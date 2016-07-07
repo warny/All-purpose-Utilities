@@ -1,0 +1,97 @@
+/*
+ * Copyright 2010, 2011, 2012 mapsforge.org
+ *
+ * This program is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with
+ * this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+using System;
+using System.Runtime.Serialization;
+using System.Text;
+
+namespace Utils.Geography.Model
+{
+
+	/**
+	 * A MapPosition represents an immutable pair of {@link GeoPoint} and zoom level.
+	 */
+	public class MapPosition /*: ISerializable*/ {
+		private const long serialVersionUID = 1L;
+
+		/**
+		 * The geographical coordinates of the map center.
+		 */
+		public GeoPoint GeoPoint { get; set; }
+
+		/**
+		 * The zoom level of the map.
+		 */
+		public byte ZoomLevel { get; set; }
+
+		/**
+		 * @param GeoPoint
+		 *            the geographical coordinates of the map center.
+		 * @param zoomLevel
+		 *            the zoom level of the map.
+		 * @throws IllegalArgumentException
+		 *             if {@code GeoPoint} is null or {@code zoomLevel} is negative.
+		 */
+		public MapPosition ( GeoPoint GeoPoint, byte zoomLevel )
+		{
+			if (GeoPoint == null) {
+				throw new NullReferenceException("GeoPoint must not be null");
+			} else if (zoomLevel < 0) {
+				throw new ArgumentException("zoomLevel must not be negative: " + zoomLevel, "zoomLevel");
+			}
+			this.GeoPoint = GeoPoint;
+			this.ZoomLevel = zoomLevel;
+		}
+
+		public override bool Equals ( object obj )
+		{
+			if (this == obj) {
+				return true;
+			} else if (!(obj is MapPosition)) {
+				return false;
+			}
+			MapPosition other = (MapPosition)obj;
+			if (this.GeoPoint == null) {
+				if (other.GeoPoint != null) {
+					return false;
+				}
+			} else if (!this.GeoPoint.Equals(other.GeoPoint)) {
+				return false;
+			} else if (this.ZoomLevel != other.ZoomLevel) {
+				return false;
+			}
+			return true;
+		}
+
+		public override int GetHashCode ()
+		{
+			const int prime = 31;
+			int result = 1;
+			result = prime * result + ((this.GeoPoint == null) ? 0 : this.GeoPoint.GetHashCode());
+			result = prime * result + this.ZoomLevel;
+			return result;
+		}
+
+
+		public override string ToString ()
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.Append("GeoPoint=");
+			stringBuilder.Append(this.GeoPoint);
+			stringBuilder.Append(", zoomLevel=");
+			stringBuilder.Append(this.ZoomLevel);
+			return stringBuilder.ToString();
+		}
+	}
+}
