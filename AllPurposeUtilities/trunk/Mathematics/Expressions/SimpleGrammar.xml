@@ -10,4 +10,5 @@
   <g:Operand sign="/" constructor="Divide" />
   <g:Operand sign="^" constructor="Power" />
   <g:Operand sign="-" constructor="Negate" />
+  <g:Class name="System.Math" />
 </g:Grammar>

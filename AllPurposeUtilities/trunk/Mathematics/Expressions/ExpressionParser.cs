@@ -16,11 +16,13 @@ namespace Utils.Mathematics.Expressions
 	{
 		private List<GroupDefinition> groupDefinitions;
 		private List<OperandDefinition> operandDefinitions;
+		private List<ClassDefinition> classDefinitions;
 
 		public ExpressionParser()
 		{
 			groupDefinitions = new List<GroupDefinition>();
 			operandDefinitions = new List<OperandDefinition>();
+			classDefinitions = new List<ClassDefinition>();
 		}
 
 		public static XmlReader SimpleGrammar
@@ -43,12 +45,21 @@ namespace Utils.Mathematics.Expressions
 					case "Operand":
 						operandDefinitions.Add(new 	OperandDefinition(definition.GetAttribute("sign")[0], definition.GetAttribute("constructor")));
 						break;
+					case "Class":
+						classDefinitions.Add(new ClassDefinition(definition.GetAttribute("assembly"), definition.GetAttribute("name")));
+						break;
 					default:
 						break;
 				}
 
 			}
 
+		}
+
+		public LambdaExpression Parse( string stringExpression, params string[] parameters )
+		{
+			var expressionParameters = parameters.Select(p=>Expression.Parameter(typeof(double), p)).ToArray();
+			return Expression.Lambda(Parse(stringExpression, expressionParameters), expressionParameters);
 		}
 
 		public Expression Parse( string stringExpression, params ParameterExpression[] parameters )
@@ -102,12 +113,18 @@ namespace Utils.Mathematics.Expressions
 				if (double.TryParse(stringExpression, out value)) {
 					return Expression.Constant(value);
 				} else if (stringExpression.Contains("(")) {
-					Regex function = new Regex(@"$(?<Name>\w+)\s*\((?<Arguments>.*) \)^");
+					Regex function = new Regex(@"^(?<Name>\w+)\s*\((?<Arguments>.*)\)$");
 					var m = function.Match(stringExpression);
 					if (m.Success) {
 						var arguments = m.Groups["Arguments"].Value.Split(CultureInfo.CurrentCulture.TextInfo.ListSeparator[0]);
 						Expression[] parametersExpression = arguments.Select(a => Parse(a, parameters)).ToArray();
-						return Expression.Call(typeof(Math).GetMethod(m.Groups["Name"].Value), parametersExpression);
+
+						foreach (var classDefinition in classDefinitions) {
+							var method = classDefinition.GetMethod(m.Groups["Name"].Value, parametersExpression.Select(p=>p.Type).ToArray());
+							if (method != null) {
+								return Expression.Call(method, parametersExpression);
+							}
+						}
 					}
 					throw new System.Data.InvalidExpressionException();
 				} else {
@@ -115,9 +132,7 @@ namespace Utils.Mathematics.Expressions
 					if (parameter!= null) {
 						return parameter;
 					} else {
-
 						value = (double)(typeof(Math).GetField(stringExpression)?.GetValue(null) ?? typeof(Math).GetProperty(stringExpression)?.GetValue(null));
-
 						return Expression.Constant(typeof(Math).GetField(stringExpression).GetValue(null));
 					}
 				}
@@ -200,6 +215,31 @@ namespace Utils.Mathematics.Expressions
 				if (parameters[0].Name=="expression") this.OperandType = typeof(UnaryExpression);
 				else if (parameters[0].Name=="left" && parameters[1].Name=="right") this.OperandType = typeof(BinaryExpression);
 
+			}
+		}
+
+		private class ClassDefinition
+		{
+			public Type Type { get; }
+
+			public MethodInfo GetMethod( string name, Type[] parametersType )
+			{
+				try {
+					return Type.GetMethod(name, parametersType);
+				} catch {
+					return null;
+				}
+			}
+
+			public ClassDefinition( string assembly, string name )
+			{
+				Assembly a;
+				if (string.IsNullOrWhiteSpace(assembly)) {
+					a = Assembly.Load("mscorlib");
+				} else {
+					a = Assembly.Load(assembly);
+				}
+				Type = a.GetType(name);
 			}
 		}
 

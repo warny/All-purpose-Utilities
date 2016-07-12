@@ -12,6 +12,7 @@
     <xs:sequence>
       <xs:element name="GroupMarkup" type="GroupMarkupType" maxOccurs="unbounded" />
       <xs:element name="Operand" type="OperandType" maxOccurs="unbounded" />
+      <xs:element name="Class" type="ClassType" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
 
@@ -23,12 +24,17 @@
   </xs:simpleType>
   
   <xs:complexType name="GroupMarkupType">
-    <xs:attribute name="open" type="char" />
-    <xs:attribute name="close" type="char" />
+    <xs:attribute name="open" type="char" use="required" />
+    <xs:attribute name="close" type="char" use="required" />
   </xs:complexType>
 
   <xs:complexType name="OperandType">
-    <xs:attribute name="sign" type="char" />
-    <xs:attribute name="constructor" />
+    <xs:attribute name="sign" type="char" use="required" />
+    <xs:attribute name="constructor" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="ClassType">
+    <xs:attribute name="assembly" type="xs:Name" />
+    <xs:attribute name="name" type="xs:Name" use="required" />
   </xs:complexType>
 </xs:schema>
