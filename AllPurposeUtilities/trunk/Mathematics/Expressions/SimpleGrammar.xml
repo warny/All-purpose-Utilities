@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<g:Grammar xmlns:g="http://expression.mathematics.utils/Grammar.xsd">
+  <g:GroupMarkup open="(" close=")" />
+  <g:GroupMarkup  open="[" close="]" />
+  <g:GroupMarkup  open="{" close="}" />
+  <g:Operand sign="=" constructor="Assign" />
+  <g:Operand sign="+" constructor="Add" />
+  <g:Operand sign="-" constructor="Subtract" />
+  <g:Operand sign="*" constructor="Multiply" />
+  <g:Operand sign="/" constructor="Divide" />
+  <g:Operand sign="^" constructor="Power" />
+  <g:Operand sign="-" constructor="Negate" />
+</g:Grammar>

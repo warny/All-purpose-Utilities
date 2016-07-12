@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="Grammar"
+    targetNamespace="http://expression.mathematics.utils/Grammar.xsd"
+    elementFormDefault="qualified"    
+    xmlns="http://expression.mathematics.utils/Grammar.xsd"
+    xmlns:mstns="http://expression.mathematics.utils/Grammar.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:element name="Grammar" type="GrammarType" />
+
+  <xs:complexType name="GrammarType">
+    <xs:sequence>
+      <xs:element name="GroupMarkup" type="GroupMarkupType" maxOccurs="unbounded" />
+      <xs:element name="Operand" type="OperandType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="char">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:complexType name="GroupMarkupType">
+    <xs:attribute name="open" type="char" />
+    <xs:attribute name="close" type="char" />
+  </xs:complexType>
+
+  <xs:complexType name="OperandType">
+    <xs:attribute name="sign" type="char" />
+    <xs:attribute name="constructor" />
+  </xs:complexType>
+</xs:schema>
