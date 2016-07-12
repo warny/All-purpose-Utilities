@@ -18,7 +18,7 @@ namespace Utils.Mathematics.Expressions
 		public static Expression Simplify( this Expression e )
 		{
 			ExpressionSimplifier simplifier = new ExpressionSimplifier();
-			return simplifier.Transform(e);
+			return simplifier.Simplify(e);
 		}
 
 		public static LambdaExpression Derive( this LambdaExpression e )
@@ -37,33 +37,11 @@ namespace Utils.Mathematics.Expressions
 
 			ExpressionDerivation derivation = new ExpressionDerivation(paramName);
 			var expression = e.Body.Simplify();
-			expression = derivation.Transform(expression);
+			expression = derivation.Derivate(e);
 			expression = expression.Simplify();
 			return Expression.Lambda(expression, e.Parameters);
 		}
 
-		public static Expression<T> Derive<T>( this Expression<T> e )
-		{
-			// check just one variable
-			if (e.Parameters.Count != 1)
-				throw new ExpressionExtensionsException("Incorrect number of parameters. Must be 1");
-
-			// calc derivative
-			return e.Derive(e.Parameters[0].Name);
-		}
-
-		public static Expression<T> Derive<T>( this Expression<T> e, string paramName )
-		{
-			if (e == null)
-				throw new ExpressionExtensionsException("Expression must be non-null");
-
-			ExpressionDerivation derivation  =new ExpressionDerivation(paramName);
-			var expression = e.Body.Simplify();
-			expression = derivation.Transform(expression);
-			expression = expression.Simplify();
-
-			return Expression.Lambda<T>(expression, e.Parameters);
-		}
 	}
 
 	public class ExpressionExtensionsException : Exception

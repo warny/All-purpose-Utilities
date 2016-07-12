@@ -12,6 +12,11 @@ namespace Utils.Mathematics.Expressions
 	{
 		private static ExpressionComparer expressionComparer = new ExpressionComparer();
 
+		public Expression Simplify( Expression e )
+		{
+			return Transform(e);
+		}
+
 		protected override Expression PrepareExpression( Expression e )
 		{
 			return Transform(e);

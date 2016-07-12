@@ -16,6 +16,10 @@ namespace Utils.Mathematics.Expressions
 			this.ParameterName = parameterName;
 		}
 
+		public Expression Derivate( LambdaExpression e )
+		{
+			return Expression.Lambda(Transform(e.Body), e.Parameters);
+		}
 
 		[ExpressionSignature(ExpressionType.Constant)]
 		public Expression Constant(

@@ -73,9 +73,16 @@
     <Compile Include="Imaging\ColorAhsv32.cs" />
     <Compile Include="Imaging\IImageAccessor.cs" />
     <Compile Include="Lists\LRUCache.cs" />
+    <Compile Include="Mathematics\Expressions\ExpressionIntegration.cs" />
+    <Compile Include="Mathematics\Expressions\ExpressionParser.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionSimplifier.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionTranformer.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionUtils.cs" />
+    <Compile Include="Mathematics\Expressions\Grammar.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Grammar.resx</DependentUpon>
+    </Compile>
     <Compile Include="Mathematics\LinearAlgebra\Matrix.Compute.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.Operators.cs" />
@@ -100,7 +107,22 @@
     <Compile Include="Objects\StringUtils.cs" />
     <Compile Include="XML\XmlDriver.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Mathematics\Expressions\Grammar.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Grammar.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Mathematics\Expressions\Grammar.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Mathematics\Expressions\SimpleGrammar.xml">
+      <SubType>Designer</SubType>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

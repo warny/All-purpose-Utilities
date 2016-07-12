@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualBasic;
 using Microsoft.VisualBasic.CompilerServices;
+using Utils.Mathematics;
 
 namespace Utils.Objects
 {
@@ -136,5 +137,21 @@ namespace Utils.Objects
 			return string.IsNullOrWhiteSpace(text);
 		}
 
+		public static bool IsNumber( this string text, System.Globalization.NumberFormatInfo format = null )
+		{
+			format = format ?? System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
+			for (int i = 0 ; i < text.Length ; i++) {
+				if (i==0) {
+					if (text[i]==format.NegativeSign[0]) continue;
+				}
+				if (text[i].ToString().In(format.NativeDigits)) continue;
+				return false;
+			}
+			return true;
+		}
+		public static bool IsNumber( this string text, System.Globalization.CultureInfo culture )
+		{
+			return IsNumber(text, culture.NumberFormat);
+		}
 	}
 }

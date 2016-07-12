@@ -15,13 +15,9 @@ namespace Utils.Mathematics.Expressions
 		private static Type TypeOfExpression = typeof(Expression);
 		protected virtual Expression PrepareExpression( Expression e ) => e;
 
-		public Expression Transform( Expression e )
+		protected Expression Transform( Expression e )
 		{
 			Type t = this.GetType();
-			if (e.NodeType == ExpressionType.Lambda) {
-				var le = (LambdaExpression)e;
-				return Expression.Lambda(Transform(le.Body), le.Parameters);
-			}
 
 			var cc = e as ConstantExpression;
 			var ue = e as UnaryExpression;
