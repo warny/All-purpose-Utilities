@@ -137,6 +137,12 @@ namespace Utils.Objects
 			return string.IsNullOrWhiteSpace(text);
 		}
 
+		/// <summary>
+		/// Vérifie si la chaîne représente un nombre
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="format"></param>
+		/// <returns></returns>
 		public static bool IsNumber( this string text, System.Globalization.NumberFormatInfo format = null )
 		{
 			format = format ?? System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
@@ -149,9 +155,76 @@ namespace Utils.Objects
 			}
 			return true;
 		}
+
+		/// <summary>
+		/// Vérifie si la chaîne représente un nombre
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="format"></param>
+		/// <returns></returns>
 		public static bool IsNumber( this string text, System.Globalization.CultureInfo culture )
 		{
 			return IsNumber(text, culture.NumberFormat);
 		}
+
+		/// <summary>
+		/// Supprime les parenthèses autour d'une chaîne
+		/// </summary>
+		/// <param name="str"></param>
+		/// <returns></returns>
+		public static string TrimBrackets( string str, params Brackets[] brackets )
+		{
+			if (brackets.IsNullOrEmptyCollection()) {
+				brackets = Brackets.All;
+			}
+
+			int start = 0, end = str.Length - 1;
+			while (str[end]==' ') end--;
+
+			for (int i = 0 ; i < str.Length ; i++) {
+				var c = str[i];
+				if (c==' ') {
+					start = i + 1;
+					continue;
+				}
+				Brackets currentBrackets = brackets.FirstOrDefault(b => b.Open== c);
+				if (currentBrackets==null) break;
+				if (str[end] == currentBrackets.Close) {
+					start = i + 1;
+					end--;
+				}
+				while (str[end]==' ') end--;
+			}
+
+			return str.Substring(start, end - start + 1);
+		}
+	}
+
+	/// <summary>
+	/// Définit une paire de parenthèses
+	/// </summary>
+	public class Brackets
+	{
+		public char Open { get; }
+		public char Close { get; }
+
+		public Brackets( string brackets ) : this(brackets[0], brackets[1]) { }
+
+		public Brackets( char open, char close )
+		{
+			this.Open = open;
+			this.Close = close;
+		}
+
+		private static Brackets roundBrackets = new Brackets('(', ')');
+		private static Brackets squareBrackets = new Brackets('(', ')');
+		private static Brackets braces = new Brackets('(', ')');
+		public static  Brackets[] all = new[] { roundBrackets, squareBrackets, braces };
+
+		public static Brackets RoundBrackets => roundBrackets;
+		public static Brackets SquareBrackets => squareBrackets;
+		public static Brackets Braces => braces;
+
+		public static Brackets[] All => all;
 	}
 }

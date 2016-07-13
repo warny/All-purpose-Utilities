@@ -6,7 +6,8 @@
     xmlns:mstns="http://expression.mathematics.utils/Grammar.xsd"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
 >
-  <xs:element name="Grammar" type="GrammarType" />
+  <xs:element name="Grammar" type="GrammarType">
+  </xs:element>
 
   <xs:complexType name="GrammarType">
     <xs:sequence>
@@ -14,8 +15,15 @@
       <xs:element name="Operand" type="OperandType" maxOccurs="unbounded" />
       <xs:element name="Class" type="ClassType" maxOccurs="unbounded" />
     </xs:sequence>
+    <xs:attribute name="culture" default="invariant" use="optional"  type="culture" />
   </xs:complexType>
 
+  <xs:simpleType name="culture">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="invariant|[A-Z][A-Z]/[A-Z][A-Z]"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+  
   <xs:simpleType name="char">
     <xs:restriction base="xs:string">
       <xs:minLength value="1"/>

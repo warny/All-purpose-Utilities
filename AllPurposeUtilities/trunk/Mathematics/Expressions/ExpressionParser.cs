@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
+using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions
 {
@@ -18,42 +19,76 @@ namespace Utils.Mathematics.Expressions
 		private List<OperandDefinition> operandDefinitions;
 		private List<ClassDefinition> classDefinitions;
 
+		public CultureInfo CultureInfo { get; set; }
+
+		public string Culture
+		{
+			get { return CultureInfo.Name; }
+			set {
+				if (value == null || value == "invariant") {
+					CultureInfo = CultureInfo.InvariantCulture;
+				} else {
+					CultureInfo = CultureInfo.GetCultureInfo(value);
+				}
+			}
+		}
+
 		public ExpressionParser()
 		{
 			groupDefinitions = new List<GroupDefinition>();
 			operandDefinitions = new List<OperandDefinition>();
 			classDefinitions = new List<ClassDefinition>();
+			CultureInfo = CultureInfo. InvariantCulture;
 		}
 
-		public static XmlReader SimpleGrammar
-		{
-			get
-			{
-				return new XmlTextReader(new StringReader( Grammar.SimpleGrammar));
-			}
-		}
+		public static XmlReader SimpleGrammar => new XmlTextReader(new StringReader(Grammar.SimpleGrammar));
 
 		public ExpressionParser(XmlReader definition) : this()
 		{
 			while (definition.Read()) {
-				if (definition.Depth!=1) continue;
-
-				switch (definition.LocalName) {
-					case "GroupMarkup":
-						groupDefinitions.Add(new GroupDefinition(definition.GetAttribute("open")[0], definition.GetAttribute("close")[0]));
-						break;
-					case "Operand":
-						operandDefinitions.Add(new 	OperandDefinition(definition.GetAttribute("sign")[0], definition.GetAttribute("constructor")));
-						break;
-					case "Class":
-						classDefinitions.Add(new ClassDefinition(definition.GetAttribute("assembly"), definition.GetAttribute("name")));
-						break;
-					default:
-						break;
+				if (definition.Depth==0) {
+					switch (definition.LocalName) {
+						case "Grammar":
+							Culture = definition.GetAttribute("culture");
+							break;
+						default:
+							break;
+					}
 				}
-
+				else if (definition.Depth==1) {
+					switch (definition.LocalName) {
+						case "GroupMarkup":
+							groupDefinitions.Add(new GroupDefinition(definition.GetAttribute("open")[0], definition.GetAttribute("close")[0]));
+							break;
+						case "Operand":
+							operandDefinitions.Add(new OperandDefinition(definition.GetAttribute("sign")[0], definition.GetAttribute("constructor")));
+							break;
+						case "Class":
+							classDefinitions.Add(new ClassDefinition(definition.GetAttribute("assembly"), definition.GetAttribute("name")));
+							break;
+						default:
+							break;
+					}
+				}
+			   
 			}
 
+		}
+
+		public LambdaExpression Parse( string stringExpression )
+		{
+			var m = Regex.Match(stringExpression, @"^\((?<arguments>.*)\)\s*=>(?<expression>.*)$");
+			if (!m.Success) {
+				throw new System.Data.InvalidExpressionException();
+			}
+			List<ParameterExpression> parameters = new List<ParameterExpression>();
+
+			foreach (Match args in Regex.Matches(m.Groups["arguments"].Value, @"((?<type>\w+(\.\w+)*)\s+)?(?<name>\w+)")) {
+				Type t = args.Groups["type"].Success ? Type.GetType(args.Groups["type"].Value) : typeof(double);
+				parameters.Add(Expression.Parameter(t, args.Groups["name"].Value));
+			}
+			var paramsArray = parameters.ToArray();
+			return Expression.Lambda(Parse(m.Groups["expression"].Value, paramsArray), paramsArray);
 		}
 
 		public LambdaExpression Parse( string stringExpression, params string[] parameters )
@@ -110,13 +145,13 @@ namespace Utils.Mathematics.Expressions
 
 			if (operandPosition == -1) {
 				double value;
-				if (double.TryParse(stringExpression, out value)) {
+				if (double.TryParse(stringExpression, NumberStyles.Float, CultureInfo, out value)) {
 					return Expression.Constant(value);
 				} else if (stringExpression.Contains("(")) {
 					Regex function = new Regex(@"^(?<Name>\w+)\s*\((?<Arguments>.*)\)$");
 					var m = function.Match(stringExpression);
 					if (m.Success) {
-						var arguments = m.Groups["Arguments"].Value.Split(CultureInfo.CurrentCulture.TextInfo.ListSeparator[0]);
+						var arguments = m.Groups["Arguments"].Value.Split(CultureInfo.TextInfo.ListSeparator[0]);
 						Expression[] parametersExpression = arguments.Select(a => Parse(a, parameters)).ToArray();
 
 						foreach (var classDefinition in classDefinitions) {
@@ -137,8 +172,8 @@ namespace Utils.Mathematics.Expressions
 					}
 				}
 			} else if (currentOperand.OperandType== typeof(BinaryExpression)) {
-				string left = TrimBrackets(stringExpression.Substring(0, operandPosition));
-				string right = TrimBrackets(stringExpression.Substring(operandPosition + 1));
+				string left = StringUtils.TrimBrackets(stringExpression.Substring(0, operandPosition), groupDefinitions.ToArray());
+				string right = StringUtils.TrimBrackets(stringExpression.Substring(operandPosition + 1), groupDefinitions.ToArray());
 
 				return (Expression)currentOperand.Constructor.Invoke(null, new[] { Parse(left, parameters), Parse(right, parameters) });
 			} else if (currentOperand.OperandType== typeof(UnaryExpression)) {
@@ -147,40 +182,9 @@ namespace Utils.Mathematics.Expressions
 			throw new System.Data.InvalidExpressionException();
 		}
 
-		public string TrimBrackets( string str )
+		class GroupDefinition : Brackets, IEquatable<GroupDefinition>
 		{
-			int start = 0, end = str.Length - 1;
-			while (str[end]==' ') end--;
-
-			for (int i = 0 ; i < str.Length ; i++) {
-				var c = str[i];
-				if (c==' ') {
-					start = i + 1;
-					continue;
-				}
-				GroupDefinition groupDefinition = groupDefinitions.FirstOrDefault(gd => gd.Open== c);
-				if (groupDefinition==null) break;
-				if (str[end] == groupDefinition.Close) {
-					start = i + 1;
-					end --;
-				}
-				while (str[end]==' ') end --;
-			}
-
-			return str.Substring(start, end - start + 1 );
-		}
-
-
-		class GroupDefinition : IEquatable<GroupDefinition>
-		{
-			public char Open { get; }
-			public char Close { get; }
-
-			public GroupDefinition( char open, char close )
-			{
-				this.Open = open;
-				this.Close = close;
-			}
+			public GroupDefinition( char open, char close ) : base(open, close) { }
 
 			public override bool Equals( object obj )
 			{
