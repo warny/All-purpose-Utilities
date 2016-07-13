@@ -11,4 +11,8 @@
   <g:Operand sign="^" constructor="Power" />
   <g:Operand sign="-" constructor="Negate" />
   <g:Class name="System.Math" />
+  <g:Class alias="double" name="System.Double" />
+  <g:Class alias="float" name="System.Single" />
+  <g:Class alias="int" name="System.Int32" />
+  <g:Class alias="long" name="System.Int64" />
 </g:Grammar>

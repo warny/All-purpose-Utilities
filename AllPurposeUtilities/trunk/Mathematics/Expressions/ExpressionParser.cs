@@ -19,6 +19,8 @@ namespace Utils.Mathematics.Expressions
 		private List<OperandDefinition> operandDefinitions;
 		private List<ClassDefinition> classDefinitions;
 
+		private List<ParameterExpression> variables;
+
 		public CultureInfo CultureInfo { get; set; }
 
 		public string Culture
@@ -38,6 +40,8 @@ namespace Utils.Mathematics.Expressions
 			groupDefinitions = new List<GroupDefinition>();
 			operandDefinitions = new List<OperandDefinition>();
 			classDefinitions = new List<ClassDefinition>();
+			variables = new List<ParameterExpression>();
+
 			CultureInfo = CultureInfo. InvariantCulture;
 		}
 
@@ -64,7 +68,7 @@ namespace Utils.Mathematics.Expressions
 							operandDefinitions.Add(new OperandDefinition(definition.GetAttribute("sign")[0], definition.GetAttribute("constructor")));
 							break;
 						case "Class":
-							classDefinitions.Add(new ClassDefinition(definition.GetAttribute("assembly"), definition.GetAttribute("name")));
+							classDefinitions.Add(new ClassDefinition(definition.GetAttribute("assembly"), definition.GetAttribute("name"), definition.GetAttribute("alias"), definition.Prefix));
 							break;
 						default:
 							break;
@@ -75,6 +79,29 @@ namespace Utils.Mathematics.Expressions
 
 		}
 
+		public Expression<Func<TResult>> Parse<TResult>( string stringExpression ) 
+			=> (Expression<Func<TResult>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1>> Parse<TResult, T1>( string stringExpression ) 
+			=> (Expression<Func<TResult, T1>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2>> Parse<TResult, T1, T2>( string stringExpression ) 
+			=> (Expression<Func<TResult, T1, T2>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3>> Parse<TResult, T1, T2, T3>( string stringExpression )
+			=> (Expression<Func<TResult, T1, T2, T3>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4>> Parse<TResult, T1, T2, T3, T4>( string stringExpression )
+			=> (Expression<Func<TResult, T1, T2, T3, T4>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4, T5>> Parse<TResult, T1, T2, T3, T4, T5>( string stringExpression )
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6>> Parse<TResult, T1, T2, T3, T4, T5, T6>( string stringExpression ) 
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7>( string stringExpression )
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8>( string stringExpression ) 
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>( string stringExpression ) 
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>>)this.Parse(stringExpression);
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>( string stringExpression ) 
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>>)this.Parse(stringExpression);
+
 		public LambdaExpression Parse( string stringExpression )
 		{
 			var m = Regex.Match(stringExpression, @"^\((?<arguments>.*)\)\s*=>(?<expression>.*)$");
@@ -84,7 +111,18 @@ namespace Utils.Mathematics.Expressions
 			List<ParameterExpression> parameters = new List<ParameterExpression>();
 
 			foreach (Match args in Regex.Matches(m.Groups["arguments"].Value, @"((?<type>\w+(\.\w+)*)\s+)?(?<name>\w+)")) {
-				Type t = args.Groups["type"].Success ? Type.GetType(args.Groups["type"].Value) : typeof(double);
+				Type t;
+				if (args.Groups["type"].Success) {
+					string typeName = args.Groups["type"].Value;
+					var classDefinition = classDefinitions.FirstOrDefault(cd=>cd.Alias == typeName);
+					if (classDefinition != null) {
+						t = classDefinition.Type;
+					} else {
+						t = Type.GetType(args.Groups["type"].Value);
+					}
+				} else {
+					t = typeof(double);
+				}
 				parameters.Add(Expression.Parameter(t, args.Groups["name"].Value));
 			}
 			var paramsArray = parameters.ToArray();
@@ -148,14 +186,32 @@ namespace Utils.Mathematics.Expressions
 				if (double.TryParse(stringExpression, NumberStyles.Float, CultureInfo, out value)) {
 					return Expression.Constant(value);
 				} else if (stringExpression.Contains("(")) {
-					Regex function = new Regex(@"^(?<Name>\w+)\s*\((?<Arguments>.*)\)$");
+					Regex function = new Regex(@"^(?<prefix>(\w+\.)+)?(?<Name>\w+)\s*\((?<Arguments>.*)\)$");
 					var m = function.Match(stringExpression);
-					if (m.Success) {
-						var arguments = m.Groups["Arguments"].Value.Split(CultureInfo.TextInfo.ListSeparator[0]);
-						Expression[] parametersExpression = arguments.Select(a => Parse(a, parameters)).ToArray();
+					var arguments = m.Groups["Arguments"].Value.Split(CultureInfo.TextInfo.ListSeparator[0]);
+					Expression[] parametersExpression = arguments.Select(a => Parse(a, parameters)).ToArray();
+					Type[] parametersTypes = parametersExpression.Select(p => p.Type).ToArray();
 
-						foreach (var classDefinition in classDefinitions) {
-							var method = classDefinition.GetMethod(m.Groups["Name"].Value, parametersExpression.Select(p=>p.Type).ToArray());
+					if (m.Success) {
+						if (m.Groups["prefix"].Success) {
+							string prefix = m.Groups["prefix"].Value;
+							var variable = variables.FirstOrDefault(v=>v.Name == prefix);
+							if (variable != null) {
+								return Expression.Call(variable, m.Groups["Name"].Value, parametersTypes, parametersExpression);
+							}
+
+							var classDefinition = classDefinitions.FirstOrDefault(cd=>cd.Prefix == prefix);
+							if (classDefinition != null) {
+								var method = classDefinition.GetMethod(m.Groups["Name"].Value, parametersTypes);
+								if (method != null) {
+									return Expression.Call(method, parametersExpression);
+								}
+							}
+							throw new System.Data.InvalidExpressionException();
+						}
+
+						foreach (var classDefinition in classDefinitions.Where(cd=>cd.Prefix != null && cd.Alias != null)) {
+							var method = classDefinition.GetMethod(m.Groups["Name"].Value, parametersTypes);
 							if (method != null) {
 								return Expression.Call(method, parametersExpression);
 							}
@@ -224,6 +280,8 @@ namespace Utils.Mathematics.Expressions
 
 		private class ClassDefinition
 		{
+			public string Alias { get; }
+			public string Prefix { get; }
 			public Type Type { get; }
 
 			public MethodInfo GetMethod( string name, Type[] parametersType )
@@ -235,8 +293,11 @@ namespace Utils.Mathematics.Expressions
 				}
 			}
 
-			public ClassDefinition( string assembly, string name )
+			public ClassDefinition( string assembly, string name, string alias, string prefix )
 			{
+				this.Alias = alias;
+				this.Prefix = prefix;
+
 				Assembly a;
 				if (string.IsNullOrWhiteSpace(assembly)) {
 					a = Assembly.Load("mscorlib");

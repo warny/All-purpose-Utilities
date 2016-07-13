@@ -43,6 +43,8 @@
 
   <xs:complexType name="ClassType">
     <xs:attribute name="assembly" type="xs:Name" />
+    <xs:attribute name="alias" type="xs:Name" />
+    <xs:attribute name="prefix" type="xs:Name" />
     <xs:attribute name="name" type="xs:Name" use="required" />
   </xs:complexType>
 </xs:schema>
