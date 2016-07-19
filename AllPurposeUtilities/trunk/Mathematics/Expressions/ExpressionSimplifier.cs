@@ -102,13 +102,13 @@ namespace Utils.Mathematics.Expressions
 
 		#region addition
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression AdditionOfConstants( BinaryExpression e, [Numeric]ConstantExpression left, [Numeric]ConstantExpression right )
+		protected Expression AdditionOfConstants( BinaryExpression e, [Numeric]ConstantExpression left, [Numeric]ConstantExpression right )
 		{
 			return Expression.Constant((double)left.Value + (double)right.Value);
 		}
 
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression AdditionWithNegate(
+		protected Expression AdditionWithNegate(
 			BinaryExpression e,
 			Expression left, [ExpressionSignature(ExpressionType.Negate)]UnaryExpression right )
 		{
@@ -116,7 +116,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionWithNegate(
+		protected Expression SubstractionWithNegate(
 			BinaryExpression e,
 			Expression left, [ExpressionSignature(ExpressionType.Negate)]UnaryExpression right )
 		{
@@ -124,7 +124,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionWithNegate(
+		protected Expression SubstractionWithNegate(
 			BinaryExpression e,
 			[ExpressionSignature(ExpressionType.Negate)]UnaryExpression left,
 			Expression right )
@@ -133,7 +133,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Negate)]
-		public Expression NegateWithSubstraction(
+		protected Expression NegateWithSubstraction(
 			UnaryExpression e,
 			[ExpressionSignature(ExpressionType.Subtract)]BinaryExpression operand )
 		{
@@ -141,7 +141,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionWithAddition(
+		protected Expression SubstractionWithAddition(
 			BinaryExpression e,
 			Expression left, [ExpressionSignature(ExpressionType.Add)]BinaryExpression right )
 		{
@@ -149,7 +149,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionWithSubstraction(
+		protected Expression SubstractionWithSubstraction(
 			BinaryExpression e,
 			Expression left, [ExpressionSignature(ExpressionType.Subtract)]BinaryExpression right )
 		{
@@ -157,13 +157,13 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionOfConstants( BinaryExpression e, [Numeric]ConstantExpression left, [Numeric]ConstantExpression right )
+		protected Expression SubstractionOfConstants( BinaryExpression e, [Numeric]ConstantExpression left, [Numeric]ConstantExpression right )
 		{
 			return Expression.Constant((double)left.Value - (double)right.Value);
 		}
 
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression AdditionOfEqualsElements( BinaryExpression e, Expression left, Expression right )
+		protected Expression AdditionOfEqualsElements( BinaryExpression e, Expression left, Expression right )
 		{
 			bool leftAugmented = false;
 			Expression leftleft;
@@ -213,7 +213,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionOfEqualsElements( BinaryExpression e, Expression left, Expression right )
+		protected Expression SubstractionOfEqualsElements( BinaryExpression e, Expression left, Expression right )
 		{
 			bool leftAugmented = false;
 			Expression leftleft;
@@ -262,7 +262,7 @@ namespace Utils.Mathematics.Expressions
 
 		#region multiplication
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression MultiplicationOfConstants(
+		protected Expression MultiplicationOfConstants(
 			BinaryExpression e,
 			[Numeric]ConstantExpression left,
 			[Numeric]ConstantExpression right
@@ -272,7 +272,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivisionOfConstants(
+		protected Expression DivisionOfConstants(
 			BinaryExpression e,
 			[Numeric]ConstantExpression left,
 			[Numeric]ConstantExpression right
@@ -282,7 +282,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression MultiplicationWithNegate(
+		protected Expression MultiplicationWithNegate(
 			BinaryExpression e,
 			Expression left,
 			[ExpressionSignature(ExpressionType.Negate)]UnaryExpression right
@@ -294,7 +294,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression MultiplicationWithNegate(
+		protected Expression MultiplicationWithNegate(
 			BinaryExpression e,
 			[ExpressionSignature(ExpressionType.Negate)]UnaryExpression left,
 			Expression right
@@ -306,7 +306,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivisionWithNegate(
+		protected Expression DivisionWithNegate(
 			BinaryExpression e,
 			Expression left,
 			[ExpressionSignature(ExpressionType.Negate)]UnaryExpression right
@@ -319,7 +319,7 @@ namespace Utils.Mathematics.Expressions
 
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivisionWithNegate(
+		protected Expression DivisionWithNegate(
 			BinaryExpression e,
 			[ExpressionSignature(ExpressionType.Negate)]UnaryExpression left,
 			Expression right
@@ -331,7 +331,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression MultiplicationOfEqualsElements( BinaryExpression e, Expression left, Expression right )
+		protected Expression MultiplicationOfEqualsElements( BinaryExpression e, Expression left, Expression right )
 		{
 			Expression leftleft;
 			Expression leftright;
@@ -369,7 +369,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivisionOfDivision( BinaryExpression e,
+		protected Expression DivisionOfDivision( BinaryExpression e,
 			[ExpressionSignature(ExpressionType.Divide)]BinaryExpression left,
 			[ExpressionSignature(ExpressionType.Divide)]BinaryExpression right )
 		{
@@ -379,7 +379,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivisionOfDivision( BinaryExpression e,
+		protected Expression DivisionOfDivision( BinaryExpression e,
 		Expression left,
 		[ExpressionSignature(ExpressionType.Divide)]BinaryExpression right )
 		{
@@ -387,7 +387,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivisionOfDivision( BinaryExpression e,
+		protected Expression DivisionOfDivision( BinaryExpression e,
 			[ExpressionSignature(ExpressionType.Divide)]BinaryExpression left,
 			Expression right )
 		{
@@ -397,7 +397,7 @@ namespace Utils.Mathematics.Expressions
 
 		#region power
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression PowerOfConstants(
+		protected Expression PowerOfConstants(
 			BinaryExpression e,
 			[Numeric]ConstantExpression left,
 			[Numeric]ConstantExpression right
@@ -407,15 +407,16 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionCallSignature(typeof(Math), "Pow")]
-		public Expression PowerConvertion( Expression e, Expression left, Expression right)
+		protected Expression PowerConvertion( Expression e, Expression left, Expression right)
 		{
 			return Transform(Expression.Power(left, right));
 		}
 		#endregion
+
 		#region logarithm 
 
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression LogarithmSimplificationAdd(Expression e, 
+		protected Expression LogarithmSimplificationAdd(Expression e, 
 			[ExpressionCallSignature(typeof(Math), "Log")]MethodCallExpression left,
 			[ExpressionCallSignature(typeof(Math), "Log")]MethodCallExpression right)
 		{
@@ -425,7 +426,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression LogarithmSimplificationSubstract( Expression e,
+		protected Expression LogarithmSimplificationSubstract( Expression e,
 			[ExpressionCallSignature(typeof(Math), "Log")]MethodCallExpression left,
 			[ExpressionCallSignature(typeof(Math), "Log")]MethodCallExpression right )
 		{
@@ -434,7 +435,7 @@ namespace Utils.Mathematics.Expressions
 				Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
 		}
 
-		public Expression Logarithm10SimplificationAdd( Expression e,
+		protected Expression Logarithm10SimplificationAdd( Expression e,
 			[ExpressionCallSignature(typeof(Math), "Log10")]MethodCallExpression left,
 			[ExpressionCallSignature(typeof(Math), "Log10")]MethodCallExpression right )
 		{
@@ -444,7 +445,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression Logarithm10SimplificationSubstract( Expression e,
+		protected Expression Logarithm10SimplificationSubstract( Expression e,
 			[ExpressionCallSignature(typeof(Math), "Log10")]MethodCallExpression left,
 			[ExpressionCallSignature(typeof(Math), "Log10")]MethodCallExpression right )
 		{
@@ -457,7 +458,7 @@ namespace Utils.Mathematics.Expressions
 
 		#region trigonometry
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression AdditionOfCos2andSin2( Expression e,
+		protected Expression AdditionOfCos2andSin2( Expression e,
 			[ExpressionSignature(ExpressionType.Power)]BinaryExpression left,
 			[ExpressionSignature(ExpressionType.Power)]BinaryExpression right )
 		{
@@ -478,6 +479,23 @@ namespace Utils.Mathematics.Expressions
 			if ( expressionComparer.Equals(leftleft.Arguments[0] , rightleft.Arguments[0])) return Expression.Constant(1.0);
 
 			return null;
+		}
+
+
+		#endregion
+
+		#region lambda
+		[ExpressionSignature(ExpressionType.Invoke)]
+		protected Expression InvokeExpression(InvocationExpression expression)
+		{
+			if (expression.Expression is LambdaExpression) {
+				var le = (LambdaExpression)expression.Expression;
+				var newArguments = expression.Arguments.ToArray();
+				var oldArguments = le.Parameters.ToArray();
+				return Transform(ReplaceArguments(le.Body, oldArguments, newArguments));
+
+			}
+			return expression;
 		}
 
 

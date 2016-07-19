@@ -217,8 +217,8 @@ namespace Utils.Objects
 		}
 
 		private static Brackets roundBrackets = new Brackets('(', ')');
-		private static Brackets squareBrackets = new Brackets('(', ')');
-		private static Brackets braces = new Brackets('(', ')');
+		private static Brackets squareBrackets = new Brackets('[', ']');
+		private static Brackets braces = new Brackets('{', '}');
 		public static  Brackets[] all = new[] { roundBrackets, squareBrackets, braces };
 
 		public static Brackets RoundBrackets => roundBrackets;

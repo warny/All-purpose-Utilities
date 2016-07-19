@@ -18,11 +18,11 @@ namespace Utils.Mathematics.Expressions
 
 		public Expression Derivate( LambdaExpression e )
 		{
-			return Expression.Lambda(Transform(e.Body), e.Parameters);
+			return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
 		}
 
 		[ExpressionSignature(ExpressionType.Constant)]
-		public Expression Constant(
+		protected Expression Constant(
 			ConstantExpression e,
 			object value
 		)
@@ -31,7 +31,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Parameter)]
-		public Expression Parameter(
+		protected Expression Parameter(
 			ParameterExpression e
 		)
 		{
@@ -43,7 +43,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Negate)]
-		public Expression Negate(
+		protected Expression Negate(
 			UnaryExpression e,
 			Expression operand
 		)
@@ -52,7 +52,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression Add(
+		protected Expression Add(
 			BinaryExpression e,
 			Expression left,
 			Expression right
@@ -65,7 +65,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression Subtract(
+		protected Expression Subtract(
 			BinaryExpression e,
 			Expression left,
 			Expression right
@@ -78,7 +78,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression Multiply(
+		protected Expression Multiply(
 			BinaryExpression e,
 			Expression left,
 			Expression right
@@ -91,7 +91,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression Divide(
+		protected Expression Divide(
 			BinaryExpression e,
 			Expression left,
 			Expression right
@@ -105,7 +105,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Power)]
-		public Expression Power(
+		protected Expression Power(
 			BinaryExpression e,
 			Expression left,
 			ConstantExpression right )
@@ -120,7 +120,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Power)]
-		public Expression Power(
+		protected Expression Power(
 			BinaryExpression e,
 			Expression left,
 			Expression right )
@@ -146,7 +146,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionCallSignature(typeof(Math), "Log")]
-		public Expression Log(
+		protected Expression Log(
 			MethodCallExpression e,
 			Expression operand )
 		{
@@ -157,7 +157,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionCallSignature(typeof(Math), "Log10")]
-		public Expression Log10(
+		protected Expression Log10(
 			MethodCallExpression e,
 			Expression operand )
 		{
@@ -171,7 +171,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionCallSignature(typeof(Math), "Sin")]
-		public Expression Sin(
+		protected Expression Sin(
 			MethodCallExpression e,
 			Expression operand )
 		{
@@ -181,7 +181,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionCallSignature(typeof(Math), "Cos")]
-		public Expression Cos(
+		protected Expression Cos(
 			MethodCallExpression e,
 			Expression operand )
 		{
@@ -192,7 +192,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionCallSignature(typeof(Math), "Tan")]
-		public Expression Tan(
+		protected Expression Tan(
 			MethodCallExpression e,
 			Expression operand )
 		{
