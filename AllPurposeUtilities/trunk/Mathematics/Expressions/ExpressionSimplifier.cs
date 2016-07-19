@@ -271,6 +271,49 @@ namespace Utils.Mathematics.Expressions
 			return Expression.Constant((double)left.Value * (double) right.Value);
 		}
 
+		[ExpressionSignature(ExpressionType.Multiply)]
+		protected Expression Multiplication(
+			BinaryExpression e,
+			Expression left,
+			[Numeric]ConstantExpression right
+		)
+		{
+			return Expression.Multiply(right, left);
+		}
+
+		[ExpressionSignature(ExpressionType.Multiply)]
+		protected Expression Multiplication(
+			BinaryExpression e,
+			[Numeric]ConstantExpression left,
+			[ExpressionSignature(ExpressionType.Multiply)]BinaryExpression right
+		)
+		{
+			if (right.Left is ConstantExpression) {
+				return Expression.Multiply(
+					Expression.Constant((double)left.Value * (double)((ConstantExpression)right.Left).Value),
+					right.Right
+				);
+			}
+			return null;
+		}
+
+		[ExpressionSignature(ExpressionType.Multiply)]
+		protected Expression Multiplication(
+			BinaryExpression e,
+			[ExpressionSignature(ExpressionType.Multiply)]BinaryExpression left,
+			[ExpressionSignature(ExpressionType.Multiply)]BinaryExpression right
+		)
+		{
+			if (left.Left is ConstantExpression && right.Left is ConstantExpression) {
+				return Expression.Multiply(
+					Expression.Constant((double)((ConstantExpression)left.Left).Value * (double)((ConstantExpression)right.Left).Value),
+					Transform(Expression.Multiply(left.Right, right.Right))
+				);
+			}
+			return null;
+		}
+
+
 		[ExpressionSignature(ExpressionType.Divide)]
 		protected Expression DivisionOfConstants(
 			BinaryExpression e,
