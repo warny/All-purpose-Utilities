@@ -58,8 +58,6 @@ namespace Utils.Mathematics
 		}
 		#endregion
 
-
-
 		#region round
 
 		public static float Round( float value, float @base )
@@ -332,19 +330,9 @@ namespace Utils.Mathematics
 		/// </summary>
 		/// <param name="value">Valeur</param>
 		/// <returns>Racine carrée</returns>
-		public static int Sqrt( byte value )
+		public static byte Sqrt( byte value )
 		{
-			byte result = 1;
-			byte lastresult1 = 0;
-			byte lastresult2 = 0;
-
-			while (result != lastresult1 && result != lastresult2) {
-				lastresult2 = lastresult1;
-				lastresult1 = result;
-				result = (byte)((result + value / result) >> 1);
-			}
-
-			return result;
+			return (byte)Math.Sqrt(value);
 		}
 
 		/// <summary>
@@ -352,19 +340,9 @@ namespace Utils.Mathematics
 		/// </summary>
 		/// <param name="value">Valeur</param>
 		/// <returns>Racine carrée</returns>
-		public static int Sqrt( short value )
+		public static short Sqrt( short value )
 		{
-			short result = 1;
-			short lastresult1 = 0;
-			short lastresult2 = 0;
-
-			while (result != lastresult1 && result != lastresult2) {
-				lastresult2 = lastresult1;
-				lastresult1 = result;
-				result = (short)((result + value / result) >> 1);
-			}
-
-			return result;
+			return (short)Math.Sqrt(value);
 		}
 
 		/// <summary>
@@ -374,17 +352,7 @@ namespace Utils.Mathematics
 		/// <returns>Racine carrée</returns>
 		public static int Sqrt( int value )
 		{
-			int result = 1;
-			int lastresult1 = 0;
-			int lastresult2 = 0;
-
-			while (result != lastresult1 && result != lastresult2) {
-				lastresult2 = lastresult1;
-				lastresult1 = result;
-				result = (result + value / result) >> 1;
-			}
-			
-			return result;
+			return (int)Math.Sqrt(value);
 		}
 
 		/// <summary>
@@ -394,34 +362,9 @@ namespace Utils.Mathematics
 		/// <returns>Racine carrée</returns>
 		public static long Sqrt( long value )
 		{
-			long result = 1;
-			long lastresult1 = 0;
-			long lastresult2 = 0;
-
-			while (result != lastresult1 && result != lastresult2) {
-				lastresult2 = lastresult1;
-				lastresult1 = result;
-				result = (result + value / result) >> 1;
-			}
-
-			return result;
+			return (long)Math.Sqrt(value);
 		}
 
-		public static long Root( long value, long root )
-		{
-			long result = 1;
-			long lastresult1 = 0;
-			long lastresult2 = 0;
-
-			while (result != lastresult1 && result != lastresult2) {
-				lastresult2 = lastresult1;
-				lastresult1 = result;
-				result = ((root-1) * result + value / Pow(result, root - 1)) / root;
-			}
-
-			return result;
-
-		}
 		#endregion
 	}
 }
