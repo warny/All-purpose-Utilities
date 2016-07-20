@@ -45,6 +45,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Arrays\ArrayAccessor.cs" />
+    <Compile Include="Arrays\ArrayUtils.cs" />
+    <Compile Include="Lists\IndexedList.cs" />
     <Compile Include="Lists\CachedLoader.cs" />
     <Compile Include="Lists\MappedDictionary.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionDerivation.cs" />
