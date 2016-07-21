@@ -10,7 +10,7 @@ namespace Utils.Lists
 	class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
 	{
 		private Dictionary<K, V> dictionary;
-		Func<V, K> getKey;
+		private Func<V, K> getKey;
 
 		public IndexedList( Func<V, K> getKey) {
 			this.getKey = getKey;
@@ -27,8 +27,8 @@ namespace Utils.Lists
 		public bool Contains( V item )=> dictionary.ContainsValue(item);
 		public bool ContainsKey( K key ) => dictionary.ContainsKey(key);
 		public void CopyTo( V[] array, int arrayIndex )	=>dictionary.Values.CopyTo(array, arrayIndex);
-		public IEnumerator<KeyValuePair<K, V>> GetEnumerator() => dictionary.GetEnumerator();
 		public bool TryGetValue( K key, out V value ) => dictionary.TryGetValue(key, out value);
+		IEnumerator<KeyValuePair<K, V>> IEnumerable<KeyValuePair<K, V>>.GetEnumerator() => dictionary.GetEnumerator();
 		IEnumerator<V> IEnumerable<V>.GetEnumerator() => dictionary.Values.GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => dictionary.Values.GetEnumerator();
 	}

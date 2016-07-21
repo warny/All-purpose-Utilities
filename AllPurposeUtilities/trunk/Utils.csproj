@@ -95,6 +95,7 @@
     <Compile Include="Mathematics\LinearAlgebra\Vector.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Vector.Operators.cs" />
     <Compile Include="Mathematics\MathEx.cs" />
+    <Compile Include="Objects\DateUtilities.cs" />
     <Compile Include="Objects\ObjectUtils.cs" />
     <Compile Include="Imaging\BitmapAccessor.cs" />
     <Compile Include="Imaging\BitmapArgb32Accessor.cs" />
