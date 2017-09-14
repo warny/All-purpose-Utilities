@@ -100,6 +100,7 @@
     <Compile Include="Imaging\BitmapAccessor.cs" />
     <Compile Include="Imaging\BitmapArgb32Accessor.cs" />
     <Compile Include="Objects\PreparedFormat.cs" />
+    <Compile Include="Objects\StringDifference.cs" />
     <Compile Include="Streams\PartialStream.cs" />
     <Compile Include="Files\PathUtils.cs" />
     <Compile Include="Streams\Reader.cs" />

@@ -1,0 +1,8 @@
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\Utils.dll
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\Utils.pdb
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\Microsoft.CodeAnalysis.LiveUnitTesting.Runtime.dll
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.Mathematics.Expressions.Grammar.resources
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.GenerateResource.Cache
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.CoreCompileInputs.cache
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.dll
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.pdb

@@ -227,4 +227,5 @@ namespace Utils.Objects
 
 		public static Brackets[] All => all;
 	}
+
 }
