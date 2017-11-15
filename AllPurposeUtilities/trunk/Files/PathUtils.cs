@@ -9,12 +9,21 @@ namespace Utils.Files
 {
 	public static class PathUtils
 	{
+		/// <summary>
+		/// Créé le repertoire en paramètre en créant tous les sous-répertoires si besoin
+		/// </summary>
+		/// <param name="baseDirectory">Répertoire de base</param>
+		/// <param name="newPath">chemin à créer</param>
 		public static void CreateDirectories( this DirectoryInfo baseDirectory, string newPath = null )
 		{
 			string path = newPath!= null ? Path.Combine(baseDirectory.FullName, newPath) : baseDirectory.FullName;
 			CreateDirectories(path);
 		}
 
+		/// <summary>
+		/// Créé le repertoire en paramètre en créant tous les sous-répertoires si besoin
+		/// </summary>
+		/// <param name="fullPath">Chemin à créer</param>
 		public static void CreateDirectories( string fullPath )
 		{
 			if (!Directory.Exists(fullPath)) {
@@ -23,6 +32,11 @@ namespace Utils.Files
 			}
 		}
 
+		/// <summary>
+		/// Enumère les répertoires
+		/// </summary>
+		/// <param name="path">Chemin à énumérer</param>
+		/// <returns></returns>
 		public static IEnumerable<string> EnumerateDirectories( string path )
 		{
 			var parent = Path.GetDirectoryName(path);
@@ -46,6 +60,11 @@ namespace Utils.Files
 			}
 		}
 
+		/// <summary>
+		/// Enumère les fichiers
+		/// </summary>
+		/// <param name="path">Chemin à énumérer</param>
+		/// <returns></returns>
 		public static IEnumerable<string> EnumerateFiles( string path )
 		{
 			var parent = Path.GetDirectoryName(path);

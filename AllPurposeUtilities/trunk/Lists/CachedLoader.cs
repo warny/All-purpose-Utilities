@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Utils.Lists
 {
 	/// <summary>
-	/// Classe permettant de charger une ressource s'il celle-ci n'a pas été chargée avant
+	/// Classe permettant de charger une ressource si celle-ci n'a pas été chargée avant
 	/// </summary>
 	/// <typeparam name="TKey"></typeparam>
 	/// <typeparam name="TValue"></typeparam>

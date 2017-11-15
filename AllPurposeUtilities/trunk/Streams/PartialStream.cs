@@ -8,6 +8,9 @@ using IO=System.IO;
 
 namespace Utils.Streams
 {
+	/// <summary>
+	/// Ouvre une partie d'un stream
+	/// </summary>
 	class PartialStream : IO.Stream
 	{
 		private readonly IO.Stream s;
@@ -15,6 +18,11 @@ namespace Utils.Streams
 		private long length;
 		private long position;
 
+		/// <summary>
+		/// Ouvre une partie d'un stream à sa position actuelle en se limitant à la longueur indiquée
+		/// </summary>
+		/// <param name="s">Stream à ouvrir</param>
+		/// <param name="length">Longueur à utiliser</param>
 		public PartialStream( IO.Stream s, long length )
 		{
 			this.s = s;
@@ -24,6 +32,12 @@ namespace Utils.Streams
 			Check();
 		}
 
+		/// <summary>
+		/// Ouvre une partie d'un stream à la position indiquée en se limitant à la longueur indiquée
+		/// </summary>
+		/// <param name="s">Stream à ouvrir</param>
+		/// <param name="position">Position à laquelle commencer la lecture</param>
+		/// <param name="length">Longueur à utiliser</param>
 		public PartialStream( IO.Stream s, long position, long length )
 		{
 			this.s = s;
@@ -32,6 +46,10 @@ namespace Utils.Streams
 			this.position = 0;
 			Check();
 		}
+
+		/// <summary>
+		/// Vérifie sur le flux est parcourable
+		/// </summary>
 		private void Check()
 		{
 			if (!this.s.CanSeek) throw new ArgumentException("Le flux doit être parcourable");
