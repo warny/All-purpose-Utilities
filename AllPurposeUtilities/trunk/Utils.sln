@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.10
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "Utils.csproj", "{66601BC8-BB62-439A-854A-269CD0A1DD35}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilsTest", "..\UtilsTest\UtilsTest.csproj", "{72EC792D-156B-4976-99DE-E1F363B71B51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilsForm", "..\UtilsForm\UtilsForm.csproj", "{3A1B1739-A809-4E69-AFA9-BD411602F49F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{72EC792D-156B-4976-99DE-E1F363B71B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72EC792D-156B-4976-99DE-E1F363B71B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72EC792D-156B-4976-99DE-E1F363B71B51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A1B1739-A809-4E69-AFA9-BD411602F49F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A1B1739-A809-4E69-AFA9-BD411602F49F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A1B1739-A809-4E69-AFA9-BD411602F49F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A1B1739-A809-4E69-AFA9-BD411602F49F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

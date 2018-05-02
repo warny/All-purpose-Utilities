@@ -36,6 +36,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -111,6 +112,7 @@
     <Compile Include="Streams\StreamValidator.cs" />
     <Compile Include="Objects\Parsers.cs" />
     <Compile Include="Objects\StringUtils.cs" />
+    <Compile Include="Web\UriBuilder.cs" />
     <Compile Include="XML\XmlDriver.cs" />
   </ItemGroup>
   <ItemGroup>

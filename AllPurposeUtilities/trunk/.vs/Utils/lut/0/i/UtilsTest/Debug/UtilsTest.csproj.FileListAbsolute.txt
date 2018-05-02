@@ -6,7 +6,8 @@ D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\UtilsTest\bin\Debug\fr\Microsoft.VisualStudio.TestPlatform.TestFramework.resources.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\UtilsTest\bin\Debug\UtilsTest.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\UtilsTest\bin\Debug\UtilsTest.pdb
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\UtilsTest\Debug\UtilsTest.csprojResolveAssemblyReference.cache
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\UtilsTest\Debug\UtilsTest.csproj.CoreCompileInputs.cache
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\UtilsTest\Debug\UtilsTest.csproj.CopyComplete
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\UtilsTest\Debug\UtilsTest.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\UtilsTest\Debug\UtilsTest.pdb
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\UtilsTest\Debug\UtilsTest.csprojResolveAssemblyReference.cache

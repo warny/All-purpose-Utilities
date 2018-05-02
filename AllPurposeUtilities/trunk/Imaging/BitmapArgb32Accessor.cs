@@ -63,6 +63,26 @@ namespace Utils.Imaging
 			}
 		}
 
+		public uint[] CopyToArray()
+		{
+			uint[] copy = new uint[totalBytes / sizeof(uint)];
+			for (int i = 0 ; i < copy.Length ; i++) {
+				copy[i] = uintdata[i];
+			}
+			return copy;
+		}
+
+		public ColorArgb32[,] CopyToColorArray()
+		{
+			ColorArgb32[,] copy = new ColorArgb32[Width, Height];
+			for (int y = 0 ; y < Height ; y++) {
+				for (int x = 0 ; x < Width ; x++) {
+					copy[x, y] = this[x, y];
+				}
+			}
+			return copy;
+		}
+
 		public void Fill( int left, int top, int right, int bottom, uint value )
 		{
 			for (int y = top ; y <= bottom ; y++) {

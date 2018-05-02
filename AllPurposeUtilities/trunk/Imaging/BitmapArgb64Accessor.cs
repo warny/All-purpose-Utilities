@@ -40,7 +40,6 @@ namespace Utils.Imaging
 
 			this.uintdata = (ulong*)(void*)bmpdata.Scan0;
 		}
-
 		public ColorArgb64 this[Point point]
 		{
 			get { return new ColorArgb64(uintdata[point.Y * bmpdata.Width + point.X]); }

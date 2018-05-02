@@ -51,6 +51,7 @@
     <Compile Include="Files\PathUtils.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Web\UriBuilderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
