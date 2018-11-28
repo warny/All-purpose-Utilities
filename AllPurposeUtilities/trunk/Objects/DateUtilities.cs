@@ -9,12 +9,12 @@ namespace Utils.Objects
 	public static class DateUtilities
 	{
 		/// <summary>
-		/// Renvoi le dé
+		/// Renvoi le début de la période qui contient la date donnée
 		/// </summary>
-		/// <param name="datetime"></param>
-		/// <param name="period"></param>
-		/// <param name="firstDayOfWeek"></param>
-		/// <returns></returns>
+		/// <param name="datetime">Date de référence</param>
+		/// <param name="period">Période</param>
+		/// <param name="firstDayOfWeek">Jour du début de la semaine</param>
+		/// <returns>Premier jour de la période</returns>
 		public static DateTime StartOf( this DateTime datetime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek = DayOfWeek.Monday )
 		{
 			switch (period) {
@@ -43,6 +43,13 @@ namespace Utils.Objects
 			}
 		}
 
+		/// <summary>
+		/// Renvoi la fin de la période qui contient la date donnée
+		/// </summary>
+		/// <param name="datetime">Date de référence</param>
+		/// <param name="period">Période</param>
+		/// <param name="firstDayOfWeek">Jour du début de la semaine</param>
+		/// <returns>Dernier jour de la période</returns>
 		public static DateTime EndOf( this DateTime datetime, PeriodTypeEnum periodType, DayOfWeek firstDayOfWeek = DayOfWeek.Monday )
 		{
 			switch (periodType) {

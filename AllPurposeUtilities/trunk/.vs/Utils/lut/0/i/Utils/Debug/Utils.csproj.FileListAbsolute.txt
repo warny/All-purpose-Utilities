@@ -1,5 +1,4 @@
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\Utils.dll
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\Utils.pdb
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\Microsoft.CodeAnalysis.LiveUnitTesting.Runtime.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\cs\Microsoft.CodeAnalysis.LiveUnitTesting.Runtime.resources.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\b\trunk\bin\Debug\de\Microsoft.CodeAnalysis.LiveUnitTesting.Runtime.resources.dll
@@ -19,5 +18,4 @@ D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.CoreCompileInputs.cache
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.CopyComplete
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.dll
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.pdb
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csprojResolveAssemblyReference.cache
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csprojAssemblyReference.cache

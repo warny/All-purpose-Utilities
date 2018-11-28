@@ -44,6 +44,30 @@ namespace Utils.Arrays
 			return s.Copy(start);
 		}
 
+		/// <summary>
+		/// Return array without values at start and end
+		/// </summary>
+		/// <typeparam name="T">Type of elements</typeparam>
+		/// <param name="obj">Array to trim</param>
+		/// <param name="values">Values to trim from array</param>
+		/// <returns></returns>
+		public static T[] Trim<T>( this T[] obj, params T[] values )
+		{
+			int start = 0, end = values.Length;
+			for (start = 0 ; start < end ; start++) {
+				T value = obj[start];
+				if (!values.Contains(value)) break;
+			}
+			for (end = end - 1 ; end > start ; end--) {
+				T value = obj[end];
+				if (!values.Contains(value)) break;
+			}
+			if (start >= end) return new T[0];
+			T[] result = new T[end - start];
+			Array.Copy(obj, start, result, 0, result.Length);
+			return result;
+		}
+
 		public static T[] Copy<T>( this T[] array, int start, int length ) {
 			T[] result = new T[length];
 			Array.Copy(array, start, result, 0, length);

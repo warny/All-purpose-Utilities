@@ -14,17 +14,19 @@ namespace Utils.Imaging
 		private double saturation;
 		private double value;
 
-		public double Alpha {
-			get { return alpha; }
-			set {
-				if (!value.Between(0.0,1.0)) throw new ArgumentOutOfRangeException(nameof(Alpha));
+		public double Alpha
+		{
+			get => alpha;
+			set
+			{
+				if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Alpha));
 				alpha = value;
 			}
 		}
 
 		public double Hue
 		{
-			get { return hue; }
+			get => hue;
 
 			set
 			{
@@ -34,7 +36,7 @@ namespace Utils.Imaging
 
 		public double Saturation
 		{
-			get { return saturation; }
+			get => saturation; 
 
 			set
 			{
@@ -45,7 +47,7 @@ namespace Utils.Imaging
 
 		public double Value
 		{
-			get { return value; }
+			get => value;
 
 			set
 			{
@@ -56,8 +58,12 @@ namespace Utils.Imaging
 
 		public ColorAhsv( double alpha, double hue, double saturation, double value )
 		{
+			if (!alpha.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(alpha));
+			if (!saturation.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(saturation));
+			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
+
 			this.alpha = alpha;
-			this.Hue = hue;
+			this.Hue = Math.IEEERemainder(hue, 360.0);
 			this.saturation = saturation;
 			this.value = value;
 		}
@@ -65,8 +71,11 @@ namespace Utils.Imaging
 
 		public ColorAhsv( double hue, double saturation, double value )
 		{
+			if (!saturation.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(saturation));
+			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
+
 			this.alpha = 1;
-			this.Hue = hue;
+			this.Hue = Math.IEEERemainder(hue, 360.0);
 			this.saturation = saturation;
 			this.value = value;
 		}

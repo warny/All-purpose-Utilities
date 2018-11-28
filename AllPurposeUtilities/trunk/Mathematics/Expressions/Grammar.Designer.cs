@@ -19,7 +19,7 @@ namespace Utils.Mathematics.Expressions {
     // à l'aide d'un outil, tel que ResGen ou Visual Studio.
     // Pour ajouter ou supprimer un membre, modifiez votre fichier .ResX, puis réexécutez ResGen
     // avec l'option /str ou régénérez votre projet VS.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Grammar {
@@ -61,8 +61,17 @@ namespace Utils.Mathematics.Expressions {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt; 
-        ///.
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;g:Grammar xmlns:g=&quot;http://expression.mathematics.utils/Grammar.xsd&quot;&gt;
+        ///  &lt;g:GroupMarkup open=&quot;(&quot; close=&quot;)&quot; /&gt;
+        ///  &lt;g:GroupMarkup  open=&quot;[&quot; close=&quot;]&quot; /&gt;
+        ///  &lt;g:GroupMarkup  open=&quot;{&quot; close=&quot;}&quot; /&gt;
+        ///  &lt;g:Operand sign=&quot;=&quot; constructor=&quot;Assign&quot; /&gt;
+        ///  &lt;g:Operand sign=&quot;+&quot; constructor=&quot;Add&quot; /&gt;
+        ///  &lt;g:Operand sign=&quot;-&quot; constructor=&quot;Subtract&quot; /&gt;
+        ///  &lt;g:Operand sign=&quot;*&quot; constructor=&quot;Multiply&quot; /&gt;
+        ///  &lt;g:Operand sign=&quot;/&quot; constructor=&quot;Divide&quot; /&gt;
+        ///  &lt;g:Operand sign=&quot;^&quot; constructor=&quot;Power&quot;  [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
         internal static string SimpleGrammar {
             get {

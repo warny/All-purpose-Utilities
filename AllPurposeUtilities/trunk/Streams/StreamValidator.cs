@@ -8,6 +8,10 @@ using IO = System.IO;
 
 namespace Utils
 {
+	/// <summary>
+	/// Flux tampon dans lequel on peut écrire des données qui ne sont écrite dans le flux final 
+	/// qu'en cas de validation avec l'appel de la fonction <see cref="Validate">Validate</see>
+	/// </summary>
 	public class StreamValidator : IO.Stream
 	{
 		private byte[] buffer = new byte[65536];
@@ -37,12 +41,18 @@ namespace Utils
 		{
 		}
 
+		/// <summary>
+		/// Valide les données dans le tampon et les copie dans le flux final
+		/// </summary>
 		public void Validate()
 		{
 			target.Write(this.buffer, 0, this.length);
 			this.length = 0;
 		}
 
+		/// <summary>
+		/// Supprime les données du tampon sans les copier dans le flux final
+		/// </summary>
 		public void Discard()
 		{
 			this.length = 0;

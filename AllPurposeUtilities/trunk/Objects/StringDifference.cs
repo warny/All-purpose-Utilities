@@ -14,43 +14,7 @@ namespace Utils.Objects
 
 		public StringDifference( string old, string @new )
 		{
-			//int lengthStart;
-			//for (
-			//	lengthStart = 0 ;
-			//	lengthStart < old.Length && lengthStart < @new.Length && old[lengthStart] == @new[lengthStart] ;
-			//	lengthStart++) ;
-			//
-			//if (lengthStart == @new.Length && lengthStart == old.Length) {
-			//	changes.Add(new StringChange(StringComparisonStatus.Unchanged, old));
-			//	return;
-			//} else if (lengthStart == @new.Length) {
-			//	changes.Add(new StringChange(StringComparisonStatus.Unchanged, @new));
-			//	changes.Add(new StringChange(StringComparisonStatus.Removed, old.Substring(lengthStart)));
-			//	return;
-			//} else if (lengthStart == old.Length) {
-			//	changes.Add(new StringChange(StringComparisonStatus.Unchanged, old));
-			//	changes.Add(new StringChange(StringComparisonStatus.Added, @new.Substring(lengthStart)));
-			//	return;
-			//}
-			//
-			//AddChange(old, @new, StringComparisonStatus.Unchanged, 0, lengthStart, 0);
-			//if (lengthStart > 0) {
-			//	changes.Add(new StringChange(StringComparisonStatus.Unchanged, old.Substring(0, lengthStart)));
-			//}
-
-			//int lengthEnd;
-			//for (
-			//	lengthEnd = 0 ;
-			//	lengthEnd < old.Length - lengthStart && lengthEnd < @new.Length - lengthStart && old[old.Length - lengthEnd - 1] == @new[@new.Length - lengthEnd - 1] ;
-			//	lengthEnd++) ;
-
-			//Compare(old, @new, lengthStart, lengthEnd);
 			changes = Compare(old, @new, 0, 0);
-
-			//if (lengthEnd > 0) {
-			//	changes.Add(new StringChange(StringComparisonStatus.Unchanged, old.Substring(old.Length - lengthEnd, lengthEnd)));
-			//}
-
 		}
 
 		private StringChange[] Compare( string old, string @new, int lengthStart, int lengthEnd )

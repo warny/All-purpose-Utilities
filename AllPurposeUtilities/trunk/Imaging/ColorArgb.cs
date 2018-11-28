@@ -16,7 +16,7 @@ namespace Utils.Imaging
 
 		public double Alpha
 		{
-			get { return alpha; }
+			get => alpha;
 
 			set
 			{
@@ -27,7 +27,7 @@ namespace Utils.Imaging
 
 		public double Red
 		{
-			get { return red; }
+			get => red;
 
 			set
 			{
@@ -38,7 +38,7 @@ namespace Utils.Imaging
 
 		public double Green
 		{
-			get { return green; }
+			get => green;
 
 			set
 			{
@@ -49,7 +49,7 @@ namespace Utils.Imaging
 
 		public double Blue
 		{
-			get { return blue; }
+			get => blue;
 
 			set
 			{
@@ -60,6 +60,11 @@ namespace Utils.Imaging
 
 		public ColorArgb( double alpha, double red, double green, double blue )
 		{
+			if (!alpha.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(alpha));
+			if (!red.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(red));
+			if (!green.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(green));
+			if (!blue.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(blue));
+
 			this.alpha = alpha;
 			this.red = red;
 			this.green = green;
@@ -68,6 +73,10 @@ namespace Utils.Imaging
 
 		public ColorArgb( double red, double green, double blue )
 		{
+			if (!red.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(red));
+			if (!green.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(green));
+			if (!blue.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(blue));
+
 			this.alpha = 1;
 			this.red = red;
 			this.green = green;

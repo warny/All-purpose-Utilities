@@ -29,6 +29,7 @@ namespace Utils.Objects
 			return coll == null || !coll.Any();
 		}
 
+
 		/// <summary>
 		/// Indique si un objet est une valeur numérique
 		/// </summary>
@@ -52,6 +53,7 @@ namespace Utils.Objects
 			obj1 = obj2;
 			obj2 = temp;
 		}
+
 
 	}
 }

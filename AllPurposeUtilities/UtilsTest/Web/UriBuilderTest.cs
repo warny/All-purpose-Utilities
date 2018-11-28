@@ -62,5 +62,16 @@ namespace UtilsTest.Web
 			Assert.AreEqual("http://example.com/?key1=value1&key2=value2&key3=value3", builder.ToString());
 		}
 
+		[TestMethod]
+		public void ModifyLoginPassword()
+		{
+			var builder = new Utils.Web.UriBuilder("http://example.com");
+			builder.Username = "username";
+			builder.Password = "password";
+
+			Assert.AreEqual("username", builder.Username);
+			Assert.AreEqual("password", builder.Password);
+			Assert.AreEqual("http://username:password@example.com/", builder.ToString());
+		}
 	}
 }

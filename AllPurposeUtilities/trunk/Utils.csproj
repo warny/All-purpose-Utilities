@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Utils</RootNamespace>
     <AssemblyName>Utils</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,6 +37,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -88,6 +90,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Grammar.resx</DependentUpon>
     </Compile>
+    <Compile Include="Mathematics\Fourrier\FastFourrierTransform.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.Compute.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.Operators.cs" />
@@ -102,6 +105,7 @@
     <Compile Include="Imaging\BitmapArgb32Accessor.cs" />
     <Compile Include="Objects\PreparedFormat.cs" />
     <Compile Include="Objects\StringDifference.cs" />
+    <Compile Include="Reflection\DomainManager.cs" />
     <Compile Include="Streams\PartialStream.cs" />
     <Compile Include="Files\PathUtils.cs" />
     <Compile Include="Streams\Reader.cs" />
