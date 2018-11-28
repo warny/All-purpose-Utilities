@@ -313,7 +313,6 @@ namespace Utils.Mathematics.Expressions
 			return null;
 		}
 
-
 		[ExpressionSignature(ExpressionType.Divide)]
 		protected Expression DivisionOfConstants(
 			BinaryExpression e,
@@ -374,13 +373,72 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
+		protected Expression MultiplicationOfEqualsElements( 
+			BinaryExpression e,
+			[ExpressionSignature(ExpressionType.Multiply)]BinaryExpression left, 
+			Expression right )
+		{
+			Expression constant;
+			Expression leftpart;
+
+			if (left.Left.NodeType == ExpressionType.Constant) {
+				constant = left.Left;
+				leftpart = left.Right;
+			} else if (left.Right.NodeType == ExpressionType.Constant) {
+				constant = left.Right;
+				leftpart = left.Left;
+			} else {
+				return null;
+			}
+			return Transform(
+				Expression.Multiply(
+					constant,
+					Expression.Multiply(
+						leftpart,
+						right
+					)
+				)
+			);
+		}
+
+		[ExpressionSignature(ExpressionType.Multiply)]
+		protected Expression MultiplicationOfEqualsElements(
+			BinaryExpression e,
+			Expression left,
+			[ExpressionSignature(ExpressionType.Multiply)]BinaryExpression right )
+		{
+			Expression constant;
+			Expression rightpart;
+
+			if (right.Left.NodeType == ExpressionType.Constant) {
+				constant = right.Left;
+				rightpart = right.Right;
+			} else if (right.Right.NodeType == ExpressionType.Constant) {
+				constant = right.Right;
+				rightpart = right.Left;
+			} else {
+				return null;
+			}
+			return Transform(
+				Expression.Multiply(
+					constant,
+					Expression.Multiply(
+						left,
+						rightpart
+					)
+				)
+			);
+		}
+
+		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression MultiplicationOfEqualsElements( BinaryExpression e, Expression left, Expression right )
 		{
 			Expression leftleft;
 			Expression leftright;
 			if (left.NodeType == ExpressionType.Power) {
-				leftleft = ((BinaryExpression)left).Left;
-				leftright = ((BinaryExpression)left).Right;
+				var _left = (BinaryExpression)left;
+				leftleft = _left.Left;
+				leftright = _left.Right;
 			} else {
 				leftleft = left;
 				leftright = Expression.Constant(1.0);
@@ -407,8 +465,6 @@ namespace Utils.Mathematics.Expressions
 			} else {
 				return null;
 			}
-
-
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]

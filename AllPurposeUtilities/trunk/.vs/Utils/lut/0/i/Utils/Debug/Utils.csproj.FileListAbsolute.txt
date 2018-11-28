@@ -18,4 +18,3 @@ D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.CoreCompileInputs.cache
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.CopyComplete
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.dll
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csprojAssemblyReference.cache

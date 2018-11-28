@@ -303,6 +303,58 @@ namespace Utils.Mathematics
 			return Array.IndexOf<T>(objects, value) == -1;
 		}
 
+		/// <summary>
+		/// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1
+		/// </summary>
+		/// <typeparam name="T">Type des éléments dans le tableau</typeparam>
+		/// <param name="enumeration">Enumération dans laquelle faire la recherche</param>
+		/// <param name="toFind">Element à retrouver</param>
+		/// <returns>index de l'élément s'il est trouvé, sinon -1</returns>
+		public static int IndexOf<T>( this IEnumerable<T> enumeration, T toFind )
+		{
+			int i = 0;
+			foreach (var element in enumeration) {
+				if (element.Equals(toFind)) return i;
+				i++;
+			}
+			return -1;
+		}
+
+		/// <summary>
+		/// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1
+		/// </summary>
+		/// <typeparam name="T">Type des éléments dans le tableau</typeparam>
+		/// <param name="enumeration">Enumération dans laquelle faire la recherche</param>
+		/// <param name="toFind">Element à retrouver</param>
+		/// <param name="comparer">Comparateur</param>
+		/// <returns>index de l'élément s'il est trouvé, sinon -1</returns>
+		public static int IndexOf<T>( this IEnumerable<T> enumeration, T toFind, IEqualityComparer<T> comparer )
+		{
+			int i = 0;
+			foreach (var element in enumeration) {
+				if (comparer.Equals(element, toFind)) return i;
+				i++;
+			}
+			return -1;
+		}
+
+		/// <summary>
+		/// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1
+		/// </summary>
+		/// <typeparam name="T">Type des éléments dans le tableau</typeparam>
+		/// <param name="enumeration">Enumération dans laquelle faire la recherche</param>
+		/// <param name="func">Fonction de recherche</param>
+		/// <returns>index de l'élément s'il est trouvé, sinon -1</returns>
+		public static int IndexOf<T>( this IEnumerable<T> enumeration, Func<T, bool> func )
+		{
+			int i = 0;
+			foreach (var element in enumeration) {
+				if (func(element)) return i;
+				i++;
+			}
+			return -1;
+		}
+
 		#endregion
 
 		#region calculs
