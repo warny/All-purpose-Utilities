@@ -50,7 +50,7 @@ namespace Utils.Mathematics.Expressions
 			expressions = new Dictionary<string, LambdaExpression>();
 			Expressions = new MappedDictionary<string, LambdaExpression>(GetExpression, RemoveExpression, GetExpressions, CountExpressions);
 
-			CultureInfo = CultureInfo. InvariantCulture;
+			CultureInfo = CultureInfo.InvariantCulture;
 		}
 
 		public static XmlReader SimpleGrammar => new XmlTextReader(new StringReader(Grammar.SimpleGrammar));
@@ -58,7 +58,7 @@ namespace Utils.Mathematics.Expressions
 		public ExpressionParser(XmlReader definition) : this()
 		{
 			while (definition.Read()) {
-				if (definition.Depth==0) {
+				if (definition.Depth == 0) {
 					switch (definition.LocalName) {
 						case "Grammar":
 							Culture = definition.GetAttribute("culture");
@@ -67,7 +67,7 @@ namespace Utils.Mathematics.Expressions
 							break;
 					}
 				}
-				else if (definition.Depth==1) {
+				else if (definition.Depth == 1) {
 					switch (definition.LocalName) {
 						case "GroupMarkup":
 							groupDefinitions.Add(new GroupDefinition(definition.GetAttribute("open")[0], definition.GetAttribute("close")[0]));
@@ -82,40 +82,40 @@ namespace Utils.Mathematics.Expressions
 							break;
 					}
 				}
-			   
+
 			}
 
 		}
 
-		public Expression<Func<TResult>> Parse<TResult>( string stringExpression ) 
+		public Expression<Func<TResult>> Parse<TResult>(string stringExpression)
 			=> (Expression<Func<TResult>>)this.Parse(stringExpression, new Type[] { });
-		public Expression<Func<TResult, T1>> Parse<TResult, T1>( string stringExpression ) 
+		public Expression<Func<TResult, T1>> Parse<TResult, T1>(string stringExpression)
 			=> (Expression<Func<TResult, T1>>)this.Parse(stringExpression, new Type[] { typeof(T1) });
-		public Expression<Func<TResult, T1, T2>> Parse<TResult, T1, T2>( string stringExpression ) 
+		public Expression<Func<TResult, T1, T2>> Parse<TResult, T1, T2>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2) });
-		public Expression<Func<TResult, T1, T2, T3>> Parse<TResult, T1, T2, T3>( string stringExpression )
+		public Expression<Func<TResult, T1, T2, T3>> Parse<TResult, T1, T2, T3>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3) });
-		public Expression<Func<TResult, T1, T2, T3, T4>> Parse<TResult, T1, T2, T3, T4>( string stringExpression )
+		public Expression<Func<TResult, T1, T2, T3, T4>> Parse<TResult, T1, T2, T3, T4>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3, T4>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4) });
-		public Expression<Func<TResult, T1, T2, T3, T4, T5>> Parse<TResult, T1, T2, T3, T4, T5>( string stringExpression )
+		public Expression<Func<TResult, T1, T2, T3, T4, T5>> Parse<TResult, T1, T2, T3, T4, T5>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3, T4, T5>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) });
-		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6>> Parse<TResult, T1, T2, T3, T4, T5, T6>( string stringExpression ) 
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6>> Parse<TResult, T1, T2, T3, T4, T5, T6>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6) });
-		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7>( string stringExpression )
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7) });
-		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8>( string stringExpression ) 
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8) });
-		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>( string stringExpression ) 
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>(string stringExpression)
 			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8), typeof(T9) });
-		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>( string stringExpression ) 
-			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8), typeof(T9), typeof(T10)});
+		public Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> Parse<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string stringExpression)
+			=> (Expression<Func<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>>)this.Parse(stringExpression, new Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8), typeof(T9), typeof(T10) });
 
-		public LambdaExpression Parse( string stringExpression )
+		public LambdaExpression Parse(string stringExpression)
 		{
 			return Parse(stringExpression, new Type[] { });
 		}
 
-		public LambdaExpression Parse( string stringExpression, params Type[] argumentsTypes )
+		public LambdaExpression Parse(string stringExpression, params Type[] argumentsTypes)
 		{
 			var m = Regex.Match(stringExpression, @"^(?<name>\w+)?\((?<arguments>.*)\)\s*=>(?<expression>.*)$");
 			if (!m.Success) {
@@ -134,7 +134,7 @@ namespace Utils.Mathematics.Expressions
 					} else {
 						t = Type.GetType(args.Groups["type"].Value);
 					}
-				} else if (argumentsTypes!= null && argumentsTypes.Length > argumentPosition) {
+				} else if (argumentsTypes != null && argumentsTypes.Length > argumentPosition) {
 					t = argumentsTypes[argumentPosition];
 				} else {
 					t = typeof(double);
@@ -153,6 +153,10 @@ namespace Utils.Mathematics.Expressions
 			}
 
 			return expression;
+		}
+
+		public Expression ParseFunctionContent(string stringExpression, ParameterExpression[] parameters)
+		{
 		}
 
 		public LambdaExpression Parse( string stringExpression, string[] parameters, Type[] parametersTypes )
