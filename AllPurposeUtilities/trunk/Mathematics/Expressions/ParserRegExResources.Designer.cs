@@ -84,22 +84,65 @@ namespace Utils.Mathematics.Expressions {
         ///        \)
         ///    )*
         ///)
+        ///\s*
         ///(
         ///     ;
         ///|
         ///    \{
-        ///	(?&lt;block&gt;
+        ///    (?&lt;block&gt;
         ///        (
         ///            ($)?@\&quot;(\&quot;\&quot;|.)*?\&quot;
         ///        |
         ///            ($)?\&quot;(\\\&quot;|.)*?\&quot;
         ///        |
         ///            [^{}]
-        ///         [le reste de la chaîne a été tronqué]&quot;;.
+        /// [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
-        internal static string InstructionBlock {
+        internal static string InstructionBlockSplitter {
             get {
-                return ResourceManager.GetString("InstructionBlock", resourceCulture);
+                return ResourceManager.GetString("InstructionBlockSplitter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à ^\s*
+        ///(
+        ///    (?&lt;keyword&gt;if|while|foreach|for|switch)\s*
+        ///    \(
+        ///    (?&lt;test&gt;
+        ///        (
+        ///            ($)?@\&quot;(\&quot;\&quot;|.)*?\&quot;
+        ///        |
+        ///            ($)?\&quot;(\\\&quot;|.)*?\&quot;
+        ///        |
+        ///            [^()]
+        ///        |
+        ///            (?&lt;b&gt;\()
+        ///        |
+        ///            (?&lt;-b&gt;\))
+        ///        )*(?(b)(?!))
+        ///    )
+        ///    \)
+        ///    |
+        ///    do
+        ///)
+        ///|
+        ///(
+        ///    (?&lt;className&gt;
+        ///        (\w+\s*\.\s*)*(\w+)
+        ///        (
+        ///            \s*
+        ///            \&lt;
+        ///            (
+        ///                [^&lt;&gt;]
+        ///            |
+        ///                (?&lt;b&gt;\&lt;)
+        ///            |
+        ///   [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string InstructionStart {
+            get {
+                return ResourceManager.GetString("InstructionStart", resourceCulture);
             }
         }
     }

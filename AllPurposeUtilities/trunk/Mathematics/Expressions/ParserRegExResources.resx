@@ -117,7 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="InstructionBlock" xml:space="preserve">
+  <data name="InstructionBlockSplitter" xml:space="preserve">
     <value>(?&lt;raw&gt;
     (
         ($)?@\"(\"\"|.)*?\"
@@ -141,11 +141,12 @@
         \)
     )*
 )
+\s*
 (
      ;
 |
     \{
-	(?&lt;block&gt;
+    (?&lt;block&gt;
         (
             ($)?@\"(\"\"|.)*?\"
         |
@@ -159,7 +160,55 @@
         )*(?(b)(?!))
 	)
     \}
-)</value>
+)
+\s*
+(?&lt;else&gt;else)?</value>
     <comment>Sépare toutes les instructions d'un bloc sans descendre en profondeur</comment>
+  </data>
+  <data name="InstructionStart" xml:space="preserve">
+    <value>^\s*
+(
+    (?&lt;keyword&gt;if|while|foreach|for|switch)\s*
+    \(
+    (?&lt;test&gt;
+        (
+            ($)?@\"(\"\"|.)*?\"
+        |
+            ($)?\"(\\\"|.)*?\"
+        |
+            [^()]
+        |
+            (?&lt;b&gt;\()
+        |
+            (?&lt;-b&gt;\))
+        )*(?(b)(?!))
+    )
+    \)
+    |
+    do
+)
+|
+(
+    (?&lt;className&gt;
+        (\w+\s*\.\s*)*(\w+)
+        (
+            \s*
+            \&lt;
+            (
+                [^&lt;&gt;]
+            |
+                (?&lt;b&gt;\&lt;)
+            |
+                (?&lt;-b&gt;\&gt;)
+            )*(?(b)(?!))
+            \&gt;
+        )?
+        \s+
+    )?
+    (?&lt;variableName&gt;(\w+\s*\.\s*)*(\w+))
+    \s+
+    (?&lt;operator&gt;)+|-|/|*|%|&amp;|\||^|&lt;&lt;|&gt;&gt;)?=
+)</value>
+    <comment>Détecte les mots clefs et les instructions d'affectation</comment>
   </data>
 </root>
