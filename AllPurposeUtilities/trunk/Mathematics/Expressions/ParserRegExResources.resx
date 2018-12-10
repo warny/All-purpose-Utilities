@@ -211,4 +211,64 @@
 )</value>
     <comment>Détecte les mots clefs et les instructions d'affectation</comment>
   </data>
+  <data name="InstructionTokenizer" xml:space="preserve">
+    <value>\s+
+|
+(?&lt;operator&gt;
+    ({{operators}})
+)
+|
+(?&lt;name&gt;
+    ((?!{{operators}}|\(|\[|\{).|\s)+
+)
+|
+    \(
+        (?&lt;parenthesis&gt;
+		    (
+		        [^()"]
+		    |
+		        ($)?@\"(\"\"|[^"])+\"
+		    |
+		        ($)?\"(\\\"|[^"])+\"
+		    |
+		        (?&lt;b&gt;\()
+		    |
+		        (?&lt;-b&gt;\))
+		    )*(?(b)(?!))
+        )
+    \)
+|
+    \[
+    (?&lt;brackets&gt;
+        (
+            (?!\[|\]).
+        |
+            ($)?@\"(\"\"|[^"])+\"
+        |
+            ($)?\"(\\\"|[^"])+\"
+        |
+            (?&lt;b&gt;\[)
+        |
+            (?&lt;-b&gt;\])
+        )*(?(b)(?!))
+    )
+    \]
+|
+    \{
+    (?&lt;braces&gt;
+        (
+            (?!\{|\}).
+        |
+            ($)?@\"(\"\"|[^"])+\"
+        |
+            ($)?\"(\\\"|[^"])+\"
+        |
+            (?&lt;b&gt;\{)
+        |
+            (?&lt;-b&gt;\})
+        )*(?(b)(?!))
+    )
+    \}</value>
+    <comment>Sépare les instructions en éléments simples qualifiés</comment>
+  </data>
 </root>

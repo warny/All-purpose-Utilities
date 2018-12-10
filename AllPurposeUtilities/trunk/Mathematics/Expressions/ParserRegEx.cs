@@ -9,7 +9,7 @@ namespace Utils.Mathematics.Expressions
 {
 	static class ParserRegEx
 	{
-		private static string[][] binaryOperators = new[] {
+		private static string[][] operators = new[] {
 			new [] { "+" , "-" },
 			new [] { "*" , "/", "%" },
 			new [] { "^" },
@@ -29,5 +29,9 @@ namespace Utils.Mathematics.Expressions
 
 		public static Regex InstructionBlockSplitter { get; } = new Regex(ParserRegExResources.InstructionBlockSplitter, regexOptions);
 		public static Regex InstructionStart { get; } = new Regex(ParserRegExResources.InstructionStart, regexOptions);
+		public static Regex InstructionTokenizer { get; } = new Regex(ParserRegExResources.InstructionTokenizer.Replace(
+			"{{operators}}", 
+			string.Join("|", operators.SelectMany(o=>o.Select(o1=>o1)))), 
+			regexOptions);
 	}
 }

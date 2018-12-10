@@ -145,5 +145,49 @@ namespace Utils.Mathematics.Expressions {
                 return ResourceManager.GetString("InstructionStart", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à \s+
+        ///|
+        ///(?&lt;operator&gt;
+        ///    ({{operators}})
+        ///)
+        ///|
+        ///(?&lt;name&gt;
+        ///    ((?!{{operators}}|\(|\[|\{).|\s)+
+        ///)
+        ///|
+        ///    \(
+        ///        (?&lt;parenthesis&gt;
+        ///		    (
+        ///		        [^()&quot;]
+        ///		    |
+        ///		        ($)?@\&quot;(\&quot;\&quot;|[^&quot;])+\&quot;
+        ///		    |
+        ///		        ($)?\&quot;(\\\&quot;|[^&quot;])+\&quot;
+        ///		    |
+        ///		        (?&lt;b&gt;\()
+        ///		    |
+        ///		        (?&lt;-b&gt;\))
+        ///		    )*(?(b)(?!))
+        ///        )
+        ///    \)
+        ///|
+        ///    \[
+        ///    (?&lt;brackets&gt;
+        ///        (
+        ///            (?!\[|\]).
+        ///        |
+        ///            ($)?@\&quot;(\&quot;\&quot;|[^&quot;])+\&quot;
+        ///        |
+        ///            ($)?\&quot;(\\\&quot;|[^&quot;])+\&quot;
+        ///        |
+        ///  [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string InstructionTokenizer {
+            get {
+                return ResourceManager.GetString("InstructionTokenizer", resourceCulture);
+            }
+        }
     }
 }
