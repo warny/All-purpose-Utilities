@@ -117,47 +117,79 @@ namespace Utils.Mathematics.Expressions
 
 		public LambdaExpression Parse(string stringExpression, params Type[] argumentsTypes)
 		{
-			var m = Regex.Match(stringExpression, @"^(?<name>\w+)?\((?<arguments>.*)\)\s*=>(?<expression>.*)$");
-			if (!m.Success) {
-				throw new System.Data.InvalidExpressionException();
-			}
-			List<ParameterExpression> parameters = new List<ParameterExpression>();
-			int argumentPosition = 0;
-			var matches = Regex.Matches(m.Groups["arguments"].Value, @"((?<type>\w+(\.\w+)*)\s+)?(?<name>\w+)");
-			foreach (Match args in matches) {
-				Type t;
-				if (args.Groups["type"].Success) {
-					string typeName = args.Groups["type"].Value;
-					var classDefinition = classDefinitions.FirstOrDefault(cd => cd.Alias == typeName);
-					if (classDefinition != null) {
-						t = classDefinition.Type;
-					} else {
-						t = Type.GetType(args.Groups["type"].Value);
-					}
-				} else if (argumentsTypes != null && argumentsTypes.Length > argumentPosition) {
-					t = argumentsTypes[argumentPosition];
-				} else {
-					t = typeof(double);
-				}
-				parameters.Add(Expression.Parameter(t, args.Groups["name"].Value));
-				argumentPosition++;
-			}
-			var paramsArray = parameters.ToArray();
-			LambdaExpression expression;
-
-			if (m.Groups["name"].Success) {
-				expression = Expression.Lambda(Parse(m.Groups["expression"].Value, paramsArray), m.Groups["name"].Value, paramsArray);
-				AddLambdaExpression(expression);
-			} else {
-				expression = Expression.Lambda(Parse(m.Groups["expression"].Value, paramsArray), paramsArray);
-			}
-
-			return expression;
 		}
 
-		public Expression ParseFunctionContent(string stringExpression, ParameterExpression[] parameters)
+		private Expression Parse(string stringExpression, ParameterExpression[] parameters)
 		{
+			IndexedList<string, LabelExpression> labels = new IndexedList<string, LabelExpression>(l => l.Target.Name);
+			return Parse(stringExpression, parameters);
 		}
+
+		private Expression Parse(string stringExpression, ParameterExpression[] parameters, IndexedList<string, LabelExpression> labels)
+		{
+			if (stringExpression == null) return null;
+			List<Expression> expressions = new List<Expression>();
+			IndexedList<string, ParameterExpression> variables = new IndexedList<string, ParameterExpression>(parameters, p=>p.Name);
+
+			var instructionBlocks = ParserRegEx.InstructionBlockSplitter.Matches(stringExpression);
+			var instructionBlocksEnumerator = instructionBlocks.GetEnumerator();
+			while (instructionBlocksEnumerator.MoveNext())
+			{
+				Match instructionBlock = (Match)instructionBlocksEnumerator.Current;
+				Expression expression, exprElse;
+				if (instructionBlock.Groups["raw"].Success)
+				{
+					string raw = instructionBlock.Groups["raw"].Value.Trim(ParserRegEx.TrimCharacters);
+					Match instructionStart = ParserRegEx.InstructionStart.Match(raw);
+
+					if (instructionStart.Groups["keyword"].Success)
+					{
+						switch (instructionStart.Groups["keyword"].Value) {
+							case "if":
+								Expression test = SimpleExpressionParser(instructionStart.Groups["test"].Value.Trim(ParserRegEx.TrimCharacters), parameters);
+								Expression trueExpr;
+								if (instructionBlock.Groups["block"].Success) {
+									trueExpr = Parse(instructionBlock.Groups["block"].Value, parameters, labels);
+								} else {
+									trueExpr = SimpleExpressionParser(instructionStart.Groups["expression"].Value.Trim(ParserRegEx.TrimCharacters), parameters);
+								}
+
+								break;
+							case "for":
+								break;
+							case "while":
+								test = SimpleExpressionParser(instructionStart.Groups["test"].Value.Trim(ParserRegEx.TrimCharacters), parameters);
+								break;
+							case "foreach":
+								break;
+						}
+					}
+					else
+					{
+					}
+				}
+				if (instructionBlock.Groups["block"].Success)
+				{
+					
+					block = Parse(instructionBlock.Groups["block"].Value, variables.ToArray());
+				}
+				else
+				{
+				}
+			}
+			if (expressions.Count == 0)
+				return Expression.
+			if (expressions.Count > 1)
+				return Expression.Block(expressions);
+			else
+				return expressions.First();
+		}
+
+		public Expression SimpleExpressionParser(string simpleExpression, ParameterExpression[] parameters)
+		{
+
+		}
+
 
 		public LambdaExpression Parse( string stringExpression, string[] parameters, Type[] parametersTypes )
 		{
@@ -169,7 +201,7 @@ namespace Utils.Mathematics.Expressions
 			return Expression.Lambda(Parse(stringExpression, expressionParameters), expressionParameters);
 		}
 
-		public Expression Parse( string stringExpression, params ParameterExpression[] parameters )
+		public Expression Parse( string stringExpression, string tto, params ParameterExpression[] parameters )
 		{
 			stringExpression = stringExpression.Trim();
 			Stack<GroupDefinition> brackets = new Stack<GroupDefinition>();

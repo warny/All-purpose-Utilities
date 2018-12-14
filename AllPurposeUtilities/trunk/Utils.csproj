@@ -52,6 +52,17 @@
     <Compile Include="Lists\IndexedList.cs" />
     <Compile Include="Lists\CachedLoader.cs" />
     <Compile Include="Lists\MappedDictionary.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\Assignation.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\Block.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\CompilerUtils.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\ComputeOperator.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\Declare.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\DeclareAndAssign.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\For.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\ForEach.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\IExpressionTree.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\If.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\While.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionDerivation.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionExtensions.cs" />
     <Compile Include="Geography\Display\MapPoint.cs" />

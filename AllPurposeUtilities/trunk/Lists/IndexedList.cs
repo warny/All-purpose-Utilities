@@ -7,13 +7,21 @@ using System.Threading.Tasks;
 
 namespace Utils.Lists
 {
-	class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
+	public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
 	{
 		private Dictionary<K, V> dictionary;
 		private Func<V, K> getKey;
 
-		public IndexedList( Func<V, K> getKey) {
+		public IndexedList(Func<V, K> getKey)
+		{
 			this.getKey = getKey;
+		}
+
+		public IndexedList(IEnumerable<V> elements, Func<V, K> getKey) : this(getKey) {
+			foreach (var element in elements)
+			{
+				this.Add(element);
+			}
 		}
 
 		public V this[K key] => dictionary[key];

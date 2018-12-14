@@ -25,13 +25,15 @@ namespace Utils.Mathematics.Expressions
 			new [] { "?" }
 		};
 
+		public static readonly char[] TrimCharacters = new char [] { ' ', '\r', '\n', '\t', '\0' };
+
 		private static RegexOptions regexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.ExplicitCapture;
 
 		public static Regex InstructionBlockSplitter { get; } = new Regex(ParserRegExResources.InstructionBlockSplitter, regexOptions);
 		public static Regex InstructionStart { get; } = new Regex(ParserRegExResources.InstructionStart, regexOptions);
 		public static Regex InstructionTokenizer { get; } = new Regex(ParserRegExResources.InstructionTokenizer.Replace(
 			"{{operators}}", 
-			string.Join("|", operators.SelectMany(o=>o.Select(o1=>o1)))), 
+			string.Join("|", operators.SelectMany(o=>o.Select(o1=>Regex.Replace(o1,@"(.)", @"\\1"))))), 
 			regexOptions);
 	}
 }

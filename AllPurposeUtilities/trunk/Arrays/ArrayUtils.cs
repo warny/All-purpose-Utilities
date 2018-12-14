@@ -8,6 +8,18 @@ namespace Utils.Arrays
 {
 	public static class ArrayUtils
 	{
+
+		/// <summary>
+		/// Indique si le table est null ou vide
+		/// </summary>
+		/// <typeparam name="T">Type du tableau à tester</typeparam>
+		/// <param name="array">Tableau à tester</param>
+		/// <returns></returns>
+		public static bool IsNullOrEmpty<T>(this T[] array)
+		{
+			return array == null || array.Length == 0;
+		}
+
 		/// <summary>
 		/// Récupère une partie de ce tableau. La sous-parte démarre à une position de caractère spécifiée et a une longueur définie.
 		/// </summary>

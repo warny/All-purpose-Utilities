@@ -168,6 +168,7 @@
   <data name="InstructionStart" xml:space="preserve">
     <value>^\s*
 (
+(
     (?&lt;keyword&gt;if|while|foreach|for|switch)\s*
     \(
     (?&lt;test&gt;
@@ -185,7 +186,7 @@
     )
     \)
     |
-    do
+    (?&lt;keyword&gt;do)
 )
 |
 (
@@ -207,8 +208,10 @@
     )?
     (?&lt;variableName&gt;(\w+\s*\.\s*)*(\w+))
     \s+
-    (?&lt;operator&gt;)+|-|/|*|%|&amp;|\||^|&lt;&lt;|&gt;&gt;)?=
-)</value>
+    (?&lt;operator&gt;(\+|\-|/|\*|%|&amp;|\||^|&lt;&lt;|&gt;&gt;)?=)
+)
+)?
+(?&lt;expression&gt;.*)</value>
     <comment>Détecte les mots clefs et les instructions d'affectation</comment>
   </data>
   <data name="InstructionTokenizer" xml:space="preserve">

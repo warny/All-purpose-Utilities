@@ -6,3 +6,4 @@ D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.pdb
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.csprojAssemblyReference.cache
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.Mathematics.Expressions.ParserRegExResources.resources

@@ -107,6 +107,7 @@ namespace Utils.Mathematics.Expressions {
         /// <summary>
         ///   Recherche une chaîne localisée semblable à ^\s*
         ///(
+        ///(
         ///    (?&lt;keyword&gt;if|while|foreach|for|switch)\s*
         ///    \(
         ///    (?&lt;test&gt;
@@ -124,7 +125,7 @@ namespace Utils.Mathematics.Expressions {
         ///    )
         ///    \)
         ///    |
-        ///    do
+        ///    (?&lt;keyword&gt;do)
         ///)
         ///|
         ///(
@@ -137,7 +138,6 @@ namespace Utils.Mathematics.Expressions {
         ///                [^&lt;&gt;]
         ///            |
         ///                (?&lt;b&gt;\&lt;)
-        ///            |
         ///   [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
         internal static string InstructionStart {
