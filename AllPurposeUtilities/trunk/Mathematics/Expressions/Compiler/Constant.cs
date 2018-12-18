@@ -15,13 +15,13 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public string Value { get; set; }
 
+		public string TypeName { get; set; }
+
 		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{
-			if (Value.StartsWith("\"")) {
-				Expression.Constant(Value.Substring(1, Value.Length - 2));
-			} else if (Value.StartsWith("$\"")) {
-
-			}
+			Type type = Type.GetType(TypeName);
+			declaredVariables = null;
+			return new Expression[] { Expression.Constant(Convert.ChangeType(Value, type, System.Globalization.CultureInfo.InvariantCulture), type) };
 		}
 	}
 }

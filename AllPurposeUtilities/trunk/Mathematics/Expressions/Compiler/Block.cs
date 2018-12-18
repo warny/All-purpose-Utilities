@@ -13,7 +13,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 	{
 		public IExpressionTree Parent { get; set; }
 
-		public List<IExpressionTree> ExpressionTrees { get; set; }
+		public ExpressionTreeList ExpressionTrees { get; }
+
+		public Block() { ExpressionTrees = new ExpressionTreeList(this); }
 
 		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{

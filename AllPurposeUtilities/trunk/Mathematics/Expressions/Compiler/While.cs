@@ -10,14 +10,34 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class While : IBreakableContinuableTree
 	{
+		private IExpressionTree test;
+		private IExpressionTree body;
+
 		public IExpressionTree Parent { get; set; }
 		public LabelTarget ContinueLabel { get; private set; }
 		public LabelTarget BreakLabel { get; private set; }
 
-		public IExpressionTree Test { get; set; }
-		public IExpressionTree Body { get; set; }
+		public IExpressionTree Test
+		{
+			get => test;
+			set
+			{
+				test = value;
+				test.Parent = this;
+			}
+		}
+		public IExpressionTree Body
+		{
+			get => body;
+			set
+			{
+				body = value;
+				body.Parent = this;
+			}
+		}
 
-		public While() {
+		public While()
+		{
 			ContinueLabel = Expression.Label();
 			BreakLabel = Expression.Label();
 		}

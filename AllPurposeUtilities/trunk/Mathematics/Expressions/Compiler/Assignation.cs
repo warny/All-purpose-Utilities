@@ -10,20 +10,30 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class Assignation : IExpressionTree
 	{
-		public string VariableName { get; set; }
-		public Func<Expression, Expression, Expression> Operator { get; set; }
-		public IExpressionTree RightExpression { get; set; }
+		private IExpressionTree right;
 
 		public IExpressionTree Parent { get; set; }
+		public string VariableName { get; set; }
+		public Func<Expression, Expression, Expression> Operator { get; set; }
+		public IExpressionTree Right
+		{
+			get => right;
+			set
+			{
+				right.Parent = this;
+				right = value;
+			}
+		}
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+
+		public virtual Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{
 			var variable = variables.FirstOrDefault(v => v.Name == VariableName);
 			if (variable == null) throw new CompilerException("Objet non déclaré", VariableName);
 
 			return new Expression[] { Operator(
 				variable,
-				RightExpression.CreateExpression(variables, labels, out declaredVariables).ToExpression())
+				Right.CreateExpression(variables, labels, out declaredVariables).ToExpression())
 			};
 		}
 	}

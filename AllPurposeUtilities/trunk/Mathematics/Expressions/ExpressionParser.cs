@@ -16,6 +16,7 @@ namespace Utils.Mathematics.Expressions
 {
 	public class ExpressionParser
 	{
+ /*
 		private List<GroupDefinition> groupDefinitions;
 		private List<OperandDefinition> operandDefinitions;
 		private List<ClassDefinition> classDefinitions;
@@ -114,7 +115,6 @@ namespace Utils.Mathematics.Expressions
 		{
 			return Parse(stringExpression, new Type[] { });
 		}
-
 		public LambdaExpression Parse(string stringExpression, params Type[] argumentsTypes)
 		{
 		}
@@ -438,6 +438,6 @@ namespace Utils.Mathematics.Expressions
 				Type = a.GetType(name);
 			}
 		}
-
+*/
 	}
 }

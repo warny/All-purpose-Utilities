@@ -10,10 +10,28 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class ComputeOperator : IExpressionTree
 	{
+		private IExpressionTree left;
+		private IExpressionTree right;
+
 		public IExpressionTree Parent { get; set; }
 
-		public IExpressionTree Left { get; set; }
-		public IExpressionTree Right { get; set; }
+		public IExpressionTree Left {
+			get => left;
+			set
+			{
+				left.Parent = this;
+				left = value;
+			}
+		}
+		public IExpressionTree Right
+		{
+			get => right;
+			set
+			{
+				right.Parent = this;
+				right = value;
+			}
+		}
 
 		public Func<Expression, Expression, Expression> Operator { get; set; }
 

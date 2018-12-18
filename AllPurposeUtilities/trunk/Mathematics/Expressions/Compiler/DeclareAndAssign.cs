@@ -8,17 +8,13 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class DeclareAndAssign : IExpressionTree
+	public class DeclareAndAssign : Assignation
 	{
-		public IExpressionTree Parent { get; set; }
-
 		public string TypeName { get; set; }
-		public string VariableName { get; set; }
-		public IExpressionTree RightExpression { get; set; }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public override Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{
-			var right = RightExpression.CreateExpression(variables, labels, out declaredVariables);
+			var right = Right.CreateExpression(variables, labels, out declaredVariables);
 			Type t;
 			if (TypeName == "var")
 			{

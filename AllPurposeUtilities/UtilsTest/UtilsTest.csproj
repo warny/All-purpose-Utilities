@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Files\PathUtilsTest.cs" />
+    <Compile Include="Math\Expressions\Compiler\Constants.cs" />
     <Compile Include="Math\Expressions\Compiler\ExpressionTree.cs" />
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />

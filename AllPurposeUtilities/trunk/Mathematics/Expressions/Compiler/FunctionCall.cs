@@ -12,11 +12,27 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class FunctionCall : IExpressionTree
 	{
+		private IExpressionTree left;
+
 		public IExpressionTree Parent { get; set; }
 
-		public IExpressionTree Left { get; set; }
+		public IExpressionTree Left
+		{
+			get => left;
+			set
+			{
+				left.Parent = this;
+				left = value;
+			}
+		}
+
 		public string Name { get; set; }
-		public List<IExpressionTree> Arguments { get; set; }
+		public ExpressionTreeList Arguments { get; }
+
+		public FunctionCall()
+		{
+			Arguments.Parent = this;
+		}
 
 		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{

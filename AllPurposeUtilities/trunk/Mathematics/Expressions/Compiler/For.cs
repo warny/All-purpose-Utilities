@@ -10,14 +10,19 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class For : IBreakableContinuableTree
 	{
+		private IExpressionTree _initializer;
+		private IExpressionTree _test;
+		private IExpressionTree _stepper;
+		private IExpressionTree _body;
+
 		public IExpressionTree Parent { get; set; }
 		public LabelTarget ContinueLabel { get; }
 		public LabelTarget BreakLabel { get; }
 
-		public IExpressionTree Initializer { get; set; }
-		public IExpressionTree Test { get; set; }
-		public IExpressionTree Stepper { get; set; }
-		public IExpressionTree Body { get; set; }
+		public IExpressionTree Initializer { get => _initializer; set => _initializer = value; }
+		public IExpressionTree Test { get => _test; set => _test = value; }
+		public IExpressionTree Stepper { get => _stepper; set => _stepper = value; }
+		public IExpressionTree Body { get => _body; set => _body = value; }
 
 		public For()
 		{
@@ -35,7 +40,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var testExpression = Test.CreateExpression(variables, labels, out var testVariables)[0];
 			var stepperExpression = Stepper.CreateExpression(variables, labels, out var stepperVariables);
 
-			var loopExpression = 
+			var loopExpression =
 				Expression.Block(
 					new Expression[] {
 						Expression.IfThen(
