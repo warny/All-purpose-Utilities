@@ -60,6 +60,7 @@
     <Compile Include="Mathematics\Expressions\Compiler\DeclareAndAssign.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\For.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\ForEach.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\FunctionCall.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\IExpressionTree.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\If.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\While.cs" />

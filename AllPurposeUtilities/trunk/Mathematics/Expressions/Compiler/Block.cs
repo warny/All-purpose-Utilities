@@ -13,7 +13,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 	{
 		public IExpressionTree Parent { get; set; }
 
-		public IExpressionTree[] ExpressionTrees { get; set; }
+		public List<IExpressionTree> ExpressionTrees { get; set; }
 
 		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{
