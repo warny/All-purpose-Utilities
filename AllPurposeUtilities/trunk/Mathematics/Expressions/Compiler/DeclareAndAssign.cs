@@ -16,17 +16,15 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			var right = Right.CreateExpression(variables, labels, out declaredVariables);
 			Type t;
-			if (TypeName == "var")
-			{
+			if (TypeName == "var") {
 				t = right[0].Type;
 			}
-			else
-			{
+			else {
 				t = Type.GetType(TypeName);
 			}
-			
+
 			var variable = Expression.Parameter(t, VariableName);
-			declaredVariables = declaredVariables.Append(variable).ToArray();
+			declaredVariables = declaredVariables?.Append(variable).ToArray() ?? new[] { variable };
 			return new Expression[] {
 				variable,
 				Expression.Assign(variable, right.ToExpression())

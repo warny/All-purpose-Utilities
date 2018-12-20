@@ -20,8 +20,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree Test
 		{
 			get => test;
-			set
-			{
+			set {
 				test = value;
 				test.Parent = this;
 			}
@@ -29,8 +28,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree Body
 		{
 			get => body;
-			set
-			{
+			set {
 				body = value;
 				body.Parent = this;
 			}

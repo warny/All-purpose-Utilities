@@ -15,10 +15,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public IExpressionTree Parent { get; set; }
 
-		public IExpressionTree Left {
+		public IExpressionTree Left
+		{
 			get => left;
-			set
-			{
+			set {
 				left.Parent = this;
 				left = value;
 			}
@@ -26,8 +26,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree Right
 		{
 			get => right;
-			set
-			{
+			set {
 				right.Parent = this;
 				right = value;
 			}

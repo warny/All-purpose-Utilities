@@ -18,8 +18,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree Test
 		{
 			get => test;
-			set
-			{
+			set {
 				test = value;
 				test.Parent = this;
 			}
@@ -27,8 +26,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree TruePart
 		{
 			get => truePart;
-			set
-			{
+			set {
 				truePart = value;
 				truePart.Parent = this;
 			}
@@ -36,8 +34,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree FalsePart
 		{
 			get => falsePart;
-			set
-			{
+			set {
 				falsePart = value;
 				falsePart.Parent = this;
 			}
@@ -50,12 +47,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 			variables = variables.Union(declaredVariables).ToArray();
 			var truePartExpressions = TruePart.CreateExpression(variables, labels, out var truePartVariables);
 
-			if (FalsePart == null)
-			{
+			if (FalsePart == null) {
 				return new[] { Expression.IfThen(testExpressions.ToExpression(), truePartExpressions.ToExpression()) };
 			}
-			else
-			{
+			else {
 				var falsePartExpression = FalsePart.CreateExpression(variables, labels, out var falsePartVariables);
 				return new[] { Expression.IfThenElse(testExpressions.ToExpression(), truePartExpressions.ToExpression(), falsePartExpression.ToExpression()) };
 			}

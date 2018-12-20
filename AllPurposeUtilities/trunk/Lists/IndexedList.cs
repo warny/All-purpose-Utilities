@@ -9,17 +9,18 @@ namespace Utils.Lists
 {
 	public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
 	{
-		private Dictionary<K, V> dictionary;
+		private Dictionary<K, V> dictionary; 
 		private Func<V, K> getKey;
 
 		public IndexedList(Func<V, K> getKey)
 		{
+			dictionary = new Dictionary<K, V>();
 			this.getKey = getKey;
 		}
 
-		public IndexedList(IEnumerable<V> elements, Func<V, K> getKey) : this(getKey) {
-			foreach (var element in elements)
-			{
+		public IndexedList(IEnumerable<V> elements, Func<V, K> getKey) : this(getKey)
+		{
+			foreach (var element in elements) {
 				this.Add(element);
 			}
 		}
@@ -29,13 +30,13 @@ namespace Utils.Lists
 		public bool IsReadOnly => false;
 		public IEnumerable<K> Keys => dictionary.Keys;
 		public IEnumerable<V> Values => dictionary.Values;
-		public void Add( V item ) => dictionary.Add(getKey(item), item);
-		public bool Remove( V item ) => dictionary.Remove(getKey(item));
+		public void Add(V item) => dictionary.Add(getKey(item), item);
+		public bool Remove(V item) => dictionary.Remove(getKey(item));
 		public void Clear() => dictionary.Clear();
-		public bool Contains( V item )=> dictionary.ContainsValue(item);
-		public bool ContainsKey( K key ) => dictionary.ContainsKey(key);
-		public void CopyTo( V[] array, int arrayIndex )	=>dictionary.Values.CopyTo(array, arrayIndex);
-		public bool TryGetValue( K key, out V value ) => dictionary.TryGetValue(key, out value);
+		public bool Contains(V item) => dictionary.ContainsValue(item);
+		public bool ContainsKey(K key) => dictionary.ContainsKey(key);
+		public void CopyTo(V[] array, int arrayIndex) => dictionary.Values.CopyTo(array, arrayIndex);
+		public bool TryGetValue(K key, out V value) => dictionary.TryGetValue(key, out value);
 		IEnumerator<KeyValuePair<K, V>> IEnumerable<KeyValuePair<K, V>>.GetEnumerator() => dictionary.GetEnumerator();
 		IEnumerator<V> IEnumerable<V>.GetEnumerator() => dictionary.Values.GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => dictionary.Values.GetEnumerator();

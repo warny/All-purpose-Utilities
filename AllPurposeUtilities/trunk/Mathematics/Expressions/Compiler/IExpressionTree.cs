@@ -23,7 +23,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 	public class CompilerException : Exception
 	{
-		public CompilerException(string message, string objectName) : base(message + " : " + objectName)
+		public CompilerException(string message, string objectName) : 
+			base(message + " : " + objectName)
 		{
 		}
 	}
@@ -33,10 +34,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 		List<IExpressionTree> expressionsTrees = new List<IExpressionTree>();
 		IExpressionTree parent;
 
-		internal IExpressionTree Parent {
+		internal IExpressionTree Parent
+		{
 			get => parent;
-			set
-			{
+			set {
 				parent = value;
 				expressionsTrees.ForEach(et => et.Parent = value);
 			}
@@ -48,10 +49,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 			this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
 		}
 
-		public IExpressionTree this[int index] {
+		public IExpressionTree this[int index]
+		{
 			get => expressionsTrees[index];
-			set
-			{
+			set {
 				expressionsTrees[index].Parent = null;
 				expressionsTrees[index] = value;
 				value.Parent = this.parent;
@@ -73,13 +74,13 @@ namespace Utils.Mathematics.Expressions.Compiler
 			expressionsTrees.Clear();
 		}
 
-		public bool Contains(IExpressionTree item) 
+		public bool Contains(IExpressionTree item)
 			=> expressionsTrees.Contains(item);
 
 		public void CopyTo(IExpressionTree[] array, int arrayIndex)
 			=> expressionsTrees.CopyTo(array, arrayIndex);
 
-		public IEnumerator<IExpressionTree> GetEnumerator() 
+		public IEnumerator<IExpressionTree> GetEnumerator()
 			=> expressionsTrees.GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator()

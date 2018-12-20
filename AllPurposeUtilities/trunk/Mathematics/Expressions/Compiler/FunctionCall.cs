@@ -19,8 +19,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree Left
 		{
 			get => left;
-			set
-			{
+			set {
 				left.Parent = this;
 				left = value;
 			}
@@ -44,11 +43,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			List<Expression> argumentsExpressions = new List<Expression>();
 
-			foreach (IExpressionTree argument in Arguments)
-			{
+			foreach (IExpressionTree argument in Arguments) {
 				Expression argumentExpr = argument.CreateExpression(innerVariables, labels, out var subDeclaredVariables).ToExpression();
-				if (!subDeclaredVariables.IsNullOrEmpty())
-				{
+				if (!subDeclaredVariables.IsNullOrEmpty()) {
 					innerDeclaredVariables.AddRange(subDeclaredVariables);
 					innerVariables = variables.Union(innerDeclaredVariables).ToArray();
 				}
@@ -59,22 +56,18 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var argumentTypes = argumentsExpressions.Select(a => a.Type).ToArray();
 
 			var methodInfo = leftType.GetMethod(Name, argumentTypes);
-			if (methodInfo == null)
-			{
+			if (methodInfo == null) {
 				return new[] { Expression.Call(leftExpression, methodInfo, argumentsExpressions) };
 			}
-			else
-			{
-				
+			else {
+
 				var propertyOrField = Expression.PropertyOrField(leftExpression, Name);
 				Type propertyOrFieldType = propertyOrField.Type;
 				var delegateType = typeof(Delegate);
-				if (propertyOrFieldType.IsAssignableFrom(delegateType))
-				{
+				if (propertyOrFieldType.IsAssignableFrom(delegateType)) {
 					methodInfo = delegateType.GetMethod("DynamicInvoke");
 				}
-				else
-				{
+				else {
 					throw new CompilerException("Aucune methode ou propriété de type expression trouvés", Name);
 				}
 

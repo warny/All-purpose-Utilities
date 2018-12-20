@@ -18,13 +18,11 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public IExpressionTree Right
 		{
 			get => right;
-			set
-			{
-				right.Parent = this;
+			set {
 				right = value;
+				right.Parent = this;
 			}
 		}
-
 
 		public virtual Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{
