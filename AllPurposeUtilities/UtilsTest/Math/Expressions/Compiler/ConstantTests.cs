@@ -11,7 +11,7 @@ using Utils.Mathematics.Expressions.Compiler;
 namespace UtilsTest.Math.Expressions.Compiler
 {
 	[TestClass]
-	public class Constants
+	public class ConstantTests
 	{
 		[TestMethod]
 		public void ConstantString()

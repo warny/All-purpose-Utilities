@@ -19,16 +19,16 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			get => left;
 			set {
-				left.Parent = this;
 				left = value;
+				left.Parent = this;
 			}
 		}
 		public IExpressionTree Right
 		{
 			get => right;
 			set {
-				right.Parent = this;
 				right = value;
+				right.Parent = this;
 			}
 		}
 
@@ -39,7 +39,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 			Expression leftExpression = Left.CreateExpression(variables, labels, out var leftVariables).ToExpression();
 			Expression rightExpression = Right.CreateExpression(variables, labels, out var rightVariables).ToExpression();
 
-			declaredVariables = leftVariables.Union(rightVariables).ToArray();
+			declaredVariables = leftVariables?.Union(rightVariables).ToArray() ?? rightVariables;
 
 			return new Expression[] {
 				Operator(leftExpression, rightExpression)

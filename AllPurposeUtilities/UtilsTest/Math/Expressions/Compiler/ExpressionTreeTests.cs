@@ -10,7 +10,7 @@ using Utils.Mathematics.Expressions.Compiler;
 namespace UtilsTest.Math.Expressions.Compiler
 {
 	[TestClass]
-	public class ExpressionTree
+	public class ExpressionTreeTests
 	{
 		[TestMethod]
 		public void DeclareString()
