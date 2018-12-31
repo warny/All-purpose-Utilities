@@ -26,9 +26,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 			Labels = new IndexedList<string, LabelTarget>(l => l.Name);
 		}
 
-		public Expression CreateLambda(ParameterExpression[] variables)
+		public Expression CreateLambda(ParameterExpression[] parameters)
 		{
-			return CreateExpression(variables, Labels, out ParameterExpression[] declaredVariables)[0];
+			return CreateExpression(parameters, Labels, out ParameterExpression[] declaredVariables)[0];
 		}
 
 		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)

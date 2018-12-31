@@ -25,11 +25,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			List<Expression> expressions = new List<Expression>();
 
-			foreach (var expressionTree in ExpressionTrees)
-			{
+			foreach (var expressionTree in ExpressionTrees) {
 				var expression = expressionTree.CreateExpression(innerVariables, labels, out var newVariables);
-				if (!newVariables.IsNullOrEmpty())
-				{
+				if (!newVariables.IsNullOrEmpty()) {
 					innerVariablesList.AddRange(newVariables);
 					innerVariables = innerVariablesList.ToArray();
 				}

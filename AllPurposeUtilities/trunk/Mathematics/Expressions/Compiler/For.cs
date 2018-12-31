@@ -10,19 +10,45 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class For : IBreakableContinuableTree
 	{
-		private IExpressionTree _initializer;
-		private IExpressionTree _test;
-		private IExpressionTree _stepper;
-		private IExpressionTree _body;
+		private IExpressionTree initializer;
+		private IExpressionTree test;
+		private IExpressionTree stepper;
+		private IExpressionTree body;
 
 		public IExpressionTree Parent { get; set; }
 		public LabelTarget ContinueLabel { get; }
 		public LabelTarget BreakLabel { get; }
 
-		public IExpressionTree Initializer { get => _initializer; set => _initializer = value; }
-		public IExpressionTree Test { get => _test; set => _test = value; }
-		public IExpressionTree Stepper { get => _stepper; set => _stepper = value; }
-		public IExpressionTree Body { get => _body; set => _body = value; }
+		public IExpressionTree Initializer
+		{
+			get => initializer;
+			set {
+				initializer = value;
+				initializer.Parent = this;
+			}
+		}
+		public IExpressionTree Test
+		{
+			get => test;
+			set {
+				test = value;
+				test.Parent = this;
+			}
+		}
+		public IExpressionTree Stepper {
+			get => stepper;
+			set {
+				stepper = value;
+				stepper.Parent = this;
+			}
+		}
+		public IExpressionTree Body {
+			get => body;
+			set {
+				body = value;
+				body.Parent = this;
+			}
+		}
 
 		public For()
 		{
