@@ -27,21 +27,25 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public string Name { get; set; }
 		public ExpressionTreeList Arguments { get; }
+		public List<string> GenericTypesNames { get; }
 
 		public FunctionCall()
 		{
 			Arguments.Parent = this;
+			GenericTypesNames = new List<string>();
 		}
 
 		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
 		{
-			var leftExpression = Left.CreateExpression(variables, labels, out var leftDeclaredVariables).ToExpression();
-			var innerDeclaredVariables = new List<ParameterExpression>(leftDeclaredVariables);
-			var innerVariables = variables.Union(innerDeclaredVariables).ToArray();
-
-			var leftType = leftExpression.Type;
+			Type funcType = typeof(Func<>);
+			Type actionType = typeof(Action<>);
 
 			List<Expression> argumentsExpressions = new List<Expression>();
+
+			ParameterExpression[] leftDeclaredVariables = null;
+			var leftExpression = Left?.CreateExpression(variables, labels, out leftDeclaredVariables).ToExpression();
+			var innerDeclaredVariables = new List<ParameterExpression>(leftDeclaredVariables);
+			var innerVariables = variables.Union(innerDeclaredVariables).ToArray();
 
 			foreach (IExpressionTree argument in Arguments) {
 				Expression argumentExpr = argument.CreateExpression(innerVariables, labels, out var subDeclaredVariables).ToExpression();
@@ -49,11 +53,38 @@ namespace Utils.Mathematics.Expressions.Compiler
 					innerDeclaredVariables.AddRange(subDeclaredVariables);
 					innerVariables = variables.Union(innerDeclaredVariables).ToArray();
 				}
+				argumentsExpressions.Add(argumentExpr);
+			}
+			var argumentTypes = argumentsExpressions.Select(a => a.Type).ToArray();
+
+			declaredVariables = innerDeclaredVariables?.ToArray();
+
+			if (Left == null) {
+				var function = variables.Where(v => v.Name == Name && (v.Type.IsAssignableFrom(funcType) || v.Type.IsAssignableFrom(actionType)));
+				throw new NotImplementedException();
 			}
 
-			declaredVariables = innerDeclaredVariables.ToArray();
+			if (leftExpression == null) {
+				if (Left is Identifier leftIdentifier) {
+					if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Class) {
+						var method = leftIdentifier.Type.GetMethod(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy, null,
+							argumentTypes, null);
+						if (method != null) {
+							return new[] { Expression.Call(null, method, argumentsExpressions.ToArray()) };
+						}
 
-			var argumentTypes = argumentsExpressions.Select(a => a.Type).ToArray();
+					}
+
+					throw new CompilerException("Impossible de résoudre le nom", leftIdentifier.IdentifierFullName + "." + Name);
+				}
+				else {
+					throw new CompilerException("Impossible de résoudre le nom", Name);
+				}
+			}
+
+
+			var leftType = leftExpression.Type;
+
 
 			var methodInfo = leftType.GetMethod(Name, argumentTypes);
 			if (methodInfo == null) {

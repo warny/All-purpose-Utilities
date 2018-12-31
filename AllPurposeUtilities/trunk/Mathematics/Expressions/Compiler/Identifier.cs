@@ -52,15 +52,19 @@ namespace Utils.Mathematics.Expressions.Compiler
 								IdentifierType = IdentifierTypeEnum.Namespace;
 								return null;
 							}
-							break;
+							else {
+								Type = type;
+								IdentifierType = IdentifierTypeEnum.Class;
+								return null;
+							}
 						case IdentifierTypeEnum.Class:
 							declaredVariables = null;
-							var field = leftIdentifier.Type.GetField(Name, BindingFlags.Static);
+							var field = leftIdentifier.Type.GetField(Name, BindingFlags.Static | BindingFlags.Public);
 							if (field != null) {
 								IdentifierType = IdentifierTypeEnum.Object;
 								return new[] { Expression.Field(null, field) };
 							}
-							var property = leftIdentifier.Type.GetProperty(Name, BindingFlags.Static);
+							var property = leftIdentifier.Type.GetProperty(Name, BindingFlags.Static | BindingFlags.Public);
 							if (property != null) {
 								IdentifierType = IdentifierTypeEnum.Object;
 								return new[] { Expression.Property(null, property) };
@@ -81,12 +85,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 			else {
 				declaredVariables = leftDeclaredVariables;
 				Type type = LeftExpression.Type;
-				var field = type.GetField(Name, BindingFlags.Instance);
+				var field = type.GetField(Name, BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public);
 				if (field != null) {
 					IdentifierType = IdentifierTypeEnum.Object;
 					return new[] { Expression.Field(LeftExpression, field) };
 				}
-				var property = type.GetProperty(Name, BindingFlags.Instance);
+				var property = type.GetProperty(Name, BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public);
 				if (property != null) {
 					IdentifierType = IdentifierTypeEnum.Object;
 					return new[] { Expression.Property(LeftExpression, property) };
