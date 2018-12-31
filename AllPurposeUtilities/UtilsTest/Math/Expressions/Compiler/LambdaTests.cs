@@ -13,7 +13,7 @@ namespace UtilsTest.Math.Expressions.Compiler
 	public class LambdaTests
 	{
 		[TestMethod]
-		public void LambdaTest()
+		public void LambdaTestAddition()
 		{
 			Lambda lambda = new Lambda() {
 				ReturnType = "System.Double"
@@ -28,7 +28,7 @@ namespace UtilsTest.Math.Expressions.Compiler
 				Right = new Identifier { Name = "y" }
 			});
 
-			var lambdaExpression = (LambdaExpression) lambda.CreateLambda(parameters);
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
 			Func<double, double, double> addition = (Func<double, double, double>)lambdaExpression.Compile();
 
 			Random rnd = new Random();
@@ -37,5 +37,64 @@ namespace UtilsTest.Math.Expressions.Compiler
 
 			Assert.AreEqual(x + y, addition(x, y));
 		}
+
+		[TestMethod]
+		public void LambdaTestStaticVariable()
+		{
+			Lambda lambda = new Lambda() {
+				ReturnType = "System.Double"
+			};
+			ParameterExpression[] parameters = { };
+			lambda.ExpressionTrees.Add(
+				new Identifier {
+					Name = "PI",
+					Left = new Identifier {
+						Name = "Math",
+						Left = new Identifier {
+							Name = "System",
+						}
+					}
+				}
+			);
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
+			Func<double> pi = (Func<double>)lambdaExpression.Compile();
+
+			Assert.AreEqual(System.Math.PI, pi());
+		}
+
+		[TestMethod]
+		public void LambdaTestStaticFunction()
+		{
+			Lambda lambda = new Lambda() {
+				ReturnType = "System.Double"
+			};
+			ParameterExpression[] parameters = {
+				Expression.Parameter (typeof(double), "angle")
+			};
+
+			lambda.ExpressionTrees.Add(
+				new FunctionCall {
+					Name = "Cos",
+					Left = new Identifier {
+						Name = "Math",
+						Left = new Identifier {
+							Name = "System",
+						}
+					},
+					Arguments = {
+						new Identifier {
+							Name = "angle"
+						}
+					}
+				}
+			);
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
+			Func<double, double> cos = (Func<double, double>)lambdaExpression.Compile();
+
+			Random rnd = new Random();
+			double angle = rnd.NextDouble();
+
+			Assert.AreEqual(System.Math.Cos(angle), cos(angle));
+		}				   
 	}
 }
