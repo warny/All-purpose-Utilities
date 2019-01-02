@@ -25,7 +25,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public Expression[] CreateExpression(Context context)
 		{
 			Type type = Type.GetType(TypeName);
-
+			return null;
 		}
 	}
 }

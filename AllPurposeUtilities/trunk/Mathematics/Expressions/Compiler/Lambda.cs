@@ -37,6 +37,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Expression[] CreateExpression(Context context)
 		{
+			context.Push();
 			Type returnType = Type.GetType(ReturnType);
 
 			List<Expression> expressions = new List<Expression>();
@@ -56,6 +57,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 				body = Expression.Block(returnType, expressions.ToArray());
 			}
 
+			context.Pop();
 			return new[] {
 				Expression.Lambda(
 					body,

@@ -20,7 +20,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			get => left;
 			set {
-				left.Parent = this;
+				if (left != null) left.Parent = this;
 				left = value;
 			}
 		}

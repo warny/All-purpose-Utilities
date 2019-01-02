@@ -13,9 +13,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 		private Stack<Variables> variablesStack = new Stack<Variables>();
 		private Stack<Labels> labelsStack = new Stack<Labels>();
 
-		public Variables Variables { get; private set; }
+		public Variables Variables { get; private set; } = new Variables();
 
-		public Labels Labels { get; private set; }
+		public Labels Labels { get; private set; } = new Labels();
 
 		public void Push()
 		{
@@ -28,7 +28,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public void Pop()
 		{
-
+			Variables = variablesStack.Pop();
+			Labels = labelsStack.Pop();
 		}
 	}
 

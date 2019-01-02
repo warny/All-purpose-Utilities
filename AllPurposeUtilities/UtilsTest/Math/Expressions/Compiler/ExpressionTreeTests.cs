@@ -20,16 +20,13 @@ namespace UtilsTest.Math.Expressions.Compiler
 				VariableName = "name"
 			};
 
-			var declareExpression = declare.CreateExpression(
-				new ParameterExpression[0],
-				new Utils.Lists.IndexedList<string, LabelTarget>(l => l.Name),
-				out var declaredVariables
-			).ToExpression();
+			Context context = new Context();
+			var declareExpression = declare.CreateExpression(context).ToExpression();
 
 			Assert.IsInstanceOfType(declareExpression, typeof(ParameterExpression));
 			Assert.IsTrue(typeof(string).IsAssignableFrom(declareExpression.Type));
-			Assert.AreEqual(declaredVariables.Length, 1);
-			Assert.AreSame(declareExpression, declaredVariables[0]);
+			Assert.AreEqual(context.Variables.Count, 1);
+			Assert.AreSame(declareExpression, context.Variables["name"]);
 			Assert.AreEqual((declareExpression as ParameterExpression).Name, declare.VariableName);
 
 		}
@@ -42,16 +39,13 @@ namespace UtilsTest.Math.Expressions.Compiler
 				VariableName = "name"
 			};
 
-			var declareExpression = declare.CreateExpression(
-				new ParameterExpression[0],
-				new Utils.Lists.IndexedList<string, LabelTarget>(l => l.Name),
-				out var declaredVariables
-			).ToExpression();
+			Context context = new Context();
+			var declareExpression = declare.CreateExpression(context).ToExpression();
 
 			Assert.IsInstanceOfType(declareExpression, typeof(ParameterExpression));
 			Assert.IsTrue(typeof(int).IsAssignableFrom(declareExpression.Type));
-			Assert.AreEqual(declaredVariables.Length, 1);
-			Assert.AreSame(declareExpression, declaredVariables[0]);
+			Assert.AreEqual(context.Variables.Count, 1);
+			Assert.AreSame(declareExpression, context.Variables["name"]);
 			Assert.AreEqual((declareExpression as ParameterExpression).Name, declare.VariableName);
 
 		}
@@ -68,18 +62,15 @@ namespace UtilsTest.Math.Expressions.Compiler
 				}
 			};
 
-			var declareExpression = declareAndAssign.CreateExpression(
-				new ParameterExpression[0],
-				new Utils.Lists.IndexedList<string, LabelTarget>(l => l.Name),
-				out var declaredVariables
-			);
+			Context context = new Context();
+			var declareExpression = declareAndAssign.CreateExpression(context);
 
 			Assert.AreEqual(declareExpression.Length, 2);
-			Assert.AreEqual(declaredVariables.Length, 1);
+			Assert.AreEqual(context.Variables.Count, 1);
 
 			Assert.IsInstanceOfType(declareExpression[0], typeof(ParameterExpression));
 			Assert.IsTrue(typeof(string).IsAssignableFrom(declareExpression[0].Type));
-			Assert.AreSame(declareExpression[0], declaredVariables[0]);
+			Assert.AreSame(declareExpression[0], context.Variables["name"]);
 			Assert.AreEqual((declareExpression[0] as ParameterExpression).Name, declareAndAssign.VariableName);
 
 			Assert.AreSame((declareExpression[1] as BinaryExpression).Left, declareExpression[0]);
@@ -100,18 +91,15 @@ namespace UtilsTest.Math.Expressions.Compiler
 				}
 			};
 
-			var declareExpression = declareAndAssign.CreateExpression(
-				new ParameterExpression[0],
-				new Utils.Lists.IndexedList<string, LabelTarget>(l => l.Name),
-				out var declaredVariables
-			);
+			Context context = new Context();
+			var declareExpression = declareAndAssign.CreateExpression(context);
 
 			Assert.AreEqual(declareExpression.Length, 2);
-			Assert.AreEqual(declaredVariables.Length, 1);
+			Assert.AreEqual(context.Variables.Count, 1);
 
 			Assert.IsInstanceOfType(declareExpression[0], typeof(ParameterExpression));
 			Assert.IsTrue(typeof(int).IsAssignableFrom(declareExpression[0].Type));
-			Assert.AreSame(declareExpression[0], declaredVariables[0]);
+			Assert.AreSame(declareExpression[0], context.Variables["name"]);
 			Assert.AreEqual((declareExpression[0] as ParameterExpression).Name, declareAndAssign.VariableName);
 
 			Assert.AreSame((declareExpression[1] as BinaryExpression).Left, declareExpression[0]);
@@ -132,18 +120,15 @@ namespace UtilsTest.Math.Expressions.Compiler
 				}
 			};
 
-			var declareExpression = declareAndAssign.CreateExpression(
-				new ParameterExpression[0],
-				new Utils.Lists.IndexedList<string, LabelTarget>(l => l.Name),
-				out var declaredVariables
-			);
+			Context context = new Context();
+			var declareExpression = declareAndAssign.CreateExpression(context);
 
 			Assert.AreEqual(declareExpression.Length, 2);
-			Assert.AreEqual(declaredVariables.Length, 1);
+			Assert.AreEqual(context.Variables.Count, 1);
 
 			Assert.IsInstanceOfType(declareExpression[0], typeof(ParameterExpression));
 			Assert.IsTrue(typeof(string).IsAssignableFrom(declareExpression[0].Type));
-			Assert.AreSame(declareExpression[0], declaredVariables[0]);
+			Assert.AreSame(declareExpression[0], context.Variables["name"]);
 			Assert.AreEqual((declareExpression[0] as ParameterExpression).Name, declareAndAssign.VariableName);
 
 			Assert.AreSame((declareExpression[1] as BinaryExpression).Left, declareExpression[0]);
@@ -164,18 +149,15 @@ namespace UtilsTest.Math.Expressions.Compiler
 				}
 			};
 
-			var declareExpression = declareAndAssign.CreateExpression(
-				new ParameterExpression[0],
-				new Utils.Lists.IndexedList<string, LabelTarget>(l => l.Name),
-				out var declaredVariables
-			);
+			Context context = new Context();
+			var declareExpression = declareAndAssign.CreateExpression(context);
 
 			Assert.AreEqual(declareExpression.Length, 2);
-			Assert.AreEqual(declaredVariables.Length, 1);
+			Assert.AreEqual(context.Variables.Count, 1);
 
 			Assert.IsInstanceOfType(declareExpression[0], typeof(ParameterExpression));
 			Assert.IsTrue(typeof(int).IsAssignableFrom(declareExpression[0].Type));
-			Assert.AreSame(declareExpression[0], declaredVariables[0]);
+			Assert.AreSame(declareExpression[0], context.Variables["name"]);
 			Assert.AreEqual((declareExpression[0] as ParameterExpression).Name, declareAndAssign.VariableName);
 
 			Assert.AreSame((declareExpression[1] as BinaryExpression).Left, declareExpression[0]);

@@ -21,8 +21,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public Expression[] CreateExpression(Context context)
 		{
 			if (Left == null) {
-				var variable = context.Variables[Name];
-				if (variable != null) {
+				if (context.Variables.TryGetValue(Name, out var variable)) {
 					IdentifierType = IdentifierTypeEnum.Object;
 					return new[] { variable };
 				}
