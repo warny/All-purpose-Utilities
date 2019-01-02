@@ -12,9 +12,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 	{
 		public string TypeName { get; set; }
 
-		public override Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public override Expression[] CreateExpression(Context context)
 		{
-			var right = Right.CreateExpression(variables, labels, out declaredVariables);
+			var right = Right.CreateExpression(context);
 			Type t;
 			if (TypeName == "var") {
 				t = right[0].Type;
@@ -24,7 +24,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 			}
 
 			var variable = Expression.Parameter(t, VariableName);
-			declaredVariables = declaredVariables?.Append(variable).ToArray() ?? new[] { variable };
+			context.Variables.Add(variable);
 			return new Expression[] {
 				variable,
 				Expression.Assign(variable, right.ToExpression())

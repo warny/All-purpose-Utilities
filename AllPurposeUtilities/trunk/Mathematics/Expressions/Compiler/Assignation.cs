@@ -24,14 +24,14 @@ namespace Utils.Mathematics.Expressions.Compiler
 			}
 		}
 
-		public virtual Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public virtual Expression[] CreateExpression(Context context)
 		{
-			var variable = variables.FirstOrDefault(v => v.Name == VariableName);
+			var variable = context.Variables[VariableName];
 			if (variable == null) throw new CompilerException("Objet non déclaré", VariableName);
 
 			return new Expression[] { Operator(
 				variable,
-				Right.CreateExpression(variables, labels, out declaredVariables).ToExpression())
+				Right.CreateExpression(context).ToExpression())
 			};
 		}
 	}

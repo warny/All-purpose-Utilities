@@ -41,17 +41,16 @@ namespace Utils.Mathematics.Expressions.Compiler
 		}
 
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			var testExpressions = Test.CreateExpression(variables, labels, out declaredVariables);
-			variables = variables.Union(declaredVariables).ToArray();
-			var truePartExpressions = TruePart.CreateExpression(variables, labels, out var truePartVariables);
+			var testExpressions = Test.CreateExpression(context);
+			var truePartExpressions = TruePart.CreateExpression(context);
 
 			if (FalsePart == null) {
 				return new[] { Expression.IfThen(testExpressions.ToExpression(), truePartExpressions.ToExpression()) };
 			}
 			else {
-				var falsePartExpression = FalsePart.CreateExpression(variables, labels, out var falsePartVariables);
+				var falsePartExpression = FalsePart.CreateExpression(context);
 				return new[] { Expression.IfThenElse(testExpressions.ToExpression(), truePartExpressions.ToExpression(), falsePartExpression.ToExpression()) };
 			}
 		}

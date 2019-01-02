@@ -31,37 +31,26 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public FunctionCall()
 		{
-			Arguments.Parent = this;
+			Arguments = new ExpressionTreeList(this);
 			GenericTypesNames = new List<string>();
 		}
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
 			Type funcType = typeof(Func<>);
 			Type actionType = typeof(Action<>);
 
-			List<Expression> argumentsExpressions = new List<Expression>();
+			var leftExpression = Left?.CreateExpression(context).ToExpression();
 
-			ParameterExpression[] leftDeclaredVariables = null;
-			var leftExpression = Left?.CreateExpression(variables, labels, out leftDeclaredVariables).ToExpression();
-			var innerDeclaredVariables = new List<ParameterExpression>(leftDeclaredVariables);
-			var innerVariables = variables.Union(innerDeclaredVariables).ToArray();
+			var argumentsExpressions = Arguments.ToExpressions(context);
 
-			foreach (IExpressionTree argument in Arguments) {
-				Expression argumentExpr = argument.CreateExpression(innerVariables, labels, out var subDeclaredVariables).ToExpression();
-				if (!subDeclaredVariables.IsNullOrEmpty()) {
-					innerDeclaredVariables.AddRange(subDeclaredVariables);
-					innerVariables = variables.Union(innerDeclaredVariables).ToArray();
-				}
-				argumentsExpressions.Add(argumentExpr);
-			}
 			var argumentTypes = argumentsExpressions.Select(a => a.Type).ToArray();
 
-			declaredVariables = innerDeclaredVariables?.ToArray();
-
 			if (Left == null) {
-				var function = variables.Where(v => v.Name == Name && (v.Type.IsAssignableFrom(funcType) || v.Type.IsAssignableFrom(actionType)));
-				throw new NotImplementedException();
+				var function = context.Variables[Name];
+				if (function == null || !function.Type.IsAssignableFrom(funcType) || !function.Type.IsAssignableFrom(actionType)) {
+					throw new NotImplementedException();
+				}
 			}
 
 			if (leftExpression == null) {

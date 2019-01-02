@@ -12,9 +12,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 	{
 		public IExpressionTree Parent { get; set; }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			declaredVariables = null;
 			for (IExpressionTree ancestor = Parent; Parent != null; ancestor = ancestor.Parent) {
 				if (ancestor is IBreakableContinuableTree breakableContinuableTree) {
 					return new[] { Expression.Break(breakableContinuableTree.BreakLabel) };

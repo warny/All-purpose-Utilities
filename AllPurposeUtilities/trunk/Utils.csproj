@@ -58,6 +58,7 @@
     <Compile Include="Mathematics\Expressions\Compiler\Constant.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\CompilerUtils.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\ComputeOperator.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\Context.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Continue.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Declare.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\DeclareAndAssign.cs" />
@@ -66,6 +67,7 @@
     <Compile Include="Mathematics\Expressions\Compiler\FunctionCall.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\IExpressionTree.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\If.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\Instanciation.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Lambda.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Identifier.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\While.cs" />

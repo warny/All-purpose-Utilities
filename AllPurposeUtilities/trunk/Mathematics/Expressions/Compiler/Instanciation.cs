@@ -8,19 +8,24 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class Declare : IExpressionTree
+	public class Instanciation : IExpressionTree
 	{
-		public string TypeName { get; set; }
-		public string VariableName { get; set; }
-
 		public IExpressionTree Parent { get; set; }
+
+		public string TypeName { get; set; }
+		public ExpressionTreeList Arguments { get; }
+		public List<string> GenericTypesNames { get; }
+
+		public Instanciation()
+		{
+			Arguments = new ExpressionTreeList(this);
+			GenericTypesNames = new List<string>();
+ 		}
 
 		public Expression[] CreateExpression(Context context)
 		{
 			Type type = Type.GetType(TypeName);
-			var variable = Expression.Parameter(type, VariableName);
-			context.Variables.Add(variable);
-			return new[] { variable };
+
 		}
 	}
 }

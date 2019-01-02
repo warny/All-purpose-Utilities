@@ -17,10 +17,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public string TypeName { get; set; }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
 			Type type = Type.GetType(TypeName);
-			declaredVariables = null;
 			return new Expression[] { Expression.Constant(Convert.ChangeType(Value, type, System.Globalization.CultureInfo.InvariantCulture), type) };
 		}
 	}

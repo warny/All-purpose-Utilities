@@ -28,25 +28,21 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Expression CreateLambda(ParameterExpression[] parameters)
 		{
-			return CreateExpression(parameters, Labels, out ParameterExpression[] declaredVariables)[0];
+			Context context = new Context();
+			context.Variables.AddRange(parameters);
+			context.Labels.AddRange(Labels);
+
+			return CreateExpression(context)[0];
 		}
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			declaredVariables = null;
-			List<ParameterExpression> innerVariablesList = new List<ParameterExpression>(variables);
-			ParameterExpression[] innerVariables = innerVariablesList.ToArray();
-
 			Type returnType = Type.GetType(ReturnType);
 
 			List<Expression> expressions = new List<Expression>();
 
 			foreach (var expressionTree in ExpressionTrees) {
-				var expression = expressionTree.CreateExpression(innerVariables, labels, out var newVariables);
-				if (!newVariables.IsNullOrEmpty()) {
-					innerVariablesList.AddRange(newVariables);
-					innerVariables = innerVariablesList.ToArray();
-				}
+				var expression = expressionTree.CreateExpression(context);
 				expressions.AddRange(expression);
 			}
 			ReturnLabel = Expression.Label(returnType);
@@ -60,14 +56,11 @@ namespace Utils.Mathematics.Expressions.Compiler
 				body = Expression.Block(returnType, expressions.ToArray());
 			}
 
-
-
-			declaredVariables = null;
 			return new[] {
 				Expression.Lambda(
 					body,
 					Name,
-					variables
+					context.Variables
 				)
 			};
 		}

@@ -17,22 +17,18 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Block() { ExpressionTrees = new ExpressionTreeList(this); }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			declaredVariables = null;
-			List<ParameterExpression> innerVariablesList = new List<ParameterExpression>(variables);
-			ParameterExpression[] innerVariables = innerVariablesList.ToArray();
+			context.Push();
 
 			List<Expression> expressions = new List<Expression>();
 
 			foreach (var expressionTree in ExpressionTrees) {
-				var expression = expressionTree.CreateExpression(innerVariables, labels, out var newVariables);
-				if (!newVariables.IsNullOrEmpty()) {
-					innerVariablesList.AddRange(newVariables);
-					innerVariables = innerVariablesList.ToArray();
-				}
+				var expression = expressionTree.CreateExpression(context);
 				expressions.AddRange(expression);
 			}
+
+			context.Pop();
 			return new[] { Expression.Block(expressions) };
 		}
 	}

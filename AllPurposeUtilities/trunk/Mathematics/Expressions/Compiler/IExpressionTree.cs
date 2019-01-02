@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Arrays;
 using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
@@ -12,7 +13,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 	public interface IExpressionTree
 	{
 		IExpressionTree Parent { get; set; }
-		Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables);
+		Expression[] CreateExpression(Context context);
 	}
 
 	public interface IBreakableContinuableTree : IExpressionTree
@@ -105,6 +106,18 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			expressionsTrees[index].Parent = null;
 			expressionsTrees.RemoveAt(index);
+		}
+
+		public Expression[] ToExpressions(Context context)
+		{
+			List<Expression> expressions = new List<Expression>();
+
+			foreach (IExpressionTree expressionTree in this) {
+				Expression expression = expressionTree.CreateExpression(context).ToExpression();
+				expressions.Add(expression);
+			}
+			var argumentTypes = expressions.Select(a => a.Type).ToArray();
+			return expressions.ToArray();
 		}
 
 	}

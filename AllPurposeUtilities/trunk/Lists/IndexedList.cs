@@ -20,6 +20,11 @@ namespace Utils.Lists
 
 		public IndexedList(IEnumerable<V> elements, Func<V, K> getKey) : this(getKey)
 		{
+			AddRange(elements);
+		}
+
+		public void AddRange(IEnumerable<V> elements)
+		{
 			foreach (var element in elements) {
 				this.Add(element);
 			}

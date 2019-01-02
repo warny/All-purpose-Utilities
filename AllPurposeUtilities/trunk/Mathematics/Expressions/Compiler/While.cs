@@ -40,10 +40,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 			BreakLabel = Expression.Label();
 		}
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			var testExpression = Test.CreateExpression(variables, labels, out declaredVariables);
-			variables = variables.Union(declaredVariables).ToArray();
+			var testExpression = Test.CreateExpression(context);
 			var loopExpression =
 				Expression.Block(
 					new Expression[] {
@@ -52,7 +51,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 						Expression.Negate(testExpression[0]),
 						Expression.Break(BreakLabel)
 					) }
-					.Concat(Body.CreateExpression(variables, labels, out var truePartVariables))
+					.Concat(Body.CreateExpression(context))
 				);
 
 			return new Expression[] {

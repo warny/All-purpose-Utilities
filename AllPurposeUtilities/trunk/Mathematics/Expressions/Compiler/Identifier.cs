@@ -18,11 +18,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 		internal string IdentifierFullName { get; set; }
 		internal Type Type { get; private set; }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
 			if (Left == null) {
-				declaredVariables = null;
-				var variable = variables.FirstOrDefault(v => v.Name == Name);
+				var variable = context.Variables[Name];
 				if (variable != null) {
 					IdentifierType = IdentifierTypeEnum.Object;
 					return new[] { variable };
@@ -39,9 +38,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 				return null;
 			}
 
-			Expression LeftExpression = Left.CreateExpression(variables, labels, out var leftDeclaredVariables)?.ToExpression();
+			Expression LeftExpression = Left.CreateExpression(context)?.ToExpression();
 			if (LeftExpression == null) {
-				declaredVariables = null;
 				if (Left is Identifier leftIdentifier) {
 					IdentifierFullName = leftIdentifier.IdentifierFullName + "." + Name;
 					switch (leftIdentifier.IdentifierType) {
@@ -58,7 +56,6 @@ namespace Utils.Mathematics.Expressions.Compiler
 								return null;
 							}
 						case IdentifierTypeEnum.Class:
-							declaredVariables = null;
 							var field = leftIdentifier.Type.GetField(Name, BindingFlags.Static | BindingFlags.Public);
 							if (field != null) {
 								IdentifierType = IdentifierTypeEnum.Object;
@@ -83,7 +80,6 @@ namespace Utils.Mathematics.Expressions.Compiler
 				throw new CompilerException("Impossible de résoudre le nom", Name);
 			}
 			else {
-				declaredVariables = leftDeclaredVariables;
 				Type type = LeftExpression.Type;
 				var field = type.GetField(Name, BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public);
 				if (field != null) {

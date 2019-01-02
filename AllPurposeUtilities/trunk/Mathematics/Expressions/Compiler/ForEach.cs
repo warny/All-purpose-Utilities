@@ -14,7 +14,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public LabelTarget ContinueLabel { get; }
 		public LabelTarget BreakLabel { get; }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
 			throw new NotImplementedException();
 		}

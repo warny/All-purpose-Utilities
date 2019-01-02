@@ -10,7 +10,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 {
 	public class For : IBreakableContinuableTree
 	{
-		private IExpressionTree initializer;
+		private Assignation initializer;
 		private IExpressionTree test;
 		private IExpressionTree stepper;
 		private IExpressionTree body;
@@ -19,7 +19,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public LabelTarget ContinueLabel { get; }
 		public LabelTarget BreakLabel { get; }
 
-		public IExpressionTree Initializer
+		public Assignation Initializer
 		{
 			get => initializer;
 			set {
@@ -57,14 +57,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 		}
 
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			declaredVariables = null;
-			var initializerExpression = Initializer.CreateExpression(variables, labels, out var initializerVariables)[0];
-			variables = variables.Union(initializerVariables).ToArray();
+			var initializerExpression = Initializer.CreateExpression(context)[0];
 
-			var testExpression = Test.CreateExpression(variables, labels, out var testVariables)[0];
-			var stepperExpression = Stepper.CreateExpression(variables, labels, out var stepperVariables);
+			var testExpression = Test.CreateExpression(context)[0];
+			var stepperExpression = Stepper.CreateExpression(context);
 
 			var loopExpression =
 				Expression.Block(
@@ -73,7 +71,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 							Expression.Negate(testExpression),
 							Expression.Break(BreakLabel)
 					) }
-					.Concat(Body.CreateExpression(variables, labels, out var bodyVariables))
+					.Concat(Body.CreateExpression(context))
 					.Concat(new Expression[] { Expression.Label(ContinueLabel) })
 					.Concat(stepperExpression)
 				);

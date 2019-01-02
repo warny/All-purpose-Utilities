@@ -34,12 +34,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Func<Expression, Expression, Expression> Operator { get; set; }
 
-		public Expression[] CreateExpression(ParameterExpression[] variables, IndexedList<string, LabelTarget> labels, out ParameterExpression[] declaredVariables)
+		public Expression[] CreateExpression(Context context)
 		{
-			Expression leftExpression = Left.CreateExpression(variables, labels, out var leftVariables).ToExpression();
-			Expression rightExpression = Right.CreateExpression(variables, labels, out var rightVariables).ToExpression();
-
-			declaredVariables = leftVariables?.Union(rightVariables).ToArray() ?? rightVariables;
+			Expression leftExpression = Left.CreateExpression(context).ToExpression();
+			Expression rightExpression = Right.CreateExpression(context).ToExpression();
 
 			return new Expression[] {
 				Operator(leftExpression, rightExpression)
