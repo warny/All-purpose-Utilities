@@ -37,5 +37,59 @@ namespace UtilsTest.Math.Expressions.Compiler
 			Assert.AreEqual(str.Length, length(str));
 		}
 
+		[TestMethod]
+		public void FunctionCallTest()
+		{
+			Lambda lambda = new Lambda() {
+				ReturnType = "System.String"
+			};
+
+			ParameterExpression[] parameters = {
+				Expression.Parameter (typeof(DateTime), "dt")
+			};
+
+			lambda.ExpressionTrees.Add(
+				new FunctionCall {
+					Name = "ToString",
+					Left = new Identifier { Name = "dt" }
+				}
+			);
+
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
+			Func<DateTime, string> toString = (Func<DateTime, string>)lambdaExpression.Compile();
+
+			DateTime dt = DateTime.Now;
+			Assert.AreEqual(dt.ToString(), toString(dt));
+		}
+
+		[TestMethod]
+		public void FunctionWithArgumentCallTest()
+		{
+			Lambda lambda = new Lambda() {
+				ReturnType = "System.String"
+			};
+
+			ParameterExpression[] parameters = {
+				Expression.Parameter (typeof(DateTime), "dt")
+			};
+
+			FunctionCall functionCall;
+			lambda.ExpressionTrees.Add(
+				functionCall = new FunctionCall {
+					Name = "ToString",
+					Left = new Identifier { Name = "dt" }
+				}
+			);
+			functionCall.Arguments.Add(
+				new Constant { TypeName = "System.String", Value = "d" }
+			);
+
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
+			Func<DateTime, string> toString = (Func<DateTime, string>)lambdaExpression.Compile();
+
+			DateTime dt = DateTime.Now;
+			Assert.AreEqual(dt.ToString("d"), toString(dt));
+		}
+
 	}
 }

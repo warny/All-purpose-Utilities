@@ -33,6 +33,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			var argumentTypes = argumentsExpressions.Select(a => a.Type).ToArray();
 
+			//Cas où il n'y a ni dépendance de nom ni dépendance d'objets
 			if (Left == null) {
 				var function = context.Variables[Name];
 				if (function == null || !function.Type.IsAssignableFrom(funcType) || !function.Type.IsAssignableFrom(actionType)) {
@@ -40,10 +41,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 				}
 			}
 
+			//Cas où il y a une dépendance de nom mais pas d'objet
 			if (leftExpression == null) {
 				if (Left is Identifier leftIdentifier) {
 					if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Class) {
-						var method = leftIdentifier.Type.GetMethod(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy, null,
+						var method = leftIdentifier.Type.GetMethod(
+							Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy, null,
 							argumentTypes, null);
 						if (method != null) {
 							return new[] { Expression.Call(null, method, argumentsExpressions.ToArray()) };
@@ -58,16 +61,14 @@ namespace Utils.Mathematics.Expressions.Compiler
 				}
 			}
 
-
+			// Cas où il y a dépendance d'objets
 			var leftType = leftExpression.Type;
 
-
 			var methodInfo = leftType.GetMethod(Name, argumentTypes);
-			if (methodInfo == null) {
+			if (methodInfo != null) {
 				return new[] { Expression.Call(leftExpression, methodInfo, argumentsExpressions) };
 			}
 			else {
-
 				var propertyOrField = Expression.PropertyOrField(leftExpression, Name);
 				Type propertyOrFieldType = propertyOrField.Type;
 				var delegateType = typeof(Delegate);
