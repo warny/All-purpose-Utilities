@@ -13,6 +13,37 @@ namespace UtilsTest.Math.Expressions.Compiler
 	public class ObjectTest
 	{
 		[TestMethod]
+		public void InstanciationTest()
+		{
+			Lambda lambda = new Lambda() {
+				ReturnType = "System.DateTime"
+			};
+
+			ParameterExpression[] parameters = {
+				Expression.Parameter (typeof(int), "year"),
+				Expression.Parameter (typeof(int), "month"),
+				Expression.Parameter (typeof(int), "day")
+			};
+
+			Instanciation instanciation;
+			lambda.ExpressionTrees.Add(
+				instanciation = new Instanciation {
+					TypeName = "System.DateTime"
+				}
+			);
+			instanciation.Arguments.Add(new Identifier { Name = "year" });
+			instanciation.Arguments.Add(new Identifier { Name = "month" });
+			instanciation.Arguments.Add(new Identifier { Name = "day" });
+
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
+			Func<int, int, int, DateTime> datetime = (Func<int, int, int, DateTime>)lambdaExpression.Compile();
+
+			int year = 1978, month = 4, day = 17;
+
+			Assert.AreEqual(new DateTime(year, month, day), datetime(year, month, day));
+		}
+
+		[TestMethod]
 		public void PropertyCallTest()
 		{
 			Lambda lambda = new Lambda() {

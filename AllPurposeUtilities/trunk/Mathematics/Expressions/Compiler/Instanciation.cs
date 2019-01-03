@@ -25,7 +25,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public Expression[] CreateExpression(Context context)
 		{
 			Type type = Type.GetType(TypeName);
-			return null;
+
+			var arguments = Arguments.ToExpressions(context);
+			var argumentsTypes = arguments.Select(a => a.Type).ToArray();
+			var constructor = type.GetConstructor(argumentsTypes);
+			   
+			return new[] { Expression.New(constructor, arguments) };
 		}
 	}
 }
