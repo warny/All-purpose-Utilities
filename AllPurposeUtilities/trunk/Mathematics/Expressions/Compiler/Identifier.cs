@@ -9,16 +9,14 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class Identifier : IExpressionTree
+	public class Identifier : ExpressionTreeWithLeft
 	{
 		public string Name { get; set; }
-		public IExpressionTree Left { get; set; }
-		public IExpressionTree Parent { get; set; }
 		internal IdentifierTypeEnum IdentifierType { get; private set;}
 		internal string IdentifierFullName { get; set; }
 		internal Type Type { get; private set; }
 
-		public Expression[] CreateExpression(Context context)
+		public override Expression[] CreateExpression(Context context)
 		{
 			if (Left == null) {
 				if (context.Variables.TryGetValue(Name, out var variable)) {

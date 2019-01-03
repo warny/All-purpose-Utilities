@@ -10,21 +10,8 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class FunctionCall : IExpressionTree
+	public class FunctionCall : ExpressionTreeWithLeft
 	{
-		private IExpressionTree left;
-
-		public IExpressionTree Parent { get; set; }
-
-		public IExpressionTree Left
-		{
-			get => left;
-			set {
-				if (left != null) left.Parent = this;
-				left = value;
-			}
-		}
-
 		public string Name { get; set; }
 		public ExpressionTreeList Arguments { get; }
 		public List<string> GenericTypesNames { get; }
@@ -35,7 +22,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 			GenericTypesNames = new List<string>();
 		}
 
-		public Expression[] CreateExpression(Context context)
+		public override Expression[] CreateExpression(Context context)
 		{
 			Type funcType = typeof(Func<>);
 			Type actionType = typeof(Action<>);

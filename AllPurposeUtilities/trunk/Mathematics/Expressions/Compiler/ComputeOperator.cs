@@ -8,33 +8,11 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class ComputeOperator : IExpressionTree
+	public class ComputeOperator : ExpressionTreeWithLeftAndRight
 	{
-		private IExpressionTree left;
-		private IExpressionTree right;
-
-		public IExpressionTree Parent { get; set; }
-
-		public IExpressionTree Left
-		{
-			get => left;
-			set {
-				left = value;
-				left.Parent = this;
-			}
-		}
-		public IExpressionTree Right
-		{
-			get => right;
-			set {
-				right = value;
-				right.Parent = this;
-			}
-		}
-
 		public Func<Expression, Expression, Expression> Operator { get; set; }
 
-		public Expression[] CreateExpression(Context context)
+		public override Expression[] CreateExpression(Context context)
 		{
 			Expression leftExpression = Left.CreateExpression(context).ToExpression();
 			Expression rightExpression = Right.CreateExpression(context).ToExpression();

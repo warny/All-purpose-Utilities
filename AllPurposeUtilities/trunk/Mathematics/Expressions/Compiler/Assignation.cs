@@ -8,23 +8,12 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class Assignation : IExpressionTree
+	public class Assignation : ExpressionTreeWithRight
 	{
-		private IExpressionTree right;
-
-		public IExpressionTree Parent { get; set; }
 		public string VariableName { get; set; }
 		public Func<Expression, Expression, Expression> Operator { get; set; }
-		public IExpressionTree Right
-		{
-			get => right;
-			set {
-				right = value;
-				right.Parent = this;
-			}
-		}
 
-		public virtual Expression[] CreateExpression(Context context)
+		public override Expression[] CreateExpression(Context context)
 		{
 			var variable = context.Variables[VariableName];
 			if (variable == null) throw new CompilerException("Objet non déclaré", VariableName);

@@ -16,6 +16,74 @@ namespace Utils.Mathematics.Expressions.Compiler
 		Expression[] CreateExpression(Context context);
 	}
 
+	public interface IExpressionTreeWithLeft : IExpressionTree
+	{
+		IExpressionTree Left { get; set; }
+	}
+
+	public interface IExpressionTreeWithRight : IExpressionTree
+	{
+		IExpressionTree Right { get; set; }
+	}
+
+	public abstract class ExpressionTreeWithLeft : IExpressionTreeWithLeft
+	{
+		public IExpressionTree Parent { get; set; }
+		public abstract Expression[] CreateExpression(Context context);
+
+		private IExpressionTree left;
+		public IExpressionTree Left
+		{
+			get => left;
+			set {
+				left = value;
+				left.Parent = this;
+			}
+		}
+	}
+
+	public abstract class ExpressionTreeWithRight : IExpressionTreeWithRight
+	{
+		public IExpressionTree Parent { get; set; }
+		public abstract Expression[] CreateExpression(Context context);
+
+		private IExpressionTree right;
+		public IExpressionTree Right
+		{
+			get => right;
+			set {
+				right = value;
+				right.Parent = this;
+			}
+		}
+	}
+
+	public abstract class ExpressionTreeWithLeftAndRight : IExpressionTreeWithRight
+	{
+		public IExpressionTree Parent { get; set; }
+		public abstract Expression[] CreateExpression(Context context);
+
+		private IExpressionTree left;
+		public IExpressionTree Left
+		{
+			get => left;
+			set {
+				left = value;
+				left.Parent = this;
+			}
+		}
+
+		private IExpressionTree right;
+		public IExpressionTree Right
+		{
+			get => right;
+			set {
+				right = value;
+				right.Parent = this;
+			}
+		}
+	}
+
 	public interface IBreakableContinuableTree : IExpressionTree
 	{
 		LabelTarget ContinueLabel { get; }

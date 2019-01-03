@@ -50,9 +50,7 @@ namespace UtilsTest.Math.Expressions.Compiler
 					Name = "PI",
 					Left = new Identifier {
 						Name = "Math",
-						Left = new Identifier {
-							Name = "System",
-						}
+						Left = new Identifier { Name = "System" }
 					}
 				}
 			);
@@ -82,9 +80,7 @@ namespace UtilsTest.Math.Expressions.Compiler
 						}
 					},
 					Arguments = {
-						new Identifier {
-							Name = "angle"
-						}
+						new Identifier { Name = "angle" }
 					}
 				}
 			);

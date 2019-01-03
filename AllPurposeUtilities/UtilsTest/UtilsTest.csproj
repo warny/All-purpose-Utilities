@@ -53,6 +53,7 @@
     <Compile Include="Math\Expressions\Compiler\ConstantTests.cs" />
     <Compile Include="Math\Expressions\Compiler\ExpressionTreeTests.cs" />
     <Compile Include="Math\Expressions\Compiler\LambdaTests.cs" />
+    <Compile Include="Math\Expressions\Compiler\ObjectTest.cs" />
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
