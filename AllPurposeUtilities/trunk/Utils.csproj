@@ -67,6 +67,7 @@
     <Compile Include="Mathematics\Expressions\Compiler\FunctionCall.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\IExpressionTree.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\If.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\INameResolver.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Instanciation.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Lambda.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Identifier.cs" />

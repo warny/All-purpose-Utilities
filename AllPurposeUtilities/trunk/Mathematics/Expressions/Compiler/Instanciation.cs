@@ -28,8 +28,16 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			var arguments = Arguments.ToExpressions(context);
 			var argumentsTypes = arguments.Select(a => a.Type).ToArray();
+
+			if (type.IsGenericType) {
+				Type[] genericTypes; 
+				if (GenericTypesNames != null) {
+					genericTypes = GenericTypesNames.Select(tn => Type.GetType(tn)).ToArray();
+				}
+			}
+
 			var constructor = type.GetConstructor(argumentsTypes);
-			   
+
 			return new[] { Expression.New(constructor, arguments) };
 		}
 	}
