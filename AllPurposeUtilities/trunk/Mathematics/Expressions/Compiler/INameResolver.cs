@@ -37,7 +37,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		/// <param name="argumentsTypes">Type des arguments de la fonction</param>
 		/// <param name="genericArgumentsTypes">Argument génériques explicites</param>
 		/// <returns></returns>
-		MethodInfo ResolveFunction(MemberInfo[] members, Parameter[] parameters, Type[] genericArgumentsTypes);
+		MemberInfo ResolveFunction(MemberInfo[] members, Parameter[] parameters, Type[] genericArgumentsTypes);
 	}
 
 	public class Parameter
@@ -65,7 +65,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 			return members.ToArray();
 		}
 
-		public MethodInfo ResolveFunction(MemberInfo[] members, Parameter[] parameters, Type[] genericArgumentsTypes)
+		public MemberInfo ResolveFunction(MemberInfo[] members, Parameter[] parameters, Type[] genericArgumentsTypes)
 		{
 			int distance = int.MaxValue;
 			MethodInfo methodInfo = null;
@@ -74,8 +74,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 					var computedDistance = Distance(mi, parameters, genericArgumentsTypes);
 					if (computedDistance < distance) methodInfo = mi;
 				}
-			}
+				else if (member is PropertyInfo pi) {
 
+				}
+				else if (member is FieldInfo fi) {
+				}
+			}
 			return methodInfo;
 		}
 
