@@ -75,9 +75,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 					if (computedDistance < distance) methodInfo = mi;
 				}
 				else if (member is PropertyInfo pi) {
-
+					return pi;
 				}
 				else if (member is FieldInfo fi) {
+					return fi;
 				}
 			}
 			return methodInfo;
@@ -86,7 +87,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 		private int? Distance(MethodInfo methodInfo, Parameter[] parameters, Type[] genericArgumentsTypes)
 		{
 			if (methodInfo.IsGenericMethod && genericArgumentsTypes == null) {
-				//resoudre automatiquement les arguments génériques
+				foreach (var parameter in parameters) {
+					
+				}
 			}
 			else if (methodInfo.IsGenericMethod && genericArgumentsTypes != null) {
 				if (methodInfo.GetGenericArguments().Length == genericArgumentsTypes.Length) {
