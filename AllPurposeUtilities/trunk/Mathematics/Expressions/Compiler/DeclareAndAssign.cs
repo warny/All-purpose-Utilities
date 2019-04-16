@@ -23,10 +23,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 				t = Type.GetType(TypeName);
 			}
 
-			var variable = Expression.Parameter(t, VariableName);
+			var variable = Expression.Variable(t, VariableName);
 			context.Variables.Add(variable);
 			return new Expression[] {
-				variable,
 				Expression.Assign(variable, right.ToExpression())
 			};
 

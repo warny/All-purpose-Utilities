@@ -15,7 +15,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		}
 
 		public static Expression ToExpression(params Expression[] expressions) {
-			if (expressions == null) return null;
+			if (expressions == null || expressions.Length == 0) return null;
 			if (expressions.Length == 1)
 				return expressions[0];
 			else

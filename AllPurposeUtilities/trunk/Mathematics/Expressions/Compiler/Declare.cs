@@ -18,9 +18,9 @@ namespace Utils.Mathematics.Expressions.Compiler
 		public Expression[] CreateExpression(Context context)
 		{
 			Type type = Type.GetType(TypeName);
-			var variable = Expression.Parameter(type, VariableName);
+			var variable = Expression.Variable(type, VariableName);
 			context.Variables.Add(variable);
-			return new[] { variable };
+			return new Expression[] { };
 		}
 	}
 }

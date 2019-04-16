@@ -10,7 +10,7 @@ using Utils.Mathematics.Expressions.Compiler;
 namespace UtilsTest.Math.Expressions.Compiler
 {
 	[TestClass]
-	public class ObjectTest
+	public class ObjectTests
 	{
 		[TestMethod]
 		public void InstanciationTest()

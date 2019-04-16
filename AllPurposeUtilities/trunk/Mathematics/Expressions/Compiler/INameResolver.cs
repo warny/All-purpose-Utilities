@@ -75,7 +75,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 					if (computedDistance < distance) methodInfo = mi;
 				}
 				else if (member is PropertyInfo pi) {
-
+				    
 				}
 				else if (member is FieldInfo fi) {
 				}

@@ -22,7 +22,7 @@ namespace UtilsTest.Math.Expressions.Compiler
 				Expression.Parameter(typeof(double), "x"),
 				Expression.Parameter(typeof(double), "y")
 			};
-			lambda.ExpressionTrees.Add(new ComputeOperator {
+			lambda.ExpressionTrees.Add(new BinaryOperator {
 				Operator = Expression.Add,
 				Left = new Identifier { Name = "x" },
 				Right = new Identifier { Name = "y" }

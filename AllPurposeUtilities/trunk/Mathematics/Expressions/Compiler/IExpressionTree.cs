@@ -26,6 +26,23 @@ namespace Utils.Mathematics.Expressions.Compiler
 		IExpressionTree Right { get; set; }
 	}
 
+	public abstract class ExpressionTreeWithUnary : IExpressionTree
+	{
+		public IExpressionTree Parent { get; set; }
+		public abstract Expression[] CreateExpression(Context context);
+
+		private IExpressionTree expression;
+		public IExpressionTree Expression
+		{
+			get => expression;
+			set {
+				expression = value;
+				expression.Parent = this;
+			}
+		}
+	}
+
+
 	public abstract class ExpressionTreeWithLeft : IExpressionTreeWithLeft
 	{
 		public IExpressionTree Parent { get; set; }
@@ -58,7 +75,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		}
 	}
 
-	public abstract class ExpressionTreeWithLeftAndRight : IExpressionTreeWithRight
+	public abstract class ExpressionTreeWithLeftAndRight : IExpressionTreeWithRight, IExpressionTreeWithLeft
 	{
 		public IExpressionTree Parent { get; set; }
 		public abstract Expression[] CreateExpression(Context context);

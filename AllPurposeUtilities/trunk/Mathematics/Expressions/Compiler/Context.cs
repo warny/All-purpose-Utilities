@@ -17,6 +17,18 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Labels Labels { get; private set; } = new Labels();
 
+		public INameResolver NameResolver { get; private set; }
+
+		public Context()
+		{
+			NameResolver = new DefaultNameResolver();
+		}
+
+		public Context(INameResolver nameResolver)
+		{
+			NameResolver = nameResolver;
+		}
+
 		public void Push()
 		{
 			variablesStack.Push(Variables);
@@ -30,6 +42,15 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			Variables = variablesStack.Pop();
 			Labels = labelsStack.Pop();
+		}
+
+		public ParameterExpression[] PeekVariables()
+		{
+			return Variables.Values.Except(variablesStack.Peek().Values).ToArray();
+		}
+		public LabelTarget[] PeekLabels()
+		{
+			return Labels.Values.Except(labelsStack.Peek().Values).ToArray();
 		}
 	}
 

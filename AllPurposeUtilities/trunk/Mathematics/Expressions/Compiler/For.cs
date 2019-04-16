@@ -59,7 +59,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Expression[] CreateExpression(Context context)
 		{
-			var initializerExpression = Initializer.CreateExpression(context)[0];
+			var initializerExpression = Initializer.CreateExpression(context);
 
 			var testExpression = Test.CreateExpression(context)[0];
 			var stepperExpression = Stepper.CreateExpression(context);
@@ -68,18 +68,19 @@ namespace Utils.Mathematics.Expressions.Compiler
 				Expression.Block(
 					new Expression[] {
 						Expression.IfThen(
-							Expression.Negate(testExpression),
+							Expression.Not(testExpression),
 							Expression.Break(BreakLabel)
 					) }
 					.Concat(Body.CreateExpression(context))
 					.Concat(new Expression[] { Expression.Label(ContinueLabel) })
 					.Concat(stepperExpression)
 				);
-			return new Expression[] {
-				initializerExpression,
-				Expression.Loop(loopExpression, BreakLabel, ContinueLabel),
-				Expression.Label(BreakLabel)
-			};
+			return
+				initializerExpression.Union(
+					new Expression[] {
+					Expression.Loop(loopExpression, BreakLabel)
+				}
+				).ToArray();
 
 		}
 	}

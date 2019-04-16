@@ -9,7 +9,7 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class Lambda: IExpressionTree
+	public class Lambda : IExpressionTree
 	{
 		public IExpressionTree Parent { get; set; }
 
@@ -42,27 +42,58 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			List<Expression> expressions = new List<Expression>();
 
+			ReturnLabel = Expression.Label(returnType);
+
 			foreach (var expressionTree in ExpressionTrees) {
 				var expression = expressionTree.CreateExpression(context);
 				expressions.AddRange(expression);
 			}
-			ReturnLabel = Expression.Label(returnType);
 
 			Expression body;
 			if (expressions.Count == 1 && expressions[0].Type == returnType) {
 				body = expressions[0];
 			}
 			else {
-				expressions.Add(Expression.Label(ReturnLabel));
-				body = Expression.Block(returnType, expressions.ToArray());
+				expressions.Add(Expression.Label(ReturnLabel, Expression.Default(returnType)));
+				body = Expression.Block(
+					returnType, 
+					context.PeekVariables(),
+					expressions.ToArray()
+				);
 			}
 
 			context.Pop();
-			return new[] {
+			var result = new[] {
 				Expression.Lambda(
 					body,
 					Name,
 					context.Variables
+				)
+			};
+			return result;
+		}
+	}
+
+	public class ReturnValue : IExpressionTree
+	{
+		public IExpressionTree Parent { get; set; }
+		public IExpressionTree Expression { get; set; }
+
+		public Expression[] CreateExpression(Context context)
+		{
+			var l = this.Parent;
+			Lambda lambda;
+			while ((lambda = l as Lambda) == null) {
+				l = l.Parent;
+				if (l == null) throw new NullReferenceException();
+			}
+
+			var returnExpression = Expression.CreateExpression(context).ToExpression();
+
+			return new[] {
+				System.Linq.Expressions.Expression.Return(
+					lambda.ReturnLabel,
+					returnExpression
 				)
 			};
 		}

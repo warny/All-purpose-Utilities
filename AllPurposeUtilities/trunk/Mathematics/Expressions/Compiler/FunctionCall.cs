@@ -45,13 +45,27 @@ namespace Utils.Mathematics.Expressions.Compiler
 			if (leftExpression == null) {
 				if (Left is Identifier leftIdentifier) {
 					if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Class) {
-						var method = leftIdentifier.Type.GetMethod(
-							Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy, null,
-							argumentTypes, null);
+						var methods = context.NameResolver.GetStaticMembers(leftIdentifier.Type, Name);
+						var method = context.NameResolver.ResolveFunction(methods, argumentsExpressions.Select((e, p) => new Parameter() { @Type = e.Type, Position = p }).ToArray(), null);
+
+
+						//var method = leftIdentifier.Type.GetMethod(
+						//	Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy, null,
+						//	argumentTypes, null);
 						if (method != null) {
-							return new[] { Expression.Call(null, method, argumentsExpressions.ToArray()) };
+							if (method is MethodInfo mi)
+								return new[] { Expression.Call(null, mi, argumentsExpressions.ToArray()) };
 						}
 
+					}
+					else if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Object) {
+						var methods = context.NameResolver.GetInstanceMembers(leftIdentifier.Type, Name);
+						var method = context.NameResolver.ResolveFunction(methods, argumentsExpressions.Select((e, p) => new Parameter() { @Type = e.Type, Position = p }).ToArray(), null);
+
+						if (method != null) {
+							if (method is MethodInfo mi)
+								return new[] { Expression.Call(null, mi, argumentsExpressions.ToArray()) };
+						}
 					}
 
 					throw new CompilerException("Impossible de résoudre le nom", leftIdentifier.IdentifierFullName + "." + Name);

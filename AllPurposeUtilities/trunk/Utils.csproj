@@ -57,7 +57,7 @@
     <Compile Include="Mathematics\Expressions\Compiler\Break.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Constant.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\CompilerUtils.cs" />
-    <Compile Include="Mathematics\Expressions\Compiler\ComputeOperator.cs" />
+    <Compile Include="Mathematics\Expressions\Compiler\Operators.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Context.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Continue.cs" />
     <Compile Include="Mathematics\Expressions\Compiler\Declare.cs" />

@@ -8,7 +8,7 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
-	public class ComputeOperator : ExpressionTreeWithLeftAndRight
+	public class BinaryOperator : ExpressionTreeWithLeftAndRight
 	{
 		public Func<Expression, Expression, Expression> Operator { get; set; }
 
@@ -22,4 +22,19 @@ namespace Utils.Mathematics.Expressions.Compiler
 			};
 		}
 	}
+
+	public class UnaryOperator : ExpressionTreeWithUnary
+	{
+		public Func<Expression, Expression> Operator { get; set; }
+
+		public override Expression[] CreateExpression(Context context)
+		{
+			Expression expression = Expression.CreateExpression(context).ToExpression();
+
+			return new Expression[] {
+				Operator(expression)
+			};
+		}
+	}
+
 }
