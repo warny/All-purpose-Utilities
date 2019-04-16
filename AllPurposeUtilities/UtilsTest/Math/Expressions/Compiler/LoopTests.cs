@@ -71,5 +71,56 @@ namespace UtilsTest.Math.Expressions.Compiler
 			Assert.AreEqual(x * (x - 1) / 2, add(x));
 		}
 
+		[TestMethod]
+		public void ForEachTest()
+		{
+			Lambda lambda = new Lambda() {
+				ReturnType = "System.Int32"
+			};
+
+			ParameterExpression[] parameters = {
+				Expression.Parameter (typeof(IEnumerable<int>), "enum")
+			};
+
+			var resultVariable = new DeclareAndAssign() {
+				TypeName = "var",
+				VariableName = "result",
+				Right = new Constant() {
+					TypeName = "System.Int32",
+					Value = "0"
+				}
+			};
+
+			var forEach = new ForEach() {
+				TypeName = "System.Int32",
+				VariableName = "s",
+				EnumerableVariable = new Identifier { Name = "enum" },
+				Body = new BinaryOperator {
+					Left = new Identifier { Name = "result" },
+					Operator = Expression.Assign,
+					Right = new BinaryOperator {
+						Left = new Identifier { Name = "result" },
+						Operator = Expression.Add,
+						Right = new Identifier { Name = "s" }
+					}
+				}
+			};
+
+			lambda.ExpressionTrees.Add(resultVariable);
+			lambda.ExpressionTrees.Add(forEach);
+			lambda.ExpressionTrees.Add(new ReturnValue() {
+				Expression = new Identifier { Name = "result" }
+			});
+
+
+			var lambdaExpression = (LambdaExpression)lambda.CreateLambda(parameters);
+			Func<int[], int> add = (Func<int[], int>)lambdaExpression.Compile();
+
+			var strings = new []{ 1, 2, 3 };
+
+			Assert.AreEqual(6, add(strings));
+
+		}
+
 	}
 }
