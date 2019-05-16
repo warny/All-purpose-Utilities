@@ -1,4 +1,0 @@
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.Mathematics.Expressions.Grammar.resources
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.Mathematics.Expressions.ParserRegExResources.resources
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.GenerateResource.cache
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\.vs\Utils\lut\0\i\Utils\Debug\Utils.csproj.CoreCompileInputs.cache
