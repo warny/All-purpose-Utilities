@@ -9,8 +9,6 @@ namespace Utils.Geography.Projections
 {
 	public class MollweidProjection : IProjectionTransformation
 	{
-		#region IProjectionTransformation Membres
-
 		public const int MaxLatitude = 90;
 
 		public ProjectedPoint GeopointToMappoint( GeoPoint geopoint )
@@ -35,7 +33,5 @@ namespace Utils.Geography.Projections
 			double longitude = (mappoint.Y - 0.5) * 180 * Math.Cos(latitude);
 			return new GeoPoint(latitude, longitude);
 		}
-
-		#endregion
 	}
 }

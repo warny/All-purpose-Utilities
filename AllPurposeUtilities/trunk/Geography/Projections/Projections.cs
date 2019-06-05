@@ -8,10 +8,10 @@ namespace Utils.Geography.Projections
 {
 	public static class Projections
 	{
-		private static Lazy<MercatorProjection> mercator = new Lazy<MercatorProjection>(() => new MercatorProjection());
-		private static Lazy<GallsPetersProjection> gallsPeters = new Lazy<GallsPetersProjection>(() => new GallsPetersProjection());
-		private static Lazy<EquirectangularProjection> equirectangular = new Lazy<EquirectangularProjection>(() => new EquirectangularProjection());
-		private static Lazy<MollweidProjection> mollweid = new Lazy<MollweidProjection>(() => new MollweidProjection());
+		private static readonly Lazy<MercatorProjection> mercator = new Lazy<MercatorProjection>(() => new MercatorProjection());
+		private static readonly Lazy<GallsPetersProjection> gallsPeters = new Lazy<GallsPetersProjection>(() => new GallsPetersProjection());
+		private static readonly Lazy<EquirectangularProjection> equirectangular = new Lazy<EquirectangularProjection>(() => new EquirectangularProjection());
+		private static readonly Lazy<MollweidProjection> mollweid = new Lazy<MollweidProjection>(() => new MollweidProjection());
 		public static MercatorProjection Mercator => mercator.Value;
 		public static GallsPetersProjection GallsPeters => gallsPeters.Value;
 		public static EquirectangularProjection Equirectangular => equirectangular.Value;
