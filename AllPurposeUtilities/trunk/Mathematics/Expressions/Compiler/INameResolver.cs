@@ -135,7 +135,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Type ResolveType(string typeName, Type[] constructorArgumentTypes)
 		{
-			;
+			throw new NotImplementedException();
 		}
 
 	}
