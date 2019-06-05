@@ -23,7 +23,7 @@ namespace Utils.Geography.Model
 	/**
 	 * A BoundingBox represents an immutable set of two latitude and two longitude coordinates.
 	 */
-	public class BoundingBox {
+	public class BoundingBox: IFormattable {
 		private const long serialVersionUID = 1L;
 
 		/**
@@ -38,7 +38,7 @@ namespace Utils.Geography.Model
 		 */
 		public static BoundingBox FromString ( string boundingBoxstring )
 		{
-			double[] coordinates = CoordinatesUtil.parseCoordinatestring(boundingBoxstring, 4);
+			double[] coordinates = CoordinatesUtil.ParseCoordinatestring(boundingBoxstring, 4);
 			return new BoundingBox(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
 		}
 
@@ -207,21 +207,7 @@ namespace Utils.Geography.Model
 		 */
 		public double LongitudeSpan { get { return this.MaxLongitude - this.MinLongitude; } }
 
-		public override int GetHashCode ()
-		{
-			const int prime = 31;
-			int result = 1;
-			long temp;
-			temp = BitConverter.DoubleToInt64Bits(this.MaxLatitude);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			temp = BitConverter.DoubleToInt64Bits(this.MaxLongitude);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			temp = BitConverter.DoubleToInt64Bits(this.MinLatitude);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			temp = BitConverter.DoubleToInt64Bits(this.MinLongitude);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			return result;
-		}
+		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.MaxLatitude, this.MaxLongitude, this.MinLatitude, this.MinLongitude);
 
 		/**
 		 * @param boundingBox
@@ -238,9 +224,8 @@ namespace Utils.Geography.Model
 					&& this.MinLatitude <= boundingBox.MaxLatitude && this.MinLongitude <= boundingBox.MaxLongitude;
 		}
 
-		public override string ToString ()
-		{
-			return string.Format("minLatitude={0}, minLongitude={1}, maxLatitude={2}, maxLongitude={3}", this.MinLatitude, this.MinLongitude, this.MaxLatitude, this.MaxLongitude);
-		}
+		public override string ToString() => $"minLatitude={this.MinLatitude}, minLongitude={this.MinLongitude}, maxLatitude={this.MaxLatitude}, maxLongitude={this.MaxLongitude}";
+		public string ToString(string format) => $"minLatitude={this.MinLatitude.ToString(format)}, minLongitude={this.MinLongitude.ToString(format)}, maxLatitude={this.MaxLatitude.ToString(format)}, maxLongitude={this.MaxLongitude.ToString(format)}";
+		public string ToString(string format, IFormatProvider formatProvider) => $"minLatitude={this.MinLatitude.ToString(format, formatProvider)}, minLongitude={this.MinLongitude.ToString(format, formatProvider)}, maxLatitude={this.MaxLatitude.ToString(format, formatProvider)}, maxLongitude={this.MaxLongitude.ToString(format, formatProvider)}";
 	}
 }

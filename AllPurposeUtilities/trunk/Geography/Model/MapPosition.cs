@@ -74,24 +74,8 @@ namespace Utils.Geography.Model
 			return true;
 		}
 
-		public override int GetHashCode ()
-		{
-			const int prime = 31;
-			int result = 1;
-			result = prime * result + ((this.GeoPoint == null) ? 0 : this.GeoPoint.GetHashCode());
-			result = prime * result + this.ZoomLevel;
-			return result;
-		}
+		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.GeoPoint?.GetHashCode() ?? 0, this.ZoomLevel);
 
-
-		public override string ToString ()
-		{
-			StringBuilder stringBuilder = new StringBuilder();
-			stringBuilder.Append("GeoPoint=");
-			stringBuilder.Append(this.GeoPoint);
-			stringBuilder.Append(", zoomLevel=");
-			stringBuilder.Append(this.ZoomLevel);
-			return stringBuilder.ToString();
-		}
+		public override string ToString() => $"GeoPoint={this.GeoPoint}, zoomLevel={this.ZoomLevel}";
 	}
 }

@@ -19,7 +19,7 @@ namespace Utils.Objects
 			if (!nullableObj.HasValue) return true;
 			return nullableObj.Equals(default(T));
 		}
-
+		 
 		/// <summary>
 		/// Returns true if collection is null or has no elements
 		/// </summary>
@@ -29,6 +29,18 @@ namespace Utils.Objects
 			return coll == null || !coll.Any();
 		}
 
+		/// <summary>
+		/// Compute a hash from the hashes of the given objects
+		/// </summary>
+		/// <param name="objects"></param>
+		/// <returns></returns>
+		public static int ComputeHash(params object[] objects)
+		{
+			unchecked
+			{
+				return objects.Aggregate(23, (value, acc) => acc.GetHashCode() * 31 + value);
+			}
+		}
 
 		/// <summary>
 		/// Indique si un objet est une valeur numérique

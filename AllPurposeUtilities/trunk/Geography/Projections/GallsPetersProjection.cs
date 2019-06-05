@@ -9,8 +9,6 @@ namespace Utils.Geography.Projections
 {
 	public class GallsPetersProjection : IProjectionTransformation
 	{
-		#region IProjectionTransformation Membres
-
 		public const double MaxLatitude = 90;
 
 		public ProjectedPoint GeopointToMappoint( GeoPoint geopoint )
@@ -37,7 +35,5 @@ namespace Utils.Geography.Projections
 
 			return new GeoPoint(latitude, longitude);
 		}
-
-		#endregion
 	}
 }
