@@ -6,3 +6,10 @@ D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.pdb
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.csprojAssemblyReference.cache
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\bin\Debug\Utils.dll
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\bin\Debug\Utils.pdb
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.Mathematics.Expressions.Grammar.resources
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.csproj.GenerateResource.cache
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.csproj.CoreCompileInputs.cache
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.dll
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.pdb

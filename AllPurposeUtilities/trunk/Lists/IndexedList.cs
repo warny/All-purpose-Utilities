@@ -9,7 +9,7 @@ namespace Utils.Lists
 {
 	class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
 	{
-		private Dictionary<K, V> dictionary;
+		private Dictionary<K, V> dictionary = new Dictionary<K, V>();
 		private Func<V, K> getKey;
 
 		public IndexedList( Func<V, K> getKey) {

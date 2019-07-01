@@ -68,12 +68,64 @@ namespace Utils.Arrays
 			return result;
 		}
 
+		/// <summary>
+		/// Vérifie si le tableau commence par les valeurs indiqués
+		/// </summary>
+		/// <typeparam name="T">Type des éléments du tableau</typeparam>
+		/// <param name="obj">Tableua de référence</param>
+		/// <param name="start">Elements à tester</param>
+		/// <returns>Vrai si le tableua commence par les éléments en paramètre</returns>
+		public static bool StartWith<T>(this T[] obj, params T[] start) where T : IEquatable<T> 
+		{
+			if (start.Length > obj.Length) return false;
+			for (int i = 0; i < start.Length; i++) {
+				if (!obj[i].Equals(start[i])) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/// <summary>
+		/// Vérifie si le tableau finit par les valeurs indiqués
+		/// </summary>
+		/// <typeparam name="T">Type des éléments du tableau</typeparam>
+		/// <param name="obj">Tableua de référence</param>
+		/// <param name="start">Elements à tester</param>
+		/// <returns>Vrai si le tableua commence par les éléments en paramètre</returns>
+		public static bool EndWith<T>(this T[] obj, params T[] start) where T : IEquatable<T> 
+		{
+			if (start.Length > obj.Length) return false;
+			var objStart = obj.Length - obj.Length;
+			for (int i = 0; i < start.Length; i++) {
+				if (!obj[i].Equals(start[objStart + i])) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/// <summary>
+		/// Renvoie la copie des valeurs d'un tableau
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array">Tableau à copier</param>
+		/// <param name="start">Position de départ</param>
+		/// <param name="length">Nombre d'éléments à copier</param>
+		/// <returns>Tableau contenant le sous ensemble des éléments</returns>
 		public static T[] Copy<T>( this T[] array, int start, int length ) {
 			T[] result = new T[length];
 			Array.Copy(array, start, result, 0, length);
 			return result;
 		}
 
+		/// <summary>
+		/// Renvoie la copie des éléments d'un tableau à partir de l'index donné
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array">Tableau à copier</param>
+		/// <param name="start">Position de départ</param>
+		/// <returns></returns>
 		public static T[] Copy<T>( this T[] array, int start )
 		{
 			return array.Copy(start, array.Length-start);
