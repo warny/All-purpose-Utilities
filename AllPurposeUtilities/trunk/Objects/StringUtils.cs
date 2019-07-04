@@ -23,6 +23,61 @@ namespace Utils.Objects
 			return LikeOperator.LikeString(str, pattern, ignoreCase ? CompareMethod.Text : CompareMethod.Binary);
 		}
 
+		/// <summary>
+		/// Supprime du début et de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// </summary>
+		/// <param name="s">Chaîne de référence</param>
+		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
+		public static string Trim(this string s, Func<char, bool> trimTester)
+		{
+			int start = 0, end = s.Length;
+			for (start = 0; start < end; start++)
+			{
+				if (!trimTester(s[start])) break;
+			}
+			for (end = s.Length - 1; end > start; end--)
+			{
+				if (!trimTester(s[end])) break;
+			}
+			if (start >= end) return "";
+			return s.Substring(start, end-start + 1);
+		}
+
+		/// <summary>
+		/// Supprime du début de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// </summary>
+		/// <param name="s">Chaîne de référence</param>
+		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
+		public static string TrimStart(this string s, Func<char, bool> trimTester)
+		{
+			int start = 0, end = s.Length;
+			for (start = 0; start < end; start++)
+			{
+				if (!trimTester(s[start])) break;
+			}
+			if (start >= end) return "";
+			return s.Substring(start, end - start);
+		}
+
+		/// <summary>
+		/// Supprime de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// </summary>
+		/// <param name="s">Chaîne de référence</param>
+		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
+		public static string TrimEnd(this string s, Func<char, bool> trimTester)
+		{
+			int start = 0, end = s.Length;
+			for (end = s.Length - 1; end > start; end--)
+			{
+				if (!trimTester(s[end])) break;
+			}
+			if (start >= end) return "";
+			return s.Substring(start, end - start + 1);
+		}
+
 
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre à une position de caractère spécifiée et a une longueur définie.

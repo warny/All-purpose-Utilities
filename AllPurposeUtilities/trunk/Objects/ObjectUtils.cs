@@ -43,6 +43,19 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
+		/// Compute a hash from the hashes of the given objects
+		/// </summary>
+		/// <param name="objects"></param>
+		/// <returns></returns>
+		public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects)
+		{
+			unchecked
+			{
+				return objects.Aggregate(23, (value, acc) => getHashCode(acc) * 31 + value);
+			}
+		}
+
+		/// <summary>
 		/// Indique si un objet est une valeur numérique
 		/// </summary>
 		/// <param name="value"></param>

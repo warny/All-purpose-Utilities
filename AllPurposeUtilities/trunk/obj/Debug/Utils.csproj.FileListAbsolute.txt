@@ -13,3 +13,4 @@ D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Deb
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.csproj.CoreCompileInputs.cache
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.dll
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.pdb
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\trunk\obj\Debug\Utils.csprojAssemblyReference.cache

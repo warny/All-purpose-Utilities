@@ -51,19 +51,85 @@ namespace Utils.Arrays
 		/// <param name="obj">Array to trim</param>
 		/// <param name="values">Values to trim from array</param>
 		/// <returns></returns>
-		public static T[] Trim<T>( this T[] obj, params T[] values )
-		{
-			int start = 0, end = values.Length;
-			for (start = 0 ; start < end ; start++) {
-				T value = obj[start];
-				if (!values.Contains(value)) break;
+		public static T[] Trim<T>(this T[] obj, params T[] values) => obj.Trim(value => values.Contains(value));
+
+		/// <summary>
+		/// Retourne un tableau sans les éléments au début et à la fin qui correspondent à la fonction passée en paramètre
+		/// </summary>
+		/// <typeparam name="T">Type des éléments du tableau</typeparam>
+		/// <param name="obj">Tableau à traiter</param>
+		/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
+		/// <returns>Tableau sans les éléments supprimés</returns>
+		public static T[] Trim<T>(this T[] obj, Func<T, bool> trimTester) {
+			int start = 0, end = obj.Length;
+			for (start = 0; start < end; start++)
+			{
+				if (!trimTester(obj[start])) break;
 			}
-			for (end = end - 1 ; end > start ; end--) {
-				T value = obj[end];
-				if (!values.Contains(value)) break;
+			for (end = obj.Length - 1; end > start; end--)
+			{
+				if (!trimTester(obj[end])) break;
+			}
+			if (start >= end) return new T[0];
+			T[] result = new T[end - start + 1];
+			Array.Copy(obj, start, result, 0, result.Length);
+			return result;
+		}
+
+		/// <summary>
+		/// Return array without values at start and end
+		/// </summary>
+		/// <typeparam name="T">Type of elements</typeparam>
+		/// <param name="obj">Array to trim</param>
+		/// <param name="values">Values to trim from array</param>
+		/// <returns></returns>
+		public static T[] TrimStart<T>(this T[] obj, params T[] values) => obj.TrimStart(value => values.Contains(value));
+
+		/// <summary>
+		/// Retourne un tableau sans les éléments au début qui correspondent à la fonction passée en paramètre
+		/// </summary>
+		/// <typeparam name="T">Type des éléments du tableau</typeparam>
+		/// <param name="obj">Tableau à traiter</param>
+		/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
+		/// <returns>Tableau sans les éléments supprimés</returns>
+		public static T[] TrimStart<T>(this T[] obj, Func<T, bool> trimTester)
+		{
+			int start = 0, end = obj.Length;
+			for (start = 0; start < end; start++)
+			{
+				if (!trimTester(obj[start])) break;
 			}
 			if (start >= end) return new T[0];
 			T[] result = new T[end - start];
+			Array.Copy(obj, start, result, 0, result.Length);
+			return result;
+		}
+
+		/// <summary>
+		/// Return array without values at start and end
+		/// </summary>
+		/// <typeparam name="T">Type of elements</typeparam>
+		/// <param name="obj">Array to trim</param>
+		/// <param name="values">Values to trim from array</param>
+		/// <returns></returns>
+		public static T[] TrimEnd<T>(this T[] obj, params T[] values) => obj.TrimEnd(value => values.Contains(value));
+
+		/// <summary>
+		/// Retourne un tableau sans les éléments au début et à la fin qui correspondent à la fonction passée en paramètre
+		/// </summary>
+		/// <typeparam name="T">Type des éléments du tableau</typeparam>
+		/// <param name="obj">Tableau à traiter</param>
+		/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
+		/// <returns>Tableau sans les éléments supprimés</returns>
+		public static T[] TrimEnd<T>(this T[] obj, Func<T, bool> trimTester)
+		{
+			int start = 0, end = obj.Length;
+			for (end = obj.Length - 1; end > start; end--)
+			{
+				if (!trimTester(obj[end])) break;
+			}
+			if (start >= end) return new T[0];
+			T[] result = new T[end - start + 1];
 			Array.Copy(obj, start, result, 0, result.Length);
 			return result;
 		}
@@ -75,11 +141,19 @@ namespace Utils.Arrays
 		/// <param name="obj">Tableua de référence</param>
 		/// <param name="start">Elements à tester</param>
 		/// <returns>Vrai si le tableua commence par les éléments en paramètre</returns>
-		public static bool StartWith<T>(this T[] obj, params T[] start) where T : IEquatable<T> 
+		public static bool StartWith<T>(this T[] obj, params T[] start)
 		{
+			if (obj.Length == 0) return start.Length == 0;
+			if (start.Length > obj.Length) return false;
+
+			Func<T, T, bool> areEquals;
+			if (typeof(IEquatable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IEquatable<T>)obj1).Equals(obj2);
+			else if (typeof(IComparable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IComparable<T>)obj1).CompareTo(obj2) == 0;
+			else areEquals = (T obj1, T obj2) => obj1.Equals(obj2);
+
 			if (start.Length > obj.Length) return false;
 			for (int i = 0; i < start.Length; i++) {
-				if (!obj[i].Equals(start[i])) {
+				if (!areEquals(obj[i],start[i])) {
 					return false;
 				}
 			}
@@ -87,18 +161,29 @@ namespace Utils.Arrays
 		}
 
 		/// <summary>
-		/// Vérifie si le tableau finit par les valeurs indiqués
+		/// Vérifie si le tableau commence par les valeurs indiqués
 		/// </summary>
 		/// <typeparam name="T">Type des éléments du tableau</typeparam>
 		/// <param name="obj">Tableua de référence</param>
-		/// <param name="start">Elements à tester</param>
+		/// <param name="end">Elements à tester</param>
 		/// <returns>Vrai si le tableua commence par les éléments en paramètre</returns>
-		public static bool EndWith<T>(this T[] obj, params T[] start) where T : IEquatable<T> 
+		public static bool EndWith<T>(this T[] obj, params T[] end)
 		{
-			if (start.Length > obj.Length) return false;
-			var objStart = obj.Length - obj.Length;
-			for (int i = 0; i < start.Length; i++) {
-				if (!obj[i].Equals(start[objStart + i])) {
+			if (obj.Length == 0) return end.Length == 0;
+			if (end.Length > obj.Length) return false;
+
+			int shift = obj.Length - end.Length;
+
+			Func<T, T, bool> areEquals;
+			if (typeof(IEquatable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IEquatable<T>)obj1).Equals(obj2);
+			else if (typeof(IComparable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IComparable<T>)obj1).CompareTo(obj2) == 0;
+			else areEquals = (T obj1, T obj2) => obj1.Equals(obj2);
+
+			if (end.Length > obj.Length) return false;
+			for (int i = 0; i < end.Length; i++)
+			{
+				if (!areEquals(obj[i + shift], end[i]))
+				{
 					return false;
 				}
 			}

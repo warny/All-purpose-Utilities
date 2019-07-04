@@ -49,6 +49,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Array\ArrayUtilsTest.cs" />
     <Compile Include="Files\PathUtilsTest.cs" />
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />
