@@ -23,16 +23,21 @@ namespace Utils.Arrays
 
 		public ArrayEqualityComparer(IEqualityComparer<T> equalityComparer)
 		{
-			areEquals = equalityComparer.Equals;
-			getHashCode = equalityComparer.GetHashCode;
+			this.areEquals = equalityComparer.Equals;
+			this.getHashCode = equalityComparer.GetHashCode;
 		}
 
 		public ArrayEqualityComparer(IComparer<T> equalityComparer, Func<T, int> getHashCode = null)
 		{
-			areEquals = (e1, e2) => equalityComparer.Compare(e1, e2)==0;
-			getHashCode = getHashCode ?? (e => e.GetHashCode());
+			this.areEquals = (e1, e2) => equalityComparer.Compare(e1, e2)==0;
+			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
 		}
 
+		public ArrayEqualityComparer(Func<T, T, bool> areEquals, Func<T, int> getHashCode = null)
+		{
+			this.areEquals = areEquals;
+			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
+		}
 
 		public bool Equals(T[] x, T[] y)
 		{
