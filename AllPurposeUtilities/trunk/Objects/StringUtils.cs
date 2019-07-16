@@ -271,13 +271,11 @@ namespace Utils.Objects
 			this.Close = close;
 		}
 
-		public static  Brackets[] all = new[] { RoundBrackets, SquareBrackets, Braces };
-
 		public static Brackets RoundBrackets { get; } = new Brackets('(', ')');
 		public static Brackets SquareBrackets { get; } = new Brackets('[', ']');
 		public static Brackets Braces { get; } = new Brackets('{', '}');
 
-		public static Brackets[] All => all;
+		public static Brackets[] All { get; } = new[] { RoundBrackets, SquareBrackets, Braces };
 	}
 
 }
