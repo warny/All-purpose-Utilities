@@ -52,6 +52,7 @@
     <Compile Include="Array\ArrayUtilsTest.cs" />
     <Compile Include="Files\PathUtilsTest.cs" />
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
+    <Compile Include="Objects\DateUtilitiesTest.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Web\UriBuilderTest.cs" />
