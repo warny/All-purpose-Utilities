@@ -41,5 +41,42 @@ namespace UtilsTest.Math.Expressions
 			var derivate = derivation.Derivate(expression);
 			Assert.IsTrue(ExpressionUtils.Equals(derivateTarget, derivate));
 		}
+
+		[TestMethod]
+		public void SimpleExpressionTest4()
+		{
+			Expression<Func<double, double>> expression = x => System.Math.Cos(x);
+			Expression<Func<double, double>> derivateTarget = x => -System.Math.Sin(x);
+			var derivate = derivation.Derivate(expression);
+			Assert.IsTrue(ExpressionUtils.Equals(derivateTarget, derivate));
+		}
+
+		[TestMethod]
+		public void SimpleExpressionTest5()
+		{
+			Expression<Func<double, double>> expression = x => System.Math.Sin(x);
+			Expression<Func<double, double>> derivateTarget = x => System.Math.Cos(x);
+			var derivate = derivation.Derivate(expression);
+			Assert.IsTrue(ExpressionUtils.Equals(derivateTarget, derivate));
+		}
+
+		[TestMethod]
+		public void SimpleExpressionTest6()
+		{
+			Expression<Func<double, double>> expression = x => System.Math.Exp(x);
+			Expression<Func<double, double>> derivateTarget = x => System.Math.Exp(x);
+			var derivate = derivation.Derivate(expression);
+			Assert.IsTrue(ExpressionUtils.Equals(derivateTarget, derivate));
+		}
+
+		[TestMethod]
+		public void SimpleExpressionTest7()
+		{
+			Expression<Func<double, double>> expression = x => System.Math.Exp(x*x);
+			Expression<Func<double, double>> derivateTarget = x => 2 * x * System.Math.Exp(x*x);
+			var derivate = derivation.Derivate(expression);
+			Assert.IsTrue(ExpressionUtils.Equals(derivateTarget, derivate));
+		}
+
 	}
 }

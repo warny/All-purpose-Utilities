@@ -92,7 +92,7 @@ namespace Utils.Mathematics.Expressions
 				if (!( xmco.Type == ymco.Type && xmco.Object == ymco.Object && xmco.Method == ymco.Method && xmco.Arguments.Count == ymco.Arguments.Count)) return false;
 
 				for (int i = 0 ; i < xmco.Arguments.Count ; i++) {
-					if (!this.Equals (xmco.Arguments[i], ymco.Arguments[i])) return false;
+					if (!this.Equals (xmco.Arguments[i], xParams, ymco.Arguments[i], yParams)) return false;
 				}
 				return true;
 			}
