@@ -60,6 +60,7 @@
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Reflection\DllMapperTest.cs" />
     <Compile Include="Web\UriBuilderTest.cs" />
   </ItemGroup>
   <ItemGroup>

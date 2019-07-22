@@ -16,4 +16,3 @@ D:\projets\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.cspro
 D:\projets\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.csproj.CoreCompileInputs.cache
 D:\projets\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.dll
 D:\projets\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.pdb
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.Mathematics.Expressions.Lexer.LexerResources.resources
