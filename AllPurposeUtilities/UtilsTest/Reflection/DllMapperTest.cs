@@ -11,6 +11,7 @@ namespace UtilsTest.Reflection
 {
 	public class Shell32 : DllMapper
 	{
+		[return: MarshalAs(UnmanagedType.Bool)]
 		public delegate bool PathIsExeDelegate([MarshalAs(UnmanagedType.LPWStr)]string filename);
 		[External("PathIsExe")]
 		public PathIsExeDelegate PathIsExe;
