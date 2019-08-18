@@ -216,5 +216,72 @@ namespace Utils.Arrays
 			return array.Copy(start, array.Length-start);
 		}
 
+		/// <summary>
+		/// Redimensionne le tableau et rajoute un remplissage à gauche
+		/// </summary>
+		/// <typeparam name="T">Type des éléments</typeparam>
+		/// <param name="array">Tableau à redimensionner</param>
+		/// <param name="length">Longueur</param>
+		/// <param name="value">Valeur à ajouter aux nouveau éléments</param>
+		/// <returns>Tableau redimensionner</returns>
+		public static T[] PadLeft<T>(this T[] array, int length, T value = default(T)) {
+			if (array.Length > length) throw new ArgumentOutOfRangeException(nameof(length));
+			T[] result = new T[length];
+			int start = length - array.Length;
+			for (int i = 0; i < start; i++) result[i] = value;
+			for (int i = start; i < length; i++) result[i] = array[i - start];
+			return result;
+		}
+
+		/// <summary>
+		/// Redimensionne le tableau et rajoute un remplissage à droite
+		/// </summary>
+		/// <typeparam name="T">Type des éléments</typeparam>
+		/// <param name="array">Tableau à redimensionner</param>
+		/// <param name="length">Longueur</param>
+		/// <param name="value">Valeur à ajouter aux nouveau éléments</param>
+		/// <returns>Tableau redimensionner</returns>
+		public static T[] PadRight<T>(this T[] array, int length, T value = default(T))
+		{
+			if (array.Length > length) throw new ArgumentOutOfRangeException(nameof(length));
+			T[] result = new T[length];
+			int end = array.Length;
+			for (int i = 0; i < end; i++) result[i] = array[i];
+			for (int i = end; i < length; i++) result[i] = value;
+			return result;
+		}
+
+		/// <summary>
+		/// Ajuste la taille d'un tableau à une taille déterminée pour l'encodage des nombres
+		/// </summary>
+		/// <typeparam name="T">Type des éléments du tableau</typeparam>
+		/// <param name="array">Tableau à ajuster</param>
+		/// <param name="invert">Indique s'il faut inverser l'ordre des éléments</param>
+		/// <param name="fullLength">Longueur finale</param>
+		/// <returns>Tableau ajusté</returns>
+		public static T[] Adjust<T>(this T[] array, bool invert, int fullLength)
+		{
+			int length = Math.Min(fullLength, array.Length);
+			T[] result = new T[fullLength];
+			Array.Clear(result, 0, fullLength);
+			if (invert)
+			{
+				for (int i = 0; i < length; i++)
+				{
+					result[i] = array[i];
+				}
+			}
+			else
+			{
+				for (int i = 0; i < length; i++)
+				{
+					result[fullLength - 1 - i] = array[i];
+				}
+			}
+			array = result;
+			return array;
+		}
+
+
 	}
 }

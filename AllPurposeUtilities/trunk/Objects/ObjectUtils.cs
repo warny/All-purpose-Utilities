@@ -56,16 +56,6 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
-		/// Indique si un objet est une valeur numérique
-		/// </summary>
-		/// <param name="value"></param>
-		/// <returns></returns>
-		public static bool IsNumeric( object value )
-		{
-			return value is double || value is float || value is long || value is int  || value is short  || value is byte  || value is ulong  || value is uint  || value is ushort  || value is decimal;
-		}
-
-		/// <summary>
 		/// 
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -79,6 +69,14 @@ namespace Utils.Objects
 			obj2 = temp;
 		}
 
-
+		public static T[] RandomArray<T>(this Random r, int minSize, int maxSize, Func<int ,T> value)
+		{
+			T[] result = new T[r.Next(minSize, maxSize)];
+			for (int i = 0; i < result.Length; i++)
+			{
+				result[i] = value(i);
+			}
+			return result;
+		}
 	}
 }

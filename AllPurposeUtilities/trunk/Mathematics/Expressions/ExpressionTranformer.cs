@@ -390,7 +390,7 @@ namespace Utils.Mathematics.Expressions
 		public override bool Match( Expression e )
 		{
 			var cc = e as ConstantExpression;
-			if (!(cc != null && ObjectUtils.IsNumeric(cc.Value))) return false;
+			if (!(cc != null && NumberUtils.IsNumeric(cc.Value))) return false;
 			if (Values == null) return true;
 			return Values.Any(v => v==(double)cc.Value);
 		}

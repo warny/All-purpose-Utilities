@@ -16,7 +16,7 @@ namespace Utils.Mathematics.Expressions
 			if (expression == null) return false;
 			var value = expression.Value;
 
-			if (ObjectUtils.IsNumeric(value)) {
+			if (NumberUtils.IsNumeric(value)) {
 				return ((double)value) == checkValue;
 			}
 			return false;

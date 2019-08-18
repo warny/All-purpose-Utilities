@@ -27,7 +27,7 @@ namespace UtilsTest.Objects
 
 			foreach (var knownEaster in knownEastern)
 			{
-				var easter = DateUtilities.ComputeEaster(knownEaster.Year);
+				var easter = DateUtils.ComputeEaster(knownEaster.Year);
 				Assert.AreEqual(knownEaster, easter);
 			}
 		}

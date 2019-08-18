@@ -11,6 +11,30 @@ namespace Utils.Objects
 {
 	public static class StringUtils
 	{
+		private static readonly char[] defaultRandomCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ".ToCharArray();
+
+		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
+		public static string RandomString(int minLength, int maxLength, char[] characters = null)
+		{
+			Random r = new Random();
+			return RandomString(r, minLength, maxLength, characters);
+		}
+
+		public static string RandomString(this Random r, int length, char[] characters = null) => RandomString(r, length, length, characters);
+		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
+		{
+			characters = characters ?? defaultRandomCharacters;
+			var length = r.Next(minLength, maxLength);
+
+			char[] result = new char[length];
+			for (int i = 0; i < length; i++)
+			{
+				result[i] = characters[r.Next(0, characters.Length - 1)];
+			}
+			return new string(result);
+		}
+
+
 		/// <summary>
 		/// Compare une chaîne par rapport à une séquence d'échappement
 		/// </summary>
