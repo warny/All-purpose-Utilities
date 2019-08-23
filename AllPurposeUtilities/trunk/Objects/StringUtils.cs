@@ -102,7 +102,6 @@ namespace Utils.Objects
 			return s.Substring(start, end - start + 1);
 		}
 
-
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre à une position de caractère spécifiée et a une longueur définie.
 		/// </summary>

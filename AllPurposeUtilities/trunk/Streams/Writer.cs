@@ -66,7 +66,11 @@ namespace Utils.Streams
 			{
 				var attribute = field.GetCustomAttribute<FieldAttribute>();
 				var value = field.GetValue(obj);
-				WriteValue(value, field.Type, attribute.Length, sizeof(Int32), attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding);
+				System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
+				System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
+				WriteValue(value, field.Type, attribute.Length, null, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding);
+				System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
+
 			}
 		}
 
@@ -318,14 +322,14 @@ namespace Utils.Streams
 			}
 			else if (type.IsArray)
 			{
-				if (fieldEncoding == FieldEncodingEnum.VariableLength)
+				if (fieldEncoding == FieldEncodingEnum.FixedLength)
 				{
-					WriteVariableLengthArray((object[])value, type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
+					WriteArray((object[])value, length ?? ((object[])value).Length, type.GetElementType(), bigIndian, stringEncoding);
 					return;
 				}
 				else
 				{
-					WriteArray((object[])value, length ?? ((object[])value).Length, type.GetElementType(), bigIndian, stringEncoding);
+					WriteVariableLengthArray((object[])value, type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
 					return;
 				}
 			}
@@ -335,14 +339,14 @@ namespace Utils.Streams
 				if (argumentType == typeof(object)) throw new NotSupportedException();
 				var toArrayMethodInfo = typeof(Enumerable).GetMethod("ToArray").MakeGenericMethod(type.GenericTypeArguments);
 				Array result = (Array)toArrayMethodInfo.Invoke(null, new object[] { value });
-				if (fieldEncoding == FieldEncodingEnum.VariableLength)
+				if (fieldEncoding == FieldEncodingEnum.FixedLength)
 				{
-					WriteVariableLengthArray(result, type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
+					WriteArray(result, length ?? result.Length, type.GetElementType(), bigIndian, stringEncoding);
 					return;
 				}
 				else
 				{
-					WriteArray(result, length ?? result.Length, type.GetElementType(), bigIndian, stringEncoding);
+					WriteVariableLengthArray(result, type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
 					return;
 				}
 			}

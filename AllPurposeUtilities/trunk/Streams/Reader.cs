@@ -80,7 +80,10 @@ namespace Utils.Streams
 
 			foreach (var field in fields) {
 				var attribute = field.GetCustomAttribute<FieldAttribute>();
+				System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
+				System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
 				field.SetValue(result, ReadValue(field.Type, attribute.Length, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding));
+				System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
 			}
 		}
 
@@ -133,22 +136,22 @@ namespace Utils.Streams
 			} else if (type == typeof(TimeSpan)) {
 				return new TimeSpan(ReadInt64(bigIndian, length ?? sizeof(Int64)));
 			} else if (type.IsArray) {
-				if (fieldEncoding == FieldEncodingEnum.VariableLength) {
-					return ReadVariableLengthArray(type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
-				} else {
+				if (fieldEncoding == FieldEncodingEnum.FixedLength) {
 					return ReadArray(length.Value, type.GetElementType(), bigIndian, stringEncoding);
+				} else {
+					return ReadVariableLengthArray(type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
 				}
 			} else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)) {
 				Type argumentType = type.GenericTypeArguments[0];
 				if (argumentType==typeof(object)) throw new NotSupportedException();
 				Array result;
-				if (fieldEncoding == FieldEncodingEnum.VariableLength) {
-					result = ReadVariableLengthArray(type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
-				} else {
-					result = ReadArray(length.Value, type.GetElementType(), bigIndian, stringEncoding);
+				if (fieldEncoding == FieldEncodingEnum.FixedLength) {
+					result = ReadArray(length.Value, argumentType, bigIndian, stringEncoding);
 				}
-				argumentType.GetConstructor(new Type[] { result.GetType() }).Invoke(new[] { result });
-
+				else {
+					result = ReadVariableLengthArray(argumentType, bigIndian, stringEncoding, length ?? sizeof(int));
+				}
+				return type.GetConstructor(new Type[] { result.GetType() }).Invoke(new[] { result });
 			}
 
 			throw new NotSupportedException();
@@ -169,7 +172,7 @@ namespace Utils.Streams
 
 		public List<byte> ReadTerminatedBytes( params byte[] terminators )
 		{
-			if (terminators.Length == 0) terminators = new byte[] { 0x0 };
+			if (terminators == null || terminators.Length == 0) terminators = new byte[] { 0x0 };
 			var bytes = new List<byte>();
 			for (int b = ReadByte() ; !terminators.Contains((byte)b) ; b = ReadByte()) {
 				bytes.Add((byte)b);

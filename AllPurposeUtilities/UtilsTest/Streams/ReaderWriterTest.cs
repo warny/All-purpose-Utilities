@@ -206,7 +206,7 @@ namespace UtilsTest.Streams
 			[Field(10, FieldEncoding: FieldEncodingEnum.NullTerminated, StringEncoding: "ISO-8859-1")]
 			public string s2 { get; set; }
 
-			[Field(11, length: 20, FieldEncoding: FieldEncodingEnum.NullTerminated, StringEncoding: "ISO-8859-1")]
+			[Field(11, length: 20, FieldEncoding: FieldEncodingEnum.FixedLength, StringEncoding: "ISO-8859-1")]
 			public string s3 { get; set; }
 
 			[Field(12, StringEncoding: "ISO-8859-1")]
@@ -246,6 +246,8 @@ namespace UtilsTest.Streams
 			{
 				Writer writer = new Writer(stream);
 				writer.Write(obj);
+
+				stream.Position = 0;
 
 				Reader reader = new Reader(stream);
 				var result = reader.Read<TestRWClass>();

@@ -57,6 +57,11 @@ namespace Utils.Reflection
 			else throw new NotSupportedException($"{nameof(FieldOrPropertyInfo)} ne supporte pas {Member.GetType().Name}");
 		}
 
+		public override string ToString()
+		{
+			return Member.ToString();
+		}
+
 		public static implicit operator FieldOrPropertyInfo(MemberInfo memberInfo) => new FieldOrPropertyInfo(memberInfo);
 		public static implicit operator FieldOrPropertyInfo(FieldInfo fieldInfo) => new FieldOrPropertyInfo(fieldInfo);
 		public static implicit operator FieldOrPropertyInfo(PropertyInfo propertyInfo) => new FieldOrPropertyInfo(propertyInfo);
