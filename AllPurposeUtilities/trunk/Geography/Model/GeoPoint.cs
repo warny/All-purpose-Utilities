@@ -74,7 +74,7 @@ namespace Utils.Geography.Model
 			var m = RegExCoordinate.Matches(coordinates);
 			if (m.Count != 2) throw new ArgumentException("Invalid or incomplete coordinates", coordinates);
 			double latitude = ParseCoordinate("latitude", m[0].Value, PositiveLatitude, NegativeLatitude);
-			double longitude = ParseCoordinate("longitude", m[1].Value, PositiveLongitude, NegativeLatitude);
+			double longitude = ParseCoordinate("longitude", m[1].Value, PositiveLongitude, NegativeLongitude);
 			Initialize(latitude, longitude);
 		}
 
@@ -86,7 +86,7 @@ namespace Utils.Geography.Model
 		public GeoPoint ( string latitudeString, string longitudeString )
 		{
 			double latitude = ParseCoordinate("latitude", latitudeString, PositiveLatitude, NegativeLatitude);
-			double longitude = ParseCoordinate("longitude", longitudeString, PositiveLongitude, NegativeLatitude);
+			double longitude = ParseCoordinate("longitude", longitudeString, PositiveLongitude, NegativeLongitude);
 			Initialize(latitude, longitude);
 		}
 
