@@ -58,16 +58,20 @@ namespace Utils.Streams
 			return result;
 		}
 
-		public object Read(Type t)
+		public bool Read(Type t, out object result)
 		{
-			var result = Activator.CreateInstance(t);
-			Read(result);
-			return result;
+			result = Activator.CreateInstance(t);
+			return Read(result, t);
 		}
 
-		public void Read( object result )
+		public bool Read( object result )
 		{
 			Type t = result.GetType();
+			return Read(result, t);
+		}
+
+		private bool Read(object result, Type t)
+		{
 			if (!TypesAccessors.TryGetValue(t, out FieldOrPropertyInfo[] fields))
 			{
 				fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -77,14 +81,16 @@ namespace Utils.Streams
 					.ToArray();
 				TypesAccessors.Add(t, fields);
 			}
-
-			foreach (var field in fields) {
+			if (!fields.Any()) return false;
+			foreach (var field in fields)
+			{
 				var attribute = field.GetCustomAttribute<FieldAttribute>();
 				System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
 				System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
 				field.SetValue(result, ReadValue(field.Type, attribute.Length, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding));
 				System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
 			}
+			return true;
 		}
 
 		private object ReadValue( Type type, int? length, bool bigIndian, byte[] terminators, FieldEncodingEnum fieldEncoding, Encoding stringEncoding)

@@ -94,6 +94,9 @@
       <DependentUpon>Grammar.resx</DependentUpon>
     </Compile>
     <Compile Include="Mathematics\Fourrier\FastFourrierTransform.cs" />
+    <Compile Include="Mathematics\InternationalSystem\IncompatibleUnitsException.cs" />
+    <Compile Include="Mathematics\InternationalSystem\PhysicalValue.cs" />
+    <Compile Include="Mathematics\InternationalSystem\Units.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.Compute.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.cs" />
     <Compile Include="Mathematics\LinearAlgebra\Matrix.Operators.cs" />
