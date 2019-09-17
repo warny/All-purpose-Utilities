@@ -106,7 +106,7 @@ namespace Utils.Mathematics.Expressions
 
 		public int GetHashCode( Expression obj )
 		{
-			return obj.ToString().GetHashCode();
+			return expressionSimplifier.Simplify(obj).ToString().GetHashCode();
 		}
 	}
 }
