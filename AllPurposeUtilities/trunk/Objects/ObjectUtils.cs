@@ -19,7 +19,7 @@ namespace Utils.Objects
 			if (!nullableObj.HasValue) return true;
 			return nullableObj.Equals(default(T));
 		}
-
+		 
 		/// <summary>
 		/// Returns true if collection is null or has no elements
 		/// </summary>
@@ -29,15 +29,30 @@ namespace Utils.Objects
 			return coll == null || !coll.Any();
 		}
 
+		/// <summary>
+		/// Compute a hash from the hashes of the given objects
+		/// </summary>
+		/// <param name="objects"></param>
+		/// <returns></returns>
+		public static int ComputeHash(params object[] objects)
+		{
+			unchecked
+			{
+				return objects.Aggregate(23, (value, acc) => acc.GetHashCode() * 31 + value);
+			}
+		}
 
 		/// <summary>
-		/// Indique si un objet est une valeur numérique
+		/// Compute a hash from the hashes of the given objects
 		/// </summary>
-		/// <param name="value"></param>
+		/// <param name="objects"></param>
 		/// <returns></returns>
-		public static bool IsNumeric( object value )
+		public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects)
 		{
-			return value is double || value is float || value is long || value is int  || value is short  || value is byte  || value is ulong  || value is uint  || value is ushort  || value is decimal;
+			unchecked
+			{
+				return objects.Aggregate(23, (value, acc) => getHashCode(acc) * 31 + value);
+			}
 		}
 
 		/// <summary>
@@ -54,6 +69,14 @@ namespace Utils.Objects
 			obj2 = temp;
 		}
 
-
+		public static T[] RandomArray<T>(this Random r, int minSize, int maxSize, Func<int ,T> value)
+		{
+			T[] result = new T[r.Next(minSize, maxSize)];
+			for (int i = 0; i < result.Length; i++)
+			{
+				result[i] = value(i);
+			}
+			return result;
+		}
 	}
 }

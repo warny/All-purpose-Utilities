@@ -16,7 +16,7 @@ namespace Utils.Mathematics.Expressions
 			if (expression == null) return false;
 			var value = expression.Value;
 
-			if (ObjectUtils.IsNumeric(value)) {
+			if (NumberUtils.IsNumeric(value)) {
 				return ((double)value) == checkValue;
 			}
 			return false;
@@ -92,7 +92,7 @@ namespace Utils.Mathematics.Expressions
 				if (!( xmco.Type == ymco.Type && xmco.Object == ymco.Object && xmco.Method == ymco.Method && xmco.Arguments.Count == ymco.Arguments.Count)) return false;
 
 				for (int i = 0 ; i < xmco.Arguments.Count ; i++) {
-					if (!this.Equals (xmco.Arguments[i], ymco.Arguments[i])) return false;
+					if (!this.Equals (xmco.Arguments[i], xParams, ymco.Arguments[i], yParams)) return false;
 				}
 				return true;
 			}
@@ -106,7 +106,7 @@ namespace Utils.Mathematics.Expressions
 
 		public int GetHashCode( Expression obj )
 		{
-			return obj.ToString().GetHashCode();
+			return expressionSimplifier.Simplify(obj).ToString().GetHashCode();
 		}
 	}
 }

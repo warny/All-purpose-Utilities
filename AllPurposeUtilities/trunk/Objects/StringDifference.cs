@@ -7,11 +7,19 @@ using System.Threading.Tasks;
 
 namespace Utils.Objects
 {
+	/// <summary>
+	/// Compare deux chaînes et renvoie leurs différences
+	/// </summary>
 	public class StringDifference : IEnumerable<StringChange>
 	{
 
 		private readonly StringChange[] changes;
 
+		/// <summary>
+		/// Compare deux chaîne de caractères et renvoie les modifications à faire à la première pour obtenir la seconde
+		/// </summary>
+		/// <param name="old">Chaîne avant modifications</param>
+		/// <param name="new">Chaîne après modifications</param>
 		public StringDifference( string old, string @new )
 		{
 			changes = Compare(old, @new, 0, 0);

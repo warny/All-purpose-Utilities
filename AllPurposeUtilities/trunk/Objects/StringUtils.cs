@@ -11,6 +11,30 @@ namespace Utils.Objects
 {
 	public static class StringUtils
 	{
+		private static readonly char[] defaultRandomCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ".ToCharArray();
+
+		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
+		public static string RandomString(int minLength, int maxLength, char[] characters = null)
+		{
+			Random r = new Random();
+			return RandomString(r, minLength, maxLength, characters);
+		}
+
+		public static string RandomString(this Random r, int length, char[] characters = null) => RandomString(r, length, length, characters);
+		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
+		{
+			characters = characters ?? defaultRandomCharacters;
+			var length = r.Next(minLength, maxLength);
+
+			char[] result = new char[length];
+			for (int i = 0; i < length; i++)
+			{
+				result[i] = characters[r.Next(0, characters.Length - 1)];
+			}
+			return new string(result);
+		}
+
+
 		/// <summary>
 		/// Compare une chaîne par rapport à une séquence d'échappement
 		/// </summary>
@@ -23,6 +47,60 @@ namespace Utils.Objects
 			return LikeOperator.LikeString(str, pattern, ignoreCase ? CompareMethod.Text : CompareMethod.Binary);
 		}
 
+		/// <summary>
+		/// Supprime du début et de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// </summary>
+		/// <param name="s">Chaîne de référence</param>
+		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
+		public static string Trim(this string s, Func<char, bool> trimTester)
+		{
+			int start = 0, end = s.Length;
+			for (start = 0; start < end; start++)
+			{
+				if (!trimTester(s[start])) break;
+			}
+			for (end = s.Length - 1; end > start; end--)
+			{
+				if (!trimTester(s[end])) break;
+			}
+			if (start >= end) return "";
+			return s.Substring(start, end-start + 1);
+		}
+
+		/// <summary>
+		/// Supprime du début de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// </summary>
+		/// <param name="s">Chaîne de référence</param>
+		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
+		public static string TrimStart(this string s, Func<char, bool> trimTester)
+		{
+			int start = 0, end = s.Length;
+			for (start = 0; start < end; start++)
+			{
+				if (!trimTester(s[start])) break;
+			}
+			if (start >= end) return "";
+			return s.Substring(start, end - start);
+		}
+
+		/// <summary>
+		/// Supprime de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// </summary>
+		/// <param name="s">Chaîne de référence</param>
+		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
+		public static string TrimEnd(this string s, Func<char, bool> trimTester)
+		{
+			int start = 0, end = s.Length;
+			for (end = s.Length - 1; end > start; end--)
+			{
+				if (!trimTester(s[end])) break;
+			}
+			if (start >= end) return "";
+			return s.Substring(start, end - start + 1);
+		}
 
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre à une position de caractère spécifiée et a une longueur définie.
@@ -216,13 +294,11 @@ namespace Utils.Objects
 			this.Close = close;
 		}
 
-		public static  Brackets[] all = new[] { RoundBrackets, SquareBrackets, Braces };
-
 		public static Brackets RoundBrackets { get; } = new Brackets('(', ')');
 		public static Brackets SquareBrackets { get; } = new Brackets('[', ']');
 		public static Brackets Braces { get; } = new Brackets('{', '}');
 
-		public static Brackets[] All => all;
+		public static Brackets[] All { get; } = new[] { RoundBrackets, SquareBrackets, Braces };
 	}
 
 }

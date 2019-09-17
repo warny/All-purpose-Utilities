@@ -21,6 +21,10 @@ namespace Utils.Web
 			{ "telnet", 23 },
 			{ "sftp", 22 },
 			{ "ssh", 22 },
+			{ "news", 144 },
+			{ "smb", 445 },
+			{ "nntps", 563 },
+			{ "ftps", 990 }
 		});
 
 		public UriBuilder( Uri uri )

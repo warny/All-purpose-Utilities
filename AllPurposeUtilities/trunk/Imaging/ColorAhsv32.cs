@@ -36,17 +36,20 @@ namespace Utils.Imaging
 			this.Value = (byte)(color.Value * 255);
 		}
 
-		public ColorAhsv32( ColorArgb32 colorArgb )
-		{
-			Alpha = colorArgb.Alpha;
+		public ColorAhsv32( ColorArgb32 colorArgb )	{ FromARGB(colorArgb.Alpha, colorArgb.Red, colorArgb.Green, colorArgb.Blue); }
+		public ColorAhsv32(System.Drawing.Color colorArgb) { FromARGB(colorArgb.A, colorArgb.R, colorArgb.G, colorArgb.B); }
 
+		private void FromARGB(byte alpha, byte red, byte green, byte blue)
+		{
+			Alpha = alpha;
 			byte rgbMin, rgbMax;
 
-			rgbMin = Mathematics.MathEx.Min(colorArgb.Red, colorArgb.Green, colorArgb.Blue);
-			rgbMax = Mathematics.MathEx.Max(colorArgb.Red, colorArgb.Green, colorArgb.Blue);
+			rgbMin = Mathematics.MathEx.Min(red, green, blue);
+			rgbMax = Mathematics.MathEx.Max(red, green, blue);
 
 			//cas du noir
-			if (Value == 0) {
+			if (Value == 0)
+			{
 				Value = rgbMax;
 				Hue = 0;
 				Saturation = 0;
@@ -56,36 +59,26 @@ namespace Utils.Imaging
 			int delta = rgbMax - rgbMin;
 
 			Saturation = (byte)(255 * delta / Value);
-			if (Saturation == 0) {
+			if (Saturation == 0)
+			{
 				Hue = 0;
 				return;
 			}
 
-			if (rgbMax == colorArgb.Red)
-				Hue = (byte)(0 + 43 * (colorArgb.Green - colorArgb.Blue) / delta);
-			else if (rgbMax == colorArgb.Green)
-				Hue = (byte)(85 + 43 * (colorArgb.Blue - colorArgb.Red) / delta);
+			if (rgbMax == red)
+				this.Hue = (byte)(0 + 43 * (green - blue) / delta);
+			else if (rgbMax == green)
+				this.Hue = (byte)(85 + 43 * (blue - red) / delta);
 			else
-				Hue = (byte)(171 + 43 * (colorArgb.Red - colorArgb.Green) / delta);
+				this.Hue = (byte)(171 + 43 * (red - green) / delta);
 
 			return;
 		}
 
-
-		public static implicit operator ColorAhsv32( ColorArgb32 color )
-		{
-			return new ColorAhsv32(color);
-		}
-
-		public static implicit operator ColorAhsv32( ColorAhsv color )
-		{
-			return new ColorAhsv32(color);
-		}
-
-		public static implicit operator ColorAhsv32( ColorAhsv64 color )
-		{
-			return new ColorAhsv32(color);
-		}
+		public static implicit operator ColorAhsv32(ColorArgb32 color) => new ColorAhsv32(color);
+		public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
+		public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
+		public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
 
 	}
 }

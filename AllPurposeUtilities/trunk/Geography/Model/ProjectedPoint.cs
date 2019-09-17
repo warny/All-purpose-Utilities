@@ -24,7 +24,7 @@ using Utils.Geography.Projections;
 namespace Utils.Geography.Model
 {
 
-	public class ProjectedPoint : IEquatable<ProjectedPoint> /*, ISerializable*/ {
+	public class ProjectedPoint : IEquatable<ProjectedPoint>, IFormattable /*, ISerializable*/ {
 		private const long serialVersionUID = 1L;
 
 		public IProjectionTransformation Projection { get; }
@@ -72,21 +72,10 @@ namespace Utils.Geography.Model
 			return this.Equals (other);
 		}
 
-		public override int GetHashCode ()
-		{
-			const int prime = 31;
-			int result = 1;
-			long temp;
-			temp = BitConverter.DoubleToInt64Bits(this.X);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			temp = BitConverter.DoubleToInt64Bits(this.Y);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			return result;
-		}
+		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.X, this.Y);
 
-		public override string ToString ()
-		{
-			return string.Format("x={0}, y={1}", this.X, this.Y);
-		}
+		public override string ToString() => $"x={this.X}, y={this.Y}";
+
+		public string ToString(string format, IFormatProvider formatProvider) => $"x={this.X.ToString(format, formatProvider)}, y={this.Y.ToString(format, formatProvider)}";
 	}
 }

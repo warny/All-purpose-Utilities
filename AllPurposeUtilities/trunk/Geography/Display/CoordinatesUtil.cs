@@ -61,7 +61,7 @@ namespace Utils.Geography.Display
 		 *            the coordinate in degrees.
 		 * @return the coordinate in microdegrees (degrees * 10^6).
 		 */
-		public static int degreesToMicrodegrees ( double coordinate )
+		public static int DegreesToMicrodegrees ( double coordinate )
 		{
 			return (int)(coordinate * CONVERSION_FACTOR);
 		}
@@ -73,7 +73,7 @@ namespace Utils.Geography.Display
 		 *            the coordinate in microdegrees (degrees * 10^6).
 		 * @return the coordinate in degrees.
 		 */
-		public static double microdegreesToDegrees ( int coordinate )
+		public static double MicrodegreesToDegrees ( int coordinate )
 		{
 			return coordinate / CONVERSION_FACTOR;
 		}
@@ -89,7 +89,7 @@ namespace Utils.Geography.Display
 		 * @throws IllegalArgumentException
 		 *             if the string is invalid or does not contain the given number of coordinate values.
 		 */
-		public static double[] parseCoordinatestring ( string coordinatesstring, int numberOfCoordinates )
+		public static double[] ParseCoordinatestring ( string coordinatesstring, int numberOfCoordinates )
 		{
 			string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.RemoveEmptyEntries);
 
@@ -108,7 +108,7 @@ namespace Utils.Geography.Display
 		 * @throws IllegalArgumentException
 		 *             if the latitude coordinate is invalid or {@link Double#NaN}.
 		 */
-		public static void validateLatitude ( double latitude )
+		public static void ValidateLatitude ( double latitude )
 		{
 			if (Double.IsNaN(latitude) || latitude < LATITUDE_MIN || latitude > LATITUDE_MAX) {
 				throw new ArgumentException("invalid latitude: " + latitude, nameof(latitude));
@@ -121,7 +121,7 @@ namespace Utils.Geography.Display
 		 * @throws IllegalArgumentException
 		 *             if the longitude coordinate is invalid or {@link Double#NaN}.
 		 */
-		public static void validateLongitude ( double longitude )
+		public static void ValidateLongitude ( double longitude )
 		{
 			if (Double.IsNaN(longitude) || longitude <= LONGITUDE_MIN || longitude >= LONGITUDE_MAX) {
 				throw new ArgumentException("invalid longitude: " + longitude, nameof(longitude));

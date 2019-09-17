@@ -9,6 +9,8 @@ namespace Utils.Streams
 {
 	public interface IReadable { }
 
+	public interface IWritable { }
+
 	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class FieldAttribute : Attribute
 	{

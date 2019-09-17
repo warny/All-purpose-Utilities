@@ -25,7 +25,7 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// A GeoPoint represents an immutable pair of latitude and longitude coordinates.
 	/// </summary>
-	public class GeoPoint : IComparable<GeoPoint>
+	public class GeoPoint : IComparable<GeoPoint>, IFormattable
 	{
 		public static Regex RegExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<deegres>\d+(\.\d+)?)(°(?<minutes>\d+(\.\d+)?))?('(?<seconds>\d+(\.\d+)?))?");
 
@@ -45,7 +45,7 @@ namespace Utils.Geography.Model
 		/// <exception cref="ArgumentException">if the string cannot be parsed or describes an invalid GeoPoint</exception>
 		public static GeoPoint Parse ( string GeoPointstring )
 		{
-			double[] coordinates = CoordinatesUtil.parseCoordinatestring(GeoPointstring, 2);
+			double[] coordinates = CoordinatesUtil.ParseCoordinatestring(GeoPointstring, 2);
 			return new GeoPoint(coordinates[0], coordinates[1]);
 		}
 
@@ -74,7 +74,7 @@ namespace Utils.Geography.Model
 			var m = RegExCoordinate.Matches(coordinates);
 			if (m.Count != 2) throw new ArgumentException("Invalid or incomplete coordinates", coordinates);
 			double latitude = ParseCoordinate("latitude", m[0].Value, PositiveLatitude, NegativeLatitude);
-			double longitude = ParseCoordinate("longitude", m[1].Value, PositiveLongitude, NegativeLatitude);
+			double longitude = ParseCoordinate("longitude", m[1].Value, PositiveLongitude, NegativeLongitude);
 			Initialize(latitude, longitude);
 		}
 
@@ -86,7 +86,7 @@ namespace Utils.Geography.Model
 		public GeoPoint ( string latitudeString, string longitudeString )
 		{
 			double latitude = ParseCoordinate("latitude", latitudeString, PositiveLatitude, NegativeLatitude);
-			double longitude = ParseCoordinate("longitude", longitudeString, PositiveLongitude, NegativeLatitude);
+			double longitude = ParseCoordinate("longitude", longitudeString, PositiveLongitude, NegativeLongitude);
 			Initialize(latitude, longitude);
 		}
 
@@ -115,8 +115,8 @@ namespace Utils.Geography.Model
 
 		private void Initialize ( double latitude, double longitude )
 		{
-			CoordinatesUtil.validateLatitude(latitude);
-			CoordinatesUtil.validateLongitude(longitude);
+			CoordinatesUtil.ValidateLatitude(latitude);
+			CoordinatesUtil.ValidateLongitude(longitude);
 
 			this.Latitude = latitude;
 			this.Longitude = longitude;
@@ -152,22 +152,10 @@ namespace Utils.Geography.Model
 			return true;
 		}
 
-		public override int GetHashCode ()
-		{
-			const int prime = 31;
-			int result = 1;
-			long temp;
-			temp = BitConverter.DoubleToInt64Bits(this.Latitude);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			temp = BitConverter.DoubleToInt64Bits(this.Longitude);
-			result = prime * result + (int)(temp ^ (temp >> 32));
-			return result;
-		}
+		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.Latitude, this.Longitude);
 
-		public override string ToString ()
-		{
-			return string.Format("latitude={0}, longitude={1}", this.Latitude, this.Longitude);
-		}
-
+		public override string ToString() => $"latitude={this.Latitude}, longitude={this.Longitude}";
+		public string ToString(string format) => $"latitude={this.Latitude.ToString(format)}, longitude={this.Longitude.ToString(format)}";
+		public string ToString(string format, IFormatProvider formatProvider) => $"latitude={this.Latitude.ToString(format, formatProvider)}, longitude={this.Longitude.ToString(format, formatProvider)}";
 	}
 }

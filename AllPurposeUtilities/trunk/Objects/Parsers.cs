@@ -11,7 +11,11 @@ namespace Utils.Objects
 	public static class Parsers
 	{
 
-		// Vérifie qu'une valeur peut être parsée
+		/// <summary>
+		/// Vérifie qu'un type peut être parsé
+		/// </summary>
+		/// <param name="type">Type à vérifier</param>
+		/// <returns><see cref="true"/> si le type peut être parsé sinon <see cref="false"/></returns>
 		static bool CanParse( Type type )
 		{
 			if (type.GetGenericTypeDefinition() == typeof(Nullable<>)) {

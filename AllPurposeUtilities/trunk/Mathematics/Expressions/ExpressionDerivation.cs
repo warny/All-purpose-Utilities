@@ -145,6 +145,18 @@ namespace Utils.Mathematics.Expressions
 				);
 		}
 
+		[ExpressionCallSignature(typeof(Math), "Exp")]
+		protected Expression Exp(
+			MethodCallExpression e,
+			Expression operand)
+		{
+			return
+				Expression.Multiply(
+					Transform(operand),
+					Expression.Call(typeof(Math).GetMethod("Exp"), operand)
+				);
+		}
+
 		[ExpressionCallSignature(typeof(Math), "Log")]
 		protected Expression Log(
 			MethodCallExpression e,
