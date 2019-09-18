@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CodeAnalysisRuleSet />
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -32,6 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CodeAnalysisRuleSet />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualBasic" />
@@ -107,7 +109,9 @@
     <Compile Include="Imaging\BitmapArgb32Accessor.cs" />
     <Compile Include="Objects\PreparedFormat.cs" />
     <Compile Include="Objects\StringDifference.cs" />
+    <Compile Include="Reflection\DllMapper.cs" />
     <Compile Include="Reflection\DomainManager.cs" />
+    <Compile Include="Reflection\Platform.cs" />
     <Compile Include="Reflection\FieldOrPropertyInfo.cs" />
     <Compile Include="Streams\PartialStream.cs" />
     <Compile Include="Files\PathUtils.cs" />
