@@ -52,6 +52,13 @@ namespace Utils.Lists
 		/// </summary>
 		/// <param name="item">Valeur</param>
 		public void Add( V item ) => dictionary.Add(getKey(item), item);
+
+		/// <summary>
+		/// Ajout d'un ensemble de valeurs
+		/// </summary>
+		/// <param name="items"></param>
+		public void AddRange(IEnumerable<V> items) { foreach (var item in items) Add(item); }
+
 		/// <summary>
 		/// Suppression d'une valeur
 		/// </summary>

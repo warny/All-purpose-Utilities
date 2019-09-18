@@ -57,12 +57,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 	public class Variables : IndexedList<string, ParameterExpression>
 	{
 		public Variables() : base(p => p.Name) { }
-		public Variables(Variables variables) : base(variables, p => p.Name) { }
+		public Variables(Variables variables) : base(p => p.Name) { }
 	}
 
 	public class Labels : IndexedList<string, LabelTarget>
 	{
 		public Labels() : base(l => l.Name) { }
-		public Labels(Labels labels) : base (labels, l => l.Name) { }
+		public Labels(Labels labels) : base (l => l.Name) { }
 	}
 }

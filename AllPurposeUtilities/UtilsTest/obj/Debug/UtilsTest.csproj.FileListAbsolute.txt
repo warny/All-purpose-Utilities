@@ -55,3 +55,5 @@ C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\Ut
 C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.csproj.CopyComplete
 C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.dll
 C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.pdb
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\bin\Debug\Utils.Compiler.dll
+D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\bin\Debug\Utils.Compiler.pdb

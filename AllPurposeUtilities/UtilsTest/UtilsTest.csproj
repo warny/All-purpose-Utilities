@@ -69,6 +69,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Utils.Compiler\Utils.Compiler.csproj">
+      <Project>{0bcb04ad-815e-4383-986b-0ed53eb320f4}</Project>
+      <Name>Utils.Compiler</Name>
+    </ProjectReference>
     <ProjectReference Include="..\trunk\Utils.csproj">
       <Project>{66601bc8-bb62-439a-854a-269cd0a1dd35}</Project>
       <Name>Utils</Name>

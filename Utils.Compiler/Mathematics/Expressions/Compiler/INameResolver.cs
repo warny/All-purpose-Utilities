@@ -124,7 +124,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 				Type testType = parameter.Type;
 				var objectType = typeof(object);
 				while (parameter.Type != methodParameter.ParameterType) {
-					if (testType == typeof(object)) return null;
+					if (testType == objectType) return null;
 					distance++;
 					testType = testType.BaseType;
 				}
@@ -135,7 +135,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Type ResolveType(string typeName, Type[] constructorArgumentTypes)
 		{
-			;
+			return null;
 		}
 
 	}
