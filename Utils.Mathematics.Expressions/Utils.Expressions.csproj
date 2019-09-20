@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Utils.Expressions</AssemblyName>
     <RootNamespace>Utils</RootNamespace>
   </PropertyGroup>
 

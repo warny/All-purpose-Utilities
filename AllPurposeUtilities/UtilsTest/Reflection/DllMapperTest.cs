@@ -15,7 +15,6 @@ namespace UtilsTest.Reflection
 		public delegate bool PathIsExeDelegate([MarshalAs(UnmanagedType.LPWStr)]string filename);
 		[External("PathIsExe")]
 		public PathIsExeDelegate PathIsExe;
-		//Declare Function ExtractIconEx Lib "shell32.dll" Alias "ExtractIconExA" (ByVal lpszFile As String, ByVal nIconIndex As Long, phiconLarge As Long, phiconSmall As Long, ByVal nIcons As Long) As Long
 	}
 
 	[TestClass]

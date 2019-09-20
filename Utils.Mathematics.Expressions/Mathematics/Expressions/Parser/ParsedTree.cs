@@ -6,10 +6,8 @@ namespace Utils.Mathematics.Expressions.Parser
 {
 	public class ParsedTree : ITree
 	{
-		public int StartIndex { get; }
-		public int EndIndex { get; }
-		public int Length { get; }
-		public string Value { get; }
+		public ParserIndex Index { get; }
+
 		public Context Context { get; }
 		public Rule Rule { get; }
 

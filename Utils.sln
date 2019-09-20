@@ -7,10 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "AllPurposeUtilitie
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilsTest", "AllPurposeUtilities\UtilsTest\UtilsTest.csproj", "{72EC792D-156B-4976-99DE-E1F363B71B51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Compiler", "Utils.Compiler\Utils.Compiler.csproj", "{0BCB04AD-815E-4383-986B-0ED53EB320F4}"
-	ProjectSection(ProjectDependencies) = postProject
-		{66601BC8-BB62-439A-854A-269CD0A1DD35} = {66601BC8-BB62-439A-854A-269CD0A1DD35}
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Expressions", "Utils.Mathematics.Expressions\Utils.Expressions.csproj", "{F59AF95B-04B1-422F-A153-EA53955C5B88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,10 +23,10 @@ Global
 		{72EC792D-156B-4976-99DE-E1F363B71B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72EC792D-156B-4976-99DE-E1F363B71B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72EC792D-156B-4976-99DE-E1F363B71B51}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0BCB04AD-815E-4383-986B-0ED53EB320F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0BCB04AD-815E-4383-986B-0ED53EB320F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0BCB04AD-815E-4383-986B-0ED53EB320F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0BCB04AD-815E-4383-986B-0ED53EB320F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F59AF95B-04B1-422F-A153-EA53955C5B88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F59AF95B-04B1-422F-A153-EA53955C5B88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F59AF95B-04B1-422F-A153-EA53955C5B88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F59AF95B-04B1-422F-A153-EA53955C5B88}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
