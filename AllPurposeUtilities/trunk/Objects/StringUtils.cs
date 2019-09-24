@@ -12,11 +12,11 @@ namespace Utils.Objects
 	public static class StringUtils
 	{
 		private static readonly char[] defaultRandomCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ".ToCharArray();
+		private static readonly Random r = new Random();
 
 		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
 		public static string RandomString(int minLength, int maxLength, char[] characters = null)
 		{
-			Random r = new Random();
 			return RandomString(r, minLength, maxLength, characters);
 		}
 
@@ -55,7 +55,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string Trim(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end = s.Length;
+			int start, end = s.Length;
 			for (start = 0; start < end; start++)
 			{
 				if (!trimTester(s[start])) break;
@@ -76,7 +76,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimStart(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end = s.Length;
+			int start, end = s.Length;
 			for (start = 0; start < end; start++)
 			{
 				if (!trimTester(s[start])) break;
@@ -93,7 +93,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end = s.Length;
+			int start = 0, end;
 			for (end = s.Length - 1; end > start; end--)
 			{
 				if (!trimTester(s[end])) break;

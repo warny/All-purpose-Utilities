@@ -16,7 +16,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			if (c.In(chars))
 			{
 				Completed = true;
-				Result = new Result(index, index, c.ToString());
+				Result = new Result(index, index + 1, c.ToString());
 				return true;
 			}
 			else

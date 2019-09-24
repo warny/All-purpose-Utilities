@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Utils.Mathematics.Expressions.Parser.RulesImplementations;
 
 namespace Utils.Mathematics.Expressions.Parser
 {
@@ -25,6 +26,16 @@ namespace Utils.Mathematics.Expressions.Parser
 				return new RulesImplementations.NotRule(rule);
 		}
 
+		public static Rule operator +(Rule rule1, Rule rule2)
+		{
+			if (rule1 is StringRule sr1 && rule2 is StringRule sr2) return new StringRule(sr1, sr2);
+			return new SequencedRule(rule1, rule2);
+		}
+
+		public static Rule operator |(Rule rule1, Rule rule2)
+		{
+			return new ParallelRule(rule1, rule2);
+		}
 	}
 
 	public static class Rules
@@ -34,5 +45,9 @@ namespace Utils.Mathematics.Expressions.Parser
 		public static Rule ExcludeChars(params char[] chars) => new RulesImplementations.ExcludeCharRule(chars);
 		public static Rule ExcludeChars(string chars) => new RulesImplementations.ExcludeCharRule(chars);
 		public static Rule String(string @string) => new RulesImplementations.StringRule(@string);
+		public static Rule Sequence(IEnumerable<Rule> rules) => new RulesImplementations.SequencedRule(rules);
+		public static Rule Sequence(params Rule[] rules) => new RulesImplementations.SequencedRule(rules);
+		public static Rule Or(IEnumerable<Rule> rules) => new RulesImplementations.ParallelRule(rules);
+		public static Rule Or(params Rule[] rules) => new RulesImplementations.ParallelRule(rules);
 	}
 }

@@ -26,7 +26,7 @@ namespace Utils.Geography.Display
 	 * A tile represents a rectangular part of the world map. All tiles can be identified by their X and Y number together
 	 * with their zoom level. The actual area that a tile covers on a map depends on the underlying map projection.
 	 */
-	public class Tile : IEquatable<Tile>, IFormattable
+	public sealed class Tile : IEquatable<Tile>, IFormattable
 	{
 		/// <summary>
 		/// Width and height of a map tile in pixel.
