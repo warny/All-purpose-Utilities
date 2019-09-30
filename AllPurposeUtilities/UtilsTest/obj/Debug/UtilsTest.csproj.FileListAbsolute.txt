@@ -32,7 +32,6 @@ D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\bin
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\bin\Debug\Microsoft.VisualStudio.TestPlatform.TestFramework.xml
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\bin\Debug\Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions.xml
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.csprojAssemblyReference.cache
-D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.csproj.CoreCompileInputs.cache
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.csproj.CopyComplete
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.dll
 D:\projets\perso\All-purpose-Utilities - trunk\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.pdb

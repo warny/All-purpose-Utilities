@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="Grammar"
+    targetNamespace="http://expression.mathematics.utils/Grammar.xsd"
+    elementFormDefault="qualified"    
+    xmlns="http://expression.mathematics.utils/Grammar.xsd"
+    xmlns:mstns="http://expression.mathematics.utils/Grammar.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:element name="Grammar" type="GrammarType">
+  </xs:element>
+
+  <xs:complexType name="GrammarType">
+    <xs:sequence>
+      <xs:element name="GroupMarkup" type="GroupMarkupType" maxOccurs="unbounded" />
+      <xs:element name="Operand" type="OperandType" maxOccurs="unbounded" />
+      <xs:element name="Class" type="ClassType" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="culture" default="invariant" use="optional"  type="culture" />
+  </xs:complexType>
+
+  <xs:simpleType name="culture">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="invariant|[A-Z][A-Z]/[A-Z][A-Z]"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="char">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:complexType name="GroupMarkupType">
+    <xs:attribute name="open" type="char" use="required" />
+    <xs:attribute name="close" type="char" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="OperandType">
+    <xs:attribute name="sign" type="char" use="required" />
+    <xs:attribute name="constructor" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="ClassType">
+    <xs:attribute name="assembly" type="xs:Name" />
+    <xs:attribute name="alias" type="xs:Name" />
+    <xs:attribute name="prefix" type="xs:Name" />
+    <xs:attribute name="name" type="xs:Name" use="required" />
+  </xs:complexType>
+</xs:schema>
