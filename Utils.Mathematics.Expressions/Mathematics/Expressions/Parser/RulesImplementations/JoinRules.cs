@@ -136,4 +136,30 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		}
 	}
 
+	public class RepetitionRule : Rule
+	{
+		internal RepetitionRule(Rule rule, int repetition) : this(rule, repetition, repetition) { }
+
+		internal RepetitionRule(Rule rule, int minimum = 0, int maximum = int.MaxValue)
+		{
+			this.Rule = rule ?? throw new ArgumentNullException(nameof(rule));
+			this.Minimum = minimum;
+			this.Maximum = maximum;
+		}
+
+		private Rule Rule { get; }
+		private int Minimum { get; }
+		private int Maximum { get; }
+
+		protected internal override void Reset(int index)
+		{
+			base.Reset(index);
+			Rule.Reset();
+		}
+		protected internal override bool Next(char c, int index)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 }

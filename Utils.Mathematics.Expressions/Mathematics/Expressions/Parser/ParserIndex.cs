@@ -14,6 +14,14 @@ namespace Utils.Mathematics.Expressions.Parser
 			this.value = new StringBuilder(value) ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		internal ParserIndex(ParserIndex index)
+		{
+			StartIndex = index.StartIndex;
+			EndIndex = index.EndIndex;
+			Length = index.Length;
+			value = new StringBuilder(index.Value);
+		}
+
 		private ParserIndex(ParserIndex index1, ParserIndex index2)
 		{
 			if (index1.EndIndex != index2.StartIndex) throw new InvalidOperationException("deux index fusionnés doivent être consécutifs");

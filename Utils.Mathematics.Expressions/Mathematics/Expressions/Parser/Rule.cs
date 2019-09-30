@@ -32,10 +32,10 @@ namespace Utils.Mathematics.Expressions.Parser
 			return new SequencedRule(rule1, rule2);
 		}
 
-		public static Rule operator |(Rule rule1, Rule rule2)
-		{
-			return new ParallelRule(rule1, rule2);
-		}
+		public static Rule operator |(Rule rule1, Rule rule2) => new ParallelRule(rule1, rule2);
+
+		public static Rule operator *(Rule rule, int repetition) => Rules.Repeat(rule, repetition);
+		public static Rule operator *(Rule rule, (int? minimum, int? maximum) repetitions) => Rules.Repeat(rule, repetitions.minimum ?? 0, repetitions.maximum ?? int.MaxValue);
 	}
 
 	public static class Rules
@@ -49,5 +49,7 @@ namespace Utils.Mathematics.Expressions.Parser
 		public static Rule Sequence(params Rule[] rules) => new RulesImplementations.SequencedRule(rules);
 		public static Rule Or(IEnumerable<Rule> rules) => new RulesImplementations.ParallelRule(rules);
 		public static Rule Or(params Rule[] rules) => new RulesImplementations.ParallelRule(rules);
+		public static Rule Repeat(this Rule rule, int repetition) => new RepetitionRule(rule, repetition);
+		public static Rule Repeat(this Rule rule, int minimum = 0, int maximum = int.MaxValue) => new RepetitionRule(rule, minimum, maximum);
 	}
 }

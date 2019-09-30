@@ -12,6 +12,12 @@ namespace Utils.Mathematics.Expressions.Parser
 			this.Success = false;
 		}
 
+		internal Result(Result result)
+		{
+			this.Index = new ParserIndex(result.Index);
+			this.Success = result.Success;
+		}
+
 		internal Result(int startIndex)
 		{
 			this.Success = false;
