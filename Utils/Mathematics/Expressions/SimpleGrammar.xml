@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<g:Grammar xmlns:g="http://expression.mathematics.utils/Grammar.xsd">
+  <g:GroupMarkup open="(" close=")" />
+  <g:GroupMarkup  open="[" close="]" />
+  <g:GroupMarkup  open="{" close="}" />
+  <g:Operand sign="=" constructor="Assign" />
+  <g:Operand sign="+" constructor="Add" />
+  <g:Operand sign="-" constructor="Subtract" />
+  <g:Operand sign="*" constructor="Multiply" />
+  <g:Operand sign="/" constructor="Divide" />
+  <g:Operand sign="^" constructor="Power" />
+  <g:Operand sign="-" constructor="Negate" />
+  <g:Class name="System.Math" />
+  <g:Class alias="double" name="System.Double" />
+  <g:Class alias="float" name="System.Single" />
+  <g:Class alias="int" name="System.Int32" />
+  <g:Class alias="long" name="System.Int64" />
+</g:Grammar>
