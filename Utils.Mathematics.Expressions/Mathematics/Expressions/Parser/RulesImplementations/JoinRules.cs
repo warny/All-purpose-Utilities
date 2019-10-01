@@ -29,6 +29,8 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			Completed = true;
 			return true;
 		}
+
+		protected override Rule Not() => this.Rule;
 	}
 
 	public class SequencedRule : Rule
@@ -91,6 +93,8 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 			return true;
 		}
+
+		protected override Rule Then(Rule rule) => new SequencedRule(this.rules.Union(new[] { rule }));
 	}
 
 	public class ParallelRule : Rule
@@ -154,7 +158,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		protected internal override void Reset(int index)
 		{
 			base.Reset(index);
-			Rule.Reset();
+			Rule.Reset(index);
 		}
 		protected internal override bool Next(char c, int index)
 		{

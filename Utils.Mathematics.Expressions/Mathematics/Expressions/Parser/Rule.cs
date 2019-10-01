@@ -18,22 +18,12 @@ namespace Utils.Mathematics.Expressions.Parser
 			Result = new Result(index);
 		}
 
-		public static Rule operator !(Rule rule)
-		{
-			if (rule is RulesImplementations.NotRule notRule)
-				return notRule.Rule;
-			else
-				return new RulesImplementations.NotRule(rule);
-		}
+		protected virtual Rule Then(Rule rule)	=> new SequencedRule(this, rule);
+		protected virtual Rule Not() => new NotRule(this);
 
-		public static Rule operator +(Rule rule1, Rule rule2)
-		{
-			if (rule1 is StringRule sr1 && rule2 is StringRule sr2) return new StringRule(sr1, sr2);
-			return new SequencedRule(rule1, rule2);
-		}
-
+		public static Rule operator !(Rule rule) => rule.Not();
+		public static Rule operator +(Rule rule1, Rule rule2) => rule1.Then(rule2);
 		public static Rule operator |(Rule rule1, Rule rule2) => new ParallelRule(rule1, rule2);
-
 		public static Rule operator *(Rule rule, int repetition) => Rules.Repeat(rule, repetition);
 		public static Rule operator *(Rule rule, (int? minimum, int? maximum) repetitions) => Rules.Repeat(rule, repetitions.minimum ?? 0, repetitions.maximum ?? int.MaxValue);
 	}
@@ -51,5 +41,6 @@ namespace Utils.Mathematics.Expressions.Parser
 		public static Rule Or(params Rule[] rules) => new RulesImplementations.ParallelRule(rules);
 		public static Rule Repeat(this Rule rule, int repetition) => new RepetitionRule(rule, repetition);
 		public static Rule Repeat(this Rule rule, int minimum = 0, int maximum = int.MaxValue) => new RepetitionRule(rule, minimum, maximum);
+		public static Rule Not(Rule rule) => !rule;
 	}
 }

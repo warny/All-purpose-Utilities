@@ -48,5 +48,14 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 		}
 
+		protected override Rule Then(Rule rule)
+		{
+			if (rule is StringRule stringRule)
+			{
+				return new StringRule(this.@string + stringRule.@string);
+			}
+			return base.Then(rule);
+		}
+
 	}
 }
