@@ -17,3 +17,4 @@ C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\tr
 C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.csproj.CoreCompileInputs.cache
 C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.dll
 C:\Users\Olivier Marty\Source\Repos\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.pdb
+D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\trunk\obj\Debug\Utils.csprojAssemblyReference.cache

@@ -27,6 +27,8 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 		}
 
+		protected internal override Rule Clone() => new IncludeCharRule(chars);
+
 		public override string ToString() => "[" + new string(chars) + "]";
 	}
 
@@ -52,7 +54,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				return false;
 			}
 		}
-
+		protected internal override Rule Clone() => new ExcludeCharRule(chars);
 		public override string ToString() => "[^" + new string(chars) + "]";
 	}
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
@@ -30,6 +31,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			return true;
 		}
 
+		protected internal override Rule Clone() => new NotRule(Rule.Clone());
 		protected override Rule Not() => this.Rule;
 	}
 
@@ -71,7 +73,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			{
 				if (currentRule.Current.Result.Success)
 				{
-					this.Result = new Result(this.Result.Index, currentRule.Current.Result.Index);
+					this.Result = new Result(this.Result.Index, currentRule.Current.Result.Index, currentRule.Current.Result.Success);
 
 					if (currentRule.MoveNext())
 					{
@@ -92,6 +94,16 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				}
 			}
 			return true;
+		}
+
+		protected internal override Rule Clone()
+		{
+			var copiedRules = new List<Rule>();
+			foreach (var rule in this.rules)
+			{
+				copiedRules.Add(rule.Clone());
+			}
+			return new SequencedRule(copiedRules);
 		}
 
 		protected override Rule Then(Rule rule) => new SequencedRule(this.rules.Union(new[] { rule }));
@@ -126,22 +138,53 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 		protected internal override bool Next(char c, int index)
 		{
-			foreach (var r in this.activeRules)
+			bool result = false;
+			List<Rule> rulesToRemove = new List<Rule>();
+			foreach (var rule in this.activeRules)
 			{
-				if (r.Completed && r.Result.Success)
+				rule.Next(c, index);
+				if (rule.Completed && rule.Result.Success)
 				{
-					this.Result = r.Result;
+					this.Result = rule.Result;
 					this.Completed = true;
-					this.CanContinue = r.CanContinue;
-					return true;
+					this.CanContinue = activeRules.Count > 1 || rule.CanContinue;
+					result = true;
+					continue;
 				}
+				rulesToRemove.Add(rule);
 			}
-			return false;
+			this.activeRules.RemoveRange(rulesToRemove);
+
+			return result;
 		}
+
+		protected internal override Rule Clone()
+		{
+			var copiedRules = this.rules.Copy(r => r.Clone());
+			return new ParallelRule(copiedRules);
+		}
+
+		public override string ToString() => "(" + string.Join("|", rules.Select(r => r.ToString())) + ")";
 	}
 
 	public class RepetitionRule : Rule
 	{
+		private class Cursor
+		{
+			public Result Result;
+			public int Repetition;
+			public Rule Rule;
+
+			public Cursor(Result result, int repetition, Rule rule)
+			{
+				this.Result = result ?? throw new ArgumentNullException(nameof(result));
+				this.Repetition = repetition;
+				this.Rule = rule ?? throw new ArgumentNullException(nameof(rule));
+			}
+		}
+
+		private readonly List<Cursor> cursors = new List<Cursor>();
+		
 		internal RepetitionRule(Rule rule, int repetition) : this(rule, repetition, repetition) { }
 
 		internal RepetitionRule(Rule rule, int minimum = 0, int maximum = int.MaxValue)
@@ -159,10 +202,53 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			base.Reset(index);
 			Rule.Reset(index);
+			cursors.Clear();
+			cursors.Add(new Cursor(null, 0, Rule));
 		}
+
+		protected internal override Rule Clone() => new RepetitionRule(Rule, Minimum, Maximum);
+
 		protected internal override bool Next(char c, int index)
 		{
-			throw new NotImplementedException();
+			var toAdd = new List<Cursor>();
+			var toRemove = new List<Cursor>();
+			foreach (var cursor in cursors)
+			{
+				cursor.Rule.Next(c, index);
+				if (cursor.Result.Success)
+				{
+					if (cursor.Rule.CanContinue)
+					{
+						var newCursor = new Cursor(cursor.Result + cursor.Rule.Result, cursor.Repetition + 1, Rule.Clone());
+						toAdd.Add(newCursor);
+					}
+					else
+					{
+						cursor.Result += Rule.Result;
+						cursor.Repetition++;
+						cursor.Rule.Reset(index);
+					}
+				}
+				else
+				{
+					toRemove.Add(cursor);
+				}
+			}
+			cursors.RemoveRange(toRemove);
+			cursors.AddRange(toAdd);
+
+			if (!cursors.Any())
+			{
+				Result = new Result();
+				return false;
+			}
+			if (cursors.Count == 1)
+			{
+				Result = cursors.First().Result;
+				return true;
+			}
+
+			return true;
 		}
 	}
 

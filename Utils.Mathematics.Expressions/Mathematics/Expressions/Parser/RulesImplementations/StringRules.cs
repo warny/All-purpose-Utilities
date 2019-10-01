@@ -57,5 +57,6 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			return base.Then(rule);
 		}
 
+		protected internal override Rule Clone() => new StringRule(@string);
 	}
 }

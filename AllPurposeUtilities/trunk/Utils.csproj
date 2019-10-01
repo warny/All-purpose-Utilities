@@ -54,6 +54,7 @@
     <Compile Include="Lists\DoubleLinkedList.cs" />
     <Compile Include="Lists\IndexedList.cs" />
     <Compile Include="Lists\CachedLoader.cs" />
+    <Compile Include="Lists\ListUtils.cs" />
     <Compile Include="Lists\MappedDictionary.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionDerivation.cs" />
     <Compile Include="Mathematics\Expressions\ExpressionExtensions.cs" />

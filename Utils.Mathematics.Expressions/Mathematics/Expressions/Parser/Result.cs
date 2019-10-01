@@ -30,12 +30,12 @@ namespace Utils.Mathematics.Expressions.Parser
 			this.Index = new ParserIndex(startIndex, endIndex, endIndex - startIndex, value);
 		}
 
-		internal Result(ParserIndex result1, ParserIndex result2)
+		internal Result(ParserIndex result1, ParserIndex result2, bool success)
 		{
 			try
 			{
 				this.Index = result1 + result2;
-				this.Success = true;
+				this.Success = success;
 			}
 			catch
 			{
@@ -46,5 +46,11 @@ namespace Utils.Mathematics.Expressions.Parser
 
 		public bool Success { get; internal set; }
 		public ParserIndex Index { get; }
+
+		public static Result operator +(Result result1, Result result2)
+		{
+			if (result1 == null) return result2;
+			return new Result(result1.Index, result2.Index, result1.Success && result2.Success);
+		}
 	}
 }

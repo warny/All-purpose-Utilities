@@ -221,13 +221,18 @@ namespace Utils.Objects
 		/// <param name="text"></param>
 		/// <param name="format"></param>
 		/// <returns></returns>
-		public static bool IsNumber( this string text, System.Globalization.NumberFormatInfo format = null )
+		public static bool IsNumber( this string text, System.Globalization.NumberFormatInfo format = null, bool testGroupSeparator = true )
 		{
 			format = format ?? System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
+			bool hasSeparator = false;
 			for (int i = 0 ; i < text.Length ; i++) {
-				if (i==0) {
-					if (text[i]==format.NegativeSign[0]) continue;
+				if (i == 0 && text[i] == format.NegativeSign[0]) continue;
+				if (text[i].ToString() == format.NumberDecimalSeparator)
+				{
+					if (hasSeparator) return false;
+					hasSeparator = true;
 				}
+				if (testGroupSeparator && text[i].ToString() == format.NumberGroupSeparator) continue;
 				if (text[i].ToString().In(format.NativeDigits)) continue;
 				return false;
 			}
