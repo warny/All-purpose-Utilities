@@ -203,7 +203,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			base.Reset(index);
 			Rule.Reset(index);
 			cursors.Clear();
-			cursors.Add(new Cursor(null, 0, Rule));
+			cursors.Add(new Cursor(Result, 0, Rule));
 		}
 
 		protected internal override Rule Clone() => new RepetitionRule(Rule, Minimum, Maximum);
@@ -212,10 +212,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			var toAdd = new List<Cursor>();
 			var toRemove = new List<Cursor>();
-			foreach (var cursor in cursors)
+			foreach (var cursor in cursors.Where(cur=>cur.Repetition < Maximum))
 			{
-				cursor.Rule.Next(c, index);
-				if (cursor.Result.Success)
+				bool valid = cursor.Rule.Next(c, index);
+				if (cursor.Rule.Result.Success)
 				{
 					if (cursor.Rule.CanContinue)
 					{
@@ -231,7 +231,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				}
 				else
 				{
-					toRemove.Add(cursor);
+					if (!valid)	toRemove.Add(cursor);
 				}
 			}
 			cursors.RemoveRange(toRemove);
@@ -239,7 +239,6 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 			if (!cursors.Any())
 			{
-				Result = new Result();
 				return false;
 			}
 			if (cursors.Count == 1)
@@ -248,7 +247,23 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				return true;
 			}
 
+			CanContinue = cursors.Any(cur => cur.Rule.CanContinue);
+			Result = cursors.FirstOrDefault(cur => cur.Result.Success).Result;
+			Result = Result ?? cursors.First().Result;
+
 			return true;
+		}
+
+		public override string ToString()
+		{
+			if (Minimum == Maximum) return $"{Rule}{{{Minimum}}}";
+			if (Maximum == int.MaxValue)
+			{
+				if (Minimum == 0) return $"{Rule}*";
+				if (Minimum == 1) return $"{Rule}+";
+				return $"{Rule}{{{Minimum},}}";
+			}
+			return $"{Rule}{{{Minimum},{Maximum}}}";
 		}
 	}
 

@@ -14,13 +14,43 @@ namespace Utils.Objects
 		private static readonly char[] defaultRandomCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ".ToCharArray();
 		private static readonly Random r = new Random();
 
+		/// <summary>
+		/// Génère une chaîne aléatoire
+		/// </summary>
+		/// <param name="length">Longueur de la chaîne</param>
+		/// <param name="characters">Caractères autorisés</param>
+		/// <returns>Chaine de <see cref="length"/> caractères</returns>
 		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
+
+		/// <summary>
+		/// Génère une chaîne aléatoire
+		/// </summary>
+		/// <param name="minLength">Longueur minimale de la chaîne</param>
+		/// <param name="minLength">Longueur maximale de la chaîne</param>
+		/// <param name="characters">Caractères autorisés</param>
+		/// <returns>Chaine de <see cref="minLength"/> à <see cref="maxLength"/> caractères</returns>
 		public static string RandomString(int minLength, int maxLength, char[] characters = null)
 		{
 			return RandomString(r, minLength, maxLength, characters);
 		}
 
+		/// <summary>
+		/// Génère une chaîne aléatoire
+		/// </summary>
+		/// <param name="r">Générateur de nombre aléatoire</param>
+		/// <param name="length">Longueur de la chaîne</param>
+		/// <param name="characters">Caractères autorisés</param>
+		/// <returns>Chaine de <see cref="length"/> caractères</returns>
 		public static string RandomString(this Random r, int length, char[] characters = null) => RandomString(r, length, length, characters);
+		
+		/// <summary>
+		/// Génère une chaîne aléatoire
+		/// </summary>
+		/// <param name="r">Générateur de nombre aléatoire</param>
+		/// <param name="minLength">Longueur minimale de la chaîne</param>
+		/// <param name="minLength">Longueur maximale de la chaîne</param>
+		/// <param name="characters">Caractères autorisés</param>
+		/// <returns>Chaine de <see cref="minLength"/> à <see cref="maxLength"/> caractères</returns>
 		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
 		{
 			characters = characters ?? defaultRandomCharacters;
@@ -34,6 +64,23 @@ namespace Utils.Objects
 			return new string(result);
 		}
 
+		/// <summary>
+		/// Renvoie une chaîne répétée
+		/// </summary>
+		/// <param name="string">Chaine à répéter</param>
+		/// <param name="count">nombre de répétitions</param>
+		/// <returns></returns>
+		public static string Repeat(this string @string, int count)
+		{
+			if (count == 0) return "";
+			if (count == 1) return @string;
+			StringBuilder result = new StringBuilder(@string.Length * count);
+			for (int i = 0; i < count; i++)
+			{
+				result.Append(@string);
+			}
+			return result.ToString();
+		}
 
 		/// <summary>
 		/// Compare une chaîne par rapport à une séquence d'échappement

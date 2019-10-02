@@ -20,8 +20,8 @@ namespace UtilsTest.Math.Expressions.Parser
 			var tester = Rules.String(tested);
 			var result = RuleTester.Test(tester, tested);
 			Assert.IsTrue(result.Success);
-			Assert.AreEqual(0, result.Index.StartIndex);
-			Assert.AreEqual(tested.Length, result.Index.EndIndex);
+			Assert.AreEqual(0, result.Index.Start);
+			Assert.AreEqual(tested.Length, result.Index.End);
 		}
 
 		[TestMethod]
@@ -31,8 +31,8 @@ namespace UtilsTest.Math.Expressions.Parser
 			var tester = Rules.Sequence(tested.Select(c=>Rules.Chars(c)));
 			var result = RuleTester.Test(tester, tested);
 			Assert.IsTrue(result.Success);
-			Assert.AreEqual(0, result.Index.StartIndex);
-			Assert.AreEqual(tested.Length, result.Index.EndIndex);
+			Assert.AreEqual(0, result.Index.Start);
+			Assert.AreEqual(tested.Length, result.Index.End);
 		}
 
 
@@ -65,8 +65,8 @@ namespace UtilsTest.Math.Expressions.Parser
 			var result = RuleTester.Test(tester, tested);
 			Assert.IsInstanceOfType(tester, typeof(StringRule));
 			Assert.IsTrue(result.Success);
-			Assert.AreEqual(0, result.Index.StartIndex);
-			Assert.AreEqual(tested.Length, result.Index.EndIndex);
+			Assert.AreEqual(0, result.Index.Start);
+			Assert.AreEqual(tested.Length, result.Index.End);
 		}
 	}
 }

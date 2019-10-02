@@ -25,6 +25,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 		protected internal override bool Next(char c, int index)
 		{
+			if (stringIndex >= @string.Length)
+			{
+				return false;
+			}
 			if (c == @string[stringIndex])
 			{
 				if (stringIndex == 0)
@@ -36,6 +40,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				if (stringIndex == @string.Length)
 				{
 					Completed = true;
+					CanContinue = false;
 					Result.Success = true;
 				}
 				return true;
@@ -58,5 +63,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		}
 
 		protected internal override Rule Clone() => new StringRule(@string);
+
+		public override string ToString() => @string;
 	}
 }
