@@ -17,18 +17,58 @@ namespace Utils.Lists
 			}
 		}
 
-		public static List<T> Copy<T>(this List<T> list)
+		public static List<T> Copy<T>(this List<T> list, Func<T, T> copyElement = null)
 		{
 			var result = new List<T>(list.Count);
-			result.AddRange(list);
+			result.AddRange(list.Select(e => copyElement(e) ?? e));
 			return result;
 		}
 
-		public static List<T> Copy<T>(this List<T> list, Func<T, T> copyElement)
+		public static L CopyTo<L, T>(this IEnumerable<T> list, Func<T, T> copyElement = null) 
+			where L : IList<T>, new()
+			where T : class
 		{
-			var result = new List<T>(list.Count);
-			result.AddRange(list.Select(e => copyElement(e)));
+			L result = new L();
+			foreach (T element in list)
+			{
+				result.Add(copyElement?.Invoke(element) ?? element);
+			}
 			return result;
 		}
+
+		public static L Copy<L, T>(this L list, Func<T, T> copyElement = null)
+			where L : IList<T>, new()
+			where T : class
+		{
+			L result = new L();
+			foreach (T element in list)
+			{
+				result.Add(copyElement?.Invoke(element) ?? element);
+			}
+			return result;
+		}
+
+		public static Queue<T> Copy<T>(this Queue<T> list, Func<T, T> copyElement = null)
+			where T : class
+		{
+			Queue<T> result = new Queue<T>();
+			foreach (T element in list)
+			{
+				result.Enqueue(copyElement?.Invoke(element) ?? element);
+			}
+			return result;
+		}
+
+		public static Queue<T> ToQueue<T>(this IEnumerable<T> list, Func<T, T> copyElement = null)
+			where T : class
+		{
+			var result = new Queue<T>();
+			foreach (T element in list)
+			{
+				result.Enqueue(copyElement?.Invoke(element) ?? element);
+			}
+			return result;
+		}
+
 	}
 }

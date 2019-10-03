@@ -61,8 +61,9 @@
     <Compile Include="Math\Expressions\Compiler\ObjectTests.cs" />
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
     <Compile Include="Math\Expressions\ExpressionSimplifierTest.cs" />
-    <Compile Include="Math\Expressions\Parser\JoinRules.cs" />
-    <Compile Include="Math\Expressions\Parser\StringRules.cs" />
+    <Compile Include="Math\Expressions\Parser\CharRulesTest.cs" />
+    <Compile Include="Math\Expressions\Parser\JoinRulesTest.cs" />
+    <Compile Include="Math\Expressions\Parser\StringRulesTest.cs" />
     <Compile Include="Objects\DateUtilitiesTest.cs" />
     <Compile Include="Objects\StringDifferenceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

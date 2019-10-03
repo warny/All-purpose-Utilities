@@ -12,7 +12,7 @@ namespace UtilsTest.Math.Expressions
 	[TestClass]
 	public class ExpressionDerivationTest
 	{
-		ExpressionDerivation derivation = new ExpressionDerivation("x");
+		readonly ExpressionDerivation derivation = new ExpressionDerivation("x");
 
 		[TestMethod]
 		public void SimpleExpressionTest1()

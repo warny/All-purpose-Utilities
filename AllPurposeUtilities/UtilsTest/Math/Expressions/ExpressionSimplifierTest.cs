@@ -21,7 +21,7 @@ namespace UtilsTest.Math.Expressions
 			Expression<Func<double, double>> Target = x => 1;
 
 			var simplified = simplifier.Simplify(expression);
-			Assert.IsTrue(ExpressionUtils.Equals(expression, Target));
+			Assert.IsTrue(ExpressionUtils.Equals(simplified, Target));
 		}
 	}
 }

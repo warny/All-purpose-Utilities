@@ -10,12 +10,10 @@ namespace Utils.Mathematics.Expressions.Parser
 		public bool CanContinue { get; protected set; }
 		public bool Completed { get; protected set; }
 		public Result Result { get; protected set; }
-		public int Start { get; private set;}
 
 		protected internal abstract bool Next(char c, int index);
 		protected internal virtual void Reset(int index)
 		{
-			Start = index;
 			Completed = false;
 			Result = new Result(index);
 		}

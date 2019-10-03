@@ -74,7 +74,7 @@ namespace Utils.Objects
 		{
 			if (count == 0) return "";
 			if (count == 1) return @string;
-			StringBuilder result = new StringBuilder(@string.Length * count);
+			var result = new StringBuilder(@string.Length * count);
 			for (int i = 0; i < count; i++)
 			{
 				result.Append(@string);
@@ -195,10 +195,7 @@ namespace Utils.Objects
 		/// au premier caractère de cette instance, ou System.String.Empty si startIndex est
 		/// égal à la longueur de cette instance et length est égal à zéro.
 		/// </returns>
-		public static string Left( this string String, int length )
-		{
-			return Mid(String, 0, length);
-		}
+		public static string Left(this string String, int length) => Mid(String, 0, length);
 
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre au premier caractère et a une longueur définie.

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -269,11 +270,13 @@ namespace Utils.Mathematics
 		#endregion
 
 		#region comparaisons
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool Between<T>( this T value, T lowerBound, T upperBound ) where T : IComparable<T>
 		{
 			return value.CompareTo(lowerBound) >= 0 && value.CompareTo(upperBound) <= 0;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool Between<T>( this T value, IComparer<T> comparer, T lowerBound, T upperBound )
 		{
 			return comparer.Compare(value, lowerBound) >= 0 && comparer.Compare(value,upperBound) <= 0;
@@ -286,6 +289,7 @@ namespace Utils.Mathematics
 		/// <param name="value">Valeur à rechercher</param>
 		/// <param name="objects">Liste de valeurs dans lesquelles la recherche s'applique</param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool In<T>( this T value, params T[] objects )
 		{
 			return Array.IndexOf<T>(objects, value) > -1;
@@ -298,6 +302,7 @@ namespace Utils.Mathematics
 		/// <param name="value">Valeur à rechercher</param>
 		/// <param name="objects">Liste de valeurs dans lesquelles la recherche s'applique</param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool NotIn<T>( this T value, params T[] objects )
 		{
 			return Array.IndexOf<T>(objects, value) == -1;

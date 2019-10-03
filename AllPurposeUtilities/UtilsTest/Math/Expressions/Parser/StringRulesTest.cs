@@ -11,7 +11,7 @@ using Utils.Objects;
 namespace UtilsTest.Math.Expressions.Parser
 {
 	[TestClass]
-	public class StringRules
+	public class StringRulesTest
 	{
 		[TestMethod]
 		public void ValidString()
