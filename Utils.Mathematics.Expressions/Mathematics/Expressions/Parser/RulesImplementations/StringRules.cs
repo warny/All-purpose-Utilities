@@ -39,7 +39,6 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				stringIndex++;
 				if (stringIndex == @string.Length)
 				{
-					Completed = true;
 					CanContinue = false;
 					Result.Success = true;
 				}
@@ -47,7 +46,6 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 			else
 			{
-				Completed = true;
 				Result.Success = false;
 				return false;
 			}

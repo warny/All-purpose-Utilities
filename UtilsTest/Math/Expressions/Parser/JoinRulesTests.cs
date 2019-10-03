@@ -10,7 +10,7 @@ using Utils.Objects;
 namespace UtilsTest.Math.Expressions.Parser
 {
 	[TestClass]
-	public class JoinRulesTest
+	public class JoinRulesTests
 	{
 		[TestMethod]
 		public void SimpleRepetition()
@@ -19,12 +19,10 @@ namespace UtilsTest.Math.Expressions.Parser
 			string testString = StringUtils.RandomString(5);
 			int repetition = r.Next(3, 5);
 			string repetedString = testString.Repeat(repetition);
-			Rule rule = Rules.String(testString) * repetition;
-			RuleTester.Test(rule, repetedString);
 
-			Assert.AreEqual(repetedString, rule.Result.Index.Value);
-			Assert.AreEqual(0, rule.Result.Index.Start);
-			Assert.AreEqual(repetedString.Length, rule.Result.Index.End);
+			Rule rule = Rules.String(testString) * repetition;
+			var result = RuleTester.Test(rule, repetedString);
+			ParserTestsUtils.AssertTrueResult(repetedString, result);
 		}
 
 		[TestMethod]
@@ -36,12 +34,10 @@ namespace UtilsTest.Math.Expressions.Parser
 			int minRepetition = r.Next(3, maxRepetition);
 			int repetition = r.Next(minRepetition, maxRepetition);
 			string repetedString = testString.Repeat(repetition);
-			Rule rule = Rules.String(testString) * (minRepetition, maxRepetition);
-			RuleTester.Test(rule, repetedString);
 
-			Assert.AreEqual(repetedString, rule.Result.Index.Value);
-			Assert.AreEqual(0, rule.Result.Index.Start);
-			Assert.AreEqual(repetedString.Length, rule.Result.Index.End);
+			Rule rule = Rules.String(testString) * (minRepetition, maxRepetition);
+			var result = RuleTester.Test(rule, repetedString);
+			ParserTestsUtils.AssertTrueResult(repetedString, result);
 		}
 
 		[TestMethod]
@@ -50,33 +46,55 @@ namespace UtilsTest.Math.Expressions.Parser
 			string testString = "aaaaaa";
 			Rule testRule = Rules.Chars("abcdef") * 5;
 			var result = RuleTester.Test(testRule, testString);
-			Assert.AreEqual(false, result.Success);
+			Assert.IsFalse(result.Success);
 		}
 
 		[TestMethod]
 		public void ComplexRepetition2()
 		{
-			string testString1 = "ababa";
-			string testString2 = "abababa";
 			Rule testRule = Rules.String("ab") * (2,3) + Rules.String("a");
+
+			string testString1 = "ababa";
 			var result1 = RuleTester.Test(testRule, testString1);
-			Assert.AreEqual(true, result1.Success);
+			ParserTestsUtils.AssertTrueResult(testString1, result1);
+
+			string testString2 = "abababa";
 			var result2 = RuleTester.Test(testRule, testString2);
-			Assert.AreEqual(true, result2.Success);
+			ParserTestsUtils.AssertTrueResult(testString2, result2);
 		}
 
 		[TestMethod]
 		public void FalseComplexRepetition2()
 		{
-			string testString1 = "ababab";
-			string testString2 = "abababab";
 			Rule testRule = Rules.String("ab") * (2, 3) + Rules.String("a");
+			
+			string testString1 = "ababab";
 			var result1 = RuleTester.Test(testRule, testString1);
-			Assert.AreEqual(false, result1.Success);
+			Assert.IsFalse(result1.Success);
+			
+			string testString2 = "abababab";
 			var result2 = RuleTester.Test(testRule, testString2);
-			Assert.AreEqual(false, result2.Success);
+			Assert.IsFalse(result2.Success);
 		}
 
+		[TestMethod]
+		public void SequenceWithOr()
+		{
+			Random r = new Random();
+			string[] testStrings = new string[3];
+			testStrings[0] = r.RandomString(r.Next(2, 4));
+			testStrings[1] = testStrings[0] + r.RandomString(r.Next(2, 4));
+			testStrings[2] = testStrings[1] + r.RandomString(r.Next(2, 4));
+			string tail = r.RandomString(r.Next(2, 4));
+
+			var testString = testStrings[1] + tail;
+
+			var testRule = Rules.Or(testStrings.Select(s => Rules.String(s))) + Rules.String(tail);
+
+			var result = RuleTester.Test(testRule, testString);
+			ParserTestsUtils.AssertTrueResult(testString, result); 
+
+		}
 
 	}
 }

@@ -18,7 +18,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		}
 	}
 
-	public abstract class JoinRule<T> : Rule
+	public abstract class SequencedRule<T> : Rule
 		where T: Cursor
 	{
 
@@ -99,36 +99,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 	}
 
-	public class NotRule : Rule
-	{
-		public NotRule(Rule rule)
-		{
-			this.Rule = rule ?? throw new ArgumentNullException(nameof(rule));
-		}
-
-		public Rule Rule { get; }
-
-		protected internal override bool Next(char c, int index)
-		{
-			if (!Result.Success) return false;
-
-			Result.Index.NextChar(c);
-			if (Rule.Result.Success)
-			{
-				Result.Success = false;
-				Completed = false;
-				return false;
-			}
-			Result.Success = true;
-			Completed = true;
-			return true;
-		}
-
-		protected internal override Rule Clone() => new NotRule(Rule.Clone());
-		protected override Rule Not() => this.Rule;
-	}
-
-	public class SequencedRule : JoinRule<SequencedRule.SequenceCursor>
+	public class SequenceRule : SequencedRule<SequenceRule.SequenceCursor>
 	{
 		private List<Rule> Rules { get; }
 
@@ -143,13 +114,13 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			public override string ToString() => $"Sequence : {Rules.Count}";
 		}
 
-		public SequencedRule(params Rule[] rules) : this((IEnumerable<Rule>)rules) { }
-		public SequencedRule(IEnumerable<Rule> rules)
+		public SequenceRule(params Rule[] rules) : this((IEnumerable<Rule>)rules) { }
+		public SequenceRule(IEnumerable<Rule> rules)
 		{
 			this.Rules = new List<Rule>();
 			foreach (var rule in rules)
 			{
-				if (rule is SequencedRule sr) this.Rules.AddRange(sr.Rules);
+				if (rule is SequenceRule sr) this.Rules.AddRange(sr.Rules);
 				else this.Rules.Add(rule);
 			}
 		}
@@ -171,10 +142,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			{
 				copiedRules.Add(rule.Clone());
 			}
-			return new SequencedRule(copiedRules);
+			return new SequenceRule(copiedRules);
 		}
 
-		protected override Rule Then(Rule rule) => new SequencedRule(this.Rules.Union(new[] { rule }));
+		protected override Rule Then(Rule rule) => new SequenceRule(this.Rules.Union(new[] { rule }));
 
 		protected override bool UseCursor(SequenceCursor cursor) => true;
 		protected override SequenceCursor Copy(SequenceCursor cursor) {
@@ -191,65 +162,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		public override string ToString() => string.Join("", Rules);
 	}
 
-	public class ParallelRule : Rule
-	{
-		private readonly List<Rule> rules;
-		private readonly List<Rule> activeRules;
-		public ParallelRule(params Rule[] rules) : this((IEnumerable<Rule>)rules) { }
-		public ParallelRule(IEnumerable<Rule> rules)
-		{
-			this.rules = new List<Rule>();
-			this.activeRules = new List<Rule>();
-			foreach (var rule in rules)
-			{
-				if (rule is ParallelRule pr) this.rules.AddRange(pr.rules);
-				else this.rules.Add(rule);
-			}
-		}
-
-		protected internal override void Reset(int index)
-		{
-			base.Reset(index);
-			activeRules.Clear();
-			foreach (var r in this.rules)
-			{
-				r.Reset(index);
-				activeRules.Add(r);
-			}
-		}
-
-		protected internal override bool Next(char c, int index)
-		{
-			bool result = false;
-			var rulesToRemove = new List<Rule>();
-			foreach (var rule in this.activeRules)
-			{
-				rule.Next(c, index);
-				if (rule.Completed && rule.Result.Success)
-				{
-					this.Result = rule.Result;
-					this.Completed = true;
-					this.CanContinue = activeRules.Count > 1 || rule.CanContinue;
-					result = true;
-					continue;
-				}
-				rulesToRemove.Add(rule);
-			}
-			this.activeRules.RemoveRange(rulesToRemove);
-
-			return result;
-		}
-
-		protected internal override Rule Clone()
-		{
-			var copiedRules = this.rules.Copy(r => r.Clone());
-			return new ParallelRule(copiedRules);
-		}
-
-		public override string ToString() => "(" + string.Join("|", rules.Select(r => r.ToString())) + ")";
-	}
-
-	public class RepetitionRule : JoinRule<RepetitionRule.RepetitionCursor>
+	public class RepetitionRule : SequencedRule<RepetitionRule.RepetitionCursor>
 	{
 		public class RepetitionCursor : Cursor {
 			public int Repetition { get; set; }

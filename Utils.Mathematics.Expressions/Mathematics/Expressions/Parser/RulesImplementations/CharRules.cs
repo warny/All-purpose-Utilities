@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
+﻿namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
 	public class IncludeCharRule : Rule
 	{
@@ -15,13 +11,11 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			if (c.In(chars))
 			{
-				Completed = true;
 				Result = new Result(index, index + 1, c.ToString());
 				return true;
 			}
 			else
 			{
-				Completed = false;
 				Result = new Result();
 				return false;
 			}
@@ -51,13 +45,11 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			if (c.Between(Start, End))
 			{
-				Completed = true;
 				Result = new Result(index, index + 1, c.ToString());
 				return true;
 			}
 			else
 			{
-				Completed = false;
 				Result = new Result();
 				return false;
 			}
@@ -75,13 +67,11 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			if (c.NotIn(chars))
 			{
-				Completed = true;
 				Result = new Result(index, index, c.ToString());
 				return true;
 			}
 			else
 			{
-				Completed = false;
 				Result = new Result();
 				return false;
 			}
@@ -109,13 +99,11 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			if (!c.Between(Start, End))
 			{
-				Completed = true;
 				Result = new Result(index, index + 1, c.ToString());
 				return true;
 			}
 			else
 			{
-				Completed = false;
 				Result = new Result();
 				return false;
 			}
