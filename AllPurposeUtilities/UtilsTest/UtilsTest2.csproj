@@ -52,25 +52,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Array\ArrayUtilsTest.cs" />
-    <Compile Include="Files\PathUtilsTest.cs" />
-    <Compile Include="Math\Expressions\Compiler\ConstantTests.cs" />
-    <Compile Include="Math\Expressions\Compiler\ExpressionTreeTests.cs" />
-    <Compile Include="Math\Expressions\Compiler\LoopTests.cs" />
-    <Compile Include="Math\Expressions\Compiler\LambdaTests.cs" />
-    <Compile Include="Math\Expressions\Compiler\ObjectTests.cs" />
-    <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
-    <Compile Include="Math\Expressions\ExpressionSimplifierTest.cs" />
-    <Compile Include="Math\Expressions\Parser\CharRulesTest.cs" />
-    <Compile Include="Math\Expressions\Parser\JoinRulesTest.cs" />
-    <Compile Include="Math\Expressions\Parser\StringRulesTest.cs" />
-    <Compile Include="Objects\DateUtilitiesTest.cs" />
-    <Compile Include="Objects\StringDifferenceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Reflection\DllMapperTest.cs" />
-    <Compile Include="Streams\ReaderWriterTest.cs" />
-    <Compile Include="Streams\StreamCopierTest.cs" />
-    <Compile Include="Web\UriBuilderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

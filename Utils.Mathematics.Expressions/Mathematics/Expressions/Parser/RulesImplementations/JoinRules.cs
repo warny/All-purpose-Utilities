@@ -67,6 +67,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				}
 				else
 				{
+					cursor.Result.Success = false;
 					if (!valid) toRemove.Add(cursor);
 				}
 			}
