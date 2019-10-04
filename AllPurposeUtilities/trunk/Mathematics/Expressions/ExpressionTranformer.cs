@@ -19,44 +19,38 @@ namespace Utils.Mathematics.Expressions
 		{
 			Type t = this.GetType();
 
-			var cc = e as ConstantExpression;
-			var ue = e as UnaryExpression;
-			var be = e as BinaryExpression;
-			var ie = e as InvocationExpression;
-			var le = e as LambdaExpression;
-			var mce = e as MethodCallExpression;
-			var pe = e as ParameterExpression;
-
 			object[] parameters = null;
 			Expression[] expressionParameters = null;
 
-			if (cc!= null) {
+			var cc = e as ConstantExpression;
+
+			if (cc != null) {
 				expressionParameters = new Expression[0];
 				parameters = new[] { cc, cc.Value };
-			} else if (ue != null) {
+			} else if (e is UnaryExpression ue) {
 				expressionParameters = new Expression[] { PrepareExpression(ue.Operand) };
 				e = ue = (UnaryExpression)CopyExpression(e, expressionParameters);
 				parameters = new[] { ue, ue.Operand };
-			} else if (be != null) {
+			} else if (e is BinaryExpression be) {
 				expressionParameters = new Expression[] { PrepareExpression(be.Left), PrepareExpression(be.Right) };
 				e = be = (BinaryExpression)CopyExpression(e, expressionParameters);
 				parameters = new[] { be, be.Left, be.Right };
-			} else if (mce!= null) {
+			} else if (e is MethodCallExpression mce) {
 				expressionParameters = mce.Arguments.Select(a => PrepareExpression(a)).ToArray();
 				e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
 				parameters = new object[mce.Arguments.Count + 1];
 				parameters[0] = mce;
 				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else if (pe != null) {
+			} else if (e is ParameterExpression pe) {
 				expressionParameters = new Expression[0];
 				parameters = new object[] { pe };
-			} else if (ie != null) {
+			} else if (e is InvocationExpression ie) {
 				expressionParameters = ie.Arguments.Select(a => PrepareExpression(a)).ToArray();
 				e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
 				parameters = new object[ie.Arguments.Count + 1];
 				parameters[0] = ie;
 				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else if (le != null) {
+			} else if (e is LambdaExpression le) {
 				expressionParameters = le.Parameters.Select(a => (ParameterExpression)PrepareExpression(a)).ToArray();
 				e = le = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
 				parameters = new object[le.Parameters.Count + 1];
@@ -80,8 +74,8 @@ namespace Utils.Mathematics.Expressions
 				if (parametersInfo.Length > 1) {
 					bool isValid = true;
 					for (int i = 1 ; i < parametersInfo.Length ; i++) {
-						if (parameters[i] is Expression) {
-							if (!CheckParameter((Expression)parameters[i], parametersInfo[i])) {
+						if (parameters[i] is Expression p) {
+							if (!CheckParameter(p, parametersInfo[i])) {
 								isValid = false;
 								break;
 							}
