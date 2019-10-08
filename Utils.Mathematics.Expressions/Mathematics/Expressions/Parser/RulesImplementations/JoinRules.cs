@@ -6,6 +6,9 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
+	/// <summary>
+	/// Curseur d'exécution des séquences
+	/// </summary>
 	public class Cursor
 	{
 		public Result Result { get; set; }
@@ -18,6 +21,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		}
 	}
 
+	/// <summary>
+	/// Système de rêgles devant être exécutées en séquence
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
 	public abstract class SequencedRule<T> : Rule
 		where T: Cursor
 	{
@@ -99,6 +106,9 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 	}
 
+	/// <summary>
+	/// Ensemble de rêgles devant être exécutées en séquence ordonnée
+	/// </summary>
 	public class SequenceRule : SequencedRule<SequenceRule.SequenceCursor>
 	{
 		private List<Rule> Rules { get; }
@@ -162,6 +172,9 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		public override string ToString() => string.Join("", Rules);
 	}
 
+	/// <summary>
+	/// Répéteur de rêgles
+	/// </summary>
 	public class RepetitionRule : SequencedRule<RepetitionRule.RepetitionCursor>
 	{
 		public class RepetitionCursor : Cursor {

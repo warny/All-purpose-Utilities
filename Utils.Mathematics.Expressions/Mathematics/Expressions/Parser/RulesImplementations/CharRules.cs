@@ -1,5 +1,8 @@
 ﻿namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
+	/// <summary>
+	/// Inclusion de caractères
+	/// </summary>
 	public class IncludeCharRule : Rule
 	{
 		private readonly char[] chars;
@@ -26,6 +29,9 @@
 		public override string ToString() => "[" + new string(chars) + "]";
 	}
 
+	/// <summary>
+	/// Inclusion d'une plage de caractères
+	/// </summary>
 	public class RangeCharRule : Rule
 	{
 		public RangeCharRule(char start, char end)
@@ -56,6 +62,9 @@
 		}
 	}
 
+	/// <summary>
+	/// Exclusion de caractères
+	/// </summary>
 	public class ExcludeCharRule : Rule
 	{
 		private readonly char[] chars;
@@ -80,6 +89,9 @@
 		public override string ToString() => "[^" + new string(chars) + "]";
 	}
 
+	/// <summary>
+	/// Exclusion de caractères dans une plage
+	/// </summary>
 	public class ExcludeRangeCharRule : Rule
 	{
 		public ExcludeRangeCharRule(char start, char end)

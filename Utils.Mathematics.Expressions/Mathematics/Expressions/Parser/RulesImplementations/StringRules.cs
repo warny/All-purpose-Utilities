@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
+	/// <summary>
+	/// Comparaison à une chaîne
+	/// </summary>
 	public class StringRule : Rule
 	{
 		private readonly string @string;

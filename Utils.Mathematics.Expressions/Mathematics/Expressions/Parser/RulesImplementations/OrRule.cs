@@ -4,6 +4,9 @@ using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
+	/// <summary>
+	/// Ensemble de rêgles dont l'une doit être vérifiée 
+	/// </summary>
 	public class OrRule : Rule
 	{
 		private readonly List<Rule> rules;
@@ -45,7 +48,6 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				if (rule.Result.Success)
 				{
 					this.CanContinue = rule.CanContinue;
-					continue;
 				}
 			}
 			this.activeRules.RemoveRange(rulesToRemove);

@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
+	/// <summary>
+	/// Négation d'une rêgle
+	/// </summary>
 	public class NotRule : Rule
 	{
 		public NotRule(Rule rule)
@@ -16,9 +19,12 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		protected internal override bool Next(char c, int index)
 		{
 			CanContinue = true;
-			if (!Result.Success) return false;
-
 			Result.Index.NextChar(c);
+			if (!Result.Success)
+			{
+				return false;
+			}
+
 			if (Rule.Result.Success)
 			{
 				CanContinue = false;
