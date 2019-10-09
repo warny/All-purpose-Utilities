@@ -7,6 +7,10 @@ namespace Utils.Mathematics.Expressions.Parser
 
 	public sealed class Result
 	{
+		private readonly Dictionary<string, Group> groups = new Dictionary<string, Group>();
+
+		public IReadOnlyDictionary<string, IReadOnlyList<ParserIndex>> Groups => (IReadOnlyDictionary<string, IReadOnlyList<ParserIndex>>)groups;
+
 		internal Result()
 		{
 			this.Success = false;
@@ -46,6 +50,27 @@ namespace Utils.Mathematics.Expressions.Parser
 
 		public bool Success { get; internal set; }
 		public ParserIndex Index { get; }
+
+		internal void PushGroup(string groupName, ParserIndex value)
+		{
+			if (!groups.TryGetValue(groupName, out Group group))
+			{
+				group = new Group();
+				groups.Add(groupName, group);
+			}
+			group.Push(value);
+		}
+		internal ParserIndex PopGroup(string groupName)
+		{
+			if (!groups.TryGetValue(groupName, out Group group)) return null;
+			return group.Pop();
+		}
+		internal ParserIndex Peek(string groupName)
+		{
+			if (!groups.TryGetValue(groupName, out Group group)) return null;
+			return group.Peek();
+		}
+
 
 		public static Result operator +(Result result1, Result result2)
 		{

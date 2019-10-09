@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser
 {
+
 	public class Context : ICloneable
 	{
 		private readonly Dictionary<string, Stack<Result>> groups;
