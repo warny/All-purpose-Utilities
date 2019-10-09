@@ -12,9 +12,9 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		private readonly string @string;
 		private int stringIndex = 0;
 
-		protected internal override void Reset(int index)
+		protected internal override void Reset(int index, Context context)
 		{
-			base.Reset(index);
+			base.Reset(index, context);
 			stringIndex = 0;
 		}
 

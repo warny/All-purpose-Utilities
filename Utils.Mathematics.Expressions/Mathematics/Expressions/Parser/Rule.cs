@@ -20,6 +20,8 @@ namespace Utils.Mathematics.Expressions.Parser
 		/// </summary>
 		public Result Result { get; protected set; }
 
+		public Context Context { get; protected set; }
+
 		/// <summary>
 		/// Test du prochain caractère
 		/// </summary>
@@ -32,8 +34,9 @@ namespace Utils.Mathematics.Expressions.Parser
 		/// Réinitialise les paramètres de la rêgle
 		/// </summary>
 		/// <param name="index">Index du caractère dans la chaîne</param>
-		protected internal virtual void Reset(int index)
+		protected internal virtual void Reset(int index, Context context)
 		{
+			Context = context;
 			Result = new Result(index);
 		}
 

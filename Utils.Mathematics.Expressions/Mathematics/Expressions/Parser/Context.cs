@@ -5,32 +5,29 @@ using System.Text;
 namespace Utils.Mathematics.Expressions.Parser
 {
 
-	public class Context : ICloneable
+	public class Context
 	{
-		private readonly Dictionary<string, Stack<Result>> groups;
+		public Groups Groups { get; }
 		public Result Result { get; }
 
 		public Context()
 		{
-			groups = new Dictionary<string, Stack<Result>>();
+			Groups = new Groups();
 			Result = new Result();
 		}
 
 		public Context(Context context) : this()
 		{
-			foreach (var group in context.Groups)
-			{
-				var targetResults = new Stack<Result>();
-				foreach (var sourceResults in group.Value)
-				{
-					targetResults.Push(new Result(sourceResults));
-				}
-				this.groups.Add(group.Key, targetResults);
-			}
+			Groups = context.Groups.Clone();
 			Result = new Result(context.Result);
 		}
 
-		public IDictionary<string, Stack<Result>> Groups => groups;
-		public object Clone() => new Context(this);
+		public Context(Context context, Result result)
+		{
+			Groups = result.Groups;
+			Result = result;
+		}
+
+		public Context Clone() => new Context(this);
 	}
 }

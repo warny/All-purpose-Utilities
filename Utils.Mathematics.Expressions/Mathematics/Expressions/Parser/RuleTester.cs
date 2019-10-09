@@ -9,7 +9,8 @@ namespace Utils.Mathematics.Expressions.Parser
 	{
 		public static Result Test(Rule rule, string testString)
 		{
-			rule.Reset(0);
+			var context = new Context();
+			rule.Reset(0, context);
 
 			for (int i = 0; i < testString.Length; i++)
 			{

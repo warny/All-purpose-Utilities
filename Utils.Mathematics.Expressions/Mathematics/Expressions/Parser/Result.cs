@@ -7,25 +7,27 @@ namespace Utils.Mathematics.Expressions.Parser
 
 	public sealed class Result
 	{
-		private readonly Dictionary<string, Group> groups = new Dictionary<string, Group>();
-
-		public IReadOnlyDictionary<string, IReadOnlyList<ParserIndex>> Groups => (IReadOnlyDictionary<string, IReadOnlyList<ParserIndex>>)groups;
+		public Groups Groups { get; }
 
 		internal Result()
 		{
 			this.Success = false;
+			this.Groups = new Groups();
 		}
 
 		internal Result(Result result)
 		{
 			this.Index = new ParserIndex(result.Index);
 			this.Success = result.Success;
+			this.Groups = result.Groups;
+
 		}
 
 		internal Result(int startIndex)
 		{
 			this.Success = false;
 			this.Index = new ParserIndex(startIndex, startIndex, 0, "");
+			this.Groups = new Groups();
 		}
 
 		internal Result(int startIndex, int endIndex, string value, bool success = true)

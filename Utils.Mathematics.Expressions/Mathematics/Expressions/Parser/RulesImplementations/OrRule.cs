@@ -23,13 +23,13 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 		}
 
-		protected internal override void Reset(int index)
+		protected internal override void Reset(int index, Context context)
 		{
-			base.Reset(index);
+			base.Reset(index, context);
 			activeRules.Clear();
 			foreach (var r in this.rules)
 			{
-				r.Reset(index);
+				r.Reset(index, context);
 				activeRules.Add(r);
 			}
 		}
