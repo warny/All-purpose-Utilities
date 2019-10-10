@@ -36,8 +36,8 @@ namespace Utils.Mathematics.Expressions.Parser
 		/// <param name="index">Index du caractère dans la chaîne</param>
 		protected internal virtual void Reset(int index, Context context)
 		{
-			Context = context;
 			Result = new Result(index);
+			Context = context;
 		}
 
 		/// <summary>
@@ -100,17 +100,19 @@ namespace Utils.Mathematics.Expressions.Parser
 
 	public static class Rules
 	{
-		public static Rule Chars(params char[] chars) => new RulesImplementations.IncludeCharRule(chars);
-		public static Rule Chars(string chars) => new RulesImplementations.IncludeCharRule(chars);
-		public static Rule ExcludeChars(params char[] chars) => new RulesImplementations.ExcludeCharRule(chars);
-		public static Rule ExcludeChars(string chars) => new RulesImplementations.ExcludeCharRule(chars);
-		public static Rule String(string @string) => new RulesImplementations.StringRule(@string);
-		public static Rule Sequence(IEnumerable<Rule> rules) => new RulesImplementations.SequenceRule(rules);
-		public static Rule Sequence(params Rule[] rules) => new RulesImplementations.SequenceRule(rules);
-		public static Rule Or(IEnumerable<Rule> rules) => new RulesImplementations.OrRule(rules);
-		public static Rule Or(params Rule[] rules) => new RulesImplementations.OrRule(rules);
+		public static Rule Chars(params char[] chars) => new IncludeCharRule(chars);
+		public static Rule Chars(string chars) => new IncludeCharRule(chars);
+		public static Rule ExcludeChars(params char[] chars) => new ExcludeCharRule(chars);
+		public static Rule ExcludeChars(string chars) => new ExcludeCharRule(chars);
+		public static Rule String(string @string) => new StringRule(@string);
+		public static Rule Sequence(IEnumerable<Rule> rules) => new SequenceRule(rules);
+		public static Rule Sequence(params Rule[] rules) => new SequenceRule(rules);
+		public static Rule Or(IEnumerable<Rule> rules) => new OrRule(rules);
+		public static Rule Or(params Rule[] rules) => new OrRule(rules);
 		public static Rule Repeat(this Rule rule, int repetition) => new RepetitionRule(rule, repetition);
 		public static Rule Repeat(this Rule rule, int minimum = 0, int maximum = int.MaxValue) => new RepetitionRule(rule, minimum, maximum);
 		public static Rule Not(Rule rule) => !rule;
+		public static Rule Group(string name, Rule rule) => new GroupRule(name, rule);
+		public static Rule GroupReference(string name) => new GroupReference(name);
 	}
 }

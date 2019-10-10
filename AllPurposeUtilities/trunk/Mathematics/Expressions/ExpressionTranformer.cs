@@ -114,7 +114,6 @@ namespace Utils.Mathematics.Expressions
 
 		protected Expression ReplaceArguments( Expression e, ParameterExpression[] oldParameters, Expression[] newParameters )
 		{
-			var cc = e as ConstantExpression;
 			var ue = e as UnaryExpression;
 			var be = e as BinaryExpression;
 			var ie = e as InvocationExpression;

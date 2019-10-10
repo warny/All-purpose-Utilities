@@ -44,6 +44,8 @@ namespace Utils.Mathematics.Expressions.Parser
 			End++;
 		}
 
+		public ParserIndex Clone() => new ParserIndex(this);
+
 		public static ParserIndex operator +(ParserIndex index1, ParserIndex index2) => new ParserIndex(index1, index2);
 	}
 }

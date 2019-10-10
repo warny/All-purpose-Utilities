@@ -29,7 +29,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			activeRules.Clear();
 			foreach (var r in this.rules)
 			{
-				r.Reset(index, context);
+				r.Reset(index, context.Clone());
 				activeRules.Add(r);
 			}
 		}
@@ -52,8 +52,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 			this.activeRules.RemoveRange(rulesToRemove);
 			this.CanContinue = CanContinue || !activeRules.All(r=> !r.Result.Success);
-			this.Result = this.activeRules.FirstOrDefault(r=>r.Result.Success)?.Result;
-			this.Result = this.Result ?? this.activeRules.FirstOrDefault()?.Result ?? new Result();
+
+			var resultRule = this.activeRules.FirstOrDefault(r => r.Result.Success) ?? this.activeRules.FirstOrDefault();
+			this.Result = resultRule?.Result ?? new Result();
+			this.Context = resultRule?.Context ?? this.Context;
 			return this.activeRules.Any();
 		}
 

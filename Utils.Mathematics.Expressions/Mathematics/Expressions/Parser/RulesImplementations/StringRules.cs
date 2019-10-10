@@ -4,28 +4,17 @@ using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
-	/// <summary>
-	/// Comparaison à une chaîne
-	/// </summary>
-	public class StringRule : Rule
+	public abstract class StringRuleBase : Rule
 	{
-		private readonly string @string;
+		private protected string @string;
 		private int stringIndex = 0;
-
+		
 		protected internal override void Reset(int index, Context context)
 		{
 			base.Reset(index, context);
 			stringIndex = 0;
 		}
-
-		public StringRule(string @string)
-		{
-			if (string.IsNullOrEmpty(@string)) throw new ArgumentNullException(nameof(@string));
-			this.@string = @string;
-		}
-
-		public StringRule(StringRule sr1, StringRule sr2) : this(sr1.@string + sr2.@string) { }
-
+		
 		protected internal override bool Next(char c, int index)
 		{
 			if (stringIndex >= @string.Length)
@@ -53,6 +42,22 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				return false;
 			}
 		}
+	}
+
+	/// <summary>
+	/// Comparaison à une chaîne
+	/// </summary>
+	public class StringRule : StringRuleBase
+	{
+
+		public StringRule(string @string) 
+		{
+			if (string.IsNullOrEmpty(@string)) throw new ArgumentNullException(nameof(@string));
+			this.@string = @string;
+		}
+
+		public StringRule(StringRule sr1, StringRule sr2) : this(sr1.@string + sr2.@string) { }
+
 
 		protected override Rule Then(Rule rule)
 		{

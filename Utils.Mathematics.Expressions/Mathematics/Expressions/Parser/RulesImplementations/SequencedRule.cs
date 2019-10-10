@@ -13,13 +13,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 	{
 		public Result Result { get; set; }
 		public Rule Rule { get; set; }
-		public Context Context { get; set; }
-
-		internal Cursor(Result result, Rule rule, Context context)
+		internal Cursor(Result result, Rule rule)
 		{
 			this.Result = result ?? throw new ArgumentNullException(nameof(result));
 			this.Rule = rule ?? throw new ArgumentNullException(nameof(rule));
-			this.Context = context ?? throw new ArgumentNullException(nameof(context));
 		}
 	}
 
@@ -57,9 +54,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 						newCursor.Result += cursor.Rule.Result;
 						if (newCursor.Rule != null)
 						{
-							Context context = newCursor.Context.Clone();
-							
-							newCursor.Rule.Reset(index, newCursor.Context);
+							newCursor.Rule.Reset(index, cursor.Rule.Context.Clone());
 							toAdd.Add(newCursor);
 						}
 					}
@@ -68,7 +63,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 						cursor.Result += cursor.Rule.Result;
 						if (Next(cursor))
 						{
-							cursor.Rule.Reset(index, cursor.Context);
+							cursor.Rule.Reset(index, cursor.Rule.Context ?? Context);
 						}
 						else
 						{
@@ -108,6 +103,12 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			return true;
 		}
 
+		protected internal override void Reset(int index, Context context)
+		{
+			base.Reset(index, context);
+			this.Context = Context;
+		}
+
 	}
 
 	/// <summary>
@@ -119,7 +120,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 		public class SequenceCursor : Cursor
 		{
-			public SequenceCursor(Result result, Rule rule, Queue<Rule> rules, Context context) : base(result, rule, context)
+			public SequenceCursor(Result result, Rule rule, Queue<Rule> rules) : base(result, rule)
 			{
 				this.Rules = rules ?? throw new ArgumentNullException(nameof(rules));
 			}
@@ -146,7 +147,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			Rule rule = rules.Dequeue();
 			rule.Reset(index, context);
 			Cursors.Clear();
-			Cursors.Add(new SequenceCursor(this.Result, rule, rules, context));
+			Cursors.Add(new SequenceCursor(this.Result, rule, rules));
 		}
 
 		protected internal override Rule Clone()
@@ -165,7 +166,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		protected override SequenceCursor Copy(SequenceCursor cursor) {
 			Queue<Rule> queue = cursor.Rules.Copy(r=>r.Clone());
 			var rule = queue.Dequeue();
-			return new SequenceCursor(cursor.Result, rule, queue, cursor.Context.Clone());
+			return new SequenceCursor(cursor.Result, rule, queue);
 		}
 		protected override bool Next(SequenceCursor cursor) {
 			if (!cursor.Rules.Any()) return false;
@@ -184,7 +185,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		public class RepetitionCursor : Cursor {
 			public int Repetition { get; set; }
 
-			internal RepetitionCursor(Result result, int repetition, Rule rule, Context context) : base(result, rule, context)
+			internal RepetitionCursor(Result result, int repetition, Rule rule) : base(result, rule)
 			{
 				Repetition = repetition;
 			}
@@ -202,7 +203,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		}
 
 		protected override bool UseCursor(RepetitionCursor cursor) => cursor.Repetition <= Maximum;
-		protected override RepetitionCursor Copy(RepetitionCursor cursor) => new RepetitionCursor(cursor.Result + cursor.Rule.Result, cursor.Repetition + 1, cursor.Rule.Clone(), cursor.Context.Clone());
+		protected override RepetitionCursor Copy(RepetitionCursor cursor) => new RepetitionCursor(cursor.Result + cursor.Rule.Result, cursor.Repetition + 1, cursor.Rule.Clone());
 		protected override bool Next(RepetitionCursor cursor)
 		{
 			cursor.Repetition++;
@@ -225,7 +226,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			base.Reset(index, context);
 			Rule.Reset(index, context);
 			Cursors.Clear();
-			Cursors.Add(new RepetitionCursor(Result, 1, Rule, context));
+			Cursors.Add(new RepetitionCursor(Result, 1, Rule));
 		}
 
 		protected internal override Rule Clone() => new RepetitionRule(Rule, Minimum, Maximum);
