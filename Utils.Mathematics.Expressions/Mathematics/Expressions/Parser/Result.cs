@@ -21,13 +21,13 @@ namespace Utils.Mathematics.Expressions.Parser
 		internal Result(int startIndex)
 		{
 			this.Success = false;
-			this.Index = new ParserIndex(startIndex, startIndex, 0, "");
+			this.Index = new ParserIndex(startIndex, startIndex, "");
 		}
 
 		internal Result(int startIndex, int endIndex, string value, bool success = true)
 		{
 			this.Success = success;
-			this.Index = new ParserIndex(startIndex, endIndex, endIndex - startIndex, value);
+			this.Index = new ParserIndex(startIndex, endIndex, value);
 		}
 
 		internal Result(ParserIndex result1, ParserIndex result2, bool success)

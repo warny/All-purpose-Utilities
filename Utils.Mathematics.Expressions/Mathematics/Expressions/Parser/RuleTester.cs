@@ -15,6 +15,7 @@ namespace Utils.Mathematics.Expressions.Parser
 			for (int i = 0; i < testString.Length; i++)
 			{
 				char c = testString[i];
+				System.Diagnostics.Debug.WriteLine($"lecture caractère {i} : {c}");
 				if (!rule.Next(c, i)) break;
 			}
 

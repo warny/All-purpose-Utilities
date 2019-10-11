@@ -54,7 +54,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 						newCursor.Result += cursor.Rule.Result;
 						if (newCursor.Rule != null)
 						{
-							newCursor.Rule.Reset(index, cursor.Rule.Context.Clone());
+							newCursor.Rule.Reset(index + 1, cursor.Rule.Context.Clone());
 							toAdd.Add(newCursor);
 						}
 					}
@@ -63,7 +63,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 						cursor.Result += cursor.Rule.Result;
 						if (Next(cursor))
 						{
-							cursor.Rule.Reset(index, cursor.Rule.Context ?? Context);
+							cursor.Rule.Reset(index + 1, cursor.Rule.Context ?? new Context(Context, cursor.Result));
 						}
 						else
 						{
@@ -103,10 +103,8 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			return true;
 		}
 
-		protected internal override void Reset(int index, Context context)
-		{
-			base.Reset(index, context);
-			this.Context = Context;
+		protected internal override void OnReset(int index, Context context) {
+			Result = new Result(index);
 		}
 
 	}
@@ -140,9 +138,9 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			}
 		}
 
-		protected internal override void Reset(int index, Context context)
+		protected internal override void OnReset(int index, Context context)
 		{
-			base.Reset(index, context);
+			base.OnReset(index, context);
 			var rules = Rules.ToQueue();
 			Rule rule = rules.Dequeue();
 			rule.Reset(index, context);
@@ -221,9 +219,9 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		private int Minimum { get; }
 		private int Maximum { get; }
 
-		protected internal override void Reset(int index, Context context)
+		protected internal override void OnReset(int index, Context context)
 		{
-			base.Reset(index, context);
+			base.OnReset(index, context);
 			Rule.Reset(index, context);
 			Cursors.Clear();
 			Cursors.Add(new RepetitionCursor(Result, 1, Rule));

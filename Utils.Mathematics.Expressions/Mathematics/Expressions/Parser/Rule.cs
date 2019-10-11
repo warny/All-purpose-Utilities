@@ -34,11 +34,14 @@ namespace Utils.Mathematics.Expressions.Parser
 		/// Réinitialise les paramètres de la rêgle
 		/// </summary>
 		/// <param name="index">Index du caractère dans la chaîne</param>
-		protected internal virtual void Reset(int index, Context context)
+		protected internal void Reset(int index, Context context)
 		{
 			Result = new Result(index);
 			Context = context;
+			OnReset(index, context);
 		}
+
+		protected internal abstract void OnReset(int index, Context context);
 
 		/// <summary>
 		/// Clone la rêgle

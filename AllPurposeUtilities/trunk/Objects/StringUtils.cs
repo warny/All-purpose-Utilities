@@ -20,7 +20,24 @@ namespace Utils.Objects
 		/// <param name="length">Longueur de la chaîne</param>
 		/// <param name="characters">Caractères autorisés</param>
 		/// <returns>Chaine de <see cref="length"/> caractères</returns>
+		public static string RandomString(int length, string characters) => RandomString(length, length, characters.ToCharArray());
+
+		/// <summary>
+		/// Génère une chaîne aléatoire
+		/// </summary>
+		/// <param name="length">Longueur de la chaîne</param>
+		/// <param name="characters">Caractères autorisés</param>
+		/// <returns>Chaine de <see cref="length"/> caractères</returns>
 		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
+
+		/// <summary>
+		/// Génère une chaîne aléatoire
+		/// </summary>
+		/// <param name="minLength">Longueur minimale de la chaîne</param>
+		/// <param name="minLength">Longueur maximale de la chaîne</param>
+		/// <param name="characters">Caractères autorisés</param>
+		/// <returns>Chaine de <see cref="minLength"/> à <see cref="maxLength"/> caractères</returns>
+		public static string RandomString(int minLength, int maxLength, string characters) => RandomString(minLength, maxLength, characters.ToCharArray());
 
 		/// <summary>
 		/// Génère une chaîne aléatoire

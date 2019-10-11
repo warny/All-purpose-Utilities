@@ -9,18 +9,14 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		private protected string @string;
 		private int stringIndex = 0;
 		
-		protected internal override void Reset(int index, Context context)
+		protected internal override void OnReset(int index, Context context)
 		{
-			base.Reset(index, context);
 			stringIndex = 0;
 		}
 		
 		protected internal override bool Next(char c, int index)
 		{
-			if (stringIndex >= @string.Length)
-			{
-				return false;
-			}
+			if (stringIndex >= @string.Length) return false;
 			if (c == @string[stringIndex])
 			{
 				if (stringIndex == 0)

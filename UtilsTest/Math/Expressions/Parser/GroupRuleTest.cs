@@ -24,5 +24,22 @@ namespace UtilsTest.Math.Expressions.Parser
 			ParserTestsUtils.AssertTrueResult(repetedString, result);
 
 		}
+
+		[TestMethod]
+		public void SimpleGroup2()
+		{
+			Random r = new Random();
+			string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+			string testString1 = StringUtils.RandomString(5, 10, chars);
+			string testString2 = StringUtils.RandomString(5);
+			int repetition = r.Next(5, 7);
+			string testString = testString1 + testString2 + testString1.Repeat(repetition);
+
+			var rule = Rules.Group("test", Rules.Chars(chars) * (5, 10) ) + Rules.String(testString2)  + Rules.GroupReference("test") * repetition;
+			var result = RuleTester.Test(rule, testString);
+			ParserTestsUtils.AssertTrueResult(testString, result);
+
+		}
+
 	}
 }

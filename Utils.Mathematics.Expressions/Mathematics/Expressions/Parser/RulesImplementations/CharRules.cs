@@ -24,8 +24,8 @@
 			}
 		}
 
+		protected internal override void OnReset(int index, Context context) { }
 		protected internal override Rule Clone() => new IncludeCharRule(chars);
-
 		public override string ToString() => "[" + new string(chars) + "]";
 	}
 
@@ -45,8 +45,8 @@
 
 
 
+		protected internal override void OnReset(int index, Context context) { }
 		protected internal override Rule Clone() => new RangeCharRule(Start, End);
-
 		protected internal override bool Next(char c, int index)
 		{
 			if (c.Between(Start, End))
@@ -85,6 +85,7 @@
 				return false;
 			}
 		}
+		protected internal override void OnReset(int index, Context context) { }
 		protected internal override Rule Clone() => new ExcludeCharRule(chars);
 		public override string ToString() => "[^" + new string(chars) + "]";
 	}
@@ -105,8 +106,8 @@
 
 
 
+		protected internal override void OnReset(int index, Context context) { }
 		protected internal override Rule Clone() => new RangeCharRule(Start, End);
-
 		protected internal override bool Next(char c, int index)
 		{
 			if (!c.Between(Start, End))

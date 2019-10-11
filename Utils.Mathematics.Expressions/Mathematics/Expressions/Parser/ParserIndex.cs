@@ -6,11 +6,10 @@ namespace Utils.Mathematics.Expressions.Parser
 {
 	public class ParserIndex
 	{
-		internal ParserIndex(int startIndex, int endIndex, int length, string value)
+		internal ParserIndex(int startIndex, int endIndex, string value)
 		{
 			this.Start = startIndex;
 			this.End = endIndex;
-			this.Length = length;
 			this.value = new StringBuilder(value) ?? throw new ArgumentNullException(nameof(value));
 		}
 
@@ -18,22 +17,20 @@ namespace Utils.Mathematics.Expressions.Parser
 		{
 			Start = index.Start;
 			End = index.End;
-			Length = index.Length;
 			value = new StringBuilder(index.Value);
 		}
 
 		private ParserIndex(ParserIndex index1, ParserIndex index2)
 		{
 			if (index1.End != index2.Start) throw new InvalidOperationException("deux index fusionnés doivent être consécutifs");
-			Start = index1.Start;
-			End = index2.End;
-			Length = index1.Length + index2.Length;
-			value = new StringBuilder(index1.Value + index2.Value);
+			Start = index1?.Start ?? index2.Start;
+			End = index2?.End ?? index1.End;
+			value = new StringBuilder(index1?.Value + index2?.Value);
 		}
 
 		public int Start { get; }
 		public int End { get; private set; }
-		public int Length { get; }
+		public int Length => value.Length;
 
 		private readonly StringBuilder value;
 		public string Value => value.ToString();

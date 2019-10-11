@@ -8,6 +8,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 	{
 		private readonly Rule rule;
 		public string Name { get; }
+		private Context contextCache = null;
 
 		public GroupRule(string name, Rule rule)
 		{
@@ -15,18 +16,23 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			this.rule = rule ?? throw new ArgumentNullException(nameof(rule));
 		}
 
-		protected internal override void Reset(int index, Context context)
+		protected internal override void OnReset(int index, Context context)
 		{
-			base.Reset(index, context);
 			rule.Reset(index, context);
 		}
 
 		protected internal override bool Next(char c, int index)
 		{
+			if (this.contextCache != null)
+			{
+				this.Context = contextCache;
+				contextCache = null;
+			}
 			var res = rule.Next(c, index);
 			this.Result = rule.Result;
 			if (res && rule.Result.Success)
 			{
+				this.contextCache = this.Context.Clone();
 				this.Context.PushGroup(Name, this.Result.Index);
 				this.CanContinue = rule.CanContinue;
 			}
@@ -37,6 +43,8 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		{
 			return new GroupRule(Name, rule.Clone());
 		}
+
+		public override string ToString() => $"(?<{Name}>{rule})";
 	}
 
 	public class GroupReference : StringRuleBase
@@ -48,13 +56,13 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			this.Name = name ?? throw new ArgumentNullException(nameof(name));
 		}
 
-		protected internal override void Reset(int index, Context context)
+		protected internal override void OnReset(int index, Context context)
 		{
-			base.Reset(index, context);
+			base.OnReset(index, context);
 			@string = context.Groups[Name].Value; 
 		}
 
 		protected internal override Rule Clone() => new GroupReference(Name);
-
+		public override string ToString() => $"§{{{Name}}}";
 	}
 }
