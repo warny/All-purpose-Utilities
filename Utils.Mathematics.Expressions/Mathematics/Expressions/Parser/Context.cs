@@ -30,6 +30,8 @@ namespace Utils.Mathematics.Expressions.Parser
 
 		internal void PushGroup(string groupName, ParserIndex value)
 		{
+			System.Diagnostics.Debug.WriteLine($"Group '{groupName}' push {value.Value} ({value.Start}=>{value.End})");
+
 			if (!Groups.TryGetValue(groupName, out Group group))
 			{
 				group = new Group(groupName);
@@ -40,12 +42,16 @@ namespace Utils.Mathematics.Expressions.Parser
 		internal ParserIndex PopGroup(string groupName)
 		{
 			if (!Groups.TryGetValue(groupName, out Group group)) return null;
-			return group.Pop();
+			var value = group.Pop();
+			System.Diagnostics.Debug.WriteLine($"Group '{groupName}' pop {value.Value} ({value.Start}=>{value.End})");
+			return value;
 		}
 		internal ParserIndex PeekGroup(string groupName)
 		{
 			if (!Groups.TryGetValue(groupName, out Group group)) return null;
-			return group.Peek();
+			ParserIndex value = group.Peek();
+			System.Diagnostics.Debug.WriteLine($"Group '{groupName}' peek {value.Value} ({value.Start}=>{value.End})");
+			return value;
 		}
 
 		public Context Clone() => new Context(this);

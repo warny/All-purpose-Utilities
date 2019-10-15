@@ -45,6 +45,12 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				bool valid = cursor.Rule.Next(c, index);
 				if (cursor.Rule.Result.Success)
 				{
+					System.Diagnostics.Debug.WriteLine($"{this.GetType().Name}.{cursor.Rule.GetType().Name} success {cursor.Result.Index.Value} ({cursor.Result.Index.Start}=>{cursor.Result.Index.End})");
+					System.Diagnostics.Debug.WriteLine($"		Context :");
+					foreach (var group in (IEnumerable<Group>)cursor.Rule.Context.Groups)
+					{
+						System.Diagnostics.Debug.WriteLine($"			{group.Name} : {group.Value}");
+					}
 					var test = Test(cursor);
 					cursor.Result.Success = test.success;
 					canContinue |= test.canContinue;
@@ -56,18 +62,26 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 						{
 							newCursor.Rule.Reset(index + 1, cursor.Rule.Context.Clone());
 							toAdd.Add(newCursor);
+							System.Diagnostics.Debug.WriteLine($"	{this.GetType().Name}.{cursor.Rule.GetType().Name} clonerule {newCursor.Rule.GetType().Name}, {cursor.Rule.Result.Index.Value} ({cursor.Rule.Result.Index.Start}=>{cursor.Rule.Result.Index.End})");
+							foreach (var group in (IEnumerable<Group>)newCursor.Rule.Context.Groups)
+							{
+								System.Diagnostics.Debug.WriteLine($"			{group.Name} : {group.Value}");
+							}
 						}
 					}
 					else
 					{
+						var oldRule = cursor.Rule;
 						cursor.Result += cursor.Rule.Result;
 						if (Next(cursor))
 						{
-							cursor.Rule.Reset(index + 1, cursor.Rule.Context ?? new Context(Context, cursor.Result));
+							cursor.Rule.Reset(index + 1, cursor.Rule.Context ?? new Context(oldRule.Context, cursor.Result));
+							System.Diagnostics.Debug.WriteLine($"	{this.GetType().Name}.{cursor.Rule.GetType().Name} resetrule {cursor.Rule.Result.Index.Value} ({cursor.Rule.Result.Index.Start}=>{cursor.Rule.Result.Index.End})");
 						}
 						else
 						{
 							toRemove.Add(cursor);
+							System.Diagnostics.Debug.WriteLine($"	{this.GetType().Name}.{cursor.Rule.GetType().Name} removerule {cursor.Rule.Result.Index.Value} ({cursor.Rule.Result.Index.Start}=>{cursor.Rule.Result.Index.End})");
 						}
 					}
 				}
@@ -78,29 +92,26 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				}
 			}
 
-			if (!Cursors.Any())
+			try
 			{
-				Result = new Result();
-				Cursors.RemoveRange(toRemove);
-				Cursors.AddRange(toAdd);
-				return false;
-			}
-			if (Cursors.Count == 1)
-			{
-				Result = Cursors.First().Result;
-				CanContinue = canContinue;
-				Cursors.RemoveRange(toRemove);
-				Cursors.AddRange(toAdd);
+				if (!Cursors.Any())
+				{
+					Result = new Result();
+					Context = null;
+					return false;
+				}
+
+				CanContinue = canContinue || Cursors.Any(cur => cur.Rule.CanContinue);
+				var cursor = Cursors.FirstOrDefault(cur => cur.Result.Success) ?? Cursors.First();
+				Result = cursor.Result;
+				Context = cursor.Rule.Context;
 				return true;
 			}
-
-			CanContinue = canContinue || Cursors.Any(cur => cur.Rule.CanContinue);
-			Result = Cursors.FirstOrDefault(cur => cur.Result.Success)?.Result;
-			Result = Result ?? Cursors.First().Result;
-			Cursors.RemoveRange(toRemove);
-			Cursors.AddRange(toAdd);
-
-			return true;
+			finally
+			{
+				Cursors.RemoveRange(toRemove);
+				Cursors.AddRange(toAdd);
+			}
 		}
 
 		protected internal override void OnReset(int index, Context context) {

@@ -63,6 +63,6 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		}
 
 		protected internal override Rule Clone() => new GroupReference(Name);
-		public override string ToString() => $"§{{{Name}}}";
+		public override string ToString() => $"\\k<{Name}>";
 	}
 }

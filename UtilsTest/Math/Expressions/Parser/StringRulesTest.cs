@@ -18,7 +18,7 @@ namespace UtilsTest.Math.Expressions.Parser
 		{
 			string tested = StringUtils.RandomString(10, 20);
 			var tester = Rules.String(tested);
-			var result = RuleTester.Test(tester, tested);
+			var (result, context) = RuleTester.Test(tester, tested);
 			ParserTestsUtils.AssertTrueResult(tested, result);
 		}
 
@@ -27,7 +27,7 @@ namespace UtilsTest.Math.Expressions.Parser
 		{
 			string tested = StringUtils.RandomString(10, 20);
 			var tester = Rules.Sequence(tested.Select(c=>Rules.Chars(c)));
-			var result = RuleTester.Test(tester, tested);
+			var (result, context) = RuleTester.Test(tester, tested);
 			ParserTestsUtils.AssertTrueResult(tested, result);
 		}
 
@@ -37,7 +37,7 @@ namespace UtilsTest.Math.Expressions.Parser
 		{
 			string tested = StringUtils.RandomString(10, 20);
 			var tester = Rules.String(StringUtils.RandomString(10, 20));
-			var result = RuleTester.Test(tester, tested);
+			var (result, context) = RuleTester.Test(tester, tested);
 			Assert.IsFalse(result.Success);
 		}
 
@@ -58,7 +58,7 @@ namespace UtilsTest.Math.Expressions.Parser
 			var tested = tested1 + tested2;
 			var tester = tester1 + tester2;
 
-			var result = RuleTester.Test(tester, tested);
+			var (result, context) = RuleTester.Test(tester, tested);
 			Assert.IsInstanceOfType(tester, typeof(StringRule));
 			ParserTestsUtils.AssertTrueResult(tested, result);
 		}

@@ -7,7 +7,7 @@ namespace Utils.Mathematics.Expressions.Parser
 {
 	public static class RuleTester
 	{
-		public static Result Test(Rule rule, string testString)
+		public static (Result result, Context context) Test(Rule rule, string testString)
 		{
 			var context = new Context();
 			rule.Reset(0, context);
@@ -19,7 +19,7 @@ namespace Utils.Mathematics.Expressions.Parser
 				if (!rule.Next(c, i)) break;
 			}
 
-			return rule.Result;
+			return (rule.Result, rule.Context);
 		}
 	}
 }

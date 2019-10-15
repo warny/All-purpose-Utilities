@@ -21,7 +21,7 @@ namespace UtilsTest.Math.Expressions.Parser
 			string repetedString = testString.Repeat(repetition);
 
 			Rule rule = Rules.String(testString) * repetition;
-			var result = RuleTester.Test(rule, repetedString);
+			var (result, context) = RuleTester.Test(rule, repetedString);
 			ParserTestsUtils.AssertTrueResult(repetedString, result);
 		}
 
@@ -36,7 +36,7 @@ namespace UtilsTest.Math.Expressions.Parser
 			string repetedString = testString.Repeat(repetition);
 
 			Rule rule = Rules.String(testString) * (minRepetition, maxRepetition);
-			var result = RuleTester.Test(rule, repetedString);
+			var (result, context) = RuleTester.Test(rule, repetedString);
 			ParserTestsUtils.AssertTrueResult(repetedString, result);
 		}
 
@@ -45,7 +45,7 @@ namespace UtilsTest.Math.Expressions.Parser
 		{
 			string testString = "aaaaaa";
 			Rule testRule = Rules.Chars("abcdef") * 5;
-			var result = RuleTester.Test(testRule, testString);
+			var (result, context) = RuleTester.Test(testRule, testString);
 			Assert.IsFalse(result.Success);
 		}
 
@@ -55,11 +55,11 @@ namespace UtilsTest.Math.Expressions.Parser
 			Rule testRule = Rules.String("ab") * (2,3) + Rules.String("a");
 
 			string testString1 = "ababa";
-			var result1 = RuleTester.Test(testRule, testString1);
+			var (result1, context1) = RuleTester.Test(testRule, testString1);
 			ParserTestsUtils.AssertTrueResult(testString1, result1);
 
 			string testString2 = "abababa";
-			var result2 = RuleTester.Test(testRule, testString2);
+			var (result2, context2) = RuleTester.Test(testRule, testString2);
 			ParserTestsUtils.AssertTrueResult(testString2, result2);
 		}
 
@@ -69,11 +69,11 @@ namespace UtilsTest.Math.Expressions.Parser
 			Rule testRule = Rules.String("ab") * (2, 3) + Rules.String("a");
 			
 			string testString1 = "ababab";
-			var result1 = RuleTester.Test(testRule, testString1);
+			var (result1, context1) = RuleTester.Test(testRule, testString1);
 			Assert.IsFalse(result1.Success);
 			
 			string testString2 = "abababab";
-			var result2 = RuleTester.Test(testRule, testString2);
+			var (result2, context2) = RuleTester.Test(testRule, testString2);
 			Assert.IsFalse(result2.Success);
 		}
 
@@ -91,7 +91,7 @@ namespace UtilsTest.Math.Expressions.Parser
 
 			var testRule = Rules.Or(testStrings.Select(s => Rules.String(s))) + Rules.String(tail);
 
-			var result = RuleTester.Test(testRule, testString);
+			var (result, context) = RuleTester.Test(testRule, testString);
 			ParserTestsUtils.AssertTrueResult(testString, result); 
 
 		}
