@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Utils.Mathematics.Expressions.Parser
 {
@@ -12,6 +10,6 @@ namespace Utils.Mathematics.Expressions.Parser
 		public Rule Rule { get; }
 
 		private readonly List<ITree> subTrees = new List<ITree>();
-		public IReadOnlyList<ITree> SubTrees { get => subTrees; } 
+		public IReadOnlyList<ITree> SubTrees { get => subTrees; }
 	}
 }

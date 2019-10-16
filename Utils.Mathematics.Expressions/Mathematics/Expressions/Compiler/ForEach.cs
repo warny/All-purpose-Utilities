@@ -3,9 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -48,14 +45,18 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var type = varEnumerableType;
 			Type enumerableType, enumeratorType, elementType;
 
-			if ((type.IsGenericType && type.GetGenericTypeDefinition() == GenericEnumerableInterface) || type == EnumerableInterface) {
+			if ((type.IsGenericType && type.GetGenericTypeDefinition() == GenericEnumerableInterface) || type == EnumerableInterface)
+			{
 				SetTypes(out enumerableType, out enumeratorType, out elementType, type);
 			}
-			else {
-				while (true) {
+			else
+			{
+				while (true)
+				{
 					var interfaces = type.GetInterfaces();
 					var @interface = interfaces.FirstOrDefault(i => (i.IsGenericType && i.GetGenericTypeDefinition() == GenericEnumerableInterface) || i == EnumerableInterface);
-					if (@interface == null) {
+					if (@interface == null)
+					{
 						type = type.BaseType;
 						continue;
 					}
@@ -67,16 +68,20 @@ namespace Utils.Mathematics.Expressions.Compiler
 			bool innerVariable;
 			ParameterExpression loopVariable;
 			Type variableType;
-			if (string.IsNullOrWhiteSpace(TypeName)) {
+			if (string.IsNullOrWhiteSpace(TypeName))
+			{
 				innerVariable = false;
 				loopVariable = context.Variables[VariableName];
 			}
-			else {
+			else
+			{
 				innerVariable = true;
-				if (TypeName == "var") {
+				if (TypeName == "var")
+				{
 					variableType = elementType;
 				}
-				else {
+				else
+				{
 					variableType = Type.GetType(TypeName);
 				}
 				loopVariable = Expression.Variable(variableType, VariableName);
@@ -102,7 +107,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 							Expression.Assign(loopVariable, Expression.Property(enumeratorVar, "Current")),
 							Body.CreateExpression(context).ToExpression()),
 						Expression.Break(BreakLabel)),
-					BreakLabel, 
+					BreakLabel,
 					ContinueLabel);
 
 			var tryFinally =
@@ -112,8 +117,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			var body =
 				Expression.Block(
-					innerVariable 
-						? new ParameterExpression[] { enumeratorVar, loopVariable } 
+					innerVariable
+						? new ParameterExpression[] { enumeratorVar, loopVariable }
 						: new ParameterExpression[] { enumeratorVar },
 					enumeratorAssign,
 					tryFinally);
@@ -124,11 +129,13 @@ namespace Utils.Mathematics.Expressions.Compiler
 		private void SetTypes(out Type enumerableType, out Type enumeratorType, out Type elementType, Type @interface)
 		{
 			enumerableType = @interface;
-			if (@interface == EnumerableInterface) {
+			if (@interface == EnumerableInterface)
+			{
 				elementType = typeof(object);
 				enumeratorType = typeof(IEnumerator);
 			}
-			else {
+			else
+			{
 				elementType = enumerableType.GetGenericArguments()[0];
 				enumeratorType = typeof(IEnumerator<>).MakeGenericType(elementType);
 			}

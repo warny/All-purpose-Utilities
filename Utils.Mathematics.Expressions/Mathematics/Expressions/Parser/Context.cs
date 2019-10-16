@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Utils.Mathematics.Expressions.Parser
+﻿namespace Utils.Mathematics.Expressions.Parser
 {
-
 	public class Context
 	{
 		public Groups Groups { get; }
@@ -39,6 +34,7 @@ namespace Utils.Mathematics.Expressions.Parser
 			}
 			group.Push(value);
 		}
+
 		internal ParserIndex PopGroup(string groupName)
 		{
 			if (!Groups.TryGetValue(groupName, out Group group)) return null;
@@ -46,6 +42,7 @@ namespace Utils.Mathematics.Expressions.Parser
 			System.Diagnostics.Debug.WriteLine($"Group '{groupName}' pop {value.Value} ({value.Start}=>{value.End})");
 			return value;
 		}
+
 		internal ParserIndex PeekGroup(string groupName)
 		{
 			if (!Groups.TryGetValue(groupName, out Group group)) return null;

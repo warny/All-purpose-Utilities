@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
@@ -48,6 +45,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			return Variables.Values.Except(variablesStack.Peek().Values).ToArray();
 		}
+
 		public LabelTarget[] PeekLabels()
 		{
 			return Labels.Values.Except(labelsStack.Peek().Values).ToArray();
@@ -56,13 +54,23 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 	public class Variables : IndexedList<string, ParameterExpression>
 	{
-		public Variables() : base(p => p.Name) { }
-		public Variables(Variables variables) : base(p => p.Name) { }
+		public Variables() : base(p => p.Name)
+		{
+		}
+
+		public Variables(Variables variables) : base(p => p.Name)
+		{
+		}
 	}
 
 	public class Labels : IndexedList<string, LabelTarget>
 	{
-		public Labels() : base(l => l.Name) { }
-		public Labels(Labels labels) : base (l => l.Name) { }
+		public Labels() : base(l => l.Name)
+		{
+		}
+
+		public Labels(Labels labels) : base(l => l.Name)
+		{
+		}
 	}
 }

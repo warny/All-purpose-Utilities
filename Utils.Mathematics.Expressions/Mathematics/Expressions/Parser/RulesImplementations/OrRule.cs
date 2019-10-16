@@ -5,13 +5,17 @@ using Utils.Lists;
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
 	/// <summary>
-	/// Ensemble de rêgles dont l'une doit être vérifiée 
+	/// Ensemble de rêgles dont l'une doit être vérifiée
 	/// </summary>
 	public class OrRule : Rule
 	{
 		private readonly List<Rule> rules;
 		private readonly List<Rule> activeRules;
-		public OrRule(params Rule[] rules) : this((IEnumerable<Rule>)rules) { }
+
+		public OrRule(params Rule[] rules) : this((IEnumerable<Rule>)rules)
+		{
+		}
+
 		public OrRule(IEnumerable<Rule> rules)
 		{
 			this.rules = new List<Rule>();
@@ -50,7 +54,7 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 				}
 			}
 			this.activeRules.RemoveRange(rulesToRemove);
-			this.CanContinue = CanContinue || !activeRules.All(r=> !r.Result.Success);
+			this.CanContinue = CanContinue || !activeRules.All(r => !r.Result.Success);
 
 			var resultRule = this.activeRules.FirstOrDefault(r => r.Result.Success) ?? this.activeRules.FirstOrDefault();
 			this.Result = resultRule?.Result ?? new Result();
@@ -66,5 +70,4 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 
 		public override string ToString() => "(" + string.Join("|", rules.Select(r => r.ToString())) + ")";
 	}
-
 }

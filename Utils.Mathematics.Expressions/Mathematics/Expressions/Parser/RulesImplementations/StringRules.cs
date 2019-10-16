@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
@@ -8,12 +6,12 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 	{
 		private protected string @string;
 		private int stringIndex = 0;
-		
+
 		protected internal override void OnReset(int index, Context context)
 		{
 			stringIndex = 0;
 		}
-		
+
 		protected internal override bool Next(char c, int index)
 		{
 			if (stringIndex >= @string.Length) return false;
@@ -45,15 +43,15 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 	/// </summary>
 	public class StringRule : StringRuleBase
 	{
-
-		public StringRule(string @string) 
+		public StringRule(string @string)
 		{
 			if (string.IsNullOrEmpty(@string)) throw new ArgumentNullException(nameof(@string));
 			this.@string = @string;
 		}
 
-		public StringRule(StringRule sr1, StringRule sr2) : this(sr1.@string + sr2.@string) { }
-
+		public StringRule(StringRule sr1, StringRule sr2) : this(sr1.@string + sr2.@string)
+		{
+		}
 
 		protected override Rule Then(Rule rule)
 		{

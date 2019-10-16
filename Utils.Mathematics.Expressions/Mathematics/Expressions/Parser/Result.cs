@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Utils.Mathematics.Expressions.Parser
+﻿namespace Utils.Mathematics.Expressions.Parser
 {
-
 	public sealed class Result
 	{
 		internal Result()

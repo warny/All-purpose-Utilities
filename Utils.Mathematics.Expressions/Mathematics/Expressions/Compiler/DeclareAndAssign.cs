@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -16,10 +11,12 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			var right = Right.CreateExpression(context);
 			Type t;
-			if (TypeName == "var") {
+			if (TypeName == "var")
+			{
 				t = right[0].Type;
 			}
-			else {
+			else
+			{
 				t = Type.GetType(TypeName);
 			}
 
@@ -28,7 +25,6 @@ namespace Utils.Mathematics.Expressions.Compiler
 			return new Expression[] {
 				Expression.Assign(variable, right.ToExpression())
 			};
-
 		}
 	}
 }

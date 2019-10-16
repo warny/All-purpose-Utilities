@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Lists;
+﻿using System.Linq.Expressions;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -14,8 +8,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public Expression[] CreateExpression(Context context)
 		{
-			for (IExpressionTree ancestor = Parent; Parent != null; ancestor = ancestor.Parent) {
-				if (ancestor is IBreakableContinuableTree breakableContinuableTree) {
+			for (IExpressionTree ancestor = Parent; Parent != null; ancestor = ancestor.Parent)
+			{
+				if (ancestor is IBreakableContinuableTree breakableContinuableTree)
+				{
 					return new[] { Expression.Break(breakableContinuableTree.ContinueLabel) };
 				}
 			}

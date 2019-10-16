@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Utils.Mathematics.Expressions.Parser
 {
-
 	public class Lexer
 	{
 		public string DefaultContext { get; set; }

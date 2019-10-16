@@ -3,16 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Arrays;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
 	public interface IExpressionTree
 	{
 		IExpressionTree Parent { get; set; }
+
 		Expression[] CreateExpression(Context context);
 	}
 
@@ -29,9 +26,11 @@ namespace Utils.Mathematics.Expressions.Compiler
 	public abstract class ExpressionTreeWithUnary : IExpressionTree
 	{
 		public IExpressionTree Parent { get; set; }
+
 		public abstract Expression[] CreateExpression(Context context);
 
 		private IExpressionTree expression;
+
 		public IExpressionTree Expression
 		{
 			get => expression;
@@ -42,13 +41,14 @@ namespace Utils.Mathematics.Expressions.Compiler
 		}
 	}
 
-
 	public abstract class ExpressionTreeWithLeft : IExpressionTreeWithLeft
 	{
 		public IExpressionTree Parent { get; set; }
+
 		public abstract Expression[] CreateExpression(Context context);
 
 		private IExpressionTree left;
+
 		public IExpressionTree Left
 		{
 			get => left;
@@ -62,9 +62,11 @@ namespace Utils.Mathematics.Expressions.Compiler
 	public abstract class ExpressionTreeWithRight : IExpressionTreeWithRight
 	{
 		public IExpressionTree Parent { get; set; }
+
 		public abstract Expression[] CreateExpression(Context context);
 
 		private IExpressionTree right;
+
 		public IExpressionTree Right
 		{
 			get => right;
@@ -78,9 +80,11 @@ namespace Utils.Mathematics.Expressions.Compiler
 	public abstract class ExpressionTreeWithLeftAndRight : IExpressionTreeWithRight, IExpressionTreeWithLeft
 	{
 		public IExpressionTree Parent { get; set; }
+
 		public abstract Expression[] CreateExpression(Context context);
 
 		private IExpressionTree left;
+
 		public IExpressionTree Left
 		{
 			get => left;
@@ -91,6 +95,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		}
 
 		private IExpressionTree right;
+
 		public IExpressionTree Right
 		{
 			get => right;
@@ -109,7 +114,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 	public class CompilerException : Exception
 	{
-		public CompilerException(string message, string objectName) : 
+		public CompilerException(string message, string objectName) :
 			base(message + " : " + objectName)
 		{
 		}
@@ -117,8 +122,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 	public class ExpressionTreeList : IList<IExpressionTree>
 	{
-		List<IExpressionTree> expressionsTrees = new List<IExpressionTree>();
-		IExpressionTree parent;
+		private List<IExpressionTree> expressionsTrees = new List<IExpressionTree>();
+		private IExpressionTree parent;
 
 		internal IExpressionTree Parent
 		{
@@ -128,7 +133,6 @@ namespace Utils.Mathematics.Expressions.Compiler
 				expressionsTrees.ForEach(et => et.Parent = value);
 			}
 		}
-
 
 		public ExpressionTreeList(IExpressionTree parent)
 		{
@@ -197,13 +201,13 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			List<Expression> expressions = new List<Expression>();
 
-			foreach (IExpressionTree expressionTree in this) {
+			foreach (IExpressionTree expressionTree in this)
+			{
 				Expression expression = expressionTree.CreateExpression(context).ToExpression();
 				expressions.Add(expression);
 			}
 			var argumentTypes = expressions.Select(a => a.Type).ToArray();
 			return expressions.ToArray();
 		}
-
 	}
 }
