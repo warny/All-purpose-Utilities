@@ -66,6 +66,30 @@ namespace Utils.Mathematics.Expressions.Parser
 			}
 		}
 
+		internal void Push(string groupName, ParserIndex value)
+		{
+			if (!this.TryGetValue(groupName, out Group group))
+			{
+				group = new Group(groupName);
+				this.Add(group);
+			}
+			group.Push(value);
+		}
+
+		internal ParserIndex Pop(string groupName)
+		{
+			if (!this.TryGetValue(groupName, out Group group)) return null;
+			var value = group.Pop();
+			return value;
+		}
+
+		internal ParserIndex Peek(string groupName)
+		{
+			if (!this.TryGetValue(groupName, out Group group)) return null;
+			ParserIndex value = group.Peek();
+			return value;
+		}
+
 		public Groups Clone() => new Groups(this);
 	}
 }
