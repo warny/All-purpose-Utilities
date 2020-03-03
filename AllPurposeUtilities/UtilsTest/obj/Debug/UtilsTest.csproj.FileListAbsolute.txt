@@ -12,7 +12,6 @@ D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\bin\Debug\U
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\bin\Debug\Utils.pdb
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\bin\Debug\Microsoft.VisualStudio.TestPlatform.TestFramework.xml
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\bin\Debug\Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions.xml
-D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.csproj.CoreCompileInputs.cache
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.dll
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.pdb
 D:\projets\perso\All-purpose-Utilities\AllPurposeUtilities\UtilsTest\obj\Debug\UtilsTest.csproj.CopyComplete

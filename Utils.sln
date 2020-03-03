@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "AllPurposeUtilitie
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilsTest", "AllPurposeUtilities\UtilsTest\UtilsTest.csproj", "{72EC792D-156B-4976-99DE-E1F363B71B51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Geography", "Utils.Geography\Utils.Geography.csproj", "{4CA5BD5E-C018-45DE-A1BF-FFEE49C20866}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Geography", "Utils.Geography\Utils.Geography.csproj", "{4CA5BD5E-C018-45DE-A1BF-FFEE49C20866}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Imaging", "Utils.Imaging\Utils.Imaging.csproj", "{7AFF4171-913B-4880-9E41-8461C963ECBF}"
 EndProject

@@ -50,6 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Array\ArrayUtilsTest.cs" />
+    <Compile Include="BaseEncoding\BaseDecoderStreamTest.cs" />
+    <Compile Include="BaseEncoding\BaseEncoderStreamTest.cs" />
     <Compile Include="Files\PathUtilsTest.cs" />
     <Compile Include="Math\Expressions\ExpressionDerivationTest.cs" />
     <Compile Include="Math\Expressions\ExpressionSimplifierTest.cs" />

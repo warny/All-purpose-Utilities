@@ -51,6 +51,9 @@
     <Compile Include="Arrays\ArrayAccessor.cs" />
     <Compile Include="Arrays\ArrayComparer.cs" />
     <Compile Include="Arrays\ArrayUtils.cs" />
+    <Compile Include="BaseEncoding\BaseDecoderStream.cs" />
+    <Compile Include="BaseEncoding\BaseDescriptor.cs" />
+    <Compile Include="BaseEncoding\BaseEncoderStream.cs" />
     <Compile Include="Lists\DoubleLinkedList.cs" />
     <Compile Include="Lists\IndexedList.cs" />
     <Compile Include="Lists\CachedLoader.cs" />
@@ -117,6 +120,7 @@
       <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
