@@ -51,9 +51,10 @@
     <Compile Include="Arrays\ArrayAccessor.cs" />
     <Compile Include="Arrays\ArrayComparer.cs" />
     <Compile Include="Arrays\ArrayUtils.cs" />
-    <Compile Include="BaseEncoding\BaseDecoderStream.cs" />
-    <Compile Include="BaseEncoding\BaseDescriptor.cs" />
-    <Compile Include="BaseEncoding\BaseEncoderStream.cs" />
+    <Compile Include="Security\Authenticator.cs" />
+    <Compile Include="Streams\BaseEncoding\BaseDecoderStream.cs" />
+    <Compile Include="Streams\BaseEncoding\BaseDescriptor.cs" />
+    <Compile Include="Streams\BaseEncoding\BaseEncoderStream.cs" />
     <Compile Include="Lists\DoubleLinkedList.cs" />
     <Compile Include="Lists\IndexedList.cs" />
     <Compile Include="Lists\CachedLoader.cs" />
@@ -92,15 +93,15 @@
     <Compile Include="Reflection\FieldOrPropertyInfo.cs" />
     <Compile Include="Streams\PartialStream.cs" />
     <Compile Include="Files\PathUtils.cs" />
-    <Compile Include="Streams\Reader.cs" />
-    <Compile Include="Streams\Descriptors.cs" />
+    <Compile Include="Streams\Serialization\Reader.cs" />
+    <Compile Include="Streams\Serialization\Descriptors.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\StreamCopier.cs" />
     <Compile Include="Streams\StreamUtils.cs" />
     <Compile Include="Streams\StreamValidator.cs" />
     <Compile Include="Objects\Parsers.cs" />
     <Compile Include="Objects\StringUtils.cs" />
-    <Compile Include="Streams\Writer.cs" />
+    <Compile Include="Streams\Serialization\Writer.cs" />
     <Compile Include="Web\UriBuilder.cs" />
     <Compile Include="XML\XmlDriver.cs" />
   </ItemGroup>

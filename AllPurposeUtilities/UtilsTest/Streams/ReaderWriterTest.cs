@@ -2,12 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Utils.Arrays;
 using Utils.Objects;
-using Utils.Streams;
+using Utils.Streams.Serialization;
 
 namespace UtilsTest.Streams
 {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Utils.Mathematics;
 
-namespace Utils.BaseEncoding
+namespace Utils.Streams.BaseEncoding
 {
 	public class BaseDecoderStream : TextWriter
 	{

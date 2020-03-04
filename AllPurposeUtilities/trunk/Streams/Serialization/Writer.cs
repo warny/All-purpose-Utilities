@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using Utils.Arrays;
 using Utils.Reflection;
 using IO = System.IO;
 
 
-namespace Utils.Streams
+namespace Utils.Streams.Serialization
 {
 	public class Writer
 	{
