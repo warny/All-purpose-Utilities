@@ -217,6 +217,12 @@ namespace Utils.Mathematics
 		#endregion
 
 		#region MinMax
+		/// <summary>
+		/// Retourne la valeur minimale de <paramref name="values"/>
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="values">Valeurs à comparer</param>
+		/// <returns>Valeur minimale</returns>
 		public static T Min<T>( params T[] values ) where T : IComparable<T>
 		{
 			T result = values[0];
@@ -229,6 +235,13 @@ namespace Utils.Mathematics
 			return result;
 		}
 
+		/// <summary>
+		/// Retourne la valeur minimale de <paramref name="values"/>
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="values">Valeurs à comparer</param>
+		/// <param name="comparer">Comparateur</param>
+		/// <returns>Valeur minimale</returns>
 		public static T Min<T>(IComparer<T> comparer,  params T[] values )
 		{
 			T result = values[0];
@@ -241,6 +254,12 @@ namespace Utils.Mathematics
 			return result;
 		}
 
+		/// <summary>
+		/// Retourne la valeur maximale de <paramref name="values"/>
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="values">Valeurs à comparer</param>
+		/// <returns>Valeur maximale</returns>
 		public static T Max<T>( params T[] values ) where T : IComparable<T>
 		{
 			T result = values[0];
@@ -253,6 +272,13 @@ namespace Utils.Mathematics
 			return result;
 		}
 
+		/// <summary>
+		/// Retourne la valeur maximale de <paramref name="values"/>
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="values">Valeurs à comparer</param>
+		/// <param name="comparer">Comparateur</param>
+		/// <returns>Valeur maximale</returns>
 		public static T Max<T>( IComparer<T> comparer, params T[] values )
 		{
 			T result = values[0];
@@ -265,6 +291,38 @@ namespace Utils.Mathematics
 			return result;
 		}
 
+		/// <summary>
+		/// Retourne <paramref name="value"/> si elle est comprise entre <paramref name="min"/> et <paramref name="max"/>, <paramref name="min"/> si elle est inférieur et <paramref name="max"/> si elle est supérieure
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value">Valeur à comparer</param>
+		/// <param name="min">Valeur minimale</param>
+		/// <param name="max">Valeur Maximale</param>
+		/// <returns></returns>
+		public static T MinMax<T>(this T value, T min, T max) where T : IComparable<T>
+		{
+			if (min.CompareTo(max) > 0) throw new ArgumentException("min doit être inférieur à max");
+			if (value.CompareTo(min) < 0) return min;
+			if (value.CompareTo(max) > 0) return max;
+			return value;
+		}
+
+		/// <summary>
+		/// Retourne <paramref name="value"/> si elle est comprise entre <paramref name="min"/> et <paramref name="max"/>, <paramref name="min"/> si elle est inférieur et <paramref name="max"/> si elle est supérieure
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value">Valeur à comparer</param>
+		/// <param name="min">Valeur minimale</param>
+		/// <param name="max">Valeur Maximale</param>
+		/// <param name="comparer">Comparateur</param>
+		/// <returns></returns>
+		public static T MinMax<T>(this T value, T min, T max, IComparer<T> comparer)
+		{
+			if (comparer.Compare(min, max) > 0) throw new ArgumentException("min doit être inférieur à max");
+			if (comparer.Compare(value, min) < 0) return min;
+			if (comparer.Compare(value, max) > 0) return max;
+			return value;
+		}
 
 		#endregion
 

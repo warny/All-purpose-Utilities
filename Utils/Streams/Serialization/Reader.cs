@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using Utils.Arrays;
 using Utils.Reflection;
-using Utils.Streams;
 using IO = System.IO;
 
-namespace Utils.Streams
+namespace Utils.Streams.Serialization
 {
-    public class Reader
+	public class Reader
     {
 		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
 		Stack<long> positionsStack = new Stack<long>();

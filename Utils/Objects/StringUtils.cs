@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 using Utils.Mathematics;
 
 namespace Utils.Objects
@@ -34,7 +29,6 @@ namespace Utils.Objects
 			return new string(result);
 		}
 
-
 		/// <summary>
 		/// Compare une chaîne par rapport à une séquence d'échappement
 		/// </summary>
@@ -42,9 +36,54 @@ namespace Utils.Objects
 		/// <param name="pattern">Séquence</param>
 		/// <param name="ignoreCase">true : ignore la casse</param>
 		/// <returns>true si la chaîne correspond</returns>
-		public static bool Like( this string str, string pattern, bool ignoreCase )
+		public static bool Like( this string value, string pattern, bool ignoreCase )
 		{
-			return LikeOperator.LikeString(str, pattern, ignoreCase ? CompareMethod.Text : CompareMethod.Binary);
+			if (ignoreCase)
+			{
+				pattern = pattern.ToLower();
+				value = value.ToLower();
+			}
+
+			int valueIndex = 0, wildcardIndex = 0;
+			int valueNext = 0, wildcardNext = 0;
+
+			while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
+			{
+				if (value[valueIndex] != pattern[wildcardIndex] && pattern[wildcardIndex] != '?')
+				{
+					return false;
+				}
+				wildcardIndex++;
+				valueIndex++;
+			}
+
+			while (wildcardIndex < pattern.Length && valueIndex < value.Length)
+			{
+				if (pattern[wildcardIndex] == '*')
+				{
+					wildcardNext = wildcardIndex;
+					wildcardIndex++;
+					if (wildcardIndex >= pattern.Length)
+					{
+						return true;
+					}
+					valueNext = valueNext + 1;
+				}
+				else if (value[valueIndex] == pattern[wildcardIndex] || pattern[wildcardIndex] == '?')
+				{
+					wildcardIndex++;
+					valueIndex++;
+					if (wildcardIndex >= pattern.Length && valueIndex < value.Length && pattern[wildcardNext] == '*') wildcardIndex = wildcardNext + 1;
+				}
+				else
+				{
+					wildcardIndex = wildcardNext + 1;
+					valueIndex = valueNext++;
+				}
+			}
+
+			while (wildcardIndex < pattern.Length && pattern[wildcardIndex] == '*') wildcardIndex++;
+			return wildcardIndex >= pattern.Length && valueIndex >= value.Length;
 		}
 
 		/// <summary>
@@ -93,7 +132,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end;
+			int start = 0, end = s.Length;
 			for (end = s.Length - 1; end > start; end--)
 			{
 				if (!trimTester(s[end])) break;
@@ -225,7 +264,9 @@ namespace Utils.Objects
 		{
 			format = format ?? System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
 			for (int i = 0 ; i < text.Length ; i++) {
-				if (i == 0 && text[i] == format.NegativeSign[0]) continue;
+				if (i==0) {
+					if (text[i]==format.NegativeSign[0]) continue;
+				}
 				if (text[i].ToString().In(format.NativeDigits)) continue;
 				return false;
 			}
