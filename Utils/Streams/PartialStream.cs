@@ -74,15 +74,19 @@ namespace Utils.Streams
 
 		public override int Read( byte[] buffer, int offset, int count )
 		{
-			long oldPosition = s.Position;
-			s.Position = this.startPosition + this.position;
-			if (this.position + offset + count > this.length) {
-				count = (int)(this.length - this.position - offset);
+			lock (s)
+			{
+				long oldPosition = s.Position;
+				s.Position = this.startPosition + this.position;
+				if (this.position + offset + count > this.length)
+				{
+					count = (int)(this.length - this.position - offset);
+				}
+				var result = s.Read(buffer, offset, count);
+				this.position = s.Position - this.startPosition;
+				s.Position = oldPosition;
+				return result;
 			}
-			var result = s.Read(buffer, offset, count);
-			this.position = s.Position - this.startPosition;
-			s.Position = oldPosition;
-			return result;
 		}
 
 		public override long Seek( long offset, SeekOrigin origin )
@@ -113,7 +117,7 @@ namespace Utils.Streams
 			long oldPosition = s.Position;
 			s.Position = this.startPosition + this.position;
 			if (this.position + offset + count > this.length) {
-				throw new ArgumentOutOfRangeException("La taille de données à copier est trop longue");
+				throw new ArgumentOutOfRangeException(nameof(count), "La taille de données à copier est trop longue");
 			}
 			s.Write(buffer, offset, count);
 			this.position = s.Position - this.startPosition;

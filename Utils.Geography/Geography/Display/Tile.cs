@@ -129,7 +129,7 @@ namespace Utils.Geography.Display
 			return true;
 		}
 
-		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
+		public override int GetHashCode() => Utils.Objects.ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
 
 		public override string ToString() => $"tileX={this.TileX}, tileY={this.TileY}, zoomLevel={this.ZoomFactor}";
 		public string ToString(string format) => $"tileX={this.TileX.ToString(format)}, tileY={this.TileY.ToString(format)}, zoomLevel={this.ZoomFactor}";
