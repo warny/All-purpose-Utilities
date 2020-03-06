@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Objects
 {
@@ -22,9 +19,10 @@ namespace Utils.Objects
 				return CanParse(type.GetGenericArguments()[0]);
 			}
 
-			MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] { typeof(string), type }, null);
-			MethodInfo ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] { typeof(string), type }, null);
-			return tryParseMethod != null || ParseMethod != null;
+			MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), type }, null);
+			MethodInfo ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), type }, null);
+			ConstructorInfo constructor = type.GetConstructor(new Type[] { typeof(string) });
+			return tryParseMethod != null || ParseMethod != null || constructor != null;
 		}
 
 		/// <summary>
@@ -115,27 +113,44 @@ namespace Utils.Objects
 				return Parse(value, type.GetGenericArguments()[0], formatsProviders);
 			}
 
-			MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IFormatProvider), type.MakeByRefType() }, null);
+			MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IFormatProvider), type.MakeByRefType() }, null);
+			MethodInfo ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IFormatProvider) }, null);
 
-			MethodInfo ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IFormatProvider) }, null);
-
-			foreach (var formatProvider in formatsProviders) {
-				// on vérifie s'il existe une méthode de parsing respectueuse dans la classe
-				if (tryParseMethod != null) {
-					var args = new object[] { value, formatProvider, null };
-					if ((bool)tryParseMethod.Invoke(null, args)) {
-						return args[2];
+			if (tryParseMethod != null || ParseMethod != null)
+			{
+				foreach (var formatProvider in formatsProviders)
+				{
+					// on vérifie s'il existe une méthode de parsing respectueuse dans la classe
+					if (tryParseMethod != null)
+					{
+						var args = new object[] { value, formatProvider, null };
+						if ((bool)tryParseMethod.Invoke(null, args))
+						{
+							return args[2];
+						}
 					}
-				}
-				// sinon, on vérifie qu'il existe une méthode de parsing directe dans la classe
-				if (ParseMethod != null) {
-					try {
-						return ParseMethod.Invoke(null, new object[] { value, formatProvider });
-					} catch {
-						// si le parse echoue, la conversion sera effectué par les convertisseurs suivants
+					// sinon, on vérifie qu'il existe une méthode de parsing directe dans la classe
+					if (ParseMethod != null)
+					{
+						try
+						{
+							return ParseMethod.Invoke(null, new object[] { value, formatProvider });
+						}
+						catch
+						{
+							// si le parse echoue, la conversion sera effectué par les convertisseurs suivants
+						}
 					}
 				}
 			}
+
+			//Si tous les parsers ont échoué, on tente de construite l'objet à partir de la chaîne
+			ConstructorInfo constructor = type.GetConstructor(new Type[] { typeof(string) });
+			if (constructor != null)
+			{
+				return constructor.Invoke(new[] { value });
+			}
+
 			// enfin, on essaye de convertir la valeur brutalement
 			try {
 				return Convert.ChangeType(value, type);

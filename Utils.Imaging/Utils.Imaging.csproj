@@ -1,10 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Olivier MARTY</Authors>
     <Company>Olivier MARTY</Company>
+    <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+    <PackageId>omy.Utils.Imaging</PackageId>
+    <Copyright>Olivier MARTY</Copyright>
+    <Description>Accesseurs d'images
+Gestion des couleurs 8, 32 et 64 bits en Argb et Ahsv</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -21,6 +26,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Utils\Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE-apache-2.0.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
