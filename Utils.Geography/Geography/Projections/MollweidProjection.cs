@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Geography.Model;
 
 namespace Utils.Geography.Projections
@@ -18,7 +14,7 @@ namespace Utils.Geography.Projections
 			else if (latitude < -MaxLatitude) latitude = -MaxLatitude;
 
 			double longitude = geopoint.Longitude % 360;
-			double X = ((longitude / 360)) * Math.Cos(latitude) + 0.5;
+			double X = (longitude / 360) * Math.Cos(latitude) + 0.5;
 
 			double Y = latitude / 180 + 0.5;
 
