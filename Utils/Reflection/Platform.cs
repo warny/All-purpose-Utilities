@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -111,7 +112,7 @@ namespace Utils.Reflection
 			}
 			set {
 				if ((value != 4) && (value != 8))
-					throw new ArgumentException();
+					throw new ArgumentException(nameof(value));
 
 				// Automatic value detection can be overriden if needed
 				_nativeULongSize = value;
@@ -149,7 +150,7 @@ namespace Utils.Reflection
 			}
 			set {
 				if ((value != 0) && (value != 1))
-					throw new ArgumentException();
+					throw new ArgumentException(nameof(value));
 
 				// Automatic value detection can be overriden if needed
 				_structPackingSize = value;
@@ -183,7 +184,7 @@ namespace Utils.Reflection
             }
             else
             {
-                throw new UnsupportedPlatformException("Pkcs11Interop is not supported on this platform");
+                throw new NotSupportedException("Pkcs11Interop is not supported on this platform");
             }
 
 #else
