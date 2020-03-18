@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Reflection
 {
@@ -16,6 +13,11 @@ namespace Utils.Reflection
 		/// Error indicating an attempt to load unmanaged library designated for a different architecture
 		/// </summary>
 		private const int ERROR_BAD_EXE_FORMAT = 0xC1;
+
+		/// <summary>
+		/// Pointeur vers la librairie
+		/// </summary>
+		private IntPtr dllHandle;
 
 		/// <summary>
 		/// Loads the specified module into the address space of the calling process.
@@ -113,7 +115,7 @@ namespace Utils.Reflection
 			if (string.IsNullOrEmpty(function))
 				throw new ArgumentNullException("function");
 
-			IntPtr functionPointer = IntPtr.Zero;
+			IntPtr functionPointer;
 
 			if (Platform.IsLinux || Platform.IsMacOsX)
 			{
@@ -171,10 +173,15 @@ namespace Utils.Reflection
 		}
 		public void Dispose()
 		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+		protected virtual void Dispose(bool disposing)
+		{
 			FreeLibrary(dllHandle);
 		}
 
-		private IntPtr dllHandle;
+		~DllMapper() => Dispose(false);
 	}
 
 	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]

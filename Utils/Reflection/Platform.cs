@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Reflection
 {
@@ -16,22 +11,12 @@ namespace Utils.Reflection
 		/// <summary>
 		/// True if 64-bit runtime is used
 		/// </summary>
-		public static bool Uses64BitRuntime
-		{
-			get {
-				return (IntPtr.Size == 8);
-			}
-		}
+		public static bool Uses64BitRuntime => IntPtr.Size == 8;
 
 		/// <summary>
 		/// True if 32-bit runtime is used
 		/// </summary>
-		public static bool Uses32BitRuntime
-		{
-			get {
-				return (IntPtr.Size == 4);
-			}
-		}
+		public static bool Uses32BitRuntime => IntPtr.Size == 4;
 
 		/// <summary>
 		/// True if runtime platform is Windows
