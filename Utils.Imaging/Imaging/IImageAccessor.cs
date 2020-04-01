@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Drawing;
 
 namespace Utils.Imaging
 {
@@ -16,6 +11,9 @@ namespace Utils.Imaging
 
 		A this[int x, int y] { get; set; }
 		A this[Point p] { get; set; }
+
+		void Rectangle(Rectangle rectangle, A color);
+		void Rectangle(int left, int top, int width, int height, A color);
 	}
 
 	public interface IImageAccessor<T>
@@ -25,7 +23,10 @@ namespace Utils.Imaging
 
 		T this[int x, int y] { get; set; }
 		T this[Point p] { get; set; }
-	}	
+
+		void Rectangle(Rectangle rectangle, T color);
+		void Rectangle(int left, int top, int width, int height, T color);
+	}
 
 	public interface IColorArgb<T> where T : struct
 	{

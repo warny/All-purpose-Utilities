@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Mathematics;
 
 namespace Utils.Imaging
@@ -151,7 +147,6 @@ namespace Utils.Imaging
 					this.green = p;
 					this.blue = color.Value;
 					break;
-				case 5:
 				default:
 					this.red = color.Value;
 					this.green = p;

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Utils.Imaging
+﻿namespace Utils.Imaging
 {
 	public class ColorAhsv32 : IColorAhsv<byte>
 	{
@@ -72,7 +66,6 @@ namespace Utils.Imaging
 			else
 				this.Hue = (byte)(171 + 43 * (red - green) / delta);
 
-			return;
 		}
 
 		public static implicit operator ColorAhsv32(ColorArgb32 color) => new ColorAhsv32(color);

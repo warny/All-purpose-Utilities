@@ -1,19 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Imaging
 {
 	public unsafe class BitmapIndexed8Accessor : IDisposable, IImageAccessor<byte>
 	{
-		Bitmap bitmap;
-		BitmapData bmpdata = null;
-		byte* uintdata;
-		int totalBytes;
+		private Bitmap bitmap;
+		private BitmapData bmpdata = null;
+		private byte* bytedata;
+		private readonly int totalBytes;
 
 		public int Width => bmpdata.Width;
 		public int Height => bmpdata.Height;
@@ -26,47 +22,54 @@ namespace Utils.Imaging
 			this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, PixelFormat.Format8bppIndexed);
 			this.totalBytes = bmpdata.Stride * bmpdata.Height;
 
-			this.uintdata = (byte*)(void*)bmpdata.Scan0;
+			this.bytedata = (byte*)(void*)bmpdata.Scan0;
 		}
 
 		public byte this[Point point]
 		{
-			get { return uintdata[point.Y * bmpdata.Stride + point.X]; }
-			set { uintdata[point.Y * bmpdata.Stride + point.X] = value; }
+			get { return bytedata[point.Y * bmpdata.Stride + point.X]; }
+			set { bytedata[point.Y * bmpdata.Stride + point.X] = value; }
 		}
 
 		public byte this[int x, int y]
 		{
-			get { return uintdata[y * bmpdata.Stride + x]; }
-			set { uintdata[y * bmpdata.Stride + x] = value; }
+			get { return bytedata[y * bmpdata.Stride + x]; }
+			set { bytedata[y * bmpdata.Stride + x] = value; }
 		}
 
-		public void Rectangle( Rectangle r, byte value )
+		public void Rectangle(Rectangle rectangle, byte color)
 		{
-			for (int y = r.Top ; y <= r.Bottom ; y++) {
+			Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color);
+		}
+
+		public void Rectangle(int left, int top, int width, int height, byte color)
+		{
+			int bottom = top + height;
+			int right = left + width;
+			for (int y = top; y <= bottom; y++)
+			{
 				int yOffset = y * bmpdata.Width;
-				for (int x = r.Left; x <= r.Right ; x++) {
-					uintdata[yOffset + x] = value;
+				for (int x = left; x <= right; x++)
+				{
+					bytedata[yOffset + x] = color;
 				}
 			}
 		}
-
-		public void Fill( int left, int top, int right, int bottom, byte value )
-		{
-			for (int y = top ; y <= bottom ; y++) {
-				int yOffset = y * bmpdata.Width;
-				for (int x = left ; x <= right ; x++) {
-					uintdata[yOffset + x] = value;
-				}
-			}
-		}
-
 
 		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		~BitmapIndexed8Accessor() => Dispose(false);
+		
+		protected virtual void Dispose(bool disposing)
 		{
 			if (bitmap != null && bmpdata != null) {
 				this.bitmap.UnlockBits(bmpdata);
 				this.bitmap = null;
+				this.bytedata = null;
 				this.bmpdata = null;
 			}
 		}

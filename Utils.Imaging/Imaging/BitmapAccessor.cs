@@ -1,20 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Imaging
 {
 	public unsafe class BitmapAccessor : IDisposable
 	{
-		Bitmap bitmap;
-		BitmapData bmpdata = null;
-		PixelFormat pixelformat;
-		byte* bytedata;
-		int totalBytes;
+		private Bitmap bitmap;
+		private BitmapData bmpdata = null;
+		private readonly PixelFormat pixelformat;
+		private byte* bytedata;
+		private readonly int totalBytes;
 
 		public int Width => bmpdata.Width;
 		public int Height => bmpdata.Height;
@@ -39,7 +35,7 @@ namespace Utils.Imaging
 			set { bytedata[y * this.bmpdata.Stride + x * ColorDepth + c] = value; }
 		}
 
-		private int GetColorDepth( PixelFormat pixelFormat )
+		private static int GetColorDepth( PixelFormat pixelFormat )
 		{
 			switch (pixelFormat) {
 				case PixelFormat.Undefined:
@@ -80,6 +76,14 @@ namespace Utils.Imaging
 		}
 
 		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		~BitmapAccessor() => Dispose(false);
+
+		protected virtual void Dispose(bool disposing)
 		{
 			if (bitmap != null && bmpdata != null) {
 				this.bitmap.UnlockBits(bmpdata);

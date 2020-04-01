@@ -1,19 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Imaging
 {
 	public unsafe class BitmapArgb32Accessor : IDisposable, IImageAccessor<ColorArgb32, byte>, IImageAccessor<uint>
 	{
-		Bitmap bitmap;
-		BitmapData bmpdata = null;
-		uint* uintdata;
-		int totalBytes;
+		private Bitmap bitmap;
+		private BitmapData bmpdata = null;
+		private uint* uintdata;
+		private readonly int totalBytes;
 
 		public int Width => bmpdata.Width;
 		public int Height => bmpdata.Height;
@@ -53,12 +49,19 @@ namespace Utils.Imaging
 			set { uintdata[y * bmpdata.Width + x] = value.Value; }
 		}
 
-		public void Rectangle( Rectangle r, uint value )
+		public void Rectangle(Rectangle rectangle, ColorArgb32 color) => Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color.Value);
+		public void Rectangle(Rectangle rectangle, uint color) => Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color);
+		public void Rectangle(int left, int top, int width, int height, ColorArgb32 color) => Rectangle(left, top, width, height, color.Value);
+		public void Rectangle(int left, int top, int width, int height, uint color)
 		{
-			for (int y = r.Top ; y <= r.Bottom ; y++) {
+			int bottom = top + height;
+			int right = left + width;
+			for (int y = top; y <= bottom; y++)
+			{
 				int yOffset = y * bmpdata.Width;
-				for (int x = r.Left ; x <= r.Right ; x++) {
-					uintdata[yOffset + x] = value;
+				for (int x = left; x <= right; x++)
+				{
+					uintdata[yOffset + x] = color;
 				}
 			}
 		}
@@ -95,9 +98,18 @@ namespace Utils.Imaging
 
 		public void Dispose()
 		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		~BitmapArgb32Accessor() => Dispose(false);
+
+		protected virtual void Dispose(bool disposing)
+		{
 			if (bitmap != null && bmpdata != null) {
 				this.bitmap.UnlockBits(bmpdata);
 				this.bitmap = null;
+				this.uintdata = null;
 				this.bmpdata = null;
 			}
 		}
