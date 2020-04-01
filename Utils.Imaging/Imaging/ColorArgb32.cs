@@ -56,6 +56,7 @@ namespace Utils.Imaging
 			this.blue = (byte)(0xFF & color);
 		}
 
+		public ColorArgb32(byte red, byte green, byte blue) : this(byte.MaxValue, red, green, blue) { }
 		public ColorArgb32( byte alpha, byte red, byte green, byte blue ) : this()
 		{
 			this.alpha = alpha;

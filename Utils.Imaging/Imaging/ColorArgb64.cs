@@ -85,6 +85,7 @@ namespace Utils.Imaging
 			this.blue =  (ushort)(color.B << 8);
 		}
 
+		public ColorArgb64(ushort red, ushort green, ushort blue) : this(ushort.MaxValue, red, green, blue) { }
 		public ColorArgb64( ushort alpha, ushort red, ushort green, ushort blue ) : this()
 		{
 			this.alpha = alpha;

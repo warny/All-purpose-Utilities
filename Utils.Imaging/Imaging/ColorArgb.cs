@@ -54,6 +54,8 @@ namespace Utils.Imaging
 			}
 		}
 
+		public ColorArgb(double red, double green, double blue) : this(1D, red, green, blue) { }
+
 		public ColorArgb( double alpha, double red, double green, double blue )
 		{
 			if (!alpha.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(alpha));
@@ -62,18 +64,6 @@ namespace Utils.Imaging
 			if (!blue.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(blue));
 
 			this.alpha = alpha;
-			this.red = red;
-			this.green = green;
-			this.blue = blue;
-		}
-
-		public ColorArgb( double red, double green, double blue )
-		{
-			if (!red.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(red));
-			if (!green.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(green));
-			if (!blue.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(blue));
-
-			this.alpha = 1;
 			this.red = red;
 			this.green = green;
 			this.blue = blue;

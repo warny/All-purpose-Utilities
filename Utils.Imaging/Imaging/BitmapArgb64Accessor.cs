@@ -53,8 +53,8 @@ namespace Utils.Imaging
 		public void Rectangle(int left, int top, int width, int height, ColorArgb64 color) => Rectangle(left, top, width, height, color.Value);
 		public void Rectangle(int left, int top, int width, int height, ulong color)
 		{
-			int bottom = top + height;
-			int right = left + width;
+			int bottom = top + height - 1;
+			int right = left + width - 1;
 			for (int y = top; y <= bottom; y++)
 			{
 				int yOffset = y * bmpdata.Width;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Utils.Mathematics;
 
 namespace Utils.Imaging
 {
@@ -54,8 +55,10 @@ namespace Utils.Imaging
 		public void Rectangle(int left, int top, int width, int height, ColorArgb32 color) => Rectangle(left, top, width, height, color.Value);
 		public void Rectangle(int left, int top, int width, int height, uint color)
 		{
-			int bottom = top + height;
-			int right = left + width;
+			int bottom = MathEx.Min(top + height, Height - 1);
+			int right = MathEx.Min(left + width, Width - 1);
+			top = MathEx.Max(0, top);
+			left = MathEx.Max(0, left);
 			for (int y = top; y <= bottom; y++)
 			{
 				int yOffset = y * bmpdata.Width;
@@ -84,16 +87,6 @@ namespace Utils.Imaging
 				}
 			}
 			return copy;
-		}
-
-		public void Fill( int left, int top, int right, int bottom, uint value )
-		{
-			for (int y = top ; y <= bottom ; y++) {
-				int yOffset = y * bmpdata.Width;
-				for (int x = left ; x <= right ; x++) {
-					uintdata[yOffset + x] = value;
-				}
-			}
 		}
 
 		public void Dispose()
