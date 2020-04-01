@@ -172,5 +172,6 @@ namespace Utils.Imaging
 			return new ColorArgb64(color);
 		}
 
+		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
 	}
 }

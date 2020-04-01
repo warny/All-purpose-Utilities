@@ -191,5 +191,6 @@ namespace Utils.Imaging
 				Math.Sqrt(Math.Pow(color1.blue, 2) * (1-percent) + Math.Pow(color2.blue, 2) * percent)
 			);
 		}
+		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
 	}
 }

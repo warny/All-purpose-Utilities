@@ -80,5 +80,6 @@ namespace Utils.Imaging
 		public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
 		public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
 
+		public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
 	}
 }

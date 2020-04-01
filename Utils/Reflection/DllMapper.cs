@@ -1,8 +1,11 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using Utils.Reflection.Emit;
 
 namespace Utils.Reflection
 {
@@ -145,7 +148,7 @@ namespace Utils.Reflection
 
 		private static readonly Type externalAttributeType = typeof(ExternalAttribute);
 		private static readonly Type delegateType = typeof(Delegate);
-		public static T Create<T>(string dllPath) 
+		public static T Create<T>(string dllPath)
 			where T : DllMapper, new()
 		{
 			var obj = new T();
@@ -171,6 +174,27 @@ namespace Utils.Reflection
 
 			return obj;
 		}
+
+		public static I Emit<I>(string dllPath, CallingConvention callingConvention) where I : IDisposable 
+		{
+			var typeOfI = typeof(I);
+			if (!typeOfI.IsInterface) throw new NotSupportedException($"{typeOfI.Name} n'est pas une interface");
+			var returnedClassName = typeOfI.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase) ? typeOfI.Name.Substring(2, typeOfI.Name.Length - 1) : "C" + typeOfI.Name;
+
+			AssemblyName assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(dllPath));
+			AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
+			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name);
+			TypeBuilder typeBuilder = moduleBuilder.DefineType(returnedClassName, TypeAttributes.Class | TypeAttributes.Public, typeof(DllMapper), new[] { typeOfI });
+			
+			foreach (var methodInfo in typeOfI.GetMethods())
+			{
+				EmitExtension.MapDelegate(moduleBuilder, typeBuilder, methodInfo);
+
+			}
+
+			return (I)assemblyBuilder.CreateInstance(returnedClassName);
+		}
+
 		public void Dispose()
 		{
 			Dispose(true);

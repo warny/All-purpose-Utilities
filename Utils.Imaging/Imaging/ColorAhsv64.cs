@@ -55,5 +55,6 @@ namespace Utils.Imaging
 
 			return;
 		}
+		public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
 	}
 }
