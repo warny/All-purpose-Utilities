@@ -48,6 +48,10 @@
 				Hue = (ushort)(43690 + 10923 * (colorArgb.Red - colorArgb.Green) / delta);
 
 		}
+		
+		public static implicit operator ColorAhsv64(ColorArgb64 color) => new ColorAhsv64(color);
+		public static implicit operator ColorAhsv64(ColorAhsv color) => new ColorAhsv64((ushort)(color.Alpha * 65535), (ushort)(color.Hue * 65535), (ushort)(color.Saturation * 65535), (ushort)(color.Value * 65535));
+		public static implicit operator ColorAhsv64(System.Drawing.Color color) => new ColorAhsv64(color);
 		public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
 	}
 }

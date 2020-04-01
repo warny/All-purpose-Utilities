@@ -132,20 +132,10 @@ namespace Utils.Imaging
 
 		}
 
-		public static implicit operator ColorAhsv( ColorArgb color )
-		{
-			return new ColorAhsv(color);
-		}
+		public static implicit operator ColorAhsv(ColorArgb color) => new ColorAhsv(color);
+		public static implicit operator ColorAhsv(ColorAhsv32 color) => new ColorAhsv(color);
+		public static implicit operator ColorAhsv(ColorAhsv64 color) => new ColorAhsv(color);
 
-		public static implicit operator ColorAhsv( ColorAhsv32 color )
-		{
-			return new ColorAhsv(color);
-		}
-
-		public static implicit operator ColorAhsv( ColorAhsv64 color )
-		{
-			return new ColorAhsv(color);
-		}
 		public override string ToString() => $"a:{alpha} h:{hue} s:{saturation} v:{value}";
 	}
 }

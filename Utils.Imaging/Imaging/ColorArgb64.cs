@@ -152,25 +152,10 @@ namespace Utils.Imaging
 			return Value.GetHashCode();
 		}
 
-		public static implicit operator ColorArgb64( ColorAhsv32 color )
-		{
-			return new ColorArgb64(color);
-		}
-
-		public static implicit operator ColorArgb64( ColorArgb color )
-		{
-			return new ColorArgb64(color);
-		}
-
-		public static implicit operator ColorArgb64( ColorArgb32 color )
-		{
-			return new ColorArgb64(color);
-		}
-
-		public static implicit operator ColorArgb64( System.Drawing.Color color )
-		{
-			return new ColorArgb64(color);
-		}
+		public static implicit operator ColorArgb64(ColorAhsv32 color) => new ColorArgb64(color);
+		public static implicit operator ColorArgb64(ColorArgb color) => new ColorArgb64(color);
+		public static implicit operator ColorArgb64(ColorArgb32 color) => new ColorArgb64(color);
+		public static implicit operator ColorArgb64(System.Drawing.Color color) => new ColorArgb64(color);
 
 		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
 	}
