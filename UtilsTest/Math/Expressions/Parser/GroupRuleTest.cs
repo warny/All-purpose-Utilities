@@ -41,5 +41,20 @@ namespace UtilsTest.Math.Expressions.Parser
 
 		}
 
+		[TestMethod]
+		public void SimpleGroup3()
+		{
+			Random r = new Random();
+			string chars = "ab";
+			string testString1 = "ab";
+			string testString2 = "a";
+			string testString = testString1 + testString2 + testString1;
+
+			var rule = Rules.Group("test", Rules.Chars(chars) * (1,3)) + Rules.String(testString2) + Rules.GroupReference("test");
+			var result = RuleTester.Test(rule, testString);
+			ParserTestsUtils.AssertTrueResult(testString, result);
+
+		}
+
 	}
 }

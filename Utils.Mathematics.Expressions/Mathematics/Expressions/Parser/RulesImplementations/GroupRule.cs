@@ -32,7 +32,10 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			this.Result = rule.Result;
 			if (res && rule.Result.Success)
 			{
-				this.contextCache = this.Context.Clone();
+				if (rule.CanContinue)
+				{
+					this.contextCache = this.Context.Clone();
+				}
 				this.Context.PushGroup(Name, this.Result.Index);
 				this.CanContinue = rule.CanContinue;
 			}
