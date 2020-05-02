@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Parser
@@ -23,11 +22,13 @@ namespace Utils.Mathematics.Expressions.Parser
 		public int Count => indexes.Count;
 
 		public IEnumerator<ParserIndex> GetEnumerator() => indexes.GetEnumerator();
+
 		IEnumerator IEnumerable.GetEnumerator() => indexes.GetEnumerator();
 
 		public string Value => indexes.Peek().Value;
 
 		internal void Push(ParserIndex value) => indexes.Push(value);
+
 		internal ParserIndex Pop()
 		{
 			if (indexes.TryPop(out ParserIndex result)) return result;
@@ -43,7 +44,8 @@ namespace Utils.Mathematics.Expressions.Parser
 		public Group Clone()
 		{
 			var result = new Group(Name);
-			foreach (var index in indexes) {
+			foreach (var index in indexes)
+			{
 				result.indexes.Push(new ParserIndex(index));
 			}
 			return result;
@@ -52,7 +54,9 @@ namespace Utils.Mathematics.Expressions.Parser
 
 	public class Groups : IndexedList<string, Group>
 	{
-		public Groups() : base(g => g.Name) { }
+		public Groups() : base(g => g.Name)
+		{
+		}
 
 		public Groups(IEnumerable<Group> groups) : this()
 		{
@@ -60,6 +64,30 @@ namespace Utils.Mathematics.Expressions.Parser
 			{
 				this.Add(group.Clone());
 			}
+		}
+
+		internal void Push(string groupName, ParserIndex value)
+		{
+			if (!this.TryGetValue(groupName, out Group group))
+			{
+				group = new Group(groupName);
+				this.Add(group);
+			}
+			group.Push(value);
+		}
+
+		internal ParserIndex Pop(string groupName)
+		{
+			if (!this.TryGetValue(groupName, out Group group)) return null;
+			var value = group.Pop();
+			return value;
+		}
+
+		internal ParserIndex Peek(string groupName)
+		{
+			if (!this.TryGetValue(groupName, out Group group)) return null;
+			ParserIndex value = group.Peek();
+			return value;
 		}
 
 		public Groups Clone() => new Groups(this);

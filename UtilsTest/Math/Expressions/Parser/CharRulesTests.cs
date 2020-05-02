@@ -11,7 +11,7 @@ namespace UtilsTest.Math.Expressions.Parser
 		{
 			string testString = "aaaaaa";
 			Rule testRule = Rules.Chars("abcdef") * 6;
-			var result = RuleTester.Test(testRule, testString);
+			var (result, context) = RuleTester.Test(testRule, testString);
 			ParserTestsUtils.AssertTrueResult(testString, result);
 		}
 
@@ -21,7 +21,7 @@ namespace UtilsTest.Math.Expressions.Parser
 		{
 			string testString = "aaaaaa";
 			Rule testRule = Rules.Chars("bcdef") * 6;
-			var result = RuleTester.Test(testRule, testString);
+			var (result, context) = RuleTester.Test(testRule, testString);
 			Assert.AreEqual(false, result.Success);
 		}
 	}

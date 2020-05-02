@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -20,7 +17,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			Arguments = new ExpressionTreeList(this);
 			GenericTypesNames = new List<string>();
- 		}
+		}
 
 		public Expression[] CreateExpression(Context context)
 		{
@@ -29,9 +26,11 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var arguments = Arguments.ToExpressions(context);
 			var argumentsTypes = arguments.Select(a => a.Type).ToArray();
 
-			if (type.IsGenericType) {
-				Type[] genericTypes; 
-				if (GenericTypesNames != null) {
+			if (type.IsGenericType)
+			{
+				Type[] genericTypes;
+				if (GenericTypesNames != null)
+				{
 					genericTypes = GenericTypesNames.Select(tn => Type.GetType(tn)).ToArray();
 				}
 			}

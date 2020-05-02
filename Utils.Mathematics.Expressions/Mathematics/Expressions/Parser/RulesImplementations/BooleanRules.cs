@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
@@ -35,8 +33,12 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 			return true;
 		}
 
-		protected internal override void OnReset(int index, Context context) { }
+		protected internal override void OnReset(int index, Context context)
+		{
+		}
+
 		protected internal override Rule Clone() => new NotRule(Rule.Clone());
+
 		protected override Rule Not() => this.Rule;
 	}
 }

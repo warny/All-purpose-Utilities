@@ -24,7 +24,7 @@ namespace UtilsTest.Math.Expressions.Parser
 
 			var testRule = Rules.Or(testStrings.Select(s => Rules.String(s)));
 			var testString = testStrings[r.Next(0, testStrings.Length - 1)];
-			var result = RuleTester.Test(testRule, testString);
+			var (result, context) = RuleTester.Test(testRule, testString);
 			ParserTestsUtils.AssertTrueResult(testString, result);
 		}
 
@@ -39,7 +39,7 @@ namespace UtilsTest.Math.Expressions.Parser
 
 			var testRule = Rules.Or(testStrings.Select(s => Rules.String(s)));
 			var testString = testStrings[testStrings.Length - 1];
-			var result = RuleTester.Test(testRule, testString);
+			var (result, context) = RuleTester.Test(testRule, testString);
 			ParserTestsUtils.AssertTrueResult(testString, result);
 		}
 	}

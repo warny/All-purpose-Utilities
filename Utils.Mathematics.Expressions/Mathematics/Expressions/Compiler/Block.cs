@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Arrays;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -15,7 +9,10 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		public ExpressionTreeList ExpressionTrees { get; }
 
-		public Block() { ExpressionTrees = new ExpressionTreeList(this); }
+		public Block()
+		{
+			ExpressionTrees = new ExpressionTreeList(this);
+		}
 
 		public Expression[] CreateExpression(Context context)
 		{
@@ -23,7 +20,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			List<Expression> expressions = new List<Expression>();
 
-			foreach (var expressionTree in ExpressionTrees) {
+			foreach (var expressionTree in ExpressionTrees)
+			{
 				var expression = expressionTree.CreateExpression(context);
 				expressions.AddRange(expression);
 			}

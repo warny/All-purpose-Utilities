@@ -8,6 +8,7 @@
 		private readonly char[] chars;
 
 		public IncludeCharRule(params char[] chars) => this.chars = chars;
+
 		public IncludeCharRule(string chars) => this.chars = chars.ToCharArray();
 
 		protected internal override bool Next(char c, int index)
@@ -24,8 +25,12 @@
 			}
 		}
 
-		protected internal override void OnReset(int index, Context context) { }
+		protected internal override void OnReset(int index, Context context)
+		{
+		}
+
 		protected internal override Rule Clone() => new IncludeCharRule(chars);
+
 		public override string ToString() => "[" + new string(chars) + "]";
 	}
 
@@ -43,10 +48,12 @@
 		public char Start { get; }
 		public char End { get; }
 
+		protected internal override void OnReset(int index, Context context)
+		{
+		}
 
-
-		protected internal override void OnReset(int index, Context context) { }
 		protected internal override Rule Clone() => new RangeCharRule(Start, End);
+
 		protected internal override bool Next(char c, int index)
 		{
 			if (c.Between(Start, End))
@@ -70,6 +77,7 @@
 		private readonly char[] chars;
 
 		public ExcludeCharRule(params char[] chars) => this.chars = chars;
+
 		public ExcludeCharRule(string chars) => this.chars = chars.ToCharArray();
 
 		protected internal override bool Next(char c, int index)
@@ -85,8 +93,13 @@
 				return false;
 			}
 		}
-		protected internal override void OnReset(int index, Context context) { }
+
+		protected internal override void OnReset(int index, Context context)
+		{
+		}
+
 		protected internal override Rule Clone() => new ExcludeCharRule(chars);
+
 		public override string ToString() => "[^" + new string(chars) + "]";
 	}
 
@@ -104,10 +117,12 @@
 		public char Start { get; }
 		public char End { get; }
 
+		protected internal override void OnReset(int index, Context context)
+		{
+		}
 
-
-		protected internal override void OnReset(int index, Context context) { }
 		protected internal override Rule Clone() => new RangeCharRule(Start, End);
+
 		protected internal override bool Next(char c, int index)
 		{
 			if (!c.Between(Start, End))
@@ -122,5 +137,4 @@
 			}
 		}
 	}
-
 }

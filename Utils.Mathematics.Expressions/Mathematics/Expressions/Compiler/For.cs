@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -27,6 +22,7 @@ namespace Utils.Mathematics.Expressions.Compiler
 				initializer.Parent = this;
 			}
 		}
+
 		public IExpressionTree Test
 		{
 			get => test;
@@ -35,14 +31,18 @@ namespace Utils.Mathematics.Expressions.Compiler
 				test.Parent = this;
 			}
 		}
-		public IExpressionTree Stepper {
+
+		public IExpressionTree Stepper
+		{
 			get => stepper;
 			set {
 				stepper = value;
 				stepper.Parent = this;
 			}
 		}
-		public IExpressionTree Body {
+
+		public IExpressionTree Body
+		{
 			get => body;
 			set {
 				body = value;
@@ -55,7 +55,6 @@ namespace Utils.Mathematics.Expressions.Compiler
 			ContinueLabel = Expression.Label();
 			BreakLabel = Expression.Label();
 		}
-
 
 		public Expression[] CreateExpression(Context context)
 		{
@@ -81,7 +80,6 @@ namespace Utils.Mathematics.Expressions.Compiler
 					Expression.Loop(loopExpression, BreakLabel)
 				}
 				).ToArray();
-
 		}
 	}
 }

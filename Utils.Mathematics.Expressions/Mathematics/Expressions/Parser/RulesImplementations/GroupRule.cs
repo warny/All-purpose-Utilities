@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 {
@@ -62,10 +60,11 @@ namespace Utils.Mathematics.Expressions.Parser.RulesImplementations
 		protected internal override void OnReset(int index, Context context)
 		{
 			base.OnReset(index, context);
-			@string = context.Groups[Name].Value; 
+			@string = context.Groups[Name].Value;
 		}
 
 		protected internal override Rule Clone() => new GroupReference(Name);
-		public override string ToString() => $"§{{{Name}}}";
+
+		public override string ToString() => $"\\k<{Name}>";
 	}
 }

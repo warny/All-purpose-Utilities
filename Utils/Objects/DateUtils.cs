@@ -79,6 +79,25 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
+		/// Date de référence unix
+		/// </summary>
+		public static DateTime UnixEpoch { get; } = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		/// <summary>
+		/// Récupère la représentation UNIX de <paramref name="dateTime"/>
+		/// </summary>
+		/// <param name="dateTime"></param>
+		/// <returns></returns>
+		public static long UnixTimeStamp(this DateTime dateTime) => (long)((dateTime - UnixEpoch).TotalSeconds);
+
+		/// <summary>
+		/// Convertit le timestamp UNIX en date
+		/// </summary>
+		/// <param name="timestamp">Timestamp UNIX</param>
+		/// <returns></returns>
+		public static DateTime GetDateFromUnixTimeStamp(long timestamp) => UnixEpoch.AddSeconds(timestamp);
+
+		/// <summary>
 		/// Calcul de la date de paques
 		/// </summary>
 		/// <param name="year">Année de référence</param>

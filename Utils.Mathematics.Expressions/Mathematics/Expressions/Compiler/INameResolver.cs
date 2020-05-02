@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using static System.Reflection.BindingFlags;
-using System.Text;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using static System.Reflection.BindingFlags;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -69,15 +67,19 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			int distance = int.MaxValue;
 			MethodInfo methodInfo = null;
-			foreach (var member in members) {
-				if (member is MethodInfo mi) {
+			foreach (var member in members)
+			{
+				if (member is MethodInfo mi)
+				{
 					var computedDistance = Distance(mi, parameters, genericArgumentsTypes);
 					if (computedDistance < distance) methodInfo = mi;
 				}
-				else if (member is PropertyInfo pi) {
+				else if (member is PropertyInfo pi)
+				{
 					return pi;
 				}
-				else if (member is FieldInfo fi) {
+				else if (member is FieldInfo fi)
+				{
 					return fi;
 				}
 			}
@@ -86,16 +88,20 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 		private int? Distance(MethodInfo methodInfo, Parameter[] parameters, Type[] genericArgumentsTypes)
 		{
-			if (methodInfo.IsGenericMethod && genericArgumentsTypes == null) {
-				foreach (var parameter in parameters) {
-					
+			if (methodInfo.IsGenericMethod && genericArgumentsTypes == null)
+			{
+				foreach (var parameter in parameters)
+				{
 				}
 			}
-			else if (methodInfo.IsGenericMethod && genericArgumentsTypes != null) {
-				if (methodInfo.GetGenericArguments().Length == genericArgumentsTypes.Length) {
+			else if (methodInfo.IsGenericMethod && genericArgumentsTypes != null)
+			{
+				if (methodInfo.GetGenericArguments().Length == genericArgumentsTypes.Length)
+				{
 					methodInfo = methodInfo.MakeGenericMethod(genericArgumentsTypes);
 				}
-				else {
+				else
+				{
 					return null;
 				}
 			}
@@ -103,41 +109,44 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var methodParameters = methodInfo.GetParameters();
 
 			int distance = 0;
-			foreach (var parameter in parameters) {
+			foreach (var parameter in parameters)
+			{
 				ParameterInfo methodParameter;
-				if (parameter.Position != null) {
+				if (parameter.Position != null)
+				{
 					methodParameter = methodParameters?[parameter.Position.Value];
-					if (methodParameter == null) {
+					if (methodParameter == null)
+					{
 						methodParameter = methodParameters.LastOrDefault();
 						if (methodParameter == null) return null;
 						if (methodParameter.GetCustomAttribute<ParamArrayAttribute>() == null) return null;
 					}
 				}
-				else if (parameter.Name != null) {
+				else if (parameter.Name != null)
+				{
 					methodParameter = methodParameters.FirstOrDefault(p => p.Name == parameter.Name);
 					if (methodParameters == null) return null;
 				}
-				else {
+				else
+				{
 					return null;
 				}
 
 				Type testType = parameter.Type;
 				var objectType = typeof(object);
-				while (parameter.Type != methodParameter.ParameterType) {
+				while (parameter.Type != methodParameter.ParameterType)
+				{
 					if (testType == objectType) return null;
 					distance++;
 					testType = testType.BaseType;
 				}
 			}
 			return distance;
-			
 		}
 
 		public Type ResolveType(string typeName, Type[] constructorArgumentTypes)
 		{
 			return null;
 		}
-
 	}
-
 }

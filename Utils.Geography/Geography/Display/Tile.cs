@@ -26,7 +26,7 @@ namespace Utils.Geography.Display
 	 * A tile represents a rectangular part of the world map. All tiles can be identified by their X and Y number together
 	 * with their zoom level. The actual area that a tile covers on a map depends on the underlying map projection.
 	 */
-	public sealed class Tile : IEquatable<Tile>, IFormattable
+	public class Tile : IEquatable<Tile>, IFormattable
 	{
 		/// <summary>
 		/// Width and height of a map tile in pixel.
@@ -129,7 +129,7 @@ namespace Utils.Geography.Display
 			return true;
 		}
 
-		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
+		public override int GetHashCode() => Utils.Objects.ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
 
 		public override string ToString() => $"tileX={this.TileX}, tileY={this.TileY}, zoomLevel={this.ZoomFactor}";
 		public string ToString(string format) => $"tileX={this.TileX.ToString(format)}, tileY={this.TileY.ToString(format)}, zoomLevel={this.ZoomFactor}";

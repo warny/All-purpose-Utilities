@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Arrays;
 using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
@@ -44,19 +40,22 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 			ReturnLabel = Expression.Label(returnType);
 
-			foreach (var expressionTree in ExpressionTrees) {
+			foreach (var expressionTree in ExpressionTrees)
+			{
 				var expression = expressionTree.CreateExpression(context);
 				expressions.AddRange(expression);
 			}
 
 			Expression body;
-			if (expressions.Count == 1 && expressions[0].Type == returnType) {
+			if (expressions.Count == 1 && expressions[0].Type == returnType)
+			{
 				body = expressions[0];
 			}
-			else {
+			else
+			{
 				expressions.Add(Expression.Label(ReturnLabel, Expression.Default(returnType)));
 				body = Expression.Block(
-					returnType, 
+					returnType,
 					context.PeekVariables(),
 					expressions.ToArray()
 				);
@@ -83,7 +82,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 		{
 			var l = this.Parent;
 			Lambda lambda;
-			while ((lambda = l as Lambda) == null) {
+			while ((lambda = l as Lambda) == null)
+			{
 				l = l.Parent;
 				if (l == null) throw new NullReferenceException();
 			}

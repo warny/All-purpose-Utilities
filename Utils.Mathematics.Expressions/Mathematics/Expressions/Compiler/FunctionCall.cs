@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Arrays;
-using Utils.Lists;
 
 namespace Utils.Mathematics.Expressions.Compiler
 {
@@ -34,35 +30,41 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var argumentTypes = argumentsExpressions.Select(a => a.Type).ToArray();
 
 			//Cas où il n'y a ni dépendance de nom ni dépendance d'objets
-			if (Left == null) {
+			if (Left == null)
+			{
 				var function = context.Variables[Name];
-				if (function == null || !function.Type.IsAssignableFrom(funcType) || !function.Type.IsAssignableFrom(actionType)) {
+				if (function == null || !function.Type.IsAssignableFrom(funcType) || !function.Type.IsAssignableFrom(actionType))
+				{
 					throw new NotImplementedException();
 				}
 			}
 
 			//Cas où il y a une dépendance de nom mais pas d'objet
-			if (leftExpression == null) {
-				if (Left is Identifier leftIdentifier) {
-					if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Class) {
+			if (leftExpression == null)
+			{
+				if (Left is Identifier leftIdentifier)
+				{
+					if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Class)
+					{
 						var methods = context.NameResolver.GetStaticMembers(leftIdentifier.Type, Name);
 						var method = context.NameResolver.ResolveFunction(methods, argumentsExpressions.Select((e, p) => new Parameter() { @Type = e.Type, Position = p }).ToArray(), null);
-
 
 						//var method = leftIdentifier.Type.GetMethod(
 						//	Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy, null,
 						//	argumentTypes, null);
-						if (method != null) {
+						if (method != null)
+						{
 							if (method is MethodInfo mi)
 								return new[] { Expression.Call(null, mi, argumentsExpressions.ToArray()) };
 						}
-
 					}
-					else if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Object) {
+					else if (leftIdentifier.IdentifierType == IdentifierTypeEnum.Object)
+					{
 						var methods = context.NameResolver.GetInstanceMembers(leftIdentifier.Type, Name);
 						var method = context.NameResolver.ResolveFunction(methods, argumentsExpressions.Select((e, p) => new Parameter() { @Type = e.Type, Position = p }).ToArray(), null);
 
-						if (method != null) {
+						if (method != null)
+						{
 							if (method is MethodInfo mi)
 								return new[] { Expression.Call(null, mi, argumentsExpressions.ToArray()) };
 						}
@@ -70,7 +72,8 @@ namespace Utils.Mathematics.Expressions.Compiler
 
 					throw new CompilerException("Impossible de résoudre le nom", leftIdentifier.IdentifierFullName + "." + Name);
 				}
-				else {
+				else
+				{
 					throw new CompilerException("Impossible de résoudre le nom", Name);
 				}
 			}
@@ -79,24 +82,26 @@ namespace Utils.Mathematics.Expressions.Compiler
 			var leftType = leftExpression.Type;
 
 			var methodInfo = leftType.GetMethod(Name, argumentTypes);
-			if (methodInfo != null) {
+			if (methodInfo != null)
+			{
 				return new[] { Expression.Call(leftExpression, methodInfo, argumentsExpressions) };
 			}
-			else {
+			else
+			{
 				var propertyOrField = Expression.PropertyOrField(leftExpression, Name);
 				Type propertyOrFieldType = propertyOrField.Type;
 				var delegateType = typeof(Delegate);
-				if (propertyOrFieldType.IsAssignableFrom(delegateType)) {
+				if (propertyOrFieldType.IsAssignableFrom(delegateType))
+				{
 					methodInfo = delegateType.GetMethod("DynamicInvoke");
 				}
-				else {
+				else
+				{
 					throw new CompilerException("Aucune methode ou propriété de type expression trouvés", Name);
 				}
 
 				return new[] { Expression.Call(propertyOrField, methodInfo, argumentsExpressions) };
 			}
-
-
 		}
 	}
 }
