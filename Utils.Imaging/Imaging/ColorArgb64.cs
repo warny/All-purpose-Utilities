@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+using Utils.Mathematics;
 
 namespace Utils.Imaging
 {
@@ -159,5 +161,48 @@ namespace Utils.Imaging
 		public static implicit operator ColorArgb64(System.Drawing.Color color) => new ColorArgb64(color);
 
 		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
+
+		private ColorArgb64 BuildColor(
+			IColorArgb<ushort> other,
+			Func<ushort, ushort, ushort> alphaFunction,
+			Func<ushort, ushort, ushort, ushort, ushort, ushort> colorFunction)
+		{
+			ushort computedAlpha = alphaFunction(this.Alpha, other.Alpha);
+			if (computedAlpha == 0) return new ColorArgb64(0);
+			return new ColorArgb64(
+					alpha,
+					colorFunction(computedAlpha, this.Alpha, other.Alpha, this.Red, other.Alpha),
+					colorFunction(computedAlpha, this.Alpha, other.Alpha, this.Green, other.Red),
+					colorFunction(computedAlpha, this.Alpha, other.Alpha, this.Blue, other.Blue)
+				);
+		}
+
+		public IColorArgb<ushort> Over(IColorArgb<ushort> other)
+		{
+			return BuildColor(
+				other,
+				(thisAlpha, otherAlpha) => (ushort)(thisAlpha + (ushort.MaxValue - thisAlpha) * otherAlpha / ushort.MaxValue),
+				(alpha, thisAlpha, otherAlpha, thisComponent, otherComponent) => (ushort)(thisComponent * thisAlpha + (ushort.MaxValue - thisAlpha) * otherComponent / ushort.MaxValue));
+		}
+
+		public IColorArgb<ushort> Add(IColorArgb<ushort> other)
+		{
+			return BuildColor(
+				other,
+				(thisAlpha, otherAlpha) => (ushort)Math.Sqrt(thisAlpha * otherAlpha),
+				(alpha, thisAlpha, otherAlpha, thisComponent, otherComponent) => (ushort)((thisComponent * thisAlpha + otherComponent * otherAlpha) / (thisAlpha + otherAlpha))
+			);
+		}
+
+		public IColorArgb<ushort> Substract(IColorArgb<ushort> other)
+		{
+			return new ColorArgb64(
+					MathEx.Min(this.Alpha, other.Alpha),
+					MathEx.Min(this.Red, other.Red),
+					MathEx.Min(this.Green, other.Green),
+					MathEx.Min(this.Blue, other.Blue)
+				);
+		}
+
 	}
 }

@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Mathematics.LinearAlgebra
 {
 	/// <summary>
 	/// Vecteur
 	/// </summary>
-	public partial class Vector : IEquatable<Vector>
+	public sealed partial class Vector : IEquatable<Vector>
 	{
 		/// <summary>
 		/// composantes du vecteur
 		/// </summary>
-		internal double[] components;
+		internal readonly double[] components;
 
 		/// <summary>
 		/// Longueur du vecteur	(calculée à la demande)
@@ -95,10 +93,10 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public override bool Equals ( object obj )
 		{
-			if (obj is Vector) {
-				return Equals((Vector)obj);
-			} else if (obj is double[]) {
-				return Equals(new Vector((double)obj));
+			if (obj is Vector v) {
+				return Equals(v);
+			} else if (obj is double[] array) {
+				return Equals(new Vector(array));
 			}
 			return false;
 		}
@@ -170,7 +168,7 @@ namespace Utils.Mathematics.LinearAlgebra
 				sign = -sign;
 			}
 
-			return new Vector() { components = result };
+			return new Vector(result);
 		}
 
 		/// <summary>

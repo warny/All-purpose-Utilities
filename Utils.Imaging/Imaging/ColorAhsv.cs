@@ -137,5 +137,6 @@ namespace Utils.Imaging
 		public static implicit operator ColorAhsv(ColorAhsv64 color) => new ColorAhsv(color);
 
 		public override string ToString() => $"a:{alpha} h:{hue} s:{saturation} v:{value}";
+
 	}
 }

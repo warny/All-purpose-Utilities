@@ -14,6 +14,9 @@ namespace Fractals
 {
 	public partial class Form1 : Form
 	{
+		IComputeFractal computeFractalMandelbrot = null;
+		IComputeFractal computeFractalJulia = null;
+		
 		public Form1()
 		{
 			InitializeComponent();
@@ -21,12 +24,6 @@ namespace Fractals
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			this.Cursor = Cursors.WaitCursor;
-
-			ComputeFractal computeFractal = new ComputeFractal();
-			computeFractal.Compute(Display, new Complex(0, 0), 0.000001, 255, (x, c)=> x * x + c, new Complex( -1.417022285618, 0.0099534));
-			//computeFractal.Compute(Display, new Complex(0, 0), 0.002, 255, (x, c) => x * x + c, new Complex(-1, 0.1));
-			this.Cursor = Cursors.Default;
 		}
 
 		private void mnuQuit_Click(object sender, EventArgs e)
@@ -34,13 +31,32 @@ namespace Fractals
 			Application.Exit();
 		}
 
-		private void Display_Paint(object sender, PaintEventArgs e)
+		private void PrepareFractal()
 		{
+			if (this.WindowState == FormWindowState.Minimized) return;
+
+			this.InitFractal(ref this.computeFractalMandelbrot, DisplayMandelbrot, (bitmap) => new ComputeFractal<Mandelbrot>(bitmap, new Complex(-1, 0), new Complex(0, 0), 0.002));
+			this.InitFractal(ref this.computeFractalJulia, DisplayJulia, (bitmap) => new ComputeFractal<Julia>(bitmap, new Complex(0, 0), new Complex(-1.417022285618, 0.0099534), 0.000001));
+			//this.InitFractal(ref this.computeFractalJulia, DisplayJulia, (bitmap) => new ComputeFractal<Julia>(bitmap, new Complex(0, 0), new Complex(-1, 0.1), 0.002));
 		}
 
-		private void Display_Click(object sender, EventArgs e)
+		private void InitFractal(ref IComputeFractal computeFractal, PictureBox display, Func<Bitmap, IComputeFractal> InitFractal)
 		{
+			if (computeFractal == null || display.Image == null || computeFractal.Image.Width != display.Width || computeFractal.Image.Height != display.Height)
+			{
+				Bitmap bitmap = new Bitmap(DisplayJulia.Width, DisplayJulia.Height);
+				DisplayJulia.Image = bitmap;
+				computeFractal = InitFractal(bitmap);
+			}
+		}
 
+		private void timer1_Tick(object sender, EventArgs e)
+		{
+			PrepareFractal();
+			computeFractalMandelbrot?.Compute();
+			DisplayMandelbrot.Image = computeFractalMandelbrot?.Image;
+			computeFractalJulia?.Compute();
+			DisplayJulia.Image = computeFractalJulia?.Image;
 		}
 	}
 }

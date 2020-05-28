@@ -34,6 +34,10 @@ namespace Utils.Imaging
 		T Red { get; set; }
 		T Green { get; set; }
 		T Blue { get; set; }
+
+		IColorArgb<T> Over(IColorArgb<T> other);
+		IColorArgb<T> Add(IColorArgb<T> other);
+		IColorArgb<T> Substract(IColorArgb<T> other);
 	}
 
 	public interface IColorAhsv<T> where T : struct
@@ -45,3 +49,4 @@ namespace Utils.Imaging
 	}
 
 }
+									

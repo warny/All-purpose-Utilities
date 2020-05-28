@@ -19,7 +19,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					result[i, j] = matrix1.components[i, j] + matrix2.components[i, j];
 				}
 			}
-			return new Matrix() { components = result };
+			return new Matrix(result);
 		}
 
 		public static Matrix operator - ( Matrix matrix1, Matrix matrix2 )
@@ -33,7 +33,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					result[i, j] = matrix1.components[i, j] - matrix2.components[i, j];
 				}
 			}
-			return new Matrix() { components = result };
+			return new Matrix(result);
 		}
 
 		public static Matrix operator - ( Matrix matrix )
@@ -44,7 +44,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					result[i, j] = -matrix.components[i, j];
 				}
 			}
-			return new Matrix() { components = result };
+			return new Matrix(result);
 		}
 
 		public static Matrix operator * ( double number, Matrix matrix )
@@ -56,7 +56,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					result[i, j] = Math.Round(number * matrix.components[i, j], 15);
 				}
 			}
-			return new Matrix() { components = result };
+			return new Matrix(result);
 		}
 
 		public static Matrix operator * ( Matrix matrix, double number )
@@ -73,7 +73,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					result[i, j] = matrix.components[i, j] / number;
 				}
 			}
-			return new Matrix() { components = result };
+			return new Matrix(result);
 		}
 
 		public static Matrix operator * ( Matrix matrix1, Matrix matrix2 )
@@ -94,7 +94,7 @@ namespace Utils.Mathematics.LinearAlgebra
 				}
 			}
 
-			return new Matrix() { components = result };
+			return new Matrix(result);
 		}
 
 		public static bool operator == ( Matrix matrix1, Matrix matrix2 )

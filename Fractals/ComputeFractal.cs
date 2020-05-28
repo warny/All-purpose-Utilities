@@ -1,76 +1,90 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
+﻿using System.Drawing;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Utils.Imaging;
+using Utils.Lists;
 
 namespace Fractals
 {
-	public unsafe class ComputeFractal
+	public class ComputeFractal<T> : IComputeFractal where T : IFractal, new()
 	{
-		public void Compute(PictureBox pictureBox, Complex center, double step, int maxIterations, Func<Complex, Complex, Complex> func, Complex start)
+		private struct ComputePixel
 		{
-			var bitmap = new Bitmap(pictureBox.Width, pictureBox.Height);
-			Compute(bitmap, center, step, maxIterations, func, start);
-			pictureBox.Image = bitmap;
-		}
-
-		public void Compute(Bitmap image, Complex center, double step, int maxIterations, Func<Complex, Complex, Complex> func, Complex start)
-		{
-			using (var accessor = new BitmapArgb32Accessor(image))
+			public ComputePixel(IFractal fractal)
 			{
-				Compute(accessor, center, step, maxIterations, func, start);
+				this.Continue = true;
+				this.Iteration = 0;
+				this.Fractal = fractal;
 			}
+
+			public bool Continue { get; set; }
+			IFractal Fractal { get; set; }
+			public int Iteration { get; set; }
+
+			public int Compute()
+			{
+				if (!Continue) return Iteration;
+				Iteration++;
+				if (Fractal.ComputeIteration())
+				{
+					Continue = false;
+					return Iteration;
+				}
+				return -1;
+			}
+
+			public override string ToString() => $"{Iteration} {(Continue ? "Continue" : "Fin")} {Fractal}";
 		}
 
-		public void Compute(BitmapArgb32Accessor accessor, Complex center, double step, int maxIterations, Func<Complex, Complex, Complex> func, Complex start)
+		public Bitmap Image { get; }
+		private readonly ComputePixel[,] Pixels;
+
+		public ComputeFractal(Bitmap image, Complex center, Complex constant, double step)
 		{
-			var brushes = new ColorArgb32[maxIterations];
-			ColorArgb32 black = new ColorArgb32(255, 0, 0, 0);
-			for (int i = 0; i < maxIterations; i++) brushes[i] = new ColorArgb32((byte)(i * 3), (byte)(70 + i * 3), (byte)(240 + i * 3));
 
-			var centerG = new Point(accessor.Width / 2, accessor.Height / 2);
+			this.Image = image;
+			Pixels = new ComputePixel[image.Width, image.Height];
 
-			for (int x = 0; x < accessor.Width; x++) {
-				for (int y = 0; y < accessor.Height; y++) {
+			var centerG = new Point(image.Width / 2, image.Height / 2);
+
+			for (int x = 0; x < image.Width; x++)
+			{
+				for (int y = 0; y < image.Height; y++)
+				{
 					Complex complex = new Complex(center.Real + (x - centerG.X) * step, center.Imaginary - (y - centerG.Y) * step);
-					var iteration = ComputePoint2(complex, maxIterations, func, start);
-					if (iteration == -1)
-					{
-						accessor[x, y] = black;
-					}
-					else
-					{
-						accessor[x, y] = brushes[iteration];
-					}
+					var pixelParameters = new T();
+					pixelParameters.Initialize(complex, constant);
+					Pixels[x, y] = new ComputePixel(pixelParameters);
 				}
 			}
 		}
 
-		public int ComputePoint(Complex complex, int maxIterations, Func<Complex, Complex, Complex> func, Complex start)
+		public void Compute()
 		{
-			var iteration = start;
-			for (int i = 0; i < maxIterations; i++)
+			using (var accessor = new BitmapArgb32Accessor(Image))
 			{
-				iteration = func(iteration, complex);
-				if (iteration.Magnitude > 10) return i;
+				Compute(accessor);
 			}
-			return -1;
 		}
 
-		public int ComputePoint2(Complex complex, int maxIterations, Func<Complex, Complex, Complex> func, Complex start)
+		private readonly CachedLoader<int, ColorArgb32> Brushes = new CachedLoader<int, ColorArgb32>(
+			i => new ColorArgb32((byte)(i * 3), (byte)(70 + i * 3), (byte)(240 + i * 3))
+		);
+
+		private void Compute(BitmapArgb32Accessor accessor)
 		{
-			var iteration = complex;
-			for (int i = 0; i < maxIterations; i++)
+			ColorArgb32 black = new ColorArgb32(255, 0, 0, 0);
+
+			for (int x = 0; x < accessor.Width; x++)
 			{
-				iteration = func(iteration, start);
-				if (iteration.Magnitude > 10) return i;
+				for (int y = 0; y < accessor.Height; y++)
+				{
+					var iteration = Pixels[x, y].Compute();
+					if (iteration == -1)
+						accessor[x, y] = black;
+					else
+						accessor[x, y] = Brushes[iteration];
+				}
 			}
-			return -1;
 		}
 	}
 }

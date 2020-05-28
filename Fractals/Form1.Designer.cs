@@ -28,18 +28,28 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
 			this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-			this.Display = new System.Windows.Forms.PictureBox();
+			this.tabs = new System.Windows.Forms.TabControl();
+			this.tabMandelbrot = new System.Windows.Forms.TabPage();
+			this.tabJulia = new System.Windows.Forms.TabPage();
+			this.DisplayJulia = new System.Windows.Forms.PictureBox();
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fichierToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.mnuQuit = new System.Windows.Forms.ToolStripMenuItem();
+			this.timer1 = new System.Windows.Forms.Timer(this.components);
+			this.DisplayMandelbrot = new System.Windows.Forms.PictureBox();
 			this.toolStripContainer1.BottomToolStripPanel.SuspendLayout();
 			this.toolStripContainer1.ContentPanel.SuspendLayout();
 			this.toolStripContainer1.TopToolStripPanel.SuspendLayout();
 			this.toolStripContainer1.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.Display)).BeginInit();
+			this.tabs.SuspendLayout();
+			this.tabMandelbrot.SuspendLayout();
+			this.tabJulia.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.DisplayJulia)).BeginInit();
 			this.menuStrip1.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.DisplayMandelbrot)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// toolStripContainer1
@@ -51,7 +61,7 @@
 			// 
 			// toolStripContainer1.ContentPanel
 			// 
-			this.toolStripContainer1.ContentPanel.Controls.Add(this.Display);
+			this.toolStripContainer1.ContentPanel.Controls.Add(this.tabs);
 			this.toolStripContainer1.ContentPanel.Size = new System.Drawing.Size(800, 404);
 			this.toolStripContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.toolStripContainer1.Location = new System.Drawing.Point(0, 0);
@@ -72,16 +82,47 @@
 			this.statusStrip1.Size = new System.Drawing.Size(800, 22);
 			this.statusStrip1.TabIndex = 0;
 			// 
-			// Display
+			// tabs
 			// 
-			this.Display.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.Display.Location = new System.Drawing.Point(0, 0);
-			this.Display.Name = "Display";
-			this.Display.Size = new System.Drawing.Size(800, 404);
-			this.Display.TabIndex = 0;
-			this.Display.TabStop = false;
-			this.Display.Click += new System.EventHandler(this.Display_Click);
-			this.Display.Paint += new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
+			this.tabs.Controls.Add(this.tabMandelbrot);
+			this.tabs.Controls.Add(this.tabJulia);
+			this.tabs.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.tabs.Location = new System.Drawing.Point(0, 0);
+			this.tabs.Name = "tabs";
+			this.tabs.SelectedIndex = 0;
+			this.tabs.Size = new System.Drawing.Size(800, 404);
+			this.tabs.TabIndex = 1;
+			// 
+			// tabMandelbrot
+			// 
+			this.tabMandelbrot.Controls.Add(this.DisplayMandelbrot);
+			this.tabMandelbrot.Location = new System.Drawing.Point(4, 22);
+			this.tabMandelbrot.Name = "tabMandelbrot";
+			this.tabMandelbrot.Padding = new System.Windows.Forms.Padding(3);
+			this.tabMandelbrot.Size = new System.Drawing.Size(792, 378);
+			this.tabMandelbrot.TabIndex = 0;
+			this.tabMandelbrot.Text = "Mandelbrot";
+			this.tabMandelbrot.UseVisualStyleBackColor = true;
+			// 
+			// tabJulia
+			// 
+			this.tabJulia.Controls.Add(this.DisplayJulia);
+			this.tabJulia.Location = new System.Drawing.Point(4, 22);
+			this.tabJulia.Name = "tabJulia";
+			this.tabJulia.Padding = new System.Windows.Forms.Padding(3);
+			this.tabJulia.Size = new System.Drawing.Size(792, 378);
+			this.tabJulia.TabIndex = 1;
+			this.tabJulia.Text = "Julia";
+			this.tabJulia.UseVisualStyleBackColor = true;
+			// 
+			// DisplayJulia
+			// 
+			this.DisplayJulia.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.DisplayJulia.Location = new System.Drawing.Point(3, 3);
+			this.DisplayJulia.Name = "DisplayJulia";
+			this.DisplayJulia.Size = new System.Drawing.Size(786, 372);
+			this.DisplayJulia.TabIndex = 3;
+			this.DisplayJulia.TabStop = false;
 			// 
 			// menuStrip1
 			// 
@@ -109,6 +150,21 @@
 			this.mnuQuit.Text = "&Quitter";
 			this.mnuQuit.Click += new System.EventHandler(this.mnuQuit_Click);
 			// 
+			// timer1
+			// 
+			this.timer1.Enabled = true;
+			this.timer1.Interval = 10;
+			this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+			// 
+			// DisplayMandelbrot
+			// 
+			this.DisplayMandelbrot.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.DisplayMandelbrot.Location = new System.Drawing.Point(3, 3);
+			this.DisplayMandelbrot.Name = "DisplayMandelbrot";
+			this.DisplayMandelbrot.Size = new System.Drawing.Size(786, 372);
+			this.DisplayMandelbrot.TabIndex = 0;
+			this.DisplayMandelbrot.TabStop = false;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -127,9 +183,13 @@
 			this.toolStripContainer1.TopToolStripPanel.PerformLayout();
 			this.toolStripContainer1.ResumeLayout(false);
 			this.toolStripContainer1.PerformLayout();
-			((System.ComponentModel.ISupportInitialize)(this.Display)).EndInit();
+			this.tabs.ResumeLayout(false);
+			this.tabMandelbrot.ResumeLayout(false);
+			this.tabJulia.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.DisplayJulia)).EndInit();
 			this.menuStrip1.ResumeLayout(false);
 			this.menuStrip1.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)(this.DisplayMandelbrot)).EndInit();
 			this.ResumeLayout(false);
 
 		}
@@ -141,7 +201,12 @@
 		private System.Windows.Forms.MenuStrip menuStrip1;
 		private System.Windows.Forms.ToolStripMenuItem fichierToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem mnuQuit;
-		private System.Windows.Forms.PictureBox Display;
+		private System.Windows.Forms.Timer timer1;
+		private System.Windows.Forms.TabControl tabs;
+		private System.Windows.Forms.TabPage tabMandelbrot;
+		private System.Windows.Forms.TabPage tabJulia;
+		private System.Windows.Forms.PictureBox DisplayJulia;
+		private System.Windows.Forms.PictureBox DisplayMandelbrot;
 	}
 }
 

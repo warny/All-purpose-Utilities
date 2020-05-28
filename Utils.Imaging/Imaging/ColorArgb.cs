@@ -177,5 +177,36 @@ namespace Utils.Imaging
 			);
 		}
 		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
+
+		public IColorArgb<double> Over(IColorArgb<double> other)
+		{
+			return new ColorArgb(
+					this.Alpha + (1.0 - this.Alpha) * other.Alpha,
+					this.Red * this.Alpha + (1.0 - this.Alpha) * other.Red,
+					this.Green * this.Alpha + (1.0 - this.Alpha) * other.Green,
+					this.Blue * this.Alpha + (1.0 - this.Alpha) * other.Blue
+				);
+		}
+
+		public IColorArgb<double> Add(IColorArgb<double> other)
+		{
+			return new ColorArgb(
+					MathEx.Min(1.0, this.Alpha + other.Alpha),
+					MathEx.Min(1.0, this.Red + other.Red),
+					MathEx.Min(1.0, this.Green + other.Green),
+					MathEx.Min(1.0, this.Blue + other.Blue)
+				);
+		}
+
+		public IColorArgb<double> Substract(IColorArgb<double> other)
+		{
+			return new ColorArgb(
+					MathEx.Min(this.Alpha, other.Alpha),
+					MathEx.Min(this.Red, other.Red),
+					MathEx.Min(this.Green, other.Green),
+					MathEx.Min(this.Blue, other.Blue)
+				);
+		}
+
 	}
 }

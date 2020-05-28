@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Lists
 {
@@ -104,10 +102,10 @@ namespace Utils.Lists
 
 	class Mapped<K, V> : IMappable<K, V>
 	{
-		private Func<K, V> getValue;
-		private Func<K, bool> removeValue;
-		private Func<IEnumerable<KeyValuePair<K, V>>> getValues;
-		private Func<int> getCount;
+		private readonly Func<K, V> getValue;
+		private readonly Func<K, bool> removeValue;
+		private readonly Func<IEnumerable<KeyValuePair<K, V>>> getValues;
+		private readonly Func<int> getCount;
 
 		public Mapped(
 			Func<K, V> getValue, 

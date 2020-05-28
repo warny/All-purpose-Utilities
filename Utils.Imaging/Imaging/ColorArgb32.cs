@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+using Utils.Mathematics;
 
 namespace Utils.Imaging
 {
@@ -71,6 +73,14 @@ namespace Utils.Imaging
 			this.red = array[index+1];
 			this.green = array[index+2];
 			this.blue = array[index+3];
+		}
+
+		public ColorArgb32(IColorArgb<byte> colorArgb64 ) : this()
+		{
+			this.alpha = (byte)(colorArgb64.Alpha * 255);
+			this.red = (byte)(colorArgb64.Red * 255);
+			this.green = (byte)(colorArgb64.Green * 255);
+			this.blue = (byte)(colorArgb64.Blue * 255);
 		}
 
 		public ColorArgb32( ColorArgb colorArgb64 ) : this()
@@ -169,5 +179,35 @@ namespace Utils.Imaging
 		}
 
 		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
+
+		public IColorArgb<byte> Over(IColorArgb<byte> other)
+		{
+			return new ColorArgb32(
+					(byte)(this.Alpha + (byte.MaxValue - this.Alpha) * other.Alpha / byte.MaxValue),
+					(byte)(this.Red * this.Alpha + (byte.MaxValue - this.Alpha) * other.Red / byte.MaxValue),
+					(byte)(this.Green * this.Alpha + (byte.MaxValue - this.Alpha) * other.Green / byte.MaxValue),
+					(byte)(this.Blue * this.Alpha + (byte.MaxValue - this.Alpha) * other.Blue / byte.MaxValue)
+				);
+		}
+
+		public IColorArgb<byte> Add(IColorArgb<byte> other)
+		{
+			return new ColorArgb32(
+					(byte)MathEx.Min(byte.MaxValue, this.Alpha + other.Alpha),
+					(byte)MathEx.Min(byte.MaxValue, this.Red + other.Red),
+					(byte)MathEx.Min(byte.MaxValue, this.Green + other.Green),
+					(byte)MathEx.Min(byte.MaxValue, this.Blue + other.Blue)
+				);
+		}
+
+		public IColorArgb<byte> Substract(IColorArgb<byte> other)
+		{
+			return new ColorArgb32(
+					MathEx.Min(this.Alpha, other.Alpha),
+					MathEx.Min(this.Red, other.Red),
+					MathEx.Min(this.Green, other.Green),
+					MathEx.Min(this.Blue, other.Blue)
+				);
+		}
 	}
 }

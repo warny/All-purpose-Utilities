@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Mathematics.LinearAlgebra
 {
@@ -12,12 +9,12 @@ namespace Utils.Mathematics.LinearAlgebra
 	/// Un point de dimension n est multipliable par une matrice d'espace normal de dimension n+1
 	/// </remarks>
 	/// </summary>
-	public partial class Point: IEquatable<Point>
+	public sealed partial class Point: IEquatable<Point>
 	{
 		/// <summary>
 		/// composantes du vecteur
 		/// </summary>
-		internal double[] components;
+		internal readonly double[] components;
 
 		private Point ()
 		{
@@ -77,10 +74,10 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public override bool Equals ( object obj )
 		{
-			if (obj is Point) {
-				return Equals((Point)obj);
-			} else if (obj is double[]) {
-				return Equals(new Point((double)obj));
+			if (obj is Point p) {
+				return Equals(p);
+			} else if (obj is double[] array) {
+				return Equals(array);
 			}
 			return false;
 		}

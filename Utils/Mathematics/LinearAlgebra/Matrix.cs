@@ -10,9 +10,9 @@ namespace Utils.Mathematics.LinearAlgebra
 	/// <summary>
 	/// Matrice
 	/// </summary>
-	public partial class Matrix : IFormattable , IEquatable<Matrix>
+	public sealed partial class Matrix : IFormattable , IEquatable<Matrix>, IEquatable<double[,]>, IEquatable<double[][]>
 	{
-		internal double[,] components;
+		internal readonly double[,] components;
 		private bool? isDiagonalized;
 		private bool? isTriangularised;
 		private bool? isIdentity;
@@ -25,6 +25,15 @@ namespace Utils.Mathematics.LinearAlgebra
 		public Matrix ( int dimensionX, int dimensionY )
 		{
 			components = new double[dimensionX, dimensionY];
+		}
+
+		private Matrix(double[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, double? determinant)
+		{
+			this.components = array;
+			this.isDiagonalized = isDiagonalized;
+			this.isTriangularised = isTriangularised;
+			this.isIdentity = isIdentity;
+			this.determinant = determinant;
 		}
 
 		public Matrix ( double[,] array )
@@ -80,13 +89,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					array[i, j] = i == j ? 1.0 : 0.0;
 				}
 			}
-			return new Matrix() { 
-				components = array, 
-				isIdentity = true, 
-				isDiagonalized = true, 
-				isTriangularised = true,
-				determinant = 1
-			};
+			return new Matrix(array, true, true, true, 1);
 		}
 
 		/// <summary>
@@ -113,13 +116,7 @@ namespace Utils.Mathematics.LinearAlgebra
 				}
 				newDeterminant *= values[i];
 			}
-			return new Matrix() {
-				components = array,
-				isIdentity = allOne,
-				isDiagonalized = !oneZero,
-				isTriangularised = !oneZero,
-				determinant = newDeterminant
-			};
+			return new Matrix(array, allOne, !oneZero, !oneZero, newDeterminant);
 		}
 
 		/// <summary>
@@ -346,7 +343,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			{
 				if (determinant == null) {
 					if (!IsSquare) {
-						throw new Exception("La matrice n'est pas une matrice carrée");
+						throw new InvalidOperationException("La matrice n'est pas une matrice carrée");
 					}
 					var columns = new ComputeColumns(components.GetLength(0));
 					this.determinant = ComputeDeterminant(0, columns);
@@ -373,12 +370,10 @@ namespace Utils.Mathematics.LinearAlgebra
 			string lineSeparator = Environment.NewLine;
 			int decimals = 2;
 			
-			if (formatProvider is CultureInfo) {
-				var c = (CultureInfo)formatProvider;
+			if (formatProvider is CultureInfo c) {
 				if (c.NumberFormat.CurrencyDecimalSeparator == ",") componentsSeparator = ";";
 				decimals = c.NumberFormat.NumberDecimalDigits;
-			} else if (formatProvider is NumberFormatInfo) {
-				var n = (NumberFormatInfo)formatProvider;
+			} else if (formatProvider is NumberFormatInfo n) {
 				if (n.CurrencyDecimalSeparator == ",") componentsSeparator = ";";
 				decimals = n.NumberDecimalDigits;
 			}
@@ -411,8 +406,13 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public override bool Equals ( object obj )
 		{
-			if (obj is Matrix) {
-				return this.Equals((Matrix)obj);
+			if (obj is Matrix m)
+			{
+				return this.Equals(m);
+			}
+			else if (obj is double[,] a)
+			{
+				return this.Equals(a);
 			}
 			return false;
 		}
@@ -420,15 +420,44 @@ namespace Utils.Mathematics.LinearAlgebra
 		public bool Equals ( Matrix other )
 		{
 			if (Object.ReferenceEquals(this, other)) return true;
-			if (this.components.GetLength(0) != other.components.GetLength(0) || this.components.GetLength(1) != other.components.GetLength(1)) {
+			return Equals(other.components);
+		}
+
+		public bool Equals(double[,] other)
+		{
+			if (this.components.GetLength(0) != other.GetLength(0) || this.components.GetLength(1) != other.GetLength(1)) {
 				return false;
 			}
 			for(int i = 0; i <	this.components.GetLength(0);i++) {
 				for (int j = 0; j < this.components.GetLength(1); j++) {
-					if (this.components[i, j] != other.components[i, j]) return false;
+					if (this.components[i, j] != other[i, j]) return false;
 				}
 			}
+			return true;
+		}
 
+		public bool Equals(double[][] other)
+		{
+			if (this.components.GetLength(0) != other.GetLength(0))
+			{
+				return false;
+			}
+			for (int i = 0; i < this.components.GetLength(0); i++)
+			{
+				double[] otherRow = other[i];
+				if (otherRow.GetLength(0) > this.components.GetLength(1)) return false;
+				for (int j = 0; j < this.components.GetLength(1); j++)
+				{
+					if (j > otherRow.GetLength(0))
+					{
+						if (this.components[i, j] != 0) return false;
+					}
+					else if (this.components[i, j] != otherRow[j])
+					{
+						return false;
+					}
+				}
+			}
 			return true;
 		}
 
