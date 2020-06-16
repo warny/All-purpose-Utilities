@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -11,6 +11,7 @@
     <Copyright>Olivier MARTY</Copyright>
     <Description>Accesseurs d'images
 Gestion des couleurs 8, 32 et 64 bits en Argb et Ahsv</Description>
+    <RootNamespace>Utils</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

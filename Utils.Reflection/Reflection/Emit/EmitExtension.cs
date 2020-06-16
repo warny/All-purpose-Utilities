@@ -7,21 +7,21 @@ namespace Utils.Reflection.Emit
 {
 	public static class EmitExtension
 	{
-		public static TypeBuilder DefineDelegate(this TypeBuilder moduleBuilder, MethodInfo methodInfo)
+		public static TypeBuilder DefineDelegate(this TypeBuilder moduleBuilder, MethodInfo methodInfo, bool @public)
 		{
 			var delegateClass = moduleBuilder.DefineNestedType(
 				methodInfo.Name + "Delegate",
-				TypeAttributes.NestedPrivate | TypeAttributes.AnsiClass | TypeAttributes.Sealed,
+				( @public ? TypeAttributes.NestedPublic : TypeAttributes.NestedPrivate ) | TypeAttributes.AnsiClass | TypeAttributes.Sealed,
 				typeof(System.MulticastDelegate)
 			);
 			return InnerDefineDelegate(delegateClass, methodInfo);
 		}
 
-		public static TypeBuilder DefineDelegate(this ModuleBuilder moduleBuilder, MethodInfo methodInfo)
+		public static TypeBuilder DefineDelegate(this ModuleBuilder moduleBuilder, MethodInfo methodInfo, bool @public)
 		{
 			var delegateClass = moduleBuilder.DefineType(
 				methodInfo.Name + "Delegate",
-				TypeAttributes.NestedPrivate | TypeAttributes.AnsiClass | TypeAttributes.Sealed,
+				(@public ? TypeAttributes.NestedPublic : TypeAttributes.NestedPrivate) | TypeAttributes.AnsiClass | TypeAttributes.Sealed,
 				typeof(System.MulticastDelegate)
 			);
 			return InnerDefineDelegate(delegateClass, methodInfo);

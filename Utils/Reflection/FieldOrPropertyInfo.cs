@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Reflection
 {
@@ -57,10 +55,7 @@ namespace Utils.Reflection
 			else throw new NotSupportedException($"{nameof(FieldOrPropertyInfo)} ne supporte pas {Member.GetType().Name}");
 		}
 
-		public override string ToString()
-		{
-			return Member.ToString();
-		}
+		public override string ToString() => Member.ToString();
 
 		public static implicit operator FieldOrPropertyInfo(MemberInfo memberInfo) => new FieldOrPropertyInfo(memberInfo);
 		public static implicit operator FieldOrPropertyInfo(FieldInfo fieldInfo) => new FieldOrPropertyInfo(fieldInfo);
