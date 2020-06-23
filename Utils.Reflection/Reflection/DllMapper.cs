@@ -1,11 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.InteropServices;
-using Utils.Reflection.Emit;
+using Utils.Reflection.Reflection.Emit;
 
 namespace Utils.Reflection
 {
@@ -147,13 +145,18 @@ namespace Utils.Reflection
 		#endregion
 
 		private static readonly Type externalAttributeType = typeof(ExternalAttribute);
-		private static readonly Type delegateType = typeof(Delegate);
+
 		public static T Create<T>(string dllPath)
 			where T : DllMapper, new()
 		{
 			var obj = new T();
-			Type t = typeof(T);
+			MapDLLToObject(dllPath, obj);
+			return obj;
+		}
 
+		private static void MapDLLToObject(string dllPath, DllMapper obj)
+		{
+			Type t = obj.GetType();
 			obj.dllHandle = LoadLibrary(dllPath);
 
 			foreach (var member in t.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance))
@@ -166,33 +169,20 @@ namespace Utils.Reflection
 				{
 					var delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, prop.PropertyType);
 					prop.SetValue(obj, delegateFunction);
-				} else if (member is FieldInfo field) {
+				}
+				else if (member is FieldInfo field)
+				{
 					var delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, field.FieldType);
 					field.SetValue(obj, delegateFunction);
 				}
 			}
-
-			return obj;
 		}
 
 		public static I Emit<I>(string dllPath, CallingConvention callingConvention) where I : IDisposable 
 		{
-			var typeOfI = typeof(I);
-			if (!typeOfI.IsInterface) throw new NotSupportedException($"{typeOfI.Name} n'est pas une interface");
-			var returnedClassName = typeOfI.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase) ? typeOfI.Name.Substring(2, typeOfI.Name.Length - 1) : "C" + typeOfI.Name;
-
-			AssemblyName assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(dllPath));
-			AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
-			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name);
-			TypeBuilder typeBuilder = moduleBuilder.DefineType(returnedClassName, TypeAttributes.Class | TypeAttributes.Public, typeof(DllMapper), new[] { typeOfI });
-			
-			foreach (var methodInfo in typeOfI.GetMethods())
-			{
-				EmitExtension.MapDelegate(moduleBuilder, typeBuilder, methodInfo);
-
-			}
-
-			return (I)assemblyBuilder.CreateInstance(returnedClassName);
+			var obj = EmitDllMappableClass.Emit<I>(callingConvention);
+			MapDLLToObject(dllPath, (DllMapper)(object)obj);
+			return obj;
 		}
 
 		public void Dispose()
@@ -208,7 +198,7 @@ namespace Utils.Reflection
 		~DllMapper() => Dispose(false);
 	}
 
-	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
 	public class ExternalAttribute : Attribute
 	{
 		public ExternalAttribute()
