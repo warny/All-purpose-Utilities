@@ -111,10 +111,10 @@ namespace Utils.Reflection
 		private static IntPtr GetFunctionPointer(IntPtr libraryHandle, string function)
 		{
 			if (libraryHandle == IntPtr.Zero)
-				throw new ArgumentNullException("libraryHandle");
+				throw new ArgumentNullException(nameof(libraryHandle));
 
-			if (string.IsNullOrEmpty(function))
-				throw new ArgumentNullException("function");
+			if (string.IsNullOrWhiteSpace(function))
+				throw new ArgumentNullException(nameof(function));
 
 			IntPtr functionPointer;
 

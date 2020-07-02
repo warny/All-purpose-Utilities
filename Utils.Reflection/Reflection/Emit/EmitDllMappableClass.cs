@@ -44,7 +44,7 @@ namespace Utils.Reflection.Reflection.Emit
 				csCode.AppendLine("}");
 
 				Assembly assembly = Compile(type, csCode);
-				t = assembly.GetTypes().FirstOrDefault(t => t.Name == returnedClassName); ;
+				t = assembly.GetTypes().FirstOrDefault(it => it.Name == returnedClassName);
 				emittedLibraries.Add(type, t);
 			}
 			return Activator.CreateInstance(t);			
