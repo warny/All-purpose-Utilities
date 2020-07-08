@@ -8,7 +8,6 @@ namespace UtilsTest.Reflection
 {
 	public interface IKernel32 : IDisposable
 	{
-		/*[DllImport("user32.dll", CharSet = CharSet.Auto)]*/
 		[External("GetTempPathA")]
 		uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
 	}

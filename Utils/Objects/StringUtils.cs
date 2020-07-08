@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Utils.Mathematics;
 
 namespace Utils.Objects
@@ -36,7 +39,7 @@ namespace Utils.Objects
 		/// <param name="pattern">Séquence</param>
 		/// <param name="ignoreCase">true : ignore la casse</param>
 		/// <returns>true si la chaîne correspond</returns>
-		public static bool Like( this string value, string pattern, bool ignoreCase )
+		public static bool Like( this string value, string pattern, bool ignoreCase = false )
 		{
 			if (ignoreCase)
 			{
@@ -155,6 +158,19 @@ namespace Utils.Objects
 		public static string Mid( this string s, int start, int length )
 		{
 			if (s == null) return null;
+			if (length < 0)
+			{
+				if (start > 0 && -length > start)
+				{
+					length = start + 1;
+					start = 0;
+				}
+				else 
+				{
+					start += length + 1;
+					length = -length;
+				}
+			}
 			if (start < 0) start = s.Length + start;
 			if (start <= -length) return string.Empty;
 			if (start < 0) return s.Substring(0, length + start);
@@ -260,14 +276,21 @@ namespace Utils.Objects
 		/// <param name="text"></param>
 		/// <param name="format"></param>
 		/// <returns></returns>
-		public static bool IsNumber( this string text, System.Globalization.NumberFormatInfo format = null )
+		public static bool IsNumber( this string text, NumberFormatInfo format = null )
 		{
-			format = format ?? System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
-			for (int i = 0 ; i < text.Length ; i++) {
-				if (i==0) {
-					if (text[i]==format.NegativeSign[0]) continue;
+			format = format ?? CultureInfo.CurrentCulture.NumberFormat;
+			if (text.IsNullOrWhiteSpace()) return false;
+			char[] digits = format.NativeDigits.Select(d => d[0]).ToArray();
+			text = text.Trim();
+			if (text[0] != format.NegativeSign[0] && text[0].NotIn(digits) && text[0] != format.NumberDecimalSeparator[0]) return false;
+			bool decimalSeparated = text[0] == format.NumberDecimalSeparator[0];
+			for (int i = 1 ; i < text.Length ; i++) {
+				if (!decimalSeparated && text[i] == format.NumberDecimalSeparator[0])
+				{
+					decimalSeparated = true;
+					continue;
 				}
-				if (text[i].ToString().In(format.NativeDigits)) continue;
+				if (text[i].In(digits)) continue;
 				return false;
 			}
 			return true;
@@ -279,7 +302,7 @@ namespace Utils.Objects
 		/// <param name="text"></param>
 		/// <param name="format"></param>
 		/// <returns></returns>
-		public static bool IsNumber( this string text, System.Globalization.CultureInfo culture )
+		public static bool IsNumber( this string text, CultureInfo culture )
 		{
 			return IsNumber(text, culture.NumberFormat);
 		}
@@ -315,6 +338,81 @@ namespace Utils.Objects
 
 			return str.Substring(start, end - start + 1);
 		}
+
+
+		/// <summary>
+		/// Supprime les caractères spéciaux de la chaîne
+		/// </summary>
+		/// <param name="s">Chaîne à traiter</param>
+		/// <param name="keepFunction">fonction qui indique s'il faut garder un caractère particulier</param>
+		/// <param name="replacement">Caractère de remplacement</param>
+		/// <returns>chaîne expurgée</returns>
+		public static string PurgeString(this string s, Func<char, bool> keepFunction, char? replacement = null)
+		{
+			_ = keepFunction ?? throw new ArgumentNullException(nameof(keepFunction));
+			if (s == null) return null;
+			StringBuilder result = new StringBuilder();
+			foreach (var c in s)
+			{
+				if (keepFunction(c))
+				{
+					result.Append(c);
+				}
+				else
+				{
+					result.Append(replacement);
+				}
+			}
+			return result.ToString();
+
+		}
+
+		/// <summary>
+		/// Supprime les caractères spéciaux de la chaîne
+		/// </summary>
+		/// <param name="s">Chaîne à traiter</param>
+		/// <param name="specialChars">Caractères à supprimer</param>
+		/// <param name="replacement">Caractère de remplacement</param>
+		/// <returns>chaîne expurgée</returns>
+		public static string RemoveSpecialChars(this string s, string specialChars, char? replacement = null)
+			=> s.RemoveSpecialChars(specialChars?.ToCharArray(), replacement);
+
+		/// <summary>
+		/// Supprime les caractères spéciaux de la chaîne
+		/// </summary>
+		/// <param name="s">Chaîne à traiter</param>
+		/// <param name="specialChars">Caractères à supprimer</param>
+		/// <param name="replacement">Caractère de remplacement</param>
+		/// <returns>chaîne expurgée</returns>
+		public static string RemoveSpecialChars(this string s, char[] specialChars, char? replacement = null)
+		{
+			_ = specialChars ?? throw new ArgumentNullException(nameof(specialChars));
+			return s.PurgeString(c => !specialChars.Contains(c), replacement);
+		}
+
+		/// <summary>
+		/// Conserve les caractères de la chaîne
+		/// </summary>
+		/// <param name="s">Chaîne à traiter</param>
+		/// <param name="chars">Caractères à conserver</param>
+		/// <param name="replacement">Caractère de remplacement</param>
+		/// <returns>chaîne expurgée</returns>
+		public static string KeepOnlyChars(this string s, string chars, char? replacement = null)
+			=> s.KeepOnlyChars(chars?.ToCharArray(), replacement);
+
+		/// <summary>
+		/// Conserve les caractères de la chaîne
+		/// </summary>
+		/// <param name="s">Chaîne à traiter</param>
+		/// <param name="chars">Caractères à conserver</param>
+		/// <param name="replacement">Caractère de remplacement</param>
+		/// <returns>chaîne expurgée</returns>
+		public static string KeepOnlyChars(this string s, char[] chars, char? replacement = null)
+		{
+			_ = chars ?? throw new ArgumentNullException(nameof(chars));
+			return s.PurgeString(c => chars.Contains(c), replacement);
+		}
+
 	}
 
 	/// <summary>
