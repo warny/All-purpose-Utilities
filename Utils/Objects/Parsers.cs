@@ -7,22 +7,69 @@ namespace Utils.Objects
 {
 	public static class Parsers
 	{
+		private static readonly Type typeOfString = typeof(string);
+		private static readonly Type typeOfIFormatProvider = typeof(IFormatProvider);
+
+		private class ParseMethods
+		{
+			public ParseMethods(Type type)
+			{
+				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+				{
+					type = type.GetGenericArguments()[0];
+				}
+
+				this.TryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider, type.MakeByRefType() }, null);
+				this.ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider }, null);
+				this.Constructor = type.GetConstructor(new Type[] { typeOfString });
+				CanParse = TryParseMethod != null || ParseMethod != null || Constructor != null;
+			}
+
+			public bool CanParse { get; }
+			public MethodInfo TryParseMethod { get; }
+			public MethodInfo ParseMethod { get; }
+			public ConstructorInfo Constructor { get; }
+		}
+
+		private static Dictionary<Type, ParseMethods> parsers = new Dictionary<Type, ParseMethods>();
+		/// <summary>
+		/// Récupère les méthodes de parsing de <paramref name="type"/>
+		/// </summary>
+		/// <param name="type">Type dont on veut récupérer les fonctions</param>
+		/// <returns></returns>
+		private static ParseMethods GetParseMethods(Type type)
+		{
+			if (!parsers.TryGetValue(type, out var parseMethods))
+			{
+				parseMethods = new ParseMethods(type);
+				parsers.Add(type, parseMethods);
+			}
+
+			return parseMethods;
+		}
 
 		/// <summary>
 		/// Vérifie qu'un type peut être parsé
 		/// </summary>
 		/// <param name="type">Type à vérifier</param>
 		/// <returns><see cref="true"/> si le type peut être parsé sinon <see cref="false"/></returns>
-		static bool CanParse( Type type )
+		public static bool CanParse<T>() => CanParse(typeof(T));
+
+		/// <summary>
+		/// Vérifie qu'un type peut être parsé
+		/// </summary>
+		/// <param name="type">Type à vérifier</param>
+		/// <returns><see cref="true"/> si le type peut être parsé sinon <see cref="false"/></returns>
+		public static bool CanParse(Type type)
 		{
-			if (type.GetGenericTypeDefinition() == typeof(Nullable<>)) {
+			if (type.IsEnum) return true;
+			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+			{
 				return CanParse(type.GetGenericArguments()[0]);
 			}
 
-			MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), type }, null);
-			MethodInfo ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), type }, null);
-			ConstructorInfo constructor = type.GetConstructor(new Type[] { typeof(string) });
-			return tryParseMethod != null || ParseMethod != null || constructor != null;
+			ParseMethods parseMethods = GetParseMethods(type);
+			return parseMethods.CanParse;
 		}
 
 		/// <summary>
@@ -31,11 +78,7 @@ namespace Utils.Objects
 		/// <typeparam name="T">Type de la valeur de sortie</typeparam>
 		/// <param name="value">Valeur à parser</param>
 		/// <returns>Valeur parsée</returns>
-		static public T Parse<T>( string value )
-		{
-			object returnValue = Parse(value, typeof(T));
-			return (T)returnValue;
-		}
+		static public T Parse<T>(string value) => (T)Parse(value, typeof(T));
 
 		/// <summary>
 		/// Parse la valeur
@@ -44,11 +87,7 @@ namespace Utils.Objects
 		/// <param name="value">Valeur à parser</param>
 		/// <param name="formatsProviders">Formats de valeurs à tester</param>
 		/// <returns>Valeur parsée</returns>
-		static public T Parse<T>( string value, IEnumerable<IFormatProvider> formatsProviders )
-		{
-			object returnValue = Parse(value, typeof(T), formatsProviders);
-			return (T)returnValue;
-		}
+		static public T Parse<T>(string value, IEnumerable<IFormatProvider> formatsProviders) => (T)Parse(value, typeof(T), formatsProviders);
 
 		/// <summary>
 		/// Parse la valeur
@@ -57,23 +96,7 @@ namespace Utils.Objects
 		/// <param name="value">Valeur à parser</param>
 		/// <param name="formatsProviders">Formats de valeurs à tester</param>
 		/// <returns>Valeur parsée</returns>
-		static public T Parse<T>( string value, params IFormatProvider[] formatsProviders )
-		{
-			object returnValue = Parse(value, typeof(T), formatsProviders);
-			return (T)returnValue;
-		}
-
-		/// <summary>
-		/// Parse la valeur
-		/// </summary>
-		/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-		/// <param name="value">Valeur à parser</param>
-		/// <returns>Valeur parsée</returns>
-		static public T ParseOrDefault<T>( string value, T defaultValue = default(T) )
-		{
-			object returnValue = Parse(value, typeof(T));
-			return (T)(returnValue ?? defaultValue);
-		}
+		static public T Parse<T>(string value, params IFormatProvider[] formatsProviders) => (T)Parse(value, typeof(T), formatsProviders);
 
 		/// <summary>
 		/// convertie une valeur chaîne dans le type spécifié
@@ -81,10 +104,7 @@ namespace Utils.Objects
 		/// <param name="value"></param>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public static object Parse( string value, Type type )
-		{
-			return Parse(value, type, CultureInfo.CurrentCulture);
-		}
+		public static object Parse(string value, Type type) => Parse(value, type, CultureInfo.CurrentCulture);
 
 		/// <summary>
 		/// convertie une valeur chaîne dans le type spécifié
@@ -92,10 +112,7 @@ namespace Utils.Objects
 		/// <param name="value"></param>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public static object Parse( string value, Type type, params IFormatProvider[] formatsProviders )
-		{
-			return Parse(value, type, (IEnumerable<IFormatProvider>)formatsProviders);
-		}
+		public static object Parse(string value, Type type, params IFormatProvider[] formatsProviders) => Parse(value, type, (IEnumerable<IFormatProvider>)formatsProviders);
 
 		/// <summary>
 		/// convertie une valeur chaîne dans le type spécifié
@@ -103,38 +120,39 @@ namespace Utils.Objects
 		/// <param name="value"></param>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public static object Parse( string value, Type type, IEnumerable<IFormatProvider> formatsProviders )
+		public static object Parse(string value, Type type, IEnumerable<IFormatProvider> formatsProviders)
 		{
-			if (type.IsEnum) {
+			if (type.IsEnum)
+			{
 				return Enum.Parse(type, value, true);
 			}
 
-			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)) {
+			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+			{
 				return Parse(value, type.GetGenericArguments()[0], formatsProviders);
 			}
 
-			MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IFormatProvider), type.MakeByRefType() }, null);
-			MethodInfo ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IFormatProvider) }, null);
+			var methods = GetParseMethods(type);
 
-			if (tryParseMethod != null || ParseMethod != null)
+			if (methods.TryParseMethod != null || methods.ParseMethod != null)
 			{
 				foreach (var formatProvider in formatsProviders)
 				{
 					// on vérifie s'il existe une méthode de parsing respectueuse dans la classe
-					if (tryParseMethod != null)
+					if (methods.TryParseMethod != null)
 					{
 						var args = new object[] { value, formatProvider, null };
-						if ((bool)tryParseMethod.Invoke(null, args))
+						if ((bool)methods.TryParseMethod.Invoke(null, args))
 						{
 							return args[2];
 						}
 					}
 					// sinon, on vérifie qu'il existe une méthode de parsing directe dans la classe
-					if (ParseMethod != null)
+					if (methods.ParseMethod != null)
 					{
 						try
 						{
-							return ParseMethod.Invoke(null, new object[] { value, formatProvider });
+							return methods.ParseMethod.Invoke(null, new object[] { value, formatProvider });
 						}
 						catch
 						{
@@ -145,22 +163,57 @@ namespace Utils.Objects
 			}
 
 			//Si tous les parsers ont échoué, on tente de construite l'objet à partir de la chaîne
-			ConstructorInfo constructor = type.GetConstructor(new Type[] { typeof(string) });
-			if (constructor != null)
+			if (methods.Constructor != null)
 			{
-				return constructor.Invoke(new[] { value });
+				return methods.Constructor.Invoke(new[] { value });
 			}
 
 			// enfin, on essaye de convertir la valeur brutalement
-			try {
+			try
+			{
 				return Convert.ChangeType(value, type);
-			} catch {
-				if (string.IsNullOrEmpty(value)) {
+			}
+			catch
+			{
+				if (string.IsNullOrEmpty(value))
+				{
 					return null;
 				}
 				throw;
 			}
 
+		}
+
+		/// <summary>
+		/// Parse la valeur
+		/// </summary>
+		/// <typeparam name="T">Type de la valeur de sortie</typeparam>
+		/// <param name="value">Valeur à parser</param>
+		/// <returns>Valeur parsée</returns>
+		static public T ParseOrDefault<T>(string value, T defaultValue = default)
+		{
+			object returnValue = Parse(value, typeof(T));
+			return (T)(returnValue ?? defaultValue);
+		}
+
+		/// <summary>
+		/// Parse la valeur
+		/// </summary>
+		/// <typeparam name="T">Type de la valeur de sortie</typeparam>
+		/// <param name="value">Valeur à parser</param>
+		/// <returns>Valeur parsée</returns>
+		static public T ParseOrDefault<T>(string value, IFormatProvider formatProvider = null, T defaultValue = default)
+			=> ParseOrDefault(value, new[] { formatProvider }, defaultValue);
+		/// <summary>
+		/// Parse la valeur
+		/// </summary>
+		/// <typeparam name="T">Type de la valeur de sortie</typeparam>
+		/// <param name="value">Valeur à parser</param>
+		/// <returns>Valeur parsée</returns>
+		static public T ParseOrDefault<T>(string value, IFormatProvider[] formatsProviders = null, T defaultValue = default)
+		{
+			object returnValue = Parse(value, typeof(T), formatsProviders);
+			return (T)(returnValue ?? defaultValue);
 		}
 
 	}
