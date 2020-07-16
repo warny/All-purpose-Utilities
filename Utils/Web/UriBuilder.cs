@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -69,8 +70,10 @@ namespace Utils.Web
 			System.UriBuilder builder = new System.UriBuilder(this.Scheme, this.Host, port, this.AbsolutePath);
 			builder.UserName = Username;
 			builder.Password = Password;
-			var queryElements = QueryString.Cast<string>()
-				.Select(name => $"{System.Web.HttpUtility.UrlEncode(name)}={System.Web.HttpUtility.UrlEncode(QueryString[name])}");
+			var queryElements = QueryString
+				.Cast<string>()
+				.SelectMany(key => QueryString.GetValues(key).Select(value => $"{System.Web.HttpUtility.UrlEncode(key)}={System.Web.HttpUtility.UrlEncode(value)}"));
+
 			builder.Query = string.Join("&", queryElements);
 			builder.Fragment  = Fragment;
 

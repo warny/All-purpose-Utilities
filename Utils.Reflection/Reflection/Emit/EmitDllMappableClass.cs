@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Runtime.Loader;
+using System.Xml.Xsl;
 
 namespace Utils.Reflection.Reflection.Emit
 {
@@ -124,7 +125,7 @@ namespace Utils.Reflection.Reflection.Emit
 			MemoryStream output = new MemoryStream();
 
 			var result = compiledCode.Emit(output);
-			if (!result.Success) throw new Exception(string.Join(Environment.NewLine, result.Diagnostics.Select(d => d.ToString())));
+			if (!result.Success) throw new InvalidOperationException(string.Join(Environment.NewLine, result.Diagnostics.Select(d => d.ToString())));
 			output.Position = 0;
 			var assembly = AssemblyLoadContext.Default.LoadFromStream(output);
 			return assembly;
@@ -138,12 +139,14 @@ namespace Utils.Reflection.Reflection.Emit
 			var parsedSyntaxTree = SyntaxFactory.ParseSyntaxTree(codeString, options);
 
 			Assembly System_Runtime = Assembly.Load("System.Runtime");
+			Assembly NetStandard = Assembly.Load("netstandard");
 			var references = new MetadataReference[]
 			{
 				MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
 				MetadataReference.CreateFromFile(type.Assembly.Location),
 				MetadataReference.CreateFromFile(typeof(DllMapper).Assembly.Location),
-				MetadataReference.CreateFromFile(System_Runtime.Location)
+				MetadataReference.CreateFromFile(System_Runtime.Location),
+				MetadataReference.CreateFromFile(NetStandard.Location)
 			};
 
 			return CSharpCompilation.Create(type.Name + ".dll",

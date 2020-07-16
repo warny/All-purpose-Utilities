@@ -158,6 +158,7 @@ namespace Utils.Reflection
 		{
 			Type t = obj.GetType();
 			obj.dllHandle = LoadLibrary(dllPath);
+			if (obj.dllHandle == IntPtr.Zero) throw new DllNotFoundException($"La librairie {dllPath} est introuvable");
 
 			foreach (var member in t.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance))
 			{
