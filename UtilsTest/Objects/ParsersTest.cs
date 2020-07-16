@@ -1,9 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Utils.Objects;
 
 namespace UtilsTest.Objects
