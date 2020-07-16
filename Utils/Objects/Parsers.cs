@@ -1,17 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Utils.Objects
 {
 	public static class Parsers
 	{
+		private delegate bool TryParseDelegate(string s, IFormatProvider formatProvider, out object value);
+		private delegate object ParseDelegate(string s, IFormatProvider formatProvider);
+		private delegate object ConstructorDelegate(string s);
+
 		private static readonly Type typeOfString = typeof(string);
 		private static readonly Type typeOfIFormatProvider = typeof(IFormatProvider);
 
 		private class ParseMethods
 		{
+
 			public ParseMethods(Type type)
 			{
 				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
@@ -19,19 +25,199 @@ namespace Utils.Objects
 					type = type.GetGenericArguments()[0];
 				}
 
-				this.TryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider, type.MakeByRefType() }, null);
-				this.ParseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider }, null);
-				this.Constructor = type.GetConstructor(new Type[] { typeOfString });
-				CanParse = TryParseMethod != null || ParseMethod != null || Constructor != null;
+				this.TryParse = BuildTryParse(type);
+				this.Parse = BuildParse(type);
+				this.Constructor = BuildConstructor(type);
+
+				CanParse = TryParse != null || Parse != null || Constructor != null;
+			}
+			public ParseMethods(TryParseDelegate tryParse, ParseDelegate parse, ConstructorDelegate constructor)
+			{
+				this.TryParse = tryParse;
+				this.Parse = parse;
+				this.Constructor = constructor;
+				CanParse = TryParse != null || Parse != null || Constructor != null;
+			}
+
+			private ConstructorDelegate BuildConstructor(Type type)
+			{
+				var constructorInfo = type.GetConstructor(new[] { typeOfString });
+				if (constructorInfo != null) {
+
+					var sParameter = Expression.Parameter(typeOfString, "s");
+					var returnLabel = Expression.Label(typeof(object));
+					return Expression.Lambda<ConstructorDelegate>(
+						Expression.Block(
+							typeof(object),
+							Expression.Return(
+								returnLabel,
+								Expression.Convert(Expression.New(constructorInfo, sParameter), typeof(object)),
+								typeof(object)
+							),
+							Expression.Label(returnLabel, Expression.Default(typeof(object)))
+							),
+						sParameter
+						)
+						.Compile();
+				}
+				return null;
+			}
+
+			private TryParseDelegate BuildTryParse(Type type)
+			{
+				MethodInfo numberTryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeof(NumberStyles), typeOfIFormatProvider, type.MakeByRefType() }, null);
+				if (numberTryParseMethod != null)
+				{
+					var strParameter = Expression.Parameter(typeOfString, "s");
+					var numberStyleConstant = Expression.Constant(NumberStyles.Any);
+					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
+					var resultParameter = Expression.Parameter(typeof(object).MakeByRefType(), "result");
+					var returnValueVariable = Expression.Parameter(typeof(bool));
+					var valueVariable = Expression.Parameter(type, "value");
+					var returnLabel = Expression.Label(typeof(bool));
+					var lambda = Expression.Lambda<TryParseDelegate>(
+						Expression.Block(
+							typeof(bool),
+							new[] { returnValueVariable, valueVariable },
+							Expression.Assign(
+								returnValueVariable,
+								Expression.Call(numberTryParseMethod, strParameter, numberStyleConstant, formatProviderParameter, valueVariable)
+							),
+							Expression.Assign(resultParameter, Expression.Convert(valueVariable, typeof(object))),
+							Expression.Return(returnLabel, returnValueVariable, typeof(bool)),
+							Expression.Label(returnLabel, Expression.Default(typeof(bool)))
+						),
+						strParameter, formatProviderParameter, resultParameter
+					);
+					return lambda.Compile();
+				}
+				MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider, type.MakeByRefType() }, null);
+				if (tryParseMethod != null)
+				{
+					var strParameter = Expression.Parameter(typeOfString, "s");
+					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
+					var resultParameter = Expression.Parameter(typeof(object).MakeByRefType(), "result");
+					var returnValueVariable = Expression.Parameter(typeof(bool));
+					var valueVariable = Expression.Parameter(type, "value");
+					var returnLabel = Expression.Label(typeof(bool));
+					var lambda = Expression.Lambda<TryParseDelegate>(
+						Expression.Block(
+							typeof(bool),
+							new[] { returnValueVariable, valueVariable },
+							Expression.Assign(
+								returnValueVariable,
+								Expression.Call(tryParseMethod, strParameter, formatProviderParameter, valueVariable)
+							),
+							Expression.Assign(resultParameter, Expression.Convert(valueVariable, typeof(object))),
+							Expression.Return(returnLabel, returnValueVariable, typeof(bool)),
+							Expression.Label(returnLabel, Expression.Default(typeof(bool)))
+						),
+						strParameter, formatProviderParameter, resultParameter
+					);
+					return lambda.Compile();
+				}
+				tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, type.MakeByRefType() }, null);
+				if (tryParseMethod != null)
+				{
+					var strParameter = Expression.Parameter(typeOfString, "s");
+					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
+					var resultParameter = Expression.Parameter(typeof(object).MakeByRefType(), "result");
+					var returnValueVariable = Expression.Parameter(typeof(bool));
+					var valueVariable = Expression.Parameter(type, "value");
+					var returnLabel = Expression.Label(typeof(bool));
+					var lambda = Expression.Lambda<TryParseDelegate>(
+						Expression.Block(
+							typeof(bool),
+							new[] { returnValueVariable, valueVariable },
+							Expression.Assign(
+								returnValueVariable,
+								Expression.Call(tryParseMethod, strParameter, valueVariable)
+							),
+							Expression.Assign(resultParameter, Expression.Convert(valueVariable, typeof(object))),
+							Expression.Return(returnLabel, returnValueVariable, typeof(bool)),
+							Expression.Label(returnLabel, Expression.Default(typeof(bool)))
+						),
+						strParameter, formatProviderParameter, resultParameter
+					);
+					return lambda.Compile();
+				}
+
+				return null;
+			}
+
+			private ParseDelegate BuildParse(Type type)
+			{
+				MethodInfo parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider }, null);
+				if (parseMethod != null)
+				{
+
+					var strParameter = Expression.Parameter(typeOfString, "s");
+					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
+					var returnLabel = Expression.Label(typeof(object));
+
+					return Expression.Lambda<ParseDelegate>(
+						Expression.Block(
+							typeof(object),
+							Expression.Return(
+								returnLabel,
+								Expression.Convert(
+									Expression.Call(parseMethod, strParameter, formatProviderParameter), typeof(object)
+								),
+								typeof(object)),
+							Expression.Label(returnLabel, Expression.Default(typeof(object)))
+							),
+						strParameter, formatProviderParameter
+						).Compile();
+				}
+
+				parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString }, null);
+				if (parseMethod != null)
+				{
+
+					var strParameter = Expression.Parameter(typeOfString, "s");
+					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
+					var returnLabel = Expression.Label(typeof(object));
+
+					return Expression.Lambda<ParseDelegate>(
+						Expression.Block(
+							typeof(object),
+							Expression.Return(
+								returnLabel,
+								Expression.Convert(
+									Expression.Call(parseMethod, strParameter), typeof(object)
+								),
+								typeof(object)),
+							Expression.Label(returnLabel, Expression.Default(typeof(object)))
+							),
+						strParameter, formatProviderParameter
+						).Compile();
+				}
+				return null;
 			}
 
 			public bool CanParse { get; }
-			public MethodInfo TryParseMethod { get; }
-			public MethodInfo ParseMethod { get; }
-			public ConstructorInfo Constructor { get; }
+
+			public TryParseDelegate TryParse { get; }
+			public ParseDelegate Parse { get; }
+			public ConstructorDelegate Constructor { get; }
 		}
 
 		private static Dictionary<Type, ParseMethods> parsers = new Dictionary<Type, ParseMethods>();
+
+		static Parsers()
+		{
+			parsers.Add(typeof(DateTime), new ParseMethods(
+				new TryParseDelegate((string s, IFormatProvider formatProvider, out object value) => {
+					var result = DateTime.TryParse(s, formatProvider, DateTimeStyles.None, out DateTime datetime);
+					value = datetime;
+					return result;
+				}),
+				new ParseDelegate((string s, IFormatProvider formatProvider) => DateTime.Parse(s, formatProvider)),
+				null
+			));
+		}
+
+
 		/// <summary>
 		/// Récupère les méthodes de parsing de <paramref name="type"/>
 		/// </summary>
@@ -134,25 +320,22 @@ namespace Utils.Objects
 
 			var methods = GetParseMethods(type);
 
-			if (methods.TryParseMethod != null || methods.ParseMethod != null)
+			if (methods.TryParse != null || methods.Parse != null)
 			{
 				foreach (var formatProvider in formatsProviders)
 				{
+					object result = null;
 					// on vérifie s'il existe une méthode de parsing respectueuse dans la classe
-					if (methods.TryParseMethod != null)
+					if (methods?.TryParse(value, formatProvider, out result) ?? false)
 					{
-						var args = new object[] { value, formatProvider, null };
-						if ((bool)methods.TryParseMethod.Invoke(null, args))
-						{
-							return args[2];
-						}
+						return result;
 					}
 					// sinon, on vérifie qu'il existe une méthode de parsing directe dans la classe
-					if (methods.ParseMethod != null)
+					if (methods.Parse != null)
 					{
 						try
 						{
-							return methods.ParseMethod.Invoke(null, new object[] { value, formatProvider });
+							return methods.Parse(value, formatProvider);
 						}
 						catch
 						{
@@ -165,7 +348,7 @@ namespace Utils.Objects
 			//Si tous les parsers ont échoué, on tente de construite l'objet à partir de la chaîne
 			if (methods.Constructor != null)
 			{
-				return methods.Constructor.Invoke(new[] { value });
+				return methods.Constructor(value);
 			}
 
 			// enfin, on essaye de convertir la valeur brutalement

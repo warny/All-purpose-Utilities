@@ -44,7 +44,6 @@ namespace UtilsTest.Objects
 			{
 				Assert.AreEqual(test.Value, Parsers.Parse<double>(test.String, test.Culture));
 			}
-
 		}
 
 		[TestMethod]
@@ -62,7 +61,6 @@ namespace UtilsTest.Objects
 			{
 				Assert.AreEqual(test.Value, Parsers.Parse<double?>(test.String, test.Culture));
 			}
-
 		}
 
 		[TestMethod]
@@ -80,7 +78,24 @@ namespace UtilsTest.Objects
 			{
 				Assert.AreEqual(test.Value, Parsers.ParseOrDefault(test.String, test.Culture, 1.0));
 			}
+		}
 
+		[TestMethod]
+		public void ParserTest5()
+		{
+			var tests = new (string String, Guid Value)[] {
+				("6e1b3671-0038-4055-b8ee-1316bf478b5e", new Guid("6e1b3671-0038-4055-b8ee-1316bf478b5e")),
+				("17914f8d-61e3-4aeb-8f34-ff74f33fcaf4", new Guid("17914f8d-61e3-4aeb-8f34-ff74f33fcaf4")),
+				("fb24ae1d-df9d-447b-9890-573e1fa8c512", new Guid("fb24ae1d-df9d-447b-9890-573e1fa8c512")),
+				("5f39b160-d006-474a-ab9c-cd6deaf3961b", new Guid("5f39b160-d006-474a-ab9c-cd6deaf3961b")),
+				("13742841-cca8-40b5-955e-5f2c57e9ea35", new Guid("13742841-cca8-40b5-955e-5f2c57e9ea35"))
+			};
+
+			Assert.IsTrue(Parsers.CanParse<Guid>());
+			foreach (var test in tests)
+			{
+				Assert.AreEqual(test.Value, Parsers.Parse<Guid>(test.String));
+			}
 		}
 	}
 }
