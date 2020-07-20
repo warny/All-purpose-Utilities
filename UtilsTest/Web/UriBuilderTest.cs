@@ -16,6 +16,7 @@ namespace UtilsTest.Web
 			var builder = new Utils.Web.UriBuilder("http://example.com");
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
+			Assert.AreEqual("/", builder.AbsolutePath);
 		}
 
 		[TestMethod]
@@ -26,6 +27,7 @@ namespace UtilsTest.Web
 			Assert.AreEqual("https", builder.Scheme);
 			Assert.AreEqual("olivier", builder.Username);
 			Assert.AreEqual("marty", builder.Password);
+			Assert.AreEqual("/", builder.AbsolutePath);
 		}
 
 		[TestMethod]
@@ -36,6 +38,7 @@ namespace UtilsTest.Web
 			Assert.AreEqual("ftp", builder.Scheme);
 			Assert.AreEqual("olivier", builder.Username);
 			Assert.AreEqual("marty", builder.Password);
+			Assert.AreEqual("/", builder.AbsolutePath);
 		}
 
 		[TestMethod]
@@ -44,6 +47,7 @@ namespace UtilsTest.Web
 			var builder = new Utils.Web.UriBuilder("http://example.com?key1=value1&key2=value2");
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
+			Assert.AreEqual("/", builder.AbsolutePath);
 			Assert.AreEqual("value1", builder.QueryString["key1"]);
 			Assert.AreEqual("value2", builder.QueryString["key2"]);
 		}
@@ -56,6 +60,7 @@ namespace UtilsTest.Web
 
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
+			Assert.AreEqual("/", builder.AbsolutePath);
 			Assert.AreEqual("value1", builder.QueryString["key1"]);
 			Assert.AreEqual("value2", builder.QueryString["key2"]);
 			Assert.AreEqual("value3", builder.QueryString["key3"]);
@@ -71,6 +76,7 @@ namespace UtilsTest.Web
 
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
+			Assert.AreEqual("/", builder.AbsolutePath);
 			Assert.AreEqual("value1", builder.QueryString["key1"]);
 			var values2 = builder.QueryString.GetValues("key2");
 			Assert.AreEqual("value2a", values2[0]);
@@ -90,6 +96,7 @@ namespace UtilsTest.Web
 
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
+			Assert.AreEqual("/", builder.AbsolutePath);
 			Assert.AreEqual("value1", builder.QueryString["key1"]);
 			var values2 = builder.QueryString.GetValues("key2");
 			Assert.AreEqual("value2", values2[0]);
@@ -106,6 +113,7 @@ namespace UtilsTest.Web
 
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
+			Assert.AreEqual("/test.html", builder.AbsolutePath);
 			Assert.AreEqual("value1", builder.QueryString["key1"]);
 			var values2 = builder.QueryString.GetValues("key2");
 			Assert.IsNull(values2);

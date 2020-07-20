@@ -11,8 +11,22 @@ namespace Utils.Security
 		public byte[] Key { get; }
 		public int IntervalLength { get; }
 
+		/// <summary>
+		/// Créé un calculateur d'authentification
+		/// </summary>
+		/// <param name="algorithm">Nom de l'algorithme de hashage mac</param>
+		/// <param name="key">Clef binaire</param>
+		/// <param name="digits">Taille du code</param>
+		/// <param name="intervalLength">Durée de conservation de la clée</param>
 		public Authenticator(string algorithm, byte[] key, int digits, int intervalLength) : this(HMAC.Create(algorithm), key, digits, intervalLength) { }
 
+		/// <summary>
+		/// Créé un calculateur d'authentification
+		/// </summary>
+		/// <param name="algorithm">Algorithme de hashage mac</param>
+		/// <param name="key">Clef binaire</param>
+		/// <param name="digits">Taille du code</param>
+		/// <param name="intervalLength">Durée de conservation de la clée</param>
 		public Authenticator(HMAC algorithm, byte[] key, int digits, int intervalLength)
 		{
 			this.Digits = digits;
@@ -21,10 +35,24 @@ namespace Utils.Security
 			this.IntervalLength = intervalLength;
 		}
 
+		/// <summary>
+		/// Créé un authentificateur compatible Google Authenticator
+		/// </summary>
+		/// <param name="key"></param>
+		/// <returns></returns>
 		public static Authenticator GoogleAuthenticator(byte[] key) => new Authenticator("HMACSHA256", key, 6, 30);
 
-		public string ComputeAuthenticator() => ComputeAuthenticator(DateTime.Now.UnixTimeStamp() / IntervalLength);
+		/// <summary>
+		/// Calcule le code actuel d'authentification
+		/// </summary>
+		/// <returns></returns>
+		public string ComputeAuthenticator() => ComputeAuthenticator(CurrentMessage);
 
+		/// <summary>
+		/// Calcule le code d'authentification lié au message
+		/// </summary>
+		/// <param name="message">message numérique</param>
+		/// <returns></returns>
 		public string ComputeAuthenticator(long message)
 		{
 			byte[] byteMessage = BitConverter.GetBytes(message);
@@ -35,6 +63,11 @@ namespace Utils.Security
 			return ComputeAuthenticator(byteMessage);
 		}
 
+		/// <summary>
+		/// Calcule le code d'authentification lié au message
+		/// </summary>
+		/// <param name="message">message binaire</param>
+		/// <returns></returns>
 		public string ComputeAuthenticator(byte[] message)
 		{
 			Algorithm.Key = Key;
@@ -62,9 +95,15 @@ namespace Utils.Security
 			return password.ToString(new string('0', Digits));
 		}
 
+		/// <summary>
+		/// Vérifie le code par rapport au + ou - <paramref name="range"/> codes avant ou après le code actuel
+		/// </summary>
+		/// <param name="range">Nombre de code à vérifier avant ou après</param>
+		/// <param name="code">Code à vérifier</param>
+		/// <returns></returns>
 		public bool VerifyAuthenticator(int range, string code)
 		{
-			long baseMessage = DateTime.Now.UnixTimeStamp() / IntervalLength;
+			long baseMessage = CurrentMessage;
 
 			for (long i = 0; i <= range; i++)
 			{
@@ -74,5 +113,9 @@ namespace Utils.Security
 			return false;
 		}
 
+		/// <summary>
+		/// Message en cours permettant de générer le code en cours
+		/// </summary>
+		public long CurrentMessage => DateTime.Now.UnixTimeStamp() / IntervalLength;
 	}
 }

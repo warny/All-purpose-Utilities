@@ -11,14 +11,44 @@ namespace Utils.Objects
 	{
 		private static readonly char[] defaultRandomCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ".ToCharArray();
 
+		/// <summary>
+		/// Génère une chaîne de caractères aléatoires
+		/// </summary>
+		/// <param name="length">Longueur de la chaîne à générer</param>
+		/// <param name="characters">Caractères à utiliser</param>
+		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
+
+		/// <summary>
+		/// Génère une chaîne de caractères aléatoires
+		/// </summary>
+		/// <param name="minLength">Longueur minimale de la chaîne à générer</param>
+		/// <param name="maxLength">Longueur minimale de la chaîne à générer</param>
+		/// <param name="characters">Caractères à utiliser</param>
+		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(int minLength, int maxLength, char[] characters = null)
 		{
 			Random r = new Random();
 			return RandomString(r, minLength, maxLength, characters);
 		}
 
+		/// <summary>
+		/// Génère une chaîne de caractères aléatoires
+		/// </summary>
+		/// <param name="r">Générateur de nombres aléatoires</param>
+		/// <param name="length">Longueur de la chaîne à générer</param>
+		/// <param name="characters">Caractères à utiliser</param>
+		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(this Random r, int length, char[] characters = null) => RandomString(r, length, length, characters);
+
+		/// <summary>
+		/// Génère une chaîne de caractères aléatoires
+		/// </summary>
+		/// <param name="r">Générateur de nombres aléatoires</param>
+		/// <param name="minLength">Longueur minimale de la chaîne à générer</param>
+		/// <param name="maxLength">Longueur minimale de la chaîne à générer</param>
+		/// <param name="characters">Caractères à utiliser</param>
+		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
 		{
 			characters = characters ?? defaultRandomCharacters;
@@ -97,7 +127,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string Trim(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end = s.Length;
+			int start, end = s.Length;
 			for (start = 0; start < end; start++)
 			{
 				if (!trimTester(s[start])) break;
@@ -118,7 +148,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimStart(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end = s.Length;
+			int start, end = s.Length;
 			for (start = 0; start < end; start++)
 			{
 				if (!trimTester(s[start])) break;
@@ -135,7 +165,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
-			int start = 0, end = s.Length;
+			int start = 0, end;
 			for (end = s.Length - 1; end > start; end--)
 			{
 				if (!trimTester(s[end])) break;
@@ -351,7 +381,7 @@ namespace Utils.Objects
 		{
 			_ = keepFunction ?? throw new ArgumentNullException(nameof(keepFunction));
 			if (s == null) return null;
-			StringBuilder result = new StringBuilder();
+			StringBuilder result = new StringBuilder(s.Length);
 			foreach (var c in s)
 			{
 				if (keepFunction(c))
