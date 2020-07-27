@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Utils.Objects
 {
@@ -59,6 +60,7 @@ namespace Utils.Objects
 		/// <typeparam name="T"></typeparam>
 		/// <param name="obj1"></param>
 		/// <param name="obj2"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void Swap<T>( ref T obj1, ref T obj2 )
 		{
 			T temp;
