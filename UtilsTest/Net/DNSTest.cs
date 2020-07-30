@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using System.Net;
+using Utils.Net;
 using Utils.Net.DNS;
 using Utils.Net.DNS.RFC1035;
 using Utils.Net.DNS.RFC1886;
@@ -188,6 +189,17 @@ namespace UtilsTest.Net
 				Assert.AreEqual(response1.TTL, response2.TTL);
 				Assert.AreEqual(response1.RData.ToString(), response2.RData.ToString());
 			}
+		}
+
+		[TestMethod]
+		public void SendDNSRequest()
+		{
+			DNSLookup lookup = new DNSLookup();
+			var header = lookup.Request("ALL", "gmail.com");
+			var dnsRequestRecord = header.Requests[0];
+			Assert.AreEqual("gmail.com", dnsRequestRecord.Name);
+			Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+			Assert.AreEqual("ALL", dnsRequestRecord.Type);
 		}
 
 	}
