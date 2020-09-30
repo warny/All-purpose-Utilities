@@ -57,15 +57,15 @@ namespace Utils.Geography.Model
 
 	public static class Planets
 	{
-		private static Lazy<Planet> mercury = new Lazy<Planet>(() => new Planet(2439700));
-		private static Lazy<Planet> venus = new Lazy<Planet>(() => new Planet(6051800));
-		private static Lazy<Planet> earth = new Lazy<Planet>(()=>new Planet(6378137));
-		private static Lazy<Planet> earthMoon = new Lazy<Planet>(() => new Planet(1737400));
-		private static Lazy<Planet> mars = new Lazy<Planet>(() => new Planet(3396200));
-		private static Lazy<Planet> jupiter = new Lazy<Planet>(() => new Planet(71492000));
-		private static Lazy<Planet> saturn = new Lazy<Planet>(() => new Planet(60268000));
-		private static Lazy<Planet> uranus = new Lazy<Planet>(() => new Planet(25559000));
-		private static Lazy<Planet> neptune = new Lazy<Planet>(() => new Planet(24764000));
+		private static readonly Lazy<Planet> mercury = new Lazy<Planet>(() => new Planet(2439700));
+		private static readonly Lazy<Planet> venus = new Lazy<Planet>(() => new Planet(6051800));
+		private static readonly Lazy<Planet> earth = new Lazy<Planet>(() => new Planet(6378137));
+		private static readonly Lazy<Planet> earthMoon = new Lazy<Planet>(() => new Planet(1737400));
+		private static readonly Lazy<Planet> mars = new Lazy<Planet>(() => new Planet(3396200));
+		private static readonly Lazy<Planet> jupiter = new Lazy<Planet>(() => new Planet(71492000));
+		private static readonly Lazy<Planet> saturn = new Lazy<Planet>(() => new Planet(60268000));
+		private static readonly Lazy<Planet> uranus = new Lazy<Planet>(() => new Planet(25559000));
+		private static readonly Lazy<Planet> neptune = new Lazy<Planet>(() => new Planet(24764000));
 
 		public static Planet Mercury => mercury.Value;
 		public static Planet Venus => venus.Value;

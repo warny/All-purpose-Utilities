@@ -11,6 +11,19 @@ namespace Utils.Streams
 	public static class StreamUtils
 	{
 		/// <summary>
+		/// Lit <paramref name="length"/> octets du flux et les renvoie dans un tableau
+		/// </summary>
+		/// <param name="length"></param>
+		/// <returns></returns>
+		public static byte[] ReadBytes(this Stream s, int length, bool raiseException = false)
+		{
+			byte[] result = new byte[length];
+			var dataLength = s.Read(result, 0, length);
+			if (raiseException && dataLength < length) throw new EndOfStreamException();
+			return result;
+		}
+
+		/// <summary>
 		/// Copies data from a source stream to a target stream.</summary>
 		/// <param name="source">The source stream to copy from.</param>
 		/// <param name="target">The destination stream to copy to.</param>
