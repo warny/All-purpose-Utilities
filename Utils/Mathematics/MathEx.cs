@@ -56,6 +56,30 @@ namespace Utils.Mathematics
 		{
 			return ((a % b + b) % b);
 		}
+
+		/// <summary>
+		/// Calcul alternatif du modulo (différent de l'opérateur %)
+		/// Le résultat est toujours compris entre 0 et y-1
+		/// Exemple : 
+		///   -1 % 3 = -1
+		///	  Modulo(-1, 3) = 2
+		/// </summary>
+		public static float Mod(float a, float b )
+		{
+			return ((a % b + b) % b);
+		}
+
+		/// <summary>
+		/// Calcul alternatif du modulo (différent de l'opérateur %)
+		/// Le résultat est toujours compris entre 0 et y-1
+		/// Exemple : 
+		///   -1 % 3 = -1
+		///	  Modulo(-1, 3) = 2
+		/// </summary>
+		public static double Mod( double a, double b )
+		{
+			return ((a % b + b) % b);
+		}
 		#endregion
 
 		#region round

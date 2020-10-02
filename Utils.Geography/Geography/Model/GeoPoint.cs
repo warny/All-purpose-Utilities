@@ -14,6 +14,8 @@
  */
 using System;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -21,33 +23,23 @@ using Utils.Geography.Display;
 
 namespace Utils.Geography.Model
 {
+	public enum CoordinateDirectionEnum {
+		Latitude,
+		Longitude
+	}
+
 
 	/// <summary>
 	/// A GeoPoint represents an immutable pair of latitude and longitude coordinates.
 	/// </summary>
 	public class GeoPoint : IComparable<GeoPoint>, IFormattable
 	{
-		public static Regex RegExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<deegres>\d+(\.\d+)?)(°(?<minutes>\d+(\.\d+)?))?('(?<seconds>\d+(\.\d+)?))?");
-
-		private static string[] PositiveLatitude = new[] { "+", "N" };
-		private static string[] NegativeLatitude = new[] { "-", "S" };
-		private static string[] PositiveLongitude = new[] { "+", "E" };
-		private static string[] NegativeLongitude = new[] { "-", "W" };
+		protected static string[] PositiveLatitude = new[] { "+", "N" };
+		protected static string[] NegativeLatitude = new[] { "-", "S" };
+		protected static string[] PositiveLongitude = new[] { "+", "E" };
+		protected static string[] NegativeLongitude = new[] { "-", "W" };
 
 		private const long serialVersionUID = 1L;
-
-
-		/// <summary>
-		/// Creates a new GeoPoint from a comma-separated string of coordinates in the order latitude, longitude. All coordinate values must be in degrees.
-		/// </summary>
-		/// <param name="GeoPointstring">the string that describes the GeoPoint</param>
-		/// <returns>a new GeoPoint with the given coordinates</returns>
-		/// <exception cref="ArgumentException">if the string cannot be parsed or describes an invalid GeoPoint</exception>
-		public static GeoPoint Parse ( string GeoPointstring )
-		{
-			double[] coordinates = CoordinatesUtil.ParseCoordinatestring(GeoPointstring, 2);
-			return new GeoPoint(coordinates[0], coordinates[1]);
-		}
 
 		/**
 		 * The latitude coordinate of this GeoPoint in degrees.
@@ -59,6 +51,18 @@ namespace Utils.Geography.Model
 		 */
 		public double Longitude { get; set; }
 
+		protected GeoPoint() { }
+
+		/// <summary>
+		/// Creates a GeoPoint from given coordinates
+		/// </summary>
+		/// <param name="latitude">the latitude coordinate in degrees.</param>
+		/// <param name="longitude">the longitude coordinate in degrees.</param>
+		public GeoPoint ( GeoPoint geoPoint )
+		{
+			Initialize(geoPoint.Latitude, geoPoint.Longitude);
+		}
+
 		/// <summary>
 		/// Creates a GeoPoint from given coordinates
 		/// </summary>
@@ -69,13 +73,21 @@ namespace Utils.Geography.Model
 			Initialize(latitude, longitude);
 		}
 
-		public GeoPoint ( string coordinates )
+		public GeoPoint ( string coordinates, params CultureInfo[] cultureInfos )
 		{
-			var m = RegExCoordinate.Matches(coordinates);
-			if (m.Count != 2) throw new ArgumentException("Invalid or incomplete coordinates", coordinates);
-			double latitude = ParseCoordinate("latitude", m[0].Value, PositiveLatitude, NegativeLatitude);
-			double longitude = ParseCoordinate("longitude", m[1].Value, PositiveLongitude, NegativeLongitude);
-			Initialize(latitude, longitude);
+			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
+
+			foreach (var cultureInfo in cultureInfos)
+			{
+				var coordinatesStrings = coordinates.Split(new[] { cultureInfo.TextInfo.ListSeparator }, StringSplitOptions.None);
+				if (coordinatesStrings.Length != 2) continue;
+				Regex regExCoordinate = BuildRegexCoordinates(cultureInfo);
+
+				if (ParseCoordinates(coordinatesStrings[0], coordinatesStrings[1], cultureInfo, regExCoordinate)) return;
+
+			}
+
+			throw new ArgumentException($"\"{coordinates}\" n'est pas une position valide");
 		}
 
 		/// <summary>
@@ -83,22 +95,34 @@ namespace Utils.Geography.Model
 		/// </summary>
 		/// <param name="latitudeString">Latitude</param>
 		/// <param name="longitudeString">Longitude</param>
-		public GeoPoint ( string latitudeString, string longitudeString )
+		public GeoPoint ( string latitudeString, string longitudeString, params CultureInfo[] cultureInfos)
 		{
-			double latitude = ParseCoordinate("latitude", latitudeString, PositiveLatitude, NegativeLatitude);
-			double longitude = ParseCoordinate("longitude", longitudeString, PositiveLongitude, NegativeLongitude);
-			Initialize(latitude, longitude);
+			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
+			foreach (var cultureInfo in cultureInfos)
+			{
+				Regex regExCoordinate = BuildRegexCoordinates(cultureInfo);
+				if (ParseCoordinates(latitudeString, longitudeString, cultureInfo, regExCoordinate)) return;
+			}
 		}
 
-		private double ParseCoordinate ( string coordinateName, string coordinateValue, string[] positiveModifiers, string[] negativeModifiers )
+		protected bool ParseCoordinates(string latitudeString, string longitudeString, CultureInfo cultureInfo, Regex regExCoordinate)
 		{
-			var m = RegExCoordinate.Match(coordinateValue);
-			if (!m.Success)
-				throw new ArgumentException(string.Format("Invalid value {0}", coordinateValue), coordinateName);
+			double latitude = ParseCoordinate(CoordinateDirectionEnum.Latitude, latitudeString, PositiveLatitude, NegativeLatitude, cultureInfo, regExCoordinate);
+			if (double.IsNaN(latitude)) return false;
+			double longitude = ParseCoordinate(CoordinateDirectionEnum.Longitude, longitudeString, PositiveLongitude, NegativeLongitude, cultureInfo, regExCoordinate);
+			if (double.IsNaN(longitude)) return false;
+			Initialize(latitude, longitude);
+			return true;
+		}
 
-			double degrees = m.Groups["deegres"].Success ? double.Parse(m.Groups["deegres"].Value, CultureInfo.InvariantCulture) : 0D;
-			double minutes = m.Groups["minutes"].Success ? double.Parse(m.Groups["minutes"].Value, CultureInfo.InvariantCulture) : 0D;
-			double seconds = m.Groups["seconds"].Success ? double.Parse(m.Groups["seconds"].Value, CultureInfo.InvariantCulture) : 0D;
+		protected double ParseCoordinate (CoordinateDirectionEnum coordinateDirection, string coordinateValue, string[] positiveModifiers, string[] negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates )
+		{
+			var m = regexCoordinates.Match(coordinateValue);
+			if (!m.Success) return double.NaN;
+
+			double degrees = m.Groups["deegres"].Success ? double.Parse(m.Groups["deegres"].Value, NumberStyles.Float, cultureInfo) : 0D;
+			double minutes = m.Groups["minutes"].Success ? double.Parse(m.Groups["minutes"].Value, NumberStyles.Float, cultureInfo) : 0D;
+			double seconds = m.Groups["seconds"].Success ? double.Parse(m.Groups["seconds"].Value, NumberStyles.Float, cultureInfo) : 0D;
 
 			double coordinate = degrees + minutes / 60 + seconds / 3600;
 
@@ -108,12 +132,12 @@ namespace Utils.Geography.Model
 			} else if (Array.IndexOf(negativeModifiers, modifier) > -1) {
 				coordinate = -coordinate;
 			} else {
-				throw new ArgumentException(string.Format("Invalid modifier {0}", modifier), coordinateName);
+				throw new ArgumentException($"Invalid modifier {modifier} for {coordinateDirection}", coordinateValue);
 			}
 			return coordinate;
 		}
 
-		private void Initialize ( double latitude, double longitude )
+		protected void Initialize ( double latitude, double longitude )
 		{
 			CoordinatesUtil.ValidateLatitude(latitude);
 			CoordinatesUtil.ValidateLongitude(longitude);
@@ -154,8 +178,45 @@ namespace Utils.Geography.Model
 
 		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.Latitude, this.Longitude);
 
-		public override string ToString() => $"latitude={this.Latitude}, longitude={this.Longitude}";
-		public string ToString(string format) => $"latitude={this.Latitude.ToString(format)}, longitude={this.Longitude.ToString(format)}";
-		public string ToString(string format, IFormatProvider formatProvider) => $"latitude={this.Latitude.ToString(format, formatProvider)}, longitude={this.Longitude.ToString(format, formatProvider)}";
+		private string FormatPosition(double position, string positiveMark, string negativeMark, string format, IFormatProvider formatProvider)
+		{
+			string mark = position == 0 ? ""
+						: position > 0 ? positiveMark : negativeMark;
+			if (format == "d" || format == "D")
+			{
+				var temp = Math.Abs(position);
+				var degrees = Math.Floor(temp);
+				temp = (temp - degrees) * 60;
+				var minutes = Math.Floor(temp);
+				temp = (temp - minutes) * 60;
+				var seconds = Math.Floor(temp);
+				if (seconds != 0 || format == "D") return $"{mark}{degrees:##0}°{minutes:00}'{seconds:00}\"";
+				if (minutes != 0) return $"{mark}{degrees}°{minutes:00}'";
+				return $"{mark}{degrees}°";
+			}
+			else
+			{
+				return mark + Math.Abs(position).ToString(format, formatProvider);
+			}
+		}
+
+		public sealed override string ToString() => ToString(null);
+		public string ToString(string format) => ToString(format, null);
+		public virtual string ToString(string format, IFormatProvider formatProvider)
+		{
+			formatProvider ??= CultureInfo.InvariantCulture;
+			var textInfo = (TextInfo)formatProvider?.GetFormat(typeof(TextInfo));
+			return $"{FormatPosition(Latitude, "N", "S", format, formatProvider)}{textInfo?.ListSeparator ?? ","} {FormatPosition(Longitude, "E", "W", format, formatProvider)}";
+		}
+
+		protected static Regex BuildRegexCoordinates(CultureInfo cultureInfo)
+		{
+			string digits = "[" + string.Join("", cultureInfo.NumberFormat.NativeDigits) + "]+";
+			string number = digits + "([" + cultureInfo.NumberFormat.NumberDecimalSeparator + "]" + digits + ")?";
+
+			Regex regExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<deegres>number)(°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
+			return regExCoordinate;
+		}
+
 	}
 }
