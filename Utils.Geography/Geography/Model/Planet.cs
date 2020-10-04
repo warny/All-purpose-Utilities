@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Mathematics;
 
 namespace Utils.Geography.Model
 {
@@ -47,10 +48,9 @@ namespace Utils.Geography.Model
 		/// <returns>Distance in meters</returns>
 		public double Distance( GeoPoint geoPoint1, GeoPoint geoPoint2 )
 		{
-			double Deg2Rad = Math.PI / 180;
 			return Math.Acos(
-					Math.Sin(geoPoint1.Latitude * Deg2Rad) * Math.Sin(geoPoint2.Latitude * Deg2Rad)
-					+ Math.Cos(geoPoint1.Latitude * Deg2Rad) * Math.Cos(geoPoint2.Latitude * Deg2Rad) * Math.Cos((geoPoint1.Longitude - geoPoint2.Longitude) * Deg2Rad)
+					Math.Sin(geoPoint1.Latitude * MathEx.Deg2Rad) * Math.Sin(geoPoint2.Latitude * MathEx.Deg2Rad)
+					+ Math.Cos(geoPoint1.Latitude * MathEx.Deg2Rad) * Math.Cos(geoPoint2.Latitude * MathEx.Deg2Rad) * Math.Cos((geoPoint1.Longitude - geoPoint2.Longitude) * MathEx.Deg2Rad)
 				) * EquatorialRadius;
 		}
 	}

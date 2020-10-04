@@ -8,6 +8,10 @@ namespace Utils.Mathematics
 {
 	public static class MathEx
 	{
+		public const double Deg2Rad = Math.PI / 180;
+
+		public const double Rad2Deg = 180 / Math.PI;
+
 		#region Modulus
 		/// <summary>
 		/// Calcul alternatif du modulo (différent de l'opérateur %)

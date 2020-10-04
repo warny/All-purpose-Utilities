@@ -73,17 +73,41 @@ namespace Utils.Geography.Model
 			Direction = MathEx.Mod(MathEx.Rad2Deg / Math.Atan(cotanDirection), 360);
 		}
 
-		private GeoVector maxNorth, maxSouth;
+		//private GeoVector maxNorth = null, maxSouth = null;
 
 		//private void ComputeMaximums() {
-		//	double cosLat = Math.Abs(Math.Sin(this.Direction * MathEx.Deg2Rad)) * Math.Cos(this.Latitude * MathEx.Deg2Rad);
+		//	if (Direction == 0)
+		//	{
+		//		maxNorth = new GeoVector(90, this.Longitude, this.Longitude);
+		//		maxSouth = new GeoVector(-90, MathEx.Mod(this.Longitude + 180, 360), MathEx.Mod(this.Longitude + 180, 360));
+		//	}
+		//	else if (Direction == 180)
+		//	{
+		//		maxNorth = new GeoVector(90, MathEx.Mod(this.Longitude + 180, 360), MathEx.Mod(this.Longitude + 180, 360));
+		//		maxSouth = new GeoVector(-90, this.Longitude, this.Longitude);
+		//	}
 
+		//	var v = (Lat: this.Latitude * MathEx.Deg2Rad, Lon: this.Longitude * MathEx.Deg2Rad, Dir: Direction * MathEx.Deg2Rad);
+
+		//	double cosLat = Math.Abs(Math.Sin(v.Dir)) * Math.Cos(v.Lat);
+			
 		//}
 
-		//GeoVector MaxNorth { get; } = new Lazy<GeoVector>(() =>
+		//public GeoVector MaxNorth
 		//{
-		//}).Value;
+		//	get {
+		//		if (maxNorth == null) ComputeMaximums();
+		//		return maxNorth;
+		//	}
+		//}
 
+		//public GeoVector MaxSouth
+		//{
+		//	get {
+		//		if (maxSouth == null) ComputeMaximums();
+		//		return maxSouth;
+		//	}
+		//}
 
 		/// <summary>
 		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
