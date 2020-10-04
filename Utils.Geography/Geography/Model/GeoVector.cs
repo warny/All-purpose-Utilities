@@ -11,6 +11,12 @@ namespace Utils.Geography.Model
 	{
 		public double Direction { get; }
 
+		/// <summary>
+		/// Create a geoVector at given <paramref name="coordinates"/> heading to <paramref name="direction"/>
+		/// </summary>
+		/// <param name="latitude">Lattitude</param>
+		/// <param name="longitude">Longitude</param>
+		/// <param name="direction">Heading direction</param>
 		public GeoVector(string coordinates, params CultureInfo[] cultureInfos) {
 			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
 
@@ -27,16 +33,75 @@ namespace Utils.Geography.Model
 			throw new ArgumentException($"\"{coordinates}\" n'est pas un vecteur valide");
 		}
 
+		/// <summary>
+		/// Create geovector at <paramref name="geoPoint"/> headind to <paramref name="direction"/>
+		/// </summary>
+		/// <param name="geoPoint">Point</param>
+		/// <param name="direction">Heading direction</param>
 		public GeoVector(GeoPoint geoPoint, double direction) : base(geoPoint)
 		{
 			Direction = MathEx.Mod(direction, 360);
 		}
 
+		/// <summary>
+		/// Compute geovector direction from <paramref name="geoPoint"/> to <paramref name="destination"/>
+		/// </summary>
+		/// <param name="geoPoint">start point</param>
+		/// <param name="destination">destination point</param>
+		public GeoVector(GeoPoint geoPoint, GeoPoint destination) : base(geoPoint)
+		{
+			if (geoPoint.Longitude == destination.Longitude || geoPoint.Longitude == destination.Longitude - 180 || geoPoint.Longitude == destination.Longitude + 180) {
+				if (geoPoint.Latitude > destination.Longitude)
+				{
+					Direction = 180;
+					return;
+				}
+				else
+				{
+					Direction = 0;
+					return;
+				}
+			}
+
+			var p1 = (Lat: geoPoint.Latitude * MathEx.Deg2Rad, Lon: geoPoint.Latitude * MathEx.Deg2Rad);
+			var p2 = (Lat: destination.Latitude * MathEx.Deg2Rad, Lon: destination.Latitude * MathEx.Deg2Rad);
+
+			double cotanDirection
+				= ((Math.Cos(p1.Lat) * Math.Tan(p2.Lat)) / Math.Sin(p1.Lon - p2.Lon))
+				- (Math.Sin(p1.Lat) / Math.Tan(p2.Lon - p1.Lon));
+
+			Direction = MathEx.Mod(MathEx.Rad2Deg / Math.Atan(cotanDirection), 360);
+		}
+
+		private GeoVector maxNorth, maxSouth;
+
+		//private void ComputeMaximums() {
+		//	double cosLat = Math.Abs(Math.Sin(this.Direction * MathEx.Deg2Rad)) * Math.Cos(this.Latitude * MathEx.Deg2Rad);
+
+		//}
+
+		//GeoVector MaxNorth { get; } = new Lazy<GeoVector>(() =>
+		//{
+		//}).Value;
+
+
+		/// <summary>
+		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
+		/// </summary>
+		/// <param name="latitude">Lattitude</param>
+		/// <param name="longitude">Longitude</param>
+		/// <param name="direction">Heading direction</param>
 		public GeoVector(double latitude, double longitude, double direction) : base(latitude, longitude)
 		{
 			Direction = MathEx.Mod(direction, 360);
 		}
 
+		/// <summary>
+		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
+		/// </summary>
+		/// <param name="latitude">Lattitude</param>
+		/// <param name="longitude">Longitude</param>
+		/// <param name="direction">Heading direction</param>
 		public GeoVector(string latitudeString, string longitudeString, double direction, params CultureInfo[] cultureInfos) : base(latitudeString, longitudeString, cultureInfos)
 		{
 			Direction = MathEx.Mod(direction, 360);
