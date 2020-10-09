@@ -28,6 +28,7 @@ namespace UtilsTest.Net
 			Assert.AreEqual("olivier", builder.Username);
 			Assert.AreEqual("marty", builder.Password);
 			Assert.AreEqual("/", builder.AbsolutePath);
+			Assert.AreEqual("https://olivier:marty@example.com/", builder.ToString());
 		}
 
 		[TestMethod]
@@ -39,6 +40,7 @@ namespace UtilsTest.Net
 			Assert.AreEqual("olivier", builder.Username);
 			Assert.AreEqual("marty", builder.Password);
 			Assert.AreEqual("/", builder.AbsolutePath);
+			Assert.AreEqual("ftp://olivier:marty@example.com/", builder.ToString());
 		}
 
 		[TestMethod]

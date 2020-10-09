@@ -100,7 +100,7 @@ namespace Utils.Objects
 					{
 						return true;
 					}
-					valueNext = valueNext + 1;
+					valueNext += 1;
 				}
 				else if (value[valueIndex] == pattern[wildcardIndex] || pattern[wildcardIndex] == '?')
 				{
