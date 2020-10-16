@@ -133,6 +133,9 @@ namespace Utils.Geography.Model
 			return base.Equals(obj);
 		}
 
+		public override int GetHashCode()
+			=> Objects.ObjectUtils.ComputeHash(Latitude, Longitude, Bearing);
+
 		public bool Equals(GeoVector other) 
 			=> comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
 	}
