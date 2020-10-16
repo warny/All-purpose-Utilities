@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * Copyright 2010, 2011, 2012 mapsforge.org
  *
  * This program is free software: you can redistribute it and/or modify it under the
@@ -38,18 +38,24 @@ namespace Utils.Geography.Model
 		protected static string[] NegativeLatitude = new[] { "-", "S" };
 		protected static string[] PositiveLongitude = new[] { "+", "E" };
 		protected static string[] NegativeLongitude = new[] { "-", "W" };
-
 		private const long serialVersionUID = 1L;
 
-		/**
-		 * The latitude coordinate of this GeoPoint in degrees.
-		 */
+		/// <summary>
+		/// The latitude coordinate of this GeoPoint in degrees.
+		/// <summary>
 		public double Latitude { get; set; }
-
-		/**
-		 * The longitude coordinate of this GeoPoint in degrees.
-		 */
+		/// <summary>
+		/// The latitude coordinate of this GeoPoint in degrees.
+		/// <summary>
+		public double Ï† { get => Latitude; set => Latitude = value; }
+		/// <summary>
+		/// The longitude coordinate of this GeoPoint in degrees
+		/// </summary>
 		public double Longitude { get; set; }
+		/// <summary>
+		/// The longitude coordinate of this GeoPoint in degrees
+		/// </summary>
+		public double Î» { get => Longitude; set => Longitude = value; }
 
 		protected GeoPoint() { }
 
@@ -58,7 +64,7 @@ namespace Utils.Geography.Model
 		/// </summary>
 		/// <param name="latitude">the latitude coordinate in degrees.</param>
 		/// <param name="longitude">the longitude coordinate in degrees.</param>
-		public GeoPoint ( GeoPoint geoPoint )
+		public GeoPoint(GeoPoint geoPoint)
 		{
 			Initialize(geoPoint.Latitude, geoPoint.Longitude);
 		}
@@ -68,12 +74,12 @@ namespace Utils.Geography.Model
 		/// </summary>
 		/// <param name="latitude">the latitude coordinate in degrees.</param>
 		/// <param name="longitude">the longitude coordinate in degrees.</param>
-		public GeoPoint ( double latitude, double longitude )
+		public GeoPoint(double latitude, double longitude)
 		{
 			Initialize(latitude, longitude);
 		}
 
-		public GeoPoint ( string coordinates, params CultureInfo[] cultureInfos )
+		public GeoPoint(string coordinates, params CultureInfo[] cultureInfos)
 		{
 			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
 
@@ -95,7 +101,7 @@ namespace Utils.Geography.Model
 		/// </summary>
 		/// <param name="latitudeString">Latitude</param>
 		/// <param name="longitudeString">Longitude</param>
-		public GeoPoint ( string latitudeString, string longitudeString, params CultureInfo[] cultureInfos)
+		public GeoPoint(string latitudeString, string longitudeString, params CultureInfo[] cultureInfos)
 		{
 			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
 			foreach (var cultureInfo in cultureInfos)
@@ -115,7 +121,7 @@ namespace Utils.Geography.Model
 			return true;
 		}
 
-		protected double ParseCoordinate (CoordinateDirectionEnum coordinateDirection, string coordinateValue, string[] positiveModifiers, string[] negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates )
+		protected double ParseCoordinate(CoordinateDirectionEnum coordinateDirection, string coordinateValue, string[] positiveModifiers, string[] negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates)
 		{
 			var m = regexCoordinates.Match(coordinateValue);
 			if (!m.Success) return double.NaN;
@@ -127,17 +133,22 @@ namespace Utils.Geography.Model
 			double coordinate = degrees + minutes / 60 + seconds / 3600;
 
 			string modifier = m.Groups["modifier"].Success ? m.Groups["modifier"].Value : positiveModifiers[0];
-			if (Array.IndexOf(positiveModifiers, modifier) > -1) {
-				//les coordonées sont positives, ne fait rien
-			} else if (Array.IndexOf(negativeModifiers, modifier) > -1) {
+			if (Array.IndexOf(positiveModifiers, modifier) > -1)
+			{
+				//les coordonÃ©es sont positives, ne fait rien
+			}
+			else if (Array.IndexOf(negativeModifiers, modifier) > -1)
+			{
 				coordinate = -coordinate;
-			} else {
+			}
+			else
+			{
 				throw new ArgumentException($"Invalid modifier {modifier} for {coordinateDirection}", coordinateValue);
 			}
 			return coordinate;
 		}
 
-		protected void Initialize ( double latitude, double longitude )
+		protected void Initialize(double latitude, double longitude)
 		{
 			CoordinatesUtil.ValidateLatitude(latitude);
 			CoordinatesUtil.ValidateLongitude(longitude);
@@ -146,31 +157,44 @@ namespace Utils.Geography.Model
 			this.Longitude = longitude;
 		}
 
-		public int CompareTo ( GeoPoint GeoPoint )
+		public int CompareTo(GeoPoint GeoPoint)
 		{
-			if (this.Longitude > GeoPoint.Longitude) {
+			if (this.Longitude > GeoPoint.Longitude)
+			{
 				return 1;
-			} else if (this.Longitude < GeoPoint.Longitude) {
+			}
+			else if (this.Longitude < GeoPoint.Longitude)
+			{
 				return -1;
-			} else if (this.Latitude > GeoPoint.Latitude) {
+			}
+			else if (this.Latitude > GeoPoint.Latitude)
+			{
 				return 1;
-			} else if (this.Latitude < GeoPoint.Latitude) {
+			}
+			else if (this.Latitude < GeoPoint.Latitude)
+			{
 				return -1;
 			}
 			return 0;
 		}
 
-		public override bool Equals ( object obj )
+		public override bool Equals(object obj)
 		{
-			if (this == obj) {
+			if (this == obj)
+			{
 				return true;
-			} else if (!(obj is GeoPoint)) {
+			}
+			else if (!(obj is GeoPoint))
+			{
 				return false;
 			}
 			GeoPoint other = (GeoPoint)obj;
-			if (this.Latitude != other.Latitude) {
+			if (this.Latitude != other.Latitude)
+			{
 				return false;
-			} else if (this.Longitude != other.Longitude) {
+			}
+			else if (this.Longitude != other.Longitude)
+			{
 				return false;
 			}
 			return true;
@@ -190,9 +214,9 @@ namespace Utils.Geography.Model
 				var minutes = Math.Floor(temp);
 				temp = (temp - minutes) * 60;
 				var seconds = Math.Floor(temp);
-				if (seconds != 0 || format == "D") return $"{mark}{degrees:##0}°{minutes:00}'{seconds:00}\"";
-				if (minutes != 0) return $"{mark}{degrees}°{minutes:00}'";
-				return $"{mark}{degrees}°";
+				if (seconds != 0 || format == "D") return $"{mark}{degrees:##0}Â°{minutes:00}'{seconds:00}\"";
+				if (minutes != 0) return $"{mark}{degrees}Â°{minutes:00}'";
+				return $"{mark}{degrees}Â°";
 			}
 			else
 			{
@@ -214,7 +238,7 @@ namespace Utils.Geography.Model
 			string digits = "[" + string.Join("", cultureInfo.NumberFormat.NativeDigits) + "]+";
 			string number = digits + "([" + cultureInfo.NumberFormat.NumberDecimalSeparator + "]" + digits + ")?";
 
-			Regex regExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<deegres>number)(°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
+			Regex regExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<deegres>number)(Â°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
 			return regExCoordinate;
 		}
 

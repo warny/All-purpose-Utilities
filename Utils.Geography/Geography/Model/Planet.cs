@@ -59,7 +59,7 @@ namespace Utils.Geography.Model
 		{
 			Vector startPoint = new Vector(0, 0, 1);
 			Vector startVector = new Vector(0, 1, 0);
-			Matrix m = Matrix.Rotation(geoVector.Longitude * MathEx.Deg2Rad, geoVector.Latitude * MathEx.Deg2Rad, geoVector.Direction * MathEx.Deg2Rad);
+			Matrix m = Matrix.Rotation(geoVector.Longitude * MathEx.Deg2Rad, geoVector.Latitude * MathEx.Deg2Rad, geoVector.Bearing * MathEx.Deg2Rad);
 			Matrix m1 = m.Invert();
 			Matrix move = Matrix.Rotation(distance / EquatorialRadius, 0.0, 0.0);
 			Matrix transform = move * m1;

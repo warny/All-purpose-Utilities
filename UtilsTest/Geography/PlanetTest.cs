@@ -1,9 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Utils.Geography.Model;
+using Utils.Mathematics;
 
 namespace UtilsTest.Geography
 {
@@ -27,10 +29,14 @@ namespace UtilsTest.Geography
 				Planet planet = new Planet(i);
 				foreach (var distance in distances)
 				{
-					Assert.AreEqual(distance.distance * i, planet.Distance(distance.geoPoint1, distance.geoPoint2));
+					Assert.AreEqual(distance.distance * i, planet.Distance(distance.geoPoint1, distance.geoPoint2), 0.0001);
 				}
 			}
 
+			Planet earth = Planets.Earth;
+			GeoPoint paris = new GeoPoint("N48°51',E2°21'");
+			GeoPoint newyork = new GeoPoint("N40°43'N,O74°00'");
+			Assert.AreEqual(5832, earth.Distance(paris, newyork), 0.5);
 		}
 
 		[TestMethod]
@@ -51,6 +57,24 @@ namespace UtilsTest.Geography
 			{
 				Assert.AreEqual(new GeoPoint(movement.result), planet.Move(movement.start, movement.distance));
 			}
+		}
+
+		[TestMethod]
+		public void TestVector()
+		{
+			Planet earth = Planets.Earth;
+			GeoPoint paris = new GeoPoint("N48°51',E2°21'");
+			GeoPoint newyork = new GeoPoint("N40°43',O74°00'");
+
+			GeoPoint baghdad = new GeoPoint("N35°,E45°");
+			GeoPoint osaka = new GeoPoint("N35°,E135°");
+
+			GeoVector vector = new GeoVector(paris, newyork);
+			Assert.AreEqual(290, vector.Bearing, 1);
+
+			GeoVector vector2 = new GeoVector(baghdad, osaka);
+			Assert.AreEqual(300, vector2.Bearing, 1);
+
 		}
 	}
 }

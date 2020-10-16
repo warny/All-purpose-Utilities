@@ -17,9 +17,9 @@ namespace Utils.Mathematics
 		}
 
 		public int Compare(double x, double y)	
-			=> x.Between(x - Interval, x + Interval) ? 0 : x.CompareTo(y);
+			=> x.Equals(y) ? 0 : x.CompareTo(y);
 
-		public bool Equals(double x, double y) => x.Between(x - Interval, x + Interval);
+		public bool Equals(double x, double y) => x.Between(y - Interval, y + Interval);
 
 		public int GetHashCode(double obj) => obj.GetHashCode();
 	}

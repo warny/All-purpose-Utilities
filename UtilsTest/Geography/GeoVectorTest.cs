@@ -27,7 +27,7 @@ namespace UtilsTest.Geography
 				GeoVector geoVector = new GeoVector(vector.latitude, vector.longitude, vector.direction);
 				Assert.AreEqual(vector.latitude, geoVector.Latitude);
 				Assert.AreEqual(vector.longitude, geoVector.Longitude);
-				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Direction);
+				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Bearing);
 				Assert.AreEqual(vector.coordinates, geoVector.ToString());
 				Assert.AreEqual(vector.dcoordinates, geoVector.ToString("d"));
 			}
@@ -41,7 +41,7 @@ namespace UtilsTest.Geography
 				GeoVector geoVector = new GeoVector(vector.coordinates);
 				Assert.AreEqual(vector.latitude, geoVector.Latitude);
 				Assert.AreEqual(vector.longitude, geoVector.Longitude);
-				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Direction);
+				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Bearing);
 				Assert.AreEqual(vector.coordinates, geoVector.ToString());
 				Assert.AreEqual(vector.dcoordinates, geoVector.ToString("d"));
 			}
@@ -57,7 +57,7 @@ namespace UtilsTest.Geography
 				GeoVector geoVector = new GeoVector(vector.dcoordinates);
 				Assert.AreEqual(vector.latitude, geoVector.Latitude);
 				Assert.AreEqual(vector.longitude, geoVector.Longitude);
-				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Direction);
+				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Bearing);
 				Assert.AreEqual(vector.coordinates, geoVector.ToString());
 				Assert.AreEqual(vector.dcoordinates, geoVector.ToString("d"));
 			}
@@ -71,7 +71,7 @@ namespace UtilsTest.Geography
 				GeoVector geoVector = new GeoVector(new GeoPoint(vector.latitude, vector.longitude), vector.direction);
 				Assert.AreEqual(vector.latitude, geoVector.Latitude);
 				Assert.AreEqual(vector.longitude, geoVector.Longitude);
-				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Direction);
+				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Bearing);
 				Assert.AreEqual(vector.coordinates, geoVector.ToString());
 				Assert.AreEqual(vector.dcoordinates, geoVector.ToString("d"));
 			}

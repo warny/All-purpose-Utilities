@@ -9,7 +9,9 @@ namespace Utils.Geography.Model
 {
 	public class GeoVector : GeoPoint
 	{
-		public double Direction { get; }
+		private static IAngleCalculator degree = Trigonometry.Degree;
+
+		public double Bearing { get; }
 
 		/// <summary>
 		/// Create a geoVector at given <paramref name="coordinates"/> heading to <paramref name="direction"/>
@@ -26,7 +28,7 @@ namespace Utils.Geography.Model
 				if (coordinatesStrings.Length != 3) continue;
 				Regex regExCoordinate = BuildRegexCoordinates(cultureInfo);
 				if (!double.TryParse(coordinatesStrings[2], NumberStyles.Float, cultureInfo, out double direction)) continue;
-				Direction = MathEx.Mod(direction, 360);
+				Bearing = MathEx.Mod(direction, 360);
 				if (ParseCoordinates(coordinatesStrings[0], coordinatesStrings[1], cultureInfo, regExCoordinate)) return;
 			}
 
@@ -40,7 +42,7 @@ namespace Utils.Geography.Model
 		/// <param name="direction">Heading direction</param>
 		public GeoVector(GeoPoint geoPoint, double direction) : base(geoPoint)
 		{
-			Direction = MathEx.Mod(direction, 360);
+			Bearing = MathEx.Mod(direction, 360);
 		}
 
 		/// <summary>
@@ -50,64 +52,39 @@ namespace Utils.Geography.Model
 		/// <param name="destination">destination point</param>
 		public GeoVector(GeoPoint geoPoint, GeoPoint destination) : base(geoPoint)
 		{
-			if (geoPoint.Longitude == destination.Longitude || geoPoint.Longitude == destination.Longitude - 180 || geoPoint.Longitude == destination.Longitude + 180) {
-				if (geoPoint.Latitude > destination.Longitude)
+			if (geoPoint.Longitude == destination.Longitude) {
+				if (geoPoint.Latitude > destination.Latitude)
 				{
-					Direction = 180;
+					Bearing = 180;
 					return;
 				}
 				else
 				{
-					Direction = 0;
+					Bearing = 0;
+					return;
+				}
+			}
+			if (geoPoint.Longitude == destination.Longitude - 180 || geoPoint.Longitude == destination.Longitude + 180)
+			{
+				if (geoPoint.Latitude > -destination.Latitude)
+				{
+					Bearing = 180;
+					return;
+				}
+				else
+				{
+					Bearing = 0;
 					return;
 				}
 			}
 
-			var p1 = (Lat: geoPoint.Latitude * MathEx.Deg2Rad, Lon: geoPoint.Latitude * MathEx.Deg2Rad);
-			var p2 = (Lat: destination.Latitude * MathEx.Deg2Rad, Lon: destination.Latitude * MathEx.Deg2Rad);
+			var A = geoPoint;
+			var B = destination;
 
-			double cotanDirection
-				= ((Math.Cos(p1.Lat) * Math.Tan(p2.Lat)) / Math.Sin(p1.Lon - p2.Lon))
-				- (Math.Sin(p1.Lat) / Math.Tan(p2.Lon - p1.Lon));
-
-			Direction = MathEx.Mod(MathEx.Rad2Deg / Math.Atan(cotanDirection), 360);
+			double y = degree.Sin(B.λ - A.λ) * degree.Cos(B.φ);
+			double x = degree.Cos(A.φ) * degree.Sin(B.φ) - degree.Sin(A.φ) * degree.Cos(B.φ) * degree.Cos(B.λ - A.λ);
+			Bearing = MathEx.Mod(-degree.Atan2(y, x), 360);
 		}
-
-		//private GeoVector maxNorth = null, maxSouth = null;
-
-		//private void ComputeMaximums() {
-		//	if (Direction == 0)
-		//	{
-		//		maxNorth = new GeoVector(90, this.Longitude, this.Longitude);
-		//		maxSouth = new GeoVector(-90, MathEx.Mod(this.Longitude + 180, 360), MathEx.Mod(this.Longitude + 180, 360));
-		//	}
-		//	else if (Direction == 180)
-		//	{
-		//		maxNorth = new GeoVector(90, MathEx.Mod(this.Longitude + 180, 360), MathEx.Mod(this.Longitude + 180, 360));
-		//		maxSouth = new GeoVector(-90, this.Longitude, this.Longitude);
-		//	}
-
-		//	var v = (Lat: this.Latitude * MathEx.Deg2Rad, Lon: this.Longitude * MathEx.Deg2Rad, Dir: Direction * MathEx.Deg2Rad);
-
-		//	double cosLat = Math.Abs(Math.Sin(v.Dir)) * Math.Cos(v.Lat);
-			
-		//}
-
-		//public GeoVector MaxNorth
-		//{
-		//	get {
-		//		if (maxNorth == null) ComputeMaximums();
-		//		return maxNorth;
-		//	}
-		//}
-
-		//public GeoVector MaxSouth
-		//{
-		//	get {
-		//		if (maxSouth == null) ComputeMaximums();
-		//		return maxSouth;
-		//	}
-		//}
 
 		/// <summary>
 		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
@@ -117,7 +94,7 @@ namespace Utils.Geography.Model
 		/// <param name="direction">Heading direction</param>
 		public GeoVector(double latitude, double longitude, double direction) : base(latitude, longitude)
 		{
-			Direction = MathEx.Mod(direction, 360);
+			Bearing = MathEx.Mod(direction, 360);
 		}
 
 		/// <summary>
@@ -128,7 +105,7 @@ namespace Utils.Geography.Model
 		/// <param name="direction">Heading direction</param>
 		public GeoVector(string latitudeString, string longitudeString, double direction, params CultureInfo[] cultureInfos) : base(latitudeString, longitudeString, cultureInfos)
 		{
-			Direction = MathEx.Mod(direction, 360);
+			Bearing = MathEx.Mod(direction, 360);
 		}
 
 		public override string ToString(string format, IFormatProvider formatProvider)
@@ -136,7 +113,7 @@ namespace Utils.Geography.Model
 			formatProvider ??= CultureInfo.InvariantCulture;
 			var textInfo = (TextInfo)formatProvider?.GetFormat(typeof(TextInfo));
 
-			return base.ToString(format, formatProvider) + $"{textInfo?.ListSeparator ?? ","} {Direction:##0.##}";
+			return base.ToString(format, formatProvider) + $"{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
 		}
 	}
 }
