@@ -34,7 +34,7 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// A GeoPoint represents an immutable pair of latitude and longitude coordinates.
 	/// </summary>
-	public class GeoPoint : IEquatable<GeoPoint>, IComparable<GeoPoint>, IFormattable
+	public class GeoPoint : IEquatable<GeoPoint>, IFormattable
 	{
 		protected static readonly DoubleComparer comparer = new DoubleComparer(10);
 
@@ -159,16 +159,6 @@ namespace Utils.Geography.Model
 
 			this.Latitude = latitude;
 			this.Longitude = longitude;
-		}
-
-		public int CompareTo(GeoPoint GeoPoint)
-		{
-			if (this.Equals(GeoPoint)) return 0;
-			if (this.Longitude > GeoPoint.Longitude) return 1;
-			if (this.Longitude < GeoPoint.Longitude) return -1;
-			if (this.Latitude > GeoPoint.Latitude) return 1;
-			if (this.Latitude < GeoPoint.Latitude) return -1;
-			return 0;
 		}
 
 		public override bool Equals(object obj)
