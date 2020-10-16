@@ -55,20 +55,8 @@ namespace Utils.Geography.Model
 				) * EquatorialRadius;
 		}
 
-		public GeoVector Move(GeoVector geoVector, double distance)
-		{
-			Vector startPoint = new Vector(0, 0, 1);
-			Vector startVector = new Vector(0, 1, 0);
-			Matrix m = Matrix.Rotation(geoVector.Longitude * MathEx.Deg2Rad, geoVector.Latitude * MathEx.Deg2Rad, geoVector.Bearing * MathEx.Deg2Rad);
-			Matrix m1 = m.Invert();
-			Matrix move = Matrix.Rotation(distance / EquatorialRadius, 0.0, 0.0);
-			Matrix transform = move * m1;
-			Vector endPoint = (transform * startPoint).Normalize();
-			Vector endVector = (transform * startVector).Normalize();
-			var endGeoPoint = new GeoPoint(endPoint[0] == 0 ? Math.Sign(endPoint[1] * 90) : Math.Atan(endPoint[1] / endPoint[0]) * MathEx.Rad2Deg, Math.Acos(endPoint[2]) * MathEx.Rad2Deg);
-			var direction = Math.Acos(endVector[2]) * MathEx.Rad2Deg - 90;
-			return new GeoVector(endGeoPoint, direction);
-		}
+		public GeoVector Travel(GeoVector geoVector, double distance) 
+			=> geoVector.Travel(MathEx.Rad2Deg * distance / EquatorialRadius);
 	}
 
 	public static class Planets

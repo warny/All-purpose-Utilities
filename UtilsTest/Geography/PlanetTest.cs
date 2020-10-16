@@ -46,16 +46,20 @@ namespace UtilsTest.Geography
 				(new GeoVector(0, 0, 0), 0, new GeoVector(0, 0, 0)),
 				(new GeoVector(0, 90, 0), 0, new GeoVector(0, 90, 0)),
 				(new GeoVector(90, 0, 0), 0, new GeoVector(90, 0, 0)),
-				(new GeoVector(0, 0, 0), System.Math.PI / 2, new GeoVector(0, 90, 0)),
-				(new GeoVector(0, 0, 0), System.Math.PI / 3, new GeoVector(0, 60, 0)),
-				(new GeoVector(0, 0, 90), System.Math.PI / 2, new GeoVector(90, 0, 0)),
-				(new GeoVector(0, 0, 90), System.Math.PI / 3, new GeoVector(60, 0, 0))
+				(new GeoVector(0, 0, 0), System.Math.PI / 2, new GeoVector(90, 0, 0)),
+				(new GeoVector(0, 0, 0), System.Math.PI / 3, new GeoVector(60, 0, 0)),
+				(new GeoVector(0, 0, 90), System.Math.PI / 2, new GeoVector(0, 90, 90)),
+				(new GeoVector(0, 0, 90), System.Math.PI / 3, new GeoVector(0, 60, 90)),
+				(new GeoVector(0, 0, 180), System.Math.PI / 2, new GeoVector(-90, 0, 180)),
+				(new GeoVector(0, 0, 180), System.Math.PI / 3, new GeoVector(-60, 0, 180)),
+				(new GeoVector(0, 0, 270), System.Math.PI / 2, new GeoVector(0, -90, 270)),
+				(new GeoVector(0, 0, 270), System.Math.PI / 3, new GeoVector(0, -60, 270))
 			};
 
 			Planet planet = new Planet(1);
 			foreach (var movement in movements)
 			{
-				Assert.AreEqual(new GeoPoint(movement.result), planet.Move(movement.start, movement.distance));
+				Assert.AreEqual(movement.result, planet.Travel(movement.start, movement.distance));
 			}
 		}
 

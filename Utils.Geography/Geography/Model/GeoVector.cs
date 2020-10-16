@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Mathematics;
 
 namespace Utils.Geography.Model
 {
-	public class GeoVector : GeoPoint
+	public class GeoVector : GeoPoint, IEquatable<GeoVector>
 	{
 		private static IAngleCalculator degree = Trigonometry.Degree;
 
@@ -52,39 +54,9 @@ namespace Utils.Geography.Model
 		/// <param name="destination">destination point</param>
 		public GeoVector(GeoPoint geoPoint, GeoPoint destination) : base(geoPoint)
 		{
-			if (geoPoint.Longitude == destination.Longitude) {
-				if (geoPoint.Latitude > destination.Latitude)
-				{
-					Bearing = 180;
-					return;
-				}
-				else
-				{
-					Bearing = 0;
-					return;
-				}
-			}
-			if (geoPoint.Longitude == destination.Longitude - 180 || geoPoint.Longitude == destination.Longitude + 180)
-			{
-				if (geoPoint.Latitude > -destination.Latitude)
-				{
-					Bearing = 180;
-					return;
-				}
-				else
-				{
-					Bearing = 0;
-					return;
-				}
-			}
-
-			var A = geoPoint;
-			var B = destination;
-
-			double y = degree.Sin(B.λ - A.λ) * degree.Cos(B.φ);
-			double x = degree.Cos(A.φ) * degree.Sin(B.φ) - degree.Sin(A.φ) * degree.Cos(B.φ) * degree.Cos(B.λ - A.λ);
-			Bearing = MathEx.Mod(-degree.Atan2(y, x), 360);
+			Bearing = ComputeBearing(geoPoint, destination);
 		}
+
 
 		/// <summary>
 		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
@@ -115,5 +87,53 @@ namespace Utils.Geography.Model
 
 			return base.ToString(format, formatProvider) + $"{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
 		}
+
+		/// <summary>
+		/// Compute dearing from point A to point B
+		/// </summary>
+		/// <param name="A">Start point</param>
+		/// <param name="B">End point</param>
+		/// <returns>Bearing</returns>
+		public static double ComputeBearing(GeoPoint A, GeoPoint B)
+		{
+			if (comparer.Equals(A.Longitude, B.Longitude))
+			{
+				return A.Latitude > B.Latitude ? 180 : 0;
+			}
+			if (comparer.Equals(A.Longitude, B.Longitude - 180) || comparer.Equals(A.Longitude, B.Longitude + 180))
+			{
+				return A.Latitude > -B.Latitude ? 180 : 0;
+			}
+
+			double y = degree.Sin(B.λ - A.λ) * degree.Cos(B.φ);
+			double x = degree.Cos(A.φ) * degree.Sin(B.φ) - degree.Sin(A.φ) * degree.Cos(B.φ) * degree.Cos(B.λ - A.λ);
+			return MathEx.Mod(-degree.Atan2(y, x), 360);
+		}
+
+		public GeoVector Travel(double angle)
+		{
+			double φ2 = degree.Asin(
+					degree.Sin(φ) * degree.Cos(angle) 
+					+ degree.Cos(φ) * degree.Sin(angle) * degree.Cos(Bearing)
+				);
+			double λ2 = λ + degree.Atan2(
+					degree.Sin(Bearing) * degree.Sin(angle) * degree.Cos(φ),
+					degree.Cos(angle) - degree.Sin(φ) * degree.Sin(φ2)
+				);
+
+			GeoPoint arrival = new GeoPoint(φ2, λ2);
+			double bearing = MathEx.Mod(180 + ComputeBearing(arrival, this), 360);
+			return new GeoVector(arrival, bearing);
+		}
+
+		public override bool Equals(object obj)
+		{
+			if (this == obj) return true;
+			if (obj is GeoVector p) return Equals(p);
+			return base.Equals(obj);
+		}
+
+		public bool Equals(GeoVector other) 
+			=> comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
 	}
 }

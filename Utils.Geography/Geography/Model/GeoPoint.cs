@@ -13,6 +13,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using System;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +21,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Geography.Display;
+using Utils.Mathematics;
 
 namespace Utils.Geography.Model
 {
@@ -32,8 +34,10 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// A GeoPoint represents an immutable pair of latitude and longitude coordinates.
 	/// </summary>
-	public class GeoPoint : IComparable<GeoPoint>, IFormattable
+	public class GeoPoint : IEquatable<GeoPoint>, IComparable<GeoPoint>, IFormattable
 	{
+		protected static readonly DoubleComparer comparer = new DoubleComparer(10);
+
 		protected static string[] PositiveLatitude = new[] { "+", "N" };
 		protected static string[] NegativeLatitude = new[] { "-", "S" };
 		protected static string[] PositiveLongitude = new[] { "+", "E" };
@@ -159,46 +163,23 @@ namespace Utils.Geography.Model
 
 		public int CompareTo(GeoPoint GeoPoint)
 		{
-			if (this.Longitude > GeoPoint.Longitude)
-			{
-				return 1;
-			}
-			else if (this.Longitude < GeoPoint.Longitude)
-			{
-				return -1;
-			}
-			else if (this.Latitude > GeoPoint.Latitude)
-			{
-				return 1;
-			}
-			else if (this.Latitude < GeoPoint.Latitude)
-			{
-				return -1;
-			}
+			if (this.Equals(GeoPoint)) return 0;
+			if (this.Longitude > GeoPoint.Longitude) return 1;
+			if (this.Longitude < GeoPoint.Longitude) return -1;
+			if (this.Latitude > GeoPoint.Latitude) return 1;
+			if (this.Latitude < GeoPoint.Latitude) return -1;
 			return 0;
 		}
 
 		public override bool Equals(object obj)
 		{
-			if (this == obj)
-			{
-				return true;
-			}
-			else if (!(obj is GeoPoint))
-			{
-				return false;
-			}
-			GeoPoint other = (GeoPoint)obj;
-			if (this.Latitude != other.Latitude)
-			{
-				return false;
-			}
-			else if (this.Longitude != other.Longitude)
-			{
-				return false;
-			}
-			return true;
+			if (this == obj) return true;
+			if (obj is GeoPoint p) return Equals(p);
+			return false;
 		}
+		public bool Equals(GeoPoint other) 
+			=> comparer.Equals(this.Latitude, other.Latitude)
+				&& comparer.Equals(this.Longitude, other.Longitude);
 
 		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.Latitude, this.Longitude);
 
