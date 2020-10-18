@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Utils.Mathematics
 {
@@ -20,15 +17,21 @@ namespace Utils.Mathematics
 		double Cosh(double angle);
 		double Atan2(double x, double y);
 		double Acot2(double x, double y);
+		double NormalizeMinToMax(double angle);
+		double Normalize0To2Max(double angle);
 	}
 
 	public class Trigonometry : IAngleCalculator
 	{
 		public double Graduation { get; }
+		public double StraightAngle { get; }
+		public double Perigon { get; }
 
 		public Trigonometry(double numberOfGraduation)
 		{
-			this.Graduation = Math.PI / numberOfGraduation;
+			this.StraightAngle = numberOfGraduation / 2;
+			this.Perigon = numberOfGraduation;
+			this.Graduation = Math.PI / StraightAngle;
 		}
 
 		public double Acos(double value) => MathEx.Round(Math.Acos(value) / Graduation, -10);
@@ -45,6 +48,9 @@ namespace Utils.Mathematics
 		public double Atan2(double x, double y) => MathEx.Round(Math.Atan2(x, y) / Graduation, -10);
 		public double Acot2(double x, double y) => MathEx.Round(Math.Atan2(y, x) / Graduation, -10);
 
+		public double NormalizeMinToMax(double angle) => MathEx.Mod(angle + StraightAngle + Perigon, Perigon) - StraightAngle;
+		public double Normalize0To2Max(double angle) => MathEx.Mod(angle, Perigon);
+
 		public static IAngleCalculator Radian => new Radian();
 		public static IAngleCalculator Degree => new Degree();
 		public static IAngleCalculator Grade => new Grade();
@@ -52,12 +58,12 @@ namespace Utils.Mathematics
 
 	public class Degree : Trigonometry
 	{
-		public Degree() : base(180) { }
+		public Degree() : base(360) { }
 	}
 
 	public class Grade : Trigonometry
 	{
-		public Grade() : base(200) { }
+		public Grade() : base(400) { }
 	}
 
 	public class Radian : IAngleCalculator
@@ -75,5 +81,8 @@ namespace Utils.Mathematics
 		public double Cosh(double angle) => Math.Cosh(angle);
 		public double Atan2(double x, double y) => Math.Atan2(x, y);
 		public double Acot2(double x, double y) => Math.Atan2(y, x);
+
+		public double NormalizeMinToMax(double angle) => MathEx.Mod(angle + 3 * Math.PI, 2 * Math.PI) - Math.PI;
+		public double Normalize0To2Max(double angle) => MathEx.Mod(angle, 2 * Math.PI);
 	}
 }

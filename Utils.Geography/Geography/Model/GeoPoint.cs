@@ -36,6 +36,7 @@ namespace Utils.Geography.Model
 	/// </summary>
 	public class GeoPoint : IEquatable<GeoPoint>, IFormattable
 	{
+		protected static readonly IAngleCalculator degree = Trigonometry.Degree;
 		protected static readonly DoubleComparer comparer = new DoubleComparer(10);
 
 		protected static string[] PositiveLatitude = new[] { "+", "N" };
@@ -155,7 +156,7 @@ namespace Utils.Geography.Model
 		protected void Initialize(double latitude, double longitude)
 		{
 			CoordinatesUtil.ValidateLatitude(latitude);
-			CoordinatesUtil.ValidateLongitude(longitude);
+			longitude = degree.NormalizeMinToMax(longitude);
 
 			this.Latitude = latitude;
 			this.Longitude = longitude;

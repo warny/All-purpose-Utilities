@@ -11,8 +11,6 @@ namespace Utils.Geography.Model
 {
 	public class GeoVector : GeoPoint, IEquatable<GeoVector>
 	{
-		private static IAngleCalculator degree = Trigonometry.Degree;
-
 		public double Bearing { get; }
 
 		/// <summary>
@@ -38,13 +36,13 @@ namespace Utils.Geography.Model
 		}
 
 		/// <summary>
-		/// Create geovector at <paramref name="geoPoint"/> headind to <paramref name="direction"/>
+		/// Create geovector at <paramref name="geoPoint"/> headind to <paramref name="bearing"/>
 		/// </summary>
 		/// <param name="geoPoint">Point</param>
-		/// <param name="direction">Heading direction</param>
-		public GeoVector(GeoPoint geoPoint, double direction) : base(geoPoint)
+		/// <param name="bearing">Heading direction</param>
+		public GeoVector(GeoPoint geoPoint, double bearing) : base(geoPoint)
 		{
-			Bearing = MathEx.Mod(direction, 360);
+			Bearing = degree.Normalize0To2Max(bearing);
 		}
 
 		/// <summary>
@@ -59,25 +57,25 @@ namespace Utils.Geography.Model
 
 
 		/// <summary>
-		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
+		/// Create a geoVector at given coordinates heading to <paramref name="bearing"/>
 		/// </summary>
 		/// <param name="latitude">Lattitude</param>
 		/// <param name="longitude">Longitude</param>
-		/// <param name="direction">Heading direction</param>
-		public GeoVector(double latitude, double longitude, double direction) : base(latitude, longitude)
+		/// <param name="bearing">Heading direction</param>
+		public GeoVector(double latitude, double longitude, double bearing) : base(latitude, longitude)
 		{
-			Bearing = MathEx.Mod(direction, 360);
+			Bearing = degree.Normalize0To2Max(bearing);
 		}
 
 		/// <summary>
-		/// Create a geoVector at given coordinates heading to <paramref name="direction"/>
+		/// Create a geoVector at given coordinates heading to <paramref name="bearing"/>
 		/// </summary>
 		/// <param name="latitude">Lattitude</param>
 		/// <param name="longitude">Longitude</param>
-		/// <param name="direction">Heading direction</param>
-		public GeoVector(string latitudeString, string longitudeString, double direction, params CultureInfo[] cultureInfos) : base(latitudeString, longitudeString, cultureInfos)
+		/// <param name="bearing">Heading direction</param>
+		public GeoVector(string latitudeString, string longitudeString, double bearing, params CultureInfo[] cultureInfos) : base(latitudeString, longitudeString, cultureInfos)
 		{
-			Bearing = MathEx.Mod(direction, 360);
+			Bearing = degree.Normalize0To2Max(bearing);
 		}
 
 		public override string ToString(string format, IFormatProvider formatProvider)
@@ -107,22 +105,35 @@ namespace Utils.Geography.Model
 
 			double y = degree.Sin(B.λ - A.λ) * degree.Cos(B.φ);
 			double x = degree.Cos(A.φ) * degree.Sin(B.φ) - degree.Sin(A.φ) * degree.Cos(B.φ) * degree.Cos(B.λ - A.λ);
-			return MathEx.Mod(-degree.Atan2(y, x), 360);
+			return degree.Normalize0To2Max(-degree.Atan2(y, x));
 		}
 
 		public GeoVector Travel(double angle)
 		{
+
+			bool negative = Math.Sign(angle) == -1;
+			angle = degree.Normalize0To2Max(angle);
+			if (angle == 0) return this;
+			if (angle == 180) return new GeoVector(-this.Latitude, -this.Longitude, -this.Bearing);
+			double bearingcorrection = (angle <= 180) ^ negative ? 180 : 0;
+
+			if (this.φ == 90) return new GeoVector(90 - angle, bearingcorrection + this.λ, bearingcorrection);
+			if (this.φ == -90) return new GeoVector(-90 + angle, bearingcorrection + this.λ, 180 + bearingcorrection);
+
 			double φ2 = degree.Asin(
 					degree.Sin(φ) * degree.Cos(angle) 
-					+ degree.Cos(φ) * degree.Sin(angle) * degree.Cos(Bearing)
+					+ degree.Cos(φ) * degree.Sin(angle) * degree.Cos(-Bearing)
 				);
+			if (φ2 == 90) return new GeoVector(90, λ, MathEx.Mod(Bearing + 180 + bearingcorrection, 360));
+			if (φ2 == -90) return new GeoVector(-90, λ, MathEx.Mod(Bearing + 180 + bearingcorrection, 360));
+
 			double λ2 = λ + degree.Atan2(
 					degree.Sin(Bearing) * degree.Sin(angle) * degree.Cos(φ),
 					degree.Cos(angle) - degree.Sin(φ) * degree.Sin(φ2)
 				);
 
 			GeoPoint arrival = new GeoPoint(φ2, λ2);
-			double bearing = MathEx.Mod(180 + ComputeBearing(arrival, this), 360);
+			double bearing = MathEx.Mod(bearingcorrection - ComputeBearing(arrival, this), 360);
 			return new GeoVector(arrival, bearing);
 		}
 

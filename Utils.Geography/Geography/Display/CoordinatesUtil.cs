@@ -107,19 +107,5 @@ namespace Utils.Geography.Display
 				throw new ArgumentException("invalid latitude: " + latitude, nameof(latitude));
 			}
 		}
-
-		/**
-		 * @param longitude
-		 *            the longitude coordinate in degrees which should be validated.
-		 * @throws IllegalArgumentException
-		 *             if the longitude coordinate is invalid or {@link Double#NaN}.
-		 */
-		public static void ValidateLongitude ( double longitude )
-		{
-			if (double.IsNaN(longitude) || longitude <= LONGITUDE_MIN || longitude >= LONGITUDE_MAX) {
-				throw new ArgumentException("invalid longitude: " + longitude, nameof(longitude));
-			}
-		}
-
 	}
 }
