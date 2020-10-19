@@ -196,7 +196,7 @@ namespace Utils.Geography.Model
 			}
 		}
 
-		public sealed override string ToString() => ToString(null);
+		public sealed override string ToString() => ToString("0.#####");
 		public string ToString(string format) => ToString(format, null);
 		public virtual string ToString(string format, IFormatProvider formatProvider)
 		{

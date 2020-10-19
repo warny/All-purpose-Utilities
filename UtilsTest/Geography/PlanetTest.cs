@@ -60,7 +60,15 @@ namespace UtilsTest.Geography
 				(new GeoVector(-90, 0, 0), System.Math.PI / 2, new GeoVector(0, 180, 0)),
 				(new GeoVector(-90, 90, 0), System.Math.PI / 2, new GeoVector(0, -90, 0)),
 				(new GeoVector(-90, 180, 0), System.Math.PI / 2, new GeoVector(0, 0, 0)),
-				(new GeoVector(-90, -90, 0), System.Math.PI / 2, new GeoVector(0, 90, 0))
+				(new GeoVector(-90, -90, 0), System.Math.PI / 2, new GeoVector(0, 90, 0)),
+				(new GeoVector(0, 0, 45), System.Math.PI / 2, new GeoVector(45, 90, 90)),
+				(new GeoVector(0, 0, -45), System.Math.PI / 2, new GeoVector(45, -90, -90)),
+				(new GeoVector(0, 0, 135), System.Math.PI / 2, new GeoVector(-45, 90, 90)),
+				(new GeoVector(0, 0, -135), System.Math.PI / 2, new GeoVector(-45, -90, -90)),
+				(new GeoVector(0, 0, 45), System.Math.PI, new GeoVector(0, 180, -135)),
+				(new GeoVector(0, 0, -45), System.Math.PI, new GeoVector(0, 180, 135)),
+				(new GeoVector(0, 0, 135), System.Math.PI, new GeoVector(0, 180, -45)),
+				(new GeoVector(0, 0, -135), System.Math.PI, new GeoVector(0, 180, 45)),
 			};
 
 			Planet planet = new Planet(1);
@@ -76,17 +84,18 @@ namespace UtilsTest.Geography
 		{
 			Planet earth = Planets.Earth;
 			GeoPoint paris = new GeoPoint("N48°51',E2°21'");
-			GeoPoint newyork = new GeoPoint("N40°43',O74°00'");
+			GeoPoint newyork = new GeoPoint("N40°43',W74°00'");
 
 			GeoPoint baghdad = new GeoPoint("N35°,E45°");
 			GeoPoint osaka = new GeoPoint("N35°,E135°");
 
-			GeoVector vector = new GeoVector(paris, newyork);
-			Assert.AreEqual(290, vector.Bearing, 1);
+			GeoVector vector1 = new GeoVector(paris, newyork);
+			Assert.AreEqual(291.7, vector1.Bearing, 0.1);
+			Assert.AreEqual(newyork, new GeoPoint(earth.Travel(vector1, earth.Distance(paris, newyork))));
 
 			GeoVector vector2 = new GeoVector(baghdad, osaka);
-			Assert.AreEqual(300, vector2.Bearing, 1);
-
+			Assert.AreEqual(60.1, vector2.Bearing, 0.1);
+			Assert.AreEqual(osaka, new GeoPoint(earth.Travel(vector2, earth.Distance(baghdad, osaka))));
 		}
 	}
 }

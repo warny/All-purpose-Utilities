@@ -105,7 +105,7 @@ namespace Utils.Geography.Model
 
 			double y = degree.Sin(B.λ - A.λ) * degree.Cos(B.φ);
 			double x = degree.Cos(A.φ) * degree.Sin(B.φ) - degree.Sin(A.φ) * degree.Cos(B.φ) * degree.Cos(B.λ - A.λ);
-			return degree.Normalize0To2Max(-degree.Atan2(y, x));
+			return degree.Normalize0To2Max(degree.Atan2(y, x));
 		}
 
 		public GeoVector Travel(double angle)
@@ -114,7 +114,7 @@ namespace Utils.Geography.Model
 			bool negative = Math.Sign(angle) == -1;
 			angle = degree.Normalize0To2Max(angle);
 			if (angle == 0) return this;
-			if (angle == 180) return new GeoVector(-this.Latitude, -this.Longitude, -this.Bearing);
+			if (angle == 180) return new GeoVector(-this.Latitude, this.Longitude + 180, this.Bearing + 180);
 			double bearingcorrection = (angle <= 180) ^ negative ? 180 : 0;
 
 			if (this.φ == 90) return new GeoVector(90 - angle, bearingcorrection + this.λ, bearingcorrection);
