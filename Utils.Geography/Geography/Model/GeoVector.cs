@@ -153,13 +153,19 @@ namespace Utils.Geography.Model
 			return new GeoVector(arrival, bearing);
 		}
 
+		public GeoVector Travel(GeoPoint other)
+			=> Travel(this.AngleWith(other));
+
 		/// <summary>
 		/// Calcule les intersections entre 2 grands cercles
 		/// </summary>
 		/// <param name="other">Grand cercle à comparer</param>
-		/// <returns></returns>
+		/// <returns>Intersection <see cref="GeoPoint"/> or <see cref="null"/> if great circles are the same</returns>
 		public GeoPoint[] Intersections(GeoVector other)
 		{
+			var temp = this.Travel(other);
+			if ((GeoPoint)temp == (GeoPoint)other && MathEx.Mod(temp.Bearing, 180) == MathEx.Mod(other.Bearing, 180)) return null;
+
 			double Δφ = this.φ - other.φ;
 			double Δλ = this.λ - other.λ;
 

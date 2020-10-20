@@ -47,13 +47,8 @@ namespace Utils.Geography.Model
 		/// <param name="geoPoint1"></param>
 		/// <param name="geoPoint2"></param>
 		/// <returns>Distance in meters</returns>
-		public double Distance( GeoPoint geoPoint1, GeoPoint geoPoint2 )
-		{
-			return Math.Acos(
-					Math.Sin(geoPoint1.Latitude * MathEx.Deg2Rad) * Math.Sin(geoPoint2.Latitude * MathEx.Deg2Rad)
-					+ Math.Cos(geoPoint1.Latitude * MathEx.Deg2Rad) * Math.Cos(geoPoint2.Latitude * MathEx.Deg2Rad) * Math.Cos((geoPoint1.Longitude - geoPoint2.Longitude) * MathEx.Deg2Rad)
-				) * EquatorialRadius;
-		}
+		public double Distance(GeoPoint geoPoint1, GeoPoint geoPoint2) 
+			=> geoPoint1.AngleWith(geoPoint2) * EquatorialRadius * MathEx.Deg2Rad;
 
 		public GeoVector Travel(GeoVector geoVector, double distance) 
 			=> geoVector.Travel(MathEx.Rad2Deg * distance / EquatorialRadius);

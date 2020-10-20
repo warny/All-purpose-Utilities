@@ -162,6 +162,14 @@ namespace Utils.Geography.Model
 			this.Longitude = longitude;
 		}
 
+		public double AngleWith(GeoPoint other)
+		{
+			return degree.Acos(
+					degree.Sin(this.Latitude) * degree.Sin(other.Latitude)
+					+ degree.Cos(this.Latitude) * degree.Cos(other.Latitude) * degree.Cos(this.Longitude - other.Longitude)
+				);
+		}
+
 		public override bool Equals(object obj)
 		{
 			if (this == obj) return true;
