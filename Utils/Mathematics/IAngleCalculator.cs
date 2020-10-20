@@ -34,22 +34,22 @@ namespace Utils.Mathematics
 			this.Graduation = Math.PI / StraightAngle;
 		}
 
-		public double Acos(double value) => MathEx.Round(Math.Acos(value) / Graduation, -10);
-		public double Asin(double value) => MathEx.Round(Math.Asin(value) / Graduation, -10);
-		public double Atan(double value) => MathEx.Round(Math.Atan(value) / Graduation, -10);
-		public double Acot(double value) => Math.Atan2(1, value);
-		public double Cos(double angle) => Math.Cos(angle * Graduation);
-		public double Sin(double angle) => Math.Sin(angle * Graduation);
-		public double Tan(double angle) => Math.Tan(angle * Graduation);
-		public double Cot(double angle) => 1 / Math.Tan(angle * Graduation);
-		public double Tanh(double angle) => Math.Tanh(angle * Graduation);
-		public double Sinh(double angle) => Math.Sinh(angle * Graduation);
-		public double Cosh(double angle) => Math.Cosh(angle * Graduation);
-		public double Atan2(double x, double y) => MathEx.Round(Math.Atan2(x, y) / Graduation, -10);
-		public double Acot2(double x, double y) => MathEx.Round(Math.Atan2(y, x) / Graduation, -10);
+		public virtual double Acos(double value) => MathEx.Round(Math.Acos(value) / Graduation, -10);
+		public virtual double Asin(double value) => MathEx.Round(Math.Asin(value) / Graduation, -10);
+		public virtual double Atan(double value) => MathEx.Round(Math.Atan(value) / Graduation, -10);
+		public virtual double Acot(double value) => Math.Atan2(1, value);
+		public virtual double Cos(double angle) => Math.Cos(angle * Graduation);
+		public virtual double Sin(double angle) => Math.Sin(angle * Graduation);
+		public virtual double Tan(double angle) => Math.Tan(angle * Graduation);
+		public virtual double Cot(double angle) => 1 / Math.Tan(angle * Graduation);
+		public virtual double Tanh(double angle) => Math.Tanh(angle * Graduation);
+		public virtual double Sinh(double angle) => Math.Sinh(angle * Graduation);
+		public virtual double Cosh(double angle) => Math.Cosh(angle * Graduation);
+		public virtual double Atan2(double x, double y) => MathEx.Round(Math.Atan2(x, y) / Graduation, -10);
+		public virtual double Acot2(double x, double y) => MathEx.Round(Math.Atan2(y, x) / Graduation, -10);
 
-		public double NormalizeMinToMax(double angle) => MathEx.Mod(angle + StraightAngle + Perigon, Perigon) - StraightAngle;
-		public double Normalize0To2Max(double angle) => MathEx.Mod(angle, Perigon);
+		public virtual double NormalizeMinToMax(double angle) => MathEx.Mod(angle + StraightAngle + Perigon, Perigon) - StraightAngle;
+		public virtual double Normalize0To2Max(double angle) => MathEx.Mod(angle, Perigon);
 
 		public static IAngleCalculator Radian => new Radian();
 		public static IAngleCalculator Degree => new Degree();
@@ -66,23 +66,25 @@ namespace Utils.Mathematics
 		public Grade() : base(400) { }
 	}
 
-	public class Radian : IAngleCalculator
+	public class Radian : Trigonometry
 	{
-		public double Acos(double value) => Math.Acos(value);
-		public double Asin(double value) => Math.Asin(value);
-		public double Atan(double value) => Math.Atan(value);
-		public double Acot(double value) => Math.Atan2(1, value);
-		public double Cos(double angle) => Math.Cos(angle);
-		public double Sin(double angle) => Math.Sin(angle);
-		public double Tan(double angle) => Math.Tan(angle);
-		public double Cot(double angle) => 1 / Math.Tan(angle);
-		public double Tanh(double angle) => Math.Tanh(angle);
-		public double Sinh(double angle) => Math.Sinh(angle);
-		public double Cosh(double angle) => Math.Cosh(angle);
-		public double Atan2(double x, double y) => Math.Atan2(x, y);
-		public double Acot2(double x, double y) => Math.Atan2(y, x);
+		public Radian() : base(Math.PI) { }
 
-		public double NormalizeMinToMax(double angle) => MathEx.Mod(angle + 3 * Math.PI, 2 * Math.PI) - Math.PI;
-		public double Normalize0To2Max(double angle) => MathEx.Mod(angle, 2 * Math.PI);
+		public override double Acos(double value) => Math.Acos(value);
+		public override double Asin(double value) => Math.Asin(value);
+		public override double Atan(double value) => Math.Atan(value);
+		public override double Acot(double value) => Math.Atan2(1, value);
+		public override double Cos(double angle) => Math.Cos(angle);
+		public override double Sin(double angle) => Math.Sin(angle);
+		public override double Tan(double angle) => Math.Tan(angle);
+		public override double Cot(double angle) => 1 / Math.Tan(angle);
+		public override double Tanh(double angle) => Math.Tanh(angle);
+		public override double Sinh(double angle) => Math.Sinh(angle);
+		public override double Cosh(double angle) => Math.Cosh(angle);
+		public override double Atan2(double x, double y) => Math.Atan2(x, y);
+		public override double Acot2(double x, double y) => Math.Atan2(y, x);
+
+		public override double NormalizeMinToMax(double angle) => MathEx.Mod(angle + 3 * Math.PI, 2 * Math.PI) - Math.PI;
+		public override double Normalize0To2Max(double angle) => MathEx.Mod(angle, 2 * Math.PI);
 	}
 }
