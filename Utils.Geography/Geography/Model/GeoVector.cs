@@ -9,16 +9,27 @@ using Utils.Mathematics;
 
 namespace Utils.Geography.Model
 {
+	/// <summary>
+	/// Vecteur de déplacement sur une géodésique shpérique
+	/// </summary>
+	/// <seealso cref="https://www.movable-type.co.uk/scripts/latlong.html"/>
 	public class GeoVector : GeoPoint, IEquatable<GeoVector>
 	{
+		/// <summary>
+		/// Cap en degree par rapport au nord, dans le sens des aiguille d'une montre
+		/// </summary>
 		public double Bearing { get; }
 
 		/// <summary>
-		/// Create a geoVector at given <paramref name="coordinates"/> heading to <paramref name="direction"/>
+		/// Cap en degree par rapport au nord, dans le sens des aiguille d'une montre
 		/// </summary>
-		/// <param name="latitude">Lattitude</param>
-		/// <param name="longitude">Longitude</param>
-		/// <param name="direction">Heading direction</param>
+		public double θ => Bearing;
+
+		/// <summary>
+		/// Create a geoVector at given <paramref name="coordinates"/> 
+		/// </summary>
+		/// <param name="coordinates">Coorduinates including bearing</param>
+		/// <param name="cultureInfos">culture used to parse coordinates</param>
 		public GeoVector(string coordinates, params CultureInfo[] cultureInfos) {
 			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
 
@@ -39,7 +50,7 @@ namespace Utils.Geography.Model
 		/// Create geovector at <paramref name="geoPoint"/> headind to <paramref name="bearing"/>
 		/// </summary>
 		/// <param name="geoPoint">Point</param>
-		/// <param name="bearing">Heading direction</param>
+		/// <param name="bearing">bearing direction</param>
 		public GeoVector(GeoPoint geoPoint, double bearing) : base(geoPoint)
 		{
 			Bearing = degree.Normalize0To2Max(bearing);
@@ -87,7 +98,7 @@ namespace Utils.Geography.Model
 		}
 
 		/// <summary>
-		/// Compute dearing from point A to point B
+		/// Compute bearing from point A to point B
 		/// </summary>
 		/// <param name="A">Start point</param>
 		/// <param name="B">End point</param>
@@ -108,6 +119,11 @@ namespace Utils.Geography.Model
 			return degree.Normalize0To2Max(degree.Atan2(y, x));
 		}
 
+		/// <summary>
+		/// Calcul le vecteur résultant d'un déplacement
+		/// </summary>
+		/// <param name="angle"></param>
+		/// <returns></returns>
 		public GeoVector Travel(double angle)
 		{
 
@@ -135,6 +151,44 @@ namespace Utils.Geography.Model
 			GeoPoint arrival = new GeoPoint(φ2, λ2);
 			double bearing = MathEx.Mod(bearingcorrection - ComputeBearing(arrival, this), 360);
 			return new GeoVector(arrival, bearing);
+		}
+
+		/// <summary>
+		/// Calcule les intersections entre 2 grands cercles
+		/// </summary>
+		/// <param name="other">Grand cercle à comparer</param>
+		/// <returns></returns>
+		public GeoPoint[] Intersections(GeoVector other)
+		{
+			double Δφ = this.φ - other.φ;
+			double Δλ = this.λ - other.λ;
+
+			double δ12 = 2 * degree.Asin(Math.Sqrt(Math.Pow(degree.Sin(Δφ / 2), 2) + degree.Cos(this.φ) * degree.Cos(other.φ) * Math.Pow(degree.Sin(Δλ / 2), 2))); //	angular dist. p1–p2
+			double θa = degree.Acos((degree.Sin(other.φ) - degree.Sin(this.φ) * degree.Cos(δ12)) / (degree.Sin(δ12) * degree.Cos(this.φ)));
+			double θb = degree.Acos((degree.Sin(this.φ) - degree.Sin(other.φ) * degree.Cos(δ12)) / (degree.Sin(δ12) * degree.Cos(other.φ)));    // initial / final bearings between points 1 & 2
+			double θ12, θ21;
+			if (degree.Sin(other.λ - this.λ) > 0) {
+				θ12 = θa;
+				θ21 = 2* Math.PI - θb;
+			}
+			else {
+				θ12 = 2 * Math.PI - θa;
+				θ21 = θb;
+			}
+			double α1 = this.Bearing - θ12; //angle p2–p1–p3 
+			double α2 = θ21 - other.Bearing; //angle p1–p2–p3	
+
+
+			double α3 = degree.Acos(-degree.Cos(α1) * degree.Cos(α2) + degree.Sin(α1) * degree.Sin(α2) * degree.Cos(δ12));  //angle p1–p2–p3
+			double δ13 = degree.Atan2(degree.Sin (δ12) * degree.Sin (α1) * degree.Sin (α2), degree.Cos (α2) + degree.Cos (α1) * degree.Cos (α3));  //angular dist. p1–p3
+			double φ3 = degree.Asin(degree.Sin (this.φ) * degree.Cos (δ13) + degree.Cos (this.φ) * degree.Sin( δ13) * degree.Cos (this.Bearing)); 	//p3 lat
+			double Δλ13 = degree.Atan2(degree.Sin (this.Bearing) * degree.Sin (δ13) * degree.Cos (this.φ), degree.Cos (δ13) - degree.Sin (this.φ) * degree.Sin (φ3));   //long p1–p3
+			double λ3 = this.λ + Δλ13;
+
+			return new[] {
+				new GeoPoint(φ3, λ3),
+				new GeoPoint(-φ3, λ3 + 180),
+			};
 		}
 
 		public override bool Equals(object obj)
