@@ -164,7 +164,7 @@ namespace Utils.Geography.Model
 		public GeoPoint[] Intersections(GeoVector other)
 		{
 			var temp = this.Travel(other);
-			if ((GeoPoint)temp == (GeoPoint)other && MathEx.Mod(temp.Bearing, 180) == MathEx.Mod(other.Bearing, 180)) return null;
+			if (comparer.Equals(MathEx.Mod(temp.Bearing, 180), MathEx.Mod(other.Bearing, 180))) return null;
 
 			double Δφ = this.φ - other.φ;
 			double Δλ = this.λ - other.λ;
@@ -173,7 +173,7 @@ namespace Utils.Geography.Model
 			double θa = degree.Acos((degree.Sin(other.φ) - degree.Sin(this.φ) * degree.Cos(δ12)) / (degree.Sin(δ12) * degree.Cos(this.φ)));
 			double θb = degree.Acos((degree.Sin(this.φ) - degree.Sin(other.φ) * degree.Cos(δ12)) / (degree.Sin(δ12) * degree.Cos(other.φ)));    // initial / final bearings between points 1 & 2
 			double θ12, θ21;
-			if (degree.Sin(other.λ - this.λ) > 0) {
+			if (degree.Sin(Δλ) <= 0) {
 				θ12 = θa;
 				θ21 = 2* Math.PI - θb;
 			}
@@ -199,7 +199,7 @@ namespace Utils.Geography.Model
 
 		public override bool Equals(object obj)
 		{
-			if (this == obj) return true;
+			if (ReferenceEquals(this, obj)) return true;
 			if (obj is GeoVector p) return Equals(p);
 			return base.Equals(obj);
 		}

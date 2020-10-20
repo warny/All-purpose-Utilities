@@ -172,7 +172,7 @@ namespace Utils.Geography.Model
 
 		public override bool Equals(object obj)
 		{
-			if (this == obj) return true;
+			if (ReferenceEquals(this, obj)) return true;
 			if (obj is GeoPoint p) return Equals(p);
 			return false;
 		}
