@@ -136,5 +136,39 @@ namespace UtilsTest.Net
 			Assert.AreEqual("password", builder.Password);
 			Assert.AreEqual("http://username:password@example.com/", builder.ToString());
 		}
+
+		[TestMethod]
+		public void AddFragmentTest()
+		{
+			var builder = new Utils.Net.UriBuilder("http://example.com");
+			builder.Fragment = "test";
+			Assert.AreEqual("http://example.com/#test", builder.ToString());
+		}
+
+		[TestMethod]
+		public void ReadFragmentTest()
+		{
+			var builder = new Utils.Net.UriBuilder("http://example.com#test");
+			Assert.AreEqual("test", builder.Fragment);
+			Assert.AreEqual("http://example.com/#test", builder.ToString());
+		}
+
+		[TestMethod]
+		public void ModifyFragmentTest()
+		{
+			var builder = new Utils.Net.UriBuilder("http://example.com#test1");
+			Assert.AreEqual("test1", builder.Fragment);
+			builder.Fragment = "test2";
+			Assert.AreEqual("http://example.com/#test2", builder.ToString());
+		}
+
+		[TestMethod]
+		public void RemoveFragmentTest()
+		{
+			var builder = new Utils.Net.UriBuilder("http://example.com#test");
+			Assert.AreEqual("test", builder.Fragment);
+			builder.Fragment = "";
+			Assert.AreEqual("http://example.com/", builder.ToString());
+		}
 	}
 }

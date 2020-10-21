@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using Utils.Objects;
 
 namespace Utils.Net
 {
@@ -39,7 +40,7 @@ namespace Utils.Net
 				this.Password = System.Web.HttpUtility.UrlDecode(userInfos[1]);
 			}
 			this.QueryString =  System.Web.HttpUtility.ParseQueryString(uri.Query);
-			this.Fragment = uri.Fragment;
+			this.Fragment = uri.Fragment?.StartsWith("#") ?? false ? uri.Fragment.Substring(1) : uri.Fragment;
 		}
 
 		public UriBuilder( string uriString ) : this(new Uri(uriString)) {}
@@ -71,7 +72,7 @@ namespace Utils.Net
 				.SelectMany(key => QueryString.GetValues(key).Select(value => $"{System.Web.HttpUtility.UrlEncode(key)}={System.Web.HttpUtility.UrlEncode(value)}"));
 
 			builder.Query = string.Join("&", queryElements);
-			builder.Fragment  = Fragment;
+			builder.Fragment = Fragment.IsNullOrWhiteSpace() ? "" : "#" + Fragment;
 
 			return builder.ToString();
 		}
