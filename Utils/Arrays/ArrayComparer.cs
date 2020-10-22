@@ -12,6 +12,7 @@ namespace Utils.Arrays
 		private readonly Func<T, T, bool> areEquals;
 		private readonly Func<T, int> getHashCode;
 		private readonly Type typeOfT = typeof(T);
+		private readonly object subComparer;
 
 		public ArrayEqualityComparer()
 		{
@@ -22,9 +23,9 @@ namespace Utils.Arrays
 				var typeOfElement = typeOfT.GetElementType();
 				Type equalityComparerGenericType = typeof(ArrayEqualityComparer<>);
 				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
-				object subComparer = Activator.CreateInstance(equalityComparerType);
-				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals)).CreateDelegate(typeof(Func<T, T, bool>));
-				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode)).CreateDelegate(typeof(Func<T, int>));
+				subComparer = Activator.CreateInstance(equalityComparerType);
+				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
+				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), new[] { typeOfT }).CreateDelegate(typeof(Func<T, int>), subComparer);
 				return;
 			}
 			else areEquals = (e1, e2) => e1.Equals(e2);

@@ -37,7 +37,7 @@ namespace Utils.Geography.Model
 	public class GeoPoint : IEquatable<GeoPoint>, IFormattable
 	{
 		protected static readonly IAngleCalculator degree = Trigonometry.Degree;
-		protected static readonly DoubleComparer comparer = new DoubleComparer(10);
+		protected static readonly DoubleComparer comparer = new DoubleComparer(5);
 
 		protected static string[] PositiveLatitude = new[] { "+", "N" };
 		protected static string[] NegativeLatitude = new[] { "-", "S" };

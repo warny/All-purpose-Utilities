@@ -72,10 +72,12 @@ namespace UtilsTest.Geography
 			};
 
 			Planet planet = new Planet(1);
+			int i = 0;
 			foreach (var move in moves)
 			{
 				var destination = planet.Travel(move.start, move.distance);
-				Assert.AreEqual(move.result, destination);
+				Assert.AreEqual(move.result, destination, $"{i} - ({move.start}) Travel of {move.distance}");
+				i++;
 			}
 		}
 

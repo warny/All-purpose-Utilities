@@ -148,8 +148,10 @@ namespace Utils.Geography.Model
 					degree.Cos(angle) - degree.Sin(φ) * degree.Sin(φ2)
 				);
 
+			φ2 = Math.Round(φ2, 5);
+			λ2 = Math.Round(λ2, 5);
 			GeoPoint arrival = new GeoPoint(φ2, λ2);
-			double bearing = MathEx.Mod(bearingcorrection - ComputeBearing(arrival, this), 360);
+			double bearing = MathEx.Mod(bearingcorrection + ComputeBearing(arrival, this), 360);
 			return new GeoVector(arrival, bearing);
 		}
 
