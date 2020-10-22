@@ -164,7 +164,16 @@ namespace Utils.Geography.Model
 		public GeoPoint[] Intersections(GeoVector other)
 		{
 			var temp = this.Travel(other);
+			//si les deux vecteurs décrivent le même grand cercle, il n'est pas possible de renvoyer les points d'intersection
 			if (comparer.Equals(MathEx.Mod(temp.Bearing, 180), MathEx.Mod(other.Bearing, 180))) return null;
+
+			//si les deux vecteurs suivents des méridiens, ils se croisents aux pôles
+			if (MathEx.Mod(this.Bearing, 180) == 0 && MathEx.Mod(other.Bearing, 180) == 0) {
+				return new[] {
+					new GeoPoint(90, 0),
+					new GeoPoint(-90, 180)
+				};
+			}
 
 			double Δφ = this.φ - other.φ;
 			double Δλ = this.λ - other.λ;
@@ -175,10 +184,10 @@ namespace Utils.Geography.Model
 			double θ12, θ21;
 			if (degree.Sin(Δλ) <= 0) {
 				θ12 = θa;
-				θ21 = 2* Math.PI - θb;
+				θ21 = 360 - θb;
 			}
 			else {
-				θ12 = 2 * Math.PI - θa;
+				θ12 = 360 - θa;
 				θ21 = θb;
 			}
 			double α1 = this.Bearing - θ12; //angle p2–p1–p3 
@@ -190,6 +199,9 @@ namespace Utils.Geography.Model
 			double φ3 = degree.Asin(degree.Sin (this.φ) * degree.Cos (δ13) + degree.Cos (this.φ) * degree.Sin( δ13) * degree.Cos (this.Bearing)); 	//p3 lat
 			double Δλ13 = degree.Atan2(degree.Sin (this.Bearing) * degree.Sin (δ13) * degree.Cos (this.φ), degree.Cos (δ13) - degree.Sin (this.φ) * degree.Sin (φ3));   //long p1–p3
 			double λ3 = this.λ + Δλ13;
+
+			φ3 = Math.Round(φ3, 5);
+			λ3 = Math.Round(λ3, 5);
 
 			return new[] {
 				new GeoPoint(φ3, λ3),

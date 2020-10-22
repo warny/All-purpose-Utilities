@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Utils.Arrays;
 using Utils.Geography.Model;
 using Utils.Mathematics;
 
@@ -74,6 +75,35 @@ namespace UtilsTest.Geography
 				Assert.AreEqual(MathEx.Mod(vector.direction, 360), geoVector.Bearing);
 				Assert.AreEqual(vector.coordinates, geoVector.ToString());
 				Assert.AreEqual(vector.dcoordinates, geoVector.ToString("d"));
+			}
+		}
+
+		[TestMethod]
+		public void GeoVectorIntersectionTest()
+		{
+			var tests = new (GeoVector v1, GeoVector v2, GeoPoint[] intersections)[] {
+				(new GeoVector(0, 0, 90), new GeoVector(0, 0, 90), null),
+				//(new GeoVector(0, 90, 90), new GeoVector(0, 0, 90), null),
+				//(new GeoVector(0, 90, 90), new GeoVector(0, 0, 270), null),
+				//(new GeoVector(0, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0,180) }),
+				//(new GeoVector(90, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0,180) }),
+				//(new GeoVector(0, 0, 0), new GeoVector(0, 90, 0), new []{ new GeoPoint(90, 0), new GeoPoint(-90,0) }),
+				(new GeoVector(45, 0, 90), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 90), new GeoPoint(0,-90) }),
+				(new GeoVector(45, 0, 90), new GeoVector(-45, 0, 90), new []{ new GeoPoint(0, 90), new GeoPoint(0,-90) }),
+			};
+
+			var geoPointsComparer = new ArrayEqualityComparer<GeoPoint>();
+
+			foreach (var test in tests)
+			{
+				var intersections = test.v1.Intersections(test.v2);
+				bool equals = geoPointsComparer.Equals(test.intersections, intersections);
+				if (!equals)
+				{
+					string strTarget = "(" + string.Join("), (", (IEnumerable<GeoPoint>)test.intersections) + ")";
+					string strResult = "(" + string.Join("), (", (IEnumerable<GeoPoint>)intersections) + ")";
+					Assert.Fail("Result [{0}] differs from target [{1}]", strResult, strTarget);
+				}
 			}
 		}
 	}

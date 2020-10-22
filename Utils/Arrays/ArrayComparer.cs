@@ -11,11 +11,22 @@ namespace Utils.Arrays
 	{
 		private readonly Func<T, T, bool> areEquals;
 		private readonly Func<T, int> getHashCode;
+		private readonly Type typeOfT = typeof(T);
 
 		public ArrayEqualityComparer()
 		{
-			if (typeof(IEquatable<T>).IsAssignableFrom(typeof(T))) areEquals = (e1, e2) => ((IEquatable<T>)e1).Equals(e2);
-			else if (typeof(IComparable<T>).IsAssignableFrom(typeof(T))) areEquals = (e1, e2) => ((IComparable<T>)e1).Equals(e2);
+			if (typeof(IEquatable<T>).IsAssignableFrom(typeOfT)) areEquals = (e1, e2) => ((IEquatable<T>)e1).Equals(e2);
+			else if (typeof(IComparable<T>).IsAssignableFrom(typeOfT)) areEquals = (e1, e2) => ((IComparable<T>)e1).Equals(e2);
+			else if (typeOfT.IsArray)
+			{
+				var typeOfElement = typeOfT.GetElementType();
+				Type equalityComparerGenericType = typeof(ArrayEqualityComparer<>);
+				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
+				object subComparer = Activator.CreateInstance(equalityComparerType);
+				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals)).CreateDelegate(typeof(Func<T, T, bool>));
+				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode)).CreateDelegate(typeof(Func<T, int>));
+				return;
+			}
 			else areEquals = (e1, e2) => e1.Equals(e2);
 
 			getHashCode = e => e.GetHashCode();

@@ -177,8 +177,9 @@ namespace Utils.Geography.Model
 			return false;
 		}
 		public bool Equals(GeoPoint other) 
-			=> comparer.Equals(this.Latitude, other.Latitude)
-				&& comparer.Equals(this.Longitude, other.Longitude);
+			=> (comparer.Equals(this.Latitude, other.Latitude) && comparer.Equals(this.Longitude, other.Longitude))
+			|| (this.Latitude == 90 && other.Latitude == 90)
+			|| (this.Latitude == -90 && other.Latitude == -90);
 
 		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.Latitude, this.Longitude);
 
