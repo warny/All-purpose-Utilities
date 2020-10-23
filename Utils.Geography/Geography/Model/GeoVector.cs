@@ -155,9 +155,6 @@ namespace Utils.Geography.Model
 			return new GeoVector(arrival, bearing);
 		}
 
-		public GeoVector Travel(GeoPoint other)
-			=> Travel(this.AngleWith(other));
-
 		/// <summary>
 		/// Calcule les intersections entre 2 grands cercles
 		/// </summary>
@@ -165,15 +162,39 @@ namespace Utils.Geography.Model
 		/// <returns>Intersection <see cref="GeoPoint"/> or <see cref="null"/> if great circles are the same</returns>
 		public GeoPoint[] Intersections(GeoVector other)
 		{
-			var temp = this.Travel(other);
+			var temp = (a: Travel(this.AngleWith(other)), b: (-this).Travel(this.AngleWith(other)));
 			//si les deux vecteurs décrivent le même grand cercle, il n'est pas possible de renvoyer les points d'intersection
-			if (comparer.Equals(MathEx.Mod(temp.Bearing, 180), MathEx.Mod(other.Bearing, 180))) return null;
+			if (other.In(temp.a, -temp.a, temp.b, -temp.b))
+			{
+				return null;
+			}
+
 
 			//si les deux vecteurs suivents des méridiens, ils se croisents aux pôles
 			if (MathEx.Mod(this.Bearing, 180) == 0 && MathEx.Mod(other.Bearing, 180) == 0) {
 				return new[] {
 					new GeoPoint(90, 0),
 					new GeoPoint(-90, 180)
+				};
+			}
+
+			if (MathEx.Mod(this.Bearing, 180) == 0)
+			{
+				var result = other.Travel(this.λ - other.λ);
+
+				return new[] {
+					new GeoPoint(result.φ, result.λ),
+					new GeoPoint(-result.φ, result.λ + 180),
+				};
+			}
+
+			if (MathEx.Mod(other.Bearing, 180) == 0)
+			{
+				var result = this.Travel(this.λ - other.λ);
+
+				return new[] {
+					new GeoPoint(result.φ, result.λ),
+					new GeoPoint(-result.φ, result.λ + 180),
 				};
 			}
 
@@ -223,5 +244,7 @@ namespace Utils.Geography.Model
 
 		public bool Equals(GeoVector other) 
 			=> comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
+
+		public static GeoVector operator -(GeoVector geoVector) => new GeoVector(geoVector.φ, geoVector.λ, 180 + geoVector.θ);
 	}
 }

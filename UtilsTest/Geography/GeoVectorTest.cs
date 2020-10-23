@@ -83,13 +83,16 @@ namespace UtilsTest.Geography
 		{
 			var tests = new (GeoVector v1, GeoVector v2, GeoPoint[] intersections)[] {
 				(new GeoVector(0, 0, 90), new GeoVector(0, 0, 90), null),
-				//(new GeoVector(0, 90, 90), new GeoVector(0, 0, 90), null),
-				//(new GeoVector(0, 90, 90), new GeoVector(0, 0, 270), null),
-				//(new GeoVector(0, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0,180) }),
-				//(new GeoVector(90, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0,180) }),
-				//(new GeoVector(0, 0, 0), new GeoVector(0, 90, 0), new []{ new GeoPoint(90, 0), new GeoPoint(-90,0) }),
-				(new GeoVector(45, 0, 90), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 90), new GeoPoint(0,-90) }),
-				(new GeoVector(45, 0, 90), new GeoVector(-45, 0, 90), new []{ new GeoPoint(0, 90), new GeoPoint(0,-90) }),
+				(new GeoVector(0, 90, 90), new GeoVector(0, 0, 90), null),
+				(new GeoVector(0, 90, 90), new GeoVector(0, 0, 270), null),
+				(new GeoVector(0, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0, 180) }),
+				(new GeoVector(90, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0, 180) }),
+				(new GeoVector(0, 0, 0), new GeoVector(0, 90, 0), new []{ new GeoPoint(90, 0), new GeoPoint(-90, 0) }),
+				(new GeoVector(45, 0, 90), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 90), new GeoPoint(0, -90) }),
+				(new GeoVector(45, 0, 90), new GeoVector(-45, 0, 90), new []{ new GeoPoint(0, 90), new GeoPoint(0, -90) }),
+				(new GeoVector(45, 0, 90), new GeoVector(0, 90, 0), new []{ new GeoPoint(0, -90), new GeoPoint(0, 90) }),
+				(new GeoVector(45, 0, 90), new GeoVector(0, 0, 0), new []{ new GeoPoint(45, 0), new GeoPoint(-45, 180) }),
+				(new GeoVector(0, 90, 135), new GeoVector(0, 0, 0), new []{ new GeoPoint(-45, 180), new GeoPoint(45, 0) }),
 			};
 
 			var geoPointsComparer = new ArrayEqualityComparer<GeoPoint>();
@@ -100,8 +103,8 @@ namespace UtilsTest.Geography
 				bool equals = geoPointsComparer.Equals(test.intersections, intersections);
 				if (!equals)
 				{
-					string strTarget = "(" + string.Join("), (", (IEnumerable<GeoPoint>)test.intersections) + ")";
-					string strResult = "(" + string.Join("), (", (IEnumerable<GeoPoint>)intersections) + ")";
+					string strTarget = test.intersections == null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint>)test.intersections) + ")";
+					string strResult = intersections == null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint>)intersections) + ")";
 					Assert.Fail("Result [{0}] differs from target [{1}]", strResult, strTarget);
 				}
 			}
