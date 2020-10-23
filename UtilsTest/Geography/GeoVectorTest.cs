@@ -93,6 +93,7 @@ namespace UtilsTest.Geography
 				(new GeoVector(45, 0, 90), new GeoVector(0, 90, 0), new []{ new GeoPoint(0, -90), new GeoPoint(0, 90) }),
 				(new GeoVector(45, 0, 90), new GeoVector(0, 0, 0), new []{ new GeoPoint(45, 0), new GeoPoint(-45, 180) }),
 				(new GeoVector(0, 90, 135), new GeoVector(0, 0, 0), new []{ new GeoPoint(-45, 180), new GeoPoint(45, 0) }),
+				(new GeoVector(0, 0, 135), new GeoVector(0, -90, 0), new []{ new GeoPoint(-45, 90), new GeoPoint(45, 270) }),
 			};
 
 			var geoPointsComparer = new ArrayEqualityComparer<GeoPoint>();

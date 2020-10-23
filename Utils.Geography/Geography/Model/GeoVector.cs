@@ -12,7 +12,7 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// Vecteur de déplacement sur une géodésique shpérique
 	/// </summary>
-	/// <seealso cref="https://www.movable-type.co.uk/scripts/latlong.html"/>
+	/// <remarks>This class has been fully ported from javascript presented in https://www.movable-type.co.uk/scripts/latlong.html </remarks>
 	public class GeoVector : GeoPoint, IEquatable<GeoVector>
 	{
 		/// <summary>
