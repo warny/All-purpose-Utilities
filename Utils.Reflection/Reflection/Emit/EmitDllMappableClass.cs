@@ -31,6 +31,7 @@ namespace Utils.Reflection.Reflection.Emit
 
 				StringBuilder csCode = new StringBuilder();
 				csCode.AppendLine("namespace dllMapperClassses {");
+				csCode.AppendLine("[System.Runtime.CompilerServices.CompilerGenerated]");
 				csCode.AppendLine($"\tpublic class {returnedClassName} : {typeof(DllMapper).FullName}, {type.FullName}");
 				csCode.AppendLine("\t{");
 

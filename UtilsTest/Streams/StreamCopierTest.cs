@@ -26,23 +26,16 @@ namespace UtilsTest.Streams
 
 				StreamCopier copier = new StreamCopier(target1, target2);
 
-				copier.WriteByte(0);
 				copier.Write(reference, 0, reference.Length);
 				copier.Flush();
 
-				Assert.AreEqual(10, target1.Length);
-				Assert.AreEqual(10, target2.Length);
-				Assert.AreEqual(10, target1.Position);
-				Assert.AreEqual(10, target2.Position);
+				Assert.AreEqual(reference.Length, target1.Length);
+				Assert.AreEqual(reference.Length, target2.Length);
+				Assert.AreEqual(reference.Length, target1.Position);
+				Assert.AreEqual(reference.Length, target2.Position);
 
-				target1.Position = 0;
-				target2.Position = 0;
-
-				byte[] test1 = new byte[10];
-				byte[] test2 = new byte[10];
-
-				target1.Read(test1, 0, 10);
-				target2.Read(test2, 0, 10);
+				byte[] test1 = target1.ToArray();
+				byte[] test2 = target2.ToArray();
 
 				var comparer = new ArrayEqualityComparer<byte>();
 
