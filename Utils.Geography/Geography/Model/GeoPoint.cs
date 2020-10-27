@@ -17,6 +17,7 @@ using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -151,6 +152,12 @@ namespace Utils.Geography.Model
 				throw new ArgumentException($"Invalid modifier {modifier} for {coordinateDirection}", coordinateValue);
 			}
 			return coordinate;
+		}
+
+		public void Deconstruct(out double latitude, out double longitude)
+		{
+			latitude = Latitude;
+			longitude = Longitude;
 		}
 
 		protected void Initialize(double latitude, double longitude)

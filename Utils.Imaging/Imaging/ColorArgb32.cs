@@ -209,5 +209,20 @@ namespace Utils.Imaging
 					MathEx.Min(this.Blue, other.Blue)
 				);
 		}
+
+		public void Deconstruct(out byte alpha, out byte red, out byte green, out byte blue)
+		{
+			alpha = Alpha;
+			red = Red;
+			green = Green;
+			blue = Blue;
+		}
+
+		public void Deconstruct(out byte red, out byte green, out byte blue)
+		{
+			red = Red;
+			green = Green;
+			blue = Blue;
+		}
 	}
 }

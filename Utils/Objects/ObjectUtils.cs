@@ -78,5 +78,19 @@ namespace Utils.Objects
 			}
 			return result;
 		}
+
+		public static byte[] NextBytes(this Random r, int size)
+		{
+			byte[] result = new byte[size];
+			r.NextBytes(result);
+			return result;
+		}
+
+		public static byte[] NextBytes(this Random r, int minSize, int maxSize)
+		{
+			byte[] result = new byte[r.Next(minSize, maxSize)];
+			r.NextBytes(result);
+			return result;
+		}
 	}
 }

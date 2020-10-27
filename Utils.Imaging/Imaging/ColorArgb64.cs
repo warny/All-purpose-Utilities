@@ -204,5 +204,19 @@ namespace Utils.Imaging
 				);
 		}
 
+		public void Deconstruct(out ushort alpha, out ushort red, out ushort green, out ushort blue)
+		{
+			alpha = Alpha;
+			red = Red;
+			green = Green;
+			blue = Blue;
+		}
+
+		public void Deconstruct(out ushort red, out ushort green, out ushort blue)
+		{
+			red = Red;
+			green = Green;
+			blue = Blue;
+		}
 	}
 }

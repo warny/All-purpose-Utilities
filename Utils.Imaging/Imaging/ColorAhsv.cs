@@ -23,11 +23,7 @@ namespace Utils.Imaging
 		public double Hue
 		{
 			get => hue;
-
-			set
-			{
-				this.hue = Math.IEEERemainder(value, 360.0);
-			}
+			set => this.hue = MathEx.Mod(value, 360.0);
 		}
 
 		public double Saturation
@@ -59,7 +55,7 @@ namespace Utils.Imaging
 			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
 
 			this.alpha = alpha;
-			this.Hue = Math.IEEERemainder(hue, 360.0);
+			this.Hue = MathEx.Mod(hue, 360.0);
 			this.saturation = saturation;
 			this.value = value;
 		}
@@ -71,7 +67,7 @@ namespace Utils.Imaging
 			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
 
 			this.alpha = 1;
-			this.Hue = Math.IEEERemainder(hue, 360.0);
+			this.Hue = MathEx.Mod(hue, 360.0);
 			this.saturation = saturation;
 			this.value = value;
 		}
@@ -138,5 +134,19 @@ namespace Utils.Imaging
 
 		public override string ToString() => $"a:{alpha} h:{hue} s:{saturation} v:{value}";
 
+		public void Deconstruct(out double alpha, out double hue, out double saturation, out double value)
+		{
+			alpha = Alpha;
+			hue = Hue;
+			saturation = Saturation;
+			value = Value;
+		}
+
+		public void Deconstruct(out double hue, out double saturation, out double value)
+		{
+			hue = Hue;
+			saturation = Saturation;
+			value = Value;
+		}
 	}
 }

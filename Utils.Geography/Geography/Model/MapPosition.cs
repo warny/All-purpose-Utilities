@@ -46,9 +46,9 @@ namespace Utils.Geography.Model
 		public MapPosition ( GeoPoint GeoPoint, byte zoomLevel )
 		{
 			if (GeoPoint == null) {
-				throw new NullReferenceException("GeoPoint must not be null");
+				throw new ArgumentNullException(nameof(GeoPoint));
 			} else if (zoomLevel < 0) {
-				throw new ArgumentException("zoomLevel must not be negative: " + zoomLevel, "zoomLevel");
+				throw new ArgumentException("zoomLevel must not be negative: " + zoomLevel, nameof(zoomLevel));
 			}
 			this.GeoPoint = GeoPoint;
 			this.ZoomLevel = zoomLevel;

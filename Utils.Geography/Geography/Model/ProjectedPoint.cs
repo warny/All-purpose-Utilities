@@ -51,6 +51,19 @@ namespace Utils.Geography.Model
 			this.Y = y;
 		}
 
+		public void Deconstruct(out double x, out double y)
+		{
+			x = X;
+			y = Y;
+		}
+
+		public void Deconstruct(out double x, out double y, out IProjectionTransformation projection)
+		{
+			x = X;
+			y = Y;
+			projection = Projection;
+		}
+
 		public bool Equals( ProjectedPoint point )
 		{
 			if (this.X != point.X) {

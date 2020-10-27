@@ -89,6 +89,12 @@ namespace Utils.Geography.Model
 			Bearing = degree.Normalize0To2Max(bearing);
 		}
 
+		public void Deconstruct(out double latitude, out double longitude, out double bearing) {
+			latitude = Latitude;
+			longitude = Longitude;
+			bearing = Bearing;
+		}
+
 		public override string ToString(string format, IFormatProvider formatProvider)
 		{
 			formatProvider ??= CultureInfo.InvariantCulture;

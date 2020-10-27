@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 namespace Utils.Imaging
 {
@@ -38,6 +39,8 @@ namespace Utils.Imaging
 		IColorArgb<T> Over(IColorArgb<T> other);
 		IColorArgb<T> Add(IColorArgb<T> other);
 		IColorArgb<T> Substract(IColorArgb<T> other);
+		void Deconstruct(out T alpha, out T red, out T green, out T blue);
+		void Deconstruct(out T red, out T green, out T blue);
 	}
 
 	public interface IColorAhsv<T> where T : struct
@@ -46,6 +49,8 @@ namespace Utils.Imaging
 		T Hue { get; set; }
 		T Saturation { get; set; }
 		T Value { get; set; }
+		void Deconstruct(out T alpha, out T hue, out T saturation, out T value);
+		void Deconstruct(out T hue, out T saturation, out T value);
 	}
 
 }

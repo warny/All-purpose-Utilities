@@ -74,5 +74,20 @@
 		public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
 
 		public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
+
+		public void Deconstruct(out byte alpha, out byte hue, out byte saturation, out byte value)
+		{
+			alpha = Alpha;
+			hue = Hue;
+			saturation = Saturation;
+			value = Value;
+		}
+
+		public void Deconstruct(out byte hue, out byte saturation, out byte value)
+		{
+			hue = Hue;
+			saturation = Saturation;
+			value = Value;
+		}
 	}
 }
