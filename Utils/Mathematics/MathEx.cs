@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -96,7 +97,7 @@ namespace Utils.Mathematics
 		public static double Round( double value, double @base )
 		{
 			double middle = @base/2;
-			double r = Math.IEEERemainder(value, @base);
+			double r = Mod(value, @base);
 			if (r < middle) {
 				return value - r;
 			} else {
@@ -354,15 +355,80 @@ namespace Utils.Mathematics
 		#endregion
 
 		#region comparaisons
+		/// <summary>
+		/// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/> inclus
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value">Valeur à comparer</param>
+		/// <param name="lowerBound">Valeur minimale</param>
+		/// <param name="upperBound">Valeur Maximale</param>
+		/// <returns></returns>
 		public static bool Between<T>( this T value, T lowerBound, T upperBound ) where T : IComparable<T>
 		{
 			return value.CompareTo(lowerBound) >= 0 && value.CompareTo(upperBound) <= 0;
 		}
 
+		/// <summary>
+		/// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/>
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value">Valeur à comparer</param>
+		/// <param name="lowerBound">Valeur minimale</param>
+		/// <param name="upperBound">Valeur Maximale</param>
+		/// <param name="includeLowerBound">Includ la valeur minimale</param>
+		/// <param name="includeUpperBound">Includ la valeur maximale</param>
+		/// <returns></returns>
+		public static bool Between<T>(this T value, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true) where T : IComparable<T>
+		{
+			var low = value.CompareTo(lowerBound);
+			if (low < 0) return false;
+			if (!includeLowerBound && low == 0) return false;
+
+			var up = value.CompareTo(upperBound);
+			if (up > 0) return false;
+			if (!includeUpperBound && up == 0) return false;
+
+			return true;
+		}
+
+		/// <summary>
+		/// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/> inclus
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value">Valeur à comparer</param>
+		/// <param name="lowerBound">Valeur minimale</param>
+		/// <param name="upperBound">Valeur Maximale</param>
+		/// <param name="comparer">Comparateur</param>
+		/// <returns></returns>
 		public static bool Between<T>( this T value, IComparer<T> comparer, T lowerBound, T upperBound )
 		{
 			return comparer.Compare(value, lowerBound) >= 0 && comparer.Compare(value,upperBound) <= 0;
 		}
+
+		/// <summary>
+		/// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/>
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value">Valeur à comparer</param>
+		/// <param name="lowerBound">Valeur minimale</param>
+		/// <param name="upperBound">Valeur Maximale</param>
+		/// <param name="includeLowerBound">Includ la valeur minimale</param>
+		/// <param name="includeUpperBound">Includ la valeur maximale</param>
+		/// <param name="comparer">Comparateur</param>
+		/// <returns></returns>
+		public static bool Between<T>(this T value, IComparer<T> comparer, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true) 
+		{
+			var low = comparer.Compare(value, lowerBound);
+			if (low < 0) return false;
+			if (!includeLowerBound && low == 0) return false;
+
+			var up = comparer.Compare(value, upperBound);
+			if (up > 0) return false;
+			if (!includeUpperBound && up == 0) return false;
+
+			return true;
+		}
+
 
 		/// <summary>
 		/// Renvoie si la valeur est dans le tableau
@@ -443,25 +509,6 @@ namespace Utils.Mathematics
 		#endregion
 
 		#region calculs
-		/// <summary>
-		/// Renvoie la puissance d'un nombre
-		/// </summary>
-		/// <param name="value">Valeur</param>
-		/// <param name="exponent">Exposant</param>
-		/// <returns></returns>
-		public static long Pow( long value, long exponent )
-		{
-			long result = 1;
-			long temp = value;
-			for (long i = exponent ; i > 0 ; i>>=1) {
-				if ((i & 1) == 1) {
-					result *= temp;
-				}
-				temp = temp * temp;
-			}
-			return result;
-		}
-
 		/// <summary>
 		/// Renvoie la racine carrée du nombre en paramètre
 		/// </summary>
