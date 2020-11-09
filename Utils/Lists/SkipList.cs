@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Transactions;
 using Utils.Mathematics;
@@ -18,19 +19,19 @@ namespace Utils.Lists
 
 		public SkipList() {
 			this.comparer = Comparer<T>.Default;
-			this.density = 0.01;
+			this.density = 0.02;
 		}
 
 		public SkipList(double density)
 		{
-			if (!density.Between(0.001, 0.2)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.2");
+			if (!density.Between(0.001, 0.5)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.2");
 			this.comparer = Comparer<T>.Default;
 			this.density = density;
 		}
 
-		public SkipList(IComparer<T> comparer, double density = 0.01)
+		public SkipList(IComparer<T> comparer, double density = 0.02)
 		{
-			if (!density.Between(0.001, 0.2)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.2");
+			if (!density.Between(0.001, 0.5)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.2");
 			this.comparer = comparer;
 			this.density = density;
 		}
@@ -95,10 +96,13 @@ namespace Utils.Lists
 					if (indexOldElement)
 					{
 						newElement.Next = element;
+						newElement.Prev = null;
+						element.Prev = newElement;
 					}
 					else
 					{
 						newElement.Next = element.Next;
+						if (newElement.Next != null) newElement.Next.Prev = newElement;
 					}
 					indexOldElement = indexOldElement && rng.NextDouble() <= density;
 					subElement = newElement;
@@ -111,6 +115,8 @@ namespace Utils.Lists
 				var newElement = new Element(item);
 				newElement.Next = previousElement.Next;
 				previousElement.Next = newElement;
+				newElement.Prev = previousElement;
+				if (newElement.Next != null) newElement.Next.Prev = newElement;
 				while (rng.NextDouble() <= density)
 				{
 					var subElement = newElement;
@@ -122,12 +128,16 @@ namespace Utils.Lists
 						var newFirstElement = new Element(firstElement.Value);
 						newFirstElement.Sub = firstElement;
 						newFirstElement.Next = newElement;
+						newFirstElement.Prev = null;
+						newElement.Prev = newFirstElement;
 						firstElement = newFirstElement;
 					}
 					else
 					{
 						newElement.Next = previousElement.Next;
 						previousElement.Next = newElement;
+						newElement.Prev = previousElement;
+						if (newElement.Next != null) newElement.Next.Prev = newElement;
 					}
 				}
 			}
@@ -137,26 +147,27 @@ namespace Utils.Lists
 
 		public bool Contains(T item)
 		{
-			Element previousElement = null;
 			Element currentElement = firstElement;
 
 			while (currentElement != null)
 			{
 				int comparison = comparer.Compare(item, currentElement.Value);
 				if (comparison == 0) return true;
-				if (comparison == -1)
+				else if (comparison == 1 && currentElement.Next != null)
 				{
-					previousElement = currentElement;
 					currentElement = currentElement.Next;
 				}
-				else if (previousElement == null)
+				else if (comparison == 1)
+				{
+					currentElement = currentElement.Sub;
+				}
+				else if (currentElement.Prev == null)
 				{
 					return false;
 				}
 				else
 				{
-					currentElement = previousElement.Sub;
-					previousElement = null;
+					currentElement = currentElement.Prev.Sub;
 				}
 			}
 			return false;
@@ -175,7 +186,72 @@ namespace Utils.Lists
 
 		public bool Remove(T item)
 		{
-			throw new NotImplementedException();
+			Element currentElement = firstElement;
+
+			while (currentElement != null)
+			{
+				int comparison = comparer.Compare(item, currentElement.Value);
+				if (comparison == 0)
+				{
+					if (currentElement.Prev == null)
+					{
+						var first = new Stack<Element>();
+						for (var element = firstElement; element != null; element = element.Sub)
+						{
+							first.Push(element);
+						}
+
+						var firstIndex = first.Pop();
+						var second = firstIndex.Next;
+						Element firstSub = null;
+
+						while (true)
+						{
+							var next = firstIndex.Next;
+							if (next == null) break;
+							if (comparer.Compare(next.Value, second.Value) == 0)
+							{
+								second.Prev = null;
+								second.Sub = firstSub;
+								firstSub = next;
+							}
+							else
+							{
+								var newFirst = new Element(second.Value);
+								newFirst.Sub = firstSub;
+								newFirst.Next = firstIndex.Next;
+								if (firstIndex.Next != null) firstIndex.Next.Prev = firstIndex;
+								firstSub = newFirst;
+							}
+							if (first.Count == 0) break;
+							firstIndex = first.Pop();
+						} 
+						firstElement = firstSub;
+						return true;
+					}
+					currentElement.Prev.Next = currentElement.Next;
+					if (currentElement.Next != null) currentElement.Next.Prev = currentElement.Prev;
+					if (currentElement.Sub == null) return true;
+					currentElement = currentElement.Sub;
+				}
+				else if (comparison == 1 && currentElement.Next != null)
+				{
+					currentElement = currentElement.Next;
+				}
+				else if (comparison == 1)
+				{
+					currentElement = currentElement.Sub;
+				}
+				else if (currentElement.Prev == null) 
+				{
+					return false;
+				}
+				else
+				{
+					currentElement = currentElement.Prev.Sub;
+				}
+			}
+			return false;
 		}
 		IEnumerator IEnumerable.GetEnumerator() => new InnerEnumerator(firstElement);
 
@@ -183,12 +259,11 @@ namespace Utils.Lists
 		{
 			public readonly T Value;
 			public Element Next;
+			public Element Prev;
 			public Element Sub;
 
-			public Element(T value)
-			{
-				Value = value;
-			}
+			public Element(T value) => Value = value;
+			public override string ToString() => Value.ToString();
 		}
 
 		private class InnerEnumerator : IEnumerator<T>

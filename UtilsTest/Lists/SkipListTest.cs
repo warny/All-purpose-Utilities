@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
@@ -31,6 +32,18 @@ namespace UtilsTest.Lists
 		}
 
 		[TestMethod]
+		public void SortTimeCompute() {
+			Random rng = new Random();
+			int[] result = new int[10000];
+			for (int i = 0; i < result.Length; i++)
+			{
+				var number = rng.RandomInt();
+				result[i] = number;
+			}
+			System.Array.Sort(result);
+		}
+
+		[TestMethod]
 		public void LargeArrayTest()
 		{
 			SkipList<int> list = new SkipList<int>();
@@ -49,6 +62,55 @@ namespace UtilsTest.Lists
 
 			Assert.IsTrue(comparer.Equals(result, value));
 
+		}
+
+		[TestMethod]
+		public void ContainsTest()
+		{
+			SkipList<int> list = new SkipList<int>();
+			Random rng = new Random();
+			int[] result = new int[10000];
+			for (int i = 0; i < result.Length; i++)
+			{
+				//var number = (i * 65537 + 3700) % 10000; 
+				var number = rng.RandomInt();
+				if (number == 0) Debugger.Break();
+				result[i] = number;
+				list.Add(number);
+			}
+			System.Array.Sort(result);
+
+			foreach (var item in result)
+			{
+				bool test = list.Contains(item);
+				if (!test) Debugger.Break();
+				Assert.IsTrue(test, $"{item} was not found");
+			}
+
+		}
+
+		[TestMethod]
+		public void RemoveTest()
+		{
+			SkipList<int> list = new SkipList<int>();
+			Random rng = new Random();
+			int[] result = new int[10000];
+			for (int i = 0; i < result.Length; i++)
+			{
+				var number = rng.RandomInt();
+				result[i] = number;
+				list.Add(number);
+			}
+
+			foreach (var item in result)
+			{
+				Assert.IsTrue(list.Remove(item));
+			}
+
+			foreach (var item in result)
+			{
+				Assert.IsFalse(list.Contains(item));
+			}
 		}
 
 	}
