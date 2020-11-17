@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml.Schema;
+using Utils.Arrays;
 using Utils.Mathematics;
 using Utils.Objects;
 
@@ -165,6 +166,27 @@ namespace UtilsTest.Objects
 			foreach (var test in tests)
 			{
 				Assert.IsFalse(testString.Like(test.WildCard, test.IgnoreCase));
+			}
+		}
+
+		[TestMethod]
+		public void CommandLineParser()
+		{
+			var comparer = new ArrayEqualityComparer<string>();
+
+			var tests = new (string line, string[] expected)[] {
+				("", new string [] { }),
+				("a", new string[] { "a" }),
+				(" abc ", new string[] { "abc" }),
+				("a b ", new string[] { "a", "b" }),
+				("a b \"c d\"", new string[] { "a", "b", "c d" }),
+				(@"/src:""C:\tmp\Some Folder\Sub Folder"" /users:""abcdefg@hijkl.com"" tasks:""SomeTask,Some Other Task"" -someParam", new string[] { @"/src:""C:\tmp\Some Folder\Sub Folder""", @"/users:""abcdefg@hijkl.com""", @"tasks:""SomeTask,Some Other Task""", @"-someParam" })
+			};
+
+			foreach (var test in tests)
+			{
+				var result = StringUtils.ParseCommandLine(test.line);
+				Assert.IsTrue(comparer.Equals(test.expected, result));
 			}
 		}
 

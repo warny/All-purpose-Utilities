@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -342,11 +343,28 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="str"></param>
 		/// <returns></returns>
+		public static string TrimBrackets(this string str, char openingBracket, char closingBracket) 
+			=> TrimBrackets(str, new Brackets(openingBracket, closingBracket));
+
+		/// <summary>
+		/// Supprime les parenthèses autour d'une chaîne
+		/// </summary>
+		/// <param name="str"></param>
+		/// <returns></returns>
+		public static string TrimBrackets(this string str, char bracket)
+			=> TrimBrackets(str, new Brackets(bracket, bracket));
+
+		/// <summary>
+		/// Supprime les parenthèses autour d'une chaîne
+		/// </summary>
+		/// <param name="str"></param>
+		/// <returns></returns>
 		public static string TrimBrackets( string str, params Brackets[] brackets )
 		{
 			if (brackets.IsNullOrEmptyCollection()) {
 				brackets = Brackets.All;
 			}
+			if (str.IsNullOrWhiteSpace()) return "";
 
 			int start = 0, end = str.Length - 1;
 			while (str[end]==' ') end--;
@@ -443,6 +461,59 @@ namespace Utils.Objects
 			return s.PurgeString(c => chars.Contains(c), replacement);
 		}
 
+		/// <summary>
+		/// Décompose la chaîne en tableau de ligne de commande
+		/// </summary>
+		/// <param name="line">Ligne de commande</param>
+		/// <returns>Décomposition en tableau</returns>
+		public static string[] ParseCommandLine(string line)
+		{
+			const int normal = 0;
+			const int instring = 1;
+
+			List<string> result = new List<string>();
+			var lastindex = 0;
+			int state = normal;
+			for (int i = 0; i < line.Length; i++)
+			{
+				var c = line[i];
+				switch (state)
+				{
+					case normal:
+						{
+							switch (c)
+							{
+								case ' ':
+									{
+										result.Add(line.Substring(lastindex, i - lastindex + 1).TrimBrackets('\"'));
+										lastindex = i + 1;
+									}
+									break;
+								case '\"':
+									{  
+										state = instring;
+									}
+									break;
+							}
+						}
+						break;
+					case instring:
+						{
+							switch (c)
+							{
+								case '\"':
+									{
+										state = normal;
+									}
+									break;
+							}
+						}
+						break;
+				}
+			}
+			result.Add(line.Substring(lastindex).TrimBrackets('\"'));
+			return result.Where(r => !r.IsNullOrWhiteSpace()).ToArray();
+		}
 	}
 
 	/// <summary>
@@ -466,6 +537,8 @@ namespace Utils.Objects
 		public static Brackets Braces { get; } = new Brackets('{', '}');
 
 		public static Brackets[] All { get; } = new[] { RoundBrackets, SquareBrackets, Braces };
+
+		public override string ToString() => $" {Open} ... {Close} ";
 	}
 
 }
