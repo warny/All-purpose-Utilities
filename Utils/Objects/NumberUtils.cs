@@ -76,5 +76,6 @@ namespace Utils.Objects
 			r.NextBytes(result);
 			return BitConverter.ToDouble(result, 0);
 		}
+
 	}
 }
