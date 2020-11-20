@@ -21,68 +21,6 @@ namespace Utils.Lists
 			public InnerItem<T1> Next { get; internal set; }
 		}
 
-		private class ListEnumeratorForward : IEnumerator<T>
-		{
-			private InnerItem<T> first;
-			private InnerItem<T> current;
-
-			public ListEnumeratorForward(InnerItem<T> first)
-			{
-				this.first = first;
-				this.current = first;
-			}
-
-			public T Current => current.Value;
-			object IEnumerator.Current => current.Value;
-
-			public void Dispose()
-			{
-				current = null;
-			}
-
-			public bool MoveNext()
-			{
-				current = current?.Next;
-				return current != null;
-			}
-
-			public void Reset()
-			{
-				current = first;
-			}
-		}
-
-		private class ListEnumeratorBackward : IEnumerator<T>
-		{
-			private InnerItem<T> last;
-			private InnerItem<T> current;
-
-			public ListEnumeratorBackward(InnerItem<T> last)
-			{
-				this.last = last;
-				this.current = last;
-			}
-
-			public T Current => current.Value;
-			object IEnumerator.Current => current.Value;
-
-			public void Dispose()
-			{
-				current = null;
-			}
-
-			public bool MoveNext()
-			{
-				current = current?.Previous;
-				return current != null;
-			}
-
-			public void Reset()
-			{
-				current = last;
-			}
-		}
-
 		private InnerItem<T> first = null;
 		private InnerItem<T> last = null;
 
@@ -101,15 +39,31 @@ namespace Utils.Lists
 			}
 		}
 
-		public IEnumerator GetEnumerator() => new ListEnumeratorForward(first);
+		public IEnumerator<T> GetEnumerator()
+		{
+			IEnumerable<T> enumerator()
+			{
+				var current = this.first;
+				while (current != null)
+				{
+					yield return current.Value;
+					current = current.Next;
+				}
+			}
+			return enumerator().GetEnumerator();
+		}
 
-		IEnumerator<T> IEnumerable<T>.GetEnumerator() => new ListEnumeratorForward(first);
+		IEnumerator IEnumerable.GetEnumerator()	=> GetEnumerator();
+
+
 
 		public IEnumerable<T> Reverse()
 		{
-			for (var enumerator = new ListEnumeratorBackward(this.last); enumerator.MoveNext();)
+			var current = this.last;
+			while (current != null)
 			{
-				yield return enumerator.Current;
+				yield return current.Value;
+				current = current.Previous;
 			}
 		}
 

@@ -182,7 +182,22 @@ namespace Utils.Lists
 			}
 		}
 
-		public IEnumerator<T> GetEnumerator() => new InnerEnumerator(firstElement);
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+		public IEnumerator<T> GetEnumerator()
+		{
+			IEnumerable<T> enumerator()
+			{
+				var element = this.firstElement;
+				while (element.Sub != null) element = element.Sub;
+				while (element != null)
+				{
+					yield return element.Value;
+					element = element.Next;
+				}
+			}
+
+			return enumerator().GetEnumerator();
+		}
 
 		public bool Remove(T item)
 		{
@@ -253,7 +268,7 @@ namespace Utils.Lists
 			}
 			return false;
 		}
-		IEnumerator IEnumerable.GetEnumerator() => new InnerEnumerator(firstElement);
+
 
 		private class Element
 		{
@@ -264,38 +279,6 @@ namespace Utils.Lists
 
 			public Element(T value) => Value = value;
 			public override string ToString() => Value.ToString();
-		}
-
-		private class InnerEnumerator : IEnumerator<T>
-		{
-			Element firstElement;
-			Element currentElement;
-
-			public InnerEnumerator(Element element)
-			{
-				while (element.Sub != null) element = element.Sub;
-				firstElement = element;
-				Reset();
-			}
-
-			public T Current => currentElement == null ? default : currentElement.Value;
-			object IEnumerator.Current { get; }
-
-			public void Dispose()
-			{
-				currentElement = null;
-			}
-
-			public bool MoveNext()
-			{
-				currentElement = currentElement == null ? firstElement : currentElement.Next;
-				return currentElement != null;
-			}
-
-			public void Reset()
-			{
-				currentElement = null;
-			}
 		}
 	}
 }
