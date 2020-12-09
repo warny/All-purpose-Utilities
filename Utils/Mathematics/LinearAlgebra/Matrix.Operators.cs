@@ -59,10 +59,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			return new Matrix(result);
 		}
 
-		public static Matrix operator * ( Matrix matrix, double number )
-		{
-			return number * matrix;
-		}
+		public static Matrix operator *(Matrix matrix, double number) => number * matrix;
 
 		public static Matrix operator / ( Matrix matrix, double number )
 		{
@@ -97,14 +94,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			return new Matrix(result);
 		}
 
-		public static bool operator == ( Matrix matrix1, Matrix matrix2 )
-		{
-			return matrix1.Equals(matrix2);
-		}
-
-		public static bool operator != ( Matrix matrix1, Matrix matrix2 )
-		{
-			return !matrix1.Equals(matrix2);
-		}
+		public static bool operator ==(Matrix matrix1, Matrix matrix2) => matrix1.Equals(matrix2);
+		public static bool operator !=(Matrix matrix1, Matrix matrix2) => !matrix1.Equals(matrix2);
+		public static bool operator ==(Matrix matrix1, object obj) => matrix1.Equals(obj);
+		public static bool operator !=(Matrix matrix1, object obj) => !matrix1.Equals(obj);
 	}
 }

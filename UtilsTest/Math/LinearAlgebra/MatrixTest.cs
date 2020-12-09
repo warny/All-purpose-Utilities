@@ -31,8 +31,8 @@ namespace UtilsTest.Math.LinearAlgebra
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
 				};
 
-			var m1 = new Utils.Mathematics.LinearAlgebra.Matrix(m1values);
-			var m2 = new Utils.Mathematics.LinearAlgebra.Matrix(m2values);
+			var m1 = new Matrix(m1values);
+			var m2 = new Matrix(m2values);
 
 			{
 				var mr = m1 + m2;
@@ -45,6 +45,55 @@ namespace UtilsTest.Math.LinearAlgebra
 						mref[x, y] = m1values[x, y] + m2values[x, y];
 					}
 				} 
+				Assert.IsTrue(comparer.Equals(mref, mr.ToArray()));
+			}
+
+			{
+				var mr = m1 - m2;
+
+				double[,] mref = new double[3, 3];
+				for (int x = 0; x < 3; x++)
+				{
+					for (int y = 0; y < 3; y++)
+					{
+						mref[x, y] = m1values[x, y] - m2values[x, y];
+					}
+				}
+				Assert.IsTrue(comparer.Equals(mref, mr.ToArray()));
+			}
+		}
+
+		[TestMethod]
+		public void MultiplyMatrixTest2()
+		{
+			Random r = new Random();
+			var comparer = new MultiDimensionnalArrayEqualityComparer<double>();
+
+			double[,] m1values = new double[3, 2] {
+					{ r.Next (0,100), r.Next (0,100) },
+					{ r.Next (0,100), r.Next (0,100) },
+					{ r.Next (0,100), r.Next (0,100) }
+				};
+
+			double[,] m2values = new double[2, 3] {
+					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
+					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
+				};
+
+			var m1 = new Matrix(m1values);
+			var m2 = new Matrix(m2values);
+
+			{
+				var mr = m1 + m2;
+
+				double[,] mref = new double[3, 3];
+				for (int x = 0; x < 3; x++)
+				{
+					for (int y = 0; y < 3; y++)
+					{
+						mref[x, y] = m1values[x, y] + m2values[x, y];
+					}
+				}
 				Assert.IsTrue(comparer.Equals(mref, mr.ToArray()));
 			}
 
@@ -80,7 +129,7 @@ namespace UtilsTest.Math.LinearAlgebra
 				("identitity", Create2D(), Matrix.Transform(1, 0, 0, 1, 0, 0)),
 				("translation", Create2D(m=>m.Translate(1,2)), Matrix.Translation(1,2)),
 				("rotation", Create2D(m=>m.Rotate(-60)), Matrix.Rotation(System.Math.PI / 3)),
-				("homothety", Create2D(m=>m.Scale(1,2)), Matrix.Homothety(1,2)),
+				("homothety", Create2D(m=>m.Scale(1,2)), Matrix.Scaling(1,2)),
 				("translation,rotation", Create2D(m=>m.Translate(1,2), m=>m.Rotate(-60)), Matrix.Translation(1, 2) * Matrix.Rotation(System.Math.PI / 3)),
 			};
 

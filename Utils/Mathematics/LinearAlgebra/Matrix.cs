@@ -11,7 +11,7 @@ namespace Utils.Mathematics.LinearAlgebra
 	/// <summary>
 	/// Matrice
 	/// </summary>
-	public sealed partial class Matrix : IFormattable , IEquatable<Matrix>, IEquatable<double[,]>, IEquatable<double[][]>
+	public sealed partial class Matrix : IFormattable , IEquatable<Matrix>, IEquatable<double[,]>, IEquatable<double[][]>, IEquatable<Vector[]>
 	{
 		internal readonly double[,] components;
 		private bool? isDiagonalized;
@@ -41,9 +41,10 @@ namespace Utils.Mathematics.LinearAlgebra
 		{
 			components = new double[array.GetLength(0), array.GetLength(1)];
 			Array.Copy(array, this.components, array.Length);
-			isDiagonalized = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
-			isTriangularised = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null; 
-			isIdentity = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+			var isSquare = IsSquare;
+			isDiagonalized = isSquare ? false : (bool?)null;
+			isTriangularised = isSquare ? false : (bool?)null; 
+			isIdentity = isSquare ? false : (bool?)null;
 			determinant = null;
 		}
 
@@ -59,6 +60,23 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 			isDiagonalized = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null; 
 			isTriangularised = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null; 
+			isIdentity = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+			determinant = null;
+		}
+
+		public Matrix(params Vector[] vectors)
+		{
+			if (vectors.Any(v => v.Dimension != vectors[0].Dimension)) throw new ArgumentException("Les vecteurs doivent tous avoir la même dimension", nameof(vectors));
+			components = new double[vectors[0].Dimension, vectors.Length];
+			for (int i = 0; i < vectors.Length; i++)
+			{
+				for (int j = 0; j < vectors[i].Dimension; j++)
+				{
+					components[j, i] = vectors[i][j];
+				}
+			}
+			isDiagonalized = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+			isTriangularised = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
 			isIdentity = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
 			determinant = null;
 		}
@@ -121,18 +139,48 @@ namespace Utils.Mathematics.LinearAlgebra
 		}
 
 		/// <summary>
-		/// Créé une matrice d'homothétie
+		/// Génère une matrice d'homothétie
 		/// </summary>
 		/// <param name="coefficients"></param>
 		/// <returns></returns>
-		public static Matrix Homothety(params double[] coefficients)
+		public static Matrix Scaling(params double[] coefficients)
 		{
-			Matrix result = Matrix.Identity(coefficients.Length + 1);
+			Matrix matrix = Matrix.Identity(coefficients.Length + 1);
 			for (int i = 0; i < coefficients.Length; i++)
 			{
-				result.components[i, i] = coefficients[i];
+				matrix.components[i, i] = coefficients[i];
 			}
-			return result;
+			matrix.isTriangularised = null;
+			matrix.isIdentity = null;
+			matrix.isDiagonalized = null;
+			return matrix;
+		}
+
+		/// <summary>
+		/// Génère une matrice de déformation
+		/// </summary>
+		/// <param name="angles"></param>
+		/// <returns></returns>
+		public static Matrix Skew(params double[] angles)
+		{
+			var dimension = (Math.Sqrt(4 * angles.Length + 1) + 1) / 2;
+			if (dimension != Math.Floor(dimension)) throw new ArgumentException("La matrice de transformation n'a pas une dimension utilisable", nameof(angles));
+
+			Matrix matrix = Matrix.Identity((int)dimension + 1);
+			int i = 0;
+			for (int x = 0; x < dimension; x++)
+			{
+				for (int y = 0; y < dimension; y++)
+				{
+					matrix.components[x, y >= x ? y : y + 1] = Math.Tan(angles[i]);
+					i++;
+				}
+			}
+			matrix.isTriangularised = null;
+			matrix.isIdentity = null;
+			matrix.isDiagonalized = null;
+
+			return matrix;
 		}
 
 		/// <summary>
@@ -159,17 +207,17 @@ namespace Utils.Mathematics.LinearAlgebra
 					double cos = Math.Cos(angles[angleIndex]);
 					double sin = Math.Sin(angles[angleIndex]);
 
-					rotation[dim1, dim1] = cos;
-					rotation[dim2, dim2] = cos;
-					rotation[dim1, dim2] = -sin;
-					rotation[dim2, dim1] = sin;
+					rotation.components[dim1, dim1] = cos;
+					rotation.components[dim2, dim2] = cos;
+					rotation.components[dim1, dim2] = -sin;
+					rotation.components[dim2, dim1] = sin;
 
 					result *= rotation;
 
-					rotation[dim1, dim1] = 1;
-					rotation[dim2, dim2] = 1;
-					rotation[dim1, dim2] = 0;
-					rotation[dim2, dim1] = 0;
+					rotation.components[dim1, dim1] = 1;
+					rotation.components[dim2, dim2] = 1;
+					rotation.components[dim1, dim2] = 0;
+					rotation.components[dim2, dim1] = 0;
 					angleIndex++;
 				}
 			}
@@ -177,20 +225,30 @@ namespace Utils.Mathematics.LinearAlgebra
 		}
 
 		/// <summary>
-		/// Construit une matrice de translation dans un espace normalisé
+		/// Génère une matrice de translation
 		/// </summary>
 		/// <param name="values"></param>
 		/// <returns></returns>
 		public static Matrix Translation ( params double[] values )
 		{
-			Matrix result = Matrix.Identity(values.Length + 1);
-			int lastRow = result.Rows - 1;
+			Matrix matrix = Matrix.Identity(values.Length + 1);
+			int lastRow = matrix.Rows - 1;
 			for (int i = 0 ; i < values.Length ; i++) {
-				result.components[lastRow, i] = values[i];
+				matrix.components[lastRow, i] = values[i];
 			}
-			return result;
+			matrix.isTriangularised = null;
+			matrix.isIdentity = null;
+			matrix.isDiagonalized = null;
+
+			return matrix;
 		}
 
+
+		/// <summary>
+		/// Génère une matrice de transformation
+		/// </summary>
+		/// <param name="values"></param>
+		/// <returns></returns>
 		public static Matrix Transform(params double[] values)
 		{
 			var dimension = (Math.Sqrt(4 * values.Length + 1) + 1) / 2;
@@ -212,26 +270,17 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// <summary>
 		/// Renvoie le nombre de lignes de la matrice
 		/// </summary>
-		public int Rows
-		{
-			get { return components.GetLength(0); }
-		}
+		public int Rows => components.GetLength(0);
 
 		/// <summary>
 		/// Renvoie le nombre de colonnes de la matrice
 		/// </summary>
-		public int Columns
-		{
-			get { return components.GetLength(1); }
-		}
+		public int Columns => components.GetLength(1);
 
 		/// <summary>
 		/// Indique s'il s'agit d'une matrice carrée
 		/// </summary>
-		public bool IsSquare
-		{
-			get { return components.GetLength(0) == components.GetLength(1); }
-		}
+		public bool IsSquare => components.GetLength(0) == components.GetLength(1);
 
 		/// <summary>
 		/// Renvoi ou défini la valeur d'un élément à la position indiqué
@@ -242,13 +291,6 @@ namespace Utils.Mathematics.LinearAlgebra
 		public double this[int row, int col] {
 			get{
 				return this.components[row, col];
-			}
-			set
-			{
-				this.components[row, col] = value;
-				isDiagonalized = null;
-				isTriangularised = null;
-				determinant = null;
 			}
 		}
 
@@ -368,6 +410,21 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 		}
 
+		public Vector[] ToVectors()
+		{
+			Vector[] result = new Vector[Columns];
+			for (int x = 0; x < Columns; x++)
+			{
+				double[] vComponents = new double[Rows];
+				for (int y = 0; y < Rows; y++)
+				{
+					vComponents[y] = this[x, y];
+				}
+				result[x] = new Vector(vComponents);
+			}
+			return result;
+		}
+
 		public override string ToString ()
 		{
 			return ToString("", System.Globalization.CultureInfo.CurrentCulture);
@@ -387,7 +444,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			int decimals = 2;
 			
 			if (formatProvider is CultureInfo c) {
-				if (c.NumberFormat.CurrencyDecimalSeparator == ",") componentsSeparator = ";";
+				componentsSeparator = c.TextInfo.ListSeparator;
 				decimals = c.NumberFormat.NumberDecimalDigits;
 			} else if (formatProvider is NumberFormatInfo n) {
 				if (n.CurrencyDecimalSeparator == ",") componentsSeparator = ";";
@@ -422,31 +479,30 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public override bool Equals ( object obj )
 		{
-			if (obj is Matrix m)
+			switch (obj)
 			{
-				return this.Equals(m);
+				case Matrix m: return Equals(m);
+				case double[,] a: return Equals(a);
+				case double[][] b: return Equals(b);
+				case Vector[] v: return Equals(v);
+				default: return false;
 			}
-			else if (obj is double[,] a)
-			{
-				return this.Equals(a);
-			}
-			return false;
 		}
 
 		public bool Equals ( Matrix other )
 		{
-			if (Object.ReferenceEquals(this, other)) return true;
+			if (ReferenceEquals(this, other)) return true;
 			return Equals(other.components);
 		}
 
 		public bool Equals(double[,] other)
 		{
-			if (this.components.GetLength(0) != other.GetLength(0) || this.components.GetLength(1) != other.GetLength(1)) {
-				return false;
-			}
-			for(int i = 0; i <	this.components.GetLength(0);i++) {
-				for (int j = 0; j < this.components.GetLength(1); j++) {
-					if (this.components[i, j] != other[i, j]) return false;
+			if (this.Rows != other.GetLength(0) || this.Columns != other.GetLength(1)) return false;
+			for (int i = 0; i < Rows; i++)
+			{
+				for (int j = 0; j < Columns; j++)
+				{
+					if (this[i, j] != other[i, j]) return false;
 				}
 			}
 			return true;
@@ -454,24 +510,37 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals(double[][] other)
 		{
-			if (this.components.GetLength(0) != other.GetLength(0))
-			{
-				return false;
-			}
+			if (Rows != other.GetLength(0)) return false;
 			for (int i = 0; i < this.components.GetLength(0); i++)
 			{
 				double[] otherRow = other[i];
-				if (otherRow.GetLength(0) > this.components.GetLength(1)) return false;
+				if (otherRow.Length > Columns) return false;
 				for (int j = 0; j < this.components.GetLength(1); j++)
 				{
-					if (j > otherRow.GetLength(0))
+					if (j > otherRow.Length)
 					{
-						if (this.components[i, j] != 0) return false;
+						if (this[i, j] != 0) return false;
 					}
-					else if (this.components[i, j] != otherRow[j])
+					else if (this[i, j] != otherRow[j])
 					{
 						return false;
 					}
+				}
+			}
+			return true;
+		}
+
+		public bool Equals(Vector[] other)
+		{
+			if (other.Length != this.Columns) return false;
+
+			for (int i = 0; i < Columns; i++)
+			{
+				var vector = other[i];
+				if (vector.Dimension != this.Rows) return false;
+				for (int j = 0; j < this.components.GetLength(1); j++)
+				{
+					if (vector[j] != this[j, i]) return false;
 				}
 			}
 			return true;
@@ -489,5 +558,6 @@ namespace Utils.Mathematics.LinearAlgebra
 		}
 
 		public double[,] ToArray() => (double[,])ArrayUtils.Copy(components);
+
 	}
 }

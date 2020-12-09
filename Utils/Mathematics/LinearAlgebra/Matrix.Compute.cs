@@ -22,8 +22,12 @@ namespace Utils.Mathematics.LinearAlgebra
 					for (int row = 0; row < dimensionY; row++) {
 						temp += matrix[row, col] * transformations[row];
 					}
-					matrix[row1, col] = temp;
+					matrix.components[row1, col] = temp;
 				}
+				var isSquare = matrix.IsSquare;
+				matrix.isTriangularised = isSquare ? (bool?)null : false;
+				matrix.isIdentity = isSquare ? (bool?)null : false;
+				matrix.isDiagonalized = isSquare ? (bool?)null : false;
 			}
 		}
 
@@ -34,9 +38,13 @@ namespace Utils.Mathematics.LinearAlgebra
 				int dimensionX = matrix.Rows;
 				for (int col = 0; col < dimensionX; col++) {
 					double temp = matrix[row1, col];
-					matrix[row1, col] = matrix[row2, col];
-					matrix[row2, col] = temp;
+					matrix.components[row1, col] = matrix[row2, col];
+					matrix.components[row2, col] = temp;
 				}
+				var isSquare = matrix.IsSquare;
+				matrix.isTriangularised = isSquare ? (bool?)null : false;
+				matrix.isIdentity = isSquare ? (bool?)null : false;
+				matrix.isDiagonalized = isSquare ? (bool?)null : false;
 			}
 		}
 

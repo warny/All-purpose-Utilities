@@ -19,17 +19,13 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// </summary>
 		private double? length;
 
-		private Vector ()
-		{
-		}
-
 		/// <summary>
 		/// constructeur par dimensions
 		/// </summary>
 		/// <param name="dimensions"></param>
-		public Vector(int dimensions) {
-			this.components = new double[dimensions];
-			this.length = 0;
+		private Vector(int dimensions) {
+			components = new double[dimensions];
+			length = 0;
 		}
 
 		/// <summary>
@@ -38,14 +34,15 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// <param name="components"></param>
 		public Vector ( params double[] components )
 		{
+			if (components.Length == 0) throw new ArgumentException("La dimension du vecteur ne peut pas être 0", nameof(components));
 			this.components = new double[components.Length];
 			Array.Copy(components, this.components,components.Length); 
 		}
 
 		public Vector ( Vector vector )
 		{
-			this.components = new Double[vector.components.Length];
-			Array.Copy(vector.components, this.components, vector.components.Length); 
+			components = new double[vector.components.Length];
+			Array.Copy(vector.components, components, vector.components.Length); 
 		}
 
 		/// <summary>
@@ -53,21 +50,12 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// </summary>
 		/// <param name="dimension"></param>
 		/// <returns></returns>
-		public double this[int dimension] {
-			get { return this.components[dimension]; }
-			set {
-				length = null;
-				this.components[dimension] = value; 
-			}
-		}
+		public double this[int dimension] => this.components[dimension];
 
 		/// <summary>
 		/// dimension du vecteur
 		/// </summary>
-		public int Dimension
-		{
-			get { return this.components.Length; }
-		}
+		public int Dimension => this.components.Length;
 
 		/// <summary>
 		/// Longueur du vecteur
@@ -86,36 +74,36 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 		}
 
-		public Vector Normalize ()
-		{
-			return this / this.Length;
-		}
+		public Vector Normalize() => this / Length;
 
 		public override bool Equals ( object obj )
 		{
-			if (obj is Vector v) {
-				return Equals(v);
-			} else if (obj is double[] array) {
-				return Equals(new Vector(array));
+			switch (obj)
+			{
+				case Vector v: return Equals(v);
+				case double[] a: return Equals(a);
+				default: return false;
 			}
-			return false;
 		}
 
 		public bool Equals ( Vector other )
 		{
-			if (Object.ReferenceEquals(this, other)) return true;
-			if (!this.components.Length.Equals(other)) return false;
+			if (ReferenceEquals(this, other)) return true;
+			return Equals(other.components);
+		}
 
-			for (int i = 0; i < this.components.Length; i++ ) {
-				if (this.components[i] != other.components[i]) return false;
+		private bool Equals(double[] other)
+		{
+			if (Dimension != other.Length) return false;
+			for (int i = 0; i < Dimension; i++)
+			{
+				if (components[i] != other[i]) return false;
 			}
 			return true;
 		}
 
-		public override string ToString ()
-		{
-			return string.Format("({0})", string.Join(";", this.components));
-		}
+		public override string ToString() 
+			=> $"({string.Join(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator, components)})";
 
 		/// <summary>
 		/// Converti un vecteur pour l'utiliser dans un espace normal
@@ -123,9 +111,9 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// <returns></returns>
 		public Vector ToNormalSpace ()
 		{
-			Vector result = new Vector(this.Dimension + 1);
-			Array.Copy(this.components, result.components, this.Dimension);
-			result[this.Dimension] = 1;
+			Vector result = new Vector(Dimension + 1);
+			Array.Copy(components, result.components, Dimension);
+			result.components[Dimension] = 1;
 			return result;
 		}
 
@@ -137,10 +125,10 @@ namespace Utils.Mathematics.LinearAlgebra
 		{
 			var temp = this;
 			if (temp[temp.Dimension - 1] != 1) {
-				temp = temp / temp[temp.Dimension - 1];
+				temp /= temp[temp.Dimension - 1];
 			}
-			Vector result = new Vector(this.Dimension - 1);
-			Array.Copy(this.components, result.components, this.Dimension -1);
+			Vector result = new Vector(Dimension - 1);
+			Array.Copy(temp.components, result.components, Dimension -1);
 			return result;
 		}
 
@@ -200,8 +188,8 @@ namespace Utils.Mathematics.LinearAlgebra
 		public override int GetHashCode ()
 		{
 			unchecked {
-				var temp = this.components.Length.GetHashCode();
-				foreach (var el in this.components) {
+				var temp = components.Length.GetHashCode();
+				foreach (var el in components) {
 					temp = ((temp * 23) << 1) + el.GetHashCode();
 				}
 				return temp;
