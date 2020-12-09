@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Objects;
 
 namespace Utils.Arrays
@@ -12,7 +9,6 @@ namespace Utils.Arrays
 		private readonly Func<T, T, bool> areEquals;
 		private readonly Func<T, int> getHashCode;
 		private readonly Type typeOfT = typeof(T);
-		private readonly object subComparer;
 
 		public ArrayEqualityComparer()
 		{
@@ -21,9 +17,9 @@ namespace Utils.Arrays
 			else if (typeOfT.IsArray)
 			{
 				var typeOfElement = typeOfT.GetElementType();
-				Type equalityComparerGenericType = typeof(ArrayEqualityComparer<>);
+				Type equalityComparerGenericType = typeof(MultiDimensionnalArrayEqualityComparer<>);
 				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
-				subComparer = Activator.CreateInstance(equalityComparerType);
+				object subComparer = Activator.CreateInstance(equalityComparerType);
 				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
 				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), new[] { typeOfT }).CreateDelegate(typeof(Func<T, int>), subComparer);
 				return;

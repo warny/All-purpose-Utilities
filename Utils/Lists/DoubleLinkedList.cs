@@ -55,8 +55,6 @@ namespace Utils.Lists
 
 		IEnumerator IEnumerable.GetEnumerator()	=> GetEnumerator();
 
-
-
 		public IEnumerable<T> Reverse()
 		{
 			var current = this.last;

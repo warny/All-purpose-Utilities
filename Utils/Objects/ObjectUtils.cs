@@ -29,6 +29,75 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
+		/// Calcul le hash d'un tableau multidimensionnel
+		/// </summary>
+		/// <param name="array"></param>
+		/// <returns></returns>
+		public static int ComputeHash(Array array)
+		{
+			unchecked
+			{
+				int hash = 23;
+				InnerComputeHash(0, new int[array.Rank], ref hash);
+				return hash;
+			}
+
+			void InnerComputeHash(int r, int[] positions, ref int hash)
+			{
+				unchecked
+				{
+					if (r == positions.Length)
+					{
+						hash *= 31;
+						hash += array.GetValue(positions).GetHashCode();
+						return;
+					}
+
+					for (int i = array.GetLowerBound(r); i <= array.GetUpperBound(r); i++)
+					{
+						positions[r] = i; 
+						InnerComputeHash(r + 1, positions, ref hash);
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Calcul le hash d'un tableau multidimensionnel
+		/// </summary>
+		/// <param name="getHashCode">Fonction de calcul de hash</param>
+		/// <param name="array"></param>
+		/// <returns></returns>
+		public static int ComputeHash<T>(Func<T, int> getHashCode, Array array)
+		{
+			unchecked
+			{
+				int hash = 23;
+				InnerComputeHash(0, new int[array.Rank], ref hash);
+				return hash;
+			}
+
+			void InnerComputeHash(int r, int[] positions, ref int hash)
+			{
+				unchecked
+				{
+					if (r == positions.Length)
+					{
+						hash *= 31;
+						hash += getHashCode((T)array.GetValue(positions));
+						return;
+					}
+
+					for (int i = array.GetLowerBound(r); i <= array.GetUpperBound(r); i++)
+					{
+						positions[r] = i;
+						InnerComputeHash(r + 1, positions, ref hash);
+					}
+				}
+			}
+		}
+
+		/// <summary>
 		/// Compute a hash from the hashes of the given objects
 		/// </summary>
 		/// <param name="objects"></param>
@@ -37,7 +106,7 @@ namespace Utils.Objects
 		{
 			unchecked
 			{
-				return objects.Aggregate(23, (value, acc) => acc.GetHashCode() * 31 + value);
+				return objects.Aggregate(23, (value, acc) => acc.GetHashCode() + value * 31);
 			}
 		}
 
@@ -50,7 +119,7 @@ namespace Utils.Objects
 		{
 			unchecked
 			{
-				return objects.Aggregate(23, (value, acc) => getHashCode(acc) * 31 + value);
+				return objects.Aggregate(23, (value, acc) => getHashCode(acc) + value * 31);
 			}
 		}
 

@@ -12,7 +12,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		private static void LinearTransformation ( IEnumerable<Matrix> matrices, int row1, double[] transformations )
 		{
 			if (transformations[row1] == 0) {
-				throw new ArgumentOutOfRangeException(string.Format("La transformation de la ligne {0} ne peut pas annuler sa valeur", row1, transformations));
+				throw new ArgumentOutOfRangeException(nameof(row1), $"La transformation de la ligne {row1} ne peut pas annuler sa valeur");
 			}
 			foreach (Matrix matrix in matrices) {
 				int dimensionX = matrix.Rows;
@@ -32,7 +32,6 @@ namespace Utils.Mathematics.LinearAlgebra
 			if (row1 == row2) return;
 			foreach (Matrix matrix in matrices) {
 				int dimensionX = matrix.Rows;
-				int dimensionY = matrix.Rows;
 				for (int col = 0; col < dimensionX; col++) {
 					double temp = matrix[row1, col];
 					matrix[row1, col] = matrix[row2, col];
@@ -116,7 +115,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		public Matrix Invert ()
 		{
 			if (!this.IsSquare) {
-				throw new Exception("la matrice n'est pas une matrice carrée");
+				throw new InvalidOperationException("la matrice n'est pas une matrice carrée");
 			}
 			if (this.IsIdentity) {
 				return new Matrix(this);

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Arrays;
 
 namespace Utils.Mathematics.LinearAlgebra
 {
@@ -120,44 +121,41 @@ namespace Utils.Mathematics.LinearAlgebra
 		}
 
 		/// <summary>
+		/// Créé une matrice d'homothétie
+		/// </summary>
+		/// <param name="coefficients"></param>
+		/// <returns></returns>
+		public static Matrix Homothety(params double[] coefficients)
+		{
+			Matrix result = Matrix.Identity(coefficients.Length + 1);
+			for (int i = 0; i < coefficients.Length; i++)
+			{
+				result.components[i, i] = coefficients[i];
+			}
+			return result;
+		}
+
+		/// <summary>
 		/// Génère une matrice de rotation
 		/// </summary>
 		/// <param name="angles"></param>
 		/// <returns></returns>
-		public static Matrix Rotation ( params double[] angles )
-		{
-			return BuildRotationMatrix(angles, false);
-		}
-
-		/// <summary>
-		/// Génère une matrice de rotation pour un espace normalisé
-		/// </summary>
-		/// <param name="angles"></param>
-		/// <returns></returns>
-		public static Matrix RotationInNormalSpace ( params double[] angles )
-		{
-			return BuildRotationMatrix(angles, true);
-		}
-
-		/// <summary>
-		/// construit une matrice de rotation
-		/// </summary>
-		/// <param name="angles"></param>
-		/// <param name="normalSpace"></param>
-		/// <returns></returns>
-		private static Matrix BuildRotationMatrix ( double[] angles, bool normalSpace )
+		public static Matrix Rotation(params double[] angles)
 		{
 			double baseComputeDimension = (1 + Math.Sqrt(8 * angles.Length + 1)) / 2;
 			int dimension = (int)(Math.Floor(baseComputeDimension));
-			if (baseComputeDimension != dimension) {
-				throw new ArgumentException("Le nombre d'angles n'est pas cohérent avec une dimension");
+			if (baseComputeDimension != dimension)
+			{
+				throw new ArgumentException("Le nombre d'angles n'est pas cohérent avec une dimension", nameof(angles));
 			}
-			Matrix result = Matrix.Identity(dimension + (normalSpace ? 1 : 0));
+			Matrix result = Matrix.Identity(dimension + 1);
 			//on ne déclare qu'une fois la matrice de rotation pour optimiser la mémoire
-			Matrix rotation = Matrix.Identity(dimension + (normalSpace ? 1 : 0));
+			Matrix rotation = Matrix.Identity(dimension + 1);
 			int angleIndex = 0;
-			for (int dim1 = 0; dim1 < dimension; dim1++) {
-				for (int dim2 = dim1 + 1; dim2 < dimension; dim2++) {
+			for (int dim1 = 0; dim1 < dimension; dim1++)
+			{
+				for (int dim2 = dim1 + 1; dim2 < dimension; dim2++)
+				{
 					double cos = Math.Cos(angles[angleIndex]);
 					double sin = Math.Sin(angles[angleIndex]);
 
@@ -183,12 +181,30 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// </summary>
 		/// <param name="values"></param>
 		/// <returns></returns>
-		public static Matrix TranslationInNormalSpace ( params double[] values )
+		public static Matrix Translation ( params double[] values )
 		{
 			Matrix result = Matrix.Identity(values.Length + 1);
-			int lastColumn = result.Columns - 1;
+			int lastRow = result.Rows - 1;
 			for (int i = 0 ; i < values.Length ; i++) {
-				result[i, lastColumn] = values[i];
+				result.components[lastRow, i] = values[i];
+			}
+			return result;
+		}
+
+		public static Matrix Transform(params double[] values)
+		{
+			var dimension = (Math.Sqrt(4 * values.Length + 1) + 1) / 2;
+			if (dimension != Math.Floor(dimension)) throw new ArgumentException("La matrice de transformation n'a pas une dimension utilisable", nameof(values));
+			Matrix result = Matrix.Identity((int)dimension);
+
+			var i = 0;
+			for (int x = 0; x < result.Rows; x++)
+			{
+				for (int y = 0; y < result.Columns - 1; y++)
+				{
+					result.components[x, y] = values[i];
+					i++;
+				}
 			}
 			return result;
 		}
@@ -472,5 +488,6 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 		}
 
+		public double[,] ToArray() => (double[,])ArrayUtils.Copy(components);
 	}
 }

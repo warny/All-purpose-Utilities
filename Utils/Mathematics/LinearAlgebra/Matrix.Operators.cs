@@ -90,7 +90,7 @@ namespace Utils.Mathematics.LinearAlgebra
 					for (int k = 0; k < depth; k++) {
 						temp += matrix1.components[k, i] * matrix2.components[j, k];
 					}
-					result[i, j] = temp;
+					result[j, i] = temp;
 				}
 			}
 

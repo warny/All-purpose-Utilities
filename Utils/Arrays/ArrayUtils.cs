@@ -218,6 +218,26 @@ namespace Utils.Arrays
 		}
 
 		/// <summary>
+		/// Copie le tableau multidimentionnel
+		/// </summary>
+		/// <param name="array"></param>
+		/// <returns></returns>
+		public static Array Copy(Array array)
+		{
+			var elementType = array.GetType().GetElementType();
+			int[] lowerBounds = new int[array.Rank];
+			int[] dimensions = new int[array.Rank];
+			for (int i = 0; i < dimensions.Length; i++)
+			{
+				lowerBounds[i] = array.GetLowerBound(i);
+				dimensions[i] = array.GetUpperBound(i) - array.GetLowerBound(i) + 1;
+			}
+			var result = Array.CreateInstance(elementType, dimensions, lowerBounds);
+			Array.Copy(array, result, array.Length);
+			return result;
+		}
+
+		/// <summary>
 		/// Redimensionne le tableau et rajoute un remplissage à gauche
 		/// </summary>
 		/// <typeparam name="T">Type des éléments</typeparam>
