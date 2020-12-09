@@ -70,15 +70,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			return new Point(result);
 		}
 
-		public static bool operator == ( Point point1, Point point2 )
-		{
-			return point1.Equals(point2);
-		}
+		public static bool operator ==(Point point1, Point point2) => point1.Equals(point2);
 
-		public static bool operator != ( Point point1, Point point2 )
-		{
-			return !point1.Equals(point2);
-		}
+		public static bool operator !=(Point point1, Point point2) => !point1.Equals(point2);
 
 		public static Point operator * ( Matrix matrix, Point point )
 		{
