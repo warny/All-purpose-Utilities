@@ -19,13 +19,13 @@ namespace UtilsTest.Math.LinearAlgebra
 			Random r = new Random();
 			var comparer = new MultiDimensionnalArrayEqualityComparer<double>();
 
-			double[,] m1values = new double[3, 3] {
+			double[,] m1values = new double[,] {
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
 				};
 
-			double[,] m2values = new double[3, 3] {
+			double[,] m2values = new double[,] {
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
@@ -64,52 +64,82 @@ namespace UtilsTest.Math.LinearAlgebra
 		}
 
 		[TestMethod]
+		public void MultiplyMatrixTest1()
+		{
+			Random r = new Random();
+			var m1 = new Matrix(new double[,] {
+				{ 1, 2 },
+				{ 3, 4 },
+			});
+
+			var m2 = new Matrix(new double[,] {
+				{ 5, 6 },
+				{ 7, 8 },
+			});
+
+			var result1 = new Matrix(new double[,] {
+				{ 19, 22 },
+				{ 43, 50 }
+			});
+
+			var result2 = new Matrix(new double[,] { 
+				{ 23, 34 }, 
+				{ 31, 46 } 
+			});
+
+			var mResult1 = m1 * m2;
+			var mResult2 = m2 * m1;
+
+			Assert.AreEqual(result1, mResult1);
+			Assert.AreEqual(result2, mResult2);
+
+		}
+
+		[TestMethod]
 		public void MultiplyMatrixTest2()
 		{
 			Random r = new Random();
-			var comparer = new MultiDimensionnalArrayEqualityComparer<double>();
+			var m1 = new Matrix(new double[,] {
+				{ 1, 2 },
+				{ 3, 4 },
+			});
 
-			double[,] m1values = new double[3, 2] {
-					{ r.Next (0,100), r.Next (0,100) },
-					{ r.Next (0,100), r.Next (0,100) },
-					{ r.Next (0,100), r.Next (0,100) }
+			var v2 = new Vector( 5, 7 );
+
+			var result1 = new Vector( 19, 43 );
+
+			var mResult1 = m1 * v2;
+
+			Assert.AreEqual(result1, mResult1);
+
+		}
+
+		[TestMethod]
+		public void MultiplyMatrixTest3()
+		{
+			Random r = new Random();
+			double[,] m1values = new double[,] {
+					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
+					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
+					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
 				};
 
-			double[,] m2values = new double[2, 3] {
+			double[,] m2values = new double[,] {
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
 					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
+					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
 				};
 
 			var m1 = new Matrix(m1values);
 			var m2 = new Matrix(m2values);
 
-			{
-				var mr = m1 + m2;
+			var vectors = m2.ToVectors();
 
-				double[,] mref = new double[3, 3];
-				for (int x = 0; x < 3; x++)
-				{
-					for (int y = 0; y < 3; y++)
-					{
-						mref[x, y] = m1values[x, y] + m2values[x, y];
-					}
-				}
-				Assert.IsTrue(comparer.Equals(mref, mr.ToArray()));
-			}
+			var mResult = m1 * m2;
+			var vResult = vectors.Select(v => m1 * v).ToArray();
 
-			{
-				var mr = m1 - m2;
+			Assert.IsTrue(mResult == vResult);
 
-				double[,] mref = new double[3, 3];
-				for (int x = 0; x < 3; x++)
-				{
-					for (int y = 0; y < 3; y++)
-					{
-						mref[x, y] = m1values[x, y] - m2values[x, y];
-					}
-				}
-				Assert.IsTrue(comparer.Equals(mref, mr.ToArray()));
-			}
 		}
 
 		[TestMethod]
@@ -120,7 +150,9 @@ namespace UtilsTest.Math.LinearAlgebra
 				var result = new System.Drawing.Drawing2D.Matrix(1, 0, 0, 1, 0, 0);
 				foreach (var action in actions)
 				{
-					action(result);
+					var tr = new System.Drawing.Drawing2D.Matrix(1, 0, 0, 1, 0, 0);
+					action(tr);
+					result.Multiply(tr);
 				}
 				return result;
 			}
@@ -130,7 +162,7 @@ namespace UtilsTest.Math.LinearAlgebra
 				("translation", Create2D(m=>m.Translate(1,2)), Matrix.Translation(1,2)),
 				("rotation", Create2D(m=>m.Rotate(-60)), Matrix.Rotation(System.Math.PI / 3)),
 				("homothety", Create2D(m=>m.Scale(1,2)), Matrix.Scaling(1,2)),
-				("translation,rotation", Create2D(m=>m.Translate(1,2), m=>m.Rotate(-60)), Matrix.Translation(1, 2) * Matrix.Rotation(System.Math.PI / 3)),
+				("translation,rotation", Create2D(m=>m.Translate(1,2), m=>m.Rotate(-60)), Matrix.Rotation(System.Math.PI / 3) * Matrix.Translation(1, 2)), //le comportement de Drawing2D.Matrix est très bizarre ici
 			};
 
 			int testNumber = 0;

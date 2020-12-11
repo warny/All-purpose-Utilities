@@ -418,7 +418,7 @@ namespace Utils.Mathematics.LinearAlgebra
 				double[] vComponents = new double[Rows];
 				for (int y = 0; y < Rows; y++)
 				{
-					vComponents[y] = this[x, y];
+					vComponents[y] = this[y, x];
 				}
 				result[x] = new Vector(vComponents);
 			}

@@ -85,9 +85,9 @@ namespace Utils.Mathematics.LinearAlgebra
 				for (int j = 0; j < result.GetLength(1); j++) {
 					double temp = 0;
 					for (int k = 0; k < depth; k++) {
-						temp += matrix1.components[k, i] * matrix2.components[j, k];
+						temp += matrix1.components[i, k] * matrix2.components[k, j];
 					}
-					result[j, i] = temp;
+					result[i, j] = temp;
 				}
 			}
 

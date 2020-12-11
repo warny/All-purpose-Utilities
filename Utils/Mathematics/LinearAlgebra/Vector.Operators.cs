@@ -130,17 +130,19 @@ namespace Utils.Mathematics.LinearAlgebra
 			return result;
 		}
 
-		public static Vector operator * ( Matrix matrix, Vector vector )
+		public static Vector operator *(Matrix matrix, Vector vector)
 		{
-			if (!matrix.IsSquare) {
-				throw new ArgumentException("La matrice doit être carrée");
-			} else if (matrix.Rows != vector.Dimension) {
+			if (matrix.Columns != vector.Dimension)
+			{
 				throw new ArgumentException("Les dimensions de la matrice et du vecteur ne sont pas compatibles avec cette opération");
 			}
+
 			double[] result = new double[vector.Dimension];
-			for (int row = 0; row < matrix.Rows; row++) {
+			for (int row = 0; row < matrix.Rows; row++)
+			{
 				double temp = 0;
-				for (int col = 0; col < result.Length; col++) {
+				for (int col = 0; col < matrix.Columns; col++)
+				{
 					temp += matrix[row, col] * vector.components[col];
 				}
 				result[row] = temp;
