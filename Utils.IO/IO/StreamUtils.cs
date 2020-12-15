@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using IO = System.IO;
 
-namespace Utils.Streams
+namespace Utils.IO
 {
 	public static class StreamUtils
 	{

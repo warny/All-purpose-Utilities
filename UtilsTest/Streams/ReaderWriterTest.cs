@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using Utils.Arrays;
 using Utils.Objects;
-using Utils.Streams.Serialization;
+using Utils.IO.Serialization;
 
 namespace UtilsTest.Streams
 {

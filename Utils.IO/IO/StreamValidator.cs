@@ -12,14 +12,14 @@ namespace Utils
 	/// Flux tampon dans lequel on peut écrire des données qui ne sont écrite dans le flux final 
 	/// qu'en cas de validation avec l'appel de la fonction <see cref="Validate">Validate</see>
 	/// </summary>
-	public class StreamValidator : IO.Stream
+	public class StreamValidator : System.IO.Stream
 	{
 		private byte[] buffer = new byte[65536];
 		private int length;
 
-		private readonly IO.Stream target;
+		private readonly System.IO.Stream target;
 
-		public StreamValidator( IO.Stream target )
+		public StreamValidator(System.IO.Stream target )
 		{
 			this.target = target;
 		}

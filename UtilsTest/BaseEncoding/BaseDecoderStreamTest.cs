@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using Utils.Arrays;
-using Utils.Streams.BaseEncoding;
+using Utils.IO.BaseEncoding;
 
 namespace UtilsTest.BaseEncoding
 {

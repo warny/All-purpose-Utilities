@@ -8,23 +8,23 @@ using Utils.Reflection;
 using IO = System.IO;
 
 
-namespace Utils.Streams.Serialization
+namespace Utils.IO.Serialization
 {
 	public class Writer
 	{
 		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
 		Stack<long> positionsStack = new Stack<long>();
 
-		public IO.Stream Stream { get; }
+		public System.IO.Stream Stream { get; }
 		public long Position => Stream.Position;
 
-		public Writer(IO.Stream s)
+		public Writer(System.IO.Stream s)
 		{
 			this.Stream = s;
 			if (!this.Stream.CanWrite) throw new NotSupportedException();
 		}
 
-		public void Seek(int offset, IO.SeekOrigin origin)
+		public void Seek(int offset, System.IO.SeekOrigin origin)
 		{
 			this.Stream.Seek(offset, origin);
 		}
@@ -35,7 +35,7 @@ namespace Utils.Streams.Serialization
 			positionsStack.Push(this.Stream.Position);
 		}
 
-		public void Push(int offset, IO.SeekOrigin origin)
+		public void Push(int offset, System.IO.SeekOrigin origin)
 		{
 			if (!this.Stream.CanSeek) throw new NotSupportedException();
 			positionsStack.Push(this.Stream.Position);
@@ -45,7 +45,7 @@ namespace Utils.Streams.Serialization
 		public void Pop()
 		{
 			if (!this.Stream.CanSeek) throw new NotSupportedException();
-			this.Stream.Seek(positionsStack.Pop(), IO.SeekOrigin.Begin);
+			this.Stream.Seek(positionsStack.Pop(), System.IO.SeekOrigin.Begin);
 		}
 
 		public void Write(object obj)

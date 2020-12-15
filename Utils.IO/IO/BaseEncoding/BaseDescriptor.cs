@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Utils.Streams.BaseEncoding
+namespace Utils.IO.BaseEncoding
 {
 	public interface IBaseDescriptor
 	{

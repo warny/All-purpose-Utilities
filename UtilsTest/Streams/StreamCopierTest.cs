@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.Arrays;
 using Utils.Objects;
-using Utils.Streams;
+using Utils.IO;
 
 namespace UtilsTest.Streams
 {

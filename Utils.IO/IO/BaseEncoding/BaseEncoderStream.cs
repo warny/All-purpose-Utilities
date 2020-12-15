@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Utils.Streams.BaseEncoding
+namespace Utils.IO.BaseEncoding
 {
 	public class BaseEncoderStream : Stream
 	{

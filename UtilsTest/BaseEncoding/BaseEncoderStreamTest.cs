@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Utils.Streams.BaseEncoding;
+using Utils.IO.BaseEncoding;
 
 namespace UtilsTest.BaseEncoding
 {

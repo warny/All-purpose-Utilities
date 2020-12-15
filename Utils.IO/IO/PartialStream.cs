@@ -6,14 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using IO=System.IO;
 
-namespace Utils.Streams
+namespace Utils.IO
 {
 	/// <summary>
 	/// Ouvre une partie d'un stream
 	/// </summary>
-	class PartialStream : IO.Stream
+	class PartialStream : System.IO.Stream
 	{
-		private readonly IO.Stream s;
+		private readonly System.IO.Stream s;
 		private readonly long startPosition; 
 		private long length;
 		private long position;
@@ -23,7 +23,7 @@ namespace Utils.Streams
 		/// </summary>
 		/// <param name="s">Stream à ouvrir</param>
 		/// <param name="length">Longueur à utiliser</param>
-		public PartialStream( IO.Stream s, long length )
+		public PartialStream(System.IO.Stream s, long length )
 		{
 			this.s = s;
 			this.startPosition = s.Position;
@@ -38,7 +38,7 @@ namespace Utils.Streams
 		/// <param name="s">Stream à ouvrir</param>
 		/// <param name="position">Position à laquelle commencer la lecture</param>
 		/// <param name="length">Longueur à utiliser</param>
-		public PartialStream( IO.Stream s, long position, long length )
+		public PartialStream(System.IO.Stream s, long position, long length )
 		{
 			this.s = s;
 			this.startPosition = position;

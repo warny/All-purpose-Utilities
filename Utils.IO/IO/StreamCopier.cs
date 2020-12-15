@@ -7,11 +7,11 @@ using System.Text;
 using System.Threading.Tasks;
 using IO = System.IO;
 
-namespace Utils.Streams
+namespace Utils.IO
 {
-	public class StreamCopier : IO.Stream, IList<IO.Stream>
+	public class StreamCopier : System.IO.Stream, IList<System.IO.Stream>
 	{
-		private readonly List<IO.Stream> targets;
+		private readonly List<System.IO.Stream> targets;
 
 		public override bool CanRead => false;
 		public override bool CanSeek => false;
@@ -19,15 +19,15 @@ namespace Utils.Streams
 
 		public StreamCopier()
 		{
-			targets = new List<IO.Stream>();
+			targets = new List<Stream>();
 		}
-		public StreamCopier( IEnumerable<IO.Stream> streams )
+		public StreamCopier( IEnumerable<System.IO.Stream> streams )
 		{
-			targets = new List<IO.Stream>();
+			targets = new List<Stream>();
 			targets.AddRange(streams);
 		}
 
-		public StreamCopier(params IO.Stream[] streams) : this((IEnumerable<IO.Stream>)streams) { }
+		public StreamCopier(params System.IO.Stream[] streams) : this((IEnumerable<System.IO.Stream>)streams) { }
 
 		public override long Length
 		{
@@ -44,7 +44,7 @@ namespace Utils.Streams
 
 		public bool IsReadOnly => false;
 
-		public IO.Stream this[int index]
+		public System.IO.Stream this[int index]
 		{
 			get { return targets[index]; }
 			set { targets[index] = value; }
@@ -75,12 +75,12 @@ namespace Utils.Streams
 			targets.ForEach(s => s.Write(buffer, offset, count));
 		}
 
-		public int IndexOf( IO.Stream item )
+		public int IndexOf(System.IO.Stream item )
 		{
 			return targets.IndexOf(item);
 		}
 
-		public void Insert( int index, IO.Stream item )
+		public void Insert( int index, System.IO.Stream item )
 		{
 			targets.Insert(index, item);
 		}
@@ -90,7 +90,7 @@ namespace Utils.Streams
 			targets.RemoveAt(index);
 		}
 
-		public void Add( IO.Stream item )
+		public void Add(System.IO.Stream item )
 		{
 			targets.Add(item);
 		}
@@ -100,22 +100,22 @@ namespace Utils.Streams
 			targets.Clear();
 		}
 
-		public bool Contains( IO.Stream item )
+		public bool Contains(System.IO.Stream item )
 		{
 			return targets.Contains(item);
 		}
 
-		public void CopyTo( IO.Stream[] array, int arrayIndex )
+		public void CopyTo(System.IO.Stream[] array, int arrayIndex )
 		{
 			targets.CopyTo(array, arrayIndex);
 		}
 
-		public bool Remove( IO.Stream item )
+		public bool Remove(System.IO.Stream item )
 		{
 			return targets.Remove(item);
 		}
 
-		public IEnumerator<IO.Stream> GetEnumerator()
+		public IEnumerator<System.IO.Stream> GetEnumerator()
 		{
 			return targets.GetEnumerator();
 		}

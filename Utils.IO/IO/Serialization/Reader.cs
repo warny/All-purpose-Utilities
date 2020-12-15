@@ -8,17 +8,17 @@ using Utils.Arrays;
 using Utils.Reflection;
 using IO = System.IO;
 
-namespace Utils.Streams.Serialization
+namespace Utils.IO.Serialization
 {
 	public class Reader
     {
 		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
 		Stack<long> positionsStack = new Stack<long>();
 
-		public IO.Stream Stream { get; }
+		public System.IO.Stream Stream { get; }
 		public long Position => Stream.Position;
 
-		public Reader(IO.Stream s)
+		public Reader(System.IO.Stream s)
 		{
 			this.Stream = s;
 			if (!this.Stream.CanRead) throw new NotSupportedException();

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Utils.Streams.Serialization
+namespace Utils.IO.Serialization
 {
 	public interface IReadable { }
 
