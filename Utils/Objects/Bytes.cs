@@ -145,7 +145,7 @@ namespace Utils.Objects
 
 		public static Bytes Parse(string s)
 		{
-			var values = s.Split(new[] { ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+			var values = s.Split(new[] { ' ', '\n', '\t', '\r', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
 			return new Bytes(values.Select(v => byte.Parse(v, System.Globalization.NumberStyles.HexNumber)).ToArray());
 		}
 	}
