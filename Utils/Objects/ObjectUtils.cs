@@ -33,7 +33,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="array"></param>
 		/// <returns></returns>
-		public static int ComputeHash(Array array)
+		public static int ComputeHash(this Array array)
 		{
 			unchecked
 			{
@@ -65,10 +65,10 @@ namespace Utils.Objects
 		/// <summary>
 		/// Calcul le hash d'un tableau multidimensionnel
 		/// </summary>
-		/// <param name="getHashCode">Fonction de calcul de hash</param>
 		/// <param name="array"></param>
+		/// <param name="getHashCode">Fonction de calcul de hash</param>
 		/// <returns></returns>
-		public static int ComputeHash<T>(Func<T, int> getHashCode, Array array)
+		public static int ComputeHash<T>(this Array array, Func<T, int> getHashCode)
 		{
 			unchecked
 			{
@@ -102,7 +102,14 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="objects"></param>
 		/// <returns></returns>
-		public static int ComputeHash(params object[] objects)
+		public static int ComputeHash(params object[] objects) => ComputeHash((IEnumerable<object>)objects);
+
+		/// <summary>
+		/// Compute a hash from the hashes of the given objects
+		/// </summary>
+		/// <param name="objects"></param>
+		/// <returns></returns>
+		public static int ComputeHash(this IEnumerable<object> objects)
 		{
 			unchecked
 			{

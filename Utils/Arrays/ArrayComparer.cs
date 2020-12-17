@@ -1,64 +1,57 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
-using Utils.Objects;
+using System.Text;
 
 namespace Utils.Arrays
 {
-	public class ArrayEqualityComparer<T> : IEqualityComparer<T[]>
+	/// <summary>
+	/// Compare deux tableau de valeurs de types comparables
+	/// </summary>
+	/// <typeparam name="T">Type comparable</typeparam>
+	public class ArrayComparer<T> : IComparer<IReadOnlyList<T>>
 	{
-		private readonly Func<T, T, bool> areEquals;
-		private readonly Func<T, int> getHashCode;
+		Func<T, T, int> comparer;
 		private readonly Type typeOfT = typeof(T);
-
-		public ArrayEqualityComparer()
+		public ArrayComparer(params object[] comparers)
 		{
-			if (typeof(IEquatable<T>).IsAssignableFrom(typeOfT)) areEquals = (e1, e2) => ((IEquatable<T>)e1).Equals(e2);
-			else if (typeof(IComparable<T>).IsAssignableFrom(typeOfT)) areEquals = (e1, e2) => ((IComparable<T>)e1).Equals(e2);
+			var externalComparer = comparers.OfType<IComparer<T>>().FirstOrDefault();
+			if (externalComparer != null)
+			{
+				comparer = (e1, e2) => externalComparer.Compare(e1, e2);
+			}
+			else if (typeof(IComparable<T>).IsAssignableFrom(typeOfT))
+			{
+				comparer = (e1, e2) => ((IComparable<T>)e1).CompareTo(e2);
+			}
 			else if (typeOfT.IsArray)
 			{
 				var typeOfElement = typeOfT.GetElementType();
-				Type equalityComparerGenericType = typeof(MultiDimensionnalArrayEqualityComparer<>);
-				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
-				object subComparer = Activator.CreateInstance(equalityComparerType);
-				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
-				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), new[] { typeOfT }).CreateDelegate(typeof(Func<T, int>), subComparer);
+				Type arrayComparerGenericType = typeof(ArrayComparer<>);
+				Type arrayComparerType = arrayComparerGenericType.MakeGenericType(typeOfElement);
+				object subComparer = Activator.CreateInstance(arrayComparerType, new object[] { comparers });
+				comparer = (Func<T, T, int>)arrayComparerType.GetMethod(nameof(Compare), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, int>), subComparer);
 				return;
 			}
-			else areEquals = (e1, e2) => e1.Equals(e2);
-
-			getHashCode = e => e.GetHashCode();
-		}
-
-		public ArrayEqualityComparer(IEqualityComparer<T> equalityComparer)
-		{
-			this.areEquals = equalityComparer.Equals;
-			this.getHashCode = equalityComparer.GetHashCode;
-		}
-
-		public ArrayEqualityComparer(IComparer<T> equalityComparer, Func<T, int> getHashCode = null)
-		{
-			this.areEquals = (e1, e2) => equalityComparer.Compare(e1, e2)==0;
-			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
-		}
-
-		public ArrayEqualityComparer(Func<T, T, bool> areEquals, Func<T, int> getHashCode = null)
-		{
-			this.areEquals = areEquals;
-			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
-		}
-
-		public bool Equals(T[] x, T[] y)
-		{
-			if (x == null && y == null) return true;
-			if (x == null || y == null) return false;
-			if (x.Length!=y.Length) return false;
-
-			for (int i = 0; i < x.Length; i++) {
-				if (!areEquals(x[i], y[i])) return false;
+			else if (typeof(IComparable).IsAssignableFrom(typeOfT))
+			{
+				comparer = (e1, e2) => ((IComparable)e1).CompareTo(e2);
 			}
-			return true;
+			else
+			{
+				throw new NotSupportedException($"The type {typeof(T).Name} doesn't spport comparison");
+			}
 		}
 
-		public int GetHashCode(T[] obj) => ObjectUtils.ComputeHash(getHashCode, obj);
+		public int Compare(IReadOnlyList<T> x, IReadOnlyList<T> y)
+		{
+			var maxIteration = Math.Min(x.Count, y.Count);
+			for (int i = 0; i < maxIteration; i++)
+			{
+				var comparison = comparer(x[i], y[i]);
+				if (comparison != 0) return comparison;
+			}
+			return x.Count.CompareTo(y.Count);
+		}
 	}
 }

@@ -77,7 +77,7 @@ namespace Utils.Arrays
 			}
 		}
 
-		public int GetHashCode(Array obj) => ObjectUtils.ComputeHash(getHashCode, obj);
+		public int GetHashCode(Array obj) => obj.ComputeHash(getHashCode);
 
 	}
 }
