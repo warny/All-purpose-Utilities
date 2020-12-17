@@ -24,6 +24,17 @@ namespace Utils.Objects
 
 		public int Count => innerBytes.Length;
 
+		public Bytes(params byte[] byteArray)
+		{
+			this.innerBytes = new byte[byteArray.Length];
+			Array.Copy(byteArray, this.innerBytes, 0);
+		}
+
+		public Bytes(IEnumerable<byte> bytes)
+		{
+			innerBytes = bytes.ToArray();
+		}
+
 		public Bytes(params byte[][] byteArrays)
 		{
 			this.innerBytes = new byte[byteArrays.Sum(a => a.Length)];
@@ -131,5 +142,11 @@ namespace Utils.Objects
 		}
 
 		public override string ToString() => string.Join(" ", innerBytes.Select(b => b.ToString("XX")));
+
+		public static Bytes Parse(string s)
+		{
+			var values = s.Split(new[] { ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+			return new Bytes(values.Select(v => byte.Parse(v, System.Globalization.NumberStyles.HexNumber)).ToArray());
+		}
 	}
 }
