@@ -114,14 +114,18 @@ namespace Utils.IO
 
 		public override void Write( byte[] buffer, int offset, int count )
 		{
-			long oldPosition = s.Position;
-			s.Position = this.startPosition + this.position;
-			if (this.position + offset + count > this.length) {
-				throw new ArgumentOutOfRangeException(nameof(count), "La taille de données à copier est trop longue");
+			lock (s)
+			{
+				long oldPosition = s.Position;
+				s.Position = this.startPosition + this.position;
+				if (this.position + offset + count > this.length)
+				{
+					throw new ArgumentOutOfRangeException(nameof(count), "La taille de données à copier est trop longue");
+				}
+				s.Write(buffer, offset, count);
+				this.position = s.Position - this.startPosition;
+				s.Position = oldPosition;
 			}
-			s.Write(buffer, offset, count);
-			this.position = s.Position - this.startPosition;
-			s.Position = oldPosition;
 		}
 	}
 }
