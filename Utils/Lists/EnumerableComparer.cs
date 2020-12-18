@@ -3,17 +3,17 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Utils.Arrays
+namespace Utils.List
 {
 	/// <summary>
 	/// Compare deux tableau de valeurs de types comparables
 	/// </summary>
 	/// <typeparam name="T">Type comparable</typeparam>
-	public class ArrayComparer<T> : IComparer<IReadOnlyList<T>>
+	public class EnumerableComparer<T> : IComparer<IEnumerable<T>>
 	{
 		Func<T, T, int> comparer;
 		private readonly Type typeOfT = typeof(T);
-		public ArrayComparer(params object[] comparers)
+		public EnumerableComparer(params object[] comparers)
 		{
 			var externalComparer = comparers.OfType<IComparer<T>>().FirstOrDefault();
 			if (externalComparer != null)
@@ -27,7 +27,7 @@ namespace Utils.Arrays
 			else if (typeOfT.IsArray)
 			{
 				var typeOfElement = typeOfT.GetElementType();
-				Type arrayComparerGenericType = typeof(ArrayComparer<>);
+				Type arrayComparerGenericType = typeof(EnumerableComparer<>);
 				Type arrayComparerType = arrayComparerGenericType.MakeGenericType(typeOfElement);
 				object subComparer = Activator.CreateInstance(arrayComparerType, new object[] { comparers });
 				comparer = (Func<T, T, int>)arrayComparerType.GetMethod(nameof(Compare), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, int>), subComparer);
@@ -43,7 +43,7 @@ namespace Utils.Arrays
 			}
 		}
 
-		public int Compare(IReadOnlyList<T> x, IReadOnlyList<T> y)
+		public int Compare(IEnumerable<T> x, IEnumerable<T> y)
 		{
 			if (x == null && y == null) return 0;
 			if (x == null) return 1;
