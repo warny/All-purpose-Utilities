@@ -71,10 +71,17 @@ namespace Utils.Arrays
 			if (x == null || y == null) return false;
 			if (x.Count!=y.Count) return false;
 
-			for (int i = 0; i < x.Count; i++) {
-				if (!areEquals(x[i], y[i])) return false;
+			var enumx = x.GetEnumerator();
+			var enumy = y.GetEnumerator();
+
+			while (true)
+			{
+				bool readx = enumx.MoveNext();
+				bool ready = enumy.MoveNext();
+				if (!readx && !ready) return true;
+				if (!readx || !ready) return false;
+				if (!areEquals(enumx.Current, enumy.Current)) return false;
 			}
-			return true;
 		}
 
 		public int GetHashCode(IReadOnlyList<T> obj) => ObjectUtils.ComputeHash(getHashCode, obj);
