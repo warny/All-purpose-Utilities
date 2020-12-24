@@ -3,19 +3,10 @@ using System.Drawing;
 
 namespace Utils.Imaging
 {
-	public interface IImageAccessor<A, T> 
+	public interface IImageAccessor<A, T> : IImageAccessor<A> 
 		where T : struct
 		where A : IColorArgb<T>
-	{
-		int Width { get; }
-		int Height { get; }
-
-		A this[int x, int y] { get; set; }
-		A this[Point p] { get; set; }
-
-		void Rectangle(Rectangle rectangle, A color);
-		void Rectangle(int left, int top, int width, int height, A color);
-	}
+	{ }
 
 	public interface IImageAccessor<T>
 	{
@@ -24,9 +15,6 @@ namespace Utils.Imaging
 
 		T this[int x, int y] { get; set; }
 		T this[Point p] { get; set; }
-
-		void Rectangle(Rectangle rectangle, T color);
-		void Rectangle(int left, int top, int width, int height, T color);
 	}
 
 	public interface IColorArgb<T> where T : struct

@@ -50,25 +50,6 @@ namespace Utils.Imaging
 			set { uintdata[y * bmpdata.Width + x] = value.Value; }
 		}
 
-		public void Rectangle(Rectangle rectangle, ColorArgb32 color) => Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color.Value);
-		public void Rectangle(Rectangle rectangle, uint color) => Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color);
-		public void Rectangle(int left, int top, int width, int height, ColorArgb32 color) => Rectangle(left, top, width, height, color.Value);
-		public void Rectangle(int left, int top, int width, int height, uint color)
-		{
-			int bottom = MathEx.Min(top + height, Height - 1);
-			int right = MathEx.Min(left + width, Width - 1);
-			top = MathEx.Max(0, top);
-			left = MathEx.Max(0, left);
-			for (int y = top; y <= bottom; y++)
-			{
-				int yOffset = y * bmpdata.Width;
-				for (int x = left; x <= right; x++)
-				{
-					uintdata[yOffset + x] = color;
-				}
-			}
-		}
-
 		public uint[] CopyToArray()
 		{
 			uint[] copy = new uint[totalBytes / sizeof(uint)];

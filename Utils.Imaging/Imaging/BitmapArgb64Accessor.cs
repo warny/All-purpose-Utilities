@@ -48,23 +48,6 @@ namespace Utils.Imaging
 			set { ulongdata[y * bmpdata.Width + x] = value.Value; }
 		}
 
-		public void Rectangle(Rectangle rectangle, ColorArgb64 color) => Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color.Value);
-		public void Rectangle(Rectangle rectangle, ulong color) => Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color);
-		public void Rectangle(int left, int top, int width, int height, ColorArgb64 color) => Rectangle(left, top, width, height, color.Value);
-		public void Rectangle(int left, int top, int width, int height, ulong color)
-		{
-			int bottom = top + height - 1;
-			int right = left + width - 1;
-			for (int y = top; y <= bottom; y++)
-			{
-				int yOffset = y * bmpdata.Width;
-				for (int x = left; x <= right; x++)
-				{
-					ulongdata[yOffset + x] = color;
-				}
-			}
-		}
-
 		public void Dispose()
 		{
 			Dispose(true);

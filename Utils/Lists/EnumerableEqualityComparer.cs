@@ -83,6 +83,6 @@ namespace Utils.List
 			}
 		}
 
-		public int GetHashCode(IEnumerable<T> obj) => obj.ComputeHash(getHashCode);
+		public int GetHashCode(IEnumerable<T> obj) => ObjectUtils.ComputeHash(obj, getHashCode);
 	}
 }

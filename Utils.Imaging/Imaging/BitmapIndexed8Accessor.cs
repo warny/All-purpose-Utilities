@@ -37,25 +37,6 @@ namespace Utils.Imaging
 			set { bytedata[y * bmpdata.Stride + x] = value; }
 		}
 
-		public void Rectangle(Rectangle rectangle, byte color)
-		{
-			Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height, color);
-		}
-
-		public void Rectangle(int left, int top, int width, int height, byte color)
-		{
-			int bottom = top + height;
-			int right = left + width;
-			for (int y = top; y <= bottom; y++)
-			{
-				int yOffset = y * bmpdata.Width;
-				for (int x = left; x <= right; x++)
-				{
-					bytedata[yOffset + x] = color;
-				}
-			}
-		}
-
 		public void Dispose()
 		{
 			Dispose(true);
