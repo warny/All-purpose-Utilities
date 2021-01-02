@@ -224,5 +224,15 @@ namespace Utils.Imaging
 			green = Green;
 			blue = Blue;
 		}
+
+		public static ColorArgb32 LinearGrandient(ColorArgb32 color1, ColorArgb32 color2, float position)
+		{
+			return new ColorArgb32(
+				(byte)(color1.alpha * (1 - position) + color2.alpha * position),
+				(byte)(color1.red * (1 - position) + color2.red * position),
+				(byte)(color1.green * (1 - position) + color2.green * position),
+				(byte)(color1.blue * (1 - position) + color2.blue * position)
+			);
+		}
 	}
 }

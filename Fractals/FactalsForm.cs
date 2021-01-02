@@ -12,12 +12,12 @@ using Utils.Imaging;
 
 namespace Fractals
 {
-	public partial class Form1 : Form
+	public partial class FactalsForm : Form
 	{
 		IComputeFractal computeFractalMandelbrot = null;
 		IComputeFractal computeFractalJulia = null;
 		
-		public Form1()
+		public FactalsForm()
 		{
 			InitializeComponent();
 		}

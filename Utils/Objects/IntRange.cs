@@ -63,12 +63,20 @@ namespace Utils.Objects
 
 		private readonly SortedSet<SimpleRange> ranges = new SortedSet<SimpleRange>();
 
-		private IntRange() { }
+		public IntRange() { }
 
-		public IntRange(string range)
+		public IntRange(string ranges) : this(ranges,
+				System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator,
+				System.Globalization.CultureInfo.InvariantCulture.TextInfo.ListSeparator) 
+		{ }
+
+		public IntRange(string ranges, System.Globalization.CultureInfo cultureInfo) : this(ranges, cultureInfo.TextInfo.ListSeparator) { }
+		public IntRange(string ranges, System.Globalization.TextInfo textInfo) : this(ranges, textInfo.ListSeparator) { }
+
+		public IntRange(string ranges, params string[] separators)
 		{
 			SortedSet<SimpleRange> result = new SortedSet<SimpleRange>();
-			var matches = Regex.Matches(range, @"((?<singleValue>\d+)|(?<start>\d+)-(?<end>\d+))(,|;|$)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+			var matches = Regex.Matches(ranges, @"((?<singleValue>\d+)|(?<start>\d+)-(?<end>\d+))(" + string.Join("|", separators) + "|$)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
 			foreach (Match match in matches)
 			{
 				if (match.Groups["singleValue"].Success)
@@ -135,7 +143,7 @@ namespace Utils.Objects
 
 		IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
-		public override string ToString() => string.Join(";", ranges.Select(r => r.ToString()));
+		public override string ToString() => string.Join(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator, ranges.Select(r => r.ToString()));
 
 		public static IntRange operator +(IntRange range1, IntRange range2)
 		{

@@ -1,6 +1,6 @@
 ﻿namespace Fractals
 {
-	partial class Form1
+	partial class FactalsForm
 	{
 		/// <summary>
 		/// Variable nécessaire au concepteur.

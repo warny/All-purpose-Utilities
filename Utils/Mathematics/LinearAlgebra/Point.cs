@@ -122,5 +122,16 @@ namespace Utils.Mathematics.LinearAlgebra
 			return string.Format("({0})", string.Join(";", this.components.Select(c => c.ToString()).ToArray(), 0, this.Dimension));
 		}
 
+		public static Point IntermediatePoint(Point point1, Point point2, double position)
+		{
+			if (point1.Dimension != point2.Dimension) { throw new ArgumentException("Les dimensions de point1 et point2 sont incompatibles", nameof(point2)); }
+
+			var result = new double[point1.Dimension];
+			for (int i = 0; i < result.Length; i++) {
+				result[i] = (1 - position) * point1[i] + position * point2[i];
+			}
+			return new Point(result);
+		}
+
 	}
 }
