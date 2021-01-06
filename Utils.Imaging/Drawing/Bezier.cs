@@ -49,7 +49,7 @@ namespace Utils.Drawing
 					{
 						var start = Point.Round(points[0]);
 						var end = Point.Round(points[1]);
-
+						if (start.X == end.X && start.Y == end.Y) continue;
 						result.Add(new Segment(start, end));
 					}
 					segments = result.ToArray();
@@ -117,7 +117,7 @@ namespace Utils.Drawing
 
 			IEnumerable<(PointF p, float position)> computeIntermediatePoints(PointF p1, float pos1, PointF p2, float pos2)
 			{
-				if ((p1.X - p2.X).Between(-1, 1) && (p1.Y - p2.Y).Between(-1, 1)) { yield break; }
+				if ((p1.X - p2.X).Between(-1, 1) || (p1.Y - p2.Y).Between(-1, 1)) { yield break; }
 
 				var pos = (pos1 + pos2) / 2;
 				var p = ComputeBezierPoint(pos);

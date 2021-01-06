@@ -21,6 +21,34 @@
 		public float Cos { get; }
 		public float Position { get; }
 
-		public override string ToString() => $"X={X},Y={Y} (P={Position})";
+		public override string ToString() {
+			string vDir, hDir;
+			switch (HorizontalDirection)
+			{
+				case -1:
+					hDir = "◄";
+					break;
+				case 1:
+					hDir = "►";
+					break;
+				default:
+					hDir = " ";
+					break;
+			}
+			switch (VerticalDirection)
+			{
+				case -1:
+					vDir = "▲";
+					break;
+				case 1:
+					vDir = "▼";
+					break;
+				default:
+					vDir = " ";
+					break;
+			}
+
+			return $"X={X},Y={Y} (P={Position}{hDir}{vDir})";
+		}
 	}
 }

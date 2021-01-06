@@ -21,7 +21,7 @@ namespace Utils.Drawing
 		public void DrawPoint(Point point, T color) => DrawPoint(point.X, point.Y, color);
 		public void DrawPoint(int x, int y, T color)
 		{
-			if (x.Between(0, ImageAccessor.Width) && y.Between(0, ImageAccessor.Height))
+			if (x.Between(0, ImageAccessor.Width-1) && y.Between(0, ImageAccessor.Height-1))
 			{
 				ImageAccessor[x, y] = color;
 			}
@@ -45,11 +45,11 @@ namespace Utils.Drawing
 				var orderedPoints = linePoints.OrderBy(p => p.X);
 				int direction = 0;
 				foreach (var pair in orderedPoints.EnumerateBy(2)) {
-					int y = pair[0].Y;
+					int y = linePoints.Key;
 					direction += pair[0].VerticalDirection;
 					DrawPoint(pair[0].X, y, color(pair[0].X, y));
 					if (direction != 0) {
-						for (int x = pair[0].X; x < pair[1].X; x++)
+						for (int x = pair[0].X; x <= pair[1].X; x++)
 						{
 							DrawPoint(x, y, color(x, y));
 						}
@@ -63,16 +63,19 @@ namespace Utils.Drawing
 			var points = drawables.SelectMany(d => d.GetPoints(true));
 			foreach (var linePoints in points.GroupBy(p => p.Y))
 			{
-				var orderedPoints = linePoints.OrderBy(p => p.X);
+				var orderedPoints = linePoints.OrderBy(p => p.X).ToArray();
 				bool drawing = false;
 				foreach (var pair in orderedPoints.EnumerateBy(2))
 				{
-					int y = pair[0].Y;
-					drawing = !drawing;
+					int y = linePoints.Key;
+					if (pair[0].VerticalDirection != 0)
+					{
+						drawing = !drawing;
+					}
 					DrawPoint(pair[0].X, y, color(pair[0].X, y));
 					if (drawing)
 					{
-						for (int x = pair[0].X; x < pair[1].X; x++)
+						for (int x = pair[0].X; x <= pair[1].X; x++)
 						{
 							DrawPoint(x, y, color(x, y));
 						}
@@ -137,10 +140,16 @@ namespace Utils.Drawing
 			DrawShape(color, polygon);
 		}
 
-		public void FillPolygon(T color, params Point[] points)
+		public void FillPolygon1(T color, params Point[] points)
 		{
 			Polygon polygon = new Polygon(points);
 			FillShape1((x, y) => color, polygon);
+		}
+
+		public void FillPolygon2(T color, params Point[] points)
+		{
+			Polygon polygon = new Polygon(points);
+			FillShape2((x, y) => color, polygon);
 		}
 
 		#endregion
@@ -183,7 +192,7 @@ namespace Utils.Drawing
 			=> FillRectangle(p1.X, p1.Y, p2.X, p2.Y, color);
 		public void FillRectangle(int x1, int y1, int x2, int y2, T color)
 		{
-			FillPolygon(color, new Point(x1, y1), new Point(x2, y1), new Point(x2, y2), new Point(x1, y2));
+			FillPolygon1(color, new Point(x1, y1), new Point(x2, y1), new Point(x2, y2), new Point(x1, y2));
 		}
 		#endregion
 

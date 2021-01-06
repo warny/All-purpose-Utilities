@@ -15,7 +15,7 @@ namespace Utils.Drawing
 
 		public Polygon(Point[] points)
 		{
-			Segments = points.EnumerateBy(2).Select(p=>new Segment(p[0], p[1])).FollowedBy(new Segment(points.First(), points.Last())).ToArray();
+			Segments = points.EnumerateBy(2).Select(p=>new Segment(p[0], p[1])).FollowedBy(new Segment(points.Last(), points.First())).ToArray();
 		}
 
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)

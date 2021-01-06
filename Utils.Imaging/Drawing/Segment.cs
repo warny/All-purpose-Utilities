@@ -42,9 +42,9 @@ namespace Utils.Drawing
 			dx = Math.Abs(dx);
 			dy = Math.Abs(dy);
 
-			yield return new DrawPoint(x, y, 0, 0, Cos, Sin, position);
 			if (dx > dy)
 			{
+				yield return new DrawPoint(x, y, xinc, 0, Cos, Sin, position);
 				int cumul = dx / 2;
 				float dl = dx / Length;
 				for (int i = 1; i <= dx; i++)
@@ -64,6 +64,7 @@ namespace Utils.Drawing
 			}
 			else
 			{
+				yield return new DrawPoint(x, y, 0, yinc, Cos, Sin, position);
 				int cumul = dy / 2;
 				float dl = dy / Length;
 				for (int i = 1; i <= dy; i++)
@@ -82,5 +83,7 @@ namespace Utils.Drawing
 				}
 			}
 		}
+		public override string ToString()
+			=> $"({Start}) ==> ({End})";
 	}
 }
