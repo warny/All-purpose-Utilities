@@ -30,6 +30,13 @@ namespace DrawTest
 					new Point(500, 500),
 					new ColorArgb32(0, 0, 50)
 				);
+				d.FillBezier(new ColorArgb32(0, 255, 0),
+					new Point(0, 0),
+					new Point(500, 0),
+					new Point(500, 500),
+					new Point(0, 500),
+					new Point(0, 0)
+				);
 				d.DrawLine(new Point(200, 0), new Point(0, 200), new ColorArgb32(255, 0, 0));
 				d.DrawLine(new Point(100, 0), new Point(0, 200), new ColorArgb32(0, 255, 0));
 				d.DrawLine(new Point(200, 0), new Point(0, 100), new ColorArgb32(0, 0, 255));
@@ -48,17 +55,12 @@ namespace DrawTest
 					new Point(250, 500),
 					new Point(0, 500)
 				);
-				d.DrawBezier(new ColorArgb32(0, 255, 0),
-					new Point(0, 0),
-					new Point(500, 0),
-					new Point(500, 500),
-					new Point(0, 500),
-					new Point(0, 0)
-				);
-				d.FillCircle(new Point (1000, 1000), 250, new ColorArgb32(255, 255, 0));
-				d.DrawCircle(new Point(1000, 1000), 250, new ColorArgb32(0, 255, 255));
+				d.FillCircle(new Point (1000, 300), 250, new ColorArgb32(255, 255, 0));
+				d.DrawEllipse(new Point(1000, 300), 250, 100, new ColorArgb32(0, 255, 255), 0);
+				d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(0, 0, 0), Math.PI / 2, Math.PI);
 				Func<float, ColorArgb32> c1 = g => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), g);
-				d.DrawCircle(new Point(1000, 1000), 250, c1, Math.PI / 2, Math.PI) ;
+				d.DrawCircle(new Point(1000, 300), 250, c1, Math.PI / 2, Math.PI) ;
+
 			}
 			pictureBox1.Image = image;
 		}
