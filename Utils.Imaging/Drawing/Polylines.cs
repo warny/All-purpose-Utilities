@@ -7,7 +7,7 @@ using Utils.Lists;
 
 namespace Utils.Drawing
 {
-	public class Polylines
+	public class Polylines : IDrawable
 	{
 		private Segment[] Segments { get; }
 
@@ -20,13 +20,23 @@ namespace Utils.Drawing
 
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)
 		{
+			IEnumerable<Segment> segments;
 			if (closed)
 			{
-				return Segments.FollowedBy(new Segment(Segments.Last().End, Segments.First().Start)).SelectMany(s => s.GetPoints(false));
+				segments = Segments.FollowedBy(new Segment(Segments.Last().End, Segments.First().Start));
 			}
 			else
 			{
-				return Segments.SelectMany(s => s.GetPoints(false));
+				segments = Segments;
+			}
+
+			foreach (var segment in segments)
+			{
+				foreach (var point in segment.GetPoints(false, position))
+				{
+					yield return point;
+					position = point.Position;
+				}
 			}
 		}
 

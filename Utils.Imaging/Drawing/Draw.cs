@@ -32,7 +32,6 @@ namespace Utils.Drawing
 			var length = drawable.Length;
 			foreach (var point in drawable.GetPoints(false))
 			{
-				Debug.WriteLine($"DrawPoint X={point.X} Y={point.Y} Position={point.Position} Relative={point.Position / length}");
 				DrawPoint(point.X, point.Y, color(point.Position / length));
 			}
 		}
