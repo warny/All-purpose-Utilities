@@ -20,10 +20,7 @@ namespace Utils.Mathematics
 		///   -1 % 3 = -1
 		///	  Modulo(-1, 3) = 2
 		/// </summary>
-		public static long Mod( long a, long b )
-		{
-			return (a % b + b) % b;
-		}
+		public static long Mod(long a, long b) => (a % b + b) % b;
 
 		/// <summary>
 		/// Calcul alternatif du modulo (différent de l'opérateur %)
@@ -32,10 +29,7 @@ namespace Utils.Mathematics
 		///   -1 % 3 = -1
 		///	  Modulo(-1, 3) = 2
 		/// </summary>
-		public static int Mod( int a, int b )
-		{
-			return (a % b + b) % b;
-		}
+		public static int Mod(int a, int b) => (a % b + b) % b;
 
 		/// <summary>
 		/// Calcul alternatif du modulo (différent de l'opérateur %)
@@ -44,10 +38,7 @@ namespace Utils.Mathematics
 		///   -1 % 3 = -1
 		///	  Modulo(-1, 3) = 2
 		/// </summary>
-		public static short Mod( short a, short b )
-		{
-			return (short)((a % b + b) % b);
-		}
+		public static short Mod(short a, short b) => (short)((a % b + b) % b);
 
 		/// <summary>
 		/// Calcul alternatif du modulo (différent de l'opérateur %)
@@ -56,10 +47,7 @@ namespace Utils.Mathematics
 		///   -1 % 3 = -1
 		///	  Modulo(-1, 3) = 2
 		/// </summary>
-		public static decimal Mod( decimal a, decimal b )
-		{
-			return ((a % b + b) % b);
-		}
+		public static decimal Mod(decimal a, decimal b) => ((a % b + b) % b);
 
 		/// <summary>
 		/// Calcul alternatif du modulo (différent de l'opérateur %)
@@ -68,10 +56,7 @@ namespace Utils.Mathematics
 		///   -1 % 3 = -1
 		///	  Modulo(-1, 3) = 2
 		/// </summary>
-		public static float Mod(float a, float b )
-		{
-			return ((a % b + b) % b);
-		}
+		public static float Mod(float a, float b) => ((a % b + b) % b);
 
 		/// <summary>
 		/// Calcul alternatif du modulo (différent de l'opérateur %)
@@ -80,18 +65,12 @@ namespace Utils.Mathematics
 		///   -1 % 3 = -1
 		///	  Modulo(-1, 3) = 2
 		/// </summary>
-		public static double Mod( double a, double b )
-		{
-			return ((a % b + b) % b);
-		}
+		public static double Mod(double a, double b) => ((a % b + b) % b);
 		#endregion
 
 		#region round
 
-		public static float Round( float value, float @base )
-		{
-			return (float)Round((double)value, @base);
-		}
+		public static float Round(float value, float @base) => (float)Round((double)value, @base);
 
 
 		public static double Round( double value, double @base )
@@ -119,30 +98,7 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple inférieur</returns>
-		public static long Floor( long value, long @base )
-		{
-			return (value-1) - (Mod(value-1, @base));
-		}
-		/// <summary>
-		/// retrouve le multiple de la base inférieur à value
-		/// </summary>
-		/// <param name="value">valeur</param>
-		/// <param name="base">base</param>
-		/// <returns>multiple inférieur</returns>
-		public static int Floor( int value, int @base )
-		{
-			return (value-1) - (Mod(value-1, @base));
-		}
-		/// <summary>
-		/// retrouve le multiple de la base inférieur à value
-		/// </summary>
-		/// <param name="value">valeur</param>
-		/// <param name="base">base</param>
-		/// <returns>multiple inférieur</returns>
-		public static short Floor( short value, short @base )
-		{
-			return (short)((value-1) - (Mod(value-1, @base)));
-		}
+		public static long Floor(long value, long @base) => (value - 1) - (Mod(value - 1, @base));
 
 		/// <summary>
 		/// retrouve le multiple de la base inférieur à value
@@ -150,10 +106,7 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple inférieur</returns>
-		public static decimal Floor( decimal value, decimal @base )
-		{
-			return ((value-1) - (Mod(value-1, @base)));
-		}
+		public static int Floor(int value, int @base) => (value - 1) - (Mod(value - 1, @base));
 
 		/// <summary>
 		/// retrouve le multiple de la base inférieur à value
@@ -161,10 +114,7 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple inférieur</returns>
-		public static float Floor( float value, float @base )
-		{
-			return (float)((value-1) - (Math.IEEERemainder(value-1, @base)));
-		}
+		public static short Floor(short value, short @base) => (short)((value - 1) - (Mod(value - 1, @base)));
 
 		/// <summary>
 		/// retrouve le multiple de la base inférieur à value
@@ -172,11 +122,23 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple inférieur</returns>
-		public static double Floor( double value, double @base )
-		{
-			return ((value-1) - (Math.IEEERemainder(value-1, @base)));
-		}
+		public static decimal Floor(decimal value, decimal @base) => ((value - 1) - (Mod(value - 1, @base)));
 
+		/// <summary>
+		/// retrouve le multiple de la base inférieur à value
+		/// </summary>
+		/// <param name="value">valeur</param>
+		/// <param name="base">base</param>
+		/// <returns>multiple inférieur</returns>
+		public static float Floor(float value, float @base) => (float)((value - 1) - (Math.IEEERemainder(value - 1, @base)));
+
+		/// <summary>
+		/// retrouve le multiple de la base inférieur à value
+		/// </summary>
+		/// <param name="value">valeur</param>
+		/// <param name="base">base</param>
+		/// <returns>multiple inférieur</returns>
+		public static double Floor(double value, double @base) => ((value - 1) - (Math.IEEERemainder(value - 1, @base)));
 		#endregion
 
 		#region ceiling
@@ -186,40 +148,7 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple supérieur</returns>
-		public static long Ceiling( long value, long @base )
-		{
-			return (value-1) + @base - (Mod(value-1, @base));
-		}
-		/// <summary>
-		/// retrouve le multiple de la base supérieur à value
-		/// </summary>
-		/// <param name="value">valeur</param>
-		/// <param name="base">base</param>
-		/// <returns>multiple supérieur</returns>
-		public static int Ceiling( int value, int @base )
-		{
-			return (value-1) + @base - (Mod(value-1, @base));
-		}
-		/// <summary>
-		/// retrouve le multiple de la base supérieur à value
-		/// </summary>
-		/// <param name="value">valeur</param>
-		/// <param name="base">base</param>
-		/// <returns>multiple supérieur</returns>
-		public static short Ceiling( short value, short @base )
-		{
-			return (short)((value-1) + @base - (Mod(value-1, @base)));
-		}
-		/// <summary>
-		/// retrouve le multiple de la base supérieur à value
-		/// </summary>
-		/// <param name="value">valeur</param>
-		/// <param name="base">base</param>
-		/// <returns>multiple supérieur</returns>
-		public static decimal Ceiling( decimal value, decimal @base )
-		{
-			return (value-1) + @base - (Mod(value-1, @base));
-		}
+		public static long Ceiling(long value, long @base) => (value - 1) + @base - (Mod(value - 1, @base));
 
 		/// <summary>
 		/// retrouve le multiple de la base supérieur à value
@@ -227,10 +156,7 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple supérieur</returns>
-		public static float Ceiling( float value, float @base )
-		{
-			return (float)((value-1) + @base - (Math.IEEERemainder(value-1, @base)));
-		}
+		public static int Ceiling(int value, int @base) => (value - 1) + @base - (Mod(value - 1, @base));
 
 		/// <summary>
 		/// retrouve le multiple de la base supérieur à value
@@ -238,10 +164,31 @@ namespace Utils.Mathematics
 		/// <param name="value">valeur</param>
 		/// <param name="base">base</param>
 		/// <returns>multiple supérieur</returns>
-		public static double Ceiling( double value, double @base )
-		{
-			return (value-1) + @base - (Math.IEEERemainder(value-1, @base));
-		}
+		public static short Ceiling(short value, short @base) => (short)((value - 1) + @base - (Mod(value - 1, @base)));
+
+		/// <summary>
+		/// retrouve le multiple de la base supérieur à value
+		/// </summary>
+		/// <param name="value">valeur</param>
+		/// <param name="base">base</param>
+		/// <returns>multiple supérieur</returns>
+		public static decimal Ceiling(decimal value, decimal @base) => (value - 1) + @base - (Mod(value - 1, @base));
+
+		/// <summary>
+		/// retrouve le multiple de la base supérieur à value
+		/// </summary>
+		/// <param name="value">valeur</param>
+		/// <param name="base">base</param>
+		/// <returns>multiple supérieur</returns>
+		public static float Ceiling(float value, float @base) => (float)((value - 1) + @base - (Math.IEEERemainder(value - 1, @base)));
+
+		/// <summary>
+		/// retrouve le multiple de la base supérieur à value
+		/// </summary>
+		/// <param name="value">valeur</param>
+		/// <param name="base">base</param>
+		/// <returns>multiple supérieur</returns>
+		public static double Ceiling(double value, double @base) => (value - 1) + @base - (Math.IEEERemainder(value - 1, @base));
 		#endregion
 
 		#region MinMax
@@ -514,41 +461,35 @@ namespace Utils.Mathematics
 		/// </summary>
 		/// <param name="value">Valeur</param>
 		/// <returns>Racine carrée</returns>
-		public static byte Sqrt( byte value )
-		{
-			return (byte)Math.Sqrt(value);
-		}
+		public static byte Sqrt(byte value) => (byte)Math.Sqrt(value);
 
 		/// <summary>
 		/// Renvoie la racine carrée du nombre en paramètre
 		/// </summary>
 		/// <param name="value">Valeur</param>
 		/// <returns>Racine carrée</returns>
-		public static short Sqrt( short value )
-		{
-			return (short)Math.Sqrt(value);
-		}
+		public static short Sqrt(short value) => (short)Math.Sqrt(value);
 
 		/// <summary>
 		/// Renvoie la racine carrée du nombre en paramètre
 		/// </summary>
 		/// <param name="value">Valeur</param>
 		/// <returns>Racine carrée</returns>
-		public static int Sqrt( int value )
-		{
-			return (int)Math.Sqrt(value);
-		}
+		public static int Sqrt(int value) => (int)Math.Sqrt(value);
 
 		/// <summary>
 		/// Renvoie la racine carrée du nombre en paramètre
 		/// </summary>
 		/// <param name="value">Valeur</param>
 		/// <returns>Racine carrée</returns>
-		public static long Sqrt( long value )
-		{
-			return (long)Math.Sqrt(value);
-		}
+		public static long Sqrt(long value) => (long)Math.Sqrt(value);
 
+		/// <summary>
+		/// Renvoie la racine carrée du nombre en paramètre
+		/// </summary>
+		/// <param name="value">Valeur</param>
+		/// <returns>Racine carrée</returns>
+		public static float Sqrt(float value) => (float)Math.Sqrt(value);
 		#endregion
 	}
 }
