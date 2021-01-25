@@ -22,5 +22,10 @@ namespace Utils.Drawing
 		{
 			return Segments.SelectMany(s => s.GetPoints(false));
 		}
+
+		public IEnumerable<Segment> GetSegments(bool closed)
+		{
+			return Segments;
+		}
 	}
 }

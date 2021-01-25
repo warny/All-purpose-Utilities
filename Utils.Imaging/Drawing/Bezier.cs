@@ -15,7 +15,7 @@ namespace Utils.Drawing
 		private Segment[] segments;
 		private float length = -1;
 
-		public Bezier(Point[] points)
+		public Bezier(params Point[] points)
 			: this(points.Select(p => new PointF(p.X, p.Y)).ToArray()) { }
 		public Bezier(PointF[] points)
 		{
@@ -65,8 +65,7 @@ namespace Utils.Drawing
 		/// <returns></returns>
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)
 		{
-
-			foreach (var segment in Segments)
+			foreach (var segment in GetSegments(closed))
 			{
 				foreach (var drawPoint in segment.GetPoints(false, position))
 				{
@@ -74,12 +73,17 @@ namespace Utils.Drawing
 					yield return drawPoint;
 				}
 			}
+		}
+
+		public IEnumerable<Segment> GetSegments(bool closed)
+		{
+			foreach (var segment in Segments)
+			{
+				yield return segment;
+			}
 			if (closed)
 			{
-				foreach (var drawPoint in  (new Segment(Point.Truncate(Points[0]), Point.Truncate(Points.Last())).GetPoints(false, position)))
-				{
-					yield return drawPoint;
-				}
+				yield return new Segment(Point.Truncate(Points[0]), Point.Truncate(Points.Last()));
 			}
 		}
 
@@ -146,7 +150,6 @@ namespace Utils.Drawing
 				yield return point.p;
 			}
 		}
-
 
 	}
 }

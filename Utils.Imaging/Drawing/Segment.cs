@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Text;
 
 namespace Utils.Drawing
@@ -15,7 +16,7 @@ namespace Utils.Drawing
 		public int X2 => End.X;
 		public int Y2 => End.Y;
 		public float Length { get; }
-		public float Sin{get; } 
+		public float Sin { get; }
 		public float Cos { get; }
 
 		public Segment(int x1, int y1, int x2, int y2) : this(new Point(x1, y1), new Point(x2, y2)) { }
@@ -83,7 +84,10 @@ namespace Utils.Drawing
 				}
 			}
 		}
+		public IEnumerable<Segment> GetSegments(bool closed) => new [] { this };
+
 		public override string ToString()
 			=> $"({Start}) ==> ({End})";
+
 	}
 }

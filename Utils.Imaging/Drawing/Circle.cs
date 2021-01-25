@@ -101,5 +101,10 @@ namespace Utils.Drawing
 			ComputeLines();
 			return polylines.GetPoints(closed, position);
 		}
+
+		public IEnumerable<Segment> GetSegments(bool closed)
+		{
+			return polylines.GetSegments(closed);
+		}
 	}
 }

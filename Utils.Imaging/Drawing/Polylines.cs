@@ -20,6 +20,18 @@ namespace Utils.Drawing
 
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)
 		{
+			foreach (var segment in GetSegments(closed))
+			{
+				foreach (var point in segment.GetPoints(false, position))
+				{
+					yield return point;
+					position = point.Position;
+				}
+			}
+		}
+
+		public IEnumerable<Segment> GetSegments(bool closed)
+		{
 			IEnumerable<Segment> segments;
 			if (closed)
 			{
@@ -30,15 +42,7 @@ namespace Utils.Drawing
 				segments = Segments;
 			}
 
-			foreach (var segment in segments)
-			{
-				foreach (var point in segment.GetPoints(false, position))
-				{
-					yield return point;
-					position = point.Position;
-				}
-			}
+			return segments;
 		}
-
 	}
 }

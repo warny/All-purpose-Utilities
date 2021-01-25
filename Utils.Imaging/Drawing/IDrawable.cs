@@ -8,5 +8,6 @@ namespace Utils.Drawing
 	{
 		float Length { get; }
 		IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0);
+		IEnumerable<Segment> GetSegments(bool closed);
 	}
 }
