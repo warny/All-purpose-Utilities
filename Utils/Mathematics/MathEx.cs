@@ -384,11 +384,7 @@ namespace Utils.Mathematics
 		/// <param name="value">Valeur à rechercher</param>
 		/// <param name="objects">Liste de valeurs dans lesquelles la recherche s'applique</param>
 		/// <returns></returns>
-		public static bool In<T>( this T value, params T[] objects )
-		{
-			return Array.IndexOf<T>(objects, value) > -1;
-		}
-
+		public static bool In<T>(this T value, params T[] objects) => objects.Contains(value);
 		/// <summary>
 		/// Renvoie si la valeur n'est pas dans le tableau
 		/// </summary>
@@ -396,10 +392,7 @@ namespace Utils.Mathematics
 		/// <param name="value">Valeur à rechercher</param>
 		/// <param name="objects">Liste de valeurs dans lesquelles la recherche s'applique</param>
 		/// <returns></returns>
-		public static bool NotIn<T>( this T value, params T[] objects )
-		{
-			return Array.IndexOf<T>(objects, value) == -1;
-		}
+		public static bool NotIn<T>(this T value, params T[] objects) => !objects.Contains(value);
 
 		/// <summary>
 		/// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1

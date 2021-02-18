@@ -86,8 +86,7 @@ namespace Utils.Drawing
 		}
 		public IEnumerable<Segment> GetSegments(bool closed) => new [] { this };
 
-		public override string ToString()
-			=> $"({Start}) ==> ({End})";
+		public override string ToString() => $"({Start}) ==> ({End})";
 
 	}
 }
