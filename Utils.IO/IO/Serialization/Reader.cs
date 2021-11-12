@@ -13,15 +13,40 @@ namespace Utils.IO.Serialization
 	public class Reader
     {
 		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
-		Stack<long> positionsStack = new Stack<long>();
+		private readonly Stack<long> positionsStack = new Stack<long>();
+		private readonly Dictionary<Type, IObjectReader> Readers = new Dictionary<Type, IObjectReader>();	
 
 		public System.IO.Stream Stream { get; }
-		public long Position => Stream.Position;
+		public long Position
+		{
+			get => Stream.Position;
+			set => Stream.Position = value;
+		}
+		public long BytesLeft => Stream.Length - Stream.Position;
 
-		public Reader(System.IO.Stream s)
+		public Reader(Stream s) : this(s, Enumerable.Empty<IObjectReader>()) { }
+		public Reader(Stream s, params IObjectReader[] readers) : this(s, (IEnumerable<IObjectReader>)readers) { }
+		public Reader(Stream s, params IEnumerable<IObjectReader>[] readers) : this (s, readers.SelectMany(r=>r)) { }
+		public Reader(Stream s, IEnumerable<IObjectReader> readers)
 		{
 			this.Stream = s;
 			if (!this.Stream.CanRead) throw new NotSupportedException();
+			Readers = new Dictionary<Type, IObjectReader>();
+			foreach (var reader in readers)
+			{
+				foreach (var type in reader.Types)
+				{
+					Readers[type] = reader;
+				}
+			}
+		}
+
+		public void AddReader(IObjectReader reader)
+		{
+			foreach (var type in reader.Types)
+			{
+				Readers.Add(type, reader);
+			}
 		}
 
 		public void Seek( int offset , SeekOrigin origin)
@@ -48,6 +73,12 @@ namespace Utils.IO.Serialization
 			this.Stream.Seek(positionsStack.Pop(), SeekOrigin.Begin);
 		}
 
+		public Reader Slice(long position, long length)
+		{
+			PartialStream s = new PartialStream(Stream, position, length);
+			return new Reader(s);
+		}
+
 		public T Read<T>() where T : IReadable, new()
 		{
 			T result = new T();
@@ -57,8 +88,15 @@ namespace Utils.IO.Serialization
 
 		public bool Read(Type t, out object result)
 		{
-			result = Activator.CreateInstance(t);
-			return Read(result, t);
+			if (Readers.TryGetValue(t, out var reader))
+			{
+				return reader.Read(this, out result);
+			}
+			else
+			{
+				result = Activator.CreateInstance(t);
+				return Read(result, t);
+			}
 		}
 
 		public bool Read( object result )
@@ -82,7 +120,7 @@ namespace Utils.IO.Serialization
 			foreach (var field in fields)
 			{
 				var attribute = field.GetCustomAttribute<FieldAttribute>();
-				System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
+				System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field} {attribute.FieldEncoding} {attribute.Length}");
 				System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
 				field.SetValue(result, ReadValue(field.Type, attribute.Length, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding));
 				System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");

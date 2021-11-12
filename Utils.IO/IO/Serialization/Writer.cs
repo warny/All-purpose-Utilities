@@ -13,15 +13,30 @@ namespace Utils.IO.Serialization
 	public class Writer
 	{
 		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
-		Stack<long> positionsStack = new Stack<long>();
+		private readonly Stack<long> positionsStack = new Stack<long>();
+		private readonly Dictionary<Type, IObjectWriter> Writers = new Dictionary<Type, IObjectWriter>();
 
 		public System.IO.Stream Stream { get; }
-		public long Position => Stream.Position;
+		public long Position {
+			get => Stream.Position;
+			set => Stream.Position = value;
+		}
+		public long BytesLeft => Stream.Length - Stream.Position;
 
-		public Writer(System.IO.Stream s)
+		public Writer(System.IO.Stream s) : this(s, Enumerable.Empty<IObjectWriter>()) { }
+		public Writer(System.IO.Stream s, params IObjectReader[] writers) : this(s, (IEnumerable<IObjectWriter>)writers) { }
+		public Writer(System.IO.Stream s, params IEnumerable<IObjectWriter>[] writers) : this(s, writers.SelectMany(r => r)) { }
+		public Writer(System.IO.Stream s, IEnumerable<IObjectWriter> writers)
 		{
 			this.Stream = s;
 			if (!this.Stream.CanWrite) throw new NotSupportedException();
+			foreach (var writer in writers)
+			{
+				foreach (var type in writer.Types)
+				{
+					Writers[type] = writer;
+				}
+			}
 		}
 
 		public void Seek(int offset, System.IO.SeekOrigin origin)
@@ -47,29 +62,43 @@ namespace Utils.IO.Serialization
 			if (!this.Stream.CanSeek) throw new NotSupportedException();
 			this.Stream.Seek(positionsStack.Pop(), System.IO.SeekOrigin.Begin);
 		}
+		public Writer Slice(long position, long length)
+		{
+			PartialStream s = new PartialStream(Stream, position, length);
+			return new Writer(s);
+		}
+
 
 		public void Write(object obj)
 		{
 			Type t = obj.GetType();
-			if (!TypesAccessors.TryGetValue(t, out FieldOrPropertyInfo[] fields))
+			if (Writers.TryGetValue(t, out var writer))
 			{
-				fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-					.Where(m => m.GetCustomAttribute<FieldAttribute>() != null)
-					.Select(m => new FieldOrPropertyInfo(m))
-					.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
-					.ToArray();
-				TypesAccessors.Add(t, fields);
+				writer.Write(this, obj);
 			}
-
-			foreach (var field in fields)
+			else
 			{
-				var attribute = field.GetCustomAttribute<FieldAttribute>();
-				var value = field.GetValue(obj);
-				System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
-				System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
-				WriteValue(value, field.Type, attribute.Length, null, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding);
-				System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
 
+				if (!TypesAccessors.TryGetValue(t, out FieldOrPropertyInfo[] fields))
+				{
+					fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+						.Where(m => m.GetCustomAttribute<FieldAttribute>() != null)
+						.Select(m => new FieldOrPropertyInfo(m))
+						.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
+						.ToArray();
+					TypesAccessors.Add(t, fields);
+				}
+
+				foreach (var field in fields)
+				{
+					var attribute = field.GetCustomAttribute<FieldAttribute>();
+					var value = field.GetValue(obj);
+					System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
+					System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
+					WriteValue(value, field.Type, attribute.Length, null, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding);
+					System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
+
+				}
 			}
 		}
 
@@ -210,7 +239,12 @@ namespace Utils.IO.Serialization
 		private void WriteValue(object value, Type type, int? length, int? sizeLength, bool bigIndian, byte[] terminators, FieldEncodingEnum fieldEncoding, Encoding stringEncoding)
 		{
 			type = type ?? value.GetType();
-			if (typeof(IWritable).IsAssignableFrom(type))
+
+			if (Writers.TryGetValue(type, out var writer))
+			{
+				writer.Write(this, value);
+			}
+			else if (typeof(IWritable).IsAssignableFrom(type))
 			{
 				Write(value);
 				return;

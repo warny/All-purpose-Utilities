@@ -11,10 +11,10 @@ namespace Utils.IO
 	/// <summary>
 	/// Ouvre une partie d'un stream
 	/// </summary>
-	class PartialStream : System.IO.Stream
+	public class PartialStream : System.IO.Stream
 	{
 		private readonly System.IO.Stream s;
-		private readonly long startPosition; 
+		private readonly long startPosition;
 		private long length;
 		private long position;
 
@@ -23,7 +23,7 @@ namespace Utils.IO
 		/// </summary>
 		/// <param name="s">Stream à ouvrir</param>
 		/// <param name="length">Longueur à utiliser</param>
-		public PartialStream(System.IO.Stream s, long length )
+		public PartialStream(System.IO.Stream s, long length)
 		{
 			this.s = s;
 			this.startPosition = s.Position;
@@ -38,7 +38,7 @@ namespace Utils.IO
 		/// <param name="s">Stream à ouvrir</param>
 		/// <param name="position">Position à laquelle commencer la lecture</param>
 		/// <param name="length">Longueur à utiliser</param>
-		public PartialStream(System.IO.Stream s, long position, long length )
+		public PartialStream(System.IO.Stream s, long position, long length)
 		{
 			this.s = s;
 			this.startPosition = position;
@@ -55,11 +55,11 @@ namespace Utils.IO
 			if (!this.s.CanSeek) throw new ArgumentException("Le flux doit être parcourable");
 		}
 
-		public override bool CanRead=>s.CanRead;
+		public override bool CanRead => s.CanRead;
 		public override bool CanSeek => s.CanSeek;
-		public override bool CanWrite=>s.CanWrite;
+		public override bool CanWrite => s.CanWrite;
 
-		public override long Length=>length;
+		public override long Length => length;
 
 		public override long Position
 		{
@@ -72,7 +72,7 @@ namespace Utils.IO
 			s.Flush();
 		}
 
-		public override int Read( byte[] buffer, int offset, int count )
+		public override int Read(byte[] buffer, int offset, int count)
 		{
 			lock (s)
 			{
@@ -89,9 +89,10 @@ namespace Utils.IO
 			}
 		}
 
-		public override long Seek( long offset, SeekOrigin origin )
+		public override long Seek(long offset, SeekOrigin origin)
 		{
-			switch (origin) {
+			switch (origin)
+			{
 				case SeekOrigin.Begin:
 					this.position = offset > 0 ? offset : 0;
 					break;
@@ -107,12 +108,12 @@ namespace Utils.IO
 			return this.position;
 		}
 
-		public override void SetLength( long value )
+		public override void SetLength(long value)
 		{
 			this.length = value;
 		}
 
-		public override void Write( byte[] buffer, int offset, int count )
+		public override void Write(byte[] buffer, int offset, int count)
 		{
 			lock (s)
 			{

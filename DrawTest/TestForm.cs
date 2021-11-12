@@ -89,7 +89,7 @@ namespace DrawTest
 				d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(255, 255, 0));
 				d.DrawEllipse(new Point(1000, 300), 250, 100, new ColorArgb32(0, 255, 255), 0);
 				d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(0, 0, 0), Math.PI / 2, Math.PI);
-				Func<float, ColorArgb32> c1 = g => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), g);
+				MapBrush<ColorArgb32> c1 = new MapBrush<ColorArgb32>((p, s) => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), p));
 				d.DrawCircle(new Point(1000, 300), 250, c1, Math.PI / 2, Math.PI);
 			}
 			pictureBox1.Image = image;

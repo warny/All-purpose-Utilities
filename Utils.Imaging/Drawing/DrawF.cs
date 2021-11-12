@@ -8,10 +8,9 @@ using System.Linq;
 
 namespace Utils.Drawing
 {
-	public class DrawF<T>
+	public class DrawF<T> : BaseDrawing<T>
 	{
 		public Draw<T> Draw { get; }
-		public IImageAccessor<T> ImageAccessor => Draw.ImageAccessor;
 		public float Top { get; }
 		public float Left { get; }
 		public float Right { get; }
@@ -22,7 +21,7 @@ namespace Utils.Drawing
 
 		public DrawF(IImageAccessor<T> imageAccessor) : this(imageAccessor, 0, 0, imageAccessor.Width, imageAccessor.Height) { }
 
-		public DrawF(IImageAccessor<T> imageAccessor, float top, float left, float right, float down)
+		public DrawF(IImageAccessor<T> imageAccessor, float top, float left, float right, float down) : base (imageAccessor)
 		{
 			Draw = new Draw<T>(imageAccessor);
 			Top = top;
@@ -79,8 +78,8 @@ namespace Utils.Drawing
 			Draw.DrawLine(p1, p2, color);
 		}
 
-		public void DrawLine(PointF p1, PointF p2, Func<float, T> color) => DrawLine(p1.X, p1.Y, p2.X, p2.Y, color);
-		public void DrawLine(float x1, float y1, float x2, float y2, Func<float, T> color)
+		public void DrawLine(PointF p1, PointF p2, IBrush<T> color) => DrawLine(p1.X, p1.Y, p2.X, p2.Y, color);
+		public void DrawLine(float x1, float y1, float x2, float y2, IBrush<T> color)
 		{
 			var p1 = ComputePixelPosition(x1, y1);
 			var p2 = ComputePixelPosition(x2, y2);
@@ -96,13 +95,13 @@ namespace Utils.Drawing
 		#region Polygon
 		public void DrawPolygon(T color, IEnumerable<PointF> points) => Draw.DrawPolygon(color, points.Select(p => ComputePixelPosition(p)));
 		public void DrawPolygon(T color, params PointF[] points) => Draw.DrawPolygon(color, points.Select(p => ComputePixelPosition(p)).ToArray());
-		public void DrawPolygon(Func<float, T> color, IEnumerable<PointF> points) => Draw.DrawPolygon(color, points.Select(p => ComputePixelPosition(p)));
-		public void DrawPolygon(Func<float, T> color, params PointF[] points) => Draw.DrawPolygon(color, points.Select(p => ComputePixelPosition(p)).ToArray());
+		public void DrawPolygon(IBrush<T> color, IEnumerable<PointF> points) => Draw.DrawPolygon(color, points.Select(p => ComputePixelPosition(p)));
+		public void DrawPolygon(IBrush<T> color, params PointF[] points) => Draw.DrawPolygon(color, points.Select(p => ComputePixelPosition(p)).ToArray());
 		#endregion
 		#region Circle
 		public void FillCircle(PointF center, float radius, T color, double startAngle = 0, double endAngle = Math.PI * 2)
 			=> Draw.DrawEllipse(ComputePixelPosition(center), (int)(radius * hRatio), (int) (radius * vRatio), color, 0, startAngle, endAngle); 
-		public void DrawCircle(PointF center, float radius, Func<float, T> color, double startAngle = 0, double endAngle = Math.PI * 2)
+		public void DrawCircle(PointF center, float radius, IBrush<T> color, double startAngle = 0, double endAngle = Math.PI * 2)
 			=> Draw.DrawEllipse(ComputePixelPosition(center), (int)(radius * hRatio), (int)(radius * vRatio), color, 0, startAngle, endAngle);
 
 		public void DrawEllipse(PointF center, float radius1, float radius2, T color, double rotation = 0, double startAngle = 0, double endAngle = Math.PI * 2)
@@ -111,7 +110,7 @@ namespace Utils.Drawing
 			Draw.DrawPolygon(color, points);
 		}
 
-		public void DrawEllipse(PointF center, float radius1, float radius2, Func<float, T> color, double rotation = 0, double startAngle = 0, double endAngle = Math.PI * 2)
+		public void DrawEllipse(PointF center, float radius1, float radius2, IBrush<T> color, double rotation = 0, double startAngle = 0, double endAngle = Math.PI * 2)
 		{
 			var points = ComputeEllipsePoints(center, radius1, radius2, rotation, startAngle, endAngle);
 			Draw.DrawPolygon(color, points);

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29324.140
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31423.177
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Geography", "Utils.Geography\Utils.Geography.csproj", "{4CA5BD5E-C018-45DE-A1BF-FFEE49C20866}"
 EndProject
@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Net", "System.Net\Uti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.IO", "Utils.IO\Utils.IO.csproj", "{A5395030-8D5C-41DB-8B43-3C9E16A8EE1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawTest", "DrawTest\DrawTest.csproj", "{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DrawTest", "DrawTest\DrawTest.csproj", "{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Fonts", "Utils.Fonts\Utils.Fonts.csproj", "{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
