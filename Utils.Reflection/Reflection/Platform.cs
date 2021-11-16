@@ -68,6 +68,23 @@ namespace Utils.Reflection
 		}
 
 		/// <summary>
+		/// True if runtime platform is unknown
+		/// </summary>
+		private static bool _isUnknown = false;
+
+		/// <summary>
+		/// True if runtime platform is unknown
+		/// </summary>
+		public static bool IsUnknown
+		{
+			get
+			{
+				DetectPlatform();
+				return _isUnknown;
+			}
+		}
+
+		/// <summary>
 		/// Size of native (unmanaged) long type
 		/// </summary>
 		private static int _nativeULongSize = 0;
@@ -170,7 +187,7 @@ namespace Utils.Reflection
             }
             else
             {
-                throw new NotSupportedException("Pkcs11Interop is not supported on this platform");
+				_isUnknown = true;
             }
 
 #else
@@ -209,7 +226,7 @@ namespace Utils.Reflection
 				}
 				else
 				{
-					throw new NotSupportedException(string.Format("Unsupported \"{0}\" platform", osType));
+					_isUnknown = true;
 				}
 			}
 			else if (File.Exists(@"/System/Library/CoreServices/SystemVersion.plist"))
@@ -219,7 +236,7 @@ namespace Utils.Reflection
 			}
 			else
 			{
-				throw new NotSupportedException("Unsupported platform");
+				_isUnknown = true;
 			}
 
 #endif
