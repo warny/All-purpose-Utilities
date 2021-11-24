@@ -82,7 +82,7 @@ namespace Utils.IO.Serialization
 				if (!TypesAccessors.TryGetValue(t, out FieldOrPropertyInfo[] fields))
 				{
 					fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-						.Where(m => m.GetCustomAttribute<FieldAttribute>() != null)
+						.Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
 						.Select(m => new FieldOrPropertyInfo(m))
 						.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
 						.ToArray();

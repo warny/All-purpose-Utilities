@@ -159,7 +159,7 @@ namespace Utils.Net.DNS
 			{
 				var s = Encoding.ASCII.GetString(ReadBytes(l));
 				var next = ReadString();
-				if (next != null) s = s + "." + next;
+				if (next is not null) s = s + "." + next;
 				if (restorePosition) this.Position = temp;
 				PositionsStrings[(ushort)position] = s;
 				StringsPositions[s] = (ushort)position;

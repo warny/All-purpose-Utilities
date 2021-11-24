@@ -110,7 +110,7 @@ namespace Utils.Objects
 					current = newRange;
 				}
 			}
-			if (current!=null) ranges.Add(current);
+			if (current is not null) ranges.Add(current);
 		}
 
 		public bool Contains(int value)
@@ -199,7 +199,7 @@ namespace Utils.Objects
 				if (find)
 				{
 					var current = simpleRange;
-					while (current != null)
+					while (current is not null)
 					{
 						while ((enum2.Current?.Maximum ?? int.MaxValue) < current.Minimum)
 						{

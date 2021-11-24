@@ -16,7 +16,7 @@ namespace Utils.Arrays
 		public ArrayComparer(params object[] comparers)
 		{
 			var externalComparer = comparers.OfType<IComparer<T>>().FirstOrDefault();
-			if (externalComparer != null)
+			if (externalComparer is not null)
 			{
 				comparer = (e1, e2) => externalComparer.Compare(e1, e2);
 			}
@@ -45,9 +45,9 @@ namespace Utils.Arrays
 
 		public int Compare(IReadOnlyList<T> x, IReadOnlyList<T> y)
 		{
-			if (x == null && y == null) return 0;
-			if (x == null) return 1;
-			if (y == null) return -1;
+			if (x is null && y is null) return 0;
+			if (x is null) return 1;
+			if (y is null) return -1;
 
 			var enumx = x.GetEnumerator();
 			var enumy = y.GetEnumerator();

@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+	  <LangVersion>9.0</LangVersion>
     <UseWPF>true</UseWPF>
     <AssemblyName>Utils.Net</AssemblyName>
     <RootNamespace>Utils</RootNamespace>

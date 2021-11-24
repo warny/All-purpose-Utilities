@@ -195,7 +195,7 @@ namespace Utils.Fonts.TTF
 		{
 			get {
 				int num = 32;
-				if (nameMap != null)
+				if (nameMap is not null)
 				{
 					num += nameMap.Length;
 				}

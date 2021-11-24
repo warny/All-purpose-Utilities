@@ -163,7 +163,7 @@ namespace Utils.Lists
 
 		public void CopyTo( KeyValuePair<TKey, TValue>[] array, int arrayIndex )
 		{
-			if (array == null) throw new ArgumentNullException("array ne doit pas être null");
+			if (array is null) throw new ArgumentNullException("array ne doit pas être null");
 			if (arrayIndex < 0) throw new System.ArgumentOutOfRangeException("arrayIndex doit être supérieur à 0");
 			if (holder.Count + arrayIndex > array.Length) throw new System.ArgumentException("La liste est trop longue pour être copiée dans le tableau");
 

@@ -299,7 +299,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// </summary>
 		private void DetermineTrianglurisedAndDiagonlized ()
 		{
-			if (this.isTriangularised != null && this.isDiagonalized != null && this.isIdentity != null) return;
+			if (this.isTriangularised is not null && this.isDiagonalized is not null && this.isIdentity is not null) return;
 			if (!IsSquare) {
 				this.isDiagonalized = false;
 				this.isTriangularised = false;

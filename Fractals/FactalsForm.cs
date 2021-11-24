@@ -42,7 +42,7 @@ namespace Fractals
 
 		private void InitFractal(ref IComputeFractal computeFractal, PictureBox display, Func<Bitmap, IComputeFractal> InitFractal)
 		{
-			if (computeFractal == null || display.Image == null || computeFractal.Image.Width != display.Width || computeFractal.Image.Height != display.Height)
+			if (computeFractal is null || display.Image is null || computeFractal.Image.Width != display.Width || computeFractal.Image.Height != display.Height)
 			{
 				Bitmap bitmap = new Bitmap(DisplayJulia.Width, DisplayJulia.Height);
 				DisplayJulia.Image = bitmap;

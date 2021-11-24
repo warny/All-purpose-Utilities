@@ -177,7 +177,7 @@ namespace Utils.Objects
 					}
 
 					if (data is string) {
-						if (part.format != null) {
+						if (part.format is not null) {
 							string temp = (string)data;
 							foreach (string formatpart in part.format.Split(',')) {
 
@@ -232,7 +232,7 @@ namespace Utils.Objects
 						}
 					} else if (data is IFormattable) {
 						formattedText.Append(((IFormattable)data).ToString(part.format, CultureInfo));
-					} else if (data != null) {
+					} else if (data is not null) {
 						formattedText.Append(data.ToString());
 					}
 
@@ -366,19 +366,19 @@ namespace Utils.Objects
 						} else {
 							// Si on trouve un nom dans la chaîne, on cherche une propriété ou un champ de l'objet en cours
 							PropertyInfo p = t.GetProperty(match.Groups["name"].Value, BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public);
-							if (p != null) {
+							if (p is not null) {
 								shadow.member = p;
 								shadow.parameters = new object[] { };
 								current = p.GetValue(current, shadow.parameters);
 							} else {
 								FieldInfo f = t.GetField(match.Groups["name"].Value, BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public);
-								if (f != null) {
+								if (f is not null) {
 									shadow.member = f;
 									shadow.parameters = null;
 									current = f.GetValue(current);
 								} else {
 									PropertyInfo i = GetDefaultStringIndexer(t);
-									if (i != null) {
+									if (i is not null) {
 										shadow.member = i;
 										shadow.parameters = new object[] { match.Groups["name"].Value };
 										current = i.GetValue(current, shadow.parameters);
@@ -451,9 +451,9 @@ namespace Utils.Objects
 					"Exception de type {0} lors de l'appel de Invoke(obj, parameters) sur la méthode {1}. Le type de obj est {2} (valeur {3}), les paramètres sont ({4})",
 					e.GetType().Name,
 					m.DeclaringType.FullName + "." + m.Name,
-					obj != null ? obj.GetType().FullName : "N.A.",
-					obj != null ? obj.ToString() : "null",
-					string.Join(", ", parameters.Select(p => p != null ? p.ToString() : "null"))
+					obj is not null ? obj.GetType().FullName : "N.A.",
+					obj is not null ? obj.ToString() : "null",
+					string.Join(", ", parameters.Select(p => p is not null ? p.ToString() : "null"))
 				);
 				throw new CustomTargetException(message, (TargetException)e);
 			} else {

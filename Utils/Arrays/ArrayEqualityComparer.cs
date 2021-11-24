@@ -18,7 +18,7 @@ namespace Utils.Arrays
 		public ArrayEqualityComparer(params object[] equalityComparers)
 		{
 			var externalEqualityComparer = equalityComparers.OfType<IEqualityComparer<T>>().FirstOrDefault();
-			if (externalEqualityComparer != null)
+			if (externalEqualityComparer is not null)
 			{
 				areEquals = (e1, e2) => externalEqualityComparer.Equals(e1, e2);
 				getHashCode = e => externalEqualityComparer.GetHashCode(e);
@@ -67,8 +67,8 @@ namespace Utils.Arrays
 
 		public bool Equals(IReadOnlyList<T> x, IReadOnlyList<T> y)
 		{
-			if (x == null && y == null) return true;
-			if (x == null || y == null) return false;
+			if (x is null && y is null) return true;
+			if (x is null || y is null) return false;
 			if (x.Count!=y.Count) return false;
 
 			var enumx = x.GetEnumerator();

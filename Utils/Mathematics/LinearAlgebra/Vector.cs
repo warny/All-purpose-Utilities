@@ -64,7 +64,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		{
 			get
 			{
-				if (length != null) return length.Value;
+				if (length is not null) return length.Value;
 				double temp = 0;
 				for (int i = 0; i < this.components.Length; i++) {
 					temp += Math.Pow(this.components[i], 2); 

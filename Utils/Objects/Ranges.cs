@@ -7,16 +7,41 @@ using Utils.Mathematics;
 
 namespace Utils.Objects
 {
-	public class Ranges<T> : ICollection<Range<T>>
+	public class Ranges<T> : ICollection<Range<T>>, ICloneable
 		where T : IComparable<T>
 	{
-		List<Range<T>> ranges = new List<Range<T>>();
+		readonly List<Range<T>> ranges;
 
 		public Range<T> this[int index] => ranges.Skip(index).FirstOrDefault();
 
 		public int Count => ranges.Count;
 
 		public bool IsReadOnly { get; }
+
+		public Ranges() {
+			ranges = new List<Range<T>>();
+		}
+
+		private Ranges(Ranges<T> ranges)
+		{
+			this.ranges = ranges.ranges.ToList();
+		}
+
+		private Ranges(params Range<T>[] ranges) : this((IEnumerable<Range<T>>)ranges) { }
+		private Ranges(IEnumerable<Range<T>> ranges) : this()
+		{
+			Add(ranges);
+		}
+
+
+		public void Add(params Range<T>[] ranges) => Add((IEnumerable<Range<T>>)ranges);
+		public void Add(IEnumerable<Range<T>> ranges)
+		{
+			foreach (var range in ranges)
+			{
+				this.Add(range);
+			}
+		}
 
 		public void Add (T start, T end) => Add(new Range<T>(start, end));
 		public void Add(Range<T> item)
@@ -57,6 +82,14 @@ namespace Utils.Objects
 			toRemove.ForEach(r => ranges.Remove(r));
 		}
 
+		public void Remove(params Range<T>[] ranges) => Remove((IEnumerable<Range<T>>)ranges);
+		public void Remove(IEnumerable<Range<T>> ranges)
+		{
+			foreach (var range in ranges)
+			{
+				this.Remove(range);
+			}
+		}
 		public void Remove(T start, T end) => Remove(new Range<T>(start, end));
 		public bool Remove(Range<T> item)
 		{
@@ -121,20 +154,59 @@ namespace Utils.Objects
 
 		public override string ToString() => String.Join(" ∪ ", ranges);
 
+		public object Clone() => new Ranges<T>(this);
+
+		public static Ranges<T> operator +(Ranges<T> r1, Range<T> r2)
+		{
+			var result = new Ranges<T>(r1);
+			r1.Add(r2);
+			return r1;
+		}
+
+		public static Ranges<T> operator +(Ranges<T> r1, Ranges<T> r2)
+		{
+			var result = new Ranges<T>(r1);
+			r1.Add(r2);
+			return r1;
+		}
+
+		public static Ranges<T> operator -(Ranges<T> r1, Range<T> r2)
+		{
+			var result = new Ranges<T>(r1);
+			r1.Remove(r2);
+			return r1;
+		}
+
+		public static Ranges<T> operator -(Ranges<T> r1, Ranges<T> r2)
+		{
+			var result = new Ranges<T>(r1);
+			r1.Remove(r2);
+			return r1;
+		}
+
 	}
 
 	public class Range<T> where T : IComparable<T>
 	{
 		public T Start { get; }
+		public bool ContainsStart { get; }
 		public T End { get; }
+		public bool ContainsEnd { get; }
 
-		public Range(T start, T end)
+		public Range(T value) : this(value, value) { }
+		public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
 		{
+			if (start.CompareTo(end) > 0) throw new ArgumentException("start > end", nameof(end));
+
 			Start = MathEx.Min(start, end);
 			End = MathEx.Max(start, end);
+			ContainsStart = containsStart;
+			ContainsEnd = containsEnd;
 		}
 
-		public bool Contains(T value) => value.CompareTo(Start) >= 0 && value.CompareTo(End) <= 0;
+		public bool Contains(T value)
+			=> ContainsStart ? value.CompareTo(Start) >= 0 : value.CompareTo(Start) > 0
+			&& ContainsEnd ? value.CompareTo(End) <= 0 : value.CompareTo(End) < 0;
 
 		public bool Contains(Range<T> range) => Contains(range.Start, range.End);
 		public bool Contains(T start, T end) => Start.CompareTo(start) <= 0 && End.CompareTo(end) >= 0;
@@ -160,6 +232,8 @@ namespace Utils.Objects
 			end = End;
 		}
 
-		public override string ToString() => $"[ {Start} - {End} ]";
+		public override string ToString() => $"{(ContainsStart ? "[" : "]") } {Start} - {End} {(ContainsEnd ? "]" : "[")}";
+
+		public static implicit operator Range<T>((T Start, T End) range) => new Range<T>(range.Start, range.End);
 	}
 }

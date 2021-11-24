@@ -80,7 +80,7 @@ namespace Utils.Imaging
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (bitmap != null && bmpdata != null) {
+			if (bitmap is not null && bmpdata is not null) {
 				this.bitmap.UnlockBits(bmpdata);
 				this.bitmap = null;
 				this.uintdata = null;

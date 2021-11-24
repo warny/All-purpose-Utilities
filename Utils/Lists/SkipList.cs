@@ -44,20 +44,20 @@ namespace Utils.Lists
 			var result = new Stack<Element>();
 			var element = firstElement;
 			Element lastElement = null;
-			while (element != null)
+			while (element is not null)
 			{
 				var comparison = comparer.Compare(value, element.Value);
 				if (comparison < 0)
 				{
-					if (lastElement == null) return null; // cas où on est sur le premier élément
+					if (lastElement is null) return null; // cas où on est sur le premier élément
 					result.Push(lastElement);
-					if (lastElement.Sub == null) return result;
+					if (lastElement.Sub is null) return result;
 					element = lastElement.Sub;
 					lastElement = element;
 				}
-				else if (element.Next == null) {
+				else if (element.Next is null) {
 					result.Push(element);
-					if (element.Sub == null) return result;
+					if (element.Sub is null) return result;
 					element = element.Sub;
 					lastElement = element;
 				}
@@ -72,17 +72,17 @@ namespace Utils.Lists
 
 		public void Add(T item)
 		{
-			if (firstElement == null)
+			if (firstElement is null)
 			{
 				firstElement = new Element(item);
 				return;
 			}
 
 			var position = FindInsertingPosition(item);
-			if (position == null)
+			if (position is null)
 			{
 				position = new Stack<Element>();
-				for (var element = firstElement; element != null; element = element.Sub )
+				for (var element = firstElement; element is not null; element = element.Sub )
 				{
 					position.Push(element);
 				}
@@ -102,7 +102,7 @@ namespace Utils.Lists
 					else
 					{
 						newElement.Next = element.Next;
-						if (newElement.Next != null) newElement.Next.Prev = newElement;
+						if (newElement.Next is not null) newElement.Next.Prev = newElement;
 					}
 					indexOldElement = indexOldElement && rng.NextDouble() <= density;
 					subElement = newElement;
@@ -116,14 +116,14 @@ namespace Utils.Lists
 				newElement.Next = previousElement.Next;
 				previousElement.Next = newElement;
 				newElement.Prev = previousElement;
-				if (newElement.Next != null) newElement.Next.Prev = newElement;
+				if (newElement.Next is not null) newElement.Next.Prev = newElement;
 				while (rng.NextDouble() <= density)
 				{
 					var subElement = newElement;
 					newElement = new Element(item);
 					newElement.Sub = subElement;
 					previousElement = position.Count == 0 ? null : position.Pop();
-					if (previousElement == null)
+					if (previousElement is null)
 					{
 						var newFirstElement = new Element(firstElement.Value);
 						newFirstElement.Sub = firstElement;
@@ -137,7 +137,7 @@ namespace Utils.Lists
 						newElement.Next = previousElement.Next;
 						previousElement.Next = newElement;
 						newElement.Prev = previousElement;
-						if (newElement.Next != null) newElement.Next.Prev = newElement;
+						if (newElement.Next is not null) newElement.Next.Prev = newElement;
 					}
 				}
 			}
@@ -149,11 +149,11 @@ namespace Utils.Lists
 		{
 			Element currentElement = firstElement;
 
-			while (currentElement != null)
+			while (currentElement is not null)
 			{
 				int comparison = comparer.Compare(item, currentElement.Value);
 				if (comparison == 0) return true;
-				else if (comparison == 1 && currentElement.Next != null)
+				else if (comparison == 1 && currentElement.Next is not null)
 				{
 					currentElement = currentElement.Next;
 				}
@@ -161,7 +161,7 @@ namespace Utils.Lists
 				{
 					currentElement = currentElement.Sub;
 				}
-				else if (currentElement.Prev == null)
+				else if (currentElement.Prev is null)
 				{
 					return false;
 				}
@@ -188,8 +188,8 @@ namespace Utils.Lists
 			IEnumerable<T> enumerator()
 			{
 				var element = this.firstElement;
-				while (element.Sub != null) element = element.Sub;
-				while (element != null)
+				while (element.Sub is not null) element = element.Sub;
+				while (element is not null)
 				{
 					yield return element.Value;
 					element = element.Next;
@@ -203,15 +203,15 @@ namespace Utils.Lists
 		{
 			Element currentElement = firstElement;
 
-			while (currentElement != null)
+			while (currentElement is not null)
 			{
 				int comparison = comparer.Compare(item, currentElement.Value);
 				if (comparison == 0)
 				{
-					if (currentElement.Prev == null)
+					if (currentElement.Prev is null)
 					{
 						var first = new Stack<Element>();
-						for (var element = firstElement; element != null; element = element.Sub)
+						for (var element = firstElement; element is not null; element = element.Sub)
 						{
 							first.Push(element);
 						}
@@ -223,7 +223,7 @@ namespace Utils.Lists
 						while (true)
 						{
 							var next = firstIndex.Next;
-							if (next == null) break;
+							if (next is null) break;
 							if (comparer.Compare(next.Value, second.Value) == 0)
 							{
 								second.Prev = null;
@@ -235,7 +235,7 @@ namespace Utils.Lists
 								var newFirst = new Element(second.Value);
 								newFirst.Sub = firstSub;
 								newFirst.Next = firstIndex.Next;
-								if (firstIndex.Next != null) firstIndex.Next.Prev = firstIndex;
+								if (firstIndex.Next is not null) firstIndex.Next.Prev = firstIndex;
 								firstSub = newFirst;
 							}
 							if (first.Count == 0) break;
@@ -245,11 +245,11 @@ namespace Utils.Lists
 						return true;
 					}
 					currentElement.Prev.Next = currentElement.Next;
-					if (currentElement.Next != null) currentElement.Next.Prev = currentElement.Prev;
-					if (currentElement.Sub == null) return true;
+					if (currentElement.Next is not null) currentElement.Next.Prev = currentElement.Prev;
+					if (currentElement.Sub is null) return true;
 					currentElement = currentElement.Sub;
 				}
-				else if (comparison == 1 && currentElement.Next != null)
+				else if (comparison == 1 && currentElement.Next is not null)
 				{
 					currentElement = currentElement.Next;
 				}

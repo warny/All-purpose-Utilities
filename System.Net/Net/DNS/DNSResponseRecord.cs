@@ -42,7 +42,7 @@ namespace Utils.Net.DNS
 		[DNSField]
         public string Name { get; set; }
         [DNSField]
-        protected ushort Type { get; set; }
+        private ushort Type { get; set; }
         [DNSField]
         public DNSClass Class { get; set; }
         [DNSField]

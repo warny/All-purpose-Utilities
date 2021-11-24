@@ -32,9 +32,9 @@ namespace Utils.Fonts.TTF
 				List<CMap> c = new List<CMap>();
 
 				CMap cmap_3_1 = GetCMap(3, 1);
-				if (cmap_3_1 != null) { c.Add(cmap_3_1); }
+				if (cmap_3_1 is not null) { c.Add(cmap_3_1); }
 				CMap cmap_1_0 = GetCMap(1, 0);
-				if (cmap_1_0 != null) { c.Add(cmap_1_0); }
+				if (cmap_1_0 is not null) { c.Add(cmap_1_0); }
 
 				foreach (var cmap in subtables.Values)
 				{
@@ -91,7 +91,7 @@ namespace Utils.Fonts.TTF
 				try
 				{
 					CMap cMap = CMap.getMap(mapData);
-					if (cMap != null)
+					if (cMap is not null)
 					{
 						AddCMap(platformID, platformSpecificID, cMap);
 					}

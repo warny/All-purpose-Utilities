@@ -22,7 +22,7 @@ namespace Utils.IO.BaseEncoding
 			this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
 			this.BaseDescriptor = baseDescriptor ?? throw new ArgumentNullException(nameof(baseDescriptor));
 
-			if (BaseDescriptor.Filler != null)
+			if (BaseDescriptor.Filler is not null)
 				toIgnore = BaseDescriptor.Separator.Union(new char[] { ' ', BaseDescriptor.Filler.Value }).ToArray();
 			else 
 				toIgnore = BaseDescriptor.Separator.Union(new char[] { ' ' }).ToArray();

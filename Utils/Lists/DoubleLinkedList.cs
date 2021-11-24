@@ -44,7 +44,7 @@ namespace Utils.Lists
 			IEnumerable<T> enumerator()
 			{
 				var current = this.first;
-				while (current != null)
+				while (current is not null)
 				{
 					yield return current.Value;
 					current = current.Next;
@@ -58,7 +58,7 @@ namespace Utils.Lists
 		public IEnumerable<T> Reverse()
 		{
 			var current = this.last;
-			while (current != null)
+			while (current is not null)
 			{
 				yield return current.Value;
 				current = current.Previous;

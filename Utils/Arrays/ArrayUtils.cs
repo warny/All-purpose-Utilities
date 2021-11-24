@@ -22,7 +22,7 @@ namespace Utils.Arrays
 		/// </returns>
 		public static T[] Mid<T>( this T[] s, int start, int length )
 		{
-			if (s == null) return null;
+			if (s is null) return null;
 			if (start < 0) start = s.Length + start;
 			if (start <= -length) return new T[] { };
 			if (start < 0) return s.Copy(0, length + start);
@@ -38,7 +38,7 @@ namespace Utils.Arrays
 		/// <param name="start">Position de caractère de départ de base zéro de la partie à extaire</param>
 		public static T[] Mid<T>( this T[] s, int start )
 		{
-			if (s==null) return null;
+			if (s is null) return null;
 			if (start < 0) start = s.Length + start;
 			if (start < 0) return s;
 			if (start > s.Length) return new T[] { };

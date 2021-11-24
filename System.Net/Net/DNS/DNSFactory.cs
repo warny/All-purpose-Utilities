@@ -55,7 +55,7 @@ namespace Utils.Net.DNS
 		{
 			if (@readonly) throw new ReadOnlyException();
 			var dnsClass = type.GetCustomAttribute<DNSClassAttribute>(false);
-			if (dnsClass == null) throw new ArgumentException(nameof(type), $"La classe {type.FullName} doit avoir un attribut {Types.dnsClassAttributeType.FullName}");
+			if (dnsClass is null) throw new ArgumentException(nameof(type), $"La classe {type.FullName} doit avoir un attribut {Types.dnsClassAttributeType.FullName}");
 			if (Types.dnsRequestRecordType.IsAssignableFrom(type))
 			{
 				DNSRequests[dnsClass.Class] = type;

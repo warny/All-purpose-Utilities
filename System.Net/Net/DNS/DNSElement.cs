@@ -10,14 +10,14 @@ namespace Utils.Net.DNS
 {
     public abstract class DNSElement
     {
-        public virtual string DNSType { get { return this.GetType().Name; } }
+		public virtual string DNSType => this.GetType().Name;
 
-        internal protected virtual void Write(DNSDatagram datagram, DNSFactory factory)
+		internal protected virtual void Write(DNSDatagram datagram, DNSFactory factory)
         {
             foreach (var field in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
-                if (dnsField == null) continue;
+                if (dnsField is null) continue;
                 if (field.PropertyType == typeof(DNSElement)) ((DNSElement)field.GetValue(this)).Write(datagram, factory);
                 else if (field.PropertyType == typeof(string)) datagram.Write((string)field.GetValue(this));
                 else if (field.PropertyType == typeof(byte)) datagram.Write((byte)field.GetValue(this));
@@ -31,7 +31,7 @@ namespace Utils.Net.DNS
             foreach (var field in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
-                if (dnsField == null) continue;
+                if (dnsField is null) continue;
                 if (field.PropertyType == typeof(DNSElement)) ((DNSElement)field.GetValue(this)).Read(datagram, factory);
 				else if (field.PropertyType == typeof(string)) field.SetValue(this, datagram.ReadString());
                 else if (field.PropertyType == typeof(byte)) field.SetValue(this, datagram.ReadByte());

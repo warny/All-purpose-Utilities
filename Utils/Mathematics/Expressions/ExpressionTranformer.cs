@@ -30,33 +30,33 @@ namespace Utils.Mathematics.Expressions
 			object[] parameters = null;
 			Expression[] expressionParameters = null;
 
-			if (cc!= null) {
+			if (cc is not null) {
 				expressionParameters = new Expression[0];
 				parameters = new[] { cc, cc.Value };
-			} else if (ue != null) {
+			} else if (ue is not null) {
 				expressionParameters = new Expression[] { PrepareExpression(ue.Operand) };
 				e = ue = (UnaryExpression)CopyExpression(e, expressionParameters);
 				parameters = new[] { ue, ue.Operand };
-			} else if (be != null) {
+			} else if (be is not null) {
 				expressionParameters = new Expression[] { PrepareExpression(be.Left), PrepareExpression(be.Right) };
 				e = be = (BinaryExpression)CopyExpression(e, expressionParameters);
 				parameters = new[] { be, be.Left, be.Right };
-			} else if (mce!= null) {
+			} else if (mce is not null) {
 				expressionParameters = mce.Arguments.Select(a => PrepareExpression(a)).ToArray();
 				e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
 				parameters = new object[mce.Arguments.Count + 1];
 				parameters[0] = mce;
 				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else if (pe != null) {
+			} else if (pe is not null) {
 				expressionParameters = new Expression[0];
 				parameters = new object[] { pe };
-			} else if (ie != null) {
+			} else if (ie is not null) {
 				expressionParameters = ie.Arguments.Select(a => PrepareExpression(a)).ToArray();
 				e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
 				parameters = new object[ie.Arguments.Count + 1];
 				parameters[0] = ie;
 				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else if (le != null) {
+			} else if (le is not null) {
 				expressionParameters = le.Parameters.Select(a => (ParameterExpression)PrepareExpression(a)).ToArray();
 				e = le = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
 				parameters = new object[le.Parameters.Count + 1];
@@ -104,7 +104,7 @@ namespace Utils.Mathematics.Expressions
 			}
 
 			{
-				if (cc!= null) {
+				if (cc is not null) {
 					return FinalizeExpression(e, new Expression[0]);
 				} else  {
 					return FinalizeExpression(e, expressionParameters);
@@ -127,17 +127,17 @@ namespace Utils.Mathematics.Expressions
 			var mce = e as MethodCallExpression;
 			var pe = e as ParameterExpression;
 
-			if (pe!=null) {
+			if (pe is not null) {
 				int i = Array.IndexOf(oldParameters, pe);
 				return newParameters[i];
-			} else if (ue!=null) {
+			} else if (ue is not null) {
 				return CopyExpression(ue, ReplaceArguments(ue.Operand, oldParameters, newParameters));
-			} else if (be!=null) {
+			} else if (be is not null) {
 				return CopyExpression(be, ReplaceArguments(be.Left, oldParameters, newParameters), ReplaceArguments(be.Right, oldParameters, newParameters));
-			} else if (ie != null) {
+			} else if (ie is not null) {
 				var arguments = ie.Arguments.Select(a => ReplaceArguments(a, oldParameters, newParameters)).ToArray();
 				return CopyExpression(ie, arguments);
-			} else if (mce !=null) {
+			} else if (mce is not null) {
 				var arguments = mce.Arguments.Select(a => ReplaceArguments(a, oldParameters, newParameters)).ToArray();
 				return CopyExpression(mce, arguments);
 			}
@@ -366,7 +366,7 @@ namespace Utils.Mathematics.Expressions
 		public override bool Match( Expression e )
 		{
 			var ec = e as MethodCallExpression;
-			return ec != null && ec.Method.DeclaringType == Type && ec.Method.Name == FunctionName;
+			return ec is not null && ec.Method.DeclaringType == Type && ec.Method.Name == FunctionName;
 		}
 	}
 
@@ -390,7 +390,7 @@ namespace Utils.Mathematics.Expressions
 		public override bool Match( Expression e )
 		{
 			var cc = e as ConstantExpression;
-			if (!(cc != null && NumberUtils.IsNumeric(cc.Value))) return false;
+			if (!(cc is not null && NumberUtils.IsNumeric(cc.Value))) return false;
 			if (Values == null) return true;
 			return Values.Any(v => v==(double)cc.Value);
 		}

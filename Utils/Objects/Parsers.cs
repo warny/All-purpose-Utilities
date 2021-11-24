@@ -29,20 +29,20 @@ namespace Utils.Objects
 				this.Parse = BuildParse(type);
 				this.Constructor = BuildConstructor(type);
 
-				CanParse = TryParse != null || Parse != null || Constructor != null;
+				CanParse = TryParse is not null || Parse is not null || Constructor is not null;
 			}
 			public ParseMethods(TryParseDelegate tryParse, ParseDelegate parse, ConstructorDelegate constructor)
 			{
 				this.TryParse = tryParse;
 				this.Parse = parse;
 				this.Constructor = constructor;
-				CanParse = TryParse != null || Parse != null || Constructor != null;
+				CanParse = TryParse is not null || Parse is not null || Constructor is not null;
 			}
 
 			private ConstructorDelegate BuildConstructor(Type type)
 			{
 				var constructorInfo = type.GetConstructor(new[] { typeOfString });
-				if (constructorInfo != null) {
+				if (constructorInfo is not null) {
 
 					var sParameter = Expression.Parameter(typeOfString, "s");
 					var returnLabel = Expression.Label(typeof(object));
@@ -66,7 +66,7 @@ namespace Utils.Objects
 			private TryParseDelegate BuildTryParse(Type type)
 			{
 				MethodInfo numberTryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeof(NumberStyles), typeOfIFormatProvider, type.MakeByRefType() }, null);
-				if (numberTryParseMethod != null)
+				if (numberTryParseMethod is not null)
 				{
 					var strParameter = Expression.Parameter(typeOfString, "s");
 					var numberStyleConstant = Expression.Constant(NumberStyles.Any);
@@ -92,7 +92,7 @@ namespace Utils.Objects
 					return lambda.Compile();
 				}
 				MethodInfo tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider, type.MakeByRefType() }, null);
-				if (tryParseMethod != null)
+				if (tryParseMethod is not null)
 				{
 					var strParameter = Expression.Parameter(typeOfString, "s");
 					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
@@ -117,7 +117,7 @@ namespace Utils.Objects
 					return lambda.Compile();
 				}
 				tryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, type.MakeByRefType() }, null);
-				if (tryParseMethod != null)
+				if (tryParseMethod is not null)
 				{
 					var strParameter = Expression.Parameter(typeOfString, "s");
 					var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
@@ -148,7 +148,7 @@ namespace Utils.Objects
 			private ParseDelegate BuildParse(Type type)
 			{
 				MethodInfo parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider }, null);
-				if (parseMethod != null)
+				if (parseMethod is not null)
 				{
 
 					var strParameter = Expression.Parameter(typeOfString, "s");
@@ -171,7 +171,7 @@ namespace Utils.Objects
 				}
 
 				parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString }, null);
-				if (parseMethod != null)
+				if (parseMethod is not null)
 				{
 
 					var strParameter = Expression.Parameter(typeOfString, "s");
@@ -320,7 +320,7 @@ namespace Utils.Objects
 
 			var methods = GetParseMethods(type);
 
-			if (methods.TryParse != null || methods.Parse != null)
+			if (methods.TryParse is not null || methods.Parse is not null)
 			{
 				foreach (var formatProvider in formatsProviders)
 				{
@@ -331,7 +331,7 @@ namespace Utils.Objects
 						return result;
 					}
 					// sinon, on vérifie qu'il existe une méthode de parsing directe dans la classe
-					if (methods.Parse != null)
+					if (methods.Parse is not null)
 					{
 						try
 						{
@@ -346,7 +346,7 @@ namespace Utils.Objects
 			}
 
 			//Si tous les parsers ont échoué, on tente de construite l'objet à partir de la chaîne
-			if (methods.Constructor != null)
+			if (methods.Constructor is not null)
 			{
 				return methods.Constructor(value);
 			}

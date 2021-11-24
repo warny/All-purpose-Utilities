@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>
+ 	  <LangVersion>9.0</LangVersion>
+ </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Utils.IO\Utils.IO.csproj" />

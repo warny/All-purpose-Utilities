@@ -63,7 +63,7 @@ namespace Utils.Geography.Model
 			}
 			MapPosition other = (MapPosition)obj;
 			if (this.GeoPoint == null) {
-				if (other.GeoPoint != null) {
+				if (other.GeoPoint is not null) {
 					return false;
 				}
 			} else if (!this.GeoPoint.Equals(other.GeoPoint)) {

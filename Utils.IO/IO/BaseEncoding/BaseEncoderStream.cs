@@ -97,7 +97,7 @@ namespace Utils.IO.BaseEncoding
 				TargetWriter.Write(BaseDescriptor[charIndex]);
 			}
 
-			if (BaseDescriptor.Filler != null && targetPosition % BaseDescriptor.FillerMod != 0)
+			if (BaseDescriptor.Filler is not null && targetPosition % BaseDescriptor.FillerMod != 0)
 			{
 				int toFill = BaseDescriptor.FillerMod - (targetPosition % BaseDescriptor.FillerMod) - 1;
 				TargetWriter.Write(new string(BaseDescriptor.Filler.Value, toFill));

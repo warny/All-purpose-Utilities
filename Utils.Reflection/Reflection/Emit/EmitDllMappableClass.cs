@@ -77,8 +77,8 @@ namespace Utils.Reflection.Reflection.Emit
 				}
 				if (declaration)
 				{
-					if (parameter.GetCustomAttribute<InAttribute>() != null) csCode.Append($"[{typeof(InAttribute).FullName}]");
-					if (parameter.GetCustomAttribute<OutAttribute>() != null) csCode.Append($"[{typeof(OutAttribute).FullName}]");
+					if (parameter.GetCustomAttribute<InAttribute>() is not null) csCode.Append($"[{typeof(InAttribute).FullName}]");
+					if (parameter.GetCustomAttribute<OutAttribute>() is not null) csCode.Append($"[{typeof(OutAttribute).FullName}]");
 					csCode.Append(parameter.ParameterType.FullName.TrimEnd('&'));
 					csCode.Append(" ");
 				}

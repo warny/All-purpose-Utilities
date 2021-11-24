@@ -18,7 +18,7 @@ namespace Utils.List
 		public EnumerableEqualityComparer(params object[] equalityComparers)
 		{
 			var externalEqualityComparer = equalityComparers.OfType<IEqualityComparer<T>>().FirstOrDefault();
-			if (externalEqualityComparer != null)
+			if (externalEqualityComparer is not null)
 			{
 				areEquals = (e1, e2) => externalEqualityComparer.Equals(e1, e2);
 				getHashCode = e => externalEqualityComparer.GetHashCode(e);
@@ -67,8 +67,8 @@ namespace Utils.List
 
 		public bool Equals(IEnumerable<T> x, IEnumerable<T> y)
 		{
-			if (x == null && y == null) return true;
-			if (x == null || y == null) return false;
+			if (x is null && y is null) return true;
+			if (x is null || y is null) return false;
 
 			var enumx = x.GetEnumerator();
 			var enumy = y.GetEnumerator();

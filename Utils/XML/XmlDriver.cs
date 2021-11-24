@@ -251,7 +251,7 @@ namespace Utils.XML
 						var parameter = parameters[i];
 						var type = i < types.Length ? types[i] : null;
 
-						if (parameter.GetCustomAttribute<ParamArrayAttribute>()!= null) {
+						if (parameter.GetCustomAttribute<ParamArrayAttribute>() is not null) {
 							var paramsLength = objects.Length - i;
 							if (!parameter.ParameterType.IsAssignableFrom(type)) {
 								var elementType = parameter.ParameterType.GetElementType();
@@ -271,7 +271,7 @@ namespace Utils.XML
 							}
 						} else {
 
-							if (type!= null) {
+							if (type is not null) {
 								if (!parameter.ParameterType.IsAssignableFrom(type)) {
 									isOk = false;
 									break;
@@ -289,7 +289,7 @@ namespace Utils.XML
 					if (isOk) {
 						var arguments = new List<object>();
 						arguments.AddRange(objects);
-						if (paramsValues!= null)
+						if (paramsValues is not null)
 							arguments.Add(paramsValues);
 
 						var oldContext = this.Current;

@@ -28,7 +28,7 @@ namespace Utils.Fonts.TTF
 				TrueTypeTableTypes.Tags.post => new PostTable(),
 				_ => new TrueTypeTable(tag),
 			};
-			if (data != null)
+			if (data is not null)
 			{
 				trueTypeTable.TrueTypeFont = ttf;
 				trueTypeTable.ReadData(data);

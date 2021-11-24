@@ -16,7 +16,7 @@ namespace Utils.Files
 		/// <param name="newPath">chemin à créer</param>
 		public static void CreateDirectories( this DirectoryInfo baseDirectory, string newPath = null )
 		{
-			string path = newPath!= null ? Path.Combine(baseDirectory.FullName, newPath) : baseDirectory.FullName;
+			string path = newPath is not null ? Path.Combine(baseDirectory.FullName, newPath) : baseDirectory.FullName;
 			CreateDirectories(path);
 		}
 

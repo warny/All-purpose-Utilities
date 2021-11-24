@@ -124,7 +124,7 @@ namespace Utils.Lists
 		public V GetValue(K key) => getValue(key);
 		public IEnumerable<KeyValuePair<K, V>> GetValues() => getValues();
 		public bool Remove(K key) => removeValue(key);
-		public bool CanCount => getCount != null;
+		public bool CanCount => getCount is not null;
 	}
 
 }

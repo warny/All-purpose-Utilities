@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+	  <LangVersion>9.0</LangVersion>
     <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
   </PropertyGroup>
 
