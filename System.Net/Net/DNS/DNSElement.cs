@@ -32,7 +32,7 @@ namespace Utils.Net.DNS
             {
                 var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
                 if (dnsField is null) continue;
-                if (field.PropertyType == typeof(DNSElement)) ((DNSElement)field.GetValue(this)).Read(datagram, factory);
+				if (field.PropertyType == typeof(DNSElement)) ((DNSElement)field.GetValue(this)).Read(datagram, factory);
 				else if (field.PropertyType == typeof(string)) field.SetValue(this, datagram.ReadString());
                 else if (field.PropertyType == typeof(byte)) field.SetValue(this, datagram.ReadByte());
                 else if (field.PropertyType == typeof(ushort)) field.SetValue(this, datagram.ReadUShort());

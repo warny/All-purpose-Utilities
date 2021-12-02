@@ -56,31 +56,31 @@ namespace Utils.Geography.Model
 
 	public static class Planets
 	{
-		public static Planet Mercury { get; } = new Lazy<Planet>(() => new Planet(2439700)).Value;
-		public static Planet Venus { get; } = new Lazy<Planet>(() => new Planet(6051800)).Value;
-		public static Planet Earth { get; } = new Lazy<Planet>(() => new Planet(6378137)).Value;
-		public static Planet EarthMoon { get; } = new Lazy<Planet>(() => new Planet(1737400)).Value;
-		public static Planet Mars { get; } = new Lazy<Planet>(() => new Planet(3396200)).Value;
-		public static Planet Jupiter { get; } = new Lazy<Planet>(() => new Planet(71492000)).Value;
-		public static Planet JupiterEurope { get; } = new Lazy<Planet>(() => new Planet(1560800)).Value;
-		public static Planet JupiterGanymede { get; } = new Lazy<Planet>(() => new Planet(2634100)).Value;
-		public static Planet JupiterIo { get; } = new Lazy<Planet>(() => new Planet(1821600)).Value;
-		public static Planet JupiterCallisto { get; } = new Lazy<Planet>(() => new Planet(2410300)).Value;
-		public static Planet Saturn { get; } = new Lazy<Planet>(() => new Planet(60268000)).Value;
-		public static Planet SaturnTitan { get; } = new Lazy<Planet>(() => new Planet(2574700)).Value;
-		public static Planet SaturnEncelade { get; } = new Lazy<Planet>(() => new Planet(252100)).Value;
-		public static Planet SaturnThetys { get; } = new Lazy<Planet>(() => new Planet(531000)).Value;
-		public static Planet SaturnMimas { get; } = new Lazy<Planet>(() => new Planet(198200)).Value;
-		public static Planet SaturnDione { get; } = new Lazy<Planet>(() => new Planet(561400)).Value;
-		public static Planet SaturnJapet { get; } = new Lazy<Planet>(() => new Planet(734500)).Value;
-		public static Planet SaturnRhea { get; } = new Lazy<Planet>(() => new Planet(763800)).Value;
-		public static Planet Uranus { get; } = new Lazy<Planet>(() => new Planet(25559000)).Value;
-		public static Planet UranusUmbriel { get; } = new Lazy<Planet>(() => new Planet(584700)).Value;
-		public static Planet UranusOberon { get; } = new Lazy<Planet>(() => new Planet(761400)).Value;
-		public static Planet UranusTitania { get; } = new Lazy<Planet>(() => new Planet(788400)).Value;
-		public static Planet UranusMiranda { get; } = new Lazy<Planet>(() => new Planet(235800)).Value;
-		public static Planet UranusAriel { get; } = new Lazy<Planet>(() => new Planet(578900)).Value;
-		public static Planet Neptune { get; } = new Lazy<Planet>(() => new Planet(24764000)).Value;
-		public static Planet NeptuneTriton { get; } = new Lazy<Planet>(() => new Planet(1353400)).Value;
+		public static Planet Mercury { get; } = new Planet(2439700);
+		public static Planet Venus { get; } = new Planet(6051800);
+		public static Planet Earth { get; } = new Planet(6378137);
+		public static Planet EarthMoon { get; } = new Planet(1737400);
+		public static Planet Mars { get; } = new Planet(3396200);
+		public static Planet Jupiter { get; } = new Planet(71492000);
+		public static Planet JupiterEurope { get; } = new Planet(1560800);
+		public static Planet JupiterGanymede { get; } = new Planet(2634100);
+		public static Planet JupiterIo { get; } = new Planet(1821600);
+		public static Planet JupiterCallisto { get; } = new Planet(2410300);
+		public static Planet Saturn { get; } = new Planet(60268000);
+		public static Planet SaturnTitan { get; } = new Planet(2574700);
+		public static Planet SaturnEncelade { get; } = new Planet(252100);
+		public static Planet SaturnThetys { get; } = new Planet(531000);
+		public static Planet SaturnMimas { get; } = new Planet(198200);
+		public static Planet SaturnDione { get; } = new Planet(561400);
+		public static Planet SaturnJapet { get; } = new Planet(734500);
+		public static Planet SaturnRhea { get; } = new Planet(763800);
+		public static Planet Uranus { get; } = new Planet(25559000);
+		public static Planet UranusUmbriel { get; } = new Planet(584700);
+		public static Planet UranusOberon { get; } = new Planet(761400);
+		public static Planet UranusTitania { get; } = new Planet(788400);
+		public static Planet UranusMiranda { get; } = new Planet(235800);
+		public static Planet UranusAriel { get; } = new Planet(578900);
+		public static Planet Neptune { get; } = new Planet(24764000);
+		public static Planet NeptuneTriton { get; } = new Planet(1353400);
 	}
 }
