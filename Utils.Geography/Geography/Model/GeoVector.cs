@@ -95,14 +95,6 @@ namespace Utils.Geography.Model
 			bearing = Bearing;
 		}
 
-		public override string ToString(string format, IFormatProvider formatProvider)
-		{
-			formatProvider ??= CultureInfo.InvariantCulture;
-			var textInfo = (TextInfo)formatProvider?.GetFormat(typeof(TextInfo));
-
-			return base.ToString(format, formatProvider) + $"{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
-		}
-
 		/// <summary>
 		/// Compute bearing from point A to point B
 		/// </summary>
@@ -252,5 +244,13 @@ namespace Utils.Geography.Model
 			=> comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
 
 		public static GeoVector operator -(GeoVector geoVector) => new GeoVector(geoVector.φ, geoVector.λ, 180 + geoVector.θ);
+
+		public override string ToString(string format, IFormatProvider formatProvider)
+		{
+			formatProvider ??= CultureInfo.InvariantCulture;
+			var textInfo = (TextInfo)formatProvider?.GetFormat(typeof(TextInfo));
+
+			return base.ToString(format, formatProvider) + $"{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
+		}
 	}
 }

@@ -24,7 +24,7 @@ using Utils.Geography.Projections;
 namespace Utils.Geography.Model
 {
 
-	public class ProjectedPoint : IEquatable<ProjectedPoint>, IFormattable /*, ISerializable*/ {
+	public class ProjectedPoint : IEquatable<ProjectedPoint>, IFormattable {
 		private const long serialVersionUID = 1L;
 
 		public IProjectionTransformation Projection { get; }

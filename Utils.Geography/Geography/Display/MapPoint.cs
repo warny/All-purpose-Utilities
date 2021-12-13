@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Utils.Geography.Model;
 
 namespace Utils.Geography.Display
 {
+	[DebuggerDisplay("X={X}, Y={Y}, ZL={ZoomLevel}, TS={TileSize}")]
 	public class MapPoint
 	{
 		public long X { get; set; }

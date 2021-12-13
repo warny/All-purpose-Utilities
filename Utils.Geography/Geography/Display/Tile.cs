@@ -18,6 +18,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Linq;
 using Utils.Geography.Model;
+using System.Diagnostics;
 
 namespace Utils.Geography.Display
 {
@@ -26,6 +27,7 @@ namespace Utils.Geography.Display
 	 * A tile represents a rectangular part of the world map. All tiles can be identified by their X and Y number together
 	 * with their zoom level. The actual area that a tile covers on a map depends on the underlying map projection.
 	 */
+	[DebuggerDisplay("Size={TileSize}px, X={TileX}, Y={TileY}, ZoomFactor={ZoomFactor}")]
 	public class Tile : IEquatable<Tile>, IFormattable
 	{
 		/// <summary>
@@ -63,26 +65,6 @@ namespace Utils.Geography.Display
 			this.TileY = tileY;
 			this.ZoomFactor = zoomFactor;
 			this.TileSize = tileSize;
-		}
-
-		public override bool Equals ( object obj )
-		{
-			if (ReferenceEquals(this, obj)) {
-				return true;
-			} else if (!(obj is Tile)) {
-				return false;
-			}
-			Tile other = (Tile)obj;
-			if (this.TileX != other.TileX) {
-				return false;
-			} else if (this.TileY != other.TileY) {
-				return false;
-			} else if (this.ZoomFactor != other.ZoomFactor) {
-				return false;
-			} else if (this.TileSize != other.TileSize) {
-				return false;
-			}
-			return true;
 		}
 
 		/// <summary>
@@ -135,28 +117,14 @@ namespace Utils.Geography.Display
 		public string ToString(string format) => $"tileX={this.TileX.ToString(format)}, tileY={this.TileY.ToString(format)}, zoomLevel={this.ZoomFactor}";
 		public string ToString(string format, IFormatProvider formatProvider) => $"tileX={this.TileX.ToString(format, formatProvider)}, tileY={this.TileY.ToString(format, formatProvider)}, zoomLevel={this.ZoomFactor}";
 
-		public bool Equals( Tile other )
-		{
-			if (this.TileX != other.TileX) {
-				return false;
-			} else if (this.TileY != other.TileY) {
-				return false;
-			} else if (this.ZoomFactor != other.ZoomFactor) {
-				return false;
-			} else if (this.TileSize != other.TileSize) {
-				return false;
-			}
-			return true;
-		}
+		public override bool Equals(object obj) => obj is Tile tile && Equals(tile);
+		public bool Equals(Tile other)
+			=> this.TileX == other.TileX
+			&& this.TileY == other.TileY
+			&& this.ZoomFactor == other.ZoomFactor
+			&& this.TileSize == other.TileSize;
 
-		public static bool operator ==( Tile tile1, Tile tile2 )
-		{
-			return tile1.Equals(tile2);
-		}
-
-		public static bool operator !=( Tile tile1, Tile tile2 )
-		{
-			return !tile1.Equals(tile2);
-		}
+		public static bool operator ==(Tile tile1, Tile tile2) => tile1.Equals(tile2);
+		public static bool operator !=(Tile tile1, Tile tile2) => !tile1.Equals(tile2);
 	}
 }
