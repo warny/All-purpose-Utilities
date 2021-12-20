@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Utils.Mathematics
 {
+	[DebuggerDisplay("{DoubleComparer}(±{Interval})")]
 	public class DoubleComparer : IComparer<double>, IEqualityComparer<double>
 	{
 		public double Interval {get;}
@@ -15,6 +17,7 @@ namespace Utils.Mathematics
 		public int GetHashCode(double obj) => obj.GetHashCode();
 	}
 
+	[DebuggerDisplay("{FloatComparer}(±{Interval})")]
 	public class FloatComparer : IComparer<float>, IEqualityComparer<float>
 	{
 		public float Interval { get; }
@@ -25,6 +28,7 @@ namespace Utils.Mathematics
 		public int GetHashCode(float obj) => obj.GetHashCode();
 	}
 
+	[DebuggerDisplay("{DecimalComparer}(±{Interval})")]
 	public class DecimalComparer : IComparer<decimal>, IEqualityComparer<decimal>
 	{
 		public decimal Interval { get; }
