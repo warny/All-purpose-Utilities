@@ -196,10 +196,10 @@ namespace Utils.Objects
 		public Range(T value) : this(value, value) { }
 		public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
 		{
-			if (start.CompareTo(end) > 0) throw new ArgumentException("start > end", nameof(end));
+			if (start.CompareTo(end) > 0) throw new ArgumentException($"start ({start}) > end ({end})", nameof(end));
 
-			Start = MathEx.Min(start, end);
-			End = MathEx.Max(start, end);
+			Start = start;
+			End = end;
 			ContainsStart = containsStart;
 			ContainsEnd = containsEnd;
 		}

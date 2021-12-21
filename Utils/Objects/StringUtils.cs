@@ -40,7 +40,8 @@ namespace Utils.Objects
 		/// <param name="length">Longueur de la chaîne à générer</param>
 		/// <param name="characters">Caractères à utiliser</param>
 		/// <returns>Chaîne aléatoire</returns>
-		public static string RandomString(this Random r, int length, char[] characters = null) => RandomString(r, length, length, characters);
+		public static string RandomString(this Random r, int length, char[] characters = null) 
+			=> RandomString(r, length, length, characters);
 
 		/// <summary>
 		/// Génère une chaîne de caractères aléatoires
@@ -234,10 +235,8 @@ namespace Utils.Objects
 		/// au premier caractère de cette instance, ou System.String.Empty si startIndex est
 		/// égal à la longueur de cette instance et length est égal à zéro.
 		/// </returns>
-		public static string Left( this string String, int length )
-		{
-			return Mid(String, 0, length);
-		}
+		public static string Left(this string String, int length) 
+			=> Mid(String, 0, length);
 
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre au premier caractère et a une longueur définie.
@@ -259,10 +258,8 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="text">text to transform</param>
 		/// <returns></returns>
-		public static string FirstLetterUpperCase( this string text )
-		{
-			return text.FirstLetterUpperCase(false);
-		}
+		public static string FirstLetterUpperCase(this string text) 
+			=> text.FirstLetterUpperCase(false);
 
 		/// <summary>
 		/// Turn the first letter of a string to uppercase
@@ -285,10 +282,8 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="text"></param>
 		/// <returns></returns>
-		public static bool IsNullOrEmpty( this string text )
-		{
-			return string.IsNullOrEmpty(text);
-		}
+		public static bool IsNullOrEmpty(this string text) 
+			=> string.IsNullOrEmpty(text);
 
 		/// <summary>
 		/// Returns true if text is null or contains only white spaces
@@ -296,10 +291,8 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="text"></param>
 		/// <returns></returns>
-		public static bool IsNullOrWhiteSpace( this string text )
-		{
-			return string.IsNullOrWhiteSpace(text);
-		}
+		public static bool IsNullOrWhiteSpace(this string text) 
+			=> string.IsNullOrWhiteSpace(text);
 
 		/// <summary>
 		/// Vérifie si la chaîne représente un nombre
@@ -333,10 +326,8 @@ namespace Utils.Objects
 		/// <param name="text"></param>
 		/// <param name="format"></param>
 		/// <returns></returns>
-		public static bool IsNumber( this string text, CultureInfo culture )
-		{
-			return IsNumber(text, culture.NumberFormat);
-		}
+		public static bool IsNumber(this string text, CultureInfo culture) 
+			=> IsNumber(text, culture.NumberFormat);
 
 		/// <summary>
 		/// Supprime les parenthèses autour d'une chaîne

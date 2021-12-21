@@ -10,10 +10,12 @@ namespace Utils.Objects
 	/// <summary>
 	/// Compare deux chaînes et renvoie leurs différences
 	/// </summary>
-	public class StringDifference : IEnumerable<StringChange>
+	public class StringDifference : IReadOnlyList<StringChange>
 	{
 
 		private readonly StringChange[] changes;
+
+		public int Count => changes.Length;
 
 		/// <summary>
 		/// Compare deux chaîne de caractères et renvoie les modifications à faire à la première pour obtenir la seconde
@@ -25,7 +27,7 @@ namespace Utils.Objects
 			changes = Compare(old, @new, 0, 0);
 		}
 
-		private StringChange[] Compare( string old, string @new, int lengthStart, int lengthEnd )
+		private static StringChange[] Compare( string old, string @new, int lengthStart, int lengthEnd )
 		{
 			List<StringChange> changes = new List<StringChange>();
 
@@ -88,13 +90,15 @@ namespace Utils.Objects
 			return changes.ToArray();
 		}
 
-		private void AddChange( List<StringChange> changes, string old, string @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition )
+		private static void AddChange( List<StringChange> changes, string old, string @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition )
 		{
 			string change = currentStatus == StringComparisonStatus.Added ? @new.Substring(newPosition, previousStatePosition - newPosition) : old.Substring(oldPosition, previousStatePosition - oldPosition);
 			if (change.Length > 0) {
 				changes.Add(new StringChange(currentStatus, change));
 			}
 		}
+
+		public StringChange this[int index] => changes[index];
 
 		public IEnumerator<StringChange> GetEnumerator()
 		{

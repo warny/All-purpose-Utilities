@@ -14,7 +14,6 @@ namespace UtilsTest.Objects
 		{
 			var tests = new (int Start, int End, string Result)[] {
 				(1, 5, "[ 1 - 5 ]"),
-				(5, 1, "[ 1 - 5 ]"),
 				(-3, 8, "[ -3 - 8 ]"),
 				(-8, -3, "[ -8 - -3 ]"),
 			};
@@ -32,8 +31,7 @@ namespace UtilsTest.Objects
 		{
 			var tests = new ((int Start, int End)[] Ranges, string Result)[] {
 				(new [] { (1, 5), (6, 7) }, "[ 1 - 5 ] ∪ [ 6 - 7 ]"),
-				(new [] { (5, 1), (7, 6) }, "[ 1 - 5 ] ∪ [ 6 - 7 ]"),
-				(new [] { (7, 6), (5, 1) }, "[ 1 - 5 ] ∪ [ 6 - 7 ]"),
+				(new [] { (6, 7), (1, 5) }, "[ 1 - 5 ] ∪ [ 6 - 7 ]"),
 				(new [] { (-3, 8), (6, 7) }, "[ -3 - 8 ]"),
 				(new [] { (-8, -3), (-3, 7) }, "[ -8 - 7 ]"),
 				(new [] { (-8, -3), (-4, 7) }, "[ -8 - 7 ]"),
