@@ -22,18 +22,16 @@ namespace Utils.Objects
 			ranges = new List<Range<T>>();
 		}
 
-		private Ranges(Ranges<T> ranges)
+		public Ranges(Ranges<T> ranges)
 		{
 			this.ranges = ranges.ranges.ToList();
 		}
 
-		private Ranges(params Range<T>[] ranges) : this((IEnumerable<Range<T>>)ranges) { }
-		private Ranges(IEnumerable<Range<T>> ranges) : this()
-		{
-			Add(ranges);
-		}
+		public Ranges(params Range<T>[] ranges) : this((IEnumerable<Range<T>>)ranges) { }
+		public Ranges(IEnumerable<Range<T>> ranges) : this() { Add(ranges); }
 
 
+		public void Add (T value) => Add(new Range<T>(value));
 		public void Add(params Range<T>[] ranges) => Add((IEnumerable<Range<T>>)ranges);
 		public void Add(IEnumerable<Range<T>> ranges)
 		{
@@ -43,27 +41,48 @@ namespace Utils.Objects
 			}
 		}
 
-		public void Add (T start, T end) => Add(new Range<T>(start, end));
+		public void Add (T start, T end, bool containsStart = true, bool containsEnd = true) => Add(new Range<T>(start, end, containsStart, containsEnd));
 		public void Add(Range<T> item)
 		{
-			if (item.Start.CompareTo(item.End) == 0) return;
-
 			List<Range<T>> toRemove = new List<Range<T>>();
 
 			T start = item.Start, end = item.End;
+			bool containsStart = item.ContainsStart, containsEnd = item.ContainsEnd;
 
 			int index = 0;
 			foreach (var range in ranges)
 			{
-				if (range.Overlap(item))
+				if (item.Start.CompareTo(range.End) > 0 || (item.Start.CompareTo(range.End) == 0 && !item.ContainsStart && !range.ContainsEnd))
 				{
-					toRemove.Add(range);
-					start = MathEx.Min(start, range.Start);
-					end = MathEx.Max(end, range.End);
+					index++;
+					continue;
 				}
-				else if (item.End.CompareTo(range.Start) < 0)
+				if (item.End.CompareTo(range.Start) < 0 || (item.End.CompareTo(range.Start) == 0 && !range.ContainsStart && !item.ContainsEnd))
 				{
 					break;
+				}
+
+				toRemove.Add(range);
+				switch (start.CompareTo(range.Start))
+				{
+					case 0:
+						containsStart |= range.ContainsStart;
+						break;
+					case 1:
+						start = range.Start;
+						containsStart = range.ContainsStart;
+						break;
+				}
+
+				switch (end.CompareTo(range.End))
+				{
+					case -1:
+						end = range.End;
+						containsEnd = range.ContainsEnd;
+						break;
+					case 0:
+						containsEnd |= range.ContainsEnd;
+						break;
 				}
 				index++;
 			}
@@ -73,15 +92,16 @@ namespace Utils.Objects
 			}
 			else if (index >= ranges.Count)
 			{
-				ranges.Add(new Range<T>(start, end));
+				ranges.Add(new Range<T>(start, end, containsStart, containsEnd));
 			}
 			else
 			{
-				ranges.Insert(index, new Range<T>(start, end));
+				ranges.Insert(index, new Range<T>(start, end, containsStart, containsEnd));
 			};
 			toRemove.ForEach(r => ranges.Remove(r));
 		}
 
+		public void Remove(T value) => Remove(new Range<T>(value));
 		public void Remove(params Range<T>[] ranges) => Remove((IEnumerable<Range<T>>)ranges);
 		public void Remove(IEnumerable<Range<T>> ranges)
 		{
@@ -90,11 +110,9 @@ namespace Utils.Objects
 				this.Remove(range);
 			}
 		}
-		public void Remove(T start, T end) => Remove(new Range<T>(start, end));
+		public void Remove(T start, T end, bool containsStart = true, bool containsEnd = true) => Remove(new Range<T>(start, end, containsStart, containsEnd));
 		public bool Remove(Range<T> item)
 		{
-			if (item.Start.CompareTo(item.End) == 0) return false;
-
 			List<Range<T>> toRemove = new List<Range<T>>();
 			List<Range<T>> toAdd = new List<Range<T>>();
 
@@ -109,13 +127,17 @@ namespace Utils.Objects
 						insertIndex = index;
 					}
 					toRemove.Add(range);
-					if (item.Start.CompareTo(range.Start) > 0)
+
+					int compareStarts = item.Start.CompareTo(range.Start);
+					if (compareStarts > 0 || (compareStarts == 0 && range.ContainsStart && !item.ContainsStart))
 					{
-						toAdd.Add(new Range<T>(range.Start, item.Start));
+						toAdd.Add(new Range<T>(range.Start, item.Start, range.ContainsStart, !item.ContainsStart));
 					}
-					if (item.End.CompareTo(range.End) < 0)
+
+					int compareEnds = item.End.CompareTo(range.End);
+					if (compareEnds < 0 || (compareStarts == 0 && !item.ContainsEnd && range.ContainsEnd))
 					{
-						toAdd.Add(new Range<T>(item.End, range.End));
+						toAdd.Add(new Range<T>(item.End, range.End, !item.ContainsStart, range.ContainsEnd)); 
 					}
 				}
 				index++;
@@ -196,7 +218,9 @@ namespace Utils.Objects
 		public Range(T value) : this(value, value) { }
 		public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
 		{
-			if (start.CompareTo(end) > 0) throw new ArgumentException($"start ({start}) > end ({end})", nameof(end));
+			int comparison = start.CompareTo(end);
+			if (comparison > 0) throw new ArgumentException($"start ({start}) > end ({end})", nameof(end));
+			if (comparison == 0 && !(containsStart && containsEnd)) throw new ArgumentException("A single element range can't exclude itself", nameof(start));
 
 			Start = start;
 			End = end;
@@ -205,11 +229,28 @@ namespace Utils.Objects
 		}
 
 		public bool Contains(T value)
-			=> ContainsStart ? value.CompareTo(Start) >= 0 : value.CompareTo(Start) > 0
-			&& ContainsEnd ? value.CompareTo(End) <= 0 : value.CompareTo(End) < 0;
+			=> (ContainsStart ? value.CompareTo(Start) >= 0 : value.CompareTo(Start) > 0)
+			&& (ContainsEnd ? value.CompareTo(End) <= 0 : value.CompareTo(End) < 0);
 
-		public bool Contains(Range<T> range) => Contains(range.Start, range.End);
-		public bool Contains(T start, T end) => Start.CompareTo(start) <= 0 && End.CompareTo(end) >= 0;
+		public bool Contains(Range<T> range) =>
+			(
+				this.Start.CompareTo(range.Start) < 0
+				||
+				(
+					( this.ContainsStart || !range.ContainsStart )
+					&& 
+					this.Start.CompareTo(range.Start) == 0
+				)
+			) && (
+				this.End.CompareTo(range.End) > 0
+				||
+				(
+					(this.ContainsEnd || !range.ContainsEnd)
+					&&
+					this.End.CompareTo(range.End) == 0
+				)
+			);
+		public bool Contains(T start, T end, bool containsStart = true, bool containsEnd = true) => Contains(new Range<T>(start, end, containsStart, containsEnd));
 
 		public Range<T> Intersect(Range<T> range)
 		{
@@ -220,11 +261,23 @@ namespace Utils.Objects
 			return new Range<T>(start, end);
 		}
 
-		public bool Overlap(Range<T> range) => Overlap(range.Start, range.End);
-		public bool Overlap(T start, T end) => Start.CompareTo(end) <= 0 && End.CompareTo(start) >= 0;
+		public bool Overlap(Range<T> range) => Overlap(this, range);
+		public bool Overlap(T start, T end, bool containsStart = true, bool containsEnd = true) => Overlap(this, new Range<T>(start, end, containsStart, containsEnd));
+
+		public static bool Overlap(Range<T> range1, Range<T> range2) =>
+			(
+				range1.Start.CompareTo(range2.End) < 0
+				|| 
+				(range1.ContainsStart && range2.ContainsEnd && range1.Start.CompareTo(range2.End) == 0)
+			) && (
+				range2.Start.CompareTo(range1.End) < 0
+				||
+				(range2.ContainsStart && range1.ContainsEnd && range2.Start.CompareTo(range1.End) == 0)
+			);
 
 		public bool IsContained(Range<T> range) => IsContained(range.Start, range.End);
 		public bool IsContained(T start, T end) => Start.CompareTo(start) >= 0 && End.CompareTo(end) <= 0;
+
 
 		public void Deconstructor(out T start, out T end)
 		{
