@@ -37,8 +37,9 @@ namespace Utils.Objects
 			if (endIndex < 0) endIndex = a.Count + endIndex;
 			if (endIndex < 0) throw new ArgumentOutOfRangeException(nameof(endIndex));
 			if (endIndex < startIndex ^ step < 0) {
-					(endIndex, startIndex) = (startIndex, endIndex);
-					//step = -step;
+				var temp = startIndex;
+				startIndex = endIndex;
+				endIndex = temp;
 			} 
 
 			this.startIndex = startIndex;
@@ -68,7 +69,7 @@ namespace Utils.Objects
 		IEnumerator IEnumerable.GetEnumerator() => Enumerate().GetEnumerator();
 	}
 
-	public static class Range
+	public static class RangeUtils
 	{
 		public static ReadOnlyRange<T> Between<T>(this IReadOnlyList<T> a, int startIndex, int endIndex) => new ReadOnlyRange<T>(a, startIndex, endIndex, 1);
 		public static ReadOnlyRange<T> Between<T>(this IReadOnlyList<T> a, int startIndex, int endIndex, int step) => new ReadOnlyRange<T>(a, startIndex, endIndex, step);
