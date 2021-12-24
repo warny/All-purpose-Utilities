@@ -3,7 +3,14 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF
 {
-		public class HmtxTable : TrueTypeTable
+
+	/// <summary>
+	/// The 'hmtx' table contains metric information for the horizontal layout each of the glyphs in the font. It begins with the hMetrics array. Each element in this array has 
+	/// two parts: the advance width and left side bearing. The value numOfLongHorMetrics is taken from the 'hhea' (Horizontal Header) table. In a monospaced font, only one entry 
+	/// is required but that entry may not be omitted.
+	/// </summary>
+	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6hmtx.html"/>
+	public class HmtxTable : TrueTypeTable
 	{
 		internal short[] advanceWidths;
 
@@ -20,7 +27,8 @@ namespace Utils.Fonts.TTF
 
 		protected internal HmtxTable() : base(TrueTypeTableTypes.hmtx) { }
 
-		public override TrueTypeFont TrueTypeFont { 
+		public override TrueTypeFont TrueTypeFont
+		{
 			get => base.TrueTypeFont;
 			protected set
 			{

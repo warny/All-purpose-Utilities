@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Arrays;
+using Utils.Fonts.TTF;
 
 namespace Utils.Fonts
 {

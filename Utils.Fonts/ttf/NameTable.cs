@@ -7,6 +7,13 @@ using Utils.Objects;
 
 namespace Utils.Fonts.TTF
 {
+	/// <summary>
+	/// The name table (tag: 'name') allows you to include human-readable names for features and settings, copyright notices, font names, style names, and other information 
+	/// related to your font. These name character strings containing font-related information can be provided in any language. Entries in the name table are referenced by 
+	/// other TrueType font tables and can be used by applications and utilities to provide useful information to the user. Name table entries can be added by the font 
+	/// designer in any language at any time to provide information to world-wide users of the font.
+	/// </summary>
+	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html"/>
 	public class NameTable : TrueTypeTable
 	{
 		public class NameRecord : IEquatable<NameRecord>

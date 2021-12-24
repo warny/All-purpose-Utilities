@@ -9,6 +9,11 @@ using Utils.Mathematics;
 
 namespace Utils.Fonts.TTF
 {
+	/// <summary>
+	/// TrueType Font
+	/// </summary>
+	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/"/>
+
 	public class TrueTypeFont
 	{
 		public int Type { get; }

@@ -5,14 +5,18 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF
 {
-		public class MaxpTable : TrueTypeTable
+	/// <summary>
+	/// The 'maxp' table establishes the memory requirements for a font. It begins with a table version number. The next entry is the number of glyphs in the font. 
+	/// The remaining entries all establish maximum values for a number of parameters. Most of these are self explanatory. A few, however, need some clarification.
+	/// </summary>
+	public class MaxpTable : TrueTypeTable
 	{
 
 		protected internal MaxpTable() : base(TrueTypeTableTypes.maxp) { }
 
 		public override int Length => 32;
 		public virtual short NumGlyphs { get; set; } = 0;
-		public virtual int Version { get; set; } = 65535;
+		public virtual int Version { get; set; } = 0x10000;
 		public virtual short MaxPoints { get; set; } = 0;
 		public virtual short MaxContours { get; set; } = 0;
 		public virtual short MaxComponentPoints { get; set; } = 0;

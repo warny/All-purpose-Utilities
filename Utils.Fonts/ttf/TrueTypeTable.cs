@@ -5,6 +5,11 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF
 {
+
+    /// <summary>
+    /// Base class for TrueType Table
+    /// </summary>
+    /// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/"/>
 	public class TrueTypeTable
 	{
 

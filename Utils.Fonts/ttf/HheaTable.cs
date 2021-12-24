@@ -5,12 +5,18 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF
 {
+	/// <summary>
+	/// The 'hhea' table contains information needed to layout fonts whose characters are written horizontally, that is, either left to right or right to left. 
+	/// This table contains information that is general to the font as a whole. Information which pertains to specific glyphs is given in the 'hmtx' table 
+	/// defined below.
+	/// </summary>
+	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6hhea.html"/>
 	public class HheaTable : TrueTypeTable
 	{
 		protected internal HheaTable() : base(TrueTypeTableTypes.hhea) { }
 
 		public override int Length => 36;
-		public virtual int Version { get; set; } = 65535;
+		public virtual int Version { get; set; } = 0x10000;
 		public virtual short Ascent { get; set; }
 		public virtual short Descent { get; set; }
 		public virtual short LineGap { get; set; }

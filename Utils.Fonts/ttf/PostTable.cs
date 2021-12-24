@@ -6,6 +6,12 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF
 {
+	/// <summary>
+	/// The 'post' table contains information needed to use a TrueType font on a PostScript printer. It contains the data needed for the FontInfo 
+	/// dictionary entry as well as the PostScript names for all of the glyphs in the font. It also contains memory usage information needed by 
+	/// the PostScript driver for memory management.
+	/// </summary>
+	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6post.html"/>
 	public class PostTable : TrueTypeTable
 	{
 		internal class PostMap
@@ -25,40 +31,40 @@ namespace Utils.Fonts.TTF
 		{
 			
 			protected internal string[] stdNames = {
-/* 0 */     ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl", "numbersign", "dollar",
-/* 8 */     "percent", "ampersand", "quotesingle", "parenleft", "parenright", "asterisk", "plus", "comma",
-/* 16 */    "hyphen", "period", "slash", "zero", "one", "two", "three", "four",
-/* 24 */    "five", "six", "seven", "eight", "nine", "colon", "semicolon", "less", 
-/* 32 */    "equal", "greater", "question", "at", "A", "B", "C", "D",
-/* 40 */    "E", "F", "G", "H", "I", "J", "K", "L",
-/* 48 */    "M", "N", "O", "P", "Q", "R", "S", "T", 
-/* 56 */    "U", "V", "W", "X", "Y", "Z", "bracketleft", "ackslash",
-/* 64 */    "bracketright", "asciicircum", "underscore", "grave", "a", "b", "c", "d",
-/* 72 */    "e", "f", "g", "h", "i", "j", "k", "l", 
-/* 80 */    "m", "n", "o", "p", "q", "r", "s", "t",
-/* 88 */    "u", "v", "w", "x", "y", "z", "braceleft", "bar",
-/* 96 */    "braceright", "asciitilde", "Adieresis", "Aring", "Ccedilla", "Eacute", "Ntilde", "Odieresis",
-/* 104 */   "Udieresis", "aacute", "agrave", "acircumflex", "adieresis", "atilde", "aring", "ccedilla",
-/* 112 */   "eacute", "egrave", "ecircumflex", "edieresis", "iacute", "igrave", "icircumflex", "idieresis",
-/* 120 */   "ntilde", "oacute", "ograve", "ocircumflex", "odieresis", "otilde", "uacute", "ugrave", 
-/* 128 */   "ucircumflex", "udieresis", "dagger", "degree", "cent", "sterling", "section", "bullet",
-/* 136 */   "paragraph", "germandbls", "registered", "copyright", "trademark", "acute", "dieresis", "notequal",
-/* 144 */   "AE", "Oslash", "infinity", "plusminus", "lessequal", "greaterequal", "yen", "mu",
-/* 152 */   "partialdiff", "summation", "product", "pi", "integral", "ordfeminine", "ordmasculine", "Omega",
-/* 160 */   "ae", "oslash", "questiondown", "exclamdown", "logicalnot", "radical", "florin", "approxequal",
-/* 168 */   "Delta", "guillemotleft", "guillemotright", "ellipsis", "nonbreakingspace", "Agrave", "Atilde", "Otilde",
-/* 176 */   "OE", "oe", "endash", "emdash", "quotedblleft", "quotedblright", "quoteleft", "quoteright",
-/* 184 */   "divide", "lozenge", "ydieresis", "Ydieresis", "fraction", "currency", "guilsinglleft", "guilsinglright",
-/* 192 */   "fi", "fl", "daggerdbl", "periodcentered", "quotesinglbase", "quotedblbase", "perthousand", "Acircumflex",
-/* 200 */   "Ecircumflex", "Aacute", "Edieresis", "Egrave", "Iacute", "Icircumflex", "Idieresis", "Igrave",
-/* 208 */   "Oacute", "Ocircumflex", "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave", "dotlessi",
-/* 216 */   "circumflex", "tilde", "macron", "breve", "dotaccent", "ring", "cedilla", "hungarumlaut",
-/* 224 */   "ogonek", "caron", "Lslash", "lslash", "Scaron", "scaron", "Zcaron", "zcaron",
-/* 232 */   "brokenbar", "Eth", "eth", "Yacute", "yacute", "Thorn", "thorn", "minus",
-/* 240 */   "multiply", "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter", "threequarters", "franc",
-/* 248 */   "Gbreve", "gbreve", "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute", "Ccaron",
-/* 256 */   "ccaron", "dcroat"
-		};
+				/* 0 */     ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl", "numbersign", "dollar",
+				/* 8 */     "percent", "ampersand", "quotesingle", "parenleft", "parenright", "asterisk", "plus", "comma",
+				/* 16 */    "hyphen", "period", "slash", "zero", "one", "two", "three", "four",
+				/* 24 */    "five", "six", "seven", "eight", "nine", "colon", "semicolon", "less", 
+				/* 32 */    "equal", "greater", "question", "at", "A", "B", "C", "D",
+				/* 40 */    "E", "F", "G", "H", "I", "J", "K", "L",
+				/* 48 */    "M", "N", "O", "P", "Q", "R", "S", "T", 
+				/* 56 */    "U", "V", "W", "X", "Y", "Z", "bracketleft", "ackslash",
+				/* 64 */    "bracketright", "asciicircum", "underscore", "grave", "a", "b", "c", "d",
+				/* 72 */    "e", "f", "g", "h", "i", "j", "k", "l", 
+				/* 80 */    "m", "n", "o", "p", "q", "r", "s", "t",
+				/* 88 */    "u", "v", "w", "x", "y", "z", "braceleft", "bar",
+				/* 96 */    "braceright", "asciitilde", "Adieresis", "Aring", "Ccedilla", "Eacute", "Ntilde", "Odieresis",
+				/* 104 */   "Udieresis", "aacute", "agrave", "acircumflex", "adieresis", "atilde", "aring", "ccedilla",
+				/* 112 */   "eacute", "egrave", "ecircumflex", "edieresis", "iacute", "igrave", "icircumflex", "idieresis",
+				/* 120 */   "ntilde", "oacute", "ograve", "ocircumflex", "odieresis", "otilde", "uacute", "ugrave", 
+				/* 128 */   "ucircumflex", "udieresis", "dagger", "degree", "cent", "sterling", "section", "bullet",
+				/* 136 */   "paragraph", "germandbls", "registered", "copyright", "trademark", "acute", "dieresis", "notequal",
+				/* 144 */   "AE", "Oslash", "infinity", "plusminus", "lessequal", "greaterequal", "yen", "mu",
+				/* 152 */   "partialdiff", "summation", "product", "pi", "integral", "ordfeminine", "ordmasculine", "Omega",
+				/* 160 */   "ae", "oslash", "questiondown", "exclamdown", "logicalnot", "radical", "florin", "approxequal",
+				/* 168 */   "Delta", "guillemotleft", "guillemotright", "ellipsis", "nonbreakingspace", "Agrave", "Atilde", "Otilde",
+				/* 176 */   "OE", "oe", "endash", "emdash", "quotedblleft", "quotedblright", "quoteleft", "quoteright",
+				/* 184 */   "divide", "lozenge", "ydieresis", "Ydieresis", "fraction", "currency", "guilsinglleft", "guilsinglright",
+				/* 192 */   "fi", "fl", "daggerdbl", "periodcentered", "quotesinglbase", "quotedblbase", "perthousand", "Acircumflex",
+				/* 200 */   "Ecircumflex", "Aacute", "Edieresis", "Egrave", "Iacute", "Icircumflex", "Idieresis", "Igrave",
+				/* 208 */   "Oacute", "Ocircumflex", "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave", "dotlessi",
+				/* 216 */   "circumflex", "tilde", "macron", "breve", "dotaccent", "ring", "cedilla", "hungarumlaut",
+				/* 224 */   "ogonek", "caron", "Lslash", "lslash", "Scaron", "scaron", "Zcaron", "zcaron",
+				/* 232 */   "brokenbar", "Eth", "eth", "Yacute", "yacute", "Thorn", "thorn", "minus",
+				/* 240 */   "multiply", "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter", "threequarters", "franc",
+				/* 248 */   "Gbreve", "gbreve", "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute", "Ccaron",
+				/* 256 */   "ccaron", "dcroat"
+			};
 
 			internal override short GetCharIndex(string charName)
 			{

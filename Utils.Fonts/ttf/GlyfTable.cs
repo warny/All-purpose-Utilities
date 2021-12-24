@@ -7,7 +7,13 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF
 {
-		public class GlyfTable : TrueTypeTable
+	/// <summary>
+	/// The 'glyf' table contains the data that defines the appearance of the glyphs in the font. This includes specification of the points that describe the contours 
+	/// that make up a glyph outline and the instructions that grid-fit that glyph. The 'glyf' table supports the definition of simple glyphs and compound glyphs, 
+	/// that is, glyphs that are made up of other glyphs.
+	/// </summary>
+	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6glyf.html"/>
+	public class GlyfTable : TrueTypeTable
 	{
 		private Glyf[] glyfs;
 		private LocaTable loca;
@@ -17,7 +23,8 @@ namespace Utils.Fonts.TTF
 
 		protected internal GlyfTable() : base(TrueTypeTableTypes.glyf) { }
 
-		public override TrueTypeFont TrueTypeFont { 
+		public override TrueTypeFont TrueTypeFont
+		{
 			get => base.TrueTypeFont;
 			protected set
 			{
