@@ -122,13 +122,20 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="objects"></param>
 		/// <returns></returns>
-		public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects)
+		public static int ComputeHash<T>(Func<T, int> getHashCode, IEnumerable<T> objects)
 		{
 			unchecked
 			{
 				return objects.Aggregate(23, (value, acc) => getHashCode(acc) + value * 31);
 			}
 		}
+
+		/// <summary>
+		/// Compute a hash from the hashes of the given objects
+		/// </summary>
+		/// <param name="objects"></param>
+		/// <returns></returns>
+		public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects) => ComputeHash(getHashCode, (IEnumerable<T>)objects);
 
 		/// <summary>
 		/// 

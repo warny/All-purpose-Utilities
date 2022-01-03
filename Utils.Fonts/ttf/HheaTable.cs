@@ -79,7 +79,7 @@ namespace Utils.Fonts.TTF
 		public override string ToString()
 		{
 			StringBuilder result = new StringBuilder();
-			result.AppendLine($"    Version             : {Version.ToString("X4")}");
+			result.AppendLine($"    Version             : {Version:X4}");
 			result.AppendLine($"    Ascent              : {Ascent}");
 			result.AppendLine($"    Descent             : {Descent}");
 			result.AppendLine($"    LineGap             : {LineGap}");

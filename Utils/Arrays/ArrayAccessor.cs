@@ -52,15 +52,9 @@ namespace Utils.Arrays
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		protected abstract void SetElement( T value, int[] references );
 
-		public IEnumerator<T> GetEnumerator()
-		{
-			return innerObject.GetEnumerator();
-		}
+		public IEnumerator<T> GetEnumerator() => innerObject.GetEnumerator();
 
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return innerObject.GetEnumerator();
-		}
+		IEnumerator IEnumerable.GetEnumerator() => innerObject.GetEnumerator();
 	}
 
 	public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
@@ -95,15 +89,9 @@ namespace Utils.Arrays
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		protected override T GetElement( int[] references )
-		{
-			return this.innerObject[Position(references)];
-		}
+		protected override T GetElement(int[] references) => this.innerObject[Position(references)];
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		protected override void SetElement( T value, int[] references )
-		{
-			this.innerObject[Position(references)] = value;
-		}
+		protected override void SetElement(T value, int[] references) => this.innerObject[Position(references)] = value;
 	}
 }

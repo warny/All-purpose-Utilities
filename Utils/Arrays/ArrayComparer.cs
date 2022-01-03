@@ -10,7 +10,7 @@ namespace Utils.Arrays
 	/// Compare deux tableau de valeurs de types comparables
 	/// </summary>
 	/// <typeparam name="T">Type comparable</typeparam>
-	public class ArrayComparer<T> : IComparer<IReadOnlyList<T>>
+	public class ArrayComparer<T> : IComparer<IReadOnlyCollection<T>>
 	{
 		Func<T, T, int> comparer;
 		private readonly Type typeOfT = typeof(T);
@@ -44,7 +44,7 @@ namespace Utils.Arrays
 			}
 		}
 
-		public int Compare(IReadOnlyList<T> x, IReadOnlyList<T> y)
+		public int Compare(IReadOnlyCollection<T> x, IReadOnlyCollection<T> y)
 		{
 			if (x is null && y is null) return 0;
 			if (x is null) return 1;

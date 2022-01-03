@@ -10,7 +10,7 @@ namespace Utils.Arrays
 	/// Classe de comparaison de tableaux
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	public class ArrayEqualityComparer<T> : IEqualityComparer<IReadOnlyList<T>>
+	public class ArrayEqualityComparer<T> : IEqualityComparer<IReadOnlyCollection<T>>
 	{
 		private readonly Func<T, T, bool> areEquals;
 		private readonly Func<T, int> getHashCode;
@@ -66,7 +66,7 @@ namespace Utils.Arrays
 			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
 		}
 
-		public bool Equals(IReadOnlyList<T> x, IReadOnlyList<T> y)
+		public bool Equals(IReadOnlyCollection<T> x, IReadOnlyCollection<T> y)
 		{
 			if (x is null && y is null) return true;
 			if (x is null || y is null) return false;
@@ -85,6 +85,21 @@ namespace Utils.Arrays
 			}
 		}
 
-		public int GetHashCode(IReadOnlyList<T> obj) => ObjectUtils.ComputeHash(getHashCode, obj);
+		public int GetHashCode(IReadOnlyCollection<T> obj) => ObjectUtils.ComputeHash(getHashCode, obj);
+	}
+
+	public static class ArrayEqualityComparers
+	{
+		public static IEqualityComparer<IReadOnlyCollection<byte>> Byte {get;} = new ArrayEqualityComparer<byte>();
+		public static IEqualityComparer<IReadOnlyCollection<short>> Int16 { get; } = new ArrayEqualityComparer<short>();
+		public static IEqualityComparer<IReadOnlyCollection<int>> Int32 { get; } = new ArrayEqualityComparer<int>();
+		public static IEqualityComparer<IReadOnlyCollection<long>> Int64 { get; } = new ArrayEqualityComparer<long>();
+		public static IEqualityComparer<IReadOnlyCollection<ushort>> UInt16 { get; } = new ArrayEqualityComparer<ushort>();
+		public static IEqualityComparer<IReadOnlyCollection<uint>> UInt32 { get; } = new ArrayEqualityComparer<uint>();
+		public static IEqualityComparer<IReadOnlyCollection<ulong>> UInt64 { get; } = new ArrayEqualityComparer<ulong>();
+		public static IEqualityComparer<IReadOnlyCollection<float>> Single { get; } = new ArrayEqualityComparer<float>();
+		public static IEqualityComparer<IReadOnlyCollection<double>> Double { get; } = new ArrayEqualityComparer<double>();
+		public static IEqualityComparer<IReadOnlyCollection<DateTime>> DateTime { get; } = new ArrayEqualityComparer<DateTime>();
+		public static IEqualityComparer<IReadOnlyCollection<Type>> Type { get; } = new ArrayEqualityComparer<Type>();	
 	}
 }
