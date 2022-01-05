@@ -9,7 +9,7 @@ using Utils.Objects;
 
 namespace Utils.VirtualMachine
 {
-	public abstract class VirtualMachine<T>
+	public abstract class VirtualProcessor<T>
 	{
 		public delegate void InstructionDelegate(Reader reader, T context);
 
@@ -18,7 +18,7 @@ namespace Utils.VirtualMachine
 
 		protected Dictionary<IReadOnlyCollection<byte>, (string name, InstructionDelegate instruction)> InstructionsSet { get; }
 
-		public VirtualMachine()
+		public VirtualProcessor()
 		{
 			InstructionsSet = ReadInstructionsSet();
 		}

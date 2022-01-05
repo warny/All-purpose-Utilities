@@ -10,7 +10,7 @@ using Utils.VirtualMachine;
 
 namespace UtilsTest.VirtualMachine
 {
-	public class TestMachine : VirtualMachine<DefaultContext> {
+	public class TestMachine : VirtualProcessor<DefaultContext> {
 		[Instruction("PUSH", 0x01)]
 		void Push(Reader reader, DefaultContext context)
 		{
