@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using Utils.Arrays;
-using Utils.IO.Serialization;
-using Utils.Objects;
+using Utils.Collections;
 
 namespace Utils.VirtualMachine
 {
-	public abstract class VirtualProcessor<T>
+	public abstract class VirtualProcessor<T> where T : Context
 	{
-		public delegate void InstructionDelegate(Reader reader, T context);
+		public delegate void InstructionDelegate(T context);
 
-		private static readonly Type[] DelegateParametersTypes = new[] { typeof(Reader), typeof(T) };
 		private int MaxDepth;
 
 		protected Dictionary<IReadOnlyCollection<byte>, (string name, InstructionDelegate instruction)> InstructionsSet { get; }
@@ -46,20 +42,20 @@ namespace Utils.VirtualMachine
 			return result;
 		}
 
-		public void Execute(Reader reader, T context)
+		public void Execute(T context)
 		{
 			List<byte> currentInstruction = new List<byte>();
-			while (reader.BytesLeft > 0)
+			while (context.IntructionPointer < context.Datas.Length)
 			{
 				bool found = false;
 				currentInstruction.Clear();
 				while (currentInstruction.Count < MaxDepth)
 				{
-					currentInstruction.Add(reader.ReadByte());
+					currentInstruction.Add(context.ReadByte());
 					if (InstructionsSet.TryGetValue(currentInstruction, out var instruction))
 					{
 						Console.WriteLine(instruction.name);
-						instruction.instruction(reader, context);
+						instruction.instruction(context);
 						found = true;
 						break;
 					}
@@ -73,8 +69,28 @@ namespace Utils.VirtualMachine
 		}
 	}
 
-	public class DefaultContext
+	public abstract class Context
 	{
-		public Stack<object> Stack = new Stack<object>();
+		public byte[] Datas { get; }
+		public long IntructionPointer { get; set; }
+
+		public Context(byte[] datas)
+		{
+			Datas = datas;
+		}
+
+		public byte ReadByte() => Datas[IntructionPointer++];
+		public virtual Int16 ReadInt16() => (Int16)(ReadByte() << 8 | ReadByte());
+		public virtual Int32 ReadInt32() => (Int32)ReadInt16() << 16 | (Int32)ReadInt16();
+		public virtual Int64 ReadInt62() => (Int64)ReadInt32() << 32 | (Int64)ReadInt32();
+	}
+
+	public class DefaultContext : Context
+	{
+		public DefaultContext(byte[] datas) : base(datas)
+		{
+		}
+
+		public Stack<object> Stack { get; } = new Stack<object>();
 	}
 }

@@ -10,30 +10,31 @@ using Utils.VirtualMachine;
 
 namespace UtilsTest.VirtualMachine
 {
-	public class TestMachine : VirtualProcessor<DefaultContext> {
+	public class TestMachine : VirtualProcessor<DefaultContext>
+	{
 		[Instruction("PUSH", 0x01)]
-		void Push(Reader reader, DefaultContext context)
+		void Push(DefaultContext context)
 		{
-			context.Stack.Push (reader.ReadByte());
+			context.Stack.Push(context.ReadByte());
 		}
 
 		[Instruction("POP", 0x02)]
-		void Pop(Reader reader, DefaultContext context)
+		void Pop(DefaultContext context)
 		{
 			context.Stack.Pop();
 		}
 
 		[Instruction("ADD", 0X10, 0x01)]
-		void Add(Reader reader, DefaultContext context)
+		void Add(DefaultContext context)
 		{
 			var op2 = (byte)context.Stack.Pop();
 			var op1 = (byte)context.Stack.Pop();
 			var res = op1 + op2;
-			context.Stack.Push ((byte)res);
+			context.Stack.Push((byte)res);
 		}
 
 		[Instruction("SUB", 0X10, 0x02)]
-		void Substract(Reader reader, DefaultContext context)
+		void Substract(DefaultContext context)
 		{
 			var op2 = (byte)context.Stack.Pop();
 			var op1 = (byte)context.Stack.Pop();
@@ -53,14 +54,12 @@ namespace UtilsTest.VirtualMachine
 				//Push 0x10
 				0x01, 0x10, 
 				//Push 0x01
-				0x01, 0x01 
+				0x01, 0x01
 			};
-			
-			Reader reader = new Reader(new MemoryStream(instructions));
 
-			var context = new DefaultContext();
+			var context = new DefaultContext(instructions);
 			TestMachine machine = new TestMachine();
-			machine.Execute(reader, context);
+			machine.Execute(context);
 
 			var result = context.Stack.OfType<byte>().ToArray();
 			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals(new byte[] { 0x01, 0x10 }, result));
@@ -77,11 +76,10 @@ namespace UtilsTest.VirtualMachine
 				//Add 
 				0x10, 0x01
 			};
-			Reader reader = new Reader(new MemoryStream(instructions));
 
-			var context = new DefaultContext();
+			var context = new DefaultContext(instructions);
 			TestMachine machine = new TestMachine();
-			machine.Execute(reader, context);
+			machine.Execute(context);
 
 			var result = context.Stack.OfType<byte>().ToArray();
 			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals(new byte[] { 0x11 }, result));
@@ -98,11 +96,10 @@ namespace UtilsTest.VirtualMachine
 				//Substract 
 				0x10, 0x02
 			};
-			Reader reader = new Reader(new MemoryStream(instructions));
 
-			var context = new DefaultContext();
+			var context = new DefaultContext(instructions);
 			TestMachine machine = new TestMachine();
-			machine.Execute(reader, context);
+			machine.Execute(context);
 
 			var result = context.Stack.OfType<byte>().ToArray();
 			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals(new byte[] { 0x0F }, result));

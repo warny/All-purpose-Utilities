@@ -28,6 +28,7 @@
     <ProjectReference Include="..\Utils.Geography\Utils.Geography.csproj" />
     <ProjectReference Include="..\Utils.IO\Utils.IO.csproj" />
     <ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
+    <ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
     <ProjectReference Include="..\Utils\Utils.csproj" />
   </ItemGroup>
 

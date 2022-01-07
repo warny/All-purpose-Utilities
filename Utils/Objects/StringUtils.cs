@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Utils.Collections;
 using Utils.Mathematics;
 
 namespace Utils.Objects
