@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using Utils.Lists;
+using Utils.Collections;
 using Utils.Mathematics;
 
 namespace Utils.Drawing

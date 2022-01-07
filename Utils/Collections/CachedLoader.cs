@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	/// <summary>
 	/// Classe permettant de charger une ressource si celle-ci n'a pas été chargée avant

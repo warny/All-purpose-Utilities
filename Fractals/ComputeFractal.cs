@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using System.Numerics;
 using Utils.Imaging;
-using Utils.Lists;
+using Utils.Collections;
 
 namespace Fractals
 {

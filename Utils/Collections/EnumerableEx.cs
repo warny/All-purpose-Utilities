@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	public static class EnumerableEx
 	{

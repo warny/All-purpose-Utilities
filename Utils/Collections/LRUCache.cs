@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	/// <summary>
 	/// Classe pour cacher les elements utilisés récemments

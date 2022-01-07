@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
-using Utils.Lists;
+using Utils.Collections;
 
 namespace Utils.Objects
 {

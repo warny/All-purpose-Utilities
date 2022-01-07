@@ -7,7 +7,7 @@ using System.Text;
 using System.Transactions;
 using Utils.Mathematics;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	public class SkipList<T> : ICollection<T>
 	{

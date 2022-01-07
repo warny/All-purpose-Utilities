@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	class DoubleLinkedList<T> : ICollection, IReadOnlyCollection<T>, ICloneable
 	{

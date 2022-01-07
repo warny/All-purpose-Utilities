@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	/// <summary>
 	/// Liste dont la source est définie par des accesseurs

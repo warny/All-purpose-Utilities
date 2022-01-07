@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
-using Utils.Lists;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Lists

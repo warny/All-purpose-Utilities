@@ -5,7 +5,7 @@ using System.Drawing;
 using Utils.Imaging;
 using Utils.Mathematics;
 using System.Linq;
-using Utils.Lists;
+using Utils.Collections;
 using System.Diagnostics;
 
 namespace Utils.Drawing

@@ -20,15 +20,6 @@ namespace Utils.Objects
 		}
 		 
 		/// <summary>
-		/// Returns true if collection is null or has no elements
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		public static bool IsNullOrEmptyCollection<T>( this IEnumerable<T> coll )
-		{
-			return coll == null || !coll.Any();
-		}
-
-		/// <summary>
 		/// Calcul le hash d'un tableau multidimensionnel
 		/// </summary>
 		/// <param name="array"></param>

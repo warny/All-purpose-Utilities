@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Utils.Lists
+namespace Utils.Collections
 {
 	public class DoubleIndexedDictionary<T1, T2> : IDictionary<T1, T2>
 	{
