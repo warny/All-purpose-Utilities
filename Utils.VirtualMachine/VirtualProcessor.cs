@@ -8,18 +8,21 @@ namespace Utils.VirtualMachine
 {
 	public abstract class VirtualProcessor<T> where T : Context
 	{
+		private readonly INumberReader numberReader;
+
 		public delegate void InstructionDelegate(T context);
 
 		private int MaxDepth;
 
 		protected Dictionary<IReadOnlyCollection<byte>, (string name, InstructionDelegate instruction)> InstructionsSet { get; }
 
-		public VirtualProcessor()
+		public VirtualProcessor(bool littleIndian = true)
 		{
+			numberReader = NumberReader.GetReader(littleIndian);
 			InstructionsSet = ReadInstructionsSet();
 		}
 
-		public Dictionary<IReadOnlyCollection<byte>, (string name, InstructionDelegate instruction)> ReadInstructionsSet()
+		private Dictionary<IReadOnlyCollection<byte>, (string name, InstructionDelegate instruction)> ReadInstructionsSet()
 		{
 			Type t = this.GetType();
 
@@ -42,6 +45,17 @@ namespace Utils.VirtualMachine
 			return result;
 		}
 
+		protected byte ReadByte(Context context) => numberReader.ReadByte(context);
+		protected Int16 ReadInt16(Context context) => numberReader.ReadInt16(context);
+		protected Int32 ReadInt32(Context context) => numberReader.ReadInt32(context);
+		protected Int64 ReadInt64(Context context) => numberReader.ReadInt64(context);
+		protected UInt16 ReadUInt16(Context context) => numberReader.ReadUInt16(context);
+		protected UInt32 ReadUInt32(Context context) => numberReader.ReadUInt32(context);
+		protected UInt64 ReadUInt64(Context context) => numberReader.ReadUInt64(context);
+		protected float ReadSingle(Context context) => numberReader.ReadSingle(context);
+		protected double ReadDouble(Context context) => numberReader.ReadDouble(context);
+
+
 		public void Execute(T context)
 		{
 			List<byte> currentInstruction = new List<byte>();
@@ -51,7 +65,7 @@ namespace Utils.VirtualMachine
 				currentInstruction.Clear();
 				while (currentInstruction.Count < MaxDepth)
 				{
-					currentInstruction.Add(context.ReadByte());
+					currentInstruction.Add(ReadByte(context));
 					if (InstructionsSet.TryGetValue(currentInstruction, out var instruction))
 					{
 						Console.WriteLine(instruction.name);
@@ -72,17 +86,13 @@ namespace Utils.VirtualMachine
 	public abstract class Context
 	{
 		public byte[] Datas { get; }
-		public long IntructionPointer { get; set; }
+		public int IntructionPointer { get; set; }
 
 		public Context(byte[] datas)
 		{
 			Datas = datas;
 		}
 
-		public byte ReadByte() => Datas[IntructionPointer++];
-		public virtual Int16 ReadInt16() => (Int16)(ReadByte() << 8 | ReadByte());
-		public virtual Int32 ReadInt32() => (Int32)ReadInt16() << 16 | (Int32)ReadInt16();
-		public virtual Int64 ReadInt62() => (Int64)ReadInt32() << 32 | (Int64)ReadInt32();
 	}
 
 	public class DefaultContext : Context

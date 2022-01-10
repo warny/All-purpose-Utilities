@@ -15,7 +15,7 @@ namespace UtilsTest.VirtualMachine
 		[Instruction("PUSH", 0x01)]
 		void Push(DefaultContext context)
 		{
-			context.Stack.Push(context.ReadByte());
+			context.Stack.Push(ReadByte(context));
 		}
 
 		[Instruction("POP", 0x02)]
