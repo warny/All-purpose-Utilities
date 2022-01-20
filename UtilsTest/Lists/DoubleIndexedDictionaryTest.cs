@@ -43,7 +43,7 @@ namespace UtilsTest.Lists
 			}
 			catch
 			{
-				Assert.Inconclusive("Can't assign indexisting value to existing key");
+				Assert.Inconclusive("Can't assign inexisting value to existing key");
 			}
 
 			try

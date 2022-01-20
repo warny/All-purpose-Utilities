@@ -9,80 +9,114 @@ namespace Utils.Reflection
 	/// </summary>
 	public static class Platform
 	{
+		static Platform()
+		{
+			// Supported platform has already been detected
+			if (IsWindows || IsLinux || IsMacOsX)
+				return;
+
+#if NETSTANDARD2_0
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				IsWindows = true;
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			{
+				// Note: Android gets here too
+				IsLinux = true;
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			{
+				// Note: iOS gets here too
+				IsMacOsX = true;
+			}
+			else
+			{
+				IsUnknown = true;
+			}
+
+#else
+
+			// Detect platform
+			//
+			// System.Environment.OSVersion.Platform is not used because:
+			// - Mac OS X detection almost never works under Mono
+			// - it is not implemented by .NET Core
+			//
+			// System.Runtime.InteropServices.RuntimeInformation is not used because:
+			// - it is not implemented by full .NET and Mono
+			// - it does not perform platform detection in runtime but uses hardcoded information instead
+			//   See https://github.com/dotnet/corefx/issues/3032 for more info
+			//
+			// Pinvoking of platform specific unmanaged functions is not used because:
+			// - it may cause segmentation fault on unknown platforms
+			//
+			// Following code may look silly but:
+			// - it is 100% managed code
+			// - it works under .NET, Mono and .NET Core
+			// - it works like a charm so far
+
+			string windir = Environment.GetEnvironmentVariable("windir");
+			if (!string.IsNullOrEmpty(windir) && windir.Contains(@"\") && Directory.Exists(windir))
+			{
+				IsWindows = true;
+			}
+			else if (File.Exists(@"/proc/sys/kernel/ostype"))
+			{
+				string osType = File.ReadAllText(@"/proc/sys/kernel/ostype");
+				if (osType.StartsWith("Linux", StringComparison.OrdinalIgnoreCase))
+				{
+					// Note: Android gets here too
+					IsLinux = true;
+				}
+				else
+				{
+					IsUnknown = true;
+				}
+			}
+			else if (File.Exists(@"/System/Library/CoreServices/SystemVersion.plist"))
+			{
+				// Note: iOS gets here too
+				_isMacOsX = true;
+			}
+			else
+			{
+				IsUnknown = true;
+			}
+
+#endif
+		}
+
 		/// <summary>
 		/// True if 64-bit runtime is used
 		/// </summary>
-		public static bool Uses64BitRuntime => IntPtr.Size == 8;
+		public static bool Uses64BitRuntime { get; } = IntPtr.Size == 8;
 
 		/// <summary>
 		/// True if 32-bit runtime is used
 		/// </summary>
-		public static bool Uses32BitRuntime => IntPtr.Size == 4;
+		public static bool Uses32BitRuntime { get; } = IntPtr.Size == 4;
 
 		/// <summary>
 		/// True if runtime platform is Windows
 		/// </summary>
-		private static bool _isWindows = false;
-
-		/// <summary>
-		/// True if runtime platform is Windows
-		/// </summary>
-		public static bool IsWindows
-		{
-			get {
-				DetectPlatform();
-				return _isWindows;
-			}
-		}
+		public static bool IsWindows { get; private set; } = false;
 
 		/// <summary>
 		/// True if runtime platform is Linux
 		/// </summary>
-		private static bool _isLinux = false;
-
-		/// <summary>
-		/// True if runtime platform is Linux
-		/// </summary>
-		public static bool IsLinux
-		{
-			get {
-				DetectPlatform();
-				return _isLinux;
-			}
-		}
+		public static bool IsLinux { get; private set; } = false;
 
 		/// <summary>
 		/// True if runtime platform is Mac OS X
 		/// </summary>
-		private static bool _isMacOsX = false;
-
-		/// <summary>
-		/// True if runtime platform is Mac OS X
-		/// </summary>
-		public static bool IsMacOsX
-		{
-			get {
-				DetectPlatform();
-				return _isMacOsX;
-			}
-		}
+		public static bool IsMacOsX { get; private set; } = false;
 
 		/// <summary>
 		/// True if runtime platform is unknown
 		/// </summary>
-		private static bool _isUnknown = false;
-
-		/// <summary>
-		/// True if runtime platform is unknown
-		/// </summary>
-		public static bool IsUnknown
-		{
-			get
-			{
-				DetectPlatform();
-				return _isUnknown;
-			}
-		}
+		public static bool IsUnknown { get; private set; } = false;
 
 		/// <summary>
 		/// Size of native (unmanaged) long type
@@ -160,86 +194,5 @@ namespace Utils.Reflection
 			}
 		}
 
-		/// <summary>
-		/// Performs platform detection
-		/// </summary>
-		private static void DetectPlatform()
-		{
-			// Supported platform has already been detected
-			if (_isWindows || _isLinux || _isMacOsX)
-				return;
-
-#if NETSTANDARD2_0
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                _isWindows = true;
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                // Note: Android gets here too
-                _isLinux = true;
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                // Note: iOS gets here too
-                _isMacOsX = true;
-            }
-            else
-            {
-				_isUnknown = true;
-            }
-
-#else
-
-			// Detect platform
-			//
-			// System.Environment.OSVersion.Platform is not used because:
-			// - Mac OS X detection almost never works under Mono
-			// - it is not implemented by .NET Core
-			//
-			// System.Runtime.InteropServices.RuntimeInformation is not used because:
-			// - it is not implemented by full .NET and Mono
-			// - it does not perform platform detection in runtime but uses hardcoded information instead
-			//   See https://github.com/dotnet/corefx/issues/3032 for more info
-			//
-			// Pinvoking of platform specific unmanaged functions is not used because:
-			// - it may cause segmentation fault on unknown platforms
-			//
-			// Following code may look silly but:
-			// - it is 100% managed code
-			// - it works under .NET, Mono and .NET Core
-			// - it works like a charm so far
-
-			string windir = Environment.GetEnvironmentVariable("windir");
-			if (!string.IsNullOrEmpty(windir) && windir.Contains(@"\") && Directory.Exists(windir))
-			{
-				_isWindows = true;
-			}
-			else if (File.Exists(@"/proc/sys/kernel/ostype"))
-			{
-				string osType = File.ReadAllText(@"/proc/sys/kernel/ostype");
-				if (osType.StartsWith("Linux", StringComparison.OrdinalIgnoreCase))
-				{
-					// Note: Android gets here too
-					_isLinux = true;
-				}
-				else
-				{
-					_isUnknown = true;
-				}
-			}
-			else if (File.Exists(@"/System/Library/CoreServices/SystemVersion.plist"))
-			{
-				// Note: iOS gets here too
-				_isMacOsX = true;
-			}
-			else
-			{
-				_isUnknown = true;
-			}
-
-#endif
-		}
 	}
 }

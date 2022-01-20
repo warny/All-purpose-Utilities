@@ -6,6 +6,15 @@ namespace Utils.Collections
 {
 	public static class EnumerableEx
 	{
+        /// <summary>
+        /// Get a value for the selected <paramref name="key"/> or return <paramref name="defaultValue"/> if it doesn't exists
+        /// </summary>
+        /// <typeparam name="K"><paramref name="key"/> type</typeparam>
+        /// <typeparam name="T"><paramref name="d"/> values type</typeparam>
+        /// <param name="d">Dictionary</param>
+        /// <param name="key">Key of value to be retrieve</param>
+        /// <param name="defaultValue">Default value if not retrieve</param>
+        /// <returns></returns>
         public static T GetValueValueOrDefault<K, T>(this IDictionary<K, T> d, K key, T defaultValue = default(T))
         {
             if (d.TryGetValue(key, out T value))
@@ -15,10 +24,23 @@ namespace Utils.Collections
             return defaultValue;
         }
 
-        public static IEnumerable<T[]> EnumerateBy<T>(this IEnumerable<T> e, int by)
+        /// <summary>
+        /// Enumerate the collection with a step of <paramref name="by"/>
+        /// </summary>
+        /// <typeparam name="T"><paramref name="e"/> values type</typeparam>
+        /// <param name="e">Collection to be read</param>
+        /// <param name="by">Step</param>
+        /// <param name="skip">Number of values to skip</param>
+        /// <returns></returns>
+        public static IEnumerable<T[]> EnumerateBy<T>(this IEnumerable<T> e, int by, int skip = 0)
         {
             T[] result = new T[by];
             var enumerator = e.GetEnumerator();
+
+			for (int i = 0; i < skip; i++)
+			{
+                if (!enumerator.MoveNext()) yield break;
+			}
 
 			for (int i = 0; i < by; i++)
 			{
@@ -47,6 +69,13 @@ namespace Utils.Collections
 
         }
 
+        /// <summary>
+        /// Enumerate <paramref name="enumerable"/> then <paramref name="elements"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="elements"></param>
+        /// <returns></returns>
         public static IEnumerable<T> FollowedBy<T>(this IEnumerable<T> enumerable, params T[] elements) 
         {
 			foreach (var item in enumerable)
@@ -59,6 +88,13 @@ namespace Utils.Collections
             }
         }
 
+        /// <summary>
+        /// Enumerate <paramref name="elements"/> then <paramref name="enumerable"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="elements"></param>
+        /// <returns></returns>
         public static IEnumerable<T> PrecededBy<T>(this IEnumerable<T> enumerable, params T[] elements)
         {
             foreach (var item in elements)

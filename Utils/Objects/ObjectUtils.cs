@@ -104,7 +104,7 @@ namespace Utils.Objects
 		{
 			unchecked
 			{
-				return objects.Aggregate(23, (value, acc) => acc.GetHashCode() + value * 31);
+				return objects.Aggregate(23, (acc, value) => value.GetHashCode() + acc * 31);
 			}
 		}
 
@@ -117,7 +117,7 @@ namespace Utils.Objects
 		{
 			unchecked
 			{
-				return objects.Aggregate(23, (value, acc) => getHashCode(acc) + value * 31);
+				return objects.Aggregate(23, (acc, value) => getHashCode(value) + acc * 31);
 			}
 		}
 
