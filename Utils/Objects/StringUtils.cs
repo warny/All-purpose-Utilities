@@ -19,7 +19,8 @@ namespace Utils.Objects
 		/// <param name="length">Longueur de la chaîne à générer</param>
 		/// <param name="characters">Caractères à utiliser</param>
 		/// <returns>Chaîne aléatoire</returns>
-		public static string RandomString(int length, char[] characters = null) => RandomString(length, length, characters);
+		public static string RandomString(int length, char[] characters = null) 
+			=> RandomString(length, length, characters);
 
 		/// <summary>
 		/// Génère une chaîne de caractères aléatoires
@@ -28,11 +29,8 @@ namespace Utils.Objects
 		/// <param name="maxLength">Longueur minimale de la chaîne à générer</param>
 		/// <param name="characters">Caractères à utiliser</param>
 		/// <returns>Chaîne aléatoire</returns>
-		public static string RandomString(int minLength, int maxLength, char[] characters = null)
-		{
-			Random r = new Random();
-			return RandomString(r, minLength, maxLength, characters);
-		}
+		public static string RandomString(int minLength, int maxLength, char[] characters = null) 
+			=> RandomString(new Random(), minLength, maxLength, characters);
 
 		/// <summary>
 		/// Génère une chaîne de caractères aléatoires
@@ -54,7 +52,8 @@ namespace Utils.Objects
 		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
 		{
-			characters = characters ?? defaultRandomCharacters;
+			_ = r ?? throw new ArgumentNullException(nameof(r)); 
+			characters ??= defaultRandomCharacters;
 			var length = r.Next(minLength, maxLength);
 
 			char[] result = new char[length];
@@ -74,6 +73,9 @@ namespace Utils.Objects
 		/// <returns>true si la chaîne correspond</returns>
 		public static bool Like( this string value, string pattern, bool ignoreCase = false )
 		{
+			_ = value ?? throw new ArgumentNullException(nameof(value));
+			_ = pattern ?? throw new ArgumentNullException(nameof(pattern));
+
 			if (ignoreCase)
 			{
 				pattern = pattern.ToLower();
@@ -130,6 +132,9 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string Trim(this string s, Func<char, bool> trimTester)
 		{
+			_ = s ?? throw new ArgumentNullException(nameof(s));
+			_ = trimTester ?? throw new ArgumentNullException(nameof(trimTester));
+
 			int start, end = s.Length;
 			for (start = 0; start < end; start++)
 			{
@@ -151,6 +156,9 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimStart(this string s, Func<char, bool> trimTester)
 		{
+			_ = s ?? throw new ArgumentNullException(nameof(s));
+			_ = trimTester ?? throw new ArgumentNullException(nameof(trimTester));
+
 			int start, end = s.Length;
 			for (start = 0; start < end; start++)
 			{
@@ -168,6 +176,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
+			if (s == null) return null;
 			int start = 0, end;
 			for (end = s.Length - 1; end > start; end--)
 			{
@@ -229,29 +238,30 @@ namespace Utils.Objects
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre au premier caractère et a une longueur définie.
 		/// </summary>
-		/// <param name="String">Chaîne dont on veut extraire la sous-chaîne</param>
+		/// <param name="s">Chaîne dont on veut extraire la sous-chaîne</param>
 		/// <param name="length">Nombre de caractères dans la sous-chaîne</param>
 		/// <returns>
 		/// Un System.String équivalent à la sous-chaîne de longueur length qui commence
 		/// au premier caractère de cette instance, ou System.String.Empty si startIndex est
 		/// égal à la longueur de cette instance et length est égal à zéro.
 		/// </returns>
-		public static string Left(this string String, int length) 
-			=> Mid(String, 0, length);
+		public static string Left(this string s, int length) 
+			=> Mid(s, 0, length);
 
 		/// <summary>
 		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre au premier caractère et a une longueur définie.
 		/// </summary>
-		/// <param name="String">Chaîne dont on veut extraire la sous-chaîne</param>
+		/// <param name="s">Chaîne dont on veut extraire la sous-chaîne</param>
 		/// <param name="length">Nombre de caractères dans la sous-chaîne</param>
 		/// <returns>
 		/// Un System.String équivalent à la sous-chaîne de longueur length qui contient les caractère de la fin de la chaîne de caractère
 		/// pour une logneur équivalente à length
 		/// </returns>
-		public static string Right( this string String, int length )
+		public static string Right( this string s, int length )
 		{
-			if (length > String.Length) return String;
-			return String.Substring(String.Length - length);
+			if (s == null) return null;
+			if (length > s.Length) return s;
+			return s.Substring(s.Length - length);
 		}
 
 		/// <summary>
