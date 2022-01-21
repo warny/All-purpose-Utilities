@@ -56,17 +56,17 @@ namespace Utils.Mathematics
 		public static IAngleCalculator Grade => new Grade();
 	}
 
-	public class Degree : Trigonometry
+	public sealed class Degree : Trigonometry
 	{
 		public Degree() : base(360) { }
 	}
 
-	public class Grade : Trigonometry
+	public sealed class Grade : Trigonometry
 	{
 		public Grade() : base(400) { }
 	}
 
-	public class Radian : Trigonometry
+	public sealed class Radian : Trigonometry
 	{
 		public Radian() : base(Math.PI) { }
 
