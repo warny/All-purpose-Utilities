@@ -296,6 +296,22 @@ namespace Utils.Objects
 			=> string.IsNullOrWhiteSpace(text);
 
 		/// <summary>
+		/// Return <paramref name="text"/> if not null and not empty or <paramref name="defaultValue"/>
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="defaultValue"></param>
+		/// <returns></returns>
+		public static string NotNullOrEmptyOrDefault(this string text, string defaultValue) => string.IsNullOrEmpty(text) ? defaultValue : text;
+
+		/// <summary>
+		/// Return <paramref name="text"/> if not null and not white space or <paramref name="defaultValue"/>
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="defaultValue"></param>
+		/// <returns></returns>
+		public static string NotNullOrWhiteSpaceOrDefault(this string text, string defaultValue) => string.IsNullOrWhiteSpace(text) ? defaultValue : text;
+
+		/// <summary>
 		/// Vérifie si la chaîne représente un nombre
 		/// </summary>
 		/// <param name="text"></param>
@@ -303,7 +319,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public static bool IsNumber( this string text, NumberFormatInfo format = null )
 		{
-			format = format ?? CultureInfo.CurrentCulture.NumberFormat;
+			format ??= CultureInfo.CurrentCulture.NumberFormat;
 			if (text.IsNullOrWhiteSpace()) return false;
 			char[] digits = format.NativeDigits.Select(d => d[0]).ToArray();
 			text = text.Trim();
@@ -315,7 +331,7 @@ namespace Utils.Objects
 					decimalSeparated = true;
 					continue;
 				}
-				if (text[i].In(digits)) continue;
+				if (text[i].In(digits) || text[i] == format.NumberGroupSeparator[0]) continue;
 				return false;
 			}
 			return true;
