@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Utils.Mathematics;
 
 namespace Utils.Objects
@@ -17,6 +18,24 @@ namespace Utils.Objects
 		public int Count => ranges.Count;
 
 		public bool IsReadOnly { get; }
+
+		protected static IEnumerable<Range<T>> InnerParse<T>(string range, string itemSearchPattern, Func<string, T> valueParser) where T : IComparable<T>
+		{
+			Regex parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*-\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
+			var results = parse.Matches(range);
+
+			var res = new SingleRanges();
+			foreach (Match result in results)
+			{
+				yield return new Range<T>(
+					valueParser(result.Groups["start"].Value),
+					valueParser(result.Groups["end"].Value),
+					result.Groups["includesStart"].Value == "[",
+					result.Groups["includesEnd"].Value == "]"
+				);
+			}
+		}
+
 
 		public Ranges() {
 			ranges = new List<Range<T>>();

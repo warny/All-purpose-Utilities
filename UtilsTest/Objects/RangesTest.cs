@@ -82,11 +82,11 @@ namespace UtilsTest.Objects
 
 			Assert.AreEqual("[ -10 - 10 ]", ranges.ToString());
 			Assert.IsTrue(ranges.Contains(5));
-			
+
 			ranges.Remove(5);
 			Assert.AreEqual("[ -10 - 5 [ ∪ ] 5 - 10 ]", ranges.ToString());
 			Assert.IsFalse(ranges.Contains(5));
-			
+
 			ranges.Add(5);
 			Assert.AreEqual("[ -10 - 10 ]", ranges.ToString());
 			Assert.IsTrue(ranges.Contains(5));
@@ -123,5 +123,57 @@ namespace UtilsTest.Objects
 			Assert.IsFalse(ranges.Contains(5));
 		}
 
+		[TestMethod]
+		public void DoubleRangesTest()
+		{
+			(string test, string result)[] tests = new[] {
+				("[-5-5]", "[ -5 - 5 ]"),
+				("[-5,5-5,5]", "[ -5,5 - 5,5 ]"),
+				("[5-10[", "[ 5 - 10 ["),
+				("]-10--5 ]", "] -10 - -5 ]"),
+				("[-10--5 ]]5-10[", "[ -10 - -5 ] ∪ ] 5 - 10 ["),
+			};
+
+			foreach (var test in tests)
+			{
+				var range = DoubleRanges.Parse(test.test);
+				Assert.AreEqual(test.result, range.ToString(), $"{test} => {range} != {test.result}");
+			}
+		}
+
+
+		[TestMethod]
+		public void SingleRangesTest()
+		{
+			(string test, string result)[] tests = new[] {
+				("[-5-5]", "[ -5 - 5 ]"),
+				("[-5,5-5,5]", "[ -5,5 - 5,5 ]"),
+				("[5-10[", "[ 5 - 10 ["),
+				("]-10--5 ]", "] -10 - -5 ]"),
+				("[-10--5 ]]5-10[", "[ -10 - -5 ] ∪ ] 5 - 10 ["),
+			};
+
+			foreach (var test in tests)
+			{
+				var range = SingleRanges.Parse(test.test);
+				Assert.AreEqual(test.result, range.ToString(), $"{test} => {range} != {test.result}");
+			}
+		}
+
+		[TestMethod]
+		public void DateRangesTest()
+		{
+			(string test, string result)[] tests = new[] {
+				("[15/11/2020-31/12/2020]", "[ 15/11/2020 00:00:00 - 31/12/2020 00:00:00 ]"),
+				("[15/11/2020-31/12/2020][15/11/2021-31/12/2021]", "[ 15/11/2020 00:00:00 - 31/12/2020 00:00:00 ] ∪ [ 15/11/2021 00:00:00 - 31/12/2021 00:00:00 ]"),
+				("[15/11/2020 12:30:00-31/12/2020 12:00][15/11/2021 09:00-31/12/2021]", "[ 15/11/2020 12:30:00 - 31/12/2020 12:00:00 ] ∪ [ 15/11/2021 09:00:00 - 31/12/2021 00:00:00 ]"),
+			};
+
+			foreach (var test in tests)
+			{
+				var range = DateTimeRanges.Parse(test.test);
+				Assert.AreEqual(test.result, range.ToString(), $"{test} => {range} != {test.result}");
+			}
+		}
 	}
 }
