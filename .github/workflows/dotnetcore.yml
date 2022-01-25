@@ -1,4 +1,4 @@
-name: .NET Core
+name: Utils
 
 on: [push]
 
@@ -11,14 +11,14 @@ jobs:
         dotnet-version: ['3.0', '3.1.x', '5.0.x', '6.0.x' ]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v1.7.2
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
-    - name: Install dependencies
+      - name: Install dependencies
         run: dotnet restore
-    - name: Build
-      run: dotnet build --configuration GitHub --no-restore
-    - name: Tests
-      run: dotnet test --no-restore --verbosity detailed
+      - name: Build
+        run: dotnet build --configuration GitHub --no-restore
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal
