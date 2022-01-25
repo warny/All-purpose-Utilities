@@ -33,7 +33,7 @@ namespace UtilsTest.Objects
 				(CultureInfo.InvariantCulture, "123.456", 123.456),
 				(CultureInfo.GetCultureInfo("en-US"), "123.456", 123.456),
 				(CultureInfo.GetCultureInfo("fr-FR"), "123,456", 123.456),
-				(CultureInfo.GetCultureInfo("jp-JP"), "123.456", 123.456)
+				(CultureInfo.GetCultureInfo("jp-JP"), "123,456", 123.456)
 			};
 
 			Assert.IsTrue(Parsers.CanParse<double>());

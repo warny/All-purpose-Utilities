@@ -8,9 +8,9 @@ using System.Collections;
 
 namespace Utils.Objects
 {
-	public class IntRange : IEnumerable<int>
+	public class IntRange : IEnumerable<int>, IFormattable
 	{
-		private class SimpleRange : IComparable<SimpleRange>, IComparable<int>
+		private class SimpleRange : IComparable<SimpleRange>, IComparable<int>, IFormattable
 		{
 			public SimpleRange(int minimum, int maximum)
 			{
@@ -58,7 +58,21 @@ namespace Utils.Objects
 				};
 			}
 
-			public override string ToString() => Minimum == Maximum ? Minimum.ToString() : $"{Minimum}-{Maximum}";
+			public override string ToString() => ToString(string.Empty, null);
+			public string ToString(string format) => ToString(format, null);
+			public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
+
+			public string ToString(string format, IFormatProvider formatProvider)
+			{
+				if (format.IsNullOrWhiteSpace())
+				{
+					return Minimum == Maximum ? Minimum.ToString() : $"{Minimum}-{Maximum}";
+				}
+				else
+				{
+					return Minimum == Maximum ? Minimum.ToString(format, formatProvider) : Minimum.ToString(format, formatProvider) + "-" + Maximum.ToString(format, formatProvider);
+				}
+			}
 		}
 
 		private readonly SortedSet<SimpleRange> ranges = new SortedSet<SimpleRange>();
@@ -143,7 +157,22 @@ namespace Utils.Objects
 
 		IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
-		public override string ToString() => string.Join(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator, ranges.Select(r => r.ToString()));
+		public override string ToString() => ToString(string.Empty, null);
+		public string ToString(string format) => ToString(format, null);
+		public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
+
+		public string ToString(string format, IFormatProvider formatProvider)
+		{
+			var cultureInfo = (System.Globalization.CultureInfo)formatProvider?.GetFormat(typeof(System.Globalization.CultureInfo)) ?? System.Globalization.CultureInfo.CurrentCulture;
+			if (format == null)
+			{
+				return string.Join(cultureInfo.TextInfo.ListSeparator, ranges.Select(r => r.ToString()));
+			}
+			else
+			{
+				return string.Join(cultureInfo.TextInfo.ListSeparator, ranges.Select(r => r.ToString(format, cultureInfo)));
+			}
+		}
 
 		public static IntRange operator +(IntRange range1, IntRange range2)
 		{

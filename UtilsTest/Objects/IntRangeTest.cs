@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Utils.Objects;
@@ -30,7 +31,7 @@ namespace UtilsTest.Objects
 			foreach (var test in tests)
 			{
 				var intRange = new IntRange(test.test);
-				Assert.AreEqual(test.result, intRange.ToString());
+				Assert.AreEqual(test.result, intRange.ToString(CultureInfo.GetCultureInfo("FR-fr")));
 			}
 		}
 
@@ -55,7 +56,7 @@ namespace UtilsTest.Objects
 				var range1 = new IntRange(test1);
 				var range2 = new IntRange(test2);
 				var result = range1 + range2;
-				Assert.AreEqual(expected, result.ToString());
+				Assert.AreEqual(expected, result.ToString(CultureInfo.GetCultureInfo("FR-fr")));
 			}
 
 			foreach (var test in tests)
@@ -88,7 +89,7 @@ namespace UtilsTest.Objects
 				var range1 = new IntRange(test.test1);
 				var range2 = new IntRange(test.test2);
 				var result = range1 - range2;
-				Assert.AreEqual(test.result, result.ToString());
+				Assert.AreEqual(test.result, result.ToString(CultureInfo.GetCultureInfo("FR-fr")));
 			}
 		}
 

@@ -142,6 +142,7 @@ namespace UtilsTest.Math.LinearAlgebra
 
 		}
 
+		/*
 		[TestMethod]
 		public void TransformMatrixTests()
 		{
@@ -183,5 +184,6 @@ namespace UtilsTest.Math.LinearAlgebra
 			}
 
 		}
+		*/
 	}
 }
