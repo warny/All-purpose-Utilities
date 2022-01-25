@@ -8,7 +8,7 @@ using Utils.Mathematics;
 
 namespace Utils.Objects
 {
-	public class Ranges<T> : ICollection<Range<T>>, ICloneable
+	public class Ranges<T> : ICollection<Range<T>>, ICloneable, IFormattable
 		where T : IComparable<T>
 	{
 		readonly List<Range<T>> ranges;
@@ -193,7 +193,15 @@ namespace Utils.Objects
 		public IEnumerator<Range<T>> GetEnumerator() => ranges.GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => ranges.GetEnumerator();
 
-		public override string ToString() => String.Join(" ∪ ", ranges);
+		public override string ToString() => ToString(string.Empty, null);
+		public string ToString(string format) => ToString(format, null);
+		public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
+		public string ToString(string format, IFormatProvider formatProvider)
+		{
+			formatProvider ??= System.Globalization.CultureInfo.CurrentCulture;
+			return String.Join(" ∪ ", ranges.Select(r=>r.ToString(format, formatProvider)));
+		}
+
 
 		public object Clone() => new Ranges<T>(this);
 
@@ -227,7 +235,8 @@ namespace Utils.Objects
 
 	}
 
-	public class Range<T> where T : IComparable<T>
+	public class Range<T> : IFormattable
+		where T : IComparable<T>
 	{
 		public T Start { get; }
 		public bool ContainsStart { get; }
@@ -304,7 +313,21 @@ namespace Utils.Objects
 			end = End;
 		}
 
-		public override string ToString() => $"{(ContainsStart ? "[" : "]") } {Start} - {End} {(ContainsEnd ? "]" : "[")}";
+		public override string ToString() => ToString(string.Empty, null);
+		public string ToString(string format) => ToString(format, null);
+		public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
+		public string ToString(string format, IFormatProvider formatProvider)
+		{
+			if (format != null && (Start is IFormattable || End is IFormattable))
+			{
+				formatProvider ??= System.Globalization.CultureInfo.CurrentCulture;
+				return String.Format(formatProvider, "{0} {1:" + format + "} - {2:" + format + "} {3}", ContainsStart ? "[" : "]", Start, End, ContainsEnd ? "]" : "[");
+			}
+			else
+			{
+				return String.Format(formatProvider, "{0} {1} - {2} {3}", ContainsStart ? "[" : "]", Start, End, ContainsEnd ? "]" : "[");
+			}
+		}
 
 		public static implicit operator Range<T>((T Start, T End) range) => new Range<T>(range.Start, range.End);
 	}

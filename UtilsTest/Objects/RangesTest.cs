@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Utils.Objects;
 
@@ -124,11 +125,11 @@ namespace UtilsTest.Objects
 		}
 
 		[TestMethod]
-		public void DoubleRangesTest()
+		public void DoubleRangesTest1()
 		{
 			(string test, string result)[] tests = new[] {
 				("[-5-5]", "[ -5 - 5 ]"),
-				("[-5,5-5,5]", "[ -5,5 - 5,5 ]"),
+				("[-5.5-5.5]", "[ -5.5 - 5.5 ]"),
 				("[5-10[", "[ 5 - 10 ["),
 				("]-10--5 ]", "] -10 - -5 ]"),
 				("[-10--5 ]]5-10[", "[ -10 - -5 ] ∪ ] 5 - 10 ["),
@@ -136,8 +137,26 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = DoubleRanges.Parse(test.test);
-				Assert.AreEqual(test.result, range.ToString(), $"{test} => {range} != {test.result}");
+				var range = DoubleRanges.Parse(test.test, CultureInfo.InvariantCulture);
+				Assert.AreEqual(test.result, range.ToString(CultureInfo.InvariantCulture), $"{test} => {range} != {test.result}");
+			}
+		}
+
+		[TestMethod]
+		public void DoubleRangesTest2()
+		{
+			(string test, string result)[] tests = new[] {
+				("[-5-5]", "[ -5 - 5 ]"),
+				("[-5,5-5,5]", "[ -5.5 - 5.5 ]"),
+				("[5-10[", "[ 5 - 10 ["),
+				("]-10--5 ]", "] -10 - -5 ]"),
+				("[-10--5 ]]5-10[", "[ -10 - -5 ] ∪ ] 5 - 10 ["),
+			};
+
+			foreach (var test in tests)
+			{
+				var range = DoubleRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
+				Assert.AreEqual(test.result, range.ToString(CultureInfo.InvariantCulture), $"{test} => {range} != {test.result}");
 			}
 		}
 
@@ -147,7 +166,7 @@ namespace UtilsTest.Objects
 		{
 			(string test, string result)[] tests = new[] {
 				("[-5-5]", "[ -5 - 5 ]"),
-				("[-5,5-5,5]", "[ -5,5 - 5,5 ]"),
+				("[-5.5-5.5]", "[ -5.5 - 5.5 ]"),
 				("[5-10[", "[ 5 - 10 ["),
 				("]-10--5 ]", "] -10 - -5 ]"),
 				("[-10--5 ]]5-10[", "[ -10 - -5 ] ∪ ] 5 - 10 ["),
@@ -155,13 +174,30 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = SingleRanges.Parse(test.test);
-				Assert.AreEqual(test.result, range.ToString(), $"{test} => {range} != {test.result}");
+				var range = SingleRanges.Parse(test.test, CultureInfo.InvariantCulture);
+				Assert.AreEqual(test.result, range.ToString(CultureInfo.InvariantCulture), $"{test} => {range} != {test.result}");
+			}
+		}
+
+		public void SingleRangesTest2()
+		{
+			(string test, string result)[] tests = new[] {
+				("[-5-5]", "[ -5 - 5 ]"),
+				("[-5,5-5,5]", "[ -5,5 - 5.5 ]"),
+				("[5-10[", "[ 5 - 10 ["),
+				("]-10--5 ]", "] -10 - -5 ]"),
+				("[-10--5 ]]5-10[", "[ -10 - -5 ] ∪ ] 5 - 10 ["),
+			};
+
+			foreach (var test in tests)
+			{
+				var range = SingleRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
+				Assert.AreEqual(test.result, range.ToString(CultureInfo.InvariantCulture), $"{test} => {range} != {test.result}");
 			}
 		}
 
 		[TestMethod]
-		public void DateRangesTest()
+		public void DateRangesTest1()
 		{
 			(string test, string result)[] tests = new[] {
 				("[15/11/2020-31/12/2020]", "[ 15/11/2020 00:00:00 - 31/12/2020 00:00:00 ]"),
@@ -171,8 +207,23 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = DateTimeRanges.Parse(test.test);
-				Assert.AreEqual(test.result, range.ToString(), $"{test} => {range} != {test.result}");
+				var range = DateTimeRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
+				Assert.AreEqual(test.result, range.ToString(CultureInfo.GetCultureInfo("FR-fr")), $"{test} => {range} != {test.result}");
+			}
+		}
+
+		[TestMethod]
+		public void DateRangesTest2()
+		{
+			(string test, string result)[] tests = new[] {
+				("[15/11/2020-31/12/2020]", "[ 15/11/2020 - 31/12/2020 ]"),
+				("[15/11/2020-31/12/2020][15/11/2021-31/12/2021]", "[ 15/11/2020 - 31/12/2020 ] ∪ [ 15/11/2021 - 31/12/2021 ]"),
+			};
+
+			foreach (var test in tests)
+			{
+				var range = DateTimeRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
+				Assert.AreEqual(test.result, range.ToString("d", CultureInfo.GetCultureInfo("FR-fr")), $"{test} => {range} != {test.result}");
 			}
 		}
 	}

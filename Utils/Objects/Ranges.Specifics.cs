@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Collections;
+using Utils.Mathematics;
 
 namespace Utils.Objects
 {
@@ -20,8 +21,8 @@ namespace Utils.Objects
 
 		protected static IEnumerable<Range<double>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
 		{
-			string digits = string.Join("", formatInfo.NativeDigits.FollowedBy(formatInfo.NumberGroupSeparator));
-			string numberSearch = $"({formatInfo.NegativeSign}?[{digits}]*)({formatInfo.NumberDecimalSeparator}([{digits}]*))?";
+			string digits = string.Join("", formatInfo.NativeDigits);
+			string numberSearch = $"{formatInfo.NegativeSign}?[{digits}]*(\\{formatInfo.NumberDecimalSeparator}[{digits}]*)?";
 			return InnerParse(range, numberSearch, s => double.Parse(s, formatInfo));
 		}
 
@@ -43,8 +44,8 @@ namespace Utils.Objects
 
 		protected static IEnumerable<Range<float>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
 		{
-			string digits = string.Join("", formatInfo.NativeDigits.FollowedBy(formatInfo.NumberGroupSeparator));
-			string numberSearch = $"({formatInfo.NegativeSign}?[{digits}]*)({formatInfo.NumberDecimalSeparator}([{digits}]*))?";
+			string digits = string.Join("", formatInfo.NativeDigits);
+			string numberSearch = $"{formatInfo.NegativeSign}?[{digits}]*(\\{formatInfo.NumberDecimalSeparator}[{digits}]*)?";
 			return InnerParse(range, numberSearch, s => float.Parse(s, formatInfo));
 		}
 
@@ -65,48 +66,70 @@ namespace Utils.Objects
 
 		protected static IEnumerable<Range<DateTime>> InnerParse(string range, System.Globalization.DateTimeFormatInfo formatInfo)
 		{
-			string dateSearch 
-				= formatInfo.ShortDatePattern.Aggregate(new StringBuilder(), (StringBuilder sb, char c) =>
-				{
-					switch (c)
-					{
-						case 'd':
-						case 'M':
-						case 'y':
-							sb.Append(@"\d");
-							break;
-						case '\\':
-							sb.Append(@"\\");
-							break;
-						default:
-							sb.Append(c);
-							break;
-					}
-					return sb;
-				}).ToString()
+
+			string dateSearch
+				= PatternToRegEx(formatInfo.ShortDatePattern)
 				+ @"(\s+("
-				+ (formatInfo.LongTimePattern + "|" + formatInfo.ShortTimePattern).Aggregate(new StringBuilder(), (StringBuilder sb, char c) =>
-				{
-					switch (c)
-					{
-						case 'H':
-						case 'h':
-						case 'm':
-						case 's':
-							sb.Append(@"\d");
-							break;
-						case '\\':
-							sb.Append(@"\\");
-							break;
-						default:
-							sb.Append(c);
-							break;
-					}
-					return sb;
-				}).ToString()
+				+ PatternToRegEx(formatInfo.LongTimePattern) 
+				+ "|" 
+				+ PatternToRegEx(formatInfo.ShortTimePattern)
 				+ "))?";
 
 			return InnerParse(range, dateSearch, s => DateTime.Parse(s, formatInfo));
+		}
+
+		private static string PatternToRegEx(string pattern)
+		{
+			StringBuilder result = new StringBuilder();
+			char last = '\0';
+			for (int i = 0; i < pattern.Length; i++)
+			{
+				char c = pattern[i];
+				if (c == '\'')
+				{
+					i++;
+					while (c != '\'')
+					{
+						c = pattern[i];
+					result.Append(c);
+						i++;
+					}
+
+				}
+				else if (c.In('y', 'M', 'd', 'H', 'h', 'm', 's', 'f'))
+				{
+					if (c != last)
+					{
+						result.Append(@"\d+");
+					}
+
+				}
+				else if (c == 't')
+				{
+					if (c != last)
+					{
+						result.Append(@"(AM|PM)");
+					}
+				}
+				else if (c == ' ')
+				{
+					if (c != last)
+					{
+						result.Append(@"\s+");
+					}
+				}
+				else if (c == '\\')
+				{
+					result.Append(@"\\");
+				}
+				else
+				{
+					result.Append(c);
+				}
+				last = c;
+			}
+
+			return result.ToString();
 		}
 
 

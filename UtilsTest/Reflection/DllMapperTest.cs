@@ -23,6 +23,7 @@ namespace UtilsTest.Reflection
 	}
 
 	[TestClass]
+	[Ignore]
 	public class DllMapperTest
 	{
 		[DllImport("kernel32.dll")]
