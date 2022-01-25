@@ -155,7 +155,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = DoubleRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
+				var range = DoubleRanges.Parse(test.test, CultureInfo.GetCultureInfo("fr-FR"));
 				Assert.AreEqual(test.result, range.ToString(CultureInfo.InvariantCulture), $"{test} => {range} != {test.result}");
 			}
 		}
@@ -191,7 +191,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = SingleRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
+				var range = SingleRanges.Parse(test.test, CultureInfo.GetCultureInfo("fr-FR"));
 				Assert.AreEqual(test.result, range.ToString(CultureInfo.InvariantCulture), $"{test} => {range} != {test.result}");
 			}
 		}
@@ -207,8 +207,8 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = DateTimeRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
-				Assert.AreEqual(test.result, range.ToString(CultureInfo.GetCultureInfo("FR-fr")), $"{test} => {range} != {test.result}");
+				var range = DateTimeRanges.Parse(test.test, CultureInfo.GetCultureInfo("fr-FR"));
+				Assert.AreEqual(test.result, range.ToString(CultureInfo.GetCultureInfo("fr-FR")), $"{test} => {range} != {test.result}");
 			}
 		}
 
@@ -222,8 +222,8 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = DateTimeRanges.Parse(test.test, CultureInfo.GetCultureInfo("FR-fr"));
-				Assert.AreEqual(test.result, range.ToString("d", CultureInfo.GetCultureInfo("FR-fr")), $"{test} => {range} != {test.result}");
+				var range = DateTimeRanges.Parse(test.test, CultureInfo.GetCultureInfo("fr-FR"));
+				Assert.AreEqual(test.result, range.ToString("d", CultureInfo.GetCultureInfo("fr-FR")), $"{test} => {range} != {test.result}");
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
@@ -20,7 +21,7 @@ namespace UtilsTest.Objects
 		{
 			string range = "1-3;5;3-1";
 			int[] expected = { 1, 2, 3, 5, 3, 2, 1 };
-			var result = Enumerators.Enumerate(range).ToArray();
+			var result = Enumerators.Enumerate(range, CultureInfo.GetCultureInfo("fr-FR")).ToArray();
 			Assert.IsTrue(intComparer.Equals(expected, result));
 		}
 
