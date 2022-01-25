@@ -17,7 +17,7 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
       - name: Install dependencies
-        run: dotnet restore
+        run: dotnet restore --ignore-failed-sources
       - name: Build
         run: dotnet build --configuration GitHub --no-restore
       - name: Test
