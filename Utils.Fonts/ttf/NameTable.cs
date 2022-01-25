@@ -330,7 +330,7 @@ namespace Utils.Fonts.TTF
 		MS_Japanese = 1041,
 		MS_Korean = 1042,
 		MS_Dutch_Netherlands = 1043,
-		MS_Norwegian_Bokmål = 1044,
+		MS_Norwegian_Bokmal = 1044,
 		MS_Polish = 1045,
 		MS_Portuguese_Brazil = 1046,
 		MS_Rhaeto_Romanic = 1047,
