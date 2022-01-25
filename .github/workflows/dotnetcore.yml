@@ -15,3 +15,5 @@ jobs:
         dotnet-version: 6.0.*
     - name: Build with dotnet
       run: dotnet build --configuration GitHub
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
