@@ -16,9 +16,9 @@ jobs:
         uses: actions/setup-dotnet@v1.7.2
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
-      - name: Install dependencies
-        run: dotnet restore --ignore-failed-sources
+      #- name: Install dependencies
+      #  run: dotnet restore --ignore-failed-sources
       - name: Build
-        run: dotnet build --configuration GitHub --no-restore
+        run: dotnet build --configuration GitHub # --no-restore
       - name: Test
         run: dotnet test --no-restore --verbosity normal
