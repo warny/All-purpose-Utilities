@@ -164,14 +164,7 @@ namespace Utils.Objects
 		public string ToString(string format, IFormatProvider formatProvider)
 		{
 			var cultureInfo = (System.Globalization.CultureInfo)formatProvider?.GetFormat(typeof(System.Globalization.CultureInfo)) ?? System.Globalization.CultureInfo.CurrentCulture;
-			if (format == null)
-			{
-				return string.Join(cultureInfo.TextInfo.ListSeparator, ranges.Select(r => r.ToString()));
-			}
-			else
-			{
-				return string.Join(cultureInfo.TextInfo.ListSeparator, ranges.Select(r => r.ToString(format, cultureInfo)));
-			}
+			return string.Join(cultureInfo.TextInfo.ListSeparator, ranges.Select(r => r.ToString(format, cultureInfo)));
 		}
 
 		public static IntRange operator +(IntRange range1, IntRange range2)
