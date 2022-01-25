@@ -9,7 +9,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class DateUtilitiesTest
+	public class DateUtilitiesTests
 	{
 		[TestMethod]
 		public void ComputeEasterTest()

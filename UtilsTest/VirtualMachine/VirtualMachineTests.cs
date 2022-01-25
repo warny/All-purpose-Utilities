@@ -45,7 +45,7 @@ namespace UtilsTest.VirtualMachine
 
 
 	[TestClass]
-	public class VirtualMachineTest
+	public class VirtualMachineTests
 	{
 		[TestMethod]
 		public void Test1()

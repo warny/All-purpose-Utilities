@@ -6,7 +6,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class StringDifferenceTest
+	public class StringDifferenceTests
 	{
 		[TestMethod]
 		public void Equality()

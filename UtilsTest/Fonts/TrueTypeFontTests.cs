@@ -7,7 +7,7 @@ using Utils.Fonts.TTF;
 namespace UtilsTest.Fonts
 {
 	[TestClass]
-	public class TrueTypeFontTest
+	public class TrueTypeFontTests
 	{
 		[TestMethod]
 		public void LoadFontTest()

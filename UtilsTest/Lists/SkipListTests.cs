@@ -11,7 +11,7 @@ using Utils.Objects;
 namespace UtilsTest.Lists
 {
 	[TestClass]
-	public class SkipListTest
+	public class SkipListTests
 	{
 		ArrayEqualityComparer<int> comparer = new ArrayEqualityComparer<int>();
 

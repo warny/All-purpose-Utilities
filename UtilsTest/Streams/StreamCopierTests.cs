@@ -13,7 +13,7 @@ using Utils.IO;
 namespace UtilsTest.Streams
 {
 	[TestClass]
-	public class StreamCopierTest
+	public class StreamCopierTests
 	{
 		[TestMethod]
 		public void StreamTest1()

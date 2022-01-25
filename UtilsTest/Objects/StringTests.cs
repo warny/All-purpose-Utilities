@@ -13,7 +13,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class StringTest
+	public class StringTests
 	{
 		[TestMethod]
 		public void IsNumberTest1()

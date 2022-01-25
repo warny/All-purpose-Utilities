@@ -10,7 +10,7 @@ using Utils.Mathematics.Expressions;
 namespace UtilsTest.Math.Expressions
 {
 	[TestClass]
-	public class ExpressionDerivationTest
+	public class ExpressionDerivationTests
 	{
 		ExpressionDerivation derivation = new ExpressionDerivation("x");
 

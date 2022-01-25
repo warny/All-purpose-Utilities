@@ -7,7 +7,7 @@ using Utils.Mathematics;
 namespace UtilsTest.Math
 {
 	[TestClass]
-	public class MathExTest
+	public class MathExTests
 	{
 		[TestMethod]
 		public void IntBetweenTest()

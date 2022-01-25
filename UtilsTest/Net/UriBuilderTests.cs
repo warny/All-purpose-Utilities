@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace UtilsTest.Net
 {
 	[TestClass]
-	public class UriBuilderTest
+	public class UriBuilderTests
 	{
 		[TestMethod]
 		public void ReadSimpleServer()

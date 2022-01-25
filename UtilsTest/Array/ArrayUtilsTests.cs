@@ -9,7 +9,7 @@ using Utils.Arrays;
 namespace UtilsTest.Array
 {
 	[TestClass]
-	public class ArrayUtilsTest
+	public class ArrayUtilsTests
 	{
 		[TestMethod]
 		public void TestTrim()

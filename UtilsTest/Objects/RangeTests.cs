@@ -8,7 +8,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class RangeTest
+	public class RangeTests
 	{
 		ArrayEqualityComparer<int> comparer = new ArrayEqualityComparer<int>();
 

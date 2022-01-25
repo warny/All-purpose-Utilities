@@ -5,7 +5,7 @@ using Utils.Files;
 namespace UtilsTest.Files
 {
 	[TestClass]
-	public class PathUtilsTest
+	public class PathUtilsTests
 	{
 		[TestMethod]
 		[Ignore]

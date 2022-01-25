@@ -9,7 +9,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class EnumeratorsTest
+	public class EnumeratorsTests
 	{
 		ArrayEqualityComparer<int> intComparer = new ArrayEqualityComparer<int>();
 		ArrayEqualityComparer<float> floatComparer = new ArrayEqualityComparer<float>();

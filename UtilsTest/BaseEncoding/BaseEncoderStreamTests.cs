@@ -10,7 +10,7 @@ using Utils.IO.BaseEncoding;
 namespace UtilsTest.BaseEncoding
 {
 	[TestClass]
-	public class BaseEncoderStreamTest
+	public class BaseEncoderStreamTests
 	{
 
 		[TestMethod]

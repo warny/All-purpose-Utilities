@@ -10,7 +10,7 @@ using Utils.IO.Serialization;
 namespace UtilsTest.Streams
 {
 	[TestClass]
-	public class ReaderWriterTest
+	public class ReaderWriterTests
 	{
 		[TestMethod]
 		public void TestReadAndWriteString1()

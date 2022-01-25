@@ -24,7 +24,7 @@ namespace UtilsTest.Reflection
 
 	[TestClass]
 	[Ignore]
-	public class DllMapperTest
+	public class DllMapperTests
 	{
 		[DllImport("kernel32.dll")]
 		static extern uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);

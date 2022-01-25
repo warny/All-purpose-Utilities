@@ -9,7 +9,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class IntRangeTest
+	public class IntRangeTests
 	{
 		[TestMethod]
 		public void IntRangeTest1()
@@ -30,7 +30,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var intRange = new IntRange(test.test);
+				var intRange = new IntRange(test.test, CultureInfo.GetCultureInfo("FR-fr"));
 				Assert.AreEqual(test.result, intRange.ToString(CultureInfo.GetCultureInfo("FR-fr")));
 			}
 		}
@@ -53,8 +53,8 @@ namespace UtilsTest.Objects
 
 			void doTest (string test1, string test2, string expected)
 			{
-				var range1 = new IntRange(test1);
-				var range2 = new IntRange(test2);
+				var range1 = new IntRange(test1, CultureInfo.GetCultureInfo("FR-fr"));
+				var range2 = new IntRange(test2, CultureInfo.GetCultureInfo("FR-fr"));
 				var result = range1 + range2;
 				Assert.AreEqual(expected, result.ToString(CultureInfo.GetCultureInfo("FR-fr")));
 			}
@@ -86,8 +86,8 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range1 = new IntRange(test.test1);
-				var range2 = new IntRange(test.test2);
+				var range1 = new IntRange(test.test1, CultureInfo.GetCultureInfo("FR-fr"));
+				var range2 = new IntRange(test.test2, CultureInfo.GetCultureInfo("FR-fr"));
 				var result = range1 - range2;
 				Assert.AreEqual(test.result, result.ToString(CultureInfo.GetCultureInfo("FR-fr")));
 			}
@@ -109,7 +109,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = new IntRange(test.range);
+				var range = new IntRange(test.range, CultureInfo.GetCultureInfo("FR-fr"));
 				foreach (var value in test.values)
 				{
 					Assert.AreEqual(test.result, range.Contains(value), $"{value} {(test.result ? "n'a pas": "a")} été trouvé dans {range}");
@@ -131,7 +131,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = new IntRange(test.range);
+				var range = new IntRange(test.range, CultureInfo.GetCultureInfo("FR-fr"));
 				var result = range.ToArray();
 				Assert.IsTrue(comparer.Equals(test.result, result), $"{{{string.Join(",", result)}}} est différent de {{{string.Join(",", test.result)}}}");
 			}

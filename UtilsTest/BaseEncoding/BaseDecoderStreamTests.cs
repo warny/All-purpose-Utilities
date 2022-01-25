@@ -6,7 +6,7 @@ using Utils.IO.BaseEncoding;
 namespace UtilsTest.BaseEncoding
 {
 	[TestClass]
-	public class BaseDecoderStreamTest
+	public class BaseDecoderStreamTests
 	{
 		[TestMethod]
 		public void Base16Test1()

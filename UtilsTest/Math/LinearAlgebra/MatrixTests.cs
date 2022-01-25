@@ -10,7 +10,7 @@ namespace UtilsTest.Math.LinearAlgebra
 {
 
 	[TestClass]
-	public class MatrixTest
+	public class MatrixTests
 	{
 
 		[TestMethod]

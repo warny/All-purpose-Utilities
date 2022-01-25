@@ -9,7 +9,7 @@ using Utils.Mathematics;
 namespace UtilsTest.Geography
 {
 	[TestClass]
-	public class GeoVectorTest
+	public class GeoVectorTests
 	{
 		(double latitude, double longitude, double direction, string coordinates, string dcoordinates)[] vectors = new (double latitude, double longitude, double direction, string coordinates, string dcoordinates)[] {
 				(0, 0, 10, "0, 0, 10", "0°, 0°, 10"),

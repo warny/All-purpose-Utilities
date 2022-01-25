@@ -7,7 +7,7 @@ using Utils.Collections;
 namespace UtilsTest.Lists
 {
 	[TestClass]
-	public class DoubleIndexedDictionaryTest
+	public class DoubleIndexedDictionaryTests
 	{
 		[TestMethod]
 		public void DictionaryTest1()

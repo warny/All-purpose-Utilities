@@ -7,7 +7,7 @@ using Utils.Geography.Model;
 namespace UtilsTest.Geography
 {
 	[TestClass]
-	public class GeoPointTest
+	public class GeoPointTests
 	{
 		(double latitude, double longitude, string coordinates, string dcoordinates)[] points = new (double latitude, double longitude, string coordinates, string dcoordinates) [] {
 			(0,0, "0, 0", "0°, 0°"),

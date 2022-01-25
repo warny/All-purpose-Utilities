@@ -8,7 +8,7 @@ using Utils.Arrays;
 namespace UtilsTest.Array
 {
 	[TestClass]
-	public class ArrayComparerTest
+	public class ArrayComparerTests
 	{
 		[TestMethod]
 		public void CompareSimpleEqualsArrays()

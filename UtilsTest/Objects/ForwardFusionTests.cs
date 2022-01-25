@@ -9,7 +9,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class ForwardFusionTest
+	public class ForwardFusionTests
 	{
 
 		[TestMethod]

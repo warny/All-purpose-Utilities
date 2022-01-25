@@ -10,7 +10,7 @@ using Utils.Net.DNS.RFC2052;
 namespace UtilsTest.Net
 {
 	[TestClass]
-	public class DNSTest
+	public class DNSTests
 	{
 		[TestMethod]
 		public void ReadAReponse()

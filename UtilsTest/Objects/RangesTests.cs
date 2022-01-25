@@ -8,7 +8,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class RangesTest
+	public class RangesTests
 	{
 		[TestMethod]
 		public void SimpleRangeTest1()

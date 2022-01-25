@@ -6,7 +6,7 @@ using Utils.Objects;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class ParsersTest
+	public class ParsersTests
 	{
 		[TestMethod]
 		public void ParserTest1()

@@ -6,7 +6,7 @@ using System.Text;
 namespace UtilsTest.Lists
 {
 	[TestClass]
-	public class EnumerableExTest
+	public class EnumerableExTests
 	{
 		[TestMethod]
 		public void GetValueOrDefaultTest()

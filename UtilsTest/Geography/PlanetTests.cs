@@ -10,7 +10,7 @@ using Utils.Mathematics;
 namespace UtilsTest.Geography
 {
 	[TestClass]
-	public class PlanetTest
+	public class PlanetTests
 	{
 		[TestMethod]
 		public void TestDistance()

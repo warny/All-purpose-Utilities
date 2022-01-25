@@ -10,7 +10,7 @@ using Utils.Mathematics.Expressions;
 namespace UtilsTest.Math.Expressions
 {
 	[TestClass]
-	public class ExpressionSimplifierTest
+	public class ExpressionSimplifierTests
 	{
 		[TestMethod]
 		public void SimpleExpressionTest1()
