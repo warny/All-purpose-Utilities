@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DrawTest", "DrawTest\DrawTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Fonts", "Utils.Fonts\Utils.Fonts.csproj", "{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.VirtualMachine", "Utils.VirtualMachine\Utils.VirtualMachine.csproj", "{5E4940A7-A5F2-48AF-89BC-43A6B75BF22C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.VirtualMachine", "Utils.VirtualMachine\Utils.VirtualMachine.csproj", "{5E4940A7-A5F2-48AF-89BC-43A6B75BF22C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,7 +54,6 @@ Global
 		{4EE3D033-7384-4BF7-8159-8589BF00DC03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4EE3D033-7384-4BF7-8159-8589BF00DC03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EE3D033-7384-4BF7-8159-8589BF00DC03}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4EE3D033-7384-4BF7-8159-8589BF00DC03}.Release|Any CPU.Build.0 = Release|Any CPU
 		{88E4D245-F817-4F24-B029-44EC41836F91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{88E4D245-F817-4F24-B029-44EC41836F91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88E4D245-F817-4F24-B029-44EC41836F91}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -66,7 +65,6 @@ Global
 		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B37B9781-B5E3-4832-9CF3-7DA9C4662C82}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4A3DE07-BE58-4905-BA85-FD2C0E1D545E}.Release|Any CPU.ActiveCfg = Release|Any CPU
