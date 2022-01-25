@@ -163,7 +163,7 @@ namespace Utils.Objects
 
 		public string ToString(string format, IFormatProvider formatProvider)
 		{
-			var cultureInfo = (System.Globalization.CultureInfo)formatProvider?.GetFormat(typeof(System.Globalization.CultureInfo)) ?? System.Globalization.CultureInfo.CurrentCulture;
+			var cultureInfo = formatProvider as System.Globalization.CultureInfo ?? System.Globalization.CultureInfo.CurrentCulture;
 			return string.Join(cultureInfo.TextInfo.ListSeparator, ranges.Select(r => r.ToString(format, cultureInfo)));
 		}
 
