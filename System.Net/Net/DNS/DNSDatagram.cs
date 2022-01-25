@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Windows;
-using System.Windows.Media;
 
 namespace Utils.Net.DNS
 {

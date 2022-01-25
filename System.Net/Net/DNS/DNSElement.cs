@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
-using System.Windows.Media.Media3D;
 
 namespace Utils.Net.DNS
 {
