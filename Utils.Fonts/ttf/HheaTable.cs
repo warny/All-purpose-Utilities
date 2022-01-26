@@ -11,6 +11,7 @@ namespace Utils.Fonts.TTF
 	/// defined below.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6hhea.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.hhea)]
 	public class HheaTable : TrueTypeTable
 	{
 		protected internal HheaTable() : base(TrueTypeTableTypes.hhea) { }

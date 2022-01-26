@@ -12,6 +12,7 @@ namespace Utils.Fonts.TTF
 	/// the PostScript driver for memory management.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6post.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.post)]
 	public class PostTable : TrueTypeTable
 	{
 		internal class PostMap

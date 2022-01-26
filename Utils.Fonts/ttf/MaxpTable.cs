@@ -9,6 +9,7 @@ namespace Utils.Fonts.TTF
 	/// The 'maxp' table establishes the memory requirements for a font. It begins with a table version number. The next entry is the number of glyphs in the font. 
 	/// The remaining entries all establish maximum values for a number of parameters. Most of these are self explanatory. A few, however, need some clarification.
 	/// </summary>
+	[TTFTable(TrueTypeTableTypes.Tags.maxp)]
 	public class MaxpTable : TrueTypeTable
 	{
 

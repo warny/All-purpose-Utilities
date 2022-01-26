@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Utils.IO.Serialization;
@@ -16,6 +17,21 @@ namespace Utils.Fonts.TTF
 
 	public class TrueTypeFont
 	{
+		static TrueTypeFont()
+		{
+			TablesType = new Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)>();
+			foreach (var t in typeof(TrueTypeTable).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(TrueTypeTable))))
+			{
+				TTFTableAttribute descriptor = t.GetCustomAttribute<TTFTableAttribute>();
+				if (descriptor == null) { continue; }
+				TablesType.Add(descriptor.TableTag, (descriptor, t));
+			}
+		}
+
+		private static Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> TablesType { get; }
+
+
+
 		public int Type { get; }
 
 		private readonly Dictionary<Tag, TrueTypeTable> tables;
@@ -125,22 +141,46 @@ namespace Utils.Fonts.TTF
 				}
 			}
 
-			void ReadTable(Tag tag)
+			void ReadTable(TableDeclaration table)
 			{
-				var table = tables.FirstOrDefault(td => td.Tag == tag);
-				ttf.AddTable(table.Tag, new Reader(table.Data));
+				if (ttf.ContainsTable(table.Tag)) { return; }
+
 				tables.Remove(table);
-			}
-			ReadTable(TrueTypeTableTypes.head);
-			ReadTable(TrueTypeTableTypes.maxp);
-			ReadTable(TrueTypeTableTypes.loca);
-			ReadTable(TrueTypeTableTypes.hhea);
+				TrueTypeTable ttt;
+				if (TablesType.TryGetValue(table.Tag, out var d))
+				{
+					foreach (var dependancy in d.Descriptor.DependsOn)
+					{
+						var tableDependancy = tables.FirstOrDefault(t => t.Tag == dependancy);
+						if (tableDependancy != null) { ReadTable(tableDependancy); }
+					}
+					ttt = (TrueTypeTable)Activator.CreateInstance(d.TableType, true);
+				}
+				else
+				{
+					ttt = new TrueTypeTable(table.Tag);
+				}
+				ttf.AddTable(table.Tag, ttt);
+				ttt.ReadData(new Reader(table.Data));
 
-			foreach (var table in tables)
+			}
+
+			while (tables.Count > 0)
 			{
- 				ttf.AddTable(table.Tag, new Reader(table.Data));
+				ReadTable(tables.First());
 			}
+		}
 
+		public TrueTypeTable CreateTable(Tag tag)
+		{
+			if (TablesType.TryGetValue(tag, out var d))
+			{
+				return (TrueTypeTable)Activator.CreateInstance(d.TableType, true);
+			}
+			else
+			{
+				return new TrueTypeTable(tag);
+			}
 		}
 
 		public virtual short TablesCount => (short)tables.Count;
@@ -228,8 +268,25 @@ namespace Utils.Fonts.TTF
 		}
 
 		public virtual T GetTable<T>(Tag tag) where T : TrueTypeTable => (T)tables[tag];
-		public virtual void AddTable(Tag tag, Reader data) => tables[tag] = TrueTypeTable.CreateTable(this, tag, data);
-		public virtual void AddTable(Tag tag, TrueTypeTable ttt) => tables[tag] = ttt;
+		public virtual bool TryGetTable<T>(Tag tag, out T table) where T : TrueTypeTable
+		{
+			if (tables.TryGetValue(tag, out var result))
+			{
+				table = (T)result;
+				return true;
+			}
+			else
+			{
+				table = null;
+				return false;
+			}
+		}
+		public virtual void AddTable(Tag tag, TrueTypeTable ttt)
+		{
+			ttt.TrueTypeFont = this;
+			tables[tag] = ttt;
+		}
+		public bool ContainsTable(Tag tag) => tables.ContainsKey(tag);
 		public virtual void RemoveTable(Tag tag) => tables.Remove(tag);
 
 		public override string ToString()

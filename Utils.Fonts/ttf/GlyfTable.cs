@@ -13,6 +13,8 @@ namespace Utils.Fonts.TTF
 	/// that is, glyphs that are made up of other glyphs.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6glyf.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.glyf, 
+		TrueTypeTableTypes.Tags.loca, TrueTypeTableTypes.Tags.maxp)]
 	public class GlyfTable : TrueTypeTable
 	{
 		private Glyf[] glyfs;
@@ -26,7 +28,7 @@ namespace Utils.Fonts.TTF
 		public override TrueTypeFont TrueTypeFont
 		{
 			get => base.TrueTypeFont;
-			protected set
+			protected internal set
 			{
 				base.TrueTypeFont = value;
 				loca = TrueTypeFont.GetTable<LocaTable>(TrueTypeTableTypes.loca);

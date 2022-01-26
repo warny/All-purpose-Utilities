@@ -14,6 +14,7 @@ namespace Utils.Fonts.TTF
 	/// designer in any language at any time to provide information to world-wide users of the font.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.name)]
 	public class NameTable : TrueTypeTable
 	{
 		public class NameRecord : IEquatable<NameRecord>

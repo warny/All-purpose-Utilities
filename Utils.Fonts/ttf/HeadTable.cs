@@ -11,6 +11,7 @@ namespace Utils.Fonts.TTF
 	/// about the placement of glyphs in the em square. The checksum is used to verify the integrity of the data in the font. It can also be used to distinguish between two similar fonts.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6head.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.head)]
 	public class HeadTable : TrueTypeTable
 	{
 		protected internal HeadTable() : base(TrueTypeTableTypes.head) { }

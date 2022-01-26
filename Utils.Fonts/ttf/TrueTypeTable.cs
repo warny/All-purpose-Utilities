@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Utils.IO.Serialization;
@@ -14,34 +17,11 @@ namespace Utils.Fonts.TTF
 	{
 
 		public Tag Tag { get; }
-		public virtual TrueTypeFont TrueTypeFont { get; protected set; }
+		public virtual TrueTypeFont TrueTypeFont { get; protected internal set; }
 
 		private byte[] data;
 
-		public static TrueTypeTable CreateTable(TrueTypeFont ttf, Tag tag, Reader data = null)
-		{
-			TrueTypeTable trueTypeTable = (TrueTypeTableTypes.Tags)tag.Value switch
-			{
-				TrueTypeTableTypes.Tags.cmap => new CmapTable(),
-				TrueTypeTableTypes.Tags.glyf => new GlyfTable(),
-				TrueTypeTableTypes.Tags.head => new HeadTable(),
-				TrueTypeTableTypes.Tags.hhea => new HheaTable(),
-				TrueTypeTableTypes.Tags.hmtx => new HmtxTable(),
-				TrueTypeTableTypes.Tags.loca => new LocaTable(),
-				TrueTypeTableTypes.Tags.maxp => new MaxpTable(),
-				TrueTypeTableTypes.Tags.name => new NameTable(),
-				TrueTypeTableTypes.Tags.post => new PostTable(),
-				_ => new TrueTypeTable(tag),
-			};
-			if (data is not null)
-			{
-				trueTypeTable.TrueTypeFont = ttf;
-				trueTypeTable.ReadData(data);
-			}
-			return trueTypeTable;
-		}
-
-		protected internal TrueTypeTable(Tag i)
+        protected internal TrueTypeTable(Tag i)
 		{
 			Tag = i;
 		}

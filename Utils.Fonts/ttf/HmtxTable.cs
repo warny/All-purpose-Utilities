@@ -10,6 +10,8 @@ namespace Utils.Fonts.TTF
 	/// is required but that entry may not be omitted.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6hmtx.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.hmtx,
+		TrueTypeTableTypes.Tags.loca, TrueTypeTableTypes.Tags.maxp)]
 	public class HmtxTable : TrueTypeTable
 	{
 		internal short[] advanceWidths;
@@ -30,7 +32,7 @@ namespace Utils.Fonts.TTF
 		public override TrueTypeFont TrueTypeFont
 		{
 			get => base.TrueTypeFont;
-			protected set
+			protected internal set
 			{
 				base.TrueTypeFont = value;
 				MaxpTable maxpTable = TrueTypeFont.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);

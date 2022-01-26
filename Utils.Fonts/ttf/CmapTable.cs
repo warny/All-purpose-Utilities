@@ -9,6 +9,7 @@ namespace Utils.Fonts.TTF
 	/// Cmap Table
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6cmap.html" />
+	[TTFTable(TrueTypeTableTypes.Tags.cmap)]
 	public class CmapTable : TrueTypeTable
 	{
 		public sealed class CmapSubtable : IEquatable<CmapSubtable>

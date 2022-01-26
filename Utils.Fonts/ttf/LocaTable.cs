@@ -10,6 +10,8 @@ namespace Utils.Fonts.TTF
 	/// the offset from the start of the 'glyf' table to the position at which the data for each glyph can be found.
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6loca.html"/>
+	[TTFTable(TrueTypeTableTypes.Tags.loca,
+		TrueTypeTableTypes.Tags.head, TrueTypeTableTypes.Tags.maxp)]
 	public class LocaTable : TrueTypeTable
 	{
 
@@ -21,11 +23,11 @@ namespace Utils.Fonts.TTF
 		public override TrueTypeFont TrueTypeFont
 		{
 			get => base.TrueTypeFont;
-			protected set
+			protected internal set
 			{
 				base.TrueTypeFont = value;
- 				MaxpTable maxpTable = value.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
 				HeadTable headTable = value.GetTable<HeadTable>(TrueTypeTableTypes.head);
+ 				MaxpTable maxpTable = value.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
 				IsLongFormat = headTable.IndexToLocFormat == 1;
 				offsets = new int[maxpTable.NumGlyphs + 1];
 			}
