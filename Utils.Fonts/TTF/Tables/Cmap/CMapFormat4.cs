@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Utils.IO.Serialization;
+using Utils.Objects;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
 
@@ -39,10 +40,8 @@ public class CMapFormat4 : CMap
 
 	public virtual void AddSegment(short startCode, short endCode, char[] map)
 	{
-		if (map.LongLength != endCode - startCode + 1)
-		{
-			throw new ArgumentException("Wrong number of entries in map");
-		}
+		map.ArgMustBeOfSize(endCode - startCode + 1);
+
 		Segment segment = new Segment(startCode, endCode, true);
 		segments.Remove(segment);
 		segments.Add(segment, map);

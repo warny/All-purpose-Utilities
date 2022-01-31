@@ -1,5 +1,6 @@
 using System;
 using Utils.IO.Serialization;
+using Utils.Objects;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
 
@@ -39,10 +40,7 @@ public class CMapFormat0 : CMap
 		get => glyphIndex;
 		set
 		{
-			if (value.Length != 256)
-			{
-				throw new ArgumentException("Glyph map must be size 256!");
-			}
+			value.ArgMustBeOfSize(256);
 			glyphIndex = value;
 		}
 	}
@@ -78,13 +76,10 @@ public class CMapFormat0 : CMap
 
 	public override void ReadData(int i, Reader data)
 	{
-		if (i != 262)
-		{
-			throw new ArgumentException("Bad length for CMap format 0");
-		}
+		i.ArgMustBeEqualsTo(262);
 		if (data.BytesLeft != 256)
 		{
-			throw new ArgumentException("Wrong amount of data for CMap format 0");
+			throw new ArgumentException("Wrong amount of data for CMap format 0", nameof(data));
 		}
 		MapBytes = data.ReadBytes(256);
 	}
