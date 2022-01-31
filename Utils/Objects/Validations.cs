@@ -23,6 +23,22 @@ namespace Utils.Objects
 			}
 		}
 
+		public static void ArgMustBeOfSize(this Array value, int size, [CallerArgumentExpression("value")] string valueName = "")
+		{
+			if (value.Length != size)
+			{
+				throw new ArgumentOutOfRangeException(valueName, value.Length, $"{valueName} must contain {size} elements");
+			}
+		}
+
+		public static void ArgMustBeEqualsTo<T>(this T value, T targetValue, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		{
+			if (value.CompareTo(targetValue) != 0)
+			{
+				throw new ArgumentOutOfRangeException(valueName, $"{valueName} must be equal to {targetValue}");
+			}
+		}
+
 		public static void ArgMustBeLesserOrEqualsThan<T>(this T value, T max, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(max) > 0)
