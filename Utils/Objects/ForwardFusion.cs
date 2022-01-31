@@ -42,23 +42,30 @@ namespace Utils.Objects
 			}
 			else
 			{
-				throw new ArgumentException($"Les classes {typeof(T1).Name} et {typeof(T2).Name} ne peuvent pas être comparée");
+				throw new ArgumentException($"Les classes {typeof(T1).Name} et {typeof(T2).Name} ne peuvent pas être comparées");
 			}
 		}
 
 		public ForwardFusion(IEnumerable<T1> leftList, IEnumerable<T2> rightList, IComparer comparer)
 		{
-			this.leftList = leftList ?? throw new ArgumentNullException(nameof(leftList));
-			this.rightList = rightList ?? throw new ArgumentNullException(nameof(rightList));
-			_= comparer ?? throw new ArgumentNullException(nameof(comparer));
+			leftList.ArgMustNotBeNull();
+			rightList.ArgMustNotBeNull();
+			comparer.ArgMustNotBeNull();
+
+			this.leftList = leftList;
+			this.rightList = rightList;
 			this.compare = (t1, t2) => comparer.Compare(t1, t2);
 		}
 
 		public ForwardFusion(IEnumerable<T1> leftList, IEnumerable<T2> rightList, Func<T1, T2, int> compare)
 		{
-			this.leftList = leftList ?? throw new ArgumentNullException(nameof(leftList));
-			this.rightList = rightList ?? throw new ArgumentNullException(nameof(rightList));
-			this.compare = compare ?? throw new ArgumentNullException(nameof(compare));
+			leftList.ArgMustNotBeNull();
+			rightList.ArgMustNotBeNull();
+			compare.ArgMustNotBeNull();
+
+			this.leftList = leftList;
+			this.rightList = rightList;
+			this.compare = compare;
 		}
 
 		private IEnumerable<(T1 Left, T2 Right)> Enumerate()

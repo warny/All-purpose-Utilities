@@ -128,9 +128,9 @@ namespace Utils.Objects
 
 		public void CopyTo(byte[] array, int index, int? length = null)
 		{
-			if (index > array.Length) throw new ArgumentOutOfRangeException(nameof(index));
+			index.ArgMustBeLesserOrEqualsThan(array.Length);
 			if (index < 0) index = array.Length + index;
-			if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+			index.ArgMustBeGreaterOrEqualsThan(0);
 			if (length == null || length + index > array.Length) length = Math.Min(array.Length - index, this.innerBytes.Length);
 			Array.Copy(this.innerBytes, 0, array, index, length.Value);
 		}

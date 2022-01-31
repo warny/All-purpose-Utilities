@@ -52,7 +52,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
 		{
-			_ = r ?? throw new ArgumentNullException(nameof(r)); 
+			r.ArgMustNotBeNull();
 			characters ??= defaultRandomCharacters;
 			var length = r.Next(minLength, maxLength);
 
@@ -73,8 +73,8 @@ namespace Utils.Objects
 		/// <returns>true si la chaîne correspond</returns>
 		public static bool Like( this string value, string pattern, bool ignoreCase = false )
 		{
-			_ = value ?? throw new ArgumentNullException(nameof(value));
-			_ = pattern ?? throw new ArgumentNullException(nameof(pattern));
+			value.ArgMustNotBeNull();
+			pattern.ArgMustNotBeNull();
 
 			if (ignoreCase)
 			{
@@ -132,8 +132,8 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string Trim(this string s, Func<char, bool> trimTester)
 		{
-			_ = s ?? throw new ArgumentNullException(nameof(s));
-			_ = trimTester ?? throw new ArgumentNullException(nameof(trimTester));
+			s.ArgMustNotBeNull();
+			trimTester.ArgMustNotBeNull();
 
 			int start, end = s.Length;
 			for (start = 0; start < end; start++)
@@ -156,8 +156,8 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimStart(this string s, Func<char, bool> trimTester)
 		{
-			_ = s ?? throw new ArgumentNullException(nameof(s));
-			_ = trimTester ?? throw new ArgumentNullException(nameof(trimTester));
+			s.ArgMustNotBeNull();
+			trimTester.ArgMustNotBeNull();
 
 			int start, end = s.Length;
 			for (start = 0; start < end; start++)
@@ -415,7 +415,7 @@ namespace Utils.Objects
 		/// <returns>chaîne expurgée</returns>
 		public static string PurgeString(this string s, Func<char, bool> keepFunction, char? replacement = null)
 		{
-			_ = keepFunction ?? throw new ArgumentNullException(nameof(keepFunction));
+			keepFunction.ArgMustNotBeNull();
 			if (s == null) return null;
 			StringBuilder result = new StringBuilder(s.Length);
 			foreach (var c in s)
@@ -452,7 +452,7 @@ namespace Utils.Objects
 		/// <returns>chaîne expurgée</returns>
 		public static string RemoveSpecialChars(this string s, char[] specialChars, char? replacement = null)
 		{
-			_ = specialChars ?? throw new ArgumentNullException(nameof(specialChars));
+			specialChars.ArgMustNotBeNull();
 			return s.PurgeString(c => !specialChars.Contains(c), replacement);
 		}
 
@@ -475,7 +475,7 @@ namespace Utils.Objects
 		/// <returns>chaîne expurgée</returns>
 		public static string KeepOnlyChars(this string s, char[] chars, char? replacement = null)
 		{
-			_ = chars ?? throw new ArgumentNullException(nameof(chars));
+			chars.ArgMustNotBeNull();
 			return s.PurgeString(c => chars.Contains(c), replacement);
 		}
 

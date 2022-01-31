@@ -30,8 +30,6 @@ namespace Utils.Fonts.TTF
 
 		private static Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> TablesType { get; }
 
-
-
 		public int Type { get; }
 
 		private readonly Dictionary<Tag, TrueTypeTable> tables;

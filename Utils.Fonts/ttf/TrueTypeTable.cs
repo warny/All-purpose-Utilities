@@ -40,12 +40,7 @@ namespace Utils.Fonts.TTF
 
 		public override string ToString()
 		{
-			string text = $"    {Tag} Table.  Data is: ";
-			if (this.data == null)
-			{
-				return text + "not set";
-			}
-			return text + "set";
+			return $"    {Tag} Table.  Data is: {(data==null ? "not " : "")}set";
 		}
 	}
     public static class TrueTypeTableTypes

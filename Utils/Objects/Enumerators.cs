@@ -108,7 +108,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public static IEnumerable<float> Enumerate(float start, float end, float step = 1f)
 		{
-			if (step <= 0) throw new ArgumentOutOfRangeException(nameof(step), $"{nameof(step)} must be greater than 0");
+			step.ArgMustBeGreaterThan(0);
 			if (start <= end)
 			{
 				for (var i = start; i < end; i+=step)
@@ -138,7 +138,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public static IEnumerable<double> Enumerate(double start, double end, double step = 1f)
 		{
-			if (step <= 0) throw new ArgumentOutOfRangeException(nameof(step), $"{nameof(step)} must be greater than 0");
+			step.ArgMustBeGreaterThan(0);
 			if (start <= end)
 			{
 				for (var i = start; i < end; i += step)
@@ -168,7 +168,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public static IEnumerable<float> EnumerateCount(float start, float end, int numberOfValues)
 		{
-			if (numberOfValues < 1) throw new ArgumentOutOfRangeException(nameof(numberOfValues), $"{nameof(numberOfValues)} must be strictly greater than 1");
+			numberOfValues.ArgMustBeGreaterThan(1);
 			return Enumerate(start, end, Math.Abs(start - end) / (numberOfValues - 1));
 		}
 
