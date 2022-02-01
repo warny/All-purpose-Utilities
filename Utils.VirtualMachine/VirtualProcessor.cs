@@ -76,7 +76,7 @@ namespace Utils.VirtualMachine
 				}
 				if (!found)
 				{
-					throw new ExecutionEngineException("Unknown instruction");
+					throw new VirtualProcessorException("Unknown instruction");
 				}
 
 			}

@@ -4,20 +4,18 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
 
-public abstract class CMap
+public abstract class CMapFormat
 {
 
 
-	public static CMap CreateCMap(short format, short language)
+	public static CMapFormat CreateCMap(short format, short language)
 	{
-		switch (format)
+		return format switch
 		{
-			case 0: return new CMapFormat0(language);
-			case 4: return new CMapFormat4(language);
-			default:
-				Console.WriteLine($"Unsupport CMap format: {format}");
-				return null;
-		}
+			0 => new CMapFormat0(language),
+			4 => new CMapFormat4(language),
+			_ => throw new NotSupportedException();
+		};
 	}
 
 	public abstract char Map(char ch);
@@ -33,18 +31,18 @@ public abstract class CMap
 
 	public virtual short Language { get; private set; }
 
-	protected CMap(short format, short language)
+	protected CMapFormat(short format, short language)
 	{
 		Format = format;
 		Language = language;
 	}
 
-	public static CMap getMap(Reader data)
+	public static CMapFormat GetMap(Reader data)
 	{
 		var format = data.ReadInt16(true);
 		var length = data.ReadInt16(true);
 		var language = data.ReadInt16(true);
-		CMap cMap = CreateCMap(format, language);
+		CMapFormat cMap = CreateCMap(format, language);
 		cMap?.ReadData(length, data);
 		return cMap;
 	}

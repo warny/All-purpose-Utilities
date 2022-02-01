@@ -4,7 +4,7 @@ using Utils.Objects;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
 
-public class CMapFormat0 : CMap
+public class CMapFormat0 : CMapFormat
 {
 	private byte[] glyphIndex;
 

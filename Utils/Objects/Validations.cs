@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -31,11 +32,35 @@ namespace Utils.Objects
 			}
 		}
 
+		public static void ValueSizeMustBeMultipleOf(this Array value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
+		{
+			if (value.Length % multiple != 0)
+			{
+				throw new ArrayDimensionException($"{valueName}.Length must be a multiple of {multiple}");
+			}
+		}
+
+		public static void ArgSizeMustBeMultipleOf(this Array value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
+		{
+			if (value.Length % multiple != 0)
+			{
+				throw new ArgumentException(valueName, $"{valueName}.Length must be a multiple of {multiple}");
+			}
+		}
+
 		public static void ArgMustBeEqualsTo<T>(this T value, T targetValue, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(targetValue) != 0)
 			{
 				throw new ArgumentOutOfRangeException(valueName, $"{valueName} must be equal to {targetValue}");
+			}
+		}
+
+		public static void ArgMustBeIn<T>(this T value, T[] targetValue, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		{
+			if (value.CompareTo(targetValue) != 0)
+			{
+				throw new ArgumentOutOfRangeException(valueName, $"{valueName} must be in {{ {string.Join(", ", targetValue.Select(v => v.ToString()))} }}");
 			}
 		}
 

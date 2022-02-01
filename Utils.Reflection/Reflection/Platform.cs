@@ -78,7 +78,7 @@ namespace Utils.Reflection
 			else if (File.Exists(@"/System/Library/CoreServices/SystemVersion.plist"))
 			{
 				// Note: iOS gets here too
-				_isMacOsX = true;
+				IsMacOsX = true;
 			}
 			else
 			{

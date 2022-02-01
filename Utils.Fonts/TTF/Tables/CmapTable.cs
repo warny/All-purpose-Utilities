@@ -28,17 +28,17 @@ public class CmapTable : TrueTypeTable
 		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID);
 	}
 
-	private Dictionary<CmapSubtable, CMap.CMap> subtables;
+	private Dictionary<CmapSubtable, CMap.CMapFormat> subtables;
 
-	public virtual CMap.CMap[] CMaps
+	public virtual CMap.CMapFormat[] CMaps
 	{
 		get
 		{
-			List<CMap.CMap> c = new List<CMap.CMap>();
+			List<CMap.CMapFormat> c = new List<CMap.CMapFormat>();
 
-			CMap.CMap cmap_3_1 = GetCMap(3, 1);
+			CMap.CMapFormat cmap_3_1 = GetCMap(3, 1);
 			if (cmap_3_1 is not null) { c.Add(cmap_3_1); }
-			CMap.CMap cmap_1_0 = GetCMap(1, 0);
+			CMap.CMapFormat cmap_1_0 = GetCMap(1, 0);
 			if (cmap_1_0 is not null) { c.Add(cmap_1_0); }
 
 			foreach (var cmap in subtables.Values)
@@ -50,10 +50,10 @@ public class CmapTable : TrueTypeTable
 		}
 	}
 
-	public virtual CMap.CMap GetCMap(short platformID, short platformSpecificID)
-		=> (CMap.CMap)subtables[new CmapSubtable(platformID, platformSpecificID)];
+	public virtual CMap.CMapFormat GetCMap(short platformID, short platformSpecificID)
+		=> (CMap.CMapFormat)subtables[new CmapSubtable(platformID, platformSpecificID)];
 
-	public virtual void AddCMap(short platformID, short platformSpecificID, CMap.CMap cm)
+	public virtual void AddCMap(short platformID, short platformSpecificID, CMap.CMapFormat cm)
 		=> subtables.Add(new CmapSubtable(platformID, platformSpecificID), cm);
 
 	public virtual void RemoveCMap(short platformID, short platformSpecificID)
@@ -63,7 +63,7 @@ public class CmapTable : TrueTypeTable
 	protected internal CmapTable() : base(TrueTypeTableTypes.cmap)
 	{
 		Version = 0;
-		subtables = new Dictionary<CmapSubtable, CMap.CMap>();
+		subtables = new Dictionary<CmapSubtable, CMap.CMapFormat>();
 	}
 
 	public override int Length
@@ -95,7 +95,7 @@ public class CmapTable : TrueTypeTable
 			Reader mapData = data.Slice(offset, data.BytesLeft);
 			try
 			{
-				CMap.CMap cMap = CMap.CMap.getMap(mapData);
+				CMap.CMapFormat cMap = CMap.CMapFormat.GetMap(mapData);
 				if (cMap is not null)
 				{
 					AddCMap(platformID, platformSpecificID, cMap);
@@ -116,7 +116,7 @@ public class CmapTable : TrueTypeTable
 		int length = 4 + NumberSubtables * 8;
 		foreach (var subTable in subtables) {
 			CmapSubtable cmapSubtable = subTable.Key;
-			CMap.CMap cMap = subTable.Value;
+			CMap.CMapFormat cMap = subTable.Value;
 			data.WriteInt16(cmapSubtable.PlatformID, true);
 			data.WriteInt16(cmapSubtable.PlatformSpecificID, true);
 			data.WriteInt32(length, true);
