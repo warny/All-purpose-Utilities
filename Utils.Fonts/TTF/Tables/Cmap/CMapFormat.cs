@@ -14,7 +14,7 @@ public abstract class CMapFormat
 		{
 			0 => new CMapFormat0(language),
 			4 => new CMapFormat4(language),
-			_ => throw new NotSupportedException();
+			_ => throw new NotSupportedException()
 		};
 	}
 

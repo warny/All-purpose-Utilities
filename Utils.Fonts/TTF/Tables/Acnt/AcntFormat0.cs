@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using Utils.IO.Serialization;
 
-namespace Utils.Fonts.TTF.Tables.Actn
+namespace Utils.Fonts.TTF.Tables.Acnt
 {
-	public class ActnFormat0 : ActnFormat
+	public class AcntFormat0 : AcntFormat
 	{
 		public byte PrimaryAttachmentPoint { get; set; }
 		public byte SecondaryInfoIndex { get; set; }

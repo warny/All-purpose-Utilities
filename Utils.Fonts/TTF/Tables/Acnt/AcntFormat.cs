@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Text;
 using Utils.IO.Serialization;
 
-namespace Utils.Fonts.TTF.Tables.Actn
+namespace Utils.Fonts.TTF.Tables.Acnt
 {
-	public abstract class ActnFormat
+	public abstract class AcntFormat
 	{
-		private static ActnFormat CreateActn(short descriptionAndIndex)
+		private static AcntFormat CreateActn(short descriptionAndIndex)
 		{
 			var description = descriptionAndIndex >> 14;
 			return description switch {
-				0 => new ActnFormat0(),
-				1 => new ActnFormat1(),
+				0 => new AcntFormat0(),
+				1 => new AcntFormat1(),
 				_ => null
 			};
 
@@ -22,17 +22,17 @@ namespace Utils.Fonts.TTF.Tables.Actn
 		public abstract void WriteData(Writer data);
 
 
-		public static ActnFormat GetActn(Reader reader)
+		public static AcntFormat GetActn(Reader reader)
 		{
 			var descriptionAndIndex = reader.ReadInt16();
 			var result = CreateActn (descriptionAndIndex);
-			result.PrimaryGlyphIndex = (short)(descriptionAndIndex & 0x8FFF);
+			result.PrimaryGlyphIndex = (short)(descriptionAndIndex & 0x7FFF);
 			result.ReadData(reader);
 			return result;
 		}
 
-		public ActnFormat Format { get; private set; }
+		public AcntFormat Format { get; private set; }
 
-		public short PrimaryGlyphIndex { get; }
+		public short PrimaryGlyphIndex { get; private set; }
 	}
 }

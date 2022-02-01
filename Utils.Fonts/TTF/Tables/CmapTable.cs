@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Utils.IO.Serialization;
+using Utils.Fonts.TTF;
 
 namespace Utils.Fonts.TTF.Tables;
 

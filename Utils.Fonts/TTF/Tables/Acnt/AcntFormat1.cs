@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using Utils.IO.Serialization;
 
-namespace Utils.Fonts.TTF.Tables.Actn
+namespace Utils.Fonts.TTF.Tables.Acnt
 {
-	internal class ActnFormat1 : ActnFormat
+	internal class AcntFormat1 : AcntFormat
 	{
 		public override void ReadData(Reader data)
 		{
@@ -14,7 +14,7 @@ namespace Utils.Fonts.TTF.Tables.Actn
 
 		public override void WriteData(Writer data)
 		{
-			data.WriteInt16(PrimaryGlyphIndex | &0x8000);
+			data.WriteInt16((short)(PrimaryGlyphIndex | 0x8000));
 
 			//throw new NotImplementedException();
 		}
