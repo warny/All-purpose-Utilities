@@ -5,9 +5,9 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Acnt
 {
-	public abstract class AcntFormat
+	public abstract class AcntFormatBase
 	{
-		private static AcntFormat CreateActn(short descriptionAndIndex)
+		private static AcntFormatBase CreateActn(short descriptionAndIndex)
 		{
 			var description = descriptionAndIndex >> 14;
 			return description switch {
@@ -22,7 +22,7 @@ namespace Utils.Fonts.TTF.Tables.Acnt
 		public abstract void WriteData(Writer data);
 
 
-		public static AcntFormat GetActn(Reader reader)
+		public static AcntFormatBase GetActn(Reader reader)
 		{
 			var descriptionAndIndex = reader.ReadInt16();
 			var result = CreateActn (descriptionAndIndex);
@@ -31,7 +31,7 @@ namespace Utils.Fonts.TTF.Tables.Acnt
 			return result;
 		}
 
-		public AcntFormat Format { get; private set; }
+		public AcntFormatBase Format { get; private set; }
 
 		public short PrimaryGlyphIndex { get; private set; }
 	}

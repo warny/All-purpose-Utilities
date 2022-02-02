@@ -5,7 +5,7 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Acnt
 {
-	internal class AcntFormat1 : AcntFormat
+	internal class AcntFormat1 : AcntFormatBase
 	{
 		public override void ReadData(Reader data)
 		{

@@ -5,7 +5,7 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Acnt
 {
-	public class AcntFormat0 : AcntFormat
+	public class AcntFormat0 : AcntFormatBase
 	{
 		public byte PrimaryAttachmentPoint { get; set; }
 		public byte SecondaryInfoIndex { get; set; }

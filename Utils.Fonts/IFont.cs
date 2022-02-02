@@ -6,8 +6,8 @@ namespace Utils.Fonts
 {
 	public interface IFont
 	{
-		IReadOnlyDictionary<char, IGlyph> Glyphs { get; }
-		IReadOnlyDictionary<(char Before, char After), float> SpacingCorrections { get; }
+		IGlyph GetGlyph(char c);
+		float GetSpacingCorrection(char defore, char after);
 	}
 
 	public interface IGlyph

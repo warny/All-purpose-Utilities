@@ -12,7 +12,7 @@ namespace Utils.Fonts.TTF.Tables
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6acnt.html"/>
 
-	[TTFTable(TrueTypeTableTypes.Tags.acnt)]
+	//[TTFTable(TrueTypeTableTypes.Tags.acnt)]
 	public class AcntTable : TrueTypeTable
 	{
 		public AcntTable() : base(TrueTypeTableTypes.acnt) { }
@@ -23,7 +23,7 @@ namespace Utils.Fonts.TTF.Tables
 		public int DescriptionOffset { get; set; }
 		public int ExtensionOffset { get; set; }
 		public int SecondaryOffset { get; set; }
-		public Glyf.Glyf[] Glyphs { get; }
+		public Glyf.GlyphBase[] Glyphs { get; }
 		public object[] Extension { get; }
 		public object[] Accent { get; }
 

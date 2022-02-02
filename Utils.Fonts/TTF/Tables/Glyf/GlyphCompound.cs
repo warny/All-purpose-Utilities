@@ -5,7 +5,7 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Glyf;
 
-public class GlyfCompound : Glyf
+public class GlyphCompound : GlyphBase
 {
 	internal class GlyfComponent
 	{
@@ -20,6 +20,8 @@ public class GlyfCompound : Glyf
 		public float e = 0f;
 		public float f = 0f;
 	}
+
+	public override bool IsCompound => true;
 
 	private GlyfComponent[] Components { get; set; }
 
@@ -48,7 +50,7 @@ public class GlyfCompound : Glyf
 		return new double[6] { gc.a, gc.b, gc.c, gc.d, e, f };
 	}
 
-	protected internal GlyfCompound() { }
+	protected internal GlyphCompound() { }
 
 	public CompoundGlyfFlags this[int i] => Components[i].flags;
 

@@ -8,7 +8,7 @@ using Utils.Objects;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
 
-public class CMapFormat4 : CMapFormat
+public class CMapFormat4 : CMapFormatBase
 {
 	public class Segment : IEquatable<Segment>
 	{

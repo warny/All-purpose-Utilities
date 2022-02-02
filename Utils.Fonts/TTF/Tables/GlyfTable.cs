@@ -17,11 +17,11 @@ namespace Utils.Fonts.TTF.Tables;
 	TrueTypeTableTypes.Tags.loca, TrueTypeTableTypes.Tags.maxp)]
 public class GlyfTable : TrueTypeTable
 {
-	private Glyf.Glyf[] glyfs;
+	private Glyf.GlyphBase[] glyfs;
 	private LocaTable loca;
 	private MaxpTable maxp;
 
-	public virtual Glyf.Glyf GetGlyph(int i) => glyfs[i];
+	public virtual Glyf.GlyphBase GetGlyph(int i) => glyfs[i];
 
 	protected internal GlyfTable() : base(TrueTypeTableTypes.glyf) { }
 
@@ -34,7 +34,7 @@ public class GlyfTable : TrueTypeTable
 			loca = TrueTypeFont.GetTable<LocaTable>(TrueTypeTableTypes.loca);
 			maxp = TrueTypeFont.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
 			int numGlyphs = maxp.NumGlyphs;
-			glyfs = new Glyf.Glyf[numGlyphs];
+			glyfs = new Glyf.GlyphBase[numGlyphs];
 		}
 	}
 
@@ -56,7 +56,7 @@ public class GlyfTable : TrueTypeTable
 			int size = loca.GetSize(i);
 			if (size != 0)
 			{
-				glyfs[i] = Glyf.Glyf.CreateGlyf(data.Slice(offset, size));
+				glyfs[i] = Glyf.GlyphBase.CreateGlyf(data.Slice(offset, size));
 			}
 		}
 	}

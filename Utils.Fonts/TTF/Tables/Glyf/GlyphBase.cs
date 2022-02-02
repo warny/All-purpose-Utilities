@@ -5,9 +5,9 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Glyf;
 
-public class Glyf
+public class GlyphBase
 {
-	private bool IsCompound { get; set; } = false;
+	public virtual bool IsCompound => false;
 
 	public short NumContours { get; set; }
 	public short MinX { get; set; }
@@ -15,21 +15,21 @@ public class Glyf
 	public short MaxX { get; set; }
 	public short MaxY { get; set; }
 
-	protected internal Glyf() { }
+	protected internal GlyphBase() { }
 
 	public virtual short Length => 10;
 
-	public static Glyf CreateGlyf(Reader data)
+	public static GlyphBase CreateGlyf(Reader data)
 	{
 		short numContours = data.ReadInt16(true);
-		Glyf glyf;
+		GlyphBase glyf;
 		if (numContours == 0)
 		{
-			glyf = new Glyf();
+			glyf = new GlyphBase();
 		}
 		else if (numContours == -1)
 		{
-			glyf = new GlyfCompound();
+			glyf = new GlyphCompound();
 		}
 		else if (numContours <= 0)
 		{
@@ -39,7 +39,7 @@ public class Glyf
 		}
 		else
 		{
-			glyf = new GlyfSimple();
+			glyf = new GlyphSimple();
 		}
 		glyf.NumContours = numContours;
 		glyf.MinX = data.ReadInt16(true);

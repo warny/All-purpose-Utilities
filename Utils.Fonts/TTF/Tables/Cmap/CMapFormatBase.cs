@@ -4,11 +4,11 @@ using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
 
-public abstract class CMapFormat
+public abstract class CMapFormatBase
 {
 
 
-	public static CMapFormat CreateCMap(short format, short language)
+	public static CMapFormatBase CreateCMap(short format, short language)
 	{
 		return format switch
 		{
@@ -31,18 +31,18 @@ public abstract class CMapFormat
 
 	public virtual short Language { get; private set; }
 
-	protected CMapFormat(short format, short language)
+	protected CMapFormatBase(short format, short language)
 	{
 		Format = format;
 		Language = language;
 	}
 
-	public static CMapFormat GetMap(Reader data)
+	public static CMapFormatBase GetMap(Reader data)
 	{
 		var format = data.ReadInt16(true);
 		var length = data.ReadInt16(true);
 		var language = data.ReadInt16(true);
-		CMapFormat cMap = CreateCMap(format, language);
+		CMapFormatBase cMap = CreateCMap(format, language);
 		cMap?.ReadData(length, data);
 		return cMap;
 	}

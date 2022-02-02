@@ -15,7 +15,7 @@ namespace Utils.Fonts.TTF
 	/// </summary>
 	/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/"/>
 
-	public class TrueTypeFont
+	public class TrueTypeFont : IFont
 	{
 		static TrueTypeFont()
 		{
@@ -300,6 +300,16 @@ namespace Utils.Fonts.TTF
 				result.AppendLine(table.Value.ToString());
 			}
 			return result.ToString();
+		}
+
+		public IGlyph GetGlyph(char c)
+		{
+			throw new NotImplementedException();
+		}
+
+		public float GetSpacingCorrection(char defore, char after)
+		{
+			throw new NotImplementedException();
 		}
 
 		public sealed class TableDeclaration : IComparable<TableDeclaration>, IComparable
