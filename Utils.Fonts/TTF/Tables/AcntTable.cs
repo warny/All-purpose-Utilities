@@ -23,7 +23,7 @@ namespace Utils.Fonts.TTF.Tables
 		public int DescriptionOffset { get; set; }
 		public int ExtensionOffset { get; set; }
 		public int SecondaryOffset { get; set; }
-		public Glyf.GlyphBase[] Glyphs { get; }
+		public Glyph.GlyphBase[] Glyphs { get; }
 		public object[] Extension { get; }
 		public object[] Accent { get; }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Utils.IO.Serialization;
 
-namespace Utils.Fonts.TTF.Tables.Glyf;
+namespace Utils.Fonts.TTF.Tables.Glyph;
 
 public class GlyphCompound : GlyphBase
 {

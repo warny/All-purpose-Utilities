@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Utils.IO.Serialization;
 
-namespace Utils.Fonts.TTF.Tables.Glyf;
+namespace Utils.Fonts.TTF.Tables.Glyph;
 
 public class GlyphBase
 {
@@ -60,5 +60,7 @@ public class GlyphBase
 		data.WriteInt16(MaxX, true);
 		data.WriteInt16(MaxY, true);
 	}
+
+	public virtual void Render(IGraphicConverter graphic) { }
 }
 

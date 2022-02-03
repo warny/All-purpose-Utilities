@@ -17,11 +17,11 @@ namespace Utils.Fonts.TTF.Tables;
 	TrueTypeTableTypes.Tags.loca, TrueTypeTableTypes.Tags.maxp)]
 public class GlyfTable : TrueTypeTable
 {
-	private Glyf.GlyphBase[] glyfs;
+	private Glyph.GlyphBase[] glyphs;
 	private LocaTable loca;
 	private MaxpTable maxp;
 
-	public virtual Glyf.GlyphBase GetGlyph(int i) => glyfs[i];
+	public virtual Glyph.GlyphBase GetGlyph(int i) => glyphs[i];
 
 	protected internal GlyfTable() : base(TrueTypeTableTypes.glyf) { }
 
@@ -34,15 +34,15 @@ public class GlyfTable : TrueTypeTable
 			loca = TrueTypeFont.GetTable<LocaTable>(TrueTypeTableTypes.loca);
 			maxp = TrueTypeFont.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
 			int numGlyphs = maxp.NumGlyphs;
-			glyfs = new Glyf.GlyphBase[numGlyphs];
+			glyphs = new Glyph.GlyphBase[numGlyphs];
 		}
 	}
 
-	public override int Length => glyfs.Sum(g => g.Length);
+	public override int Length => glyphs.Sum(g => g.Length);
 
 	public override void WriteData(Writer data)
 	{
-		foreach (var glyf in glyfs)
+		foreach (var glyf in glyphs)
 		{
 			glyf?.WriteData(data);
 		}
@@ -50,13 +50,13 @@ public class GlyfTable : TrueTypeTable
 
 	public override void ReadData(Reader data)
 	{
-		for (int i = 0; i < glyfs.Length; i++)
+		for (int i = 0; i < glyphs.Length; i++)
 		{
 			int offset = loca.GetOffset(i);
 			int size = loca.GetSize(i);
 			if (size != 0)
 			{
-				glyfs[i] = Glyf.GlyphBase.CreateGlyf(data.Slice(offset, size));
+				glyphs[i] = Glyph.GlyphBase.CreateGlyf(data.Slice(offset, size));
 			}
 		}
 	}
@@ -64,7 +64,7 @@ public class GlyfTable : TrueTypeTable
 	public override string ToString()
 	{
 		StringBuilder val = new StringBuilder();
-		val.AppendLine($"    Glyf Table: ({glyfs.Length} glyphs)");
+		val.AppendLine($"    Glyf Table: ({glyphs.Length} glyphs)");
 		val.AppendLine($"      Glyf 0: {(object)GetGlyph(0)}");
 		return val.ToString();
 	}

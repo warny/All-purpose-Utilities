@@ -31,6 +31,13 @@ public class CMapFormat4 : CMapFormatBase
 
 	public Dictionary<Segment, object> segments;
 
+	protected internal CMapFormat4(short s)
+		: base(4, s)
+	{
+		segments = new Dictionary<Segment, object>();
+		AddSegment(-1, -1, new char[1] { '\0' });
+	}
+
 	public virtual void AddSegment(short startCode, short endCode, short iDelta)
 	{
 		Segment segment = new Segment(startCode, endCode, false);
@@ -76,13 +83,6 @@ public class CMapFormat4 : CMapFormatBase
 			return '\0';
 		}
 		return '\0';
-	}
-
-	protected internal CMapFormat4(short s)
-		: base(4, s)
-	{
-		segments = new Dictionary<Segment, object>();
-		AddSegment(-1, -1, new char[1] { '\0' });
 	}
 
 	public override short Length

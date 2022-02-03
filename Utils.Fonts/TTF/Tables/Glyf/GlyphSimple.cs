@@ -6,7 +6,7 @@ using Utils.Collections;
 using Utils.IO.Serialization;
 using Utils.Mathematics;
 
-namespace Utils.Fonts.TTF.Tables.Glyf;
+namespace Utils.Fonts.TTF.Tables.Glyph;
 
 public class GlyphSimple : GlyphBase
 {
@@ -18,7 +18,7 @@ public class GlyphSimple : GlyphBase
 	protected internal GlyphSimple() { }
 
 	public override bool IsCompound => false;
-	public virtual short PointsCount => (short)Flags.Length;
+	public virtual short PointsCount => (short)points.Length;
 
 	public virtual short GetContourEndPoint(int i) => ContourEndPoints[i];
 
@@ -91,52 +91,37 @@ public class GlyphSimple : GlyphBase
 			}
 		}
 
-		short[] xCoords = new short[numPoints];
-		for (int i = 0; i < xCoords.Length; i++)
+		short[] coords (OutLineFlags isByte, OutLineFlags isSame ) 
 		{
-			OutLineFlags flag = flags[i];
-			if (i > 0)
+			short[] result = new short[numPoints];
+			for (int i = 0; i < result.Length; i++)
 			{
-				xCoords[i] = xCoords[i - 1];
-			}
-			if ((flag & OutLineFlags.XIsByte) != 0)
-			{
-				int val = data.ReadByte();
-				if ((flag & OutLineFlags.XIsSame) == 0)
+				OutLineFlags flag = flags[i];
+				if (i > 0)
 				{
-					val = -val;
+					result[i] = result[i - 1];
 				}
-				xCoords[i] = (short)(xCoords[i] + val);
+				if (flag.HasFlag(isByte))
+				{
+					int val = data.ReadByte();
+					if (!flag.HasFlag(isSame))
+					{
+						val = -val;
+					}
+					result[i] = (short)(result[i] + val);
+				}
+				else if (!flag.HasFlag(isSame))
+				{
+					result[i] += data.ReadInt16(true);
+				}
 			}
-			else if ((flag & OutLineFlags.XIsSame) == 0)
-			{
-				xCoords[i] += data.ReadInt16(true);
-			}
+			return result;
 		}
-		short[] yCoords = new short[numPoints];
-		for (int i = 0; i < yCoords.Length; i++)
-		{
-			OutLineFlags flag = flags[i];
-			if (i > 0)
-			{
-				yCoords[i] = yCoords[i - 1];
-			}
-			if ((flag & OutLineFlags.YIsByte) != 0)
-			{
-				int val = data.ReadByte();
-				if ((flag & OutLineFlags.YIsSame) == 0)
-				{
-					val = -val;
-				}
-				yCoords[i] = (short)(yCoords[i] + val);
-			}
-			else if ((flag & OutLineFlags.YIsSame) == 0)
-			{
 
-				yCoords[i] += data.ReadInt16(true);
-			}
-		}
-		points = CollectionUtils.Zip(CollectionUtils.Zip(xCoords, yCoords), flags, (p, f) => (p.Left, p.Right, f.HasFlag(OutLineFlags.OnCurve))).ToArray();
+		var xCoords = coords(OutLineFlags.XIsByte, OutLineFlags.XIsSame);
+		var yCoords = coords(OutLineFlags.YIsByte, OutLineFlags.YIsSame);
+
+		points = CollectionUtils.Zip(xCoords, yCoords, flags, (x, y, flag) => (x, y, flag.HasFlag(OutLineFlags.OnCurve))).ToArray();
 	}
 
 	public override void WriteData(Writer data)
@@ -162,7 +147,7 @@ public class GlyphSimple : GlyphBase
 				if (repetition > 1)
 				{
 					data.WriteByte((byte)(flag.item | OutLineFlags.Repeat));
-					data.WriteByte((byte)MathEx.Min(255, flag.repetition));
+					data.WriteByte((byte)MathEx.Min(255, flag.repetition - 1));
 				}
 				else
 				{
@@ -172,60 +157,42 @@ public class GlyphSimple : GlyphBase
 			}
 		}
 
-
-		for (int i = 0; i < PointsCount; i++)
-		{
-			byte r = 0;
-			while (i > 0 && flags[i] == flags[i - 1])
-			{
-				i++;
-				r++;
-			}
-			if (r > 0)
-			{
-				data.WriteByte(r);
-			}
-			else
-			{
-				data.WriteByte((byte)flags[i]);
-			}
-		}
 		for (int i = 0; i < PointsCount; i++)
 		{
 			OutLineFlags flag = flags[i];
-			if ((flag & OutLineFlags.XIsByte) != 0)
+			if ((flag & OutLineFlags.XIsByte) == 0)
 			{
 				if ((flag & OutLineFlags.XIsSame) == 0)
 				{
-					data.WriteByte((byte)(-points[i].X));
-				}
-				else
-				{
-					data.WriteByte((byte)points[i].X);
+					data.WriteInt16(points[i].X, true);
 				}
 			}
 			else if ((flag & OutLineFlags.XIsSame) == 0)
 			{
-				data.WriteInt16(points[i].X, true);
+				data.WriteByte((byte)(-points[i].X));
+			}
+			else
+			{
+				data.WriteByte((byte)points[i].X);
 			}
 		}
 		for (int i = 0; i < PointsCount; i++)
 		{
 			OutLineFlags flag = flags[i];
-			if ((flag & OutLineFlags.YIsByte) != 0)
+			if ((flag & OutLineFlags.YIsByte) == 0)
 			{
 				if ((flag & OutLineFlags.YIsSame) == 0)
 				{
-					data.WriteByte((byte)(-points[i].Y));
-				}
-				else
-				{
-					data.WriteByte((byte)points[i].Y);
+					data.WriteInt16(points[i].Y, true);
 				}
 			}
 			else if ((flag & OutLineFlags.YIsSame) == 0)
 			{
-				data.WriteInt16(points[i].Y, true);
+				data.WriteByte((byte)(-points[i].Y));
+			}
+			else
+			{
+				data.WriteByte((byte)points[i].Y);
 			}
 		}
 	}
@@ -253,4 +220,50 @@ public class GlyphSimple : GlyphBase
 		}
 	}
 
+	public override void Render(IGraphicConverter graphic)
+	{
+		(short X, short Y, bool onCurve) MidPoint((short X, short Y, bool onCurve) p1, (short X, short Y, bool onCurve) p2)
+			=> ((short)((p1.X + p2.X) / 2), (short)((p1.Y + p2.Y) / 2), true);
+
+		var lastPoint = points[0];
+		var lastCurvePoint = lastPoint;
+		for (int i = 1; i < points.Length; i++)
+		{
+			var point = points[i];
+			if (point.onCurve)
+			{
+				if (lastPoint == lastCurvePoint)
+				{
+					graphic.Line(lastCurvePoint.X, lastCurvePoint.Y, point.X, point.Y);
+				}
+				else
+				{
+					graphic.Spline(
+						(lastCurvePoint.X, lastCurvePoint.Y),
+						(lastPoint.X, lastPoint.Y),
+						(point.X, point.Y)
+					);
+
+				}
+
+				lastPoint = point;
+				lastCurvePoint = point;
+			}
+			else
+			{
+				if (!lastPoint.onCurve)
+				{
+					var newCurvePoint = MidPoint(lastPoint, point);
+					graphic.Spline(
+						(lastCurvePoint.X, lastCurvePoint.Y), 
+						(point.X, point.Y), 
+						(newCurvePoint.X, newCurvePoint.Y)
+					);
+					lastCurvePoint = newCurvePoint;
+				}
+
+				lastPoint = point;
+			}
+		}
+	}
 }
