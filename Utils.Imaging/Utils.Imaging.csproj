@@ -27,6 +27,7 @@ Gestion des couleurs 8, 32 et 64 bits en Argb et Ahsv</Description>
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
     <ProjectReference Include="..\Utils\Utils.csproj" />
   </ItemGroup>
 

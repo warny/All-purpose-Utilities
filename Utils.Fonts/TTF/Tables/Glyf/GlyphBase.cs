@@ -17,9 +17,11 @@ public class GlyphBase
 
 	protected internal GlyphBase() { }
 
+	internal GlyfTable GlyfTable { get; set; }
+
 	public virtual short Length => 10;
 
-	public static GlyphBase CreateGlyf(Reader data)
+	public static GlyphBase CreateGlyf(Reader data, GlyfTable glyfTable)
 	{
 		short numContours = data.ReadInt16(true);
 		GlyphBase glyf;
@@ -41,6 +43,7 @@ public class GlyphBase
 		{
 			glyf = new GlyphSimple();
 		}
+		glyf.GlyfTable = glyfTable;
 		glyf.NumContours = numContours;
 		glyf.MinX = data.ReadInt16(true);
 		glyf.MinY = data.ReadInt16(true);

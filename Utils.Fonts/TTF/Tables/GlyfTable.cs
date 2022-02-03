@@ -56,7 +56,7 @@ public class GlyfTable : TrueTypeTable
 			int size = loca.GetSize(i);
 			if (size != 0)
 			{
-				glyphs[i] = Glyph.GlyphBase.CreateGlyf(data.Slice(offset, size));
+				glyphs[i] = Glyph.GlyphBase.CreateGlyf(data.Slice(offset, size), this);
 			}
 		}
 	}

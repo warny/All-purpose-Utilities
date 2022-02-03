@@ -138,5 +138,41 @@ namespace UtilsTest.Collections
 			Assert.IsTrue(comparer.Equals(expected, result));
 		}
 
+		[TestMethod]
+		public void SliceTest()
+		{
+			var test = new string[] { "a", "b", "c", "d", "e", "f" };
+			var indexes = new int[] { 1, 4 };
+
+			var expected = new string[][] {
+				new [] { "a" },
+				new [] { "b", "c", "d" },
+				new [] { "e", "f" }
+			};
+
+			var result = CollectionUtils.Slice(test, indexes).Select(c=>c.ToArray()).ToArray();
+
+			var innerComparer = new ArrayEqualityComparer<string>();
+			var comparer = new ArrayEqualityComparer<string[]>(innerComparer);
+
+			Assert.IsTrue(comparer.Equals(expected, result));
+		}
+
+		[TestMethod]
+		public void FlattenTest()
+		{
+			var test = new string[][] {
+				new [] { "a" },
+				new [] { "b", "c", "d" },
+				new [] { "e", "f" }
+			};
+
+			var expected = new string[] { "a", "b", "c", "d", "e", "f" };
+
+			var result = CollectionUtils.Flatten(test).ToArray();
+			
+			var comparer = new ArrayEqualityComparer<string>();
+			Assert.IsTrue(comparer.Equals(expected, result));
+		}
 	}
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Utils.Fonts.TTF.Tables;
 using Utils.IO.Serialization;
 using Utils.Mathematics;
 
@@ -304,7 +305,17 @@ namespace Utils.Fonts.TTF
 
 		public IGlyph GetGlyph(char c)
 		{
-			throw new NotImplementedException();
+			var cmap = GetTable<CmapTable>(TrueTypeTableTypes.cmap);
+			var glyf = GetTable<GlyfTable>(TrueTypeTableTypes.glyf);
+			foreach (var map in cmap.CMaps)
+			{
+				int index = map.Map(c);
+				if (index > 0)
+				{
+					return new TrueTypeGlyph(glyf.GetGlyph(index));
+				}
+			}
+			return null;
 		}
 
 		public float GetSpacingCorrection(char defore, char after)

@@ -52,7 +52,7 @@ public class CmapTable : TrueTypeTable
 	}
 
 	public virtual CMap.CMapFormatBase GetCMap(short platformID, short platformSpecificID)
-		=> (CMap.CMapFormatBase)subtables[new CmapSubtable(platformID, platformSpecificID)];
+		=> subtables.GetValueOrDefault(new CmapSubtable(platformID, platformSpecificID));
 
 	public virtual void AddCMap(short platformID, short platformSpecificID, CMap.CMapFormatBase cm)
 		=> subtables.Add(new CmapSubtable(platformID, platformSpecificID), cm);

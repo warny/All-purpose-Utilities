@@ -14,5 +14,14 @@ namespace UtilsTest.Fonts
 		{
 			TrueTypeFont font = TrueTypeFont.ParseFont((byte[])Fonts.ResourceManager.GetObject("Arial"));
 		}
+
+		[TestMethod]
+		public void LoadFontGlyphTest()
+		{
+			TrueTypeFont font = TrueTypeFont.ParseFont((byte[])Fonts.ResourceManager.GetObject("Arial"));
+			var glyph = font.GetGlyph('a');
+			Assert.IsNotNull(glyph);
+		}
+
 	}
 }

@@ -253,5 +253,66 @@ namespace Utils.Collections
 				}
 			}
 		}
+
+		/// <summary>
+		/// Slice <paramref name="enumeration"/> at each index
+		/// </summary>
+		/// <typeparam name="T">Type of element in enumeration</typeparam>
+		/// <param name="enumeration"><see cref="IEnumerable{T}"/> to slice</param>
+		/// <param name="cutIndexes">Indexes at which the enumeration will be sliced</param>
+		/// <returns></returns>
+		public static IEnumerable<IEnumerable<T>> Slice<T>(IEnumerable<T> enumeration, params int[] cutIndexes)
+		{
+			List<T> result = new List<T>();
+			int index = 0;
+			var indexes = new Queue<int>(cutIndexes);
+			var nextIndex = indexes.Dequeue();
+
+			var enumerator = enumeration.GetEnumerator();
+
+			bool @continue;
+			while (@continue = enumerator.MoveNext())
+			{
+				if (index == nextIndex)
+				{
+					yield return result.ToArray();
+					result.Clear();
+					if (indexes.Count == 0)
+					{
+						break;
+					}
+					nextIndex = indexes.Dequeue();
+				}
+				result.Add(enumerator.Current);
+				index++;
+			}
+
+			if (@continue)
+			{
+				do
+				{
+					result.Add(enumerator.Current);
+				} while (enumerator.MoveNext());
+			}
+			yield return result.ToArray();
+
+		}
+
+		/// <summary>
+		/// Flatten <paramref name="enumerations"/> into one enumeration
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="enumerations"><see cref="IEnumerable{IEnumerable{T}}"/> to flatten</param>
+		/// <returns></returns>
+		public static IEnumerable<T> Flatten<T>(IEnumerable<IEnumerable<T>> enumerations)
+		{
+			foreach (var enumeration in enumerations)
+			{
+				foreach (var item in enumeration)
+				{
+					yield return item;
+				}
+			}
+		}
 	}
 }
