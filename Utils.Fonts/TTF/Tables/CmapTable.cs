@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Utils.IO.Serialization;
 using Utils.Fonts.TTF;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace Utils.Fonts.TTF.Tables;
 
@@ -13,7 +15,7 @@ namespace Utils.Fonts.TTF.Tables;
 [TTFTable(TrueTypeTableTypes.Tags.cmap)]
 public class CmapTable : TrueTypeTable
 {
-	public sealed class CmapSubtable : IEquatable<CmapSubtable>
+	public sealed class CmapSubtable : IEquatable<CmapSubtable>, IComparable<CmapSubtable>
 	{
 		public short PlatformID { get; }
 		public short PlatformSpecificID { get; }
@@ -27,44 +29,47 @@ public class CmapTable : TrueTypeTable
 		public override bool Equals(object obj) => obj is CmapSubtable other && Equals(other);
 		public bool Equals(CmapSubtable other) => PlatformID == other.PlatformID && PlatformSpecificID == other.PlatformSpecificID;
 		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID);
-	}
 
-	private Dictionary<CmapSubtable, CMap.CMapFormatBase> subtables;
-
-	public virtual CMap.CMapFormatBase[] CMaps
-	{
-		get
+		public int CompareTo([AllowNull] CmapSubtable other)
 		{
-			List<CMap.CMapFormatBase> c = new List<CMap.CMapFormatBase>();
+			if (other == null) return 1;
+			if (this.Equals(other)) return 0;
 
-			CMap.CMapFormatBase cmap_3_1 = GetCMap(3, 1);
-			if (cmap_3_1 is not null) { c.Add(cmap_3_1); }
-			CMap.CMapFormatBase cmap_1_0 = GetCMap(1, 0);
-			if (cmap_1_0 is not null) { c.Add(cmap_1_0); }
+			if (this.PlatformID == 3 && this.PlatformSpecificID == 1) return -1;
+			if (other.PlatformID == 3 && other.PlatformSpecificID == 1) return 1;
 
-			foreach (var cmap in subtables.Values)
-			{
-				if (!c.Contains(cmap)) { c.Add(cmap); }
-			}
+			if (this.PlatformSpecificID == 1 && this.PlatformSpecificID == 0) return -1;
+			if (other.PlatformSpecificID == 1 && other.PlatformSpecificID == 0) return -1;
 
-			return c.ToArray();
+			return new int[] {
+				this.PlatformID.CompareTo(other.PlatformID),
+				this.PlatformSpecificID.CompareTo(other.PlatformSpecificID)
+			}.FirstOrDefault(t => t != 0);
 		}
 	}
+
+	private SortedDictionary<CmapSubtable, CMap.CMapFormatBase> subtables;
+
+	public virtual CMap.CMapFormatBase[] CMaps { get; private set; }
 
 	public virtual CMap.CMapFormatBase GetCMap(short platformID, short platformSpecificID)
 		=> subtables.GetValueOrDefault(new CmapSubtable(platformID, platformSpecificID));
 
-	public virtual void AddCMap(short platformID, short platformSpecificID, CMap.CMapFormatBase cm)
-		=> subtables.Add(new CmapSubtable(platformID, platformSpecificID), cm);
+	public virtual void AddCMap(short platformID, short platformSpecificID, CMap.CMapFormatBase cm) {
+		subtables.Add(new CmapSubtable(platformID, platformSpecificID), cm);
+		SortMaps();
+	}
 
-	public virtual void RemoveCMap(short platformID, short platformSpecificID)
-		=> subtables.Remove(new CmapSubtable(platformID, platformSpecificID));
+	public virtual void RemoveCMap(short platformID, short platformSpecificID) {
+		subtables.Remove(new CmapSubtable(platformID, platformSpecificID));
+		SortMaps();
+	}
 
 
 	protected internal CmapTable() : base(TrueTypeTableTypes.cmap)
 	{
 		Version = 0;
-		subtables = new Dictionary<CmapSubtable, CMap.CMapFormatBase>();
+		subtables = new SortedDictionary<CmapSubtable, CMap.CMapFormatBase>();
 	}
 
 	public override int Length
@@ -108,6 +113,13 @@ public class CmapTable : TrueTypeTable
 				Console.WriteLine($"Reason: {ex.Message}");
 			}
 		}
+
+		SortMaps();
+	}
+
+	private void SortMaps()
+	{
+		CMaps = subtables.Values.ToArray();
 	}
 
 	public override void WriteData(Writer data)
@@ -131,8 +143,8 @@ public class CmapTable : TrueTypeTable
 	public override string ToString()
 	{
 		StringBuilder val = new StringBuilder();
-		val.AppendLine($"    Version: {(int)Version}");
-		val.AppendLine($"    NumMaps: {(int)NumberSubtables}");
+		val.AppendLine($"    Version: {Version:X2}");
+		val.AppendLine($"    NumMaps: {NumberSubtables}");
 		foreach (var subTable in subtables) {
 			var cmapSubtable = subTable.Key;
 			var cMap = subTable.Value;

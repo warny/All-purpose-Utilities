@@ -8,13 +8,6 @@ public class CMapFormat0 : CMapFormatBase
 {
 	private byte[] glyphIndex;
 
-	public override byte Map(byte b)
-	{
-		int num = (sbyte)b;
-		int num2 = 0xFF & num;
-		return glyphIndex[num2];
-	}
-
 	protected internal CMapFormat0(short s)
 		: base(0, s)
 	{
@@ -45,13 +38,13 @@ public class CMapFormat0 : CMapFormatBase
 		}
 	}
 
-	public override char Map(char ch)
+	public override short Map(char ch)
 	{
 		if (ch < '\0' || ch > 'ÿ')
 		{
-			return '\0';
+			return 0;
 		}
-		return (char)(Map((byte)ch));
+		return glyphIndex[ch];
 	}
 
 	public override char ReverseMap(short s)

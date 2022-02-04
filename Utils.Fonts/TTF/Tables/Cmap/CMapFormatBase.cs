@@ -18,8 +18,7 @@ public abstract class CMapFormatBase
 		};
 	}
 
-	public abstract char Map(char ch);
-	public abstract byte Map(byte b);
+	public abstract short Map(char ch);
 	public abstract char ReverseMap(short s);
 
 	public abstract void ReadData(int i, Reader data);

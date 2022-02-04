@@ -60,31 +60,6 @@ public class CMapFormat4 : CMapFormatBase
 		segments.Remove(segment);
 	}
 
-	public override char Map(char ch)
-	{
-		foreach (var kv in segments)
-		{
-			var segment = kv.Key;
-			var value = kv.Value;
-			if (segment.StartCode < ch)
-			{
-				continue;
-			}
-			if (segment.EndCode <= ch)
-			{
-				if (segment.HasMap)
-				{
-					char[] array = (char[])value;
-					return array[ch - segment.EndCode];
-				}
-				int val2 = (int)value;
-				return (char)(ch + val2);
-			}
-			return '\0';
-		}
-		return '\0';
-	}
-
 	public override short Length
 	{
 		get
@@ -131,14 +106,28 @@ public class CMapFormat4 : CMapFormatBase
 
 	public virtual short RangeShift => (short)(2 * SegmentCount - SearchRange);
 
-	public override byte Map(byte b)
+	public override short Map(char ch)
 	{
-		int c = Map((char)b);
-		if (c < -128 || c > 127)
+		foreach (var kv in segments)
 		{
+			var segment = kv.Key;
+			var value = kv.Value;
+			if (segment.StartCode < ch)
+			{
+				continue;
+			}
+			if (segment.EndCode <= ch)
+			{
+				if (segment.HasMap)
+				{
+					short[] array = (short[])value;
+					return array[ch - segment.EndCode];
+				}
+				return (short)(ch + (int)value);
+			}
 			return 0;
 		}
-		return (byte)c;
+		return 0;
 	}
 
 	public override char ReverseMap(short s)
