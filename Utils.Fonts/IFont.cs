@@ -20,7 +20,8 @@ namespace Utils.Fonts
 
 	public interface IGraphicConverter
 	{
-		void Line(float x1, float y1, float x2, float y2);
-		void Spline(params (float x, float y)[] points);
+		void StartAt(float x, float y);
+		void LineTo(float x, float y);
+		void BezierTo(params (float x, float y)[] points);
 	}
 }

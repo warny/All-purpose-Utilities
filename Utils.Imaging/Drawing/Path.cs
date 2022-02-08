@@ -11,18 +11,18 @@ namespace Utils.Drawing
 	{
 		private readonly List<Segment> segments;
 
-		private Point startPoint;
-		private Point lastPoint;
+		private PointF startPoint;
+		private PointF lastPoint;
 
 		public float Length { get; }
 
-		public Path(Point startPoint)
+		public Path(PointF startPoint)
 		{
 			this.startPoint = startPoint;
 			this.lastPoint = startPoint;
 		}
 
-		public Path LineTo(Point p)
+		public Path LineTo(PointF p)
 		{
 			Segment segment = new Segment(lastPoint, p);
 			lastPoint = p;
@@ -30,7 +30,7 @@ namespace Utils.Drawing
 			return this;
 		}
 
-		public Path BezierTo(params Point[] points)
+		public Path BezierTo(params PointF[] points)
 		{
 			Bezier bezier = new Bezier(points.PrecededBy(lastPoint).ToArray());
 			segments.AddRange(bezier.GetSegments(false));

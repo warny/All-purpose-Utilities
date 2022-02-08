@@ -8,19 +8,32 @@ namespace Utils.Drawing
 {
 	public class Segment : IDrawable
 	{
-		public Point Start { get; }
-		public Point End { get; }
+		public PointF Start { get; }
+		public PointF End { get; }
 
-		public int X1 => Start.X;
-		public int Y1 => Start.Y;
-		public int X2 => End.X;
-		public int Y2 => End.Y;
+		public float X1 => Start.X;
+		public float Y1 => Start.Y;
+		public float X2 => End.X;
+		public float Y2 => End.Y;
 		public float Length { get; }
 		public float Sin { get; }
 		public float Cos { get; }
 
-		public Segment(int x1, int y1, int x2, int y2) : this(new Point(x1, y1), new Point(x2, y2)) { }
-		public Segment(Point start, Point end) {
+		public Segment(
+			int x1, int y1, 
+			int x2, int y2
+		) : this(
+			new PointF(x1, y1), 
+			new PointF(x2, y2)
+		) { }
+		public Segment(
+			float x1, float y1, 
+			float x2, float y2
+		) : this(
+			new PointF(x1, y1), 
+			new PointF(x2, y2)
+		) { }
+		public Segment(PointF start, PointF end) {
 			Start = start;
 			End = end;
 
@@ -33,10 +46,10 @@ namespace Utils.Drawing
 
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)
 		{
-			int x = X1;
-			int y = Y1;
-			int dx = X2 - X1;
-			int dy = Y2 - Y1;
+			int x = (int)X1;
+			int y = (int)Y1;
+			int dx = (int)X2 - x;
+			int dy = (int)Y2 - y;
 
 			int xinc = (dx > 0) ? 1 : -1;
 			int yinc = (dy > 0) ? 1 : -1;

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Arrays;
+using Utils.Objects;
 
 namespace Utils.Mathematics.LinearAlgebra
 {
@@ -18,10 +19,9 @@ namespace Utils.Mathematics.LinearAlgebra
 		private bool? isTriangularised;
 		private bool? isIdentity;
 		private double? determinant;
+		private int? hashCode;
 
-		private Matrix ()
-		{
-		}
+		private Matrix() { }
 
 		public Matrix ( int dimensionX, int dimensionY )
 		{
@@ -37,7 +37,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			this.determinant = determinant;
 		}
 
-		public Matrix ( double[,] array )
+		public Matrix ( double[,] array)
 		{
 			components = new double[array.GetLength(0), array.GetLength(1)];
 			Array.Copy(array, this.components, array.Length);
@@ -48,7 +48,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			determinant = null;
 		}
 
-		public Matrix ( double[][] array )
+		public Matrix ( double[][] array)
 		{
 			int maxYLength = array.Select(a => a.Length).Max();
 			components = new double[array.Length, maxYLength];
@@ -85,11 +85,11 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// Créé une copie de la matrice
 		/// </summary>
 		/// <param name="matrix"></param>
-		public Matrix ( Matrix matrix )
+		public Matrix(Matrix matrix)
 		{
 			this.components = new double[matrix.components.GetLength(0), matrix.components.GetLength(1)];
 			Array.Copy(matrix.components, this.components, matrix.components.Length);
-			this.isDiagonalized = matrix.isDiagonalized ;
+			this.isDiagonalized = matrix.isDiagonalized;
 			this.isTriangularised = matrix.isTriangularised;
 			this.isIdentity = matrix.isIdentity;
 			this.determinant = matrix.determinant;
@@ -100,7 +100,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// </summary>
 		/// <param name="dimension"></param>
 		/// <returns></returns>
-		public static Matrix Identity ( int dimension )
+		public static Matrix Identity ( int dimension)
 		{
 			var array = new double[dimension, dimension];
 			for (int i = 0; i < dimension; i++) {
@@ -492,7 +492,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		public bool Equals ( Matrix other )
 		{
 			if (ReferenceEquals(this, other)) return true;
-			return Equals(other.components);
+			return this.GetHashCode() == other.GetHashCode() && Equals(other.components);
 		}
 
 		public bool Equals(double[,] other)
@@ -546,16 +546,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			return true;
 		}
 
-		public override int GetHashCode ()
-		{
-			unchecked {
-				var temp = this.components.Length.GetHashCode();
-				foreach (var el in this.components) {
-					temp = ((temp * 23) << 1) + el.GetHashCode();
-				}
-				return temp;
-			}
-		}
+		public override int GetHashCode() => hashCode ??= ObjectUtils.ComputeHash(components);
 
 		public double[,] ToArray() => (double[,])ArrayUtils.Copy(components);
 

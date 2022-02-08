@@ -70,7 +70,7 @@ public class CMapFormat0 : CMapFormatBase
 	public override void ReadData(int i, Reader data)
 	{
 		i.ArgMustBeEqualsTo(262);
-		if (data.BytesLeft != 256)
+		if (data.BytesLeft < 256)
 		{
 			throw new ArgumentException("Wrong amount of data for CMap format 0", nameof(data));
 		}

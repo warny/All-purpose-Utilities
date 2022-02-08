@@ -93,23 +93,35 @@ public class CmapTable : TrueTypeTable
 	{
 		Version = data.ReadInt16(true);
 		int numberSubtables = data.ReadInt16(true);
+
+		var subTables = new (short platformID, short platformSpecificID, int offset, int length)[numberSubtables];
+
+		int lastOffset = 0;
 		for (int i = 0; i < numberSubtables; i++)
 		{
-			short platformID = data.ReadInt16(true);
-			short platformSpecificID = data.ReadInt16(true);
-			int offset = data.ReadInt32(true);
-			Reader mapData = data.Slice(offset, data.BytesLeft);
+			var platformID = data.ReadInt16(true);
+			var platformSpecificID = data.ReadInt16(true);
+			var offset = data.ReadInt32(true);
+
+			subTables[i] = (platformID, platformSpecificID, offset, offset - lastOffset);
+			lastOffset = offset;
+		}
+
+		for (int i = 0; i < numberSubtables; i++)
+		{
+			var subTable = subTables[i];
+			Reader mapData = data.Slice(subTable.offset, subTable.length);
 			try
 			{
 				CMap.CMapFormatBase cMap = CMap.CMapFormatBase.GetMap(mapData);
 				if (cMap is not null)
 				{
-					AddCMap(platformID, platformSpecificID, cMap);
+					AddCMap(subTable.platformID, subTable.platformSpecificID, cMap);
 				}
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"Error reading map.  PlatformID={platformID}, PlatformSpecificID={platformSpecificID}");
+				Console.WriteLine($"Error reading map.  PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}");
 				Console.WriteLine($"Reason: {ex.Message}");
 			}
 		}

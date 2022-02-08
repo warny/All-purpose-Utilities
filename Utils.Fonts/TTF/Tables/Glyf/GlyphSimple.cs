@@ -222,6 +222,7 @@ public class GlyphSimple : GlyphBase
 		{
 			var lastPoint = points[0];
 			var lastCurvePoint = lastPoint;
+			graphic.StartAt(lastPoint.X, lastPoint.Y);
 			for (int i = 1; i < points.Length; i++)
 			{
 				var point = points[i];
@@ -229,12 +230,11 @@ public class GlyphSimple : GlyphBase
 				{
 					if (lastPoint == lastCurvePoint)
 					{
-						graphic.Line(lastCurvePoint.X, lastCurvePoint.Y, point.X, point.Y);
+						graphic.LineTo(point.X, point.Y);
 					}
 					else
 					{
-						graphic.Spline(
-							(lastCurvePoint.X, lastCurvePoint.Y),
+						graphic.BezierTo(
 							(lastPoint.X, lastPoint.Y),
 							(point.X, point.Y)
 						);
@@ -249,8 +249,7 @@ public class GlyphSimple : GlyphBase
 					if (!lastPoint.onCurve)
 					{
 						var newCurvePoint = MidPoint(lastPoint, point);
-						graphic.Spline(
-							(lastCurvePoint.X, lastCurvePoint.Y),
+						graphic.BezierTo(
 							(point.X, point.Y),
 							(newCurvePoint.X, newCurvePoint.Y)
 						);
@@ -259,6 +258,14 @@ public class GlyphSimple : GlyphBase
 
 					lastPoint = point;
 				}
+			}
+			//close the curve
+			if (lastPoint.onCurve) {
+				graphic.LineTo(points[0].X, points[0].Y);
+			} else {
+				graphic.BezierTo(
+					(lastPoint.X, lastPoint.Y),
+					(points[0].X, points[0].Y));
 			}
 		}
 	}

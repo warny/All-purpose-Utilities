@@ -13,42 +13,45 @@ public class GlyphCompound : GlyphBase
 		public short glyphIndex;
 		public int compoundPoint;
 		public int componentPoint;
-		public float a = 1f;
-		public float b = 0f;
-		public float c = 0f;
-		public float d = 1f;
-		public float e = 0f;
-		public float f = 0f;
+		public float a { get; internal set; } = 1f;
+		public float b { get; internal set; } = 0f;
+		public float c { get; internal set; } = 0f;
+		public float d { get; internal set; } = 1f;
+		public float e { get; internal set; } = 0f;
+		public float f { get; internal set;} = 0f;
+
+		public float te { get; private set; } = 0f;
+		public float tf { get; private set; } = 0f;
+
+		public virtual void ComputeTransform()
+		{
+			const float limit = (33f / 65535f);
+			float m = Math.Max(Math.Abs(a), Math.Abs(b));
+			if (Math.Abs(Math.Abs(a) - Math.Abs(c)) < limit)
+			{
+				m *= 2f;
+			}
+			float n = Math.Max(Math.Abs(c), Math.Abs(d));
+			if (Math.Abs(Math.Abs(c) - Math.Abs(d)) < limit)
+			{
+				n *= 2f;
+			}
+			te = m * e;
+			tf = n * f;
+		}
+
 	}
 
 	public override bool IsCompound => true;
 
 	private GlyfComponent[] Components { get; set; }
 
-	private byte[] Instructions { get; set; }
+	public byte[] Instructions { get; private set; }
 
 	public virtual int NumComponents => Components.Length;
 
 	public virtual short getGlyphIndex(int i) => Components[i].glyphIndex;
 
-	public virtual double[] getTransform(int i)
-	{
-		const float limit = (33f / 65535f);
-		GlyfComponent gc = Components[i];
-		float m = Math.Max(Math.Abs(gc.a), Math.Abs(gc.b));
-		if (Math.Abs(Math.Abs(gc.a) - Math.Abs(gc.c)) < limit)
-		{
-			m *= 2f;
-		}
-		float n = Math.Max(Math.Abs(gc.c), Math.Abs(gc.d));
-		if (Math.Abs(Math.Abs(gc.c) - Math.Abs(gc.d)) < limit)
-		{
-			n *= 2f;
-		}
-		float e = m * gc.e;
-		float f = n * gc.f;
-		return new double[6] { gc.a, gc.b, gc.c, gc.d, e, f };
-	}
 
 	protected internal GlyphCompound() { }
 
@@ -64,47 +67,49 @@ public class GlyphCompound : GlyphBase
 			current = new GlyfComponent();
 			current.flags = (CompoundGlyfFlags)data.ReadInt16(true);
 			current.glyphIndex = data.ReadInt16(true);
-			if ((current.flags & CompoundGlyfFlags.ARG_1_AND_2_ARE_WORDS) != 0 && (current.flags & CompoundGlyfFlags.ARGS_ARE_XY_VALUES) != 0)
+			switch ((current.flags.HasFlag(CompoundGlyfFlags.ARG_1_AND_2_ARE_WORDS), current.flags.HasFlag(CompoundGlyfFlags.ARGS_ARE_XY_VALUES)))
 			{
-				current.e = data.ReadInt16(true);
-				current.f = data.ReadInt16(true);
+				case (true, true):
+					current.e = data.ReadInt16(true);
+					current.f = data.ReadInt16(true);
+					break;
+				case (false, true):
+					current.e = data.ReadInt16(true);
+					current.f = data.ReadInt16(true);
+					break;
+				case (true, false):
+					current.compoundPoint = data.ReadInt16(true);
+					current.componentPoint = data.ReadInt16(true);
+					break;
+				case (false, false):
+					current.compoundPoint = data.ReadInt16(true);
+					current.componentPoint = data.ReadInt16(true);
+					break;
 			}
-			else if ((current.flags & CompoundGlyfFlags.ARG_1_AND_2_ARE_WORDS) == 0 && (current.flags & CompoundGlyfFlags.ARGS_ARE_XY_VALUES) != 0)
-			{
-				current.e = data.ReadByte();
-				current.f = data.ReadByte();
-			}
-			else if ((current.flags & CompoundGlyfFlags.ARG_1_AND_2_ARE_WORDS) != 0 && (current.flags & CompoundGlyfFlags.ARGS_ARE_XY_VALUES) == 0)
-			{
-				current.compoundPoint = data.ReadInt16(true);
-				current.componentPoint = data.ReadInt16(true);
-			}
-			else
-			{
-				current.compoundPoint = data.ReadByte();
-				current.componentPoint = data.ReadByte();
-			}
-			if ((current.flags & CompoundGlyfFlags.WE_HAVE_A_SCALE) != 0)
+
+
+			if (current.flags.HasFlag(CompoundGlyfFlags.WE_HAVE_A_SCALE))
 			{
 				current.a = data.ReadInt16(true) / 16384f;
 				current.d = current.a;
 			}
-			else if ((current.flags & CompoundGlyfFlags.WE_HAVE_AN_X_AND_Y_SCALE) != 0)
+			else if (current.flags.HasFlag(CompoundGlyfFlags.WE_HAVE_AN_X_AND_Y_SCALE))
 			{
 				current.a = data.ReadInt16(true) / 16384f;
 				current.d = data.ReadInt16(true) / 16384f;
 			}
-			else if ((current.flags & CompoundGlyfFlags.WE_HAVE_A_TWO_BY_TWO) != 0)
+			else if (current.flags.HasFlag(CompoundGlyfFlags.WE_HAVE_A_TWO_BY_TWO))
 			{
 				current.a = data.ReadInt16(true) / 16384f;
 				current.b = data.ReadInt16(true) / 16384f;
 				current.c = data.ReadInt16(true) / 16384f;
 				current.d = data.ReadInt16(true) / 16384f;
 			}
-			if ((current.flags & CompoundGlyfFlags.WE_HAVE_INSTRUCTIONS) != 0)
+			if (current.flags.HasFlag(CompoundGlyfFlags.WE_HAVE_INSTRUCTIONS))
 			{
 				hasInstructions = true;
 			}
+			current.ComputeTransform();
 			comps.Add(current);
 		}
 		while ((current.flags & CompoundGlyfFlags.MORE_COMPONENTS) != 0);
@@ -112,9 +117,9 @@ public class GlyphCompound : GlyphBase
 		byte[] instructions;
 		if (hasInstructions)
 		{
-			int @short = data.ReadInt16(true);
-			instructions = new byte[@short];
-			for (int i = 0; i < instructions.Length; i++)
+			int instructionsCount = data.ReadInt16(true);
+			instructions = new byte[instructionsCount];
+			for (int i = 0; i < instructionsCount; i++)
 			{
 				instructions[i] = data.ReadByte();
 			}
@@ -125,20 +130,5 @@ public class GlyphCompound : GlyphBase
 		}
 		Instructions = instructions;
 	}
-
-	public virtual int GetCompoundPoint(int i) => Components[i].compoundPoint;
-	public virtual int GetComponentPoint(int i) => Components[i].componentPoint;
-	public virtual bool ArgsAreWords(int i) => ((this[i] & CompoundGlyfFlags.ARG_1_AND_2_ARE_WORDS) != 0);
-	public virtual bool ArgsAreXYValues(int i) => ((this[i] & CompoundGlyfFlags.ARGS_ARE_XY_VALUES) != 0);
-	public virtual bool RoundXYToGrid(int i) => ((this[i] & CompoundGlyfFlags.ROUND_XY_TO_GRID) != 0);
-	public virtual bool HasAScale(int i) => ((this[i] & CompoundGlyfFlags.WE_HAVE_A_SCALE) != 0);
-	protected internal virtual bool MoreComponents(int i) => ((this[i] & CompoundGlyfFlags.MORE_COMPONENTS) != 0);
-	protected internal virtual bool HasXYScale(int i) => ((this[i] & CompoundGlyfFlags.WE_HAVE_AN_X_AND_Y_SCALE) != 0);
-	protected internal virtual bool HasTwoByTwo(int i) => ((this[i] & CompoundGlyfFlags.WE_HAVE_A_TWO_BY_TWO) != 0);
-	protected internal virtual bool HasInstructions(int i) => ((this[i] & CompoundGlyfFlags.WE_HAVE_INSTRUCTIONS) != 0);
-	public virtual bool UseMetrics(int i) => ((this[i] & CompoundGlyfFlags.USE_MY_METRICS) != 0);
-	public virtual bool OverlapCompound(int i) => ((this[i] & CompoundGlyfFlags.OVERLAP_COMPOUND) != 0);
-	public virtual short NumInstructions => (short)Instructions.Length;
-	public virtual byte GetInstruction(int i) => Instructions[i];
 }
 

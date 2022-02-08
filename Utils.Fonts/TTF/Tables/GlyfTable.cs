@@ -21,8 +21,6 @@ public class GlyfTable : TrueTypeTable
 	private LocaTable loca;
 	private MaxpTable maxp;
 
-	public virtual Glyph.GlyphBase GetGlyph(int i) => glyphs[i];
-
 	protected internal GlyfTable() : base(TrueTypeTableTypes.glyf) { }
 
 	public override TrueTypeFont TrueTypeFont
@@ -39,6 +37,8 @@ public class GlyfTable : TrueTypeTable
 	}
 
 	public override int Length => glyphs.Sum(g => g.Length);
+
+	public virtual Glyph.GlyphBase GetGlyph(int i) => glyphs[i];
 
 	public override void WriteData(Writer data)
 	{
@@ -65,7 +65,7 @@ public class GlyfTable : TrueTypeTable
 	{
 		StringBuilder val = new StringBuilder();
 		val.AppendLine($"    Glyf Table: ({glyphs.Length} glyphs)");
-		val.AppendLine($"      Glyf 0: {(object)GetGlyph(0)}");
+		val.AppendLine($"      Glyf 0: {GetGlyph(0)}");
 		return val.ToString();
 	}
 }
