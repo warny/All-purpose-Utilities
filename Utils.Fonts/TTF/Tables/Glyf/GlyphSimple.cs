@@ -8,16 +8,18 @@ using Utils.Mathematics;
 
 namespace Utils.Fonts.TTF.Tables.Glyph;
 
-public class GlyphSimple : GlyphBase
+public abstract class GlyphSimple : GlyphBase
 {
+	private (float X, float Y, bool onCurve)[][] contours;
+
 	protected internal byte[] Instructions { get; set; }
 
 	protected internal GlyphSimple() { }
 
 	public override bool IsCompound => false;
-	public virtual short PointsCount => (short)Contours.Sum(c=>c.Length);
+	public virtual short PointsCount => (short)Contours.Sum(c => c.Length);
 
-	public virtual (short X, short Y, bool onCurve)[][] Contours { get; private set; }
+	public override (float X, float Y, bool onCurve)[][] Contours { get => contours; }
 
 	public virtual byte GetInstruction(int i) => Instructions[i];
 
@@ -29,10 +31,10 @@ public class GlyphSimple : GlyphBase
 		return GetFlags(points);
 	}
 
-	private IEnumerable<OutLineFlags> GetFlags((short X, short Y, bool onCurve)[] points) 
+	private IEnumerable<OutLineFlags> GetFlags((float X, float Y, bool onCurve)[] points)
 	{
 		(short? X, short? Y, bool onCurve) lastPoint = (null, null, false);
-		foreach (var point in points)
+		foreach (var point in points.Select(p => (X: (float)p.X, Y: (float)p.Y, p.onCurve)))
 		{
 			OutLineFlags flag = OutLineFlags.None;
 			if (point.X == lastPoint.X)
@@ -72,7 +74,7 @@ public class GlyphSimple : GlyphBase
 
 	public override void ReadData(Reader data)
 	{
-		var contourEndPoints = data.ReadArray<short>(NumContours, true).Select (nc=>nc + 1).ToArray();
+		var contourEndPoints = data.ReadArray<short>(NumContours, true).Select(nc => nc + 1).ToArray();
 		int numPoints = contourEndPoints[contourEndPoints.Length - 1];
 
 		int length = data.ReadInt16(true);
@@ -93,7 +95,7 @@ public class GlyphSimple : GlyphBase
 			}
 		}
 
-		short[] coords (OutLineFlags isByte, OutLineFlags isSame ) 
+		short[] coords(OutLineFlags isByte, OutLineFlags isSame)
 		{
 			short[] result = new short[numPoints];
 			for (int i = 0; i < numPoints; i++)
@@ -123,9 +125,9 @@ public class GlyphSimple : GlyphBase
 		var xCoords = coords(OutLineFlags.XIsByte, OutLineFlags.XIsSame);
 		var yCoords = coords(OutLineFlags.YIsByte, OutLineFlags.YIsSame);
 
-		var points = CollectionUtils.Zip(xCoords, yCoords, flags, (x,y,flag) => (x, y, flag.HasFlag(OutLineFlags.OnCurve)));
+		var points = CollectionUtils.Zip(xCoords, yCoords, flags, (x, y, flag) => ((float)x, (float)y, flag.HasFlag(OutLineFlags.OnCurve)));
 
-		Contours = CollectionUtils.Slice(points, contourEndPoints).Select(p=>p.ToArray()).ToArray();
+		contours = CollectionUtils.Slice(points, contourEndPoints).Select(p => p.ToArray()).ToArray();
 	}
 
 	public override void WriteData(Writer data)
@@ -162,7 +164,7 @@ public class GlyphSimple : GlyphBase
 			}
 		}
 
-		void Write(OutLineFlags isByte, OutLineFlags isSame, Func<(short X, short Y, bool OnCurve), short> getValue)
+		void Write(OutLineFlags isByte, OutLineFlags isSame, Func<(float X, float Y, bool OnCurve), short> getValue)
 		{
 			for (int i = 0; i < PointsCount; i++)
 			{
@@ -186,8 +188,8 @@ public class GlyphSimple : GlyphBase
 			}
 		}
 
-		Write(OutLineFlags.XIsByte, OutLineFlags.XIsSame, p => p.X);
-		Write(OutLineFlags.YIsByte, OutLineFlags.YIsSame, p => p.Y);
+		Write(OutLineFlags.XIsByte, OutLineFlags.XIsSame, p => (short)p.X);
+		Write(OutLineFlags.YIsByte, OutLineFlags.YIsSame, p => (short)p.Y);
 	}
 
 	public override short Length
@@ -210,63 +212,6 @@ public class GlyphSimple : GlyphBase
 				else if ((flag & OutLineFlags.YIsSame) == 0) { length += 2; }
 			}
 			return (short)length;
-		}
-	}
-
-	public override void Render(IGraphicConverter graphic)
-	{
-		(short X, short Y, bool onCurve) MidPoint((short X, short Y, bool onCurve) p1, (short X, short Y, bool onCurve) p2)
-			=> ((short)((p1.X + p2.X) / 2), (short)((p1.Y + p2.Y) / 2), true);
-
-		foreach (var points in Contours)
-		{
-			var lastPoint = points[0];
-			var lastCurvePoint = lastPoint;
-			graphic.StartAt(lastPoint.X, lastPoint.Y);
-			for (int i = 1; i < points.Length; i++)
-			{
-				var point = points[i];
-				if (point.onCurve)
-				{
-					if (lastPoint == lastCurvePoint)
-					{
-						graphic.LineTo(point.X, point.Y);
-					}
-					else
-					{
-						graphic.BezierTo(
-							(lastPoint.X, lastPoint.Y),
-							(point.X, point.Y)
-						);
-
-					}
-
-					lastPoint = point;
-					lastCurvePoint = point;
-				}
-				else
-				{
-					if (!lastPoint.onCurve)
-					{
-						var newCurvePoint = MidPoint(lastPoint, point);
-						graphic.BezierTo(
-							(point.X, point.Y),
-							(newCurvePoint.X, newCurvePoint.Y)
-						);
-						lastCurvePoint = newCurvePoint;
-					}
-
-					lastPoint = point;
-				}
-			}
-			//close the curve
-			if (lastPoint.onCurve) {
-				graphic.LineTo(points[0].X, points[0].Y);
-			} else {
-				graphic.BezierTo(
-					(lastPoint.X, lastPoint.Y),
-					(points[0].X, points[0].Y));
-			}
 		}
 	}
 }
