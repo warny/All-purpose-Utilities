@@ -136,7 +136,7 @@ public class GlyphCompound : GlyphBase
 		Instructions = instructions;
 	}
 
-	public override (float X, float Y, bool onCurve)[][] Contours
+	public override IEnumerable<IEnumerable<(float X, float Y, bool onCurve)>> Contours
 	{
 		get
 		{
@@ -144,9 +144,9 @@ public class GlyphCompound : GlyphBase
 				component=>
 				{
 					var glyph = GlyfTable.GetGlyph(component.GlyphIndex);
-					return glyph.Contours.Select(cs => cs.Select(c => component.Transform(c)).ToArray());
+					return glyph.Contours.Select(cs => cs.Select(c => component.Transform(c)));
 				}
-			).ToArray();
+			);
 		}
 	}
 }

@@ -10,16 +10,16 @@ namespace Utils.Fonts.TTF.Tables.Glyph;
 
 public abstract class GlyphSimple : GlyphBase
 {
-	private (float X, float Y, bool onCurve)[][] contours;
+	private (short X, short Y, bool onCurve)[][] contours;
 
 	protected internal byte[] Instructions { get; set; }
 
 	protected internal GlyphSimple() { }
 
 	public override bool IsCompound => false;
-	public virtual short PointsCount => (short)Contours.Sum(c => c.Length);
+	public virtual short PointsCount => (short)contours.Sum(c => c.Length);
 
-	public override (float X, float Y, bool onCurve)[][] Contours { get => contours; }
+	public override IEnumerable<IEnumerable<(float X, float Y, bool onCurve)>> Contours => contours.Select(c=>c.Select(p => ((float)p.X, (float)p.Y, p.onCurve)));
 
 	public virtual byte GetInstruction(int i) => Instructions[i];
 
@@ -125,7 +125,7 @@ public abstract class GlyphSimple : GlyphBase
 		var xCoords = coords(OutLineFlags.XIsByte, OutLineFlags.XIsSame);
 		var yCoords = coords(OutLineFlags.YIsByte, OutLineFlags.YIsSame);
 
-		var points = CollectionUtils.Zip(xCoords, yCoords, flags, (x, y, flag) => ((float)x, (float)y, flag.HasFlag(OutLineFlags.OnCurve)));
+		var points = CollectionUtils.Zip(xCoords, yCoords, flags, (x, y, flag) => (x, y, flag.HasFlag(OutLineFlags.OnCurve)));
 
 		contours = CollectionUtils.Slice(points, contourEndPoints).Select(p => p.ToArray()).ToArray();
 	}
@@ -139,7 +139,7 @@ public abstract class GlyphSimple : GlyphBase
 		base.WriteData(data);
 		for (int i = 0; i < NumContours; i++)
 		{
-			data.WriteInt16((short)Contours[i].Length, true);
+			data.WriteInt16((short)contours[i].Length, true);
 		}
 		data.WriteInt16(InstructionsCount, true);
 		for (int i = 0; i < InstructionsCount; i++)

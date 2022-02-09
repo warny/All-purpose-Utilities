@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Utils.IO.Serialization;
@@ -14,7 +15,7 @@ public class GlyphBase
 	public short MinY { get; set; }
 	public short MaxX { get; set; }
 	public short MaxY { get; set; }
-	public virtual (float X, float Y, bool onCurve)[][] Contours { get; }
+	public virtual IEnumerable<IEnumerable<(float X, float Y, bool onCurve)>> Contours { get; }
 
 	protected internal GlyphBase() { }
 
@@ -71,12 +72,16 @@ public class GlyphBase
 
 		foreach (var points in Contours)
 		{
-			var lastPoint = points[0];
+			var pointsEnumerator = points.GetEnumerator();
+			if (!pointsEnumerator.MoveNext()) continue;
+			var firstPoint = pointsEnumerator.Current;
+			var lastPoint = pointsEnumerator.Current;
 			var lastCurvePoint = lastPoint;
 			graphic.StartAt(lastPoint.X, lastPoint.Y);
-			for (int i = 1; i < points.Length; i++)
+
+			while (pointsEnumerator.MoveNext())
 			{
-				var point = points[i];
+				var point = pointsEnumerator.Current;
 				if (point.onCurve)
 				{
 					if (lastPoint == lastCurvePoint)
@@ -113,13 +118,13 @@ public class GlyphBase
 			//close the curve
 			if (lastPoint.onCurve)
 			{
-				graphic.LineTo(points[0].X, points[0].Y);
+				graphic.LineTo(firstPoint.X, firstPoint.Y);
 			}
 			else
 			{
 				graphic.BezierTo(
 					(lastPoint.X, lastPoint.Y),
-					(points[0].X, points[0].Y));
+					(firstPoint.X, firstPoint.Y));
 			}
 		}
 	}
