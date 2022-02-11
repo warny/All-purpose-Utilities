@@ -1,6 +1,10 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Utils.IO.Serialization;
+using Utils.Objects;
 
 namespace Utils.Fonts.TTF.Tables;
 
@@ -12,11 +16,15 @@ namespace Utils.Fonts.TTF.Tables;
 /// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6loca.html"/>
 [TTFTable(TrueTypeTableTypes.Tags.loca,
 		TrueTypeTableTypes.Tags.head, TrueTypeTableTypes.Tags.maxp)]
-public class LocaTable : TrueTypeTable
+public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
 {
+	private HeadTable headTable;
+	private MaxpTable maxpTable;
 
 	private int[] offsets;
-	public virtual bool IsLongFormat { get; private set; }
+	public int GlyphCount => maxpTable.NumGlyphs;
+
+	public virtual bool IsLongFormat => headTable.IndexToLocFormat == 1;
 
 	protected internal LocaTable() : base(TrueTypeTableTypes.loca) { }
 
@@ -26,16 +34,20 @@ public class LocaTable : TrueTypeTable
 		protected internal set
 		{
 			base.TrueTypeFont = value;
-			HeadTable headTable = value.GetTable<HeadTable>(TrueTypeTableTypes.head);
-			MaxpTable maxpTable = value.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
-			IsLongFormat = headTable.IndexToLocFormat == 1;
-			offsets = new int[maxpTable.NumGlyphs + 1];
+			headTable = value.GetTable<HeadTable>(TrueTypeTableTypes.head);
+			maxpTable = value.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
 		}
 	}
 
-	public virtual int GetOffset(int i) => offsets[i];
-	public virtual int GetSize(int i) => offsets[i + 1] - offsets[i];
-
+	public (int offset, int size) this[int index]
+	{
+		get
+		{
+			index.ArgMustBeLesserThan(GlyphCount);
+			return (offsets[index], offsets[index + 1] - offsets[index]);
+		}
+	}
+		
 	public override int Length
 	{
 		get
@@ -71,18 +83,27 @@ public class LocaTable : TrueTypeTable
 	{
 		if (IsLongFormat)
 		{
-			for (int i = 0; i < offsets.Length; i++)
-			{
-				offsets[i] = data.ReadInt32(true);
-			}
+			offsets = data.ReadArray<int>(GlyphCount + 1, true);
 		}
 		else
 		{
-			for (int i = 0; i < offsets.Length; i++)
-			{
-				offsets[i] = data.ReadInt16(true) << 1;
-			}
+			var temp = data.ReadArray<short>(GlyphCount + 1, true);
+			offsets = temp.Select(o => o << 1).ToArray();
 		}
 	}
+
+	public IEnumerator<LocaRecord> GetEnumerator()
+	{
+		IEnumerable<LocaRecord> enumerate ()
+		{
+			for (int i = 0; i < offsets.Length - 1; i++)
+			{
+				yield return new LocaRecord(i, offsets[i], offsets[i + 1] - offsets[i]);
+			}
+		}
+		return enumerate().GetEnumerator();
+	}
+
+	IEnumerator IEnumerable.GetEnumerator()	=> GetEnumerator();
 }
 

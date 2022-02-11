@@ -39,10 +39,10 @@ public class GlyphCompound : GlyphBase
 			}
 		}
 
-		public (float x, float y, bool onCurve) Transform((float x, float y, bool onCurve) point) => Transform(point.x, point.y, point.onCurve);
+		public TTFPoint Transform(TTFPoint point) => Transform(point.X, point.Y, point.OnCurve);
 
-		public (float x, float y, bool onCurve) Transform(float x, float y, bool onCurve)
-			=> (
+		public TTFPoint Transform(float x, float y, bool onCurve)
+			=> new TTFPoint(
 				a * x + c * y + m * e,
 				b * x + d * y + n * f,
 				onCurve
@@ -114,7 +114,6 @@ public class GlyphCompound : GlyphBase
 			{
 				hasInstructions = true;
 			}
-			current.ComputeTransform();
 			comps.Add(current);
 		}
 		while ((current.flags & CompoundGlyfFlags.MORE_COMPONENTS) != 0);
@@ -122,12 +121,8 @@ public class GlyphCompound : GlyphBase
 		byte[] instructions;
 		if (hasInstructions)
 		{
-			int instructionsCount = data.ReadInt16(true);
-			instructions = new byte[instructionsCount];
-			for (int i = 0; i < instructionsCount; i++)
-			{
-				instructions[i] = data.ReadByte();
-			}
+			int instructionsCount = data.ReadUInt16(true);
+			instructions = data.ReadBytes(instructionsCount);
 		}
 		else
 		{
@@ -136,15 +131,16 @@ public class GlyphCompound : GlyphBase
 		Instructions = instructions;
 	}
 
-	public override IEnumerable<IEnumerable<(float X, float Y, bool onCurve)>> Contours
+	public override IEnumerable<IEnumerable<TTFPoint>> Contours
 	{
 		get
 		{
 			return Components.SelectMany(
 				component=>
 				{
+					component.ComputeTransform();
 					var glyph = GlyfTable.GetGlyph(component.GlyphIndex);
-					return glyph.Contours.Select(cs => cs.Select(c => component.Transform(c)));
+					return glyph?.Contours.Select(cs => cs.Select(c => component.Transform(c))) ?? Enumerable.Empty<IEnumerable<TTFPoint>>();
 				}
 			);
 		}

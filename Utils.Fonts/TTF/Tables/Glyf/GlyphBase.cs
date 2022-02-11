@@ -15,7 +15,7 @@ public class GlyphBase
 	public short MinY { get; set; }
 	public short MaxX { get; set; }
 	public short MaxY { get; set; }
-	public virtual IEnumerable<IEnumerable<(float X, float Y, bool onCurve)>> Contours { get; }
+	public virtual IEnumerable<IEnumerable<TTFPoint>> Contours { get; }
 
 	protected internal GlyphBase() { }
 
@@ -27,7 +27,7 @@ public class GlyphBase
 	{
 		short numContours = data.ReadInt16(true);
 		GlyphBase glyf;
-		if (numContours == 0)
+		if (numContours >= 0)
 		{
 			glyf = new GlyphBase();
 		}
@@ -39,11 +39,10 @@ public class GlyphBase
 		{
 			string text = $"Unknown glyf type: {numContours}";
 			throw new ArgumentException(text);
-
 		}
 		else
 		{
-			throw new NotSupportedException();
+			return null;
 		}
 		glyf.GlyfTable = glyfTable;
 		glyf.NumContours = numContours;
@@ -67,9 +66,6 @@ public class GlyphBase
 	}
 
 	public void Render(IGraphicConverter graphic) {
-		(float X, float Y, bool onCurve) MidPoint((float X, float Y, bool onCurve) p1, (float X, float Y, bool onCurve) p2)
-		=> ((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, true);
-
 		foreach (var points in Contours)
 		{
 			var pointsEnumerator = points.GetEnumerator();
@@ -82,7 +78,7 @@ public class GlyphBase
 			while (pointsEnumerator.MoveNext())
 			{
 				var point = pointsEnumerator.Current;
-				if (point.onCurve)
+				if (point.OnCurve)
 				{
 					if (lastPoint == lastCurvePoint)
 					{
@@ -102,9 +98,9 @@ public class GlyphBase
 				}
 				else
 				{
-					if (!lastPoint.onCurve)
+					if (!lastPoint.OnCurve)
 					{
-						var newCurvePoint = MidPoint(lastPoint, point);
+						var newCurvePoint = TTFPoint.MidPoint(lastPoint, point);
 						graphic.BezierTo(
 							(point.X, point.Y),
 							(newCurvePoint.X, newCurvePoint.Y)
@@ -116,7 +112,7 @@ public class GlyphBase
 				}
 			}
 			//close the curve
-			if (lastPoint.onCurve)
+			if (lastPoint.OnCurve)
 			{
 				graphic.LineTo(firstPoint.X, firstPoint.Y);
 			}

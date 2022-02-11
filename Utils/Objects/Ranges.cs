@@ -21,7 +21,7 @@ namespace Utils.Objects
 
 		protected static IEnumerable<Range<T>> InnerParse<T>(string range, string itemSearchPattern, Func<string, T> valueParser) where T : IComparable<T>
 		{
-			Regex parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*-\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
+			var parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*-\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
 			var results = parse.Matches(range);
 
 			var res = new SingleRanges();

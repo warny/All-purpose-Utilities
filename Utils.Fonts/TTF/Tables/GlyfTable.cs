@@ -13,7 +13,7 @@ namespace Utils.Fonts.TTF.Tables;
 /// that is, glyphs that are made up of other glyphs.
 /// </summary>
 /// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6glyf.html"/>
-[TTFTable(TrueTypeTableTypes.Tags.glyf, 
+[TTFTable(TrueTypeTableTypes.Tags.glyf,
 	TrueTypeTableTypes.Tags.loca, TrueTypeTableTypes.Tags.maxp)]
 public class GlyfTable : TrueTypeTable
 {
@@ -31,8 +31,6 @@ public class GlyfTable : TrueTypeTable
 			base.TrueTypeFont = value;
 			loca = TrueTypeFont.GetTable<LocaTable>(TrueTypeTableTypes.loca);
 			maxp = TrueTypeFont.GetTable<MaxpTable>(TrueTypeTableTypes.maxp);
-			int numGlyphs = maxp.NumGlyphs;
-			glyphs = new Glyph.GlyphBase[numGlyphs];
 		}
 	}
 
@@ -50,15 +48,12 @@ public class GlyfTable : TrueTypeTable
 
 	public override void ReadData(Reader data)
 	{
-		for (int i = 0; i < glyphs.Length; i++)
-		{
-			int offset = loca.GetOffset(i);
-			int size = loca.GetSize(i);
+		glyphs = new Glyph.GlyphBase[maxp.NumGlyphs];
+		foreach ((int index, int offset, int size) in loca)
 			if (size != 0)
 			{
-				glyphs[i] = Glyph.GlyphBase.CreateGlyf(data.Slice(offset, size), this);
+				glyphs[index] = Glyph.GlyphBase.CreateGlyf(data.Slice(offset, size), this);
 			}
-		}
 	}
 
 	public override string ToString()

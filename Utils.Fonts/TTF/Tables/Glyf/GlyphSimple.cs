@@ -19,7 +19,7 @@ public abstract class GlyphSimple : GlyphBase
 	public override bool IsCompound => false;
 	public virtual short PointsCount => (short)contours.Sum(c => c.Length);
 
-	public override IEnumerable<IEnumerable<(float X, float Y, bool onCurve)>> Contours => contours.Select(c=>c.Select(p => ((float)p.X, (float)p.Y, p.onCurve)));
+	public override IEnumerable<IEnumerable<TTFPoint>> Contours => contours.Select(c=>c.Select(p => new TTFPoint(p.X, p.Y, p.onCurve)));
 
 	public virtual byte GetInstruction(int i) => Instructions[i];
 
@@ -27,11 +27,11 @@ public abstract class GlyphSimple : GlyphBase
 
 	private IEnumerable<OutLineFlags> GetFlags()
 	{
-		var points = CollectionUtils.Flatten(Contours).ToArray();
+		var points = CollectionUtils.Flatten(contours).ToArray();
 		return GetFlags(points);
 	}
 
-	private IEnumerable<OutLineFlags> GetFlags((float X, float Y, bool onCurve)[] points)
+	private IEnumerable<OutLineFlags> GetFlags((short X, short Y, bool onCurve)[] points)
 	{
 		(short? X, short? Y, bool onCurve) lastPoint = (null, null, false);
 		foreach (var point in points.Select(p => (X: (float)p.X, Y: (float)p.Y, p.onCurve)))
@@ -132,7 +132,7 @@ public abstract class GlyphSimple : GlyphBase
 
 	public override void WriteData(Writer data)
 	{
-		var points = CollectionUtils.Flatten(Contours).ToArray();
+		var points = CollectionUtils.Flatten(contours).ToArray();
 		var flags = GetFlags(points).ToArray();
 		var compactFlags = CollectionUtils.Pack(flags);
 
