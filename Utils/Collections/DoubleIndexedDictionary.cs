@@ -38,8 +38,8 @@ namespace Utils.Collections
 
 		public ICollection<T1> Keys => dictionary1.Keys;
 		public ICollection<T2> Values => dictionary2.Keys;
-		public int Count { get; }
-		public bool IsReadOnly { get; }
+		public int Count => dictionary1.Count;
+		public bool IsReadOnly => false;
 
 		public void Add(T1 key, T2 value)
 		{
@@ -70,25 +70,9 @@ namespace Utils.Collections
 		public bool ContainsKey(T1 key) => dictionary1.ContainsKey(key);
 		public bool ContainsKey(T2 key) => dictionary2.ContainsKey(key);
 
-		public void CopyTo(KeyValuePair<T1, T2>[] array, int arrayIndex)
-		{
-			foreach (var item in dictionary1)
-			{
-				if (array.Length >= arrayIndex) return;
-				array[arrayIndex] = item;
-				arrayIndex++;
-			}
-		}
+		public void CopyTo(KeyValuePair<T1, T2>[] array, int arrayIndex) => ((IDictionary<T1, T2>)dictionary1).CopyTo(array, arrayIndex);
 
-		public void CopyTo(KeyValuePair<T2, T1>[] array, int arrayIndex)
-		{
-			foreach (var item in dictionary2)
-			{
-				if (array.Length >= arrayIndex) return;
-				array[arrayIndex] = item;
-				arrayIndex++;
-			}
-		}
+		public void CopyTo(KeyValuePair<T2, T1>[] array, int arrayIndex) => ((IDictionary<T2, T1>)dictionary2).CopyTo(array, arrayIndex);
 
 		public bool Remove(T1 key)
 		{
