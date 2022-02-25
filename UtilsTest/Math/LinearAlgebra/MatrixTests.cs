@@ -12,54 +12,6 @@ namespace UtilsTest.Math.LinearAlgebra
 	[TestClass]
 	public class MatrixTests
 	{
-
-		[TestMethod]
-		public void MultiplyMatrixTest2()
-		{
-			Random r = new Random();
-			var m1 = new Matrix(new double[,] {
-				{ 1, 2 },
-				{ 3, 4 },
-			});
-
-			var v2 = new Vector( 5, 7 );
-
-			var result1 = new Vector( 19, 43 );
-
-			var mResult1 = m1 * v2;
-
-			Assert.AreEqual(result1, mResult1);
-
-		}
-
-		[TestMethod]
-		public void MultiplyMatrixTest3()
-		{
-			Random r = new Random();
-			double[,] m1values = new double[,] {
-					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
-					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
-					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
-				};
-
-			double[,] m2values = new double[,] {
-					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
-					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) },
-					{ r.Next (0,100), r.Next (0,100), r.Next (0,100) }
-				};
-
-			var m1 = new Matrix(m1values);
-			var m2 = new Matrix(m2values);
-
-			var vectors = m2.ToVectors();
-
-			var mResult = m1 * m2;
-			var vResult = vectors.Select(v => m1 * v).ToArray();
-
-			Assert.IsTrue(mResult == vResult);
-
-		}
-
 		/*
 		[TestMethod]
 		public void TransformMatrixTests()
