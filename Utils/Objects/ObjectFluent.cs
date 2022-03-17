@@ -14,32 +14,15 @@ namespace Utils.Objects
 		public static FluentResult<T> Test<T>(this T value, Func<T, bool> test) => new FluentResult<T>(value, test(value));
 
 		public static FluentResult<T> IsEqualTo<T, CT>(this T value, CT comparisonValue)
-		{
-			if (value is IEquatable<CT> equatable) 
-				return new FluentResult<T>(value, equatable.Equals(comparisonValue));
-			if (value is IComparable<CT> gcomparable)
-			    return new FluentResult<T>(value, gcomparable.CompareTo(comparisonValue) == 0);
-			if (value is IComparable comparable)
-				return new FluentResult<T>(value, comparable.CompareTo(comparisonValue) == 0);
-			return new FluentResult<T>(value, value.Equals(comparisonValue)); ;
-		}
-
-		public static FluentResult<T> IsLowerThan<T>(this T value, object comparisonValue) where T : IComparable
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) < 0);
-		public static FluentResult<T> IsLowerThan<T, CT>(this T value, CT comparisonValue) where T : IComparable<CT>
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) < 0);
-		public static FluentResult<T> IsLowerOrEqualsThan<T>(this T value, object comparisonValue) where T : IComparable
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) <= 0);
-		public static FluentResult<T> IsLowerOrEqualsThan<T, CT>(this T value, CT comparisonValue) where T : IComparable<CT>
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) <= 0);
-		public static FluentResult<T> IsGreaterThan<T>(this T value, object comparisonValue) where T : IComparable
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) > 0);
-		public static FluentResult<T> IsGreaterThan<T, CT>(this T value, CT comparisonValue) where T : IComparable<CT>
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) > 0);
-		public static FluentResult<T> IsGreaterOrEqualsThan<T>(this T value, object comparisonValue) where T : IComparable
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) >= 0);
-		public static FluentResult<T> IsGreaterOrEqualsThan<T, CT>(this T value, CT comparisonValue) where T : IComparable<CT>
-			=> new FluentResult<T>(value, value.CompareTo(comparisonValue) >= 0);
+			=> new FluentResult<T>(value).IsEqualTo(comparisonValue);
+		public static FluentResult<T> IsLowerThan<T, CT>(this T value, CT comparisonValue) 
+			=> new FluentResult<T>(value).IsLowerThan(comparisonValue);
+		public static FluentResult<T> IsLowerOrEqualsThan<T, CT>(this T value, CT comparisonValue) 
+			=> new FluentResult<T>(value).IsLowerOrEqualsThan(comparisonValue);
+		public static FluentResult<T> IsGreaterThan<T, CT>(this T value, CT comparisonValue)
+			=> new FluentResult<T>(value).IsGreaterThan(comparisonValue);
+		public static FluentResult<T> IsGreaterOrEqualsThan<T, CT>(this T value, CT comparisonValue)
+			=> new FluentResult<T>(value).IsGreaterOrEqualsThan(comparisonValue);
 
 		public static string NullOrEmptyIsNull(this string value) => value.IsNullOrEmpty() ? null : value;
 		public static FluentResult<string> NullOrEmptyIsNull(this FluentResult<string> value) => new FluentResult<string>(value.Value.IsNullOrEmpty() ? null : value.Value, value.Success);
