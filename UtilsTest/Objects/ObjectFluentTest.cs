@@ -23,7 +23,7 @@ namespace UtilsTest.Objects
 			foreach (var test in tests)
 			{
 				var result = test.obj.IsNull();
-				Assert.AreEqual(test.expectedResult, result.Success);
+				Assert.AreEqual(test.expectedResult, result.Result);
 				Assert.AreEqual(test.expectedValue, result.Value);
 			}
 
@@ -41,7 +41,7 @@ namespace UtilsTest.Objects
 			foreach (var test in tests)
 			{
 				var result = test.obj.IsNotNull();
-				Assert.AreEqual(test.expectedResult, result.Success);
+				Assert.AreEqual(test.expectedResult, result.Result);
 				Assert.AreEqual(test.expectedValue, result.Value);
 			}
 		}
@@ -94,11 +94,11 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				Assert.AreEqual(test.expectedE, test.obj1.IsEqualTo(test.obj2).Success, $"{test.obj1} == {test.obj2}");
-				Assert.AreEqual(test.expectedG, test.obj1.IsGreaterThan(test.obj2).Success, $"{test.obj1} > {test.obj2}");
-				Assert.AreEqual(test.expectedGT, test.obj1.IsGreaterOrEqualsThan(test.obj2).Success, $"{test.obj1} >= {test.obj2}");
-				Assert.AreEqual(test.expectedL, test.obj1.IsLowerThan(test.obj2).Success, $"{test.obj1} < {test.obj2}");
-				Assert.AreEqual(test.expectedLT, test.obj1.IsLowerOrEqualsThan(test.obj2).Success, $"{test.obj1} <= {test.obj2}");
+				Assert.AreEqual(test.expectedE, test.obj1.IsEqualTo(test.obj2).Result, $"{test.obj1} == {test.obj2}");
+				Assert.AreEqual(test.expectedG, test.obj1.IsGreaterThan(test.obj2).Result, $"{test.obj1} > {test.obj2}");
+				Assert.AreEqual(test.expectedGT, test.obj1.IsGreaterOrEqualsThan(test.obj2).Result, $"{test.obj1} >= {test.obj2}");
+				Assert.AreEqual(test.expectedL, test.obj1.IsLowerThan(test.obj2).Result, $"{test.obj1} < {test.obj2}");
+				Assert.AreEqual(test.expectedLT, test.obj1.IsLowerOrEqualsThan(test.obj2).Result, $"{test.obj1} <= {test.obj2}");
 			}
 
 		}
