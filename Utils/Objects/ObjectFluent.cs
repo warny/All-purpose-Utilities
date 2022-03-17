@@ -118,6 +118,7 @@ namespace Utils.Objects
 		}
 
 		public T Then(Func<FluentResult<T>, T> func) => func(this);
+		public T Then(Func<T, T> @true, Func<T, T> @false) => Success ? @true(Value) : @false(Value);
 
 		public static implicit operator T (FluentResult<T> value) => value.Value;
 	}
