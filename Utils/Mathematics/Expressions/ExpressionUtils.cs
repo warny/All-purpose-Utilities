@@ -10,14 +10,21 @@ namespace Utils.Mathematics.Expressions
 {
 	public static class ExpressionUtils
 	{
-		public static bool CheckConstant( Expression expressionToCheck, double checkValue )
+		public static bool CheckConstant<T>( Expression expressionToCheck, T checkValue )
 		{
-			ConstantExpression expression = expressionToCheck as ConstantExpression;
-			if (expression == null) return false;
+			if (!(expressionToCheck is ConstantExpression expression))
+			{
+				return false;
+			}
 			var value = expression.Value;
 
-			if (NumberUtils.IsNumeric(value)) {
-				return ((double)value) == checkValue;
+			if (value is T val)
+			{
+				return val.Equals(checkValue);
+			}
+
+			if (NumberUtils.IsNumeric(value) && NumberUtils.IsNumeric(checkValue)) {
+				return ((double)value) == ((double)(object)checkValue);
 			}
 			return false;
 		}
