@@ -70,6 +70,40 @@ namespace Utils.Collections
         }
 
         /// <summary>
+        /// Indicate if <paramref name="enumerable"/> has more than 1 element
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool HasManyElements<T>(this IEnumerable<T> enumerable)
+            => HasAtLeastElements(enumerable, 2);
+
+        /// <summary>
+        /// Indicate if <paramref name="enumerable"/> have at least <paramref name="count"/> elements
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool HasAtLeastElements<T>(this IEnumerable<T> enumerable, int count)
+        {
+            _ = enumerable ?? throw new ArgumentNullException(nameof(enumerable));
+            if (enumerable is ICollection<T> collection)
+            {
+                return collection.Count >= count;
+            }
+            var enumerator = enumerable.GetEnumerator();
+			for (int i = 0; i < count; i++)
+			{
+                if (!enumerator.MoveNext()) return false;
+            }
+            return true;
+        }
+
+
+        /// <summary>
         /// Enumerate <paramref name="enumerable"/> then <paramref name="elements"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
