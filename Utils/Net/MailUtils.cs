@@ -215,11 +215,11 @@ namespace Utils.Net
 		/// Envoi le fichier en tant que fichier joint
 		/// </summary>
 		/// <param name="mailMessage">Message</param>
-		/// <param name="file">Fichier à envoyer en pièce jointe</param>
+		/// <param name="fileName">Fichier à envoyer en pièce jointe</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string file)
+		public static MailMessage Attachment(this MailMessage mailMessage, string fileName)
 		{
-			mailMessage.Attachments.Add(new Attachment(file));
+			mailMessage.Attachments.Add(new Attachment(fileName));
 			return mailMessage;
 		}
 
