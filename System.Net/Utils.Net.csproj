@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-	  <LangVersion>10.0</LangVersion>
+	  <LangVersion>preview</LangVersion>
     <AssemblyName>Utils.Net</AssemblyName>
     <RootNamespace>Utils</RootNamespace>
   </PropertyGroup>
