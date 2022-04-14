@@ -20,7 +20,7 @@ namespace Utils.Net
 		/// <param name="mailAddress">Chaîne décrivant une adresse de la forme "boite@domaine.com" ou "boite@domaine.com &lt;Nom du recipiendaire&qt;"</param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentException"></exception>
-		public static MailAddress ParseMailAddress(string mailAddress)
+		public static MailAddress ParseMailAddress(string mailAddress!!)
 		{
 			var m = mailAddressParser.Match(mailAddress);
 			if (!m.Success) throw new ArgumentException($"{mailAddress} n'est pas une adresse valide", nameof(mailAddress));
@@ -33,7 +33,7 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="mailAddresses"></param>
 		/// <returns></returns>
-		public static MailAddress[] ParseMailAddresses(string mailAddresses)
+		public static MailAddress[] ParseMailAddresses(string mailAddresses!!)
 		{
 			return mailAddresses
 				.Split(new[] { ';', ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
@@ -54,7 +54,7 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, IEnumerable<MailAddress> mailAddresses)
+		public static void AddRange(this MailAddressCollection addresses, IEnumerable<MailAddress> mailAddresses!!)
 		{
 			foreach (var mailAddress in mailAddresses)
 			{
@@ -75,7 +75,7 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses)
+		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses!!)
 			=> AddRange(addresses, mailAddresses.Select(ma=>ParseMailAddress(ma)));
 
 		/// <summary>
@@ -83,7 +83,7 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, string mailAddresses)
+		public static void AddRange(this MailAddressCollection addresses, string mailAddresses!!)
 			=> AddRange(addresses, (IEnumerable<MailAddress>)ParseMailAddresses(mailAddresses));
 
 		/// <summary>
@@ -92,7 +92,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage To(this MailMessage mailMessage, string mailAdresses)
+		public static MailMessage To(this MailMessage mailMessage, string mailAdresses!!)
 		{
 			mailMessage.To.AddRange(mailAdresses);
 			return mailMessage;
@@ -112,7 +112,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage To(this MailMessage mailMessage, IEnumerable<string> mailAdresses)
+		public static MailMessage To(this MailMessage mailMessage, IEnumerable<string> mailAdresses!!)
 		{
 			mailMessage.To.AddRange(mailAdresses);
 			return mailMessage;
@@ -124,7 +124,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage CC(this MailMessage mailMessage, string mailAdresses)
+		public static MailMessage CC(this MailMessage mailMessage, string mailAdresses!!)
 		{
 			mailMessage.CC.AddRange(mailAdresses);
 			return mailMessage;
@@ -144,7 +144,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage CC(this MailMessage mailMessage, IEnumerable<string> mailAdresses)
+		public static MailMessage CC(this MailMessage mailMessage, IEnumerable<string> mailAdresses!!)
 		{
 			mailMessage.CC.AddRange(mailAdresses);
 			return mailMessage;
@@ -156,7 +156,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, string mailAdresses)
+		public static MailMessage BCC(this MailMessage mailMessage, string mailAdresses!!)
 		{
 			mailMessage.Bcc.AddRange(mailAdresses);
 			return mailMessage;
@@ -176,7 +176,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, IEnumerable<string> mailAdresses)
+		public static MailMessage BCC(this MailMessage mailMessage, IEnumerable<string> mailAdresses!!)
 		{
 			mailMessage.Bcc.AddRange(mailAdresses);
 			return mailMessage;
@@ -189,7 +189,7 @@ namespace Utils.Net
 		/// <param name="body">Sujet du message</param>
 		/// <param name="encoding">Encodage du sujet (par défaut <see cref="Encoding.UTF8"/>)</param>
 		/// <returns></returns>
-		public static MailMessage Subject(this MailMessage mailMessage, string subject, Encoding encoding = null)
+		public static MailMessage Subject(this MailMessage mailMessage, string subject!!, Encoding encoding = null)
 		{
 			mailMessage.Subject = subject;
 			mailMessage.SubjectEncoding = encoding ?? Encoding.UTF8;
@@ -203,7 +203,7 @@ namespace Utils.Net
 		/// <param name="body">Corps de message</param>
 		/// <param name="encoding">Encodage du corps (par défaut <see cref="Encoding.UTF8"/>)</param>
 		/// <returns></returns>
-		public static MailMessage Body(this MailMessage mailMessage, string body, Encoding encoding = null)
+		public static MailMessage Body(this MailMessage mailMessage, string body!!, Encoding encoding = null)
 		{
 			mailMessage.Body = body;
 			mailMessage.BodyEncoding = encoding ?? Encoding.UTF8;
@@ -217,7 +217,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="fileName">Fichier à envoyer en pièce jointe</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string fileName)
+		public static MailMessage Attachment(this MailMessage mailMessage, string fileName!!)
 		{
 			mailMessage.Attachments.Add(new Attachment(fileName));
 			return mailMessage;
@@ -242,7 +242,7 @@ namespace Utils.Net
 		/// <param name="filename">Nom du chier joint</param>
 		/// <param name="contentStream">Contenu du fichier</param>
 		/// <returns></returns>
-		public static MailMessage Attachement(this MailMessage mailMessage, string filename, Stream contentStream)
+		public static MailMessage Attachement(this MailMessage mailMessage, string filename!!, Stream contentStream!!)
 		{
 			mailMessage.Attachments.Add(new Attachment(contentStream, filename));
 			return mailMessage;
@@ -255,7 +255,7 @@ namespace Utils.Net
 		/// <param name="filename">Nom du fichier joint</param>
 		/// <param name="content">Contenu du fichier</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string filename, byte[] content)
+		public static MailMessage Attachment(this MailMessage mailMessage, string filename!!, byte[] content!!)
 		{
 			using (MemoryStream contentStream = new MemoryStream(content)) {
 				contentStream.Position = 0;
@@ -272,7 +272,7 @@ namespace Utils.Net
 		/// <param name="content">Contenu du fichier</param>
 		/// <param name="encoding">Encodage (par défaut <see cref="Encoding.UTF8"/>)</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string filename, string content, Encoding encoding = null)
+		public static MailMessage Attachment(this MailMessage mailMessage, string filename!!, string content!!, Encoding encoding = null)
 		{
 			encoding ??= Encoding.UTF8;
 			using (MemoryStream contentStream = new MemoryStream())

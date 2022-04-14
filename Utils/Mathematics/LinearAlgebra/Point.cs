@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Utils.Mathematics.LinearAlgebra
@@ -9,7 +10,7 @@ namespace Utils.Mathematics.LinearAlgebra
 	/// Un point de dimension n est multipliable par une matrice d'espace normal de dimension n+1
 	/// </remarks>
 	/// </summary>
-	public sealed partial class Point: IEquatable<Point>
+	public sealed partial class Point: IEquatable<Point>, IEquatable<double[]>
 	{
 		/// <summary>
 		/// composantes du vecteur
@@ -33,7 +34,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// constructeur par valeurs
 		/// </summary>
 		/// <param name="components"></param>
-		public Point ( params double[] components )
+		public Point ( params double[] components!! )
 		{
 			this.components = new double[components.Length + 1];
 			Array.Copy(components, this.components,components.Length);
@@ -44,7 +45,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// Constructeur de copie
 		/// </summary>
 		/// <param name="point"></param>
-		public Point ( Point point )
+		public Point ( Point point!! )
 		{
 			this.components = new Double[point.components.Length];
 			Array.Copy(point.components, this.components, point.components.Length); 
@@ -74,23 +75,22 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public override bool Equals ( object obj )
 		{
-			if (obj is Point p) {
-				return Equals(p);
-			} else if (obj is double[] array) {
-				return Equals(array);
-			}
+			if (obj is Point p) return Equals(p);
+			if (obj is double[] array) return Equals(array);
 			return false;
 		}
 
 		public bool Equals ( Point other )
 		{
+			if (other == null) return false;
 			if (Object.ReferenceEquals(this, other)) return true;
-			if (!this.components.Length.Equals(other)) return false;
-
-			for (int i = 0; i < this.components.Length; i++) {
-				if (this.components[i] != other.components[i]) return false;
-			}
+			Arrays.ArrayEqualityComparers.Double.Equals(this.components, other.components);
 			return true;
+		}
+		public bool Equals(double[] other)
+		{
+			if (other == null) return false;
+			return Arrays.ArrayEqualityComparers.Double.Equals(this.components, other);
 		}
 
 		public override int GetHashCode ()
@@ -132,6 +132,5 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 			return new Point(result);
 		}
-
 	}
 }

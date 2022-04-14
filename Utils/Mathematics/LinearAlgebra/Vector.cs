@@ -7,7 +7,7 @@ namespace Utils.Mathematics.LinearAlgebra
 	/// <summary>
 	/// Vecteur
 	/// </summary>
-	public sealed partial class Vector : IEquatable<Vector>
+	public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
 	{
 		/// <summary>
 		/// composantes du vecteur
@@ -88,18 +88,15 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals ( Vector other )
 		{
+			if (other == null) return false;
 			if (ReferenceEquals(this, other)) return true;
 			return Equals(other.components);
 		}
 
-		private bool Equals(double[] other)
+		public bool Equals(double[] other)
 		{
-			if (Dimension != other.Length) return false;
-			for (int i = 0; i < Dimension; i++)
-			{
-				if (components[i] != other[i]) return false;
-			}
-			return true;
+			if (other == null) return false;
+			return Arrays.ArrayEqualityComparers.Double.Equals(this.components, other);
 		}
 
 		public override string ToString() 

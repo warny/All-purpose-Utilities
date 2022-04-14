@@ -19,11 +19,8 @@ namespace Utils.Objects
 
 		private readonly Func<T1, T2, int> compare;
 
-		public ForwardFusion(IEnumerable<T1> leftList, IEnumerable<T2> rightList)
+		public ForwardFusion(IEnumerable<T1> leftList!!, IEnumerable<T2> rightList!!)
 		{
-			this.leftList = leftList ?? throw new ArgumentNullException(nameof(leftList));
-			this.rightList = rightList ?? throw new ArgumentNullException(nameof(rightList));
-
 			if (typeof(IComparable<T2>).IsAssignableFrom(typeof(T1)))
 			{
 				compare = (t1, t2) => ((IComparable<T2>)t1).CompareTo(t2);

@@ -28,7 +28,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			components = new double[dimensionX, dimensionY];
 		}
 
-		private Matrix(double[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, double? determinant)
+		private Matrix(double[,] array!!, bool isIdentity, bool isDiagonalized, bool isTriangularised, double? determinant)
 		{
 			this.components = array;
 			this.isDiagonalized = isDiagonalized;
@@ -37,7 +37,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			this.determinant = determinant;
 		}
 
-		public Matrix ( double[,] array)
+		public Matrix ( double[,] array!!)
 		{
 			components = new double[array.GetLength(0), array.GetLength(1)];
 			Array.Copy(array, this.components, array.Length);
@@ -48,7 +48,7 @@ namespace Utils.Mathematics.LinearAlgebra
 			determinant = null;
 		}
 
-		public Matrix ( double[][] array)
+		public Matrix ( double[][] array!!)
 		{
 			int maxYLength = array.Select(a => a.Length).Max();
 			components = new double[array.Length, maxYLength];
@@ -85,7 +85,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// Créé une copie de la matrice
 		/// </summary>
 		/// <param name="matrix"></param>
-		public Matrix(Matrix matrix)
+		public Matrix(Matrix matrix!!)
 		{
 			this.components = new double[matrix.components.GetLength(0), matrix.components.GetLength(1)];
 			Array.Copy(matrix.components, this.components, matrix.components.Length);
@@ -437,7 +437,7 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public string ToString ( string format, IFormatProvider formatProvider )
 		{
-			format = format ?? "";
+			format ??= "";
 			StringBuilder sb = new StringBuilder();
 			string componentsSeparator = ", ";
 			string lineSeparator = Environment.NewLine;
@@ -489,14 +489,16 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 		}
 
-		public bool Equals ( Matrix other )
+		public bool Equals ( Matrix other)
 		{
+			if (other == null) return false;
 			if (ReferenceEquals(this, other)) return true;
 			return this.GetHashCode() == other.GetHashCode() && Equals(other.components);
 		}
 
 		public bool Equals(double[,] other)
 		{
+			if (other == null) return false;
 			if (this.Rows != other.GetLength(0) || this.Columns != other.GetLength(1)) return false;
 			for (int i = 0; i < Rows; i++)
 			{
@@ -510,6 +512,7 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals(double[][] other)
 		{
+			if (other == null) return false;
 			if (Rows != other.GetLength(0)) return false;
 			for (int i = 0; i < this.components.GetLength(0); i++)
 			{
@@ -530,8 +533,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			return true;
 		}
 
-		public bool Equals(Vector[] other)
+		public bool Equals(params Vector[] other)
 		{
+			if (other == null) return false;
 			if (other.Length != this.Columns) return false;
 
 			for (int i = 0; i < Columns; i++)

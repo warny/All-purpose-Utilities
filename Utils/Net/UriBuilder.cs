@@ -25,7 +25,7 @@ namespace Utils.Net
 			{ "ftps", 990 }
 		});
 
-		public UriBuilder( Uri uri )
+		public UriBuilder( Uri uri!! )
 		{
 			this.Scheme = uri.Scheme;
 			this.Host = uri.Host;
@@ -43,7 +43,7 @@ namespace Utils.Net
 			this.Fragment = uri.Fragment?.StartsWith("#") ?? false ? uri.Fragment.Substring(1) : uri.Fragment;
 		}
 
-		public UriBuilder( string uriString ) : this(new Uri(uriString)) {}
+		public UriBuilder( string uriString!! ) : this(new Uri(uriString)) {}
 
 
 		public string Scheme { get; set; }
