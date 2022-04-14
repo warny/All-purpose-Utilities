@@ -37,7 +37,7 @@ namespace Utils.Reflection
 			=> (T)GetCustomAttribute(typeof(T), inherit);
 		#endregion
 
-		public FieldOrPropertyInfo(MemberInfo Member)
+		public FieldOrPropertyInfo(MemberInfo Member!!)
 		{
 			this.Member = Member;
 			if (Member is PropertyInfo pi)
@@ -57,9 +57,9 @@ namespace Utils.Reflection
 
 		public override string ToString() => Member.ToString();
 
-		public static implicit operator FieldOrPropertyInfo(MemberInfo memberInfo) => new FieldOrPropertyInfo(memberInfo);
-		public static implicit operator FieldOrPropertyInfo(FieldInfo fieldInfo) => new FieldOrPropertyInfo(fieldInfo);
-		public static implicit operator FieldOrPropertyInfo(PropertyInfo propertyInfo) => new FieldOrPropertyInfo(propertyInfo);
+		public static implicit operator FieldOrPropertyInfo(MemberInfo memberInfo) => memberInfo == null ? null : new FieldOrPropertyInfo(memberInfo);
+		public static implicit operator FieldOrPropertyInfo(FieldInfo fieldInfo) => fieldInfo == null ? null : new FieldOrPropertyInfo(fieldInfo);
+		public static implicit operator FieldOrPropertyInfo(PropertyInfo propertyInfo) => propertyInfo == null ? null : new FieldOrPropertyInfo(propertyInfo);
 
 	}
 }

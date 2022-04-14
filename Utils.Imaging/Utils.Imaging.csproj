@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	  <TargetFramework>net5.0</TargetFramework>
-	  <LangVersion>9.0</LangVersion>
+	  <LangVersion>10.0</LangVersion>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Olivier MARTY</Authors>
     <Company>Olivier MARTY</Company>

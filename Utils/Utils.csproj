@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	  <TargetFramework>netcoreapp3.1</TargetFramework>
-	  <LangVersion>10.0</LangVersion>
+	  <LangVersion>preview</LangVersion>
     <Authors>Olivier MARTY</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>omy.Utils</PackageId>
