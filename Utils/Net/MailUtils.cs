@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Utils.Objects;
 
 namespace Utils.Net
 {
@@ -20,8 +21,9 @@ namespace Utils.Net
 		/// <param name="mailAddress">Chaîne décrivant une adresse de la forme "boite@domaine.com" ou "boite@domaine.com &lt;Nom du recipiendaire&qt;"</param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentException"></exception>
-		public static MailAddress ParseMailAddress(string mailAddress!!)
+		public static MailAddress ParseMailAddress(string mailAddress)
 		{
+			mailAddress.ArgMustNotBeNull();
 			var m = mailAddressParser.Match(mailAddress);
 			if (!m.Success) throw new ArgumentException($"{mailAddress} n'est pas une adresse valide", nameof(mailAddress));
 			if (m.Groups["name"].Success) return new MailAddress(m.Groups["mail"].Value, m.Groups["name"].Value);
@@ -33,8 +35,9 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="mailAddresses"></param>
 		/// <returns></returns>
-		public static MailAddress[] ParseMailAddresses(string mailAddresses!!)
+		public static MailAddress[] ParseMailAddresses(string mailAddresses)
 		{
+			mailAddresses.ArgMustNotBeNull();
 			return mailAddresses
 				.Split(new[] { ';', ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
 				.Select(s=> ParseMailAddress(s.Trim(' ', '\t')))
@@ -54,8 +57,10 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, IEnumerable<MailAddress> mailAddresses!!)
+		public static void AddRange(this MailAddressCollection addresses, IEnumerable<MailAddress> mailAddresses)
 		{
+			mailAddresses.ArgMustNotBeNull();
+
 			foreach (var mailAddress in mailAddresses)
 			{
 				addresses.Add(mailAddress);
@@ -75,16 +80,21 @@ namespace Utils.Net
 		/// </summary>
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses!!)
-			=> AddRange(addresses, mailAddresses.Select(ma=>ParseMailAddress(ma)));
+		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses) {
+			mailAddresses.ArgMustNotBeNull();
+
+			AddRange(addresses, mailAddresses.Select(ma => ParseMailAddress(ma)));
+		}
 
 		/// <summary>
 		/// Ajoute une liste d'adresses sous forme d'une chaîne à une liste d'adresses
 		/// </summary>
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, string mailAddresses!!)
-			=> AddRange(addresses, (IEnumerable<MailAddress>)ParseMailAddresses(mailAddresses));
+		public static void AddRange(this MailAddressCollection addresses, string mailAddresses) {
+			mailAddresses.ArgMustNotBeNull();
+			AddRange(addresses, (IEnumerable<MailAddress>)ParseMailAddresses(mailAddresses));
+		}
 
 		/// <summary>
 		/// Ajoute une ou des adresses en destinataire
@@ -92,9 +102,11 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage To(this MailMessage mailMessage, string mailAdresses!!)
+		public static MailMessage To(this MailMessage mailMessage, string mailAddresses)
 		{
-			mailMessage.To.AddRange(mailAdresses);
+			mailMessage.ArgMustNotBeNull();
+			mailAddresses.ArgMustNotBeNull();
+			mailMessage.To.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
@@ -112,9 +124,12 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage To(this MailMessage mailMessage, IEnumerable<string> mailAdresses!!)
+		public static MailMessage To(this MailMessage mailMessage, IEnumerable<string> mailAddresses)
 		{
-			mailMessage.To.AddRange(mailAdresses);
+			mailMessage.ArgMustNotBeNull();
+			mailAddresses.ArgMustNotBeNull();
+
+			mailMessage.To.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
@@ -124,9 +139,11 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage CC(this MailMessage mailMessage, string mailAdresses!!)
+		public static MailMessage CC(this MailMessage mailMessage, string mailAddresses)
 		{
-			mailMessage.CC.AddRange(mailAdresses);
+			mailMessage.ArgMustNotBeNull();
+			mailAddresses.ArgMustNotBeNull();
+			mailMessage.CC.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
@@ -144,9 +161,11 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage CC(this MailMessage mailMessage, IEnumerable<string> mailAdresses!!)
+		public static MailMessage CC(this MailMessage mailMessage, IEnumerable<string> mailAddresses)
 		{
-			mailMessage.CC.AddRange(mailAdresses);
+			mailMessage.ArgMustNotBeNull();
+			mailAddresses.ArgMustNotBeNull();
+			mailMessage.CC.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
@@ -156,9 +175,11 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, string mailAdresses!!)
+		public static MailMessage BCC(this MailMessage mailMessage, string mailAddresses)
 		{
-			mailMessage.Bcc.AddRange(mailAdresses);
+			mailMessage.ArgMustNotBeNull();
+			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Bcc.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
@@ -168,7 +189,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAdresses) => BCC(mailMessage, (IEnumerable<string>)mailAdresses);
+		public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAddresses) => BCC(mailMessage, (IEnumerable<string>)mailAddresses);
 
 		/// <summary>
 		/// Ajoute une ou des adresses en copie cachée
@@ -176,9 +197,11 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, IEnumerable<string> mailAdresses!!)
+		public static MailMessage BCC(this MailMessage mailMessage, IEnumerable<string> mailAddresses)
 		{
-			mailMessage.Bcc.AddRange(mailAdresses);
+			mailMessage.ArgMustNotBeNull();
+			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Bcc.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
@@ -189,8 +212,11 @@ namespace Utils.Net
 		/// <param name="body">Sujet du message</param>
 		/// <param name="encoding">Encodage du sujet (par défaut <see cref="Encoding.UTF8"/>)</param>
 		/// <returns></returns>
-		public static MailMessage Subject(this MailMessage mailMessage, string subject!!, Encoding encoding = null)
+		public static MailMessage Subject(this MailMessage mailMessage, string subject, Encoding encoding = null)
 		{
+			mailMessage.ArgMustNotBeNull();
+			subject.ArgMustNotBeNull();
+
 			mailMessage.Subject = subject;
 			mailMessage.SubjectEncoding = encoding ?? Encoding.UTF8;
 			return mailMessage;
@@ -203,8 +229,11 @@ namespace Utils.Net
 		/// <param name="body">Corps de message</param>
 		/// <param name="encoding">Encodage du corps (par défaut <see cref="Encoding.UTF8"/>)</param>
 		/// <returns></returns>
-		public static MailMessage Body(this MailMessage mailMessage, string body!!, Encoding encoding = null)
+		public static MailMessage Body(this MailMessage mailMessage, string body, Encoding encoding = null)
 		{
+			mailMessage.ArgMustNotBeNull();
+			body.ArgMustNotBeNull();
+ 
 			mailMessage.Body = body;
 			mailMessage.BodyEncoding = encoding ?? Encoding.UTF8;
 			mailMessage.IsBodyHtml = body.TrimStart().StartsWith("<html");

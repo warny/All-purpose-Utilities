@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Utils.Objects;
 
 namespace Utils.Mathematics.LinearAlgebra
 {
@@ -34,8 +35,10 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// constructeur par valeurs
 		/// </summary>
 		/// <param name="components"></param>
-		public Point ( params double[] components!! )
+		public Point ( params double[] components )
 		{
+			components.ArgMustNotBeNull();
+
 			this.components = new double[components.Length + 1];
 			Array.Copy(components, this.components,components.Length);
 			this.components[this.components.Length - 1] = 1;
@@ -45,8 +48,9 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// Constructeur de copie
 		/// </summary>
 		/// <param name="point"></param>
-		public Point ( Point point!! )
+		public Point ( Point point )
 		{
+			point.ArgMustNotBeNull();
 			this.components = new Double[point.components.Length];
 			Array.Copy(point.components, this.components, point.components.Length); 
 		}

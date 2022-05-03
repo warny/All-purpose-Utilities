@@ -28,8 +28,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			components = new double[dimensionX, dimensionY];
 		}
 
-		private Matrix(double[,] array!!, bool isIdentity, bool isDiagonalized, bool isTriangularised, double? determinant)
+		private Matrix(double[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, double? determinant)
 		{
+			array.ArgMustNotBeNull();
 			this.components = array;
 			this.isDiagonalized = isDiagonalized;
 			this.isTriangularised = isTriangularised;
@@ -37,8 +38,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			this.determinant = determinant;
 		}
 
-		public Matrix ( double[,] array!!)
+		public Matrix ( double[,] array)
 		{
+			array.ArgMustNotBeNull();
 			components = new double[array.GetLength(0), array.GetLength(1)];
 			Array.Copy(array, this.components, array.Length);
 			var isSquare = IsSquare;
@@ -48,8 +50,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			determinant = null;
 		}
 
-		public Matrix ( double[][] array!!)
+		public Matrix ( double[][] array)
 		{
+			array.ArgMustNotBeNull();
 			int maxYLength = array.Select(a => a.Length).Max();
 			components = new double[array.Length, maxYLength];
 
@@ -66,6 +69,7 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public Matrix(params Vector[] vectors)
 		{
+			vectors.ArgMustNotBeNull();
 			if (vectors.Any(v => v.Dimension != vectors[0].Dimension)) throw new ArgumentException("Les vecteurs doivent tous avoir la même dimension", nameof(vectors));
 			components = new double[vectors[0].Dimension, vectors.Length];
 			for (int i = 0; i < vectors.Length; i++)
@@ -85,8 +89,10 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// Créé une copie de la matrice
 		/// </summary>
 		/// <param name="matrix"></param>
-		public Matrix(Matrix matrix!!)
+		public Matrix(Matrix matrix)
 		{
+			matrix.ArgMustNotBeNull();
+
 			this.components = new double[matrix.components.GetLength(0), matrix.components.GetLength(1)];
 			Array.Copy(matrix.components, this.components, matrix.components.Length);
 			this.isDiagonalized = matrix.isDiagonalized;

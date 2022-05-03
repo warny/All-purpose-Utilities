@@ -71,23 +71,48 @@ namespace Utils.Objects
 		/// <param name="pattern">Séquence</param>
 		/// <param name="ignoreCase">true : ignore la casse</param>
 		/// <returns>true si la chaîne correspond</returns>
-		public static bool Like( this string value, string pattern, bool ignoreCase = false )
-		{
+		public static bool Like(this string value, string pattern, bool ignoreCase = false, TextInfo textInfo = null) {
 			value.ArgMustNotBeNull();
 			pattern.ArgMustNotBeNull();
+			return Like(value.AsSpan(), pattern, ignoreCase, textInfo);
+		}
 
-			if (ignoreCase)
-			{
-				pattern = pattern.ToLower();
-				value = value.ToLower();
-			}
+		/// <summary>
+		/// Compare une chaîne par rapport à une séquence d'échappement
+		/// </summary>
+		/// <param name="str">Chaîne à comparer</param>
+		/// <param name="pattern">Séquence</param>
+		/// <param name="ignoreCase">true : ignore la casse</param>
+		/// <returns>true si la chaîne correspond</returns>
+		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, CultureInfo cultureInfo = null) {
+			pattern.ArgMustNotBeNull();
+			return Like(value, pattern, ignoreCase, cultureInfo.TextInfo);
+		}
+
+
+		/// <summary>
+		/// Compare une chaîne par rapport à une séquence d'échappement
+		/// </summary>
+		/// <param name="str">Chaîne à comparer</param>
+		/// <param name="pattern">Séquence</param>
+		/// <param name="ignoreCase">true : ignore la casse</param>
+		/// <returns>true si la chaîne correspond</returns>
+		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, TextInfo textInfo = null)
+		{
+			pattern.ArgMustNotBeNull();
+			if (pattern == "*") return true;
+			textInfo ??= CultureInfo.CurrentCulture.TextInfo;
+
+			Func<char, char, bool> equals = ignoreCase
+				? (x, y) => textInfo.ToLower(x) == textInfo.ToLower(y)
+				: (x, y) => x == y;
 
 			int valueIndex = 0, wildcardIndex = 0;
 			int valueNext = 0, wildcardNext = 0;
 
 			while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
 			{
-				if (value[valueIndex] != pattern[wildcardIndex] && pattern[wildcardIndex] != '?')
+				if (pattern[wildcardIndex] != '?' && !Equals(value[valueIndex], pattern[wildcardIndex]))
 				{
 					return false;
 				}
@@ -107,7 +132,7 @@ namespace Utils.Objects
 					}
 					valueNext += 1;
 				}
-				else if (value[valueIndex] == pattern[wildcardIndex] || pattern[wildcardIndex] == '?')
+				else if (pattern[wildcardIndex] == '?' || equals(value[valueIndex], pattern[wildcardIndex]))
 				{
 					wildcardIndex++;
 					valueIndex++;
