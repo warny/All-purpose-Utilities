@@ -25,25 +25,29 @@ namespace Utils.Net
 			{ "ftps", 990 }
 		});
 
-		public UriBuilder( Uri uri!! )
+		public UriBuilder(Uri uri)
 		{
+			uri.ArgMustNotBeNull();
+
 			this.Scheme = uri.Scheme;
 			this.Host = uri.Host;
 			this.Port = uri.Port;
 			this.AbsolutePath = uri.AbsolutePath;
 
 			string[] userInfos = uri.UserInfo.Split(new[] { ':' }, 2);
-			if (userInfos.Length >= 1) {
+			if (userInfos.Length >= 1)
+			{
 				this.Username = System.Web.HttpUtility.UrlDecode(userInfos[0]);
 			}
-			if (userInfos.Length >= 2) {
+			if (userInfos.Length >= 2)
+			{
 				this.Password = System.Web.HttpUtility.UrlDecode(userInfos[1]);
 			}
-			this.QueryString =  System.Web.HttpUtility.ParseQueryString(uri.Query);
+			this.QueryString = System.Web.HttpUtility.ParseQueryString(uri.Query);
 			this.Fragment = uri.Fragment?.StartsWith("#") ?? false ? uri.Fragment.Substring(1) : uri.Fragment;
 		}
 
-		public UriBuilder( string uriString!! ) : this(new Uri(uriString)) {}
+		public UriBuilder(string uriString) : this(new Uri(uriString)) { }
 
 
 		public string Scheme { get; set; }
@@ -58,10 +62,13 @@ namespace Utils.Net
 		public override string ToString()
 		{
 			int port;
-			if (DefaultPorts.TryGetValue(this.Scheme, out int defaultPort) && this.Port==defaultPort) {
+			if (DefaultPorts.TryGetValue(this.Scheme, out int defaultPort) && this.Port == defaultPort)
+			{
 				port = -1;
-			} else {
-				port =  this.Port;
+			}
+			else
+			{
+				port = this.Port;
 			}
 
 			System.UriBuilder builder = new System.UriBuilder(this.Scheme, this.Host, port, this.AbsolutePath);

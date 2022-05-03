@@ -246,8 +246,10 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="fileName">Fichier à envoyer en pièce jointe</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string fileName!!)
+		public static MailMessage Attachment(this MailMessage mailMessage, string fileName)
 		{
+			mailMessage.ArgMustNotBeNull();
+			fileName.ArgMustNotBeNull();
 			mailMessage.Attachments.Add(new Attachment(fileName));
 			return mailMessage;
 		}
@@ -271,8 +273,11 @@ namespace Utils.Net
 		/// <param name="filename">Nom du chier joint</param>
 		/// <param name="contentStream">Contenu du fichier</param>
 		/// <returns></returns>
-		public static MailMessage Attachement(this MailMessage mailMessage, string filename!!, Stream contentStream!!)
+		public static MailMessage Attachement(this MailMessage mailMessage, string filename, Stream contentStream)
 		{
+			mailMessage.ArgMustNotBeNull();
+			filename.ArgMustNotBeNull();
+			contentStream.ArgMustNotBeNull();
 			mailMessage.Attachments.Add(new Attachment(contentStream, filename));
 			return mailMessage;
 		}
@@ -284,8 +289,11 @@ namespace Utils.Net
 		/// <param name="filename">Nom du fichier joint</param>
 		/// <param name="content">Contenu du fichier</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string filename!!, byte[] content!!)
+		public static MailMessage Attachment(this MailMessage mailMessage, string filename, byte[] content)
 		{
+			mailMessage.ArgMustNotBeNull();
+			filename.ArgMustNotBeNull();
+			content.ArgMustNotBeNull();
 			using (MemoryStream contentStream = new MemoryStream(content)) {
 				contentStream.Position = 0;
 				mailMessage.Attachments.Add(new Attachment(contentStream, filename));
@@ -301,8 +309,11 @@ namespace Utils.Net
 		/// <param name="content">Contenu du fichier</param>
 		/// <param name="encoding">Encodage (par défaut <see cref="Encoding.UTF8"/>)</param>
 		/// <returns></returns>
-		public static MailMessage Attachment(this MailMessage mailMessage, string filename!!, string content!!, Encoding encoding = null)
+		public static MailMessage Attachment(this MailMessage mailMessage, string filename, string content, Encoding encoding = null)
 		{
+			mailMessage.ArgMustNotBeNull();
+			filename.ArgMustNotBeNull();
+			content.ArgMustNotBeNull();
 			encoding ??= Encoding.UTF8;
 			using (MemoryStream contentStream = new MemoryStream())
 			{

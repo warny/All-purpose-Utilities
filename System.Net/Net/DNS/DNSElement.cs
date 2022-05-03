@@ -1,13 +1,8 @@
-﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
+﻿using System.Reflection;
 
 namespace Utils.Net.DNS
 {
-    public abstract class DNSElement
+	public abstract class DNSElement
     {
 		public virtual string DNSType => this.GetType().Name;
 

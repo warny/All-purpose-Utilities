@@ -18,8 +18,9 @@ namespace Utils.Objects
 		private class ParseMethods
 		{
 
-			public ParseMethods(Type type!!)
+			public ParseMethods(Type type)
 			{
+				type.ArgMustNotBeNull();
 				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
 				{
 					type = type.GetGenericArguments()[0];
@@ -63,8 +64,9 @@ namespace Utils.Objects
 				return null;
 			}
 
-			private TryParseDelegate BuildTryParse(Type type!!)
+			private TryParseDelegate BuildTryParse(Type type)
 			{
+				type.ArgMustNotBeNull();
 				MethodInfo numberTryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeof(NumberStyles), typeOfIFormatProvider, type.MakeByRefType() }, null);
 				if (numberTryParseMethod is not null)
 				{
@@ -145,8 +147,9 @@ namespace Utils.Objects
 				return null;
 			}
 
-			private ParseDelegate BuildParse(Type type!!)
+			private ParseDelegate BuildParse(Type type)
 			{
+				type.ArgMustNotBeNull();
 				MethodInfo parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider }, null);
 				if (parseMethod is not null)
 				{
@@ -223,8 +226,9 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="type">Type dont on veut récupérer les fonctions</param>
 		/// <returns></returns>
-		private static ParseMethods GetParseMethods(Type type!!)
+		private static ParseMethods GetParseMethods(Type type)
 		{
+			type.ArgMustNotBeNull();
 			if (!parsers.TryGetValue(type, out var parseMethods))
 			{
 				parseMethods = new ParseMethods(type);
@@ -246,8 +250,9 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="type">Type à vérifier</param>
 		/// <returns><see cref="true"/> si le type peut être parsé sinon <see cref="false"/></returns>
-		public static bool CanParse(Type type!!)
+		public static bool CanParse(Type type)
 		{
+			type.ArgMustNotBeNull();
 			if (type.IsEnum) return true;
 			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
 			{

@@ -21,7 +21,7 @@ namespace Utils.Objects
 			public int Minimum { get; }
 			public int Maximum { get; }
 
-			public int CompareTo(SimpleRange other!!)
+			public int CompareTo(SimpleRange other)
 			{
 				if (other == null) return -1;
 				return new[] {
@@ -37,7 +37,12 @@ namespace Utils.Objects
 				return 0;
 			}
 
-			public static bool CanMerge(SimpleRange range1!!, SimpleRange range2!!) => range1.Minimum <= range2.Maximum + 1 && range2.Minimum <= range1.Maximum + 1;
+			public static bool CanMerge(SimpleRange range1, SimpleRange range2)
+			{
+				if (range1 is null || range2 is null) return false;
+				return range1.Minimum <= range2.Maximum + 1 && range2.Minimum <= range1.Maximum + 1;
+			}
+
 			public static SimpleRange Merge(SimpleRange range1, SimpleRange range2)
 			{
 				if (range1 == null) return range2;
@@ -79,16 +84,17 @@ namespace Utils.Objects
 
 		public IntRange() { }
 
-		public IntRange(string ranges!!) : this(ranges,
+		public IntRange(string ranges) : this(ranges,
 				System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator,
 				System.Globalization.CultureInfo.InvariantCulture.TextInfo.ListSeparator) 
 		{ }
 
-		public IntRange(string ranges!!, System.Globalization.CultureInfo cultureInfo) : this(ranges, cultureInfo.TextInfo.ListSeparator) { }
-		public IntRange(string ranges!!, System.Globalization.TextInfo textInfo) : this(ranges, textInfo.ListSeparator) { }
+		public IntRange(string ranges, System.Globalization.CultureInfo cultureInfo) : this(ranges, cultureInfo.TextInfo.ListSeparator) { }
+		public IntRange(string ranges, System.Globalization.TextInfo textInfo) : this(ranges, textInfo.ListSeparator) { }
 
-		public IntRange(string ranges!!, params string[] separators)
+		public IntRange(string ranges, params string[] separators)
 		{
+			ranges.ArgMustNotBeNull();
 			SortedSet<SimpleRange> result = new SortedSet<SimpleRange>();
 			var matches = Regex.Matches(ranges, @"((?<singleValue>\d+)|(?<start>\d+)-(?<end>\d+))(" + string.Join("|", separators) + "|$)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
 			foreach (Match match in matches)
@@ -108,8 +114,9 @@ namespace Utils.Objects
 			InitRanges(result);
 		}
 
-		private void InitRanges(IEnumerable<SimpleRange> result!!)
+		private void InitRanges(IEnumerable<SimpleRange> result)
 		{
+			result.ArgMustNotBeNull();
 			SimpleRange current = null;
 			foreach (var simpleRange in result)
 			{

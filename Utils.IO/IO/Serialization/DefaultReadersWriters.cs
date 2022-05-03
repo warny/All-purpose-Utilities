@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
+using O = Utils.Objects;
 
 namespace Utils.IO.Serialization
 {
@@ -79,7 +80,7 @@ namespace Utils.IO.Serialization
 			BigIndian = bigIndian;
 		}
 
-		public Type[] Types { get; } = new[] { typeof(Int16), typeof(UInt16) };
+		public Type[] Types { get; } = new[] { O.Types.Int16, O.Types.UInt16 };
 
 		public bool Read(Reader reader, out object result)
 		{
@@ -112,7 +113,7 @@ namespace Utils.IO.Serialization
 			BigIndian = bigIndian;
 		}
 
-		public Type[] Types { get; } = new[] { typeof(Int32), typeof(UInt32) };
+		public Type[] Types { get; } = O.Types._32BitsNumberI;
 
 		public bool Read(Reader reader, out object result)
 		{
@@ -144,7 +145,7 @@ namespace Utils.IO.Serialization
 			BigIndian = bigIndian;
 		}
 
-		public Type[] Types { get; } = new[] { typeof(Int64), typeof(UInt64) };
+		public Type[] Types { get; } = O.Types._64BitsNumberI;
 
 		public bool Read(Reader reader, out object result)
 		{
@@ -229,7 +230,7 @@ namespace Utils.IO.Serialization
 			BigIndian = bigIndian;
 		}
 
-		public Type[] Types { get; } = new[] { typeof(DateTime) };
+		public Type[] Types { get; } = new[] { O.Types.DateTime };
 
 		public bool Read(Reader reader, out object result)
 		{
@@ -260,7 +261,7 @@ namespace Utils.IO.Serialization
 			BigIndian = bigIndian;
 		}
 
-		public Type[] Types { get; } = new[] { typeof(DateTime) };
+		public Type[] Types { get; } = new[] { O.Types.DateTime };
 
 		public bool Read(Reader reader, out object result)
 		{

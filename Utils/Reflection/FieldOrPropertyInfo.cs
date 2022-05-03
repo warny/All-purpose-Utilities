@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Utils.Objects;
 
 namespace Utils.Reflection
 {
@@ -37,8 +38,9 @@ namespace Utils.Reflection
 			=> (T)GetCustomAttribute(typeof(T), inherit);
 		#endregion
 
-		public FieldOrPropertyInfo(MemberInfo Member!!)
+		public FieldOrPropertyInfo(MemberInfo Member)
 		{
+			Member.ArgMustNotBeNull();
 			this.Member = Member;
 			if (Member is PropertyInfo pi)
 			{
