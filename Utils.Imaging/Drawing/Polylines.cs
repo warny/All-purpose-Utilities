@@ -15,7 +15,7 @@ namespace Utils.Drawing
 
 		public Polylines(Point[] points)
 		{
-			Segments = points.EnumerateBy(2).Select(p => new Segment(p[0], p[1])).ToArray();
+			Segments = points.SlideEnumerateBy(2).Select(p => new Segment(p[0], p[1])).ToArray();
 		}
 
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)

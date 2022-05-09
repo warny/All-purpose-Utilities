@@ -45,7 +45,7 @@ namespace Utils.Drawing
 			{
 				var orderedPoints = linePoints.OrderBy(p => p.X);
 				int direction = 0;
-				foreach (var pair in orderedPoints.EnumerateBy(2)) {
+				foreach (var pair in orderedPoints.SlideEnumerateBy(2)) {
 					int y = linePoints.Key;
 					direction += pair[0].VerticalDirection;
 					DrawPoint(pair[0].X, y, color(pair[0].X, y));
@@ -66,7 +66,7 @@ namespace Utils.Drawing
 			{
 				var orderedPoints = linePoints.OrderBy(p => p.X).ToArray();
 				bool drawing = false;
-				foreach (var pair in orderedPoints.EnumerateBy(2))
+				foreach (var pair in orderedPoints.SlideEnumerateBy(2))
 				{
 					int y = linePoints.Key;
 					if (pair[0].VerticalDirection != 0)

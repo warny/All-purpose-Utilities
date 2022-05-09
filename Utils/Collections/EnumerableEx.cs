@@ -32,7 +32,7 @@ namespace Utils.Collections
         /// <param name="by">Step</param>
         /// <param name="skip">Number of values to skip</param>
         /// <returns></returns>
-        public static IEnumerable<T[]> EnumerateBy<T>(this IEnumerable<T> e, int by, int skip = 0)
+        public static IEnumerable<T[]> SlideEnumerateBy<T>(this IEnumerable<T> e, int by, int skip = 0)
         {
             T[] result = new T[by];
             var enumerator = e.GetEnumerator();

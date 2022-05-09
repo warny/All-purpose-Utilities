@@ -94,5 +94,6 @@ namespace DrawTest
 			}
 			pictureBox1.Image = image;
 		}
+
 	}
 }

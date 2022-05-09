@@ -45,7 +45,7 @@ namespace Utils.Drawing
 					List<Segment> result = new List<Segment>();
 					var computedPoints = ComputeBezierPoints(Points.Select(p => new PointF(p.X, p.Y)).ToArray());
 
-					foreach (var points in computedPoints.EnumerateBy(2))
+					foreach (var points in computedPoints.SlideEnumerateBy(2))
 					{
 						var start = Point.Round(points[0]);
 						var end = Point.Round(points[1]);
@@ -92,7 +92,7 @@ namespace Utils.Drawing
 		/// </summary>
 		/// <param name="points"></param>
 		/// <returns></returns>
-		private IEnumerable<PointF> ComputeBezierPoints(params PointF[] points)
+		private PointF[] ComputeBezierPoints(params PointF[] points)
 		{
 			PointF ComputeBezierPoint(float position)
 			{
@@ -119,36 +119,30 @@ namespace Utils.Drawing
 				return result[0];
 			}
 
-			IEnumerable<(PointF p, float position)> computeIntermediatePoints(PointF p1, float pos1, PointF p2, float pos2)
-			{
-				if ((p1.X - p2.X).Between(-1, 1) || (p1.Y - p2.Y).Between(-1, 1)) { yield break; }
+			LinkedList<(PointF Point, float Position)> computedPoints = new ();
 
-				var pos = (pos1 + pos2) / 2;
-				var p = ComputeBezierPoint(pos);
-				foreach (var point in computeIntermediatePoints(p1, pos1, p, pos))
-				{
-					yield return point;
+			for (float f = 0; f < 1; f += 0.1f) {
+				computedPoints.AddLast((ComputeBezierPoint(f), f));
+			}
+			var last =computedPoints.AddLast((ComputeBezierPoint(1f), 1f));
+
+			var current = computedPoints.First;
+			while (current != last)
+			{
+				var next = current.Next;
+				var newPosition = (current.Value.Position + next.Value.Position) / 2;
+				var newPoint = ComputeBezierPoint(newPosition);
+
+				float dx = next.Value.Point.X - newPoint.X;
+				float dy = next.Value.Point.Y - newPoint.Y;
+				if (/*dx.Between(-1f, 1f) || dy.Between(-1f, 1f) ||*/ (dx*dx + dy*dy) <= 1f) {
+					current = next;
+					continue;
 				}
-				foreach (var point in computeIntermediatePoints(p, pos, p2, pos2))
-				{
-					yield return point;
-				}
-				yield return (p2, pos2);
+				computedPoints.AddAfter(current, (newPoint, newPosition));
 			}
 
-			var pstart = ComputeBezierPoint(0f);
-			var pmid = ComputeBezierPoint(0.5f);
-			var pend = ComputeBezierPoint(1f);
-
-			yield return pstart;
-			foreach (var point in computeIntermediatePoints(pstart, 0, pmid, 0.5f))
-			{
-				yield return point.p;
-			}
-			foreach (var point in computeIntermediatePoints(pmid, 0.5f, pend, 1))
-			{
-				yield return point.p;
-			}
+			return computedPoints.Select(p=>p.Point).ToArray();
 		}
 
 	}
