@@ -164,7 +164,7 @@ namespace Utils.Geography.Model
 			//si les deux vecteurs décrivent le même grand cercle, il n'est pas possible de renvoyer les points d'intersection
 			if (other.In(temp.a, -temp.a, temp.b, -temp.b))
 			{
-				return null;
+				return new GeoPoint[] { };
 			}
 
 

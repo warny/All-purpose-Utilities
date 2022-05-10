@@ -29,7 +29,7 @@ namespace Utils.XML
 		/// <summary>
 		/// Descripteur de méthode
 		/// </summary>
-		private class Method
+		private sealed class Method
 		{
 			public MethodInfo MethodInfo { get; }
 			public ParameterInfo[] Parameters { get; }
@@ -44,7 +44,7 @@ namespace Utils.XML
 		/// <summary>
 		/// Classe de base d'un lecteur de fichier piloté par les données XML
 		/// </summary>
-		public XmlDriver()
+		protected XmlDriver()
 		{
 
 			Type t = this.GetType();

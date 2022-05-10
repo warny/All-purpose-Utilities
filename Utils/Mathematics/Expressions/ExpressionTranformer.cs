@@ -19,52 +19,63 @@ namespace Utils.Mathematics.Expressions
 		{
 			Type t = this.GetType();
 
-			var cc = e as ConstantExpression;
-			var ue = e as UnaryExpression;
-			var be = e as BinaryExpression;
-			var ie = e as InvocationExpression;
-			var le = e as LambdaExpression;
-			var mce = e as MethodCallExpression;
-			var pe = e as ParameterExpression;
-
 			object[] parameters = null;
 			Expression[] expressionParameters = null;
 
-			if (cc is not null) {
-				expressionParameters = new Expression[0];
-				parameters = new[] { cc, cc.Value };
-			} else if (ue is not null) {
-				expressionParameters = new Expression[] { PrepareExpression(ue.Operand) };
-				e = ue = (UnaryExpression)CopyExpression(e, expressionParameters);
-				parameters = new[] { ue, ue.Operand };
-			} else if (be is not null) {
-				expressionParameters = new Expression[] { PrepareExpression(be.Left), PrepareExpression(be.Right) };
-				e = be = (BinaryExpression)CopyExpression(e, expressionParameters);
-				parameters = new[] { be, be.Left, be.Right };
-			} else if (mce is not null) {
-				expressionParameters = mce.Arguments.Select(a => PrepareExpression(a)).ToArray();
-				e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
-				parameters = new object[mce.Arguments.Count + 1];
-				parameters[0] = mce;
-				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else if (pe is not null) {
-				expressionParameters = new Expression[0];
-				parameters = new object[] { pe };
-			} else if (ie is not null) {
-				expressionParameters = ie.Arguments.Select(a => PrepareExpression(a)).ToArray();
-				e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
-				parameters = new object[ie.Arguments.Count + 1];
-				parameters[0] = ie;
-				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else if (le is not null) {
-				expressionParameters = le.Parameters.Select(a => (ParameterExpression)PrepareExpression(a)).ToArray();
-				e = le = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
-				parameters = new object[le.Parameters.Count + 1];
-				parameters[0] = le;
-				Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-			} else {
-				expressionParameters = new Expression[] { };
-				parameters = new[] { e };
+			switch (e)
+			{
+				case ConstantExpression cc:
+					expressionParameters = new Expression[0];
+					parameters = new[] { cc, cc.Value };
+					break;
+				case UnaryExpression ue:
+					expressionParameters = new Expression[] { PrepareExpression(ue.Operand) };
+					e = ue = (UnaryExpression)CopyExpression(e, expressionParameters);
+					parameters = new[] { ue, ue.Operand };
+					break;
+				case BinaryExpression be:
+					expressionParameters = new Expression[] { PrepareExpression(be.Left), PrepareExpression(be.Right) };
+					e = be = (BinaryExpression)CopyExpression(e, expressionParameters);
+					parameters = new[] { be, be.Left, be.Right };
+					break;
+				case MethodCallExpression mce:
+					{
+						expressionParameters = mce.Arguments.Select(a => PrepareExpression(a)).ToArray();
+						e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
+						parameters = new object[mce.Arguments.Count + 1];
+						parameters[0] = mce;
+						Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
+						break;
+					}
+
+				case ParameterExpression pe:
+					expressionParameters = new Expression[0];
+					parameters = new object[] { pe };
+					break;
+				case InvocationExpression ie:
+					{
+						expressionParameters = ie.Arguments.Select(a => PrepareExpression(a)).ToArray();
+						e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
+						parameters = new object[ie.Arguments.Count + 1];
+						parameters[0] = ie;
+						Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
+						break;
+					}
+
+				case LambdaExpression le:
+					{
+						expressionParameters = le.Parameters.Select(a => (ParameterExpression)PrepareExpression(a)).ToArray();
+						e = le = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
+						parameters = new object[le.Parameters.Count + 1];
+						parameters[0] = le;
+						Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
+						break;
+					}
+
+				default:
+					expressionParameters = new Expression[] { };
+					parameters = new[] { e };
+					break;
 			}
 
 			foreach (var method in t.GetMethods(Public | NonPublic | InvokeMethod | Instance)) {
@@ -75,18 +86,18 @@ namespace Utils.Mathematics.Expressions
 
 				var parametersInfo = method.GetParameters();
 
-				if (!parametersInfo[0].ParameterType.IsAssignableFrom(parameters[0].GetType())) continue;
+				if (!parametersInfo[0].ParameterType.IsInstanceOfType(parameters[0])) continue;
 				object result;
 				if (parametersInfo.Length > 1) {
 					bool isValid = true;
 					for (int i = 1 ; i < parametersInfo.Length ; i++) {
-						if (parameters[i] is Expression) {
-							if (!CheckParameter((Expression)parameters[i], parametersInfo[i])) {
+						if (parameters[i] is Expression pe) {
+							if (!CheckParameter(pe, parametersInfo[i])) {
 								isValid = false;
 								break;
 							}
 						} else {
-							if (!parametersInfo[1].ParameterType.IsAssignableFrom(cc.Type)) {
+							if (!parametersInfo[1].ParameterType.IsAssignableFrom(e.Type)) {
 								isValid = false;
 								break;
 							}
@@ -104,7 +115,7 @@ namespace Utils.Mathematics.Expressions
 			}
 
 			{
-				if (cc is not null) {
+				if (e is ConstantExpression cc) {
 					return FinalizeExpression(e, new Expression[0]);
 				} else  {
 					return FinalizeExpression(e, expressionParameters);
@@ -120,26 +131,29 @@ namespace Utils.Mathematics.Expressions
 
 		protected Expression ReplaceArguments( Expression e, ParameterExpression[] oldParameters, Expression[] newParameters )
 		{
-			var cc = e as ConstantExpression;
-			var ue = e as UnaryExpression;
-			var be = e as BinaryExpression;
-			var ie = e as InvocationExpression;
-			var mce = e as MethodCallExpression;
-			var pe = e as ParameterExpression;
+			switch (e)
+			{
+				case ParameterExpression pe:
+					{
+						int i = Array.IndexOf(oldParameters, pe);
+						return newParameters[i];
+					}
 
-			if (pe is not null) {
-				int i = Array.IndexOf(oldParameters, pe);
-				return newParameters[i];
-			} else if (ue is not null) {
-				return CopyExpression(ue, ReplaceArguments(ue.Operand, oldParameters, newParameters));
-			} else if (be is not null) {
-				return CopyExpression(be, ReplaceArguments(be.Left, oldParameters, newParameters), ReplaceArguments(be.Right, oldParameters, newParameters));
-			} else if (ie is not null) {
-				var arguments = ie.Arguments.Select(a => ReplaceArguments(a, oldParameters, newParameters)).ToArray();
-				return CopyExpression(ie, arguments);
-			} else if (mce is not null) {
-				var arguments = mce.Arguments.Select(a => ReplaceArguments(a, oldParameters, newParameters)).ToArray();
-				return CopyExpression(mce, arguments);
+				case UnaryExpression ue:
+					return CopyExpression(ue, ReplaceArguments(ue.Operand, oldParameters, newParameters));
+				case BinaryExpression be:
+					return CopyExpression(be, ReplaceArguments(be.Left, oldParameters, newParameters), ReplaceArguments(be.Right, oldParameters, newParameters));
+				case InvocationExpression ie:
+					{
+						var arguments = ie.Arguments.Select(a => ReplaceArguments(a, oldParameters, newParameters)).ToArray();
+						return CopyExpression(ie, arguments);
+					}
+
+				case MethodCallExpression mce:
+					{
+						var arguments = mce.Arguments.Select(a => ReplaceArguments(a, oldParameters, newParameters)).ToArray();
+						return CopyExpression(mce, arguments);
+					}
 			}
 			return e;
 		}

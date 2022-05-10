@@ -20,10 +20,6 @@ namespace DrawTest
 			Draw();
 		}
 
-		private void pictureBox1_Paint(object sender, PaintEventArgs e)
-		{
-		}
-
 		private void Draw()
 		{
 			Bitmap image = new Bitmap(pictureBox1.Width, pictureBox1.Height);

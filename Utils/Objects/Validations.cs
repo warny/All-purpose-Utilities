@@ -20,7 +20,7 @@ namespace Utils.Objects
 		{
 			if (value is null)
 			{
-				throw new NullReferenceException();
+				throw new NullReferenceException($"{valueName} must not be null");
 			}
 		}
 

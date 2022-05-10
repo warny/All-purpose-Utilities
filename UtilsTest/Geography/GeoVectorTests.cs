@@ -82,9 +82,9 @@ namespace UtilsTest.Geography
 		public void GeoVectorIntersectionTest()
 		{
 			var tests = new (GeoVector v1, GeoVector v2, GeoPoint[] intersections)[] {
-				(new GeoVector(0, 0, 90), new GeoVector(0, 0, 90), null),
-				(new GeoVector(0, 90, 90), new GeoVector(0, 0, 90), null),
-				(new GeoVector(0, 90, 90), new GeoVector(0, 0, 270), null),
+				(new GeoVector(0, 0, 90), new GeoVector(0, 0, 90), new GeoPoint[] { }),
+				(new GeoVector(0, 90, 90), new GeoVector(0, 0, 90), new GeoPoint[] { }),
+				(new GeoVector(0, 90, 90), new GeoVector(0, 0, 270), new GeoPoint[] { }),
 				(new GeoVector(0, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0, 180) }),
 				(new GeoVector(90, 0, 0), new GeoVector(0, 0, 90), new []{ new GeoPoint(0, 0), new GeoPoint(0, 180) }),
 				(new GeoVector(0, 0, 0), new GeoVector(0, 90, 0), new []{ new GeoPoint(90, 0), new GeoPoint(-90, 0) }),

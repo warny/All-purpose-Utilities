@@ -19,11 +19,6 @@ namespace UtilsTest.Lists
 		DoubleIndexedDictionary<int, string> d;
 		readonly KeyValuePairComparer<int, string> kvComparer = new();
 
-		[BeforeScenario(Order = 1)]
-		public void FirstBeforeScenario()
-		{
-		}
-
 		[Given("An empty DoubleIndexedDictionary")]
 		public void AnEmptyDoubleIndexedDictionary()
 		{
@@ -140,14 +135,6 @@ namespace UtilsTest.Lists
 			{
 				Assert.AreEqual(exceptionTypeName, ex.GetType().Name);
 			}
-		}
-
-
-
-		[AfterScenario]
-		public void AfterScenario()
-		{
-			
 		}
 	}
 
