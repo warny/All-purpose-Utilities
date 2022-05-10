@@ -90,7 +90,7 @@ namespace Utils.Reflection.Reflection.Emit
 		private static string WriteDelegateField(this StringBuilder csCode, MethodInfo methodInfo, string delegateClassName)
 		{
 			var externalAttribute = methodInfo.GetCustomAttribute<ExternalAttribute>(true);
-			if (externalAttribute == null)
+			if (externalAttribute is null)
 			{
 				csCode.AppendLine($"\t\t[{typeof(ExternalAttribute).FullName}(\"{methodInfo.Name}\")]");
 			}

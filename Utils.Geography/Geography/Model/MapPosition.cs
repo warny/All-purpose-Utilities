@@ -15,6 +15,7 @@
 using System;
 using System.Runtime.Serialization;
 using System.Text;
+using Utils.Objects;
 
 namespace Utils.Geography.Model
 {
@@ -22,7 +23,7 @@ namespace Utils.Geography.Model
 	/**
 	 * A MapPosition represents an immutable pair of {@link GeoPoint} and zoom level.
 	 */
-	public class MapPosition /*: ISerializable*/ {
+	public class MapPosition {
 		private const long serialVersionUID = 1L;
 
 		/**
@@ -43,14 +44,11 @@ namespace Utils.Geography.Model
 		 * @throws IllegalArgumentException
 		 *             if {@code GeoPoint} is null or {@code zoomLevel} is negative.
 		 */
-		public MapPosition ( GeoPoint GeoPoint, byte zoomLevel )
+		public MapPosition ( GeoPoint geoPoint, byte zoomLevel )
 		{
-			if (GeoPoint == null) {
-				throw new ArgumentNullException(nameof(GeoPoint));
-			} else if (zoomLevel < 0) {
-				throw new ArgumentException("zoomLevel must not be negative: " + zoomLevel, nameof(zoomLevel));
-			}
-			this.GeoPoint = GeoPoint;
+			geoPoint.ArgMustNotBeNull();
+			zoomLevel.ArgMustBeGreaterThan((byte)0);
+			this.GeoPoint = geoPoint;
 			this.ZoomLevel = zoomLevel;
 		}
 
@@ -62,7 +60,7 @@ namespace Utils.Geography.Model
 				return false;
 			}
 			MapPosition other = (MapPosition)obj;
-			if (this.GeoPoint == null) {
+			if (this.GeoPoint is null) {
 				if (other.GeoPoint is not null) {
 					return false;
 				}

@@ -567,7 +567,7 @@ namespace Utils.Mathematics.Expressions
 
 			var leftleft = (left.Left as MethodCallExpression);
 			var rightleft = (right.Left as MethodCallExpression);
-			if(leftleft == null || rightleft == null) return null;
+			if(leftleft is null || rightleft is null) return null;
 
 			var sin = typeof(Math).GetMethod("Sin");
 			var cos = typeof(Math).GetMethod("Cos");

@@ -405,7 +405,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		{
 			get
 			{
-				if (determinant == null) {
+				if (determinant is null) {
 					if (!IsSquare) {
 						throw new InvalidOperationException("La matrice n'est pas une matrice carrée");
 					}
@@ -497,14 +497,14 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals ( Matrix other)
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			if (ReferenceEquals(this, other)) return true;
 			return this.GetHashCode() == other.GetHashCode() && Equals(other.components);
 		}
 
 		public bool Equals(double[,] other)
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			if (this.Rows != other.GetLength(0) || this.Columns != other.GetLength(1)) return false;
 			for (int i = 0; i < Rows; i++)
 			{
@@ -518,7 +518,7 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals(double[][] other)
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			if (Rows != other.GetLength(0)) return false;
 			for (int i = 0; i < this.components.GetLength(0); i++)
 			{
@@ -541,7 +541,7 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals(params Vector[] other)
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			if (other.Length != this.Columns) return false;
 
 			for (int i = 0; i < Columns; i++)

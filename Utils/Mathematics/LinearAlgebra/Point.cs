@@ -86,14 +86,14 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals ( Point other )
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			if (Object.ReferenceEquals(this, other)) return true;
 			Arrays.ArrayEqualityComparers.Double.Equals(this.components, other.components);
 			return true;
 		}
 		public bool Equals(double[] other)
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			return Arrays.ArrayEqualityComparers.Double.Equals(this.components, other);
 		}
 

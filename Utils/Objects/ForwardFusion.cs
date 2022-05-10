@@ -23,6 +23,9 @@ namespace Utils.Objects
 		{
 			leftList.ArgMustNotBeNull();
 			rightList.ArgMustNotBeNull();
+			this.leftList = leftList;
+			this.rightList = rightList;
+
 			if (typeof(IComparable<T2>).IsAssignableFrom(typeof(T1)))
 			{
 				compare = (t1, t2) => ((IComparable<T2>)t1).CompareTo(t2);
@@ -69,6 +72,9 @@ namespace Utils.Objects
 
 		private IEnumerable<(T1 Left, T2 Right)> Enumerate()
 		{
+			leftList.ArgMustNotBeNull();
+			rightList.ArgMustNotBeNull();
+
 			var leftEnum = leftList.GetEnumerator();
 			var rightEnum = rightList.GetEnumerator();
 

@@ -88,14 +88,14 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public bool Equals ( Vector other )
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			if (ReferenceEquals(this, other)) return true;
 			return Equals(other.components);
 		}
 
 		public bool Equals(double[] other)
 		{
-			if (other == null) return false;
+			if (other is null) return false;
 			return Arrays.ArrayEqualityComparers.Double.Equals(this.components, other);
 		}
 

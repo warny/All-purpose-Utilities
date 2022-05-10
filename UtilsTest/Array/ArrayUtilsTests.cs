@@ -39,5 +39,74 @@ namespace UtilsTest.Array
 			Assert.AreEqual("abcdefghijklmnopqrstuvwx", resultString);
 		}
 
+		private static int[] InitIntArray()
+		{
+			Random random = new Random();
+			return new int[] {
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+				random.Next(),
+			};
+		}
+
+		private static double[] InitDoubleArray()
+		{
+			Random random = new Random();
+			double[] values = new double[] {
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+				random.NextDouble(),
+			};
+			return values;
+		}
+
+		[TestMethod]
+		public void ConvertToArrayOfIntTest()
+		{
+			int[] values = InitIntArray();
+
+			var strings = values.Select(v => v.ToString()).ToArray();
+
+			var result = strings.ConvertToArrayOf<int>();
+
+			Assert.AreEqual(values.Length, result.Length);
+
+			for (int i = 0; i < values.Length; i++)
+			{
+				Assert.AreEqual(values[i], result[i]);
+			}
+		}
+
+
+		[TestMethod]
+		public void ConvertToArrayOfDoubleTest()
+		{
+			double[] values = InitDoubleArray();
+
+			var strings = values.Select(v => v.ToString()).ToArray();
+
+			var result = strings.ConvertToArrayOf<double>();
+
+			Assert.AreEqual(values.Length, result.Length);
+
+			for (int i = 0; i < values.Length; i++)
+			{
+				Assert.AreEqual(values[i], result[i], 0.00000001);
+			}
+		}
 	}
 }

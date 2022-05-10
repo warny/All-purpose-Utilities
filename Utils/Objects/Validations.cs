@@ -10,7 +10,7 @@ namespace Utils.Objects
 	{
 		public static void ArgMustNotBeNull(this object value, [CallerArgumentExpression("value")] string valueName = "")
 		{
-			if (value == null)
+			if (value is null)
 			{
 				throw new ArgumentNullException(valueName);
 			}
@@ -18,31 +18,31 @@ namespace Utils.Objects
 
 		public static void ValueMustNotBeNull(this object value, [CallerArgumentExpression("value")] string valueName = "")
 		{
-			if (value == null)
+			if (value is null)
 			{
 				throw new NullReferenceException();
 			}
 		}
 
-		public static void ArgMustBeOfSize(this Array value, int size, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgMustBeOfSize<T>(this IReadOnlyCollection<T> value, int size, [CallerArgumentExpression("value")] string valueName = "")
 		{
-			if (value.Length != size)
+			if (value.Count != size)
 			{
-				throw new ArgumentOutOfRangeException(valueName, value.Length, $"{valueName} must contain {size} elements");
+				throw new ArgumentOutOfRangeException(valueName, value.Count, $"{valueName} must contain {size} elements");
 			}
 		}
 
-		public static void ValueSizeMustBeMultipleOf(this Array value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ValueSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
 		{
-			if (value.Length % multiple != 0)
+			if (value.Count % multiple != 0)
 			{
 				throw new ArrayDimensionException($"{valueName}.Length must be a multiple of {multiple}");
 			}
 		}
 
-		public static void ArgSizeMustBeMultipleOf(this Array value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
 		{
-			if (value.Length % multiple != 0)
+			if (value.Count % multiple != 0)
 			{
 				throw new ArgumentException(valueName, $"{valueName}.Length must be a multiple of {multiple}");
 			}

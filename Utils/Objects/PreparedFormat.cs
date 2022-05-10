@@ -85,7 +85,7 @@ namespace Utils.Objects
 		{
 			get
 			{
-				if (getConstants == null) {
+				if (getConstants is null) {
 					getConstants = new Dictionary<char, GetConstantDelegate>();
 				}
 				return getConstants;
@@ -106,7 +106,7 @@ namespace Utils.Objects
 		{
 			get
 			{
-				if (overrides == null) {
+				if (overrides is null) {
 					overrides = new Overrides();
 				}
 				return overrides;
@@ -120,7 +120,7 @@ namespace Utils.Objects
 		/// <param name="formatString">Format de chaîne</param>
 		public PreparedFormat( string formatString )
 		{
-			if (formatString == null) return;
+			if (formatString is null) return;
 			this.FormatString = formatString;
 
 			StringBuilder text = new StringBuilder();
@@ -156,7 +156,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne formatée</returns>
 		private string FormatDatas( Func<string, object, object> getDatasFromSource, object obj )
 		{
-			if (FormatString == null) return null;
+			if (FormatString is null) return null;
 			StringBuilder formattedText = new StringBuilder();
 			foreach (var part in formatParts) {
 				if (part.text) {
@@ -259,7 +259,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public string Format( IDataRecord obj )
 		{
-			if (FormatString == null) return null;
+			if (FormatString is null) return null;
 			Func<string, object, object> getDatasFromSource = (( name, o ) => ((IDataRecord)o)[name]);
 			return FormatDatas(getDatasFromSource, obj);
 		}
@@ -281,9 +281,9 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public string Format( object obj )
 		{
-			if (FormatString == null) return null;
+			if (FormatString is null) return null;
 			// Vérifie s'il existe un cache d'execution
-			if (ObjectShadow == null) ObjectShadow = new Dictionary<Type, Dictionary<string, objectShadow[]>>();
+			if (ObjectShadow is null) ObjectShadow = new Dictionary<Type, Dictionary<string, objectShadow[]>>();
 
 			// Vérifie s'il existe un cache d'execution pour l'objet passé en paramètre
 			Type BaseType = obj.GetType();
@@ -305,7 +305,7 @@ namespace Utils.Objects
 
 		public object ExecuteObjectMembers( string name, object current )
 		{
-			if (ObjectShadow == null) ObjectShadow = new Dictionary<Type, Dictionary<string, objectShadow[]>>();
+			if (ObjectShadow is null) ObjectShadow = new Dictionary<Type, Dictionary<string, objectShadow[]>>();
 			return ExecuteObjectMembers(name, current, ObjectShadow[current.GetType()]);
 		}
 
@@ -322,7 +322,7 @@ namespace Utils.Objects
 				// Cas on on a caché l'execution. On cherche le type du paramètre, et on l'execute
 				foreach (objectShadow shadow in currentShadow[name]) {
 					// dans le cas où on obtient un objet null, on arrête le traitement
-					if (current == null) return null;
+					if (current is null) return null;
 					// sinon, on execute la prochaine procédure, fonction ou propriété
 					if (shadow.member is FieldInfo) {
 						current = ((FieldInfo)shadow.member).GetValue(current);
@@ -348,7 +348,7 @@ namespace Utils.Objects
 				// si on a pas de cache, on le créé à la première execution
 				foreach (Match match in parseObjectString.Matches(name)) {
 					// dans le cas où on obtient un objet null, on arrête le traitement
-					if (current == null) return null;
+					if (current is null) return null;
 					// sinon, on execute la prochaine procédure, fonction ou propriété
 					objectShadow shadow = new objectShadow();
 					Type t = current.GetType();
@@ -483,7 +483,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public string FormatFromIndexer( object obj )
 		{
-			if (FormatString == null) return null;
+			if (FormatString is null) return null;
 			Type t = obj.GetType();
 			var Indexer = GetDefaultStringIndexer(t);
 			var getMethod = Indexer.GetGetMethod();

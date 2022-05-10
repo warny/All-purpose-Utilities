@@ -24,7 +24,7 @@ namespace Utils.Fonts.TTF
 			foreach (var t in typeof(TrueTypeTable).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(TrueTypeTable))))
 			{
 				TTFTableAttribute descriptor = t.GetCustomAttribute<TTFTableAttribute>();
-				if (descriptor == null) { continue; }
+				if (descriptor is null) { continue; }
 				TablesType.Add(descriptor.TableTag, (descriptor, t));
 			}
 		}

@@ -32,7 +32,7 @@ public class CmapTable : TrueTypeTable
 
 		public int CompareTo([AllowNull] CmapSubtable other)
 		{
-			if (other == null) return 1;
+			if (other is null) return 1;
 			if (this.Equals(other)) return 0;
 
 			if (this.PlatformID == 3 && this.PlatformSpecificID == 1) return -1;

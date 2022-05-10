@@ -112,7 +112,7 @@ namespace Utils.Objects
 
 			while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
 			{
-				if (pattern[wildcardIndex] != '?' && !Equals(value[valueIndex], pattern[wildcardIndex]))
+				if (pattern[wildcardIndex] != '?' && !equals(value[valueIndex], pattern[wildcardIndex]))
 				{
 					return false;
 				}
@@ -201,7 +201,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
-			if (s == null) return null;
+			if (s is null) return null;
 			int start = 0, end;
 			for (end = s.Length - 1; end > start; end--)
 			{
@@ -224,7 +224,7 @@ namespace Utils.Objects
 		/// </returns>
 		public static string Mid( this string s, int start, int length )
 		{
-			if (s == null) return null;
+			if (s is null) return null;
 			if (length < 0)
 			{
 				if (start > 0 && -length > start)
@@ -284,7 +284,7 @@ namespace Utils.Objects
 		/// </returns>
 		public static string Right( this string s, int length )
 		{
-			if (s == null) return null;
+			if (s is null) return null;
 			if (length > s.Length) return s;
 			return s.Substring(s.Length - length);
 		}
@@ -441,7 +441,7 @@ namespace Utils.Objects
 		public static string PurgeString(this string s, Func<char, bool> keepFunction, char? replacement = null)
 		{
 			keepFunction.ArgMustNotBeNull();
-			if (s == null) return null;
+			if (s is null) return null;
 			StringBuilder result = new StringBuilder(s.Length);
 			foreach (var c in s)
 			{

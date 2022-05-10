@@ -26,7 +26,7 @@ namespace Utils.IO.Serialization
 			this.Length = length == 0 ? (int?)null : length;
 			this.BigIndian = bigIndian;
 			this.FieldEncoding = FieldEncoding;
-			this.StringEncoding = StringEncoding == null ? Encoding.Default : Encoding.GetEncoding(StringEncoding) ;
+			this.StringEncoding = StringEncoding is null ? Encoding.Default : Encoding.GetEncoding(StringEncoding) ;
 		}
 	}
 

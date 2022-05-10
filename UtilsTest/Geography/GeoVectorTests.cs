@@ -105,8 +105,8 @@ namespace UtilsTest.Geography
 				bool equals = geoPointsComparer.Equals(test.intersections, intersections);
 				if (!equals)
 				{
-					string strTarget = test.intersections == null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint>)test.intersections) + ")";
-					string strResult = intersections == null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint>)intersections) + ")";
+					string strTarget = test.intersections is null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint>)test.intersections) + ")";
+					string strResult = intersections is null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint>)intersections) + ")";
 					Assert.Fail("Result [{0}] differs from target [{1}]", strResult, strTarget);
 				}
 			}

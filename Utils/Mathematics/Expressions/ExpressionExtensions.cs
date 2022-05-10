@@ -23,17 +23,14 @@ namespace Utils.Mathematics.Expressions
 
 		public static LambdaExpression Derive( this LambdaExpression e )
 		{
-			if (e == null)
-				throw new ExpressionExtensionsException("Expression must be non-null");
-			if (e.Parameters.Count != 1)
-				throw new ExpressionExtensionsException("Incorrect number of parameters. Must be 1");
+			e.ArgMustNotBeNull();
+			e.Parameters.ArgMustBeOfSize(1);
 			return e.Derive(e.Parameters[0].Name);
 		}
 
 		public static LambdaExpression Derive( this LambdaExpression e, string paramName )
 		{
-			if (e == null)
-				throw new ExpressionExtensionsException("Expression must be non-null");
+			e.ArgMustNotBeNull();
 
 			ExpressionDerivation derivation = new ExpressionDerivation(paramName);
 			var expression = e.Body.Simplify();

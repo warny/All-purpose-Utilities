@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
 namespace Utils.Arrays
 {
@@ -302,5 +303,36 @@ namespace Utils.Arrays
 			array = result;
 			return array;
 		}
+
+		/// <summary>
+		/// Converti la liste de chaine de caractère en tableau
+		/// </summary>
+		/// <param name="values">Valeurs à convertir</param>
+		/// <param name="elementType">Type cible</param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException">si <paramref name="values"/> ou <paramref name="elementType"/> est null</exception>
+		public static Array ConvertToArrayOf(this IEnumerable<string> values, Type elementType)
+		{
+			values.ArgMustNotBeNull();
+			elementType.ArgMustNotBeNull();
+
+			var results = new System.Collections.ArrayList();
+
+			foreach (var value in values)
+			{
+				results.Add(Parsers.Parse(value, elementType));
+			}
+			return results.ToArray(elementType);
+		}
+
+		/// <summary>
+		/// Converti la liste de chaine de caractère en tableau
+		/// </summary>
+		/// <param name="values">Valeurs à convertir</param>
+		/// <typeparam name="T">Type cible</typeparam>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static T[] ConvertToArrayOf<T>(this IEnumerable<string> values)
+			=> (T[])values.ConvertToArrayOf(typeof(T));
 	}
 }

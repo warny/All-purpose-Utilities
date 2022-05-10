@@ -163,7 +163,7 @@ namespace Utils.Reflection
 			foreach (var member in t.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance))
 			{
 				var attr = (ExternalAttribute)member.GetCustomAttributes(externalAttributeType, true).FirstOrDefault();
-				if (attr == null) continue;
+				if (attr is null) continue;
 				string functionName = attr.Name ?? member.Name;
 				var functionPtr = GetFunctionPointer(obj.dllHandle, functionName);
 				if (member is PropertyInfo prop)

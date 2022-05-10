@@ -91,7 +91,7 @@ namespace Utils.Resources
 				foreach (var r2 in r1.ReadChildElements("value"))
 				{
 					var value = r2.ReadElementContentAsString();
-					if (type == null)
+					if (type is null)
 					{
 						resources[name] = new StringResource(this, value);
 					}
@@ -164,10 +164,10 @@ namespace Utils.Resources
 			{
 				get
 				{
-					if (value == null)
+					if (value is null)
 					{
 						string fullName = externalResource.baseDirectory.GetFiles(filename).FirstOrDefault().FullName;
-						if (type == null)
+						if (type is null)
 						{
 							value = File.ReadAllBytes(fullName);
 						}

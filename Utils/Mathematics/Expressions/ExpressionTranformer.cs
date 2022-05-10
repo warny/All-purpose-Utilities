@@ -69,7 +69,7 @@ namespace Utils.Mathematics.Expressions
 
 			foreach (var method in t.GetMethods(Public | NonPublic | InvokeMethod | Instance)) {
 				var attr = method.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault();
-				if (attr == null) continue;
+				if (attr is null) continue;
 				if (!attr.Match(e)) continue;
 				if (!TypeOfExpression.IsAssignableFrom(method.ReturnType)) throw new InvalidProgramException();
 
@@ -94,7 +94,7 @@ namespace Utils.Mathematics.Expressions
 					}
 					if (!isValid) continue;
 					result = method.Invoke(this, parameters);
-					if (result == null) continue;
+					if (result is null) continue;
 				} else if (parametersInfo.Length == 1) {
 					result = method.Invoke(this, new[] { parameters[0] });
 				} else {
@@ -328,7 +328,7 @@ namespace Utils.Mathematics.Expressions
 		{
 			if (!parameter.ParameterType.IsAssignableFrom(e.GetType())) return false;
 			var attribute = parameter.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault();
-			if (attribute == null) return true;
+			if (attribute is null) return true;
 			return attribute.Match(e);
 		}
 
@@ -391,7 +391,7 @@ namespace Utils.Mathematics.Expressions
 		{
 			var cc = e as ConstantExpression;
 			if (!(cc is not null && NumberUtils.IsNumeric(cc.Value))) return false;
-			if (Values == null) return true;
+			if (Values is null) return true;
 			return Values.Any(v => v==(double)cc.Value);
 		}
 	}

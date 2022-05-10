@@ -131,7 +131,7 @@ namespace Utils.Objects
 			index.ArgMustBeLesserOrEqualsThan(array.Length);
 			if (index < 0) index = array.Length + index;
 			index.ArgMustBeGreaterOrEqualsThan(0);
-			if (length == null || length + index > array.Length) length = Math.Min(array.Length - index, this.innerBytes.Length);
+			if (length is null || length + index > array.Length) length = Math.Min(array.Length - index, this.innerBytes.Length);
 			Array.Copy(this.innerBytes, 0, array, index, length.Value);
 		}
 

@@ -213,7 +213,7 @@ namespace Utils.IO.Serialization
 
 		public List<byte> ReadTerminatedBytes( params byte[] terminators )
 		{
-			if (terminators == null || terminators.Length == 0) terminators = new byte[] { 0x0 };
+			if (terminators is null || terminators.Length == 0) terminators = new byte[] { 0x0 };
 			var bytes = new List<byte>();
 			for (int b = ReadByte() ; !terminators.Contains((byte)b) ; b = ReadByte()) {
 				bytes.Add((byte)b);

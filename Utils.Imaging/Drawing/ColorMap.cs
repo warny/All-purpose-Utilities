@@ -50,7 +50,7 @@ namespace Utils.Drawing
 
 		public IEnumerable<(Point Point, T Color)> Draw(DrawPoint point, float position)
 		{
-			if (lastPoint == null)
+			if (lastPoint is null)
 			{
 				lastPoint = point;
 				var returnPoint = new Point(lastPoint.X, lastPoint.Y);

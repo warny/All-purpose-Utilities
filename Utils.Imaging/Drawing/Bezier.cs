@@ -39,7 +39,7 @@ namespace Utils.Drawing
 		/// </summary>
 		private Segment[] Segments {
 			get {
-				if (segments == null)
+				if (segments is null)
 				{
 
 					List<Segment> result = new List<Segment>();

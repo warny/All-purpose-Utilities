@@ -23,7 +23,7 @@ namespace Utils.Objects
 
 			public int CompareTo(SimpleRange other)
 			{
-				if (other == null) return -1;
+				if (other is null) return -1;
 				return new[] {
 					Minimum.CompareTo(other.Minimum),
 					Maximum.CompareTo(other.Maximum)
@@ -45,15 +45,15 @@ namespace Utils.Objects
 
 			public static SimpleRange Merge(SimpleRange range1, SimpleRange range2)
 			{
-				if (range1 == null) return range2;
-				if (range2 == null) return range1;
+				if (range1 is null) return range2;
+				if (range2 is null) return range1;
 				if (!CanMerge(range1, range2)) return null;
 				return new SimpleRange(MathEx.Min(range1.Minimum, range2.Minimum), MathEx.Max(range1.Maximum, range2.Maximum));
 			}
 
 			public static SimpleRange[] Except(SimpleRange range1, SimpleRange range2)
 			{
-				if (range2 == null || range2.Minimum > range1.Maximum || range2.Maximum < range1.Minimum) return new SimpleRange[] { new SimpleRange(range1.Minimum, range1.Maximum) };
+				if (range2 is null || range2.Minimum > range1.Maximum || range2.Maximum < range1.Minimum) return new SimpleRange[] { new SimpleRange(range1.Minimum, range1.Maximum) };
 				if (range2.Minimum <= range1.Minimum && range2.Maximum >= range1.Maximum) return new SimpleRange[] { };
 				if (range2.Maximum >= range1.Maximum) return new SimpleRange[] { new SimpleRange(range1.Minimum, range2.Minimum - 1) };
 				if (range2.Minimum <= range1.Minimum) return new SimpleRange[] { new SimpleRange(range2.Maximum + 1, range1.Maximum) };
@@ -121,7 +121,7 @@ namespace Utils.Objects
 			foreach (var simpleRange in result)
 			{
 				var newRange = SimpleRange.Merge(current, simpleRange);
-				if (newRange == null)
+				if (newRange is null)
 				{
 					ranges.Add(current);
 					current = simpleRange;

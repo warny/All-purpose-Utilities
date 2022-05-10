@@ -248,7 +248,7 @@ public class PostTable : TrueTypeTable
 			_ => null
 		};
 
-		if (nameMap == null)
+		if (nameMap is null)
 		{
 			nameMap = new PostMap();
 			Console.WriteLine($"Unknown post map type: {Format:X2}");
