@@ -10,9 +10,9 @@ using System.Diagnostics;
 
 namespace Utils.Drawing
 {
-	public class Draw<T> : BaseDrawing<T>
+	public class DrawI<T> : BaseDrawing<T>
 	{
-		public Draw(IImageAccessor<T> imageAccessor) : base(imageAccessor) { }
+		public DrawI(IImageAccessor<T> imageAccessor) : base(imageAccessor) { }
 
 		#region Point
 		public void DrawPoint(Point point, T color) => DrawPoint(point.X, point.Y, color);
@@ -38,7 +38,10 @@ namespace Utils.Drawing
 			}
 		}
 
-		private void FillShape1(UVMap<T> color, params IDrawable[] drawables)
+		public void FillShape1(UVMap<T> color, params IDrawable[] drawables)
+			=> FillShape1(color, (IEnumerable<IDrawable>)drawables);
+
+		public void FillShape1(UVMap<T> color, IEnumerable<IDrawable> drawables)
 		{
 			var points = drawables.SelectMany(d => d.GetPoints(true));
 			foreach (var linePoints in points.GroupBy(p => p.Y))
@@ -59,22 +62,22 @@ namespace Utils.Drawing
 			}
 		}
 
-		private void FillShape2(UVMap<T> color, params IDrawable[] drawables)
+		public void FillShape2(UVMap<T> color, params IDrawable[] drawables) 
+			=> FillShape2(color, (IEnumerable<IDrawable>)drawables);
+
+		public void FillShape2(UVMap<T> color, IEnumerable<IDrawable> drawables)
 		{
 			var points = drawables.SelectMany(d => d.GetPoints(true));
 			foreach (var linePoints in points.GroupBy(p => p.Y))
 			{
-				var orderedPoints = linePoints.OrderBy(p => p.X).ToArray();
-				bool drawing = false;
+				var orderedPoints = linePoints.OrderBy(p => p.X);
+				int direction = 0;
 				foreach (var pair in orderedPoints.SlideEnumerateBy(2))
 				{
 					int y = linePoints.Key;
-					if (pair[0].VerticalDirection != 0)
-					{
-						drawing = !drawing;
-					}
+					direction += pair[0].VerticalDirection;
 					DrawPoint(pair[0].X, y, color(pair[0].X, y));
-					if (drawing)
+					if (MathEx.Mod(direction, 2) != 0)
 					{
 						for (int x = pair[0].X; x <= pair[1].X; x++)
 						{
@@ -130,26 +133,26 @@ namespace Utils.Drawing
 		public void DrawPolygon(T color, IEnumerable<Point> points) => DrawPolygon(color, points.ToArray());
 		public void DrawPolygon(T color, params Point[] points)
 		{
-			Polygon polygon = new Polygon(points);
+			Polygon polygon = new Polygon(points.Select(p=>(PointF)p));
 			DrawShape(new MapBrush<T>(color), polygon);
 		}
 
 		public void DrawPolygon(IBrush<T> color, IEnumerable<Point> points) => DrawPolygon(color, points.ToArray());
 		public void DrawPolygon(IBrush<T> color, params Point[] points)
 		{
-			Polygon polygon = new Polygon(points);
+			Polygon polygon = new Polygon(points.Select(p => (PointF)p));
 			DrawShape(color, polygon);
 		}
 
 		public void FillPolygon1(T color, params Point[] points)
 		{
-			Polygon polygon = new Polygon(points);
+			Polygon polygon = new Polygon(points.Select(p => (PointF)p));
 			FillShape1((x, y) => color, polygon);
 		}
 
 		public void FillPolygon2(T color, params Point[] points)
 		{
-			Polygon polygon = new Polygon(points);
+			Polygon polygon = new Polygon(points.Select(p => (PointF)p));
 			FillShape2((x, y) => color, polygon);
 		}
 

@@ -38,19 +38,6 @@ namespace Utils.Drawing
 			return this;
 		}
 
-		//public Path BezierThenLineTo(Point start, Point end)
-		//{
-
-
-
-		//	Bezier bezier = new Bezier(lastPoint, start);
-		//	Segment segment = new Segment(start, end);
-		//	segments.AddRange(bezier.GetSegments(false));
-		//	segments.Add(segment);
-		//	lastPoint = end;
-		//	return this;
-		//}
-
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)
 		{
 			foreach (var segment in GetSegments(closed))

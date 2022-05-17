@@ -17,7 +17,7 @@ namespace Utils.Drawing
 
 		public Bezier(params Point[] points)
 			: this(points.Select(p => new PointF(p.X, p.Y)).ToArray()) { }
-		public Bezier(PointF[] points)
+		public Bezier(params PointF[] points)
 		{
 			Points = points;
 		}
@@ -88,7 +88,7 @@ namespace Utils.Drawing
 		}
 
 		/// <summary>
-		/// 
+		/// Compute the points for bezier curve
 		/// </summary>
 		/// <param name="points"></param>
 		/// <returns></returns>

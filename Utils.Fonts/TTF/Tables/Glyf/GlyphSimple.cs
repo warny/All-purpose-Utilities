@@ -148,17 +148,17 @@ public abstract class GlyphSimple : GlyphBase
 		}
 		foreach (var flag in compactFlags)
 		{
-			var repetition = flag.repetition;
+			var repetition = flag.Repetition;
 			while (repetition > 0)
 			{
 				if (repetition > 1)
 				{
-					data.WriteByte((byte)(flag.item | OutLineFlags.Repeat));
-					data.WriteByte((byte)MathEx.Min(255, flag.repetition - 1));
+					data.WriteByte((byte)(flag.Value | OutLineFlags.Repeat));
+					data.WriteByte((byte)MathEx.Min(255, flag.Repetition - 1));
 				}
 				else
 				{
-					data.WriteByte((byte)(flag.item));
+					data.WriteByte((byte)(flag.Value));
 				}
 				repetition -= 255;
 			}

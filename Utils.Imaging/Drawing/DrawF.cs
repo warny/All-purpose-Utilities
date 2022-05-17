@@ -10,7 +10,7 @@ namespace Utils.Drawing
 {
 	public class DrawF<T> : BaseDrawing<T>
 	{
-		public Draw<T> Draw { get; }
+		public DrawI<T> Draw { get; }
 		public float Top { get; }
 		public float Left { get; }
 		public float Right { get; }
@@ -23,7 +23,7 @@ namespace Utils.Drawing
 
 		public DrawF(IImageAccessor<T> imageAccessor, float top, float left, float right, float down) : base (imageAccessor)
 		{
-			Draw = new Draw<T>(imageAccessor);
+			Draw = new DrawI<T>(imageAccessor);
 			Top = top;
 			Left = left;
 			Right = right;
@@ -53,8 +53,8 @@ namespace Utils.Drawing
 		}
 
 		#region Point
-		public PointF ComputePoint(Point p) => ComputePoint(p.X, p.Y);
-		public PointF ComputePoint(int x, int y)
+		public PointF ComputePoint(PointF p) => ComputePoint(p.X, p.Y);
+		public PointF ComputePoint(float x, float y)
 		{
 			return new PointF(
 				x / hRatio + Left,

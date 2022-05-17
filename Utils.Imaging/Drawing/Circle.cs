@@ -18,21 +18,21 @@ namespace Utils.Drawing
 			}
 		}
 
-		public Point Center { get; }
+		public PointF Center { get; }
 		public double Orientation { get; }
-		public int Radius1 { get; }
-		public int Radius2 { get; }
+		public float Radius1 { get; }
+		public float Radius2 { get; }
 		public double StartAngle { get; }
 		public double EndAngle { get; }
 
 		private Polylines polylines;
 
-		public Circle(Point center, int radius, double startAngle = 0, double endAngle = Math.PI * 2)
+		public Circle(PointF center, float radius, double startAngle = 0, double endAngle = Math.PI * 2)
 			: this(center, radius, radius, 0, startAngle, endAngle)
 		{
 		}
 		
-		public Circle(Point center, int radius1, int radius2, double orientation = 0, double startAngle = 0, double endAngle = Math.PI * 2)
+		public Circle(PointF center, float radius1, float radius2, double orientation = 0, double startAngle = 0, double endAngle = Math.PI * 2)
 		{
 			Center = center;
 			Radius1 = radius1;
@@ -51,7 +51,7 @@ namespace Utils.Drawing
 
 		private void ComputeLines()
 		{
-			IEnumerable<Point> ComputePoints()
+			IEnumerable<PointF> ComputePoints()
 			{
 				double angle = EndAngle - StartAngle;
 				var angularResolution = angle / (Math.Max(Radius1, Radius2) * Math.PI * 2);
@@ -75,7 +75,7 @@ namespace Utils.Drawing
 				int deltaX = (int)(cosR * delta1 + sinR * delta2);
 				int deltaY = (int)(sinR * delta1 + cosR * delta2);
 
-				Point lastPoint = new Point(Center.X + deltaX, Center.Y + deltaY);
+				PointF lastPoint = new PointF(Center.X + deltaX, Center.Y + deltaY);
 				yield return lastPoint;
 
 				for (double a = StartAngle + angularResolution; test(a); a += angularResolution)
@@ -86,7 +86,7 @@ namespace Utils.Drawing
 					deltaX = (int)(cosR * delta1 + sinR * delta2);
 					deltaY = (int)(sinR * delta1 + cosR * delta2);
 
-					var newPoint = new Point(Center.X + deltaX, Center.Y + deltaY);
+					var newPoint = new PointF(Center.X + deltaX, Center.Y + deltaY);
 					if (newPoint.X == lastPoint.X && newPoint.Y == lastPoint.Y) continue;
 					lastPoint = newPoint;
 					yield return newPoint;

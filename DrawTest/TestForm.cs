@@ -25,7 +25,7 @@ namespace DrawTest
 			Bitmap image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
 			using (var a = new BitmapArgb32Accessor(image))
 			{
-				var d = new Draw<ColorArgb32>(a);
+				var d = new DrawI<ColorArgb32>(a);
 				/*
 				d.FillPolygon1(
 					new ColorArgb32(0, 0, 0),
@@ -87,6 +87,21 @@ namespace DrawTest
 				d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(0, 0, 0), Math.PI / 2, Math.PI);
 				MapBrush<ColorArgb32> c1 = new MapBrush<ColorArgb32>((p, s) => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), p));
 				d.DrawCircle(new Point(1000, 300), 250, c1, Math.PI / 2, Math.PI);
+
+				var s1 = new Pathes(
+					new Circle(new PointF(300, 300), 100),
+					new Circle(new PointF(350, 300), 75, Math.PI * 2, 0)
+				);
+
+				d.FillShape1((x,y) => new ColorArgb32(128, 128, 0), s1);
+
+				var s2 = new Pathes(
+					new Circle(new PointF(500, 500), 100),
+					new Circle(new PointF(550, 500), 75)
+				);
+
+				d.FillShape2((x, y) => new ColorArgb32(128, 0, 128), s2);
+
 			}
 			pictureBox1.Image = image;
 		}

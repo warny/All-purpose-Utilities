@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using Utils.Mathematics;
 
 namespace Utils.Drawing
 {
@@ -46,10 +47,10 @@ namespace Utils.Drawing
 
 		public IEnumerable<DrawPoint> GetPoints(bool closed, float position = 0)
 		{
-			int x = (int)X1;
-			int y = (int)Y1;
-			int dx = (int)X2 - x;
-			int dy = (int)Y2 - y;
+			int x = (int)MathEx.Round(X1);
+			int y = (int)MathEx.Round(Y1);
+			int dx = (int)MathEx.Round(X2) - x;
+			int dy = (int)MathEx.Round(Y2) - y;
 
 			int xinc = (dx > 0) ? 1 : -1;
 			int yinc = (dy > 0) ? 1 : -1;

@@ -13,7 +13,9 @@ namespace Utils.Drawing
 
 		public float Length => Segments.Sum(s => s.Length);
 
-		public Polygon(Point[] points)
+		public Polygon(params PointF[] points) : this((IEnumerable<PointF>)points) { }
+
+		public Polygon(IEnumerable<PointF> points)
 		{
 			Segments = points.SlideEnumerateBy(2).Select(p=>new Segment(p[0], p[1])).FollowedBy(new Segment(points.Last(), points.First())).ToArray();
 		}
@@ -23,9 +25,6 @@ namespace Utils.Drawing
 			return Segments.SelectMany(s => s.GetPoints(false));
 		}
 
-		public IEnumerable<Segment> GetSegments(bool closed)
-		{
-			return Segments;
-		}
+		public IEnumerable<Segment> GetSegments(bool closed) => Segments;
 	}
 }

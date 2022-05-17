@@ -13,7 +13,7 @@ namespace Utils.Drawing
 
 		public float Length => Segments.Sum(s => s.Length);
 
-		public Polylines(Point[] points)
+		public Polylines(PointF[] points)
 		{
 			Segments = points.SlideEnumerateBy(2).Select(p => new Segment(p[0], p[1])).ToArray();
 		}

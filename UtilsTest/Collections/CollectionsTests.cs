@@ -108,27 +108,27 @@ namespace UtilsTest.Collections
 		public void PackTest()
 		{
 			var test = new string[] { "a", "b", "b", "c", "b", "b" };
-			var expected = new (string value, int repetition)[] {
-				("a", 1),
-				("b", 2),
-				("c", 1),
-				("b", 2),
+			var expected = new Pack<string>[] {
+				new ("a", 1),
+				new ("b", 2),
+				new ("c", 1),
+				new ("b", 2),
 			};
 
 			var result = CollectionUtils.Pack(test).ToArray();
 
-			var comparer = new ArrayEqualityComparer<(string, int)>();
+			var comparer = new ArrayEqualityComparer<Pack<string>>();
 			Assert.IsTrue(comparer.Equals(expected, result));
 		}
 
 		[TestMethod]
 		public void UpackTest()
 		{
-			var test = new (string value, int repetition)[] {
-				("a", 1),
-				("b", 2),
-				("c", 1),
-				("b", 2),
+			var test = new Pack<string>[] {
+				new ("a", 1),
+				new ("b", 2),
+				new ("c", 1),
+				new ("b", 2),
 			};
 			var expected = new string[] { "a", "b", "b", "c", "b", "b" };
 
