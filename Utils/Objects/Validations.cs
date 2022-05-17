@@ -23,7 +23,9 @@ namespace Utils.Objects
 		{
 			if (value is null)
 			{
+				#pragma warning disable S112 // General exceptions should never be thrown
 				throw new NullReferenceException($"{valueName} must not be null");
+				#pragma warning restore S112 // General exceptions should never be thrown
 			}
 			return value;
 		}
@@ -44,14 +46,12 @@ namespace Utils.Objects
 			}
 		}
 
-		public static C ArgSizeMustBeMultipleOf<C, T>(this C value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
-			where C : IReadOnlyCollection<T>
+		public static void ArgSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
 		{
 			if (value.Count % multiple != 0)
 			{
 				throw new ArgumentException(valueName, $"{valueName}.Length must be a multiple of {multiple}");
 			}
-			return value;
 		}
 
 		public static T ArgMustBeEqualsTo<T>(this T value, T targetValue, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
