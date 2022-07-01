@@ -26,7 +26,7 @@ namespace Utils.Collections
 		/// <summary>
 		/// conteneur des ressources chargées
 		/// </summary>
-		private Dictionary<TKey, TValue> holder;
+		private IDictionary<TKey, TValue> holder;
 
 		/// <summary>
 		/// Constructeur du chargeur de ressource
@@ -38,6 +38,19 @@ namespace Utils.Collections
 			this.holder = new Dictionary<TKey, TValue>();
 			this.loader = loader;
 		}
+
+		/// <summary>
+		/// Constructeur du chargeur de ressource
+		/// </summary>
+		/// <param name="loader">Fonction de chargement des ressources</param>
+		/// <param name="cacheHolder">dictonnaire dans lequel sont stockés les valeurs</param>
+		public CachedLoader(Func<TKey, TValue> loader, IDictionary<TKey, TValue> cacheHolder)
+		{
+			AutoCreateObject = true;
+			this.holder = cacheHolder;
+			this.loader = loader;
+		}
+
 
 		public bool AutoCreateObject { get; set; }
 

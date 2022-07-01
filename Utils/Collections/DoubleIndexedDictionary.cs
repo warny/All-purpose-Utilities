@@ -10,6 +10,41 @@ namespace Utils.Collections
 		private readonly Dictionary<T1, T2> dictionary1 = new Dictionary<T1, T2>();
 		private readonly Dictionary<T2, T1> dictionary2 = new Dictionary<T2, T1>();
 
+		public DoubleIndexedDictionary() { }
+		public DoubleIndexedDictionary(IEnumerable<(T1 Key, T2 Value)> values)
+		{
+			foreach (var kv in values)
+			{
+				dictionary1.Add(kv.Key, kv.Value);
+				dictionary2.Add(kv.Value, kv.Key);
+			}
+		}
+		public DoubleIndexedDictionary(IEnumerable<(T2 Value, T1 Key)> values)
+		{
+			foreach (var kv in values)
+			{
+				dictionary1.Add(kv.Key, kv.Value);
+				dictionary2.Add(kv.Value, kv.Key);
+			}
+		}
+
+		public DoubleIndexedDictionary(IEnumerable<KeyValuePair<T1, T2>> values)
+		{
+			foreach (var kv in values)
+			{
+				dictionary1.Add(kv.Key, kv.Value);
+				dictionary2.Add(kv.Value, kv.Key);
+			}
+		}
+		public DoubleIndexedDictionary(IEnumerable<KeyValuePair<T2, T1>> values)
+		{
+			foreach (var kv in values)
+			{
+				dictionary1.Add(kv.Value, kv.Key);
+				dictionary2.Add(kv.Key, kv.Value);
+			}
+		}
+
 		public T2 this[T1 key] {
 			get => dictionary1[key];
 			set
