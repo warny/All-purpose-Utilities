@@ -528,7 +528,7 @@ namespace Utils.Objects
 							{
 								case ' ':
 									{
-										result.Add(line.Substring(lastindex, i - lastindex + 1).TrimBrackets('\"'));
+										result.Add(line.Substring(lastindex, i - lastindex).TrimBrackets('\"'));
 										lastindex = i + 1;
 									}
 									break;
