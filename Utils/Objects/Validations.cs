@@ -30,6 +30,60 @@ namespace Utils.Objects
 			return value;
 		}
 
+		public static void ArgMustBeOfRank(this Array value, int size, [CallerArgumentExpression("value")] string valueName = "")
+		{
+			if (value.Rank != size)
+			{
+				#pragma warning disable S112 // General exceptions should never be thrown
+				throw new ArgumentException($"{valueName} must be of rank {size}");
+				#pragma warning restore S112 // General exceptions should never be thrown
+			}
+		}
+
+		public static void ArgMustBeOfSizes(this Array value, int?[] sizes, int size, [CallerArgumentExpression("value")] string valueName = "")
+		{
+			if (value.Rank != sizes.Length)
+			{
+				#pragma warning disable S112 // General exceptions should never be thrown
+				throw new ArgumentException($"{valueName} must be of rank {sizes.Length}");
+				#pragma warning restore S112 // General exceptions should never be thrown
+			}
+			for (int i = 0; i < sizes.Length; i++)
+			{
+				if (sizes[i] != null && value.GetLength(i) != sizes[i].Value)
+				{
+					#pragma warning disable S112 // General exceptions should never be thrown
+					throw new ArgumentException($"{valueName} must be of size {sizes[i]}");
+					#pragma warning restore S112 // General exceptions should never be thrown
+				}
+			}
+		}
+
+		public static void ArgMustBeOfBounds(this Array value, (int? lBound, int? uBound)[] bounds, [CallerArgumentExpression("value")] string valueName = "")
+		{
+			if (value.Rank != bounds.Length)
+			{
+				#pragma warning disable S112 // General exceptions should never be thrown
+				throw new ArgumentException($"{valueName} must be of rank {bounds.Length}");
+				#pragma warning restore S112 // General exceptions should never be thrown
+			}
+			for (int i = 0; i < bounds.Length; i++)
+			{
+				if (bounds[i].lBound != null && value.GetLowerBound(i) != bounds[i].lBound.Value)
+				{
+					#pragma warning disable S112 // General exceptions should never be thrown
+					throw new ArgumentException($"{valueName}[{i}] must be of lower bound {bounds[i].lBound}");
+					#pragma warning restore S112 // General exceptions should never be thrown
+				}
+				if (bounds[i].uBound != null && value.GetUpperBound(i) != bounds[i].uBound.Value)
+				{
+					#pragma warning disable S112 // General exceptions should never be thrown
+					throw new ArgumentException($"{valueName}[{i}] must be of upper bound {bounds[i].uBound}");
+					#pragma warning restore S112 // General exceptions should never be thrown
+				}
+			}
+		}
+
 		public static void ArgMustBeOfSize<T>(this IReadOnlyCollection<T> value, int size, [CallerArgumentExpression("value")] string valueName = "")
 		{
 			if (value.Count != size)

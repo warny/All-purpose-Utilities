@@ -11,7 +11,7 @@ namespace Utils.Collections
 	/// </summary>
 	/// <typeparam name="TKey"></typeparam>
 	/// <typeparam name="TValue"></typeparam>
-	public class CachedLoader<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDictionary<TKey, TValue>
+	public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 	{
 		public CachedLoader()
 		{

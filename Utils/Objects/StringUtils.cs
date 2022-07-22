@@ -554,9 +554,25 @@ namespace Utils.Objects
 						break;
 				}
 			}
-			result.Add(line.Substring(lastindex).TrimBrackets('\"'));
+			result.Add(TrimQuotes(line.Substring(lastindex)));
 			return result.Where(r => !r.IsNullOrWhiteSpace()).ToArray();
 		}
+
+		/// <summary>
+		/// Supprime les " lorsqu'une chaîne en est entourée 
+		/// </summary>
+		/// <param name="str">chaine à modifier</param>
+		/// <returns>chaine nettoyée</returns>
+		private static string TrimQuotes(string str)
+		{
+			if (str.StartsWith("\"") && str.EndsWith("\""))
+			{
+				return str.Substring(1, str.Length - 2).Replace("\"\"", "\"");
+			}
+			return str;
+		}
+
+
 	}
 
 	/// <summary>
