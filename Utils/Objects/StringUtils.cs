@@ -516,7 +516,7 @@ namespace Utils.Objects
 			Regex regex = new Regex(@"\((?<singular>\w+)\|(?<plural>\w+)\)|\((?<plural>\w+)\)");
 			return regex.Replace(str, m =>
 			{
-				if (number == 1)
+				if (number.Between(-1, 1))
 				{
 					return m.Groups["singular"]?.Value ?? "";
 				}
