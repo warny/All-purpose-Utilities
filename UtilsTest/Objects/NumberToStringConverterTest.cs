@@ -74,7 +74,20 @@ namespace UtilsTest.Objects
 				(1260, "mille deux cent soixante"),
 				(1261, "mille deux cent soixante et un"),
 				(1262, "mille deux cent soixante deux"),
+			};
 
+			var converter = new NumberToStringConverter();
+
+			foreach (var test in tests)
+			{
+				Assert.AreEqual(test.Expected, converter.Convert(test.Number));
+			}
+		}
+
+		[TestMethod]
+		public void From10000To99999Test()
+		{
+			(long Number, string Expected)[] tests = new (long Number, string Expected)[] {
 				(12000, "douze mille"),
 				(12001, "douze mille un"),
 				(12002, "douze mille deux"),
