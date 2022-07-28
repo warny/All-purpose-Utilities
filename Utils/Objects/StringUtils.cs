@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using Utils.Collections;
 using Utils.Mathematics;
 
@@ -503,6 +504,29 @@ namespace Utils.Objects
 			chars.ArgMustNotBeNull();
 			return s.PurgeString(c => chars.Contains(c), replacement);
 		}
+
+		/// <summary>
+		/// Transform a string in the form "word(s)" or "chev(al|aux)" into its singular or plural form.
+		/// </summary>
+		/// <param name="str">String to transform</param>
+		/// <param name="number">Number of objects</param>
+		/// <returns></returns>
+		public static string ToPlural(this string str, long number)
+		{
+			Regex regex = new Regex(@"\((?<singular>\w+)\|(?<plural>\w+)\)|\((?<plural>\w+)\)");
+			return regex.Replace(str, m =>
+			{
+				if (number == 1)
+				{
+					return m.Groups["singular"]?.Value ?? "";
+				}
+				else
+				{
+					return m.Groups["plural"].Value;
+				}
+			});
+		}
+
 
 		/// <summary>
 		/// Décompose la chaîne en tableau de ligne de commande

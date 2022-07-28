@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using Utils.Objects;
 
 namespace Utils.Mathematics
 {
 	public class NumberToStringConverter
 	{
 		public int Group { get; } = 3;
+
+		public string Separator { get; } = " ";
 
 		public string Zero { get; } = "zéro";
 
@@ -99,12 +103,12 @@ namespace Utils.Mathematics
 		{
 			"",
 			"mille" ,
-			"million" ,
-			"milliard" ,
-			"billion",
-			"billiard",
-			"trillion",
-			"trilliard"
+			"million(s)" ,
+			"milliard(s)" ,
+			"billion(s)",
+			"billiard(s)",
+			"trillion(s)",
+			"trilliard(s)"
 		};
 
 		public string Convert(long number)
@@ -124,7 +128,7 @@ namespace Utils.Mathematics
 				var group = number % groupValue;
 				if (group != 0)
 				{
-					string resValue = ConvertGroup(maxGroup, group) + " " + GroupTexts[groupNumber];
+					string resValue = ConvertGroup(maxGroup, group) + Separator + GroupTexts[groupNumber].ToPlural(group);
 					if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
 					groupsValues.Push(resValue.Trim());
 				}
@@ -136,7 +140,7 @@ namespace Utils.Mathematics
 			while (groupsValues.Count > 0)
 			{
 				result.Append(groupsValues.Pop().Trim());
-				result.Append(" ");
+				result.Append(Separator);
 			}
 			if (isNegative) 
 			{
@@ -150,7 +154,7 @@ namespace Utils.Mathematics
 
 		public string ConvertGroup(int groupNumber, long number)
 		{
-			if (groupNumber == 0) { return ""; }
+			if (groupNumber == 0) { return string.Empty; }
 			if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value))
 			{
 				return value;

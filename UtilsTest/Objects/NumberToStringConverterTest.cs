@@ -131,7 +131,7 @@ namespace UtilsTest.Objects
 				(401000, "quatre cent un mille"),
 				(999999, "neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
 				(1000000, "un million"),
-				(999999999, "neuf cent quatre-vingt dix neuf million neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
+				(999999999, "neuf cent quatre-vingt dix neuf millions neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
 			};
 
 			var converter = new NumberToStringConverter();
