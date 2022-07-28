@@ -15,6 +15,8 @@ namespace UtilsTest.Objects
 		public void From1To999Test()
 		{
 			(long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+				(-1, "moins un"),
+				(0, "zéro"),
 				(1, "un"),
 				(2, "deux"),
 				(11, "onze"),
@@ -125,8 +127,10 @@ namespace UtilsTest.Objects
 		public void BiggerTest()
 		{
 			(long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+				(-401000, "moins quatre cent un mille"),
 				(401000, "quatre cent un mille"),
 				(999999, "neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
+				(1000000, "un million"),
 				(999999999, "neuf cent quatre-vingt dix neuf million neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
 			};
 

@@ -11,6 +11,8 @@ namespace Utils.Mathematics
 
 		public string Zero { get; } = "zéro";
 
+		public string Minus { get; } = "moins *";
+
 		public Dictionary<long, string> Exceptions { get; } = new()
 		{
 			{ 1, "un" },
@@ -112,14 +114,20 @@ namespace Utils.Mathematics
 			var maxGroup = Groups.Keys.Max();
 			var groupValue = (long)Math.Pow(10, maxGroup);
 
+			bool isNegative = number < 0;
 			Stack<string> groupsValues = new Stack<string>();
+			if (isNegative) { number = -number; }
+
 			int groupNumber = 0;
 			while (number != 0)
 			{
 				var group = number % groupValue;
-				string resValue = ConvertGroup(maxGroup, group) + " " + GroupTexts[groupNumber];
-				if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
-				groupsValues.Push(resValue);
+				if (group != 0)
+				{
+					string resValue = ConvertGroup(maxGroup, group) + " " + GroupTexts[groupNumber];
+					if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
+					groupsValues.Push(resValue.Trim());
+				}
 				number /= groupValue;
 				groupNumber++;
 			}
@@ -130,7 +138,14 @@ namespace Utils.Mathematics
 				result.Append(groupsValues.Pop().Trim());
 				result.Append(" ");
 			}
-			return result.ToString().Trim(' ');
+			if (isNegative) 
+			{
+				return Minus.Replace("*", result.ToString().Trim(' '));
+			}
+			else
+			{
+				return result.ToString().Trim(' ');
+			}
 		}
 
 		public string ConvertGroup(int groupNumber, long number)
