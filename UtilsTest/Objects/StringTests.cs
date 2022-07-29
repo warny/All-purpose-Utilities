@@ -60,6 +60,7 @@ namespace UtilsTest.Objects
 				( Start: 2, End: -2, Result: "BC"),
 				( Start: -2, End: -2, Result: "CD"),
 				( Start: -5, End: -2, Result: "A"),
+				( Start: -2, End: 2, Result: "DE"),
 				( Start: -1, End: 2, Result: "E"),
 				};
 
@@ -198,6 +199,7 @@ namespace UtilsTest.Objects
 				(" abc ", new string[] { "abc" }),
 				("a b ", new string[] { "a", "b" }),
 				("a b \"c d\"", new string[] { "a", "b", "c d" }),
+				("a b \"c\"\"d\"", new string[] { "a", "b", "c\"d" }),
 				(@"/src:""C:\tmp\Some Folder\Sub Folder"" /users:""abcdefg@hijkl.com"" tasks:""SomeTask,Some Other Task"" -someParam", new string[] { @"/src:""C:\tmp\Some Folder\Sub Folder""", @"/users:""abcdefg@hijkl.com""", @"tasks:""SomeTask,Some Other Task""", @"-someParam" })
 			};
 
