@@ -170,6 +170,24 @@ namespace UtilsTest.Objects
 		}
 
 		[TestMethod]
+		public void ToPluralTest()
+		{
+			var tests = new (string input, int number, string expected)[]{
+				("child(ren)", 1, "child"),
+				("child(ren)", 2, "children"),
+				("vert(ex|ices)", 1, "vertex"),
+				("vert(ex|ices)", 2, "vertices"),
+				("chev(al|aux)", 1, "cheval"),
+				("chev(al|aux)", 2, "chevaux"),
+			};
+
+			foreach (var test in tests)
+			{
+				Assert.AreEqual(test.expected, test.input.ToPlural(test.number));
+			}
+		}
+
+		[TestMethod]
 		public void CommandLineParser()
 		{
 			var comparer = new ArrayEqualityComparer<string>();
