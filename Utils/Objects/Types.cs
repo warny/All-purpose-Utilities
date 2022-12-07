@@ -30,6 +30,7 @@ namespace Utils.Objects
 
 		public static Type UIntPtr { get; } = typeof(UIntPtr);
 
+		public static Type[] Number { get; } = { Byte, UInt16, UInt32, UInt64, SByte, Int16, Int32, Int64, Decimal, Single, Double };
 		public static Type[] UnsignedNumber { get; } = { Byte, UInt16, UInt32, UInt64 };
 		public static Type[] SignedNumber { get; } = { SByte, Int16, Int32, Int64 };
 		public static Type[] FloatingPointNumber { get; } = { Decimal, Single, Double };
