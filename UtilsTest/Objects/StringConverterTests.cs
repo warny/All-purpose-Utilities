@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Utils.Objects;
 
@@ -78,6 +79,51 @@ namespace UtilsTest.Objects
 			{
 				Assert.IsTrue(converter.CanConvert<string, Guid>());
 				Assert.AreEqual(test.Value, converter.Convert<string, Guid>(test.String));
+			}
+		}
+
+		[Flags]
+		private enum TestValues
+		{
+			Val1 = 1,
+			Val2 = 2,
+			[Display(Name = "Valeur 3")]
+			Val3 = 4,
+			[Display(Name = "Valeur 4")]
+			Val4 = 8
+		}
+
+
+		[TestMethod]
+		public void ToEnumConvertionTest()
+		{
+			var tests = new (string Source, TestValues Target)[] {
+				("1", TestValues.Val1),
+				("2", TestValues.Val2),
+				("4", TestValues.Val3),
+				("8", TestValues.Val4),
+				("3", TestValues.Val1 | TestValues.Val2),
+				("Val1", TestValues.Val1),
+				("Val2", TestValues.Val2),
+				("Val3", TestValues.Val3),
+				("Val4", TestValues.Val4),
+				("Val1 | Val2", TestValues.Val1 | TestValues.Val2),
+				("Valeur 3", TestValues.Val3),
+				("Valeur 4", TestValues.Val4),
+				("Valeur 3 | Valeur 4", TestValues.Val3 | TestValues.Val4),
+				("Val1 | Val2 | Valeur 3 | Valeur 4", TestValues.Val1 | TestValues.Val2 | TestValues.Val3 | TestValues.Val4),
+				("Val1 | 2 | Valeur 3 | 8", TestValues.Val1 | TestValues.Val2 | TestValues.Val3 | TestValues.Val4),
+				("3 | Valeur 3 | 8", TestValues.Val1 | TestValues.Val2 | TestValues.Val3 | TestValues.Val4),
+			};
+
+			var converter = new StringConverter(enumAdditionalValuesSelectors: new() {
+				(DisplayAttribute a) => a.Name
+			});
+			Assert.IsTrue(converter.CanConvert<string, TestValues>());
+			
+			foreach (var test in tests)
+			{
+				Assert.AreEqual(test.Target, converter.Convert<string, TestValues>(test.Source));
 			}
 		}
 	}

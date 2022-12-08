@@ -23,10 +23,8 @@ namespace Utils.Objects
 		private readonly DelegateSelector<Attribute, string> enumAdditionalValuesSelectors;
 
 
-		public StringConverter() : this(System.Globalization.CultureInfo.CurrentCulture) { }
-
 		public StringConverter(
-			IFormatProvider defaultFormatProvider,
+			IFormatProvider defaultFormatProvider = null,
 			IFormatProvider numberFormatProvider = null,
 			NumberStyles numberStyles = NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign | NumberStyles.AllowThousands | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
 			IFormatProvider dateTimeFormatProvider = null,
@@ -35,7 +33,7 @@ namespace Utils.Objects
 			DelegateSelector<Attribute, string> enumAdditionalValuesSelectors = null
 			)
 		{
-			this.defaultFormatProvider = defaultFormatProvider;
+			this.defaultFormatProvider = defaultFormatProvider ?? CultureInfo.CurrentCulture;
 			this.numberFormatProvider = numberFormatProvider;
 			this.numberStyles = numberStyles;
 			this.dateTimeFormatProvider = dateTimeFormatProvider;
@@ -139,16 +137,19 @@ namespace Utils.Objects
 			if (!target.IsEnum) { return null; }
 			List<Expression> expressions = new List<Expression>();
 
-			var constZero = Expression.Constant(Activator.CreateInstance(target), target);
+			var underlyingType = Enum.GetUnderlyingType(target);
+			
+			var constZero = Expression.Constant(System.Convert.ChangeType(0, underlyingType), underlyingType);
 
 			var paramValue = Expression.Parameter(typeof(string), "value");
 			var varAllValues = Expression.Variable(typeof(string[]), "allValues");
 			var varSingleValue = Expression.Variable(typeof(string), "singleValue");
-			var varConvertedValue = Expression.Variable(typeof(long), "convertedValue");
-			var varResult = Expression.Variable(target, "result");
+			var varConvertedValue = Expression.Variable(underlyingType, "convertedValue");
+			var varResult = Expression.Variable(underlyingType, "result");
 
 			var varIndex = Expression.Variable(typeof(int), "i");
 			var varElementsCount = Expression.Variable(typeof(int), "elementsCount");
+
 
 			Dictionary<long, List<string>> convertions = target.GetFields(BindingFlags.Public | BindingFlags.Static)
 				.ToDictionary(f => System.Convert.ToInt64(f.GetValue(null)), f => new List<string> { f.Name.ToLower() });
@@ -157,24 +158,35 @@ namespace Utils.Objects
 
 			foreach (var field in target.GetFields(BindingFlags.Public | BindingFlags.Static))
 			{
-				var convertion = convertions[System.Convert.ToInt64(field.GetValue(null))];
-				foreach (Attribute attribute in field.GetCustomAttributes(true))
+				long key = System.Convert.ToInt64(field.GetValue(null));
+
+				if (!convertions.TryGetValue(key, out var values))
 				{
-					if (enumAdditionalValuesSelectors.TryInvoke(attribute, out var value))
+					values = new List<string>();
+					convertions.Add(key, values);
+				}
+				values.Add(field.Name);
+
+				if (enumAdditionalValuesSelectors != null)
+				{
+					foreach (Attribute attribute in field.GetCustomAttributes(true))
 					{
-						convertion.Add(value.ToLower());
+						if (enumAdditionalValuesSelectors.TryInvoke(attribute, out var value))
+						{
+							values.Add(value.ToLower());
+						}
 					}
 				}
 			}
 
-			SwitchCase[] cases = convertions.Select(c => Expression.SwitchCase(Expression.Constant(c.Key, typeof(long)), c.Value.Select(v => Expression.Constant(v)))).ToArray();
+			SwitchCase[] cases = convertions.Select(c => Expression.SwitchCase(Expression.Constant(System.Convert.ChangeType(c.Key, underlyingType), underlyingType), c.Value.Select(v => Expression.Constant(v)))).ToArray();
 
 			var switchValue = Expression.Switch(
 				varSingleValue,
 				Expression.Block(
-					typeof(long),
+					underlyingType,
 					Expression.Throw(Expression.New(typeof(FormatException).GetConstructor(new[] { typeof(string) }), paramValue)),
-					Expression.Constant(0L, typeof(long))
+					constZero
 				),
 				cases
 			);
@@ -212,16 +224,13 @@ namespace Utils.Objects
 						),
 						Expression.Assign(
 							varResult,
-							Expression.Convert(
-								Expression.Or(
-									Expression.Convert(varResult, typeof(long)),
-										Expression.Condition(
-											Expression.Call(typeof(long).GetMethod(nameof(long.TryParse), new[] { typeof(string), typeof(long).MakeByRefType() }), varSingleValue, varConvertedValue),
-											varConvertedValue,
-											switchValue
-										)
-									),
-									target
+							Expression.Or(
+								varResult,
+								Expression.Condition(
+									Expression.Call(underlyingType.GetMethod("TryParse", new[] { typeof(string), underlyingType.MakeByRefType() }), varSingleValue, varConvertedValue),
+									varConvertedValue,
+									switchValue
+								)
 							)
 						),
 						Expression.PostIncrementAssign(varIndex)
@@ -229,7 +238,7 @@ namespace Utils.Objects
 					lblBreak
 				)
 			);
-			expressions.Add(varResult);
+			expressions.Add(Expression.Convert(varResult, target));
 
 			var result = Expression.Lambda(
 				Expression.Block(
