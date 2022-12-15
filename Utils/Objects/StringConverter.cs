@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml;
+using Utils.Globalization;
 using Utils.Mathematics;
 using Utils.Reflection;
 
@@ -136,6 +137,7 @@ namespace Utils.Objects
 		{
 			if (!target.IsEnum) { return null; }
 			List<Expression> expressions = new List<Expression>();
+			var separator = (numberFormatProvider ?? defaultFormatProvider).GetTextInfo().ListSeparator;
 
 			var underlyingType = Enum.GetUnderlyingType(target);
 			
@@ -196,7 +198,7 @@ namespace Utils.Objects
 					Expression.Call(
 						paramValue,
 						typeof(string).GetMethod("Split", new[] { typeof(char[]), typeof(StringSplitOptions) }),
-						Expression.Constant(new[] { '|', ',', ';' }),
+						Expression.Constant(new[] { '|', separator[0] }),
 						Expression.Constant(StringSplitOptions.RemoveEmptyEntries)
 					)
 				)
