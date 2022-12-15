@@ -58,7 +58,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var result = test.obj.NullOrEmptyIsNull();
+				var result = test.obj.NullOrEmptyToNull();
 				Assert.AreEqual(test.expectedValue, result);
 			}
 		}
@@ -75,7 +75,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var result = test.obj.NullOrWhiteSpaceIsNull();
+				var result = test.obj.NullOrWhiteSpaceToNull();
 				Assert.AreEqual(test.expectedValue, result);
 			}
 		}

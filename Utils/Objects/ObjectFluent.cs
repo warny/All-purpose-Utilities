@@ -27,9 +27,9 @@ namespace Utils.Objects
 		public static FluentResult<T> IsGreaterOrEqualsThan<T, CT>(this T value, CT comparisonValue)
 			=> new FluentResult<T>(value).IsGreaterOrEqualsThan(comparisonValue);
 
-		public static string NullOrEmptyIsNull(this string value) => value.IsNullOrEmpty() ? null : value;
+		public static string NullOrEmptyToNull(this string value) => value.IsNullOrEmpty() ? null : value;
 		public static FluentResult<string> NullOrEmptyIsNull(this FluentResult<string> value) => new FluentResult<string>(value.Value.IsNullOrEmpty() ? null : value.Value, value.Result);
-		public static string NullOrWhiteSpaceIsNull(this string value) => value.IsNullOrWhiteSpace() ? null : value;
+		public static string NullOrWhiteSpaceToNull(this string value) => value.IsNullOrWhiteSpace() ? null : value;
 		public static FluentResult<string> NullOrWhiteSpaceIsNull(this FluentResult<string> value) => new FluentResult<string>(value.Value.IsNullOrWhiteSpace() ? null : value.Value, value.Result);
 	}
 
