@@ -96,27 +96,42 @@ namespace Utils.Drawing
 		{
 			PointF ComputeBezierPoint(float position)
 			{
-				PointF[] computePoints(PointF[] source)
-				{
-					var target = new PointF[source.Length - 1];
-					for (int i = 0; i < target.Length; i++)
-					{
-						var point1 = source[i];
-						var point2 = source[i + 1];
-						target[i] = new PointF(
-							(1f - position) * point1.X + position * point2.X,
-							(1f - position) * point1.Y + position * point2.Y
-						);
-					}
-					return target;
-				}
+				var n = points.Length - 1;
+				var weights = MathEx.ComputePascalTriangleLine(n);
 
-				var result = points;
-				while (result.Length > 1)
+				PointF result = new PointF();
+
+				float iPosition = 1 - position;
+
+				for (int i = 0; i <= n; i++)
 				{
-					result = computePoints(result);
+					var b = weights[i] * (float)Math.Pow(iPosition, n - i) * (float)Math.Pow(position, i);
+					result.X += b * points[i].X;
+					result.Y += b * points[i].Y;
 				}
-				return result[0];
+				return result;
+
+				//PointF[] computePoints(PointF[] source)
+				//{
+				//	var target = new PointF[source.Length - 1];
+				//	for (int i = 0; i < target.Length; i++)
+				//	{
+				//		var point1 = source[i];
+				//		var point2 = source[i + 1];
+				//		target[i] = new PointF(
+				//			(1f - position) * point1.X + position * point2.X,
+				//			(1f - position) * point1.Y + position * point2.Y
+				//		);
+				//	}
+				//	return target;
+				//}
+
+				//var result = points;
+				//while (result.Length > 1)
+				//{
+				//	result = computePoints(result);
+				//}
+				//return result[0];
 			}
 
 			LinkedList<(PointF Point, float Position)> computedPoints = new ();
