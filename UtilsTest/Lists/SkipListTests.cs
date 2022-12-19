@@ -11,6 +11,7 @@ using Utils.Objects;
 namespace UtilsTest.Lists
 {
 	[TestClass]
+	[Ignore]
 	public class SkipListTests
 	{
 		ArrayEqualityComparer<int> comparer = new ArrayEqualityComparer<int>();
@@ -72,7 +73,6 @@ namespace UtilsTest.Lists
 			int[] result = new int[10000];
 			for (int i = 0; i < result.Length; i++)
 			{
-				//var number = (i * 65537 + 3700) % 10000; 
 				var number = rng.RandomInt();
 				if (number == 0) Debugger.Break();
 				result[i] = number;

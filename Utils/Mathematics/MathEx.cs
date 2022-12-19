@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
 namespace Utils.Mathematics
 {
@@ -484,5 +485,41 @@ namespace Utils.Mathematics
 		/// <returns>Racine carrée</returns>
 		public static float Sqrt(float value) => (float)Math.Sqrt(value);
 		#endregion
+
+		private static Dictionary<int, int[]> pascalTriangleCache = new Dictionary<int, int[]>()
+		{
+			{ 0, new [] { 1 } },
+			{ 1, new [] { 1, 1 } },
+			{ 2, new [] { 1, 2, 1 } },
+			{ 3, new [] { 1, 3, 3, 1 } },
+			{ 4, new [] { 1, 4, 6, 4, 1 } },
+			{ 5, new [] { 1, 5, 10, 10, 5, 1 } },
+			{ 6, new [] { 1, 6, 15, 20, 15, 6, 1 } }
+		};
+
+		public static int[] ComputePascalTriangleLine(int lineNumber)
+		{
+			lineNumber.ArgMustBeGreaterOrEqualsThan(0);
+			if (pascalTriangleCache.TryGetValue(lineNumber, out var pascalTriangleLine))
+			{
+				return pascalTriangleLine;
+			}
+			var maxLine = pascalTriangleCache.Keys.Max();
+			int[] lastLine = pascalTriangleCache[maxLine];
+
+			for (int i = maxLine + 1; i <= lineNumber; i++)
+			{
+				var newLine = new int[i + 1];
+				newLine[0] = 1;
+				for (int j = 1; j < i ; j++)
+				{
+					newLine[j] = lastLine[j - 1] + lastLine[j];
+				}
+				newLine[newLine.Length - 1] = 1;
+				pascalTriangleCache[i] = newLine;
+				lastLine = newLine;
+			}
+			return lastLine;
+		}
 	}
 }
