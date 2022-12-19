@@ -110,28 +110,6 @@ namespace Utils.Drawing
 					result.Y += b * points[i].Y;
 				}
 				return result;
-
-				//PointF[] computePoints(PointF[] source)
-				//{
-				//	var target = new PointF[source.Length - 1];
-				//	for (int i = 0; i < target.Length; i++)
-				//	{
-				//		var point1 = source[i];
-				//		var point2 = source[i + 1];
-				//		target[i] = new PointF(
-				//			(1f - position) * point1.X + position * point2.X,
-				//			(1f - position) * point1.Y + position * point2.Y
-				//		);
-				//	}
-				//	return target;
-				//}
-
-				//var result = points;
-				//while (result.Length > 1)
-				//{
-				//	result = computePoints(result);
-				//}
-				//return result[0];
 			}
 
 			LinkedList<(PointF Point, float Position)> computedPoints = new ();
@@ -150,7 +128,7 @@ namespace Utils.Drawing
 
 				float dx = next.Value.Point.X - newPoint.X;
 				float dy = next.Value.Point.Y - newPoint.Y;
-				if (/*dx.Between(-1f, 1f) || dy.Between(-1f, 1f) ||*/ (dx*dx + dy*dy) <= 1f) {
+				if ((dx*dx + dy*dy) <= 1f) {
 					current = next;
 					continue;
 				}
