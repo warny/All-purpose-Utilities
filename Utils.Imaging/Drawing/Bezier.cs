@@ -94,27 +94,27 @@ namespace Utils.Drawing
 		/// <returns></returns>
 		private PointF[] ComputeBezierPoints(params PointF[] points)
 		{
-			PointF ComputeBezierPoint(float position)
+			var n = points.Length - 1;
+
+			PointF ComputeBezierPoint(float t)
 			{
-				var n = points.Length - 1;
-				var weights = MathEx.ComputePascalTriangleLine(n);
-
-				PointF result = new PointF();
-
-				float iPosition = 1 - position;
-
-				for (int i = 0; i <= n; i++)
+				PointF[] newPoints = (PointF[])points.Clone();
+				var u = (1 - t);
+				for (int i = 1; i <= n; i++)
 				{
-					var b = weights[i] * (float)Math.Pow(iPosition, n - i) * (float)Math.Pow(position, i);
-					result.X += b * points[i].X;
-					result.Y += b * points[i].Y;
+					for (int j = 0; j <= n - i; j++)
+					{
+						newPoints[j] = new PointF(u * newPoints[j].X + t * newPoints[j + 1].X, u * newPoints[j].Y + t * newPoints[j + 1].Y);
+					}
 				}
-				return result;
+				return newPoints[0];
 			}
 
-			LinkedList<(PointF Point, float Position)> computedPoints = new ();
+			float initialsteps = 5 / points.SlideEnumerateBy(2).Sum(p => Math.Max(Math.Abs(p[0].X - p[1].X), Math.Abs(p[0].Y - p[1].Y)));
 
-			for (float f = 0; f < 1; f += 0.1f) {
+			LinkedList <(PointF Point, float Position)> computedPoints = new ();
+
+			for (float f = 0; f < 1; f += initialsteps) {
 				computedPoints.AddLast((ComputeBezierPoint(f), f));
 			}
 			var last =computedPoints.AddLast((ComputeBezierPoint(1f), 1f));
