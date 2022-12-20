@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Utils.Collections;
 using Utils.Mathematics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Utils.Drawing
 {
@@ -99,7 +100,7 @@ namespace Utils.Drawing
 			PointF ComputeBezierPoint(float t)
 			{
 				PointF[] newPoints = (PointF[])points.Clone();
-				var u = (1 - t);
+				var u = 1 - t;
 				for (int i = 1; i <= n; i++)
 				{
 					for (int j = 0; j <= n - i; j++)
@@ -110,32 +111,28 @@ namespace Utils.Drawing
 				return newPoints[0];
 			}
 
-			float initialsteps = 5 / points.SlideEnumerateBy(2).Sum(p => Math.Max(Math.Abs(p[0].X - p[1].X), Math.Abs(p[0].Y - p[1].Y)));
+			var divisions = points.SlideEnumerateBy(2).Sum(p => Math.Max(Math.Abs(p[0].X - p[1].X), Math.Abs(p[0].Y - p[1].Y)));
+			float initialsteps = 1 / divisions;
 
-			LinkedList <(PointF Point, float Position)> computedPoints = new ();
+			PointF[] result = new PointF[(int)divisions + 1];
+			int index = 0;
 
-			for (float f = 0; f < 1; f += initialsteps) {
-				computedPoints.AddLast((ComputeBezierPoint(f), f));
-			}
-			var last =computedPoints.AddLast((ComputeBezierPoint(1f), 1f));
-
-			var current = computedPoints.First;
-			while (current != last)
+			PointF? lastPoint = null;
+			for (float f = 0; f < 1; f += initialsteps)
 			{
-				var next = current.Next;
-				var newPosition = (current.Value.Position + next.Value.Position) / 2;
-				var newPoint = ComputeBezierPoint(newPosition);
-
-				float dx = next.Value.Point.X - newPoint.X;
-				float dy = next.Value.Point.Y - newPoint.Y;
-				if ((dx*dx + dy*dy) <= 1f) {
-					current = next;
-					continue;
+				var newPoint = ComputeBezierPoint(f);
+				if (lastPoint != null)
+				{
+					float dx = lastPoint.Value.X - newPoint.X;
+					float dy = lastPoint.Value.Y - newPoint.Y;
+					if ((dx * dx + dy * dy) < 1f) { continue; }
 				}
-				computedPoints.AddAfter(current, (newPoint, newPosition));
-			}
+				result[index] = newPoint;
+				index++;
+				lastPoint = newPoint;
 
-			return computedPoints.Select(p=>p.Point).ToArray();
+			}
+			return result.Take(index).ToArray();
 		}
 
 	}
