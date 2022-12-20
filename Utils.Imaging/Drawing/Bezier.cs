@@ -93,7 +93,7 @@ namespace Utils.Drawing
 		/// </summary>
 		/// <param name="points"></param>
 		/// <returns></returns>
-		private PointF[] ComputeBezierPoints(params PointF[] points)
+		private IEnumerable<PointF> ComputeBezierPoints(params PointF[] points)
 		{
 			var n = points.Length - 1;
 
@@ -114,25 +114,17 @@ namespace Utils.Drawing
 			var divisions = points.SlideEnumerateBy(2).Sum(p => Math.Max(Math.Abs(p[0].X - p[1].X), Math.Abs(p[0].Y - p[1].Y)));
 			float initialsteps = 1 / divisions;
 
-			PointF[] result = new PointF[(int)divisions + 1];
-			int index = 0;
-
-			PointF? lastPoint = null;
-			for (float f = 0; f < 1; f += initialsteps)
+			PointF lastPoint = ComputeBezierPoint(0);
+			yield return lastPoint;
+			for (float f = initialsteps; f < 1; f += initialsteps)
 			{
 				var newPoint = ComputeBezierPoint(f);
-				if (lastPoint != null)
-				{
-					float dx = lastPoint.Value.X - newPoint.X;
-					float dy = lastPoint.Value.Y - newPoint.Y;
-					if ((dx * dx + dy * dy) < 1f) { continue; }
-				}
-				result[index] = newPoint;
-				index++;
+				float dx = lastPoint.X - newPoint.X;
+				float dy = lastPoint.Y - newPoint.Y;
+				if ((dx * dx + dy * dy) < 1f) { continue; }
+				yield return newPoint;
 				lastPoint = newPoint;
-
 			}
-			return result.Take(index).ToArray();
 		}
 
 	}
