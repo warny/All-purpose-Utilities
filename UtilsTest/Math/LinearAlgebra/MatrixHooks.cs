@@ -149,7 +149,7 @@ namespace UtilsTest.Math.LinearAlgebra
 		{
 			Vector v = (Vector)context[name];
 			var expected = TransformToVectors(values);
-			Assert.AreEqual(expected.First(), v);
+			Assert.AreEqual(expected.First().Value, v);
 		}
 
 		[Then(@"I expect (\w+) \= (\w+)")]
