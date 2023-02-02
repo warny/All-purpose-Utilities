@@ -51,7 +51,7 @@ namespace Utils.Files
 					try {
 						directories = Directory.EnumerateDirectories(directory, current);
 					} catch {
-						directories = new string[] { };
+						directories = Enumerable.Empty<string>();
 					}
 					foreach (var subdirectory in directories) {
 						yield return subdirectory;
