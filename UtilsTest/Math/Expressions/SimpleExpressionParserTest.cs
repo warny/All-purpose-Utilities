@@ -11,7 +11,7 @@ using Utils.Net.DNS.RFC1183;
 namespace UtilsTest.Math.Expressions
 {
 	[TestClass]
-	public class SimpleExpressionParserTest
+	public class MathExpressionParserTest
 	{
 		[TestMethod]
 		public void ParseSimpleExpressions()
@@ -31,7 +31,34 @@ namespace UtilsTest.Math.Expressions
 			};
 
 
-			SimpleExpressionParser parser = new SimpleExpressionParser();
+			MathExpressionParser parser = new MathExpressionParser();
+			ExpressionComparer comparer = new ExpressionComparer();
+			foreach (var test in tests)
+			{
+				var result = parser.ParseExpression(test.Expression, parameters);
+				Assert.AreEqual(test.Expected, result, comparer);
+			}
+		}
+
+		[TestMethod]
+		public void ParseGroupingExpressions()
+		{
+			var parameters = new ParameterExpression[] {
+				Expression.Parameter(typeof(double), "x"),
+				Expression.Parameter(typeof(double), "y"),
+				Expression.Parameter(typeof(double), "z")
+			};
+
+			var tests = new (string Expression, Expression Expected)[] {
+				("x+y+z", (double x, double y, double z) => x + y + z),
+				("x-y*z", (double x, double y, double z) => x - y * z),
+				("(x-y)*z", (double x, double y, double z) => (x - y) * z),
+				("x*y+z", (double x, double y, double z) => x * y + z),
+				("x/(y-z)", (double x, double y, double z) => x / ( y - z )),
+			};
+
+
+			MathExpressionParser parser = new MathExpressionParser();
 			ExpressionComparer comparer = new ExpressionComparer();
 			foreach (var test in tests)
 			{

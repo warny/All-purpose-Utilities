@@ -9,13 +9,13 @@ using Utils.Collections;
 
 namespace Utils.Mathematics.Expressions
 {
-	public class SimpleExpressionParser
+	public class MathExpressionParser
 	{
 		private readonly IndexedList<string, BinaryOperator> Operators = new IndexedList<string, BinaryOperator>(o => o.Name);
 
-		public SimpleExpressionParser() : this(BinaryOperator.DefaultOperators) { }
+		public MathExpressionParser() : this(BinaryOperator.DefaultOperators) { }
 
-		public SimpleExpressionParser(IEnumerable<BinaryOperator> operators)
+		public MathExpressionParser(IEnumerable<BinaryOperator> operators)
 		{
 			foreach (var op in operators)
 			{
