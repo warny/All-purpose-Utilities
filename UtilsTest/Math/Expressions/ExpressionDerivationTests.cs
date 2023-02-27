@@ -78,5 +78,6 @@ namespace UtilsTest.Math.Expressions
 			Assert.IsTrue(ExpressionUtils.Equals(derivateTarget, derivate));
 		}
 
+
 	}
 }

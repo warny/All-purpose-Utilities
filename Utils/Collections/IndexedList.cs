@@ -26,6 +26,18 @@ namespace Utils.Collections
 		}
 
 		/// <summary>
+		/// Liste indexée
+		/// </summary>
+		/// <param name="getKey">Fonction d'extraction de la clef</param>
+		public IndexedList(Func<V, K> getKey, IEnumerable<V> values) : this(getKey)
+		{
+			foreach (var value in values)
+			{
+				Add(value);
+			}
+		}
+
+		/// <summary>
 		/// Récupération d'une valeur
 		/// </summary>
 		/// <param name="key">clef</param>
