@@ -6,7 +6,7 @@ using System.Text;
 using Utils.Arrays;
 using Utils.Mathematics.LinearAlgebra;
 
-namespace UtilsTest.Math.LinearAlgebra
+namespace UtilsTest.Mathematics.LinearAlgebra
 {
 
 	[TestClass]

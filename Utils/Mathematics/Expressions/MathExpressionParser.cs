@@ -4,14 +4,17 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Collections;
+using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions
 {
 	public class MathExpressionParser
 	{
-		private readonly IndexedList<string, BinaryOperator> Operators = new IndexedList<string, BinaryOperator>(o => o.Name);
+		private readonly IndexedList<string, UnaryOperator> UnaryOperators = new IndexedList<string, UnaryOperator>(o => o.Name);
+		private readonly IndexedList<string, BinaryOperator> BinaryOperators = new IndexedList<string, BinaryOperator>(o => o.Name);
 
 		public MathExpressionParser() : this(BinaryOperator.DefaultOperators) { }
 
@@ -19,15 +22,15 @@ namespace Utils.Mathematics.Expressions
 		{
 			foreach (var op in operators)
 			{
-				Operators.Add(op);
+				BinaryOperators.Add(op);
 			}
 		}
 
-
 		private string[] Tokenize(string input)
 		{
+			var allOperators = UnaryOperators.Keys.Union(BinaryOperators.Keys).Distinct();
 			// Diviser l'entrée en tokens en utilisant les délimiteurs suivants : +, -, *, /, %, (, ), et espaces.
-			var operators = "(" + string.Join("|", Operators.Keys.Select(o => "\\" + o)) + "|\\(|\\)|\\,|\\s+)";
+			var operators = "(" + string.Join("|", allOperators.Select(StringUtils.EscapeForRegex)) + "|\\(|\\)|\\,|\\s+)";
 
 			return Regex.Split(input, operators)
 				.Where(s => !string.IsNullOrEmpty(s))
@@ -175,13 +178,13 @@ namespace Utils.Mathematics.Expressions
 		// Méthode utilitaire pour appliquer un opérateur à deux expressions
 		private Expression ApplyOperator(string op, Expression left, Expression right)
 		{
-			return Operators[op].GetExpression(left, right);
+			return BinaryOperators[op].GetExpression(left, right);
 		}
 
 		// Méthode utilitaire pour obtenir la précédence d'un opérateur
 		private int GetPrecedence(string op)
 		{
-			if (Operators.TryGetValue(op, out var result))
+			if (BinaryOperators.TryGetValue(op, out var result))
 			{
 				return result.Precedence;
 			}
@@ -189,7 +192,9 @@ namespace Utils.Mathematics.Expressions
 		}
 	}
 
-	public class BinaryOperator {
+	public class BinaryOperator
+	{
+		// Constructeur pour initialiser les propriétés de l'opérateur
 		public BinaryOperator(string name, int precedence, Func<Expression, Expression, Expression> getExpression)
 		{
 			this.Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -197,18 +202,48 @@ namespace Utils.Mathematics.Expressions
 			this.GetExpression = getExpression ?? throw new ArgumentNullException(nameof(getExpression));
 		}
 
+		// Propriétés de l'opérateur
 		public string Name { get; }
 		public int Precedence { get; }
 		public Func<Expression, Expression, Expression> GetExpression { get; }
 
+		// Tableau des opérateurs par défaut
+		public static BinaryOperator[] DefaultOperators { get; } = {
+			new BinaryOperator(">", 1, Expression.GreaterThan),          // Supérieur à
+			new BinaryOperator(">=", 1, Expression.GreaterThanOrEqual),  // Supérieur ou égal à
+			new BinaryOperator("<", 1, Expression.LessThan),             // Inférieur à
+			new BinaryOperator("<=", 1, Expression.LessThanOrEqual),     // Inférieur ou égal à
+			new BinaryOperator("==", 1, Expression.Equal),              // Égal à
+			new BinaryOperator("!=", 1, Expression.NotEqual),            // Différent de
+			new BinaryOperator("&&", 2, Expression.AndAlso),            // ET logique
+			new BinaryOperator("||", 2, Expression.OrElse),             // OU logique
+			new BinaryOperator("&", 3, Expression.And),                  // ET bit à bit
+			new BinaryOperator("|", 3, Expression.Or),                   // OU bit à bit
+			new BinaryOperator("&|", 3, Expression.ExclusiveOr),           // OU exclusif bit à bit
+			new BinaryOperator("+", 4, Expression.Add),                  // Addition
+			new BinaryOperator("-", 4, Expression.Subtract),             // Soustraction
+			new BinaryOperator("*", 5, Expression.Multiply),             // Multiplication
+			new BinaryOperator("/", 5, Expression.Divide),               // Division
+			new BinaryOperator("%", 5, Expression.Modulo),               // Modulo
+			new BinaryOperator("^", 6, Expression.Power),                // Puissance
+		};
 
-		public static readonly BinaryOperator[] DefaultOperators = {
-			new BinaryOperator("+", 1, Expression.Add),
-			new BinaryOperator("-", 1, Expression.Subtract),
-			new BinaryOperator("*", 2, Expression.Multiply),
-			new BinaryOperator("/", 2, Expression.Divide),
-			new BinaryOperator("%", 2, Expression.Modulo),
-			new BinaryOperator("^", 3, Expression.Power)
+	}
+
+	public class UnaryOperator
+	{
+		public UnaryOperator(string name, Func<Expression, Expression> getExpression)
+		{
+			this.Name = name ?? throw new ArgumentNullException(nameof(name));
+			this.GetExpression = getExpression ?? throw new ArgumentNullException(nameof(getExpression));
+		}
+
+		public string Name { get; }
+		public Func<Expression, Expression> GetExpression { get; }
+
+		public static UnaryOperator[] DefaultOperators { get; } = {
+			new UnaryOperator("-", Expression.Negate),
+			new UnaryOperator("+", e=>e)
 		};
 	}
 }

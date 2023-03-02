@@ -596,6 +596,25 @@ namespace Utils.Objects
 			return str;
 		}
 
+		/// <summary>
+		/// Cette procédure prend une chaîne de caractères en entrée et retourne une nouvelle chaîne de caractères dans laquelle certains caractères spéciaux ont été échappés en vue de les utiliser dans une expression régulière.
+		/// </summary>
+		/// <param name="str">Chaîne à echapper</param>
+		/// <returns>Chaîne où les caractères spéciaux sont echappés</returns>
+		public static string EscapeForRegex(string str)
+		{
+			StringBuilder result = new StringBuilder(str.Length * 2);
+			foreach (var c in str)
+			{
+				if (!char.IsLetter(c) && !char.IsDigit(c))
+				{
+					result.Append('\\');
+				}
+				result.Append(c);
+			}
+			return result.ToString();
+		}
+
 
 	}
 

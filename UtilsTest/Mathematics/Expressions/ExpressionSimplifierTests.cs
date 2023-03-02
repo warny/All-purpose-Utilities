@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.Mathematics.Expressions;
 
-namespace UtilsTest.Math.Expressions
+namespace UtilsTest.Mathematics.Expressions
 {
 	[TestClass]
 	public class ExpressionSimplifierTests

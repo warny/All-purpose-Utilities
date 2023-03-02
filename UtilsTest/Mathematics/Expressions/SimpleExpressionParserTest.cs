@@ -1,14 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Mathematics.Expressions;
-using Utils.Net.DNS.RFC1183;
 
-namespace UtilsTest.Math.Expressions
+namespace UtilsTest.Mathematics.Expressions
 {
 	[TestClass]
 	public class MathExpressionParserTest
@@ -27,7 +22,7 @@ namespace UtilsTest.Math.Expressions
 				("x*y", (double x, double y) => x * y),
 				("x/y", (double x, double y) => x / y),
 				("x%y", (double x, double y) => x % y),
-				("x^y", (double x, double y) => System.Math.Pow(x, y)),
+				("x^y", (double x, double y) => Math.Pow(x, y)),
 			};
 
 
@@ -66,6 +61,30 @@ namespace UtilsTest.Math.Expressions
 				Assert.AreEqual(test.Expected, result, comparer);
 			}
 		}
+
+		[TestMethod]
+		public void ParseFunctionExpressions()
+		{
+			var parameters = new ParameterExpression[] {
+				Expression.Parameter(typeof(double), "x"),
+			};
+
+			var tests = new (string Expression, Expression Expected)[] {
+				("Cos(x)", (double x) => Math.Cos(x)),
+				("Sin(x)", (double x) => Math.Sin(x)),
+				("Tan(x)", (double x) => Math.Tan(x)),
+			};
+
+
+			MathExpressionParser parser = new MathExpressionParser();
+			ExpressionComparer comparer = new ExpressionComparer();
+			foreach (var test in tests)
+			{
+				var result = parser.ParseExpression(test.Expression, parameters);
+				Assert.AreEqual(test.Expected, result, comparer);
+			}
+		}
+
 	}
 }
 				

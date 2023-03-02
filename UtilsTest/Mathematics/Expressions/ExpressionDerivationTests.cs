@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Mathematics.Expressions;
 
-namespace UtilsTest.Math.Expressions
+namespace UtilsTest.Mathematics.Expressions
 {
 	[TestClass]
 	public class ExpressionDerivationTests

@@ -6,7 +6,7 @@ using System.Text;
 using Utils.Arrays;
 using Utils.Mathematics;
 
-namespace UtilsTest.Math
+namespace UtilsTest.Mathematics
 {
 	[TestClass]
 	public class MathExTests

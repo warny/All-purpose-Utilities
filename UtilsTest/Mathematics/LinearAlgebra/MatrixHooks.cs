@@ -5,7 +5,7 @@ using System.Linq;
 using TechTalk.SpecFlow;
 using Utils.Mathematics.LinearAlgebra;
 
-namespace UtilsTest.Math.LinearAlgebra
+namespace UtilsTest.Mathematics.LinearAlgebra
 {
 	[Binding]
 	public sealed class MatrixHooks

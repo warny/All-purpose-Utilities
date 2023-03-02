@@ -10,7 +10,7 @@
 // ------------------------------------------------------------------------------
 #region Designer generated code
 #pragma warning disable
-namespace UtilsTest.Math.LinearAlgebra
+namespace UtilsTest.Mathematics.LinearAlgebra
 {
     using TechTalk.SpecFlow;
     using System;
@@ -48,7 +48,7 @@ namespace UtilsTest.Math.LinearAlgebra
         public static void FeatureSetup(Microsoft.VisualStudio.TestTools.UnitTesting.TestContext testContext)
         {
             testRunner = TechTalk.SpecFlow.TestRunnerManager.GetTestRunner();
-            TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Math/LinearAlgebra", "MatrixTests", "A short summary of the feature", ProgrammingLanguage.CSharp, featureTags);
+            TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Mathematics/LinearAlgebra", "MatrixTests", "A short summary of the feature", ProgrammingLanguage.CSharp, featureTags);
             testRunner.OnFeatureStart(featureInfo);
         }
         
@@ -65,7 +65,7 @@ namespace UtilsTest.Math.LinearAlgebra
             if (((testRunner.FeatureContext != null) 
                         && (testRunner.FeatureContext.FeatureInfo.Title != "MatrixTests")))
             {
-                global::UtilsTest.Math.LinearAlgebra.MatrixTestsFeature.FeatureSetup(null);
+                global::UtilsTest.Mathematics.LinearAlgebra.MatrixTestsFeature.FeatureSetup(null);
             }
         }
         
