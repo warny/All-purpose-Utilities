@@ -27,11 +27,10 @@ namespace UtilsTest.Mathematics.Expressions
 
 
 			MathExpressionParser parser = new MathExpressionParser();
-			ExpressionComparer comparer = new ExpressionComparer();
 			foreach (var test in tests)
 			{
 				var result = parser.ParseExpression(test.Expression, parameters);
-				Assert.AreEqual(test.Expected, result, comparer);
+				Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
 			}
 		}
 
@@ -54,11 +53,10 @@ namespace UtilsTest.Mathematics.Expressions
 
 
 			MathExpressionParser parser = new MathExpressionParser();
-			ExpressionComparer comparer = new ExpressionComparer();
 			foreach (var test in tests)
 			{
 				var result = parser.ParseExpression(test.Expression, parameters);
-				Assert.AreEqual(test.Expected, result, comparer);
+				Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
 			}
 		}
 
@@ -77,11 +75,10 @@ namespace UtilsTest.Mathematics.Expressions
 
 
 			MathExpressionParser parser = new MathExpressionParser();
-			ExpressionComparer comparer = new ExpressionComparer();
 			foreach (var test in tests)
 			{
 				var result = parser.ParseExpression(test.Expression, parameters);
-				Assert.AreEqual(test.Expected, result, comparer);
+				Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
 			}
 		}
 

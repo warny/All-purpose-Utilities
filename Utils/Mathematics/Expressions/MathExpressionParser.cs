@@ -37,13 +37,13 @@ namespace Utils.Mathematics.Expressions
 				.ToArray();
 		}
 
-		public Expression ParseExpression(string expression, params ParameterExpression[] parameters)
+		public LambdaExpression ParseExpression(string expression, params ParameterExpression[] parameters)
 			=> ParseExpression(expression, new IndexedList<string, ParameterExpression>(e=>e.Name, parameters));
 
-		public Expression ParseExpression(string expression, IEnumerable<ParameterExpression> parameters)
+		public LambdaExpression ParseExpression(string expression, IEnumerable<ParameterExpression> parameters)
 			=> ParseExpression(expression, new IndexedList<string, ParameterExpression>(e => e.Name, parameters));
 
-		private Expression ParseExpression(string expression, IndexedList<string, ParameterExpression> parameters)
+		private LambdaExpression ParseExpression(string expression, IndexedList<string, ParameterExpression> parameters)
 		{
 			var tokens = Tokenize(expression);
 			var outputQueue = new Queue<string>();
@@ -107,7 +107,7 @@ namespace Utils.Mathematics.Expressions
 					// Dépiler la parenthèse ouvrante
 					operatorStack.Pop();
 				}
-				else
+				else if (!token.IsNullOrWhiteSpace())
 				{
 					throw new ArgumentException($"Unrecognized token: {token}");
 				}
@@ -219,7 +219,7 @@ namespace Utils.Mathematics.Expressions
 			new BinaryOperator("||", 2, Expression.OrElse),             // OU logique
 			new BinaryOperator("&", 3, Expression.And),                  // ET bit à bit
 			new BinaryOperator("|", 3, Expression.Or),                   // OU bit à bit
-			new BinaryOperator("&|", 3, Expression.ExclusiveOr),           // OU exclusif bit à bit
+			new BinaryOperator("~|", 3, Expression.ExclusiveOr),           // OU exclusif bit à bit
 			new BinaryOperator("+", 4, Expression.Add),                  // Addition
 			new BinaryOperator("-", 4, Expression.Subtract),             // Soustraction
 			new BinaryOperator("*", 5, Expression.Multiply),             // Multiplication

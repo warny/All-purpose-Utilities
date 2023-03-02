@@ -10,8 +10,6 @@ namespace Utils.Mathematics.Expressions
 {
 	public class ExpressionSimplifier : ExpressionTranformer
 	{
-		private static ExpressionComparer expressionComparer = new ExpressionComparer();
-
 		public Expression Simplify( Expression e )
 		{
 			return Transform(e);
@@ -193,14 +191,14 @@ namespace Utils.Mathematics.Expressions
 			if (rightAugmented && rightright is ConstantExpression && ((ConstantExpression)rightright).Value as double? == 1.0) return null;
 
 			//on pousse à droite les termes à factoriser
-			if ((!leftAugmented && !rightAugmented) && expressionComparer.Equals(leftleft, rightleft)) {
+			if ((!leftAugmented && !rightAugmented) && ExpressionComparer.Default.Equals(leftleft, rightleft)) {
 				ObjectUtils.Swap(ref leftleft, ref leftright);
 				ObjectUtils.Swap(ref rightleft, ref rightright);
-			} else if (expressionComparer.Equals(leftleft, rightright)) {
+			} else if (ExpressionComparer.Default.Equals(leftleft, rightright)) {
 				ObjectUtils.Swap(ref leftleft, ref leftright);
-			} else if (expressionComparer.Equals(leftright, rightleft)) {
+			} else if (ExpressionComparer.Default.Equals(leftright, rightleft)) {
 				ObjectUtils.Swap(ref rightleft, ref rightright);
-			} else if (expressionComparer.Equals(leftright, rightright)) {
+			} else if (ExpressionComparer.Default.Equals(leftright, rightright)) {
 			} else {
 				return null;
 			}
@@ -240,14 +238,14 @@ namespace Utils.Mathematics.Expressions
 			}
 
 			//o, pousse à droite les termes à factoriser
-			if ((!leftAugmented && !rightAugmented) && expressionComparer.Equals(leftleft, rightleft)) {
+			if ((!leftAugmented && !rightAugmented) && ExpressionComparer.Default.Equals(leftleft, rightleft)) {
 				ObjectUtils.Swap(ref leftleft, ref leftright);
 				ObjectUtils.Swap(ref rightleft, ref rightright);
-			} else if (expressionComparer.Equals(leftleft, rightright)) {
+			} else if (ExpressionComparer.Default.Equals(leftleft, rightright)) {
 				ObjectUtils.Swap(ref leftleft, ref leftright);
-			} else if (expressionComparer.Equals(leftright, rightleft)) {
+			} else if (ExpressionComparer.Default.Equals(leftright, rightleft)) {
 				ObjectUtils.Swap(ref rightleft, ref rightright);
-			} else if (expressionComparer.Equals(leftright, rightright)) {
+			} else if (ExpressionComparer.Default.Equals(leftright, rightright)) {
 			} else {
 				return null;
 			}
@@ -455,7 +453,7 @@ namespace Utils.Mathematics.Expressions
 			}
 
 			//on pousse à droite les termes à factoriser
-			if (expressionComparer.Equals(leftleft, rightleft)) {
+			if (ExpressionComparer.Default.Equals(leftleft, rightleft)) {
  				return Transform(
 					Expression.Power(
 						leftleft,
@@ -575,7 +573,7 @@ namespace Utils.Mathematics.Expressions
 
 			if (!(leftleft.Method == sin && rightleft.Method == cos || leftleft.Method == cos && rightleft.Method == sin)) return null;
 
-			if ( expressionComparer.Equals(leftleft.Arguments[0] , rightleft.Arguments[0])) return Expression.Constant(1.0);
+			if (ExpressionComparer.Default.Equals(leftleft.Arguments[0] , rightleft.Arguments[0])) return Expression.Constant(1.0);
 
 			return null;
 		}
@@ -587,12 +585,10 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Invoke)]
 		protected Expression InvokeExpression(InvocationExpression expression)
 		{
-			if (expression.Expression is LambdaExpression) {
-				var le = (LambdaExpression)expression.Expression;
+			if (expression.Expression is LambdaExpression le) {
 				var newArguments = expression.Arguments.ToArray();
 				var oldArguments = le.Parameters.ToArray();
 				return Transform(ReplaceArguments(le.Body, oldArguments, newArguments));
-
 			}
 			return expression;
 		}

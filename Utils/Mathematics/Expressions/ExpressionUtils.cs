@@ -31,11 +31,9 @@ namespace Utils.Mathematics.Expressions
 			return false;
 		}
 
-		private static ExpressionComparer expressionComparer = new ExpressionComparer();
-
 		public static bool Equals( Expression x, Expression y )
 		{
-			return expressionComparer.Equals(x, y);
+			return ExpressionComparer.Default.Equals(x, y);
 		}
 
 	}

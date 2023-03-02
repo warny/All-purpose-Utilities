@@ -13,28 +13,26 @@ namespace Utils.Mathematics.Expressions
 {
 	public static class ExpressionExtensions
 	{
-		private static ExpressionComparer expressionComparer = new ExpressionComparer();
-
 		public static Expression Simplify( this Expression e )
 		{
 			ExpressionSimplifier simplifier = new ExpressionSimplifier();
 			return simplifier.Simplify(e);
 		}
 
-		public static LambdaExpression Derive( this LambdaExpression e )
+		public static LambdaExpression Derivate( this LambdaExpression e )
 		{
 			e.ArgMustNotBeNull();
 			e.Parameters.ArgMustBeOfSize(1);
-			return e.Derive(e.Parameters[0].Name);
+			return e.Derivate(e.Parameters[0].Name);
 		}
 
-		public static LambdaExpression Derive( this LambdaExpression e, string paramName )
+		public static LambdaExpression Derivate( this LambdaExpression e, string paramName )
 		{
 			e.ArgMustNotBeNull();
 
 			ExpressionDerivation derivation = new ExpressionDerivation(paramName);
 			var expression = e.Body.Simplify();
-			expression = derivation.Derivate(e);
+			expression = derivation.Derivate((LambdaExpression)expression);
 			expression = expression.Simplify();
 			return Expression.Lambda(expression, e.Parameters);
 		}

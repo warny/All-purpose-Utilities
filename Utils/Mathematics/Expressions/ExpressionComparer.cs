@@ -8,6 +8,10 @@ namespace Utils.Mathematics.Expressions
 	{
 		private static readonly ExpressionSimplifier expressionSimplifier = new ExpressionSimplifier();
 
+		private ExpressionComparer() { }
+
+		public static ExpressionComparer Default { get; } = new ExpressionComparer();
+
 		public bool Equals(Expression x, Expression y)
 		{
 			var xParameters = x is LambdaExpression xLambda ? xLambda.Parameters.ToArray() : null;
