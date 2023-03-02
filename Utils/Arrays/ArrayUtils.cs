@@ -63,7 +63,7 @@ namespace Utils.Arrays
 		/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
 		/// <returns>Tableau sans les éléments supprimés</returns>
 		public static T[] Trim<T>(this T[] obj, Func<T, bool> trimTester) {
-			int start = 0, end = obj.Length;
+			int start, end = obj.Length;
 			for (start = 0; start < end; start++)
 			{
 				if (!trimTester(obj[start])) break;
@@ -96,7 +96,7 @@ namespace Utils.Arrays
 		/// <returns>Tableau sans les éléments supprimés</returns>
 		public static T[] TrimStart<T>(this T[] obj, Func<T, bool> trimTester)
 		{
-			int start = 0, end = obj.Length;
+			int start, end = obj.Length;
 			for (start = 0; start < end; start++)
 			{
 				if (!trimTester(obj[start])) break;
@@ -125,7 +125,7 @@ namespace Utils.Arrays
 		/// <returns>Tableau sans les éléments supprimés</returns>
 		public static T[] TrimEnd<T>(this T[] obj, Func<T, bool> trimTester)
 		{
-			int start = 0, end = obj.Length;
+			int start = 0, end;
 			for (end = obj.Length - 1; end > start; end--)
 			{
 				if (!trimTester(obj[end])) break;
@@ -213,10 +213,7 @@ namespace Utils.Arrays
 		/// <param name="array">Tableau à copier</param>
 		/// <param name="start">Position de départ</param>
 		/// <returns></returns>
-		public static T[] Copy<T>( this T[] array, int start )
-		{
-			return array.Copy(start, array.Length-start);
-		}
+		public static T[] Copy<T>(this T[] array, int start) => array.Copy(start, array.Length - start);
 
 		/// <summary>
 		/// Copie le tableau multidimentionnel
@@ -246,7 +243,7 @@ namespace Utils.Arrays
 		/// <param name="length">Longueur</param>
 		/// <param name="value">Valeur à ajouter aux nouveau éléments</param>
 		/// <returns>Tableau redimensionner</returns>
-		public static T[] PadLeft<T>(this T[] array, int length, T value = default(T)) {
+		public static T[] PadLeft<T>(this T[] array, int length, T value = default) {
 			if (array.Length > length) throw new ArgumentOutOfRangeException(nameof(length));
 			T[] result = new T[length];
 			int start = length - array.Length;
@@ -263,7 +260,7 @@ namespace Utils.Arrays
 		/// <param name="length">Longueur</param>
 		/// <param name="value">Valeur à ajouter aux nouveau éléments</param>
 		/// <returns>Tableau redimensionner</returns>
-		public static T[] PadRight<T>(this T[] array, int length, T value = default(T))
+		public static T[] PadRight<T>(this T[] array, int length, T value = default)
 		{
 			if (array.Length > length) throw new ArgumentOutOfRangeException(nameof(length));
 			T[] result = new T[length];

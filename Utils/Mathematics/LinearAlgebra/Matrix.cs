@@ -294,11 +294,7 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// <param name="row">Ligne</param>
 		/// <param name="col">Colonne</param>
 		/// <returns></returns>
-		public double this[int row, int col] {
-			get{
-				return this.components[row, col];
-			}
-		}
+		public double this[int row, int col] => this.components[row, col];
 
 		/// <summary>
 		/// Détermine si la matrice est triangulaire ou diagonale
@@ -431,15 +427,9 @@ namespace Utils.Mathematics.LinearAlgebra
 			return result;
 		}
 
-		public override string ToString ()
-		{
-			return ToString("", System.Globalization.CultureInfo.CurrentCulture);
-		}
+		public override string ToString() => ToString("", CultureInfo.CurrentCulture);
 
-		public string ToString ( string format )
-		{
-			return ToString(format, System.Globalization.CultureInfo.CurrentCulture);
-		}
+		public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
 
 		public string ToString ( string format, IFormatProvider formatProvider )
 		{
@@ -483,17 +473,14 @@ namespace Utils.Mathematics.LinearAlgebra
 			return sb.ToString();
 		}
 
-		public override bool Equals ( object obj )
+		public override bool Equals(object obj) => obj switch
 		{
-			switch (obj)
-			{
-				case Matrix m: return Equals(m);
-				case double[,] a: return Equals(a);
-				case double[][] b: return Equals(b);
-				case Vector[] v: return Equals(v);
-				default: return false;
-			}
-		}
+			Matrix m => Equals(m),
+			double[,] a => Equals(a),
+			double[][] b => Equals(b),
+			Vector[] v => Equals(v),
+			_ => false,
+		};
 
 		public bool Equals ( Matrix other)
 		{

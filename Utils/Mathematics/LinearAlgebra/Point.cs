@@ -72,17 +72,14 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// <summary>
 		/// dimension du vecteur
 		/// </summary>
-		public int Dimension
-		{
-			get { return this.components.Length - 1; }
-		}
+		public int Dimension => this.components.Length - 1;
 
-		public override bool Equals ( object obj )
+		public override bool Equals(object obj) => obj switch
 		{
-			if (obj is Point p) return Equals(p);
-			if (obj is double[] array) return Equals(array);
-			return false;
-		}
+			Point p => Equals(p),
+			double[] array => Equals(array),
+			_ => false
+		};
 
 		public bool Equals ( Point other )
 		{
