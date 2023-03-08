@@ -22,7 +22,7 @@ Gestion des couleurs 8, 32 et 64 bits en Argb et Ahsv</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="4.7.2" />
   </ItemGroup>
 
   <ItemGroup>
