@@ -2,7 +2,6 @@
 
   <PropertyGroup>
 	  <TargetFramework>netcoreapp3.1</TargetFramework>
-	  <LangVersion>preview</LangVersion>
 	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
     <Authors>Olivier MARTY</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
