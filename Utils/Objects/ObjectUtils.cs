@@ -18,7 +18,56 @@ namespace Utils.Objects
 			if (!nullableObj.HasValue) return true;
 			return nullableObj.Equals(default(T));
 		}
-		 
+
+		/// <summary>
+		/// Execute the specified function for the current object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="Result">The type of the esult.</typeparam>
+		/// <param name="value">The value.</param>
+		/// <param name="func">The function to execute for the current object.</param>
+		/// <returns></returns>
+		public static Result Do<T, Result>(this T value, Func<T, Result> func)
+		{
+			return func(value);
+		}
+
+		/// <summary>
+		/// Execute the specified function for the current object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="Result">The type of the esult.</typeparam>
+		/// <param name="value">The value.</param>
+		/// <param name="ifNotNull">The function to execute for the current object.</param>
+		/// <param name="ifNull">The function to execute isf the object is null</param>
+		/// <returns></returns>
+		public static Result Do<T, Result>(this T value, Func<T, Result> ifNotNull, Func<Result> ifNull)
+		{
+			if (value == null)
+			{
+				return ifNull();
+			}
+			return ifNotNull(value);
+		}
+
+		/// <summary>
+		/// Execute the specified function for the current object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="Result">The type of the esult.</typeparam>
+		/// <param name="value">The value.</param>
+		/// <param name="ifNotNull">The function to execute for the current object.</param>
+		/// <param name="ifNull">The value to return if the object is null</param>
+		/// <returns></returns>
+		public static Result Do<T, Result>(this T value, Func<T, Result> ifNotNull, Result ifNull)
+		{
+			if (value == null)
+			{
+				return ifNull;
+			}
+			return ifNotNull(value);
+		}
+
 		/// <summary>
 		/// Calcul le hash d'un tableau multidimensionnel
 		/// </summary>
@@ -26,6 +75,7 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public static int ComputeHash(this Array array)
 		{
+			array.ArgMustNotBeNull();
 			unchecked
 			{
 				int hash = 23;
@@ -61,6 +111,9 @@ namespace Utils.Objects
 		/// <returns></returns>
 		public static int ComputeHash<T>(this Array array, Func<T, int> getHashCode)
 		{
+			array.ArgMustNotBeNull();
+			getHashCode.ArgMustNotBeNull();
+
 			unchecked
 			{
 				int hash = 23;

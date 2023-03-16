@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Transactions;
 using Utils.Mathematics;
 
 namespace Utils.Collections
@@ -24,14 +20,14 @@ namespace Utils.Collections
 
 		public SkipList(double density)
 		{
-			if (!density.Between(0.001, 0.5)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.2");
+			if (!density.Between(0.001, 0.5)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.5");
 			this.comparer = Comparer<T>.Default;
 			this.density = density;
 		}
 
 		public SkipList(IComparer<T> comparer, double density = 0.02)
 		{
-			if (!density.Between(0.001, 0.5)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.2");
+			if (!density.Between(0.001, 0.5)) throw new ArgumentOutOfRangeException(nameof(density), "density doit être compris entre 0.001 et 0.5");
 			this.comparer = comparer;
 			this.density = density;
 		}
@@ -112,11 +108,14 @@ namespace Utils.Collections
 			else
 			{
 				var previousElement = position.Pop();
-				var newElement = new Element(item);
-				newElement.Next = previousElement.Next;
+				var newElement = new Element(item)
+				{
+					Next = previousElement.Next,
+					Prev = previousElement
+				};
 				previousElement.Next = newElement;
-				newElement.Prev = previousElement;
-				if (newElement.Next is not null) newElement.Next.Prev = newElement;
+				if (newElement.Next is not null) { newElement.Next.Prev = newElement; }
+
 				while (rng.NextDouble() <= density)
 				{
 					var subElement = newElement;
@@ -125,10 +124,12 @@ namespace Utils.Collections
 					previousElement = position.Count == 0 ? null : position.Pop();
 					if (previousElement is null)
 					{
-						var newFirstElement = new Element(firstElement.Value);
-						newFirstElement.Sub = firstElement;
-						newFirstElement.Next = newElement;
-						newFirstElement.Prev = null;
+						var newFirstElement = new Element(firstElement.Value)
+						{
+							Sub = firstElement,
+							Next = newElement,
+							Prev = null
+						};
 						newElement.Prev = newFirstElement;
 						firstElement = newFirstElement;
 					}
@@ -270,7 +271,7 @@ namespace Utils.Collections
 		}
 
 
-		private class Element
+		private sealed class Element
 		{
 			public readonly T Value;
 			public Element Next;
