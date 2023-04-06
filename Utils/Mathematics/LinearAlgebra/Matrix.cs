@@ -12,7 +12,7 @@ namespace Utils.Mathematics.LinearAlgebra
 	/// <summary>
 	/// Matrice
 	/// </summary>
-	public sealed partial class Matrix : IFormattable , IEquatable<Matrix>, IEquatable<double[,]>, IEquatable<double[][]>, IEquatable<Vector[]>
+	public sealed partial class Matrix : IFormattable , IEquatable<Matrix>, IEquatable<double[,]>, IEquatable<double[][]>, IEquatable<Vector[]>, ICloneable
 	{
 		internal readonly double[,] components;
 		private bool? isDiagonalized;
@@ -394,6 +394,21 @@ namespace Utils.Mathematics.LinearAlgebra
 			}
 		}
 
+		public Matrix Pad(int newRows, int newColumns)
+		{
+			double[,] paddedMatrix = new double[newRows, newColumns];
+			var rowsCount = MathEx.Min(newRows, this.Rows);
+			var columnCount = MathEx.Min(newColumns, this.Columns);
+			for (int i = 0; i < rowsCount; i++)
+			{
+				for (int j = 0; j < columnCount; j++)
+				{
+					paddedMatrix[i, j] = this.components[i, j];
+				}
+			}
+			return new Matrix(paddedMatrix);
+		}
+
 		/// <summary>
 		/// Déterminant de la matrice
 		/// </summary>
@@ -547,5 +562,6 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		public double[,] ToArray() => (double[,])ArrayUtils.Copy(components);
 
+		public object Clone() => new Matrix(this.components);
 	}
 }

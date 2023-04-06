@@ -160,18 +160,7 @@ namespace Utils.Objects
 		{
 			s.ArgMustNotBeNull();
 			trimTester.ArgMustNotBeNull();
-
-			int start, end = s.Length;
-			for (start = 0; start < end; start++)
-			{
-				if (!trimTester(s[start])) break;
-			}
-			for (end = s.Length - 1; end > start; end--)
-			{
-				if (!trimTester(s[end])) break;
-			}
-			if (start >= end) return "";
-			return s.Substring(start, end-start + 1);
+			return s.AsSpan().Trim(trimTester).ToString();
 		}
 
 		/// <summary>
@@ -184,14 +173,7 @@ namespace Utils.Objects
 		{
 			s.ArgMustNotBeNull();
 			trimTester.ArgMustNotBeNull();
-
-			int start, end = s.Length;
-			for (start = 0; start < end; start++)
-			{
-				if (!trimTester(s[start])) break;
-			}
-			if (start >= end) return "";
-			return s.Substring(start, end - start);
+			return s.AsSpan().TrimStart(trimTester).ToString();
 		}
 
 		/// <summary>
@@ -202,14 +184,9 @@ namespace Utils.Objects
 		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
-			if (s is null) return null;
-			int start = 0, end;
-			for (end = s.Length - 1; end > start; end--)
-			{
-				if (!trimTester(s[end])) break;
-			}
-			if (start >= end) return "";
-			return s.Substring(start, end - start + 1);
+			s.ArgMustNotBeNull();
+			trimTester.ArgMustNotBeNull();
+			return s.AsSpan().TrimEnd(trimTester).ToString();
 		}
 
 		/// <summary>
@@ -226,25 +203,7 @@ namespace Utils.Objects
 		public static string Mid( this string s, int start, int length )
 		{
 			if (s is null) return null;
-			if (length < 0)
-			{
-				if (start > 0 && -length > start)
-				{
-					length = start + 1;
-					start = 0;
-				}
-				else 
-				{
-					start += length + 1;
-					length = -length;
-				}
-			}
-			if (start < 0) start = s.Length + start;
-			if (start <= -length) return string.Empty;
-			if (start < 0) return s.Substring(0, length + start);
-			if (start > s.Length) return string.Empty;
-			if (start + length > s.Length) return s.Substring(start);
-			return s.Substring(start, length);
+			return s.AsSpan().Mid(start, length).ToString();
 		}
 
 		/// <summary>
@@ -255,10 +214,8 @@ namespace Utils.Objects
 		public static string Mid( this string s, int start )
 		{
 			if (s==null) return null;
-			if (start < 0) start = s.Length + start;
-			if (start < 0) return s;
-			if (start > s.Length) return string.Empty;
-			return s.Substring(start);
+			return s.AsSpan().Mid(start).ToString();
+			;
 		}
 
 		/// <summary>
