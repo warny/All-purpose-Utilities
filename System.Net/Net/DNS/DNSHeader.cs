@@ -97,10 +97,10 @@ namespace Utils.Net.DNS
             set => Flags = (ushort)((Flags | ~DNSConstants.ReservedZ) & (value & DNSConstants.ReservedZ));
         }
 
-        public byte ErrorCode
+        public DNSError ErrorCode
         {
-            get => (byte)(Flags & DNSConstants.Error);
-            set => Flags = (ushort)((Flags | ~DNSConstants.Error) & (value & DNSConstants.Error));
+            get => (DNSError)((ushort)Flags & DNSConstants.Error);
+            set => Flags = (ushort)((Flags | ~DNSConstants.Error) & ((ushort)value & DNSConstants.Error));
         }
 
 		protected internal override void Read(DNSDatagram datagram, DNSFactory factory)

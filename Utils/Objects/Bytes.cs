@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks.Dataflow;
 using Utils.Arrays;
 
 namespace Utils.Objects
@@ -24,18 +25,12 @@ namespace Utils.Objects
 
 		public int Count => innerBytes.Length;
 
-		public Bytes(params byte[] byteArray)
+		internal Bytes(params byte[] byteArray)
 		{
-			this.innerBytes = new byte[byteArray.Length];
-			Array.Copy(byteArray, this.innerBytes, 0);
+			this.innerBytes = byteArray;
 		}
 
-		public Bytes(IEnumerable<byte> bytes)
-		{
-			innerBytes = bytes.ToArray();
-		}
-
-		public Bytes(params byte[][] byteArrays)
+		internal Bytes(params byte[][] byteArrays)
 		{
 			this.innerBytes = new byte[byteArrays.Sum(a => a.Length)];
 			int position = 0;
@@ -46,7 +41,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public Bytes(params Bytes[] bytess)
+		internal Bytes(params Bytes[] bytess)
 		{
 			this.innerBytes = new byte[bytess.Sum(a=>a.innerBytes.Length)];
 			int position = 0;
@@ -57,7 +52,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public  byte[] ToArray()
+		public byte[] ToArray()
 		{
 			byte[] result = new byte[this.innerBytes.Length];
 			Array.Copy(this.innerBytes, result, this.innerBytes.Length);
@@ -141,7 +136,7 @@ namespace Utils.Objects
 			s.Write(this.innerBytes, index, length.Value);
 		}
 
-		public override string ToString() => string.Join(" ", innerBytes.Select(b => b.ToString("XX")));
+		public override string ToString() => string.Join(" ", innerBytes.Select(b => b.ToString("X2")));
 
 		public static Bytes Parse(string s)
 		{
@@ -149,4 +144,64 @@ namespace Utils.Objects
 			return new Bytes(values.Select(v => byte.Parse(v, System.Globalization.NumberStyles.HexNumber)).ToArray());
 		}
 	}
+
+	public static class BytesExtensions
+	{
+		public static Bytes ToBytes(this byte[] byteArray)
+		{
+            var innerBytes = new byte[byteArray.Length];
+            Array.Copy(byteArray, innerBytes, 0);
+			return new Bytes(innerBytes);
+        }
+
+		public static Bytes ToBytes( this IEnumerable<byte> byteArray)
+		{
+			return new Bytes(byteArray.ToArray());
+		}
+
+		public static Bytes AsBytes(this byte[] byteArray)
+		{
+			return new Bytes(byteArray);
+		}
+
+        public static Bytes Join(IEnumerable<byte[]> byteArrays) => Join(byteArrays.ToArray());
+		public static Bytes Join(params byte[][] byteArrays)
+        {
+            var innerBytes = new byte[byteArrays.Sum(a => a.Length)];
+            int position = 0;
+            foreach (var item in byteArrays)
+            {
+                Array.Copy(item, innerBytes, position);
+                position += item.Length;
+            }
+            return new Bytes(innerBytes);
+        }
+
+        public static Bytes Join(IEnumerable<Bytes> byteArrays) => Join(byteArrays.ToArray());
+        public static Bytes Join(params Bytes[] byteArrays)
+        {
+            var innerBytes = new byte[byteArrays.Sum(a => a.Count)];
+            int position = 0;
+            foreach (var item in byteArrays)
+            {
+                Array.Copy(item, innerBytes, position);
+                position += item.Count;
+            }
+            return new Bytes(innerBytes);
+        }
+
+        public static Bytes Join(IEnumerable<IEnumerable<byte>> byteArrays)
+        {
+			MemoryStream memory = new();
+			foreach (var byteArray in byteArrays)
+			{
+				foreach (var value in byteArray)
+				{
+					memory.WriteByte(value);
+				}
+			}
+			return new Bytes(Join(memory.ToArray()));
+        }
+
+    }
 }

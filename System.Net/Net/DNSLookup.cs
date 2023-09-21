@@ -1,73 +1,95 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using Utils.Net.DNS;
 
 namespace Utils.Net
 {
-	public class DNSLookup
-	{
-        public DNSLookup() {
+    /// <summary>
+    /// A class for performing DNS lookups using specified name servers.
+    /// </summary>
+    public class DNSLookup
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DNSLookup"/> class with default name servers.
+        /// </summary>
+        public DNSLookup()
+        {
             NameServers = new NetworkParameters().DnsServers;
         }
 
-        public DNSLookup(params IPAddress[] nameServers) {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DNSLookup"/> class with custom name servers.
+        /// </summary>
+        /// <param name="nameServers">Array of IP addresses representing DNS name servers.</param>
+        public DNSLookup(params IPAddress[] nameServers)
+        {
             NameServers = nameServers;
         }
 
+        /// <summary>
+        /// Gets or sets the array of IP addresses representing DNS name servers.
+        /// </summary>
         public IPAddress[] NameServers { get; set; }
 
-		public DNSHeader Request(string type, string name, DNSClass @class = DNSClass.ALL)
-		{
-			DNSHeader request = new DNSHeader();
-			request.Requests.Add(new DNSRequestRecord(type, name, @class));
-            var requestDatagram = request.ToByteArray();
-            foreach (var NameServer in NameServers)
+        /// <summary>
+        /// Sends a DNS query request to the specified name servers and returns the response.
+        /// </summary>
+        /// <param name="type">DNS record type to query (e.g., "A" for IPv4 address).</param>
+        /// <param name="name">Domain name to query.</param>
+        /// <param name="class">DNS class (default is DNSClass.ALL).</param>
+        /// <returns>The DNS response header containing the query result.</returns>
+        public DNSHeader Request(string type, string name, DNSClass @class = DNSClass.ALL)
+        {
+            DNSHeader request = new DNSHeader();
+            request.RecursionDesired = true;
+            request.Requests.Add(new DNSRequestRecord(type, name, @class));
+
+            byte[] requestDatagram = request.ToByteArray();
+
+            foreach (IPAddress nameServer in NameServers)
             {
                 try
                 {
-                    var responseDatagram = UdpTransport(NameServer, 53, requestDatagram);
+                    byte[] responseDatagram = UdpTransport(nameServer, 53, requestDatagram);
                     return new DNSHeader(responseDatagram);
                 }
                 catch
                 {
                 }
             }
-            throw new Exception("Impossible d'executer la requête");
-		}
 
+            throw new Exception("Unable to execute the request");
+        }
 
-        #region procédures de transport
+        #region Transport Procedures
         /// <summary>
-        /// Produit une requête udp et attend un retour
+        /// Sends a UDP request and waits for a response.
         /// </summary>
-        /// <param name="Server">Adresse de la machine distante</param>
-        /// <param name="Port">Port à requêter</param>
-        /// <param name="packet">Paquet à envoyer</param>
-        /// <returns>Résultat de la réponse</returns>
-        private static byte[] UdpTransport(IPAddress Server, int Port, byte[] packet)
+        /// <param name="server">Remote machine's address.</param>
+        /// <param name="port">Port to query.</param>
+        /// <param name="packet">Packet to send.</param>
+        /// <returns>The response result.</returns>
+        private static byte[] UdpTransport(IPAddress server, int port, byte[] packet)
         {
-            // on dimensionne une réponse de 512 octets = taille udp maximum
-            Byte[] byteRes = new Byte[512];
-            int intByteRec = 0;
+            byte[] responseBytes = new byte[512]; // Initialize a response buffer with a maximum UDP size of 512 bytes
+            int receivedBytes = 0;
 
-            Socket sokUDP = new Socket(Server.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            sokUDP.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 5000);
+            using (Socket udpSocket = new Socket(server.AddressFamily, SocketType.Dgram, ProtocolType.Udp))
+            {
+                udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 5000);
 
-            EndPoint RemoteHost = new IPEndPoint(Server, Port);
+                EndPoint remoteHost = new IPEndPoint(server, port);
 
-            sokUDP.SendTo(packet, packet.Length, SocketFlags.None, RemoteHost);
+                udpSocket.SendTo(packet, packet.Length, SocketFlags.None, remoteHost);
 
-            intByteRec = sokUDP.ReceiveFrom(byteRes, byteRes.Length, SocketFlags.None, ref RemoteHost);
-            try { sokUDP.Close(); } catch {; }
-            byte[] ret = new byte[intByteRec];
-            Array.Copy(byteRes, 0, ret, 0, intByteRec);
-            return ret;
+                receivedBytes = udpSocket.ReceiveFrom(responseBytes, responseBytes.Length, SocketFlags.None, ref remoteHost);
+            }
+
+            byte[] response = new byte[receivedBytes];
+            Array.Copy(responseBytes, 0, response, 0, receivedBytes);
+            return response;
         }
         #endregion
-
     }
 }

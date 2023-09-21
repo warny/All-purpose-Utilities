@@ -64,7 +64,7 @@ namespace Utils.Net.DNS
             base.Write(datagram, factory);
             var lengthPosition = datagram.Length - 2;
             RData.Write(datagram, factory);
-            //ecriture de la taille des données (RDLength)
+            //écriture de la taille des données (RDLength)
             RDLength = (ushort)(datagram.Length - lengthPosition - 2);
             datagram.Write(lengthPosition, RDLength);
         }

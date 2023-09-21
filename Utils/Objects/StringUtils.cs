@@ -91,72 +91,87 @@ namespace Utils.Objects
 		}
 
 
-		/// <summary>
-		/// Compare une chaîne par rapport à une séquence d'échappement
-		/// </summary>
-		/// <param name="str">Chaîne à comparer</param>
-		/// <param name="pattern">Séquence</param>
-		/// <param name="ignoreCase">true : ignore la casse</param>
-		/// <returns>true si la chaîne correspond</returns>
-		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, TextInfo textInfo = null)
-		{
-			pattern.ArgMustNotBeNull();
-			if (pattern == "*") return true;
-			textInfo ??= CultureInfo.CurrentCulture.TextInfo;
+        /// <summary>
+        /// Compares a string to an escape pattern.
+        /// </summary>
+        /// <param name="str">String to compare</param>
+        /// <param name="pattern">Pattern to match</param>
+        /// <param name="ignoreCase">true: ignore case</param>
+        /// <returns>true if the string matches the pattern</returns>
+        public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, TextInfo textInfo = null)
+        {
+            pattern.ArgMustNotBeNull(); // Ensure the pattern is not null.
+            if (pattern == "*") return true; // If the pattern is "*", consider it a match.
+            textInfo ??= CultureInfo.CurrentCulture.TextInfo; // Get the TextInfo for culture-specific operations.
 
-			Func<char, char, bool> equals = ignoreCase
-				? (x, y) => textInfo.ToLower(x) == textInfo.ToLower(y)
-				: (x, y) => x == y;
+            // Define a function 'equals' for character comparison based on 'ignoreCase' option.
+            Func<char, char, bool> equals = ignoreCase
+                ? (x, y) => textInfo.ToLower(x) == textInfo.ToLower(y)
+                : (x, y) => x == y;
 
-			int valueIndex = 0, wildcardIndex = 0;
-			int valueNext = 0, wildcardNext = 0;
+            // Initialize indices for the string and pattern.
+            int valueIndex = 0, wildcardIndex = 0;
+            int valueNext = 0, wildcardNext = 0;
 
-			while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
-			{
-				if (pattern[wildcardIndex] != '?' && !equals(value[valueIndex], pattern[wildcardIndex]))
-				{
-					return false;
-				}
-				wildcardIndex++;
-				valueIndex++;
-			}
+            // Compare characters until the first '*' in the pattern.
+            while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
+            {
+                if (pattern[wildcardIndex] != '?' && !equals(value[valueIndex], pattern[wildcardIndex]))
+                {
+                    return false; // If a character doesn't match, return false.
+                }
+                wildcardIndex++;
+                valueIndex++;
+            }
 
-			while (wildcardIndex < pattern.Length && valueIndex < value.Length)
-			{
-				if (pattern[wildcardIndex] == '*')
-				{
-					wildcardNext = wildcardIndex;
-					wildcardIndex++;
-					if (wildcardIndex >= pattern.Length)
-					{
-						return true;
-					}
-					valueNext += 1;
-				}
-				else if (pattern[wildcardIndex] == '?' || equals(value[valueIndex], pattern[wildcardIndex]))
-				{
-					wildcardIndex++;
-					valueIndex++;
-					if (wildcardIndex >= pattern.Length && valueIndex < value.Length && pattern[wildcardNext] == '*') wildcardIndex = wildcardNext + 1;
-				}
-				else
-				{
-					wildcardIndex = wildcardNext + 1;
-					valueIndex = valueNext++;
-				}
-			}
+            // Compare the rest of the string and pattern.
+            while (wildcardIndex < pattern.Length && valueIndex < value.Length)
+            {
+                if (pattern[wildcardIndex] == '*')
+                {
+                    // Handle '*' in the pattern.
+                    wildcardNext = wildcardIndex;
+                    wildcardIndex++;
+                    if (wildcardIndex >= pattern.Length)
+                    {
+                        return true; // If '*' is the last character in the pattern, consider it a match.
+                    }
+                    valueNext += 1;
+                }
+                else if (pattern[wildcardIndex] == '?' || equals(value[valueIndex], pattern[wildcardIndex]))
+                {
+                    // If character matches or '?' in pattern, move both indices.
+                    wildcardIndex++;
+                    valueIndex++;
+                    if (wildcardIndex >= pattern.Length && valueIndex < value.Length && pattern[wildcardNext] == '*')
+                    {
+                        wildcardIndex = wildcardNext + 1;
+                    }
+                }
+                else
+                {
+                    // Mismatch, reset indices to try matching again.
+                    wildcardIndex = wildcardNext + 1;
+                    valueIndex = valueNext++;
+                }
+            }
 
-			while (wildcardIndex < pattern.Length && pattern[wildcardIndex] == '*') wildcardIndex++;
-			return wildcardIndex >= pattern.Length && valueIndex >= value.Length;
-		}
+            // Handle remaining '*' characters in the pattern.
+            while (wildcardIndex < pattern.Length && pattern[wildcardIndex] == '*')
+            {
+                wildcardIndex++;
+            }
 
-		/// <summary>
-		/// Supprime du début et de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
-		/// </summary>
-		/// <param name="s">Chaîne de référence</param>
-		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
-		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
-		public static string Trim(this string s, Func<char, bool> trimTester)
+            return wildcardIndex >= pattern.Length && valueIndex >= value.Length;
+        }
+
+        /// <summary>
+        /// Supprime du début et de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+        /// </summary>
+        /// <param name="s">Chaîne de référence</param>
+        /// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
+        /// <returns>Chaîne expurgée des éléments à supprimer</returns>
+        public static string Trim(this string s, Func<char, bool> trimTester)
 		{
 			s.ArgMustNotBeNull();
 			trimTester.ArgMustNotBeNull();
@@ -251,17 +266,9 @@ namespace Utils.Objects
 		/// Turn the first letter of a string to uppercase
 		/// </summary>
 		/// <param name="text">text to transform</param>
-		/// <returns></returns>
-		public static string FirstLetterUpperCase(this string text) 
-			=> text.FirstLetterUpperCase(false);
-
-		/// <summary>
-		/// Turn the first letter of a string to uppercase
-		/// </summary>
-		/// <param name="text">text to transform</param>
 		/// <param name="endToLowerCase">True if the end of input string must be set to lowercase</param>
 		/// <returns></returns>
-		public static string FirstLetterUpperCase( this string text, bool endToLowerCase )
+		public static string FirstLetterUpperCase( this string text, bool endToLowerCase = false)
 		{
 			if (text.IsNullOrEmpty()) {
 				return text;

@@ -27,17 +27,17 @@ namespace Utils.Net.DNS
 		protected readonly Dictionary<ushort, Type> DNSResponses = new Dictionary<ushort, Type>();
 		protected readonly Dictionary<string, ushort> DNSClassesNames = new Dictionary<string, ushort>()
 		{
-			{ "ALL", 0x00FF },
-			{ "AXFR", 0x00FC },
-            { "MAILB", 0x00FD },
-            { "MAILA", 0x00FE }
+			{ "ALL", DNSRequestType.ALL },
+			{ "AXFR", DNSRequestType.AXFR },
+            { "MAILB", DNSRequestType.MAILB },
+            { "MAILA", DNSRequestType.MAILA }
 		};
 		protected readonly Dictionary<ushort, string> DNSClassesIds = new Dictionary<ushort, string>()
 		{
-			{ 0x00FF, "ALL" },
-			{ 0x00FC, "AXFR" },
-			{ 0x00FD, "MAILB" },
-			{ 0x00FE, "MAILA" }
+			{ DNSRequestType.ALL, "ALL" },
+			{ DNSRequestType.AXFR, "AXFR" },
+			{ DNSRequestType.MAILB, "MAILB" },
+			{ DNSRequestType.MAILA, "MAILA" }
 
 		};
 
@@ -83,11 +83,8 @@ namespace Utils.Net.DNS
 			return (DNSResponseDetail)Activator.CreateInstance(elementType);
 		}
 
-		public string GetClassName(ushort classIdentifier)
-		{
-			return DNSClassesIds[classIdentifier];
-		}
+        public string GetClassName(ushort classIdentifier) => DNSClassesIds[classIdentifier];
 
-		public ushort GetClassIdentifier(string className) => DNSClassesNames[className];
+        public ushort GetClassIdentifier(string className) => DNSClassesNames[className];
 	}
 }

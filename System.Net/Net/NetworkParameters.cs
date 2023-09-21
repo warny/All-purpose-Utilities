@@ -21,6 +21,7 @@ namespace Utils.Net
                 if (networkInterface.OperationalStatus == OperationalStatus.Up)
                 {
                     IPInterfaceProperties ipProperties = networkInterface.GetIPProperties();
+                    if (ipProperties.GatewayAddresses == null || ipProperties.GatewayAddresses.Count == 0) continue;
                     IPAddressCollection dnsAddresses = ipProperties.DnsAddresses;
 
 

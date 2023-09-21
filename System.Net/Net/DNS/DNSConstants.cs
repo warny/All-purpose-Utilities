@@ -23,8 +23,7 @@ namespace Utils.Net.DNS
     */
 
     /// <summary>
-    /// Bit qui indique que le paquet est une réponse 1 ou une question 0
-    /// Les valeurs sont décallés
+    /// Is the packet is a response or a question (1 bit, aligned)
     /// </summary>
     public enum DNSQRBit : ushort
     {
@@ -33,12 +32,7 @@ namespace Utils.Net.DNS
     }
 
     /// <summary>
-    /// Quatre bits qui indiquent l'opération demmandée
-    /// Les valeurs possibles sont :
-    /// Standart 0
-    /// Inverse  1
-    /// Status   2
-    /// Les valeurs sont décallées
+    /// Requested operation (4bits)
     /// </summary>
     public enum DNSOpCode : ushort
     {
@@ -47,29 +41,88 @@ namespace Utils.Net.DNS
         Status = 0x2000
     }
 
+    /// <summary>
+    /// Four bits that indicates the returned error value (4 bits, aligned)
+    /// </summary>
     public enum DNSError : ushort
     {
-        Ok = 0x0000, // No error condition
-        FormatError = 0x0001, // Format error - The name server was unable to interpret the query.
-        ServerFailure = 0x0002, // Server failure - The name server was unable to process this query due to a problem with the name server.
-        NameError = 0x0003, // Name Error - Meaningful only for responses from an authoritative name server, this code signifies that the domain name referenced in the query does not exist.
-        NotImplemented = 0x0004, // Not Implemented - The name server does not support the requested kind of query.
-        Refused = 0x0005  // Refused - The name server refuses to perform the specified operation for policy reasons.  For example, a name server may not wish to provide the information to the particular requester, or a name server may not wish to perform a particular operation (e.g., zone transfer) for particular data.
+        /// <summary>
+        /// No error condition
+        /// </summary>
+        Ok = 0x0000,
+        /// <summary>
+        /// Format error - The name server was unable to interpret the query.
+        /// </summary>
+        FormatError = 0x0001,
+        /// <summary>
+        /// Server failure - The name server was unable to process this query due to a problem with the name server.
+        /// </summary>
+        ServerFailure = 0x0002,
+        /// <summary>
+        /// Name Error - Meaningful only for responses from an authoritative name server, this code signifies that the domain name referenced in the query does not exist.
+        /// </summary>
+        NameError = 0x0003,
+        /// <summary>
+        /// Not Implemented - The name server does not support the requested kind of query.
+        /// </summary>
+        NotImplemented = 0x0004,
+        /// <summary>
+        /// Refused - The name server refuses to perform the specified operation for policy reasons.  For example, a name server may not wish to provide the information to the particular requester, or a name server may not wish to perform a particular operation (e.g., zone transfer) for particular data.
+        /// </summary>
+        Refused = 0x0005 
     }
 
+    /// <summary>
+    /// DNS Standart constants masks
+    /// </summary>
+    /// <summary>
+    /// Constants representing DNS datagram flags and fields masks.
+    /// </summary>
     public static class DNSConstants
     {
+        /// <summary>
+        /// QR (Query/Response) bit. Set to 1 for Response, 0 for Query.
+        /// <seealso cref="DNSQRBit"/>
+        /// </summary>
         public const ushort QR = 0x8000;
+
+        /// <summary>
+        /// OpCode (Operation Code) field. Indicates the type of DNS query.
+        /// <seealso cref="DNSOpCode"/>
+        /// </summary>
         public const ushort OpCode = 0x7800;
 
+        /// <summary>
+        /// Authoritative Answer bit. Set to 1 if the responding server is an authority for the queried domain.
+        /// </summary>
         public const ushort AuthoritativeAnswer = 0x0400;
+
+        /// <summary>
+        /// Message Truncated bit. Set to 1 if the DNS message was truncated during transmission.
+        /// </summary>
         public const ushort MessageTruncated = 0x0200;
+
+        /// <summary>
+        /// Recursion Desired bit. Set to 1 if the client requests a recursive DNS query.
+        /// </summary>
         public const ushort RecursionDesired = 0x0100;
+
+        /// <summary>
+        /// Recursion Possible bit. Set to 1 if the server supports recursive queries.
+        /// </summary>
         public const ushort RecursionPossible = 0x0008;
+
+        /// <summary>
+        /// Reserved Zero (Z) bits. Reserved for future use. Should be set to 0.
+        /// </summary>
         public const ushort ReservedZ = 0x0070;
+
+        /// <summary>
+        /// Error field. Indicates the type of DNS error encountered in the response.
+        /// <seealso cref="DNSError"/>
+        /// </summary>
         public const ushort Error = 0x000F;
     }
-
     public enum DNSClass : ushort
     {
         /// <summary>
@@ -94,12 +147,12 @@ namespace Utils.Net.DNS
         ALL = 0x00FF
     }
 
-    public enum DNSRequestType : ushort
+    public static class DNSRequestType
     {
-         ALL = 0xFF,
-         AXFR = 0xFC,
-         MAILB = 0xFD,
-         MAILA = 0xFE,
+        public const ushort ALL = 0xFF;
+        public const ushort AXFR = 0xFC;
+        public const ushort MAILB = 0xFD;
+        public const ushort MAILA = 0xFE;
     }
 
     static class Types

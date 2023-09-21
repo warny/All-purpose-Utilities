@@ -8,7 +8,7 @@ namespace Utils.Objects
 {
 	public static class Validations
 	{
-		public static T ArgMustNotBeNull<T>(this T value, [CallerArgumentExpression("value")] string valueName = "")
+		public static T ArgMustNotBeNull<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "")
 			where T : class
 		{
 			if (value is null)
@@ -18,7 +18,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ValueMustNotBeNull<T>(this T value, [CallerArgumentExpression("value")] string valueName = "")
+		public static T ValueMustNotBeNull<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "")
 			where T : class
 		{
 			if (value is null)
@@ -30,7 +30,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static void ArgMustBeOfRank(this Array value, int size, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgMustBeOfRank(this Array value, int size, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		{
 			if (value.Rank != size)
 			{
@@ -40,7 +40,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public static void ArgMustBeOfSizes(this Array value, int?[] sizes, int size, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgMustBeOfSizes(this Array value, int?[] sizes, int size, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		{
 			if (value.Rank != sizes.Length)
 			{
@@ -59,7 +59,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public static void ArgMustBeOfBounds(this Array value, (int? lBound, int? uBound)[] bounds, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgMustBeOfBounds(this Array value, (int? lBound, int? uBound)[] bounds, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		{
 			if (value.Rank != bounds.Length)
 			{
@@ -84,7 +84,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public static void ArgMustBeOfSize<T>(this IReadOnlyCollection<T> value, int size, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgMustBeOfSize<T>(this IReadOnlyCollection<T> value, int size, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		{
 			if (value.Count != size)
 			{
@@ -92,7 +92,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public static void ValueSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ValueSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		{
 			if (value.Count % multiple != 0)
 			{
@@ -100,7 +100,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public static void ArgSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression("value")] string valueName = "")
+		public static void ArgSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		{
 			if (value.Count % multiple != 0)
 			{
@@ -108,7 +108,7 @@ namespace Utils.Objects
 			}
 		}
 
-		public static T ArgMustBeEqualsTo<T>(this T value, T targetValue, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeEqualsTo<T>(this T value, T targetValue, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(targetValue) != 0)
 			{
@@ -117,7 +117,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ArgMustBeIn<T>(this T value, T[] targetValue, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeIn<T>(this T value, T[] targetValue, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(targetValue) != 0)
 			{
@@ -126,7 +126,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ArgMustBeLesserOrEqualsThan<T>(this T value, T max, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeLesserOrEqualsThan<T>(this T value, T max, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(max) > 0)
 			{
@@ -135,7 +135,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ArgMustBeLesserThan<T>(this T value, T max, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeLesserThan<T>(this T value, T max, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(max) >= 0)
 			{
@@ -144,7 +144,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ArgMustBeGreaterOrEqualsThan<T>(this T value, T min, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeGreaterOrEqualsThan<T>(this T value, T min, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(min) < 0)
 			{
@@ -153,7 +153,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ArgMustBeGreaterThan<T>(this T value, T min, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeGreaterThan<T>(this T value, T min, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(min) <= 0)
 			{
@@ -162,7 +162,7 @@ namespace Utils.Objects
 			return value;
 		}
 
-		public static T ArgMustBeBetween<T>(this T value, T min, T max, [CallerArgumentExpression("value")] string valueName = "") where T : IComparable
+		public static T ArgMustBeBetween<T>(this T value, T min, T max, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 		{
 			if (value.CompareTo(min) < 0 || value.CompareTo(max) > 0) 
 			{
