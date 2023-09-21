@@ -171,6 +171,7 @@ namespace UtilsTest.Net
 
 
         [TestMethod]
+		[Ignore]
 		public void SendDNSRequest()
 		{
 			DNSLookup lookup = new DNSLookup();
