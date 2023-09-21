@@ -99,20 +99,39 @@ ALTITUDE     The altitude of the center of the sphere described by the
              height values relative to the [WGS 84] ellipsoid.
         */
         [DNSField]
-        public byte Version { get; set; }
+        public ushort Version { get; set; }
         [DNSField]
-        private byte Size { get; set; }
+        private ushort Size { get; set; }
         [DNSField]
-        private byte HorizontalPrecision { get; set; }
+        private ushort HorizontalPrecision { get; set; }
         [DNSField]
-        private byte VerticalPrecision { get; set; }
+        private ushort VerticalPrecision { get; set; }
 
         [DNSField]
-        public uint Latitude { get; set; }
+        private int latitude { get; set; }
         [DNSField]
-        public uint Longitude { get; set; }
+        private int longitude { get; set; }
         [DNSField]
-        public uint Altitude { get; set; }
+        private int altitude { get; set; }
+
+        public double Latitude
+        {
+            get => (double)latitude / 145;
+            set => latitude = (int)(value * 145);
+        }
+
+        public double Longitude
+        {
+            get => (double)longitude / 256;
+            set => longitude = (int)(value * 256);
+        }
+
+        public double Altitude
+        {
+            get => (double)altitude / 256;
+            set => altitude = (int)(value * 256);
+        }
+
 
         public override string ToString() {
             return $"L:{Latitude} l:{Longitude} A:{Altitude} \n\t Size:{Size} Precision (h:{HorizontalPrecision}, v:{VerticalPrecision})" ;

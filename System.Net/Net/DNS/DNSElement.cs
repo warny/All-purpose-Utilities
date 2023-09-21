@@ -17,6 +17,8 @@ namespace Utils.Net.DNS
                 else if (field.PropertyType == typeof(byte)) datagram.Write((byte)field.GetValue(this));
                 else if (field.PropertyType == typeof(ushort)) datagram.Write((ushort)field.GetValue(this));
                 else if (field.PropertyType == typeof(uint)) datagram.Write((uint)field.GetValue(this));
+                else if (field.PropertyType == typeof(short)) datagram.Write((short)field.GetValue(this));
+                else if (field.PropertyType == typeof(int)) datagram.Write((int)field.GetValue(this));
                 else if (field.PropertyType == typeof(DNSClass)) datagram.Write((ushort)field.GetValue(this));
             }
         }
@@ -31,6 +33,8 @@ namespace Utils.Net.DNS
                 else if (field.PropertyType == typeof(byte)) field.SetValue(this, datagram.ReadByte());
                 else if (field.PropertyType == typeof(ushort)) field.SetValue(this, datagram.ReadUShort());
                 else if (field.PropertyType == typeof(uint)) field.SetValue(this, datagram.ReadUInt());
+                else if (field.PropertyType == typeof(short)) field.SetValue(this, datagram.ReadShort());
+                else if (field.PropertyType == typeof(int)) field.SetValue(this, datagram.ReadInt());
                 else if (field.PropertyType == typeof(DNSClass)) field.SetValue(this, datagram.ReadUShort());
             }
         }

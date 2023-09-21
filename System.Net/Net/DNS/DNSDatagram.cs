@@ -62,20 +62,38 @@ namespace Utils.Net.DNS
 			Length += 2;
 		}
 
-		public void Write(int position, ushort s)
+        public void Write(short s)
+        {
+            Write(Length, s);
+            Length += 2;
+        }
+
+        public void Write(int position, ushort s)
 		{
 			datagram[position] = (byte)((s >> 8) & 0xFF);
 			datagram[position + 1] = (byte)(s & 0xFF);
 		}
 
+        public void Write(int position, short s)
+        {
+            datagram[position] = (byte)((s >> 8) & 0xFF);
+            datagram[position + 1] = (byte)(s & 0xFF);
+        }
+        
 		public void Write(uint i)
 		{
 			var position = Length;
 			Write(position, i);
 			Length += 4;
 		}
+        public void Write(int i)
+        {
+            var position = Length;
+            Write(position, i);
+            Length += 4;
+        }
 
-		private void Write(int position, uint i)
+        private void Write(int position, uint i)
 		{
 			datagram[position] = (byte)((i >> 24) & 0xFF);
 			datagram[position + 1] = (byte)((i >> 16) & 0xFF);
@@ -83,6 +101,14 @@ namespace Utils.Net.DNS
 			datagram[position + 3] = (byte)(i & 0xFF);
 		}
 
+        private void Write(int position, int i)
+        {
+            datagram[position] = (byte)((i >> 24) & 0xFF);
+            datagram[position + 1] = (byte)((i >> 16) & 0xFF);
+            datagram[position + 2] = (byte)((i >> 8) & 0xFF);
+            datagram[position + 3] = (byte)(i & 0xFF);
+        }
+        
 		public void Write(string s)
 		{
 			if (StringsPositions.TryGetValue(s, out ushort position))
@@ -127,7 +153,14 @@ namespace Utils.Net.DNS
 				| ReadByte());
 		}
 
-		public uint ReadUInt()
+        public short ReadShort()
+        {
+            return (short)(
+                (ReadByte() << 8)
+                | ReadByte());
+        }
+
+        public uint ReadUInt()
 		{
 			return (uint)(
 				(ReadByte() << 24)
@@ -136,7 +169,16 @@ namespace Utils.Net.DNS
 				| (ReadByte()));
 		}
 
-		public string ReadString() => ReadString(Position);
+        public int ReadInt()
+        {
+            return (int)(
+                (ReadByte() << 24)
+                | (ReadByte() << 16)
+                | (ReadByte() << 8)
+                | (ReadByte()));
+        }
+
+        public string ReadString() => ReadString(Position);
 	
 		private string ReadString(int position)
 		{
