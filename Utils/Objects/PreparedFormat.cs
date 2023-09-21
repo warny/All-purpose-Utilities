@@ -632,7 +632,6 @@ namespace Utils.Objects
 		/// <returns>
 		/// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
 		/// </returns>
-		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
 		public override int GetHashCode()
 		{
 			return FormatString.GetHashCode();

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <TargetFramework>netcoreapp3.1</TargetFramework>
+	  <TargetFramework>net7.0</TargetFramework>
 	<LangVersion>Latest</LangVersion>
 	  <RootNamespace>Utils</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -22,7 +22,7 @@ Calculs de distances</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="PolySharp" Version="1.12.1">
+    <PackageReference Include="PolySharp" Version="1.13.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

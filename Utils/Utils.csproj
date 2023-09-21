@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <TargetFramework>netcoreapp3.1</TargetFramework>
+	  <TargetFramework>net7.0</TargetFramework>
 	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
 	<LangVersion>Latest</LangVersion>
     <Authors>Olivier MARTY</Authors>
@@ -57,12 +57,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="PolySharp" Version="1.12.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Globalization\" />
   </ItemGroup>
 
 </Project>

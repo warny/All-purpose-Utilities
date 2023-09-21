@@ -18,7 +18,7 @@ namespace Utils.Security
 		/// <param name="key">Clef binaire</param>
 		/// <param name="digits">Taille du code</param>
 		/// <param name="intervalLength">Durée de conservation de la clée</param>
-		public Authenticator(string algorithm, byte[] key, int digits, int intervalLength) : this(HMAC.Create(algorithm), key, digits, intervalLength) { }
+		public Authenticator(string algorithm, byte[] key, int digits, int intervalLength) : this((HMAC)CryptoConfig.CreateFromName(algorithm), key, digits, intervalLength) { }
 
 		/// <summary>
 		/// Créé un calculateur d'authentification

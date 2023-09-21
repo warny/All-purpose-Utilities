@@ -19,7 +19,7 @@ namespace Utils.Objects
 
 		public bool IsReadOnly { get; }
 
-		protected static IEnumerable<Range<T>> InnerParse<T>(string range, string itemSearchPattern, Func<string, T> valueParser) where T : IComparable<T>
+		protected static IEnumerable<Range<T1>> InnerParse<T1>(string range, string itemSearchPattern, Func<string, T1> valueParser) where T1 : IComparable<T1>
 		{
 			var parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*-\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
 			var results = parse.Matches(range);
@@ -27,7 +27,7 @@ namespace Utils.Objects
 			var res = new SingleRanges();
 			foreach (Match result in results)
 			{
-				yield return new Range<T>(
+				yield return new Range<T1>(
 					valueParser(result.Groups["start"].Value),
 					valueParser(result.Groups["end"].Value),
 					result.Groups["includesStart"].Value == "[",

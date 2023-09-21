@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml;
-using Utils.Globalization;
 using Utils.Mathematics;
 using Utils.Reflection;
 
@@ -15,20 +14,20 @@ namespace Utils.Objects
 	{
 		private readonly Dictionary<Type, Delegate> converters = new Dictionary<Type, Delegate>();
 
-		private readonly IFormatProvider defaultFormatProvider;
-		private readonly IFormatProvider numberFormatProvider = null;
+		private readonly CultureInfo defaultFormatProvider;
+		private readonly NumberFormatInfo numberFormatProvider = null;
 		private readonly NumberStyles numberStyles;
-		private readonly IFormatProvider dateTimeFormatProvider;
+		private readonly DateTimeFormatInfo dateTimeFormatProvider;
 		private readonly DateTimeStyles dateTimeStyles;
 		private readonly string[] dateTimeStringFormats;
 		private readonly DelegateSelector<Attribute, string> enumAdditionalValuesSelectors;
 
 
 		public StringConverter(
-			IFormatProvider defaultFormatProvider = null,
-			IFormatProvider numberFormatProvider = null,
+            CultureInfo defaultFormatProvider = null,
+			NumberFormatInfo numberFormatProvider = null,
 			NumberStyles numberStyles = NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign | NumberStyles.AllowThousands | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
-			IFormatProvider dateTimeFormatProvider = null,
+			DateTimeFormatInfo dateTimeFormatProvider = null,
 			DateTimeStyles dateTimeStyles = DateTimeStyles.AllowWhiteSpaces,
 			string[] dateTimeStringFormats = null,
 			DelegateSelector<Attribute, string> enumAdditionalValuesSelectors = null
@@ -137,7 +136,7 @@ namespace Utils.Objects
 		{
 			if (!target.IsEnum) { return null; }
 			List<Expression> expressions = new List<Expression>();
-			var separator = (numberFormatProvider ?? defaultFormatProvider).GetTextInfo().ListSeparator;
+			var separator = defaultFormatProvider.TextInfo.ListSeparator;
 
 			var underlyingType = Enum.GetUnderlyingType(target);
 			
@@ -279,11 +278,11 @@ namespace Utils.Objects
 			var formatProvider = defaultFormatProvider;
 			if (constructor.Parameters.Any(p => p.ParameterType == typeof(NumberStyles)))
 			{
-				formatProvider = numberFormatProvider ?? defaultFormatProvider;
+				formatProvider = defaultFormatProvider;
 			}
 			else if (constructor.Parameters.Any(p => p.ParameterType == typeof(DateTimeStyles)))
 			{
-				formatProvider = dateTimeFormatProvider ?? defaultFormatProvider;
+				formatProvider = defaultFormatProvider;
 			}
 
 			var valueParameter = Expression.Parameter(Types.String, "value");
@@ -335,11 +334,11 @@ namespace Utils.Objects
 			var formatProvider = defaultFormatProvider;
 			if (method.Parameters.Any(p => p.ParameterType == typeof(NumberStyles)))
 			{
-				formatProvider = numberFormatProvider ?? defaultFormatProvider;
+				formatProvider = defaultFormatProvider;
 			}
 			else if (method.Parameters.Any(p => p.ParameterType == typeof(DateTimeStyles)))
 			{
-				formatProvider = dateTimeFormatProvider ?? defaultFormatProvider;
+				formatProvider = defaultFormatProvider;
 			}
 
 			var valueParameter = Expression.Parameter(Types.String, "value");
