@@ -128,7 +128,7 @@ namespace Utils.Net.DNS
 			}
 			else
 			{
-				Write(0x00);
+				Write((byte)0x00);
 			}
 
 		}
