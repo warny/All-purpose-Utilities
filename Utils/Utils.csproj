@@ -3,6 +3,7 @@
   <PropertyGroup>
 	  <TargetFramework>netcoreapp3.1</TargetFramework>
 	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	<LangVersion>Latest</LangVersion>
     <Authors>Olivier MARTY</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>omy.Utils</PackageId>

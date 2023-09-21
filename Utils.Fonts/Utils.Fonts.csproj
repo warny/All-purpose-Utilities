@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
- </PropertyGroup>
+	<LangVersion>Latest</LangVersion>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="PolySharp" Version="1.12.1">
