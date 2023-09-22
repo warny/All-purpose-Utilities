@@ -51,8 +51,8 @@ namespace UtilsTest.Net
 				0x00, 0x29, // Data Length (45 bytes)
 
 				// Location Data
-				0x00, 0x19, // Version and Size
-				0x12, 0x12, // Horizontal Precision and Vertical Precision
+				0x00, 0x19, // Version and Size	(1 * 10^9m)
+				0x12, 0x12, // Horizontal Precision and Vertical Precision (1*10^2cm = 1m)
 
 				// Latitude (45°30'N)
 				0x83, 0x83, 0xC7, 0xC0,
