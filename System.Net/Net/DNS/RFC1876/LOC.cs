@@ -116,7 +116,7 @@ ALTITUDE     The altitude of the center of the sphere described by the
 
         private const double equatorLatitude = 2_147_483_648;
         private const double primeMeridian = 2_147_483_648;
-        private const uint altitudeZeroCorrection = 100_000_00;
+        private const double altitudeZeroCorrection = 100_000_00;
         private const double arcSec = 1_296_000;
         private const double meter2Centimeter = 100;
 

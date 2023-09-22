@@ -82,7 +82,7 @@ namespace UtilsTest.Net
 
 			for (int i = 0; i < 20; i++)
 			{
-				double altitude = random.Next(-2000, 80000) / 10d;
+				double altitude = random.Next(-120000, 90000) / 10d;
 				double latitude = random.Next(-90_000, 90_000) / 1000d;
 				double longitude = random.Next(-180_000, 180_000) / 1000d;
 
