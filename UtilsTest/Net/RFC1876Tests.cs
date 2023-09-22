@@ -1,4 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net.DNS;
 using Utils.Net.DNS.RFC1035;
 using Utils.Net.DNS.RFC1876;
@@ -70,6 +72,43 @@ namespace UtilsTest.Net
 			Assert.AreEqual(45.5, loc.Latitude, loc.HorizontalPrecision / 1852);
             Assert.AreEqual(15.25, loc.Longitude, loc.HorizontalPrecision / 1852);
             Assert.AreEqual(loc.Altitude, 452, 1);
+        }
+
+
+		[TestMethod]
+		public void LOCRecordWriteRead()
+		{
+			Random random = new Random();
+
+			for (int i = 0; i < 20; i++)
+			{
+				double altitude = random.Next(-2000, 80000) / 10d;
+				double latitude = random.Next(-90_000, 90_000) / 1000d;
+				double longitude = random.Next(-180_000, 180_000) / 1000d;
+
+				DNSHeader header = new DNSHeader();
+				var loc = new LOC();
+				header.Responses.Add(new DNSResponseRecord("example.com", 1000, loc));
+				loc.Version = 0;
+				loc.VerticalPrecision = 100;
+				loc.HorizontalPrecision = 100;
+				loc.Size = 100_000_000;
+
+				loc.Altitude = altitude;
+				loc.Latitude = latitude;
+				loc.Longitude = longitude;
+
+				Assert.AreEqual(altitude, loc.Altitude, 0.001, "L'altitude stockée ne correspond pas à celle écrite");
+				Assert.AreEqual(latitude, loc.Latitude, 0.001, "La latitude stockée ne correspond pas à celle écrite");
+				Assert.AreEqual(longitude, loc.Longitude, 0.001, "La longitude stockée ne correspond pas à celle écrite");
+
+				var readHeader = new DNSHeader(header.ToByteArray());
+				var readLoc = (LOC)readHeader.Responses[0].RData;
+
+				Assert.AreEqual(altitude, readLoc.Altitude, 0.001, "L'altitude lue ne correspond pas à celle écrite");
+				Assert.AreEqual(latitude, readLoc.Latitude, 0.001, "La latitude lue ne correspond pas à celle écrite");
+				Assert.AreEqual(longitude, readLoc.Longitude, 0.001, "La longitude lue ne correspond pas à celle écrite");
+			}
         }
     }
 }

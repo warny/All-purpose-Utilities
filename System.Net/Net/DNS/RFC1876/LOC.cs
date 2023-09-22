@@ -114,8 +114,8 @@ ALTITUDE     The altitude of the center of the sphere described by the
         [DNSField]
         private uint altitude { get; set; }
 
-        private const uint equatorLatitude = 2_147_483_648;
-        private const uint primeMeridian = 2_147_483_648;
+        private const double equatorLatitude = 2_147_483_648;
+        private const double primeMeridian = 2_147_483_648;
         private const uint altitudeZeroCorrection = 100_000_00;
         private const double arcSec = 1_296_000;
         private const double meter2Centimeter = 100;
@@ -124,8 +124,8 @@ ALTITUDE     The altitude of the center of the sphere described by the
         byte InverseExponentialValueConvert(double value)
         {
             int exponent = (int)Math.Floor(Math.Log10(value));
-            double mantissa = value / Math.Pow(10, exponent);
-            return (byte)((exponent << 4) + (int)Math.Round(mantissa));
+            int mantissa = (int)Math.Round(value /  Math.Pow(10, exponent));
+            return (byte)((mantissa << 4) + exponent);
         }
 
         public double Size
@@ -142,25 +142,25 @@ ALTITUDE     The altitude of the center of the sphere described by the
         public double VerticalPrecision
         {
             get => ExponentialValueConvert(verticalPrecision) / meter2Centimeter;
-            set => VerticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+            set => verticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
         }
 
         public double Latitude
         {
             get => (latitude - equatorLatitude) / arcSec;
-            set => latitude = (uint)(value * arcSec) + equatorLatitude;
+            set => latitude = (uint)((value * arcSec) + equatorLatitude);
         }
 
         public double Longitude
         {
             get => (longitude - primeMeridian) / arcSec;
-            set => longitude = (uint)(value * arcSec) + primeMeridian;
+            set => longitude = (uint)((value * arcSec) + primeMeridian);
         }
 
         public double Altitude
         {
             get => (altitude - altitudeZeroCorrection) / meter2Centimeter;
-            set => longitude = (uint)(value * meter2Centimeter) + altitudeZeroCorrection;
+            set => altitude = (uint)((value * meter2Centimeter) + altitudeZeroCorrection);
         }
 
 
