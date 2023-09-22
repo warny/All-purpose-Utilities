@@ -17,30 +17,6 @@ namespace UtilsTest.Net
 	public class DNSTests
 	{
 		[TestMethod]
-		public void ReadAReponse()
-		{
-			var datagram = new byte[] { 
-				0x3D, 0x20, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77, 
-				0x06, 0x67, 0x6F, 0x6F, 0x67, 0x6C, 0x65, 0x02, 0x66, 0x72, 0x00, 0x00, 0x01, 0x00, 0xFF, 0xC0, 
-				0x0C, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x04, 0x00, 0x04, 0xD8, 0x3A, 0xD6, 0x43 
-			};
-
-			DNSHeader header = new DNSHeader(datagram);
-
-			var dnsRequestRecord = header.Requests[0];
-			Assert.AreEqual("www.google.fr", dnsRequestRecord.Name);
-			Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
-			Assert.AreEqual("A", dnsRequestRecord.Type);
-
-			Assert.IsTrue(header.Responses.Count == 1);
-			var dnsResponse = header.Responses[0];
-			var ARecord = (A)dnsResponse.RData;
-			Assert.AreEqual("www.google.fr", dnsResponse.Name);
-			Assert.AreEqual("216.58.214.67", ARecord.IPAddress.ToString());
-
-		}
-
-		[TestMethod]
 		public void ReadALLReponse1()
 		{
 			var datagram = new byte[] { 

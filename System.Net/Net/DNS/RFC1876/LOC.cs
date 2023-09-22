@@ -5,7 +5,7 @@ using Utils.Net;
 
 namespace Utils.Net.DNS.RFC1876
 {
-    [DNSClass(0x15)]
+    [DNSClass(0x1D)]
     public class LOC : DNSResponseDetail
     {
         /*
@@ -99,37 +99,68 @@ ALTITUDE     The altitude of the center of the sphere described by the
              height values relative to the [WGS 84] ellipsoid.
         */
         [DNSField]
-        public ushort Version { get; set; }
+        public byte Version { get; set; }
         [DNSField]
-        private ushort Size { get; set; }
+        private byte size { get; set; }
         [DNSField]
-        private ushort HorizontalPrecision { get; set; }
+        private byte horizontalPrecision { get; set; }
         [DNSField]
-        private ushort VerticalPrecision { get; set; }
+        private byte verticalPrecision { get; set; }
 
         [DNSField]
-        private int latitude { get; set; }
+        private uint latitude { get; set; }
         [DNSField]
-        private int longitude { get; set; }
+        private uint longitude { get; set; }
         [DNSField]
-        private int altitude { get; set; }
+        private uint altitude { get; set; }
+
+        private const uint equatorLatitude = 2_147_483_648;
+        private const uint primeMeridian = 2_147_483_648;
+        private const uint altitudeZeroCorrection = 100_000_00;
+        private const double arcSec = 1_296_000;
+        private const double meter2Centimeter = 100;
+
+        private double ExponentialValueConvert(byte value) => (value >> 4) * Math.Pow(10, value & 0xF);
+        byte InverseExponentialValueConvert(double value)
+        {
+            int exponent = (int)Math.Floor(Math.Log10(value));
+            double mantissa = value / Math.Pow(10, exponent);
+            return (byte)((exponent << 4) + (int)Math.Round(mantissa));
+        }
+
+        public double Size
+        {
+            get => ExponentialValueConvert(size);
+            set => size = InverseExponentialValueConvert(value);
+        }
+
+        public double HorizontalPrecision {
+            get => ExponentialValueConvert(horizontalPrecision) / meter2Centimeter;
+            set => horizontalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+        }
+
+        public double VerticalPrecision
+        {
+            get => ExponentialValueConvert(verticalPrecision) / meter2Centimeter;
+            set => VerticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+        }
 
         public double Latitude
         {
-            get => (double)latitude / 145;
-            set => latitude = (int)(value * 145);
+            get => (latitude - equatorLatitude) / arcSec;
+            set => latitude = (uint)(value * arcSec) + equatorLatitude;
         }
 
         public double Longitude
         {
-            get => (double)longitude / 256;
-            set => longitude = (int)(value * 256);
+            get => (longitude - primeMeridian) / arcSec;
+            set => longitude = (uint)(value * arcSec) + primeMeridian;
         }
 
         public double Altitude
         {
-            get => (double)altitude / 256;
-            set => altitude = (int)(value * 256);
+            get => (altitude - altitudeZeroCorrection) / meter2Centimeter;
+            set => longitude = (uint)(value * meter2Centimeter) + altitudeZeroCorrection;
         }
 
 

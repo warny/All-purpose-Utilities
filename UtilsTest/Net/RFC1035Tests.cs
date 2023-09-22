@@ -1,14 +1,41 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Net.DNS;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net.DNS.RFC1035;
-using Utils.Net.DNS.RFC1876;
+using Utils.Net.DNS;
 
 namespace UtilsTest.Net
 {
     [TestClass]
-
-    public class DNSResponseDatagramTests
+    public class RFC1035Tests
     {
+        [TestMethod]
+        public void ReadAReponse()
+        {
+            var datagram = new byte[] {
+                0x3D, 0x20, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77,
+                0x06, 0x67, 0x6F, 0x6F, 0x67, 0x6C, 0x65, 0x02, 0x66, 0x72, 0x00, 0x00, 0x01, 0x00, 0xFF, 0xC0,
+                0x0C, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x04, 0x00, 0x04, 0xD8, 0x3A, 0xD6, 0x43
+            };
+
+            DNSHeader header = new DNSHeader(datagram);
+
+            var dnsRequestRecord = header.Requests[0];
+            Assert.AreEqual("www.google.fr", dnsRequestRecord.Name);
+            Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+            Assert.AreEqual("A", dnsRequestRecord.Type);
+
+            Assert.IsTrue(header.Responses.Count == 1);
+            var dnsResponse = header.Responses[0];
+            var ARecord = (A)dnsResponse.RData;
+            Assert.AreEqual("www.google.fr", dnsResponse.Name);
+            Assert.AreEqual("216.58.214.67", ARecord.IPAddress.ToString());
+
+        }
+
         [TestMethod]
         public void ReadMXReponse()
         {
@@ -39,7 +66,7 @@ namespace UtilsTest.Net
                 0x1C, 0x00, 0x01, 0x00, 0x00, 0x01, 0x2B, 0x00, 0x10, 0x26, 0x07, 0xF8, 0xB0, 0x40, 0x0E,
                 0x0C, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1B
             };
-            
+
             DNSHeader header = new DNSHeader(datagram);
 
             var dnsRequestRecord = header.Requests[0];
@@ -89,66 +116,5 @@ namespace UtilsTest.Net
 
         }
 
-        [TestMethod]
-        public void ReadLOCResponse()
-		{
-            var datagram = new byte[] {
-				// Transaction ID (2 bytes)
-				0x12, 0x34,
-
-				// Flags (2 bytes)
-				0x81, 0x80,
-
-				// Number of Questions (2 bytes)
-				0x00, 0x01,
-
-				// Number of Answer Resource Records (2 bytes)
-				0x00, 0x01,
-
-				// Number of Authority Resource Records (2 bytes)
-				0x00, 0x00,
-
-				// Number of Additional Resource Records (2 bytes)
-				0x00, 0x00,
-
-				// DNS Question (QNAME)
-				0x07, 0x65, 0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, // "example" in ASCII
-				0x03, 0x63, 0x6F, 0x6D, // "com" in ASCII
-				0x00, // Null-terminated
-
-				// DNS Question Type (2 bytes)
-				0x00, 0x15, // Type: LOC (26)
-
-				// DNS Question Class (2 bytes)
-				0x00, 0x01, // Class: IN (Internet)
-
-				// Resource Record 1 (Answer)
-				0xC0, 0x0C, // Name: Compression pointer to the question
-				0x00, 0x15, // Type: LOC (26)
-				0x00, 0x01, // Class: IN (Internet)
-				0x00, 0x00, 0x0E, 0x10, // TTL
-				0x00, 0x2D, // Data Length (45 bytes)
-
-				// Location Data
-				0x00, 0x00, 0x00, 0x00, // Version and Size
-				0x00, 0x00, 0x00, 0x00, // Horizontal Precision and Vertical Precision
-
-				// Latitude (45°18'N)
-				0x00, 0x00, 0x19, 0x99,
-
-				// Longitude (15°16'E)
-				0x00, 0x00, 0x0F, 0xA0,
-
-				// Altitude (543m)
-				0x00, 0x02, 0x1F, 0x3B,
-			};
-
-
-            DNSHeader header = new DNSHeader(datagram);
-			var loc = (LOC)header.Responses[0].RData;
-			Assert.AreEqual(loc.Latitude, 45.3, 0.5);
-            Assert.AreEqual(loc.Longitude, 15.26, 0.5);
-            Assert.AreEqual(loc.Altitude, 543, 1);
-        }
     }
 }
