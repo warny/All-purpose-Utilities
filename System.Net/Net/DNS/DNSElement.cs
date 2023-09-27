@@ -24,14 +24,15 @@ namespace Utils.Net.DNS
         {
             foreach (var field in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
+                var type = field.PropertyType;
+                if (type.IsEnum) { type = type.GetEnumUnderlyingType(); }
                 var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
                 if (dnsField is null) continue;
-				if (field.PropertyType == typeof(DNSElement)) ((DNSElement)field.GetValue(this)).Read(datagram, factory);
-				else if (field.PropertyType == typeof(string)) field.SetValue(this, datagram.ReadString());
-                else if (field.PropertyType == typeof(byte)) field.SetValue(this, datagram.ReadByte());
-                else if (field.PropertyType == typeof(ushort)) field.SetValue(this, datagram.ReadUShort());
-                else if (field.PropertyType == typeof(uint)) field.SetValue(this, datagram.ReadUInt());
-                else if (field.PropertyType == typeof(DNSClass)) field.SetValue(this, datagram.ReadUShort());
+				if (type == typeof(DNSElement)) ((DNSElement)field.GetValue(this)).Read(datagram, factory);
+				else if (type == typeof(string)) field.SetValue(this, datagram.ReadString());
+                else if (type == typeof(byte)) field.SetValue(this, datagram.ReadByte());
+                else if (type == typeof(ushort)) field.SetValue(this, datagram.ReadUShort());
+                else if (type == typeof(uint)) field.SetValue(this, datagram.ReadUInt());
             }
         }
     }

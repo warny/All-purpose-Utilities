@@ -16,34 +16,20 @@ namespace UtilsTest.Net
         public void ReadLOCResponse()
 		{
             var datagram = new byte[] {
-				// Transaction ID (2 bytes)
-				0x12, 0x34,
+				// Header
+				0x12, 0x34,	// Transaction ID (2 bytes)
+				0x81, 0x80, // Flags (2 bytes)
+				0x00, 0x01, // Number of Questions (2 bytes)
+				0x00, 0x01, // Number of Answer Resource Records (2 bytes)
+				0x00, 0x00, // Number of Authority Resource Records (2 bytes)
+				0x00, 0x00, // Number of Additional Resource Records (2 bytes)
 
-				// Flags (2 bytes)
-				0x81, 0x80,
-
-				// Number of Questions (2 bytes)
-				0x00, 0x01,
-
-				// Number of Answer Resource Records (2 bytes)
-				0x00, 0x01,
-
-				// Number of Authority Resource Records (2 bytes)
-				0x00, 0x00,
-
-				// Number of Additional Resource Records (2 bytes)
-				0x00, 0x00,
-
-				// DNS Question (QNAME)
+				// Question section
 				0x07, 0x65, 0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, // "example" in ASCII
 				0x03, 0x63, 0x6F, 0x6D, // "com" in ASCII
 				0x00, // Null-terminated
-
-				// DNS Question Type (2 bytes)
-				0x00, 0x1D, // Type: LOC (29)
-
-				// DNS Question Class (2 bytes)
-				0x00, 0x01, // Class: IN (Internet)
+				0x00, 0x1D, // DNS Question Type (2 bytes) Type: LOC (29)
+				0x00, 0x01, // DNS Question Class (2 bytes) Class: IN (Internet)
 
 				// Resource Record 1 (Answer)
 				0xC0, 0x0C, // Name: Compression pointer to the question
@@ -51,19 +37,12 @@ namespace UtilsTest.Net
 				0x00, 0x01, // Class: IN (Internet)
 				0x00, 0x00, 0x0E, 0x10, // TTL
 				0x00, 0x29, // Data Length (45 bytes)
-
 				// Location Data
 				0x00, 0x19, // Version and Size	(1 * 10^9m)
 				0x12, 0x12, // Horizontal Precision and Vertical Precision (1*10^2cm = 1m)
-
-				// Latitude (45°30'N)
-				0x83, 0x83, 0xC7, 0xC0,
-
-				// Longitude (15°15'E)
-				0x81, 0x2D, 0x93, 0x20,
-
-				// Altitude (543m)
-                0x00, 0x99, 0x47, 0x10,
+				0x83, 0x83, 0xC7, 0xC0, // Latitude (45°30'N)
+				0x81, 0x2D, 0x93, 0x20, // Longitude (15°15'E)
+                0x00, 0x99, 0x47, 0x10, // Altitude (543m)
             };
 
 

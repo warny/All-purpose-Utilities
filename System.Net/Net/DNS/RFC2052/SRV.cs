@@ -13,7 +13,7 @@ namespace Utils.Net.DNS.RFC2052
         [DNSField]
         public ushort Priority { get; set; }
         [DNSField]
-        public ushort Weigth { get; set; }
+        public ushort Weight { get; set; }
         [DNSField]
         public ushort Port { get; set; }
     }

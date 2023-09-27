@@ -12,7 +12,7 @@ namespace Utils.Net.DNS.RFC1886
         public IPAddress IPAddress {
             get => ipAddress;
             set {
-                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6) throw new NotSupportedException("Les enregistrements AAAA ne suppote que les adresse IPV6");
+                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6) throw new NotSupportedException("AAAA records only support IPV6 addresses");
                 ipAddress = value;
             }
         }

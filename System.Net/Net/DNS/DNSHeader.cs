@@ -55,7 +55,7 @@ namespace Utils.Net.DNS
         public IList<DNSRequestRecord> Requests { get; } = new List<DNSRequestRecord>();
         public IList<DNSResponseRecord> Responses { get; } = new List<DNSResponseRecord>();
         public IList<DNSResponseRecord> Authorities { get; } = new List<DNSResponseRecord>();
-        public IList<DNSResponseRecord> Additionnals { get; } = new List<DNSResponseRecord>();
+        public IList<DNSResponseRecord> Additionals { get; } = new List<DNSResponseRecord>();
 
         public DNSQRBit QrBit
         {
@@ -128,7 +128,7 @@ namespace Utils.Net.DNS
             {
                 DNSResponseRecord responseRecord = new DNSResponseRecord();
                 responseRecord.Read(datagram, factory);
-                Additionnals.Add(responseRecord);
+                Additionals.Add(responseRecord);
             }
         }
 
@@ -137,9 +137,9 @@ namespace Utils.Net.DNS
             QDCount = (ushort)Requests.Count;
             ANCount = (ushort)Responses.Count;
             NSCount = (ushort)Authorities.Count;
-            ARCount = (ushort)Additionnals.Count;
+            ARCount = (ushort)Additionals.Count;
             base.Write(datagram, factory);
-            foreach (var element in Requests.Union<DNSElement>(Responses).Union(Authorities).Union(Additionnals))
+            foreach (var element in Requests.Union<DNSElement>(Responses).Union(Authorities).Union(Additionals))
             {
                 element.Write(datagram, factory);
             }

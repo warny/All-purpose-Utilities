@@ -31,7 +31,7 @@ namespace Utils.Net.DNS.RFC1035
         {
             get => ipAddress;
             set {
-                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork) throw new NotSupportedException("Les enregistrements A ne suppotent que les adresse IPV4");
+                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork) throw new NotSupportedException("A records only support IPV4 addresses");
                 ipAddress = value;
             }
         }

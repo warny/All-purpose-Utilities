@@ -19,13 +19,13 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ReadALLReponse1()
 		{
-			var datagram = new byte[] { 
-				0x1B, 0x0F, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x05, 0x67, 0x6D, 0x61, 
-				0x69, 0x6C, 0x03, 0x63, 0x6F, 0x6D, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0xC0, 0x0C, 0x00, 0x06, 0x00, 
-				0x01, 0x00, 0x00, 0x00, 0x2C, 0x00, 0x2D, 0x03, 0x6E, 0x73, 0x31, 0x06, 0x67, 0x6F, 0x6F, 0x67, 
-				0x6C, 0x65, 0xC0, 0x12, 0x09, 0x64, 0x6E, 0x73, 0x2D, 0x61, 0x64, 0x6D, 0x69, 0x6E, 0xC0, 0x2B, 
-				0x13, 0x4C, 0x10, 0xD3, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x07, 0x08, 
-				0x00, 0x00, 0x00, 0x3C 
+			var datagram = new byte[] {
+				0x1B, 0x0F, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x05, 0x67, 0x6D, 0x61,
+				0x69, 0x6C, 0x03, 0x63, 0x6F, 0x6D, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0xC0, 0x0C, 0x00, 0x06, 0x00,
+				0x01, 0x00, 0x00, 0x00, 0x2C, 0x00, 0x2D, 0x03, 0x6E, 0x73, 0x31, 0x06, 0x67, 0x6F, 0x6F, 0x67,
+				0x6C, 0x65, 0xC0, 0x12, 0x09, 0x64, 0x6E, 0x73, 0x2D, 0x61, 0x64, 0x6D, 0x69, 0x6E, 0xC0, 0x2B,
+				0x13, 0x4C, 0x10, 0xD3, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x07, 0x08,
+				0x00, 0x00, 0x00, 0x3C
 			};
 
 			DNSHeader header = new DNSHeader(datagram);
@@ -74,10 +74,10 @@ namespace UtilsTest.Net
 			DNSHeader header1 = new DNSHeader();
 			header1.Requests.Add(new DNSRequestRecord("ALL", "google.fr"));
 			header1.QrBit = DNSQRBit.Response;
-			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new A() { IPAddress = new IPAddress(new byte[]{ 1, 2, 3, 4 }) }));
+			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new A() { IPAddress = new IPAddress(new byte[] { 1, 2, 3, 4 }) }));
 			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new AAAA() { IPAddress = new IPAddress(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }) }));
-			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new MX() { Preference = 5, Exchange="mail.google.fr" }));
-			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new SRV() { Priority = 5, Weigth=15, Server = "service.mail.google.fr", Port = 32534 }));
+			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new MX() { Preference = 5, Exchange = "mail.google.fr" }));
+			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new SRV() { Priority = 5, Weight = 15, Server = "service.mail.google.fr", Port = 32534 }));
 			header1.Responses.Add(new DNSResponseRecord("google.fr", 300, new TXT() { Text = "Ceci est un test" }));
 			var datagram = header1.ToByteArray();
 			var header2 = new DNSHeader(datagram);
@@ -106,21 +106,17 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void BuildDNSRequest()
 		{
-            byte[] dnsRequestBytes = new byte[]
+			byte[] dnsRequestBytes = new byte[]
 			{
-				// Transaction ID (2 bytes)
+				//Header section
 				0x00, 0x01, // Transaction ID: 1
-				// Flags (2 bytes)
 				0x01, 0x00, // Standard query, Recursion desired
-				// Questions (2 bytes)
 				0x00, 0x01, // Number of questions: 1
-				// Answer RRs (2 bytes)
 				0x00, 0x00, // Number of answer resource records: 0
-				// Authority RRs (2 bytes)
 				0x00, 0x00, // Number of authority resource records: 0
-				// Additional RRs (2 bytes)
 				0x00, 0x00, // Number of additional resource records: 0
-				// Query (variable length)
+
+				
 				// Question QNAME (variable length)
 				0x05, 0x67, 0x6d, 0x61, 0x69, 0x6c, // "gmail" in ASCII
 				0x03, 0x63, 0x6f, 0x6d, // "com" in ASCII
@@ -131,38 +127,38 @@ namespace UtilsTest.Net
 				0x00, 0xFF // Class: ALL
 			};
 
-            DNSHeader request = new DNSHeader();
+			DNSHeader request = new DNSHeader();
 			request.RecursionDesired = true;
-            request.Requests.Add(new DNSRequestRecord("ALL", "gmail.com"));
+			request.Requests.Add(new DNSRequestRecord("ALL", "gmail.com"));
 
 			var constructedRequestBytes = request.ToByteArray();
 
 			// alignement du numéro de la demande
 			dnsRequestBytes[0] = constructedRequestBytes[0];
-            dnsRequestBytes[1] = constructedRequestBytes[1];
+			dnsRequestBytes[1] = constructedRequestBytes[1];
 
 
-            Assert.AreEqual((Bytes)dnsRequestBytes, (Bytes)constructedRequestBytes);
-        }
+			Assert.AreEqual((Bytes)dnsRequestBytes, (Bytes)constructedRequestBytes);
+		}
 
 
-        [TestMethod]
+		[TestMethod]
 		[Ignore]
 		public void SendDNSRequest()
 		{
 			DNSLookup lookup = new DNSLookup();
 			var header = lookup.Request("ALL", "gmail.com");
-            Assert.AreEqual(DNSError.Ok, header.ErrorCode);
-            
+			Assert.AreEqual(DNSError.Ok, header.ErrorCode);
+
 			var dnsRequestRecord = header.Requests[0];
 			Assert.AreEqual("gmail.com", dnsRequestRecord.Name);
 			Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
 			Assert.AreEqual("ALL", dnsRequestRecord.Type);
 
 			Assert.IsTrue(header.Responses.Count > 0, "No response from DNS");
-            Assert.IsTrue(header.Responses.Any(r => r.RData is A), "No A record returned from DNS");
-            Assert.IsTrue(header.Responses.Any(r => r.RData is MX), "No MX record returned from DNS");
-        }
+			Assert.IsTrue(header.Responses.Any(r => r.RData is A), "No A record returned from DNS");
+			Assert.IsTrue(header.Responses.Any(r => r.RData is MX), "No MX record returned from DNS");
+		}
 
     }
 }
