@@ -25,17 +25,9 @@ namespace Utils.Net.DNS.RFC1035
             mailbox.
 
          */
-        string NewName { get; set; }
 
-        protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-        {
-            NewName = Encoding.ASCII.GetString(datagram.ReadBytes(this.Length));
-        }
-
-        protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-        {
-            datagram.Write(Encoding.ASCII.GetBytes(NewName));
-        }
+        [DNSField()]
+        public string NewName { get; set; }
 
         public override string ToString() => NewName;
 

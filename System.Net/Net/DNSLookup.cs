@@ -10,11 +10,16 @@ namespace Utils.Net
     /// </summary>
     public class DNSLookup
     {
+        private DNSPacketWriter packetWriter;
+        private DNSPacketReader packetReader;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DNSLookup"/> class with default name servers.
         /// </summary>
         public DNSLookup()
         {
+            packetWriter = DNSPacketWriter.Default;
+            packetReader = DNSPacketReader.Default;
             NameServers = new NetworkParameters().DnsServers;
         }
 
@@ -24,6 +29,8 @@ namespace Utils.Net
         /// <param name="nameServers">Array of IP addresses representing DNS name servers.</param>
         public DNSLookup(params IPAddress[] nameServers)
         {
+            packetWriter = DNSPacketWriter.Default;
+            packetReader = DNSPacketReader.Default;
             NameServers = nameServers;
         }
 
@@ -45,14 +52,15 @@ namespace Utils.Net
             request.RecursionDesired = true;
             request.Requests.Add(new DNSRequestRecord(type, name, @class));
 
-            byte[] requestDatagram = request.ToByteArray();
+
+            byte[] requestDatagram = packetWriter.Write(request);
 
             foreach (IPAddress nameServer in NameServers)
             {
                 try
                 {
                     byte[] responseDatagram = UdpTransport(nameServer, 53, requestDatagram);
-                    return new DNSHeader(responseDatagram);
+                    return packetReader.Read(responseDatagram);
                 }
                 catch
                 {

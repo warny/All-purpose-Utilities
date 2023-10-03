@@ -58,14 +58,14 @@ namespace Utils.Net.DNS
 			if (dnsClass is null) throw new ArgumentException(nameof(type), $"La classe {type.FullName} doit avoir un attribut {Types.dnsClassAttributeType.FullName}");
 			if (Types.dnsRequestRecordType.IsAssignableFrom(type))
 			{
-				DNSRequests[dnsClass.Class] = type;
+				DNSRequests[dnsClass.ClassId] = type;
 				return;
 			}
 			if (Types.dnsResponseDetailType.IsAssignableFrom(type))
 			{
-				DNSResponses[dnsClass.Class] = type;
-				DNSClassesNames[type.Name] = dnsClass.Class;
-				DNSClassesIds[dnsClass.Class] = type.Name;
+				DNSResponses[dnsClass.ClassId] = type;
+				DNSClassesNames[type.Name] = dnsClass.ClassId;
+				DNSClassesIds[dnsClass.ClassId] = type.Name;
 				return;
 			}
 			throw new ArgumentException(nameof(type), $"La classe {type.FullName} doit dériver de {Types.dnsRequestRecordType.FullName} ou de {Types.dnsResponseDetailType.FullName}");

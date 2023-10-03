@@ -41,7 +41,8 @@ namespace UtilsTest.Net
                 0x0A, 0x0B, 0x0C, 0x0D  // Address: 10.11.12.13
             };
 
-            DNSHeader header = new DNSHeader(datagram);
+            var DNSReader = DNSPacketReader.Default;
+            DNSHeader header = DNSReader.Read(datagram);
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("test.example.com", dnsRequestRecord.Name);
@@ -93,7 +94,8 @@ namespace UtilsTest.Net
                 0x00, 0x04,             // 0x30 RDLENGTH (Data Length) - Longueur d'adresse IPv4
                 0x0A, 0x0B, 0x0C, 0x0D  // 0x32 Address: 10.11.12.13
             };
-            DNSHeader header = new DNSHeader(datagram);
+            var DNSReader = DNSPacketReader.Default;
+            DNSHeader header = DNSReader.Read(datagram);
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("test.example.com", dnsRequestRecord.Name);
@@ -173,7 +175,8 @@ namespace UtilsTest.Net
                 0x0A, 0x15, 0x16, 0x17  // 0x64 Adresse IP pour mx2.example.com : 10.21.22.23
 
             };
-            DNSHeader header = new DNSHeader(datagram);
+            var DNSReader = DNSPacketReader.Default;
+            DNSHeader header = DNSReader.Read(datagram);
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("example.com", dnsRequestRecord.Name);

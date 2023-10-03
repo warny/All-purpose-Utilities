@@ -34,23 +34,11 @@ namespace Utils.Net.DNS
         public string Name { get; set; }
 
         [DNSField]
-        protected ushort RequestType { get; set; }
+        internal ushort RequestType { get; set; }
         [DNSField]
         public DNSClass Class { get; set; }
 
         public string Type { get; set; }
-
-		protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-		{
-            RequestType = factory.GetClassIdentifier(Type); 
-			base.Write(datagram, factory);
-		}
-
-		protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-		{
-			base.Read(datagram, factory);
-            Type = factory.GetClassName(RequestType);
-		}
 
         public override string ToString() => $"Request {Type} : {Name} ({Class})";
 	}

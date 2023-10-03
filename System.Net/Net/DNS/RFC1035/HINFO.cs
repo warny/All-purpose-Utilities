@@ -30,17 +30,8 @@ namespace Utils.Net.DNS.RFC1035
             when talking between machines or operating systems of the same type.
         */
 
+        [DNSField(-1)]
         public string Info { get; set; }
-
-		protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-		{
-			Info = Encoding.ASCII.GetString(datagram.ReadBytes(this.Length));
-		}
-
-		protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-		{
-            datagram.Write(Encoding.ASCII.GetBytes(Info));
-        }
 
         public override string ToString() => Info;
 	}

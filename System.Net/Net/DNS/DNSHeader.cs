@@ -31,26 +31,19 @@ namespace Utils.Net.DNS
             ID = (ushort)new Random().Next();
             QrBit = DNSQRBit.Question;
         }
-        public DNSHeader(Stream datas, DNSFactory factory = null) : this(new DNSDatagram(datas), factory) { }
-        public DNSHeader(byte[] datas, DNSFactory factory = null) : this(new DNSDatagram(datas), factory) { }
-        internal DNSHeader(DNSDatagram datagram, DNSFactory factory = null) {
-            factory = factory ?? DNSFactory.Default;
-            this.Read(datagram, factory);
-        }
-
 
         [DNSField]
         public ushort ID { get; set; }
         [DNSField]
-        protected ushort Flags { get; set; }
+        internal ushort Flags { get; set; }
         [DNSField]
-        protected ushort QDCount { get; set; }
+        internal ushort QDCount { get; set; }
         [DNSField]
-        protected ushort ANCount { get; set; }
+        internal ushort ANCount { get; set; }
         [DNSField]
-        protected ushort NSCount { get; set; }
+        internal ushort NSCount { get; set; }
         [DNSField]
-        protected ushort ARCount { get; set; }
+        internal ushort ARCount { get; set; }
 
         public IList<DNSRequestRecord> Requests { get; } = new List<DNSRequestRecord>();
         public IList<DNSResponseRecord> Responses { get; } = new List<DNSResponseRecord>();
@@ -103,54 +96,5 @@ namespace Utils.Net.DNS
             set => Flags = (ushort)((Flags | ~DNSConstants.Error) & ((ushort)value & DNSConstants.Error));
         }
 
-		protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-		{
-			base.Read(datagram, factory);
-            for (int i = 0; i < QDCount; i++)
-            {
-                DNSRequestRecord request = new DNSRequestRecord();
-                request.Read(datagram, factory);
-                Requests.Add(request);
-            }
-            for (int i = 0; i < ANCount; i++)
-            {
-                DNSResponseRecord responseRecord = new DNSResponseRecord();
-                responseRecord.Read(datagram, factory);
-                Responses.Add(responseRecord);
-            }
-            for (int i = 0; i < NSCount; i++)
-            {
-                DNSResponseRecord responseRecord = new DNSResponseRecord();
-                responseRecord.Read(datagram, factory);
-                Authorities.Add(responseRecord);
-            }
-            for (int i = 0; i < ARCount; i++)
-            {
-                DNSResponseRecord responseRecord = new DNSResponseRecord();
-                responseRecord.Read(datagram, factory);
-                Additionals.Add(responseRecord);
-            }
-        }
-
-        protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-		{
-            QDCount = (ushort)Requests.Count;
-            ANCount = (ushort)Responses.Count;
-            NSCount = (ushort)Authorities.Count;
-            ARCount = (ushort)Additionals.Count;
-            base.Write(datagram, factory);
-            foreach (var element in Requests.Union<DNSElement>(Responses).Union(Authorities).Union(Additionals))
-            {
-                element.Write(datagram, factory);
-            }
-		}
-
-        public Byte[] ToByteArray(DNSFactory factory = null)
-        {
-            factory ??= DNSFactory.Default;
-            DNSDatagram datagram = new DNSDatagram();
-            this.Write(datagram, factory);
-            return datagram.ToBytes();
-        }
 	}
 }

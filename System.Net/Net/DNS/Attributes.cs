@@ -5,17 +5,14 @@ using System.Text;
 namespace Utils.Net.DNS
 {
 	[AttributeUsage(AttributeTargets.Class)]
-	public class DNSClassAttribute : Attribute
+	public class DNSClassAttribute(ushort classId, string name = null) : Attribute
 	{
-		public ushort Class { get; }
-		public DNSClassAttribute(ushort @class)
-		{
-			this.Class = @class;
-		}
+		public ushort ClassId => classId;
+		public string Name => name;
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
-	public class DNSFieldAttribute : Attribute
-	{
+	public class DNSFieldAttribute(int length = 0) : Attribute { 
+		public int Length => length;
 	}
 }

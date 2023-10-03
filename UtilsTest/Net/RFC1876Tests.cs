@@ -46,8 +46,9 @@ namespace UtilsTest.Net
             };
 
 
-            DNSHeader header = new DNSHeader(datagram);
-			var loc = (LOC)header.Responses[0].RData;
+            var DNSReader = DNSPacketReader.Default;
+            DNSHeader header = DNSReader.Read(datagram);
+            var loc = (LOC)header.Responses[0].RData;
 			Assert.AreEqual(45.5, loc.Latitude, loc.HorizontalPrecision / 1852);
             Assert.AreEqual(15.25, loc.Longitude, loc.HorizontalPrecision / 1852);
             Assert.AreEqual(loc.Altitude, 452, 1);
@@ -57,7 +58,10 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void LOCRecordWriteRead()
 		{
-			Random random = new Random();
+            var packetWriter = DNSPacketWriter.Default;
+            var packetReader = DNSPacketReader.Default;
+
+            Random random = new Random();
 
 			for (int i = 0; i < 20; i++)
 			{
@@ -81,7 +85,7 @@ namespace UtilsTest.Net
 				Assert.AreEqual(latitude, loc.Latitude, 0.001, "La latitude stockée ne correspond pas à celle écrite");
 				Assert.AreEqual(longitude, loc.Longitude, 0.001, "La longitude stockée ne correspond pas à celle écrite");
 
-				var readHeader = new DNSHeader(header.ToByteArray());
+                DNSHeader readHeader =  packetReader.Read(packetWriter.Write(header));
 				var readLoc = (LOC)readHeader.Responses[0].RData;
 
 				Assert.AreEqual(altitude, readLoc.Altitude, 0.001, "L'altitude lue ne correspond pas à celle écrite");

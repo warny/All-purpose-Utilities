@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace Utils.Net.DNS.RFC1035
@@ -52,29 +53,36 @@ namespace Utils.Net.DNS.RFC1035
             In master files, both ports and protocols are expressed using mnemonics
             or decimal numbers.
          */
-        public System.Net.IPAddress IpAddress { get; set; }
+
+
+        [DNSField()]
+        private byte[] ipAddressBytes
+        {
+            get => ipAddress.GetAddressBytes();
+            set => new IPAddress(value);
+        }
+
+        public IPAddress IPAddress
+        {
+            get => ipAddress;
+            set
+            {
+                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork) throw new NotSupportedException("WKS records only support IPV4 addresses");
+                ipAddress = value;
+            }
+        }
+        private System.Net.IPAddress ipAddress = null;
+
+        [DNSField()]
         public byte Protocol { get; set; }
+        
+        [DNSField(-1)]
         public byte[] Bitmap { get; set; }
 
 
         public override string ToString() {
-            return $"{IpAddress}:{Protocol}\t({string.Join(" ", Bitmap.Select(d=>d.ToString("X2")))}";
+            return $"{IPAddress}:{Protocol}\t({string.Join(" ", Bitmap.Select(d=>d.ToString("X2")))}";
         }
 
-		protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-		{
-            IpAddress = new System.Net.IPAddress(datagram.ReadBytes(4));
-            Protocol = datagram.ReadByte();
-            Bitmap = datagram.ReadBytes(Length - 5);
-		}
-
-		protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-		{
-			datagram.Write(IpAddress.GetAddressBytes());
-            datagram.Write(Protocol);
-            datagram.Write(Bitmap);
-            int filler = 8 - Bitmap.Length % 8;
-            for (int i = 0; i < filler; i++) datagram.Write(0x00);
-		}
     }
 }

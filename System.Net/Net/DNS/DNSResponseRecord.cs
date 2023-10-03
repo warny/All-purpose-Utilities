@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace Utils.Net.DNS
@@ -41,32 +42,22 @@ namespace Utils.Net.DNS
 		[DNSField]
         public string Name { get; set; }
         [DNSField]
-        private ushort Type { get; set; }
+        public ushort Type { get; internal set; }
         [DNSField]
         public DNSClass Class { get; set; }
         [DNSField]
         public uint TTL { get; set; }
         [DNSField]
-        private ushort RDLength { get; set; }
-        public DNSResponseDetail RData { get; set; }
+        public ushort RDLength { get; internal set; }
 
-        protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-        {
-            base.Read(datagram, factory);
-            RData = factory.CreateResponseDetail(Type);
-            RData.Length = RDLength;
-            RData.Read(datagram, factory);
-        }
-
-        protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-        {
-            Type = factory.GetClassIdentifier(RData.Name);
-            base.Write(datagram, factory);
-            var lengthPosition = datagram.Length - 2;
-            RData.Write(datagram, factory);
-            //écriture de la taille des données (RDLength)
-            RDLength = (ushort)(datagram.Length - lengthPosition - 2);
-            datagram.Write(lengthPosition, RDLength);
+        private DNSResponseDetail rData;
+        public DNSResponseDetail RData {
+            get => rData;
+            set
+            {
+                Type = value.ClassId;
+                rData = value;
+            }
         }
 
         public override string ToString() => $"{Name} ({RData.Name}) : {RData}, TTL : {TTL}";

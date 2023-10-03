@@ -9,6 +9,13 @@ namespace Utils.Net.DNS.RFC1886
     [DNSClass(0x1C)]
     public class AAAA : DNSResponseDetail
     {
+        [DNSField(-1)]
+        private byte[] ipAddressBytes
+        {
+            get => ipAddress.GetAddressBytes();
+            set => ipAddress = new IPAddress(value);
+        }
+
         public IPAddress IPAddress {
             get => ipAddress;
             set {
@@ -17,17 +24,6 @@ namespace Utils.Net.DNS.RFC1886
             }
         }
  		private System.Net.IPAddress ipAddress = null;
-
-        protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-        {
-            IPAddress = new IPAddress(datagram.ReadBytes(16));
-        }
-
-        protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-        {
-            datagram.Write(IPAddress.GetAddressBytes());
-        }
-
 
         public override string ToString()
         {

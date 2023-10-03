@@ -6,8 +6,8 @@ using System.Text;
 namespace Utils.Net.DNS.RFC1035
 {
     [DNSClass(0x01)]
-	public sealed class A: DNSResponseDetail
-	{
+    public sealed class A : DNSResponseDetail
+    {
         /*
             A RDATA format
 
@@ -27,6 +27,13 @@ namespace Utils.Net.DNS.RFC1035
             "10.2.0.52" or "192.0.5.6").
          */
 
+        [DNSField(4)]
+        private byte[] ipAddressBytes
+        {
+            get => ipAddress.GetAddressBytes();
+            set => ipAddress = new IPAddress(value);
+        }
+
         public IPAddress IPAddress
         {
             get => ipAddress;
@@ -36,16 +43,6 @@ namespace Utils.Net.DNS.RFC1035
             }
         }
         private System.Net.IPAddress ipAddress = null;
-
-        protected internal override void Read(DNSDatagram datagram, DNSFactory factory)
-		{
-			IPAddress = new IPAddress(datagram.ReadBytes(4));
-		}
-
-		protected internal override void Write(DNSDatagram datagram, DNSFactory factory)
-		{
-            datagram.Write(IPAddress.GetAddressBytes());
-		}
 
 		public override string ToString() => IPAddress.ToString();
 	}
