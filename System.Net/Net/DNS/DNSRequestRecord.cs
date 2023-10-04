@@ -31,7 +31,7 @@ namespace Utils.Net.DNS
 		}
 
 		[DNSField]
-        public string Name { get; set; }
+        public DNSDomainName Name { get; set; }
 
         [DNSField]
         internal ushort RequestType { get; set; }

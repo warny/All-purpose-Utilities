@@ -45,14 +45,14 @@ namespace UtilsTest.Net
             DNSHeader header = DNSReader.Read(datagram);
 
             var dnsRequestRecord = header.Requests[0];
-            Assert.AreEqual("test.example.com", dnsRequestRecord.Name);
+            Assert.AreEqual("test.example.com", dnsRequestRecord.Name.Value);
             Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("A", dnsRequestRecord.Type);
 
             Assert.IsTrue(header.Responses.Count == 1);
             var dnsResponse = header.Responses[0];
             var ARecord = (A)dnsResponse.RData;
-            Assert.AreEqual("test.example.com", dnsResponse.Name);
+            Assert.AreEqual("test.example.com", dnsResponse.Name.Value);
             Assert.AreEqual("10.11.12.13", ARecord.IPAddress.ToString());
 
         }
@@ -98,19 +98,19 @@ namespace UtilsTest.Net
             DNSHeader header = DNSReader.Read(datagram);
 
             var dnsRequestRecord = header.Requests[0];
-            Assert.AreEqual("test.example.com", dnsRequestRecord.Name);
+            Assert.AreEqual("test.example.com", dnsRequestRecord.Name.Value);
             Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("ALL", dnsRequestRecord.Type);
 
             Assert.AreEqual(2, header.Responses.Count);
             var dnsResponse0 = header.Responses[0];
             var CNameRecord0 = (CNAME)dnsResponse0.RData;
-            Assert.AreEqual("test.example.com", dnsResponse0.Name);
-            Assert.AreEqual("cname.example.com", CNameRecord0.CName);
+            Assert.AreEqual("test.example.com", dnsResponse0.Name.Value);
+            Assert.AreEqual("cname.example.com", CNameRecord0.CName.Value);
 
             var dnsResponse1 = header.Responses[1];
             var ARecord1 = (A)dnsResponse1.RData;
-            Assert.AreEqual("cname.example.com", dnsResponse1.Name);
+            Assert.AreEqual("cname.example.com", dnsResponse1.Name.Value);
             Assert.AreEqual("10.11.12.13", ARecord1.IPAddress.ToString());
         }
 
@@ -179,7 +179,7 @@ namespace UtilsTest.Net
             DNSHeader header = DNSReader.Read(datagram);
 
             var dnsRequestRecord = header.Requests[0];
-            Assert.AreEqual("example.com", dnsRequestRecord.Name);
+            Assert.AreEqual("example.com", dnsRequestRecord.Name.Value);
             Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("MX", dnsRequestRecord.Type);
 
@@ -192,9 +192,9 @@ namespace UtilsTest.Net
                 var expectedResponse = expectedResponses[i];
                 var response = header.Responses[i];
                 var MXResponse = (MX)response.RData;
-                Assert.AreEqual(expectedResponse.Name, response.Name);
+                Assert.AreEqual(expectedResponse.Name, response.Name.Value);
                 Assert.AreEqual(expectedResponse.Priority, MXResponse.Preference);
-                Assert.AreEqual(expectedResponse.Exchange, MXResponse.Exchange);
+                Assert.AreEqual(expectedResponse.Exchange, MXResponse.Exchange.Value);
             }
 
             var expectedAdditionals = new (string Name, string Type, string Adress, uint TTL)[]{
@@ -206,7 +206,7 @@ namespace UtilsTest.Net
             {
                 var expectedAdditional = expectedAdditionals[i];
                 var additionnal = header.Additionals[i];
-                Assert.AreEqual(expectedAdditional.Name, additionnal.Name);
+                Assert.AreEqual(expectedAdditional.Name, additionnal.Name.Value);
                 Assert.AreEqual(expectedAdditional.TTL, additionnal.TTL);
                 Assert.AreEqual(expectedAdditional.Type, additionnal.RData.Name);
                 Assert.AreEqual(expectedAdditional.Adress, additionnal.RData.ToString());

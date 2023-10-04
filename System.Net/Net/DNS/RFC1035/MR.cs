@@ -26,8 +26,8 @@ namespace Utils.Net.DNS.RFC1035
 
          */
 
-        [DNSField()]
-        public string NewName { get; set; }
+        [DNSField]
+        public DNSDomainName NewName { get; set; }
 
         public override string ToString() => NewName;
 

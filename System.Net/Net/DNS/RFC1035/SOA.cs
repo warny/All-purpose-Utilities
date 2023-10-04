@@ -74,9 +74,9 @@ namespace Utils.Net.DNS.RFC1035
             change the SOA RR with known semantics.
         */
         [DNSField]
-        public string MName { get; set; }
+        public DNSDomainName MName { get; set; }
         [DNSField]
-        public string RName { get; set; }
+        public DNSDomainName RName { get; set; }
         [DNSField]
         public uint Serial { get; set; }
         [DNSField]

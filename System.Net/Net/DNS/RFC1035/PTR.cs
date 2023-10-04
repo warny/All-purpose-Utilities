@@ -26,7 +26,7 @@ namespace Utils.Net.DNS.RFC1035
             description of the IN-ADDR.ARPA domain for an example.
         */
         [DNSField]
-        public string PTRName { get; set; }
+        public DNSDomainName PTRName { get; set; }
 
         public override string ToString() => PTRName;
     }

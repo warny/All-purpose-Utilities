@@ -25,7 +25,7 @@ namespace Utils.Net.DNS.RFC1035
             the description of name server logic in [RFC-1034] for details.
         */
         [DNSField]
-        public string CName { get; set; }
+        public DNSDomainName CName { get; set; }
 
         public override string ToString() => Name;
 	}

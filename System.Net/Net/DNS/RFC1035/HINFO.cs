@@ -30,7 +30,7 @@ namespace Utils.Net.DNS.RFC1035
             when talking between machines or operating systems of the same type.
         */
 
-        [DNSField(-1)]
+        [DNSField]
         public string Info { get; set; }
 
         public override string ToString() => Info;

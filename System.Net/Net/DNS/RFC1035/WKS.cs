@@ -55,7 +55,7 @@ namespace Utils.Net.DNS.RFC1035
          */
 
 
-        [DNSField()]
+        [DNSField]
         private byte[] ipAddressBytes
         {
             get => ipAddress.GetAddressBytes();
@@ -73,10 +73,10 @@ namespace Utils.Net.DNS.RFC1035
         }
         private System.Net.IPAddress ipAddress = null;
 
-        [DNSField()]
+        [DNSField]
         public byte Protocol { get; set; }
         
-        [DNSField(-1)]
+        [DNSField]
         public byte[] Bitmap { get; set; }
 
 

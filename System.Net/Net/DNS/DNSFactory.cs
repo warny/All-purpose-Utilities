@@ -5,86 +5,26 @@ using System.Reflection;
 using Utils.Net.DNS.RFC1035;
 using Utils.Net.DNS.RFC1183;
 using Utils.Net.DNS.RFC1876;
-using Utils.Net.DNS.RFC1886;
 using Utils.Net.DNS.RFC2052;
 
 namespace Utils.Net.DNS
 {
 	public class DNSFactory
 	{
-		public static DNSFactory Default { get; } = new DNSFactory(true,
+		public static Type[] DNSTypes { get; } = [
 			typeof(Default),
-			typeof(A), typeof(AAAA), typeof(CNAME),
+			typeof(A), typeof(CNAME),
 			typeof(SOA), typeof(MX), typeof(MINFO), typeof(SRV),
 			typeof(HINFO), typeof(TXT), typeof(NULL),
-			typeof(NS), typeof(MB), typeof(MD), typeof(MF), typeof(MG), typeof(MR), 
+			typeof(NS), typeof(MB), typeof(MG), typeof(MR),
 			typeof(PTR), typeof(WKS),
 			typeof(AFSDB), typeof(ISDN), typeof(RP), typeof(RT), typeof(X25),
 			typeof(LOC)
-		);
+		];
+        public static Type[] ObsoletesDNSTypes { get; } = [
+            typeof(MD),
+            typeof(MF),
+        ];
 
-		protected readonly Dictionary<ushort, Type> DNSRequests = new Dictionary<ushort, Type>();
-		protected readonly Dictionary<ushort, Type> DNSResponses = new Dictionary<ushort, Type>();
-		protected readonly Dictionary<string, ushort> DNSClassesNames = new Dictionary<string, ushort>()
-		{
-			{ "ALL", DNSRequestType.ALL },
-			{ "AXFR", DNSRequestType.AXFR },
-            { "MAILB", DNSRequestType.MAILB },
-            { "MAILA", DNSRequestType.MAILA }
-		};
-		protected readonly Dictionary<ushort, string> DNSClassesIds = new Dictionary<ushort, string>()
-		{
-			{ DNSRequestType.ALL, "ALL" },
-			{ DNSRequestType.AXFR, "AXFR" },
-			{ DNSRequestType.MAILB, "MAILB" },
-			{ DNSRequestType.MAILA, "MAILA" }
-
-		};
-
-		private readonly bool @readonly;
-
-		public DNSFactory() : this(false) { }
-		public DNSFactory(params Type[] types) : this(false, types) { }
-		public DNSFactory(bool @readonly, params Type[] types)
-		{
-			foreach (var type in types) AddType(type);
-			this.@readonly = @readonly;
-		}
-
-		public void AddType(Type type)
-		{
-			if (@readonly) throw new ReadOnlyException();
-			var dnsClass = type.GetCustomAttribute<DNSClassAttribute>(false);
-			if (dnsClass is null) throw new ArgumentException(nameof(type), $"La classe {type.FullName} doit avoir un attribut {Types.dnsClassAttributeType.FullName}");
-			if (Types.dnsRequestRecordType.IsAssignableFrom(type))
-			{
-				DNSRequests[dnsClass.ClassId] = type;
-				return;
-			}
-			if (Types.dnsResponseDetailType.IsAssignableFrom(type))
-			{
-				DNSResponses[dnsClass.ClassId] = type;
-				DNSClassesNames[type.Name] = dnsClass.ClassId;
-				DNSClassesIds[dnsClass.ClassId] = type.Name;
-				return;
-			}
-			throw new ArgumentException(nameof(type), $"La classe {type.FullName} doit dériver de {Types.dnsRequestRecordType.FullName} ou de {Types.dnsResponseDetailType.FullName}");
-		}
-
-		public DNSRequestRecord CreateRequestElement(ushort elementId)
-		{
-			var elementType = DNSRequests[elementId];
-			return (DNSRequestRecord)Activator.CreateInstance(elementType);
-		}
-
-		public DNSResponseDetail CreateResponseDetail(ushort classIdentifier)
-		{
-			var elementType = DNSResponses[classIdentifier];
-			return (DNSResponseDetail)Activator.CreateInstance(elementType);
-		}
-
-        public string GetClassName(ushort classIdentifier) => DNSClassesIds[classIdentifier];
-
-        public ushort GetClassIdentifier(string className) => DNSClassesNames[className];
 	}
 }

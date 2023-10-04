@@ -35,7 +35,7 @@ namespace Utils.Net.DNS.RFC1035
         public ushort Preference { get; set; }
 
         [DNSField]
-        public string Exchange { get; set; }
+        public DNSDomainName Exchange { get; set; }
 
         public override string ToString() => $"{Exchange} ({Preference})";
 	}

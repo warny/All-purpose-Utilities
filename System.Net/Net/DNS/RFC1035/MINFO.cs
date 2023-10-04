@@ -41,9 +41,9 @@ namespace Utils.Net.DNS.RFC1035
 
         */
         [DNSField]
-        public string EMailBx { get; set; }
+        public DNSDomainName EMailBx { get; set; }
         [DNSField]
-        public string RMailBx { get; set; }
+        public DNSDomainName RMailBx { get; set; }
 
         public override string ToString() {
             return $"EMAILBX : \t{EMailBx}\n\tRMAILBX : \t{RMailBx}";

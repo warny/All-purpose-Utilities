@@ -7,7 +7,7 @@ namespace Utils.Net.DNS
 {
 	public abstract class DNSResponseDetail : DNSElement
 	{
-		internal ushort ClassId => this.GetType().GetCustomAttribute<DNSClassAttribute>().ClassId;
+		internal virtual ushort ClassId => this.GetType().GetCustomAttribute<DNSClassAttribute>().ClassId;
 
         public virtual string Name => this.GetType().Name;
 

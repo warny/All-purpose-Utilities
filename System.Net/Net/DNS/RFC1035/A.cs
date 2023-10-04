@@ -5,7 +5,11 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1035
 {
-    [DNSClass(0x01)]
+    /// <summary>
+    /// IPAddress, used for both RFC1035.A and RFC1886.AAAA records
+    /// </summary>
+    [DNSClass(0x01, "A")]
+    [DNSClass(0x1C, "AAAA")]
     public sealed class A : DNSResponseDetail
     {
         /*
@@ -27,23 +31,36 @@ namespace Utils.Net.DNS.RFC1035
             "10.2.0.52" or "192.0.5.6").
          */
 
-        [DNSField(4)]
-        private byte[] ipAddressBytes
+        internal override ushort ClassId => ipAddress.AddressFamily switch
         {
-            get => ipAddress.GetAddressBytes();
-            set => ipAddress = new IPAddress(value);
-        }
+            System.Net.Sockets.AddressFamily.InterNetwork => 0x01,
+            System.Net.Sockets.AddressFamily.InterNetworkV6 => 0x1C,
+            _ => throw new NotSupportedException("A and AAAA records only support IPV4 and IPV6 addresses")
+        };
+
+        public override string Name => ipAddress.AddressFamily switch
+        {
+            System.Net.Sockets.AddressFamily.InterNetwork => "A",
+            System.Net.Sockets.AddressFamily.InterNetworkV6 => "AAAA",
+            _ => throw new NotSupportedException("A and AAAA records only support IPV4 and IPV6 addresses")
+        };
+
+        [DNSField]
+        private System.Net.IPAddress ipAddress = null;
 
         public IPAddress IPAddress
         {
             get => ipAddress;
             set {
-                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork) throw new NotSupportedException("A records only support IPV4 addresses");
+                if (value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork && value.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
+                {
+                    throw new NotSupportedException("A and AAAA records only support IPV4 and IPV6 addresses");
+                }
                 ipAddress = value;
             }
         }
-        private System.Net.IPAddress ipAddress = null;
 
 		public override string ToString() => IPAddress.ToString();
 	}
 }
+                                       

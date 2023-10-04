@@ -5,6 +5,7 @@ using System.Text;
 namespace Utils.Net.DNS.RFC1035
 {
     [DNSClass(0x04)]
+    [Obsolete]
     public class MF : DNSResponseDetail
     {
         /*
@@ -31,7 +32,7 @@ namespace Utils.Net.DNS.RFC1035
 
          */
         [DNSField]
-        public string MadName { get; set; }
+        public DNSDomainName MadName { get; set; }
 
         public override string ToString() => MadName;
 

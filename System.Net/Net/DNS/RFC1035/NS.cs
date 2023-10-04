@@ -32,6 +32,6 @@ namespace Utils.Net.DNS.RFC1035
             class information are normally queried using IN class protocols.
         */
         [DNSField]
-        public string DNSName { get; set; }
+        public DNSDomainName DNSName { get; set; }
     }
 }

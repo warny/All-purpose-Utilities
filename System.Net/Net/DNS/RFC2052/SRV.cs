@@ -9,7 +9,7 @@ namespace Utils.Net.DNS.RFC2052
     public class SRV : DNSResponseDetail
     {
         [DNSField]
-        public string Server { get; set; }
+        public DNSDomainName Server { get; set; }
         [DNSField]
         public ushort Priority { get; set; }
         [DNSField]

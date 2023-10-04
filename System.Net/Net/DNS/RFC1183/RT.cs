@@ -5,13 +5,13 @@ using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1183
 {
-    [DNSClass(21)]
+    [DNSClass(0x15)]
     public class RT : DNSResponseDetail
     {
         [DNSField]
         public ushort Preference { get; set; }
         [DNSField]
-        public string DnsName { get; set; }
+        public DNSDomainName DnsName { get; set; }
 
 		public override string ToString() => $"{Preference}\t{DnsName}";
 	}

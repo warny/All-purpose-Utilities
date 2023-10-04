@@ -30,7 +30,7 @@ namespace Utils.Net.DNS.RFC1183
         [DNSField]
         public ushort Preference { get; set; }
         [DNSField] 
-        public string AFSServer { get; set; }
+        public DNSDomainName AFSServer { get; set; }
 
         public override string ToString() {
             return $"{AFSServer} ({Preference})";

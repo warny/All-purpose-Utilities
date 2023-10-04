@@ -21,7 +21,7 @@ namespace Utils.Net.DNS.RFC1035
             TXT RRs are used to hold descriptive text.  The semantics of the text
             depends on the domain where it is found.
         */
-        [DNSField(-1)]
+        [DNSField]
         public string Text { get; set; }
 
         public override string ToString() => Text;

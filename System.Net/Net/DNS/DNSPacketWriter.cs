@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using Utils.Net.DNS.RFC1035;
-using Utils.Net.DNS.RFC1876;
-using Utils.Net.DNS.RFC1886;
-using Utils.Net.DNS.RFC2052;
-using System.Resources;
 
 namespace Utils.Net.DNS
 {
@@ -23,16 +17,7 @@ namespace Utils.Net.DNS
         private readonly Dictionary<Type, Action<Datas, DNSResponseDetail>> writers = new();
         private readonly Dictionary<string, ushort> requestClassTypes = new() { { "ALL", 0xFF } };
 
-        public static DNSPacketWriter Default { get; } = new DNSPacketWriter(
-            typeof(Default),
-            typeof(A), typeof(AAAA), typeof(CNAME),
-            typeof(SOA), typeof(MX), typeof(MINFO), typeof(SRV),
-            typeof(HINFO), typeof(TXT), typeof(NULL),
-            typeof(NS), typeof(MB), typeof(MD), typeof(MF), typeof(MG), typeof(MR),
-            typeof(PTR), typeof(WKS),
-            //typeof(AFSDB), typeof(ISDN), typeof(RP), typeof(RT), typeof(X25),
-            typeof(LOC)
-        );
+        public static DNSPacketWriter Default { get; } = new DNSPacketWriter(DNSFactory.DNSTypes);
 
         public DNSPacketWriter(params Type[] dnsElementTypes)
         {
@@ -48,11 +33,14 @@ namespace Utils.Net.DNS
 
         private void CreateReader(Type dnsElementType)
         {
-            var dnsClass = dnsElementType.GetCustomAttribute<DNSClassAttribute>();
-            if (dnsClass == null) { throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType)); }
+            var dnsClasses = dnsElementType.GetCustomAttributes<DNSClassAttribute>();
+            if (!dnsClasses.Any()) { throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType)); }
             var writer = CreateWriter<DNSResponseDetail>(dnsElementType);
             writers.Add(dnsElementType, writer);
-            requestClassTypes.Add(dnsClass.Name ?? dnsElementType.Name, dnsClass.ClassId);
+            foreach (var dnsClass in dnsClasses)
+            {
+                requestClassTypes.Add(dnsClass.Name ?? dnsElementType.Name, dnsClass.ClassId);
+            }
         }
 
         private Action<Datas, T> CreateWriter<T>(Type dnsElementType) where T : DNSElement
@@ -83,7 +71,7 @@ namespace Utils.Net.DNS
                 var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
                 if (dnsField is null) continue;
 
-                Type type = (field as PropertyInfo).PropertyType ?? (field as FieldInfo).FieldType;
+                Type type = (field as PropertyInfo)?.PropertyType ?? (field as FieldInfo).FieldType;
                 Expression assignationSource = field is PropertyInfo
                     ? Expression.Property(element, (PropertyInfo)field)
                     : Expression.Field(element, (FieldInfo)field);
@@ -95,25 +83,25 @@ namespace Utils.Net.DNS
                 }
 
                 Expression callExpression = null;
-                if (uType == typeof(string) && dnsField.Length == -1)
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource);
-                }
-                else if (uType == typeof(string) && dnsField.Length > 0)
+                if (uType == typeof(string) && dnsField.Length > 0)
                 {
                     callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
                 }
                 else if (uType == typeof(string))
                 {
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource);
+                }
+                else if (uType == typeof(DNSDomainName))
+                {
                     callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource);
                 }
-                else if (uType == typeof(byte[]) && dnsField.Length == -1)
+                else if (uType == typeof(byte[]) && dnsField.Length > 0)
                 {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource);
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
                 }
                 else if (uType == typeof(byte[]))
                 {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource);
                 }
                 else if (uType == typeof(byte))
                 {
@@ -127,6 +115,14 @@ namespace Utils.Net.DNS
                 {
                     callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource);
                 }
+                else if (GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes))
+                {
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), builderToBytes);
+                }
+                else if (GetObjectConverter(assignationSource, typeof(string), out var builderToString))
+                {
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), builderToString);
+                }
                 else
                 {
                     throw new NotSupportedException();
@@ -138,7 +134,7 @@ namespace Utils.Net.DNS
             var expression = Expression.Lambda<Action<Datas, T>>(
                 Expression.Block(
                     variables,
-                    fieldsReaders.ToArray()
+                    [.. fieldsReaders]
                 ),
                 "Write" + dnsElementType.Name,
                 new[] {
@@ -156,6 +152,27 @@ namespace Utils.Net.DNS
             var method = typeof(Datas).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, argumentTypes, null);
             Expression callExpression = Expression.Call(datasParameter, method, arguments);
             return callExpression;
+        }
+
+        private static bool GetObjectConverter(Expression source, Type outType, out Expression builder)
+        {
+            var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m =>  m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type).FirstOrDefault();
+            if (methodStatic != null)
+            {
+                builder = Expression.Call(null, methodStatic, source);
+                return true;
+            }
+
+            var methodInstance = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m => m.ReturnType == outType && m.GetParameters().Length == 0).FirstOrDefault();
+            if (methodInstance != null)
+            {
+                builder = Expression.Call(source, methodInstance);
+                return true;
+            }
+
+
+            builder = null;
+            return false;
         }
 
         private class Datas
@@ -221,21 +238,20 @@ namespace Utils.Net.DNS
                 WriteBytes(bytes);
             }
 
-            public void WriteDomainName(string s)
+            public void WriteDomainName(DNSDomainName s)
             {
-                if (StringsPositions.TryGetValue(s, out ushort position))
+                if (StringsPositions.TryGetValue(s.Value, out ushort position))
                 {
                     WriteUShort((ushort)(position | 0xC000));
                     return;
                 }
 
-                var stringSplit = s.Split('.', 2);
-                StringsPositions.Add(s, (ushort)Position);
-                WriteByte((byte)stringSplit[0].Length);
-                WriteBytes(ASCIIEncoding.ASCII.GetBytes(stringSplit[0]));
-                if (stringSplit.Length > 1)
+                StringsPositions.Add(s.Value, (ushort)Position);
+                WriteByte((byte)s.SubDomain.Length);
+                WriteBytes(ASCIIEncoding.UTF8.GetBytes(s.SubDomain));
+                if (s.ParentDomain != null)
                 {
-                    WriteDomainName(stringSplit[1]);
+                    WriteDomainName(s.ParentDomain);
                 }
                 else
                 {
@@ -297,8 +313,8 @@ namespace Utils.Net.DNS
         }
         private void WriteResponse(Datas datas, DNSResponseRecord responseRecord)
         {
-            var startRecordPosition = datas.Position;
             WriteResponseRecord(datas, responseRecord);
+            var middlePosition = datas.Position;
             datas.Context = new Context
             {
                 Length = 0
@@ -307,8 +323,8 @@ namespace Utils.Net.DNS
             var endRecordPosition = datas.Position;
             responseRecord.RDLength = datas.Context.Length;
             datas.Context = null;
-            datas.Position = startRecordPosition;
-            WriteResponseRecord(datas, responseRecord);
+            datas.Position = middlePosition - 2;
+            datas.WriteUShort(responseRecord.RDLength); 
             datas.Position = endRecordPosition;
         }
 

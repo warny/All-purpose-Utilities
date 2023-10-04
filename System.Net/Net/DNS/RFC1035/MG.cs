@@ -23,7 +23,7 @@ namespace Utils.Net.DNS.RFC1035
             MG records cause no additional section processing.
          */
         [DNSField]
-        public string MGName { get; set; }
+        public DNSDomainName MGName { get; set; }
 
         public override string ToString() => MGName;
 

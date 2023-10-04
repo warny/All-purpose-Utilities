@@ -40,7 +40,7 @@ namespace Utils.Net.DNS
 		}
 
 		[DNSField]
-        public string Name { get; set; }
+        public DNSDomainName Name { get; set; }
         [DNSField]
         public ushort Type { get; internal set; }
         [DNSField]

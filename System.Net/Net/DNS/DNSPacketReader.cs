@@ -4,14 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net;
 using System.Reflection;
 using System.Text;
-using Utils.Net.DNS.RFC1035;
-using Utils.Net.DNS.RFC1183;
-using Utils.Net.DNS.RFC1876;
-using Utils.Net.DNS.RFC1886;
-using Utils.Net.DNS.RFC2052;
 
 namespace Utils.Net.DNS
 {
@@ -23,16 +17,7 @@ namespace Utils.Net.DNS
         private readonly Dictionary<int, Func<Datas, DNSResponseDetail>> readers = new();
         private readonly Dictionary<int, string> requestClassNames = new() { { 0xFF, "ALL" } };
 
-        public static DNSPacketReader Default { get; } = new DNSPacketReader(
-            typeof(Default),
-            typeof(A), typeof(AAAA), typeof(CNAME),
-            typeof(SOA), typeof(MX), typeof(MINFO), typeof(SRV),
-            typeof(HINFO), typeof(TXT), typeof(NULL),
-            typeof(NS), typeof(MB), typeof(MD), typeof(MF), typeof(MG), typeof(MR),
-            typeof(PTR), typeof(WKS),
-            //typeof(AFSDB), typeof(ISDN), typeof(RP), typeof(RT), typeof(X25),
-            typeof(LOC)
-        );
+        public static DNSPacketReader Default { get; } = new DNSPacketReader(DNSFactory.DNSTypes);
 
         public DNSPacketReader(params Type[] dnsElementTypes) {
             ReadHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
@@ -47,11 +32,14 @@ namespace Utils.Net.DNS
 
         private void CreateReader(Type dnsElementType)
         {
-            var dnsClass = dnsElementType.GetCustomAttribute<DNSClassAttribute>();
-            if (dnsClass == null) { throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType)); }
+            var dnsClasses = dnsElementType.GetCustomAttributes<DNSClassAttribute>();
+            if (!dnsClasses.Any()) { throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType)); }
             var reader = CreateReader<DNSResponseDetail>(dnsElementType);
-            readers.Add(dnsClass.ClassId, reader);
-            requestClassNames.Add(dnsClass.ClassId, dnsClass.Name ?? dnsElementType.Name);
+            foreach (var dnsClass in dnsClasses)
+            {
+                readers.Add(dnsClass.ClassId, reader);
+                requestClassNames.Add(dnsClass.ClassId, dnsClass.Name ?? dnsElementType.Name);
+            }
         }
 
         private Func<Datas, T> CreateReader<T>(Type dnsElementType) where T : DNSElement
@@ -68,7 +56,7 @@ namespace Utils.Net.DNS
                 var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
                 if (dnsField is null) continue;
 
-                Type type = (field as PropertyInfo).PropertyType ?? (field as FieldInfo).FieldType;
+                Type type = (field as PropertyInfo)?.PropertyType ?? (field as FieldInfo).FieldType;
                 var assignationTarget = field is PropertyInfo
                     ? Expression.Property(resultVariable, (PropertyInfo)field)
                     : Expression.Field(resultVariable, (FieldInfo)field);
@@ -76,21 +64,25 @@ namespace Utils.Net.DNS
                 var uType = type.IsEnum ? type.GetEnumUnderlyingType() : type;
 
                 Expression callExpression = null;
-                if (uType == typeof(string) && dnsField.Length == -1)
+                if (uType == typeof(byte[]) && dnsField.Length > 0)
                 {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadString));
-                }
-                else if (uType == typeof(string))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadDomainName));
-                }
-                else if (uType == typeof(byte[]) && dnsField.Length == -1)
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes));
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), Expression.Constant(dnsField.Length, typeof(int)));
                 }
                 else if (uType == typeof(byte[]))
                 {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), Expression.Constant(dnsField.Length, typeof(int)));
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes));
+                }
+                else if (uType == typeof(string) && dnsField.Length > 0)
+                {
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadString), Expression.Constant(dnsField.Length, typeof(int)));
+                }
+                else if (uType == typeof(string))
+                {
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadString));
+                }
+                else if (uType == typeof(DNSDomainName))
+                {
+                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadDomainName));
                 }
                 else if (uType == typeof(byte))
                 {
@@ -103,7 +95,25 @@ namespace Utils.Net.DNS
                 else if (uType == typeof(uint))
                 {
                     callExpression = CreateExpressionCall(datasParameter, nameof(Datas.ReadUInt));
-                } else {
+                }
+                else if (dnsField.Length == 0 && GetObjectBuilder(uType, CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes)), out var builderBytesRaw))
+                {
+                    callExpression = builderBytesRaw;
+                }
+                else if (GetObjectBuilder(uType, CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), Expression.Constant(dnsField.Length, typeof(int))), out var builderBytes))
+                {
+                    callExpression = builderBytes;
+                }
+                else if (dnsField.Length == 0 && GetObjectBuilder(uType, CreateExpressionCall(datasParameter, nameof(Datas.ReadString)), out var builderStringRaw))
+                {
+                    callExpression = builderStringRaw;
+                }
+                else if (GetObjectBuilder(uType, CreateExpressionCall(datasParameter, nameof(Datas.ReadString), Expression.Constant(dnsField.Length, typeof(int))), out var builderString))
+                {
+                    callExpression = builderString;
+                }
+                else
+                {
                     throw new NotSupportedException();
                 }
 
@@ -131,6 +141,24 @@ namespace Utils.Net.DNS
             );
 
             return expression.Compile();
+        }
+
+        private static bool GetObjectBuilder(Type type, Expression datasExpression, out Expression builder)
+        {
+            var constructor = type.GetConstructor([datasExpression.Type]);
+            if (constructor != null)
+            {
+                builder = Expression.New(constructor, datasExpression);
+                return true;
+            }
+            var  method = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.InvokeMethod).Where(m=>m.ReturnType == type && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == datasExpression.Type).FirstOrDefault();
+            if (method != null)
+            {
+                builder = Expression.Call(method, datasExpression);
+                return true;
+            }
+            builder = null;
+            return false;
         }
 
         private static Expression CreateExpressionCall(ParameterExpression datasParameter, string name, params Expression[] arguments)
@@ -171,20 +199,6 @@ namespace Utils.Net.DNS
                 return result;
             }
 
-            public IPAddress ReadIPAddress()
-            {
-                if (Context == null) throw new NullReferenceException("Context must not be null");
-                var length = Context.BytesLeft;
-                return ReadIPAddress(length);
-            }
-
-            public IPAddress ReadIPAddress(int length)
-            {
-                if (length != 4 || length != 16) throw new ArgumentOutOfRangeException(nameof(length));
-                var result = ReadBytes(length);
-                return new IPAddress(result);
-            }
-
             public ushort ReadUShort()
             {
                 return (ushort)(
@@ -201,7 +215,7 @@ namespace Utils.Net.DNS
                     | (ReadByte()));
             }
 
-            public string ReadDomainName() => ReadDomainName(Position);
+            public DNSDomainName ReadDomainName() => ReadDomainName(Position);
 
             private string ReadDomainName(int position)
             {
@@ -231,8 +245,8 @@ namespace Utils.Net.DNS
                 else
                 {
                     var s = Encoding.UTF8.GetString(ReadBytes(length));
-                    var next = ReadDomainName();
-                    if (next is not null) s = s + "." + next;
+                    var next = ReadDomainName(this.Position);
+                    if (next is not null) s+= "." + next;
                     if (restorePosition) this.Position = temp;
                     PositionsStrings[(ushort)position] = s;
                     Context = context;
@@ -244,9 +258,10 @@ namespace Utils.Net.DNS
             public string ReadString()
             {
                 if (Context == null) throw new NullReferenceException("Context must not be null");
-                var length = Context.BytesLeft;
-                return Encoding.UTF8.GetString(ReadBytes(length));
+                return ReadString(Context.BytesLeft);
             }
+
+            public string ReadString(int length) => Encoding.UTF8.GetString(ReadBytes(length));
         }
 
         private class Context
@@ -316,6 +331,7 @@ namespace Utils.Net.DNS
                  BytesLeft = responseRecord.RDLength,
                  Length = responseRecord.RDLength
             };
+            Debug.WriteLine($"Read record {requestClassNames[responseRecord.Type]}. Length = {responseRecord.RDLength}");
             var responseDetail = readers[responseRecord.Type](datas);
             responseRecord.RData = responseDetail;
             datas.Context = null;

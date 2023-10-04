@@ -24,7 +24,7 @@ namespace Utils.Net.DNS.RFC1035
             RRs corresponding to MADNAME.
         */
         [DNSField]
-        public string MadName { get; set; }
+        public DNSDomainName MadName { get; set; }
 
         public override string ToString() => MadName;
 
