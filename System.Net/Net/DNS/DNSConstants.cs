@@ -10,7 +10,7 @@ namespace Utils.Net.DNS
         +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
         |                      ID                       |
         +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
+		|QR|   Opcode  |AA|TC|RD|RA| Z|AD|CD|   RCODE   |
         +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
         |                    QDCOUNT                    |
         +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -32,7 +32,7 @@ namespace Utils.Net.DNS
     }
 
     /// <summary>
-    /// Requested operation (4bits)
+    /// Requested operation (4bits, aligned)
     /// </summary>
     public enum DNSOpCode : ushort
     {
@@ -115,7 +115,20 @@ namespace Utils.Net.DNS
         /// <summary>
         /// Reserved Zero (Z) bits. Reserved for future use. Should be set to 0.
         /// </summary>
-        public const ushort ReservedZ = 0x0070;
+        public const ushort ReservedZ = 0x0040;
+
+        /// <summary>
+        /// indicates in a response that all the data included in the answer and authority
+        /// portion of the response has been authenticated by the server
+        /// according to the policies of that server.
+        /// </summary>
+        public const ushort AuthenticDatas = 0x20;
+
+        /// <summary>
+        /// indicates in a query that Pending(non-authenticated) 
+        /// data is acceptable to the resolver sending the query.
+        /// </summary>
+        public const ushort CheckingDisabled = 0x10;
 
         /// <summary>
         /// Error field. Indicates the type of DNS error encountered in the response.
@@ -132,6 +145,7 @@ namespace Utils.Net.DNS
         /// <summary>
         /// the CSNET class (Obsolete - used only for examples in some obsolete RFCs) 
         /// </summary>
+        [Obsolete]
         CS = 0x0002,
         /// <summary>
         /// the CHAOS class
@@ -151,7 +165,9 @@ namespace Utils.Net.DNS
     {
         public const ushort ALL = 0xFF;
         public const ushort AXFR = 0xFC;
+        [Obsolete]
         public const ushort MAILB = 0xFD;
+        [Obsolete]
         public const ushort MAILA = 0xFE;
     }
 

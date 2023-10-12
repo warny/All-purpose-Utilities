@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace Utils.Net.DNS
@@ -12,7 +14,14 @@ namespace Utils.Net.DNS
 	}
 
 	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-	public class DNSFieldAttribute(int length = 0) : Attribute { 
+	public class DNSFieldAttribute(int length = 0 ) : Attribute { 
 		public int Length => length;
+		public string Condition { get; init; }
+	}
+
+
+	public static class FieldConstants
+	{
+		public const int PREFIXED_SIZE = -1;
 	}
 }

@@ -2,31 +2,30 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Utils.Net.DNS.RFC1035
+namespace Utils.Net.DNS.RFC1035;
+
+[DNSClass(0x05)]
+public sealed class CNAME : DNSResponseDetail
 {
-    [DNSClass(0x05)]
-    public sealed class CNAME : DNSResponseDetail
-    {
-        /*
-            CNAME RDATA format
+    /*
+        CNAME RDATA format
 
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                     CNAME                     /
-                /                                               /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            /                     CNAME                     /
+            /                                               /
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-            where:
+        where:
 
-            CNAME           A <domain-name> which specifies the canonical or primary
-                            name for the owner.  The owner name is an alias.
+        CNAME           A <domain-name> which specifies the canonical or primary
+                        name for the owner.  The owner name is an alias.
 
-            CNAME RRs cause no additional section processing, but name servers may
-            choose to restart the query at the canonical name in certain cases.  See
-            the description of name server logic in [RFC-1034] for details.
-        */
-        [DNSField]
-        public DNSDomainName CName { get; set; }
+        CNAME RRs cause no additional section processing, but name servers may
+        choose to restart the query at the canonical name in certain cases.  See
+        the description of name server logic in [RFC-1034] for details.
+    */
+    [DNSField]
+    public DNSDomainName CName { get; set; }
 
-        public override string ToString() => Name;
+    public override string ToString() => Name;
 	}
-}

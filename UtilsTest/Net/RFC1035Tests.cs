@@ -51,7 +51,7 @@ namespace UtilsTest.Net
 
             Assert.IsTrue(header.Responses.Count == 1);
             var dnsResponse = header.Responses[0];
-            var ARecord = (A)dnsResponse.RData;
+            var ARecord = (Address)dnsResponse.RData;
             Assert.AreEqual("test.example.com", dnsResponse.Name.Value);
             Assert.AreEqual("10.11.12.13", ARecord.IPAddress.ToString());
 
@@ -109,7 +109,7 @@ namespace UtilsTest.Net
             Assert.AreEqual("cname.example.com", CNameRecord0.CName.Value);
 
             var dnsResponse1 = header.Responses[1];
-            var ARecord1 = (A)dnsResponse1.RData;
+            var ARecord1 = (Address)dnsResponse1.RData;
             Assert.AreEqual("cname.example.com", dnsResponse1.Name.Value);
             Assert.AreEqual("10.11.12.13", ARecord1.IPAddress.ToString());
         }

@@ -52,6 +52,8 @@ namespace UtilsTest.Net
         [TestMethod]
 		public void WriteReadRequest()
 		{
+            var comparer = DNSElementsComparer.Default;
+
             var packetReader = DNSPacketReader.Default;
 			var packetWriter = DNSPacketWriter.Default;
             
@@ -60,18 +62,14 @@ namespace UtilsTest.Net
 			var datagram = packetWriter.Write(header1);
             DNSHeader header2 = packetReader.Read(datagram);
 
-			Assert.AreEqual(header1.QrBit, header2.QrBit);
-			Assert.AreEqual(header1.RecursionDesired, header2.RecursionDesired);
-			Assert.AreEqual(header1.RecursionPossible, header2.RecursionPossible);
-			Assert.AreEqual(header1.ErrorCode, header2.ErrorCode);
-			Assert.AreEqual(header1.OpCode, header2.OpCode);
-			Assert.AreEqual(header1.Requests[0].Name, header2.Requests[0].Name);
-			Assert.AreEqual(header1.Requests[0].Type, header2.Requests[0].Type);
-			Assert.AreEqual(header1.Requests[0].Class, header2.Requests[0].Class);
-			Assert.AreEqual(header1.Requests[0].DNSType, header2.Requests[0].DNSType);
-		}
+			Assert.AreEqual(header1, header2, comparer);
+			for (int i = 0; i < header1.Requests.Count; i++)
+			{
+				Assert.AreEqual(header1.Requests[i], header2.Requests[i], comparer);
+			}
+        }
 
-		[TestMethod]
+        [TestMethod]
 		public void WriteReadResponse()
 		{
 			var DNSWriter = DNSPacketWriter.Default;
@@ -80,8 +78,8 @@ namespace UtilsTest.Net
             DNSHeader header1 = new DNSHeader();
 			header1.Requests.Add(new DNSRequestRecord("ALL", "example.com"));
 			header1.QrBit = DNSQRBit.Response;
-			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new A() { IPAddress = new IPAddress(new byte[] { 1, 2, 3, 4 }) }));
-			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new A() { IPAddress = new IPAddress(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }) }));
+			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new Address() { IPAddress = new IPAddress(new byte[] { 1, 2, 3, 4 }) }));
+			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new Address() { IPAddress = new IPAddress(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }) }));
 			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new MX() { Preference = 5, Exchange = "mail.google.fr" }));
 			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new SRV() { Priority = 5, Weight = 15, Server = "service.mail.google.fr", Port = 32534 }));
 			header1.Responses.Add(new DNSResponseRecord("example.com", 300, new TXT() { Text = "Ceci est un test" }));
@@ -90,25 +88,8 @@ namespace UtilsTest.Net
 
             DNSHeader header2 = DNSReader.Read(datagram);
 
-			Assert.AreEqual(header1.QrBit, header2.QrBit);
-			Assert.AreEqual(header1.RecursionDesired, header2.RecursionDesired);
-			Assert.AreEqual(header1.RecursionPossible, header2.RecursionPossible);
-			Assert.AreEqual(header1.ErrorCode, header2.ErrorCode);
-			Assert.AreEqual(header1.OpCode, header2.OpCode);
-			Assert.AreEqual(header1.Requests[0].Name, header2.Requests[0].Name);
-			Assert.AreEqual(header1.Requests[0].Type, header2.Requests[0].Type);
-			Assert.AreEqual(header1.Requests[0].Class, header2.Requests[0].Class);
-			Assert.AreEqual(header1.Requests[0].DNSType, header2.Requests[0].DNSType);
-
-			for (int i = 0; i < header1.Responses.Count; i++)
-			{
-				var response1 = header1.Responses[i];
-				var response2 = header2.Responses[i];
-
-				Assert.AreEqual(response1.Name, response2.Name);
-				Assert.AreEqual(response1.TTL, response2.TTL);
-				Assert.AreEqual(response1.RData.ToString(), response2.RData.ToString());
-			}
+			var comparer = DNSHeadersComparer.Default;
+			Assert.AreEqual(header1, header2, comparer);
 		}
 
 		[TestMethod]
@@ -166,7 +147,7 @@ namespace UtilsTest.Net
 			Assert.AreEqual("ALL", dnsRequestRecord.Type);
 
 			Assert.IsTrue(header.Responses.Count > 0, "No response from DNS");
-			Assert.IsTrue(header.Responses.Any(r => r.RData is A), "No A record returned from DNS");
+			Assert.IsTrue(header.Responses.Any(r => r.RData is Address), "No A record returned from DNS");
 			Assert.IsTrue(header.Responses.Any(r => r.RData is MX), "No MX record returned from DNS");
 		}
 

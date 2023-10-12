@@ -26,6 +26,9 @@ namespace Utils.Net.DNS
         public static implicit operator string(DNSDomainName dnsDomainName) => dnsDomainName.Value;
         public static implicit operator DNSDomainName(string domainName) => new DNSDomainName(domainName);
 
+        public DNSDomainName Append(string append) => append is null ? this : new DNSDomainName(this.Value + "." + append);
+        public DNSDomainName Append(DNSDomainName? append) => append is null ? this : new DNSDomainName(this.Value + "." + append.Value);
+
         public override string ToString() => Value;
 
         public int CompareTo([AllowNull] DNSDomainName other) => Value.CompareTo(other.Value);

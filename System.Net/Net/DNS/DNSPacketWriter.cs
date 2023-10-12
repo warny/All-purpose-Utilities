@@ -21,9 +21,9 @@ namespace Utils.Net.DNS
 
         public DNSPacketWriter(params Type[] dnsElementTypes)
         {
-            WriteHeader = CreateWriter<DNSHeader>(typeof(DNSHeader));
-            WriteRequestRecord = CreateWriter<DNSRequestRecord>(typeof(DNSRequestRecord));
-            WriteResponseRecord = CreateWriter<DNSResponseRecord>(typeof(DNSResponseRecord));
+            WriteHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
+            WriteRequestRecord = CreateReader<DNSRequestRecord>(typeof(DNSRequestRecord));
+            WriteResponseRecord = CreateReader<DNSResponseRecord>(typeof(DNSResponseRecord));
 
             foreach (var dnsElementType in dnsElementTypes)
             {
@@ -35,7 +35,7 @@ namespace Utils.Net.DNS
         {
             var dnsClasses = dnsElementType.GetCustomAttributes<DNSClassAttribute>();
             if (!dnsClasses.Any()) { throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType)); }
-            var writer = CreateWriter<DNSResponseDetail>(dnsElementType);
+            var writer = CreateReader<DNSResponseDetail>(dnsElementType);
             writers.Add(dnsElementType, writer);
             foreach (var dnsClass in dnsClasses)
             {
@@ -43,7 +43,7 @@ namespace Utils.Net.DNS
             }
         }
 
-        private Action<Datas, T> CreateWriter<T>(Type dnsElementType) where T : DNSElement
+        private Action<Datas, T> CreateReader<T>(Type dnsElementType) where T : DNSElement
         {
             Debug.WriteLine(dnsElementType.FullName);
             var datasParameter = Expression.Parameter(typeof(Datas), "datas");
@@ -66,68 +66,9 @@ namespace Utils.Net.DNS
                 fieldsReaders.Add(Expression.Assign(elementVariable, Expression.Convert(elementParameter, dnsElementType)));
             }
 
-            foreach (var field in dnsElementType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m is PropertyInfo || m is FieldInfo))
+            foreach (var field in DNSPacketHelpers.GetDNSFields(dnsElementType))
             {
-                var dnsField = field.GetCustomAttribute<DNSFieldAttribute>();
-                if (dnsField is null) continue;
-
-                Type type = (field as PropertyInfo)?.PropertyType ?? (field as FieldInfo).FieldType;
-                Expression assignationSource = field is PropertyInfo
-                    ? Expression.Property(element, (PropertyInfo)field)
-                    : Expression.Field(element, (FieldInfo)field);
-
-                var uType = type.IsEnum ? type.GetEnumUnderlyingType() : type;
-                if (type.IsEnum)
-                {
-                    assignationSource = Expression.Convert(assignationSource, uType);
-                }
-
-                Expression callExpression = null;
-                if (uType == typeof(string) && dnsField.Length > 0)
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
-                }
-                else if (uType == typeof(string))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource);
-                }
-                else if (uType == typeof(DNSDomainName))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource);
-                }
-                else if (uType == typeof(byte[]) && dnsField.Length > 0)
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
-                }
-                else if (uType == typeof(byte[]))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource);
-                }
-                else if (uType == typeof(byte))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteByte), assignationSource);
-                }
-                else if (uType == typeof(ushort))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteUShort), assignationSource);
-                }
-                else if (uType == typeof(uint))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource);
-                }
-                else if (GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), builderToBytes);
-                }
-                else if (GetObjectConverter(assignationSource, typeof(string), out var builderToString))
-                {
-                    callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), builderToString);
-                }
-                else
-                {
-                    throw new NotSupportedException();
-                }
-
+                Expression callExpression = CreateReadExpression(datasParameter, element, field.Member, field.Attribute);
                 fieldsReaders.Add(callExpression);
             }
 
@@ -146,6 +87,74 @@ namespace Utils.Net.DNS
             return expression.Compile();
         }
 
+        private static Expression CreateReadExpression(ParameterExpression datasParameter, Expression element, MemberInfo field, DNSFieldAttribute dnsField)
+        {
+            Type type = (field as PropertyInfo)?.PropertyType ?? (field as FieldInfo).FieldType;
+            Expression assignationSource = field is PropertyInfo
+                ? Expression.Property(element, (PropertyInfo)field)
+                : Expression.Field(element, (FieldInfo)field);
+
+            var uType = type.IsEnum ? type.GetEnumUnderlyingType() : type;
+            if (type.IsEnum)
+            {
+                assignationSource = Expression.Convert(assignationSource, uType);
+            }
+
+            Expression callExpression = null;
+            if (uType == typeof(string) && dnsField.Length != 0)
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
+            }
+            else if (uType == typeof(string))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource);
+            }
+            else if (uType.IsAssignableFrom(typeof(DNSDomainName)))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource);
+            }
+            else if (uType == typeof(byte[]) && dnsField.Length != 0)
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)));
+            }
+            else if (uType == typeof(byte[]))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource);
+            }
+            else if (uType == typeof(byte))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteByte), assignationSource);
+            }
+            else if (uType == typeof(ushort))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteUShort), assignationSource);
+            }
+            else if (uType == typeof(uint))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource);
+            }
+            else if (GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), builderToBytes);
+            }
+            else if (GetObjectConverter(assignationSource, typeof(string), out var builderToString))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), builderToString);
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+
+            if (dnsField.Condition != null)
+            {
+                var conditionExpression = DNSPacketHelpers.ConditionBuilder(element, dnsField.Condition);
+                callExpression = Expression.IfThen(conditionExpression, callExpression);
+            }
+
+            return callExpression;
+        }
+
         private static Expression CreateExpressionCall(ParameterExpression datasParameter, string name, params Expression[] arguments)
         {
             Type[] argumentTypes = arguments.Select(a => a.Type).ToArray();
@@ -156,14 +165,14 @@ namespace Utils.Net.DNS
 
         private static bool GetObjectConverter(Expression source, Type outType, out Expression builder)
         {
-            var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m =>  m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type).FirstOrDefault();
+            var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m =>  m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type);
             if (methodStatic != null)
             {
                 builder = Expression.Call(null, methodStatic, source);
                 return true;
             }
 
-            var methodInstance = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m => m.ReturnType == outType && m.GetParameters().Length == 0).FirstOrDefault();
+            var methodInstance = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m => m.ReturnType == outType && m.GetParameters().Length == 0);
             if (methodInstance != null)
             {
                 builder = Expression.Call(source, methodInstance);
@@ -193,6 +202,11 @@ namespace Utils.Net.DNS
 
             public void WriteBytes(byte[] b, int length)
             {
+                if (length == FieldConstants.PREFIXED_SIZE)
+                {
+                    length = b.Length;
+                    WriteByte((byte)length);
+                }
                 Array.Copy(b, 0, Datagram, Position, length);
                 Position += length;
                 if (Context != null) { Context.Length += (ushort)length; }
@@ -298,10 +312,6 @@ namespace Utils.Net.DNS
             {
                 WriteResponse(datas, responseRecord);
             }
-            foreach (var responseRecord in header.Responses)
-            {
-                WriteResponse(datas, responseRecord);
-            }
             foreach (var responseRecord in header.Authorities)
             {
                 WriteResponse(datas, responseRecord);
@@ -311,6 +321,7 @@ namespace Utils.Net.DNS
                 WriteResponse(datas, responseRecord);
             }
         }
+
         private void WriteResponse(Datas datas, DNSResponseRecord responseRecord)
         {
             WriteResponseRecord(datas, responseRecord);
@@ -330,3 +341,4 @@ namespace Utils.Net.DNS
 
     }
 }
+

@@ -2,32 +2,31 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Utils.Net.DNS.RFC1035
+namespace Utils.Net.DNS.RFC1035;
+
+[DNSClass(0x0C)]
+public class PTR : DNSResponseDetail
 {
-    [DNSClass(0x0C)]
-    public class PTR : DNSResponseDetail
-    {
-        /*
-            PTR RDATA format
+    /*
+        PTR RDATA format
 
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                   PTRDNAME                    /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            /                   PTRDNAME                    /
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-            where:
+        where:
 
-            PTRDNAME        A <domain-name> which points to some location in the
-                            domain name space.
+        PTRDNAME        A <domain-name> which points to some location in the
+                        domain name space.
 
-            PTR records cause no additional section processing.  These RRs are used
-            in special domains to point to some other location in the domain space.
-            These records are simple data, and don't imply any special processing
-            similar to that performed by CNAME, which identifies aliases.  See the
-            description of the IN-ADDR.ARPA domain for an example.
-        */
-        [DNSField]
-        public DNSDomainName PTRName { get; set; }
+        PTR records cause no additional section processing.  These RRs are used
+        in special domains to point to some other location in the domain space.
+        These records are simple data, and don't imply any special processing
+        similar to that performed by CNAME, which identifies aliases.  See the
+        description of the IN-ADDR.ARPA domain for an example.
+    */
+    [DNSField]
+    public DNSDomainName PTRName { get; set; }
 
-        public override string ToString() => PTRName;
-    }
+    public override string ToString() => PTRName;
 }
