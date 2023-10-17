@@ -18,16 +18,21 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private readonly Dictionary<int, Func<Datas, DNSResponseDetail>> readers = new();
     private readonly Dictionary<int, string> requestClassNames = new() { { 0xFF, "ALL" } };
 
-    public static DNSPacketReader Default { get; } = new DNSPacketReader(DNSFactory.DNSTypes);
+    public static DNSPacketReader Default { get; } = new DNSPacketReader(DNSFactory.Default);
 
-    public DNSPacketReader(params Type[] dnsElementTypes) {
+    public DNSPacketReader(params DNSFactory[] factories) : this((IEnumerable<DNSFactory>)factories) {}
+
+    public DNSPacketReader(IEnumerable<DNSFactory> factories) {
         ReadHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
         ReadRequestRecord = CreateReader<DNSRequestRecord>(typeof(DNSRequestRecord));
         ReadResponseRecord = CreateReader<DNSResponseRecord>(typeof(DNSResponseRecord));
 
-        foreach (var dnsElementType in dnsElementTypes)
+        foreach (var factory in factories)
         {
-            CreateReader(dnsElementType);
+            foreach (var dnsElementType in factory.DNSTypes)
+            {
+                CreateReader(dnsElementType);
+            }
         }
     }
 
@@ -62,15 +67,11 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var expression = Expression.Lambda<Func<Datas, T>>(
             Expression.Block(
                 typeof(T),
-                new[] {
-                    resultVariable
-                },
-                fieldsReaders.ToArray()
+                [ resultVariable ],
+                [.. fieldsReaders]
             ),
             "Read" + dnsElementType.Name,
-            new [] {
-                datasParameter
-            }
+            [ datasParameter ]
         );
 
         return expression.Compile();

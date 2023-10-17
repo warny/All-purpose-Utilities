@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using Utils.Net;
 
@@ -347,5 +348,52 @@ namespace Utils.Net.DNS
             set => Flags = (ushort)((Flags | ~DNSConstants.Error) & ((ushort)value & DNSConstants.Error));
         }
 
-	}
+		public void Append(DNSHeader header)
+		{
+			if (this.ID == header.ID) { throw new Exception("Mismatch headers"); }
+			foreach (var request in header.Requests)
+			{
+				if (!Requests.Contains(request, DNSElementsComparer.Default))
+				{
+					Requests.Add((DNSRequestRecord)request.Clone());
+				}
+			}
+			foreach (var response in header.Responses)
+			{
+				if (!Responses.Contains(response))
+				{
+					Responses.Add((DNSResponseRecord)response.Clone());
+				}
+			}
+            foreach (var authority in header.Authorities)
+            {
+                if (!Authorities.Contains(authority))
+                {
+                    Authorities.Add((DNSResponseRecord)authority.Clone());
+                }
+            }
+            foreach (var additional in header.Additionals)
+            {
+                if (!Additionals.Contains(additional))
+                {
+                    Additionals.Add((DNSResponseRecord)additional.Clone());
+                }
+            }
+        }
+
+		public override string ToString() =>
+			$""""
+			{QrBit} ID = {ID}, Operation Code = {OpCode} 
+				Recursition possible = {RecursionPossible}, Recursion desired = {RecursionDesired}
+				Authentic Datas = {AuthenticDatas}, Checking Disables {CheckingDisabled}
+			Requests :
+				{String.Join(Environment.NewLine + "\t", Requests.Select(r=>r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+			Responses : 
+				{String.Join(Environment.NewLine + "\t", Responses.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+			Authorities : 
+				{String.Join(Environment.NewLine + "\t", Authorities.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+			Additionals : 
+				{String.Join(Environment.NewLine + "\t", Additionals.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+			"""";
+    }
 }

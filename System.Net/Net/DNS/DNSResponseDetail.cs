@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Utils.Net.DNS
 {
-	public abstract class DNSResponseDetail : DNSElement
+	public abstract class DNSResponseDetail : DNSElement, ICloneable
 	{
 		internal virtual ushort ClassId => this.GetType().GetCustomAttribute<DNSClassAttribute>().ClassId;
 
@@ -16,14 +16,36 @@ namespace Utils.Net.DNS
         public override string ToString()
         {
             var result = new StringBuilder();
-            foreach (var property in GetType().GetProperties())
+            foreach (var dnsField in DNSPacketHelpers.GetDNSFields(GetType()))
             {
-                var dnsFieldAttr = (DNSFieldAttribute)Attribute.GetCustomAttribute(property, typeof(DNSFieldAttribute));
-                if (dnsFieldAttr is null) continue;
-                result.AppendLine($"{property.Name}: {property.GetValue(this)}");
+                if (dnsField.Member is FieldInfo f)
+                {
+                    result.AppendLine($"{f.Name}: {f.GetValue(this)}");
+                }
+                else if (dnsField.Member is PropertyInfo p)
+                {
+                    result.AppendLine($"{p.Name}: {p.GetValue(this)}");
+                }
+
             }
             return result.ToString();
         }
 
+        public object Clone()
+        {
+            var result = Activator.CreateInstance(this.GetType());
+            foreach (var dnsField in DNSPacketHelpers.GetDNSFields(GetType()))
+            {
+                if (dnsField.Member is FieldInfo f)
+                {
+                    f.SetValue(result, f.GetValue(this));
+                }
+                else if (dnsField.Member is PropertyInfo p)
+                {
+                    p.SetValue(result, p.GetValue(this));
+                }
+            }
+            return result;
+        }
     }
 }

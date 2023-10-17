@@ -17,17 +17,21 @@ namespace Utils.Net.DNS
         private readonly Dictionary<Type, Action<Datas, DNSResponseDetail>> writers = new();
         private readonly Dictionary<string, ushort> requestClassTypes = new() { { "ALL", 0xFF } };
 
-        public static DNSPacketWriter Default { get; } = new DNSPacketWriter(DNSFactory.DNSTypes);
+        public static DNSPacketWriter Default { get; } = new DNSPacketWriter(DNSFactory.Default);
+        public DNSPacketWriter(params DNSFactory[] factories) : this((IEnumerable<DNSFactory>)factories) { }
 
-        public DNSPacketWriter(params Type[] dnsElementTypes)
+        public DNSPacketWriter(IEnumerable<DNSFactory> factories)
         {
             WriteHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
             WriteRequestRecord = CreateReader<DNSRequestRecord>(typeof(DNSRequestRecord));
             WriteResponseRecord = CreateReader<DNSResponseRecord>(typeof(DNSResponseRecord));
-
-            foreach (var dnsElementType in dnsElementTypes)
+            foreach (var factory in factories)
             {
-                CreateReader(dnsElementType);
+                foreach (var dnsElementType in factory.DNSTypes)
+                {
+                    CreateReader(dnsElementType);
+                }
+
             }
         }
 
@@ -133,13 +137,21 @@ namespace Utils.Net.DNS
             {
                 callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource);
             }
-            else if (GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes))
+            else if (dnsField.Length != 0 && GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes1))
             {
-                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), builderToBytes);
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), builderToBytes1, Expression.Constant(dnsField.Length, typeof(int)));
             }
-            else if (GetObjectConverter(assignationSource, typeof(string), out var builderToString))
+            else if (GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes2))
             {
-                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), builderToString);
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), builderToBytes2);
+            }
+            else if (dnsField.Length != 0 && GetObjectConverter(assignationSource, typeof(string), out var builderToString1))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), builderToString1, Expression.Constant(dnsField.Length, typeof(int)));
+            }
+            else if (GetObjectConverter(assignationSource, typeof(string), out var builderToString2))
+            {
+                callExpression = CreateExpressionCall(datasParameter, nameof(Datas.WriteString), builderToString2);
             }
             else
             {
@@ -165,7 +177,7 @@ namespace Utils.Net.DNS
 
         private static bool GetObjectConverter(Expression source, Type outType, out Expression builder)
         {
-            var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m =>  m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type);
+            var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m => m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type);
             if (methodStatic != null)
             {
                 builder = Expression.Call(null, methodStatic, source);

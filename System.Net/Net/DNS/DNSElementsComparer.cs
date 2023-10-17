@@ -41,6 +41,7 @@ namespace Utils.Net.DNS
         }
 
         private Func<DNSElement, DNSElement, bool> CreateComparer(Type type) {
+
             List<Expression> comparer = new List<Expression>();
             var param1 = Expression.Parameter(typeof(DNSElement), "param1");
             var param2 = Expression.Parameter(typeof(DNSElement), "param2");
@@ -48,70 +49,33 @@ namespace Utils.Net.DNS
             var variable2 = Expression.Variable(type, "variable2");
             var comparison = Expression.Variable(typeof(bool), "comparison");
             
-            comparer.Add(Expression.Assign(comparison, Expression.Constant(true)));
             comparer.Add(Expression.Assign(variable1, Expression.Convert(param1, type)));
             comparer.Add(Expression.Assign(variable2, Expression.Convert(param2, type)));
 
-            foreach (var field in DNSPacketHelpers.GetDNSFields(type))
+            var comparableType = typeof(IEquatable<>).MakeGenericType(type);
+            if (comparableType.IsAssignableFrom(type))
             {
-                Expression member1 = PropertyOrField(variable1, field.Member);
+                var equalsMethod = comparableType.GetMethod("Equals");
+                comparer.Add(Expression.Assign(comparison, Expression.Call (variable1, equalsMethod, [variable2])));
+            }
+            else
+            {
+                comparer.Add(Expression.Assign(comparison, Expression.Constant(true)));
 
-                if (member1.Type.IsArray)
+                foreach (var field in DNSPacketHelpers.GetDNSFields(type))
                 {
-                    Expression member2 = PropertyOrField(variable2, field.Member);
-                    var elementType = member1.Type.GetElementType();
-                    var lengthMethod = member1.Type.GetMethod("Length");
-                    comparer.Add(Expression.Assign(comparison, Expression.Equal(Expression.Call(member1, lengthMethod), Expression.Call(member2, lengthMethod))));
-                    
-                    var variableI = Expression.Variable(typeof(int), "i");
-                    var variableLength = Expression.Variable(typeof(int), "length");
+                    Expression member1 = PropertyOrField(variable1, field.Member);
 
-                    var @break = Expression.Label("break");
-
-                    var equalsMethod = member1.Type.GetMethod("Equals", [member1.Type]);
-                    Expression comparerExpression;
-                    if (equalsMethod.GetParameters()[0].ParameterType == typeof(object))
+                    if (member1.Type.IsArray)
                     {
-                        comparerExpression = Expression.Assign(comparison, Expression.AndAlso(comparison, Expression.Call(Expression.ArrayIndex(member1, variableI), equalsMethod, [Expression.Convert(Expression.ArrayIndex(member2, variableI), typeof(object))])));
+                        CreateArrayComparer(comparer, variable2, comparison, field, member1);
+                        continue;
                     }
                     else
                     {
-                        comparerExpression = Expression.Assign(comparison, Expression.AndAlso(comparison, Expression.Call(Expression.ArrayIndex(member1, variableI), equalsMethod, [Expression.ArrayIndex(member2, variableI)])));
+                        Expression member2 = PropertyOrField(variable2, field.Member);
+                        comparer.Add(Expression.Assign(comparison, Expression.AndAlso(comparison, CreateEqualityComparer(member1, member2))));
                     }
-
-                    comparer.Add(
-                        Expression.IfThen(
-                            comparison,
-                            Expression.Block(
-                                Expression.Assign(variableI, Expression.Constant(0)),
-                                Expression.Assign(variableLength, Expression.Call(member1, lengthMethod)),
-                                Expression.Loop(
-                                    Expression.Block(
-                                        Expression.IfThen(Expression.GreaterThanOrEqual(variableI, variableLength), Expression.Break (@break)),
-                                        Expression.Assign(
-                                            comparison, 
-                                            Expression.AndAlso(
-                                                comparison, Expression.Call(Expression.ArrayIndex(member1, variableI), equalsMethod, Expression.ArrayIndex(member2, variableI))
-                                            )
-                                        ),
-                                        Expression.IfThen(Expression.Not(comparison), Expression.Break(@break)),
-                                        Expression.AddAssign(variableI, Expression.Constant(1))
-                                    ),
-                                    @break
-                                )
-                            )
-                        )
-                    );
-                }
-                else
-                {
-                    var equalsMethod = member1.Type.GetMethod("Equals", [member1.Type]);
-                    if (equalsMethod.GetParameters()[0].ParameterType == typeof(object)) {
-                        comparer.Add(Expression.Assign(comparison, Expression.AndAlso(comparison, Expression.Call(member1, equalsMethod, [Expression.Convert(PropertyOrField(variable2, field.Member), typeof(object))]))));
-                    } else {
-                        comparer.Add(Expression.Assign(comparison, Expression.AndAlso(comparison, Expression.Call(member1, equalsMethod, [PropertyOrField(variable2, field.Member)]))));
-                    }
-
                 }
             }
             comparer.Add(comparison);
@@ -127,6 +91,61 @@ namespace Utils.Net.DNS
             var comparerFunc = comparerLambda.Compile();
             this.comparers.Add(type, comparerFunc); 
             return comparerFunc;
+        }
+
+        private void CreateArrayComparer(List<Expression> comparer, ParameterExpression variable2, ParameterExpression comparison, (DNSFieldAttribute Attribute, MemberInfo Member) field, Expression member1)
+        {
+            Expression member2 = PropertyOrField(variable2, field.Member);
+            var elementType = member1.Type.GetElementType();
+            var lengthMethod = member1.Type.GetMethod("Length");
+            comparer.Add(Expression.Assign(comparison, Expression.Equal(Expression.Call(member1, lengthMethod), Expression.Call(member2, lengthMethod))));
+
+            var variableI = Expression.Variable(typeof(int), "i");
+            var variableLength = Expression.Variable(typeof(int), "length");
+
+            var @break = Expression.Label("break");
+
+            Expression comparerExpression = CreateEqualityComparer(Expression.ArrayIndex(member1, variableI), Expression.ArrayIndex(member2, variableI));
+
+            comparer.Add(
+                Expression.IfThen(
+                    comparison,
+                    Expression.Block(
+                        Expression.Assign(variableI, Expression.Constant(0)),
+                        Expression.Assign(variableLength, Expression.Call(member1, lengthMethod)),
+                        Expression.Loop(
+                            Expression.Block(
+                                Expression.IfThen(Expression.GreaterThanOrEqual(variableI, variableLength), Expression.Break(@break)),
+                                Expression.Assign(
+                                    comparison,
+                                    Expression.AndAlso(
+                                        comparison, comparerExpression
+                                    )
+                                ),
+                                Expression.IfThen(Expression.Not(comparison), Expression.Break(@break)),
+                                Expression.AddAssign(variableI, Expression.Constant(1))
+                            ),
+                            @break
+                        )
+                    )
+                )
+            );
+        }
+
+        private Expression CreateEqualityComparer(Expression member1, Expression member2)
+        {
+            var equalsMethod = member1.Type.GetMethod("Equals", [member2.Type]);
+            if (equalsMethod.GetParameters()[0].ParameterType != typeof(object))
+            {
+                return Expression.Call(member1, equalsMethod, [member2]);
+            }
+            var opEqualsMethod = member1.Type.GetMethod("op_Equality", [member1.Type, member2.Type]);
+            if (opEqualsMethod != null)
+            {
+                return Expression.Call(null, opEqualsMethod, [member1, member2]);
+            }
+            return Expression.Call(member1, equalsMethod, [Expression.Convert(member2, typeof(object))]);
+
         }
 
         private Func<DNSElement, int> CreateGetHasCode(Type type)

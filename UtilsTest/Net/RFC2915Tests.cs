@@ -67,7 +67,7 @@ namespace UtilsTest.Net
                 0x2E, 0x6F, 0x72, 0x67, // sip:info@example.org
             };
 
-            var DNSReader = new DNSPacketReader(typeof(NAPTR));
+            var DNSReader = new DNSPacketReader(DNSFactory.Default);
             DNSHeader header = DNSReader.Read(datagram);
 
             var naptr = (NAPTR)header.Responses[0].RData;

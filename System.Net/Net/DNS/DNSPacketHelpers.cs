@@ -28,7 +28,7 @@ internal static class DNSPacketHelpers
     }
 
 
-        public static Expression ConditionBuilder(Expression obj, string condition)
+    public static Expression ConditionBuilder(Expression obj, string condition)
     {
         var type = obj.Type;
         int lastPosition = 0;

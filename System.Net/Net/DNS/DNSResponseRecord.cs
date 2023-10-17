@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Utils.Net.DNS
 {
-    public sealed class DNSResponseRecord : DNSElement
+    public sealed class DNSResponseRecord : DNSElement, ICloneable
     {
         /*
             +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -60,6 +60,12 @@ namespace Utils.Net.DNS
             }
         }
 
-        public override string ToString() => $"{Name} ({RData.Name}) : {RData}, TTL : {TTL}";
-	}
+        public override string ToString() => 
+           $"""
+            {RData.Name} {Name} {Class}, TTL : {TTL}
+            	{RData.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}
+            """;
+
+        public object Clone() => new { Name, TTL, Class, RDLength, RData = (DNSResponseDetail)rData.Clone() };
+    }
 }

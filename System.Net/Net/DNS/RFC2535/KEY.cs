@@ -391,17 +391,17 @@ public class KEY : DNSResponseDetail
 static class KeyFlags
 {
     // Bits 0 and 1 : Key usage
-    public const ushort ProhibitedForAuthentication = (ushort)0b1000_0000_0000_0000;
-    public const ushort ProhibitedForConfidentiality = (ushort)0b0100_0000_0000_0000;
+    public const ushort ProhibitedForAuthentication = 0b_1000_0000_0000_0000;
+    public const ushort ProhibitedForConfidentiality = 0b_0100_0000_0000_0000;
 
     // Bit 3 : Exntension flag
-    public const ushort Extension = (ushort)0b0001_0000_0000_0000;
+    public const ushort Extension = 0b_0001_0000_0000_0000;
 
     // Bits 6 and 7 : Key owner
-    public const ushort UserOrAccountKey = (ushort)0b0000_0000_0000_0000;
-    public const ushort ZoneKey = (ushort)0b0000_0010_0000_0000;
-    public const ushort NonZoneKey = (ushort)0b0000_0100_0000_0000;
-    public const ushort ReservedUseKey = (ushort)0b0000_0110_0000_0000;
+    public const ushort UserOrAccountKey = 0b_0000_0000_0000_0000;
+    public const ushort ZoneKey = 0b_0000_0010_0000_0000;
+    public const ushort NonZoneKey = 0b_0000_0100_0000_0000;
+    public const ushort ReservedUseKey = 0b_0000_0110_0000_0000;
 }
 
 public enum KeyOwner : ushort
@@ -417,16 +417,16 @@ static class KeyFlagsMasks
     /// <summary>
     /// Bits 0 and 1 : Key usage
     /// </summary>
-    public const ushort KeyUsage = (ushort)0b1100_0000_0000_0000;
+    public const ushort KeyUsage = 0b_1100_0000_0000_0000;
 
     /// <summary>
     /// Bit 3 : Extension flag
     /// </summary>
-    public const ushort Extension = (ushort)0b0001_0000_0000_0000;
+    public const ushort Extension = 0b_0001_0000_0000_0000;
     /// <summary>
     /// Bits 6 and 7 : Key owner
     /// </summary>
-    public const ushort KeyOwner = (ushort)0b0000_0110_0000_0000;
+    public const ushort KeyOwner = 0b_0000_0110_0000_0000;
     /// <summary>
     /// Bits 12-15 : SignatoryField
     ///  If non-zero, they indicate
@@ -435,70 +435,6 @@ static class KeyFlagsMasks
     ///  6 and 7 above) always have authority to sign any RRs in
     ///  the zone regardless of the value of the signatory field.
     /// </summary>
-    public const ushort SignatoryField = (ushort)0b0000_0000_0000_1111;
+    public const ushort SignatoryField = 0b_0000_0000_0000_1111;
 }
 
-public enum Protocol : byte
-{
-    /// <summary>
-    /// Reserved
-    /// </summary>
-    Reserved = 0,
-    /// <summary>
-    /// for use in connection with TLS.
-    /// </summary>
-    TLS = 1,
-    /// <summary>
-    /// for use in connection with email.
-    /// </summary>
-    email = 2,
-    /// <summary>
-    /// DNS security.  The protocol field SHOULD be set to
-    ///  this value for zone keys and other keys used in DNS security.
-    ///  Implementations that can determine that a key is a DNS
-    ///  security key by the fact that flags label it a zone key or the
-    ///  signatory flag field is non-zero are NOT REQUIRED to check the
-    ///  protocol field.
-    /// </summary>
-    dnssec = 3,
-    /// <summary>
-    /// Oakley/IPSEC <see cref="https://datatracker.ietf.org/doc/html/rfc2401">[RFC 2401]</see> protocol
-    ///  and indicates that this key is valid for use in conjunction
-    ///  with that security standard.  This key could be used in
-    ///  connection with secured communication on behalf of an end
-    ///  entity or user whose name is the owner name of the KEY RR if
-    ///  the entity or user flag bits are set.  The presence of a KEY
-    ///  resource with this protocol value is an assertion that the
-    ///  host speaks Oakley/IPSEC.
-    /// </summary>
-    IPSEC = 4,
-    /// <summary>
-    /// indicates that the key can be used in connection with any
-    ///  protocol for which KEY RR protocol octet values have been
-    ///  defined.  The use of this value is discouraged and the use of
-    ///  different keys for different protocols is encouraged.
-    /// </summary>
-    All = 255
-}
-
-/// <summary>
-/// Algorithm Number Specification
-/// </summary>
-public enum Algorithm : byte
-{
-    /// <summary>
-    /// Reserved
-    /// </summary>
-    Reserved1 = 0,
-    RSA_MD5 = 1,
-    DiffieHellman = 2,
-    DSA = 3,
-    EllipticCurve = 4,
-    IndirectKey = 252,
-    Private_DomainName = 253,
-    Private_OID = 254,
-    /// <summary>
-    /// Reserved
-    /// </summary>
-    Reserved2 = 255
-}

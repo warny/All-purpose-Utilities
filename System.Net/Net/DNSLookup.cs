@@ -35,6 +35,17 @@ namespace Utils.Net
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="DNSLookup"/> class with custom name servers.
+        /// </summary>
+        /// <param name="nameServers">Array of IP addresses representing DNS name servers.</param>
+        public DNSLookup(DNSFactory factory, params IPAddress[] nameServers)
+        {
+            packetWriter = new DNSPacketWriter(factory);
+            packetReader = new DNSPacketReader(factory);
+            NameServers = nameServers;
+        }
+
+        /// <summary>
         /// Gets or sets the array of IP addresses representing DNS name servers.
         /// </summary>
         public IPAddress[] NameServers { get; set; }

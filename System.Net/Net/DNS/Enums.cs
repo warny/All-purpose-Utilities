@@ -1,0 +1,83 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Utils.Net.DNS;
+
+
+/// <summary>
+/// Algorithm Number Specification
+/// </summary>
+public enum Algorithm : byte
+{
+    /// <summary>
+    /// Reserved
+    /// </summary>
+    Reserved1 = 0,
+    RSA_MD5 = 1,
+    DiffieHellman = 2,
+    DSA_SHA1 = 3,
+    EllipticCurve = 4,
+    RSA_SHA1 = 5,
+    IndirectKey = 252,
+    Private_DomainName = 253,
+    Private_OID = 254,
+    /// <summary>
+    /// Reserved
+    /// </summary>
+    Reserved2 = 255
+}
+
+/// <summary>
+/// Protocol which the key is to be used with
+/// </summary>
+public enum Protocol : byte
+{
+    /// <summary>
+    /// Reserved
+    /// </summary>
+    Reserved = 0,
+    /// <summary>
+    /// for use in connection with TLS.
+    /// </summary>
+    TLS = 1,
+    /// <summary>
+    /// for use in connection with email.
+    /// </summary>
+    email = 2,
+    /// <summary>
+    /// DNS security.  The protocol field SHOULD be set to
+    ///  this value for zone keys and other keys used in DNS security.
+    ///  Implementations that can determine that a key is a DNS
+    ///  security key by the fact that flags label it a zone key or the
+    ///  signatory flag field is non-zero are NOT REQUIRED to check the
+    ///  protocol field.
+    /// </summary>
+    dnssec = 3,
+    /// <summary>
+    /// Oakley/IPSEC <see cref="https://datatracker.ietf.org/doc/html/rfc2401">[RFC 2401]</see> protocol
+    ///  and indicates that this key is valid for use in conjunction
+    ///  with that security standard.  This key could be used in
+    ///  connection with secured communication on behalf of an end
+    ///  entity or user whose name is the owner name of the KEY RR if
+    ///  the entity or user flag bits are set.  The presence of a KEY
+    ///  resource with this protocol value is an assertion that the
+    ///  host speaks Oakley/IPSEC.
+    /// </summary>
+    IPSEC = 4,
+    /// <summary>
+    /// indicates that the key can be used in connection with any
+    ///  protocol for which KEY RR protocol octet values have been
+    ///  defined.  The use of this value is discouraged and the use of
+    ///  different keys for different protocols is encouraged.
+    /// </summary>
+    All = 255
+}
+
+public enum DigestTypes : byte
+{
+    Reserved = 0,
+    SHA1 = 1,
+}
+
+

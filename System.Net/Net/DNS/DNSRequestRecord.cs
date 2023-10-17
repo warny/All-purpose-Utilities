@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS
 {
-	public class DNSRequestRecord	: DNSElement
+    public class DNSRequestRecord : DNSElement, ICloneable
 	{
         /*
             +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -41,5 +41,7 @@ namespace Utils.Net.DNS
         public string Type { get; set; }
 
         public override string ToString() => $"Request {Type} : {Name} ({Class})";
-	}
+
+        public object Clone() => new { Name, Class, Type };
+    }
 }
