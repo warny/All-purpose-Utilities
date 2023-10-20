@@ -130,11 +130,11 @@ namespace Utils.Net.DNS
             {
                 callExpression = getWriterFunction(datasParameter, assignationSource, dnsField);
             }
-            else if (GetObjectConverter(assignationSource, typeof(byte[]), out var builderToBytes))
+            else if (TryGetConverter(assignationSource, typeof(byte[]), out var builderToBytes))
             {
                 callExpression = WriterExpressions[typeof(byte[])](datasParameter, builderToBytes, dnsField);
             }
-            else if (GetObjectConverter(assignationSource, typeof(string), out var builderToString))
+            else if (TryGetConverter(assignationSource, typeof(string), out var builderToString))
             {
                 callExpression = WriterExpressions[typeof(string)](datasParameter, builderToString, dnsField);
             }
@@ -160,7 +160,7 @@ namespace Utils.Net.DNS
             return callExpression;
         }
 
-        private bool GetObjectConverter(Expression source, Type outType, out Expression builder)
+        private bool TryGetConverter(Expression source, Type outType, out Expression builder)
         {
             var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m => m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type);
             if (methodStatic != null)

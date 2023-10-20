@@ -114,11 +114,11 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         if (ReaderExpressions.TryGetValue(uType, out var getFunction) ) {
             callExpression = getFunction(datasParameter, dnsField);
         }
-        else if (GetObjectBuilder(uType, ReaderExpressions[typeof(byte[])](datasParameter, dnsField), out var builderBytesRaw))
+        else if (TryGetObjectBuilder(uType, ReaderExpressions[typeof(byte[])](datasParameter, dnsField), out var builderBytesRaw))
         {
             callExpression = builderBytesRaw;
         }
-        else if (GetObjectBuilder(uType, ReaderExpressions[typeof(string)](datasParameter, dnsField), out var builderString))
+        else if (TryGetObjectBuilder(uType, ReaderExpressions[typeof(string)](datasParameter, dnsField), out var builderString))
         {
             callExpression = builderBytesRaw;
         }
@@ -142,7 +142,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         return assignExpression;
     }
 
-    private static bool GetObjectBuilder(Type type, Expression datasExpression, out Expression builder)
+    private static bool TryGetObjectBuilder(Type type, Expression datasExpression, out Expression builder)
     {
         var constructor = type.GetConstructor([datasExpression.Type]);
         if (constructor != null)
