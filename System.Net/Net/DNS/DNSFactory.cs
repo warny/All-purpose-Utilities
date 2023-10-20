@@ -23,7 +23,7 @@ namespace Utils.Net.DNS
         private static IReadOnlyList<Type> GetDNSClasses(IEnumerable<Type> types)
             => types
                 .Where(t => typeof(DNSResponseDetail).IsAssignableFrom(t))
-                .Where(t => t.GetCustomAttributes<DNSClassAttribute>().Any())
+                .Where(t => t.GetCustomAttributes<DNSRecordAttribute>().Any())
                 .ToImmutableList();
 
         public IReadOnlyList<Type> DNSTypes { get; }
@@ -41,12 +41,12 @@ namespace Utils.Net.DNS
 
             foreach (var dnsType in DNSTypes)
             {
-                foreach (var dnsClass in dnsType.GetCustomAttributes<DNSClassAttribute>())
+                foreach (var dnsClass in dnsType.GetCustomAttributes<DNSRecordAttribute>())
                 {
                     string name = dnsClass.Name ?? dnsType.Name;
-                    dnsResponsesById.Add(dnsClass.ClassId, dnsType);
-                    dnsClassNameById.Add(dnsClass.ClassId, name);
-                    dnsClassIdByName.Add(name, dnsClass.ClassId);
+                    dnsResponsesById.Add(dnsClass.RecordId, dnsType);
+                    dnsClassNameById.Add(dnsClass.RecordId, name);
+                    dnsClassIdByName.Add(name, dnsClass.RecordId);
                 }
             }
             this.DNSResponsesById = dnsResponsesById.ToImmutableDictionary();

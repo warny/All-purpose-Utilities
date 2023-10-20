@@ -175,7 +175,7 @@ namespace Utils.Net.DNS
     {
         public static readonly Type dnsRequestRecordType = typeof(DNSRequestRecord);
         public static readonly Type dnsResponseDetailType = typeof(DNSResponseDetail);
-        public static readonly Type dnsClassAttributeType = typeof(DNSClassAttribute);
+        public static readonly Type dnsClassAttributeType = typeof(DNSRecordAttribute);
     }
 }
 

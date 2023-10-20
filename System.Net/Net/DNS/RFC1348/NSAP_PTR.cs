@@ -8,7 +8,7 @@ namespace Utils.Net.DNS.RFC1348;
 /// domain name-to-NSAP mapping
 /// </summary>
 /// <see cref="https://datatracker.ietf.org/doc/html/rfc1348"/>
-[DNSClass(0x16, "NSAP-PTR")]
+[DNSRecord("IN", 0x16, "NSAP-PTR")]
 public class NSAP_PTR : DNSResponseDetail
 {
     [DNSField]

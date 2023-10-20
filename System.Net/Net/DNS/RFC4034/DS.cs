@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC4034
 {
-    [DNSClass(0x2B)]
+    [DNSRecord("IN", 0x2B)]
     public class DS : DNSResponseDetail
     {
         /*

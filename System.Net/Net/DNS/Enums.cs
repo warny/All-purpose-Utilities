@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Utils.Net.DNS;
@@ -78,6 +79,62 @@ public enum DigestTypes : byte
 {
     Reserved = 0,
     SHA1 = 1,
+}
+
+public enum CertificateTypes : ushort
+{
+    /// <summary>
+    /// Reserved
+    /// </summary>
+    Reserved = 0,
+    /// <summary>
+    /// X.509 as per PKIX
+    /// </summary>
+    PKIX = 1,
+    /// <summary>
+    /// SPKI certificate
+    /// </summary>
+    SPKI = 2,
+    /// <summary>
+    /// OpenPGP packet
+    /// </summary>
+    PGP = 3,
+    /// <summary>
+    /// The URL of an X.509 data object
+    /// </summary>
+    IPKIX = 4,
+    /// <summary>
+    /// The URL of an SPKI certificate
+    /// </summary>
+    ISPKI = 5,
+    /// <summary>
+    /// The fingerprint and URL of an OpenPGP packet
+    /// </summary>
+    IPGP = 6,
+    /// <summary>
+    /// Attribute Certificate
+    /// </summary>
+    ACPKIX = 7,
+    /// <summary>
+    /// The URL of an Attribute Certificate
+    /// </summary>
+    IACPKIX = 8,
+    /// <summary>
+    /// URI private
+    /// </summary>
+    URI = 253,
+    /// <summary>
+    /// OID private
+    /// </summary>
+    OID = 254,
+    /// <summary>
+    /// Reserved
+    /// </summary>
+    ReservedFF = 255,
+    /// <summary>
+    /// Reserved
+    /// </summary>
+    ReservedFFFF = 65535
 }
 
 

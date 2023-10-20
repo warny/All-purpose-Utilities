@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace Utils.Net.DNS.RFC2535;
 
-[DNSClass(0x19)]
+[DNSRecord("IN", 0x19)]
 public class KEY : DNSResponseDetail
 {
     /*

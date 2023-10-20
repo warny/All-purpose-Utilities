@@ -5,7 +5,7 @@ using Utils.Net;
 
 namespace Utils.Net.DNS.RFC1183;
 
-[DNSClass(0x13)]
+[DNSRecord("IN", 0x13)]
 public class X25 : DNSResponseDetail
 {
     //La représentation du ISDN est fausse, mais je n'ai pas trouvé les specs détaillées de l'enregistrement

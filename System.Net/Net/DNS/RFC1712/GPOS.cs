@@ -6,7 +6,7 @@ using Utils.Net.Structures;
 
 namespace Utils.Net.DNS.RFC1712
 {
-    [DNSClass(0x1B)]
+    [DNSRecord("IN", 0x1B)]
     public class GPOS : DNSResponseDetail
     {
         [DNSField(FieldConstants.PREFIXED_SIZE)]

@@ -9,7 +9,7 @@ namespace Utils.Net.DNS.RFC2052;
 /// Define a specific server for an application
 /// </summary>
 /// <see cref="https://datatracker.ietf.org/doc/html/rfc2782"/>
-[DNSClass(0x21)]
+[DNSRecord("IN", 0x21)]
 public class SRV : DNSResponseDetail
 {
     [DNSField]

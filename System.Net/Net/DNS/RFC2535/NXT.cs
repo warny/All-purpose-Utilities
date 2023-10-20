@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC2535
 {
-	[DNSClass(0x28)]
+	[DNSRecord("IN", 0x28)]
     public class NXT : DNSResponseDetail
     {
         /*

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1035;
 
-[DNSClass(0x0C)]
+[DNSRecord("IN", 0x0C)]
 public class PTR : DNSResponseDetail
 {
     /*
