@@ -116,14 +116,14 @@ namespace Utils.Net.DNS
                 ? Expression.Property(element, (PropertyInfo)field)
                 : Expression.Field(element, (FieldInfo)field);
 
-            var uType = type.IsEnum ? type.GetEnumUnderlyingType() : type;
-            if (type.IsEnum)
+            Type underLyingType = DNSPacketHelpers.GetUnderlyingType(type);
+            if (type != underLyingType)
             {
-                assignationSource = Expression.Convert(assignationSource, uType);
+                assignationSource = Expression.Convert(assignationSource, underLyingType);
             }
 
             Expression callExpression = null;
-            if (WriterExpressions.TryGetValue(uType, out var getWriterFunction))
+            if (WriterExpressions.TryGetValue(underLyingType, out var getWriterFunction))
             {
                 callExpression = getWriterFunction(datasParameter, assignationSource, dnsField);
             }

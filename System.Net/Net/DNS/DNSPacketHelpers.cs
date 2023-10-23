@@ -60,7 +60,7 @@ internal static class DNSPacketHelpers
         if (match.Length != length) throw new NotSupportedException($"{condition.Substring(lastPosition, position - 1)} is not a valid condition");
 
         //traite la valeur de gauche
-        Expression left = CreateMember(obj, type, match.Groups["left"].Value);
+        Expression left = CreateMember(obj, type, null, match.Groups["left"].Value);
 
         if (match.Groups["comparison"].Success)
         {
@@ -137,7 +137,7 @@ internal static class DNSPacketHelpers
         }
         else if (match.Groups["right"].Success)
         {
-            right = CreateMember(obj, type, match.Groups["right"].Value);
+            right = CreateMember(obj, type, left.Type, match.Groups["right"].Value);
         }
         else
         {
@@ -168,10 +168,9 @@ internal static class DNSPacketHelpers
         return Expression.Constant(result, type);
     }
 
-    private static Expression CreateMember(Expression obj, Type type, string name)
+    private static Expression CreateMember(Expression obj, Type type, Type leftType, string name)
     {
-        var member = type.GetMember(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault(m => m is FieldInfo || m is PropertyInfo)
-            ?? throw new MissingMemberException(type.FullName, name);
+        var member = type.GetMember(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault(m => m is FieldInfo || m is PropertyInfo);
 
         if (member != null)
         {
@@ -182,11 +181,10 @@ internal static class DNSPacketHelpers
                 _ => throw new MissingMemberException(type.FullName, name)
             };
         }
-        if (obj.Type.IsEnum)
+        if (leftType is not null && leftType.IsEnum)
         {
-            var field = obj.Type.GetField(name, BindingFlags.Public | BindingFlags.Static);
-            if (field == null) throw new MissingMemberException(type.FullName, name);
-            return Expression.Constant(field.GetValue(null), obj.Type);
+            var value = Enum.Parse(leftType, name, true);
+            return Expression.Constant(value, leftType);
         }
         throw new MissingMemberException(type.FullName, name);
     }
@@ -305,5 +303,19 @@ internal static class DNSPacketHelpers
         builder = null;
         return false;
     }
+
+
+    public static Type GetUnderlyingType(Type type)
+    {
+        if (type.IsEnum) return type.GetEnumUnderlyingType();
+
+        if (type.IsGenericType && typeof(Nullable<>) == type.GetGenericTypeDefinition())
+        {
+            return type.GetGenericArguments()[0];
+        }
+
+        return type;
+    }
+
 
 }

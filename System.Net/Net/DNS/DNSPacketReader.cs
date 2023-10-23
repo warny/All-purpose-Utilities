@@ -105,17 +105,18 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
             ? Expression.Property(resultVariable, (PropertyInfo)field)
             : Expression.Field(resultVariable, (FieldInfo)field);
 
-        var uType = type.IsEnum ? type.GetEnumUnderlyingType() : type;
+        Type underLyingType = DNSPacketHelpers.GetUnderlyingType(type);
 
         Expression callExpression = null;
-        if (ReaderExpressions.TryGetValue(uType, out var getFunction) ) {
+        if (ReaderExpressions.TryGetValue(underLyingType, out var getFunction))
+        {
             callExpression = getFunction(datasParameter, dnsField);
         }
-        else if (DNSPacketHelpers.TryGetConverter(ReaderExpressions[typeof(byte[])](datasParameter, dnsField), uType, out var builderBytesRaw))
+        else if (DNSPacketHelpers.TryGetConverter(ReaderExpressions[typeof(byte[])](datasParameter, dnsField), underLyingType, out var builderBytesRaw))
         {
             callExpression = builderBytesRaw;
         }
-        else if (DNSPacketHelpers.TryGetConverter(ReaderExpressions[typeof(string)](datasParameter, dnsField), uType, out var builderString))
+        else if (DNSPacketHelpers.TryGetConverter(ReaderExpressions[typeof(string)](datasParameter, dnsField), underLyingType, out var builderString))
         {
             callExpression = builderString;
         }
@@ -124,7 +125,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
             throw new NotSupportedException();
         }
 
-        if (uType != type)
+        if (underLyingType != type)
         {
             callExpression = Expression.Convert(callExpression, type);
         }

@@ -137,4 +137,30 @@ public enum CertificateTypes : ushort
     ReservedFFFF = 65535
 }
 
+public enum SSHAlgorithm : byte
+{
+    Reserved = 0,
+    RSA = 1,
+    DSS = 2
+}
 
+public enum SSHFingerprintType : byte
+{
+    Reserved = 0,
+    SHA1 = 1
+}
+
+public enum GatewayType : byte
+{
+    NoGateway = 0,
+    IPV4GatewayAddress = 1,
+    IPV6GatewayAddress = 2,
+    WireEncodedDomain = 3,
+}
+
+public enum IPSecAlgorithm : byte
+{
+    NoKey = 0,
+    DSAKey = 1,
+    RSAKey = 2
+}

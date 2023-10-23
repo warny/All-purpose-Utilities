@@ -5,7 +5,7 @@ using System.Text;
 namespace Utils.Net.DNS.RFC3123
 {
     [DNSRecord("IN", 0x2A)]
-    public class APL
+    public class APL : DNSResponseDetail
     {
         /*
            The RDATA section consists of zero or more items (<apitem>) of the
