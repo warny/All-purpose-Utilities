@@ -23,6 +23,7 @@ namespace Utils.Net.DNS
 
 	public static class FieldConstants
 	{
-		public const int PREFIXED_SIZE = -1;
-	}
+		public const int PREFIXED_SIZE_1B = -1;
+        public const int PREFIXED_SIZE_2B = -2;
+    }
 }

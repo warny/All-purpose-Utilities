@@ -167,10 +167,18 @@ namespace Utils.Net.DNS
 
             public void WriteBytes(byte[] b, int length)
             {
-                if (length == FieldConstants.PREFIXED_SIZE)
-                {
-                    length = b.Length;
-                    WriteByte((byte)length);
+                switch (length) {
+                    case 0:
+                        length = b.Length; 
+                        break;
+                    case FieldConstants.PREFIXED_SIZE_1B:
+                        length = b.Length;
+                        WriteByte((byte)length);
+                        break;
+                    case FieldConstants.PREFIXED_SIZE_2B:
+                        length = b.Length;
+                        WriteUShort((ushort)length);
+                        break;
                 }
                 Array.Copy(b, 0, Datagram, Position, length);
                 Position += length;

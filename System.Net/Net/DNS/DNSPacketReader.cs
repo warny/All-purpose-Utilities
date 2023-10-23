@@ -162,10 +162,12 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         public byte[] ReadBytes(int length)
         {
-            if (length == FieldConstants.PREFIXED_SIZE)
+            length = length switch
             {
-                length = ReadByte();
-            }
+                FieldConstants.PREFIXED_SIZE_1B => ReadByte(),
+                FieldConstants.PREFIXED_SIZE_2B => (ReadByte() << 8) | ReadByte(),
+                _ => length
+            };
             byte[] result = new byte[length];
             Array.Copy(Datagram, Position, result, 0, length);
             Position += length;

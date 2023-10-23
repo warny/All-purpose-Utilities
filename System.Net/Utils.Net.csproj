@@ -14,8 +14,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Net\DNS\RFC2671\" />
-  </ItemGroup>
-
 </Project>

@@ -14,16 +14,16 @@ namespace Utils.Net.DNS.RFC2915
         [DNSField]
         public ushort Preference { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE)]
+        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
         public string Flags { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE)]
+        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
         public string Service { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE)]
+        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
         public string Regexp { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE)]
+        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
         public string Replacement { get; set; }
 
 
