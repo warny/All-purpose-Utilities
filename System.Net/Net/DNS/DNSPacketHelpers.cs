@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -233,5 +234,76 @@ internal static class DNSPacketHelpers
         }
     }
 
+
+    public static Expression CreateExpressionCall(Expression expression, string name, params Expression[] arguments)
+    {
+        Type[] argumentTypes = arguments.Select(a => a.Type).ToArray();
+        var method = expression.Type.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, argumentTypes, null);
+        return Expression.Call(expression, method, arguments);
+    }
+
+    /// <summary>
+    /// Try to get a conversion method from an expression or the target type
+    /// This function searches 
+    /// </summary>
+    /// <param name="source">Source expression to get a convert from</param>
+    /// <param name="outType">Target Type to get a convert to</param>
+    /// <param name="builder">Resulting expression</param>
+    /// <returns></returns>
+    public static bool TryGetConverter(Expression source, Type outType, out Expression builder)
+    {
+        var methodsInstance = source.Type
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Where(m => m.ReturnType == outType && m.GetParameters().Length == 0)
+            .ToArray();
+
+        foreach (var method in new MethodInfo[] {
+                methodsInstance.FirstOrDefault(m => m.Name.StartsWith("As")),
+                methodsInstance.FirstOrDefault(m => m.Name.StartsWith("To")),
+                methodsInstance.FirstOrDefault(),
+            }.Where(m => m is not null))
+        {
+                builder = Expression.Call(source, method);
+                return true;
+        }
+
+        var methodsStatic = source.Type
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(m => m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type)
+            .ToArray();
+
+        var methodsTarget = outType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(m => m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type)
+            .ToArray();
+
+        foreach (var method in new MethodInfo[] {
+                methodsStatic.FirstOrDefault(m => m.Name.StartsWith("As")),
+                methodsStatic.FirstOrDefault(m => m.Name.StartsWith("To")),
+                methodsStatic.FirstOrDefault(),
+                methodsTarget.FirstOrDefault(m => m.Name.StartsWith("From")),
+                methodsTarget.FirstOrDefault(m => m.Name.StartsWith("Parse")),
+                methodsTarget.FirstOrDefault(),
+            }.Where(m => m is not null))
+        {
+            builder = Expression.Call(method, source);
+            return true;
+        }
+
+        var constructorTarget = outType
+            .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            .Where(m => m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type)
+            .Where(c => c is not null)
+            .ToArray();
+
+        foreach (var constructor in constructorTarget)
+        {
+            builder = Expression.New(constructor, source);
+            return true;
+        }
+
+        builder = null;
+        return false;
+    }
 
 }

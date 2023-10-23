@@ -25,13 +25,10 @@ namespace Utils.Net.DNS
             WriteHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
             WriteRequestRecord = CreateReader<DNSRequestRecord>(typeof(DNSRequestRecord));
             WriteResponseRecord = CreateReader<DNSResponseRecord>(typeof(DNSResponseRecord));
-            foreach (var factory in factories)
-            {
-                foreach (var dnsElementType in factory.DNSTypes)
-                {
-                    CreateReader(dnsElementType);
-                }
 
+            foreach (var dnsElementType in factories.SelectMany(f => f.DNSTypes))
+            {
+                CreateReader(dnsElementType);
             }
         }
 
@@ -92,23 +89,23 @@ namespace Utils.Net.DNS
         }
 
         private IReadOnlyDictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression>> WriterExpressions {get;} = new Dictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression>>() {
-                { typeof(byte), (datasParameter, assignationSource, dnsField) => CreateExpressionCall(datasParameter, nameof(Datas.WriteByte), assignationSource) },
-                { typeof(ushort), (datasParameter, assignationSource, dnsField) => CreateExpressionCall(datasParameter, nameof(Datas.WriteUShort), assignationSource) },
-                { typeof(uint), (datasParameter, assignationSource, dnsField) => CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource) },
-                { typeof(DNSDomainName), (datasParameter, assignationSource, dnsField) => CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource) },
+                { typeof(byte), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteByte), assignationSource) },
+                { typeof(ushort), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteUShort), assignationSource) },
+                { typeof(uint), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource) },
+                { typeof(DNSDomainName), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource) },
                 {
                     typeof(byte[]),
                     (datasParameter, assignationSource, dnsField)
                         => dnsField.Length != 0
-                        ? CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))
-                        : CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource)
+                        ? DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))
+                        : DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource)
                 },
                 {
                     typeof(string),
                     (datasParameter, assignationSource, dnsField)
                         => dnsField.Length != 0
-                        ? CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))
-                        : CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource)
+                        ? DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))
+                        : DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource)
                 },
             };
 
@@ -130,11 +127,11 @@ namespace Utils.Net.DNS
             {
                 callExpression = getWriterFunction(datasParameter, assignationSource, dnsField);
             }
-            else if (TryGetConverter(assignationSource, typeof(byte[]), out var builderToBytes))
+            else if (DNSPacketHelpers.TryGetConverter(assignationSource, typeof(byte[]), out var builderToBytes))
             {
                 callExpression = WriterExpressions[typeof(byte[])](datasParameter, builderToBytes, dnsField);
             }
-            else if (TryGetConverter(assignationSource, typeof(string), out var builderToString))
+            else if (DNSPacketHelpers.TryGetConverter(assignationSource, typeof(string), out var builderToString))
             {
                 callExpression = WriterExpressions[typeof(string)](datasParameter, builderToString, dnsField);
             }
@@ -150,35 +147,6 @@ namespace Utils.Net.DNS
             }
 
             return callExpression;
-        }
-
-        private static Expression CreateExpressionCall(ParameterExpression datasParameter, string name, params Expression[] arguments)
-        {
-            Type[] argumentTypes = arguments.Select(a => a.Type).ToArray();
-            var method = typeof(Datas).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, argumentTypes, null);
-            Expression callExpression = Expression.Call(datasParameter, method, arguments);
-            return callExpression;
-        }
-
-        private bool TryGetConverter(Expression source, Type outType, out Expression builder)
-        {
-            var methodStatic = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m => m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type);
-            if (methodStatic != null)
-            {
-                builder = Expression.Call(null, methodStatic, source);
-                return true;
-            }
-
-            var methodInstance = source.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(m => m.ReturnType == outType && m.GetParameters().Length == 0);
-            if (methodInstance != null)
-            {
-                builder = Expression.Call(source, methodInstance);
-                return true;
-            }
-
-
-            builder = null;
-            return false;
         }
 
         private class Datas
