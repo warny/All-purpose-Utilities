@@ -9,13 +9,13 @@ namespace Utils.Net.DNS.RFC1712
     [DNSRecord("IN", 0x1B)]
     public class GPOS : DNSResponseDetail
     {
-        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
+        [DNSField(FieldsSizeOptions.PrefixedSize1B)]
         public StringEncodedDouble Longitude { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
+        [DNSField(FieldsSizeOptions.PrefixedSize1B)]
         public StringEncodedDouble Latitude { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
+        [DNSField(FieldsSizeOptions.PrefixedSize1B)]
         public StringEncodedDouble Altitude { get; set; }
     }
 }

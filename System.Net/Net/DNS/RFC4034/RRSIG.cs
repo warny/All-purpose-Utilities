@@ -56,7 +56,7 @@ namespace Utils.Net.DNS.RFC4034
         [DNSField]
         public ushort KeyTag { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
+        [DNSField(FieldsSizeOptions.PrefixedSize1B)]
         public string SignerName { get; set; }
 
         [DNSField]

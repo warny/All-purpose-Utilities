@@ -10,6 +10,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.Net.Expressions;
+using Utils.Reflection;
 
 namespace Utils.Net.DNS;
 
@@ -57,7 +59,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var fieldsReaders = new List<Expression>();
         fieldsReaders.Add(Expression.Assign(resultVariable, Expression.New(dnsElementType)));
 
-        foreach(var field in DNSPacketHelpers.GetDNSFields(dnsElementType)) {
+        foreach (var field in DNSPacketHelpers.GetDNSFields(dnsElementType)) {
             Expression assignExpression = CreateExpression(datasParameter, resultVariable, field.Member, field.Attribute);
             fieldsReaders.Add(assignExpression);
         }
@@ -77,25 +79,41 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         return expression.Compile();
     }
 
-    private IReadOnlyDictionary<Type, Func<ParameterExpression, DNSFieldAttribute, Expression>> ReaderExpressions { get; } = 
-        new Dictionary<Type, Func<ParameterExpression, DNSFieldAttribute, Expression>>()
+    private IReadOnlyDictionary<Type, Func<ParameterExpression, ParameterExpression, DNSFieldAttribute, Expression>> ReaderExpressions { get; } = 
+        new Dictionary<Type, Func<ParameterExpression, ParameterExpression, DNSFieldAttribute, Expression>>()
         {
-            { typeof(byte), (datasParameter, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte)) },
-            { typeof(ushort), (datasParameter, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadUShort)) },
-            { typeof(uint), (datasParameter, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadUInt)) },
+            { typeof(byte), (datasParameter, resultVariable, dnsField) => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte), BindingFlags.Public | BindingFlags.NonPublic) },
+            { typeof(ushort), (datasParameter, resultVariable, dnsField) => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadUShort), BindingFlags.Public | BindingFlags.NonPublic) },
+            { typeof(uint), (datasParameter, resultVariable, dnsField) => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadUInt), BindingFlags.Public | BindingFlags.NonPublic) },
             {
-                typeof(byte[]), (datasParameter, dnsField)
-                    => dnsField.Length != 0
-                    ? DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), Expression.Constant(dnsField.Length, typeof(int)))
-                    : DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes))
+                typeof(byte[]), (datasParameter, resultVariable, dnsField)
+                    => dnsField.Length switch {
+                        int length => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), BindingFlags.Public | BindingFlags.NonPublic, Expression.Constant(length, typeof(int))),
+                        FieldsSizeOptions options => options switch {
+                            FieldsSizeOptions.PrefixedSize1B => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), BindingFlags.Public | BindingFlags.NonPublic, Expression.Convert(ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte)), typeof(int))),
+                            FieldsSizeOptions.PrefixedSize2B => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), BindingFlags.Public | BindingFlags.NonPublic, Expression.Convert(ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadUShort)), typeof(int))),
+                            FieldsSizeOptions.PrefixedSizeBits1B => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), BindingFlags.Public | BindingFlags.NonPublic, Expression.Divide (Expression.Convert(ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte)), typeof(int)), Expression.Constant(8))),
+                            _ => throw new InvalidOperationException($"{options} is not a valid value")
+                        },
+                        string field => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes), BindingFlags.Public | BindingFlags.NonPublic, Expression.Convert(Expression.PropertyOrField(resultVariable, field), typeof(int))),
+                        _ => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadBytes))
+                    }
             },
             {
-                typeof(string), (datasParameter, dnsField)
-                    => dnsField.Length != 0
-                    ? DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadString), Expression.Constant(dnsField.Length, typeof(int)))
-                    : DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadString))
+                typeof(string), (datasParameter, resultVariable, dnsField)
+                    => dnsField.Length switch {
+                        int length => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadString), Expression.Constant(dnsField.Length, typeof(int))),
+                        FieldsSizeOptions options => options switch {
+                            FieldsSizeOptions.PrefixedSize1B => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadString), BindingFlags.Public | BindingFlags.NonPublic, Expression.Convert(ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte)), typeof(int))),
+                            FieldsSizeOptions.PrefixedSize2B => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadString), BindingFlags.Public | BindingFlags.NonPublic, Expression.Convert(ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadUShort)), typeof(int))),
+                            FieldsSizeOptions.PrefixedSizeBits1B => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadString), BindingFlags.Public | BindingFlags.NonPublic, Expression.Divide (Expression.Convert(ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte)), typeof(int)), Expression.Constant(8))),
+                            _ => throw new InvalidOperationException($"{options} is not a valid value")
+                        },
+                        string field => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadString), BindingFlags.Public | BindingFlags.NonPublic, Expression.Convert(Expression.PropertyOrField(resultVariable, field), typeof(int))),
+                        _ => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadString))
+                    }
             },
-            { typeof(DNSDomainName), (datasParameter, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.ReadDomainName)) }
+            { typeof(DNSDomainName), (datasParameter, resultVariable, dnsField) => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadDomainName), BindingFlags.Public | BindingFlags.NonPublic) }
         }.ToImmutableDictionary();
 
     private Expression CreateExpression(ParameterExpression datasParameter, ParameterExpression resultVariable, MemberInfo field, DNSFieldAttribute dnsField)
@@ -105,20 +123,21 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
             ? Expression.Property(resultVariable, (PropertyInfo)field)
             : Expression.Field(resultVariable, (FieldInfo)field);
 
-        Type underLyingType = DNSPacketHelpers.GetUnderlyingType(type);
+        Type underLyingType = ReflectionEx.GetUnderlyingType(type);
 
         Expression callExpression = null;
         if (ReaderExpressions.TryGetValue(underLyingType, out var getFunction))
         {
-            callExpression = getFunction(datasParameter, dnsField);
+            callExpression = getFunction(datasParameter, resultVariable, dnsField);
         }
-        else if (DNSPacketHelpers.TryGetConverter(ReaderExpressions[typeof(byte[])](datasParameter, dnsField), underLyingType, out var builderBytesRaw))
+        else if (
+            ExpressionEx.TryGetConverter([
+                (underLyingType, ReaderExpressions[typeof(byte[])](datasParameter, resultVariable, dnsField)),
+                (underLyingType, ReaderExpressions[typeof(string)](datasParameter, resultVariable, dnsField))
+            ], out var builderBytesRaw)
+        )
         {
             callExpression = builderBytesRaw;
-        }
-        else if (DNSPacketHelpers.TryGetConverter(ReaderExpressions[typeof(string)](datasParameter, dnsField), underLyingType, out var builderString))
-        {
-            callExpression = builderString;
         }
         else
         {
@@ -133,7 +152,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         if (dnsField.Condition != null)
         {
-            var conditionExpression = DNSPacketHelpers.ConditionBuilder(resultVariable, dnsField.Condition);
+            var conditionExpression = DNSExpression.BuildExpression(resultVariable, dnsField.Condition);
             assignExpression = Expression.IfThen(conditionExpression, assignExpression);
         }
 
@@ -163,12 +182,6 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         public byte[] ReadBytes(int length)
         {
-            length = length switch
-            {
-                FieldConstants.PREFIXED_SIZE_1B => ReadByte(),
-                FieldConstants.PREFIXED_SIZE_2B => (ReadByte() << 8) | ReadByte(),
-                _ => length
-            };
             byte[] result = new byte[length];
             Array.Copy(Datagram, Position, result, 0, length);
             Position += length;

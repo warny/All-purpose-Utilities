@@ -15,15 +15,36 @@ namespace Utils.Net.DNS
 	}
 
 	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-	public class DNSFieldAttribute(int length = 0 ) : Attribute { 
-		public int Length => length;
+	public class DNSFieldAttribute : Attribute {
+		public DNSFieldAttribute()
+		{
+			Length = null;
+		}
+
+		public DNSFieldAttribute(int length)
+		{
+			Length = length;
+		}
+
+		public DNSFieldAttribute(string length)
+		{ 
+			Length = length;
+		}
+
+		public DNSFieldAttribute(FieldsSizeOptions options)
+		{
+			Length = options;
+		}
+
+		public object Length { get; }
 		public string Condition { get; init; }
 	}
 
 
-	public static class FieldConstants
+	public enum FieldsSizeOptions
 	{
-		public const int PREFIXED_SIZE_1B = -1;
-        public const int PREFIXED_SIZE_2B = -2;
+		PrefixedSize1B,
+        PrefixedSize2B,
+		PrefixedSizeBits1B  
     }
 }

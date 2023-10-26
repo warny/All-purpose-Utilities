@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Utils.Net.DNS
 {
@@ -133,6 +134,26 @@ namespace Utils.Net.DNS
         }
 
         private Expression CreateEqualityComparer(Expression member1, Expression member2)
+        {
+            Expression valueEqualityComparer = CreateValueEqualityComparer(member1, member2);
+            Expression nullTest = null;
+            if (member1.Type.IsClass && member2.Type.IsClass)
+            {
+                return Expression.OrElse(
+                    Expression.AndAlso(
+                        Expression.Equal(member1, Expression.Constant(null, member1.Type)),
+                        Expression.Equal(member2, Expression.Constant(null, member2.Type))
+                    ),
+                    Expression.AndAlso(
+                        Expression.NotEqual(member1, Expression.Constant(null, member1.Type)),
+                        valueEqualityComparer
+                    )
+                );
+            }
+            return valueEqualityComparer;
+        }
+        
+        private Expression CreateValueEqualityComparer(Expression member1, Expression member2)
         {
             var equalsMethod = member1.Type.GetMethod("Equals", [member2.Type]);
             if (equalsMethod.GetParameters()[0].ParameterType != typeof(object))

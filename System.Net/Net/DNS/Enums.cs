@@ -14,7 +14,7 @@ public enum Algorithm : byte
     /// <summary>
     /// Reserved
     /// </summary>
-    Reserved1 = 0,
+    Reserved0 = 0,
     RSA_MD5 = 1,
     DiffieHellman = 2,
     DSA_SHA1 = 3,
@@ -26,7 +26,7 @@ public enum Algorithm : byte
     /// <summary>
     /// Reserved
     /// </summary>
-    Reserved2 = 255
+    Reserved255 = 255
 }
 
 /// <summary>
@@ -163,4 +163,60 @@ public enum IPSecAlgorithm : byte
     NoKey = 0,
     DSAKey = 1,
     RSAKey = 2
+}
+
+public enum IANAddressFamily : ushort
+{
+    Reserved0 = 0,
+    /// <summary>
+    /// Internet Protocol (IP)
+    /// </summary>
+    IP = 4,
+    /// <summary>
+    /// ST Datagram Mode
+    /// </summary>
+    STDM = 5,
+    /// <summary>
+    /// SIP
+    /// </summary>
+    SIP = 6,
+    /// <summary>
+    /// TP/IX
+    /// </summary>
+    IP_IX = 7,
+    /// <summary>
+    /// PIP
+    /// </summary>
+    PIP = 8,
+    /// <summary>
+    /// TUBA
+    /// </summary>
+    TUBA = 9,
+    Reserved15 = 15,
+    /// <summary>
+    /// Novell IPX
+    /// </summary>
+    IPX = 16
+}
+
+public enum DHCIDIdentifierTypes : ushort
+{
+    /// <summary>
+    /// The 1-octet 'htype' followed by 'hlen' octets
+    /// of 'chaddr' from a DHCPv4 client's DHCPREQUEST
+    /// </summary>
+    DHCPv4ClientDHCPRequest = 0,
+    /// <summary>
+    /// The data octets (i.e., the Type and
+    /// Client-Identifier fields) from a DHCPv4
+    /// client's Client Identifier option.
+    /// </summary>
+    DHCPv4ClientIdentifierOption = 1,
+    /// <summary>
+    /// The client's DUID (i.e., the data octets of a
+    /// DHCPv6 client's Client Identifier option
+    /// or the DUID field from a DHCPv4 client's
+    /// Client Identifier option).
+    /// </summary>
+    DHCPv4ClientDUIDField = 2
 }

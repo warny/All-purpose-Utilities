@@ -6,6 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using Utils.Net.Expressions;
+using Utils.Reflection;
 
 namespace Utils.Net.DNS
 {
@@ -53,24 +55,57 @@ namespace Utils.Net.DNS
             var elementVariable = Expression.Variable(dnsElementType, "element");
             Expression element;
 
-            ParameterExpression[] variables;
+            List<ParameterExpression> variables = new();
             var fieldsReaders = new List<Expression>();
+            int insertIndex = 0;
             if (typeof(T) == dnsElementType)
             {
                 element = elementParameter;
-                variables = [];
             }
             else
             {
                 element = elementVariable;
-                variables = [elementVariable];
+                variables.Add(elementVariable);
                 fieldsReaders.Add(Expression.Assign(elementVariable, Expression.Convert(elementParameter, dnsElementType)));
+                insertIndex = 2;
             }
 
             foreach (var field in DNSPacketHelpers.GetDNSFields(dnsElementType))
             {
-                Expression callExpression = CreateReadExpression(datasParameter, element, field.Member, field.Attribute);
-                fieldsReaders.Add(callExpression);
+                if (field.Attribute.Length is string fieldName)
+                {
+                    var memberType = ReflectionEx.GetTypeOf(field.Member);
+                    var memberTarget = ExpressionEx.CreateMemberExpression(elementVariable, fieldName, BindingFlags.Public | BindingFlags.NonPublic);
+                    if (memberType == typeof(string)) {
+                        fieldsReaders.Insert(
+                            insertIndex ++,
+                            Expression.Assign(
+                                memberTarget,
+                                Expression.Convert(
+                                    ExpressionEx.CreateMemberExpression(
+                                        ExpressionEx.CreateStaticExpression(typeof(Encoding), nameof(Encoding.UTF8)), nameof(Encoding.UTF8.GetByteCount),
+                                        ExpressionEx.CreateMemberExpression(elementVariable, field.Member)
+                                    ),
+                                    memberTarget.Type
+                                )
+                            )
+                        );
+                    }
+                    else if(memberType == typeof(byte[])) {
+                        fieldsReaders.Insert(
+                            insertIndex++,
+                            Expression.Assign(
+                                memberTarget,
+                                Expression.Convert(
+                                    Expression.ArrayLength(ExpressionEx.CreateMemberExpression(elementVariable, field.Member)),
+                                    memberTarget.Type
+                                )
+                            )
+                        );
+                    }
+                }
+                Expression[] callExpression = CreateReadExpression(datasParameter, element, field.Member, field.Attribute);
+                fieldsReaders.AddRange(callExpression);
             }
 
             var expression = Expression.Lambda<Action<Datas, T>>(
@@ -88,52 +123,67 @@ namespace Utils.Net.DNS
             return expression.Compile();
         }
 
-        private IReadOnlyDictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression>> WriterExpressions {get;} = new Dictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression>>() {
-                { typeof(byte), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteByte), assignationSource) },
-                { typeof(ushort), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteUShort), assignationSource) },
-                { typeof(uint), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource) },
-                { typeof(DNSDomainName), (datasParameter, assignationSource, dnsField) => DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource) },
+        private IReadOnlyDictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression[]>> WriterExpressions {get;} = new Dictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression[]>>() {
+                { typeof(byte), (datasParameter, assignationSource, dnsField) => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteByte), assignationSource)] },
+                { typeof(ushort), (datasParameter, assignationSource, dnsField) => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteUShort), assignationSource)] },
+                { typeof(uint), (datasParameter, assignationSource, dnsField) => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteUInt), assignationSource)] },
+                { typeof(DNSDomainName), (datasParameter, assignationSource, dnsField) => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteDomainName), assignationSource)] },
                 {
                     typeof(byte[]),
                     (datasParameter, assignationSource, dnsField)
-                        => dnsField.Length != 0
-                        ? DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))
-                        : DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource)
+                        => dnsField.Length switch {
+                            int length => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource, Expression.Constant(length, typeof(int)))],
+                            FieldsSizeOptions options => options switch {
+                                FieldsSizeOptions.PrefixedSize1B => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytesPrefixed1B), assignationSource)],
+                                FieldsSizeOptions.PrefixedSize2B => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytesPrefixed2B), assignationSource)],
+                                FieldsSizeOptions.PrefixedSizeBits1B => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytesPrefixedBits1B), assignationSource)],
+                                _ => throw new InvalidOperationException($"{options} is not a valid value")
+                            },
+                            _ => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteBytes), assignationSource)]
+                        }
                 },
                 {
                     typeof(string),
                     (datasParameter, assignationSource, dnsField)
-                        => dnsField.Length != 0
-                        ? DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))
-                        : DNSPacketHelpers.CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource)
+                        => dnsField.Length switch {
+                            int length => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource, Expression.Constant(dnsField.Length, typeof(int)))],
+                            FieldsSizeOptions options => options switch {
+                                FieldsSizeOptions.PrefixedSize1B => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteStringPrefixed1B), assignationSource)],
+                                FieldsSizeOptions.PrefixedSize2B => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteStringPrefixed2B), assignationSource)],
+                                FieldsSizeOptions.PrefixedSizeBits1B => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteStringPrefixedBits1B), assignationSource)],
+                                _ => throw new InvalidOperationException($"{options} is not a valid value")
+                            },
+                            _ => [ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.WriteString), assignationSource)]
+                        }
                 },
             };
 
-        private Expression CreateReadExpression(ParameterExpression datasParameter, Expression element, MemberInfo field, DNSFieldAttribute dnsField)
+        private Expression[] CreateReadExpression(ParameterExpression datasParameter, Expression element, MemberInfo field, DNSFieldAttribute dnsField)
         {
-            Type type = (field as PropertyInfo)?.PropertyType ?? (field as FieldInfo).FieldType;
+            Type type = ReflectionEx.GetTypeOf(field);
             Expression assignationSource = field is PropertyInfo
                 ? Expression.Property(element, (PropertyInfo)field)
                 : Expression.Field(element, (FieldInfo)field);
 
-            Type underLyingType = DNSPacketHelpers.GetUnderlyingType(type);
+            Type underLyingType = ReflectionEx.GetUnderlyingType(type);
             if (type != underLyingType)
             {
                 assignationSource = Expression.Convert(assignationSource, underLyingType);
             }
 
-            Expression callExpression = null;
+            Expression[] callExpression = null;
             if (WriterExpressions.TryGetValue(underLyingType, out var getWriterFunction))
             {
                 callExpression = getWriterFunction(datasParameter, assignationSource, dnsField);
             }
-            else if (DNSPacketHelpers.TryGetConverter(assignationSource, typeof(byte[]), out var builderToBytes))
+            else if (
+                ExpressionEx.TryGetConverter([
+                    (typeof(byte[]), assignationSource),
+                    (typeof(string), assignationSource)
+                ], out var builderToBytes)
+            )
             {
                 callExpression = WriterExpressions[typeof(byte[])](datasParameter, builderToBytes, dnsField);
-            }
-            else if (DNSPacketHelpers.TryGetConverter(assignationSource, typeof(string), out var builderToString))
-            {
-                callExpression = WriterExpressions[typeof(string)](datasParameter, builderToString, dnsField);
             }
             else
             {
@@ -142,8 +192,8 @@ namespace Utils.Net.DNS
 
             if (dnsField.Condition != null)
             {
-                var conditionExpression = DNSPacketHelpers.ConditionBuilder(element, dnsField.Condition);
-                callExpression = Expression.IfThen(conditionExpression, callExpression);
+                var conditionExpression = DNSExpression.BuildExpression(element, dnsField.Condition);
+                callExpression = [Expression.IfThen(conditionExpression, callExpression.Length == 1 ? callExpression[0] : Expression.Block(callExpression))];
             }
 
             return callExpression;
@@ -167,22 +217,28 @@ namespace Utils.Net.DNS
 
             public void WriteBytes(byte[] b, int length)
             {
-                switch (length) {
-                    case 0:
-                        length = b.Length; 
-                        break;
-                    case FieldConstants.PREFIXED_SIZE_1B:
-                        length = b.Length;
-                        WriteByte((byte)length);
-                        break;
-                    case FieldConstants.PREFIXED_SIZE_2B:
-                        length = b.Length;
-                        WriteUShort((ushort)length);
-                        break;
-                }
+                if (length == 0) length = b.Length;
                 Array.Copy(b, 0, Datagram, Position, length);
                 Position += length;
                 if (Context != null) { Context.Length += (ushort)length; }
+            }
+
+            public void WriteBytesPrefixed1B(byte[] b)
+            {
+                WriteByte((byte)b.Length);
+                WriteBytes(b, b.Length);
+            }
+
+            public void WriteBytesPrefixed2B(byte[] b)
+            {
+                WriteUShort((ushort)b.Length);
+                WriteBytes(b, b.Length);
+            }
+
+            public void WriteBytesPrefixedBits1B(byte[] b)
+            {
+                WriteByte((byte)(b.Length * 8));
+                WriteBytes(b, b.Length);
             }
 
             public void WriteUShort(ushort s)
@@ -224,6 +280,27 @@ namespace Utils.Net.DNS
                 var bytes = Encoding.UTF8.GetBytes(s);
                 WriteBytes(bytes);
             }
+
+            public void WriteStringPrefixedBits1B(string s)
+            {
+                var bytes = Encoding.UTF8.GetBytes(s);
+                WriteBytesPrefixedBits1B(bytes);
+            }
+
+            public void WriteStringPrefixed1B(string s)
+            {
+                var bytes = Encoding.UTF8.GetBytes(s);
+                WriteBytesPrefixed1B(bytes);
+            }
+
+
+            public void WriteStringPrefixed2B(string s)
+            {
+                var bytes = Encoding.UTF8.GetBytes(s);
+                WriteBytesPrefixed2B(bytes);
+            }
+
+
 
             public void WriteDomainName(DNSDomainName s)
             {

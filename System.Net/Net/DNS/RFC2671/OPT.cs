@@ -29,7 +29,7 @@ namespace Utils.Net.DNS.RFC2671
         [DNSField]
         public ushort OptionCode { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE_2B)]
+        [DNSField(FieldsSizeOptions.PrefixedSize2B)]
         public byte[] OptionsData { get; set; }
     }
 }

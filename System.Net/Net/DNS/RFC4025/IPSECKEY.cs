@@ -36,10 +36,10 @@ namespace Utils.Net.DNS.RFC4025
         [DNSField]
         public IPSecAlgorithm SecAlgorithm { get; set; }
 
-        [DNSField(4, Condition = "GatewayType=IPV4GatewayAddress")]
+        [DNSField(4, Condition = "GatewayType==Utils.Net.DNS.GatewayType.IPV4GatewayAddress")]
         private IPAddress gatewayAddressIPv4 = null;
 
-        [DNSField(16, Condition = "GatewayType=IPV6GatewayAddress")]
+        [DNSField(16, Condition = "GatewayType==Utils.Net.DNS.GatewayType.IPV6GatewayAddress")]
         private IPAddress gatewayAddressIPv6 = null;
 
         public IPAddress GatewayAddress
@@ -64,7 +64,7 @@ namespace Utils.Net.DNS.RFC4025
             }
         }
 
-        [DNSField(Condition = "GatewayType=WireEncodedDomain")]
+        [DNSField(Condition = "GatewayType==Utils.Net.DNS.GatewayType.WireEncodedDomain")]
         private DNSDomainName? gatewayDomainName = null;
 
         public DNSDomainName? GatewayDomainName

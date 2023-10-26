@@ -8,7 +8,7 @@ namespace Utils.Net.DNS.RFC3123
     public class APL : DNSResponseDetail
     {
         /*
-           The RDATA section consists of zero or more items (<apitem>) of the
+           The RDATA section consists of zero or more items (&lt;apitem&gt;) of the
            form
 
               +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
@@ -38,24 +38,17 @@ namespace Utils.Net.DNS.RFC3123
         */
 
         [DNSField]
-        public ushort AdressFamily { get; set; }
-        
+        public IANAddressFamily AddressFamily { get; set; }
+
         [DNSField]
         public byte Prefix { get; set; }
 
         [DNSField]
         private byte flagAndAfdLength;
 
-        [DNSField]
-        public byte[] afdPart;
-
-        public byte[] AfdPart {
-            get => afdPart;
-            set
-            {
-                afdPart = value;
-                flagAndAfdLength = (byte)((value.Length & 0b0111_1111) | (flagAndAfdLength & 0b1000_0000));
-            }
+        private byte AfdLength {
+            get => (byte)(flagAndAfdLength & 0b0111_1111);
+            set => flagAndAfdLength = (byte)((value & 0b0111_1111) | (flagAndAfdLength & 0b1000_0000));
         }
 
         public bool Negate
@@ -63,5 +56,12 @@ namespace Utils.Net.DNS.RFC3123
             get => (flagAndAfdLength & 0b1000_0000) != 0;
             set => flagAndAfdLength = (byte)((value ? 0b1000_0000 : 0) | (flagAndAfdLength & 0b0111_1111));
         }
+
+        [DNSField]
+        public byte[] afdPart;
+
+        [DNSField(nameof(AfdLength))]
+        public byte[] AfdPart { get; set; }
+
     }
 }

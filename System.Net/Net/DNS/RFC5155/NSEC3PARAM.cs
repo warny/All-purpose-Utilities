@@ -42,7 +42,7 @@ namespace Utils.Net.DNS.RFC5155
         [DNSField]
         public ushort Iterations { get; set; }
 
-        [DNSField(FieldConstants.PREFIXED_SIZE_1B)]
+        [DNSField(FieldsSizeOptions.PrefixedSize1B)]
         public byte[] Salt { get; set; }
     }
 }
