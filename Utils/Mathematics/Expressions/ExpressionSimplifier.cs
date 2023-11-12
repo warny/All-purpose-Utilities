@@ -22,35 +22,35 @@ namespace Utils.Mathematics.Expressions
 
 		#region operations avec 0 et 1
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression AdditionWithZero( BinaryExpression e, Expression left, [Numeric(0.0)]ConstantExpression right )
+		public Expression AdditionWithZero( BinaryExpression e, Expression left, [ConstantNumeric(0.0)]ConstantExpression right )
 		{
 			if ((double)right.Value == 0.0) { return left; }
 			return null;
 		}
 
 		[ExpressionSignature(ExpressionType.Add)]
-		public Expression AdditionWithZero( BinaryExpression e, [Numeric(0.0)]ConstantExpression left, Expression right )
+		public Expression AdditionWithZero( BinaryExpression e, [ConstantNumeric(0.0)]ConstantExpression left, Expression right )
 		{
 			if ((double)left.Value == 0.0) { return right; }
 			return null;
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionWithZero( BinaryExpression e, Expression left, [Numeric(0.0)]ConstantExpression right )
+		public Expression SubstractionWithZero( BinaryExpression e, Expression left, [ConstantNumeric(0.0)]ConstantExpression right )
 		{
 			if ((double)right.Value == 0.0) { return left; }
 			return null;
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		public Expression SubstractionWithZero( BinaryExpression e, [Numeric(0.0)]ConstantExpression left, Expression right )
+		public Expression SubstractionWithZero( BinaryExpression e, [ConstantNumeric(0.0)]ConstantExpression left, Expression right )
 		{
 			if ((double)left.Value == 0.0) { return Transform(Expression.Negate(right)); }
 			return null;
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression MultiplicationWithZeroOrOne( BinaryExpression e, Expression left, [Numeric(0.0, 1.0)]ConstantExpression right )
+		public Expression MultiplicationWithZeroOrOne( BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)]ConstantExpression right )
 		{
 			if ((double)right.Value == 0.0) { return right; }
 			if ((double)right.Value == 1.0) { return left; }
@@ -58,7 +58,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Multiply)]
-		public Expression MultiplicationWithZeroOrOne( BinaryExpression e, [Numeric(0.0, 1.0)]ConstantExpression left, Expression right )
+		public Expression MultiplicationWithZeroOrOne( BinaryExpression e, [ConstantNumeric(0.0, 1.0)]ConstantExpression left, Expression right )
 		{
 			if ((double)left.Value == 0.0) { return left; }
 			if ((double)left.Value == 1.0) { return right; }
@@ -66,7 +66,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivideWithZeroOrOne( BinaryExpression e, Expression left, [Numeric(0.0, 1.0)]ConstantExpression right )
+		public Expression DivideWithZeroOrOne( BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)]ConstantExpression right )
 		{
 			if ((double)right.Value == 0.0) { throw new DivideByZeroException(); }
 			if ((double)right.Value == 1.0) { return left; }
@@ -74,14 +74,14 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivideWithZero( BinaryExpression e, [Numeric(0.0)]ConstantExpression left, Expression right )
+		public Expression DivideWithZero( BinaryExpression e, [ConstantNumeric(0.0)]ConstantExpression left, Expression right )
 		{
 			if ((double)left.Value == 0.0) { return left; }
 			return null;
 		}
 
 		[ExpressionSignature(ExpressionType.Power)]
-		public Expression PowerOfZeroOrOne( BinaryExpression e, [Numeric(0.0, 1.0)]ConstantExpression left, Expression right )
+		public Expression PowerOfZeroOrOne( BinaryExpression e, [ConstantNumeric(0.0, 1.0)]ConstantExpression left, Expression right )
 		{
 			if ((double)left.Value == 0.0) { return left; }
 			if ((double)left.Value == 1.0) { return left; }
@@ -89,7 +89,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Power)]
-		public Expression PowerByZeroOrOne( BinaryExpression e, Expression left, [Numeric(0.0, 1.0)]ConstantExpression right )
+		public Expression PowerByZeroOrOne( BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)]ConstantExpression right )
 		{
 			if ((double)right.Value == 0.0) { return Expression.Constant(1.0); }
 			if ((double)right.Value == 1.0) { return left; }
@@ -100,7 +100,7 @@ namespace Utils.Mathematics.Expressions
 
 		#region addition
 		[ExpressionSignature(ExpressionType.Add)]
-		protected Expression AdditionOfConstants( BinaryExpression e, [Numeric]ConstantExpression left, [Numeric]ConstantExpression right )
+		protected Expression AdditionOfConstants( BinaryExpression e, [ConstantNumeric]ConstantExpression left, [ConstantNumeric]ConstantExpression right )
 		{
 			return Expression.Constant((double)left.Value + (double)right.Value);
 		}
@@ -155,7 +155,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		[ExpressionSignature(ExpressionType.Subtract)]
-		protected Expression SubstractionOfConstants( BinaryExpression e, [Numeric]ConstantExpression left, [Numeric]ConstantExpression right )
+		protected Expression SubstractionOfConstants( BinaryExpression e, [ConstantNumeric]ConstantExpression left, [ConstantNumeric]ConstantExpression right )
 		{
 			return Expression.Constant((double)left.Value - (double)right.Value);
 		}
@@ -262,8 +262,8 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression MultiplicationOfConstants(
 			BinaryExpression e,
-			[Numeric]ConstantExpression left,
-			[Numeric]ConstantExpression right
+			[ConstantNumeric]ConstantExpression left,
+			[ConstantNumeric]ConstantExpression right
 		)
 		{
 			return Expression.Constant((double)left.Value * (double) right.Value);
@@ -273,7 +273,7 @@ namespace Utils.Mathematics.Expressions
 		protected Expression Multiplication(
 			BinaryExpression e,
 			Expression left,
-			[Numeric]ConstantExpression right
+			[ConstantNumeric]ConstantExpression right
 		)
 		{
 			return Expression.Multiply(right, left);
@@ -282,7 +282,7 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression Multiplication(
 			BinaryExpression e,
-			[Numeric]ConstantExpression left,
+			[ConstantNumeric]ConstantExpression left,
 			[ExpressionSignature(ExpressionType.Multiply)]BinaryExpression right
 		)
 		{
@@ -314,8 +314,8 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Divide)]
 		protected Expression DivisionOfConstants(
 			BinaryExpression e,
-			[Numeric]ConstantExpression left,
-			[Numeric]ConstantExpression right
+			[ConstantNumeric]ConstantExpression left,
+			[ConstantNumeric]ConstantExpression right
 		)
 		{
 			return Expression.Constant((double)left.Value / (double)right.Value);
@@ -496,8 +496,8 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression PowerOfConstants(
 			BinaryExpression e,
-			[Numeric]ConstantExpression left,
-			[Numeric]ConstantExpression right
+			[ConstantNumeric]ConstantExpression left,
+			[ConstantNumeric]ConstantExpression right
 		)
 		{
 			return Expression.Constant(Math.Pow((double)left.Value, (double)right.Value));
