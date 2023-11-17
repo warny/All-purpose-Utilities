@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using Utils.Objects;
 
 namespace Utils.Expressions;
 
@@ -34,7 +35,7 @@ public class ExpressionParserCore
 
     private bool ReadLambdaPrefix(ParserContext context)
     {
-        Markers[] markers = [ ('<', '>'), ('(', ')') ];
+        Parenthesis[] markers = [ ("<", ">"), ("(", ")") ];
 
         int paramIndexPrefix = 0;
         if (context.DefaultInstanceType != null)
@@ -46,7 +47,7 @@ public class ExpressionParserCore
         string val = context.Tokenizer.ReadToken();
         if (val == "(")
         {
-            string bracketContent = ParserExtensions.GetBracketString(context, new WrapMarkers("(", ")", null), true);
+            string bracketContent = ParserExtensions.GetBracketString(context, new Parenthesis("(", ")", null), true);
             if (bracketContent != null)
             {
                 string lambdaOperator = context.Tokenizer.ReadToken();
@@ -57,10 +58,10 @@ public class ExpressionParserCore
                 }
 
                 // Parse parameters
-                string[] paramsName = Utils.SplitCommaSeparatedList(bracketContent, ',', markers).Select(p => p.Trim()).ToArray();
+                string[] paramsName = bracketContent.SplitCommaSeparatedList(',', markers).Select(p => p.Trim()).ToArray();
                 for (int i = 0; i < paramsName.Length; i++)
                 {
-                    string[] typeName = Utils.SplitCommaSeparatedList(paramsName[i], ' ', true, markers).ToArray();
+                    string[] typeName = paramsName[i].SplitCommaSeparatedList(' ', true, markers).ToArray();
                     Type paramType;
                     string paramName;
                     if (typeName.Length == 1)
@@ -120,7 +121,7 @@ public class ExpressionParserCore
         return ReadExpression(context, 0, null, out _);
     }
 
-    internal Expression ReadExpression(ParserContext context, int priorityLevel, WrapMarkers markers, out bool isClosedWrap)
+    internal Expression ReadExpression(ParserContext context, int priorityLevel, Parenthesis markers, out bool isClosedWrap)
     {
         Expression currentExpression = null;
         isClosedWrap = false;
@@ -198,7 +199,7 @@ public class ExpressionParserCore
         return [.. result];
     }
 
-    public Expression[] ReadExpressions(ParserContext context, WrapMarkers markers, bool readStartSymbol = true, bool ignoreSeparatorAfterBlock = false) 
+    public Expression[] ReadExpressions(ParserContext context, Parenthesis markers, bool readStartSymbol = true, bool ignoreSeparatorAfterBlock = false) 
     {
         if (readStartSymbol)
         {
@@ -290,7 +291,7 @@ public class ExpressionParserCore
         if (methods.Any())
         {
             var genericParams = ReadGenericParams(context)?.ToArray();
-            var listArguments = ReadExpressions(context, new WrapMarkers("(", ")", ",")).ToArray();
+            var listArguments = ReadExpressions(context, new Parenthesis("(", ")", ",")).ToArray();
 
             var methodAndParameters = Resolver.SelectMethod(methods, currentExpression, genericParams, listArguments);
 
@@ -317,7 +318,7 @@ public class ExpressionParserCore
         if (methods.Any())
         {
             var genericParams = ReadGenericParams(context)?.ToArray();
-            var listArguments = ReadExpressions(context, new WrapMarkers("(", ")", ",")).ToArray();
+            var listArguments = ReadExpressions(context, new Parenthesis("(", ")", ",")).ToArray();
 
             var methodAndParameters = Resolver.SelectMethod(methods, null, genericParams, listArguments);
 

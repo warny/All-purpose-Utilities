@@ -86,7 +86,7 @@ namespace Utils.Expressions
             return Expression.Convert(expression, type);
         }
 
-        public static string GetBracketString(ParserContext context, WrapMarkers markers, bool hasReadPre)
+        public static string GetBracketString(ParserContext context, Parenthesis markers, bool hasReadPre)
         {
             // Read the opening parenthesis if it hasn't been read previously
             if (!hasReadPre) context.Tokenizer.ReadSymbol(markers.Start);

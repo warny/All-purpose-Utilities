@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Collections;
+using Utils.Expressions;
 using Utils.Mathematics;
 
 namespace Utils.Objects
@@ -579,13 +580,53 @@ namespace Utils.Objects
 			return result.ToString();
 		}
 
+        public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, params Parenthesis[] depthMarkerChars)
+			=> SplitCommaSeparatedList(commaSeparatedValues, commaChar, false, depthMarkerChars);
 
-	}
+        public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, bool removeEmptyEntries, params Parenthesis[] depthMarkerChars)
+        {
+            var lastTypeIndex = 0;
+            var depth = new Stack<Parenthesis>();
+            for (int i = 0; i < commaSeparatedValues.Length; i++)
+            {
+                char current = commaSeparatedValues[i];
+                Parenthesis m;
+                if ((m = depthMarkerChars.FirstOrDefault(m => m.Start[0] == current)) != null)
+                {
+                    if (depth.Any() && m.Start == m.End)
+                    {
+                        depth.Pop();
+                        continue;
+                    }
 
-	/// <summary>
-	/// Définit une paire de parenthèses
-	/// </summary>
-	public class Brackets
+                    depth.Push(m);
+                    continue;
+                }
+                if ((m = depthMarkerChars.FirstOrDefault(m => m.End[0] == current)) != null)
+                {
+                    var startChar = depth.Pop();
+                    if (startChar.End[0] == current) continue;
+                    throw new Exception(commaSeparatedValues);
+                }
+                if (current == commaChar && !depth.Any())
+                {
+                    var value = commaSeparatedValues[lastTypeIndex..i];
+                    if (!removeEmptyEntries || !string.IsNullOrEmpty(value)) yield return value;
+                    lastTypeIndex = i + 1;
+                }
+            }
+            {
+                var value = commaSeparatedValues[lastTypeIndex..];
+                if (!removeEmptyEntries || !string.IsNullOrEmpty(value)) yield return value;
+            }
+        }
+
+    }
+
+    /// <summary>
+    /// Définit une paire de parenthèses
+    /// </summary>
+    public class Brackets
 	{
 		public char Open { get; }
 		public char Close { get; }

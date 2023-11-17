@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
 namespace Utils.Expressions.Resolvers;
 
@@ -14,8 +15,8 @@ public class DefaultResolver : IResolver
 {
     protected ITypeFinder TypeFinder { get; }
 
-    public Markers GenericMarkers = new('<', '>');
-    public Markers ArrayMarkers = new('[', ']');
+    public Parenthesis GenericMarkers = new("<", ">");
+    public Parenthesis ArrayMarkers = new("[", "]");
 
     public char NullableMarkChar { get; } = '?';
 
@@ -58,7 +59,7 @@ public class DefaultResolver : IResolver
 
             var genericStartIndex = name.LastIndexOf(GenericMarkers.Start);
             var genericMarker = name[genericStartIndex..];
-            genericParameters = Utils.SplitCommaSeparatedList(genericMarker.Trim(' ', '<', '>'), ',', [GenericMarkers, ArrayMarkers]).Select(t => ResolveType(t)).ToArray();
+            genericParameters = genericMarker.Trim(' ', '<', '>').SplitCommaSeparatedList(',', [GenericMarkers, ArrayMarkers]).Select(t => ResolveType(t)).ToArray();
         }
 
         var type = TypeFinder.FindType(name, genericParameters);

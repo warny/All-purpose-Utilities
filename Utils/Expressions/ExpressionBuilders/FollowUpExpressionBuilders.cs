@@ -11,7 +11,7 @@ namespace Utils.Expressions.ExpressionBuilders;
 
 public class PlusOperatorBuilder() : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
 
@@ -64,7 +64,7 @@ public class OperatorBuilder(Func<Expression, Expression, Expression> buildOpera
     private Func<Expression, Expression, Expression> BuildOperator => buildOperator;
     private bool AdjustNumberType => adjustNumberType;
 
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
         if(AdjustNumberType) (currentExpression, right) = parser.Options.AdjustNumberType(currentExpression, right);
@@ -74,7 +74,7 @@ public class OperatorBuilder(Func<Expression, Expression, Expression> buildOpera
 
 public class MemberBuilder : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         string strMember = context.Tokenizer.ReadToken();
         return parser.GetExpression(context, currentExpression, strMember);
@@ -84,7 +84,7 @@ public class MemberBuilder : IFollowUpExpressionBuilder
 
 public class NullOrMemberBuilder : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         context.PushContext();
         string strMember = context.Tokenizer.ReadToken();
@@ -117,7 +117,7 @@ public class NullOrMemberBuilder : IFollowUpExpressionBuilder
 
 public class TypeMatchBuilder : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Type t = parser.ReadType(context, null);
         return Expression.TypeIs(currentExpression, t);
@@ -126,7 +126,7 @@ public class TypeMatchBuilder : IFollowUpExpressionBuilder
 
 public class AddAssignationBuilder() : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
         if (currentExpression.Type == typeof(string))
@@ -169,7 +169,7 @@ public class AssignationBuilder(Func<Expression, Expression, BinaryExpression> b
 {
     private Func<Expression, Expression, BinaryExpression> BuildOperator => buildOperator;
 
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
         right = parser.Options.AdjustNumberType(currentExpression.Type, right);
@@ -181,7 +181,7 @@ public class PostOperationBuilder(Func<Expression, UnaryExpression> buildOperato
 {
     private Func<Expression, UnaryExpression> BuildOperator => buildOperator;
 
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         return BuildOperator(currentExpression);
     }
@@ -189,7 +189,7 @@ public class PostOperationBuilder(Func<Expression, UnaryExpression> buildOperato
 
 public class TypeCastBuilder : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Type t = parser.ReadType(context, null);
         return Expression.TypeAs(currentExpression, t);
@@ -198,7 +198,7 @@ public class TypeCastBuilder : IFollowUpExpressionBuilder
 
 public class ElseBuilder : IFollowUpExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         if (currentExpression is not ConditionalExpression ce) throw new ParseWrongSymbolException(nextVal, val, context.Tokenizer.Position.Index);
         Expression falseExpression = parser.ReadExpression(context, 0, null, out _);

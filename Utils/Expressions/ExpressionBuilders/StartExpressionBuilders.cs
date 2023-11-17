@@ -13,7 +13,7 @@ namespace Utils.Expressions.ExpressionBuilders;
 
 public class NumberConstantBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         if (val.Length > 2 && val[0] == 0 && char.IsLetter(val[1]))
         {
@@ -48,22 +48,22 @@ public class NumberConstantBuilder : IStartExpressionBuilder
 
 public class NullBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap) => Expression.Constant(null);
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap) => Expression.Constant(null);
 }
 
 public class TrueBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap) => Expression.Constant(true);
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap) => Expression.Constant(true);
 }
 
 public class FalseBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap) => Expression.Constant(false);
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap) => Expression.Constant(false);
 }
 
 public class SizeOfBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         context.Tokenizer.ReadSymbol("(");
         Type type = parser.ReadType(context, null);
@@ -74,7 +74,7 @@ public class SizeOfBuilder : IStartExpressionBuilder
 
 public class TypeofBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         // string str = GetBracketString(false);
         context.Tokenizer.ReadSymbol("(");
@@ -88,15 +88,15 @@ public class TypeofBuilder : IStartExpressionBuilder
 public class NewBuilder : IStartExpressionBuilder
 {
 
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression currentExpression;
         // Get the type
         Type type = parser.ReadType(context, context.Tokenizer.ReadToken());
 
         // Check if it's an array
-        var arrayParam = parser.ReadExpressions(context, new WrapMarkers("[", "]", ","));
-        var listParam = parser.ReadExpressions(context, new WrapMarkers("(", ")", ","));
+        var arrayParam = parser.ReadExpressions(context, new Parenthesis("[", "]", ","));
+        var listParam = parser.ReadExpressions(context, new Parenthesis("(", ")", ","));
 
         if (listParam != null)
         {
@@ -162,7 +162,7 @@ public class NewBuilder : IStartExpressionBuilder
         else if (arrayParam!= null)
         {
             // Read array initialization inside {}
-            var initValues = parser.ReadExpressions(context, new WrapMarkers("{", "}", ","));
+            var initValues = parser.ReadExpressions(context, new Parenthesis("{", "}", ","));
             if (initValues != null)
             {
                 currentExpression = Expression.NewArrayInit(type, initValues);
@@ -182,13 +182,13 @@ public class NewBuilder : IStartExpressionBuilder
 
     public class ReadNextExpressionBuilder : IStartExpressionBuilder
     {
-        public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+        public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
             => parser.ReadExpression(context, priorityLevel, markers, out isClosedWrap);
     }
 
     public class UnaryMinusBuilder : IStartExpressionBuilder
     {
-        public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap) {
+        public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap) {
             var Expression = parser.ReadExpression(context, parser.Options.GetOperatorLevel(val, true), markers, out _);
 
             if (Expression is ConstantExpression constantExpression && parser.Options.NumberTypeLevel.ContainsKey(Expression.Type))
@@ -220,15 +220,15 @@ public class UnaryOperandBuilder(Func<Expression, UnaryExpression> buildOperator
 {
     public Func<Expression, UnaryExpression> OperatorBuilder => buildOperator;
 
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
         => OperatorBuilder(parser.ReadExpression(context, parser.Options.GetOperatorLevel(val, true), markers, out isClosedWrap));
 }
 
 public class ParenthesisBuilder(string closeParenthesis, string separator) : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
-        var parenthesis = new WrapMarkers(val, closeParenthesis, separator);
+        var parenthesis = new Parenthesis(val, closeParenthesis, separator);
 
         context.Tokenizer.PushPosition();
         string str = ParserExtensions.GetBracketString(context, parenthesis, true);
@@ -254,9 +254,9 @@ public class ParenthesisBuilder(string closeParenthesis, string separator) : ISt
 
 public class BlockBuilder(string closeParenthesis, string separator) : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
-        var blockMarkers = new WrapMarkers(val, closeParenthesis, separator);
+        var blockMarkers = new Parenthesis(val, closeParenthesis, separator);
 
         context.PushContext();
         var expressions = parser.ReadExpressions(context, blockMarkers, false);
@@ -268,7 +268,7 @@ public class BlockBuilder(string closeParenthesis, string separator) : IStartExp
 
 public class InstructionSeparatorBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         if (priorityLevel > 0) throw new ParseWrongSymbolException("", val, context.Tokenizer.Position.Index);
         return null;
@@ -277,7 +277,7 @@ public class InstructionSeparatorBuilder : IStartExpressionBuilder
 
 public class DefaultUnaryBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var firstChar = val[0];
 
@@ -347,10 +347,10 @@ public class DefaultUnaryBuilder : IStartExpressionBuilder
 
 public class IfBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         context.Tokenizer.ReadSymbol("(");
-        var testExpression = parser.ReadExpression(context, 0, new WrapMarkers("(", ")", null), out _);
+        var testExpression = parser.ReadExpression(context, 0, new Parenthesis("(", ")", null), out _);
         var trueExpression = parser.ReadExpression(context, 0, null, out _);
         if (trueExpression is not BlockExpression) context.Tokenizer.ReadSymbol(";");
         return Expression.IfThen(testExpression, trueExpression);
@@ -359,7 +359,7 @@ public class IfBuilder : IStartExpressionBuilder
 
 public class BreakBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var target = context.BreakLabel;
         if (target == null) throw new ParseWrongSymbolException("", val, context.Tokenizer.Position.Index);
@@ -369,7 +369,7 @@ public class BreakBuilder : IStartExpressionBuilder
 
 public class ContinueBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var target = context.ContinueLabel;
         if (target == null) throw new ParseWrongSymbolException("", val, context.Tokenizer.Position.Index);
@@ -379,13 +379,13 @@ public class ContinueBuilder : IStartExpressionBuilder
 
 public class WhileBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var continueLabel = Expression.Label();
         var breakLabel = Expression.Label();
         context.PushContext(continueLabel, breakLabel);
         context.Tokenizer.ReadSymbol("(");
-        var testExpression = parser.ReadExpression(context, 0, new WrapMarkers("(", ")", null), out _);
+        var testExpression = parser.ReadExpression(context, 0, new Parenthesis("(", ")", null), out _);
         var loopExpression = parser.ReadExpression(context, 0, null, out _);
 
         var result = Expression.Block(
@@ -406,12 +406,12 @@ public class WhileBuilder : IStartExpressionBuilder
 
 public class ForBuilder : IStartExpressionBuilder
 {
-    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, WrapMarkers markers, ref bool isClosedWrap)
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var continueLabel = Expression.Label();
         var breakLabel = Expression.Label();
         context.PushContext(continueLabel, breakLabel);
-        var forExpression = parser.ReadExpressions(context, new WrapMarkers("(", ")", ";"), true, true);
+        var forExpression = parser.ReadExpressions(context, new Parenthesis("(", ")", ";"), true, true);
         var initializer = forExpression[0];
         var test = forExpression[1];
         var loop = forExpression[2..];

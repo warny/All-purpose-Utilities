@@ -5,11 +5,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions
 {
-	[TestClass]
+    [TestClass]
 	public class ExpressionSimplifierTests
 	{
 		[TestMethod]
