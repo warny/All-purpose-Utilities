@@ -7,7 +7,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using Utils.Net.Expressions;
-using Utils.Reflection;
+using Utils.Expressions;
 
 namespace Utils.Net.DNS
 {

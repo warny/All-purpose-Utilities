@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.Collections;
 
-namespace Utils.Reflection;
+namespace Utils.Expressions;
 
 public static class ExpressionEx
 {
@@ -274,7 +274,8 @@ public static class ExpressionEx
         throw new MissingMemberException(memberName);
     }
 
-    public static Expression CreateMemberExpression(Expression expression, MemberInfo member, params Expression[] arguments) {
+    public static Expression CreateMemberExpression(Expression expression, MemberInfo member, params Expression[] arguments)
+    {
         Type[] argumentTypes = arguments.Select(a => a.Type).ToArray();
         switch (member)
         {
@@ -416,9 +417,10 @@ public static class ExpressionEx
             constructorInfo = constructor;
             parameterType = parameters[0].ParameterType;
         }
-        if (constructorInfo != null) { 
-            converter = Expression.New(constructorInfo, Expression.Convert(expressionRight, parameterType)); 
-            return true; 
+        if (constructorInfo != null)
+        {
+            converter = Expression.New(constructorInfo, Expression.Convert(expressionRight, parameterType));
+            return true;
         }
 
         // on recherche les méthodes static
@@ -429,18 +431,19 @@ public static class ExpressionEx
         foreach (var method in targetType.GetMethods(bindingFlags | BindingFlags.Static))
         {
             var parameters = method.GetParameters();
-            if(!targetType.IsAssignableFrom(method.ReturnType)) continue;
+            if (!targetType.IsAssignableFrom(method.ReturnType)) continue;
             if (parameters.Length != 1) continue;
             if (!parameters[0].ParameterType.IsAssignableFrom(expressionRight.Type)) continue;
             methodInfo = method;
             parameterType = parameters[0].ParameterType;
             if (targetType == method.ReturnType && parameters[0].ParameterType == expressionRight.Type) break;
         }
-        if (methodInfo != null) { 
+        if (methodInfo != null)
+        {
             if (parameterType != expressionRight.Type) expressionRight = Expression.Convert(expressionRight, parameterType);
-            converter = Expression.Call(null, methodInfo, expressionRight); 
-            if( converter.Type != targetType) converter = Expression.Convert(converter, targetType);
-            return true; 
+            converter = Expression.Call(null, methodInfo, expressionRight);
+            if (converter.Type != targetType) converter = Expression.Convert(converter, targetType);
+            return true;
         }
 
         converter = null;
@@ -460,7 +463,7 @@ public static class ExpressionEx
     }
 
     private static Expression Copy(
-        Expression expression, 
+        Expression expression,
         IReadOnlyDictionary<ParameterExpression, Expression> replacements,
         IDictionary<LabelTarget, LabelTarget> labels
     )
@@ -494,7 +497,7 @@ public static class ExpressionEx
             LabelExpression le => Copy(le, replacements, labels),
 
             DebugInfoExpression die => Expression.DebugInfo(die.Document, die.StartLine, die.StartColumn, die.EndLine, die.EndColumn),
-            
+
             null => null,
             _ => throw new NotSupportedException($"{expression.GetType()} is not supported")
         };
@@ -502,7 +505,7 @@ public static class ExpressionEx
     }
 
     private static Expression Copy(
-        BlockExpression expression, 
+        BlockExpression expression,
         IReadOnlyDictionary<ParameterExpression, Expression> replacements,
         IDictionary<LabelTarget, LabelTarget> labels
     )
@@ -519,7 +522,7 @@ public static class ExpressionEx
     }
 
     private static Expression Copy(
-        LoopExpression expression, 
+        LoopExpression expression,
         IReadOnlyDictionary<ParameterExpression, Expression> replacements,
         IDictionary<LabelTarget, LabelTarget> labels
     )
@@ -564,22 +567,22 @@ public static class ExpressionEx
         { ExpressionType.Negate, Expression.Negate },
         { ExpressionType.Not, Expression.Not },
         { ExpressionType.OnesComplement, Expression.OnesComplement },
-        
+
         { ExpressionType.ArrayLength, Expression.ArrayLength },
-        
+
         { ExpressionType.Increment, Expression.Increment },
         { ExpressionType.UnaryPlus, Expression.UnaryPlus },
         { ExpressionType.Decrement, Expression.Decrement },
-        
+
         { ExpressionType.PostIncrementAssign, Expression.PostIncrementAssign},
         { ExpressionType.PostDecrementAssign, Expression.PostDecrementAssign},
         { ExpressionType.PreIncrementAssign, Expression.PreIncrementAssign},
         { ExpressionType.PreDecrementAssign, Expression.PreDecrementAssign},
-        
+
         { ExpressionType.Quote, Expression.Quote},
     }.ToImmutableDictionary();
 
-    private static IReadOnlyDictionary<ExpressionType, Func<Expression, Expression, Expression>> BinaryExpressions = new Dictionary<ExpressionType, Func<Expression, Expression, Expression>>() 
+    private static IReadOnlyDictionary<ExpressionType, Func<Expression, Expression, Expression>> BinaryExpressions = new Dictionary<ExpressionType, Func<Expression, Expression, Expression>>()
     {
         { ExpressionType.Assign, Expression.Assign },
         { ExpressionType.ArrayIndex, Expression.ArrayIndex },

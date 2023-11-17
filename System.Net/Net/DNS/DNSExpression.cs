@@ -4,8 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
-using Utils.Reflection;
-using Xamarin.Lambda;
+using Utils.Expressions;
 
 namespace Utils.Net.DNS
 {
@@ -13,7 +12,7 @@ namespace Utils.Net.DNS
     {
         public static Expression BuildExpression(Expression element, string expression)
         {
-            var result = ExpressionParser.Parse(expression, element.Type, "Utils.Net.DNS");
+            var result = ExpressionParser.Parse(expression, element.Type, ["Utils.Net.DNS"]);
             var result2 = ExpressionEx.ExtractInnerExpression(result, element);
             return result2;
         }
