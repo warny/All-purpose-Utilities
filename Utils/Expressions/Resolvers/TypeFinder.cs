@@ -35,7 +35,7 @@ namespace Utils.Expressions.Resolvers
                     Types[type.Name] = type;
                     if (type.IsSealed && type.IsAbstract)
                     {
-                        foreach (MethodInfo m in type.GetRuntimeMethods().Where(m => m.IsStatic))
+                        foreach (MethodInfo m in type.GetRuntimeMethods().Where(m => m.IsStatic && m.GetParameters().Length > 0))
                         {
                             var param0 = m.GetParameters()[0];
                             if (param0.GetCustomAttribute<ExtensionAttribute>() is null) continue;

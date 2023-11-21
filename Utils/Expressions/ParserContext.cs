@@ -23,7 +23,7 @@ public class ParserContext
         DefaultInstanceParam = defaultInstanceType != null ? Expression.Parameter(defaultInstanceType, "___DefaultInstanceParam") : null;
         stack = new ContextStackElement(null);
 
-        ParameterInfo[] invokeMethodParameters = DelegateType.GetMethod("Invoke")?.GetParameters();
+        ParameterInfo[] invokeMethodParameters = DelegateType?.GetMethod("Invoke")?.GetParameters();
 
         // Get the parameter types of the delegate
         ParamTypes ??= invokeMethodParameters?.Select(m => m.ParameterType).ToArray();
@@ -45,6 +45,24 @@ public class ParserContext
         }
 
     }
+
+    public ParserContext(ParameterExpression[] parameters, Tokenizer tokenizer, bool firstTypeIsDefaultInstance)
+    {
+        DelegateType = null;
+        Tokenizer = tokenizer;
+        DefaultInstanceType = firstTypeIsDefaultInstance && parameters.Length > 0 ? parameters[0].Type : null;
+        ParamTypes = parameters.Select(p=>p.Type).ToArray();
+        FirstTypeIsDefaultInstance = firstTypeIsDefaultInstance;
+        DefaultInstanceParam = firstTypeIsDefaultInstance && parameters.Length > 0 ? parameters[0] : null;
+        stack = new ContextStackElement(null);
+
+        // Get the parameter types of the delegate
+        foreach (var p in Parameters)
+        {
+            Parameters.Add(p);
+        }
+    }
+
 
     public Type DelegateType { get; }
     public Tokenizer Tokenizer { get; }

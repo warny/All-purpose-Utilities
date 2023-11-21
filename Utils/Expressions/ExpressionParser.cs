@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Utils.Expressions.Builders;
@@ -18,7 +19,7 @@ static public class ExpressionParser
     /// </summary>
     /// <param name = "lambdaCode"> lambda expression code. Such as: m => m.ToString () </param>
     /// <param name = "namespaces"> namespace set </param>
-    public static LambdaExpression Parse(string lambdaCode, string[] namespaces = null)
+    public static LambdaExpression Parse(string lambdaCode, string[] namespaces = null, IReadOnlyDictionary<string, object> constants = null)
     {
         return ParseCore<Delegate>(null, lambdaCode, null, false, null, namespaces);
     }
@@ -29,7 +30,7 @@ static public class ExpressionParser
     /// <param name = "lambdaCode"> lambda expression code. Such as: m => m.ToString () </param>
     /// <param name="defaultInstance"></param>
     /// <param name = "namespaces"> namespace set </param>
-    static public LambdaExpression Parse(string lambdaCode, Type defaultInstance, string[] namespaces = null)
+    static public LambdaExpression Parse(string lambdaCode, Type defaultInstance, string[] namespaces = null, IReadOnlyDictionary<string, object> constants = null)
     {
         return ParseCore<Delegate>(null, lambdaCode, defaultInstance, false, null, namespaces);
     }
@@ -217,12 +218,12 @@ static public class ExpressionParser
     /// <param name="defaultInstanceType"></param>
     /// <param name="firstTypeIsDefaultInstance"></param>
     /// <exception cref="ArgumentNullException">Exception thrown if <paramref name="code"/> is null</exception>
-    static private LambdaExpression ParseCore<TDelegate>(Type delegateType, string lambdaCode, Type defaultInstanceType, bool firstTypeIsDefaultInstance, Type[] paramTypes, string[] namespaces = null)
+    static private LambdaExpression ParseCore<TDelegate>(Type delegateType, string lambdaCode, Type defaultInstanceType, bool firstTypeIsDefaultInstance, Type[] paramTypes, string[] namespaces = null, IReadOnlyDictionary<string, object> constants = null)
     {
         var options = new ParserOptions();
         var builder = new CStyleBuilder();
         var tokenizer = new Tokenizer(lambdaCode ?? throw new ArgumentNullException(nameof(lambdaCode)), builder);
-        var parser = new ExpressionParserCore(options, builder, new DefaultResolver(new TypeFinder(options, namespaces, [])));
+        var parser = new ExpressionParserCore(options, builder, new DefaultResolver(new TypeFinder(options, namespaces, []), constants));
         var context = new ParserContext(delegateType ?? typeof(TDelegate), tokenizer, defaultInstanceType, paramTypes, firstTypeIsDefaultInstance);
         return Expression.Lambda(parser.ReadExpression(context), context.Parameters);
     }
@@ -235,13 +236,13 @@ static public class ExpressionParser
     /// <param name="namespaces">Default resolution namespaces</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException">Exception thrown if <paramref name="code"/> is null</exception>
-    static public Expression ParseExpression(string code, ParameterExpression[] parameters, string[] namespaces = null)
+    static public Expression ParseExpression(string code, ParameterExpression[] parameters, bool defaultFirst, string[] namespaces = null, IReadOnlyDictionary<string, object> constants = null)
     {
         var options = new ParserOptions();
         var builder = new CStyleBuilder();
         var tokenizer = new Tokenizer(code ?? throw new ArgumentNullException(nameof(code)), builder);
-        var parser = new ExpressionParserCore(options, builder, new DefaultResolver(new TypeFinder(options, namespaces, [])));
-        ParserContext context = new ParserContext(null, tokenizer, null, null, false);
+        var parser = new ExpressionParserCore(options, builder, new DefaultResolver(new TypeFinder(options, namespaces, []), constants));
+        ParserContext context = new ParserContext(parameters, tokenizer, defaultFirst);
         foreach (var parameter in parameters)
         {
             context.Parameters.Add(parameter);

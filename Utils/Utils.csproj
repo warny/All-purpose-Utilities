@@ -3,6 +3,7 @@
   <PropertyGroup>
 	  <TargetFramework>net7.0</TargetFramework>
 	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	  <LangVersion>latest</LangVersion>
 	<LangVersion>Latest</LangVersion>
     <Authors>Olivier MARTY</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

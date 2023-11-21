@@ -471,12 +471,27 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
-		/// Transform a string in the form "word(s)" or "chev(al|aux)" into its singular or plural form.
+		/// Create a string of <paramref name="length"/> characters where <paramref name="s"/> is align right or left
 		/// </summary>
-		/// <param name="str">String to transform</param>
-		/// <param name="number">Number of objects</param>
+		/// <param name="s">String to be aligned</param>
+		/// <param name="width">Width of the string, align right if positive, left if negative</param>
 		/// <returns></returns>
-		public static string ToPlural(this string str, long number)
+		public static string Align(this string s, int length)
+		{
+			s ??= "";
+			if (s.Length >= Math.Abs(length)) return s;
+            if (length > 0) return new string(' ', length - s.Length) + s;
+            if (length < 0) return s + new string(' ', length - s.Length);
+			return s;
+        }
+
+        /// <summary>
+        /// Transform a string in the form "word(s)" or "chev(al|aux)" into its singular or plural form.
+        /// </summary>
+        /// <param name="str">String to transform</param>
+        /// <param name="number">Number of objects</param>
+        /// <returns></returns>
+        public static string ToPlural(this string str, long number)
 		{
 			Regex regex = new Regex(@"\((?<singular>\w+)\|(?<plural>\w+)\)|\((?<plural>\w+)\)");
 			return regex.Replace(str, m =>

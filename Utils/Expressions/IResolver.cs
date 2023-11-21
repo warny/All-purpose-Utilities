@@ -19,6 +19,7 @@ namespace Utils.Expressions
         (MethodInfo Method, Expression[] Parameters)? SelectMethod(IEnumerable<MethodInfo> methods, Expression obj, Type[] genericParameters, Expression[] arguments);
         MemberInfo GetStaticPropertyOrField(Type type, string name);
         MemberInfo GetInstancePropertyOrField(Type type, string name);
+        bool TryGetConstant(string name, out ConstantExpression constantExpression);
     }
 
     public interface IDistanceValue<T> 

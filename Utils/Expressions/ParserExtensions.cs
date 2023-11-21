@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Collections;
+using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.Expressions
 {
@@ -187,7 +190,7 @@ namespace Utils.Expressions
 
         public static int GetTypeDistance(this Type toBeAssigned, Type toAssign)
         {
-            if (!toBeAssigned.IsAssignableFrom(toAssign)) return -1;
+            if (!toBeAssigned.IsAssignableFromEx(toAssign)) return -1;
             int distance = 0;
 
             if (toBeAssigned.IsGenericEnumerable(out var toBeAssignedElement) && toAssign.IsGenericEnumerable(out var toAssignElement)) distance += GetTypeDistance(toBeAssignedElement, toAssignElement);
@@ -367,6 +370,27 @@ namespace Utils.Expressions
                     result[lastResultIndex] = Expression.NewArrayInit(elementType, listParams[lastResultIndex..]);
                 }
             }
+
+            for (int i = 0; i < result.Length; i++)
+            {
+                if (methodParams[i].ParameterType == result[i].Type) continue;
+                if (methodParams[i].ParameterType.IsClass != result[i].Type.IsClass)
+                {
+                    result[i] = Expression.Convert(result[i], methodParams[i].ParameterType);
+                }
+                if (methodParams[i].ParameterType.In(Types.Number))
+                {
+                    if (result[i] is ConstantExpression ce)
+                    {
+                        result[i] = Expression.Constant(Convert.ChangeType(ce.Value, methodParams[i].ParameterType));
+                    }
+                    else
+                    {
+                        result[i] = Expression.Convert(result[i], methodParams[i].ParameterType);
+                    }
+                }
+            }
+
 
             return result;
         }

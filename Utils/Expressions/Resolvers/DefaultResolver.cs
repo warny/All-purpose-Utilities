@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 using Utils.Objects;
 
 namespace Utils.Expressions.Resolvers;
@@ -20,9 +21,13 @@ public class DefaultResolver : IResolver
 
     public char NullableMarkChar { get; } = '?';
 
-    public DefaultResolver(ITypeFinder typeFinder)
+    public IReadOnlyDictionary<string, object> Constants { get; }
+
+    public DefaultResolver(ITypeFinder typeFinder, IReadOnlyDictionary<string, object> constants)
     {
+        constants ??= new Dictionary<string, object>();
         this.TypeFinder = typeFinder;
+        this.Constants = constants;
     }
 
     public Type ResolveType(string name) => ResolveType(name, null);
@@ -114,6 +119,15 @@ public class DefaultResolver : IResolver
 
     public MemberInfo GetInstancePropertyOrField(Type type, string name) 
         => (MemberInfo)type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) ?? (MemberInfo)type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+
+    public bool TryGetConstant(string name, out ConstantExpression constantExpression) {
+        if (Constants.TryGetValue(name, out var value)) {
+            constantExpression = Expression.Constant(value);
+            return true;
+        }
+        constantExpression = null;
+        return false;
+    }
 
     private class DistanceValue<T>(int distance, T value) : IDistanceValue<T>
     {

@@ -12,9 +12,20 @@ namespace Utils.Net.DNS
     {
         public static Expression BuildExpression(Expression element, string expression)
         {
-            var result = ExpressionParser.Parse(expression, element.Type, ["Utils.Net.DNS"]);
-            var result2 = ExpressionEx.ExtractInnerExpression(result, element);
-            return result2;
+            if (element is ParameterExpression pe)
+            {
+                return ExpressionParser.ParseExpression(expression, [pe], true, ["Utils.Net.DNS"]);
+            }
+            else
+            {
+                var variable = Expression.Variable(element.Type, "<default>");
+                return Expression.Block([variable],
+                    Expression.Assign(variable, element),
+                    ExpressionParser.ParseExpression(expression, [variable], true, ["Utils.Net.DNS"])
+                );
+            }
+            //var result2 = ExpressionEx.ExtractInnerExpression(result, element);
+            //return result2;
         }
     }
 }

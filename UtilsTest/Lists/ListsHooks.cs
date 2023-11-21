@@ -93,7 +93,7 @@ namespace UtilsTest.Lists
 			var expected = table.CreateSet<KeyValuePair<int, string>>().OrderBy(kv=>kv.Key);
 			var result = d.OrderBy(kv => kv.Key).ToArray();
 
-			foreach (var c in CollectionUtils.Zip(expected, result))
+			foreach (var c in EnumerableEx.Zip(expected, result))
 			{
 				Assert.IsTrue(kvComparer.Equals(c.Item1, c.Item2));
 			}

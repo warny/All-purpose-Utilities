@@ -27,7 +27,7 @@ public abstract class GlyphSimple : GlyphBase
 
 	private IEnumerable<OutLineFlags> GetFlags()
 	{
-		var points = CollectionUtils.Flatten(contours).ToArray();
+		var points = EnumerableEx.Flatten(contours).ToArray();
 		return GetFlags(points);
 	}
 
@@ -125,16 +125,16 @@ public abstract class GlyphSimple : GlyphBase
 		var xCoords = coords(OutLineFlags.XIsByte, OutLineFlags.XIsSame);
 		var yCoords = coords(OutLineFlags.YIsByte, OutLineFlags.YIsSame);
 
-		var points = CollectionUtils.Zip(xCoords, yCoords, flags, (x, y, flag) => (x, y, flag.HasFlag(OutLineFlags.OnCurve)));
+		var points = EnumerableEx.Zip(xCoords, yCoords, flags, (x, y, flag) => (x, y, flag.HasFlag(OutLineFlags.OnCurve)));
 
-		contours = CollectionUtils.Slice(points, contourEndPoints).Select(p => p.ToArray()).ToArray();
+		contours = EnumerableEx.Slice(points, contourEndPoints).Select(p => p.ToArray()).ToArray();
 	}
 
 	public override void WriteData(Writer data)
 	{
-		var points = CollectionUtils.Flatten(contours).ToArray();
+		var points = EnumerableEx.Flatten(contours).ToArray();
 		var flags = GetFlags(points).ToArray();
-		var compactFlags = CollectionUtils.Pack(flags);
+		var compactFlags = EnumerableEx.Pack(flags);
 
 		base.WriteData(data);
 		for (int i = 0; i < NumContours; i++)
@@ -197,7 +197,7 @@ public abstract class GlyphSimple : GlyphBase
 		get
 		{
 			var flags = GetFlags().ToArray();
-			var compactFlags = CollectionUtils.Pack(flags);
+			var compactFlags = EnumerableEx.Pack(flags);
 
 			int length = base.Length;
 			length += NumContours * 2;

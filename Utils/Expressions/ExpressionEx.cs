@@ -179,7 +179,7 @@ public static class ExpressionEx
         );
     }
 
-    public static Expression For(ParameterExpression iterator, Expression init, Expression test, Expression next, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)
+    public static Expression For(ParameterExpression iterator, Expression init, Expression test, Expression[] next, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)
     {
         breakLoop ??= Expression.Label("__break__");
         continueLoop ??= Expression.Label("__continue__");
@@ -190,9 +190,11 @@ public static class ExpressionEx
                 Expression.Assign(iterator, init),
                 Expression.Loop(
                     Expression.Block(
+                        [
                         Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop)),
                         iteration,
-                        Expression.Assign(iterator, next)
+                        .. next
+                        ]
                     ),
                     breakLoop, continueLoop
                 )
@@ -454,7 +456,7 @@ public static class ExpressionEx
     {
         if (lambda.Parameters.Count != replacingExpressions.Length) throw new ArgumentException($"{nameof(replacingExpressions)} must be as long as {nameof(lambda)} arguments count", nameof(replacingExpressions));
 
-        var replacements = CollectionUtils.Zip(lambda.Parameters, replacingExpressions).ToDictionary(r => r.Item1, r => r.Item2);
+        var replacements = EnumerableEx.Zip(lambda.Parameters, replacingExpressions).ToDictionary(r => r.Item1, r => r.Item2);
         if (replacements.Any(r => !r.Key.Type.IsAssignableFrom(r.Value.Type))) throw new ArgumentException($"{nameof(replacingExpressions)} types must be compatible with {nameof(lambda)} arguments types", nameof(replacingExpressions));
 
         var labels = new Dictionary<LabelTarget, LabelTarget>();

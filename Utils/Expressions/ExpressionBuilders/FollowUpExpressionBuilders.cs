@@ -31,30 +31,44 @@ public class PlusOperatorBuilder() : IFollowUpExpressionBuilder
     {
         var concat = typeof(string).GetRuntimeMethod("Concat", new Type[] { typeof(string[]) });
 
-        IEnumerable<Expression> lefts;
-        IEnumerable<Expression> rights;
+        Expression[] lefts;
+        Expression[] rights;
 
         if (currentExpression is MethodCallExpression methodCallLeft && methodCallLeft.Method == concat)
         {
-            lefts = ((NewArrayExpression)methodCallLeft.Arguments[0]).Expressions;
-        } else {
-            lefts = [currentExpression]; 
+            lefts = [.. ((NewArrayExpression)methodCallLeft.Arguments[0]).Expressions];
+        }
+        else
+        {
+            lefts = [currentExpression];
         }
 
         if (right is MethodCallExpression methodCallRight && methodCallRight.Method == concat)
         {
-            rights = ((NewArrayExpression)methodCallRight.Arguments[0]).Expressions;
+            rights = [.. ((NewArrayExpression)methodCallRight.Arguments[0]).Expressions];
         }
         else
         {
             rights = [right];
         }
 
-        // Call the string.Concat method
-        return Expression.Call(
-            concat,
-            Expression.NewArrayInit(typeof(string), Enumerable.Concat(lefts, rights))
-        );
+        if (lefts[^1] is ConstantExpression constLeft && rights[0] is ConstantExpression constRight)
+        {
+            lefts[^1] = Expression.Constant((string)constLeft.Value + (string)constRight.Value, typeof(ConstantExpression));
+            rights = rights[1..];
+        }
+
+        var newArguments = Enumerable.Concat(lefts, rights).ToArray();
+        if (newArguments.Length > 1)
+        {
+
+            // Call the string.Concat method
+            return Expression.Call(concat, Expression.NewArrayInit(typeof(string), newArguments));
+        }
+        else
+        {
+            return newArguments[0];
+        }
     }
 }
 

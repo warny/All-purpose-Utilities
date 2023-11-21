@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Utils.Mathematics.Expressions;
 using Utils.Objects;
 
-namespace Utils.Expressions
+namespace Utils.Mathematics.Expressions
 {
     public static class ExpressionExtensions
     {

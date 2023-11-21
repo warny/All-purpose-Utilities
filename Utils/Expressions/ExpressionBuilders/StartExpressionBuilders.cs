@@ -307,11 +307,19 @@ public class DefaultUnaryBuilder : IStartExpressionBuilder
     {
         // Parameter or class or default instance property
         if (context.TryFindVariable(val, out ParameterExpression parameter)) return parameter;
+        if (parser.Resolver.TryGetConstant(val, out ConstantExpression constant)) return constant;
 
         // Default instance method call
         if (context.DefaultInstanceParam != null)
         {
             var expression = parser.GetExpression(context, context.DefaultInstanceParam, val);
+            if (expression != null) return expression;
+        }
+
+        // default static method call
+        if (context.DefaultInstanceType != null)
+        {
+            var expression = parser.GetExpression(context, context.DefaultInstanceType, val);
             if (expression != null) return expression;
         }
 
