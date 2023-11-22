@@ -97,7 +97,6 @@ namespace Utils.Expressions
 
             int depth = 1;
             // Read the content inside the brackets
-            StringBuilder sb = new();
             string str;
             while (depth > 0) 
             {

@@ -16,7 +16,9 @@ public class CStyleBuilder : IBuilder
             .Union(AdditionalSymbols)
             .Union(IntegerPrefixes.Select(p => p.Key))
             .Union(StartExpressionBuilders.Select(p => p.Key))
+            .Union(StartExpressionBuilders.Values.OfType<IAdditionalTokens>().SelectMany(p => p.AdditionalTokens))
             .Union(FollowUpExpressionBuilder.Select(p => p.Key))
+            .Union(FollowUpExpressionBuilder.Values.OfType<IAdditionalTokens>().SelectMany(p => p.AdditionalTokens))
         ;
 
 
@@ -25,7 +27,7 @@ public class CStyleBuilder : IBuilder
     public char ListSeparator { get; } = ',';
 
     public char[] SpaceSymbols { get; } = [' ', '\t', '\r', '\n'];
-    public string[] AdditionalSymbols { get; } = ["=>", ":", "(", ")", "{", "}", "[", "]", "<", ">"];
+    public string[] AdditionalSymbols { get; } = ["=>"];
 
     public IEnumerable<TryReadToken> TokenReaders { get; } =
     [
@@ -63,7 +65,7 @@ public class CStyleBuilder : IBuilder
         { "typeof", new TypeofBuilder() },
         { "new", new NewBuilder() },
 
-        { "if", new IfBuilder() },
+        { "if", new IfBuilder("else") },
         { "while", new WhileBuilder() },
         { "for", new ForBuilder() },
         { "break", new BreakBuilder() },
@@ -82,7 +84,6 @@ public class CStyleBuilder : IBuilder
 
         { ".", new ThrowParseException() },
         { ",", new ReadNextExpressionBuilder() },
-        { ";", new InstructionSeparatorBuilder() },
 
     };
     public IStartExpressionBuilder FallbackUnaryBuilder { get; } = new DefaultUnaryBuilder();
@@ -143,8 +144,6 @@ public class CStyleBuilder : IBuilder
         { "^=", new AssignationBuilder(Expression.ExclusiveOrAssign) },
         { "|=", new AssignationBuilder(Expression.OrAssign) },
         { "&=", new AssignationBuilder(Expression.AndAssign) },
-
-        { "else", new ElseBuilder() },
     };
 
     public IFollowUpExpressionBuilder FallbackBinaryOrTernaryBuilder { get; } = new ThrowParseException();
@@ -211,8 +210,8 @@ public class CStyleBuilder : IBuilder
                 if (hasDot) return true;
                 if (!char.IsDigit(content[i + 1])) return true;
                 hasDot = true;
-                length++;
             }
+            length++;
         }
 
         if (content.Length <= index + length + 1) return true;

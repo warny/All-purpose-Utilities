@@ -128,11 +128,11 @@ public class ExpressionParserCore
         string val = "";
 
         // Initialization
-        val = context.Tokenizer.ReadToken();
-
+        val = context.Tokenizer.PeekToken();
+        if (markers?.Test(val, out isClosedWrap) ?? false) return null;
+        context.Tokenizer.ReadToken();
         // Check if the value is null, return null if so
         if (val == null) return null;
-        if (markers?.Test(val, out isClosedWrap) ?? false) return null;
 
         char firstChar = val[0];
 
@@ -159,9 +159,9 @@ public class ExpressionParserCore
         // If isCloseWrap is false (returning immediately when encountering a closing bracket), and the next operator's priority level is higher than the current priority level, then compute the next one.
         while (!isClosedWrap && (nextLevel = TryGetNextPriorityLevel(context)) > priorityLevel)
         {
-            string nextVal = context.Tokenizer.ReadToken();
-
+            string nextVal = context.Tokenizer.PeekToken();
             if (markers?.Test(nextVal, out isClosedWrap) ?? false) return currentExpression;
+            context.Tokenizer.ReadToken();
 
             if (!Builder.FollowUpExpressionBuilder.TryGetValue(nextVal, out var expressionBuilder))
             {
@@ -213,12 +213,11 @@ public class ExpressionParserCore
         while (!newIsClosedWrap)
         {
             Expression expression = ReadExpression(context, 0, markers, out newIsClosedWrap);
-            if (!newIsClosedWrap || expression != null) result.Add(expression);
-            var nextToken = context.Tokenizer.PeekToken();
-            if (!newIsClosedWrap && markers.Test(nextToken, expression is BlockExpression, out var isEnd)) {
-                context.Tokenizer.ReadToken();
-                if (isEnd) break;
-            }
+            if (expression == null && newIsClosedWrap) { context.Tokenizer.ReadSymbol(markers.End); break; }
+            result.Add(expression);
+            var nextToken = context.Tokenizer.ReadToken();
+            if (!markers.Test(nextToken, expression is BlockExpression, out var isEnd)) throw new ParseUnknownException(nextToken, context.Tokenizer.Position.Index);
+            if (isEnd) break;
         }
         return [.. result];
     }
@@ -322,7 +321,7 @@ public class ExpressionParserCore
 
             var methodAndParameters = Resolver.SelectMethod(methods, null, genericParams, listArguments);
 
-            if (methodAndParameters is not null)
+            if (methodAndParameters?.Method is not null)
             {
                 return Expression.Call(null, methodAndParameters?.Method, methodAndParameters?.Parameters);
             }

@@ -83,7 +83,7 @@ public class BlockTests
     [TestMethod]
     public void WhileIfBreakTest()
     {
-        Random random = new Random();
+        Random random = new();
         var expression = "(char c, int length) =>  { string result=\"\"; while (true) { if(result.Length >= length) break; else result += c.ToString(); }; result; }";
 
         var e = ExpressionParser.Parse(expression);

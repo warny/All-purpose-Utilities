@@ -6,74 +6,73 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Utils.Objects
+namespace Utils.Objects;
+
+public class CustomFormatter : NullFormatter
 {
-    public class CustomFormatter : NullFormatter
+
+    private readonly IDictionary<Type, IDictionary <string, Func<object, IFormatProvider, string>>> typeFormatters = new Dictionary<Type, IDictionary<string, Func<object, IFormatProvider, string>>>();
+
+    public CustomFormatter() { }
+    public CustomFormatter (CultureInfo CultureInfo) : base (CultureInfo) { }
+
+    public void AddFormatter<T>(string format, Func<T, string> formatter)
     {
-
-        private readonly IDictionary<Type, IDictionary <string, Func<object, IFormatProvider, string>>> typeFormatters = new Dictionary<Type, IDictionary<string, Func<object, IFormatProvider, string>>>();
-
-        public CustomFormatter() { }
-        public CustomFormatter (CultureInfo CultureInfo) : base (CultureInfo) { }
-
-        public void AddFormatter<T>(string format, Func<T, string> formatter)
+        if (!typeFormatters.TryGetValue(typeof(T), out var formatters))
         {
-            if (!typeFormatters.TryGetValue(typeof(T), out var formatters))
-            {
-                formatters = new Dictionary<string, Func<object, IFormatProvider, string>>();
-            }
-            formatters[format] = (object o, IFormatProvider formatProvider) => formatter((T)o);
+            formatters = new Dictionary<string, Func<object, IFormatProvider, string>>();
         }
-
-        public void AddFormatter<T>(string format, Func<T, IFormatProvider, string> formatter)
-        {
-            if (!typeFormatters.TryGetValue(typeof(T), out var formatters))
-            {
-                formatters = new Dictionary<string, Func<object, IFormatProvider, string>>();
-            }
-            formatters[format] = (object o, IFormatProvider formatProvider) => formatter((T)o, formatProvider);
-        }
-
-        public override string Format(string format, object arg, IFormatProvider formatProvider)
-        {
-            formatProvider ??= CultureInfo;
-            if (arg is null) return "";
-            if (typeFormatters.TryGetValue(arg.GetType(), out var formatters) && formatters.TryGetValue(format, out var formatter))
-            {
-                return formatter(arg, formatProvider);
-            }
-            return base.Format(format, arg, formatProvider);
-        }
-
+        formatters[format] = (object o, IFormatProvider formatProvider) => formatter((T)o);
     }
+
+    public void AddFormatter<T>(string format, Func<T, IFormatProvider, string> formatter)
+    {
+        if (!typeFormatters.TryGetValue(typeof(T), out var formatters))
+        {
+            formatters = new Dictionary<string, Func<object, IFormatProvider, string>>();
+        }
+        formatters[format] = (object o, IFormatProvider formatProvider) => formatter((T)o, formatProvider);
+    }
+
+    public override string Format(string format, object arg, IFormatProvider formatProvider)
+    {
+        formatProvider ??= CultureInfo;
+        if (arg is null) return "";
+        if (typeFormatters.TryGetValue(arg.GetType(), out var formatters) && formatters.TryGetValue(format, out var formatter))
+        {
+            return formatter(arg, formatProvider);
+        }
+        return base.Format(format, arg, formatProvider);
+    }
+
 }
 
 
 public class NullFormatter : IFormatProvider, ICustomFormatter
 {
-    public static NullFormatter Default { get; } = new NullFormatter();
-    
-    public CultureInfo CultureInfo { get; }
+public static NullFormatter Default { get; } = new NullFormatter();
 
-    public NullFormatter() : this (CultureInfo.CurrentCulture) { }
-    public NullFormatter(CultureInfo cultureInfo)
-    {
-        CultureInfo = cultureInfo;
-    }
+public CultureInfo CultureInfo { get; }
 
-    public object GetFormat(Type formatType)
-    {
-        if (formatType == typeof(ICustomFormatter))
-            return this;
-        else
-            return null;
-    }
+public NullFormatter() : this (CultureInfo.CurrentCulture) { }
+public NullFormatter(CultureInfo cultureInfo)
+{
+    CultureInfo = cultureInfo;
+}
 
-    public virtual string Format(string format, object arg, IFormatProvider formatProvider) => arg switch
-    {
-        IFormattable formattable => formattable.ToString(format, formatProvider ?? CultureInfo),
-        _ => arg?.ToString() ?? ""
-    };
+public object GetFormat(Type formatType)
+{
+    if (formatType == typeof(ICustomFormatter))
+        return this;
+    else
+        return null;
+}
+
+public virtual string Format(string format, object arg, IFormatProvider formatProvider) => arg switch
+{
+    IFormattable formattable => formattable.ToString(format, formatProvider ?? CultureInfo),
+    _ => arg?.ToString() ?? ""
+};
 
 
 }

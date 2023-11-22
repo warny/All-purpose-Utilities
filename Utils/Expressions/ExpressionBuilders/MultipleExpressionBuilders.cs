@@ -12,10 +12,14 @@ public class BracketBuilder : IFollowUpExpressionBuilder
 {
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
+        Parenthesis brackets = new Parenthesis("[", "]", ",");
         // Indexer access
         if (currentExpression.Type.IsArray)
         {
-            return Expression.ArrayIndex(currentExpression, parser.Options.AdjustType(parser.ReadExpression(context, 0, new Parenthesis("[", "]", ","), out _), typeof(int)));
+            var result = Expression.ArrayIndex(currentExpression, parser.Options.AdjustType(parser.ReadExpression(context, 0, brackets, out _), typeof(int)));
+            string token = context.Tokenizer.ReadToken();
+            if (token != brackets.End) throw new ParseUnknownException(token, context.Tokenizer.Position.Index);
+            return result;
         }
 
         DefaultMemberAttribute[] atts = currentExpression.GetType().GetTypeInfo().GetCustomAttributes<DefaultMemberAttribute>().ToArray();
@@ -28,7 +32,7 @@ public class BracketBuilder : IFollowUpExpressionBuilder
         MethodInfo methodInfo = propertyInfo.GetMethod;
 
         // Get parameters
-        var listParam = parser.ReadExpressions(context, new Parenthesis("[", "]", ","));
+        var listParam = parser.ReadExpressions(context, brackets);
 
         return Expression.Call(currentExpression, methodInfo, listParam);
     }
@@ -75,8 +79,10 @@ public class CloseBuilder(string wrapStart) : IFollowUpExpressionBuilder
     }
 }
 
-public class ConditionalBuilder(string choiceSymbol) : IFollowUpExpressionBuilder
+public class ConditionalBuilder(string choiceSymbol) : IFollowUpExpressionBuilder, IAdditionalTokens
 {
+    public IEnumerable<string> AdditionalTokens => [":"];
+
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression first = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);

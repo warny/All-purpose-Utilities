@@ -210,12 +210,3 @@ public class TypeCastBuilder : IFollowUpExpressionBuilder
     }
 }
 
-public class ElseBuilder : IFollowUpExpressionBuilder
-{
-    public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
-    {
-        if (currentExpression is not ConditionalExpression ce) throw new ParseWrongSymbolException(nextVal, val, context.Tokenizer.Position.Index);
-        Expression falseExpression = parser.ReadExpression(context, 0, null, out _);
-        return Expression.IfThenElse(ce.Test, ce.IfTrue, falseExpression);
-    }
-}

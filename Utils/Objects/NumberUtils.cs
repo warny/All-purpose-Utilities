@@ -77,5 +77,7 @@ namespace Utils.Objects
 			return BitConverter.ToDouble(result, 0);
 		}
 
+		public static T RandomFrom<T>(this Random r, params T[] values)
+			=> values[r.Next(values.Length)];
 	}
 }

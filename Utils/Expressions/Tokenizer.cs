@@ -35,7 +35,7 @@ namespace Utils.Expressions
         {
             if (Read(true, isIgnoreWhiteSpace))
             {
-                string token = this.Content.Substring(this.Position.Index, this.Position.Length);
+                var token = this.Content.Substring(this.Position.Index, this.Position.Length);
                 foreach (var stringTransformer in StringTransformers)
                 {
                     if (stringTransformer(token, out string result))
@@ -75,14 +75,9 @@ namespace Utils.Expressions
 
         public string PeekToken()
         {
-            int index = this.position.Index;
-            int length = this.position.Length;
-
+            PushPosition();
             string str = ReadToken(true);
-
-            this.position.Index = index;
-            this.position.Length = length;
-
+            PopPosition();
             return str;
         }
 
