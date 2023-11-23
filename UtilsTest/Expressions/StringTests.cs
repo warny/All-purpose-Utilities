@@ -32,7 +32,7 @@ public class StringTests
         {
             var subTest = tests[0..i];
 
-            var expression = "item => " + string.Join(" + ", subTest.Select((s, i) => $"item[{i}]"));
+            var expression = "(item) => " + string.Join(" + ", subTest.Select((s, i) => $"item[{i}]"));
             var e = ExpressionParser.Parse<Func<string[], string>>(expression);
             var f = e.Compile();
 

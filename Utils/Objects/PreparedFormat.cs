@@ -208,7 +208,7 @@ namespace Utils.Objects
         {
             var allParameters = parameterExpressions.Append(formatter).Append(culture).Where(p => p is not null).Distinct().ToArray();
             string generatedCommand = GenerateCommands(formatString, formatter, culture);
-            var result = ExpressionParser.ParseExpression(generatedCommand, allParameters, defaultFirst, namespaces);
+            var result = ExpressionParser.ParseExpression(generatedCommand, allParameters, null, defaultFirst, namespaces);
             return result;
         }
 

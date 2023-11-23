@@ -317,9 +317,9 @@ public class DefaultUnaryBuilder : IStartExpressionBuilder
         }
 
         // default static method call
-        if (context.DefaultInstanceType != null)
+        if (context.DefaultStaticType != null)
         {
-            var expression = parser.GetExpression(context, context.DefaultInstanceType, val);
+            var expression = parser.GetExpression(context, context.DefaultStaticType, val);
             if (expression != null) return expression;
         }
 

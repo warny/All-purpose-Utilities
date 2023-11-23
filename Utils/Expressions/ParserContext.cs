@@ -1,63 +1,49 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Xml.Linq;
+using Utils.Collections;
+using Utils.Objects;
 
 namespace Utils.Expressions;
 
 public class ParserContext
 {
-    public ParserContext(Type delegateType, Tokenizer tokenizer, Type defaultInstanceType, Type[] paramTypes, bool firstTypeIsDefaultInstance)
+    public ParserContext(Type delegateType, string[] paramNames, Type defaultStaticType, Tokenizer tokenizer, bool firstArgumentIsDefaultInstance)
     {
-        DelegateType = delegateType;
+        DelegateType = delegateType.ArgMustNotBeNull();
+        ParameterInfo[] invokeMethodParameters = DelegateType.GetMethod("Invoke")?.GetParameters();
+
         Tokenizer = tokenizer;
-        DefaultInstanceType = defaultInstanceType;
-        ParamTypes = paramTypes;
-        FirstTypeIsDefaultInstance = firstTypeIsDefaultInstance;
-        DefaultInstanceParam = defaultInstanceType != null ? Expression.Parameter(defaultInstanceType, "___DefaultInstanceParam") : null;
+        DefaultStaticType = defaultStaticType;
+        FirstArgumentIsDefaultInstance = firstArgumentIsDefaultInstance;
         stack = new ContextStackElement(null);
 
-        ParameterInfo[] invokeMethodParameters = DelegateType?.GetMethod("Invoke")?.GetParameters();
+        if (paramNames.IsNullOrEmptyCollection()) paramNames = null;
+        if (paramNames is not null && paramNames.Length != invokeMethodParameters.Length) throw new ArgumentException("paramNames for delegate name overriding must be of the same length than the delegate type argument count", nameof(paramNames));
 
-        // Get the parameter types of the delegate
-        ParamTypes ??= invokeMethodParameters?.Select(m => m.ParameterType).ToArray();
+        Parameters = new List<ParameterExpression>(invokeMethodParameters.Length);
 
-        // Determine whether a specific delegate type is specified
-        if (invokeMethodParameters != null && FirstTypeIsDefaultInstance && DelegateType.GetType().GetTypeInfo().IsAssignableFrom(typeof(MulticastDelegate).GetTypeInfo()))
+        for (int i = 0; i < invokeMethodParameters.Length; i++)
         {
-            ParameterInfo firstParam = invokeMethodParameters.FirstOrDefault();
-            if (firstParam != null)
-            {
-                DefaultInstanceType = firstParam.ParameterType;
-            }
+            Parameters.Add(Expression.Parameter(invokeMethodParameters[i].ParameterType, paramNames?[i] ?? invokeMethodParameters[i].Name));
         }
 
-        if (DefaultInstanceParam != null)
-        {
-            // Add default parameter
-            Parameters.Add(DefaultInstanceParam);
-        }
-
+        if (firstArgumentIsDefaultInstance) DefaultInstanceParam = Parameters.FirstOrDefault();
     }
 
-    public ParserContext(ParameterExpression[] parameters, Tokenizer tokenizer, bool firstTypeIsDefaultInstance)
+    public ParserContext(ParameterExpression[] parameters, Type defaultStaticType, Tokenizer tokenizer, bool firstTypeIsDefaultInstance)
     {
         DelegateType = null;
         Tokenizer = tokenizer;
-        DefaultInstanceType = firstTypeIsDefaultInstance && parameters.Length > 0 ? parameters[0].Type : null;
-        ParamTypes = parameters.Select(p=>p.Type).ToArray();
-        FirstTypeIsDefaultInstance = firstTypeIsDefaultInstance;
+        DefaultStaticType = defaultStaticType;
+        FirstArgumentIsDefaultInstance = firstTypeIsDefaultInstance;
         DefaultInstanceParam = firstTypeIsDefaultInstance && parameters.Length > 0 ? parameters[0] : null;
         stack = new ContextStackElement(null);
 
         // Get the parameter types of the delegate
-        foreach (var p in Parameters)
+        foreach (var p in parameters)
         {
             Parameters.Add(p);
         }
@@ -66,12 +52,11 @@ public class ParserContext
 
     public Type DelegateType { get; }
     public Tokenizer Tokenizer { get; }
-    public Type DefaultInstanceType { get; }
+    public Type DefaultStaticType { get; }
 
-    public Type[] ParamTypes { get; set; }
     public IList<ParameterExpression> Parameters { get; } = new List<ParameterExpression>();
 
-    public bool FirstTypeIsDefaultInstance { get; }
+    public bool FirstArgumentIsDefaultInstance { get; }
     public ParameterExpression DefaultInstanceParam { get; }
 
     private ContextStackElement stack { get; set; }

@@ -38,10 +38,6 @@ public class ExpressionParserCore
         Parenthesis[] markers = [ ("<", ">"), ("(", ")") ];
 
         int paramIndexPrefix = 0;
-        if (context.DefaultInstanceType != null)
-        {
-            paramIndexPrefix = 1;
-        }
 
         // Check for a lambda prefix (e.g., m=>)
         string val = context.Tokenizer.ReadToken();
@@ -58,6 +54,9 @@ public class ExpressionParserCore
                 }
 
                 // Parse parameters
+                var parameters = context.Parameters?.ToArray();
+                context.Parameters.Clear();
+
                 string[] paramsName = bracketContent.SplitCommaSeparatedList(',', markers).Select(p => p.Trim()).ToArray();
                 for (int i = 0; i < paramsName.Length; i++)
                 {
@@ -66,7 +65,7 @@ public class ExpressionParserCore
                     string paramName;
                     if (typeName.Length == 1)
                     {
-                        paramType = context.ParamTypes?[i + paramIndexPrefix] ?? typeof(object);
+                        paramType = parameters?[i + paramIndexPrefix].Type ?? typeof(object);
                         paramName = paramsName[i];
                         context.Parameters.Add(Expression.Parameter(paramType, paramName));
                     }
@@ -90,7 +89,7 @@ public class ExpressionParserCore
             string lambdaOperator = context.Tokenizer.ReadToken();
             if (lambdaOperator == "=>")
             {
-                Type paramType = context.ParamTypes?[0 + paramIndexPrefix] ?? typeof(object);
+                Type paramType = context.Parameters?[0 + paramIndexPrefix].Type ?? typeof(object);
                 context.Parameters.Add(Expression.Parameter(paramType, val));
                 return true;
             }

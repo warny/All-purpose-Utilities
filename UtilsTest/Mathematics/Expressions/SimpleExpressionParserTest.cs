@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq.Expressions;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions
@@ -22,14 +23,12 @@ namespace UtilsTest.Mathematics.Expressions
 				("x*y", (double x, double y) => x * y),
 				("x/y", (double x, double y) => x / y),
 				("x%y", (double x, double y) => x % y),
-				("x^y", (double x, double y) => Math.Pow(x, y)),
+				("x**y", (double x, double y) => Math.Pow(x, y)),
 			};
 
-
-			MathExpressionParser parser = new MathExpressionParser();
 			foreach (var test in tests)
 			{
-				var result = parser.ParseExpression(test.Expression, parameters);
+				var result = ExpressionParser.Parse<Func<double, double, double>>(test.Expression, parameters);
 				Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
 			}
 		}
@@ -52,10 +51,9 @@ namespace UtilsTest.Mathematics.Expressions
 			};
 
 
-			MathExpressionParser parser = new MathExpressionParser();
 			foreach (var test in tests)
 			{
-				var result = parser.ParseExpression(test.Expression, parameters);
+                var result = ExpressionParser.Parse<Func<double, double, double, double>>(test.Expression, parameters);
 				Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
 			}
 		}
@@ -74,10 +72,9 @@ namespace UtilsTest.Mathematics.Expressions
 			};
 
 
-			MathExpressionParser parser = new MathExpressionParser();
 			foreach (var test in tests)
 			{
-				var result = parser.ParseExpression(test.Expression, parameters);
+                var result = ExpressionParser.Parse<Func<double, double>>(test.Expression, parameters, typeof(Math), false);
 				Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
 			}
 		}
