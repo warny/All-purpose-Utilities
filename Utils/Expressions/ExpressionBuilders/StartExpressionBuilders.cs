@@ -304,7 +304,7 @@ public class ParenthesisBuilder(string closeParenthesis, string separator) : ISt
         context.PopContext();
         var lambdaExpression = Expression.Lambda(innerExpression, context.StackVariables);
         context.PopContext();
-        return Expression.Constant(lambdaExpression.Compile());
+        return lambdaExpression;
     }
 }
 

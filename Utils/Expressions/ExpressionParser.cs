@@ -120,6 +120,16 @@ static public class ExpressionParser
         return (Expression<TDelegate>)ParseCore(parameters, lambdaCode, defaultStaticType, firstTypeIsDefaultInstance, namespaces);
     }
 
+    /// <summary>
+    /// parse the Lambda expression code
+    /// </summary>
+    /// <param name = "lambdaCode"> lambda expression code. Such as: m => m.ToString () </param>
+    /// <param name = "firstTypeIsDefaultInstance"> whether the first type is the default instance </param>
+    /// <param name = "namespaces"> namespace set </param>
+    static public LambdaExpression Parse(string lambdaCode, ParameterExpression[] parameters, Type defaultStaticType, bool firstTypeIsDefaultInstance, string[] namespaces = null)
+    {
+        return ParseCore(parameters, lambdaCode, defaultStaticType, firstTypeIsDefaultInstance, namespaces);
+    }
     #endregion
 
     #region all Compile()

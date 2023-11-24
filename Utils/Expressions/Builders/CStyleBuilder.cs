@@ -217,7 +217,7 @@ public class CStyleBuilder : IBuilder
 
         if (content.Length <= index + length + 1) return true;
 
-        var nextChar = content[index + length + 1];
+        var nextChar = content[index + length];
         if ((new char[] { 'M', 'D', 'F', 'L', 'X' }).Contains(char.ToUpperInvariant(nextChar))) length++;
 
         return true;

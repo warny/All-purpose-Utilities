@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
+using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions
 {
@@ -40,10 +43,26 @@ namespace Utils.Mathematics.Expressions
 			}
 
 			if (x is ConstantExpression xco && y is ConstantExpression yco) {
-				return xco.Value.Equals (yco.Value);
-			}
+				if (!xco.Type.In(Types.Number) || !yco.Type.In(Types.Number)) return xco.Value.Equals(yco.Value);
 
-			if (x is ParameterExpression xpe && y is ParameterExpression ype) {
+				bool TryCompareNumber(ConstantExpression x, ConstantExpression y, Type type, out bool result) {
+					result = false;
+					if (x.Type != type && y.Type != type) return false;
+					if (Marshal.SizeOf(xco.Type) > Marshal.SizeOf(type)) return false;
+                    if (Marshal.SizeOf(yco.Type) > Marshal.SizeOf(type)) return false;
+                    result = Convert.ChangeType(xco.Value, type).Equals(Convert.ChangeType(yco.Value, type));
+					return true;
+				}
+
+				foreach (var type in Types.Number)
+				{
+					if (TryCompareNumber(xco, yco, type, out var result)) return result;
+				}
+
+				return false;
+            }
+
+            if (x is ParameterExpression xpe && y is ParameterExpression ype) {
 				int xi = xParams?.IndexOf(e => e.Name == xpe.Name) ?? -1;
 				int yi = yParams?.IndexOf(e => e.Name == ype.Name) ?? -1;
 				
