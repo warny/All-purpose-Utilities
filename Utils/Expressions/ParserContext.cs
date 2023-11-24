@@ -18,7 +18,7 @@ public class ParserContext
         Tokenizer = tokenizer;
         DefaultStaticType = defaultStaticType;
         FirstArgumentIsDefaultInstance = firstArgumentIsDefaultInstance;
-        stack = new ContextStackElement(null);
+        stack = new ContextStackElement(null, false);
 
         if (paramNames.IsNullOrEmptyCollection()) paramNames = null;
         if (paramNames is not null && paramNames.Length != invokeMethodParameters.Length) throw new ArgumentException("paramNames for delegate name overriding must be of the same length than the delegate type argument count", nameof(paramNames));
@@ -40,7 +40,7 @@ public class ParserContext
         DefaultStaticType = defaultStaticType;
         FirstArgumentIsDefaultInstance = firstTypeIsDefaultInstance;
         DefaultInstanceParam = firstTypeIsDefaultInstance && parameters.Length > 0 ? parameters[0] : null;
-        stack = new ContextStackElement(null);
+        stack = new ContextStackElement(null, false);
 
         // Get the parameter types of the delegate
         foreach (var p in parameters)
@@ -68,14 +68,14 @@ public class ParserContext
 
     public ParameterExpression FirstParameter => Parameters.FirstOrDefault();
 
-    public void PushContext()
+    public void PushContext(bool lambdaExpression = false)
     {
-        stack = new ContextStackElement(stack); 
+        stack = new ContextStackElement(stack, lambdaExpression); 
     }
 
-    public void PushContext(LabelTarget continueLabel, LabelTarget breakLabel)
+    public void PushContext(LabelTarget continueLabel, LabelTarget breakLabel, bool lambdaExpression = false)
     {
-        stack = new ContextStackElement(stack)
+        stack = new ContextStackElement(stack, lambdaExpression)
         {
             ContinueLabel = continueLabel,
             BreakLabel = breakLabel
@@ -108,14 +108,16 @@ public class ParserContext
 internal class ContextStackElement
 {
 
-    internal ContextStackElement parent;
+    internal readonly ContextStackElement parent;
 
+    public bool LambdaExpression { get; }
     public int Depth { get; }
 
-    internal ContextStackElement(ContextStackElement parent)
+    internal ContextStackElement(ContextStackElement parent, bool lambdaExpression)
     {
         this.parent = parent;
         Depth = parent == null ? 0 : parent.Depth + 1;
+        LambdaExpression = lambdaExpression;
     }
 
     private readonly IDictionary<string, ParameterExpression> variables = new Dictionary<string, ParameterExpression>();

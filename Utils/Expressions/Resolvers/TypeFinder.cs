@@ -57,8 +57,11 @@ namespace Utils.Expressions.Resolvers
             if (Options.DefaultTypes.TryGetValue(name, out Type defaultType)) return defaultType;
             if (Cache.TryGetValue((name, genericArguments), out var type)) return type;
 
+            var genericPosition = name.LastIndexOf('<');
+            if (genericPosition < 0) genericPosition = name.Length;
+
             var typeName = (genericArguments?.Length ?? 0) > 0
-                ? name[..name.LastIndexOf('<')] + "`" + genericArguments.Length
+                ? name[..genericPosition] + "`" + genericArguments.Length
                 : name;
 
             var result = InnerFindType(typeName, genericArguments);

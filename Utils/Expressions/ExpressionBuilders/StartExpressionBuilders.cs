@@ -234,7 +234,7 @@ public class UnaryOperandBuilder(Func<Expression, UnaryExpression> buildOperator
 
 public class ParenthesisBuilder(string closeParenthesis, string separator) : IStartExpressionBuilder, IAdditionalTokens
 {
-    public IEnumerable<string> AdditionalTokens => [closeParenthesis, separator];
+    public IEnumerable<string> AdditionalTokens => [closeParenthesis, separator, "<", ">", "(", ")"];
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
@@ -242,6 +242,14 @@ public class ParenthesisBuilder(string closeParenthesis, string separator) : ISt
 
         context.Tokenizer.PushPosition();
         string str = ParserExtensions.GetBracketString(context, parenthesis, true);
+        
+        if (context.Tokenizer.ReadSymbol("=>", false))
+        {
+            // if the parenthesis in followed by => it's a lambda definition
+            context.Tokenizer.DiscardPosition();
+            return LambdaBuilder(parser, context, str);
+        }
+
         Type type = parser.GetType(context, str);
 
         // Found a type, treat it as a type conversion
@@ -259,6 +267,44 @@ public class ParenthesisBuilder(string closeParenthesis, string separator) : ISt
             // Allocate a new isClosedWrap variable
             return result;
         }
+    }
+
+    public Expression LambdaBuilder(ExpressionParserCore parser, ParserContext context, string lambdaPrefix)
+    {
+        Parenthesis[] markers = [("<", ">"), ("(", ")")];
+
+        // Parse parameters
+        string[] paramsDefinitions = lambdaPrefix.SplitCommaSeparatedList(',', markers).Select(p => p.Trim()).ToArray();
+        var parameters = new ParameterExpression[paramsDefinitions.Length];
+
+        context.PushContext(true);
+
+        for (int i = 0; i < paramsDefinitions.Length; i++)
+        {
+            if (paramsDefinitions[i] is null) throw new ParseUnknownException(lambdaPrefix, context.Tokenizer.Position.Index);
+
+            var lastSeparatorIndex = paramsDefinitions[i].LastIndexOf(' ');
+            string parameterTypeName;
+            string parameterName;
+            if (lastSeparatorIndex == -1)
+            {
+                throw new ParseUnknownException(lambdaPrefix, context.Tokenizer.Position.Index);
+            }
+            parameterTypeName = paramsDefinitions[i][.. lastSeparatorIndex].Trim();
+            parameterTypeName = parameterTypeName.IsNullOrEmpty() ? null : parameterTypeName;
+            parameterName = paramsDefinitions[i][lastSeparatorIndex .. ].Trim();
+
+            Type parameterType = parser.GetType(context, parameterTypeName);
+
+            context.AddVariable(Expression.Parameter(parameterType, parameterName));
+        }
+
+        context.PushContext(false);
+        var innerExpression = parser.ReadExpression(context, 0, null, out _);
+        context.PopContext();
+        var lambdaExpression = Expression.Lambda(innerExpression, context.StackVariables);
+        context.PopContext();
+        return Expression.Constant(lambdaExpression.Compile());
     }
 }
 
@@ -555,7 +601,7 @@ public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens
             returnType = typeof(object);
             current = getEnumerator.ReturnType.GetProperty("Current");
             enumeratorVariable = Expression.Variable(typeof(IEnumerator));
-            assignment = Expression.Assign(forExpression, Expression.Convert(Expression.Property(enumeratorVariable, current), forExpression.Type));
+            assignment = Expression.Assign(forExpression, Expression.ConvertChecked(Expression.Property(enumeratorVariable, current), forExpression.Type));
         }
         if (getEnumerator is null) throw new ParseUnknownException(enumerableExpression.ToString(), context.Tokenizer.Position.Index);
 

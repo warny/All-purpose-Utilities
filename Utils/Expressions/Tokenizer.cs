@@ -51,6 +51,7 @@ namespace Utils.Expressions
 
         public bool ReadSymbol(string symbol, bool throwExceptionIfError = true)
         {
+            if (this.position.Index + this.position.Length >= this.Content.Length) return false;
             // Skip whitespace characters
             while (char.IsWhiteSpace(this.Content[this.position.Index + this.position.Length]))
             {
@@ -61,6 +62,10 @@ namespace Utils.Expressions
             {
                 // Check if the next part of the content matches the expected symbol, and if not, throw an exception
                 ParseException.Assert(this.Content.Substring(this.position.Index + this.position.Length, symbol.Length), symbol, this.position.Index);
+            }
+            else if (this.position.Index + this.position.Length + symbol.Length >= this.Content.Length)
+            {
+                return false;
             }
             else if (this.Content.Substring(this.position.Index + this.position.Length, symbol.Length) != symbol)
             {

@@ -72,7 +72,7 @@ public class FunctionCallTests
     }
 
     [TestMethod]
-    public void LambdaCallTest()
+    public void LambdaCallTest1()
     {
         Func<string, string> ToUpperCase = (string s) => s.ToUpper();
         Func<string, string> ToLowerCase = (string s) => s.ToLower();
@@ -97,6 +97,30 @@ public class FunctionCallTests
 
 
     }
+
+    [TestMethod]
+    public void LambdaCallTest2()
+    {
+        var expression = "(string str) => { System.Func<string, string> f = (string s) => s.ToUpper(); f(str) }";
+        var e = ExpressionParser.Parse(expression);
+        var f = (Func<string, string>)e.Compile();
+
+        var tests = new List<string>()
+            {
+                "ABCDEF",
+                "abcdef",
+                "AbCdEf",
+                "aBcDeF"
+            };
+
+        foreach (var test in tests)
+        {
+            Assert.AreEqual(test.ToUpper(), f(test));
+        }
+
+
+    }
+
 
     public void ExtensionMethodCallTest()
     {
