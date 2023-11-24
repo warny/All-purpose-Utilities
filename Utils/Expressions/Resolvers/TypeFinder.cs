@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
 namespace Utils.Expressions.Resolvers
 {
@@ -61,6 +62,7 @@ namespace Utils.Expressions.Resolvers
                 : name;
 
             var result = InnerFindType(typeName, genericArguments);
+            if (result is null) return null;
             if ((genericArguments?.Length ?? 0 )> 0) result = result.MakeGenericType(genericArguments); 
             Cache[(name, genericArguments)] = result;
             return result;

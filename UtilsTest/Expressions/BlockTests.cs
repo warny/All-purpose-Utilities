@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -123,5 +124,96 @@ public class BlockTests
         }
     }
 
+    [TestMethod]
+    public void ForEachTest1()
+    {
+        Random random = new Random();
+        var expression =
+            """
+            (int[] test) => { 
+                int result=0; 
+                foreach(int i in test) {
+                    result += i;
+                };
+                result; 
+            }
+            """;
 
+        var e = ExpressionParser.Parse(expression);
+        var f = (Func<int[], int>)e.Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int[] test = new int[random.Next(5, 10)];
+            for (int j = 0; i < test.Length; i++)
+            {
+                test[j] = random.Next(0, 100);
+            }
+
+            var length = random.Next(5, 10);
+            Assert.AreEqual(test.Sum(), f(test));
+        }
+    }
+
+    [TestMethod]
+    public void ForEachTest2()
+    {
+        Random random = new Random();
+        var expression =
+            """
+            (IEnumerable<int> test) => { 
+                int result=0; 
+                foreach(int i in test) {
+                    result += i;
+                };
+                result; 
+            }
+            """;
+
+        var e = ExpressionParser.Parse(expression, ["System.Collections", "System.Collections.Generic"]);
+        var f = (Func<IEnumerable<int>, int>)e.Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int[] test = new int[random.Next(5, 10)];
+            for (int j = 0; i < test.Length; i++)
+            {
+                test[j] = random.Next(0, 100);
+            }
+
+            var length = random.Next(5, 10);
+            Assert.AreEqual(test.Sum(), f(test));
+        }
+    }
+
+    [TestMethod]
+    public void ForEachTest3()
+    {
+        Random random = new Random();
+        var expression =
+            """
+            (IEnumerable test) => { 
+                int result=0; 
+                foreach(int i in test) {
+                    result += i;
+                };
+                result; 
+            }
+            """;
+
+        var e = ExpressionParser.Parse(expression, ["System.Collections", "System.Collections.Generic"]);
+        var f = (Func<IEnumerable, int>)e.Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int[] test = new int[random.Next(5, 10)];
+            for (int j = 0; i < test.Length; i++)
+            {
+                test[j] = random.Next(0, 100);
+            }
+
+            var length = random.Next(5, 10);
+            Assert.AreEqual(test.Sum(), f(test));
+        }
+    }
 }

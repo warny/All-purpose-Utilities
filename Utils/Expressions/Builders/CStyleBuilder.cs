@@ -68,6 +68,7 @@ public class CStyleBuilder : IBuilder
         { "if", new IfBuilder("else") },
         { "while", new WhileBuilder() },
         { "for", new ForBuilder() },
+        { "foreach", new ForEachBuilder() },
         { "break", new BreakBuilder() },
         { "continue", new ContinueBuilder() },
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,6 +9,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Utils.Objects;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Utils.Expressions.ExpressionBuilders;
 
@@ -397,8 +400,10 @@ public class ContinueBuilder : IStartExpressionBuilder
     }
 }
 
-public class WhileBuilder : IStartExpressionBuilder
+public class WhileBuilder : IStartExpressionBuilder, IAdditionalTokens
 {
+    public IEnumerable<string> AdditionalTokens => ["(", ")", ";"];
+
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var continueLabel = Expression.Label();
@@ -425,8 +430,10 @@ public class WhileBuilder : IStartExpressionBuilder
     }
 }
 
-public class ForBuilder : IStartExpressionBuilder
+public class ForBuilder : IStartExpressionBuilder, IAdditionalTokens
 {
+    public IEnumerable<string> AdditionalTokens => ["(", ")", ";"];
+
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         var continueLabel = Expression.Label();
@@ -457,5 +464,119 @@ public class ForBuilder : IStartExpressionBuilder
 
         context.PopContext();
         return result;
+    }
+}
+
+public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens
+{
+    public IEnumerable<string> AdditionalTokens => ["(", ")", "in"];
+
+    public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
+    {
+        var continueLabel = Expression.Label();
+        var breakLabel = Expression.Label();
+        context.PushContext(continueLabel, breakLabel);
+        context.Tokenizer.ReadSymbol("(");
+        var forExpression = parser.ReadExpression(context, 0, new Parenthesis("(", ")", "in"), out _);
+        context.Tokenizer.ReadSymbol("in");
+        var enumerableExpression = parser.ReadExpression(context, 0, new Parenthesis("(", ")", "in"), out _);
+        context.Tokenizer.ReadSymbol(")");
+        var loopExpression = parser.ReadExpression(context, 0, null, out _);
+
+        Expression result;
+        if (enumerableExpression.Type.IsArray && enumerableExpression.Type.GetArrayRank() == 1)
+        {
+            result = CreateExpressionWithArray(context, continueLabel, breakLabel, forExpression, enumerableExpression, loopExpression);
+        }
+        else
+        {
+            result = CreateExpressionWithEnumerator(context, continueLabel, breakLabel, forExpression, enumerableExpression, loopExpression);
+        }
+        context.PopContext();
+        return result;
+    }
+
+    private static Expression CreateExpressionWithArray(ParserContext context, LabelTarget continueLabel, LabelTarget breakLabel, Expression forExpression, Expression enumerableExpression, Expression loopExpression)
+    {
+        var getLowerBoundMethod = typeof(Array).GetMethod("GetLowerBound");
+        var getUpperBoundMethod = typeof(Array).GetMethod("GetUpperBound");
+
+        var indexVariable = Expression.Variable(typeof(int), "index");
+        var upperBoundVariable = Expression.Variable(typeof(int), "upperBound");
+        var initializer1 = Expression.Assign(indexVariable, Expression.Call(enumerableExpression, getLowerBoundMethod, [Expression.Constant(0)]));
+        var initializer2 = Expression.Assign(upperBoundVariable, Expression.Call(enumerableExpression, getUpperBoundMethod, [Expression.Constant(0)]));
+        var loop = Expression.PostIncrementAssign(indexVariable);
+        var test = Expression.GreaterThan(indexVariable, upperBoundVariable);
+
+        return Expression.Block(
+            context.StackVariables.Append(indexVariable).Append(upperBoundVariable),
+            [
+                initializer1,
+                initializer2,
+                Expression.Loop(
+                    Expression.Block(
+                        new Expression[] {
+                            Expression.IfThen(test, Expression.Break(breakLabel)),
+                            Expression.Assign(forExpression, Expression.ArrayIndex(enumerableExpression, indexVariable)),
+                            loopExpression,
+                            loop
+                        }
+                    ),
+                    breakLabel, continueLabel
+               )
+           ]
+        );
+    }
+
+    private static Expression CreateExpressionWithEnumerator(ParserContext context, LabelTarget continueLabel, LabelTarget breakLabel, Expression forExpression, Expression enumerableExpression, Expression loopExpression)
+    {
+        var enumerableGenericType = typeof(IEnumerable<>);
+        var enumerableType = typeof(IEnumerable);
+
+        MethodInfo getEnumerator = null;
+        Type returnType = null;
+        PropertyInfo current = null;
+        Expression assignment = null;
+        ParameterExpression enumeratorVariable = null;
+
+        var typedEnumerableGenericType = enumerableExpression.Type.GetInterfaces().Prepend(enumerableExpression.Type)
+            .FirstOrDefault(i => i.IsInterface && i.IsGenericType && i.GetGenericTypeDefinition() == enumerableGenericType && forExpression.Type.IsAssignableFromEx(i.GetGenericArguments()[0]));
+        if (typedEnumerableGenericType != null)
+        {
+            getEnumerator = typedEnumerableGenericType.GetMethod("GetEnumerator");
+            returnType = typedEnumerableGenericType.GetGenericArguments()[0];
+            current = getEnumerator.ReturnType.GetProperty("Current");
+            enumeratorVariable = Expression.Variable(typeof(IEnumerator<>).MakeGenericType(returnType), "enumerator");
+            assignment = Expression.Assign(forExpression, Expression.Property(enumeratorVariable, current));
+        }
+        else if (enumerableExpression.Type.GetInterfaces().Prepend(enumerableExpression.Type).Any(i => i.IsInterface && i == enumerableType))
+        {
+            getEnumerator = enumerableType.GetMethod("GetEnumerator");
+            returnType = typeof(object);
+            current = getEnumerator.ReturnType.GetProperty("Current");
+            enumeratorVariable = Expression.Variable(typeof(IEnumerator));
+            assignment = Expression.Assign(forExpression, Expression.Convert(Expression.Property(enumeratorVariable, current), forExpression.Type));
+        }
+        if (getEnumerator is null) throw new ParseUnknownException(enumerableExpression.ToString(), context.Tokenizer.Position.Index);
+
+        MethodInfo moveNext = typeof(IEnumerator).GetMethod("MoveNext");
+        Expression initializer = Expression.Assign(enumeratorVariable, Expression.Call(enumerableExpression, getEnumerator));
+
+        return Expression.Block(
+             context.StackVariables.Append(enumeratorVariable),
+             [
+                initializer,
+                 Expression.Loop(
+                    Expression.Block(
+                        new Expression[] {
+                            Expression.IfThen(Expression.Not(Expression.Call(enumeratorVariable, moveNext)), Expression.Break(breakLabel)),
+                            assignment,
+                            loopExpression
+                        }
+                    ),
+                    breakLabel, continueLabel
+                )
+            ]
+        );
     }
 }
