@@ -6,8 +6,8 @@ using System.Text.RegularExpressions;
 using Utils.Collections;
 using Utils.Mathematics;
 
-namespace Utils.Objects
-{
+namespace Utils.Objects;
+
 	public class DoubleRanges : Ranges<double>
 	{
 		public DoubleRanges() : base() { }
@@ -54,89 +54,87 @@ namespace Utils.Objects
 		public void Add(string ranges, System.Globalization.NumberFormatInfo formatInfo) => this.Add(InnerParse(ranges, formatInfo));
 	}
 
-	public class DateTimeRanges : Ranges<DateTime>
+public class DateTimeRanges : Ranges<DateTime>
+{
+	public DateTimeRanges() : base() { }
+	public DateTimeRanges(Ranges<DateTime> ranges) : base(ranges) { }
+	public DateTimeRanges(params Range<DateTime>[] ranges) : base(ranges) { }
+	public DateTimeRanges(IEnumerable<Range<DateTime>> ranges) : base(ranges) { }
+
+	public static DateTimeRanges Parse(string range) => Parse(range, System.Globalization.CultureInfo.CurrentCulture);
+	public static DateTimeRanges Parse(string range, System.Globalization.CultureInfo cultureInfo) => new DateTimeRanges(InnerParse(range, cultureInfo.DateTimeFormat));
+
+	protected static IEnumerable<Range<DateTime>> InnerParse(string range, System.Globalization.DateTimeFormatInfo formatInfo)
 	{
-		public DateTimeRanges() : base() { }
-		public DateTimeRanges(Ranges<DateTime> ranges) : base(ranges) { }
-		public DateTimeRanges(params Range<DateTime>[] ranges) : base(ranges) { }
-		public DateTimeRanges(IEnumerable<Range<DateTime>> ranges) : base(ranges) { }
 
-		public static DateTimeRanges Parse(string range) => Parse(range, System.Globalization.CultureInfo.CurrentCulture);
-		public static DateTimeRanges Parse(string range, System.Globalization.CultureInfo cultureInfo) => new DateTimeRanges(InnerParse(range, cultureInfo.DateTimeFormat));
+		string dateSearch
+			= PatternToRegEx(formatInfo.ShortDatePattern)
+			+ @"(\s+("
+			+ PatternToRegEx(formatInfo.LongTimePattern)
+			+ "|"
+			+ PatternToRegEx(formatInfo.ShortTimePattern)
+			+ "))?";
 
-		protected static IEnumerable<Range<DateTime>> InnerParse(string range, System.Globalization.DateTimeFormatInfo formatInfo)
-		{
-
-			string dateSearch
-				= PatternToRegEx(formatInfo.ShortDatePattern)
-				+ @"(\s+("
-				+ PatternToRegEx(formatInfo.LongTimePattern) 
-				+ "|" 
-				+ PatternToRegEx(formatInfo.ShortTimePattern)
-				+ "))?";
-
-			return InnerParse(range, dateSearch, s => DateTime.Parse(s, formatInfo));
-		}
-
-		private static string PatternToRegEx(string pattern)
-		{
-			StringBuilder result = new StringBuilder();
-			char last = '\0';
-			for (int i = 0; i < pattern.Length; i++)
-			{
-				char c = pattern[i];
-				if (c == '\'')
-				{
-					i++;
-					while (c != '\'')
-					{
-						c = pattern[i];
-					result.Append(c);
-						i++;
-					}
-
-				}
-				else if (c.In('y', 'M', 'd', 'H', 'h', 'm', 's', 'f'))
-				{
-					if (c != last)
-					{
-						result.Append(@"\d+");
-					}
-
-				}
-				else if (c == 't')
-				{
-					if (c != last)
-					{
-						result.Append(@"(AM|PM)");
-					}
-				}
-				else if (c == ' ')
-				{
-					if (c != last)
-					{
-						result.Append(@"\s+");
-					}
-				}
-				else if (c == '\\')
-				{
-					result.Append(@"\\");
-				}
-				else
-				{
-					result.Append(c);
-				}
-				last = c;
-			}
-
-			return result.ToString();
-		}
-
-
-		public void Add(string ranges) => this.Add(ranges, System.Globalization.CultureInfo.CurrentCulture);
-		public void Add(string ranges, System.Globalization.CultureInfo cultureInfo) => this.Add(ranges, cultureInfo.DateTimeFormat);
-		public void Add(string ranges, System.Globalization.DateTimeFormatInfo formatInfo) => this.Add(InnerParse(ranges, formatInfo));
-
+		return InnerParse(range, dateSearch, s => DateTime.Parse(s, formatInfo));
 	}
+
+	private static string PatternToRegEx(string pattern)
+	{
+		StringBuilder result = new StringBuilder();
+		char last = '\0';
+		for (int i = 0; i < pattern.Length; i++)
+		{
+			char c = pattern[i];
+			if (c == '\'')
+			{
+				i++;
+				while (c != '\'')
+				{
+					c = pattern[i];
+					result.Append(c);
+					i++;
+				}
+
+			}
+			else if (c.In('y', 'M', 'd', 'H', 'h', 'm', 's', 'f'))
+			{
+				if (c != last)
+				{
+					result.Append(@"\d+");
+				}
+
+			}
+			else if (c == 't')
+			{
+				if (c != last)
+				{
+					result.Append(@"(AM|PM)");
+				}
+			}
+			else if (c == ' ')
+			{
+				if (c != last)
+				{
+					result.Append(@"\s+");
+				}
+			}
+			else if (c == '\\')
+			{
+				result.Append(@"\\");
+			}
+			else
+			{
+				result.Append(c);
+			}
+			last = c;
+		}
+
+		return result.ToString();
+	}
+
+
+	public void Add(string ranges) => this.Add(ranges, System.Globalization.CultureInfo.CurrentCulture);
+	public void Add(string ranges, System.Globalization.CultureInfo cultureInfo) => this.Add(ranges, cultureInfo.DateTimeFormat);
+	public void Add(string ranges, System.Globalization.DateTimeFormatInfo formatInfo) => this.Add(InnerParse(ranges, formatInfo));
 
 }

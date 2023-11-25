@@ -6,8 +6,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Mathematics;
 
-namespace Utils.Objects
-{
+namespace Utils.Objects;
+
 	public class Ranges<T> : ICollection<Range<T>>, ICloneable, IFormattable
 		where T : IComparable<T>
 	{
@@ -235,100 +235,99 @@ namespace Utils.Objects
 
 	}
 
-	public class Range<T> : IFormattable
-		where T : IComparable<T>
+public class Range<T> : IFormattable
+	where T : IComparable<T>
+{
+	public T Start { get; }
+	public bool ContainsStart { get; }
+	public T End { get; }
+	public bool ContainsEnd { get; }
+
+	public Range(T value) : this(value, value) { }
+	public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
 	{
-		public T Start { get; }
-		public bool ContainsStart { get; }
-		public T End { get; }
-		public bool ContainsEnd { get; }
+		int comparison = start.CompareTo(end);
+		if (comparison > 0) throw new ArgumentException($"start ({start}) > end ({end})", nameof(end));
+		if (comparison == 0 && !(containsStart && containsEnd)) throw new ArgumentException("A single element range can't exclude itself", nameof(start));
 
-		public Range(T value) : this(value, value) { }
-		public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
-		{
-			int comparison = start.CompareTo(end);
-			if (comparison > 0) throw new ArgumentException($"start ({start}) > end ({end})", nameof(end));
-			if (comparison == 0 && !(containsStart && containsEnd)) throw new ArgumentException("A single element range can't exclude itself", nameof(start));
-
-			Start = start;
-			End = end;
-			ContainsStart = containsStart;
-			ContainsEnd = containsEnd;
-		}
-
-		public bool Contains(T value)
-			=> (ContainsStart ? value.CompareTo(Start) >= 0 : value.CompareTo(Start) > 0)
-			&& (ContainsEnd ? value.CompareTo(End) <= 0 : value.CompareTo(End) < 0);
-
-		public bool Contains(Range<T> range) =>
-			(
-				this.Start.CompareTo(range.Start) < 0
-				||
-				(
-					( this.ContainsStart || !range.ContainsStart )
-					&& 
-					this.Start.CompareTo(range.Start) == 0
-				)
-			) && (
-				this.End.CompareTo(range.End) > 0
-				||
-				(
-					(this.ContainsEnd || !range.ContainsEnd)
-					&&
-					this.End.CompareTo(range.End) == 0
-				)
-			);
-		public bool Contains(T start, T end, bool containsStart = true, bool containsEnd = true) => Contains(new Range<T>(start, end, containsStart, containsEnd));
-
-		public Range<T> Intersect(Range<T> range)
-		{
-			T start = MathEx.Max(Start, range.Start);
-			T end = MathEx.Min(End, range.End);
-
-			if (start.CompareTo(end) > 0) return null;
-			return new Range<T>(start, end);
-		}
-
-		public bool Overlap(Range<T> range) => Overlap(this, range);
-		public bool Overlap(T start, T end, bool containsStart = true, bool containsEnd = true) => Overlap(this, new Range<T>(start, end, containsStart, containsEnd));
-
-		public static bool Overlap(Range<T> range1, Range<T> range2) =>
-			(
-				range1.Start.CompareTo(range2.End) < 0
-				|| 
-				(range1.ContainsStart && range2.ContainsEnd && range1.Start.CompareTo(range2.End) == 0)
-			) && (
-				range2.Start.CompareTo(range1.End) < 0
-				||
-				(range2.ContainsStart && range1.ContainsEnd && range2.Start.CompareTo(range1.End) == 0)
-			);
-
-		public bool IsContained(Range<T> range) => IsContained(range.Start, range.End);
-		public bool IsContained(T start, T end) => Start.CompareTo(start) >= 0 && End.CompareTo(end) <= 0;
-
-
-		public void Deconstructor(out T start, out T end)
-		{
-			start = Start;
-			end = End;
-		}
-
-		public override string ToString() => ToString(string.Empty, null);
-		public string ToString(string format) => ToString(format, null);
-		public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
-		public string ToString(string format, IFormatProvider formatProvider)
-		{
-			if (format != null && (Start is IFormattable || End is IFormattable))
-			{
-				formatProvider ??= System.Globalization.CultureInfo.CurrentCulture;
-				return String.Format(formatProvider, "{0} {1:" + format + "} - {2:" + format + "} {3}", ContainsStart ? "[" : "]", Start, End, ContainsEnd ? "]" : "[");
-			}
-			else
-			{
-				return String.Format(formatProvider, "{0} {1} - {2} {3}", ContainsStart ? "[" : "]", Start, End, ContainsEnd ? "]" : "[");
-			}
-		}
-
-		public static implicit operator Range<T>((T Start, T End) range) => new Range<T>(range.Start, range.End);
+		Start = start;
+		End = end;
+		ContainsStart = containsStart;
+		ContainsEnd = containsEnd;
 	}
+
+	public bool Contains(T value)
+		=> (ContainsStart ? value.CompareTo(Start) >= 0 : value.CompareTo(Start) > 0)
+		&& (ContainsEnd ? value.CompareTo(End) <= 0 : value.CompareTo(End) < 0);
+
+	public bool Contains(Range<T> range) =>
+		(
+			this.Start.CompareTo(range.Start) < 0
+			||
+			(
+				(this.ContainsStart || !range.ContainsStart)
+				&&
+				this.Start.CompareTo(range.Start) == 0
+			)
+		) && (
+			this.End.CompareTo(range.End) > 0
+			||
+			(
+				(this.ContainsEnd || !range.ContainsEnd)
+				&&
+				this.End.CompareTo(range.End) == 0
+			)
+		);
+	public bool Contains(T start, T end, bool containsStart = true, bool containsEnd = true) => Contains(new Range<T>(start, end, containsStart, containsEnd));
+
+	public Range<T> Intersect(Range<T> range)
+	{
+		T start = MathEx.Max(Start, range.Start);
+		T end = MathEx.Min(End, range.End);
+
+		if (start.CompareTo(end) > 0) return null;
+		return new Range<T>(start, end);
+	}
+
+	public bool Overlap(Range<T> range) => Overlap(this, range);
+	public bool Overlap(T start, T end, bool containsStart = true, bool containsEnd = true) => Overlap(this, new Range<T>(start, end, containsStart, containsEnd));
+
+	public static bool Overlap(Range<T> range1, Range<T> range2) =>
+		(
+			range1.Start.CompareTo(range2.End) < 0
+			||
+			(range1.ContainsStart && range2.ContainsEnd && range1.Start.CompareTo(range2.End) == 0)
+		) && (
+			range2.Start.CompareTo(range1.End) < 0
+			||
+			(range2.ContainsStart && range1.ContainsEnd && range2.Start.CompareTo(range1.End) == 0)
+		);
+
+	public bool IsContained(Range<T> range) => IsContained(range.Start, range.End);
+	public bool IsContained(T start, T end) => Start.CompareTo(start) >= 0 && End.CompareTo(end) <= 0;
+
+
+	public void Deconstructor(out T start, out T end)
+	{
+		start = Start;
+		end = End;
+	}
+
+	public override string ToString() => ToString(string.Empty, null);
+	public string ToString(string format) => ToString(format, null);
+	public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
+	public string ToString(string format, IFormatProvider formatProvider)
+	{
+		if (format != null && (Start is IFormattable || End is IFormattable))
+		{
+			formatProvider ??= System.Globalization.CultureInfo.CurrentCulture;
+			return String.Format(formatProvider, "{0} {1:" + format + "} - {2:" + format + "} {3}", ContainsStart ? "[" : "]", Start, End, ContainsEnd ? "]" : "[");
+		}
+		else
+		{
+			return String.Format(formatProvider, "{0} {1} - {2} {3}", ContainsStart ? "[" : "]", Start, End, ContainsEnd ? "]" : "[");
+		}
+	}
+
+	public static implicit operator Range<T>((T Start, T End) range) => new Range<T>(range.Start, range.End);
 }
