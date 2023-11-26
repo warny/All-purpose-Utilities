@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
-public partial class Matrix 
+public partial class Matrix
 {
-	private static void LinearTransformation(IEnumerable<Matrix> matrices, int row1, double[] transformations)
+    private static void LinearTransformation(IEnumerable<Matrix> matrices, int row1, double[] transformations)
 	{
 		if (transformations[row1] == 0)
 		{

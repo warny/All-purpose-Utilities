@@ -1,9 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Utils.Mathematics.LinearAlgebra
 {
-	public partial class Vector
+	public partial class Vector :
+		IAdditionOperators<Vector, Vector, Vector>,
+        ISubtractionOperators<Vector, Vector, Vector>,
+		IMultiplyOperators<Vector, double, Vector>,
+		IDivisionOperators<Vector, double, Vector>,
+		IMultiplyOperators<Vector, Vector, double>,
+		IEqualityOperators<Vector, Vector, bool>
     {
 		public (double weight, Vector vector) ComputeBarycenter(params Vector[] points) => ComputeBarycenter((IEnumerable<Vector>)points);
 		public (double weight, Vector vector) ComputeBarycenter(IEnumerable<Vector> vectors) => ComputeBarycenter<Vector>(wp => 1.0, vector => vector, vectors);
@@ -128,26 +135,6 @@ namespace Utils.Mathematics.LinearAlgebra
 				result += vector1[i] + vector2[i];
 			}
 			return result;
-		}
-
-		public static Vector operator *(Matrix matrix, Vector vector)
-		{
-			if (matrix.Columns != vector.Dimension)
-			{
-				throw new ArgumentException("Les dimensions de la matrice et du vecteur ne sont pas compatibles avec cette opération");
-			}
-
-			double[] result = new double[vector.Dimension];
-			for (int row = 0; row < matrix.Rows; row++)
-			{
-				double temp = 0;
-				for (int col = 0; col < matrix.Columns; col++)
-				{
-					temp += matrix[row, col] * vector.components[col];
-				}
-				result[row] = temp;
-			}
-			return new Vector(result);
 		}
 
 		public static explicit operator Vector ( Point point )

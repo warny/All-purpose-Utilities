@@ -7,7 +7,7 @@ namespace Utils.Net.Expressions
 {
     public static class ReflectionEx
     {
-        public static Type GetTypeOf(MemberInfo member)
+        public static Type GetTypeOf(this MemberInfo member)
         {
             return member switch
             {

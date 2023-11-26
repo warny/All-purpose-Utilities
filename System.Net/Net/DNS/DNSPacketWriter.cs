@@ -74,7 +74,7 @@ namespace Utils.Net.DNS
             {
                 if (field.Attribute.Length is string fieldName)
                 {
-                    var memberType = ReflectionEx.GetTypeOf(field.Member);
+                    var memberType = field.Member.GetTypeOf();
                     var memberTarget = ExpressionEx.CreateMemberExpression(elementVariable, fieldName, BindingFlags.Public | BindingFlags.NonPublic);
                     if (memberType == typeof(string)) {
                         fieldsReaders.Insert(
@@ -160,7 +160,7 @@ namespace Utils.Net.DNS
 
         private Expression[] CreateReadExpression(ParameterExpression datasParameter, Expression element, MemberInfo field, DNSFieldAttribute dnsField)
         {
-            Type type = ReflectionEx.GetTypeOf(field);
+            Type type = field.GetTypeOf();
             Expression assignationSource = field is PropertyInfo
                 ? Expression.Property(element, (PropertyInfo)field)
                 : Expression.Field(element, (FieldInfo)field);

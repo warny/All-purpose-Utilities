@@ -404,12 +404,12 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		{
 			if (!IsSquare) return false;
 			int lastRow = this.Rows - 1;
-			int lastcol = this.Columns - 1;
-			for (int col = 0; col < lastcol - 1; col++)
+			int lastCol = this.Columns - 1;
+			for (int col = 0; col < lastCol - 1; col++)
 			{
 				if (this.components[lastRow, col] != 0) return false;
 			}
-			return this.components[lastRow, lastcol] == 1;
+			return this.components[lastRow, lastCol] == 1;
 		}
 	}
 
@@ -470,7 +470,7 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	public string ToString(string format, IFormatProvider formatProvider)
 	{
 		format ??= "";
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new ();
 		string componentsSeparator = ", ";
 		string lineSeparator = Environment.NewLine;
 		int decimals = 2;
