@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,7 +16,7 @@ namespace Utils.Expressions
     {
         public static bool CheckConstant<T>(Expression expressionToCheck, T checkValue)
         {
-            if (!(expressionToCheck is ConstantExpression expression))
+            if (expressionToCheck is not ConstantExpression expression)
             {
                 return false;
             }
@@ -26,7 +27,7 @@ namespace Utils.Expressions
                 return val.Equals(checkValue);
             }
 
-            if (NumberUtils.IsNumeric(value) && NumberUtils.IsNumeric(checkValue))
+            if (NumberUtils.IsBaseNumeric(value) && NumberUtils.IsBaseNumeric(checkValue))
             {
                 return (double)value == (double)(object)checkValue;
             }

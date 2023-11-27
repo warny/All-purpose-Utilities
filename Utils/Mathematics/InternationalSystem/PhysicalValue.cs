@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
 namespace Utils.Mathematics.InternationalSystem
 {
 	public class PhysicalValue : 
+        IEquatable<PhysicalValue>,
+		IComparable<PhysicalValue>,
 		IAdditionOperators<PhysicalValue, PhysicalValue, PhysicalValue>,
         ISubtractionOperators<PhysicalValue, PhysicalValue, PhysicalValue>,
 		IMultiplyOperators<PhysicalValue, PhysicalValue, PhysicalValue>,
@@ -15,7 +21,9 @@ namespace Utils.Mathematics.InternationalSystem
         IDivisionOperators<PhysicalValue, PhysicalValue, PhysicalValue>,
         IDivisionOperators<PhysicalValue, double, PhysicalValue>,
         IUnaryNegationOperators<PhysicalValue, PhysicalValue>,
-		IUnaryPlusOperators<PhysicalValue, PhysicalValue>
+		IUnaryPlusOperators<PhysicalValue, PhysicalValue>,
+		IEqualityOperators<PhysicalValue, PhysicalValue, bool>,
+		IComparisonOperators<PhysicalValue, PhysicalValue, bool>
 
     {
         public PhysicalValue(double value, int l = 0, int m = 0, int t = 0, int i = 0, int theta = 0, int n = 0, int j = 0, int rad = 0, int sterad = 0)
@@ -244,6 +252,18 @@ namespace Utils.Mathematics.InternationalSystem
                 value.Sterad);
         }
 
+        public static bool operator ==(PhysicalValue left, PhysicalValue right)	=> left?.Equals(right) ?? right is null;
+
+        public static bool operator !=(PhysicalValue left, PhysicalValue right) => !(left?.Equals(right) ?? right is null);
+
+		public static bool operator >(PhysicalValue left, PhysicalValue right) => left?.CompareTo(right) > 0;
+
+        public static bool operator >=(PhysicalValue left, PhysicalValue right) => left?.CompareTo(right) >= 0;
+
+        public static bool operator <(PhysicalValue left, PhysicalValue right) => left?.CompareTo(right) < 0;
+
+        public static bool operator <=(PhysicalValue left, PhysicalValue right) => left?.CompareTo(right) <= 0;
+
         public PhysicalValue Pow(int i)
 		{
 			return new PhysicalValue(
@@ -259,5 +279,30 @@ namespace Utils.Mathematics.InternationalSystem
 					Sterad * i
 				);
 		}
-	}
+
+        public override bool Equals(object obj) => obj is PhysicalValue v && Equals(v);
+
+        public bool Equals(PhysicalValue other)
+            => other is not null
+            && this.Scalar == other.Scalar
+            && this.L == other.L
+            && this.M == other.M
+            && this.T == other.T
+            && this.I == other.I
+            && this.Theta == other.Theta
+            && this.N == other.N
+            && this.J == other.J
+            && this.Rad == other.Rad
+            && this.Sterad == other.Sterad;
+
+
+        public int GetHashCode([DisallowNull] PhysicalValue obj)
+			=> ObjectUtils.ComputeHash(Scalar, L, M, T, I, Theta, N, J, Rad, Sterad);
+
+        public int CompareTo(PhysicalValue other)
+        {
+            IncompatibleUnitsException.TestCompatibility(this, other);
+			return this.Scalar.CompareTo(other.Scalar);
+        }
+    }
 }

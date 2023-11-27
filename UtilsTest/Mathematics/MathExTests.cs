@@ -5,19 +5,20 @@ using System.Linq;
 using System.Text;
 using Utils.Arrays;
 using Utils.Mathematics;
+using Utils.Objects;
 
-namespace UtilsTest.Mathematics
+namespace UtilsTest.Mathematics;
+
+[TestClass]
+public class MathExTests
 {
-	[TestClass]
-	public class MathExTests
+	[TestMethod]
+	public void IntBetweenTest()
 	{
-		[TestMethod]
-		public void IntBetweenTest()
-		{
-			int lowerBound = 5;
-			int upperBound = 10;
+		int lowerBound = 5;
+		int upperBound = 10;
 
-			var tests = new (int value, bool resultII, bool resultEI, bool resultIE, bool resultEE)[] {
+		var tests = new (int value, bool resultII, bool resultEI, bool resultIE, bool resultEE)[] {
 				(4, false, false, false, false),
 				(5, true, false, true, false),
 				(7, true, true, true, true),
@@ -26,22 +27,22 @@ namespace UtilsTest.Mathematics
 				(11, false, false, false, false),
 			};
 
-			foreach (var test in tests)
-			{
-				Assert.AreEqual(test.resultII, test.value.Between(lowerBound, upperBound));
-				Assert.AreEqual(test.resultEI, test.value.Between(lowerBound, upperBound, includeLowerBound: false));
-				Assert.AreEqual(test.resultIE, test.value.Between(lowerBound, upperBound, includeUpperBound: false));
-				Assert.AreEqual(test.resultEE, test.value.Between(lowerBound, upperBound, includeLowerBound: false, includeUpperBound: false));
-			}
-		}
-
-		[TestMethod]
-		public void DoubleBetweenTest()
+		foreach (var test in tests)
 		{
-			double lowerBound = 5;
-			double upperBound = 10;
+			Assert.AreEqual(test.resultII, test.value.Between(lowerBound, upperBound));
+			Assert.AreEqual(test.resultEI, test.value.Between(lowerBound, upperBound, includeLowerBound: false));
+			Assert.AreEqual(test.resultIE, test.value.Between(lowerBound, upperBound, includeUpperBound: false));
+			Assert.AreEqual(test.resultEE, test.value.Between(lowerBound, upperBound, includeLowerBound: false, includeUpperBound: false));
+		}
+	}
 
-			var tests = new (double value, bool resultII, bool resultEI, bool resultIE, bool resultEE)[] {
+	[TestMethod]
+	public void DoubleBetweenTest()
+	{
+		double lowerBound = 5;
+		double upperBound = 10;
+
+		var tests = new (double value, bool resultII, bool resultEI, bool resultIE, bool resultEE)[] {
 				(4, false, false, false, false),
 				(5, true, false, true, false),
 				(7, true, true, true, true),
@@ -50,31 +51,55 @@ namespace UtilsTest.Mathematics
 				(11, false, false, false, false),
 			};
 
-			foreach (var test in tests)
-			{
-				Assert.AreEqual(test.resultII, test.value.Between(lowerBound, upperBound));
-				Assert.AreEqual(test.resultEI, test.value.Between(lowerBound, upperBound, includeLowerBound: false));
-				Assert.AreEqual(test.resultIE, test.value.Between(lowerBound, upperBound, includeUpperBound: false));
-				Assert.AreEqual(test.resultEE, test.value.Between(lowerBound, upperBound, includeLowerBound: false, includeUpperBound: false));
-			}
-		}
-
-		[TestMethod]
-		public void PascalTriangleTest()
+		foreach (var test in tests)
 		{
-			var tests = new (int line, int[] values)[] {
-				( 3, new[] { 1,3,3,1 } ), // utilise le cache d'initialisation
-				( 8, new[] { 1, 8, 28, 56, 70, 56, 28, 8, 1, } ), // calcule la 8° ligne, met en cache la 7 et la 8
-				( 7, new[] { 1, 7, 21, 35, 35, 21, 7, 1, } ) // récupère le cache de la 7 calculé par la ligne précédente
-			};
+			Assert.AreEqual(test.resultII, test.value.Between(lowerBound, upperBound));
+			Assert.AreEqual(test.resultEI, test.value.Between(lowerBound, upperBound, includeLowerBound: false));
+			Assert.AreEqual(test.resultIE, test.value.Between(lowerBound, upperBound, includeUpperBound: false));
+			Assert.AreEqual(test.resultEE, test.value.Between(lowerBound, upperBound, includeLowerBound: false, includeUpperBound: false));
+		}
+	}
 
-			var comparer = new ArrayEqualityComparer<int>();
+	[TestMethod]
+	public void SquareRootTest1()
+	{
+		Random random = new();
+		var values = random.RandomArray(10, 10, i => random.NextDouble() * 65535d);
 
-			foreach (var test in tests)
-			{
-				var result = MathEx.ComputePascalTriangleLine(test.line);
-				Assert.IsTrue(comparer.Equals(test.values, result), $"{{ {string.Join(", ", result)} }} is different from {{ {string.Join(", ", test.values)} }} expected");
-			}
+		for (int i = 0; i < values.Length; i++)
+		{
+			Assert.AreEqual(Math.Sqrt(values[i]), MathEx.Sqrt(values[i]));
+		}
+	}
+
+    [TestMethod]
+    public void SquareRootTest2()
+    {
+        Random random = new();
+        var values = random.RandomArray(10, 10, i => (float)random.NextDouble() * 65535f);
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            Assert.AreEqual((float)Math.Sqrt(values[i]), MathEx.Sqrt(values[i]));
+        }
+    }
+
+
+    [TestMethod]
+	public void PascalTriangleTest()
+	{
+		var tests = new (int line, int[] values)[] {
+			( 3, new[] { 1,3,3,1 } ), // utilise le cache d'initialisation
+			( 8, new[] { 1, 8, 28, 56, 70, 56, 28, 8, 1, } ), // calcule la 8° ligne, met en cache la 7 et la 8
+			( 7, new[] { 1, 7, 21, 35, 35, 21, 7, 1, } ) // récupère le cache de la 7 calculé par la ligne précédente
+		};
+
+		var comparer = new ArrayEqualityComparer<int>();
+
+		foreach (var test in tests)
+		{
+			var result = MathEx.ComputePascalTriangleLine(test.line);
+			Assert.IsTrue(comparer.Equals(test.values, result), $"{{ {string.Join(", ", result)} }} is different from {{ {string.Join(", ", test.values)} }} expected");
 		}
 	}
 }

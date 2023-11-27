@@ -427,7 +427,7 @@ public static class MathEx
     /// <returns>Square root of <paramref name="value"/></returns>
     /// <typeparam name="T">Type of number</typeparam>
     public static T Sqrt<T>(T value)
-        where T : struct, INumberBase<T>, IPowerFunctions<T>
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
         => T.Pow(value, T.One / (T.One + T.One));
 
     public static T Tan<T>(Task<T> value)

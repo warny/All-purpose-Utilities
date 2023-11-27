@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
+using Utils.Mathematics;
 
 namespace Utils.Objects;
 
@@ -12,10 +14,21 @@ public static class NumberUtils
 	/// <returns></returns>
 	public static bool IsNumeric(object value)
 	{
-		return value is double || value is float || value is long || value is int || value is short || value is byte || value is ulong || value is uint || value is ushort || value is decimal;
+		Type t = value.GetType();
+		return t.GetInterfaces().Where(i => i.IsGenericType).Select(i => i.GetGenericTypeDefinition()).Any(i=>i==typeof(INumber<>));
 	}
 
-	public static byte RandomByte(this Random r)
+    /// <summary>
+    /// Indique si un objet est une valeur numérique de base
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public static bool IsBaseNumeric(object value)
+    {
+		return value.GetType().In(Types.Number);
+    }
+
+    public static byte RandomByte(this Random r)
 	{
 		byte[] result = new byte[sizeof(byte)];
 		r.NextBytes(result);
