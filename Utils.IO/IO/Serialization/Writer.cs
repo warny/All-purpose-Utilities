@@ -12,9 +12,9 @@ namespace Utils.IO.Serialization
 {
 	public class Writer
 	{
-		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
+		private static Dictionary<Type, PropertyOrFieldInfo[]> TypesAccessors = [];
 		private readonly Stack<long> positionsStack = new Stack<long>();
-		private readonly Dictionary<Type, IObjectWriter> Writers = new Dictionary<Type, IObjectWriter>();
+		private readonly Dictionary<Type, IObjectWriter> Writers = [];
 
 		public System.IO.Stream Stream { get; }
 		public long Position {
@@ -79,11 +79,11 @@ namespace Utils.IO.Serialization
 			else
 			{
 
-				if (!TypesAccessors.TryGetValue(t, out FieldOrPropertyInfo[] fields))
+				if (!TypesAccessors.TryGetValue(t, out PropertyOrFieldInfo[] fields))
 				{
 					fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 						.Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
-						.Select(m => new FieldOrPropertyInfo(m))
+						.Select(m => new PropertyOrFieldInfo(m))
 						.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
 						.ToArray();
 					TypesAccessors.Add(t, fields);

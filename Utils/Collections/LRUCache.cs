@@ -6,15 +6,15 @@ using System.Runtime.CompilerServices;
 namespace Utils.Collections
 {
 	/// <summary>
-	/// Classe pour cacher les elements utilisés récemments
+	/// Cache class for loaded elements
 	/// </summary>
-	/// <typeparam name="K">Clef des élements</typeparam>
-	/// <typeparam name="V">Type des éléments</typeparam>
+	/// <typeparam name="K">Type of element keys</typeparam>
+	/// <typeparam name="V">Type of elements</typeparam>
 	public class LRUCache<K, V> : IDictionary <K,V>
 	{
-		private int capacity;
-		private Dictionary<K, LinkedListNode<KeyValuePair<K, V>>> cacheMap = new Dictionary<K, LinkedListNode<KeyValuePair<K, V>>>();
-		private LinkedList<KeyValuePair<K, V>> lruList = new LinkedList<KeyValuePair<K, V>>();
+		private readonly int capacity;
+		private readonly Dictionary<K, LinkedListNode<KeyValuePair<K, V>>> cacheMap = [];
+		private readonly LinkedList<KeyValuePair<K, V>> lruList = new();
 
 		public LRUCache( int capacity )
 		{
@@ -34,8 +34,7 @@ namespace Utils.Collections
 			[MethodImpl(MethodImplOptions.Synchronized)]
 			get
 			{
-				V value;
-				TryGetValue(key, out value);
+				TryGetValue(key, out V value);
 				return value;
 			}
 
@@ -91,7 +90,7 @@ namespace Utils.Collections
 				lruList.AddLast(node);
 				return true;
 			}
-			value = default(V);
+			value = default;
 			return false;
 		}
 

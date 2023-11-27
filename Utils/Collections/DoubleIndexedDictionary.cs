@@ -7,8 +7,8 @@ namespace Utils.Collections
 {
 	public class DoubleIndexedDictionary<T1, T2> : IDictionary<T1, T2>
 	{
-		private readonly Dictionary<T1, T2> dictionary1 = new Dictionary<T1, T2>();
-		private readonly Dictionary<T2, T1> dictionary2 = new Dictionary<T2, T1>();
+		private readonly Dictionary<T1, T2> dictionary1 = [];
+		private readonly Dictionary<T2, T1> dictionary2 = [];
 
 		public DoubleIndexedDictionary() { }
 		public DoubleIndexedDictionary(IEnumerable<(T1 Key, T2 Value)> values)

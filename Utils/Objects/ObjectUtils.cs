@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Utils.Objects;
 
@@ -17,19 +18,6 @@ public static class ObjectUtils
 	{
 		if (!nullableObj.HasValue) return true;
 		return nullableObj.Equals(default(T));
-	}
-
-	/// <summary>
-	/// Execute the specified function for the current object
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <typeparam name="Result">The type of the esult.</typeparam>
-	/// <param name="value">The value.</param>
-	/// <param name="func">The function to execute for the current object.</param>
-	/// <returns></returns>
-	public static Result Do<T, Result>(this T value, Func<T, Result> func)
-	{
-		return func(value);
 	}
 
 	/// <summary>
@@ -69,11 +57,48 @@ public static class ObjectUtils
 	}
 
 	/// <summary>
-	/// Calcul le hash d'un tableau multidimensionnel
+	/// Execute the specified function for the current object
 	/// </summary>
-	/// <param name="array"></param>
+	/// <typeparam name="T"></typeparam>
+	/// <typeparam name="Result">The type of the esult.</typeparam>
+	/// <param name="value">The value.</param>
+	/// <param name="ifNotNull">The function to execute for the current object.</param>
+	/// <param name="ifNull">The function to execute isf the object is null</param>
 	/// <returns></returns>
-	public static int ComputeHash(this Array array)
+	public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Result> ifNotNull, Func<Result> ifNull)
+	{
+		if (value == null)
+		{
+			return await Task.Run(ifNull);
+		}
+		return await Task.Run(() => ifNotNull(value));
+	}
+
+    /// <summary>
+    /// Execute the specified function for the current object
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="Result">The type of the esult.</typeparam>
+    /// <param name="value">The value.</param>
+    /// <param name="ifNotNull">The function to execute for the current object.</param>
+    /// <param name="ifNull">The value to return if the object is null</param>
+    /// <returns></returns>
+    public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Result> ifNotNull, Result ifNull)
+    {
+        if (value == null)
+        {
+            return ifNull;
+        }
+        return await Task.Run(() => ifNotNull(value));
+    }
+
+
+    /// <summary>
+    /// Calcul le hash d'un tableau multidimensionnel
+    /// </summary>
+    /// <param name="array"></param>
+    /// <returns></returns>
+    public static int ComputeHash(this Array array)
 	{
 		array.ArgMustNotBeNull();
 		unchecked

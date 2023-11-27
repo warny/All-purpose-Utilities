@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Arrays;
@@ -12,23 +13,24 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// <summary>
 /// Matrice
 /// </summary>
-public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatable<double[,]>, IEquatable<double[][]>, IEquatable<Vector[]>, ICloneable
+public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEquatable<T[,]>, IEquatable<T[][]>, IEquatable<Vector<T>[]>, ICloneable
+	where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
 {
-	internal readonly double[,] components;
+	internal readonly T[,] components;
 	private bool? isDiagonalized;
 	private bool? isTriangularised;
 	private bool? isIdentity;
-	private double? determinant;
+	private T? determinant;
 	private int? hashCode;
 
 	private Matrix() { }
 
 	public Matrix(int dimensionX, int dimensionY)
 	{
-		components = new double[dimensionX, dimensionY];
+		components = new T[dimensionX, dimensionY];
 	}
 
-	private Matrix(double[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, double? determinant)
+	private Matrix(T[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, T? determinant)
 	{
 		array.ArgMustNotBeNull();
 		this.components = array;
@@ -38,10 +40,10 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		this.determinant = determinant;
 	}
 
-	public Matrix(double[,] array)
+	public Matrix(T[,] array)
 	{
 		array.ArgMustNotBeNull();
-		components = new double[array.GetLength(0), array.GetLength(1)];
+		components = new T[array.GetLength(0), array.GetLength(1)];
 		Array.Copy(array, this.components, array.Length);
 		var isSquare = IsSquare;
 		isDiagonalized = isSquare ? false : (bool?)null;
@@ -50,11 +52,11 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		determinant = null;
 	}
 
-	public Matrix(double[][] array)
+	public Matrix(T[][] array)
 	{
 		array.ArgMustNotBeNull();
 		int maxYLength = array.Select(a => a.Length).Max();
-		components = new double[array.Length, maxYLength];
+		components = new T[array.Length, maxYLength];
 
 		for (int i = 0; i < array.Length; i++)
 		{
@@ -69,11 +71,11 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		determinant = null;
 	}
 
-	public Matrix(params Vector[] vectors)
+	public Matrix(params Vector<T>[] vectors)
 	{
 		vectors.ArgMustNotBeNull();
 		if (vectors.Any(v => v.Dimension != vectors[0].Dimension)) throw new ArgumentException("Les vecteurs doivent tous avoir la même dimension", nameof(vectors));
-		components = new double[vectors[0].Dimension, vectors.Length];
+		components = new T[vectors[0].Dimension, vectors.Length];
 		for (int i = 0; i < vectors.Length; i++)
 		{
 			for (int j = 0; j < vectors[i].Dimension; j++)
@@ -91,11 +93,11 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// Créé une copie de la matrice
 	/// </summary>
 	/// <param name="matrix"></param>
-	public Matrix(Matrix matrix)
+	public Matrix(Matrix<T> matrix)
 	{
 		matrix.ArgMustNotBeNull();
 
-		this.components = new double[matrix.components.GetLength(0), matrix.components.GetLength(1)];
+		this.components = new T[matrix.components.GetLength(0), matrix.components.GetLength(1)];
 		Array.Copy(matrix.components, this.components, matrix.components.Length);
 		this.isDiagonalized = matrix.isDiagonalized;
 		this.isTriangularised = matrix.isTriangularised;
@@ -108,17 +110,17 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="dimension"></param>
 	/// <returns></returns>
-	public static Matrix Identity(int dimension)
+	public static Matrix<T> Identity(int dimension)
 	{
-		var array = new double[dimension, dimension];
+		var array = new T[dimension, dimension];
 		for (int i = 0; i < dimension; i++)
 		{
 			for (int j = 0; j < dimension; j++)
 			{
-				array[i, j] = i == j ? 1.0 : 0.0;
+				array[i, j] = i == j ? T.One : T.Zero;
 			}
 		}
-		return new Matrix(array, true, true, true, 1);
+		return new Matrix<T>(array, true, true, true, T.One);
 	}
 
 	/// <summary>
@@ -126,31 +128,31 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="values"></param>
 	/// <returns></returns>
-	public static Matrix Diagonal(params double[] values)
+	public static Matrix<T> Diagonal(params T[] values)
 	{
 		int dimension = values.Length;
-		var array = new double[dimension, dimension];
+		var array = new T[dimension, dimension];
 		bool allOne = true;
 		bool oneZero = false;
-		double newDeterminant = 1;
+		T newDeterminant = T.One;
 		for (int i = 0; i < dimension; i++)
 		{
-			if (values[i] == 0.0)
+			if (values[i] == T.Zero)
 			{
 				oneZero = true;
 				allOne = false;
 			}
-			else if (values[i] != 1.0)
+			else if (values[i] != T.One)
 			{
 				allOne = false;
 			}
 			for (int j = 0; j < dimension; j++)
 			{
-				array[i, j] = i == j ? values[i] : 0.0;
+				array[i, j] = i == j ? values[i] : T.Zero;
 			}
 			newDeterminant *= values[i];
 		}
-		return new Matrix(array, allOne, !oneZero, !oneZero, newDeterminant);
+		return new Matrix<T>(array, allOne, !oneZero, !oneZero, newDeterminant);
 	}
 
 	/// <summary>
@@ -158,9 +160,9 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="coefficients"></param>
 	/// <returns></returns>
-	public static Matrix Scaling(params double[] coefficients)
+	public static Matrix<T> Scaling(params T[] coefficients)
 	{
-		Matrix matrix = Matrix.Identity(coefficients.Length + 1);
+		Matrix<T> matrix = Identity(coefficients.Length + 1);
 		for (int i = 0; i < coefficients.Length; i++)
 		{
 			matrix.components[i, i] = coefficients[i];
@@ -176,18 +178,18 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="angles"></param>
 	/// <returns></returns>
-	public static Matrix Skew(params double[] angles)
+	public static Matrix<T> Skew(params double[] angles)
 	{
 		var dimension = (Math.Sqrt(4 * angles.Length + 1) + 1) / 2;
 		if (dimension != Math.Floor(dimension)) throw new ArgumentException("La matrice de transformation n'a pas une dimension utilisable", nameof(angles));
 
-		Matrix matrix = Matrix.Identity((int)dimension + 1);
+		Matrix<T> matrix = Identity((int)dimension + 1);
 		int i = 0;
 		for (int x = 0; x < dimension; x++)
 		{
 			for (int y = 0; y < dimension; y++)
 			{
-				matrix.components[x, y >= x ? y : y + 1] = Math.Tan(angles[i]);
+				matrix.components[x, y >= x ? y : y + 1] = (T)(object)Math.Tan(angles[i]);
 				i++;
 			}
 		}
@@ -203,7 +205,7 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="angles"></param>
 	/// <returns></returns>
-	public static Matrix Rotation(params double[] angles)
+	public static Matrix<T> Rotation(params double[] angles)
 	{
 		double baseComputeDimension = (1 + Math.Sqrt(8 * angles.Length + 1)) / 2;
 		int dimension = (int)(Math.Floor(baseComputeDimension));
@@ -211,16 +213,16 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		{
 			throw new ArgumentException("Le nombre d'angles n'est pas cohérent avec une dimension", nameof(angles));
 		}
-		Matrix result = Matrix.Identity(dimension + 1);
+		Matrix<T> result = Identity(dimension + 1);
 		//on ne déclare qu'une fois la matrice de rotation pour optimiser la mémoire
-		Matrix rotation = Matrix.Identity(dimension + 1);
+		Matrix<T> rotation = Identity(dimension + 1);
 		int angleIndex = 0;
 		for (int dim1 = 0; dim1 < dimension; dim1++)
 		{
 			for (int dim2 = dim1 + 1; dim2 < dimension; dim2++)
 			{
-				double cos = Math.Cos(angles[angleIndex]);
-				double sin = Math.Sin(angles[angleIndex]);
+				T cos = (T)(object)Math.Cos(angles[angleIndex]);
+				T sin = (T)(object)Math.Sin(angles[angleIndex]);
 
 				rotation.components[dim1, dim1] = cos;
 				rotation.components[dim2, dim2] = cos;
@@ -229,10 +231,10 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 
 				result *= rotation;
 
-				rotation.components[dim1, dim1] = 1;
-				rotation.components[dim2, dim2] = 1;
-				rotation.components[dim1, dim2] = 0;
-				rotation.components[dim2, dim1] = 0;
+				rotation.components[dim1, dim1] = T.One;
+				rotation.components[dim2, dim2] = T.One;
+				rotation.components[dim1, dim2] = T.Zero;
+				rotation.components[dim2, dim1] = T.Zero;
 				angleIndex++;
 			}
 		}
@@ -244,9 +246,9 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="values"></param>
 	/// <returns></returns>
-	public static Matrix Translation(params double[] values)
+	public static Matrix<T> Translation(params T[] values)
 	{
-		Matrix matrix = Matrix.Identity(values.Length + 1);
+		Matrix<T> matrix = Identity(values.Length + 1);
 		int lastRow = matrix.Rows - 1;
 		for (int i = 0; i < values.Length; i++)
 		{
@@ -265,11 +267,11 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// </summary>
 	/// <param name="values"></param>
 	/// <returns></returns>
-	public static Matrix Transform(params double[] values)
+	public static Matrix<T> Transform(params T[] values)
 	{
 		var dimension = (Math.Sqrt(4 * values.Length + 1) + 1) / 2;
 		if (dimension != Math.Floor(dimension)) throw new ArgumentException("La matrice de transformation n'a pas une dimension utilisable", nameof(values));
-		Matrix result = Matrix.Identity((int)dimension);
+		Matrix<T> result = Identity((int)dimension);
 
 		var i = 0;
 		for (int x = 0; x < result.Rows; x++)
@@ -304,7 +306,7 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 	/// <param name="row">Ligne</param>
 	/// <param name="col">Colonne</param>
 	/// <returns></returns>
-	public double this[int row, int col] => this.components[row, col];
+	public T this[int row, int col] => this.components[row, col];
 
 	/// <summary>
 	/// Détermine si la matrice est triangulaire ou diagonale
@@ -331,18 +333,18 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 			{
 				if (row == col)
 				{
-					if (this.components[row, col] == 0)
+					if (this.components[row, col] == T.Zero)
 					{
 						isDiagonalized = false;
 						isTriangularised = false;
 						return;
 					}
-					else if (this.components[row, col] != 1.0)
+					else if (this.components[row, col] != T.One)
 					{
 						isIdentity = false;
 					}
 				}
-				if (this.components[row, col] != 0)
+				if (this.components[row, col] != T.Zero)
 				{
 					if (row > col)
 						upside = false;
@@ -407,15 +409,15 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 			int lastCol = this.Columns - 1;
 			for (int col = 0; col < lastCol - 1; col++)
 			{
-				if (this.components[lastRow, col] != 0) return false;
+				if (this.components[lastRow, col] != T.Zero) return false;
 			}
-			return this.components[lastRow, lastCol] == 1;
+			return this.components[lastRow, lastCol] == T.One;
 		}
 	}
 
-	public Matrix Pad(int newRows, int newColumns)
+	public Matrix<T> Pad(int newRows, int newColumns)
 	{
-		double[,] paddedMatrix = new double[newRows, newColumns];
+		T[,] paddedMatrix = new T[newRows, newColumns];
 		var rowsCount = MathEx.Min(newRows, this.Rows);
 		var columnCount = MathEx.Min(newColumns, this.Columns);
 		for (int i = 0; i < rowsCount; i++)
@@ -425,13 +427,13 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 				paddedMatrix[i, j] = this.components[i, j];
 			}
 		}
-		return new Matrix(paddedMatrix);
+		return new Matrix<T>(paddedMatrix);
 	}
 
 	/// <summary>
 	/// Déterminant de la matrice
 	/// </summary>
-	public double Determinant
+	public T Determinant
 	{
 		get
 		{
@@ -441,24 +443,24 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 				{
 					throw new InvalidOperationException("La matrice n'est pas une matrice carrée");
 				}
-				var columns = new ComputeColumns(components.GetLength(0));
+				var columns = new ComputeColumns<T>(components.GetLength(0));
 				this.determinant = ComputeDeterminant(0, columns);
 			}
 			return this.determinant.Value;
 		}
 	}
 
-	public Vector[] ToVectors()
+	public Vector<T>[] ToVectors()
 	{
-		Vector[] result = new Vector[Columns];
+		Vector<T>[] result = new Vector<T>[Columns];
 		for (int x = 0; x < Columns; x++)
 		{
-			double[] vComponents = new double[Rows];
+			T[] vComponents = new T[Rows];
 			for (int y = 0; y < Rows; y++)
 			{
 				vComponents[y] = this[y, x];
 			}
-			result[x] = new Vector(vComponents);
+			result[x] = new Vector<T>(vComponents);
 		}
 		return result;
 	}
@@ -507,7 +509,7 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 			for (int col = 0; col < components.GetLength(1); col++)
 			{
 				if (col > 0) sb.Append(componentsSeparator);
-				sb.Append(Math.Round(components[row, col], decimals));
+				sb.Append(MathEx.Round(components[row, col], decimals));
 			}
 			sb.Append(" }");
 		}
@@ -517,21 +519,21 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 
 	public override bool Equals(object obj) => obj switch
 	{
-		Matrix m => Equals(m),
-		double[,] a => Equals(a),
-		double[][] b => Equals(b),
-		Vector[] v => Equals(v),
+		Matrix<T> m => Equals(m),
+		T[,] a => Equals(a),
+		T[][] b => Equals(b),
+		Vector<T>[] v => Equals(v),
 		_ => false,
 	};
 
-	public bool Equals(Matrix other)
+	public bool Equals(Matrix<T> other)
 	{
 		if (other is null) return false;
 		if (ReferenceEquals(this, other)) return true;
 		return this.GetHashCode() == other.GetHashCode() && Equals(other.components);
 	}
 
-	public bool Equals(double[,] other)
+	public bool Equals(T[,] other)
 	{
 		if (other is null) return false;
 		if (this.Rows != other.GetLength(0) || this.Columns != other.GetLength(1)) return false;
@@ -545,19 +547,19 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		return true;
 	}
 
-	public bool Equals(double[][] other)
+	public bool Equals(T[][] other)
 	{
 		if (other is null) return false;
 		if (Rows != other.GetLength(0)) return false;
 		for (int i = 0; i < this.components.GetLength(0); i++)
 		{
-			double[] otherRow = other[i];
+			T[] otherRow = other[i];
 			if (otherRow.Length > Columns) return false;
 			for (int j = 0; j < this.components.GetLength(1); j++)
 			{
 				if (j > otherRow.Length)
 				{
-					if (this[i, j] != 0) return false;
+					if (this[i, j] != T.Zero) return false;
 				}
 				else if (this[i, j] != otherRow[j])
 				{
@@ -568,7 +570,7 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 		return true;
 	}
 
-	public bool Equals(params Vector[] other)
+	public bool Equals(params Vector<T>[] other)
 	{
 		if (other is null) return false;
 		if (other.Length != this.Columns) return false;
@@ -589,5 +591,5 @@ public sealed partial class Matrix : IFormattable, IEquatable<Matrix>, IEquatabl
 
 	public double[,] ToArray() => (double[,])ArrayUtils.Copy(components);
 
-	public object Clone() => new Matrix(this.components);
+	public object Clone() => new Matrix<T>(this.components);
 }

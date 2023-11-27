@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
@@ -17,7 +18,13 @@ public struct Bytes :
     IReadOnlyList<byte>, IReadOnlyCollection<byte>,
     IEnumerable<byte>, ICloneable,
     IEquatable<Bytes>, IEquatable<byte[]>,
-    IComparable<Bytes>, IComparable<byte[]>, IComparable
+    IComparable<Bytes>, IComparable<byte[]>, IComparable,
+    IComparisonOperators<Bytes, Bytes, bool>,
+    IComparisonOperators<Bytes, byte[], bool>,
+    IEqualityOperators<Bytes, Bytes, bool>,
+    IEqualityOperators<Bytes, byte[], bool>,
+    IAdditionOperators<Bytes, Bytes, Bytes>,
+    IAdditionOperators<Bytes, byte[], Bytes>
 {
     static ArrayComparer<byte> comparer = new ArrayComparer<byte>();
 

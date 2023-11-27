@@ -10,12 +10,17 @@ namespace Utils.Objects;
 
 public class CustomFormatter : NullFormatter
 {
-
     private readonly IDictionary<Type, IDictionary <string, Func<object, IFormatProvider, string>>> typeFormatters = new Dictionary<Type, IDictionary<string, Func<object, IFormatProvider, string>>>();
 
     public CustomFormatter() { }
     public CustomFormatter (CultureInfo CultureInfo) : base (CultureInfo) { }
 
+    /// <summary>
+    /// Add a custom format
+    /// </summary>
+    /// <typeparam name="T">Type to be formatted</typeparam>
+    /// <param name="format">Format identifier</param>
+    /// <param name="formatter">Formatter function without a format provider</param>
     public void AddFormatter<T>(string format, Func<T, string> formatter)
     {
         if (!typeFormatters.TryGetValue(typeof(T), out var formatters))
@@ -25,6 +30,12 @@ public class CustomFormatter : NullFormatter
         formatters[format] = (object o, IFormatProvider formatProvider) => formatter((T)o);
     }
 
+    /// <summary>
+    /// Add a custom format
+    /// </summary>
+    /// <typeparam name="T">Type to be formatted</typeparam>
+    /// <param name="format">Format identifier</param>
+    /// <param name="formatter">Formatter function with a format provider</param>
     public void AddFormatter<T>(string format, Func<T, IFormatProvider, string> formatter)
     {
         if (!typeFormatters.TryGetValue(typeof(T), out var formatters))
@@ -34,6 +45,13 @@ public class CustomFormatter : NullFormatter
         formatters[format] = (object o, IFormatProvider formatProvider) => formatter((T)o, formatProvider);
     }
 
+    /// <summary>
+    /// format a string using the format identifier
+    /// </summary>
+    /// <param name="format">Format identifier</param>
+    /// <param name="arg">Object to be formatted</param>
+    /// <param name="formatProvider">format provider</param>
+    /// <returns></returns>
     public override string Format(string format, object arg, IFormatProvider formatProvider)
     {
         formatProvider ??= CultureInfo;
@@ -68,11 +86,11 @@ public object GetFormat(Type formatType)
         return null;
 }
 
-public virtual string Format(string format, object arg, IFormatProvider formatProvider) => arg switch
-{
-    IFormattable formattable => formattable.ToString(format, formatProvider ?? CultureInfo),
-    _ => arg?.ToString() ?? ""
-};
+    public virtual string Format(string format, object arg, IFormatProvider formatProvider) => arg switch
+    {
+        IFormattable formattable => formattable.ToString(format, formatProvider ?? CultureInfo),
+        _ => arg?.ToString() ?? ""
+    };
 
 
 }

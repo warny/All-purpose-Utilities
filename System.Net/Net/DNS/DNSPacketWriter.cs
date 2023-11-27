@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using Utils.Net.Expressions;
 using Utils.Expressions;
+using Utils.Reflection;
 
 namespace Utils.Net.DNS
 {
@@ -165,7 +166,7 @@ namespace Utils.Net.DNS
                 ? Expression.Property(element, (PropertyInfo)field)
                 : Expression.Field(element, (FieldInfo)field);
 
-            Type underLyingType = ReflectionEx.GetUnderlyingType(type);
+            Type underLyingType = type.GetUnderlyingType();
             if (type != underLyingType)
             {
                 assignationSource = Expression.Convert(assignationSource, underLyingType);

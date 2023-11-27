@@ -1,41 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Utils.Mathematics
 {
-	[DebuggerDisplay("{DoubleComparer}(±{Interval})")]
-	public class DoubleComparer : IComparer<double>, IEqualityComparer<double>
-	{
-		public double Interval {get;}
-		public DoubleComparer(int precision) : this (Math.Pow(10, -precision)) {}
-		public DoubleComparer(double interval) => this.Interval = interval;
-		public int Compare(double x, double y) => x.Equals(y) ? 0 : x.CompareTo(y);
-		public bool Equals(double x, double y) => x.Between(y - Interval, y + Interval);
-		public int GetHashCode(double obj) => obj.GetHashCode();
-	}
+    [DebuggerDisplay("{FloatingPointComparer}(±{Interval})")]
+    public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
+        where
+            T : struct, IComparable<T>, IEquatable<T>, IAdditionOperators<T, T, T>, ISubtractionOperators<T, T, T>
+    {
+		public T Interval { get; }
 
-	[DebuggerDisplay("{FloatComparer}(±{Interval})")]
-	public class FloatComparer : IComparer<float>, IEqualityComparer<float>
-	{
-		public float Interval { get; }
-		public FloatComparer(int precision) : this((float)Math.Pow(10, -precision)) { }
-		public FloatComparer(float interval) => this.Interval = interval;
-		public int Compare(float x, float y) => x.Between(x - Interval, x + Interval) ? 0 : x.CompareTo(y);
-		public bool Equals(float x, float y) => x.Between(x - Interval, x + Interval);
-		public int GetHashCode(float obj) => obj.GetHashCode();
-	}
+		public FloatingPointComparer(int precision) : this((T)(object)Math.Pow(10d, -(double)precision)) { }
 
-	[DebuggerDisplay("{DecimalComparer}(±{Interval})")]
-	public class DecimalComparer : IComparer<decimal>, IEqualityComparer<decimal>
-	{
-		public decimal Interval { get; }
-		public DecimalComparer(int precision) : this((decimal)Math.Pow(10, -precision)) { }
-		public DecimalComparer(decimal interval) => this.Interval = interval;
-		public int Compare(decimal x, decimal y) => x.Between(x - Interval, x + Interval) ? 0 : x.CompareTo(y);
-		public bool Equals(decimal x, decimal y) => x.Between(x - Interval, x + Interval);
-		public int GetHashCode(decimal obj) => obj.GetHashCode();
-	}
+        public FloatingPointComparer(T interval)
+        {
+            Interval = interval;
+        }
+
+        public int Compare(T x, T y) => x.Equals(y) ? 0 : x.CompareTo(y);
+        public bool Equals(T x, T y) => x.Between(y - Interval, y + Interval);
+        public int GetHashCode([DisallowNull] T obj) => obj.GetHashCode();
+    }
 }

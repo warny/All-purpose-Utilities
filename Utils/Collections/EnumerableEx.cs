@@ -196,7 +196,7 @@ public static partial class EnumerableEx
     /// <returns></returns>
     public static IEnumerable<IEnumerable<T>> Slice<T>(IEnumerable<T> enumeration, params int[] cutIndexes)
     {
-        List<T> result = new List<T>();
+        List<T> result = [];
         int index = 0;
         var indexes = new Queue<int>(cutIndexes);
         var nextIndex = indexes.Dequeue();

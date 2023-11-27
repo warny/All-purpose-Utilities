@@ -22,57 +22,41 @@ public static class MathEx
     ///   -1 % 3 = -1
     ///	  Modulo(-1, 3) = 2
     /// </summary>
-    public static long Mod(long a, long b) => (a % b + b) % b;
-
-    /// <summary>
-    /// Calcul alternatif du modulo (différent de l'opérateur %)
-    /// Le résultat est toujours compris entre 0 et y-1
-    /// Exemple : 
-    ///   -1 % 3 = -1
-    ///	  Modulo(-1, 3) = 2
-    /// </summary>
-    public static int Mod(int a, int b) => (a % b + b) % b;
-
-    /// <summary>
-    /// Calcul alternatif du modulo (différent de l'opérateur %)
-    /// Le résultat est toujours compris entre 0 et y-1
-    /// Exemple : 
-    ///   -1 % 3 = -1
-    ///	  Modulo(-1, 3) = 2
-    /// </summary>
-    public static short Mod(short a, short b) => (short)((a % b + b) % b);
-
-    /// <summary>
-    /// Calcul alternatif du modulo (différent de l'opérateur %)
-    /// Le résultat est toujours compris entre 0 et y-1
-    /// Exemple : 
-    ///   -1 % 3 = -1
-    ///	  Modulo(-1, 3) = 2
-    /// </summary>
-    public static decimal Mod(decimal a, decimal b) => ((a % b + b) % b);
-
-    /// <summary>
-    /// Calcul alternatif du modulo (différent de l'opérateur %)
-    /// Le résultat est toujours compris entre 0 et y-1
-    /// Exemple : 
-    ///   -1 % 3 = -1
-    ///	  Modulo(-1, 3) = 2
-    /// </summary>
-    public static float Mod(float a, float b) => ((a % b + b) % b);
-
-    /// <summary>
-    /// Calcul alternatif du modulo (différent de l'opérateur %)
-    /// Le résultat est toujours compris entre 0 et y-1
-    /// Exemple : 
-    ///   -1 % 3 = -1
-    ///	  Modulo(-1, 3) = 2
-    /// </summary>
-    public static double Mod(double a, double b) => ((a % b + b) % b);
+    public static T Mod<T>(T a, T b)
+        where T : struct, IModulusOperators<T, T, T>, IAdditionOperators<T, T, T>
+         => ((a % b + b) % b);
     #endregion
+
+    public static T Abs<T>(T value)
+        where T : struct, INumber<T>
+        => value < T.Zero ? -value : value;
 
     #region round
 
     public static float Round(float value, float @base) => (float)Round((double)value, @base);
+
+    public static T Round<T>(T value, T @base)
+        where T : struct, INumber<T>
+    {
+        T middle = @base / (T.One + T.One);
+        T r = Mod(value, @base);
+        if (r < middle)
+        {
+            return value - r;
+        }
+        else
+        {
+            return value - r + @base;
+        }
+    }
+
+    public static T Round<T>(T value, int exponent = 0)
+        where T : struct, INumber<T>, IPowerFunctions<T>
+    {
+        T @base = T.Pow((T)(object)10, (T)(object)exponent);
+        return Round<T>(value, @base);
+    }
+
 
 
     public static double Round(double value, double @base)
@@ -103,31 +87,14 @@ public static class MathEx
     /// <param name="value">valeur</param>
     /// <param name="base">base</param>
     /// <returns>multiple inférieur</returns>
-    public static long Floor(long value, long @base) => (value - 1) - (Mod(value - 1, @base));
-
-    /// <summary>
-    /// retrouve le multiple de la base inférieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple inférieur</returns>
-    public static int Floor(int value, int @base) => (value - 1) - (Mod(value - 1, @base));
-
-    /// <summary>
-    /// retrouve le multiple de la base inférieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple inférieur</returns>
-    public static short Floor(short value, short @base) => (short)((value - 1) - (Mod(value - 1, @base)));
-
-    /// <summary>
-    /// retrouve le multiple de la base inférieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple inférieur</returns>
-    public static decimal Floor(decimal value, decimal @base) => ((value - 1) - (Mod(value - 1, @base)));
+    public static T Floor<T>(T value, T @base)
+        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
+        => (value, @base) switch
+        {
+            (double d, double b) => (T)(object)Floor(d, b),
+            (float d, float b) => (T)(object)Floor(d, b),
+            _ => (value - T.One) - (Mod(value - T.One, @base))
+        };
 
     /// <summary>
     /// retrouve le multiple de la base inférieur à value
@@ -137,6 +104,12 @@ public static class MathEx
     /// <returns>multiple inférieur</returns>
     public static float Floor(float value, float @base) => (float)((value - 1) - (Math.IEEERemainder(value - 1, @base)));
 
+    /// <summary>
+    /// retrouve le multiple de la base inférieur à value
+    /// </summary>
+    /// <param name="value">valeur</param>
+    /// <param name="base">base</param>
+    /// <returns>multiple inférieur</returns>
     /// <summary>
     /// retrouve le multiple de la base inférieur à value
     /// </summary>
@@ -153,31 +126,13 @@ public static class MathEx
     /// <param name="value">valeur</param>
     /// <param name="base">base</param>
     /// <returns>multiple supérieur</returns>
-    public static long Ceiling(long value, long @base) => (value - 1) + @base - (Mod(value - 1, @base));
-
-    /// <summary>
-    /// retrouve le multiple de la base supérieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple supérieur</returns>
-    public static int Ceiling(int value, int @base) => (value - 1) + @base - (Mod(value - 1, @base));
-
-    /// <summary>
-    /// retrouve le multiple de la base supérieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple supérieur</returns>
-    public static short Ceiling(short value, short @base) => (short)((value - 1) + @base - (Mod(value - 1, @base)));
-
-    /// <summary>
-    /// retrouve le multiple de la base supérieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple supérieur</returns>
-    public static decimal Ceiling(decimal value, decimal @base) => (value - 1) + @base - (Mod(value - 1, @base));
+    public static T Ceiling<T>(T value, T @base)
+        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
+        => (value, @base) switch {
+            (double d, double b) => (T)(object)Ceiling(d, b),
+            (float d, float b) => (T)(object)Ceiling(d, b),
+            _ => (value - T.One) + @base - (Mod(value - T.One, @base))
+        };
 
     /// <summary>
     /// retrouve le multiple de la base supérieur à value
@@ -335,8 +290,8 @@ public static class MathEx
     /// <param name="value">Valeur à comparer</param>
     /// <param name="lowerBound">Valeur minimale</param>
     /// <param name="upperBound">Valeur Maximale</param>
-    /// <param name="includeLowerBound">Includ la valeur minimale</param>
-    /// <param name="includeUpperBound">Includ la valeur maximale</param>
+    /// <param name="includeLowerBound">Inclus la valeur minimale</param>
+    /// <param name="includeUpperBound">Inclus la valeur maximale</param>
     /// <returns></returns>
     public static bool Between<T>(this T value, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true) where T : IComparable<T>
     {
@@ -372,8 +327,8 @@ public static class MathEx
     /// <param name="value">Valeur à comparer</param>
     /// <param name="lowerBound">Valeur minimale</param>
     /// <param name="upperBound">Valeur Maximale</param>
-    /// <param name="includeLowerBound">Includ la valeur minimale</param>
-    /// <param name="includeUpperBound">Includ la valeur maximale</param>
+    /// <param name="includeLowerBound">Inclus la valeur minimale</param>
+    /// <param name="includeUpperBound">Inclus la valeur maximale</param>
     /// <param name="comparer">Comparateur</param>
     /// <returns></returns>
     public static bool Between<T>(this T value, IComparer<T> comparer, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true)
@@ -466,42 +421,29 @@ public static class MathEx
 
     #region calculs
     /// <summary>
-    /// Renvoie la racine carrée du nombre en paramètre
+    /// Compute the square root of <paramref name="value"/>
     /// </summary>
-    /// <param name="value">Valeur</param>
-    /// <returns>Racine carrée</returns>
-    public static byte Sqrt(byte value) => (byte)Math.Sqrt(value);
+    /// <param name="value">Value to compute the square root of</param>
+    /// <returns>Square root of <paramref name="value"/></returns>
+    /// <typeparam name="T">Type of number</typeparam>
+    public static T Sqrt<T>(T value)
+        where T : struct, INumberBase<T>, IPowerFunctions<T>
+        => T.Pow(value, T.One / (T.One + T.One));
 
-    /// <summary>
-    /// Renvoie la racine carrée du nombre en paramètre
-    /// </summary>
-    /// <param name="value">Valeur</param>
-    /// <returns>Racine carrée</returns>
-    public static short Sqrt(short value) => (short)Math.Sqrt(value);
+    public static T Tan<T>(Task<T> value)
+        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
+        => (T)(object)Math.Tan((double)(object)value);
 
-    /// <summary>
-    /// Renvoie la racine carrée du nombre en paramètre
-    /// </summary>
-    /// <param name="value">Valeur</param>
-    /// <returns>Racine carrée</returns>
-    public static int Sqrt(int value) => (int)Math.Sqrt(value);
+    public static T Sin<T>(Task<T> value)
+        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>, IPowerFunctions<T>
+        => (T)(object)Math.Sin((double)(object)value);
 
-    /// <summary>
-    /// Renvoie la racine carrée du nombre en paramètre
-    /// </summary>
-    /// <param name="value">Valeur</param>
-    /// <returns>Racine carrée</returns>
-    public static long Sqrt(long value) => (long)Math.Sqrt(value);
-
-    /// <summary>
-    /// Renvoie la racine carrée du nombre en paramètre
-    /// </summary>
-    /// <param name="value">Valeur</param>
-    /// <returns>Racine carrée</returns>
-    public static float Sqrt(float value) => (float)Math.Sqrt(value);
+    public static T Cos<T>(Task<T> value)
+        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
+        => (T)(object)Math.Cos((double)(object)value);
     #endregion
 
-    private static Dictionary<int, int[]> pascalTriangleCache = new Dictionary<int, int[]>()
+    private static readonly Dictionary<int, int[]> pascalTriangleCache = new()
         {
             { 0, new [] { 1 } },
             { 1, new [] { 1, 1 } },

@@ -7,14 +7,14 @@ namespace Utils.Objects;
 
 	public static class ObjectFluent
 	{
-		public static FluentResult<T> Success<T>(this T value) => new FluentResult<T>(value);
-		public static FluentResult<T> Failure<T>(this T value) => new FluentResult<T>(value, false);
+		public static FluentResult<T> Success<T>(this T value) => new(value);
+		public static FluentResult<T> Failure<T>(this T value) => new(value, false);
 
-		public static FluentResult<T> IsNull<T>(this T value) => new FluentResult<T>(value, value is null);
-		public static FluentResult<T> IsNotNull<T>(this T value) => new FluentResult<T>(value, value is not null);
-		public static FluentResult<T> IsIn<T>(this T value, params T[] values) => new FluentResult<T>(value, value.In(values));
-		public static FluentResult<T> IsNotIn<T>(this T value, params T[] values) => new FluentResult<T>(value, value.NotIn(values));
-		public static FluentResult<T> Test<T>(this T value, Func<T, bool> test) => new FluentResult<T>(value, test(value));
+		public static FluentResult<T> IsNull<T>(this T value) => new(value, value is null);
+		public static FluentResult<T> IsNotNull<T>(this T value) => new(value, value is not null);
+		public static FluentResult<T> IsIn<T>(this T value, params T[] values) => new(value, value.In(values));
+		public static FluentResult<T> IsNotIn<T>(this T value, params T[] values) => new(value, value.NotIn(values));
+		public static FluentResult<T> Test<T>(this T value, Func<T, bool> test) => new(value, test(value));
 
 		public static FluentResult<T> IsEqualTo<T, CT>(this T value, CT comparisonValue)
 			=> new FluentResult<T>(value).IsEqualTo(comparisonValue);
@@ -28,9 +28,9 @@ namespace Utils.Objects;
 			=> new FluentResult<T>(value).IsGreaterOrEqualsThan(comparisonValue);
 
 		public static string NullOrEmptyToNull(this string value) => value.IsNullOrEmpty() ? null : value;
-		public static FluentResult<string> NullOrEmptyIsNull(this FluentResult<string> value) => new FluentResult<string>(value.Value.IsNullOrEmpty() ? null : value.Value, value.Result);
+		public static FluentResult<string> NullOrEmptyIsNull(this FluentResult<string> value) => new(value.Value.IsNullOrEmpty() ? null : value.Value, value.Result);
 		public static string NullOrWhiteSpaceToNull(this string value) => value.IsNullOrWhiteSpace() ? null : value;
-		public static FluentResult<string> NullOrWhiteSpaceIsNull(this FluentResult<string> value) => new FluentResult<string>(value.Value.IsNullOrWhiteSpace() ? null : value.Value, value.Result);
+		public static FluentResult<string> NullOrWhiteSpaceIsNull(this FluentResult<string> value) => new(value.Value.IsNullOrWhiteSpace() ? null : value.Value, value.Result);
 	}
 
 public struct FluentResult<T>
@@ -50,17 +50,17 @@ public struct FluentResult<T>
 		Result = success;
 	}
 
-	public FluentResult<T> Not() => new FluentResult<T>(Value, !Result);
-	public FluentResult<T> Success() => new FluentResult<T>(Value, true);
-	public FluentResult<T> Failure() => new FluentResult<T>(Value, false);
+	public readonly FluentResult<T> Not() => new(Value, !Result);
+	public readonly FluentResult<T> Success() => new(Value, true);
+	public readonly FluentResult<T> Failure() => new(Value, false);
 
-	public FluentResult<T> IsNull() => new FluentResult<T>(Value, Result && Value is null);
-	public FluentResult<T> IsNotNull() => new FluentResult<T>(Value, Result && Value is not null);
-	public FluentResult<T> IsIn(params T[] values) => new FluentResult<T>(Value, Result && Value.In(values));
-	public FluentResult<T> IsNotIn(params T[] values) => new FluentResult<T>(Value, Result && Value.NotIn(values));
-	public FluentResult<T> Test(Func<T, bool> test) => new FluentResult<T>(Value, Result && test(Value));
+	public readonly FluentResult<T> IsNull() => new(Value, Result && Value is null);
+	public readonly FluentResult<T> IsNotNull() => new(Value, Result && Value is not null);
+	public readonly FluentResult<T> IsIn(params T[] values) => new(Value, Result && Value.In(values));
+	public readonly FluentResult<T> IsNotIn(params T[] values) => new(Value, Result && Value.NotIn(values));
+	public readonly FluentResult<T> Test(Func<T, bool> test) => new(Value, Result && test(Value));
 
-	public FluentResult<T> IsEqualTo<CT>(CT comparisonValue)
+	public readonly FluentResult<T> IsEqualTo<CT>(CT comparisonValue)
 	{
 		if (Value is IEquatable<CT> equatable)
 			return new FluentResult<T>(Value, Result && equatable.Equals(comparisonValue));
@@ -71,7 +71,7 @@ public struct FluentResult<T>
 		return new FluentResult<T>(Value, Result && Value.Equals(comparisonValue)); ;
 	}
 
-	public FluentResult<T> IsLowerThan<CT>(CT comparisonValue)
+	public readonly FluentResult<T> IsLowerThan<CT>(CT comparisonValue)
 	{
 		if (Value is IComparable<CT> gcomparable)
 			return new FluentResult<T>(Value, Result && gcomparable.CompareTo(comparisonValue) < 0);
@@ -80,7 +80,7 @@ public struct FluentResult<T>
 		throw new NotSupportedException($"{typeof(CT).Name} is not comparable");
 	}
 
-	public FluentResult<T> IsLowerOrEqualsThan<CT>(CT comparisonValue)
+	public readonly FluentResult<T> IsLowerOrEqualsThan<CT>(CT comparisonValue)
 	{
 		if (Value is IComparable<CT> gcomparable)
 			return new FluentResult<T>(Value, Result && gcomparable.CompareTo(comparisonValue) <= 0);
@@ -89,7 +89,7 @@ public struct FluentResult<T>
 		throw new NotSupportedException($"{typeof(CT).Name} is not comparable");
 	}
 
-	public FluentResult<T> IsGreaterThan<CT>(CT comparisonValue)
+	public readonly FluentResult<T> IsGreaterThan<CT>(CT comparisonValue)
 	{
 		if (Value is IComparable<CT> gcomparable)
 			return new FluentResult<T>(Value, Result && gcomparable.CompareTo(comparisonValue) > 0);
@@ -98,7 +98,7 @@ public struct FluentResult<T>
 		throw new NotSupportedException($"{typeof(CT).Name} is not comparable");
 	}
 
-	public FluentResult<T> IsGreaterOrEqualsThan<CT>(CT comparisonValue)
+	public readonly FluentResult<T> IsGreaterOrEqualsThan<CT>(CT comparisonValue)
 	{
 		if (Value is IComparable<CT> gcomparable)
 			return new FluentResult<T>(Value, Result && gcomparable.CompareTo(comparisonValue) >= 0);
@@ -107,8 +107,8 @@ public struct FluentResult<T>
 		throw new NotSupportedException($"{typeof(CT).Name} is not comparable");
 	}
 
-	public T Then(Func<FluentResult<T>, T> func) => func(this);
-	public T Then(Func<T, T> @true, Func<T, T> @false) => Result ? @true(Value) : @false(Value);
+	public readonly T Then(Func<FluentResult<T>, T> func) => func(this);
+	public readonly T Then(Func<T, T> @true, Func<T, T> @false) => Result ? @true(Value) : @false(Value);
 
 	public static implicit operator T(FluentResult<T> value) => value.Value;
 }

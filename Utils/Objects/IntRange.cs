@@ -5,10 +5,15 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using Utils.Mathematics;
 using System.Collections;
+using System.Numerics;
 
 namespace Utils.Objects;
 
-public class IntRange : IEnumerable<int>, IFormattable
+public class IntRange : 
+	IEnumerable<int>, 
+	IFormattable,
+	IAdditionOperators<IntRange, IntRange, IntRange>,
+	ISubtractionOperators<IntRange, IntRange, IntRange>
 {
 	private class SimpleRange : IComparable<SimpleRange>, IComparable<int>, IFormattable
 	{
@@ -53,14 +58,14 @@ public class IntRange : IEnumerable<int>, IFormattable
 
 		public static SimpleRange[] Except(SimpleRange range1, SimpleRange range2)
 		{
-			if (range2 is null || range2.Minimum > range1.Maximum || range2.Maximum < range1.Minimum) return new SimpleRange[] { new SimpleRange(range1.Minimum, range1.Maximum) };
-			if (range2.Minimum <= range1.Minimum && range2.Maximum >= range1.Maximum) return new SimpleRange[] { };
-			if (range2.Maximum >= range1.Maximum) return new SimpleRange[] { new SimpleRange(range1.Minimum, range2.Minimum - 1) };
-			if (range2.Minimum <= range1.Minimum) return new SimpleRange[] { new SimpleRange(range2.Maximum + 1, range1.Maximum) };
-			return new SimpleRange[] {
+			if (range2 is null || range2.Minimum > range1.Maximum || range2.Maximum < range1.Minimum) return [new SimpleRange(range1.Minimum, range1.Maximum)];
+			if (range2.Minimum <= range1.Minimum && range2.Maximum >= range1.Maximum) return [];
+			if (range2.Maximum >= range1.Maximum) return [new SimpleRange(range1.Minimum, range2.Minimum - 1)];
+			if (range2.Minimum <= range1.Minimum) return [new SimpleRange(range2.Maximum + 1, range1.Maximum)];
+			return [
 					new SimpleRange(range1.Minimum, range2.Minimum - 1),
 					new SimpleRange(range2.Maximum + 1, range1.Maximum)
-				};
+				];
 		}
 
 		public override string ToString() => ToString(string.Empty, null);
@@ -147,7 +152,7 @@ public class IntRange : IEnumerable<int>, IFormattable
 
 	public IEnumerator<int> GetEnumerator()
 	{
-		IEnumerable<int> getValues(IEnumerable<SimpleRange> ranges)
+        static IEnumerable<int> getValues(IEnumerable<SimpleRange> ranges)
 		{
 			foreach (var range in ranges)
 			{

@@ -95,7 +95,7 @@ public abstract class GlyphSimple : GlyphBase
 			}
 		}
 
-		short[] coords(OutLineFlags isByte, OutLineFlags isSame)
+		short[] coordinates(OutLineFlags isByte, OutLineFlags isSame)
 		{
 			short[] result = new short[numPoints];
 			for (int i = 0; i < numPoints; i++)
@@ -122,8 +122,8 @@ public abstract class GlyphSimple : GlyphBase
 			return result;
 		}
 
-		var xCoords = coords(OutLineFlags.XIsByte, OutLineFlags.XIsSame);
-		var yCoords = coords(OutLineFlags.YIsByte, OutLineFlags.YIsSame);
+		var xCoords = coordinates(OutLineFlags.XIsByte, OutLineFlags.XIsSame);
+		var yCoords = coordinates(OutLineFlags.YIsByte, OutLineFlags.YIsSame);
 
 		var points = EnumerableEx.Zip(xCoords, yCoords, flags, (x, y, flag) => (x, y, flag.HasFlag(OutLineFlags.OnCurve)));
 

@@ -2,238 +2,242 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Mathematics;
 
 namespace Utils.Objects;
 
-	public class Ranges<T> : ICollection<Range<T>>, ICloneable, IFormattable
-		where T : IComparable<T>
+public class Ranges<T> : ICollection<Range<T>>, ICloneable, IFormattable,
+        IAdditionOperators<Ranges<T>, Ranges<T>, Ranges<T>>,
+        ISubtractionOperators<Ranges<T>, Ranges<T>, Ranges<T>>
+    where
+		T : IComparable<T>
+{
+	readonly List<Range<T>> ranges;
+
+	public Range<T> this[int index] => ranges.Skip(index).FirstOrDefault();
+
+	public int Count => ranges.Count;
+
+	public bool IsReadOnly { get; }
+
+	protected static IEnumerable<Range<T1>> InnerParse<T1>(string range, string itemSearchPattern, Func<string, T1> valueParser) where T1 : IComparable<T1>
 	{
-		readonly List<Range<T>> ranges;
+		var parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*-\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
+		var results = parse.Matches(range);
 
-		public Range<T> this[int index] => ranges.Skip(index).FirstOrDefault();
-
-		public int Count => ranges.Count;
-
-		public bool IsReadOnly { get; }
-
-		protected static IEnumerable<Range<T1>> InnerParse<T1>(string range, string itemSearchPattern, Func<string, T1> valueParser) where T1 : IComparable<T1>
+		var res = new SingleRanges();
+		foreach (Match result in results)
 		{
-			var parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*-\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
-			var results = parse.Matches(range);
-
-			var res = new SingleRanges();
-			foreach (Match result in results)
-			{
-				yield return new Range<T1>(
-					valueParser(result.Groups["start"].Value),
-					valueParser(result.Groups["end"].Value),
-					result.Groups["includesStart"].Value == "[",
-					result.Groups["includesEnd"].Value == "]"
-				);
-			}
+			yield return new Range<T1>(
+				valueParser(result.Groups["start"].Value),
+				valueParser(result.Groups["end"].Value),
+				result.Groups["includesStart"].Value == "[",
+				result.Groups["includesEnd"].Value == "]"
+			);
 		}
-
-
-		public Ranges() {
-			ranges = new List<Range<T>>();
-		}
-
-		public Ranges(Ranges<T> ranges)
-		{
-			this.ranges = ranges.ranges.ToList();
-		}
-
-		public Ranges(params Range<T>[] ranges) : this((IEnumerable<Range<T>>)ranges) { }
-		public Ranges(IEnumerable<Range<T>> ranges) : this() { Add(ranges); }
-
-
-		public void Add (T value) => Add(new Range<T>(value));
-		public void Add(params Range<T>[] ranges) => Add((IEnumerable<Range<T>>)ranges);
-		public void Add(IEnumerable<Range<T>> ranges)
-		{
-			foreach (var range in ranges)
-			{
-				this.Add(range);
-			}
-		}
-
-		public void Add (T start, T end, bool containsStart = true, bool containsEnd = true) => Add(new Range<T>(start, end, containsStart, containsEnd));
-		public void Add(Range<T> item)
-		{
-			List<Range<T>> toRemove = new List<Range<T>>();
-
-			T start = item.Start, end = item.End;
-			bool containsStart = item.ContainsStart, containsEnd = item.ContainsEnd;
-
-			int index = 0;
-			foreach (var range in ranges)
-			{
-				if (item.Start.CompareTo(range.End) > 0 || (item.Start.CompareTo(range.End) == 0 && !item.ContainsStart && !range.ContainsEnd))
-				{
-					index++;
-					continue;
-				}
-				if (item.End.CompareTo(range.Start) < 0 || (item.End.CompareTo(range.Start) == 0 && !range.ContainsStart && !item.ContainsEnd))
-				{
-					break;
-				}
-
-				toRemove.Add(range);
-				switch (start.CompareTo(range.Start))
-				{
-					case 0:
-						containsStart |= range.ContainsStart;
-						break;
-					case 1:
-						start = range.Start;
-						containsStart = range.ContainsStart;
-						break;
-				}
-
-				switch (end.CompareTo(range.End))
-				{
-					case -1:
-						end = range.End;
-						containsEnd = range.ContainsEnd;
-						break;
-					case 0:
-						containsEnd |= range.ContainsEnd;
-						break;
-				}
-				index++;
-			}
-			if (ranges.Count == 0)
-			{
-				ranges.Add(item);
-			}
-			else if (index >= ranges.Count)
-			{
-				ranges.Add(new Range<T>(start, end, containsStart, containsEnd));
-			}
-			else
-			{
-				ranges.Insert(index, new Range<T>(start, end, containsStart, containsEnd));
-			};
-			toRemove.ForEach(r => ranges.Remove(r));
-		}
-
-		public void Remove(T value) => Remove(new Range<T>(value));
-		public void Remove(params Range<T>[] ranges) => Remove((IEnumerable<Range<T>>)ranges);
-		public void Remove(IEnumerable<Range<T>> ranges)
-		{
-			foreach (var range in ranges)
-			{
-				this.Remove(range);
-			}
-		}
-		public void Remove(T start, T end, bool containsStart = true, bool containsEnd = true) => Remove(new Range<T>(start, end, containsStart, containsEnd));
-		public bool Remove(Range<T> item)
-		{
-			List<Range<T>> toRemove = new List<Range<T>>();
-			List<Range<T>> toAdd = new List<Range<T>>();
-
-			int insertIndex = -1;
-			int index = 0;
-			foreach (var range in ranges)
-			{
-				if (range.Overlap(item))
-				{
-					if (insertIndex == -1)
-					{
-						insertIndex = index;
-					}
-					toRemove.Add(range);
-
-					int compareStarts = item.Start.CompareTo(range.Start);
-					if (compareStarts > 0 || (compareStarts == 0 && range.ContainsStart && !item.ContainsStart))
-					{
-						toAdd.Add(new Range<T>(range.Start, item.Start, range.ContainsStart, !item.ContainsStart));
-					}
-
-					int compareEnds = item.End.CompareTo(range.End);
-					if (compareEnds < 0 || (compareStarts == 0 && !item.ContainsEnd && range.ContainsEnd))
-					{
-						toAdd.Add(new Range<T>(item.End, range.End, !item.ContainsStart, range.ContainsEnd)); 
-					}
-				}
-				index++;
-			}
-			toRemove.ForEach(r => ranges.Remove(r));
-			toAdd.ForEach(r=> ranges.Insert(insertIndex ++, r));
-
-			return toRemove.Count == 0;
-		}
-
-		public void Clear() => ranges.Clear();
-
-		public bool Contains(Range<T> item)
-		{
-			foreach (var range in ranges)
-			{
-				if (range.Contains(item)) return true;
-				if (item.End.CompareTo(range.Start) < 0) return false;
-			}
-			return false;
-		}
-
-		public bool Contains(T item)
-		{
-			foreach (var range in ranges)
-			{
-				if (range.Contains(item)) return true;
-				if (item.CompareTo(range.Start) < 0) return false;
-			}
-			return false;
-		}
-
-		public void CopyTo(Range<T>[] array, int arrayIndex) => ranges.CopyTo(array, arrayIndex);
-		public IEnumerator<Range<T>> GetEnumerator() => ranges.GetEnumerator();
-		IEnumerator IEnumerable.GetEnumerator() => ranges.GetEnumerator();
-
-		public override string ToString() => ToString(string.Empty, null);
-		public string ToString(string format) => ToString(format, null);
-		public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
-		public string ToString(string format, IFormatProvider formatProvider)
-		{
-			formatProvider ??= System.Globalization.CultureInfo.CurrentCulture;
-			return String.Join(" ∪ ", ranges.Select(r=>r.ToString(format, formatProvider)));
-		}
-
-
-		public object Clone() => new Ranges<T>(this);
-
-		public static Ranges<T> operator +(Ranges<T> r1, Range<T> r2)
-		{
-			var result = new Ranges<T>(r1);
-			r1.Add(r2);
-			return r1;
-		}
-
-		public static Ranges<T> operator +(Ranges<T> r1, Ranges<T> r2)
-		{
-			var result = new Ranges<T>(r1);
-			r1.Add(r2);
-			return r1;
-		}
-
-		public static Ranges<T> operator -(Ranges<T> r1, Range<T> r2)
-		{
-			var result = new Ranges<T>(r1);
-			r1.Remove(r2);
-			return r1;
-		}
-
-		public static Ranges<T> operator -(Ranges<T> r1, Ranges<T> r2)
-		{
-			var result = new Ranges<T>(r1);
-			r1.Remove(r2);
-			return r1;
-		}
-
 	}
+
+
+	public Ranges()
+	{
+		ranges = new List<Range<T>>();
+	}
+
+	public Ranges(Ranges<T> ranges)
+	{
+		this.ranges = ranges.ranges.ToList();
+	}
+
+	public Ranges(params Range<T>[] ranges) : this((IEnumerable<Range<T>>)ranges) { }
+	public Ranges(IEnumerable<Range<T>> ranges) : this() { Add(ranges); }
+
+
+	public void Add(T value) => Add(new Range<T>(value));
+	public void Add(params Range<T>[] ranges) => Add((IEnumerable<Range<T>>)ranges);
+	public void Add(IEnumerable<Range<T>> ranges)
+	{
+		foreach (var range in ranges)
+		{
+			this.Add(range);
+		}
+	}
+
+	public void Add(T start, T end, bool containsStart = true, bool containsEnd = true) => Add(new Range<T>(start, end, containsStart, containsEnd));
+	public void Add(Range<T> item)
+	{
+		List<Range<T>> toRemove = new List<Range<T>>();
+
+		T start = item.Start, end = item.End;
+		bool containsStart = item.ContainsStart, containsEnd = item.ContainsEnd;
+
+		int index = 0;
+		foreach (var range in ranges)
+		{
+			if (item.Start.CompareTo(range.End) > 0 || (item.Start.CompareTo(range.End) == 0 && !item.ContainsStart && !range.ContainsEnd))
+			{
+				index++;
+				continue;
+			}
+			if (item.End.CompareTo(range.Start) < 0 || (item.End.CompareTo(range.Start) == 0 && !range.ContainsStart && !item.ContainsEnd))
+			{
+				break;
+			}
+
+			toRemove.Add(range);
+			switch (start.CompareTo(range.Start))
+			{
+				case 0:
+					containsStart |= range.ContainsStart;
+					break;
+				case 1:
+					start = range.Start;
+					containsStart = range.ContainsStart;
+					break;
+			}
+
+			switch (end.CompareTo(range.End))
+			{
+				case -1:
+					end = range.End;
+					containsEnd = range.ContainsEnd;
+					break;
+				case 0:
+					containsEnd |= range.ContainsEnd;
+					break;
+			}
+			index++;
+		}
+		if (ranges.Count == 0)
+		{
+			ranges.Add(item);
+		}
+		else if (index >= ranges.Count)
+		{
+			ranges.Add(new Range<T>(start, end, containsStart, containsEnd));
+		}
+		else
+		{
+			ranges.Insert(index, new Range<T>(start, end, containsStart, containsEnd));
+		};
+		toRemove.ForEach(r => ranges.Remove(r));
+	}
+
+	public void Remove(T value) => Remove(new Range<T>(value));
+	public void Remove(params Range<T>[] ranges) => Remove((IEnumerable<Range<T>>)ranges);
+	public void Remove(IEnumerable<Range<T>> ranges)
+	{
+		foreach (var range in ranges)
+		{
+			this.Remove(range);
+		}
+	}
+	public void Remove(T start, T end, bool containsStart = true, bool containsEnd = true) => Remove(new Range<T>(start, end, containsStart, containsEnd));
+	public bool Remove(Range<T> item)
+	{
+		List<Range<T>> toRemove = new List<Range<T>>();
+		List<Range<T>> toAdd = new List<Range<T>>();
+
+		int insertIndex = -1;
+		int index = 0;
+		foreach (var range in ranges)
+		{
+			if (range.Overlap(item))
+			{
+				if (insertIndex == -1)
+				{
+					insertIndex = index;
+				}
+				toRemove.Add(range);
+
+				int compareStarts = item.Start.CompareTo(range.Start);
+				if (compareStarts > 0 || (compareStarts == 0 && range.ContainsStart && !item.ContainsStart))
+				{
+					toAdd.Add(new Range<T>(range.Start, item.Start, range.ContainsStart, !item.ContainsStart));
+				}
+
+				int compareEnds = item.End.CompareTo(range.End);
+				if (compareEnds < 0 || (compareStarts == 0 && !item.ContainsEnd && range.ContainsEnd))
+				{
+					toAdd.Add(new Range<T>(item.End, range.End, !item.ContainsStart, range.ContainsEnd));
+				}
+			}
+			index++;
+		}
+		toRemove.ForEach(r => ranges.Remove(r));
+		toAdd.ForEach(r => ranges.Insert(insertIndex++, r));
+
+		return toRemove.Count == 0;
+	}
+
+	public void Clear() => ranges.Clear();
+
+	public bool Contains(Range<T> item)
+	{
+		foreach (var range in ranges)
+		{
+			if (range.Contains(item)) return true;
+			if (item.End.CompareTo(range.Start) < 0) return false;
+		}
+		return false;
+	}
+
+	public bool Contains(T item)
+	{
+		foreach (var range in ranges)
+		{
+			if (range.Contains(item)) return true;
+			if (item.CompareTo(range.Start) < 0) return false;
+		}
+		return false;
+	}
+
+	public void CopyTo(Range<T>[] array, int arrayIndex) => ranges.CopyTo(array, arrayIndex);
+	public IEnumerator<Range<T>> GetEnumerator() => ranges.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => ranges.GetEnumerator();
+
+	public override string ToString() => ToString(string.Empty, null);
+	public string ToString(string format) => ToString(format, null);
+	public string ToString(IFormatProvider formatProvider) => ToString(string.Empty, formatProvider);
+	public string ToString(string format, IFormatProvider formatProvider)
+	{
+		formatProvider ??= System.Globalization.CultureInfo.CurrentCulture;
+		return String.Join(" ∪ ", ranges.Select(r => r.ToString(format, formatProvider)));
+	}
+
+
+	public object Clone() => new Ranges<T>(this);
+
+	public static Ranges<T> operator +(Ranges<T> r1, Range<T> r2)
+	{
+		var result = new Ranges<T>(r1);
+        result.Add(r2);
+		return result;
+	}
+
+	public static Ranges<T> operator +(Ranges<T> r1, Ranges<T> r2)
+	{
+		var result = new Ranges<T>(r1);
+        result.Add(r2);
+		return result;
+	}
+
+	public static Ranges<T> operator -(Ranges<T> r1, Range<T> r2)
+	{
+		var result = new Ranges<T>(r1);
+        result.Remove(r2);
+		return result;
+	}
+
+	public static Ranges<T> operator -(Ranges<T> r1, Ranges<T> r2)
+	{
+		var result = new Ranges<T>(r1);
+        result.Remove(r2);
+		return result;
+	}
+}
 
 public class Range<T> : IFormattable
 	where T : IComparable<T>

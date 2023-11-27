@@ -54,7 +54,7 @@ public static class DataUtils
 					MemberTypes.Field | MemberTypes.Property,
 					BindingFlags.Public | BindingFlags.NonPublic,
 					null, null)
-				.Select(m => new FieldMap(m))
+				.Select(m => new FieldMap(new Reflection.PropertyOrFieldInfo(m)))
 				.Where(m => m.FieldAttribute != null)
 				.ToArray();
 			maps.Add(t, fieldsOrProperties);

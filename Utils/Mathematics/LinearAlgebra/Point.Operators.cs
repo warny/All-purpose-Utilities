@@ -1,37 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Formats.Tar;
 using System.Numerics;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
-public partial class Point :
-	IAdditionOperators<Point, Vector, Point>,
-	ISubtractionOperators<Point, Point, Vector>,
-	IEqualityOperators<Point, Point, bool>
+public partial class Point<T> :
+	IAdditionOperators<Point<T>, Vector<T>, Point<T>>,
+	ISubtractionOperators<Point<T>, Point<T>, Vector<T>>,
+	IEqualityOperators<Point<T>, Point<T>, bool>
+	where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
 {
+	/*
+	public static (T weight, Point<T> point) ComputeBarycenter<T>(params Point<T>[] points)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+        => ComputeBarycenter((IEnumerable<Point<T>>)points);
+	public static (T weight, Point<T> point) ComputeBarycenter<T>(IEnumerable<Point<T>> points)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+        => ComputeBarycenter<T, Point<T>>(wp => T.One, point => point, points);
+	public static (T weight, Point<T> point) ComputeBarycenter<T>(params (T weight, Point<T> point)[] weightedPoints)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+        => ComputeBarycenter<T>((IEnumerable<(T weight, Point point)>)weightedPoints);
+	public static (T weight, Point<T> point) ComputeBarycenter<T>(IEnumerable<(T weight, Point<T> point)> weightedPoints)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+        => ComputeBarycenter<T>(wp => wp.weight, wp => wp.point, weightedPoints);
+	public static (T weigth, Point<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Point<T>> getPoint, params Tw[] weightedPoints)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+        => ComputeBarycenter<T, Tw>(getWeight, getPoint, (IEnumerable<Tw>)weightedPoints);
+	public static (T weigth, Point<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Point<T>> getPoint, IEnumerable<Tw> weightedPoints)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+    {
+        var enumerator = weightedPoints.GetEnumerator();
 
-	public (double weight, Point point) ComputeBarycenter(params Point[] points) => ComputeBarycenter((IEnumerable<Point>)points);
-	public (double weight, Point point) ComputeBarycenter(IEnumerable<Point> points) => ComputeBarycenter<Point>(wp => 1.0, point => point, points);
-	public (double weight, Point point) ComputeBarycenter(params (double weight, Point point)[] weightedPoints) => ComputeBarycenter((IEnumerable<(double weight, Point point)>)weightedPoints);
-	public (double weight, Point point) ComputeBarycenter(IEnumerable<(double weight, Point point)> weightedPoints) => ComputeBarycenter(wp => wp.weight, wp => wp.point, weightedPoints);
-	public static (double weigth, Point point) ComputeBarycenter<T>(Func<T, double> getWeight, Func<T, Point> getPoint, params T[] weightedPoints) => ComputeBarycenter(getWeight, getPoint, (IEnumerable<T>)weightedPoints);
-	public static (double weigth, Point point) ComputeBarycenter<T>(Func<T, double> getWeight, Func<T, Point> getPoint, IEnumerable<T> weightedPoints)
-	{
-		var enumerator = weightedPoints.GetEnumerator();
-
-		double totalWeight = 0;
+		T totalWeight = T.Zero;
 
 		var first = enumerator.Current;
-		Point firstPoint = getPoint(first);
+		Point<T> firstPoint = getPoint(first);
 		int dimension = firstPoint.Dimension;
-		double[] temp = new double[dimension];
+		T[] temp = new T[dimension];
 
 
 		for (var weightedPoint = enumerator.Current; enumerator.MoveNext();)
 		{
-			double weight = getWeight(weightedPoint);
+			T weight = getWeight(weightedPoint);
 			totalWeight += weight;
-			Point point = getPoint(weightedPoint);
+			Point<T> point = getPoint(weightedPoint);
 			if (dimension != point.Dimension) throw new InvalidOperationException("Tous les points doivent avoir la même dimension");
 			for (int i = 0; i < dimension; i++)
 			{
@@ -43,51 +56,51 @@ public partial class Point :
 		{
 			temp[i] /= totalWeight;
 		}
-		return (totalWeight, new Point(temp));
+		return (totalWeight, new Point<T>(temp));
 
 	}
-
-	public static Vector operator -(Point point1, Point point2)
+	*/
+	public static Vector<T> operator -(Point<T> point1, Point<T> point2)
 	{
 		if (point1.Dimension != point2.Dimension)
 		{
 			throw new ArgumentOutOfRangeException(nameof(point2), "Les deux points n'ont pas la même dimension");
 		}
 
-		double[] result = new double[point1.Dimension];
+		T[] result = new T[point1.Dimension];
 		for (int i = 0; i < result.Length; i++)
 		{
 			result[i] = point1[i] - point2[i];
 		}
-		return new Vector(result);
+		return new Vector<T>(result);
 
 	}
 
-	public static Point operator +(Point point1, Vector vector2)
+	public static Point<T> operator +(Point<T> point1, Vector<T> vector2)
 	{
 		if (point1.Dimension != vector2.Dimension)
 		{
 			throw new ArgumentOutOfRangeException(nameof(vector2), "Le point et le vecteur n'ont pas la même dimension");
 		}
-		double[] result = new double[point1.Dimension + 1];
+		T[] result = new T[point1.Dimension + 1];
 		for (int i = 0; i < result.Length - 1; i++)
 		{
 			result[i] = point1[i] - vector2[i];
 		}
-		result[^1] = 1;
-		return new Point(result);
+		result[^1] = T.One;
+		return new Point<T>(result);
 	}
 
-	public static bool operator ==(Point point1, Point point2) => point1.Equals(point2);
+	public static bool operator ==(Point<T> point1, Point<T> point2) => point1.Equals(point2);
 
-	public static bool operator !=(Point point1, Point point2) => !point1.Equals(point2);
+	public static bool operator !=(Point<T> point1, Point<T> point2) => !point1.Equals(point2);
 
-	public static explicit operator Point(Vector vector)
+	public static explicit operator Point<T>(Vector<T> vector)
 	{
-		double[] result = new double[vector.Dimension + 1];
-		result[^1] = 1;
+		T[] result = new T[vector.Dimension + 1];
+		result[^1] = T.One;
 		Array.Copy(vector.components, result, vector.Dimension);
-		return new Point(result);
+		return new Point<T>(result);
 	}
 
 }

@@ -12,7 +12,7 @@ namespace Utils.IO.Serialization
 {
 	public class Reader
     {
-		private static Dictionary<Type, FieldOrPropertyInfo[]> TypesAccessors = new Dictionary<Type, FieldOrPropertyInfo[]>();
+		private static Dictionary<Type, PropertyOrFieldInfo[]> TypesAccessors = new Dictionary<Type, PropertyOrFieldInfo[]>();
 		private readonly Stack<long> positionsStack = new Stack<long>();
 		private readonly Dictionary<Type, IObjectReader> Readers = new Dictionary<Type, IObjectReader>();	
 
@@ -107,11 +107,11 @@ namespace Utils.IO.Serialization
 
 		private bool Read(object result, Type t)
 		{
-			if (!TypesAccessors.TryGetValue(t, out FieldOrPropertyInfo[] fields))
+			if (!TypesAccessors.TryGetValue(t, out PropertyOrFieldInfo[] fields))
 			{
 				fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 					.Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
-					.Select(m => new FieldOrPropertyInfo(m))
+					.Select(m => new PropertyOrFieldInfo(m))
 					.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
 					.ToArray();
 				TypesAccessors.Add(t, fields);

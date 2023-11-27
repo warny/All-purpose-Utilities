@@ -1,23 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using Utils.Arrays;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
 /// <summary>
 /// Vecteur
 /// </summary>
-public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
+public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
+    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
 {
+    private static ArrayEqualityComparer<T> ComponentComparer { get; } = new();
+
     /// <summary>
     /// composantes du vecteur
     /// </summary>
-    internal readonly double[] components;
+    internal readonly T[] components;
 
     /// <summary>
     /// Longueur du vecteur	(calculée à la demande)
     /// </summary>
-    private double? length;
+    private T? length;
 
     /// <summary>
     /// constructeur par dimensions
@@ -25,24 +30,24 @@ public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
     /// <param name="dimensions"></param>
     private Vector(int dimensions)
     {
-        components = new double[dimensions];
-        length = 0;
+        components = new T[dimensions];
+        length = T.Zero;
     }
 
     /// <summary>
     /// constructeur par valeurs
     /// </summary>
     /// <param name="components"></param>
-    public Vector(params double[] components)
+    public Vector(params T[] components)
     {
         if (components.Length == 0) throw new ArgumentException("La dimension du vecteur ne peut pas être 0", nameof(components));
-        this.components = new double[components.Length];
+        this.components = new T[components.Length];
         Array.Copy(components, this.components, components.Length);
     }
 
-    public Vector(Vector vector)
+    public Vector(Vector<T> vector)
     {
-        components = new double[vector.components.Length];
+        components = new T[vector.components.Length];
         Array.Copy(vector.components, components, vector.components.Length);
     }
 
@@ -51,7 +56,7 @@ public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
     /// </summary>
     /// <param name="dimension"></param>
     /// <returns></returns>
-    public double this[int dimension] => this.components[dimension];
+    public T this[int dimension] => this.components[dimension];
 
     /// <summary>
     /// dimension du vecteur
@@ -61,81 +66,81 @@ public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
     /// <summary>
     /// Longueur du vecteur
     /// </summary>
-    public double Length
+    public T Length
     {
         get
         {
             if (length is not null) return length.Value;
-            double temp = 0;
+            T temp = T.Zero;
             for (int i = 0; i < this.components.Length; i++)
             {
-                temp += Math.Pow(this.components[i], 2);
+                temp += this.components[i] * this.components[i];
             }
-            length = Math.Sqrt(temp);
+            length = MathEx.Sqrt(temp);
             return length.Value;
         }
     }
 
-    public Vector Normalize() => this / Length;
+    public Vector<T> Normalize() => this / Length;
 
     public override bool Equals(object obj) => obj switch
     {
-        Vector v => Equals(v),
+        Vector<T> v => Equals(v),
         double[] a => Equals(a),
         _ => false,
     };
 
-    public bool Equals(Vector other)
+    public bool Equals(Vector<T> other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return Equals(other.components);
     }
 
-    public bool Equals(double[] other)
+    public bool Equals(T[] other)
     {
         if (other is null) return false;
-        return Arrays.ArrayEqualityComparers.Double.Equals(this.components, other);
+        return ComponentComparer.Equals(this.components, other);
     }
 
     public override string ToString()
         => $"({string.Join(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator, components)})";
 
     /// <summary>
-    /// Converti un vecteur pour l'utiliser dans un espace normal
+    /// Converts a vector for use in a normal space.
     /// </summary>
-    /// <returns></returns>
-    public Vector ToNormalSpace()
+    /// <returns>The converted vector for normal space.</returns>
+    public Vector<T> ToNormalSpace()
     {
-        Vector result = new Vector(Dimension + 1);
+        Vector<T> result = new (Dimension + 1);
         Array.Copy(components, result.components, Dimension);
-        result.components[Dimension] = 1;
+        result.components[Dimension] = T.One;
         return result;
     }
 
     /// <summary>
-    /// Converti un vecteur utilisable dans un espace normal en vecteur utilisable en espace cartésien
+    /// Converts a vector usable in normal space to a vector usable in Cartesian space.
     /// </summary>
-    /// <returns></returns>
-    public Vector FromNormalSpace()
+    /// <returns>The converted vector for Cartesian space.</returns>
+    public Vector<T> FromNormalSpace()
     {
         var temp = this;
-        if (temp[temp.Dimension - 1] != 1)
+        if (temp[temp.Dimension - 1] != T.One)
         {
             temp /= temp[temp.Dimension - 1];
         }
-        Vector result = new Vector(Dimension - 1);
+        Vector<T> result = new (Dimension - 1);
         Array.Copy(temp.components, result.components, Dimension - 1);
         return result;
     }
 
     /// <summary>
-    /// renvoi le produit vectoriel de (n-1) vecteurs de dimension n
+    /// Returns the cross product of (n-1) vectors of dimension n.
     /// </summary>
-    /// <param name="vectors">vecteurs de dimension n</param>
-    /// <returns>vecteur normal</returns>
-    /// <exception cref="ArgumentException">Renvoie une exception si les vecteurs ne sont pas tous de dimension n</exception>
-    public static Vector Product(params Vector[] vectors)
+    /// <param name="vectors">Vectors of dimension n.</param>
+    /// <returns>A normal vector.</returns>
+    /// <exception cref="ArgumentException">Throws an exception if vectors are not all of dimension n.</exception>
+    public static Vector<T> Product(params Vector<T>[] vectors)
     {
         int dimensions = vectors.Length + 1;
         foreach (var vector in vectors)
@@ -146,9 +151,9 @@ public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
             }
         }
 
-        double[] result = new double[dimensions];
+        T[] result = new T[dimensions];
         var columns = Enumerable.Range(0, dimensions);
-        double sign = 1;
+        T sign = T.One;
         foreach (var column in columns)
         {
             var nextColumns = columns.Where(c => c != column);
@@ -156,31 +161,31 @@ public sealed partial class Vector : IEquatable<Vector>, IEquatable<double[]>
             sign = -sign;
         }
 
-        return new Vector(result);
+        return new Vector<T>(result);
     }
 
     /// <summary>
-    /// Calcul recursif du produit vectoriel de n-1 vecteurs dans un espace n
+    /// Recursive computation of the cross product of n-1 vectors in an n-dimensional space.
     /// </summary>
-    /// <param name="recurence"></param>
-    /// <param name="columns"></param>
-    /// <param name="vectors"></param>
-    /// <returns></returns>
-    private static double ComputeProduct(int recurence, IEnumerable<int> columns, Vector[] vectors)
+    /// <param name="recurrence">The current recursion step.</param>
+    /// <param name="columns">The columns to process for computation.</param>
+    /// <param name="vectors">The vectors to compute the product.</param>
+    /// <returns>The computed product.</returns>
+    private static T ComputeProduct(int recurrence, IEnumerable<int> columns, Vector<T>[] vectors)
     {
-        double result = 0;
-        double sign = 1;
+        T result = T.Zero;
+        T sign = T.One;
         foreach (int column in columns)
         {
-            double temp = sign;
-            if (recurence > 0)
+            T temp = sign;
+            if (recurrence > 0)
             {
-                temp *= vectors[recurence - 1].components[column];
+                temp *= vectors[recurrence - 1].components[column];
 
                 var nextColumns = columns.Where(c => c != column);
-                if (temp != 0 && nextColumns.Any())
+                if (temp != T.Zero && nextColumns.Any())
                 {
-                    temp *= ComputeProduct(recurence + 1, nextColumns, vectors);
+                    temp *= ComputeProduct(recurrence + 1, nextColumns, vectors);
                 }
             }
             result += temp;

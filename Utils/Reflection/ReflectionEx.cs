@@ -18,11 +18,5 @@ namespace Utils.Net.Expressions
             };
         }
 
-        public static Type GetUnderlyingType(Type type)
-        {
-            if (type.IsEnum) return type.GetEnumUnderlyingType();
-            if (type.IsGenericType && typeof(Nullable<>) == type.GetGenericTypeDefinition()) return type.GetGenericArguments()[0];
-            return type;
-        }
     }
 }

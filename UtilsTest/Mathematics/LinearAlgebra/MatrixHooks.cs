@@ -12,7 +12,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 	{
 		readonly ScenarioContext context = ScenarioContext.Current;
 
-		private static Matrix TransformToMatrix(Table values)
+		private static Matrix<double> TransformToMatrix(Table values)
 		{
 			double[,] matrix = new double[values.RowCount, values.Header.Count];
 			int i, j;
@@ -28,10 +28,10 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 				i++;
 			}
 
-			return new Matrix(matrix);
+			return new Matrix<double>(matrix);
 		}
 
-		private static Dictionary<string, Vector> TransformToVectors(Table values)
+		private static Dictionary<string, Vector<double>> TransformToVectors(Table values)
 		{
 			Dictionary<string, double[]> vectors = new (values.Header.Count);
 
@@ -51,7 +51,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 			}
 
 
-			return vectors.ToDictionary(v=> v.Key, v => new Vector(v.Value));
+			return vectors.ToDictionary(v=> v.Key, v => new Vector<double>(v.Value));
 		}
 
 		public R Compute<R>(string resultName, Func<R> compute)
@@ -89,8 +89,8 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[When(@"I compute matrix (\w+) \= (\w+) \+ (\w+)")]
 		public void IComputeMatrixAddition (string resName, string m1Name, string m2Name)
 		{
-			var m1 = (Matrix)context[m1Name];
-			var m2 = (Matrix)context[m2Name];
+			var m1 = (Matrix<double>)context[m1Name];
+			var m2 = (Matrix<double>)context[m2Name];
 
 			Compute(resName, () => m1 + m2);
 		}
@@ -98,15 +98,15 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[When(@"I compute matrix (\w+) \= (\d+) \* (\w+)")]
 		public void IComputeMatrixMultiplication(string resName, double multiplicator, string name)
 		{
-			var m = (Matrix)context[name];
+			var m = (Matrix<double>)context[name];
 			Compute(resName, () => multiplicator * m);
 		}
 
 		[When(@"I compute matrix (\w+) \= (\w+) \* (\w+)")]
 		public void IComputeMatrixMultiplication(string resName, string m1Name, string m2Name)
 		{
-			var m1 = (Matrix)context[m1Name];
-			var m2 = (Matrix)context[m2Name];
+			var m1 = (Matrix<double>)context[m1Name];
+			var m2 = (Matrix<double>)context[m2Name];
 
 			Compute(resName, () => m1 * m2);
 		}
@@ -114,8 +114,8 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[When(@"I compute vector (\w+) \= (\w+) \+ (\w+)")]
 		public void IComputeVectorAddition(string resName, string v1Name, string v2Name)
 		{
-			var m1 = (Vector)context[v1Name];
-			var m2 = (Vector)context[v2Name];
+			var m1 = (Vector<double>)context[v1Name];
+			var m2 = (Vector<double>)context[v2Name];
 
 			Compute(resName, () => m1 + m2);
 		}
@@ -123,15 +123,15 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[When(@"I compute vector (\w+) \= (\d+) \* (\w+)")]
 		public void IComputeVectorMultiplication(string resName, double multiplicator, string name)
 		{
-			var m = (Vector)context[name];
+			var m = (Vector<double>)context[name];
 			Compute(resName, () => multiplicator * m);
 		}
 
 		[When(@"I compute vector (\w+) \= (\w+) \* (\w+)")]
 		public void IComputeVectorMultiplication(string resName, string m1Name, string v2Name)
 		{
-			var m1 = (Matrix)context[m1Name];
-			var m2 = (Vector)context[v2Name];
+			var m1 = (Matrix<double>)context[m1Name];
+			var m2 = (Vector<double>)context[v2Name];
 
 			Compute(resName, () => m1 * m2);
 		}
@@ -139,15 +139,15 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[Then(@"I expect matrix (\w+) equals")]
 		public void IExpectMatrixEquals(string name, Table values)
 		{
-			Matrix m = (Matrix)context[name];
-			Matrix expected = TransformToMatrix(values);
+			Matrix<double> m = (Matrix<double>)context[name];
+			Matrix<double> expected = TransformToMatrix(values);
 			Assert.AreEqual(expected, m);
 		}
 
 		[Then(@"I expect vector (\w+) equals")]
 		public void IExpectVectorEquals(string name, Table values)
 		{
-			Vector v = (Vector)context[name];
+			Vector<double> v = (Vector<double>)context[name];
 			var expected = TransformToVectors(values);
 			Assert.AreEqual(expected.First().Value, v);
 		}
@@ -164,7 +164,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[Then(@"det\((\w+)\) = (\-?\d+)")]
 		public void MatrixDeterminantIsEqualTo(string name, double value)
 		{
-			Matrix m = (Matrix)context[name];
+			Matrix<double> m = (Matrix<double>)context[name];
 			Assert.AreEqual(value, m.Determinant);
 		}
 	}

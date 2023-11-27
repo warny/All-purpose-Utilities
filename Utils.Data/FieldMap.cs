@@ -5,7 +5,7 @@ using Utils.Reflection;
 namespace Utils.Data;
 
 public class FieldMap {
-	public FieldMap(FieldOrPropertyInfo member)
+	public FieldMap(PropertyOrFieldInfo member)
 	{
 		Member = member ?? throw new ArgumentNullException(nameof(member));
 		FieldAttribute = member.GetCustomAttribute<FieldAttribute>();
@@ -16,7 +16,7 @@ public class FieldMap {
 				: (IDataRecord r) => r[Name];
 	}
 
-	public FieldMap(FieldOrPropertyInfo member, string name)
+	public FieldMap(PropertyOrFieldInfo member, string name)
 	{
 		Member = member ?? throw new ArgumentNullException(nameof(member));
 		Name = name;
@@ -24,7 +24,7 @@ public class FieldMap {
 		getValue = (IDataRecord r) => r[Name];
 	}
 
-	public FieldMap(FieldOrPropertyInfo member, int index)
+	public FieldMap(PropertyOrFieldInfo member, int index)
 	{
 		Member = member ?? throw new ArgumentNullException(nameof(member));
 		Name = null;
@@ -32,7 +32,7 @@ public class FieldMap {
 		getValue = (IDataRecord r) => r.GetValue(Index);
 	}
 
-	public FieldOrPropertyInfo Member { get; }
+	public PropertyOrFieldInfo Member { get; }
 	internal FieldAttribute FieldAttribute { get; }
 	internal string Name { get; }
 	internal int Index { get; }

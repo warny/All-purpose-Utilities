@@ -11,7 +11,7 @@ namespace Utils.List
 	/// <typeparam name="T">Type comparable</typeparam>
 	public class EnumerableComparer<T> : IComparer<IEnumerable<T>>
 	{
-		Func<T, T, int> comparer;
+        readonly Func<T, T, int> comparer;
 		private readonly Type typeOfT = typeof(T);
 		public EnumerableComparer(params object[] comparers)
 		{

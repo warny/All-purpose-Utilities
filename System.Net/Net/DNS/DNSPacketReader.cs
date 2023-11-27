@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Expressions;
 using Utils.Net.Expressions;
+using Utils.Reflection;
 
 namespace Utils.Net.DNS;
 
@@ -123,7 +124,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
             ? Expression.Property(resultVariable, (PropertyInfo)field)
             : Expression.Field(resultVariable, (FieldInfo)field);
 
-        Type underLyingType = ReflectionEx.GetUnderlyingType(type);
+        Type underLyingType = type.GetUnderlyingType();
 
         Expression callExpression = null;
         if (ReaderExpressions.TryGetValue(underLyingType, out var getFunction))

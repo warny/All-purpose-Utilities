@@ -14,8 +14,10 @@
  */
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -35,15 +37,16 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// A GeoPoint represents an immutable pair of latitude and longitude coordinates.
 	/// </summary>
-	public class GeoPoint : IEquatable<GeoPoint>, IFormattable
+	public class GeoPoint : IEquatable<GeoPoint>, IFormattable,
+		IEqualityOperators<GeoPoint, GeoPoint, bool>
 	{
 		protected static readonly IAngleCalculator degree = Trigonometry.Degree;
-		protected static readonly DoubleComparer comparer = new DoubleComparer(5);
+		protected static readonly FloatingPointComparer<double> comparer = new (5);
 
-		protected static string[] PositiveLatitude = new[] { "+", "N" };
-		protected static string[] NegativeLatitude = new[] { "-", "S" };
-		protected static string[] PositiveLongitude = new[] { "+", "E" };
-		protected static string[] NegativeLongitude = new[] { "-", "W" };
+		protected static IReadOnlyList<string> PositiveLatitude = ["+", "N"];
+		protected static IReadOnlyList<string> NegativeLatitude = ["-", "S"];
+		protected static IReadOnlyList<string> PositiveLongitude = ["+", "E"];
+		protected static IReadOnlyList<string> NegativeLongitude = ["-", "W"];
 		private const long serialVersionUID = 1L;
 
 		/// <summary>
@@ -127,23 +130,23 @@ namespace Utils.Geography.Model
 			return true;
 		}
 
-		protected double ParseCoordinate(CoordinateDirectionEnum coordinateDirection, string coordinateValue, string[] positiveModifiers, string[] negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates)
+		protected double ParseCoordinate(CoordinateDirectionEnum coordinateDirection, string coordinateValue, IReadOnlyList<string> positiveModifiers, IReadOnlyList<string> negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates)
 		{
 			var m = regexCoordinates.Match(coordinateValue);
 			if (!m.Success) return double.NaN;
 
-			double degrees = m.Groups["deegres"].Success ? double.Parse(m.Groups["deegres"].Value, NumberStyles.Float, cultureInfo) : 0D;
+			double degrees = m.Groups["degrees"].Success ? double.Parse(m.Groups["degrees"].Value, NumberStyles.Float, cultureInfo) : 0D;
 			double minutes = m.Groups["minutes"].Success ? double.Parse(m.Groups["minutes"].Value, NumberStyles.Float, cultureInfo) : 0D;
 			double seconds = m.Groups["seconds"].Success ? double.Parse(m.Groups["seconds"].Value, NumberStyles.Float, cultureInfo) : 0D;
 
 			double coordinate = degrees + minutes / 60 + seconds / 3600;
 
 			string modifier = m.Groups["modifier"].Success ? m.Groups["modifier"].Value : positiveModifiers[0];
-			if (Array.IndexOf(positiveModifiers, modifier) > -1)
+			if (positiveModifiers.Contains(modifier))
 			{
-				//les coordonées sont positives, ne fait rien
+				//les coordonnées sont positives, ne fait rien
 			}
-			else if (Array.IndexOf(negativeModifiers, modifier) > -1)
+			else if (negativeModifiers.Contains(modifier))
 			{
 				coordinate = -coordinate;
 			}
@@ -177,12 +180,13 @@ namespace Utils.Geography.Model
 				);
 		}
 
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj is GeoPoint p) return Equals(p);
-			return false;
-		}
+		public override bool Equals(object obj) =>
+			obj switch
+			{
+				GeoPoint other => Equals(other),
+				_ => false
+			};
+
 		public bool Equals(GeoPoint other) 
 			=> (comparer.Equals(this.Latitude, other.Latitude) && comparer.Equals(this.Longitude, other.Longitude))
 			|| (this.Latitude == 90 && other.Latitude == 90)
@@ -226,9 +230,12 @@ namespace Utils.Geography.Model
 			string digits = "[" + string.Join("", cultureInfo.NumberFormat.NativeDigits) + "]+";
 			string number = digits + "([" + cultureInfo.NumberFormat.NumberDecimalSeparator + "]" + digits + ")?";
 
-			Regex regExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<deegres>number)(°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
+			Regex regExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<degrees>number)(°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
 			return regExCoordinate;
 		}
 
-	}
+        public static bool operator ==(GeoPoint left, GeoPoint right) => left.Equals(right);
+
+        public static bool operator !=(GeoPoint left, GeoPoint right) => !left.Equals(right);
+    }
 }
