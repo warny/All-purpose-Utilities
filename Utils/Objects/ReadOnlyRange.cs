@@ -8,9 +8,9 @@ public class ReadOnlyRange<T> :
 	IReadOnlyList<T>, IReadOnlyCollection<T>
 {
 	private IReadOnlyList<T> innerList;
-	private int startIndex;
-	private int endIndex;
-	private int step;
+	private readonly int startIndex;
+	private readonly int endIndex;
+	private readonly int step;
 
 	public T this[int index]
 	{

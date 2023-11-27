@@ -29,7 +29,7 @@ public class ReturnValue<T, E> where E : class
 
     public ReturnValue(E error)
     {
-        Value = default(T);
+        Value = default;
         Error = error;
     }
 
