@@ -7,6 +7,7 @@ using Utils.Mathematics;
 using System.Linq;
 using Utils.Collections;
 using System.Diagnostics;
+using Utils.Objects;
 
 namespace Utils.Drawing
 {

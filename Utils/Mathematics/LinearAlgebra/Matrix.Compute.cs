@@ -113,7 +113,7 @@ public partial class Matrix<T>
 			int maxLine = 0;
 			for (int j = column; j < this.Rows; j++)
 			{
-				T value = MathEx.Abs(this[j, column]);
+				T value = T.Abs(this[j, column]);
 				if (max < value)
 				{
 					max = value;

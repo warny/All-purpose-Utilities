@@ -1,5 +1,6 @@
 ﻿using System;
 using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.Imaging
 {

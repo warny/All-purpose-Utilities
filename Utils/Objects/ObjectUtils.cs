@@ -221,27 +221,154 @@ public static class ObjectUtils
 		obj2 = temp;
 	}
 
-	public static T[] RandomArray<T>(this Random r, int minSize, int maxSize, Func<int, T> value)
-	{
-		T[] result = new T[r.Next(minSize, maxSize)];
-		for (int i = 0; i < result.Length; i++)
-		{
-			result[i] = value(i);
-		}
-		return result;
-	}
+    #region comparaisons
+    /// <summary>
+    /// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/> inclus
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value">Valeur à comparer</param>
+    /// <param name="lowerBound">Valeur minimale</param>
+    /// <param name="upperBound">Valeur Maximale</param>
+    /// <returns></returns>
+    public static bool Between<T>(this T value, T lowerBound, T upperBound) where T : IComparable<T>
+    {
+        return value.CompareTo(lowerBound) >= 0 && value.CompareTo(upperBound) <= 0;
+    }
 
-	public static byte[] NextBytes(this Random r, int size)
-	{
-		byte[] result = new byte[size];
-		r.NextBytes(result);
-		return result;
-	}
+    /// <summary>
+    /// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value">Valeur à comparer</param>
+    /// <param name="lowerBound">Valeur minimale</param>
+    /// <param name="upperBound">Valeur Maximale</param>
+    /// <param name="includeLowerBound">Inclus la valeur minimale</param>
+    /// <param name="includeUpperBound">Inclus la valeur maximale</param>
+    /// <returns></returns>
+    public static bool Between<T>(this T value, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true) where T : IComparable<T>
+    {
+        var low = value.CompareTo(lowerBound);
+        if (low < 0) return false;
+        if (!includeLowerBound && low == 0) return false;
 
-	public static byte[] NextBytes(this Random r, int minSize, int maxSize)
-	{
-		byte[] result = new byte[r.Next(minSize, maxSize)];
-		r.NextBytes(result);
-		return result;
-	}
+        var up = value.CompareTo(upperBound);
+        if (up > 0) return false;
+        if (!includeUpperBound && up == 0) return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/> inclus
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value">Valeur à comparer</param>
+    /// <param name="lowerBound">Valeur minimale</param>
+    /// <param name="upperBound">Valeur Maximale</param>
+    /// <param name="comparer">Comparateur</param>
+    /// <returns></returns>
+    public static bool Between<T>(this T value, IComparer<T> comparer, T lowerBound, T upperBound)
+    {
+        return comparer.Compare(value, lowerBound) >= 0 && comparer.Compare(value, upperBound) <= 0;
+    }
+
+    /// <summary>
+    /// Retourne <see cref="true"/> si elle est comprise entre <paramref name="lowerBound"/> et <paramref name="upperBound"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value">Valeur à comparer</param>
+    /// <param name="lowerBound">Valeur minimale</param>
+    /// <param name="upperBound">Valeur Maximale</param>
+    /// <param name="includeLowerBound">Inclus la valeur minimale</param>
+    /// <param name="includeUpperBound">Inclus la valeur maximale</param>
+    /// <param name="comparer">Comparateur</param>
+    /// <returns></returns>
+    public static bool Between<T>(this T value, IComparer<T> comparer, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true)
+    {
+        var low = comparer.Compare(value, lowerBound);
+        if (low < 0) return false;
+        if (!includeLowerBound && low == 0) return false;
+
+        var up = comparer.Compare(value, upperBound);
+        if (up > 0) return false;
+        if (!includeUpperBound && up == 0) return false;
+
+        return true;
+    }
+
+
+    /// <summary>
+    /// Renvoie si la valeur est dans le tableau
+    /// </summary>
+    /// <typeparam name="T">Type de la valeur</typeparam>
+    /// <param name="value">Valeur à rechercher</param>
+    /// <param name="objects">Liste de valeurs dans lesquelles la recherche s'applique</param>
+    /// <returns></returns>
+    public static bool In<T>(this T value, params T[] objects) => objects.Contains(value);
+    /// <summary>
+    /// Renvoie si la valeur n'est pas dans le tableau
+    /// </summary>
+    /// <typeparam name="T">Type de la valeur</typeparam>
+    /// <param name="value">Valeur à rechercher</param>
+    /// <param name="objects">Liste de valeurs dans lesquelles la recherche s'applique</param>
+    /// <returns></returns>
+    public static bool NotIn<T>(this T value, params T[] objects) => !objects.Contains(value);
+
+    /// <summary>
+    /// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1
+    /// </summary>
+    /// <typeparam name="T">Type des éléments dans le tableau</typeparam>
+    /// <param name="enumeration">Enumération dans laquelle faire la recherche</param>
+    /// <param name="toFind">Element à retrouver</param>
+    /// <returns>index de l'élément s'il est trouvé, sinon -1</returns>
+    public static int IndexOf<T>(this IEnumerable<T> enumeration, T toFind)
+    {
+        int i = 0;
+        foreach (var element in enumeration)
+        {
+            if (element.Equals(toFind)) return i;
+            i++;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1
+    /// </summary>
+    /// <typeparam name="T">Type des éléments dans le tableau</typeparam>
+    /// <param name="enumeration">Enumération dans laquelle faire la recherche</param>
+    /// <param name="toFind">Element à retrouver</param>
+    /// <param name="comparer">Comparateur</param>
+    /// <returns>index de l'élément s'il est trouvé, sinon -1</returns>
+    public static int IndexOf<T>(this IEnumerable<T> enumeration, T toFind, IEqualityComparer<T> comparer)
+    {
+        int i = 0;
+        foreach (var element in enumeration)
+        {
+            if (comparer.Equals(element, toFind)) return i;
+            i++;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Renvoie l'index de l'élément s'il est dans l'énumération sinon -1
+    /// </summary>
+    /// <typeparam name="T">Type des éléments dans le tableau</typeparam>
+    /// <param name="enumeration">Enumération dans laquelle faire la recherche</param>
+    /// <param name="func">Fonction de recherche</param>
+    /// <returns>index de l'élément s'il est trouvé, sinon -1</returns>
+    public static int IndexOf<T>(this IEnumerable<T> enumeration, Func<T, bool> func)
+    {
+        int i = 0;
+        foreach (var element in enumeration)
+        {
+            if (func(element)) return i;
+            i++;
+        }
+        return -1;
+    }
+
+    #endregion
+
 }

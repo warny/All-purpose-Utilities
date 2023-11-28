@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.Collections;
 

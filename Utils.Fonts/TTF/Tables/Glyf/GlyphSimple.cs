@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Utils.Collections;
 using Utils.IO.Serialization;
 using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.Fonts.TTF.Tables.Glyph;
 

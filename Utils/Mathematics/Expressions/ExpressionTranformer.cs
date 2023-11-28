@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.Objects;
 using System.Text.RegularExpressions;
+using Utils.Reflection;
 
 namespace Utils.Mathematics.Expressions
 {
@@ -84,7 +85,7 @@ namespace Utils.Mathematics.Expressions
 				var attr = method.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault();
 				if (attr is null) continue;
 				if (!attr.Match(e)) continue;
-				if (!TypeOfExpression.IsAssignableFrom(method.ReturnType)) throw new InvalidProgramException();
+				if (!TypeOfExpression.IsAssignableFromEx(method.ReturnType)) throw new InvalidProgramException();
 
 				var parametersInfo = method.GetParameters();
 
@@ -92,29 +93,36 @@ namespace Utils.Mathematics.Expressions
 				object result;
 				if (parametersInfo.Length > 1)
 				{
-					bool isValid = true;
-					for (int i = 1; i < parametersInfo.Length; i++)
+					if (parametersInfo[1].ParameterType == typeof(Expression[]))
 					{
-						if (parameters[i] is Expression pe)
-						{
-							if (!CheckParameter(pe, parametersInfo[i]))
-							{
-								isValid = false;
-								break;
-							}
-						}
-						else
-						{
-							if (!parametersInfo[1].ParameterType.IsAssignableFrom(e.Type))
-							{
-								isValid = false;
-								break;
-							}
-						}
+						result = method.Invoke(this, [ e, expressionParameters ]);
 					}
-					if (!isValid) continue;
-					result = method.Invoke(this, parameters);
-					if (result is null) continue;
+					else
+					{
+						bool isValid = true;
+						for (int i = 1; i < parametersInfo.Length; i++)
+						{
+							if (parameters[i] is Expression pe)
+							{
+								if (!CheckParameter(pe, parametersInfo[i]))
+								{
+									isValid = false;
+									break;
+								}
+							}
+							else
+							{
+								if (!parametersInfo[1].ParameterType.IsAssignableFrom(e.Type))
+								{
+									isValid = false;
+									break;
+								}
+							}
+						}
+						if (!isValid) continue;
+						result = method.Invoke(this, parameters);
+						if (result is null) continue;
+					}
 				}
 				else if (parametersInfo.Length == 1)
 				{
@@ -298,7 +306,7 @@ namespace Utils.Mathematics.Expressions
 		public override bool Match( Expression e )
 		{
 			var ec = e as MethodCallExpression;
-			return ec is not null && ec.Method.DeclaringType == Type && ec.Method.Name == FunctionName;
+			return ec is not null && ec.Method.DeclaringType.IsDefinedBy(Type) && ec.Method.Name == FunctionName;
 		}
 	}
 

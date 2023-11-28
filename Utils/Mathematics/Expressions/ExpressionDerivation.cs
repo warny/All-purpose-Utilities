@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Expressions;
@@ -137,7 +138,7 @@ namespace Utils.Mathematics.Expressions
 						Expression.Multiply(
 							left,
 							Expression.Multiply(
-								Expression.Call(typeof(Math).GetMethod("Log"), left),
+								Expression.Call(typeof(double).GetMethod("Log"), left),
 								Transform(right)
 							)
 						)
@@ -146,7 +147,7 @@ namespace Utils.Mathematics.Expressions
 				);
 		}
 
-		[ExpressionCallSignature(typeof(Math), "Exp")]
+		[ExpressionCallSignature(typeof(double), nameof(double.Exp))]
 		protected Expression Exp(
 			MethodCallExpression e,
 			Expression operand)
@@ -154,12 +155,12 @@ namespace Utils.Mathematics.Expressions
 			return
 				Expression.Multiply(
 					Transform(operand),
-					Expression.Call(typeof(Math).GetMethod("Exp"), operand)
+					Expression.Call(typeof(double).GetMethod("Exp"), operand)
 				);
 		}
 
-		[ExpressionCallSignature(typeof(Math), "Log")]
-		protected Expression Log(
+		[ExpressionCallSignature(typeof(double), nameof(double.Log))]
+		protected Expression LogMath(
 			MethodCallExpression e,
 			Expression operand )
 		{
@@ -169,7 +170,7 @@ namespace Utils.Mathematics.Expressions
 				);
 		}
 
-		[ExpressionCallSignature(typeof(Math), "Log10")]
+        [ExpressionCallSignature(typeof(double), nameof(double.Log10))]
 		protected Expression Log10(
 			MethodCallExpression e,
 			Expression operand )
@@ -183,17 +184,17 @@ namespace Utils.Mathematics.Expressions
 			);
 		}
 
-		[ExpressionCallSignature(typeof(Math), "Sin")]
+		[ExpressionCallSignature(typeof(double), nameof(double.Sin))]
 		protected Expression Sin(
 			MethodCallExpression e,
 			Expression operand )
 		{
 			return Expression.Multiply(
 				Transform(operand),
-				Expression.Call(typeof(Math).GetMethod("Cos"), operand));
+				Expression.Call(typeof(double).GetMethod("Cos"), operand));
 		}
 
-		[ExpressionCallSignature(typeof(Math), "Cos")]
+		[ExpressionCallSignature(typeof(double), nameof(double.Cos))]
 		protected Expression Cos(
 			MethodCallExpression e,
 			Expression operand )
@@ -201,17 +202,17 @@ namespace Utils.Mathematics.Expressions
 			return Expression.Negate(
 				Expression.Multiply(
 				Transform(operand),
-				Expression.Call(typeof(Math).GetMethod("Sin"), operand)));
+				Expression.Call(typeof(double).GetMethod("Sin"), operand)));
 		}
 
-		[ExpressionCallSignature(typeof(Math), "Tan")]
+		[ExpressionCallSignature(typeof(double), nameof(double.Tan))]
 		protected Expression Tan(
 			MethodCallExpression e,
 			Expression operand )
 		{
 			return Transform(Expression.Divide(
-				 Expression.Call(typeof(Math).GetMethod("Sin"), operand),
-				 Expression.Call(typeof(Math).GetMethod("Cos"), operand)
+				 Expression.Call(typeof(double).GetMethod("Sin"), operand),
+				 Expression.Call(typeof(double).GetMethod("Cos"), operand)
 				).Simplify()
 			);
 		}

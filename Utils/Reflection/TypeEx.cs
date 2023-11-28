@@ -97,4 +97,18 @@ public static class TypeEx
         }
         return null;
     }
+
+    public static MethodInfo[] GetStaticMethods(this Type type, Type[] genericTypeArguments, string methodName)
+    {
+        if (!type.IsGenericType) throw new ArgumentException($"{type.FullName} is not a generic type", nameof(type));
+        var t = type.MakeGenericType(genericTypeArguments);
+        return t.GetMethods().Where(t1 => t1.IsStatic && t1.Name == methodName).ToArray();
+    }
+
+    public static MethodInfo GetStaticMethod(this Type type, Type[] genericTypeArguments, string methodName, Type[] argumentTypes)
+    {
+        if (!type.IsGenericType) throw new ArgumentException($"{type.FullName} is not a generic type", nameof(type));
+        var t = type.MakeGenericType(genericTypeArguments);
+        return t.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public, argumentTypes);
+    }
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.IO.BaseEncoding
 {

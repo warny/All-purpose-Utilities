@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.Geography.Model
 {
@@ -32,7 +33,7 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Create a geoVector at given <paramref name="coordinates"/> 
         /// </summary>
-        /// <param name="coordinates">Coorduinates including bearing</param>
+        /// <param name="coordinates">Coordinates including bearing</param>
         /// <param name="cultureInfos">culture used to parse coordinates</param>
         public GeoVector(string coordinates, params CultureInfo[] cultureInfos) {
 			if (cultureInfos.Length == 0) cultureInfos = new[] { CultureInfo.CurrentCulture, CultureInfo.InvariantCulture };
@@ -51,7 +52,7 @@ namespace Utils.Geography.Model
 		}
 
 		/// <summary>
-		/// Create geovector at <paramref name="geoPoint"/> headind to <paramref name="bearing"/>
+		/// Create geovector at <paramref name="geoPoint"/> heading to <paramref name="bearing"/>
 		/// </summary>
 		/// <param name="geoPoint">Point</param>
 		/// <param name="bearing">bearing direction</param>
@@ -74,7 +75,7 @@ namespace Utils.Geography.Model
 		/// <summary>
 		/// Create a geoVector at given coordinates heading to <paramref name="bearing"/>
 		/// </summary>
-		/// <param name="latitude">Lattitude</param>
+		/// <param name="latitude">Latitude</param>
 		/// <param name="longitude">Longitude</param>
 		/// <param name="bearing">Heading direction</param>
 		public GeoVector(double latitude, double longitude, double bearing) : base(latitude, longitude)
@@ -85,7 +86,7 @@ namespace Utils.Geography.Model
 		/// <summary>
 		/// Create a geoVector at given coordinates heading to <paramref name="bearing"/>
 		/// </summary>
-		/// <param name="latitude">Lattitude</param>
+		/// <param name="latitude">Latitude</param>
 		/// <param name="longitude">Longitude</param>
 		/// <param name="bearing">Heading direction</param>
 		public GeoVector(string latitudeString, string longitudeString, double bearing, params CultureInfo[] cultureInfos) : base(latitudeString, longitudeString, cultureInfos)
@@ -190,7 +191,7 @@ namespace Utils.Geography.Model
             // If both vectors describe the same great circle, no intersection points can be returned
             if (other.In(temp.a, -temp.a, temp.b, -temp.b))
             {
-                return Array.Empty<GeoPoint>();
+                return [];
             }
 
             // If both vectors follow meridians, they intersect at the poles

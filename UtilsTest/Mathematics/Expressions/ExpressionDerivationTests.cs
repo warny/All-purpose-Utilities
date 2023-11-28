@@ -36,8 +36,8 @@ namespace UtilsTest.Mathematics.Expressions
 
 			foreach (var test in tests)
 			{
-				var function = ExpressionParser.Parse(test.function, parameters, typeof(Math), false);
-				var derivative = ExpressionParser.Parse(test.derivative, parameters, typeof(Math), false);
+				var function = ExpressionParser.Parse(test.function, parameters, typeof(double), false);
+				var derivative = ExpressionParser.Parse(test.derivative, parameters, typeof(double), false);
 
 				var result = derivation.Derivate(function);
 
