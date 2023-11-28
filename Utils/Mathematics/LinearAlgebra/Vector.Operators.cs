@@ -6,29 +6,30 @@ namespace Utils.Mathematics.LinearAlgebra
 {
 	public partial class Vector<T> :
 		IAdditionOperators<Vector<T>, Vector<T>, Vector<T>>,
-        ISubtractionOperators<Vector<T>, Vector<T>, Vector<T>>,
+		ISubtractionOperators<Vector<T>, Vector<T>, Vector<T>>,
 		IMultiplyOperators<Vector<T>, T, Vector<T>>,
 		IDivisionOperators<Vector<T>, T, Vector<T>>,
 		IMultiplyOperators<Vector<T>, Vector<T>, T>,
 		IEqualityOperators<Vector<T>, Vector<T>, bool>,
 		IUnaryNegationOperators<Vector<T>, Vector<T>>,
 		IUnaryPlusOperators<Vector<T>, Vector<T>>
-    {
-		public (T weight, Vector<T> vector) ComputeBarycenter(params Vector<T>[] points) => ComputeBarycenter((IEnumerable<Vector<T>>)points);
+	{
+		public (T weight, Vector<T> vector) ComputeBarycenter(params Vector<T>[] points)
+			=> ComputeBarycenter((IEnumerable<Vector<T>>)points);
 		public (T weight, Vector<T> vector) ComputeBarycenter<T>(IEnumerable<Vector<T>> vectors)
-            where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-            => ComputeBarycenter<T, Vector<T>>(wp => T.One, vector => vector, vectors);
-
-		public (T weight, Vector<T> vector) ComputeBarycenter(params (T weight, Vector<T> point)[] weightedPoints) => ComputeBarycenter((IEnumerable<(T weight, Vector<T> vector)>)weightedPoints);
-		public (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<(T weight, Vector<T> vector)> weightedPoints) => ComputeBarycenter(wp => wp.weight, wp => wp.vector, weightedPoints);
+			where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+			=> ComputeBarycenter<T, Vector<T>>(wp => T.One, vector => vector, vectors);
+		public (T weight, Vector<T> vector) ComputeBarycenter(params (T weight, Vector<T> point)[] weightedPoints)
+			=> ComputeBarycenter((IEnumerable<(T weight, Vector<T> vector)>)weightedPoints);
+		public (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<(T weight, Vector<T> vector)> weightedPoints)
+			=> ComputeBarycenter(wp => wp.weight, wp => wp.vector, weightedPoints);
 		public static (T weigth, Vector<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, params TW[] weightedPoints)
-            where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-
-            => ComputeBarycenter(getWeight, getVector, (IEnumerable<TW>)weightedPoints);
+			where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+			=> ComputeBarycenter(getWeight, getVector, (IEnumerable<TW>)weightedPoints);
 		public static (T weigth, Vector<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, IEnumerable<TW> weightedPoints)
-			where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-        {
-            var enumerator = weightedPoints.GetEnumerator();
+			where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+		{
+			var enumerator = weightedPoints.GetEnumerator();
 
 			T totalWeight = T.Zero;
 
@@ -58,72 +59,79 @@ namespace Utils.Mathematics.LinearAlgebra
 
 		}
 
-		public static Vector<T> operator + ( Vector<T> vector1, Vector<T> vector2 )
+		public static Vector<T> operator +(Vector<T> vector1, Vector<T> vector2)
 		{
-			if (vector1.components.Length != vector2.components.Length) {
+			if (vector1.components.Length != vector2.components.Length)
+			{
 				throw new ArgumentOutOfRangeException(nameof(vector2), "Les deux vecteurs n'ont pas le même nombre de dimensions");
 			}
 
 			T[] result = new T[vector1.components.Length];
-			for (int i = 0; i < result.Length; i++) {
+			for (int i = 0; i < result.Length; i++)
+			{
 				result[i] = vector1.components[i] + vector2.components[i];
 			}
 			return new Vector<T>(result);
 		}
 
-		public static Vector<T> operator - ( Vector<T> vector1, Vector<T> vector2 )
+		public static Vector<T> operator -(Vector<T> vector1, Vector<T> vector2)
 		{
-			if (vector1.components.Length != vector2.components.Length) {
+			if (vector1.components.Length != vector2.components.Length)
+			{
 				throw new ArgumentOutOfRangeException(nameof(vector2), "Les deux vecteurs n'ont pas le même nombre de dimensions");
 			}
 
 			T[] result = new T[vector1.components.Length];
-			for (int i = 0; i < result.Length; i++) {
+			for (int i = 0; i < result.Length; i++)
+			{
 				result[i] = vector1.components[i] - vector2.components[i];
 			}
 			return new Vector<T>(result);
 		}
 
-		public static Vector<T> operator - ( Vector<T> vector )
+		public static Vector<T> operator -(Vector<T> vector)
 		{
 			T[] result = new T[vector.components.Length];
-			for (int i = 0; i < vector.components.Length; i++) {
+			for (int i = 0; i < vector.components.Length; i++)
+			{
 				result[i] = -vector.components[i];
 			}
 			return new Vector<T>(result);
 		}
 
-		public static Vector<T> operator * ( T number, Vector<T> vector )
+		public static Vector<T> operator *(T number, Vector<T> vector)
 		{
 			T[] result = new T[vector.components.Length];
 
-			for (int i = 0; i < result.Length; i++) {
+			for (int i = 0; i < result.Length; i++)
+			{
 				result[i] = vector.components[i] * number;
 			}
 			return new Vector<T>(result);
 		}
 
-		public static Vector<T> operator * ( Vector<T> vector, T number )
+		public static Vector<T> operator *(Vector<T> vector, T number)
 		{
 			return number * vector;
 		}
 
-		public static Vector<T> operator / ( Vector<T> vector, T number )
+		public static Vector<T> operator /(Vector<T> vector, T number)
 		{
 			T[] result = new T[vector.components.Length];
 
-			for (int i = 0; i < result.Length; i++) {
+			for (int i = 0; i < result.Length; i++)
+			{
 				result[i] = vector.components[i] / number;
 			}
 			return new Vector<T>(result);
 		}
 
-		public static bool operator == ( Vector<T> vector1, Vector<T> vector2 )
+		public static bool operator ==(Vector<T> vector1, Vector<T> vector2)
 		{
 			return vector1.Equals(vector2);
 		}
 
-		public static bool operator != ( Vector<T> vector1, Vector<T> vector2 )
+		public static bool operator !=(Vector<T> vector1, Vector<T> vector2)
 		{
 			return !vector1.Equals(vector2);
 		}
@@ -134,19 +142,21 @@ namespace Utils.Mathematics.LinearAlgebra
 		/// <param name="vector1"></param>
 		/// <param name="vector2"></param>
 		/// <returns></returns>
-		public static T operator * ( Vector<T> vector1, Vector<T> vector2 )
+		public static T operator *(Vector<T> vector1, Vector<T> vector2)
 		{
-			if (vector1.Dimension != vector2.Dimension) {
+			if (vector1.Dimension != vector2.Dimension)
+			{
 				throw new ArgumentException("les vecteurs n'ont pas la même dimension");
 			}
 			T result = T.Zero;
-			for (int i = 0; i < vector1.Dimension; i++ ) {
+			for (int i = 0; i < vector1.Dimension; i++)
+			{
 				result += vector1[i] + vector2[i];
 			}
 			return result;
 		}
 
-		public static explicit operator Vector<T> ( Point<T> point )
+		public static explicit operator Vector<T>(Point<T> point)
 		{
 			T[] result = new T[point.Dimension + 1];
 			result[^1] = T.One;
@@ -154,6 +164,6 @@ namespace Utils.Mathematics.LinearAlgebra
 			return new Vector<T>(result);
 		}
 
-        public static Vector<T> operator +(Vector<T> value) => new(value);
-    }
+		public static Vector<T> operator +(Vector<T> value) => new(value);
+	}
 }

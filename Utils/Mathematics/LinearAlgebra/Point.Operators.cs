@@ -9,26 +9,23 @@ public partial class Point<T> :
 	IAdditionOperators<Point<T>, Vector<T>, Point<T>>,
 	ISubtractionOperators<Point<T>, Point<T>, Vector<T>>,
 	IEqualityOperators<Point<T>, Point<T>, bool>
-	where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+	where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
-	/*
-	public static (T weight, Point<T> point) ComputeBarycenter<T>(params Point<T>[] points)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+	
+	public static (T weight, Point<T> point) ComputeBarycenter(params Point<T>[] points)
         => ComputeBarycenter((IEnumerable<Point<T>>)points);
 	public static (T weight, Point<T> point) ComputeBarycenter<T>(IEnumerable<Point<T>> points)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
         => ComputeBarycenter<T, Point<T>>(wp => T.One, point => point, points);
-	public static (T weight, Point<T> point) ComputeBarycenter<T>(params (T weight, Point<T> point)[] weightedPoints)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-        => ComputeBarycenter<T>((IEnumerable<(T weight, Point point)>)weightedPoints);
-	public static (T weight, Point<T> point) ComputeBarycenter<T>(IEnumerable<(T weight, Point<T> point)> weightedPoints)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-        => ComputeBarycenter<T>(wp => wp.weight, wp => wp.point, weightedPoints);
-	public static (T weigth, Point<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Point<T>> getPoint, params Tw[] weightedPoints)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-        => ComputeBarycenter<T, Tw>(getWeight, getPoint, (IEnumerable<Tw>)weightedPoints);
-	public static (T weigth, Point<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Point<T>> getPoint, IEnumerable<Tw> weightedPoints)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+    public (T weight, Point<T> vector) ComputeBarycenter(params (T weight, Point<T> point)[] weightedPoints) 
+		=> ComputeBarycenter((IEnumerable<(T weight, Point<T> vector)>)weightedPoints);
+    public static (T weight, Point<T> point) ComputeBarycenter(IEnumerable<(T weight, Point<T> point)> weightedPoints)
+        => ComputeBarycenter(wp => wp.weight, wp => wp.point, weightedPoints);
+    public static (T weigth, Point<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Point<T>> getVector, params TW[] weightedPoints)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+        => ComputeBarycenter(getWeight, getVector, (IEnumerable<TW>)weightedPoints);
+    public static (T weigth, Point<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Point<T>> getVector, IEnumerable<TW> weightedPoints)
+        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
     {
         var enumerator = weightedPoints.GetEnumerator();
 
@@ -59,7 +56,6 @@ public partial class Point<T> :
 		return (totalWeight, new Point<T>(temp));
 
 	}
-	*/
 	public static Vector<T> operator -(Point<T> point1, Point<T> point2)
 	{
 		if (point1.Dimension != point2.Dimension)

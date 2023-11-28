@@ -10,7 +10,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// Vecteur
 /// </summary>
 public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
-    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
     private static ArrayEqualityComparer<T> ComponentComparer { get; } = new();
 
@@ -76,7 +76,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
             {
                 temp += this.components[i] * this.components[i];
             }
-            length = MathEx.Sqrt(temp);
+            length = T.Sqrt(temp);
             return length.Value;
         }
     }

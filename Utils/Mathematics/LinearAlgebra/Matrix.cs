@@ -14,7 +14,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// Matrice
 /// </summary>
 public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEquatable<T[,]>, IEquatable<T[][]>, IEquatable<Vector<T>[]>, ICloneable
-	where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+	where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
 {
 	internal readonly T[,] components;
 	private bool? isDiagonalized;
@@ -178,7 +178,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// </summary>
 	/// <param name="angles"></param>
 	/// <returns></returns>
-	public static Matrix<T> Skew(params double[] angles)
+	public static Matrix<T> Skew(params T[] angles)
 	{
 		var dimension = (Math.Sqrt(4 * angles.Length + 1) + 1) / 2;
 		if (dimension != Math.Floor(dimension)) throw new ArgumentException("La matrice de transformation n'a pas une dimension utilisable", nameof(angles));
@@ -189,7 +189,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 		{
 			for (int y = 0; y < dimension; y++)
 			{
-				matrix.components[x, y >= x ? y : y + 1] = (T)(object)Math.Tan(angles[i]);
+				matrix.components[x, y >= x ? y : y + 1] = T.Tan(angles[i]);
 				i++;
 			}
 		}
@@ -205,7 +205,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// </summary>
 	/// <param name="angles"></param>
 	/// <returns></returns>
-	public static Matrix<T> Rotation(params double[] angles)
+	public static Matrix<T> Rotation(params T[] angles)
 	{
 		double baseComputeDimension = (1 + Math.Sqrt(8 * angles.Length + 1)) / 2;
 		int dimension = (int)(Math.Floor(baseComputeDimension));
@@ -221,8 +221,8 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 		{
 			for (int dim2 = dim1 + 1; dim2 < dimension; dim2++)
 			{
-				T cos = (T)(object)Math.Cos(angles[angleIndex]);
-				T sin = (T)(object)Math.Sin(angles[angleIndex]);
+				T cos = T.Cos(angles[angleIndex]);
+				T sin = T.Sin(angles[angleIndex]);
 
 				rotation.components[dim1, dim1] = cos;
 				rotation.components[dim2, dim2] = cos;

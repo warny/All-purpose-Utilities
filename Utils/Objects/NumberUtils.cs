@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Utils.Mathematics;
+using Utils.Reflection;
 
 namespace Utils.Objects;
 
@@ -15,7 +16,7 @@ public static class NumberUtils
 	public static bool IsNumeric(object value)
 	{
 		Type t = value.GetType();
-		return t.GetInterfaces().Where(i => i.IsGenericType).Select(i => i.GetGenericTypeDefinition()).Any(i=>i==typeof(INumber<>));
+		return t.IsDefinedBy(typeof(INumber<>));
 	}
 
     /// <summary>
@@ -24,7 +25,7 @@ public static class NumberUtils
     /// <param name="value"></param>
     /// <returns></returns>
     public static bool IsBaseNumeric(object value)
-    {
+    { 
 		return value.GetType().In(Types.Number);
     }
 

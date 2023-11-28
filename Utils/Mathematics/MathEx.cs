@@ -75,7 +75,7 @@ public static class MathEx
 
     public static double Round(double value, int exponent = 0)
     {
-        double @base = Math.Pow(10, exponent);
+        double @base = double.Pow(10, exponent);
         return Round(value, @base);
     }
     #endregion
@@ -419,30 +419,6 @@ public static class MathEx
 
     #endregion
 
-    #region calculs
-    /// <summary>
-    /// Compute the square root of <paramref name="value"/>
-    /// </summary>
-    /// <param name="value">Value to compute the square root of</param>
-    /// <returns>Square root of <paramref name="value"/></returns>
-    /// <typeparam name="T">Type of number</typeparam>
-    public static T Sqrt<T>(T value)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
-        => T.Pow(value, T.One / (T.One + T.One));
-
-    public static T Tan<T>(Task<T> value)
-        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
-        => (T)(object)Math.Tan((double)(object)value);
-
-    public static T Sin<T>(Task<T> value)
-        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>, IPowerFunctions<T>
-        => (T)(object)Math.Sin((double)(object)value);
-
-    public static T Cos<T>(Task<T> value)
-        where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
-        => (T)(object)Math.Cos((double)(object)value);
-    #endregion
-
     private static readonly Dictionary<int, int[]> pascalTriangleCache = new()
         {
             { 0, new [] { 1 } },
@@ -472,7 +448,7 @@ public static class MathEx
             {
                 newLine[j] = lastLine[j - 1] + lastLine[j];
             }
-            newLine[newLine.Length - 1] = 1;
+            newLine[^1] = 1;
             pascalTriangleCache[i] = newLine;
             lastLine = newLine;
         }

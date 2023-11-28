@@ -60,31 +60,6 @@ public class MathExTests
 		}
 	}
 
-	[TestMethod]
-	public void SquareRootTest1()
-	{
-		Random random = new();
-		var values = random.RandomArray(10, 10, i => random.NextDouble() * 65535d);
-
-		for (int i = 0; i < values.Length; i++)
-		{
-			Assert.AreEqual(Math.Sqrt(values[i]), MathEx.Sqrt(values[i]));
-		}
-	}
-
-    [TestMethod]
-    public void SquareRootTest2()
-    {
-        Random random = new();
-        var values = random.RandomArray(10, 10, i => (float)random.NextDouble() * 65535f);
-
-        for (int i = 0; i < values.Length; i++)
-        {
-            Assert.AreEqual((float)Math.Sqrt(values[i]), MathEx.Sqrt(values[i]));
-        }
-    }
-
-
     [TestMethod]
 	public void PascalTriangleTest()
 	{

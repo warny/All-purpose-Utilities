@@ -14,7 +14,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// </remarks>
 /// </summary>
 public sealed partial class Point<T> : IEquatable<Point<T>>, IEquatable<T[]>
-    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>
+    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
     private static ArrayEqualityComparer<T> ComponentsComparer { get; } = new();
 
@@ -125,7 +125,7 @@ public sealed partial class Point<T> : IEquatable<Point<T>>, IEquatable<T[]>
             temp += diff * diff;
         }
 
-        return MathEx.Sqrt(temp);
+        return T.Sqrt(temp);
     }
 
     public override string ToString()
