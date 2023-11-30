@@ -16,7 +16,6 @@ public partial class Matrix<T> :
     IMultiplyOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
 	IMultiplyOperators<Matrix<T>, T, Matrix<T>>,
     IMultiplyOperators<Matrix<T>, Vector<T>, Vector<T>>,
-    IMultiplyOperators<Matrix<T>, Point<T>, Point<T>>,
     IDivisionOperators<Matrix<T>, T, Matrix<T>>,
 	IUnaryNegationOperators<Matrix<T>, Matrix<T>>,
     IUnaryPlusOperators<Matrix<T>, Matrix<T>>
@@ -143,32 +142,6 @@ public partial class Matrix<T> :
         return new Vector<T>(result);
     }
 
-    public static Point<T> operator *(Matrix<T> matrix, Point<T> point)
-    {
-        if (!matrix.IsSquare)
-        {
-            throw new ArgumentException("La matrice doit être carrée");
-        }
-        else if (!(matrix.Rows == point.Dimension || (matrix.Rows - 1 == point.Dimension && matrix.IsNormalSpace)))
-        {
-            throw new ArgumentException("Les dimensions de la matrice et du point ne sont pas compatibles avec cette opération");
-        }
-        T[] result = new T[point.Dimension + 1];
-        result[^1] = T.One;
-        for (int row = 0; row < matrix.Rows; row++)
-        {
-            T temp = T.One;
-            for (int col = 0; col < matrix.Columns; col++)
-            {
-                temp += matrix[row, col] * point.components[col];
-            }
-            result[row] = temp;
-        }
-        if (result[^1] != T.One)        {
-            throw new InvalidOperationException("Erreur lors de l'application de la matrice de transformation");
-        }
-        return new Point<T>(result);
-    }
     public static Matrix<T> operator +(Matrix<T> value) => new Matrix<T>(value);
 
     public static bool operator ==(Matrix<T> matrix1, Matrix<T> matrix2) => matrix1.Equals(matrix2);

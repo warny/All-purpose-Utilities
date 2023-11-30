@@ -29,8 +29,6 @@ public static class MathEx
 
     #region round
 
-    public static float Round(float value, float @base) => (float)Round((double)value, @base);
-
     public static T Round<T>(T value, T @base)
         where T : struct, INumber<T>
     {
@@ -49,7 +47,7 @@ public static class MathEx
     public static T Round<T>(T value, int exponent = 0)
         where T : struct, INumber<T>, IPowerFunctions<T>
     {
-        T @base = T.Pow((T)(object)10, (T)(object)exponent);
+        T @base = T.Pow((T)Convert.ChangeType(10, typeof(T)), (T)Convert.ChangeType(exponent, typeof(T)));
         return Round<T>(value, @base);
     }
 

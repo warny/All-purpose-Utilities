@@ -138,7 +138,7 @@ namespace Utils.Mathematics.Expressions
 						Expression.Multiply(
 							left,
 							Expression.Multiply(
-								Expression.Call(typeof(double).GetMethod("Log"), left),
+								Expression.Call(typeof(double).GetMethod(nameof(double.Log)), left),
 								Transform(right)
 							)
 						)
@@ -155,7 +155,7 @@ namespace Utils.Mathematics.Expressions
 			return
 				Expression.Multiply(
 					Transform(operand),
-					Expression.Call(typeof(double).GetMethod("Exp"), operand)
+					Expression.Call(typeof(double).GetMethod(nameof(double.Exp)), operand)
 				);
 		}
 
@@ -191,7 +191,7 @@ namespace Utils.Mathematics.Expressions
 		{
 			return Expression.Multiply(
 				Transform(operand),
-				Expression.Call(typeof(double).GetMethod("Cos"), operand));
+				Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), operand));
 		}
 
 		[ExpressionCallSignature(typeof(double), nameof(double.Cos))]
@@ -202,7 +202,7 @@ namespace Utils.Mathematics.Expressions
 			return Expression.Negate(
 				Expression.Multiply(
 				Transform(operand),
-				Expression.Call(typeof(double).GetMethod("Sin"), operand)));
+				Expression.Call(typeof(double).GetMethod(nameof(double.Sin)), operand)));
 		}
 
 		[ExpressionCallSignature(typeof(double), nameof(double.Tan))]
@@ -211,8 +211,8 @@ namespace Utils.Mathematics.Expressions
 			Expression operand )
 		{
 			return Transform(Expression.Divide(
-				 Expression.Call(typeof(double).GetMethod("Sin"), operand),
-				 Expression.Call(typeof(double).GetMethod("Cos"), operand)
+				 Expression.Call(typeof(double).GetMethod(nameof(double.Sin)), operand),
+				 Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), operand)
 				).Simplify()
 			);
 		}

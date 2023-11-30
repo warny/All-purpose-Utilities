@@ -14,7 +14,9 @@
  */
 
 using System;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 
 namespace Utils.Geography.Display
 {
@@ -22,12 +24,13 @@ namespace Utils.Geography.Display
 	/**
 	 * A utility class to convert, parse and validate geographical coordinates.
 	 */
-	public static class CoordinatesUtil
-	{
-		/// <summary>
-		/// Maximum possible latitude coordinate
-		/// </summary>
-		public const double LATITUDE_MAX = 90;
+	public static class CoordinatesUtil<T>
+		where T : struct, IFloatingPointIeee754<T>
+    {
+        /// <summary>
+        /// Maximum possible latitude coordinate
+        /// </summary>
+        public const double LATITUDE_MAX = 90;
 
 		/// <summary>
 		/// Minimum possible latitude coordinate
@@ -82,7 +85,7 @@ namespace Utils.Geography.Display
 		 * @throws IllegalArgumentException
 		 *             if the string is invalid or does not contain the given number of coordinate values.
 		 */
-		public static double[] ParseCoordinatestring ( string coordinatesstring, int numberOfCoordinates )
+		public static T[] ParseCoordinatestring ( string coordinatesstring, int numberOfCoordinates )
 		{
 			string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.RemoveEmptyEntries);
 
@@ -90,7 +93,7 @@ namespace Utils.Geography.Display
 				throw new ArgumentException("invalid number of coordinate values: " + coordinatesstring, nameof(numberOfCoordinates));
 			}
 
-			double[] coordinates = tokens.Select(t => double.Parse(t)).ToArray();
+			T[] coordinates = tokens.Select(t => T.Parse(t, CultureInfo.InvariantCulture)).ToArray();
 
 			return coordinates;
 		}

@@ -14,81 +14,71 @@
  */
 using System;
 using System.Drawing;
+using System.Numerics;
 using System.Runtime.Serialization;
 using System.Text;
 using Utils.Geography.Projections;
 
 /**
- * A point represents an immutable pair of double coordinates.
+ * A point represents an immutable pair of T coordinates.
  */
-namespace Utils.Geography.Model
+namespace Utils.Geography.Model;
+
+
+public class ProjectedPoint<T> : IEquatable<ProjectedPoint<T>>, IFormattable
+where T : struct, IFloatingPointIeee754<T>
 {
+	private const long serialVersionUID = 1L;
 
-	public class ProjectedPoint : IEquatable<ProjectedPoint>, IFormattable {
-		private const long serialVersionUID = 1L;
+	public IProjectionTransformation<T> Projection { get; }
 
-		public IProjectionTransformation Projection { get; }
+	/// <summary>
+	/// The x coordinate of this point.
+	/// </summary>
+	public T X { get; set; }
 
-		/// <summary>
-		/// The x coordinate of this point.
-		/// </summary>
-		public double X { get; set; }
+	/// <summary>
+	/// The y coordinate of this point.
+	/// </summary>
+	public T Y { get; set; }
 
-		/// <summary>
-		/// The y coordinate of this point.
-		/// </summary>
-		public double Y { get; set; }
-
-		/// <summary>
-		/// Build a new Mappoint
-		/// </summary>
-		/// <param name="x">the x coordinate of this point.</param>
-		/// <param name="y">the y coordinate of this point.</param>
-		public ProjectedPoint ( double x, double y, IProjectionTransformation projection)
-		{
-			this.Projection = projection;
-			this.X = x;
-			this.Y = y;
-		}
-
-		public void Deconstruct(out double x, out double y)
-		{
-			x = X;
-			y = Y;
-		}
-
-		public void Deconstruct(out double x, out double y, out IProjectionTransformation projection)
-		{
-			x = X;
-			y = Y;
-			projection = Projection;
-		}
-
-		public bool Equals( ProjectedPoint point )
-		{
-			if (this.X != point.X) {
-				return false;
-			} else if (this.Y != point.Y) {
-				return false;
-			}
-			return true;
-		}
-
-		public override bool Equals ( object obj )
-		{
-			if (this == obj) {
-				return true;
-			} else if (!(obj is ProjectedPoint)) {
-				return false;
-			}
-			ProjectedPoint other = (ProjectedPoint)obj;
-			return this.Equals (other);
-		}
-
-		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.X, this.Y);
-
-		public override string ToString() => $"x={this.X}, y={this.Y}";
-
-		public string ToString(string format, IFormatProvider formatProvider) => $"x={this.X.ToString(format, formatProvider)}, y={this.Y.ToString(format, formatProvider)}";
+	/// <summary>
+	/// Build a new Mappoint
+	/// </summary>
+	/// <param name="x">the x coordinate of this point.</param>
+	/// <param name="y">the y coordinate of this point.</param>
+	public ProjectedPoint(T x, T y, IProjectionTransformation<T> projection)
+	{
+		this.Projection = projection;
+		this.X = x;
+		this.Y = y;
 	}
+
+	public void Deconstruct(out T x, out T y)
+	{
+		x = X;
+		y = Y;
+	}
+
+	public void Deconstruct(out T x, out T y, out IProjectionTransformation<T> projection)
+	{
+		x = X;
+		y = Y;
+		projection = Projection;
+	}
+
+	public bool Equals(ProjectedPoint<T> other) => this.X != other.X && this.Y != other.Y;
+
+	public override bool Equals(object obj)
+		=> obj switch
+		{
+			ProjectedPoint<T> other => obj.Equals(other),
+			_ => false
+		};
+
+	public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.X, this.Y);
+
+	public override string ToString() => $"x={this.X}, y={this.Y}";
+
+	public string ToString(string format, IFormatProvider formatProvider) => $"x={this.X.ToString(format, formatProvider)}, y={this.Y.ToString(format, formatProvider)}";
 }

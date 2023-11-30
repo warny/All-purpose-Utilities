@@ -15,18 +15,18 @@ namespace UtilsTest.Geography
 		[TestMethod]
 		public void TestDistance()
 		{
-			(GeoPoint geoPoint1, GeoPoint geoPoint2, double distance)[] distances = new (GeoPoint geoPoint1, GeoPoint geoPoint2, double distance)[] {
-				(new GeoPoint(0,0), new GeoPoint(0,0), 0.0),
-				(new GeoPoint(10,10), new GeoPoint(10,10), 0.0),
-				(new GeoPoint(0,0), new GeoPoint(0,90), System.Math.PI / 2),
-				(new GeoPoint(0,0), new GeoPoint(90,0), System.Math.PI / 2),
-				(new GeoPoint(0,0), new GeoPoint(60,0), System.Math.PI / 3),
-				(new GeoPoint(0,0), new GeoPoint(0,60), System.Math.PI / 3)
-			};
+			(GeoPoint<double> geoPoint1, GeoPoint<double> geoPoint2, double distance)[] distances = [
+				(new (0,0), new (0,0), 0.0),
+				(new (10,10), new (10,10), 0.0),
+				(new (0,0), new (0,90), System.Math.PI / 2),
+				(new (0,0), new (90,0), System.Math.PI / 2),
+				(new (0,0), new (60,0), System.Math.PI / 3),
+				(new (0,0), new (0,60), System.Math.PI / 3)
+			];
 
 			for (double i = 1; i < 256; i *= 2)
 			{
-				Planet planet = new Planet(i);
+				var planet = new Planet<double>(i);
 				foreach (var distance in distances)
 				{
 					Assert.AreEqual(distance.distance * i, planet.Distance(distance.geoPoint1, distance.geoPoint2), 0.0001);
@@ -37,41 +37,41 @@ namespace UtilsTest.Geography
 		[TestMethod]
 		public void TestMove()
 		{
-			(GeoVector start, double distance, GeoVector result)[] moves = new (GeoVector start, double distance, GeoVector result)[] {
-				(new GeoVector(0, 0, 0), 0, new GeoVector(0, 0, 0)),
-				(new GeoVector(0, 90, 0), 0, new GeoVector(0, 90, 0)),
-				(new GeoVector(90, 0, 0), 0, new GeoVector(90, 0, 0)),
-				(new GeoVector(0, 0, 0), System.Math.PI / 2, new GeoVector(90, 0, 0)),
-				(new GeoVector(0, 0, 0), System.Math.PI * 1.5, new GeoVector(-90, 0, 180)),
-				(new GeoVector(0, 0, 0), System.Math.PI / 3, new GeoVector(60, 0, 0)),
-				(new GeoVector(0, 0, 90), System.Math.PI / 2, new GeoVector(0, 90, 90)),
-				(new GeoVector(0, 0, 90), System.Math.PI * 1.5, new GeoVector(0, -90, 90)),
-				(new GeoVector(0, 0, 90), System.Math.PI / 3, new GeoVector(0, 60, 90)),
-				(new GeoVector(0, 0, 180), System.Math.PI / 2, new GeoVector(-90, 0, 180)),
-				(new GeoVector(0, 0, 180), System.Math.PI * 1.5, new GeoVector(90, 0, 0)),
-				(new GeoVector(0, 0, 180), System.Math.PI / 3, new GeoVector(-60, 0, 180)),
-				(new GeoVector(0, 0, 270), System.Math.PI / 2, new GeoVector(0, -90, 270)),
-				(new GeoVector(0, 0, 270), System.Math.PI * 1.5, new GeoVector(0, 90, 270)),
-				(new GeoVector(0, 0, 270), System.Math.PI / 3, new GeoVector(0, -60, 270)),
-				(new GeoVector(90, 0, 0), System.Math.PI / 2, new GeoVector(0, 180, 180)),
-				(new GeoVector(90, 90, 0), System.Math.PI / 2, new GeoVector(0, -90, 180)),
-				(new GeoVector(90, 180, 0), System.Math.PI / 2, new GeoVector(0, 0, 180)),
-				(new GeoVector(90, -90, 0), System.Math.PI / 2, new GeoVector(0, 90, 180)),
-				(new GeoVector(-90, 0, 0), System.Math.PI / 2, new GeoVector(0, 180, 0)),
-				(new GeoVector(-90, 90, 0), System.Math.PI / 2, new GeoVector(0, -90, 0)),
-				(new GeoVector(-90, 180, 0), System.Math.PI / 2, new GeoVector(0, 0, 0)),
-				(new GeoVector(-90, -90, 0), System.Math.PI / 2, new GeoVector(0, 90, 0)),
-				(new GeoVector(0, 0, 45), System.Math.PI / 2, new GeoVector(45, 90, 90)),
-				(new GeoVector(0, 0, -45), System.Math.PI / 2, new GeoVector(45, -90, -90)),
-				(new GeoVector(0, 0, 135), System.Math.PI / 2, new GeoVector(-45, 90, 90)),
-				(new GeoVector(0, 0, -135), System.Math.PI / 2, new GeoVector(-45, -90, -90)),
-				(new GeoVector(0, 0, 45), System.Math.PI, new GeoVector(0, 180, -135)),
-				(new GeoVector(0, 0, -45), System.Math.PI, new GeoVector(0, 180, 135)),
-				(new GeoVector(0, 0, 135), System.Math.PI, new GeoVector(0, 180, -45)),
-				(new GeoVector(0, 0, -135), System.Math.PI, new GeoVector(0, 180, 45)),
-			};
+			(GeoVector<double> start, double distance, GeoVector<double> result)[] moves = [
+				(new (0, 0, 0), 0, new (0, 0, 0)),
+				(new (0, 90, 0), 0, new (0, 90, 0)),
+				(new (90, 0, 0), 0, new (90, 0, 0)),
+				(new (0, 0, 0), System.Math.PI / 2, new (90, 0, 0)),
+				(new (0, 0, 0), System.Math.PI * 1.5, new (-90, 0, 180)),
+				(new (0, 0, 0), System.Math.PI / 3, new (60, 0, 0)),
+				(new (0, 0, 90), System.Math.PI / 2, new (0, 90, 90)),
+				(new (0, 0, 90), System.Math.PI * 1.5, new (0, -90, 90)),
+				(new (0, 0, 90), System.Math.PI / 3, new (0, 60, 90)),
+				(new (0, 0, 180), System.Math.PI / 2, new (-90, 0, 180)),
+				(new (0, 0, 180), System.Math.PI * 1.5, new (90, 0, 0)),
+				(new (0, 0, 180), System.Math.PI / 3, new (-60, 0, 180)),
+				(new (0, 0, 270), System.Math.PI / 2, new (0, -90, 270)),
+				(new (0, 0, 270), System.Math.PI * 1.5, new (0, 90, 270)),
+				(new (0, 0, 270), System.Math.PI / 3, new (0, -60, 270)),
+				(new (90, 0, 0), System.Math.PI / 2, new (0, 180, 180)),
+				(new (90, 90, 0), System.Math.PI / 2, new (0, -90, 180)),
+				(new (90, 180, 0), System.Math.PI / 2, new (0, 0, 180)),
+				(new (90, -90, 0), System.Math.PI / 2, new (0, 90, 180)),
+				(new (-90, 0, 0), System.Math.PI / 2, new (0, 180, 0)),
+				(new (-90, 90, 0), System.Math.PI / 2, new (0, -90, 0)),
+				(new (-90, 180, 0), System.Math.PI / 2, new (0, 0, 0)),
+				(new (-90, -90, 0), System.Math.PI / 2, new (0, 90, 0)),
+				(new (0, 0, 45), System.Math.PI / 2, new (45, 90, 90)),
+				(new (0, 0, -45), System.Math.PI / 2, new (45, -90, -90)),
+				(new (0, 0, 135), System.Math.PI / 2, new (-45, 90, 90)),
+				(new (0, 0, -135), System.Math.PI / 2, new (-45, -90, -90)),
+				(new (0, 0, 45), System.Math.PI, new (0, 180, -135)),
+				(new (0, 0, -45), System.Math.PI, new (0, 180, 135)),
+				(new (0, 0, 135), System.Math.PI, new (0, 180, -45)),
+				(new (0, 0, -135), System.Math.PI, new (0, 180, 45)),
+			];
 
-			Planet planet = new Planet(1);
+			Planet<double> planet = new(1);
 			int i = 0;
 			foreach (var move in moves)
 			{
@@ -84,20 +84,20 @@ namespace UtilsTest.Geography
 		[TestMethod]
 		public void TestVector()
 		{
-			Planet earth = Planets.Earth;
-			GeoPoint paris = new GeoPoint("N48°51',E2°21'");
-			GeoPoint newyork = new GeoPoint("N40°43',W74°00'");
+			var earth = Planets<double>.Earth;
+			var paris = new GeoPoint<double>("N48°51',E2°21'");
+			var newyork = new GeoPoint<double>("N40°43',W74°00'");
 
-			GeoPoint baghdad = new GeoPoint("N35°,E45°");
-			GeoPoint osaka = new GeoPoint("N35°,E135°");
+			var baghdad = new GeoPoint<double>("N35°,E45°");
+			var osaka = new GeoPoint<double>("N35°,E135°");
 
-			GeoVector vector1 = new GeoVector(paris, newyork);
+			var vector1 = new GeoVector<double>(paris, newyork);
 			Assert.AreEqual(291.7, vector1.Bearing, 0.1);
-			Assert.AreEqual(newyork, new GeoPoint(earth.Travel(vector1, earth.Distance(paris, newyork))));
+			Assert.AreEqual(newyork, new GeoPoint<double>(earth.Travel(vector1, earth.Distance(paris, newyork))));
 
-			GeoVector vector2 = new GeoVector(baghdad, osaka);
+			var vector2 = new GeoVector<double>(baghdad, osaka);
 			Assert.AreEqual(60.1, vector2.Bearing, 0.1);
-			Assert.AreEqual(osaka, new GeoPoint(earth.Travel(vector2, earth.Distance(baghdad, osaka))));
+			Assert.AreEqual(osaka, new GeoPoint<double>(earth.Travel(vector2, earth.Distance(baghdad, osaka))));
 		}
 	}
 }

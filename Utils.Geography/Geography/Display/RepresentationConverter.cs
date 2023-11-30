@@ -1,19 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Geography.Model;
 using Utils.Geography.Projections;
+using Utils.Mathematics;
 
 namespace Utils.Geography.Display
 {
-	public class RepresentationConverter
-	{
-		/// <summary>
-		/// Planète de référence
-		/// </summary>
-		Planet Planet { get; }
+	public class RepresentationConverter<T>
+            where T : struct, IFloatingPointIeee754<T>
+    {
+        private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+
+        /// <summary>
+        /// Planète de référence
+        /// </summary>
+        Planet<T> Planet { get; }
 
 		/// <summary>
 		/// Taille des tuiles cibles
@@ -23,7 +28,7 @@ namespace Utils.Geography.Display
 		/// <summary>
 		/// Projection de carte
 		/// </summary>
-		public IProjectionTransformation Projection { get; private set; }
+		public IProjectionTransformation<T> Projection { get; private set; }
 		
 		/// <summary>
 		/// Créé une nouvelle projection pour la planète passée en paramètre
@@ -31,7 +36,7 @@ namespace Utils.Geography.Display
 		/// <param name="planet">Planète</param>
 		/// <param name="projection">Projection</param>
 		/// <param name="tileSize">Taille de la tuile</param>
-		public RepresentationConverter (Planet planet, IProjectionTransformation projection, int tileSize = 256 )
+		public RepresentationConverter (Planet<T> planet, IProjectionTransformation<T> projection, int tileSize = 256 )
 		{
 			this.Planet = planet;
 			Projection = projection;
@@ -43,9 +48,9 @@ namespace Utils.Geography.Display
 		/// </summary>
 		/// <param name="projection">Projection</param>
 		/// <param name="tileSize">Taille de la tuile</param>
-		public RepresentationConverter( IProjectionTransformation projection, int tileSize = 256 )
+		public RepresentationConverter( IProjectionTransformation<T> projection, int tileSize = 256 )
 		{
-			this.Planet = Planets.Earth;
+			this.Planet = Planets<T>.Earth;
 			Projection = projection;
 			TileSize = tileSize;
 		}
@@ -56,9 +61,9 @@ namespace Utils.Geography.Display
 		/// <param name="GeoPoint">Point géographique</param>
 		/// <param name="zoomFactor">Facteur de grossissement</param>
 		/// <returns></returns>
-		public ProjectedPoint GeoPointToMappoint ( GeoPoint GeoPoint, byte zoomFactor )
+		public ProjectedPoint<T> GeoPointToMappoint ( GeoPoint<T> GeoPoint, byte zoomFactor )
 		{
-			return Projection.GeopointToMappoint(GeoPoint);
+			return Projection.GeoPointToMapPoint(GeoPoint);
 
 		}
 
@@ -67,9 +72,9 @@ namespace Utils.Geography.Display
 		/// </summary>
 		/// <param name="projectedPoint">Point sur carte</param>
 		/// <returns>point géographique</returns>
-		public GeoPoint MappointToGeoPoint ( ProjectedPoint projectedPoint )
+		public GeoPoint<T> MappointToGeoPoint ( ProjectedPoint<T> projectedPoint )
 		{
-			return Projection.MappointToGeopoint(projectedPoint);
+			return Projection.MapPointToGeoPoint(projectedPoint);
 		}
 
 		/// <summary>
@@ -78,14 +83,14 @@ namespace Utils.Geography.Display
 		/// <param name="projectedPoint">Point sur carte</param>
 		/// <param name="zoomLevel"></param>
 		/// <returns>tuile</returns>
-		public Tile MappointToTile ( ProjectedPoint projectedPoint, byte zoomLevel )
+		public Tile<T> MappointToTile ( ProjectedPoint<T> projectedPoint, byte zoomLevel )
 		{
 			long zoom = 1 << zoomLevel;
-			return new Tile(
-				(long)Math.Min(Math.Max(projectedPoint.X / TileSize, 0), zoom - 1),
-				(long)Math.Min(Math.Max(projectedPoint.Y / TileSize, 0), zoom - 1),
+			return new Tile<T>(
+				MathEx.Clamp((long)(object)(projectedPoint.X) / TileSize, 0, zoom - 1),
+				MathEx.Clamp((long)(object)(projectedPoint.Y) / TileSize, 0, zoom - 1),
 				zoomLevel,
-				TileSize);
+				(int)(object)TileSize);
 		}
 
 		/// <summary>
@@ -93,9 +98,9 @@ namespace Utils.Geography.Display
 		/// </summary>
 		/// <param name="zoomLevel">Niveau de zoom</param>
 		/// <returns>Taille de la carte en pixels</returns>
-		public long GetMapSize ( byte zoomLevel )
+		public int GetMapSize ( byte zoomLevel )
 		{
-			return (long)TileSize << zoomLevel;
+			return TileSize << zoomLevel;
 		}
 
 		/// <summary>
@@ -104,10 +109,10 @@ namespace Utils.Geography.Display
 		/// <param name="latitude">Latitude</param>
 		/// <param name="zoomLevel">Niveau de zoom</param>
 		/// <returns></returns>
-		public double ComputeGroundResolution ( double latitude, byte zoomLevel )
+		public T ComputeGroundResolution ( T latitude, byte zoomLevel )
 		{
-			long mapSize = GetMapSize(zoomLevel);
-			return Math.Cos(latitude * (Math.PI / 180)) * Planet.EquatorialCircumference / mapSize;
+			var mapSize = (T)(object)GetMapSize(zoomLevel);
+			return degree.Cos(latitude) * Planet.EquatorialCircumference / mapSize;
 		}
 
 	}

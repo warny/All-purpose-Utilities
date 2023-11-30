@@ -19,6 +19,7 @@ using System.Text;
 using System.Linq;
 using Utils.Geography.Model;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace Utils.Geography.Display
 {
@@ -28,29 +29,30 @@ namespace Utils.Geography.Display
 	 * with their zoom level. The actual area that a tile covers on a map depends on the underlying map projection.
 	 */
 	[DebuggerDisplay("Size={TileSize}px, X={TileX}, Y={TileY}, ZoomFactor={ZoomFactor}")]
-	public class Tile : IEquatable<Tile>, IFormattable
-	{
-		/// <summary>
-		/// Width and height of a map tile in pixel.
-		/// </summary>
-		public int TileSize { get; private set; }
+	public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Tile<T>, Tile<T>, bool>
+        where T : struct, IFloatingPointIeee754<T>
+    {
+        /// <summary>
+        /// Width and height of a map tile in pixel.
+        /// </summary>
+        public int TileSize { get; }
 
 		private const long serialVersionUID = 1L;
 
 		/// <summary>
 		/// The X number of this tile.
 		/// </summary>
-		public long TileX { get; set; }
+		public long TileX { get; }
 
 		/// <summary>
 		/// The Y number of this tile.
 		/// </summary>
-		public long TileY { get; set; }
+		public long TileY { get; }
 
 		/// <summary>
 		/// The zoom level of this tile.
 		/// </summary>
-		public byte ZoomFactor { get; set; }
+		public byte ZoomFactor { get; }
 
 		/// <summary>
 		/// 
@@ -70,11 +72,11 @@ namespace Utils.Geography.Display
 		/// <summary>
 		/// Upper left point of this tile
 		/// </summary>
-		public MapPoint MapPoint1
+		public MapPoint<T> MapPoint1
 		{
 			get
 			{
-				return new MapPoint(
+				return new MapPoint<T>(
 					this.TileX * TileSize,
 					this.TileY * TileSize,
 					ZoomFactor,
@@ -86,14 +88,14 @@ namespace Utils.Geography.Display
 		/// <summary>
 		/// Lowerright point of this tile
 		/// </summary>
-		public MapPoint MapPoint2
+		public MapPoint<T> MapPoint2
 		{
 			get
 			{
-				return new MapPoint(
+				return new MapPoint<T>(
 					(this.TileX + 1) * TileSize,
-					(this.TileY + 1) * TileSize,
-					ZoomFactor,
+                    (this.TileY + 1) * TileSize,
+                    ZoomFactor,
 					TileSize
 				);
 			}
@@ -104,11 +106,11 @@ namespace Utils.Geography.Display
 		/// </summary>
 		/// <param name="mappoint">point to test</param>
 		/// <returns>True if contained</returns>
-		public bool Contains ( ProjectedPoint mappoint )
+		public bool Contains ( ProjectedPoint<T> mappoint )
 		{
-			if (mappoint.X < this.TileX * TileSize || mappoint.X > (this.TileX + 1) * TileSize) return false;
-			if (mappoint.Y < this.TileY * TileSize || mappoint.Y > (this.TileY + 1) * TileSize) return false;
-			return true;
+			if (mappoint.X < (T)Convert.ChangeType(this.TileX * TileSize, typeof(T)) || mappoint.X > (T)Convert.ChangeType((this.TileX + 1) * TileSize, typeof(T))) return false;
+            if (mappoint.Y < (T)Convert.ChangeType(this.TileY * TileSize, typeof(T)) || mappoint.Y > (T)Convert.ChangeType((this.TileY + 1) * TileSize, typeof(T))) return false;
+            return true;
 		}
 
 		public override int GetHashCode() => Utils.Objects.ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
@@ -117,14 +119,18 @@ namespace Utils.Geography.Display
 		public string ToString(string format) => $"tileX={this.TileX.ToString(format)}, tileY={this.TileY.ToString(format)}, zoomLevel={this.ZoomFactor}";
 		public string ToString(string format, IFormatProvider formatProvider) => $"tileX={this.TileX.ToString(format, formatProvider)}, tileY={this.TileY.ToString(format, formatProvider)}, zoomLevel={this.ZoomFactor}";
 
-		public override bool Equals(object obj) => obj is Tile tile && Equals(tile);
-		public bool Equals(Tile other)
+		public override bool Equals(object obj)
+			=> obj switch {
+				Tile<T> tile => Equals(tile),
+				_ => false
+			};
+		public bool Equals(Tile<T> other)
 			=> this.TileX == other.TileX
 			&& this.TileY == other.TileY
 			&& this.ZoomFactor == other.ZoomFactor
 			&& this.TileSize == other.TileSize;
 
-		public static bool operator ==(Tile tile1, Tile tile2) => tile1.Equals(tile2);
-		public static bool operator !=(Tile tile1, Tile tile2) => !tile1.Equals(tile2);
+		public static bool operator ==(Tile<T> tile1, Tile<T> tile2) => tile1.Equals(tile2);
+		public static bool operator !=(Tile<T> tile1, Tile<T> tile2) => !tile1.Equals(tile2);
 	}
 }

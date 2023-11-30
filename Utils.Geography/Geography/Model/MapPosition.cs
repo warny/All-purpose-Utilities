@@ -13,6 +13,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using System;
+using System.Numerics;
 using System.Runtime.Serialization;
 using System.Text;
 using Utils.Objects;
@@ -23,13 +24,13 @@ namespace Utils.Geography.Model
 	/**
 	 * A MapPosition represents an immutable pair of {@link GeoPoint} and zoom level.
 	 */
-	public class MapPosition {
-		private const long serialVersionUID = 1L;
-
+	public class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperators<MapPosition<T>, MapPosition<T>, bool>
+        where T : struct, IFloatingPointIeee754<T>
+    {
 		/**
 		 * The geographical coordinates of the map center.
 		 */
-		public GeoPoint GeoPoint { get; set; }
+		public GeoPoint<T> GeoPoint { get; set; }
 
 		/**
 		 * The zoom level of the map.
@@ -44,7 +45,7 @@ namespace Utils.Geography.Model
 		 * @throws IllegalArgumentException
 		 *             if {@code GeoPoint} is null or {@code zoomLevel} is negative.
 		 */
-		public MapPosition ( GeoPoint geoPoint, byte zoomLevel )
+		public MapPosition ( GeoPoint<T> geoPoint, byte zoomLevel )
 		{
 			geoPoint.ArgMustNotBeNull();
 			zoomLevel.ArgMustBeGreaterThan((byte)0);
@@ -52,28 +53,29 @@ namespace Utils.Geography.Model
 			this.ZoomLevel = zoomLevel;
 		}
 
-		public override bool Equals ( object obj )
-		{
-			if (this == obj) {
-				return true;
-			} else if (!(obj is MapPosition)) {
-				return false;
-			}
-			MapPosition other = (MapPosition)obj;
-			if (this.GeoPoint is null) {
-				if (other.GeoPoint is not null) {
-					return false;
-				}
-			} else if (!this.GeoPoint.Equals(other.GeoPoint)) {
-				return false;
-			} else if (this.ZoomLevel != other.ZoomLevel) {
-				return false;
-			}
-			return true;
-		}
+		public override bool Equals(object obj)
+			=> obj switch
+			{
+				MapPosition<T> other => Equals(other as MapPosition<T>),
+				_ => false
+			};
+        public bool Equals(MapPosition<T> other)
+        {
+			if (other is null) return false;
+            if (this.GeoPoint is null)
+            {
+				return other.GeoPoint is null;
+            }
 
-		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.GeoPoint?.GetHashCode() ?? 0, this.ZoomLevel);
+			return this.GeoPoint.Equals(other.GeoPoint) && this.ZoomLevel == other.ZoomLevel;
+        }
+
+        public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.GeoPoint?.GetHashCode() ?? 0, this.ZoomLevel);
 
 		public override string ToString() => $"GeoPoint={this.GeoPoint}, zoomLevel={this.ZoomLevel}";
-	}
+
+        public static bool operator ==(MapPosition<T> left, MapPosition<T> right) => left?.Equals(right) ?? right is null;
+
+		public static bool operator !=(MapPosition<T> left, MapPosition<T> right) => !(left == right);
+    }
 }

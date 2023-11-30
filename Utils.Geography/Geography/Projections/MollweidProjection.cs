@@ -1,33 +1,38 @@
 ﻿using System;
+using System.Numerics;
 using Utils.Geography.Model;
+using Utils.Mathematics;
 
 namespace Utils.Geography.Projections
 {
-	public class MollweidProjection : IProjectionTransformation
-	{
-		public const int MaxLatitude = 90;
+	public class MollweidProjection<T> : IProjectionTransformation<T>
+        where T : struct, IFloatingPointIeee754<T>
+    {
+		private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
-		public ProjectedPoint GeopointToMappoint( GeoPoint geopoint )
+		public static readonly T MaxLatitude = degree.StraightAngle;
+
+		public ProjectedPoint<T> GeoPointToMapPoint( GeoPoint<T> geoPoint )
 		{
-			double latitude = geopoint.Latitude;
+			T latitude = geoPoint.Latitude;
 			if (latitude > MaxLatitude) latitude = MaxLatitude;
 			else if (latitude < -MaxLatitude) latitude = -MaxLatitude;
 
-			double longitude = geopoint.Longitude % 360;
-			double X = (longitude / 360) * Math.Cos(latitude) + 0.5;
+			T longitude = geoPoint.Longitude % degree.Perigon;
+			T X = (longitude / degree.Perigon) * T.Cos(latitude) + (T.One / (T.One + T.One));
 
-			double Y = latitude / 180 + 0.5;
+			T Y = latitude / degree.StraightAngle + (T.One / (T.One + T.One));
 
-			return new ProjectedPoint(X, Y, this);
+			return new ProjectedPoint<T>(X, Y, this);
 		}
 
-		public GeoPoint MappointToGeopoint( ProjectedPoint mappoint )
+		public GeoPoint<T> MapPointToGeoPoint( ProjectedPoint<T> mapPoint )
 		{
-			double coordinateX = (mappoint.X) % 1;
-			double latitude = 360 * (coordinateX - 0.5);
+			T coordinateX = (mapPoint.X) % T.One;
+			T latitude = degree.Perigon * (coordinateX - (T.One/(T.One + T.One)));
 
-			double longitude = (mappoint.Y - 0.5) * 180 * Math.Cos(latitude);
-			return new GeoPoint(latitude, longitude);
+			T longitude = (mapPoint.Y - (T.One / (T.One + T.One))) * degree.StraightAngle * degree.Cos(latitude);
+			return new GeoPoint<T>(latitude, longitude);
 		}
 	}
 }

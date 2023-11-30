@@ -1,19 +1,21 @@
 ﻿using System;
+using System.Numerics;
 
 namespace Utils.Geography.Projections
 {
-	public static class Projections
-	{
-		private static readonly Lazy<MercatorProjection> mercator = new Lazy<MercatorProjection>(() => new MercatorProjection());
-		private static readonly Lazy<GallsPetersProjection> gallsPeters = new Lazy<GallsPetersProjection>(() => new GallsPetersProjection());
-		private static readonly Lazy<EquirectangularProjection> equirectangular = new Lazy<EquirectangularProjection>(() => new EquirectangularProjection());
-		private static readonly Lazy<MollweidProjection> mollweid = new Lazy<MollweidProjection>(() => new MollweidProjection());
-		public static MercatorProjection Mercator => mercator.Value;
-		public static GallsPetersProjection GallsPeters => gallsPeters.Value;
-		public static EquirectangularProjection Equirectangular => equirectangular.Value;
-		public static MollweidProjection Mollweid => mollweid.Value;
+	public static class Projections<T>
+        where T : struct, IFloatingPointIeee754<T>
+    {
+        private static readonly Lazy<MercatorProjection<T>> mercator = new(() => new ());
+		private static readonly Lazy<GallsPetersProjection<T>> gallsPeters = new (() => new ());
+		private static readonly Lazy<EquirectangularProjection<T>> equirectangular = new (() => new ());
+		private static readonly Lazy<MollweidProjection<T>> mollweid = new (() => new ());
+		public static MercatorProjection<T> Mercator => mercator.Value;
+		public static GallsPetersProjection<T> GallsPeters => gallsPeters.Value;
+		public static EquirectangularProjection<T> Equirectangular => equirectangular.Value;
+		public static MollweidProjection<T> Mollweid => mollweid.Value;
 
-		public static IProjectionTransformation GetProjection ( string name )
+		public static IProjectionTransformation<T> GetProjection ( string name )
 		{
 			switch (name.ToLower()) {
 				case "mercator": 

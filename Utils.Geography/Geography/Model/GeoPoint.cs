@@ -25,6 +25,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Geography.Display;
 using Utils.Mathematics;
+using Utils.Objects;
 
 namespace Utils.Geography.Model
 {
@@ -37,11 +38,20 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// A GeoPoint represents an immutable pair of latitude and longitude coordinates.
 	/// </summary>
-	public class GeoPoint : IEquatable<GeoPoint>, IFormattable,
-		IEqualityOperators<GeoPoint, GeoPoint, bool>
-	{
-		protected static readonly IAngleCalculator degree = Trigonometry.Degree;
-		protected static readonly FloatingPointComparer<double> comparer = new (5);
+	public class GeoPoint<T> : IEquatable<GeoPoint<T>>, IFormattable,
+		IEqualityOperators<GeoPoint<T>, GeoPoint<T>, bool>
+		where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
+    {
+		private static readonly T MinutesInDegree = (T)Convert.ChangeType(60, typeof(T));
+        private static readonly T SecondsInDegree = (T)Convert.ChangeType(3600, typeof(T));
+        private static readonly T SecondsInMinute = (T)Convert.ChangeType(60, typeof(T));
+
+
+        protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+		protected static readonly FloatingPointComparer<T> comparer = new (5);
+
+		public T MaxLatitude => degree.RightAngle;
+        public T MinLatitude => -degree.RightAngle;
 
 		protected static IReadOnlyList<string> PositiveLatitude = ["+", "N"];
 		protected static IReadOnlyList<string> NegativeLatitude = ["-", "S"];
@@ -52,19 +62,19 @@ namespace Utils.Geography.Model
 		/// <summary>
 		/// The latitude coordinate of this GeoPoint in degrees.
 		/// <summary>
-		public double Latitude { get; set; }
+		public T Latitude { get; set; }
 		/// <summary>
 		/// The latitude coordinate of this GeoPoint in degrees.
 		/// <summary>
-		public double φ { get => Latitude; set => Latitude = value; }
+		public T φ { get => Latitude; set => Latitude = value; }
 		/// <summary>
 		/// The longitude coordinate of this GeoPoint in degrees
 		/// </summary>
-		public double Longitude { get; set; }
+		public T Longitude { get; set; }
 		/// <summary>
 		/// The longitude coordinate of this GeoPoint in degrees
 		/// </summary>
-		public double λ { get => Longitude; set => Longitude = value; }
+		public T λ { get => Longitude; set => Longitude = value; }
 
 		protected GeoPoint() { }
 
@@ -73,7 +83,7 @@ namespace Utils.Geography.Model
 		/// </summary>
 		/// <param name="latitude">the latitude coordinate in degrees.</param>
 		/// <param name="longitude">the longitude coordinate in degrees.</param>
-		public GeoPoint(GeoPoint geoPoint)
+		public GeoPoint(GeoPoint<T> geoPoint)
 		{
 			Initialize(geoPoint.Latitude, geoPoint.Longitude);
 		}
@@ -83,7 +93,7 @@ namespace Utils.Geography.Model
 		/// </summary>
 		/// <param name="latitude">the latitude coordinate in degrees.</param>
 		/// <param name="longitude">the longitude coordinate in degrees.</param>
-		public GeoPoint(double latitude, double longitude)
+		public GeoPoint(T latitude, T longitude)
 		{
 			Initialize(latitude, longitude);
 		}
@@ -122,24 +132,24 @@ namespace Utils.Geography.Model
 
 		protected bool ParseCoordinates(string latitudeString, string longitudeString, CultureInfo cultureInfo, Regex regExCoordinate)
 		{
-			double latitude = ParseCoordinate(CoordinateDirectionEnum.Latitude, latitudeString, PositiveLatitude, NegativeLatitude, cultureInfo, regExCoordinate);
-			if (double.IsNaN(latitude)) return false;
-			double longitude = ParseCoordinate(CoordinateDirectionEnum.Longitude, longitudeString, PositiveLongitude, NegativeLongitude, cultureInfo, regExCoordinate);
-			if (double.IsNaN(longitude)) return false;
+			T latitude = ParseCoordinate(CoordinateDirectionEnum.Latitude, latitudeString, PositiveLatitude, NegativeLatitude, cultureInfo, regExCoordinate);
+			if (T.IsNaN(latitude)) return false;
+			T longitude = ParseCoordinate(CoordinateDirectionEnum.Longitude, longitudeString, PositiveLongitude, NegativeLongitude, cultureInfo, regExCoordinate);
+			if (T.IsNaN(longitude)) return false;
 			Initialize(latitude, longitude);
 			return true;
 		}
 
-		protected double ParseCoordinate(CoordinateDirectionEnum coordinateDirection, string coordinateValue, IReadOnlyList<string> positiveModifiers, IReadOnlyList<string> negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates)
+		protected T ParseCoordinate(CoordinateDirectionEnum coordinateDirection, string coordinateValue, IReadOnlyList<string> positiveModifiers, IReadOnlyList<string> negativeModifiers, CultureInfo cultureInfo, Regex regexCoordinates)
 		{
 			var m = regexCoordinates.Match(coordinateValue);
-			if (!m.Success) return double.NaN;
+			if (!m.Success) return T.NaN;
 
-			double degrees = m.Groups["degrees"].Success ? double.Parse(m.Groups["degrees"].Value, NumberStyles.Float, cultureInfo) : 0D;
-			double minutes = m.Groups["minutes"].Success ? double.Parse(m.Groups["minutes"].Value, NumberStyles.Float, cultureInfo) : 0D;
-			double seconds = m.Groups["seconds"].Success ? double.Parse(m.Groups["seconds"].Value, NumberStyles.Float, cultureInfo) : 0D;
+			T degrees = m.Groups["degrees"].Success ? T.Parse(m.Groups["degrees"].Value, NumberStyles.Float, cultureInfo) : T.Zero;
+			T minutes = m.Groups["minutes"].Success ? T.Parse(m.Groups["minutes"].Value, NumberStyles.Float, cultureInfo) : T.Zero;
+			T seconds = m.Groups["seconds"].Success ? T.Parse(m.Groups["seconds"].Value, NumberStyles.Float, cultureInfo) : T.Zero;
 
-			double coordinate = degrees + minutes / 60 + seconds / 3600;
+			T coordinate = degrees + minutes / MinutesInDegree + seconds / SecondsInDegree;
 
 			string modifier = m.Groups["modifier"].Success ? m.Groups["modifier"].Value : positiveModifiers[0];
 			if (positiveModifiers.Contains(modifier))
@@ -157,62 +167,64 @@ namespace Utils.Geography.Model
 			return coordinate;
 		}
 
-		public void Deconstruct(out double latitude, out double longitude)
+		public void Deconstruct(out T latitude, out T longitude)
 		{
 			latitude = Latitude;
 			longitude = Longitude;
 		}
 
-		protected void Initialize(double latitude, double longitude)
+		protected void Initialize(T latitude, T longitude)
 		{
-			CoordinatesUtil.ValidateLatitude(latitude);
+			latitude.ArgMustBeANumber();
+			latitude.ArgMustBeBetween(MinLatitude, MaxLatitude);
+
 			longitude = degree.NormalizeMinToMax(longitude);
 
 			this.Latitude = latitude;
 			this.Longitude = longitude;
 		}
 
-		public double AngleWith(GeoPoint other)
-		{
-			return degree.Acos(
-					degree.Sin(this.Latitude) * degree.Sin(other.Latitude)
-					+ degree.Cos(this.Latitude) * degree.Cos(other.Latitude) * degree.Cos(this.Longitude - other.Longitude)
-				);
-		}
+        public T AngleWith(GeoPoint<T> other)
+        {
+            return degree.Acos(
+                degree.Sin(this.Latitude) * degree.Sin(other.Latitude) +
+                degree.Cos(this.Latitude) * degree.Cos(other.Latitude) * degree.Cos(this.Longitude - other.Longitude)
+            );
+        }
 
-		public override bool Equals(object obj) =>
+        public override bool Equals(object obj) =>
 			obj switch
 			{
-				GeoPoint other => Equals(other),
+				GeoPoint<T> other => Equals(other),
 				_ => false
 			};
 
-		public bool Equals(GeoPoint other) 
+		public bool Equals(GeoPoint<T> other) 
 			=> (comparer.Equals(this.Latitude, other.Latitude) && comparer.Equals(this.Longitude, other.Longitude))
-			|| (this.Latitude == 90 && other.Latitude == 90)
-			|| (this.Latitude == -90 && other.Latitude == -90);
+			|| (this.Latitude == MaxLatitude && other.Latitude == MaxLatitude)
+			|| (this.Latitude == MinLatitude && other.Latitude == MinLatitude);
 
 		public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.Latitude, this.Longitude);
 
-		private string FormatPosition(double position, string positiveMark, string negativeMark, string format, IFormatProvider formatProvider)
-		{
-			string mark = position == 0 ? ""
-						: position > 0 ? positiveMark : negativeMark;
+		private string FormatPosition(T position, string positiveMark, string negativeMark, string format, IFormatProvider formatProvider)
+		{	 
+			string mark = T.IsZero(position) ? ""
+						: T.IsPositive(position) ? positiveMark : negativeMark;
 			if (format == "d" || format == "D")
 			{
-				var temp = Math.Abs(position);
-				var degrees = Math.Floor(temp);
-				temp = (temp - degrees) * 60;
-				var minutes = Math.Floor(temp);
-				temp = (temp - minutes) * 60;
-				var seconds = Math.Floor(temp);
-				if (seconds != 0 || format == "D") return $"{mark}{degrees:##0}°{minutes:00}'{seconds:00}\"";
-				if (minutes != 0) return $"{mark}{degrees}°{minutes:00}'";
+				var temp = T.Abs(position);
+				var degrees = T.Floor(temp);
+				temp = (temp - degrees) * MinutesInDegree;
+				var minutes = T.Floor(temp);
+				temp = (temp - minutes) * SecondsInDegree;
+				var seconds = T.Floor(temp);
+				if (seconds != T.Zero || format == "D") return $"{mark}{degrees:##0}°{minutes:00}'{seconds:00}\"";
+				if (minutes != T.Zero) return $"{mark}{degrees}°{minutes:00}'";
 				return $"{mark}{degrees}°";
 			}
 			else
 			{
-				return mark + Math.Abs(position).ToString(format, formatProvider);
+				return mark + T.Abs(position).ToString(format, formatProvider);
 			}
 		}
 
@@ -230,12 +242,12 @@ namespace Utils.Geography.Model
 			string digits = "[" + string.Join("", cultureInfo.NumberFormat.NativeDigits) + "]+";
 			string number = digits + "([" + cultureInfo.NumberFormat.NumberDecimalSeparator + "]" + digits + ")?";
 
-			Regex regExCoordinate = new Regex(@"(?<modifier>W|E|N|S|-|\+)?(?<degrees>number)(°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
+			Regex regExCoordinate = new(@"(?<modifier>W|E|N|S|-|\+)?(?<degrees>number)(°(?<minutes>number))?('(?<seconds>number))?".Replace("number", number));
 			return regExCoordinate;
 		}
 
-        public static bool operator ==(GeoPoint left, GeoPoint right) => left.Equals(right);
+        public static bool operator ==(GeoPoint<T> left, GeoPoint<T> right) => left.Equals(right);
 
-        public static bool operator !=(GeoPoint left, GeoPoint right) => !left.Equals(right);
+        public static bool operator !=(GeoPoint<T> left, GeoPoint<T> right) => !left.Equals(right);
     }
 }

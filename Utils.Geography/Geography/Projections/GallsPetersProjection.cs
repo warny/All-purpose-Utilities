@@ -1,39 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Geography.Model;
+using Utils.Mathematics;
 
-namespace Utils.Geography.Projections
+namespace Utils.Geography.Projections;
+
+public class GallsPetersProjection<T> : IProjectionTransformation<T>
+	where T : struct, IFloatingPointIeee754<T>
 {
-	public class GallsPetersProjection : IProjectionTransformation
-	{
-		public const double MaxLatitude = 90;
+    private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+    public static readonly T MaxLatitude = degree.StraightAngle;
 
-		public ProjectedPoint GeopointToMappoint( GeoPoint geopoint )
-		{
-			double longitude = geopoint.Longitude % 360;
-			double X = (longitude / 360) + 0.5;
+    public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geopoint)
+    {
+        T longitude = geopoint.Longitude % degree.Perigon;
+        T X = (longitude / degree.Perigon) + (T.One / (T.One + T.One));
 
-			double latitude = geopoint.Latitude;
-			if (latitude > MaxLatitude) latitude = MaxLatitude;
-			else if (latitude < -MaxLatitude) latitude = -MaxLatitude;
+        T latitude = geopoint.Latitude;
+        if (latitude > MaxLatitude) latitude = MaxLatitude;
+        else if (latitude < -MaxLatitude) latitude = -MaxLatitude;
 
-			double Y = Math.Sin(latitude * (Math.PI / 180));
+        T Y = degree.Sin(latitude);
 
-			return new ProjectedPoint(X, Y, this);
-		}
+        return new ProjectedPoint<T>(X, Y, this);
+    }
 
-		public GeoPoint MappointToGeopoint( ProjectedPoint mappoint )
-		{
-			double coordinateX = (mappoint.X ) % 1;
-			double latitude = 360 * (coordinateX - 0.5);
+    public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mappoint)
+    {
+        T coordinateX = mappoint.X % T.One;
+        T latitude = degree.Perigon * (coordinateX - (T.One / (T.One + T.One)));
 
-			double y = 0.5 - mappoint.Y;
-			double longitude = Math.Asin(y);
+        T y = (T.One / (T.One + T.One)) - mappoint.Y;
+        T longitude = degree.Asin(y);
 
-			return new GeoPoint(latitude, longitude);
-		}
-	}
+        return new GeoPoint<T>(latitude, longitude);
+    }
 }

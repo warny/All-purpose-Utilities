@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -168,6 +169,12 @@ public static class Validations
 		{
 			throw new ArgumentOutOfRangeException(valueName, value, $"{valueName} must be between {min} and {max}");
 		}
+		return value;
+	}
+
+	public static T ArgMustBeANumber<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : INumberBase<T>
+	{
+		if (T.IsNaN(value)) throw new ArgumentOutOfRangeException(valueName, $"{value} in not a number");
 		return value;
 	}
 }

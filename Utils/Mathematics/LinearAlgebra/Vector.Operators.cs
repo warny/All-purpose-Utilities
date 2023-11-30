@@ -156,14 +156,6 @@ namespace Utils.Mathematics.LinearAlgebra
 			return result;
 		}
 
-		public static explicit operator Vector<T>(Point<T> point)
-		{
-			T[] result = new T[point.Dimension + 1];
-			result[^1] = T.One;
-			Array.Copy(point.components, result, point.Dimension);
-			return new Vector<T>(result);
-		}
-
 		public static Vector<T> operator +(Vector<T> value) => new(value);
 	}
 }

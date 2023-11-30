@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Geography.Model;
@@ -9,9 +10,10 @@ using Utils.Geography.Model;
 namespace Utils.Geography.Display
 {
 	[DebuggerDisplay("X={X}, Y={Y}, ZL={ZoomLevel}, TS={TileSize}")]
-	public class MapPoint
-	{
-		public long X { get; set; }
+	public class MapPoint<T>
+        where T : struct, IFloatingPointIeee754<T>
+    {
+        public long X { get; set; }
 		public long Y { get; set; }
 		public byte ZoomLevel { get; set; }
 		public int TileSize { get; set; }
@@ -19,14 +21,14 @@ namespace Utils.Geography.Display
 		public int TileX => (int)(X % TileSize);
 		public int TileY => (int)(Y % TileSize);
 
-		public Tile Tile => new Tile((int)X / TileSize, (int)Y / TileSize, ZoomLevel, TileSize);
+		public Tile<T> Tile => new Tile<T>((int)X / TileSize, (int)Y / TileSize, ZoomLevel, TileSize);
 
-		public MapPoint( ProjectedPoint projectedPoint, byte zoomLevel, int tileSize )
+		public MapPoint( ProjectedPoint<T> projectedPoint, byte zoomLevel, int tileSize )
 		{
-			int zoomFactor = 1 << zoomLevel;
+			T zoomFactor = (T)Convert.ChangeType(1 << zoomLevel, typeof(T)) ;
 			this.ZoomLevel = zoomLevel;
-			this.X = (long)(projectedPoint.X * zoomFactor);
-			this.Y = (long)(projectedPoint.X * zoomFactor);
+			this.X = (long)Convert.ChangeType(T.Floor(projectedPoint.X * zoomFactor), typeof(long));
+			this.Y = (long)Convert.ChangeType(T.Floor(projectedPoint.X * zoomFactor), typeof(long));
 			this.TileSize = tileSize;
 
 		}
