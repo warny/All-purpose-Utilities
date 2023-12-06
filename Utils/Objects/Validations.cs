@@ -93,7 +93,15 @@ public static class Validations
 		}
 	}
 
-	public static void ValueSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression(nameof(value))] string valueName = "")
+    public static void ArgMustNotBeEmpty<T>(this IReadOnlyCollection<T> value, [CallerArgumentExpression(nameof(value))] string valueName = "")
+    {
+        if (value.Count == 0)
+        {
+            throw new ArgumentOutOfRangeException(valueName, value.Count, $"{valueName} must contain at least one element");
+        }
+    }
+
+    public static void ValueSizeMustBeMultipleOf<T>(this IReadOnlyCollection<T> value, int multiple, [CallerArgumentExpression(nameof(value))] string valueName = "")
 	{
 		if (value.Count % multiple != 0)
 		{

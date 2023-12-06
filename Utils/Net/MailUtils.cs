@@ -11,9 +11,13 @@ using Utils.Objects;
 
 namespace Utils.Net
 {
-	public static class MailUtils
+	public static partial class MailUtils
 	{
-		private static readonly Regex mailAddressParser = new Regex(@"^(((?<name>[^;,<>\n]+)\s*)?\<(?<mail>[^@<>;,\s]+@(\w+\.)*\w+)\>|(?<mail>[^@<>;,\s]+@(\w+\.)*\w+))$", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+
+        [GeneratedRegex("^(((?<name>[^;,<>\\n]+)\\s*)?\\<(?<mail>[^@<>;,\\s]+@(\\w+\\.)*\\w+)\\>|(?<mail>[^@<>;,\\s]+@(\\w+\\.)*\\w+))$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.Singleline, "fr-FR")]
+        private static partial Regex mailAddressParserRegex();
+        
+		private static readonly Regex mailAddressParser = mailAddressParserRegex();
 
 		/// <summary>
 		/// Transforme une chaîne en adresse mail
@@ -50,7 +54,7 @@ namespace Utils.Net
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
 		public static void AddRange(this MailAddressCollection addresses, params MailAddress[] mailAddresses)
-			=> AddRange(addresses, (IEnumerable<MailAddress>)mailAddresses);
+			=> addresses.AddRange((IEnumerable<MailAddress>)mailAddresses);
 
 		/// <summary>
 		/// Ajoute une énumration d'adresses à une liste d'adresses
@@ -73,7 +77,7 @@ namespace Utils.Net
 		/// <param name="addresses"></param>
 		/// <param name="mailAddresses"></param>
 		public static void AddRange(this MailAddressCollection addresses, params string[] mailAddresses)
-			=> AddRange(addresses, (IEnumerable<string>)mailAddresses);
+			=> addresses.AddRange((IEnumerable<string>)mailAddresses);
 
 		/// <summary>
 		/// Ajoute une énumration d'adresses sous forme de chaînes à une liste d'adresses
@@ -83,7 +87,7 @@ namespace Utils.Net
 		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses) {
 			mailAddresses.ArgMustNotBeNull();
 
-			AddRange(addresses, mailAddresses.Select(ma => ParseMailAddress(ma)));
+			addresses.AddRange(mailAddresses.Select(ma => ParseMailAddress(ma)));
 		}
 
 		/// <summary>
@@ -93,7 +97,7 @@ namespace Utils.Net
 		/// <param name="mailAddresses"></param>
 		public static void AddRange(this MailAddressCollection addresses, string mailAddresses) {
 			mailAddresses.ArgMustNotBeNull();
-			AddRange(addresses, (IEnumerable<MailAddress>)ParseMailAddresses(mailAddresses));
+			addresses.AddRange((IEnumerable<MailAddress>)ParseMailAddresses(mailAddresses));
 		}
 
 		/// <summary>
@@ -116,7 +120,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage To(this MailMessage mailMessage, params string[] mailAdresses) => To(mailMessage, (IEnumerable<string>)mailAdresses);
+		public static MailMessage To(this MailMessage mailMessage, params string[] mailAdresses) => mailMessage.To((IEnumerable<string>)mailAdresses);
 
 		/// <summary>
 		/// Ajoute une ou des adresses en destinataire
@@ -153,7 +157,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage CC(this MailMessage mailMessage, params string[] mailAdresses) => CC(mailMessage, (IEnumerable<string>) mailAdresses);
+		public static MailMessage CC(this MailMessage mailMessage, params string[] mailAdresses) => mailMessage.CC((IEnumerable<string>) mailAdresses);
 
 		/// <summary>
 		/// Ajoute une ou des adresses en copie 
@@ -189,7 +193,7 @@ namespace Utils.Net
 		/// <param name="mailMessage">Message</param>
 		/// <param name="mailAdresses">Adresses à ajouter</param>
 		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAddresses) => BCC(mailMessage, (IEnumerable<string>)mailAddresses);
+		public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAddresses) => mailMessage.BCC((IEnumerable<string>)mailAddresses);
 
 		/// <summary>
 		/// Ajoute une ou des adresses en copie cachée
@@ -325,5 +329,5 @@ namespace Utils.Net
 			}
 			return mailMessage;
 		}
-	}
+    }
 }

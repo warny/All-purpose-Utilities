@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Mathematics;
@@ -9,7 +10,7 @@ using Utils.Mathematics;
 namespace UtilsTest.Objects
 {
 	[TestClass]
-	public class NumberToStringConverterTest
+	public class NumberToStringConverterFRTests
 	{
 		[TestMethod]
 		public void From1To999Test()
@@ -41,7 +42,7 @@ namespace UtilsTest.Objects
 				(262, "deux cent soixante deux"),
 			};
 			
-			var converter = new NumberToStringConverter();
+			var converter = NumberToStringConverter.FrenchFranceNumbers();
 
 			foreach (var test in tests)
 			{
@@ -78,9 +79,9 @@ namespace UtilsTest.Objects
 				(1262, "mille deux cent soixante deux"),
 			};
 
-			var converter = new NumberToStringConverter();
+            var converter = NumberToStringConverter.FrenchFranceNumbers();
 
-			foreach (var test in tests)
+            foreach (var test in tests)
 			{
 				Assert.AreEqual(test.Expected, converter.Convert(test.Number));
 			}
@@ -115,9 +116,9 @@ namespace UtilsTest.Objects
 				(99262, "quatre-vingt dix neuf mille deux cent soixante deux"),
 			};
 
-			var converter = new NumberToStringConverter();
+            var converter = NumberToStringConverter.FrenchFranceNumbers();
 
-			foreach (var test in tests)
+            foreach (var test in tests)
 			{
 				Assert.AreEqual(test.Expected, converter.Convert(test.Number));
 			}
@@ -134,13 +135,31 @@ namespace UtilsTest.Objects
 				(999999999, "neuf cent quatre-vingt dix neuf millions neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
 			};
 
-			var converter = new NumberToStringConverter();
+            var converter = NumberToStringConverter.FrenchFranceNumbers();
 
-			foreach (var test in tests)
+            foreach (var test in tests)
 			{
 				Assert.AreEqual(test.Expected, converter.Convert(test.Number));
 			}
 		}
 
+		[TestMethod]
+		public void BigIntTest()
+		{
+			(BigInteger Number, string Expected)[] tests = new (BigInteger Number, string Expected)[] {
+				(
+					new BigInteger([0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true, true),
+                    "un tredecillion huit cent cinquante deux duodecilliards six cent soixante treize duodecillions quatre cent vingt sept unidecilliards sept cent quatre-vingt dix sept unidecillions cinquante neuf decilliards cent vingt six decillions sept cent soixante dix sept nonilliards cent trente cinq nonillions sept cent soixante octilliards cent trente neuf octillions six septilliards cinq cent vingt cinq septillions six cent cinquante deux sextilliards trois cent dix neuf sextillions sept cent cinquante quatre quintilliards six cent cinquante quintillions deux cent quarante neuf quadrilliards vingt quatre quadrillions six cent trente et un trilliards trois cent vingt et un trillions trois cent quarante quatre billiards cent vingt six billions six cent dix milliards soixante quatorze millions deux cent trente huit mille neuf cent soixante quinze"
+                ),
+			};
+
+            var converter = NumberToStringConverter.FrenchFranceNumbers();
+
+            foreach (var test in tests)
+			{
+				var value = converter.Convert(test.Number);
+                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
+			}
+		}
 	}
 }

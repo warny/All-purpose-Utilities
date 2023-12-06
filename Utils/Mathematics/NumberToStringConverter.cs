@@ -1,14 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics
 {
-	public class NumberToStringConverter
+	public partial class NumberToStringConverter
 	{
+		public NumberToStringConverter(int group, string separator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale)
+		{
+			Group = group;
+			Separator = separator ?? "";
+			Zero = zero.ArgMustNotBeNull();
+			Minus = minus.ArgMustNotBeNull();
+			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, string[]>)kv.Value.ToImmutableDictionary());
+			Exceptions = exceptions.ArgMustNotBeNull().ToImmutableDictionary();
+			Replacements = replacements.ArgMustNotBeNull().ToImmutableDictionary();
+			Scale = scale;
+		}
+
 		public int Group { get; } = 3;
 
 		public string Separator { get; } = " ";
@@ -17,142 +31,61 @@ namespace Utils.Mathematics
 
 		public string Minus { get; } = "moins *";
 
-		public Dictionary<long, string> Exceptions { get; } = new()
-		{
-			{ 1, "un" },
-			{ 11, "onze" },
-			{ 12, "douze" },
-			{ 13, "treize" },
-			{ 14, "quatorze" },
-			{ 15, "quinze" },
-			{ 16, "seize" },
-			{ 71, "soixante onze" },
-			{ 72, "soixante douze" },
-			{ 73, "soixante treize" },
-			{ 74, "soixante quatorze" },
-			{ 75, "soixante quinze" },
-			{ 76, "soixante seize" },
-			{ 77, "soixante dix sept" },
-			{ 78, "soixante dix huit" },
-			{ 79, "soixante dix neuf" },
-			{ 91, "quatre-vingt onze" },
-			{ 92, "quatre-vingt douze" },
-			{ 93, "quatre-vingt treize" },
-			{ 94, "quatre-vingt quatorze" },
-			{ 95, "quatre-vingt quinze" },
-			{ 96, "quatre-vingt seize" },
-			{ 97, "quatre-vingt dix sept" },
-			{ 98, "quatre-vingt dix huit" },
-			{ 99, "quatre-vingt dix neuf" },
-		};
+		public IReadOnlyDictionary<long, string> Exceptions { get; }
 
-		public Dictionary<string, string> Replacements { get; } = new()
-		{
-			{ "un mille", "mille" }
-		};
+		public IReadOnlyDictionary<string, string> Replacements { get; }
 
-		public Dictionary<int, Dictionary<long, string[]>> Groups { get; } = new()
-		{
-			{ 1 ,
-				new ()
-				{
-					{ 0, new [] { "" } },
-					{ 1, new [] { "et un"} },
-					{ 2, new [] { "deux"} },
-					{ 3, new [] { "trois"} },
-					{ 4, new [] { "quattre"} },
-					{ 5, new [] { "cinq"} },
-					{ 6, new [] { "six" } },
-					{ 7, new [] { "sept" } },
-					{ 8, new [] { "huit"} },
-					{ 9, new [] { "neuf"} }
-				}
-			},
-			{ 2,
-				new () {
-					{ 0, new [] { "", "*" } },
-					{ 1, new [] { "dix", "dix *" } },
-					{ 2, new [] { "vingt", "vingt *" } },
-					{ 3, new [] { "trente", "trente *"} },
-					{ 4, new [] { "quarante", "quarante *" } },
-					{ 5, new [] { "cinquante", "cinquante *" } },
-					{ 6, new [] { "soixante", "soixante *" } },
-					{ 7, new [] { "soixante dix", "soixante dix *" } },
-					{ 8, new [] { "quatre vingt", "quatre vingt *" } },
-					{ 9, new [] { "quatre vingt dix", "quatre vingt dix *" } }
-				}
-			},
-			{ 3,
-				new ()
-				{
-					{ 0, new [] { "", "*" } },
-					{ 1, new [] { "cent"         , "cent *"         } },
-					{ 2, new [] { "deux cents"   , "deux cent *"   } },
-					{ 3, new [] { "trois cents"  , "trois cent *"  } },
-					{ 4, new [] { "quatre cents" , "quatre cent *" } },
-					{ 5, new [] { "cinq cents"   , "cinq cent *"   } },
-					{ 6, new [] { "six cents"    , "six cent *"    } },
-					{ 7, new [] { "sept cents"   , "sept cent *"   } },
-					{ 8, new [] { "huit cents"   , "huit cent *"   } },
-					{ 9, new [] { "neuf cents"   , "neuf cent *"   } }
-				}
-			}
-		};
+		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, string[]>> Groups { get; }
 
-		public string[] GroupTexts { get; } = new[]
-		{
-			"",
-			"mille" ,
-			"million(s)" ,
-			"milliard(s)" ,
-			"billion(s)",
-			"billiard(s)",
-			"trillion(s)",
-			"trilliard(s)"
-		};
+		public NumberScale Scale { get; }
 
-		public string Convert(long number)
-		{
-			if (number == 0) { return Zero; }
-			if (Exceptions.TryGetValue(number, out var value)) { return value; } 
-			var maxGroup = Groups.Keys.Max();
-			var groupValue = (long)Math.Pow(10, maxGroup);
+        public string Convert(int number) => Convert((BigInteger)number);
+        public string Convert(long number) => Convert((BigInteger)number);
 
-			bool isNegative = number < 0;
-			Stack<string> groupsValues = new Stack<string>();
-			if (isNegative) { number = -number; }
+        public string Convert(BigInteger number)
+        {
+            if (number == 0) { return Zero; }
+            if (number.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)number, out var value)) { return value; }
 
-			int groupNumber = 0;
-			while (number != 0)
-			{
-				var group = number % groupValue;
-				if (group != 0)
-				{
-					string resValue = ConvertGroup(maxGroup, group) + Separator + GroupTexts[groupNumber].ToPlural(group);
-					if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
-					groupsValues.Push(resValue.Trim());
-				}
-				number /= groupValue;
-				groupNumber++;
-			}
+            var maxGroup = Groups.Keys.Max();
+            var groupValue = BigInteger.Pow(10, maxGroup);
 
-			StringBuilder result = new StringBuilder();
-			while (groupsValues.Count > 0)
-			{
-				result.Append(groupsValues.Pop().Trim());
-				result.Append(Separator);
-			}
-			if (isNegative) 
-			{
-				return Minus.Replace("*", result.ToString().Trim(' '));
-			}
-			else
-			{
-				return result.ToString().Trim(' ');
-			}
-		}
+            bool isNegative = number < 0;
+            Stack<string> groupsValues = new();
+            if (isNegative) { number = -number; }
 
-		public string ConvertGroup(int groupNumber, long number)
+            int groupNumber = 0;
+            while (number != 0)
+            {
+                var group = (long)(number % groupValue);
+                if (group != 0)
+                {
+                    string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
+                    if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
+                    groupsValues.Push(resValue.Trim());
+                }
+                number /= groupValue;
+                groupNumber++;
+            }
+
+            StringBuilder result = new StringBuilder();
+            while (groupsValues.Count > 0)
+            {
+                result.Append(groupsValues.Pop().Trim());
+                result.Append(Separator);
+            }
+            if (isNegative)
+            {
+                return Minus.Replace("*", result.ToString().Trim(' '));
+            }
+            else
+            {
+                return result.ToString().Trim(' ');
+            }
+        }
+
+
+        public string ConvertGroup(int groupNumber, long number)
 		{
 			if (groupNumber == 0) { return string.Empty; }
 			if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value))
@@ -175,5 +108,138 @@ namespace Utils.Mathematics
 				return valueText.First(v => !v.Contains('*'));
 			}
 		}
+	}
+
+	public class NumberScale {
+		public NumberScale(IReadOnlyList<string> staticValues, IReadOnlyList<string> scaleSuffixes)
+		{
+			staticValues.ArgMustNotBeNull();
+			scaleSuffixes.ArgMustNotBeNull();
+			scaleSuffixes.ArgMustNotBeEmpty();
+
+			StaticValues = staticValues.ToImmutableArray();
+			ScaleSuffixes = scaleSuffixes.ToImmutableArray();
+		}
+
+        public IReadOnlyList<string> StaticValues { get; }
+
+		public IReadOnlyList<string> ScaleSuffixes { get; }
+
+		public string VoidGroup = "ni";
+		public string GroupSeparator = "lli";
+
+		private static readonly Regex prefixParser = new(@"(\((?<start>\w+)\))?(?<value>\w+)(\((?<end>\w+)\))?", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture);
+
+		public IReadOnlyList<string> Scale0Prefixes { get; } = [
+			"",
+			"mi",
+			"bi",
+			"tri",
+			"quadri",
+			"quinti",
+			"sexti",
+			"septi",
+			"octi",
+			"noni"
+		];
+
+
+		public IReadOnlyList<string> UnitsPrefixes { get; } = [
+			"",
+			"uni",
+			"duo",
+			"tre(s)",
+			"quattuor",
+			"quinqua",
+			"se(xs)",
+			"septe(mn)",
+			"octo",
+			"nove(mn)"
+		];
+
+		public IReadOnlyList<string> TensPrefixes { get; } = [
+			"",
+			"(n)deci",
+			"(ms)vingti",
+			"(ns)triginta",
+            "(ns)quadraginta",
+            "(ns)quinquaginta",
+            "(n)sexaginta",
+            "(n)septuaginta",
+            "(mxs)octoginta",
+            "nonaginta"
+        ];
+
+        public IReadOnlyList<string> HundredsPrefixes { get; } = [
+			"",
+			"(nx)centi",
+			"(ms)ducenti",
+			"(ns)trecenti",
+            "(ns)quadringenti",
+            "(ns)quingenti",
+            "(n)sescenti",
+            "(n)septingenti",
+            "(mxs)octingenti",
+            "nongenti"
+        ];
+		
+
+		public string GetScaleName(int scale)
+		{
+			if (scale < StaticValues.Count) { return StaticValues[scale]; }
+			scale -= StaticValues.Count;
+            var result = int.DivRem(scale, ScaleSuffixes.Count);
+
+			var suffix = ScaleSuffixes[result.Remainder];
+			var prefix = result.Quotient + 1;
+
+			if (prefix.Between(0, 9))
+			{
+				return Scale0Prefixes[prefix] + GroupSeparator + suffix;
+			}
+
+			List<string> prefixes = [];
+
+			while (prefix > 0)
+			{
+				(prefix, var u) = int.DivRem(prefix, 10);
+                (prefix, var t) = int.DivRem(prefix, 10);
+                (prefix, var h) = int.DivRem(prefix, 10);
+
+				if (h == 0 && t == 0 && u == 0)
+				{
+					prefixes.Add(VoidGroup);
+					continue;
+				}
+
+                Match[] groupValues = [
+					prefixParser.Match(HundredsPrefixes[h]),
+					prefixParser.Match(TensPrefixes[t]),
+					prefixParser.Match(UnitsPrefixes[u])
+				];
+
+				string value = "";
+				string start = "", end = "";
+
+				foreach (Match match in groupValues)
+				{
+					if (match.Value == null) continue;
+					end = match.Groups["end"].Value;
+
+					if (start != "")
+					{
+						foreach (var s in end)
+						{
+							if (start.Contains(s)) value = s + value;
+						}
+					}
+					value = match.Groups["value"].Value + value;
+                    start = match.Groups["start"].Value;
+                }
+
+                prefixes.Add(value);
+            }
+            return string.Join(GroupSeparator, Enumerable.Reverse(prefixes)) + GroupSeparator + suffix;
+        }
 	}
 }
