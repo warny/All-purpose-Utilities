@@ -12,6 +12,26 @@ namespace Utils.Mathematics
 {
 	public partial class NumberToStringConverter
 	{
+		public static NumberToStringConverter GetConverter(CultureInfo culture) => GetConverter(culture.Name);
+
+        public static NumberToStringConverter GetConverter(string culture) {
+			culture.Length.ArgMustBeIn([2, 5]);
+			var result = culture switch
+			{
+				"fr" => French20Numbers,
+				"fr-BE" => French10Numbers,
+				"fr-CH" => French10Numbers,
+				"en" => EnglishNumbers,
+				"de" => GermanNumbers,
+				_ => null
+			};
+			if (result != null) return result;
+			if (culture.Length == 5) return GetConverter(culture[0..2]);
+			return EnglishNumbers;
+		}
+
+
+
 		public NumberToStringConverter(int group, string separator, string groupSeparator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale, Func<string, string> adjustFunction = null)
 		{
 			Group = group;

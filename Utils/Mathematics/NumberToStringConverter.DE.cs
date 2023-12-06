@@ -10,8 +10,8 @@ namespace Utils.Mathematics
 {
     public partial class NumberToStringConverter
     {
-        public static NumberToStringConverter GermanNumbers()
-            => new NumberToStringConverter(
+        public static NumberToStringConverter GermanNumbers { get; }
+        = new NumberToStringConverter(
                 group: 3,
                 separator: " ",
                 groupSeparator: "",

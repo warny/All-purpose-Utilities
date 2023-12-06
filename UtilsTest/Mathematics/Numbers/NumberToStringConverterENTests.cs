@@ -45,7 +45,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (262, "two hundred and sixty-two"),
             ];
 
-            var converter = NumberToStringConverter.EnglishNumbers();
+            var converter = NumberToStringConverter.GetConverter("en-UK");
 
             foreach (var test in tests)
             {
@@ -82,7 +82,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (1262, "one thousand, two hundred and sixty-two"),
             };
 
-            var converter = NumberToStringConverter.EnglishNumbers();
+            var converter = NumberToStringConverter.GetConverter("en-US");
 
             foreach (var test in tests)
             {
@@ -119,7 +119,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (99262, "ninety-nine thousand, two hundred and sixty-two"),
             };
 
-            var converter = NumberToStringConverter.EnglishNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers;
 
             foreach (var test in tests)
             {
@@ -138,7 +138,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (999999999, "nine hundred and ninety-nine million, nine hundred and ninety-nine thousand, nine hundred and ninety-nine"),
             };
 
-            var converter = NumberToStringConverter.EnglishNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers;
 
             foreach (var test in tests)
             {
@@ -156,7 +156,7 @@ namespace UtilsTest.Mathematics.Numbers
                 ),
             };
 
-            var converter = NumberToStringConverter.EnglishNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers;
 
             foreach (var test in tests)
             {

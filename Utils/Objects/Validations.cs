@@ -128,7 +128,7 @@ public static class Validations
 
 	public static T ArgMustBeIn<T>(this T value, T[] targetValue, [CallerArgumentExpression(nameof(value))] string valueName = "") where T : IComparable
 	{
-		if (value.CompareTo(targetValue) != 0)
+		if (value.NotIn(targetValue))
 		{
 			throw new ArgumentOutOfRangeException(valueName, $"{valueName} must be in {{ {string.Join(", ", targetValue.Select(v => v.ToString()))} }}");
 		}

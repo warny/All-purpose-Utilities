@@ -8,8 +8,8 @@ namespace Utils.Mathematics
 {
     public partial class NumberToStringConverter
     {
-        public static NumberToStringConverter French20Numbers()
-            => new NumberToStringConverter(
+        public static NumberToStringConverter French20Numbers { get; }
+        = new NumberToStringConverter(
                 group: 3,
                 separator: " ",
                 groupSeparator: "",
@@ -62,10 +62,10 @@ namespace Utils.Mathematics
                         }
                     }
                 },
-                scale: new NumberScale(["","mille"],["on(s)", "ard(s)"]),
+                scale: new NumberScale(["", "mille"], ["on(s)", "ard(s)"]),
                 replacements: new Dictionary<string, string>()
-		        {
-			        { "un mille", "mille" }
+                {
+                    { "un mille", "mille" }
                 },
                 exceptions: new Dictionary<long, string>()
                 {

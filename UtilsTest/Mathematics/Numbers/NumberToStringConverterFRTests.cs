@@ -45,7 +45,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (262, "deux cent soixante deux"),
             };
 
-            var converter = NumberToStringConverter.French10Numbers();
+            var converter = NumberToStringConverter.French10Numbers;
 
             foreach (var test in tests)
             {
@@ -82,7 +82,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (1262, "mille deux cent soixante deux"),
             };
 
-            var converter = NumberToStringConverter.French10Numbers();
+            var converter = NumberToStringConverter.French10Numbers;
 
             foreach (var test in tests)
             {
@@ -119,7 +119,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (99262, "nonante neuf mille deux cent soixante deux"),
             };
 
-            var converter = NumberToStringConverter.French10Numbers();
+            var converter = NumberToStringConverter.French10Numbers;
 
             foreach (var test in tests)
             {
@@ -138,7 +138,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (999999999, "neuf cent nonante neuf millions neuf cent nonante neuf mille neuf cent nonante neuf"),
             };
 
-            var converter = NumberToStringConverter.French10Numbers();
+            var converter = NumberToStringConverter.French10Numbers;
 
             foreach (var test in tests)
             {
@@ -156,7 +156,7 @@ namespace UtilsTest.Mathematics.Numbers
                 ),
             };
 
-            var converter = NumberToStringConverter.French10Numbers();
+            var converter = NumberToStringConverter.French10Numbers;
 
             foreach (var test in tests)
             {

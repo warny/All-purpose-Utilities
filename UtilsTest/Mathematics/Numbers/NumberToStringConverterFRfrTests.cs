@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -42,7 +43,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (262, "deux cent soixante deux"),
             };
 
-            var converter = NumberToStringConverter.French20Numbers();
+            var converter = NumberToStringConverter.GetConverter("fr-FR");
 
             foreach (var test in tests)
             {
@@ -79,7 +80,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (1262, "mille deux cent soixante deux"),
             };
 
-            var converter = NumberToStringConverter.French20Numbers();
+            var converter = NumberToStringConverter.GetConverter(CultureInfo.GetCultureInfo("fr-FR"));
 
             foreach (var test in tests)
             {
@@ -116,7 +117,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (99262, "quatre-vingt dix neuf mille deux cent soixante deux"),
             };
 
-            var converter = NumberToStringConverter.French20Numbers();
+            var converter = NumberToStringConverter.French20Numbers;
 
             foreach (var test in tests)
             {
@@ -135,7 +136,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (999999999, "neuf cent quatre-vingt dix neuf millions neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
             };
 
-            var converter = NumberToStringConverter.French20Numbers();
+            var converter = NumberToStringConverter.French20Numbers;
 
             foreach (var test in tests)
             {
@@ -153,7 +154,7 @@ namespace UtilsTest.Mathematics.Numbers
                 ),
             };
 
-            var converter = NumberToStringConverter.French20Numbers();
+            var converter = NumberToStringConverter.French20Numbers;
 
             foreach (var test in tests)
             {

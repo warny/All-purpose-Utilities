@@ -8,8 +8,8 @@ namespace Utils.Mathematics
 {
     public partial class NumberToStringConverter
     {
-        public static NumberToStringConverter French10Numbers()
-            => new NumberToStringConverter(
+        public static NumberToStringConverter French10Numbers { get; }
+        = new NumberToStringConverter(
                 group: 3,
                 separator: " ",
                 groupSeparator: "",
