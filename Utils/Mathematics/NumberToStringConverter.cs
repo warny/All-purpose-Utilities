@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Utils.Mathematics
 {
 	public partial class NumberToStringConverter
 	{
-		public NumberToStringConverter(int group, string separator, string groupSeparator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale)
+		public NumberToStringConverter(int group, string separator, string groupSeparator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale, Func<string, string> adjustFunction = null)
 		{
 			Group = group;
 			Separator = separator ?? " ";
@@ -20,8 +21,9 @@ namespace Utils.Mathematics
 			Minus = minus.ArgMustNotBeNull();
 			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, string[]>)kv.Value.ToImmutableDictionary());
 			Exceptions = exceptions.ArgMustNotBeNull().ToImmutableDictionary();
-			Replacements = replacements.ArgMustNotBeNull().ToImmutableDictionary();
+			Replacements = replacements ?? new Dictionary<string,string>().ToImmutableDictionary();
 			Scale = scale;
+			AdjustFunction = adjustFunction ?? new (s=>s); 
 		}
 
 		public int Group { get; } = 3;
@@ -30,7 +32,8 @@ namespace Utils.Mathematics
 		public string Zero { get; }
 		public string Minus { get; }
 
-		public IReadOnlyDictionary<long, string> Exceptions { get; }
+        public Func<string, string> AdjustFunction { get; }
+        public IReadOnlyDictionary<long, string> Exceptions { get; }
 		public IReadOnlyDictionary<string, string> Replacements { get; }
 		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, string[]>> Groups { get; }
 
@@ -42,7 +45,10 @@ namespace Utils.Mathematics
         public string Convert(BigInteger number)
         {
             if (number == 0) { return Zero; }
-            if (number.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)number, out var value)) { return value; }
+			if (number.Between(long.MinValue, long.MaxValue))
+			{
+                if (Exceptions.TryGetValue((long)number, out var value)) return AdjustFunction(value);
+			}
 
             var maxGroup = Groups.Keys.Max();
             var groupValue = BigInteger.Pow(10, maxGroup);
@@ -74,11 +80,11 @@ namespace Utils.Mathematics
             }
             if (isNegative)
             {
-                return Minus.Replace("*", result.ToString().Trim([.. Separator, .. GroupSeparator]));
+                return AdjustFunction(Minus.Replace("*", result.ToString().Trim([.. Separator, .. GroupSeparator])));
             }
             else
             {
-                return result.ToString().Trim([..Separator, ..GroupSeparator]);
+                return AdjustFunction(result.ToString().Trim([..Separator, ..GroupSeparator]));
             }
         }
 
@@ -91,11 +97,10 @@ namespace Utils.Mathematics
 				return value;
 			}
 
-			int group = (int)Math.Pow(10, groupNumber - 1);
-			var groupValue = (int)(number / group);
-			var leftOver = number % group;
+			long group = (long) Math.Pow(10, groupNumber - 1);
+			(var groupValue, var remainder) = long.DivRem(number, group);
 
-			var leftText = ConvertGroup(groupNumber - 1, leftOver);
+			var leftText = ConvertGroup(groupNumber - 1, remainder);
 			var valueText = Groups[groupNumber][groupValue];
 			if (leftText.Length > 0)
 			{
@@ -109,7 +114,7 @@ namespace Utils.Mathematics
 	}
 
 	public class NumberScale {
-		public NumberScale(IReadOnlyList<string> staticValues, IReadOnlyList<string> scaleSuffixes)
+		public NumberScale(IReadOnlyList<string> staticValues, IReadOnlyList<string> scaleSuffixes, bool staticFirstLetterUpercase = false, bool firstLetterUppercase = false)
 		{
 			staticValues.ArgMustNotBeNull();
 			scaleSuffixes.ArgMustNotBeNull();
@@ -117,14 +122,18 @@ namespace Utils.Mathematics
 
 			StaticValues = staticValues.ToImmutableArray();
 			ScaleSuffixes = scaleSuffixes.ToImmutableArray();
+			FirstLetterUppercase = firstLetterUppercase;
+			StaticFirstLetterUppercase = staticFirstLetterUpercase;
 		}
 
         public IReadOnlyList<string> StaticValues { get; }
-
 		public IReadOnlyList<string> ScaleSuffixes { get; }
+		public bool FirstLetterUppercase { get; }
+		public bool StaticFirstLetterUppercase { get; }
 
-		public string VoidGroup = "ni";
-		public string GroupSeparator = "lli";
+
+		private const string VoidGroup = "ni";
+		private const string GroupSeparator = "lli";
 
 		private static readonly Regex prefixParser = new(@"(\((?<start>\w+)\))?(?<value>\w+)(\((?<end>\w+)\))?", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture);
 
@@ -142,7 +151,7 @@ namespace Utils.Mathematics
 		];
 
 
-		public IReadOnlyList<string> UnitsPrefixes { get; } = [
+		public IReadOnlyList<string> UnitsPrefixes { get; init; } = [
 			"",
 			"uni",
 			"duo",
@@ -155,7 +164,7 @@ namespace Utils.Mathematics
 			"nove(mn)"
 		];
 
-		public IReadOnlyList<string> TensPrefixes { get; } = [
+		public IReadOnlyList<string> TensPrefixes { get; init; } = [
 			"",
 			"(n)deci",
 			"(ms)vingti",
@@ -168,7 +177,7 @@ namespace Utils.Mathematics
             "nonaginta"
         ];
 
-        public IReadOnlyList<string> hundredPrefixes { get; } = [
+        public IReadOnlyList<string> hundredPrefixes { get; init; } = [
 			"",
 			"(nx)centi",
 			"(ms)ducenti",
@@ -184,7 +193,12 @@ namespace Utils.Mathematics
 
 		public string GetScaleName(int scale)
 		{
-			if (scale < StaticValues.Count) { return StaticValues[scale]; }
+			if (scale < StaticValues.Count)
+			{
+				var value = StaticValues[scale];
+                if (StaticFirstLetterUppercase) value = value[..1].ToUpper() + value[1..];
+                return value;
+			}
 			scale -= StaticValues.Count;
             var result = int.DivRem(scale, ScaleSuffixes.Count);
 
@@ -193,7 +207,9 @@ namespace Utils.Mathematics
 
 			if (prefix.Between(0, 9))
 			{
-				return Scale0Prefixes[prefix] + GroupSeparator + suffix;
+				var value = Scale0Prefixes[prefix] + GroupSeparator + suffix;
+                if (FirstLetterUppercase) value = value[..1].ToUpper() + value[1..];
+                return value;
 			}
 
 			List<string> prefixes = [];
@@ -234,7 +250,7 @@ namespace Utils.Mathematics
 					value = match.Groups["value"].Value + value;
                     start = match.Groups["start"].Value;
                 }
-
+				if (FirstLetterUppercase) value = value = value[..1].ToUpper() + value[1..];
                 prefixes.Add(value);
             }
             return string.Join(GroupSeparator, Enumerable.Reverse(prefixes)) + GroupSeparator + suffix;

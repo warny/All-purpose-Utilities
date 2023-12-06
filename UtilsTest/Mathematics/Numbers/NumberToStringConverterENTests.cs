@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.Mathematics;
 
-namespace UtilsTest.Objects
+namespace UtilsTest.Mathematics.Numbers
 {
     [TestClass]
     public class NumberToStringConverterENTests
@@ -27,6 +27,9 @@ namespace UtilsTest.Objects
                 (60, "sixty"),
                 (61, "sixty-one"),
                 (62, "sixty-two"),
+                (72, "seventy-two"),
+                (82, "eighty-two"),
+                (92, "ninety-two"),
                 (111, "one hundred and eleven"),
                 (121, "one hundred and twenty-one"),
                 (122, "one hundred and twenty-two"),
@@ -42,7 +45,7 @@ namespace UtilsTest.Objects
                 (262, "two hundred and sixty-two"),
             ];
 
-            var converter = NumberToStringConverter.EnglishAmericanNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers();
 
             foreach (var test in tests)
             {
@@ -79,7 +82,7 @@ namespace UtilsTest.Objects
                 (1262, "one thousand, two hundred and sixty-two"),
             };
 
-            var converter = NumberToStringConverter.EnglishAmericanNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers();
 
             foreach (var test in tests)
             {
@@ -116,7 +119,7 @@ namespace UtilsTest.Objects
                 (99262, "ninety-nine thousand, two hundred and sixty-two"),
             };
 
-            var converter = NumberToStringConverter.EnglishAmericanNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers();
 
             foreach (var test in tests)
             {
@@ -135,7 +138,7 @@ namespace UtilsTest.Objects
                 (999999999, "nine hundred and ninety-nine million, nine hundred and ninety-nine thousand, nine hundred and ninety-nine"),
             };
 
-            var converter = NumberToStringConverter.EnglishAmericanNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers();
 
             foreach (var test in tests)
             {
@@ -153,7 +156,7 @@ namespace UtilsTest.Objects
                 ),
             };
 
-            var converter = NumberToStringConverter.EnglishAmericanNumbers();
+            var converter = NumberToStringConverter.EnglishNumbers();
 
             foreach (var test in tests)
             {

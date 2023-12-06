@@ -8,7 +8,7 @@ namespace Utils.Mathematics
 {
     public partial class NumberToStringConverter
     {
-        public static NumberToStringConverter EnglishAmericanNumbers()
+        public static NumberToStringConverter EnglishNumbers()
             => new NumberToStringConverter(
                 group: 3,
                 separator: " ",
@@ -75,7 +75,8 @@ namespace Utils.Mathematics
                     { 17, "seventeen" },
                     { 18, "eighteen" },
                     { 19, "nineteen" },
-                }
+                },
+                adjustFunction: null
             );
 
     }

@@ -8,7 +8,7 @@ namespace Utils.Mathematics
 {
     public partial class NumberToStringConverter
     {
-        public static NumberToStringConverter French20Numbers()
+        public static NumberToStringConverter French10Numbers()
             => new NumberToStringConverter(
                 group: 3,
                 separator: " ",
@@ -41,9 +41,9 @@ namespace Utils.Mathematics
                             { 4, [ "quarante", "quarante *" ] },
                             { 5, [ "cinquante", "cinquante *" ] },
                             { 6, [ "soixante", "soixante *" ] },
-                            { 7, [ "soixante dix", "soixante dix *" ] },
-                            { 8, [ "quatre vingt", "quatre vingt *" ] },
-                            { 9, [ "quatre vingt dix", "quatre vingt dix *"] }
+                            { 7, [ "septante", "septante *"] },
+                            { 8, [ "huitante", "huitante *"] },
+                            { 9, [ "nonante", "nonante *"] }
                         }
                     },
                     { 3,
@@ -76,24 +76,6 @@ namespace Utils.Mathematics
                     { 14, "quatorze" },
                     { 15, "quinze" },
                     { 16, "seize" },
-                    { 71, "soixante onze" },
-                    { 72, "soixante douze" },
-                    { 73, "soixante treize" },
-                    { 74, "soixante quatorze" },
-                    { 75, "soixante quinze" },
-                    { 76, "soixante seize" },
-                    { 77, "soixante dix sept" },
-                    { 78, "soixante dix huit" },
-                    { 79, "soixante dix neuf" },
-                    { 91, "quatre-vingt onze" },
-                    { 92, "quatre-vingt douze" },
-                    { 93, "quatre-vingt treize" },
-                    { 94, "quatre-vingt quatorze" },
-                    { 95, "quatre-vingt quinze" },
-                    { 96, "quatre-vingt seize" },
-                    { 97, "quatre-vingt dix sept" },
-                    { 98, "quatre-vingt dix huit" },
-                    { 99, "quatre-vingt dix neuf" },
                 },
                 adjustFunction: null
             );
