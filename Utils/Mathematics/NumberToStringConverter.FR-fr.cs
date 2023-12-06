@@ -12,6 +12,7 @@ namespace Utils.Mathematics
             => new NumberToStringConverter(
                 group: 3,
                 separator: " ",
+                groupSeparator: "",
                 zero: "zéro",
                 minus: "moins *",
                 groups: new Dictionary<int, Dictionary<long, string[]>>()

@@ -12,6 +12,7 @@ namespace Utils.Mathematics
             => new NumberToStringConverter(
                 group: 3,
                 separator: " ",
+                groupSeparator: ",",
                 zero: "zero",
                 minus: "minus *",
                 groups: new Dictionary<int, Dictionary<long, string[]>>()
@@ -35,14 +36,14 @@ namespace Utils.Mathematics
                         new () {
                             { 0, [ "", "*" ] },
                             { 1, [ "ten", "ten *" ] },
-                            { 2, [ "twenty", "twenty *"] },
-                            { 3, [ "thirty", "thirty *"] },
-                            { 4, [ "forty", "forty *" ] },
-                            { 5, [ "fifty", "fifty *" ] },
-                            { 6, [ "sixty", "sixty *"] },
-                            { 7, [ "seventy", "seventy *"] },
-                            { 8, [ "eighty", "eighty *"] },
-                            { 9, [ "ninety", "ninety *"] }
+                            { 2, [ "twenty", "twenty-*"] },
+                            { 3, [ "thirty", "thirty-*"] },
+                            { 4, [ "forty", "forty-*" ] },
+                            { 5, [ "fifty", "fifty-*" ] },
+                            { 6, [ "sixty", "sixty-*"] },
+                            { 7, [ "seventy", "seventy-*"] },
+                            { 8, [ "eighty", "eighty-*"] },
+                            { 9, [ "ninety", "ninety-*"] }
                         }
                     },
                     { 3,

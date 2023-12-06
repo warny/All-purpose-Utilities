@@ -11,10 +11,11 @@ namespace Utils.Mathematics
 {
 	public partial class NumberToStringConverter
 	{
-		public NumberToStringConverter(int group, string separator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale)
+		public NumberToStringConverter(int group, string separator, string groupSeparator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale)
 		{
 			Group = group;
-			Separator = separator ?? "";
+			Separator = separator ?? " ";
+			GroupSeparator = groupSeparator ?? "";
 			Zero = zero.ArgMustNotBeNull();
 			Minus = minus.ArgMustNotBeNull();
 			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, string[]>)kv.Value.ToImmutableDictionary());
@@ -24,17 +25,13 @@ namespace Utils.Mathematics
 		}
 
 		public int Group { get; } = 3;
-
-		public string Separator { get; } = " ";
-
-		public string Zero { get; } = "zéro";
-
-		public string Minus { get; } = "moins *";
+		public string Separator { get; }
+		public string GroupSeparator { get; }
+		public string Zero { get; }
+		public string Minus { get; }
 
 		public IReadOnlyDictionary<long, string> Exceptions { get; }
-
 		public IReadOnlyDictionary<string, string> Replacements { get; }
-
 		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, string[]>> Groups { get; }
 
 		public NumberScale Scale { get; }
@@ -72,15 +69,16 @@ namespace Utils.Mathematics
             while (groupsValues.Count > 0)
             {
                 result.Append(groupsValues.Pop().Trim());
+				result.Append(GroupSeparator);
                 result.Append(Separator);
             }
             if (isNegative)
             {
-                return Minus.Replace("*", result.ToString().Trim(' '));
+                return Minus.Replace("*", result.ToString().Trim([.. Separator, .. GroupSeparator]));
             }
             else
             {
-                return result.ToString().Trim(' ');
+                return result.ToString().Trim([..Separator, ..GroupSeparator]);
             }
         }
 
