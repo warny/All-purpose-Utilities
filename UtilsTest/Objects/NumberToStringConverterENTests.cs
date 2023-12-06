@@ -33,13 +33,13 @@ namespace UtilsTest.Objects
                 (160, "one hundred and sixty"),
                 (161, "one hundred and sixty one"),
                 (162, "one hundred and sixty two"),
-                (200, "two hundreds"),
-                (201, "two hundreds and one"),
-                (221, "two hundreds and twenty one"),
-                (222, "two hundreds and twenty two"),
-                (260, "two hundreds and sixty"),
-                (261, "two hundreds and sixty one"),
-                (262, "two hundreds and sixty two"),
+                (200, "two hundred"),
+                (201, "two hundred and one"),
+                (221, "two hundred and twenty one"),
+                (222, "two hundred and twenty two"),
+                (260, "two hundred and sixty"),
+                (261, "two hundred and sixty one"),
+                (262, "two hundred and sixty two"),
             ];
 
             var converter = NumberToStringConverter.EnglishAmericanNumbers();
@@ -70,13 +70,13 @@ namespace UtilsTest.Objects
                 (1160, "one thousand one hundred and sixty"),
                 (1161, "one thousand one hundred and sixty one"),
                 (1162, "one thousand one hundred and sixty two"),
-                (1200, "one thousand two hundreds"),
-                (1201, "one thousand two hundreds and one"),
-                (1221, "one thousand two hundreds and twenty one"),
-                (1222, "one thousand two hundreds and twenty two"),
-                (1260, "one thousand two hundreds and sixty"),
-                (1261, "one thousand two hundreds and sixty one"),
-                (1262, "one thousand two hundreds and sixty two"),
+                (1200, "one thousand two hundred"),
+                (1201, "one thousand two hundred and one"),
+                (1221, "one thousand two hundred and twenty one"),
+                (1222, "one thousand two hundred and twenty two"),
+                (1260, "one thousand two hundred and sixty"),
+                (1261, "one thousand two hundred and sixty one"),
+                (1262, "one thousand two hundred and sixty two"),
             };
 
             var converter = NumberToStringConverter.EnglishAmericanNumbers();
@@ -91,29 +91,29 @@ namespace UtilsTest.Objects
         public void From10000To99999Test()
         {
             (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
-                (12000, "twelve thousands"),
-                (12001, "twelve thousands one"),
-                (12002, "twelve thousands two"),
-                (12011, "twelve thousands eleven"),
-                (12020, "twelve thousands twenty"),
-                (12021, "twelve thousands twenty one"),
-                (12022, "twelve thousands twenty two"),
-                (12060, "twelve thousands sixty"),
-                (12061, "twelve thousands sixty one"),
-                (12062, "twelve thousands sixty two"),
-                (12111, "twelve thousands one hundred and eleven"),
-                (12121, "twelve thousands one hundred and twenty one"),
-                (12122, "twelve thousands one hundred and twenty two"),
-                (99160, "ninety nine thousands one hundred and sixty"),
-                (99161, "ninety nine thousands one hundred and sixty one"),
-                (99162, "ninety nine thousands one hundred and sixty two"),
-                (99200, "ninety nine thousands two hundreds"),
-                (99201, "ninety nine thousands two hundreds and one"),
-                (99221, "ninety nine thousands two hundreds and twenty one"),
-                (99222, "ninety nine thousands two hundreds and twenty two"),
-                (99260, "ninety nine thousands two hundreds and sixty"),
-                (99261, "ninety nine thousands two hundreds and sixty one"),
-                (99262, "ninety nine thousands two hundreds and sixty two"),
+                (12000, "twelve thousand"),
+                (12001, "twelve thousand one"),
+                (12002, "twelve thousand two"),
+                (12011, "twelve thousand eleven"),
+                (12020, "twelve thousand twenty"),
+                (12021, "twelve thousand twenty one"),
+                (12022, "twelve thousand twenty two"),
+                (12060, "twelve thousand sixty"),
+                (12061, "twelve thousand sixty one"),
+                (12062, "twelve thousand sixty two"),
+                (12111, "twelve thousand one hundred and eleven"),
+                (12121, "twelve thousand one hundred and twenty one"),
+                (12122, "twelve thousand one hundred and twenty two"),
+                (99160, "ninety nine thousand one hundred and sixty"),
+                (99161, "ninety nine thousand one hundred and sixty one"),
+                (99162, "ninety nine thousand one hundred and sixty two"),
+                (99200, "ninety nine thousand two hundred"),
+                (99201, "ninety nine thousand two hundred and one"),
+                (99221, "ninety nine thousand two hundred and twenty one"),
+                (99222, "ninety nine thousand two hundred and twenty two"),
+                (99260, "ninety nine thousand two hundred and sixty"),
+                (99261, "ninety nine thousand two hundred and sixty one"),
+                (99262, "ninety nine thousand two hundred and sixty two"),
             };
 
             var converter = NumberToStringConverter.EnglishAmericanNumbers();
@@ -128,11 +128,11 @@ namespace UtilsTest.Objects
         public void BiggerTest()
         {
             (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
-                (-401000, "minus four hundreds and one thousands"),
-                (401000, "four hundreds and one thousands"),
-                (999999, "nine hundreds and ninety nine thousands nine hundreds and ninety nine"),
+                (-401000, "minus four hundred and one thousand"),
+                (401000, "four hundred and one thousand"),
+                (999999, "nine hundred and ninety nine thousand nine hundred and ninety nine"),
                 (1000000, "one million"),
-                (999999999, "nine hundreds and ninety nine millions nine hundreds and ninety nine thousands nine hundreds and ninety nine"),
+                (999999999, "nine hundred and ninety nine million nine hundred and ninety nine thousand nine hundred and ninety nine"),
             };
 
             var converter = NumberToStringConverter.EnglishAmericanNumbers();
@@ -149,7 +149,7 @@ namespace UtilsTest.Objects
             (BigInteger Number, string Expected)[] tests = new (BigInteger Number, string Expected)[] {
                 (
                     new BigInteger([0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true, true),
-                    "one quinquavingtillion height hundreds and fifty two quattuorvingtillions six hundreds and seventy three tresvingtillions four hundreds and twenty seven duovingtillions seven hundreds and ninety seven univingtillions fifty nine vingtillions one hundred and twenty six novendecillions seven hundreds and seventy seven octodecillions one hundred and thirty five septendecillions seven hundreds and sixty sedecillions one hundred and thirty nine quinquadecillions six quattuordecillions five hundreds and twenty five tredecillions six hundreds and fifty two duodecillions three hundreds and nineteen unidecillions seven hundreds and fifty four decillions six hundreds and fifty nonillions two hundreds and forty nine octillions twenty four septillions six hundreds and thirty one sextillions three hundreds and twenty one quintillions three hundreds and forty four quadrillions one hundred and twenty six trillions six hundreds and ten billions seventy four millions two hundreds and thirty height thousands nine hundreds and seventy five"
+                    "one quinquavingtillion height hundred and fifty two quattuorvingtillion six hundred and seventy three tresvingtillion four hundred and twenty seven duovingtillion seven hundred and ninety seven univingtillion fifty nine vingtillion one hundred and twenty six novendecillion seven hundred and seventy seven octodecillion one hundred and thirty five septendecillion seven hundred and sixty sedecillion one hundred and thirty nine quinquadecillion six quattuordecillion five hundred and twenty five tredecillion six hundred and fifty two duodecillion three hundred and nineteen unidecillion seven hundred and fifty four decillion six hundred and fifty nonillion two hundred and forty nine octillion twenty four septillion six hundred and thirty one sextillion three hundred and twenty one quintillion three hundred and forty four quadrillion one hundred and twenty six trillion six hundred and ten billion seventy four million two hundred and thirty height thousand nine hundred and seventy five"
                 ),
             };
 

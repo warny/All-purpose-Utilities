@@ -50,18 +50,18 @@ namespace Utils.Mathematics
                         {
                             { 0, [""             , "*"             ]},
                             { 1, ["one hundred"         , "one hundred and *"        ]},
-                            { 2, ["two hundreds", "two hundreds and *"   ]},
-                            { 3, ["three hundreds", "three hundreds and *"  ]},
-                            { 4, ["four hundreds", "four hundreds and *" ]},
-                            { 5, ["five hundreds", "five hundreds and *"   ]},
-                            { 6, ["six hundreds", "six hundreds and *"    ]},
-                            { 7, ["seven hundreds", "seven hundreds and *"   ]},
-                            { 8, ["height hundreds", "height hundreds and *"   ]},
-                            { 9, ["nine hundreds", "nine hundreds and *"   ]}
+                            { 2, ["two hundred", "two hundred and *"   ]},
+                            { 3, ["three hundred", "three hundred and *"  ]},
+                            { 4, ["four hundred", "four hundred and *" ]},
+                            { 5, ["five hundred", "five hundred and *"   ]},
+                            { 6, ["six hundred", "six hundred and *"    ]},
+                            { 7, ["seven hundred", "seven hundred and *"   ]},
+                            { 8, ["height hundred", "height hundred and *"   ]},
+                            { 9, ["nine hundred", "nine hundred and *"   ]}
                         }
                     }
                 },
-                scale: new NumberScale(["", "thousand(s)"], ["on(s)"]),
+                scale: new NumberScale(["", "thousand"], ["on"]),
                 replacements: new Dictionary<string, string>() { },
                 exceptions: new Dictionary<long, string>()
                 {

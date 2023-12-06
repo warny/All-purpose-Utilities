@@ -170,7 +170,7 @@ namespace Utils.Mathematics
             "nonaginta"
         ];
 
-        public IReadOnlyList<string> HundredsPrefixes { get; } = [
+        public IReadOnlyList<string> hundredPrefixes { get; } = [
 			"",
 			"(nx)centi",
 			"(ms)ducenti",
@@ -213,7 +213,7 @@ namespace Utils.Mathematics
 				}
 
                 Match[] groupValues = [
-					prefixParser.Match(HundredsPrefixes[h]),
+					prefixParser.Match(hundredPrefixes[h]),
 					prefixParser.Match(TensPrefixes[t]),
 					prefixParser.Match(UnitsPrefixes[u])
 				];
