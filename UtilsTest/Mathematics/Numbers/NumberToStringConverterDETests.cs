@@ -135,7 +135,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (999999999, "neunhundertneunundneunzig Millionen neunhundertneunundneunzig tausend neunhundertneunundneunzig"),
             };
 
-            var converter = NumberToStringConverter.GermanNumbers;
+            var converter = NumberToStringConverter.GetConverter("de-DE");
 
             foreach (var test in tests)
             {
@@ -153,7 +153,7 @@ namespace UtilsTest.Mathematics.Numbers
                 ),
             };
 
-            var converter = NumberToStringConverter.GermanNumbers;
+            var converter = NumberToStringConverter.GetConverter("de-DE");
 
             foreach (var test in tests)
             {

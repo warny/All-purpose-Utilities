@@ -70,4 +70,19 @@
     <Folder Include="Globalization\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>NumberConverterResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Mathematics\NumberConverterResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

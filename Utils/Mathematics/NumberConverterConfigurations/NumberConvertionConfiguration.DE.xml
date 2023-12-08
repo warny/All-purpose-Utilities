@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+	<Language
+		groupSize="3"
+		separator=" "
+		groupSeparator=""
+		zero="null"
+		minus="minus *"
+	>
+		<Culture>DE</Culture>
+		<Groups>
+			<Group level="1">
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="ein" />
+				<Digit digit="2" string="zwei" />
+				<Digit digit="3" string="drei" />
+				<Digit digit="4" string="vier" />
+				<Digit digit="5" string="fünf" />
+				<Digit digit="6" string="sechs" />
+				<Digit digit="7" string="sieben" />
+				<Digit digit="8" string="acht" />
+				<Digit digit="9" string="neun" />
+			</Group>
+			<Group level="2">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="zehn" buildString="*zehn" />
+				<Digit digit="2" string="zwanzig" buildString="*undzwanzig" />
+				<Digit digit="3" string="dreizig" buildString="*unddreizig" />
+				<Digit digit="4" string="vierzig" buildString="*undvierzig" />
+				<Digit digit="5" string="fünfzig" buildString="*undfünfzig" />
+				<Digit digit="6" string="sechzig" buildString="*undsechzig" />
+				<Digit digit="7" string="siebzig" buildString="*undsiebzig" />
+				<Digit digit="8" string="achtzich" buildString="undachtzich" />
+				<Digit digit="9" string="neunzig" buildString="*undneunzig" />
+			</Group>
+			<Group level="3">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="einhundert" buildString="einhundert*" />
+				<Digit digit="2" string="zweihundert" buildString="zweihundert*" />
+				<Digit digit="3" string="dreihundert" buildString="dreihundert*" />
+				<Digit digit="4" string="vierhundert" buildString="vierhundert*" />
+				<Digit digit="5" string="fünfhundert" buildString="fünfhundert*" />
+				<Digit digit="6" string="sechshundert" buildString="sechshundert*" />
+				<Digit digit="7" string="siebenhundert" buildString="siebenhundert*" />
+				<Digit digit="8" string="achthundert" buildString="achthundert*" />
+				<Digit digit="9" string="neunhundert" buildString="neunhundert*" />
+			</Group>
+		</Groups>
+		<NumberScale firstLetterUpperCase="true">
+			<StaticNames>
+				<Scale value="0" string=""/>
+				<Scale value="1" string="tausend"/>
+			</StaticNames>
+			<Suffixes>
+				<Suffix>on(en)</Suffix>
+				<Suffix>arde(n)</Suffix>
+			</Suffixes>
+			<TensPrefixes>
+				<Digit digit="0" string=""/>
+				<Digit digit="1" string="(n)dezi"/>
+				<Digit digit="2" string="(ms)vingti"/>
+				<Digit digit="3" string="(ns)triginta"/>
+				<Digit digit="4" string="(ns)quadraginta"/>
+				<Digit digit="5" string="(ns)quinquaginta"/>
+				<Digit digit="6" string="(n)sexaginta"/>
+				<Digit digit="7" string="(n)septuaginta"/>
+				<Digit digit="8" string="(mxs)octoginta"/>
+				<Digit digit="9" string="nonaginta"/>
+			</TensPrefixes>
+		</NumberScale>
+		<Replacements>
+			<Replacement oldValue="un mille" newValue="mille" />
+		</Replacements>
+		<Exceptions>
+			<Number value="11" string="elf" />
+			<Number value="12" string="zwölf" />
+			<Number value="16" string="sechzehn" />
+			<Number value="17" string="siebzehn" />
+		</Exceptions>
+		<AdjustFunction>
+			<![CDATA[
+			(string s)=>	{
+				s = Regex.Replace(s, @"\bein (?<l>[A-Z])", "eine ${l}");
+				s = s.EndsWith("ein") ? s + "s" : s;
+				s
+			}
+			]]>
+		</AdjustFunction>
+	</Language>
+</Numbers>

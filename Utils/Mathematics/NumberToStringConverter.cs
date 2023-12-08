@@ -16,30 +16,22 @@ namespace Utils.Mathematics
 
         public static NumberToStringConverter GetConverter(string culture) {
 			culture.Length.ArgMustBeIn([2, 5]);
-			var result = culture switch
-			{
-				"fr" => French20Numbers,
-				"fr-BE" => French10Numbers,
-				"fr-CH" => French10Numbers,
-				"en" => EnglishNumbers,
-				"de" => GermanNumbers,
-				_ => null
-			};
-			if (result != null) return result;
+
+			if (configurations.TryGetValue(culture, out var result)) return result;
 			if (culture.Length == 5) return GetConverter(culture[0..2]);
-			return EnglishNumbers;
+			return configurations["EN"];
 		}
 
 
 
-		public NumberToStringConverter(int group, string separator, string groupSeparator, string zero, string minus, Dictionary<int, Dictionary<long, string[]>> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale, Func<string, string> adjustFunction = null)
+		public NumberToStringConverter(int group, string separator, string groupSeparator, string zero, string minus, IReadOnlyDictionary<int, DigitListType> groups, IReadOnlyDictionary<long, string> exceptions, IReadOnlyDictionary<string, string> replacements, NumberScale scale, Func<string, string> adjustFunction = null)
 		{
 			Group = group;
 			Separator = separator ?? " ";
 			GroupSeparator = groupSeparator ?? "";
 			Zero = zero.ArgMustNotBeNull();
 			Minus = minus.ArgMustNotBeNull();
-			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, string[]>)kv.Value.ToImmutableDictionary());
+			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d=>(long)d.Digit).ToImmutableDictionary());
 			Exceptions = exceptions.ArgMustNotBeNull().ToImmutableDictionary();
 			Replacements = replacements ?? new Dictionary<string,string>().ToImmutableDictionary();
 			Scale = scale;
@@ -55,7 +47,7 @@ namespace Utils.Mathematics
         public Func<string, string> AdjustFunction { get; }
         public IReadOnlyDictionary<long, string> Exceptions { get; }
 		public IReadOnlyDictionary<string, string> Replacements { get; }
-		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, string[]>> Groups { get; }
+		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
 
 		public NumberScale Scale { get; }
 
@@ -98,14 +90,9 @@ namespace Utils.Mathematics
 				result.Append(GroupSeparator);
                 result.Append(Separator);
             }
-            if (isNegative)
-            {
-                return AdjustFunction(Minus.Replace("*", result.ToString().Trim([.. Separator, .. GroupSeparator])));
-            }
-            else
-            {
-                return AdjustFunction(result.ToString().Trim([..Separator, ..GroupSeparator]));
-            }
+			string v = result.ToString().Trim([.. Separator, .. GroupSeparator]);
+			v = isNegative ? Minus.Replace("*", v) : v;
+            return AdjustFunction(v);
         }
 
 
@@ -124,36 +111,50 @@ namespace Utils.Mathematics
 			var valueText = Groups[groupNumber][groupValue];
 			if (leftText.Length > 0)
 			{
-				return valueText.First(v => v.Contains('*')).Replace("*", leftText);
+				return valueText.BuildString.Replace("*", leftText);
 			}
 			else
 			{
-				return valueText.First(v => !v.Contains('*'));
+				return valueText.StringValue;
 			}
 		}
 	}
 
 	public class NumberScale {
-		public NumberScale(IReadOnlyList<string> staticValues, IReadOnlyList<string> scaleSuffixes, bool staticFirstLetterUpercase = false, bool firstLetterUppercase = false)
+		public NumberScale(
+			IReadOnlyList<string> staticValues,
+			IReadOnlyList<string> scaleSuffixes,
+			string voidGroup = "ni",
+			string groupSeparator = "lli",
+			IReadOnlyList<string> scale0Prefixes = null,
+			IReadOnlyList<string> unitsPrefixes = null,
+            IReadOnlyList<string> tensPrefixes = null,
+            IReadOnlyList<string> hundredsPrefixes = null,
+            bool firstLetterUppercase = false)
 		{
 			staticValues.ArgMustNotBeNull();
 			scaleSuffixes.ArgMustNotBeNull();
 			scaleSuffixes.ArgMustNotBeEmpty();
 
-			StaticValues = staticValues.ToImmutableArray();
+            StaticValues = staticValues.ToImmutableArray();
 			ScaleSuffixes = scaleSuffixes.ToImmutableArray();
 			FirstLetterUppercase = firstLetterUppercase;
-			StaticFirstLetterUppercase = staticFirstLetterUpercase;
+			
+			VoidGroup = voidGroup.NotNullOrEmptyOrDefault("ni");
+			GroupSeparator = groupSeparator.NotNullOrEmptyOrDefault("lli");
+
+			Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
+			UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;
+            TensPrefixes = tensPrefixes?.ToImmutableArray() ?? TensPrefixes;
+            HundredsPrefixes = hundredsPrefixes?.ToImmutableArray() ?? HundredsPrefixes;
 		}
 
         public IReadOnlyList<string> StaticValues { get; }
 		public IReadOnlyList<string> ScaleSuffixes { get; }
 		public bool FirstLetterUppercase { get; }
-		public bool StaticFirstLetterUppercase { get; }
 
-
-		private const string VoidGroup = "ni";
-		private const string GroupSeparator = "lli";
+		private readonly string VoidGroup;
+		private readonly string GroupSeparator;
 
 		private static readonly Regex prefixParser = new(@"(\((?<start>\w+)\))?(?<value>\w+)(\((?<end>\w+)\))?", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture);
 
@@ -171,7 +172,7 @@ namespace Utils.Mathematics
 		];
 
 
-		public IReadOnlyList<string> UnitsPrefixes { get; init; } = [
+		public IReadOnlyList<string> UnitsPrefixes { get; } = [
 			"",
 			"uni",
 			"duo",
@@ -184,7 +185,7 @@ namespace Utils.Mathematics
 			"nove(mn)"
 		];
 
-		public IReadOnlyList<string> TensPrefixes { get; init; } = [
+		public IReadOnlyList<string> TensPrefixes { get; } = [
 			"",
 			"(n)deci",
 			"(ms)vingti",
@@ -197,7 +198,7 @@ namespace Utils.Mathematics
             "nonaginta"
         ];
 
-        public IReadOnlyList<string> hundredPrefixes { get; init; } = [
+        public IReadOnlyList<string> HundredsPrefixes { get; } = [
 			"",
 			"(nx)centi",
 			"(ms)ducenti",
@@ -216,7 +217,6 @@ namespace Utils.Mathematics
 			if (scale < StaticValues.Count)
 			{
 				var value = StaticValues[scale];
-                if (StaticFirstLetterUppercase) value = value[..1].ToUpper() + value[1..];
                 return value;
 			}
 			scale -= StaticValues.Count;
@@ -247,7 +247,7 @@ namespace Utils.Mathematics
 				}
 
                 Match[] groupValues = [
-					prefixParser.Match(hundredPrefixes[h]),
+					prefixParser.Match(HundredsPrefixes[h]),
 					prefixParser.Match(TensPrefixes[t]),
 					prefixParser.Match(UnitsPrefixes[u])
 				];

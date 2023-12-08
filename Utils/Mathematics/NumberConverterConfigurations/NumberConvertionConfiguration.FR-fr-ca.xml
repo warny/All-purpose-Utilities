@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+	<Language
+		groupSize="3"
+		separator=" "
+		groupSeparator=""
+		zero="zéro"
+		minus="moins *"
+	>
+		<Culture>FR</Culture>
+		<Culture>FR-fr</Culture>
+		<Culture>FR-ca</Culture>
+		<Groups>
+			<Group level="1">
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="et un" />
+				<Digit digit="2" string="deux" />
+				<Digit digit="3" string="trois" />
+				<Digit digit="4" string="quatre" />
+				<Digit digit="5" string="cinq" />
+				<Digit digit="6" string="six" />
+				<Digit digit="7" string="sept" />
+				<Digit digit="8" string="huit" />
+				<Digit digit="9" string="neuf" />
+			</Group>
+			<Group level="2">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="dix" buildString="dix *" />
+				<Digit digit="2" string="vingt" buildString="vingt *" />
+				<Digit digit="3" string="trente" buildString="trente *" />
+				<Digit digit="4" string="quarante" buildString="quarante *" />
+				<Digit digit="5" string="cinquante" buildString="cinquante *" />
+				<Digit digit="6" string="soixante" buildString="soixante *" />
+				<Digit digit="7" string="soixante-dix" buildString="soixante dix *" />
+				<Digit digit="8" string="quatre-vingt" buildString="quatre vingt *" />
+				<Digit digit="9" string="quatre-vingt dix" buildString="quatre vingt dix *" />
+			</Group>
+			<Group level="3">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="cent" buildString="cent *" />
+				<Digit digit="2" string="deux cents" buildString="deux cent *" />
+				<Digit digit="3" string="trois cents" buildString="trois cent *" />
+				<Digit digit="4" string="quatre cents" buildString="quatre cent *" />
+				<Digit digit="5" string="cinq cents" buildString="cinq cent *" />
+				<Digit digit="6" string="six cents" buildString="six cent *" />
+				<Digit digit="7" string="sept cents" buildString="sept cent *" />
+				<Digit digit="8" string="huit cents" buildString="huit cent *" />
+				<Digit digit="9" string="neuf cents" buildString="neuf cent *" />
+			</Group>
+		</Groups>
+		<NumberScale firstLetterUpperCase="false">
+			<StaticNames>
+				<Scale value="0" string=""/>
+				<Scale value="1" string="mille"/>
+			</StaticNames>
+			<Suffixes>
+				<Suffix>on(s)</Suffix>
+				<Suffix>ard(s)</Suffix>
+			</Suffixes>
+		</NumberScale>
+		<Replacements>
+			<Replacement oldValue="un mille" newValue="mille" />
+		</Replacements>
+		<Exceptions>
+			<Number value="1" string="un" />
+			<Number value="11" string="onze" />
+			<Number value="12" string="douze" />
+			<Number value="13" string="treize" />
+			<Number value="14" string="quatorze" />
+			<Number value="15" string="quinze" />
+			<Number value="16" string="seize" />
+			<Number value="71" string="soixante onze" />
+			<Number value="72" string="soixante douze" />
+			<Number value="73" string="soixante treize" />
+			<Number value="74" string="soixante quatorze" />
+			<Number value="75" string="soixante quinze" />
+			<Number value="76" string="soixante seize" />
+			<Number value="77" string="soixante dix sept" />
+			<Number value="78" string="soixante dix huit" />
+			<Number value="79" string="soixante dix neuf" />
+			<Number value="91" string="quatre-vingt onze" />
+			<Number value="92" string="quatre-vingt douze" />
+			<Number value="93" string="quatre-vingt treize" />
+			<Number value="94" string="quatre-vingt quatorze" />
+			<Number value="95" string="quatre-vingt quinze" />
+			<Number value="96" string="quatre-vingt seize" />
+			<Number value="97" string="quatre-vingt dix sept" />
+			<Number value="98" string="quatre-vingt dix huit" />
+			<Number value="99" string="quatre-vingt dix neuf" />
+		</Exceptions>
+	</Language>
+</Numbers>

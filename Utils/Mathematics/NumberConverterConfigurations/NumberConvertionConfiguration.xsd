@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="NumberConvertionConfiguration"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="Utils/NumberConvertionConfiguration.xsd"
+    xmlns="Utils/NumberConvertionConfiguration.xsd"
+    elementFormDefault="qualified"
+>
+	<xs:complexType name="DigitType">
+		<xs:attribute name="digit">
+			<xs:simpleType>
+				<xs:restriction base="xs:long">
+					<xs:totalDigits value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="string" type="xs:string" use="required"/>
+		<xs:attribute name="buildString" type="xs:string"/>
+	</xs:complexType>
+	
+	<xs:complexType name="DigitListType">
+		<xs:sequence>
+			<xs:element name="Digit" type="DigitType" minOccurs="10" maxOccurs="10"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="NumberType">
+		<xs:attribute name="value" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:long" />
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="string" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="NumberListType">
+		<xs:sequence>
+			<xs:element name="Number" type="NumberType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:element name="Numbers">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Language">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Culture" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+							<xs:element name="Groups">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Group" maxOccurs="3">
+											<xs:complexType>
+												<xs:complexContent>
+													<xs:extension base="DigitListType">
+														<xs:attribute name="level" type="xs:long" use="required"/>
+													</xs:extension>
+												</xs:complexContent>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="NumberScale">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="StaticNames">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Scale" type="NumberType" minOccurs="0" maxOccurs="unbounded" />
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Suffixes">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Suffix" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Scale0Prefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
+										<xs:element name="UnitsPrefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
+										<xs:element name="TensPrefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
+										<xs:element name="HundredsPrefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
+									</xs:sequence>
+									<xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="required"/>
+									<xs:attribute name="voidGroup" type="xs:string" />
+									<xs:attribute name="groupSeparator" type="xs:string" />
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Replacements">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Replacement" maxOccurs="unbounded">
+											<xs:complexType>
+												<xs:attribute name="oldValue" type="xs:string" use="required"/>
+												<xs:attribute name="newValue" type="xs:string" use="required"/>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Exceptions" type="NumberListType" />
+							<xs:element name="AdjustFunction" minOccurs="0" maxOccurs="1">
+								<xs:complexType>
+									<xs:simpleContent>
+										<xs:extension base="xs:string"/>
+									</xs:simpleContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+						<xs:attribute name="baseOn" type="xs:string"/>
+						<xs:attribute name="groupSize" type="xs:long" use="required"/>
+						<xs:attribute name="separator" type="xs:string" use="required"/>
+						<xs:attribute name="groupSeparator" type="xs:string" use="required"/>
+						<xs:attribute name="zero" type="xs:string" use="required"/>
+						<xs:attribute name="minus" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+</xs:schema>

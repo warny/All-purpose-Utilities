@@ -391,8 +391,8 @@ public class CStyleBuilder : IBuilder
     private static bool StringTransform2(string token, out string result)
     {
         result = null;
-        if (!token.StartsWith("@\"") || token.StartsWith("\"\"\"")) return false;
-        token = token[1..^1];
+        if (!token.StartsWith("@\"")) return false;
+        token = token[2..^1];
         result = token.Replace("\"\"", "\"");
         return true;
     }
