@@ -73,10 +73,16 @@ public class PlusOperatorBuilder() : IFollowUpExpressionBuilder
 }
 
 
-public class OperatorBuilder(Func<Expression, Expression, Expression> buildOperator, bool adjustNumberType) : IFollowUpExpressionBuilder
+public class OperatorBuilder : IFollowUpExpressionBuilder
 {
-    private Func<Expression, Expression, Expression> BuildOperator => buildOperator;
-    private bool AdjustNumberType => adjustNumberType;
+    public OperatorBuilder(Func<Expression, Expression, Expression> buildOperator, bool adjustNumberType)
+    {
+        this.BuildOperator = buildOperator;
+        this.AdjustNumberType = adjustNumberType;
+    }
+
+    private Func<Expression, Expression, Expression> BuildOperator { get; }
+    private bool AdjustNumberType { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
@@ -138,7 +144,7 @@ public class TypeMatchBuilder : IFollowUpExpressionBuilder
     }
 }
 
-public class AddAssignationBuilder() : IFollowUpExpressionBuilder
+public class AddAssignationBuilder : IFollowUpExpressionBuilder
 {
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
@@ -179,9 +185,14 @@ public class AddAssignationBuilder() : IFollowUpExpressionBuilder
 }
 
 
-public class AssignationBuilder(Func<Expression, Expression, BinaryExpression> buildOperator) : IFollowUpExpressionBuilder
+public class AssignationBuilder : IFollowUpExpressionBuilder
 {
-    private Func<Expression, Expression, BinaryExpression> BuildOperator => buildOperator;
+    public AssignationBuilder(Func<Expression, Expression, BinaryExpression> buildOperator)
+    {
+        this.BuildOperator = buildOperator;
+    }
+
+    private Func<Expression, Expression, BinaryExpression> BuildOperator { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
@@ -191,9 +202,14 @@ public class AssignationBuilder(Func<Expression, Expression, BinaryExpression> b
     }
 }
 
-public class PostOperationBuilder(Func<Expression, UnaryExpression> buildOperator) : IFollowUpExpressionBuilder
+public class PostOperationBuilder : IFollowUpExpressionBuilder
 {
-    private Func<Expression, UnaryExpression> BuildOperator => buildOperator;
+    public PostOperationBuilder(Func<Expression, UnaryExpression> buildOperator)
+    {
+        this.BuildOperator = buildOperator;
+    }
+
+    private Func<Expression, UnaryExpression> BuildOperator { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {

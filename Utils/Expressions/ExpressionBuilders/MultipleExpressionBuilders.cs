@@ -12,7 +12,7 @@ public class BracketBuilder : IFollowUpExpressionBuilder
 {
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
-        Parenthesis brackets = new Parenthesis("[", "]", ",");
+        Parenthesis brackets = new("[", "]", ",");
         // Indexer access
         if (currentExpression.Type.IsArray)
         {
@@ -64,29 +64,41 @@ public class RightParenthesisBuilder : IFollowUpExpressionBuilder
     }
 }
 
-public class CloseBuilder(string wrapStart) : IFollowUpExpressionBuilder
+public class CloseBuilder : IFollowUpExpressionBuilder
 {
-    private string WrapStart => wrapStart;
+    public CloseBuilder(string wrapStart)
+    {
+        this.WrapStart = wrapStart;
+    }
+
+    private string WrapStart { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
-        if (wrapStart != this.WrapStart)
+        if (WrapStart != this.WrapStart)
         {
-            throw new ParseUnmatchException(wrapStart, nextVal, context.Tokenizer.Position.Index);
+            throw new ParseUnmatchException(WrapStart, nextVal, context.Tokenizer.Position.Index);
         }
         isClosedWrap = true;
         return currentExpression;
     }
 }
 
-public class ConditionalBuilder(string choiceSymbol) : IFollowUpExpressionBuilder, IAdditionalTokens
+public class ConditionalBuilder : IFollowUpExpressionBuilder, IAdditionalTokens
 {
-    public IEnumerable<string> AdditionalTokens => [":"];
+    public ConditionalBuilder(string choiceSymbol)
+    {
+        this.ChoiceSymbol = choiceSymbol;
+    }
+
+    public IEnumerable<string> AdditionalTokens => [ChoiceSymbol];
+
+    public string ChoiceSymbol { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, Expression currentExpression, string val, string nextVal, int priorityLevel, ref int nextLevel, Parenthesis markers, ref bool isClosedWrap)
     {
         Expression first = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
-        context.Tokenizer.ReadSymbol(choiceSymbol);
+        context.Tokenizer.ReadSymbol(ChoiceSymbol);
         Expression second = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
         return Expression.Condition(currentExpression, first, second);
     }

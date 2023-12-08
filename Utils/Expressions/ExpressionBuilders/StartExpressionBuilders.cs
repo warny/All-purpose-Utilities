@@ -225,21 +225,35 @@ public class NewBuilder : IStartExpressionBuilder, IAdditionalTokens
     }
 }
 
-public class UnaryOperandBuilder(Func<Expression, UnaryExpression> buildOperator) : IStartExpressionBuilder
+public class UnaryOperandBuilder : IStartExpressionBuilder
 {
-    public Func<Expression, UnaryExpression> OperatorBuilder => buildOperator;
+    public UnaryOperandBuilder(Func<Expression, UnaryExpression> buildOperator)
+    {
+        this.OperatorBuilder = buildOperator;
+    }
+
+    public Func<Expression, UnaryExpression> OperatorBuilder { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
         => OperatorBuilder(parser.ReadExpression(context, parser.Options.GetOperatorLevel(val, true), markers, out isClosedWrap));
 }
 
-public class ParenthesisBuilder(string closeParenthesis, string separator) : IStartExpressionBuilder, IAdditionalTokens
+public class ParenthesisBuilder : IStartExpressionBuilder, IAdditionalTokens
 {
-    public IEnumerable<string> AdditionalTokens => [closeParenthesis, separator, "<", ">", "(", ")"];
+    public IEnumerable<string> AdditionalTokens => [CloseParenthesis, Separator, "<", ">", "(", ")"];
+
+    public ParenthesisBuilder(string closeParenthesis, string separator)
+    {
+        this.CloseParenthesis = closeParenthesis;
+        this.Separator = separator;
+    }
+
+    public string CloseParenthesis { get; }
+    public string Separator { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
-        var parenthesis = new Parenthesis(val, closeParenthesis, separator);
+        var parenthesis = new Parenthesis(val, CloseParenthesis, Separator);
 
         context.Tokenizer.PushPosition();
         string str = ParserExtensions.GetBracketString(context, parenthesis, true);
@@ -309,13 +323,23 @@ public class ParenthesisBuilder(string closeParenthesis, string separator) : ISt
     }
 }
 
-public class BlockBuilder(string closeParenthesis, string separator) : IStartExpressionBuilder, IAdditionalTokens
+public class BlockBuilder : IStartExpressionBuilder, IAdditionalTokens
 {
-    public IEnumerable<string> AdditionalTokens => [closeParenthesis, separator];
+    public BlockBuilder(string closeParenthesis, string separator)
+    {
+        this.CloseParenthesis = closeParenthesis;
+        this.Separator = separator;
+    }
+
+    public IEnumerable<string> AdditionalTokens => [CloseParenthesis, Separator];
+
+    public string CloseParenthesis { get; }
+
+    public string Separator { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
-        var blockMarkers = new Parenthesis(val, closeParenthesis, separator);
+        var blockMarkers = new Parenthesis(val, CloseParenthesis, Separator);
 
         context.PushContext();
         var expressions = parser.ReadExpressions(context, blockMarkers, false);
@@ -403,9 +427,16 @@ public class DefaultUnaryBuilder : IStartExpressionBuilder
     }
 }
 
-public class IfBuilder(string elseKeyword) : IStartExpressionBuilder, IAdditionalTokens
+public class IfBuilder : IStartExpressionBuilder, IAdditionalTokens
 {
-    public IEnumerable<string> AdditionalTokens => [elseKeyword];
+
+    public IfBuilder(string elseKeyword)
+    {
+        ElseKeyword = elseKeyword;
+    }
+
+    public IEnumerable<string> AdditionalTokens => [ElseKeyword];
+    public string ElseKeyword { get; }
 
     public Expression Build(ExpressionParserCore parser, ParserContext context, string val, int priorityLevel, Parenthesis markers, ref bool isClosedWrap)
     {
@@ -416,7 +447,7 @@ public class IfBuilder(string elseKeyword) : IStartExpressionBuilder, IAdditiona
         context.Tokenizer.PushPosition();
         if (ifTrueExpression is not BlockExpression) context.Tokenizer.ReadSymbol(";");
         var nextToken = context.Tokenizer.ReadToken();
-        if (nextToken == elseKeyword)
+        if (nextToken == ElseKeyword)
         {
             context.Tokenizer.DiscardPosition();
             var ifFalseExpression = parser.ReadExpression(context, 0, null, out _);

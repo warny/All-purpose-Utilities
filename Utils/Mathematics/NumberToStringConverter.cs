@@ -208,70 +208,74 @@ namespace Utils.Mathematics
             "(mxs)octingenti",
             "nongenti"
         ];
-		
 
-		public string GetScaleName(int scale)
-		{
-			if (scale < StaticValues.Count)
-			{
-				var value = StaticValues[scale];
-                return value;
-			}
-			scale -= StaticValues.Count;
+
+        public string GetScaleName(int scale)
+        {
+            if (scale < StaticValues.Count)
+            {
+                return StaticValues[scale];
+            }
+
+            scale -= StaticValues.Count;
             var result = int.DivRem(scale, ScaleSuffixes.Count);
 
-			var suffix = ScaleSuffixes[result.Remainder];
-			var prefix = result.Quotient + 1;
+            var suffix = ScaleSuffixes[result.Remainder];
+            var prefix = result.Quotient + 1;
 
-			if (prefix.Between(0, 9))
-			{
-				var value = Scale0Prefixes[prefix] + GroupSeparator + suffix;
-                if (FirstLetterUppercase) value = value[..1].ToUpper() + value[1..];
-                return value;
-			}
+            if (prefix.Between(0, 9))
+            {
+                var value = Scale0Prefixes[prefix] + GroupSeparator + suffix;
+                return FirstLetterUppercase ? char.ToUpper(value[0]) + value[1..] : value;
+            }
 
-			List<string> prefixes = [];
+            var prefixes = new List<string>();
 
-			while (prefix > 0)
-			{
-				(prefix, var u) = int.DivRem(prefix, 10);
-                (prefix, var t) = int.DivRem(prefix, 10);
-                (prefix, var h) = int.DivRem(prefix, 10);
+            while (prefix > 0)
+            {
+                (prefix, int u) = Math.DivRem(prefix, 10);
+                (prefix, int t) = Math.DivRem(prefix, 10);
+                (prefix, int h) = Math.DivRem(prefix, 10);
 
-				if (h == 0 && t == 0 && u == 0)
-				{
-					prefixes.Add(VoidGroup);
-					continue;
-				}
-
-                Match[] groupValues = [
-					prefixParser.Match(HundredsPrefixes[h]),
-					prefixParser.Match(TensPrefixes[t]),
-					prefixParser.Match(UnitsPrefixes[u])
-				];
-
-				string value = "";
-				string start = "", end = "";
-
-				foreach (Match match in groupValues)
-				{
-					if (match.Value == null) continue;
-					end = match.Groups["end"].Value;
-
-					if (start != "")
-					{
-						foreach (var s in end)
-						{
-							if (start.Contains(s)) value = s + value;
-						}
-					}
-					value = match.Groups["value"].Value + value;
-                    start = match.Groups["start"].Value;
+                if (h == 0 && t == 0 && u == 0)
+                {
+                    prefixes.Add(VoidGroup);
+                    continue;
                 }
-				if (FirstLetterUppercase) value = value = value[..1].ToUpper() + value[1..];
+
+                Match[] groupValues =
+                {
+                    prefixParser.Match(HundredsPrefixes[h]),
+                    prefixParser.Match(TensPrefixes[t]),
+                    prefixParser.Match(UnitsPrefixes[u])
+                };
+
+                string value = "";
+                string start = "", end = "";
+
+                foreach (Match match in groupValues)
+                {
+                    if (match.Success)
+                    {
+                        end = match.Groups["end"].Value;
+
+                        if (start != "")
+                        {
+                            foreach (var s in end)
+                            {
+                                if (start.Contains(s)) value = s + value;
+                            }
+                        }
+                        value = match.Groups["value"].Value + value;
+                        start = match.Groups["start"].Value;
+                    }
+                }
+
+                if (FirstLetterUppercase) value = char.ToUpper(value[0]) + value[1..];
                 prefixes.Add(value);
             }
-            return string.Join(GroupSeparator, Enumerable.Reverse(prefixes)) + GroupSeparator + suffix;
+
+            return string.Join(GroupSeparator, prefixes.AsEnumerable().Reverse()) + GroupSeparator + suffix;
         }
-	}
+    }
 }
