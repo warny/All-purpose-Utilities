@@ -57,19 +57,21 @@ namespace Utils.Mathematics
         public string Convert(BigInteger number)
         {
             if (number == 0) { return Zero; }
-			if (number.Between(long.MinValue, long.MaxValue))
-			{
-                if (Exceptions.TryGetValue((long)number, out var value)) return AdjustFunction(value);
-			}
+
+            if (number.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)number, out var value))
+            {
+                return AdjustFunction(value);
+            }
 
             var maxGroup = Groups.Keys.Max();
             var groupValue = BigInteger.Pow(10, maxGroup);
 
-            bool isNegative = number < 0;
-            Stack<string> groupsValues = new();
-            if (isNegative) { number = -number; }
+            bool isNegative = number.Sign == -1;
+            if (isNegative) { number = BigInteger.Abs(number); }
 
             int groupNumber = 0;
+            var groupsValues = new Stack<string>();
+
             while (number != 0)
             {
                 var group = (long)(number % groupValue);
@@ -83,44 +85,40 @@ namespace Utils.Mathematics
                 groupNumber++;
             }
 
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
             while (groupsValues.Count > 0)
             {
                 result.Append(groupsValues.Pop().Trim());
-				result.Append(GroupSeparator);
+                result.Append(GroupSeparator);
                 result.Append(Separator);
             }
-			string v = result.ToString().Trim([.. Separator, .. GroupSeparator]);
-			v = isNegative ? Minus.Replace("*", v) : v;
+
+            var v = result.ToString().TrimEnd([..GroupSeparator, ..Separator]);
+            v = isNegative ? Minus.Replace("*", v) : v;
+
             return AdjustFunction(v);
         }
 
 
         public string ConvertGroup(int groupNumber, long number)
-		{
-			if (groupNumber == 0) { return string.Empty; }
-			if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value))
-			{
-				return value;
-			}
+        {
+            if (groupNumber == 0) { return string.Empty; }
+            if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value))
+            {
+                return value;
+            }
 
-			long group = (long) Math.Pow(10, groupNumber - 1);
-			(var groupValue, var remainder) = long.DivRem(number, group);
+            long group = (long)Math.Pow(10, groupNumber - 1);
+            var (groupValue, remainder) = long.DivRem(number, group);
 
-			var leftText = ConvertGroup(groupNumber - 1, remainder);
-			var valueText = Groups[groupNumber][groupValue];
-			if (leftText.Length > 0)
-			{
-				return valueText.BuildString.Replace("*", leftText);
-			}
-			else
-			{
-				return valueText.StringValue;
-			}
-		}
-	}
+            var leftText = ConvertGroup(groupNumber - 1, remainder);
+            var valueText = Groups[groupNumber][groupValue];
 
-	public class NumberScale {
+            return leftText.Length > 0 ? valueText.BuildString.Replace("*", leftText) : valueText.StringValue;
+        }
+    }
+
+    public class NumberScale {
 		public NumberScale(
 			IReadOnlyList<string> staticValues,
 			IReadOnlyList<string> scaleSuffixes,
