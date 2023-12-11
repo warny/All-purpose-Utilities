@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Utils.Expressions
+namespace Utils.Collections
 {
     public class SymbolTree : IEnumerable<string>
     {
@@ -61,12 +61,12 @@ namespace Utils.Expressions
         public char Character { get; }
         public string Value { get; internal set; }
         public bool IsFinal => SubItems is null || !SubItems.Any();
-        internal IDictionary <char, SymbolLeaf> SubItems { get; } = new Dictionary<char, SymbolLeaf>();
+        internal IDictionary<char, SymbolLeaf> SubItems { get; } = new Dictionary<char, SymbolLeaf>();
         public bool TryFindNext(char c, out SymbolLeaf leaf) => SubItems.TryGetValue(c, out leaf);
 
-        public IEnumerable<string> Values 
-            => Value is not null 
-            ? SubItems.SelectMany(i=>i.Value.Values).Prepend(Value)
+        public IEnumerable<string> Values
+            => Value is not null
+            ? SubItems.SelectMany(i => i.Value.Values).Prepend(Value)
             : SubItems.SelectMany(i => i.Value.Values);
 
         internal SymbolLeaf(string value, int index)

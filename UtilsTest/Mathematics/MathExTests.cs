@@ -61,6 +61,112 @@ public class MathExTests
 	}
 
     [TestMethod]
+    public void RoundTest()
+	{
+		var tests = new (double number, double @base, double result)[]
+		{
+			(1, 2, 2),
+			(2, 3, 3),
+			(3, 2, 4),
+			(3, 3, 3),
+            (1.24, 0.5, 1),
+            (1.25, 0.5, 1.5),
+            (1.26, 0.5, 1.5),
+            (1.74, 0.5, 1.5),
+            (1.75, 0.5, 2),
+            (1.76, 0.5, 2),
+
+            (-1, 2, 0),
+            (-2, 3, -3),
+            (-3, 2, -2),
+            (-3, 3, -3),
+            (-1.24, 0.5, -1),
+            (-1.25, 0.5, -1),
+            (-1.26, 0.5, -1.5),
+            (-1.74, 0.5, -1.5),
+            (-1.75, 0.5, -1.5),
+            (-1.76, 0.5, -2),
+        };
+
+		foreach (var test in tests)
+		{
+			var result = MathEx.Round(test.number, test.@base);
+            Assert.AreEqual(test.result, result, $"Round({test.number}, {test.@base})");
+		}
+	}
+
+    [TestMethod]
+    public void FloorTest()
+    {
+        var tests = new (double number, double @base, double result)[]
+        {
+            (1, 2, 0),
+            (2, 3, 0),
+            (3, 2, 2),
+            (3, 3, 3),
+            (1.24, 0.5, 1),
+            (1.25, 0.5, 1),
+            (1.26, 0.5, 1),
+            (1.74, 0.5, 1.5),
+            (1.75, 0.5, 1.5),
+            (1.76, 0.5, 1.5),
+
+            (-1, 2, -2),
+            (-2, 3, -3),
+            (-3, 2, -4),
+            (-3, 3, -3),
+            (-1.24, 0.5, -1.5),
+            (-1.25, 0.5, -1.5),
+            (-1.26, 0.5, -1.5),
+            (-1.74, 0.5, -2),
+            (-1.75, 0.5, -2),
+            (-1.76, 0.5, -2),
+        };
+
+        foreach (var test in tests)
+        {
+            var result = MathEx.Floor(test.number, test.@base);
+            Assert.AreEqual(test.result, result, $"Floor({test.number}, {test.@base})");
+        }
+    }
+
+    [TestMethod]
+    public void CeilingTest()
+    {
+        var tests = new (double number, double @base, double result)[]
+        {
+            (1, 2, 2),
+            (2, 3, 3),
+            (3, 2, 4),
+            (3, 3, 3),
+            (1.24, 0.5, 1.5),
+            (1.25, 0.5, 1.5),
+            (1.26, 0.5, 1.5),
+            (1.74, 0.5, 2),
+            (1.75, 0.5, 2),
+            (1.76, 0.5, 2),
+
+            (-1, 2, 0),
+            (-2, 3, 0),
+            (-3, 2, -2),
+            (-3, 3, -3),
+            (-1.24, 0.5, -1),
+            (-1.25, 0.5, -1),
+            (-1.26, 0.5, -1),
+            (-1.74, 0.5, -1.5),
+            (-1.75, 0.5, -1.5),
+            (-1.76, 0.5, -1.5),
+        };
+
+        foreach (var test in tests)
+        {
+            var result = MathEx.Ceiling(test.number, test.@base);
+            Assert.AreEqual(test.result, result, $"Ceiling({test.number}, {test.@base})");
+        }
+    }
+
+
+    [TestMethod]
 	public void PascalTriangleTest()
 	{
 		var tests = new (int line, int[] values)[] {

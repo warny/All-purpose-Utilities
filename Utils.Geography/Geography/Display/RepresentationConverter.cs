@@ -87,10 +87,10 @@ namespace Utils.Geography.Display
 		{
 			long zoom = 1 << zoomLevel;
 			return new Tile<T>(
-				MathEx.Clamp((long)(object)(projectedPoint.X) / TileSize, 0, zoom - 1),
-				MathEx.Clamp((long)(object)(projectedPoint.Y) / TileSize, 0, zoom - 1),
+				MathEx.Clamp((long)Convert.ChangeType(projectedPoint.X, typeof(long)) / TileSize, 0, zoom - 1),
+				MathEx.Clamp((long)Convert.ChangeType(projectedPoint.Y, typeof(long)) / TileSize, 0, zoom - 1),
 				zoomLevel,
-				(int)(object)TileSize);
+				TileSize);
 		}
 
 		/// <summary>
@@ -111,7 +111,7 @@ namespace Utils.Geography.Display
 		/// <returns></returns>
 		public T ComputeGroundResolution ( T latitude, byte zoomLevel )
 		{
-			var mapSize = (T)(object)GetMapSize(zoomLevel);
+			var mapSize = (T)Convert.ChangeType(GetMapSize(zoomLevel), typeof(T));
 			return degree.Cos(latitude) * Planet.EquatorialCircumference / mapSize;
 		}
 

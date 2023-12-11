@@ -10,11 +10,16 @@ namespace Utils.Mathematics;
 [DebuggerDisplay("{FloatingPointComparer}(±{Interval})")]
 public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
     where
-        T : struct, IComparable<T>, IEquatable<T>, IAdditionOperators<T, T, T>, ISubtractionOperators<T, T, T>
+        T : struct, IFloatingPointIeee754<T>
 {
 		public T Interval { get; }
 
-		public FloatingPointComparer(int precision) : this((T)(object)Math.Pow(10d, -(double)precision)) { }
+		public FloatingPointComparer(int precision) : this(
+            T.Pow(
+                (T)Convert.ChangeType(10, typeof(T)),
+                (T)Convert.ChangeType(-precision, typeof(T)) 
+            )
+        ) { }
 
     public FloatingPointComparer(T interval)
     {

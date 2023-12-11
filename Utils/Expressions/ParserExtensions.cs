@@ -171,7 +171,7 @@ namespace Utils.Expressions
                     {
                         var elementDistance = paramType.GetTypeDistance(eToAssign.Current);
                         if (elementDistance == -1) return -1;
-                        distance = Math.Max(distance, elementDistance);
+                        distance = MathEx.Max(distance, elementDistance);
                     } while (eToAssign.MoveNext());
                     totalDistance += distance;
                     return totalDistance;

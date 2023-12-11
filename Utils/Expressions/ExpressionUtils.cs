@@ -29,7 +29,7 @@ namespace Utils.Expressions
 
             if (NumberUtils.IsBaseNumeric(value) && NumberUtils.IsBaseNumeric(checkValue))
             {
-                return (double)value == (double)(object)checkValue;
+                return (double)value == (double)Convert.ChangeType(checkValue, typeof(double));
             }
             return false;
         }

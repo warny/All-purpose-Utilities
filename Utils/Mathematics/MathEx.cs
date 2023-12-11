@@ -50,28 +50,6 @@ public static class MathEx
         T @base = T.Pow((T)Convert.ChangeType(10, typeof(T)), (T)Convert.ChangeType(exponent, typeof(T)));
         return Round<T>(value, @base);
     }
-
-
-
-    public static double Round(double value, double @base)
-    {
-        double middle = @base / 2;
-        double r = Mod(value, @base);
-        if (r < middle)
-        {
-            return value - r;
-        }
-        else
-        {
-            return value - r + @base;
-        }
-    }
-
-    public static double Round(double value, int exponent = 0)
-    {
-        double @base = double.Pow(10, exponent);
-        return Round(value, @base);
-    }
     #endregion
 
     #region floor
@@ -83,34 +61,11 @@ public static class MathEx
     /// <returns>multiple inférieur</returns>
     public static T Floor<T>(T value, T @base)
         where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
-        => (value, @base) switch
-        {
-            (double d, double b) => (T)(object)Floor(d, b),
-            (float d, float b) => (T)(object)Floor(d, b),
-            _ => (value - T.One) - (Mod(value - T.One, @base))
-        };
-
-    /// <summary>
-    /// retrouve le multiple de la base inférieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple inférieur</returns>
-    public static float Floor(float value, float @base) => (float)((value - 1) - (Math.IEEERemainder(value - 1, @base)));
-
-    /// <summary>
-    /// retrouve le multiple de la base inférieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple inférieur</returns>
-    /// <summary>
-    /// retrouve le multiple de la base inférieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple inférieur</returns>
-    public static double Floor(double value, double @base) => ((value - 1) - (Math.IEEERemainder(value - 1, @base)));
+    {
+        T correction = Mod(value, @base);
+        return value - correction;
+    }
+    
     #endregion
 
     #region ceiling
@@ -122,27 +77,11 @@ public static class MathEx
     /// <returns>multiple supérieur</returns>
     public static T Ceiling<T>(T value, T @base)
         where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
-        => (value, @base) switch {
-            (double d, double b) => (T)(object)Ceiling(d, b),
-            (float d, float b) => (T)(object)Ceiling(d, b),
-            _ => (value - T.One) + @base - (Mod(value - T.One, @base))
-        };
+    {
+        T floor = Floor(value, @base);
+        return floor == value ? value : floor + @base;
+    }
 
-    /// <summary>
-    /// retrouve le multiple de la base supérieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple supérieur</returns>
-    public static float Ceiling(float value, float @base) => (float)((value - 1) + @base - (Math.IEEERemainder(value - 1, @base)));
-
-    /// <summary>
-    /// retrouve le multiple de la base supérieur à value
-    /// </summary>
-    /// <param name="value">valeur</param>
-    /// <param name="base">base</param>
-    /// <returns>multiple supérieur</returns>
-    public static double Ceiling(double value, double @base) => (value - 1) + @base - (Math.IEEERemainder(value - 1, @base));
     #endregion
 
     #region MinMax

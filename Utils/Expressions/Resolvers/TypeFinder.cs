@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Mathematics;
 using Utils.Objects;
 
 namespace Utils.Expressions.Resolvers
@@ -98,7 +99,7 @@ namespace Utils.Expressions.Resolvers
                 foreach (var parameter in typeArgument.GetGenericParameterConstraints())
                 {
                     if (!parameter.IsAssignableFrom(argument)) continue;
-                    parameterDistance = Math.Max(parameterDistance, ParserExtensions.GetTypeDistance(parameter, argument));
+                    parameterDistance = MathEx.Max(parameterDistance, ParserExtensions.GetTypeDistance(parameter, argument));
                 }
                 result += parameterDistance;
 

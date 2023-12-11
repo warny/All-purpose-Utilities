@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;

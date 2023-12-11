@@ -25,7 +25,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Fonts", "Utils.Fonts\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.VirtualMachine", "Utils.VirtualMachine\Utils.VirtualMachine.csproj", "{5E4940A7-A5F2-48AF-89BC-43A6B75BF22C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Data", "Utils.Data\Utils.Data.csproj", "{F63B616A-5662-41D9-8C33-1E5656FE2491}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Data", "Utils.Data\Utils.Data.csproj", "{F63B616A-5662-41D9-8C33-1E5656FE2491}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Mathematics", "Utils.Mathematics\Utils.Mathematics.csproj", "{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +106,12 @@ Global
 		{F63B616A-5662-41D9-8C33-1E5656FE2491}.GitHub|Any CPU.Build.0 = Debug|Any CPU
 		{F63B616A-5662-41D9-8C33-1E5656FE2491}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F63B616A-5662-41D9-8C33-1E5656FE2491}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77F82802-20ED-42B2-A4AE-A1E44D7C29D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
