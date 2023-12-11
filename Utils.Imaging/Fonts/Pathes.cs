@@ -4,30 +4,31 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using Utils.Drawing;
+using Utils.Mathematics.LinearAlgebra;
 
 namespace Utils.Fonts
 {
-	public class Pathes<T> : IReadOnlyList<Path>, IGraphicConverter
+	public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
 	{
-		private readonly List<Path> pathes;
+		private readonly List<Path> paths;
 		private Path path = null;
-		private Mathematics.LinearAlgebra.Matrix<double> transformation;
+		private Matrix<double> transformation;
 
-		public Pathes()
+		public Paths()
 		{
-			this.transformation = Mathematics.LinearAlgebra.Matrix<double>.Identity(3);
-			this.pathes = new List<Path>();
+			this.transformation = Matrix<double>.Identity(3);
+			this.paths = new List<Path>();
 		}
 
-		public Pathes(Mathematics.LinearAlgebra.Matrix<double> transformation)
+		public Paths(Matrix<double> transformation)
 		{
 			this.transformation = transformation;
-			this.pathes = new List<Path>();
+			this.paths = [];
 		}
 
-		public int Count => pathes.Count;
+		public int Count => paths.Count;
 
-		public Path this[int index] => pathes[index];
+		public Path this[int index] => paths[index];
 
 		public void StartAt(float x, float y)
 		{
@@ -35,7 +36,7 @@ namespace Utils.Fonts
 			p = transformation * p;
 
 			path = new Path(new PointF((short)p[0], (short)p[1]));
-			pathes.Add(path);
+			paths.Add(path);
 		}
 
 		public void LineTo(float x, float y)
@@ -54,7 +55,7 @@ namespace Utils.Fonts
 			path.BezierTo(tPoints.ToArray());
 		}
 
-		public IEnumerator<Path> GetEnumerator() => pathes.GetEnumerator();
+		public IEnumerator<Path> GetEnumerator() => paths.GetEnumerator();
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 }
