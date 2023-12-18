@@ -1,22 +1,12 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.ConstrainedExecution;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Utils.Arrays;
-using Utils.Collections;
 using Utils.Expressions;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Utils.Objects;
 
@@ -48,13 +38,21 @@ public static partial class StringFormat
     /// </summary>
     private static readonly Regex parseFormatString = MyRegex();
 
-    private static string GenerateCommands(string formatString, ParameterExpression formatter, ParameterExpression cultureInfo)
-    {
-        string alignName = typeof(StringUtils).FullName + "." + nameof(StringUtils.Align);
-        string formatterName = formatter?.Name ?? typeof (NullFormatter).FullName + "." + nameof(NullFormatter.Default);
-        string cultureName = cultureInfo?.Name ?? typeof(CultureInfo).FullName + "." + nameof(CultureInfo.CurrentCulture);
 
-        List<string> commands = new();
+    private static readonly MethodInfo alignMethod = typeof(StringUtils).GetMethod(nameof(StringUtils.Align), [typeof(string), typeof(int)]);
+    private static readonly MethodInfo customFormatMethod = typeof(ICustomFormatter).GetMethod("Format", [typeof(string), typeof(object), typeof(IFormatProvider)]);
+    private static readonly PropertyInfo currentCultureProperty = typeof(CultureInfo).GetProperty(nameof(CultureInfo.CurrentCulture));
+    private static readonly ConstructorInfo nullFormatterConstructor = typeof(NullFormatter).GetConstructor([typeof(CultureInfo)]);
+    private static readonly MethodInfo stringConcatMethod = typeof(string).GetMethod(nameof(string.Concat), [typeof(string[])]);
+
+    private static Expression GenerateCommands(string formatString, ParameterExpression formatter, ParameterExpression cultureInfo, ParameterExpression[] parameterExpressions, bool defaultFirst, string[] namespaces)
+    {
+        var result = new List<Expression>();
+        var variables = new List<ParameterExpression>();
+        ParameterExpression cultureInfoExpression = ExpressionOrDefault(cultureInfo, "@@cultureInfo", typeof(CultureInfo), Expression.Property(null, currentCultureProperty), variables, result);
+        ParameterExpression formatterExpression = ExpressionOrDefault(formatter, "@@formater", typeof(ICustomFormatter), Expression.New(nullFormatterConstructor, [cultureInfoExpression]), variables, result);
+
+        List<Expression> commands = new();
         foreach (Match match in parseFormatString.Matches(formatString))
         {
             if (match.Groups["error"].Success)
@@ -63,22 +61,37 @@ public static partial class StringFormat
             }
             if (match.Groups["text"].Success)
             {
-                if (commands.Any() && commands[^1].EndsWith("\""))
+                if (commands.Any() && commands[^1] is ConstantExpression ce && ce.Value is string s)
                 {
-                    commands[^1] = string.Concat(commands[^1].AsSpan(0, commands[^1].Length - 1), match.Groups["text"].Value.Replace("\"", "\\\""), "\"");
+                    commands[^1] = Expression.Constant(string.Concat(s, match.Groups["text"].Value), typeof(string));
                 }
                 else
                 {
-                    commands.Add("\"" + match.Groups["text"].Value.Replace("\"", "\\\"") + "\"");
+                    commands.Add(Expression.Constant(match.Groups["text"].Value, typeof(string)));
                 }
             }
             else if (match.Groups["expression"].Success)
             {
-                var alignment = match.Groups["alignment"].Success ? match.Groups["alignment"].Value : "0";
-                commands.Add($"{alignName}({formatterName}.Format(\"{match.Groups["format"].Value.Replace("\"", "\\\"")}\", {match.Groups["expression"].Value}, {cultureName}), {alignment})");
+                Expression command = Expression.Call(
+                    formatterExpression, customFormatMethod,
+                    [
+                        Expression.Constant(match.Groups["format"].Value),
+                        Expression.Convert(ExpressionParser.ParseExpression(match.Groups["expression"].Value, parameterExpressions, null, defaultFirst, namespaces), typeof(object)),
+                        cultureInfoExpression
+                    ]
+                );
+
+                if (match.Groups["alignment"].Success) {
+                    command = Expression.Call(null, alignMethod, [command, Expression.Constant(int.Parse(match.Groups["alignment"].Value), typeof(int))]);
+                }
+
+                commands.Add(command);
             }
         }
-        return "string.Concat(" + Environment.NewLine + string.Join("," + Environment.NewLine, commands) + Environment.NewLine + ");";
+        result.Add(Expression.Call(null, stringConcatMethod, Expression.NewArrayInit(typeof(string), commands)));
+
+        if (!variables.Any() && result.Count == 1) return result[0];
+        return Expression.Block(typeof(string), variables, result);
     }
 
     /// <summary>
@@ -205,8 +218,7 @@ public static partial class StringFormat
     public static Expression Create(string formatString, ParameterExpression[] parameterExpressions, ParameterExpression formatter, ParameterExpression culture, bool defaultFirst, string[] namespaces)
     {
         var allParameters = parameterExpressions.Append(formatter).Append(culture).Where(p => p is not null).Distinct().ToArray();
-        string generatedCommand = GenerateCommands(formatString, formatter, culture);
-        var result = ExpressionParser.ParseExpression(generatedCommand, allParameters, null, defaultFirst, namespaces);
+        var result = GenerateCommands(formatString, formatter, culture, parameterExpressions, defaultFirst, namespaces);
         return result;
     }
 
@@ -217,5 +229,16 @@ public static partial class StringFormat
         action(Expression.Assign(result, Expression.Constant(value)));
         return result;
     }
+
+    private static ParameterExpression ExpressionOrDefault(ParameterExpression expression, string propertyName, Type type, Expression defaultValue, List<ParameterExpression> variables, List<Expression> expressions)
+    {
+        if (expression != null) return expression;
+
+        ParameterExpression result = Expression.Variable(type, propertyName);
+        variables.Add(result);
+        expressions.Add(Expression.Assign(result, defaultValue));
+        return result;
+    }
+
 
 }

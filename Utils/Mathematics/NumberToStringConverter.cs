@@ -122,6 +122,7 @@ namespace Utils.Mathematics
 		public NumberScale(
 			IReadOnlyList<string> staticValues,
 			IReadOnlyList<string> scaleSuffixes,
+            int startIndex = 0,
 			string voidGroup = "ni",
 			string groupSeparator = "lli",
 			IReadOnlyList<string> scale0Prefixes = null,
@@ -136,7 +137,8 @@ namespace Utils.Mathematics
 
             StaticValues = staticValues.ToImmutableArray();
 			ScaleSuffixes = scaleSuffixes.ToImmutableArray();
-			FirstLetterUppercase = firstLetterUppercase;
+			StartIndex = startIndex;
+            FirstLetterUppercase = firstLetterUppercase;
 			
 			VoidGroup = voidGroup.NotNullOrEmptyOrDefault("ni");
 			GroupSeparator = groupSeparator.NotNullOrEmptyOrDefault("lli");
@@ -149,7 +151,8 @@ namespace Utils.Mathematics
 
         public IReadOnlyList<string> StaticValues { get; }
 		public IReadOnlyList<string> ScaleSuffixes { get; }
-		public bool FirstLetterUppercase { get; }
+		public int StartIndex { get; }
+        public bool FirstLetterUppercase { get; }
 
 		private readonly string VoidGroup;
 		private readonly string GroupSeparator;
@@ -218,6 +221,7 @@ namespace Utils.Mathematics
             }
 
             scale -= StaticValues.Count;
+            scale += StartIndex;
             var result = int.DivRem(scale, ScaleSuffixes.Count);
 
             var suffix = ScaleSuffixes[result.Remainder];

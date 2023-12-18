@@ -66,6 +66,7 @@ namespace Utils.Mathematics
             var scale = new NumberScale(
                 confScale.StaticNames.Scales.OrderBy(n => n.Value).Select(n => n.StringValue).ToArray(),
                 confScale.Suffixes.Values,
+                confScale.StartIndex,
                 confScale.VoidGroup,
                 confScale.GroupSeparator,
                 confScale.Scale0Prefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),

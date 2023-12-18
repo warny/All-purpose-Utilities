@@ -9,7 +9,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>omy.Utils</PackageId>
     <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
-    <Copyright>Olivier MARTY</Copyright>
+    <Copyright>Olivier MARTY 2023</Copyright>
     <Description>General Functions
 
     Expressions
@@ -24,12 +24,8 @@
         - Induced Key Dictionary
     Mathematics
         - Base Class for Expression Transformer
-        - Expression Derivation
         - Expression Simplifier
-        - Fast Fourier Transform
-        - Conversion to International System (beta)
-        - Linear Algebra (matrices in any dimension)
-        - Mathematical Functions
+        - Mathematical extended functions
     Objects
         - Date Utilities
         - Number Utilities

@@ -4,6 +4,13 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>    Mathematics
+        - Expression Derivation
+        - Fast Fourier Transform
+        - Conversion to International System (beta)
+        - Linear Algebra (matrices in any dimension)
+</Description>
+    <Copyright>Olivier MARTY 2023</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

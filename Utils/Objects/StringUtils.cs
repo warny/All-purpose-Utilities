@@ -489,9 +489,9 @@ public static class StringUtils
 	public static string Align(this string s, int length)
 	{
 		s ??= "";
-		if (s.Length >= Math.Abs(length)) return s;
+		if (int.Abs(s.Length) >= int.Abs(length)) return s;
 		if (length > 0) return new string(' ', length - s.Length) + s;
-		if (length < 0) return s + new string(' ', length - s.Length);
+		if (length < 0) return s + new string(' ', -length - s.Length);
 		return s;
 	}
 

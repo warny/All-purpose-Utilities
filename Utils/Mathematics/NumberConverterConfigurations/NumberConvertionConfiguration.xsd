@@ -85,6 +85,7 @@
 									<xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="required"/>
 									<xs:attribute name="voidGroup" type="xs:string" />
 									<xs:attribute name="groupSeparator" type="xs:string" />
+									<xs:attribute name="startIndex" type="xs:integer" />
 								</xs:complexType>
 							</xs:element>
 							<xs:element name="Replacements">

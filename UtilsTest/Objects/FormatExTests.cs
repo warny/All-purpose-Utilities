@@ -39,12 +39,21 @@ namespace UtilsTest.Objects
             formatter.AddFormatter("uc", (string s) => s.ToUpper());
             formatter.AddFormatter("lc", (string s) => s.ToLower());
 
+            var result = new {
+                Field1 = r.RandomString(5, 10),
+                Field2 = r.Next(-100, 100),
+                Field3 = new DateTime(r.Next(2000, 2100), 1, 1).AddDays(r.Next(0,365)),
+                Field3_1 = r.RandomFrom(null, r.RandomString(5, 10)),
+                Field4 = r.RandomString(5, 10)
+            };
+
+
             var fields = new (Type Type, string Name, Func<object> Value)[] {
-                (typeof(string), "field1", () => r.RandomString(5, 10)),
-                (typeof(int), "field2", () => r.Next(-100, 100)),
-                (typeof(DateTime), "field3", () => new DateTime(r.Next(2000, 2100), 1, 1).AddDays(r.Next(0,365))),
-                (typeof(string), "field3", () => r.RandomFrom(null, r.RandomString(5, 10))),
-                (typeof(string), "field4", () => r.RandomString(5, 10)),
+                (typeof(string), "field1", () => result.Field1),
+                (typeof(int), "field2", () => result.Field2),
+                (typeof(DateTime), "field3", () => result.Field3),
+                (typeof(string), "field3", () => result.Field3_1),
+                (typeof(string), "field4", () => result.Field4),
             };
 
             Mock<IDataRecord> dataRecord = new Mock<IDataRecord>();
@@ -61,7 +70,9 @@ namespace UtilsTest.Objects
             var dr = dataRecord.Object;
 
             var format = StringFormat.Create("{field1,-10} : {field2,8:X2} => {field3:yyyy-MM-dd} {field3_1} {{{field3_1:fluc}}} {field4}", formatter, CultureInfo.InvariantCulture, dr);
-            var result = string.Format(formatter, "{0,-10} : {1,8:X2} => {2:yyyy-MM-dd} {3} {{{3:fluc}}} {4}", dr[0], dr[1], dr[2], dr[3], dr[4]);
+            var expected = string.Format(formatter, "{0,-10} : {1,8:X2} => {2:yyyy-MM-dd} {3} {{{3:fluc}}} {4}", dr[0], dr[1], dr[2], dr[3], dr[4]);
+
+            Assert.AreEqual(expected, format(dr));
         }
     }
 }

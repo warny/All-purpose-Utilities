@@ -162,6 +162,9 @@ public class NumberScaleType
 
     [XmlAttribute("groupSeparator")]
     public string GroupSeparator { get; set; }
+    
+    [XmlAttribute("startIndex")]
+    public int StartIndex { get; set; } 
 
     [XmlElement(ElementName = "StaticNames")]
     public StaticNamesType StaticNames { get; set; }
