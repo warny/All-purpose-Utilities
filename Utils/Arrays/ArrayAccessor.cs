@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
 namespace Utils.Arrays;
 
@@ -38,7 +39,7 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private void CheckReference(int[] references)
 	{
-		if (references.Length != Sizes.Length) throw new ArgumentException("les references n'ont pas la bonne dimension", nameof(references));
+		references.ArgMustBeOfSize(Sizes.Length);
 		for (int i = 0; i < references.Length; i++)
 		{
 			if (references[i] >= Sizes[i]) throw new IndexOutOfRangeException();
