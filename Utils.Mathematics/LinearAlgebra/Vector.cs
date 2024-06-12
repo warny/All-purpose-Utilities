@@ -9,7 +9,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// <summary>
 /// Vecteur
 /// </summary>
-public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
+public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable
     where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
     private static ArrayEqualityComparer<T> ComponentComparer { get; } = new();
@@ -22,7 +22,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
     /// <summary>
     /// Longueur du vecteur	(calculée à la demande)
     /// </summary>
-    private T? length;
+    private T? norm;
 
     /// <summary>
     /// constructeur par dimensions
@@ -31,7 +31,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
     private Vector(int dimensions)
     {
         components = new T[dimensions];
-        length = T.Zero;
+        norm = T.Zero;
     }
 
     /// <summary>
@@ -66,31 +66,31 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
     /// <summary>
     /// Longueur du vecteur
     /// </summary>
-    public T Length
+    public T Norm
     {
         get
         {
-            if (length is not null) return length.Value;
+            if (norm is not null) return norm.Value;
             T temp = T.Zero;
             for (int i = 0; i < this.components.Length; i++)
             {
                 temp += this.components[i] * this.components[i];
             }
-            length = T.Sqrt(temp);
-            return length.Value;
+            norm = T.Sqrt(temp);
+            return norm.Value;
         }
     }
 
-    public Vector<T> Normalize() => this / Length;
+    public Vector<T> Normalize() => this / Norm;
 
-    public override bool Equals(object obj) => obj switch
+    public override bool Equals(object? obj) => obj switch
     {
         Vector<T> v => Equals(v),
         double[] a => Equals(a),
         _ => false,
     };
 
-    public bool Equals(Vector<T> other)
+    public bool Equals(Vector<T>? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -206,5 +206,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>
             return temp;
         }
     }
+
+    public object Clone() => new Vector<T>(this);
 }
 

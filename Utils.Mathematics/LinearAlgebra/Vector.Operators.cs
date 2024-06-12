@@ -126,23 +126,19 @@ namespace Utils.Mathematics.LinearAlgebra
 			return new Vector<T>(result);
 		}
 
-		public static bool operator ==(Vector<T> vector1, Vector<T> vector2)
-		{
-			return vector1.Equals(vector2);
-		}
+        public static bool operator ==(Vector<T>? vector1, Vector<T>? vector2) 
+			=> (vector1 is not null && vector1.Equals(vector2)) || vector2 is null;
 
-		public static bool operator !=(Vector<T> vector1, Vector<T> vector2)
-		{
-			return !vector1.Equals(vector2);
-		}
+        public static bool operator !=(Vector<T>? vector1, Vector<T>? vector2) 
+			=> !(vector1 == vector2);
 
-		/// <summary>
-		/// calcule le produit scalaire de deux vecteurs
-		/// </summary>
-		/// <param name="vector1"></param>
-		/// <param name="vector2"></param>
-		/// <returns></returns>
-		public static T operator *(Vector<T> vector1, Vector<T> vector2)
+        /// <summary>
+        /// calcule le produit scalaire de deux vecteurs
+        /// </summary>
+        /// <param name="vector1"></param>
+        /// <param name="vector2"></param>
+        /// <returns></returns>
+        public static T operator *(Vector<T> vector1, Vector<T> vector2)
 		{
 			if (vector1.Dimension != vector2.Dimension)
 			{
