@@ -13,7 +13,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ReadSimpleServer()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com");
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
 			Assert.AreEqual("/", builder.AbsolutePath);
@@ -22,7 +22,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ReadSimpleServerWithAuthentication()
 		{
-			var builder = new Utils.Net.UriBuilder("https://olivier:marty@example.com");
+			var builder = new Utils.Net.UriBuilderEx("https://olivier:marty@example.com");
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("https", builder.Scheme);
 			Assert.AreEqual("olivier", builder.Username);
@@ -34,7 +34,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ReadSimpleServerWithEscapedAuthentication()
 		{
-			var builder = new Utils.Net.UriBuilder("ftp://%6Flivier:%6Darty@example.com");
+			var builder = new Utils.Net.UriBuilderEx("ftp://%6Flivier:%6Darty@example.com");
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("ftp", builder.Scheme);
 			Assert.AreEqual("olivier", builder.Username);
@@ -46,7 +46,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ReadQueryString()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com?key1=value1&key2=value2");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com?key1=value1&key2=value2");
 			Assert.AreEqual("example.com", builder.Host);
 			Assert.AreEqual("http", builder.Scheme);
 			Assert.AreEqual("/", builder.AbsolutePath);
@@ -57,7 +57,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ModifyQueryStringAddValue()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com/?key1=value1&key2=value2");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com/?key1=value1&key2=value2");
 			builder.QueryString.Add("key3", "value3");
 
 			Assert.AreEqual("example.com", builder.Host);
@@ -72,7 +72,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ModifyQueryStringAddMultipleValues()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com/?key1=value1&key2=value2a&key2=value2b");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com/?key1=value1&key2=value2a&key2=value2b");
 			builder.QueryString.Add("key3", "value3a");
 			builder.QueryString.Add("key3", "value3b");
 
@@ -92,7 +92,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ModifyQueryStringReplaceValues()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com/?key1=value1&key2=value2a&key2=value2b");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com/?key1=value1&key2=value2a&key2=value2b");
 			builder.QueryString["key2"] = "value2";
 			builder.QueryString["key3"] = "value3";
 
@@ -110,7 +110,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ModifyQueryStringRemoveMultipleValues()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com/test.html?key1=value1&key2=value2a&key2=value2b&key3=value3a&key3=value3b");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com/test.html?key1=value1&key2=value2a&key2=value2b&key3=value3a&key3=value3b");
 			builder.QueryString.Remove("key2");
 
 			Assert.AreEqual("example.com", builder.Host);
@@ -128,7 +128,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ModifyLoginPassword()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com");
 			builder.Username = "username";
 			builder.Password = "password";
 
@@ -140,7 +140,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void AddFragmentTest()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com");
 			builder.Fragment = "test";
 			Assert.AreEqual("http://example.com/#test", builder.ToString());
 		}
@@ -148,7 +148,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ReadFragmentTest()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com#test");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com#test");
 			Assert.AreEqual("test", builder.Fragment);
 			Assert.AreEqual("http://example.com/#test", builder.ToString());
 		}
@@ -156,7 +156,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void ModifyFragmentTest()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com#test1");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com#test1");
 			Assert.AreEqual("test1", builder.Fragment);
 			builder.Fragment = "test2";
 			Assert.AreEqual("http://example.com/#test2", builder.ToString());
@@ -165,7 +165,7 @@ namespace UtilsTest.Net
 		[TestMethod]
 		public void RemoveFragmentTest()
 		{
-			var builder = new Utils.Net.UriBuilder("http://example.com#test");
+			var builder = new Utils.Net.UriBuilderEx("http://example.com#test");
 			Assert.AreEqual("test", builder.Fragment);
 			builder.Fragment = "";
 			Assert.AreEqual("http://example.com/", builder.ToString());
