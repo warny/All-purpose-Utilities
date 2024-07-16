@@ -21,8 +21,8 @@ public class ArrayEqualityComparer<T> : IEqualityComparer<IReadOnlyCollection<T>
 		var externalEqualityComparer = equalityComparers.OfType<IEqualityComparer<T>>().FirstOrDefault();
 		if (externalEqualityComparer is not null)
 		{
-			areEquals = (e1, e2) => externalEqualityComparer.Equals(e1, e2);
-			getHashCode = e => externalEqualityComparer.GetHashCode(e);
+			areEquals = externalEqualityComparer.Equals;
+			getHashCode = externalEqualityComparer.GetHashCode;
 			return;
 		}
 		else if (typeof(IEquatable<T>).IsAssignableFrom(typeOfT))
@@ -39,8 +39,8 @@ public class ArrayEqualityComparer<T> : IEqualityComparer<IReadOnlyCollection<T>
 			Type equalityComparerGenericType = typeof(MultiDimensionnalArrayEqualityComparer<>);
 			Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
 			object subComparer = Activator.CreateInstance(equalityComparerType);
-			areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
-			getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), new[] { typeOfT }).CreateDelegate(typeof(Func<T, int>), subComparer);
+			areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), [typeOfT, typeOfT]).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
+			getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), [typeOfT]).CreateDelegate(typeof(Func<T, int>), subComparer);
 			return;
 		}
 		else areEquals = (e1, e2) => e1.Equals(e2);
@@ -90,7 +90,9 @@ public class ArrayEqualityComparer<T> : IEqualityComparer<IReadOnlyCollection<T>
 
 public static class ArrayEqualityComparers
 {
+	public static IEqualityComparer<IReadOnlyCollection<bool>> Boolean { get; } = new ArrayEqualityComparer<bool>();
 	public static IEqualityComparer<IReadOnlyCollection<byte>> Byte { get; } = new ArrayEqualityComparer<byte>();
+	public static IEqualityComparer<IReadOnlyCollection<sbyte>> SByte { get; } = new ArrayEqualityComparer<sbyte>();
 	public static IEqualityComparer<IReadOnlyCollection<short>> Int16 { get; } = new ArrayEqualityComparer<short>();
 	public static IEqualityComparer<IReadOnlyCollection<int>> Int32 { get; } = new ArrayEqualityComparer<int>();
 	public static IEqualityComparer<IReadOnlyCollection<long>> Int64 { get; } = new ArrayEqualityComparer<long>();
@@ -99,6 +101,9 @@ public static class ArrayEqualityComparers
 	public static IEqualityComparer<IReadOnlyCollection<ulong>> UInt64 { get; } = new ArrayEqualityComparer<ulong>();
 	public static IEqualityComparer<IReadOnlyCollection<float>> Single { get; } = new ArrayEqualityComparer<float>();
 	public static IEqualityComparer<IReadOnlyCollection<double>> Double { get; } = new ArrayEqualityComparer<double>();
+	public static IEqualityComparer<IReadOnlyCollection<decimal>> Decimal { get; } = new ArrayEqualityComparer<decimal>();
 	public static IEqualityComparer<IReadOnlyCollection<DateTime>> DateTime { get; } = new ArrayEqualityComparer<DateTime>();
+	public static IEqualityComparer<IReadOnlyCollection<Guid>> Guid { get; } = new ArrayEqualityComparer<Guid>();
 	public static IEqualityComparer<IReadOnlyCollection<Type>> Type { get; } = new ArrayEqualityComparer<Type>();
+	public static IEqualityComparer<IReadOnlyCollection<string>> String { get; } = new ArrayEqualityComparer<string>();
 }

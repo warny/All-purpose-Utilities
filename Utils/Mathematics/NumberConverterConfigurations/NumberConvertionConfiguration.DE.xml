@@ -69,7 +69,7 @@
 			</TensPrefixes>
 		</NumberScale>
 		<Replacements>
-			<Replacement oldValue="un mille" newValue="mille" />
+			<Replacement oldValue="ein tausend" newValue="tausend" />
 		</Replacements>
 		<Exceptions>
 			<Number value="11" string="elf" />

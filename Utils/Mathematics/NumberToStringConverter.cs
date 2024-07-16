@@ -10,11 +10,12 @@ using Utils.Objects;
 
 namespace Utils.Mathematics
 {
-	public partial class NumberToStringConverter
+	public partial class NumberToStringConverter : INumberToStringConverter
 	{
 		public static NumberToStringConverter GetConverter(CultureInfo culture) => GetConverter(culture.Name);
 
-        public static NumberToStringConverter GetConverter(string culture) {
+		public static NumberToStringConverter GetConverter(string culture)
+		{
 			culture.Length.ArgMustBeIn([2, 5]);
 
 			if (configurations.TryGetValue(culture, out var result)) return result;
@@ -31,11 +32,11 @@ namespace Utils.Mathematics
 			GroupSeparator = groupSeparator ?? "";
 			Zero = zero.ArgMustNotBeNull();
 			Minus = minus.ArgMustNotBeNull();
-			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d=>(long)d.Digit).ToImmutableDictionary());
+			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => (long)d.Digit).ToImmutableDictionary());
 			Exceptions = exceptions.ArgMustNotBeNull().ToImmutableDictionary();
-			Replacements = replacements ?? new Dictionary<string,string>().ToImmutableDictionary();
+			Replacements = replacements ?? new Dictionary<string, string>().ToImmutableDictionary();
 			Scale = scale;
-			AdjustFunction = adjustFunction ?? new (s=>s); 
+			AdjustFunction = adjustFunction ?? new(s => s);
 		}
 
 		public int Group { get; } = 3;
@@ -44,81 +45,81 @@ namespace Utils.Mathematics
 		public string Zero { get; }
 		public string Minus { get; }
 
-        public Func<string, string> AdjustFunction { get; }
-        public IReadOnlyDictionary<long, string> Exceptions { get; }
+		public Func<string, string> AdjustFunction { get; }
+		public IReadOnlyDictionary<long, string> Exceptions { get; }
 		public IReadOnlyDictionary<string, string> Replacements { get; }
 		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
 
 		public NumberScale Scale { get; }
 
-        public string Convert(int number) => Convert((BigInteger)number);
-        public string Convert(long number) => Convert((BigInteger)number);
+		public string Convert(int number) => Convert((BigInteger)number);
+		public string Convert(long number) => Convert((BigInteger)number);
 
-        public string Convert(BigInteger number)
-        {
-            if (number == 0) { return Zero; }
+		public string Convert(BigInteger number)
+		{
+			if (number == 0) { return Zero; }
 
-            if (number.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)number, out var value))
-            {
-                return AdjustFunction(value);
-            }
+			if (number.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)number, out var value))
+			{
+				return AdjustFunction(value);
+			}
 
-            var maxGroup = Groups.Keys.Max();
-            var groupValue = BigInteger.Pow(10, maxGroup);
+			var maxGroup = Groups.Keys.Max();
+			var groupValue = BigInteger.Pow(10, maxGroup);
 
-            bool isNegative = number.Sign == -1;
-            if (isNegative) { number = BigInteger.Abs(number); }
+			bool isNegative = number.Sign == -1;
+			if (isNegative) { number = BigInteger.Abs(number); }
 
-            int groupNumber = 0;
-            var groupsValues = new Stack<string>();
+			int groupNumber = 0;
+			var groupsValues = new Stack<string>();
 
-            while (number != 0)
-            {
-                var group = (long)(number % groupValue);
-                if (group != 0)
-                {
-                    string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
-                    if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
-                    groupsValues.Push(resValue.Trim());
-                }
-                number /= groupValue;
-                groupNumber++;
-            }
+			while (number != 0)
+			{
+				var group = (long)(number % groupValue);
+				if (group != 0)
+				{
+					string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
+					if (Replacements.TryGetValue(resValue, out var replacement)) { resValue = replacement; }
+					groupsValues.Push(resValue.Trim());
+				}
+				number /= groupValue;
+				groupNumber++;
+			}
 
-            var result = new StringBuilder();
-            while (groupsValues.Count > 0)
-            {
-                result.Append(groupsValues.Pop().Trim());
-                result.Append(GroupSeparator);
-                result.Append(Separator);
-            }
+			var result = new StringBuilder();
+			while (groupsValues.Count > 0)
+			{
+				result.Append(groupsValues.Pop().Trim());
+				result.Append(GroupSeparator);
+				result.Append(Separator);
+			}
 
-            var v = result.ToString().TrimEnd([..GroupSeparator, ..Separator]);
-            v = isNegative ? Minus.Replace("*", v) : v;
+			var v = result.ToString().TrimEnd([.. GroupSeparator, .. Separator]);
+			v = isNegative ? Minus.Replace("*", v) : v;
 
-            return AdjustFunction(v);
-        }
+			return AdjustFunction(v);
+		}
 
 
-        public string ConvertGroup(int groupNumber, long number)
-        {
-            if (groupNumber == 0) { return string.Empty; }
-            if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value))
-            {
-                return value;
-            }
+		public string ConvertGroup(int groupNumber, long number)
+		{
+			if (groupNumber == 0) { return string.Empty; }
+			if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value))
+			{
+				return value;
+			}
 
-            long group = (long)Math.Pow(10, groupNumber - 1);
-            var (groupValue, remainder) = long.DivRem(number, group);
+			long group = (long)Math.Pow(10, groupNumber - 1);
+			var (groupValue, remainder) = long.DivRem(number, group);
 
-            var leftText = ConvertGroup(groupNumber - 1, remainder);
-            var valueText = Groups[groupNumber][groupValue];
+			var leftText = ConvertGroup(groupNumber - 1, remainder);
+			var valueText = Groups[groupNumber][groupValue];
 
-            return leftText.Length > 0 ? valueText.BuildString.Replace("*", leftText) : valueText.StringValue;
-        }
-    }
+			return leftText.Length > 0 ? valueText.BuildString.Replace("*", leftText) : valueText.StringValue;
+		}
+	}
 
-    public class NumberScale {
+	public class NumberScale {
 		public NumberScale(
 			IReadOnlyList<string> staticValues,
 			IReadOnlyList<string> scaleSuffixes,
