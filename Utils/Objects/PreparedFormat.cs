@@ -39,7 +39,7 @@ public static partial class StringFormat
     private static readonly Regex parseFormatString = MyRegex();
 
 
-    private static readonly MethodInfo alignMethod = typeof(StringUtils).GetMethod(nameof(StringUtils.Align), [typeof(string), typeof(int)]);
+    private static readonly MethodInfo alignMethod = typeof(StringExtensions).GetMethod(nameof(StringExtensions.Align), [typeof(string), typeof(int)]);
     private static readonly MethodInfo customFormatMethod = typeof(ICustomFormatter).GetMethod("Format", [typeof(string), typeof(object), typeof(IFormatProvider)]);
     private static readonly PropertyInfo currentCultureProperty = typeof(CultureInfo).GetProperty(nameof(CultureInfo.CurrentCulture));
     private static readonly ConstructorInfo nullFormatterConstructor = typeof(NullFormatter).GetConstructor([typeof(CultureInfo)]);
@@ -52,7 +52,7 @@ public static partial class StringFormat
         ParameterExpression cultureInfoExpression = ExpressionOrDefault(cultureInfo, "@@cultureInfo", typeof(CultureInfo), Expression.Property(null, currentCultureProperty), variables, result);
         ParameterExpression formatterExpression = ExpressionOrDefault(formatter, "@@formater", typeof(ICustomFormatter), Expression.New(nullFormatterConstructor, [cultureInfoExpression]), variables, result);
 
-        List<Expression> commands = new();
+        List<Expression> commands = [];
         foreach (Match match in parseFormatString.Matches(formatString))
         {
             if (match.Groups["error"].Success)

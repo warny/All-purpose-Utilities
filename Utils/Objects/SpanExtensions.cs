@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Objects;
 
-public static class SpanUtilities
+public static class SpanExtensions
 {
     /// <summary>
     /// Removes elements from the beginning and end of <paramref name="s"/> that match the result of the specified function.
