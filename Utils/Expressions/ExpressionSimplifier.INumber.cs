@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Collections;
 using Utils.Expressions;
 using Utils.Objects;
 using Utils.Reflection;
@@ -66,29 +68,121 @@ public partial class ExpressionSimplifier
 	#endregion
 
 	#region trigonometry
+	private class TrigonometricMethods {
+
+		public Type ReferenceType { get; }
+		public MethodInfo Cos { get; }
+		public MethodInfo Sin { get; }
+		public MethodInfo Tan { get; }
+
+		public TrigonometricMethods(Type type)
+		{
+			ReferenceType = typeof(ITrigonometricFunctions<>).MakeGenericType(type);
+			Cos = ReferenceType.GetMethod(nameof(ITrigonometricFunctions<double>.Cos), BindingFlags.Static | BindingFlags.Public, [type]);
+			Sin = ReferenceType.GetMethod(nameof(ITrigonometricFunctions<double>.Sin), BindingFlags.Static | BindingFlags.Public, [type]);
+			Tan = ReferenceType.GetMethod(nameof(ITrigonometricFunctions<double>.Tan), BindingFlags.Static | BindingFlags.Public, [type]);
+		}
+
+		public void Deconstruct(out MethodInfo cos, out MethodInfo sin, out MethodInfo tan)
+		{
+			cos = Cos;
+			sin = Sin;
+			tan = Tan;
+		}
+	}
+
+	private IDictionary<Type, TrigonometricMethods> TrigonometricMethodsByType { get; } 
+		= new CachedLoader<Type, TrigonometricMethods>(type=>new TrigonometricMethods (type));
+
 	[ExpressionSignature(ExpressionType.Add)]
 	protected Expression AdditionOfCos2andSin2Number(Expression e,
 		[ExpressionSignature(ExpressionType.Power)] BinaryExpression left,
 		[ExpressionSignature(ExpressionType.Power)] BinaryExpression right)
 	{
-		var leftRight = (left.Right as ConstantExpression);
-		var rightRight = (right.Right as ConstantExpression);
+		if (!left.Type.IsOfGenericType(typeof(ITrigonometricFunctions<>))) return null;
+		if (right.Type != left.Type) return null;
+
+		var leftRight = left.Right as ConstantExpression;
+		var rightRight = right.Right as ConstantExpression;
 		if ((double)leftRight.Value != 2 || (double)rightRight.Value != 2) return null;
 
-		var leftLeft = (left.Left as MethodCallExpression);
-		var rightLeft = (right.Left as MethodCallExpression);
-		if (leftLeft is null || rightLeft is null) return null;
+		if (left.Left is not MethodCallExpression leftLeft) return null;
+		if (right.Left is not MethodCallExpression rightLeft) return null;
 
-		var sin = typeof(ITrigonometricFunctions<>).GetStaticMethod([left.Type], "Sin", [left.Type]);
-		var cos = typeof(ITrigonometricFunctions<>).GetStaticMethod([left.Type], "Cos", [left.Type]);
+		(var cos, var sin, _) = TrigonometricMethodsByType[left.Type];
 
-		if (!(leftLeft.Method == sin && rightLeft.Method == cos || leftLeft.Method == cos && rightLeft.Method == sin)) return null;
+		if (!(leftLeft.Method == sin && rightLeft.Method == cos) && !(leftLeft.Method == cos && rightLeft.Method == sin)) return null;
 
-		if (ExpressionComparer.Default.Equals(leftLeft.Arguments[0], rightLeft.Arguments[0])) return Expression.Constant(1.0);
+		if (ExpressionComparer.Default.Equals(leftLeft.Arguments[0], rightLeft.Arguments[0])) return Expression.Constant(Convert.ChangeType(1.0, left.Type));
 
 		return null;
 	}
 
+	[ExpressionSignature(ExpressionType.Divide)]
+	protected Expression DivisionOfCosAndSinNumber(Expression e,
+		[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Sin))] MethodCallExpression left,
+		[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Cos))] MethodCallExpression right)
+	{
+		if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+		{
+			var tan = TrigonometricMethodsByType[left.Type].Tan;
+			return Expression.Call(null, tan, left.Arguments[0]);
+		}
+		return null;
+	}
+
+	[ExpressionSignature(ExpressionType.Divide)]
+	protected Expression DivisionOfSinAndCosNumber(Expression e,
+	[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Cos))] MethodCallExpression left,
+	[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Sin))] MethodCallExpression right)
+	{
+		if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+		{
+			var tan = TrigonometricMethodsByType[left.Type].Tan;
+			return Expression.Divide(Expression.Constant(Convert.ChangeType(1.0, left.Type)), Expression.Call(null, tan, left.Arguments[0]));
+		}
+		return null;
+	}
+
+	[ExpressionSignature(ExpressionType.Multiply)]
+	protected Expression MultiplicationOfCosAndTanNumber(Expression e,
+		[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Cos))] MethodCallExpression left,
+		[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Tan))] MethodCallExpression right)
+	{
+		if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+		{
+			var sin = TrigonometricMethodsByType[left.Type].Sin;
+			return Expression.Call(null, sin, left.Arguments[0]);
+		}
+		return null;
+	}
+
+	[ExpressionSignature(ExpressionType.Multiply)]
+	protected Expression MultiplicationOfTanAndCosNumber(Expression e,
+	[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Tan))] MethodCallExpression left,
+	[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Cos))] MethodCallExpression right)
+	{
+		if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+		{
+			var sin = TrigonometricMethodsByType[left.Type].Sin;
+			return Expression.Call(null, sin, left.Arguments[0]);
+		}
+		return null;
+	}
+
+
+	[ExpressionSignature(ExpressionType.Divide)]
+	protected Expression DivisionOfSinAndTanNumber(Expression e,
+	[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Sin))] MethodCallExpression left,
+	[ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Tan))] MethodCallExpression right)
+	{
+		if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+		{
+			var cos = TrigonometricMethodsByType[left.Type].Cos;
+			return Expression.Call(null, cos, left.Arguments[0]);
+		}
+		return null;
+	}
 
 	#endregion
 

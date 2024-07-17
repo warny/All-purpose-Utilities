@@ -64,7 +64,11 @@ public static class TypeEx
         if (type == baseType) return true;
         if (baseType.IsInterface)
         {
-            if (baseType.IsGenericTypeDefinition) return type.GetInterfaces().Where(i => i.IsGenericType).Any(i => i.GetGenericTypeDefinition() == baseType);
+            if (baseType.IsGenericTypeDefinition)
+            {
+                return (type.IsGenericType && type.GetGenericTypeDefinition() == baseType) 
+                    || type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == baseType);
+            }
             return baseType.GetInterfaces().Any(i => i == baseType);
         }
         for (var t = type.BaseType; t is not null; t = t.BaseType)

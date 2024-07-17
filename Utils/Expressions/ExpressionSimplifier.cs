@@ -93,7 +93,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 	[ExpressionSignature(ExpressionType.Power)]
 	public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)] ConstantExpression right)
 	{
-		if ((double)right.Value == 0.0) { return Expression.Constant(1.0); }
+		if ((double)right.Value == 0.0) { return Expression.Constant(Convert.ChangeType(1.0, right.Type)); }
 		if ((double)right.Value == 1.0) { return left; }
 		return null;
 	}

@@ -27,22 +27,22 @@ namespace Utils.Expressions
             switch (e)
             {
                 case ConstantExpression cc:
-                    expressionParameters = new Expression[0];
+                    expressionParameters = [];
                     parameters = [cc, cc.Value];
                     break;
                 case UnaryExpression ue:
-                    expressionParameters = new Expression[] { PrepareExpression(ue.Operand) };
+                    expressionParameters = [PrepareExpression(ue.Operand)];
                     e = ue = (UnaryExpression)CopyExpression(e, expressionParameters);
                     parameters = [ue, ue.Operand];
                     break;
                 case BinaryExpression be:
-                    expressionParameters = new Expression[] { PrepareExpression(be.Left), PrepareExpression(be.Right) };
+                    expressionParameters = [PrepareExpression(be.Left), PrepareExpression(be.Right)];
                     e = be = (BinaryExpression)CopyExpression(e, expressionParameters);
                     parameters = [be, be.Left, be.Right];
                     break;
                 case MethodCallExpression mce:
                     {
-                        expressionParameters = mce.Arguments.Select(a => PrepareExpression(a)).ToArray();
+                        expressionParameters = mce.Arguments.Select(PrepareExpression).ToArray();
                         e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
                         parameters = new object[mce.Arguments.Count + 1];
                         parameters[0] = mce;
@@ -51,12 +51,12 @@ namespace Utils.Expressions
                     }
 
                 case ParameterExpression pe:
-                    expressionParameters = new Expression[0];
+                    expressionParameters = [];
                     parameters = [pe];
                     break;
                 case InvocationExpression ie:
                     {
-                        expressionParameters = ie.Arguments.Select(a => PrepareExpression(a)).ToArray();
+                        expressionParameters = ie.Arguments.Select(PrepareExpression).ToArray();
                         e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
                         parameters = new object[ie.Arguments.Count + 1];
                         parameters[0] = ie;
@@ -75,8 +75,8 @@ namespace Utils.Expressions
                     }
 
                 default:
-                    expressionParameters = new Expression[] { };
-                    parameters = new[] { e };
+                    expressionParameters = [];
+					parameters = [e];
                     break;
             }
 
@@ -126,7 +126,7 @@ namespace Utils.Expressions
                 }
                 else if (parametersInfo.Length == 1)
                 {
-                    result = method.Invoke(this, new[] { parameters[0] });
+                    result = method.Invoke(this, [parameters[0]]);
                 }
                 else
                 {
@@ -138,7 +138,7 @@ namespace Utils.Expressions
             {
                 if (e is ConstantExpression cc)
                 {
-                    return FinalizeExpression(e, new Expression[0]);
+                    return FinalizeExpression(e, []);
                 }
                 else
                 {
