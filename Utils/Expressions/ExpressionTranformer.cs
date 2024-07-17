@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Utils.Objects;
 using System.Text.RegularExpressions;
 using Utils.Reflection;
+using System.Collections.Immutable;
 
 namespace Utils.Expressions
 {
@@ -17,9 +18,22 @@ namespace Utils.Expressions
         private static Type TypeOfExpression = typeof(Expression);
         protected virtual Expression PrepareExpression(Expression e) => e;
 
-        protected Expression Transform(Expression e)
+        private IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)> TansformMethods { get; }
+
+        public ExpressionTranformer()
         {
             Type t = GetType();
+			TansformMethods =
+                t
+                .GetMethods(Public | NonPublic | InvokeMethod | Instance)
+                .Select(m => (m, attr: m.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault()))
+                .Where(ma => ma.attr != null)
+                .Select (ma => (ma.m, ma.attr, ma.m.GetParameters()))
+                .ToImmutableList();
+		}
+
+        protected Expression Transform(Expression e)
+        {
 
             object[] parameters = null;
             Expression[] expressionParameters = null;
@@ -76,19 +90,14 @@ namespace Utils.Expressions
 
                 default:
                     expressionParameters = [];
-					parameters = [e];
+                    parameters = [e];
                     break;
             }
 
-            foreach (var method in t.GetMethods(Public | NonPublic | InvokeMethod | Instance))
+            foreach ((var method, var attr, var parametersInfo) in TansformMethods)
             {
-                var attr = method.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault();
-                if (attr is null) continue;
                 if (!attr.Match(e)) continue;
                 if (!TypeOfExpression.IsAssignableFromEx(method.ReturnType)) throw new InvalidProgramException();
-
-                var parametersInfo = method.GetParameters();
-
                 if (!parametersInfo[0].ParameterType.IsInstanceOfType(parameters[0])) continue;
                 object result;
                 if (parametersInfo.Length > 1)
