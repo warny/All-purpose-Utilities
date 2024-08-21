@@ -49,5 +49,5 @@ Scenario: Read Value 1
 	Given A prefilled DoubleIndexedDictionary
 	Then I expect [1] = "A"
 	 And I expect ["A"] = 1
-	 And I expect [999] throw KeyNotFoundException 
-	 And I expect ["A"] throw KeyNotFoundException 
+	 And I expect [999] throws KeyNotFoundException 
+	 And I expect ["A"] throws KeyNotFoundException 

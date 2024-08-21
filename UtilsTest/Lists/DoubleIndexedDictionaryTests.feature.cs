@@ -334,10 +334,10 @@ this.ScenarioInitialize(scenarioInfo);
   testRunner.And("I expect [\"A\"] = 1", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 52
-  testRunner.And("I expect [999] throw KeyNotFoundException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+  testRunner.And("I expect [999] throws KeyNotFoundException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 53
-  testRunner.And("I expect [\"A\"] throw KeyNotFoundException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+  testRunner.And("I expect [\"A\"] throws KeyNotFoundException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
             }
             this.ScenarioCleanup();

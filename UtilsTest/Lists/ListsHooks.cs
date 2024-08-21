@@ -28,10 +28,12 @@ namespace UtilsTest.Lists
 		[Given("A prefilled DoubleIndexedDictionary")]
 		public void APreFilledDoubleIndexedDictionary()
 		{
-			d = new();
-			d.Add(1, "A");
-			d.Add(2, "B");
-			d.Add(3, "C");
+			d = new()
+			{
+				{ 1, "A" },
+				{ 2, "B" },
+				{ 3, "C" }
+			};
 
 		}
 
@@ -53,7 +55,7 @@ namespace UtilsTest.Lists
 		{
 			try
 			{
-				d.Add(s, i);
+				d.Add(i, s);
 			}
 			catch (System.Exception ex)
 			{
@@ -66,7 +68,7 @@ namespace UtilsTest.Lists
 		{
 			try
 			{
-				d[i] = s;
+				d.Left[i] = s;
 			}
 			catch (System.Exception ex)
 			{
@@ -79,7 +81,7 @@ namespace UtilsTest.Lists
 		{
 			try
 			{
-				d[s] = i;
+				d.Right[s] = i;
 			}
 			catch (System.Exception ex)
 			{
@@ -102,21 +104,21 @@ namespace UtilsTest.Lists
 		[Then(@"I expect \[(\d+)\] = \""(\w+)\""")]
 		public void IExpectThisKeyValue(int key, string value)
 		{
-			Assert.AreEqual(value, d[key]);
+			Assert.AreEqual(value, d.Left[key]);
 		}
 
 		[Then(@"I expect \[\""(\w+)\""\] = (\d+)")]
 		public void IExpectThisKeyValue(string key, int value)
 		{
-			Assert.AreEqual(value, d[key]);
+			Assert.AreEqual(value, d.Right[key]);
 		}
 
-		[Then(@"I expect \[(\d+)\] throw (\w+)")]
+		[Then(@"I expect \[(\d+)\] throws (\w+)")]
 		public void IExpectThisKeyValueThrows(int key, string exceptionTypeName)
 		{
 			try
 			{
-				var value = d[key];
+				var value = d.Left[key];
 			}
 			catch (Exception ex)
 			{
@@ -124,12 +126,12 @@ namespace UtilsTest.Lists
 			}
 		}
 
-		[Then(@"I expect \[\""(\w+)\""\] throw (\w+)")]
+		[Then(@"I expect \[\""(\w+)\""\] throws (\w+)")]
 		public void IExpectThisKeyValueThrows(string key, string exceptionTypeName)
 		{
 			try
 			{
-				var value = d[key];
+				var value = d.Right[key];
 			}
 			catch (Exception ex)
 			{
