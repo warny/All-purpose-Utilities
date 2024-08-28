@@ -27,82 +27,87 @@ public class StringDifference : IReadOnlyList<StringChange>
         changes = Compare(old, @new, 0, 0);
     }
 
-    private static IReadOnlyList<StringChange> Compare(ReadOnlySpan<char> old, ReadOnlySpan<char> @new, int lengthStart, int lengthEnd)
-    {
-        List<StringChange> changes = new List<StringChange>();
+	private static IReadOnlyList<StringChange> Compare(ReadOnlySpan<char> old, ReadOnlySpan<char> @new, int lengthStart, int lengthEnd)
+	{
+		Span<int> lengths = stackalloc int[(old.Length + 1) * (@new.Length + 1)];
+		int width = @new.Length + 1;
 
-        int[,] lengths = new int[old.Length + 1, @new.Length + 1];
+		for (int i = lengthStart; i < old.Length - lengthEnd; i++)
+		{
+			for (int j = lengthStart; j < @new.Length - lengthEnd; j++)
+			{
+				if (old[i] == @new[j])
+					lengths[(i + 1) * width + (j + 1)] = lengths[i * width + j] + 1;
+				else
+					lengths[(i + 1) * width + (j + 1)] = Math.Max(lengths[(i + 1) * width + j], lengths[i * width + (j + 1)]);
+			}
+		}
 
-        // Row 0 and column 0 are initialized to 0 already
+		List<StringChange> changes = new List<StringChange>();
+		StringComparisonStatus currentStatus = StringComparisonStatus.Unchanged;
+		int previousStatePosition = old.Length - lengthEnd;
 
-        for (int i = lengthStart; i < old.Length - lengthEnd; i++)
-            for (int j = lengthStart; j < @new.Length - lengthEnd; j++)
-                if (old[i] == @new[j])
-                    lengths[i + 1, j + 1] = lengths[i, j] + 1;
-                else
-                    lengths[i + 1, j + 1] = Math.Max(lengths[i + 1, j], lengths[i, j + 1]);
+		int oldPosition = old.Length - lengthEnd;
+		int newPosition = @new.Length - lengthEnd;
 
-        // Read the substring out from the matrix
-        StringComparisonStatus currentStatus = StringComparisonStatus.Unchanged;
-        int previousStatePosition = old.Length - lengthEnd;
-        int oldPosition, newPosition;
-        for (oldPosition = old.Length - lengthEnd, newPosition = @new.Length - lengthEnd;
-               oldPosition > lengthStart && newPosition != lengthStart;)
-        {
-            if (lengths[oldPosition, newPosition] == lengths[oldPosition - 1, newPosition])
-            {
-                if (currentStatus != StringComparisonStatus.Removed)
-                {
-                    AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
-                    previousStatePosition = oldPosition;
-                    currentStatus = StringComparisonStatus.Removed;
-                }
-                oldPosition--;
-            }
-            else if (lengths[oldPosition, newPosition] == lengths[oldPosition, newPosition - 1])
-            {
-                if (currentStatus != StringComparisonStatus.Added)
-                {
-                    AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
-                    previousStatePosition = newPosition;
-                    currentStatus = StringComparisonStatus.Added;
-                }
-                newPosition--;
-            }
-            else
-            {
-                if (old[oldPosition - 1] != @new[newPosition - 1])
-                {
-                    throw new Exception($"Oops... something went wrong in the {nameof(Compare)} method!");
-                }
-                if (currentStatus != StringComparisonStatus.Unchanged)
-                {
-                    AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
-                    previousStatePosition = oldPosition;
-                    currentStatus = StringComparisonStatus.Unchanged;
-                }
+		while (oldPosition > lengthStart && newPosition > lengthStart)
+		{
+			if (lengths[oldPosition * width + newPosition] == lengths[(oldPosition - 1) * width + newPosition])
+			{
+				if (currentStatus != StringComparisonStatus.Removed)
+				{
+					AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
+					previousStatePosition = oldPosition;
+					currentStatus = StringComparisonStatus.Removed;
+				}
+				oldPosition--;
+			}
+			else if (lengths[oldPosition * width + newPosition] == lengths[oldPosition * width + (newPosition - 1)])
+			{
+				if (currentStatus != StringComparisonStatus.Added)
+				{
+					AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
+					previousStatePosition = newPosition;
+					currentStatus = StringComparisonStatus.Added;
+				}
+				newPosition--;
+			}
+			else
+			{
+				if (old[oldPosition - 1] != @new[newPosition - 1])
+				{
+					throw new InvalidOperationException($"Inconsistency detected in {nameof(Compare)} method.");
+				}
 
-                oldPosition--;
-                newPosition--;
-            }
-        }
+				if (currentStatus != StringComparisonStatus.Unchanged)
+				{
+					AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
+					previousStatePosition = oldPosition;
+					currentStatus = StringComparisonStatus.Unchanged;
+				}
 
-        AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
+				oldPosition--;
+				newPosition--;
+			}
+		}
 
-        if (newPosition > 0)
-        {
-            AddChange(changes, old, @new, StringComparisonStatus.Added, newPosition, oldPosition, 0);
-        }
-        if (oldPosition > 0)
-        {
-            AddChange(changes, old, @new, StringComparisonStatus.Removed, oldPosition, 0, oldPosition);
-        }
+		AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
 
-        changes.Reverse();
-        return changes.ToImmutableArray();
-    }
+		if (newPosition > lengthStart)
+		{
+			AddChange(changes, old, @new, StringComparisonStatus.Added, newPosition, oldPosition, lengthStart);
+		}
 
-    private static void AddChange(List<StringChange> changes, ReadOnlySpan<char> old, ReadOnlySpan<char> @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition)
+		if (oldPosition > lengthStart)
+		{
+			AddChange(changes, old, @new, StringComparisonStatus.Removed, oldPosition, lengthStart, oldPosition);
+		}
+
+		changes.Reverse();
+		return changes.ToImmutableArray();
+	}
+
+	private static void AddChange(List<StringChange> changes, ReadOnlySpan<char> old, ReadOnlySpan<char> @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition)
     {
         var change = currentStatus == StringComparisonStatus.Added ? @new[newPosition .. previousStatePosition] : old[oldPosition .. previousStatePosition];
         if (change.Length > 0)
