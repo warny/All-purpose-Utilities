@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,21 +13,21 @@ namespace Utils.Objects;
 /// </summary>
 public class StringDifference : IReadOnlyList<StringChange>
 {
-    private readonly StringChange[] changes;
+    private readonly IReadOnlyList<StringChange> changes;
 
-    public int Count => changes.Length;
+    public int Count => changes.Count;
 
     /// <summary>
     /// Compares two strings and returns the modifications needed to transform the first string into the second.
     /// </summary>
     /// <param name="old">String before modifications</param>
     /// <param name="new">String after modifications</param>
-    public StringDifference(string old, string @new)
+    public StringDifference(ReadOnlySpan<char> old, ReadOnlySpan<char> @new)
     {
         changes = Compare(old, @new, 0, 0);
     }
 
-    private static StringChange[] Compare(string old, string @new, int lengthStart, int lengthEnd)
+    private static IReadOnlyList<StringChange> Compare(ReadOnlySpan<char> old, ReadOnlySpan<char> @new, int lengthStart, int lengthEnd)
     {
         List<StringChange> changes = new List<StringChange>();
 
@@ -98,15 +99,15 @@ public class StringDifference : IReadOnlyList<StringChange>
         }
 
         changes.Reverse();
-        return changes.ToArray();
+        return changes.ToImmutableArray();
     }
 
-    private static void AddChange(List<StringChange> changes, string old, string @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition)
+    private static void AddChange(List<StringChange> changes, ReadOnlySpan<char> old, ReadOnlySpan<char> @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition)
     {
-        string change = currentStatus == StringComparisonStatus.Added ? @new.Substring(newPosition, previousStatePosition - newPosition) : old.Substring(oldPosition, previousStatePosition - oldPosition);
+        var change = currentStatus == StringComparisonStatus.Added ? @new[newPosition .. previousStatePosition] : old[oldPosition .. previousStatePosition];
         if (change.Length > 0)
         {
-            changes.Add(new StringChange(currentStatus, change));
+            changes.Add(new StringChange(currentStatus, change.ToString()));
         }
     }
 
