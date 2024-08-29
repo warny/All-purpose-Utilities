@@ -33,6 +33,15 @@ public class ReturnValue<T, E> where E : class
         Error = error;
     }
 
+    public void Do(
+        Action<T> onSuccess,
+        Action<E> onError
+    )
+    {
+        if (IsSuccess) { onSuccess(Value); }
+        else { onError(Error); }
+    }
+
     public static implicit operator ReturnValue<T, E>(T value) => new ReturnValue<T, E>(value);
 
 }

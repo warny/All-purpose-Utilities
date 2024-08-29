@@ -16,7 +16,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From1To999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (-1, "moins un"),
                 (0, "zéro"),
                 (1, "un"),
@@ -41,7 +41,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (260, "deux cent soixante"),
                 (261, "deux cent soixante et un"),
                 (262, "deux cent soixante deux"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("FR-fr");
 
@@ -54,7 +54,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From1000To9999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (1000, "mille"),
                 (1001, "mille un"),
                 (1002, "mille deux"),
@@ -78,7 +78,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (1260, "mille deux cent soixante"),
                 (1261, "mille deux cent soixante et un"),
                 (1262, "mille deux cent soixante deux"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter(CultureInfo.GetCultureInfo("FR-fr"));
 
@@ -91,7 +91,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From10000To99999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (12000, "douze mille"),
                 (12001, "douze mille un"),
                 (12002, "douze mille deux"),
@@ -115,7 +115,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (99260, "quatre-vingt dix neuf mille deux cent soixante"),
                 (99261, "quatre-vingt dix neuf mille deux cent soixante et un"),
                 (99262, "quatre-vingt dix neuf mille deux cent soixante deux"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("FR-fr");
 
@@ -128,13 +128,13 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void BiggerTest()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (-401000, "moins quatre cent un mille"),
                 (401000, "quatre cent un mille"),
                 (999999, "neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
                 (1000000, "un million"),
                 (999999999, "neuf cent quatre-vingt dix neuf millions neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("FR-fr");
 

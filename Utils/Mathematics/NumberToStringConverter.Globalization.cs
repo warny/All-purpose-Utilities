@@ -22,9 +22,10 @@ namespace Utils.Mathematics
             );
         }
 
+		// Caches configurations for different cultures
+		private static readonly Dictionary<string, NumberToStringConverter> configurations = new Dictionary<string, NumberToStringConverter>(StringComparer.InvariantCultureIgnoreCase);
 
-        private static readonly Dictionary<string, NumberToStringConverter> configurations = new Dictionary<string, NumberToStringConverter>(StringComparer.InvariantCultureIgnoreCase);
-        public static void InitializeConfigurations(params string[] configurations)
+		public static void InitializeConfigurations(params string[] configurations)
             => RegisterConfigurations((IEnumerable<string>)configurations);
         public static void RegisterConfigurations(IEnumerable<string> configurations) {
             foreach (var configuration in configurations)

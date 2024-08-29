@@ -31,7 +31,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2)=>i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 
 		}
 
@@ -52,7 +52,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 
 		}
 
@@ -73,7 +73,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 		}
 
 		[TestMethod]
@@ -94,7 +94,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 		}
 
 		[TestMethod]
@@ -115,7 +115,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 		}
 
 		[TestMethod]
@@ -139,7 +139,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 
 		}
 
@@ -163,7 +163,7 @@ namespace UtilsTest.Objects
 
 			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
-			Assert.IsTrue(comparer.Equals(expected, result));
+			Assert.AreEqual(expected, result, comparer);
 
 		}
 

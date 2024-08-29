@@ -56,7 +56,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From1000To9999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (1000, "one thousand"),
                 (1001, "one thousand, one"),
                 (1002, "one thousand, two"),
@@ -80,7 +80,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (1260, "one thousand, two hundred and sixty"),
                 (1261, "one thousand, two hundred and sixty-one"),
                 (1262, "one thousand, two hundred and sixty-two"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("en-US");
 
@@ -93,7 +93,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From10000To99999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (12000, "twelve thousand"),
                 (12001, "twelve thousand, one"),
                 (12002, "twelve thousand, two"),
@@ -117,7 +117,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (99260, "ninety-nine thousand, two hundred and sixty"),
                 (99261, "ninety-nine thousand, two hundred and sixty-one"),
                 (99262, "ninety-nine thousand, two hundred and sixty-two"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("en-UK");
 
@@ -130,13 +130,13 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void BiggerTest()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (-401000, "minus four hundred and one thousand"),
                 (401000, "four hundred and one thousand"),
                 (999999, "nine hundred and ninety-nine thousand, nine hundred and ninety-nine"),
                 (1000000, "one million"),
                 (999999999, "nine hundred and ninety-nine million, nine hundred and ninety-nine thousand, nine hundred and ninety-nine"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("en-UK");
 
@@ -149,12 +149,12 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void BigIntTest()
         {
-            (BigInteger Number, string Expected)[] tests = new (BigInteger Number, string Expected)[] {
+            (BigInteger Number, string Expected)[] tests = [
                 (
                     new BigInteger([0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true, true),
                     "one quinquavingtillion, height hundred and fifty-two quattuorvingtillion, six hundred and seventy-three tresvingtillion, four hundred and twenty-seven duovingtillion, seven hundred and ninety-seven univingtillion, fifty-nine vingtillion, one hundred and twenty-six novendecillion, seven hundred and seventy-seven octodecillion, one hundred and thirty-five septendecillion, seven hundred and sixty sedecillion, one hundred and thirty-nine quinquadecillion, six quattuordecillion, five hundred and twenty-five tredecillion, six hundred and fifty-two duodecillion, three hundred and nineteen unidecillion, seven hundred and fifty-four decillion, six hundred and fifty nonillion, two hundred and forty-nine octillion, twenty-four septillion, six hundred and thirty-one sextillion, three hundred and twenty-one quintillion, three hundred and forty-four quadrillion, one hundred and twenty-six trillion, six hundred and ten billion, seventy-four million, two hundred and thirty-height thousand, nine hundred and seventy-five"
                 ),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("en-UK");
 

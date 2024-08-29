@@ -15,7 +15,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From1To999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (-1, "minus eins"),
                 (0, "null"),
                 (1, "eins"),
@@ -40,7 +40,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (260, "zweihundertsechzig"),
                 (261, "zweihunderteinundsechzig"),
                 (262, "zweihundertzweiundsechzig"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("de-DE");
 
@@ -53,7 +53,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From1000To9999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (1000, "ein tausend"),
                 (1001, "ein tausend eins"),
                 (1002, "ein tausend zwei"),
@@ -77,7 +77,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (1260, "ein tausend zweihundertsechzig"),
                 (1261, "ein tausend zweihunderteinundsechzig"),
                 (1262, "ein tausend zweihundertzweiundsechzig"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("de-CH");
 
@@ -90,7 +90,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void From10000To99999Test()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (12000, "zwölf tausend"),
                 (12001, "zwölf tausend eins"),
                 (12002, "zwölf tausend zwei"),
@@ -114,7 +114,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (99260, "neunundneunzig tausend zweihundertsechzig"),
                 (99261, "neunundneunzig tausend zweihunderteinundsechzig"),
                 (99262, "neunundneunzig tausend zweihundertzweiundsechzig"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("de");
 
@@ -127,13 +127,13 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void BiggerTest()
         {
-            (long Number, string Expected)[] tests = new (long Number, string Expected)[] {
+            (long Number, string Expected)[] tests = [
                 (-401000, "minus vierhundertein tausend"),
                 (401000, "vierhundertein tausend"),
                 (999999, "neunhundertneunundneunzig tausend neunhundertneunundneunzig"),
                 (1000000, "eine Million"),
                 (999999999, "neunhundertneunundneunzig Millionen neunhundertneunundneunzig tausend neunhundertneunundneunzig"),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("de-DE");
 
@@ -146,12 +146,12 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void BigIntTest()
         {
-            (BigInteger Number, string Expected)[] tests = new (BigInteger Number, string Expected)[] {
+            (BigInteger Number, string Expected)[] tests = [
                 (
                     new BigInteger([0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true, true),
                     "eine Tredezillion achthundertzweiundfünfzig Duodezilliarden sechshundertdreiundsiebzig Duodezillionen vierhundertsiebenundzwanzig Unidezilliarden siebenhundertsiebenundneunzig Unidezillionen neunundfünfzig Dezilliarden einhundertsechsundzwanzig Dezillionen siebenhundertsiebenundsiebzig Nonilliarden einhundertfünfunddreizig Nonillionen siebenhundertsechzig Octilliarden einhundertneununddreizig Octillionen sechs Septilliarden fünfhundertfünfundzwanzig Septillionen sechshundertzweiundfünfzig Sextilliarden dreihundertneunzehn Sextillionen siebenhundertvierundfünfzig Quintilliarden sechshundertfünfzig Quintillionen zweihundertneunundvierzig Quadrilliarden vierundzwanzig Quadrillionen sechshunderteinunddreizig Trilliarden dreihunderteinundzwanzig Trillionen dreihundertvierundvierzig Billiarden einhundertsechsundzwanzig Billionen sechshundertzehn Milliarden vierundsiebzig Millionen zweihundertachtunddreizig tausend neunhundertfünfundsiebzig"
                 ),
-            };
+            ];
 
             var converter = NumberToStringConverter.GetConverter("de-DE");
 
