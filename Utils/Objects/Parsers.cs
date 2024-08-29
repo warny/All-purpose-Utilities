@@ -6,65 +6,83 @@ using System.Reflection;
 
 namespace Utils.Objects;
 
+/// <summary>
+/// Utility class that provides methods to parse strings into various types using reflection and expressions.
+/// </summary>
 public static class Parsers
 {
+	// Delegate definitions for different parsing methods
 	private delegate bool TryParseDelegate(string s, IFormatProvider formatProvider, out object value);
 	private delegate object ParseDelegate(string s, IFormatProvider formatProvider);
 	private delegate object ConstructorDelegate(string s);
 
+	// Cached Type references
 	private static readonly Type typeOfString = typeof(string);
 	private static readonly Type typeOfIFormatProvider = typeof(IFormatProvider);
 
+	/// <summary>
+	/// Contains the parsing methods (TryParse, Parse, Constructor) for a specific type.
+	/// </summary>
 	private class ParseMethods
 	{
+		public bool CanParse { get; }
+		public TryParseDelegate TryParse { get; }
+		public ParseDelegate Parse { get; }
+		public ConstructorDelegate Constructor { get; }
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ParseMethods"/> class by building the parsing methods for the specified type.
+		/// </summary>
+		/// <param name="type">The type to build parsing methods for.</param>
 		public ParseMethods(Type type)
 		{
 			type.ArgMustNotBeNull();
+
 			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
 			{
 				type = type.GetGenericArguments()[0];
 			}
 
-			this.TryParse = BuildTryParse(type);
-			this.Parse = BuildParse(type);
-			this.Constructor = BuildConstructor(type);
+			TryParse = BuildTryParse(type);
+			Parse = BuildParse(type);
+			Constructor = BuildConstructor(type);
 
-			CanParse = TryParse is not null || Parse is not null || Constructor is not null;
+			CanParse = TryParse != null || Parse != null || Constructor != null;
 		}
+
 		public ParseMethods(TryParseDelegate tryParse, ParseDelegate parse, ConstructorDelegate constructor)
 		{
-			this.TryParse = tryParse;
-			this.Parse = parse;
-			this.Constructor = constructor;
-			CanParse = TryParse is not null || Parse is not null || Constructor is not null;
+			TryParse = tryParse;
+			Parse = parse;
+			Constructor = constructor;
+			CanParse = TryParse != null || Parse != null || Constructor != null;
 		}
 
+		/// <summary>
+		/// Builds a constructor delegate for types that have a constructor accepting a string parameter.
+		/// </summary>
 		private ConstructorDelegate BuildConstructor(Type type)
 		{
 			var constructorInfo = type.GetConstructor(new[] { typeOfString });
-			if (constructorInfo is not null)
+			if (constructorInfo != null)
 			{
-
 				var sParameter = Expression.Parameter(typeOfString, "s");
 				var returnLabel = Expression.Label(typeof(object));
+
 				return Expression.Lambda<ConstructorDelegate>(
 					Expression.Block(
-						typeof(object),
-						Expression.Return(
-							returnLabel,
-							Expression.Convert(Expression.New(constructorInfo, sParameter), typeof(object)),
-							typeof(object)
-						),
+						Expression.Return(returnLabel, Expression.Convert(Expression.New(constructorInfo, sParameter), typeof(object))),
 						Expression.Label(returnLabel, Expression.Default(typeof(object)))
-						),
+					),
 					sParameter
-					)
-					.Compile();
+				).Compile();
 			}
 			return null;
 		}
 
+		/// <summary>
+		/// Builds a TryParse delegate for the specified type.
+		/// </summary>
 		private TryParseDelegate BuildTryParse(Type type)
 		{
 			type.ArgMustNotBeNull();
@@ -148,68 +166,40 @@ public static class Parsers
 			return null;
 		}
 
+		/// <summary>
+		/// Builds a Parse delegate for the specified type.
+		/// </summary>
 		private ParseDelegate BuildParse(Type type)
 		{
-			type.ArgMustNotBeNull();
-			MethodInfo parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeOfIFormatProvider }, null);
-			if (parseMethod is not null)
-			{
+			MethodInfo parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null,
+				[typeOfString, typeOfIFormatProvider], null)
+				?? type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null,
+				[typeOfString], null);
 
+			if (parseMethod != null)
+			{
 				var strParameter = Expression.Parameter(typeOfString, "s");
-				var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
+				var formatProviderParameter = Expression.Parameter(typeOfIFormatProvider, "formatProvider");
 				var returnLabel = Expression.Label(typeof(object));
 
 				return Expression.Lambda<ParseDelegate>(
 					Expression.Block(
-						typeof(object),
-						Expression.Return(
-							returnLabel,
-							Expression.Convert(
-								Expression.Call(parseMethod, strParameter, formatProviderParameter), typeof(object)
-							),
-							typeof(object)),
+						Expression.Return(returnLabel, Expression.Convert(Expression.Call(parseMethod, strParameter, formatProviderParameter), typeof(object))),
 						Expression.Label(returnLabel, Expression.Default(typeof(object)))
-						),
+					),
 					strParameter, formatProviderParameter
-					).Compile();
-			}
-
-			parseMethod = type.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString }, null);
-			if (parseMethod is not null)
-			{
-
-				var strParameter = Expression.Parameter(typeOfString, "s");
-				var formatProviderParameter = Expression.Parameter(typeof(IFormatProvider), "formatProvider");
-				var returnLabel = Expression.Label(typeof(object));
-
-				return Expression.Lambda<ParseDelegate>(
-					Expression.Block(
-						typeof(object),
-						Expression.Return(
-							returnLabel,
-							Expression.Convert(
-								Expression.Call(parseMethod, strParameter), typeof(object)
-							),
-							typeof(object)),
-						Expression.Label(returnLabel, Expression.Default(typeof(object)))
-						),
-					strParameter, formatProviderParameter
-					).Compile();
+				).Compile();
 			}
 			return null;
 		}
-
-		public bool CanParse { get; }
-
-		public TryParseDelegate TryParse { get; }
-		public ParseDelegate Parse { get; }
-		public ConstructorDelegate Constructor { get; }
 	}
 
-	private static Dictionary<Type, ParseMethods> parsers = new Dictionary<Type, ParseMethods>();
+	// Cache of parsers for different types
+	private static readonly Dictionary<Type, ParseMethods> parsers = new Dictionary<Type, ParseMethods>();
 
 	static Parsers()
 	{
+		// Adding default parser for DateTime
 		parsers.Add(typeof(DateTime), new ParseMethods(
 			new TryParseDelegate((string s, IFormatProvider formatProvider, out object value) =>
 			{
@@ -222,97 +212,100 @@ public static class Parsers
 		));
 	}
 
-
 	/// <summary>
-	/// Récupère les méthodes de parsing de <paramref name="type"/>
+	/// Retrieves the parsing methods for a specified type.
 	/// </summary>
-	/// <param name="type">Type dont on veut récupérer les fonctions</param>
-	/// <returns></returns>
+	/// <param name="type">The type to retrieve parsing methods for.</param>
+	/// <returns>The <see cref="ParseMethods"/> instance containing the parsing methods for the specified type.</returns>
 	private static ParseMethods GetParseMethods(Type type)
 	{
 		type.ArgMustNotBeNull();
+
 		if (!parsers.TryGetValue(type, out var parseMethods))
 		{
 			parseMethods = new ParseMethods(type);
-			parsers.Add(type, parseMethods);
+			parsers[type] = parseMethods;
 		}
 
 		return parseMethods;
 	}
 
 	/// <summary>
-	/// Vérifie qu'un type peut être parsé
+	/// Checks if a type can be parsed.
 	/// </summary>
-	/// <param name="type">Type à vérifier</param>
-	/// <returns><see cref="true"/> si le type peut être parsé sinon <see cref="false"/></returns>
+	/// <param name="type">The type to check.</param>
+	/// <returns><c>true</c> if the type can be parsed; otherwise, <c>false</c>.</returns>
 	public static bool CanParse<T>() => CanParse(typeof(T));
 
 	/// <summary>
-	/// Vérifie qu'un type peut être parsé
+	/// Checks if a type can be parsed.
 	/// </summary>
-	/// <param name="type">Type à vérifier</param>
-	/// <returns><see cref="true"/> si le type peut être parsé sinon <see cref="false"/></returns>
+	/// <param name="type">The type to check.</param>
+	/// <returns><c>true</c> if the type can be parsed; otherwise, <c>false</c>.</returns>
 	public static bool CanParse(Type type)
 	{
 		type.ArgMustNotBeNull();
+
 		if (type.IsEnum) return true;
+
 		if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
 		{
 			return CanParse(type.GetGenericArguments()[0]);
 		}
 
-		ParseMethods parseMethods = GetParseMethods(type);
-		return parseMethods.CanParse;
+		return GetParseMethods(type).CanParse;
 	}
 
 	/// <summary>
-	/// Parse la valeur
+	/// Parses a string value to a specified type.
 	/// </summary>
-	/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-	/// <param name="value">Valeur à parser</param>
-	/// <returns>Valeur parsée</returns>
-	static public T Parse<T>(string value) => (T)Parse(value, typeof(T));
+	/// <typeparam name="T">The type to parse the value to.</typeparam>
+	/// <param name="value">The string value to parse.</param>
+	/// <returns>The parsed value of type <typeparamref name="T"/>.</returns>
+	public static T Parse<T>(string value) => (T)Parse(value, typeof(T));
 
 	/// <summary>
-	/// Parse la valeur
+	/// Parses a string value to a specified type using multiple format providers.
 	/// </summary>
-	/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-	/// <param name="value">Valeur à parser</param>
-	/// <param name="formatsProviders">Formats de valeurs à tester</param>
-	/// <returns>Valeur parsée</returns>
-	static public T Parse<T>(string value, IEnumerable<IFormatProvider> formatsProviders) => (T)Parse(value, typeof(T), formatsProviders);
+	/// <typeparam name="T">The type to parse the value to.</typeparam>
+	/// <param name="value">The string value to parse.</param>
+	/// <param name="formatsProviders">An enumerable of format providers to use for parsing.</param>
+	/// <returns>The parsed value of type <typeparamref name="T"/>.</returns>
+	public static T Parse<T>(string value, IEnumerable<IFormatProvider> formatsProviders) => (T)Parse(value, typeof(T), formatsProviders);
 
 	/// <summary>
-	/// Parse la valeur
+	/// Parses a string value to a specified type using multiple format providers.
 	/// </summary>
-	/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-	/// <param name="value">Valeur à parser</param>
-	/// <param name="formatsProviders">Formats de valeurs à tester</param>
-	/// <returns>Valeur parsée</returns>
-	static public T Parse<T>(string value, params IFormatProvider[] formatsProviders) => (T)Parse(value, typeof(T), formatsProviders);
+	/// <typeparam name="T">The type to parse the value to.</typeparam>
+	/// <param name="value">The string value to parse.</param>
+	/// <param name="formatsProviders">An array of format providers to use for parsing.</param>
+	/// <returns>The parsed value of type <typeparamref name="T"/>.</returns>
+	public static T Parse<T>(string value, params IFormatProvider[] formatsProviders) => (T)Parse(value, typeof(T), formatsProviders);
 
 	/// <summary>
-	/// convertie une valeur chaîne dans le type spécifié
+	/// Converts a string value to the specified type using the current culture.
 	/// </summary>
-	/// <param name="value"></param>
-	/// <param name="type"></param>
-	/// <returns></returns>
+	/// <param name="value">The string value to convert.</param>
+	/// <param name="type">The target type.</param>
+	/// <returns>The converted value as an object of the specified type.</returns>
 	public static object Parse(string value, Type type) => Parse(value, type, CultureInfo.CurrentCulture);
 
 	/// <summary>
-	/// convertie une valeur chaîne dans le type spécifié
+	/// Converts a string value to the specified type using multiple format providers.
 	/// </summary>
-	/// <param name="value"></param>
-	/// <param name="type"></param>
-	/// <returns></returns>
+	/// <param name="value">The string value to convert.</param>
+	/// <param name="type">The target type.</param>
+	/// <param name="formatsProviders">An array of format providers to use for conversion.</param>
+	/// <returns>The converted value as an object of the specified type.</returns>
 	public static object Parse(string value, Type type, params IFormatProvider[] formatsProviders) => Parse(value, type, (IEnumerable<IFormatProvider>)formatsProviders);
 
 	/// <summary>
-	/// convertie une valeur chaîne dans le type spécifié
+	/// Converts a string value to the specified type using multiple format providers.
 	/// </summary>
-	/// <param name="value"></param>
-	/// <param name="type"></param>
-	/// <returns></returns>
+	/// <param name="value">The string value to convert.</param>
+	/// <param name="type">The target type.</param>
+	/// <param name="formatsProviders">An enumerable of format providers to use for conversion.</param>
+	/// <returns>The converted value as an object of the specified type.</returns>
 	public static object Parse(string value, Type type, IEnumerable<IFormatProvider> formatsProviders)
 	{
 		if (type.IsEnum)
@@ -327,18 +320,16 @@ public static class Parsers
 
 		var methods = GetParseMethods(type);
 
-		if (methods.TryParse is not null || methods.Parse is not null)
+		if (methods.TryParse != null || methods.Parse != null)
 		{
 			foreach (var formatProvider in formatsProviders)
 			{
-				object result = null;
-				// on vérifie s'il existe une méthode de parsing respectueuse dans la classe
-				if (methods?.TryParse(value, formatProvider, out result) ?? false)
+				if (methods.TryParse?.Invoke(value, formatProvider, out var result) == true)
 				{
 					return result;
 				}
-				// sinon, on vérifie qu'il existe une méthode de parsing directe dans la classe
-				if (methods.Parse is not null)
+
+				if (methods.Parse != null)
 				{
 					try
 					{
@@ -346,19 +337,17 @@ public static class Parsers
 					}
 					catch
 					{
-						// si le parse echoue, la conversion sera effectué par les convertisseurs suivants
+						// Ignore parse failures and continue to the next format provider
 					}
 				}
 			}
 		}
 
-		//Si tous les parsers ont échoué, on tente de construite l'objet à partir de la chaîne
-		if (methods.Constructor is not null)
+		if (methods.Constructor != null)
 		{
 			return methods.Constructor(value);
 		}
 
-		// enfin, on essaye de convertir la valeur brutalement
 		try
 		{
 			return Convert.ChangeType(value, type);
@@ -371,39 +360,43 @@ public static class Parsers
 			}
 			throw;
 		}
-
 	}
 
 	/// <summary>
-	/// Parse la valeur
+	/// Parses a string value to a specified type, returning a default value if parsing fails.
 	/// </summary>
-	/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-	/// <param name="value">Valeur à parser</param>
-	/// <returns>Valeur parsée</returns>
-	static public T ParseOrDefault<T>(string value, T defaultValue = default)
+	/// <typeparam name="T">The type to parse the value to.</typeparam>
+	/// <param name="value">The string value to parse.</param>
+	/// <param name="defaultValue">The default value to return if parsing fails.</param>
+	/// <returns>The parsed value of type <typeparamref name="T"/> or the default value if parsing fails.</returns>
+	public static T ParseOrDefault<T>(string value, T defaultValue = default)
 	{
-		object returnValue = Parse(value, typeof(T));
-		return (T)(returnValue ?? defaultValue);
+		var result = Parse(value, typeof(T));
+		return (T)(result ?? defaultValue);
 	}
 
 	/// <summary>
-	/// Parse la valeur
+	/// Parses a string value to a specified type using a format provider, returning a default value if parsing fails.
 	/// </summary>
-	/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-	/// <param name="value">Valeur à parser</param>
-	/// <returns>Valeur parsée</returns>
-	static public T ParseOrDefault<T>(string value, IFormatProvider formatProvider = null, T defaultValue = default)
+	/// <typeparam name="T">The type to parse the value to.</typeparam>
+	/// <param name="value">The string value to parse.</param>
+	/// <param name="formatProvider">The format provider to use for parsing.</param>
+	/// <param name="defaultValue">The default value to return if parsing fails.</param>
+	/// <returns>The parsed value of type <typeparamref name="T"/> or the default value if parsing fails.</returns>
+	public static T ParseOrDefault<T>(string value, IFormatProvider formatProvider = null, T defaultValue = default)
 		=> ParseOrDefault(value, new[] { formatProvider }, defaultValue);
-	/// <summary>
-	/// Parse la valeur
-	/// </summary>
-	/// <typeparam name="T">Type de la valeur de sortie</typeparam>
-	/// <param name="value">Valeur à parser</param>
-	/// <returns>Valeur parsée</returns>
-	static public T ParseOrDefault<T>(string value, IFormatProvider[] formatsProviders = null, T defaultValue = default)
-	{
-		object returnValue = Parse(value, typeof(T), formatsProviders);
-		return (T)(returnValue ?? defaultValue);
-	}
 
+	/// <summary>
+	/// Parses a string value to a specified type using multiple format providers, returning a default value if parsing fails.
+	/// </summary>
+	/// <typeparam name="T">The type to parse the value to.</typeparam>
+	/// <param name="value">The string value to parse.</param>
+	/// <param name="formatsProviders">An array of format providers to use for parsing.</param>
+	/// <param name="defaultValue">The default value to return if parsing fails.</param>
+	/// <returns>The parsed value of type <typeparamref name="T"/> or the default value if parsing fails.</returns>
+	public static T ParseOrDefault<T>(string value, IFormatProvider[] formatsProviders = null, T defaultValue = default)
+	{
+		var result = Parse(value, typeof(T), formatsProviders);
+		return (T)(result ?? defaultValue);
+	}
 }

@@ -42,7 +42,7 @@ namespace UtilsTest.Array
 		private static int[] InitIntArray()
 		{
 			Random random = new Random();
-			return new int[] {
+			return [
 				random.Next(),
 				random.Next(),
 				random.Next(),
@@ -53,13 +53,13 @@ namespace UtilsTest.Array
 				random.Next(),
 				random.Next(),
 				random.Next(),
-			};
+			];
 		}
 
 		private static double[] InitDoubleArray()
 		{
 			Random random = new Random();
-			double[] values = new double[] {
+			double[] values = [
 				random.NextDouble(),
 				random.NextDouble(),
 				random.NextDouble(),
@@ -70,7 +70,7 @@ namespace UtilsTest.Array
 				random.NextDouble(),
 				random.NextDouble(),
 				random.NextDouble(),
-			};
+			];
 			return values;
 		}
 
