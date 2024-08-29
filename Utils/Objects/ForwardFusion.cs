@@ -188,9 +188,9 @@ public class ForwardFusion<T1, T2> : IEnumerable<(T1 Left, T2 Right)>, IDisposab
 [Flags]
 public enum JoinType
 {
-InnerJoin = 0,
-LeftJoin = 1,
-RightJoin = 2,
-FullOuterJoin = LeftJoin | RightJoin
+	InnerJoin = 0,
+	LeftJoin = 1,
+	RightJoin = 2,
+	FullOuterJoin = LeftJoin | RightJoin
 }
 
