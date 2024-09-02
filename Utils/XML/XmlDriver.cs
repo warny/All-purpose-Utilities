@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -68,7 +69,7 @@ namespace Utils.XML
 		/// </summary>
 		/// <param name="xPath">xPath</param>
 		/// <returns>object XPathExpression compilé</returns>
-		protected XPathExpression CreateExpression( string xPath )
+		protected XPathExpression CreateExpression(string xPath )
 		{
 			return XPathExpression.Compile(xPath, NamespaceManager);
 		}
@@ -313,7 +314,7 @@ namespace Utils.XML
 		/// <summary>
 		/// Lit le document XML
 		/// </summary>
-		public void Read( string uri )
+		public void Read([StringSyntax(StringSyntaxAttribute.Uri)] string uri )
 		{
 			Read(new XPathDocument(uri).CreateNavigator());
 		}
@@ -321,7 +322,7 @@ namespace Utils.XML
 		/// <summary>
 		/// Lit le document XML
 		/// </summary>
-		public void Read( string uri, XmlSpace xmlSpace )
+		public void Read([StringSyntax(StringSyntaxAttribute.Uri)] string uri, XmlSpace xmlSpace )
 		{
 			Read(new XPathDocument(uri, xmlSpace).CreateNavigator());
 		}

@@ -14,7 +14,9 @@ namespace Utils.Objects
 	/// <typeparam name="T">The type of elements in the range, which must implement IComparable<T>.</typeparam>
 	public class Ranges<T> : ICollection<Range<T>>, ICloneable, IFormattable,
 		IAdditionOperators<Ranges<T>, Ranges<T>, Ranges<T>>,
-		ISubtractionOperators<Ranges<T>, Ranges<T>, Ranges<T>>
+		ISubtractionOperators<Ranges<T>, Ranges<T>, Ranges<T>>,
+		IEqualityOperators<Ranges<T>, Ranges<T>, bool>,
+		IEquatable<Ranges<T>>
 		where T : IComparable<T>
 	{
 		// The internal list that stores the individual ranges.
@@ -353,6 +355,16 @@ namespace Utils.Objects
 		/// <returns>A new Ranges{T} object that is a copy of this instance.</returns>
 		public object Clone() => new Ranges<T>(this);
 
+		public override bool Equals(object obj)
+			=> obj switch {
+				Ranges<T> r => r.Equals(this),
+				_ => false
+			};
+
+		public bool Equals(Ranges<T> other)
+			=> this.SequenceEqual(other.ranges);
+
+		public override int GetHashCode() => ObjectUtils.ComputeHash(ranges);
 		#region Operators
 
 		public static Ranges<T> operator +(Ranges<T> r1, Range<T> r2)
@@ -383,6 +395,16 @@ namespace Utils.Objects
 			return result;
 		}
 
+		public static bool operator ==(Ranges<T> left, Ranges<T> right)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static bool operator !=(Ranges<T> left, Ranges<T> right)
+		{
+			throw new NotImplementedException();
+		}
+
 		#endregion
 	}
 
@@ -390,7 +412,10 @@ namespace Utils.Objects
 	/// Represents a range of values with a start and end, and supports various operations like containment and intersection.
 	/// </summary>
 	/// <typeparam name="T">The type of elements in the range, which must implement IComparable<T>.</typeparam>
-	public class Range<T> : IFormattable where T : IComparable<T>
+	public class Range<T> : IFormattable,
+		IEquatable<Range<T>>,
+		IEqualityOperators<Range<T>, Range<T>, bool>
+		where T : IComparable<T>
 	{
 		/// <summary>
 		/// Gets the start value of the range.
@@ -594,10 +619,28 @@ namespace Utils.Objects
 			}
 		}
 
+		public override bool Equals(object obj)
+			=> obj switch
+			{
+				Range<T> r => this.Equals(r),
+				_ => false,
+			};
+
+
+		public bool Equals(Range<T> other)
+			=> this.Start.CompareTo(other.Start) == 0
+			&& this.End.CompareTo(other.End) == 0;
+
+		public override int GetHashCode() => HashCode.Combine(this.Start, this.End);
+
 		/// <summary>
 		/// Converts a tuple to a range implicitly.
 		/// </summary>
 		/// <param name="range">A tuple containing the start and end values.</param>
 		public static implicit operator Range<T>((T Start, T End) range) => new Range<T>(range.Start, range.End);
+
+		public static bool operator ==(Range<T> left, Range<T> right) => left.Equals(right);
+
+		public static bool operator !=(Range<T> left, Range<T> right) => !left.Equals(right);
 	}
 }

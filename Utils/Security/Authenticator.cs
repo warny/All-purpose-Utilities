@@ -116,6 +116,6 @@ namespace Utils.Security
 		/// <summary>
 		/// Message en cours permettant de générer le code en cours
 		/// </summary>
-		public long CurrentMessage => DateTime.Now.UnixTimeStamp() / IntervalLength;
+		public long CurrentMessage => DateTime.Now.ToUnixTimeStamp() / IntervalLength;
 	}
 }
