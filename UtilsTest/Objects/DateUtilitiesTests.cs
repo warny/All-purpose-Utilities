@@ -15,14 +15,14 @@ public class DateUtilitiesTests
 	public void ComputeEasterTest()
 	{
 		var knownEastern = new DateTime[] {
-			new DateTime(2006, 4, 16),
-			new DateTime(2018, 4, 1),
-			new DateTime(2019, 4, 21),
-			new DateTime(2020, 4, 12),
-			new DateTime(2021, 4, 4),
-			new DateTime(2022, 4, 17),
-			new DateTime(2023, 4, 9),
-			new DateTime(2024, 3, 31)
+			new (2006, 4, 16),
+			new (2018, 4, 1),
+			new (2019, 4, 21),
+			new (2020, 4, 12),
+			new (2021, 4, 4),
+			new (2022, 4, 17),
+			new (2023, 4, 9),
+			new (2024, 3, 31)
 		};
 
 		foreach (var knownEaster in knownEastern)
@@ -45,7 +45,7 @@ public class DateUtilitiesTests
 		};
 
 		foreach (var (parameters, expected) in tests) {
-			var result = DateUtils.GetWeekDateRange(parameters.Year, parameters.Week, parameters.startOfWeek, parameters.pivot);
+			var result = WeekUtils.GetWeekDateRange(parameters.Year, parameters.Week, parameters.startOfWeek, parameters.pivot);
 			Assert.AreEqual(expected, result);
 		}
 	}

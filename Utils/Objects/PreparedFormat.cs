@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Utils.Expressions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Utils.Objects;
 
@@ -45,7 +46,13 @@ public static partial class StringFormat
     private static readonly ConstructorInfo nullFormatterConstructor = typeof(NullFormatter).GetConstructor([typeof(CultureInfo)]);
     private static readonly MethodInfo stringConcatMethod = typeof(string).GetMethod(nameof(string.Concat), [typeof(string[])]);
 
-    private static Expression GenerateCommands(string formatString, ParameterExpression formatter, ParameterExpression cultureInfo, ParameterExpression[] parameterExpressions, bool defaultFirst, string[] namespaces)
+    private static Expression GenerateCommands(
+        [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string formatString, 
+        ParameterExpression formatter, 
+        ParameterExpression cultureInfo, 
+        ParameterExpression[] parameterExpressions, 
+        bool defaultFirst, 
+        string[] namespaces)
     {
         var result = new List<Expression>();
         var variables = new List<ParameterExpression>();
@@ -102,7 +109,7 @@ public static partial class StringFormat
     /// <param name="names">names of argument used in interpolated string, if no names are provided, use <typeparamref name="T"/> names instead</param>
     /// <returns>A function that builds a string from the provided interpolated string</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="names"/> are provided and does not match <typeparamref name="T"/> arguments count</exception>
-    public static T Create<T>(string formatString, params string[] names)
+    public static T Create<T>([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string formatString, params string[] names)
         where T : Delegate
         => Create<T>(formatString, null, null, names);
 
@@ -116,7 +123,7 @@ public static partial class StringFormat
     /// <param name="names">names of argument used in interpolated string, if no names are provided, use <typeparamref name="T"/> names instead</param>
     /// <returns>A function that builds a string from the provided interpolated string</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="names"/> are provided and does not match <typeparamref name="T"/> arguments count</exception>
-    public static T Create<T>(string formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, params string[] names)
+    public static T Create<T>([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, params string[] names)
     where T : Delegate
     {
         var delegateParameters = typeof(T).GetMethod("Invoke").GetParameters();
@@ -142,7 +149,7 @@ public static partial class StringFormat
     /// <param name="cultureInfo">Culture Info</param>
     /// <param name="parameterExpressions">parameters for the output function</param>
     /// <returns>A function that builds a string from the provided interpolated string</returns>
-    public static T Create<T>(string formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, params ParameterExpression[] parameterExpressions)
+    public static T Create<T>([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, params ParameterExpression[] parameterExpressions)
     where T : Delegate
     {
         List<Expression> expressions = [];
@@ -168,7 +175,7 @@ public static partial class StringFormat
     /// <param name="cultureInfo">Culture Info</param>
     /// <param name="dataRecord"><see cref="IDataRecord"/> for which to create an interpolated string</param>
     /// <returns>A function that builds a string from the provided interpolated string</returns>
-    public static Func<IDataRecord, string> Create(string formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, IDataRecord dataRecord)
+    public static Func<IDataRecord, string> Create([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, IDataRecord dataRecord)
     {
         var getItem = typeof(IDataRecord).GetMethod("get_Item", [typeof(int)]);
         var expressions = new List<Expression>();
@@ -215,7 +222,7 @@ public static partial class StringFormat
     /// <param name="parameterExpressions">parameters for the output function</param>
     /// <param name="namespaces">namespaces for classes resolution</param>
     /// <returns>An expression that builds a string from the provided interpolated string</returns>
-    public static Expression Create(string formatString, ParameterExpression[] parameterExpressions, ParameterExpression formatter, ParameterExpression culture, bool defaultFirst, string[] namespaces)
+    public static Expression Create([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string formatString, ParameterExpression[] parameterExpressions, ParameterExpression formatter, ParameterExpression culture, bool defaultFirst, string[] namespaces)
     {
         var allParameters = parameterExpressions.Append(formatter).Append(culture).Where(p => p is not null).Distinct().ToArray();
         var result = GenerateCommands(formatString, formatter, culture, parameterExpressions, defaultFirst, namespaces);
