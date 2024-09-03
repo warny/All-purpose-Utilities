@@ -301,9 +301,9 @@ namespace Utils.Mathematics
 
 			while (prefix > 0)
 			{
-				(prefix, int u) = Math.DivRem(prefix, 10);
-				(prefix, int t) = Math.DivRem(prefix, 10);
-				(prefix, int h) = Math.DivRem(prefix, 10);
+				(prefix, int u) = int.DivRem(prefix, 10);
+				(prefix, int t) = int.DivRem(prefix, 10);
+				(prefix, int h) = int.DivRem(prefix, 10);
 
 				if (h == 0 && t == 0 && u == 0)
 				{
