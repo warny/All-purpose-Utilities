@@ -395,15 +395,9 @@ namespace Utils.Objects
 			return result;
 		}
 
-		public static bool operator ==(Ranges<T> left, Ranges<T> right)
-		{
-			throw new NotImplementedException();
-		}
+		public static bool operator ==(Ranges<T> left, Ranges<T> right) => left.Equals(right);
 
-		public static bool operator !=(Ranges<T> left, Ranges<T> right)
-		{
-			throw new NotImplementedException();
-		}
+		public static bool operator !=(Ranges<T> left, Ranges<T> right) => !left.Equals(right);
 
 		#endregion
 	}
