@@ -50,59 +50,59 @@ namespace UtilsTest.VirtualMachine
 		[TestMethod]
 		public void Test1()
 		{
-			byte[] instructions = new byte[] { 
+			byte[] instructions = [ 
 				//Push 0x10
 				0x01, 0x10, 
 				//Push 0x01
 				0x01, 0x01
-			};
+			];
 
 			var context = new DefaultContext(instructions);
 			TestMachine machine = new TestMachine();
 			machine.Execute(context);
 
 			var result = context.Stack.OfType<byte>().ToArray();
-			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals(new byte[] { 0x01, 0x10 }, result));
+			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals([0x01, 0x10], result));
 		}
 
 		[TestMethod]
 		public void Test2()
 		{
-			byte[] instructions = new byte[] { 
+			byte[] instructions = [ 
 				//Push 0x10
 				0x01, 0x10, 
 				//Push 0x01
 				0x01, 0x01,
 				//Add 
 				0x10, 0x01
-			};
+			];
 
 			var context = new DefaultContext(instructions);
 			TestMachine machine = new TestMachine();
 			machine.Execute(context);
 
 			var result = context.Stack.OfType<byte>().ToArray();
-			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals(new byte[] { 0x11 }, result));
+			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals([0x11], result));
 		}
 
 		[TestMethod]
 		public void Test3()
 		{
-			byte[] instructions = new byte[] { 
+			byte[] instructions = [ 
 				//Push 0x10
 				0x01, 0x10, 
 				//Push 0x01
 				0x01, 0x01,
 				//Substract 
 				0x10, 0x02
-			};
+			];
 
 			var context = new DefaultContext(instructions);
 			TestMachine machine = new TestMachine();
 			machine.Execute(context);
 
 			var result = context.Stack.OfType<byte>().ToArray();
-			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals(new byte[] { 0x0F }, result));
+			Assert.IsTrue(ArrayEqualityComparers.Byte.Equals([0x0F], result));
 		}
 	}
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Utils.Arrays;
 
 /// <summary>
-/// Compares two strings and returns their differences.
+/// Compares two arrays and returns their differences.
 /// </summary>
 public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 {
@@ -17,15 +17,15 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 
     public int Count => changes.Count;
 
-    public static ArraysDifference<T> GetDifferences<T>(ReadOnlySpan<T> old, ReadOnlySpan<T> @new)
-        where T : IEquatable<T>
-        => new ArraysDifference<T>(old, @new, (o, n) => o.Equals(n));
+    public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new)
+        where ET : IEquatable<ET>
+        => new ArraysDifference<ET>(old, @new, (o, n) => o.Equals(n));
 
-	public static ArraysDifference<T> GetDifferences<T>(ReadOnlySpan<T> old, ReadOnlySpan<T> @new, IEqualityComparer<T> comparer)
-    	=> new ArraysDifference<T>(old, @new, comparer.Equals);
+	public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IEqualityComparer<ET> comparer)
+    	=> new ArraysDifference<ET>(old, @new, comparer.Equals);
 
-	public static ArraysDifference<T> GetDifferences<T>(ReadOnlySpan<T> old, ReadOnlySpan<T> @new, IComparer<T> comparer)
-		=> new ArraysDifference<T>(old, @new, (o, n) => comparer.Compare(o, n) == 0);
+	public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IComparer<ET> comparer)
+		=> new ArraysDifference<ET>(old, @new, (o, n) => comparer.Compare(o, n) == 0);
 
 	/// <summary>
 	/// Compares two strings and returns the modifications needed to transform the first string into the second.

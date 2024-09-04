@@ -63,11 +63,11 @@ public class QuickEqualityComparer<T> : IEqualityComparer<T>
 		else if (typeOfT.IsArray)
 		{
 			var typeOfElement = typeOfT.GetElementType();
-			Type equalityComparerGenericType = typeof(MultiDimensionnalArrayEqualityComparer<>);
+			Type equalityComparerGenericType = typeof(MultiDimensionalArrayEqualityComparer<>);
 			Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
 			object subComparer = Activator.CreateInstance(equalityComparerType);
-			areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
-			getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), new[] { typeOfT }).CreateDelegate(typeof(Func<T, int>), subComparer);
+			areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), [typeOfT, typeOfT]).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
+			getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), [typeOfT]).CreateDelegate(typeof(Func<T, int>), subComparer);
 			return;
 		}
 		else areEquals = (e1, e2) => e1.Equals(e2);

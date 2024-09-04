@@ -30,15 +30,17 @@ namespace Utils.Arrays
 			else if (typeof(IEquatable<T>).IsAssignableFrom(typeOfT))
 			{
 				areEquals = (e1, e2) => ((IEquatable<T>)e1).Equals(e2);
+				getHashCode = e1 => e1.GetHashCode();
 			}
 			else if (typeof(IComparable<T>).IsAssignableFrom(typeOfT))
 			{
 				areEquals = (e1, e2) => ((IComparable<T>)e1).CompareTo(e2) == 0;
+				getHashCode = e1 => e1.GetHashCode();
 			}
 			else if (typeOfT.IsArray)
 			{
 				var typeOfElement = typeOfT.GetElementType();
-				Type equalityComparerGenericType = typeof(MultiDimensionnalArrayEqualityComparer<>);
+				Type equalityComparerGenericType = typeof(MultiDimensionalArrayEqualityComparer<>);
 				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
 				object subComparer = Activator.CreateInstance(equalityComparerType);
 				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
