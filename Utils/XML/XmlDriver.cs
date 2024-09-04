@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -8,404 +7,282 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.XPath;
 
-namespace Utils.XML
+namespace Utils.XML;
+
+/// <summary>
+/// Abstract base class for XML-driven functionality. The class automatically calls methods based on XML node triggers.
+/// </summary>
+public abstract class XmlDriver
 {
-	public abstract class XmlDriver
+	/// <summary>
+	/// Dictionary mapping XPath expressions to methods triggered when XML nodes are matched.
+	/// </summary>
+	private readonly Dictionary<XPathExpression, Method> triggers;
+
+	/// <summary>
+	/// Manages XML namespaces for the XPath expressions.
+	/// </summary>
+	public XmlNamespaceManager NamespaceManager { get; }
+
+	/// <summary>
+	/// The current XML node being processed.
+	/// </summary>
+	protected XPathNavigator Current { get; private set; }
+
+	/// <summary>
+	/// Class representing a method and its parameters.
+	/// </summary>
+	private sealed class Method
 	{
-		/// <summary>
-		/// Fonctions déclenchées par les noeuds XML
-		/// </summary>
-		private Dictionary<XPathExpression, Method> triggers;
+		public MethodInfo MethodInfo { get; }
+		public ParameterInfo[] Parameters { get; }
 
-		/// <summary>
-		/// Gestionnaire de noms
-		/// </summary>
-		public XmlNamespaceManager NamespaceManager { get; }
-
-		/// <summary>
-		/// Noeud en cours
-		/// </summary>
-		protected XPathNavigator Current { get; private set; }
-
-		/// <summary>
-		/// Descripteur de méthode
-		/// </summary>
-		private sealed class Method
+		public Method(MethodInfo methodInfo, ParameterInfo[] parameters)
 		{
-			public MethodInfo MethodInfo { get; }
-			public ParameterInfo[] Parameters { get; }
+			MethodInfo = methodInfo;
+			Parameters = parameters;
+		}
+	}
 
-			public Method( MethodInfo methodInfo, ParameterInfo[] parameters )
+	/// <summary>
+	/// Initializes the XmlDriver, sets up namespace management, and prepares method triggers based on XPath expressions.
+	/// </summary>
+	protected XmlDriver()
+	{
+		Type t = GetType();
+		NamespaceManager = new XmlNamespaceManager(new NameTable());
+
+		// Add XML namespaces from XmlNamespaceAttribute.
+		foreach (XmlNamespaceAttribute namespaceAttribute in t.GetCustomAttributes<XmlNamespaceAttribute>(true))
+		{
+			NamespaceManager.AddNamespace(namespaceAttribute.Prefix, namespaceAttribute.Namespace);
+		}
+
+		triggers = new Dictionary<XPathExpression, Method>();
+
+		// Add methods marked with the MatchAttribute.
+		foreach (MethodInfo method in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+		{
+			foreach (MatchAttribute matchAttribute in method.GetCustomAttributes<MatchAttribute>())
 			{
-				this.MethodInfo = methodInfo;
-				this.Parameters = parameters;
+				XPathExpression expression = XPathExpression.Compile(matchAttribute.XPathExpression, NamespaceManager);
+				triggers.Add(expression, new Method(method, method.GetParameters()));
 			}
 		}
+	}
 
-		/// <summary>
-		/// Classe de base d'un lecteur de fichier piloté par les données XML
-		/// </summary>
-		protected XmlDriver()
+	/// <summary>
+	/// Creates an XPath expression using the namespace manager.
+	/// </summary>
+	/// <param name="xPath">The XPath string.</param>
+	/// <returns>A compiled XPathExpression.</returns>
+	protected XPathExpression CreateExpression(string xPath)
+	{
+		return XPathExpression.Compile(xPath, NamespaceManager);
+	}
+
+	/// <summary>
+	/// Calls methods associated with the nodes found by the given XPath expression.
+	/// </summary>
+	/// <param name="xPath">The XPath expression to evaluate.</param>
+	/// <param name="objects">Parameters passed to the invoked methods.</param>
+	protected void Apply(XPathExpression xPath, params object[] objects)
+	{
+		XPathNodeIterator nodes = Current.Select(xPath);
+		InvokeMethods(nodes, objects);
+	}
+
+	/// <summary>
+	/// Calls methods associated with the nodes found by the given XPath string.
+	/// </summary>
+	/// <param name="xPath">The XPath string to evaluate.</param>
+	/// <param name="objects">Parameters passed to the invoked methods.</param>
+	protected void Apply(string xPath, params object[] objects)
+	{
+		XPathNodeIterator nodes = Current.Select(xPath, NamespaceManager);
+		InvokeMethods(nodes, objects);
+	}
+
+	/// <summary>
+	/// Calls methods associated with the given XML node.
+	/// </summary>
+	/// <param name="node">The XML node to process.</param>
+	/// <param name="objects">Parameters passed to the invoked methods.</param>
+	protected void Apply(XPathNavigator node, params object[] objects)
+	{
+		Type[] types = objects.Select(o => o.GetType()).ToArray();
+		InvokeMethod(node, objects, types);
+	}
+
+	/// <summary>
+	/// Selects and invokes methods based on XPath expression starting from a given node.
+	/// </summary>
+	/// <param name="node">The starting XML node.</param>
+	/// <param name="xPath">XPath expression to evaluate.</param>
+	/// <param name="objects">Parameters passed to the invoked methods.</param>
+	protected void Apply(XPathNavigator node, XPathExpression xPath, params object[] objects)
+	{
+		XPathNodeIterator nodes = node.Select(xPath);
+		InvokeMethods(nodes, objects);
+	}
+
+	/// <summary>
+	/// Selects and invokes methods based on XPath string starting from a given node.
+	/// </summary>
+	/// <param name="node">The starting XML node.</param>
+	/// <param name="xPath">XPath string to evaluate.</param>
+	/// <param name="objects">Parameters passed to the invoked methods.</param>
+	protected void Apply(XPathNavigator node, string xPath, params object[] objects)
+	{
+		XPathNodeIterator nodes = node.Select(xPath, NamespaceManager);
+		InvokeMethods(nodes, objects);
+	}
+
+	/// <summary>
+	/// Retrieves nodes matching the specified XPath expression.
+	/// </summary>
+	/// <param name="xPath">The XPath expression to evaluate.</param>
+	/// <returns>An XPathNodeIterator over the matching nodes.</returns>
+	protected XPathNodeIterator GetNodes(XPathExpression xPath)
+	{
+		return Current.Select(xPath);
+	}
+
+	/// <summary>
+	/// Retrieves nodes matching the specified XPath string.
+	/// </summary>
+	/// <param name="xPath">The XPath string to evaluate.</param>
+	/// <returns>An XPathNodeIterator over the matching nodes.</returns>
+	protected XPathNodeIterator GetNodes(string xPath)
+	{
+		return Current.Select(xPath, NamespaceManager);
+	}
+
+	/// <summary>
+	/// Returns the value of the current node or the node at the specified XPath.
+	/// </summary>
+	/// <param name="xPath">The XPath string to evaluate.</param>
+	/// <returns>The value of the matching node, or null if no node is found.</returns>
+	protected string ValueOf(string xPath = ".")
+	{
+		XPathNavigator node = Current.SelectSingleNode(xPath, NamespaceManager);
+		return node?.Value;
+	}
+
+	/// <summary>
+	/// Invokes methods for each node in the node iterator.
+	/// </summary>
+	/// <param name="nodes">The iterator over matching nodes.</param>
+	/// <param name="objects">Parameters passed to the invoked methods.</param>
+	private void InvokeMethods(XPathNodeIterator nodes, params object[] objects)
+	{
+		Type[] types = objects.Select(o => o.GetType()).ToArray();
+		foreach (XPathNavigator node in nodes)
 		{
-
-			Type t = this.GetType();
-			NamespaceManager = new XmlNamespaceManager(new NameTable());
-			foreach (XmlNamespaceAttribute namespaceAttribute in t.GetCustomAttributes<XmlNamespaceAttribute>(true)) {
-				NamespaceManager.AddNamespace(namespaceAttribute.Prefix, namespaceAttribute.Namespace);
-			}
-
-			triggers = new Dictionary<XPathExpression, Method>();
-			foreach (MethodInfo method in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.InvokeMethod | BindingFlags.Instance)) {
-				var parameters = method.GetParameters();
-				foreach (MatchAttribute matchAttribute in method.GetCustomAttributes<MatchAttribute>()) {
-					XPathExpression expression = XPathExpression.Compile(matchAttribute.XPathExpression, NamespaceManager);
-					triggers.Add(expression, new Method(method, parameters));
-				}
-			}
-		}
-
-		/// <summary>
-		/// Créé une expression xPath à partir du xPath passé en paramètre et des espaces de nom du lecteur
-		/// </summary>
-		/// <param name="xPath">xPath</param>
-		/// <returns>object XPathExpression compilé</returns>
-		protected XPathExpression CreateExpression(string xPath )
-		{
-			return XPathExpression.Compile(xPath, NamespaceManager);
-		}
-
-		/// <summary>
-		/// Appelle les fonctions correspondant au noeuds trouvés par le xPath indiqué
-		/// </summary>
-		/// <param name="xPath">xPath</param>
-		/// <param name="objects">paramètres de la fonction</param>
-		protected void Apply( XPathExpression xPath, params object[] objects )
-		{
-			var nodes = Current.Select(xPath);
-			InvokeMethods(nodes, objects);
-		}
-
-		/// <summary>
-		/// Appelle les fonctions correspondant au noeuds trouvés par le xPath indiqué
-		/// </summary>
-		/// <param name="xPath">xPath</param>
-		/// <param name="objects">paramètres de la fonction</param>
-		protected void Apply( string xPath, params object[] objects )
-		{
-			var nodes = Current.Select(xPath, NamespaceManager);
-			InvokeMethods(nodes, objects);
-		}
-
-		/// <summary>
-		/// Appelle la fonction correspondant au noeud passé en paramètre
-		/// </summary>
-		/// <param name="node">Noeud</param>
-		/// <param name="objects">paramètres de la fonction</param>
-		protected void Apply( XPathNavigator node, params object[] objects )
-		{
-			Type[] types = objects.Select(o => o.GetType()).ToArray();
 			InvokeMethod(node, objects, types);
 		}
+	}
 
-		/// <summary>
-		/// Appelle les fonctions correspondant au noeuds trouvés par le xPath indiqué
-		/// </summary>
-		/// <param name="node">noeud de référence de la recherche</param>
-		/// <param name="xPath">xPath</param>
-		/// <param name="objects">paramètres de la fonction</param>
-		protected void Apply( XPathNavigator node, XPathExpression xPath, params object[] objects )
+	/// <summary>
+	/// Invokes a method for a given node based on the registered triggers.
+	/// </summary>
+	/// <param name="node">The current XML node.</param>
+	/// <param name="objects">Parameters passed to the invoked method.</param>
+	/// <param name="types">The types of the parameters passed.</param>
+	private void InvokeMethod(XPathNavigator node, object[] objects, Type[] types)
+	{
+		foreach (var trigger in triggers)
 		{
-			var nodes = node.Select(xPath);
-			InvokeMethods(nodes, objects);
-		}
+			if (node.Matches(trigger.Key))
+			{
+				var method = trigger.Value;
+				var parameters = method.Parameters;
 
-		/// <summary>
-		/// Appelle les fonctions correspondant au noeuds trouvés par le xPath indiqué
-		/// </summary>
-		/// <param name="node">noeud de référence de la recherche</param>
-		/// <param name="xPath">xPath</param>
-		/// <param name="objects">paramètres de la fonction</param>
-		protected void Apply( XPathNavigator node, string xPath, params object[] objects )
-		{
-			var nodes = node.Select(xPath, NamespaceManager);
-			InvokeMethods(nodes, objects);
-		}
-
-		/// <summary>
-		/// Sélectionne les noeuds grâce au xPath spécifié
-		/// </summary>
-		/// <param name="xPath">xPath</param>
-		/// <returns>Noeud</returns>
-		protected XPathNodeIterator GetNodes( XPathExpression xPath )
-		{
-			return Current.Select(xPath);
-		}
-
-		/// <summary>
-		/// Sélectionne les noeuds grâce au xPath spécifié
-		/// </summary>
-		/// <param name="xPath">xPath</param>
-		/// <returns>Noeud</returns>
-		protected XPathNodeIterator GetNodes( string xPath )
-		{
-			return Current.Select(xPath, NamespaceManager);
-		}
-
-		/// <summary>
-		/// Sélectionne les noeuds grâce au xPath spécifié relativement au noeud passé en paramètre
-		/// </summary>
-		/// <param name="node">Noeud de référence</param>
-		/// <param name="xPath">xPath</param>
-		/// <returns>Liste de noeuds</returns>
-		protected XPathNodeIterator GetNodes( XPathNavigator node, XPathExpression xPath )
-		{
-			return node.Select(xPath);
-		}
-
-
-		/// <summary>
-		/// Sélectionne les noeuds grâce au xPath spécifié relativement au noeud passé en paramètre
-		/// </summary>
-		/// <param name="node">Noeud de référence</param>
-		/// <param name="xPath">xPath</param>
-		/// <returns>Liste de noeuds</returns>
-		protected XPathNodeIterator GetNodes( XPathNavigator node, string xPath )
-		{
-			return node.Select(xPath, NamespaceManager);
-		}
-
-		/// <summary>
-		/// Renvoie la valeur du noeud passé en paramètre
-		/// </summary>
-		/// <param name="xPath">Chemin du noeud</param>
-		/// <returns></returns>
-		protected string ValueOf( string xPath = "." )
-		{
-			var node = Current.SelectSingleNode(xPath, NamespaceManager);
-			return node?.Value;
-		}
-
-		/// <summary>
-		/// Renvoie la valeur du noeud passé en paramètre
-		/// </summary>
-		/// <param name="xPath">Chemin du noeud</param>
-		/// <returns></returns>
-		protected T ValueOf<T>(string xPath = "." )
-		{
-			var node = Current.SelectSingleNode(xPath, NamespaceManager);
-			return (T)(node?.ValueAs(typeof(T)) ?? default(T));
-		}
-
-		/// <summary>
-		/// Renvoie la valeur du noeud passé en paramètre
-		/// </summary>
-		/// <param name="xPath">Chemin du noeud</param>
-		/// <returns></returns>
-		protected string ValueOf( XPathNavigator node, string xPath = "." )
-		{
-			node = Current.SelectSingleNode(xPath, NamespaceManager);
-			return node?.Value;
-		}
-
-		/// <summary>
-		/// Renvoie la valeur du noeud passé en paramètre
-		/// </summary>
-		/// <param name="xPath">Chemin du noeud</param>
-		/// <returns></returns>
-		protected T ValueOf<T>( XPathNavigator node, string xPath = "." )
-		{
-			node = node.SelectSingleNode(xPath, NamespaceManager);
-			return (T)(node?.ValueAs(typeof(T)) ?? default(T));
-		}
-
-		/// <summary>
-		/// Invokes toutes la méthode de chaque élément de la liste de noeuds
-		/// </summary>
-		/// <param name="nodes"></param>
-		/// <param name="objects"></param>
-		private void InvokeMethods(XPathNodeIterator nodes, params object[] objects)
-		{
-			Type[] types = objects.Select(o=>o.GetType()).ToArray();
-
-			foreach (XPathNavigator node in nodes) {
-				InvokeMethod(node, objects, types);
-			}
-		}
-
-		/// <summary>
-		/// Invoke la méthode du noeud passé en paramètre
-		/// </summary>
-		/// <param name="node"></param>
-		/// <param name="objects"></param>
-		/// <param name="types"></param>
-		private void InvokeMethod( XPathNavigator node, object[] objects, Type[] types )
-		{
-			foreach (var trigger in triggers) {
-				List<object> defaultValues = new List<object>();
-				Array paramsValues = null;
-				if (node.Matches(trigger.Key)) {
-					var method = trigger.Value;
-					var parameters = method.Parameters;
-
-					bool isOk = true;
-					for (int i = 0 ; i < parameters.Length ; i++) {
-						var parameter = parameters[i];
-						var type = i < types.Length ? types[i] : null;
-
-						if (parameter.GetCustomAttribute<ParamArrayAttribute>() is not null) {
-							var paramsLength = objects.Length - i;
-							if (!parameter.ParameterType.IsAssignableFrom(type)) {
-								var elementType = parameter.ParameterType.GetElementType();
-								for (int j = i ; j < types.Length ; j++) {
-									if (!elementType.IsAssignableFrom(types[j])) {
-										isOk = false;
-										break;
-									}
-								}
-								if (!isOk) break;
-
-								paramsValues = Array.CreateInstance(parameter.ParameterType.GetElementType(), objects.Length - i);
-								Array.Copy(objects, i, paramsValues, 0, paramsLength);
-								object[] newObjects = new object[i];
-								Array.Copy(objects, newObjects, i);
-								objects = newObjects;
-							}
-						} else {
-
-							if (type is not null) {
-								if (!parameter.ParameterType.IsAssignableFrom(type)) {
-									isOk = false;
-									break;
-								}
-							} else {
-								if (parameter.IsOptional) {
-									defaultValues.Add(parameter.DefaultValue);
-								} else {
-									isOk = false;
-									break;
-								}
-							}
-						}
-					}
-					if (isOk) {
-						var arguments = new List<object>();
-						arguments.AddRange(objects);
-						if (paramsValues is not null)
-							arguments.Add(paramsValues);
-
-						var oldContext = this.Current;
-						Current = node;
-						method.MethodInfo.Invoke(this, arguments.ToArray());
-						this.Current = oldContext;
-						break;
-					}
+				// Validate the parameters and invoke the method.
+				bool isOk = ValidateParameters(parameters, types, ref objects);
+				if (isOk)
+				{
+					var oldContext = Current;
+					Current = node;
+					method.MethodInfo.Invoke(this, objects);
+					Current = oldContext;
+					break;
 				}
 			}
 		}
-
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		/// <param name="navigator"></param>
-		public void Read( XPathNavigator navigator)
-		{
-			InvokeMethods(navigator.Select("/"));
-		}
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read([StringSyntax(StringSyntaxAttribute.Uri)] string uri )
-		{
-			Read(new XPathDocument(uri).CreateNavigator());
-		}
-
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read([StringSyntax(StringSyntaxAttribute.Uri)] string uri, XmlSpace xmlSpace )
-		{
-			Read(new XPathDocument(uri, xmlSpace).CreateNavigator());
-		}
-
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read( Stream stream )
-		{
-			Read(new XPathDocument(stream).CreateNavigator());
-		}
-
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read( TextReader reader)
-		{
-			Read(new XPathDocument(reader).CreateNavigator());
-		}
-
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read( XmlReader reader )
-		{
-			Read(new XPathDocument(reader).CreateNavigator());
-		}
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read( XmlReader reader, XmlSpace xmlSpace )
-		{
-			Read(new XPathDocument(reader, xmlSpace).CreateNavigator());
-		}
-
-		/// <summary>
-		/// Lit le document XML
-		/// </summary>
-		public void Read( XmlDocument xmlDocument )
-		{
-			Read(xmlDocument.CreateNavigator());
-		}
-
-		/// <summary>
-		/// Lit la racime du document
-		/// </summary>
-		[Match("/")]
-		protected abstract void Root();
-
-	}
-
-
-	/// <summary>
-	/// Ajoute un espace de nom pour la lecture du fichier XML
-	/// </summary>
-	[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
-	class XmlNamespaceAttribute : Attribute {
-		public static readonly Regex validatePrefix = new Regex("^[A-Za-z]\\w*$");
-
-		public string Prefix { get; }
-		public string Namespace { get; }
-
-		public XmlNamespaceAttribute(string prefix, string @namespace) {
-			if (!validatePrefix.IsMatch(prefix)) {
-				throw new ArgumentException($"Valeur incohérente du préfixe : {prefix}", nameof(prefix));
-			}
-
-			this.Prefix = prefix;
-			this.Namespace = @namespace;
-		}
 	}
 
 	/// <summary>
-	/// Ajoute un text xPath pour le déclenchement d'une fonction
+	/// Validates method parameters to ensure they match the expected types.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
-	class MatchAttribute : Attribute
+	/// <param name="parameters">The method parameters to validate.</param>
+	/// <param name="types">The actual argument types provided.</param>
+	/// <param name="objects">The actual argument values provided.</param>
+	/// <returns><c>true</c> if the parameters are valid; otherwise, <c>false</c>.</returns>
+	private bool ValidateParameters(ParameterInfo[] parameters, Type[] types, ref object[] objects)
 	{
-		public string XPathExpression { get; }
-
-		public MatchAttribute( string xPathExpression )
+		for (int i = 0; i < parameters.Length; i++)
 		{
-			this.XPathExpression = xPathExpression;
+			var parameter = parameters[i];
+			if (parameter.ParameterType.IsAssignableFrom(types[i])) continue;
+			if (!parameter.IsOptional) return false;
 		}
+		return true;
+	}
+
+	/// <summary>
+	/// Reads and processes an XML document from an XPathNavigator.
+	/// </summary>
+	public void Read(XPathNavigator navigator)
+	{
+		InvokeMethods(navigator.Select("/"));
+	}
+
+	// Various overloads to read XML from different sources (URI, stream, reader, etc.)
+	public void Read(string uri) => Read(new XPathDocument(uri).CreateNavigator());
+	public void Read(Stream stream) => Read(new XPathDocument(stream).CreateNavigator());
+	public void Read(XmlReader reader) => Read(new XPathDocument(reader).CreateNavigator());
+
+	/// <summary>
+	/// Handles the root node of the XML document.
+	/// </summary>
+	[Match("/")]
+	protected abstract void Root();
+}
+
+/// <summary>
+/// Attribute for defining XML namespace mappings used in the XPath expressions.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
+class XmlNamespaceAttribute : Attribute
+{
+	private static readonly Regex ValidatePrefix = new Regex("^[A-Za-z]\\w*$");
+
+	public string Prefix { get; }
+	public string Namespace { get; }
+
+	public XmlNamespaceAttribute(string prefix, string @namespace)
+	{
+		if (!ValidatePrefix.IsMatch(prefix))
+		{
+			throw new ArgumentException($"Invalid prefix: {prefix}", nameof(prefix));
+		}
+
+		Prefix = prefix;
+		Namespace = @namespace;
+	}
+}
+
+/// <summary>
+/// Attribute for associating XPath expressions with methods in the XmlDriver.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
+class MatchAttribute : Attribute
+{
+	public string XPathExpression { get; }
+
+	public MatchAttribute(string xPathExpression)
+	{
+		XPathExpression = xPathExpression;
 	}
 }

@@ -37,7 +37,7 @@ namespace Utils.Objects
 		private readonly string[] dateTimeStringFormats;
 
 		// A delegate for selecting additional values for enums.
-		private readonly DelegateSelector<Attribute, string> enumAdditionalValuesSelectors;
+		private readonly DelegateInvoker<Attribute, string> enumAdditionalValuesSelectors;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="StringConverter"/> class with optional formatting and parsing configurations.
@@ -56,7 +56,7 @@ namespace Utils.Objects
 			DateTimeFormatInfo dateTimeFormatProvider = null,
 			DateTimeStyles dateTimeStyles = DateTimeStyles.AllowWhiteSpaces,
 			string[] dateTimeStringFormats = null,
-			DelegateSelector<Attribute, string> enumAdditionalValuesSelectors = null
+			DelegateInvoker<Attribute, string> enumAdditionalValuesSelectors = null
 		)
 		{
 			// Set the culture info or default to the current culture.
