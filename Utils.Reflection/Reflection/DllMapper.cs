@@ -5,213 +5,200 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Utils.Reflection.Reflection.Emit;
 
-namespace Utils.Reflection
+namespace Utils.Reflection;
+
+/// <summary>
+/// A class to dynamically map unmanaged DLL functions to .NET properties or fields.
+/// This class also handles platform differences (Windows vs Unix-based systems).
+/// </summary>
+public abstract class DllMapper : IDisposable
 {
-	public abstract class DllMapper : IDisposable
+	#region Windows native methods
+
+	private const int ERROR_BAD_EXE_FORMAT = 0xC1; // Error for mismatched architecture libraries
+
+	private IntPtr dllHandle; // Handle to the loaded DLL
+
+	[DllImport("kernel32", CallingConvention = CallingConvention.Winapi, SetLastError = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
+	private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
+
+	[DllImport("kernel32", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool FreeLibrary(IntPtr hModule);
+
+	[DllImport("kernel32", CallingConvention = CallingConvention.Winapi, SetLastError = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
+	private static extern IntPtr GetProcAddress(IntPtr hModule, [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
+
+	#endregion
+
+	#region Unix native methods
+
+	internal const int RTLD_NOW_LINUX = 0x2;
+	internal const int RTLD_LOCAL_LINUX = 0;
+	internal const int RTLD_NOW_MACOSX = 0x2;
+	internal const int RTLD_LOCAL_MACOSX = 0x4;
+
+	[DllImport("libdl", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern IntPtr dlerror();
+
+	[DllImport("libdl", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true)]
+	internal static extern IntPtr dlopen(string filename, int flag);
+
+	[DllImport("libdl", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern int dlclose(IntPtr handle);
+
+	[DllImport("libdl", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true)]
+	internal static extern IntPtr dlsym(IntPtr handle, string symbol);
+
+	#endregion
+
+	#region Function pointer retrieval
+
+	/// <summary>
+	/// Retrieves the function pointer for a specified unmanaged function.
+	/// </summary>
+	/// <param name="libraryHandle">Handle to the loaded library.</param>
+	/// <param name="function">Name of the function.</param>
+	/// <returns>Pointer to the function in the loaded library.</returns>
+	private static IntPtr GetFunctionPointer(IntPtr libraryHandle, string function)
 	{
-		#region windows native methods
-		/// <summary>
-		/// Error indicating an attempt to load unmanaged library designated for a different architecture
-		/// </summary>
-		private const int ERROR_BAD_EXE_FORMAT = 0xC1;
+		if (libraryHandle == IntPtr.Zero)
+			throw new ArgumentNullException(nameof(libraryHandle));
 
-		/// <summary>
-		/// Pointeur vers la librairie
-		/// </summary>
-		private IntPtr dllHandle;
+		if (string.IsNullOrWhiteSpace(function))
+			throw new ArgumentNullException(nameof(function));
 
-		/// <summary>
-		/// Loads the specified module into the address space of the calling process.
-		/// </summary>
-		/// <param name="lpFileName">The name of the module.</param>
-		/// <returns>If the function succeeds, the return value is a handle to the module. If the function fails, the return value is NULL.</returns>
-		[DllImport("kernel32", CallingConvention = CallingConvention.Winapi, SetLastError = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
-		private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
+		IntPtr functionPointer;
 
-		/// <summary>
-		/// Frees the loaded dynamic-link library (DLL) module and, if necessary, decrements its reference count.
-		/// </summary>
-		/// <param name="hModule">A handle to the loaded library module.</param>
-		/// <returns>If the function succeeds, the return value is nonzero. If the function fails, the return value is zero.</returns>
-		[DllImport("kernel32", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		private static extern bool FreeLibrary(IntPtr hModule);
-
-		/// <summary>
-		/// Retrieves the address of an exported function or variable from the specified dynamic-link library (DLL).
-		/// </summary>
-		/// <param name="hModule">A handle to the DLL module that contains the function or variable.</param>
-		/// <param name="lpProcName">The function or variable name, or the function's ordinal value.</param>
-		/// <returns>If the function succeeds, the return value is the address of the exported function or variable. If the function fails, the return value is NULL.</returns>
-		[DllImport("kernel32", CallingConvention = CallingConvention.Winapi, SetLastError = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
-		private static extern IntPtr GetProcAddress(IntPtr hModule, [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
-		#endregion
-		#region unix native methods
-
-		/// <summary>
-		/// Immediately resolve all symbols
-		/// </summary>
-		internal const int RTLD_NOW_LINUX = 0x2;
-
-		/// <summary>
-		/// Resolved symbols are not available for subsequently loaded libraries
-		/// </summary>
-		internal const int RTLD_LOCAL_LINUX = 0;
-
-		/// <summary>
-		/// Immediately resolve all symbols
-		/// </summary>
-		internal const int RTLD_NOW_MACOSX = 0x2;
-
-		/// <summary>
-		/// Resolved symbols are not available for subsequently loaded libraries
-		/// </summary>
-		internal const int RTLD_LOCAL_MACOSX = 0x4;
-
-		/// <summary>
-		/// Human readable string describing the most recent error that occurred from dlopen(), dlsym() or dlclose() since the last call to dlerror().
-		/// </summary>
-		/// <returns>Human readable string describing the most recent error or NULL if no errors have occurred since initialization or since it was last called.</returns>
-		[DllImport("libdl", CallingConvention = CallingConvention.Cdecl)]
-		internal static extern IntPtr dlerror();
-
-		/// <summary>
-		/// Loads the dynamic library
-		/// </summary>
-		/// <param name='filename'>Library filename.</param>
-		/// <param name='flag'>RTLD_LAZY for lazy function call binding or RTLD_NOW immediate function call binding.</param>
-		/// <returns>Handle for the dynamic library if successful, IntPtr.Zero otherwise.</returns>
-		[DllImport("libdl", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true)]
-		internal static extern IntPtr dlopen(string filename, int flag);
-
-		/// <summary>
-		/// Decrements the reference count on the dynamic library handle. If the reference count drops to zero and no other loaded libraries use symbols in it, then the dynamic library is unloaded.
-		/// </summary>
-		/// <param name='handle'>Handle for the dynamic library.</param>
-		/// <returns>Returns 0 on success, and nonzero on error.</returns>
-		[DllImport("libdl", CallingConvention = CallingConvention.Cdecl)]
-		internal static extern int dlclose(IntPtr handle);
-
-		/// <summary>
-		/// Returns the address where the symbol is loaded into memory.
-		/// </summary>
-		/// <param name='handle'>Handle for the dynamic library.</param>
-		/// <param name='symbol'>Name of symbol that should be addressed.</param>
-		/// <returns>Returns 0 on success, and nonzero on error.</returns>
-		[DllImport("libdl", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true)]
-		internal static extern IntPtr dlsym(IntPtr handle, string symbol);
-		#endregion
-		#region GetFunctionPointer
-		/// <summary>
-		/// Gets function pointer for specified unmanaged function
-		/// </summary>
-		/// <param name='libraryHandle'>Dynamic library handle</param>
-		/// <param name='function'>Function name</param>
-		/// <returns>The function pointer for specified unmanaged function</returns>
-		private static IntPtr GetFunctionPointer(IntPtr libraryHandle, string function)
+		if (Platform.IsLinux || Platform.IsMacOsX)
 		{
-			if (libraryHandle == IntPtr.Zero)
-				throw new ArgumentNullException(nameof(libraryHandle));
-
-			if (string.IsNullOrWhiteSpace(function))
-				throw new ArgumentNullException(nameof(function));
-
-			IntPtr functionPointer;
-
-			if (Platform.IsLinux || Platform.IsMacOsX)
+			functionPointer = dlsym(libraryHandle, function);
+			if (functionPointer == IntPtr.Zero)
 			{
-				functionPointer = DllMapper.dlsym(libraryHandle, function);
-				if (functionPointer == IntPtr.Zero)
-				{
-					IntPtr error = DllMapper.dlerror();
-					if (error == IntPtr.Zero)
-						throw new ExternalException(string.Format("Unable to get pointer for {0} function", function));
-					else
-						throw new ExternalException(string.Format("Unable to get pointer for {0} function. Error detail: {1}", function, Marshal.PtrToStringAnsi(error)));
-				}
+				IntPtr error = dlerror();
+				string errorMessage = error == IntPtr.Zero
+					? $"Unable to get pointer for function '{function}'"
+					: $"Unable to get pointer for function '{function}'. Error: {Marshal.PtrToStringAnsi(error)}";
+
+				throw new ExternalException(errorMessage);
 			}
-			else
-			{
-				functionPointer = DllMapper.GetProcAddress(libraryHandle, function);
-				if (functionPointer == IntPtr.Zero)
-				{
-					int win32Error = Marshal.GetLastWin32Error();
-					throw new ExternalException(string.Format("Unable to get pointer for {0} function. Error code: 0x{1:X8}. Error detail: {2}", function, win32Error, new Win32Exception(win32Error).Message), win32Error);
-				}
-			}
-
-			return functionPointer;
 		}
-		#endregion
-
-		private static readonly Type externalAttributeType = typeof(ExternalAttribute);
-
-		public static T Create<T>(string dllPath)
-			where T : DllMapper, new()
+		else
 		{
-			var obj = new T();
-			MapDLLToObject(dllPath, obj);
-			return obj;
-		}
-
-		private static void MapDLLToObject(string dllPath, DllMapper obj)
-		{
-			Type t = obj.GetType();
-			obj.dllHandle = LoadLibrary(dllPath);
-			if (obj.dllHandle == IntPtr.Zero) throw new DllNotFoundException($"La librairie {dllPath} est introuvable");
-
-			foreach (var member in t.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance))
+			functionPointer = GetProcAddress(libraryHandle, function);
+			if (functionPointer == IntPtr.Zero)
 			{
-				var attr = (ExternalAttribute)member.GetCustomAttributes(externalAttributeType, true).FirstOrDefault();
-				if (attr is null) continue;
-				string functionName = attr.Name ?? member.Name;
-				var functionPtr = GetFunctionPointer(obj.dllHandle, functionName);
-				if (member is PropertyInfo prop)
-				{
-					var delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, prop.PropertyType);
-					prop.SetValue(obj, delegateFunction);
-				}
-				else if (member is FieldInfo field)
-				{
-					var delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, field.FieldType);
-					field.SetValue(obj, delegateFunction);
-				}
+				int win32Error = Marshal.GetLastWin32Error();
+				throw new ExternalException(
+					$"Unable to get pointer for function '{function}'. Win32 Error Code: 0x{win32Error:X8}, Error Detail: {new Win32Exception(win32Error).Message}",
+					win32Error);
 			}
 		}
 
-		public static I Emit<I>(string dllPath, CallingConvention callingConvention) where I : IDisposable 
-		{
-			var obj = EmitDllMappableClass.Emit<I>(callingConvention);
-			MapDLLToObject(dllPath, (DllMapper)(object)obj);
-			return obj;
-		}
+		return functionPointer;
+	}
 
-		public void Dispose()
+	#endregion
+
+	private static readonly Type ExternalAttributeType = typeof(ExternalAttribute);
+
+	/// <summary>
+	/// Creates an instance of a derived <see cref="DllMapper"/> class and maps the specified DLL functions to the instance's properties and fields.
+	/// </summary>
+	/// <typeparam name="T">A class derived from <see cref="DllMapper"/>.</typeparam>
+	/// <param name="dllPath">The path to the DLL to load.</param>
+	/// <returns>An instance of the derived class.</returns>
+	public static T Create<T>(string dllPath) where T : DllMapper, new()
+	{
+		var obj = new T();
+		MapDLLToObject(dllPath, obj);
+		return obj;
+	}
+
+	/// <summary>
+	/// Maps the functions in a DLL to the properties and fields of the provided <see cref="DllMapper"/> object.
+	/// </summary>
+	/// <param name="dllPath">The path to the DLL.</param>
+	/// <param name="obj">The object whose members are to be mapped to DLL functions.</param>
+	private static void MapDLLToObject(string dllPath, DllMapper obj)
+	{
+		Type objType = obj.GetType();
+		obj.dllHandle = LoadLibrary(dllPath);
+
+		if (obj.dllHandle == IntPtr.Zero)
+			throw new DllNotFoundException($"Unable to load the DLL: {dllPath}");
+
+		foreach (var member in objType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
 		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
+			var attr = (ExternalAttribute)member.GetCustomAttributes(ExternalAttributeType, true).FirstOrDefault();
+			if (attr == null) continue;
+
+			string functionName = attr.Name ?? member.Name;
+			var functionPtr = GetFunctionPointer(obj.dllHandle, functionName);
+
+			if (member is PropertyInfo prop)
+			{
+				var delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, prop.PropertyType);
+				prop.SetValue(obj, delegateFunction);
+			}
+			else if (member is FieldInfo field)
+			{
+				var delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, field.FieldType);
+				field.SetValue(obj, delegateFunction);
+			}
 		}
-		protected virtual void Dispose(bool disposing)
+	}
+
+	/// <summary>
+	/// Dynamically emits a class and maps DLL functions to its members based on an interface.
+	/// </summary>
+	/// <typeparam name="I">The interface that defines the functions to map.</typeparam>
+	/// <param name="dllPath">The path to the DLL.</param>
+	/// <param name="callingConvention">The calling convention of the functions.</param>
+	/// <returns>An instance of the emitted class implementing the interface <typeparamref name="I"/>.</returns>
+	public static I Emit<I>(string dllPath, CallingConvention callingConvention) where I : class, IDisposable
+	{
+		var obj = EmitDllMappableClass.Emit<I>(callingConvention);
+		MapDLLToObject(dllPath, (DllMapper)(object)obj);
+		return obj;
+	}
+
+	/// <summary>
+	/// Releases the resources used by the <see cref="DllMapper"/> class.
+	/// </summary>
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
+	}
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (dllHandle != IntPtr.Zero)
 		{
 			FreeLibrary(dllHandle);
+			dllHandle = IntPtr.Zero;
 		}
-
-		~DllMapper() => Dispose(false);
 	}
 
-	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-	public class ExternalAttribute : Attribute
+	~DllMapper() => Dispose(false);
+}
+
+/// <summary>
+/// Attribute used to mark properties or fields to be mapped to external unmanaged functions.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+public class ExternalAttribute : Attribute
+{
+	public ExternalAttribute() { }
+
+	public ExternalAttribute(string name)
 	{
-		public ExternalAttribute()
-		{
-			this.Name = null;
-		}
-
-		public ExternalAttribute(string name)
-		{
-			this.Name = name;
-		}
-
-		public string Name { get; }
+		Name = name;
 	}
+
+	/// <summary>
+	/// The name of the external function to map. If not provided, the member's name will be used.
+	/// </summary>
+	public string Name { get; }
 }

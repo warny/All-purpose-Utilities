@@ -1,84 +1,109 @@
-/*
- * Copyright 2010, 2011, 2012 mapsforge.org
- *
- * This program is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
- */
 using System;
-using System.Drawing;
 using System.Numerics;
-using System.Runtime.Serialization;
-using System.Text;
 using Utils.Geography.Projections;
+using Utils.Objects;
 
-/**
- * A point represents an immutable pair of T coordinates.
- */
-namespace Utils.Geography.Model;
-
-
-public class ProjectedPoint<T> : IEquatable<ProjectedPoint<T>>, IFormattable
-where T : struct, IFloatingPointIeee754<T>
+namespace Utils.Geography.Model
 {
-	private const long serialVersionUID = 1L;
-
-	public IProjectionTransformation<T> Projection { get; }
-
 	/// <summary>
-	/// The x coordinate of this point.
+	/// Represents an immutable point in a projected coordinate system with an associated projection transformation.
 	/// </summary>
-	public T X { get; set; }
-
-	/// <summary>
-	/// The y coordinate of this point.
-	/// </summary>
-	public T Y { get; set; }
-
-	/// <summary>
-	/// Build a new Mappoint
-	/// </summary>
-	/// <param name="x">the x coordinate of this point.</param>
-	/// <param name="y">the y coordinate of this point.</param>
-	public ProjectedPoint(T x, T y, IProjectionTransformation<T> projection)
+	/// <typeparam name="T">A numeric type that supports IEEE 754 floating-point operations.</typeparam>
+	public class ProjectedPoint<T> : IEquatable<ProjectedPoint<T>>, IFormattable
+		where T : struct, IFloatingPointIeee754<T>
 	{
-		this.Projection = projection;
-		this.X = x;
-		this.Y = y;
-	}
+		private const long SerialVersionUID = 1L;
 
-	public void Deconstruct(out T x, out T y)
-	{
-		x = X;
-		y = Y;
-	}
+		/// <summary>
+		/// The projection transformation associated with this point.
+		/// </summary>
+		public IProjectionTransformation<T> Projection { get; }
 
-	public void Deconstruct(out T x, out T y, out IProjectionTransformation<T> projection)
-	{
-		x = X;
-		y = Y;
-		projection = Projection;
-	}
+		/// <summary>
+		/// The X coordinate of this point.
+		/// </summary>
+		public T X { get; }
 
-	public bool Equals(ProjectedPoint<T> other) => this.X != other.X && this.Y != other.Y;
+		/// <summary>
+		/// The Y coordinate of this point.
+		/// </summary>
+		public T Y { get; }
 
-	public override bool Equals(object obj)
-		=> obj switch
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ProjectedPoint{T}"/> class.
+		/// </summary>
+		/// <param name="x">The X coordinate of the point.</param>
+		/// <param name="y">The Y coordinate of the point.</param>
+		/// <param name="projection">The projection transformation associated with this point.</param>
+		public ProjectedPoint(T x, T y, IProjectionTransformation<T> projection)
 		{
-			ProjectedPoint<T> other => obj.Equals(other),
-			_ => false
-		};
+			Projection = projection ?? throw new ArgumentNullException(nameof(projection));
+			X = x;
+			Y = y;
+		}
 
-	public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.X, this.Y);
+		/// <summary>
+		/// Deconstructs the point into its X and Y coordinates.
+		/// </summary>
+		/// <param name="x">The X coordinate.</param>
+		/// <param name="y">The Y coordinate.</param>
+		public void Deconstruct(out T x, out T y)
+		{
+			x = X;
+			y = Y;
+		}
 
-	public override string ToString() => $"x={this.X}, y={this.Y}";
+		/// <summary>
+		/// Deconstructs the point into its X and Y coordinates and the associated projection.
+		/// </summary>
+		/// <param name="x">The X coordinate.</param>
+		/// <param name="y">The Y coordinate.</param>
+		/// <param name="projection">The associated projection transformation.</param>
+		public void Deconstruct(out T x, out T y, out IProjectionTransformation<T> projection)
+		{
+			x = X;
+			y = Y;
+			projection = Projection;
+		}
 
-	public string ToString(string format, IFormatProvider formatProvider) => $"x={this.X.ToString(format, formatProvider)}, y={this.Y.ToString(format, formatProvider)}";
+		/// <summary>
+		/// Determines whether the specified <see cref="ProjectedPoint{T}"/> is equal to the current one.
+		/// </summary>
+		/// <param name="other">The other <see cref="ProjectedPoint{T}"/> to compare to.</param>
+		/// <returns>True if the points are equal, false otherwise.</returns>
+		public bool Equals(ProjectedPoint<T> other)
+		{
+			if (other is null) return false;
+			return X.Equals(other.X) && Y.Equals(other.Y) && Projection.Equals(other.Projection);
+		}
+
+		/// <inheritdoc />
+		public override bool Equals(object obj)
+		{
+			return obj is ProjectedPoint<T> other && Equals(other);
+		}
+
+		/// <inheritdoc />
+		public override int GetHashCode()
+		{
+			return ObjectUtils.ComputeHash(X, Y, Projection.GetHashCode());
+		}
+
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return $"x={X}, y={Y}, projection={Projection}";
+		}
+
+		/// <summary>
+		/// Returns a string representation of the point with a specified format.
+		/// </summary>
+		/// <param name="format">A format string for the numeric values.</param>
+		/// <param name="formatProvider">An object that provides culture-specific formatting information.</param>
+		/// <returns>A formatted string representing the point.</returns>
+		public string ToString(string format, IFormatProvider formatProvider)
+		{
+			return $"x={X.ToString(format, formatProvider)}, y={Y.ToString(format, formatProvider)}, projection={Projection}";
+		}
+	}
 }
