@@ -3,7 +3,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	  <UseWindowsForms>true</UseWindowsForms>
 	<LangVersion>Latest</LangVersion>
   </PropertyGroup>
 

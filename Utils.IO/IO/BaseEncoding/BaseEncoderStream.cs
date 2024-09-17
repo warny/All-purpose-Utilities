@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace Utils.IO.BaseEncoding
 {
@@ -64,7 +65,7 @@ namespace Utils.IO.BaseEncoding
 
 		public override void Write(byte[] buffer, int offset, int count)
 		{
-			foreach (var b in buffer)
+			foreach (var b in buffer.Skip(offset).Take(count))
 			{
 				position++;
 				value = (value << 8) | b;

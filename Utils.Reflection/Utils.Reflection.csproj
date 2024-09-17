@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-	<LangVersion>Latest</LangVersion>
-    <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+    <TargetFramework>net8.0</TargetFramework>
+	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	  <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>

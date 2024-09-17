@@ -93,7 +93,7 @@ namespace Utils.IO.Serialization
 				{
 					var attribute = field.GetCustomAttribute<FieldAttribute>();
 					var value = field.GetValue(obj);
-					System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field.ToString()} {attribute.FieldEncoding} {attribute.Length}");
+					System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field} {attribute.FieldEncoding} {attribute.Length}");
 					System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
 					WriteValue(value, field.Type, attribute.Length, null, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding);
 					System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
@@ -230,7 +230,7 @@ namespace Utils.IO.Serialization
 
 		public void WriteNullTerminatedString(string value, Encoding stringEncoding, byte[] terminators)
 		{
-			terminators = terminators ?? new byte[]{ 0 };
+			terminators = terminators ?? [0];
 			byte[] bytes = stringEncoding.GetBytes(value);
 			WriteBytes(bytes);
 			WriteByte(terminators.LastOrDefault());
@@ -371,7 +371,7 @@ namespace Utils.IO.Serialization
 				Type argumentType = type.GenericTypeArguments[0];
 				if (argumentType == typeof(object)) throw new NotSupportedException();
 				var toArrayMethodInfo = typeof(Enumerable).GetMethod("ToArray").MakeGenericMethod(type.GenericTypeArguments);
-				Array result = (Array)toArrayMethodInfo.Invoke(null, new object[] { value });
+				Array result = (Array)toArrayMethodInfo.Invoke(null, [value]);
 				if (fieldEncoding == FieldEncodingEnum.FixedLength)
 				{
 					WriteArray(result, length ?? result.Length, type.GetElementType(), bigIndian, stringEncoding);

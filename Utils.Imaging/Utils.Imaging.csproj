@@ -2,7 +2,8 @@
 
   <PropertyGroup>
 	  <TargetFramework>net8.0</TargetFramework>
-	<LangVersion>Latest</LangVersion>
+	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	  <LangVersion>Latest</LangVersion>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Olivier MARTY</Authors>
     <Company>Olivier MARTY</Company>

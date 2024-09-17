@@ -185,4 +185,18 @@ public static class Validations
 		if (T.IsNaN(value)) throw new ArgumentOutOfRangeException(valueName, $"{value} in not a number");
 		return value;
 	}
+
+	public static T ArgMustBe<T>(this T value, Func<T, bool> validationFunction, string message, [CallerArgumentExpression(nameof(value))] string valueName = "")
+	{
+		validationFunction.ArgMustNotBeNull();
+		if (!validationFunction(value)) throw new ArgumentException(message, valueName);
+		return value;
+	}
+
+	public static T ArgMustNotBe<T>(this T value, Func<T, bool> validationFunction, string message, [CallerArgumentExpression(nameof(value))] string valueName = "")
+	{
+		validationFunction.ArgMustNotBeNull();
+		if (validationFunction(value)) throw new ArgumentException(message, valueName);
+		return value;
+	}
 }

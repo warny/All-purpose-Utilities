@@ -44,8 +44,8 @@ namespace UtilsTest.Streams
 			using (MemoryStream stream = new MemoryStream())
 			{
 				Writer writer = new Writer(stream);
-				writer.WriteNullTerminatedString(testString1, Encoding.UTF8, new byte[] { 0 });
-				writer.WriteNullTerminatedString(testString2, Encoding.UTF8, new byte[] { 0 });
+				writer.WriteNullTerminatedString(testString1, Encoding.UTF8, [0]);
+				writer.WriteNullTerminatedString(testString2, Encoding.UTF8, [0]);
 
 				stream.Seek(0, SeekOrigin.Begin);
 
