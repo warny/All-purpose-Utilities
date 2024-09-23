@@ -69,14 +69,12 @@ public class RawWriter
 
 	public void WriteShort(IWriter writer, short value) => WriteNumber(writer, value);
 	public void WriteUShort(IWriter writer, ushort value) => WriteNumber(writer, value);
-
 	public void WriteInt(IWriter writer, int value) => WriteNumber(writer, value);
-
 	public void WriteUInt(IWriter writer, uint value) => WriteNumber(writer, value);
 	public void WriteLong(IWriter writer, long value) => WriteNumber(writer, value);
-
 	public void WriteULong(IWriter writer, ulong value) => WriteNumber(writer, value);
 	public void WriteSingle(IWriter writer, float value) => WriteNumberBytes(writer, BitConverter.GetBytes(value));
+
 	public void WriteDouble(IWriter writer, double value) => WriteNumberBytes(writer, BitConverter.GetBytes(value));
 	public void WriteDecimal(IWriter writer, decimal value) => WriteNumberBytes(writer, BitConverterEx.GetBytes(value));
 	public void WriteHalf(IWriter writer, Half value) => WriteNumberBytes(writer, BitConverter.GetBytes(value));
@@ -100,14 +98,14 @@ public class RawWriter
 
 	public void WriteString(IWriter writer, string value)
 	{
-		var data = Encoding.UTF8.GetBytes(value);
+		var data = Encoding.GetBytes(value);
 		writer.Write(data.Length);
 		writer.WriteBytes(data);
 	}
 
 	public void WriteChar(IWriter writer, char value)
 	{
-		var data = Encoding.UTF8.GetBytes([value]);
+		var data = Encoding.GetBytes([value]);
 		WriteByte(writer, (byte)data.Length);
 		writer.WriteBytes(data);
 	}
@@ -160,6 +158,12 @@ public class CompressedIntWriter : IBasicWriter, IIntegerNumberWriters
 		}
 		result = result.TrimStart<byte>(0x00);
 
+		if (result.Length == 0)
+		{
+			writer.WriteByte(0);
+			return;
+		}
+
 		for (int i = 0; i < result.Length - 1; i++)
 		{
 			result[i] |= 0b1000_0000;
@@ -195,11 +199,12 @@ public class UTF8IntWriter : IBasicWriter, IIntegerNumberWriters
 
 		value.WriteBigEndian(bytes);
 		bytes = bytes.TrimStart((byte)0);
+		if (bytes.Length == 0) bytes = [0];
 		int leadingZeros = byte.LeadingZeroCount(bytes[0]);
 
-		int prefixLength = bytes.Length / 8 + 1;
+		int prefixLength = bytes.Length / 8;
 		int bitsInLastByte = bytes.Length % 8 + 1;
-		if (bitsInLastByte + 8 - leadingZeros > 8)
+		if (bitsInLastByte + 8 - leadingZeros >= 8)
 		{
 			bitsInLastByte++;
 			if (bitsInLastByte == 8)
@@ -209,7 +214,7 @@ public class UTF8IntWriter : IBasicWriter, IIntegerNumberWriters
 			}
 		}
 
-		for (var i = 0; i < prefixLength - 1; i++)
+		for (var i = 0; i < prefixLength; i++)
 		{
 			WriteByte(writer, 0xFF);
 		}

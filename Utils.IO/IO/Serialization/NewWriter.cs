@@ -10,7 +10,7 @@ using Utils.Reflection;
 
 namespace Utils.IO.Serialization
 {
-	public class NewWriter : IWriter
+	public class NewWriter : IWriter, IStreamMapping<NewWriter>
 	{
 		public Stream Stream { get; }
 
@@ -34,7 +34,7 @@ namespace Utils.IO.Serialization
 			foreach (var converter in converters.Union(new RawWriter().WriterDelegates))
 			{
 				var method = converter.GetMethodInfo();
-				var arguments =method.GetParameters();
+				var arguments = method.GetParameters();
 				arguments.ArgMustBeOfSize(2);
 				arguments[0].ArgMustBe(a => a.ParameterType == typeof(IWriter), "The first argument of the function is not IWriter");
 				if (!writers.ContainsKey(arguments[1].ParameterType))
@@ -98,10 +98,10 @@ namespace Utils.IO.Serialization
 			Stream.Seek(this.positionsStack.Pop(), SeekOrigin.Begin);
 		}
 
-		public NewReader Slice(long position, long length)
+		public NewWriter Slice(long position, long length)
 		{
 			PartialStream s = new PartialStream(Stream, position, length);
-			return new NewReader(s);
+			return new NewWriter(s);
 		}
 
 

@@ -10,9 +10,11 @@ using Utils.Reflection;
 
 namespace Utils.IO.Serialization;
 
-public class NewReader : IReader
+public class NewReader : IReader, IStreamMapping<NewReader>
 {
 	public Stream Stream { get; }
+	public long BytesLeft { get; }
+	public long Position { get; set; }
 
 	private readonly Stack<long> positionsStack = new Stack<long>();
 
@@ -65,29 +67,26 @@ public class NewReader : IReader
 		return reader.Invoke(this);
 	}
 
-	public void Seek(int offset, SeekOrigin origin)
-	{
-		Stream.Seek(offset, origin);
-	}
-
 	public void Push()
 	{
 		if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
-		positionsStack.Push(Stream.Position);
+		this.positionsStack.Push(Stream.Position);
 	}
 
 	public void Push(int offset, SeekOrigin origin)
 	{
 		if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
-		positionsStack.Push(Stream.Position);
+		this.positionsStack.Push(Stream.Position);
 		Stream.Seek(offset, origin);
 	}
 
 	public void Pop()
 	{
 		if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
-		Stream.Seek(positionsStack.Pop(), SeekOrigin.Begin);
+		Stream.Seek(this.positionsStack.Pop(), SeekOrigin.Begin);
 	}
+	public void Seek(int offset, SeekOrigin origin) => Stream.Seek(offset, origin);
+
 
 	public int ReadByte() => Stream.ReadByte();
 	public byte[] ReadBytes(int length) => Stream.ReadBytes(length);
