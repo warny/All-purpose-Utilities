@@ -180,7 +180,6 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 				if (!IsSquare)
 					throw new InvalidOperationException("The matrix is not square.");
 
-				var columns = new ComputeColumns<T>(components.GetLength(0));
 				determinant = ComputeDeterminant();
 			}
 			return determinant.Value;
