@@ -42,7 +42,14 @@ public class ReturnValue<T, E> where E : class
         else { onError(Error); }
     }
 
-    public static implicit operator ReturnValue<T, E>(T value) => new ReturnValue<T, E>(value);
+    public static implicit operator ReturnValue<T, E>(T value) => new (value);
+
+	public static implicit operator T(ReturnValue<T, E> rv) => rv.Value;
+	public static implicit operator E(ReturnValue<T, E> rv) => rv.Error;
+
+	public override string ToString() => this.Error?.ToString() ?? this.Value.ToString();
+    public override bool Equals(object obj) => this.Error is null ? this.Value.Equals(obj) : false;
+	public override int GetHashCode() => this.Error?.GetHashCode() ?? this.Value.GetHashCode();
 
 }
 

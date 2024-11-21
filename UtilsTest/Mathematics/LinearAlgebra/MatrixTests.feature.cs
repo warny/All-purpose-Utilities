@@ -346,13 +346,13 @@ this.ScenarioInitialize(scenarioInfo);
         }
         
         [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute()]
-        [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("Matrix determinant 5*5")]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("Matrix determinant 4*4")]
         [Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "MatrixTests")]
-        public void MatrixDeterminant55()
+        public void MatrixDeterminant44()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Matrix determinant 5*5", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Matrix determinant 4*4", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 68
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -367,42 +367,95 @@ this.ScenarioInitialize(scenarioInfo);
                             "C1",
                             "C2",
                             "C3",
+                            "C4"});
+                table14.AddRow(new string[] {
+                            "12",
+                            "10",
+                            "9",
+                            "-12"});
+                table14.AddRow(new string[] {
+                            "2",
+                            "-8",
+                            "6",
+                            "4"});
+                table14.AddRow(new string[] {
+                            "1",
+                            "-13",
+                            "14",
+                            "2"});
+                table14.AddRow(new string[] {
+                            "1",
+                            "8",
+                            "-6",
+                            "7"});
+#line 69
+ testRunner.Given("m is a matrix", ((string)(null)), table14, "Given ");
+#line hidden
+#line 75
+ testRunner.Then("det(m) = -7622", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+            }
+            this.ScenarioCleanup();
+        }
+        
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute()]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("Matrix determinant 5*5")]
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "MatrixTests")]
+        public void MatrixDeterminant55()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Matrix determinant 5*5", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 77
+this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                this.ScenarioStart();
+                TechTalk.SpecFlow.Table table15 = new TechTalk.SpecFlow.Table(new string[] {
+                            "C1",
+                            "C2",
+                            "C3",
                             "C4",
                             "C5"});
-                table14.AddRow(new string[] {
+                table15.AddRow(new string[] {
                             "12",
                             "10",
                             "9",
                             "-12",
                             "2"});
-                table14.AddRow(new string[] {
+                table15.AddRow(new string[] {
                             "2",
                             "-8",
                             "6",
                             "4",
                             "-4"});
-                table14.AddRow(new string[] {
+                table15.AddRow(new string[] {
                             "1",
                             "-13",
                             "14",
                             "2",
                             "4"});
-                table14.AddRow(new string[] {
+                table15.AddRow(new string[] {
                             "1",
                             "8",
                             "-6",
                             "7",
                             "4"});
-                table14.AddRow(new string[] {
+                table15.AddRow(new string[] {
                             "-1",
                             "-2",
                             "7",
                             "14",
                             "-18"});
-#line 69
- testRunner.Given("m is a matrix", ((string)(null)), table14, "Given ");
+#line 78
+ testRunner.Given("m is a matrix", ((string)(null)), table15, "Given ");
 #line hidden
-#line 76
+#line 85
  testRunner.Then("det(m) = 294064", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }

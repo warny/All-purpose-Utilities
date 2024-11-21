@@ -3,224 +3,240 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Objects;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
 public partial class Matrix<T>
 {
-    private static void LinearTransformation(IEnumerable<Matrix<T>> matrices, int row1, T[] transformations)
+	/// <summary>
+	/// Applies a linear transformation to the specified row of the matrix using the given transformation coefficients.
+	/// </summary>
+	private static void ApplyLinearTransformation(int targetRow, T[] transformations, params Matrix<T>[] matrices)
 	{
-		if (transformations[row1] == T.Zero)
+		if (transformations[targetRow] == T.Zero)
 		{
-			throw new ArgumentOutOfRangeException(nameof(row1), $"La transformation de la ligne {row1} ne peut pas annuler sa valeur");
+			throw new ArgumentOutOfRangeException(nameof(targetRow), $"The transformation of row {targetRow} cannot nullify its own value.");
 		}
+
 		foreach (Matrix<T> matrix in matrices)
 		{
-			int dimensionX = matrix.Rows;
-			int dimensionY = matrix.Rows;
-			for (int col = 0; col < dimensionX; col++)
+			int rows = matrix.Rows;
+			int cols = matrix.Columns;
+
+			for (int col = 0; col < cols; col++)
 			{
 				T temp = T.Zero;
-				for (int row = 0; row < dimensionY; row++)
+				for (int row = 0; row < rows; row++)
 				{
 					temp += matrix[row, col] * transformations[row];
 				}
-				matrix.components[row1, col] = temp;
+				matrix.components[targetRow, col] = temp;
 			}
-			var isSquare = matrix.IsSquare;
-			matrix.isTriangularised = isSquare ? (bool?)null : false;
-			matrix.isIdentity = isSquare ? (bool?)null : false;
-			matrix.isDiagonalized = isSquare ? (bool?)null : false;
+
+			matrix.ResetMatrixProperties();
 		}
 	}
 
-	private static void PermuteTransformation(IEnumerable<Matrix<T>> matrices, int row1, int row2)
+	/// <summary>
+	/// Swaps two rows of the matrices in the given collection.
+	/// </summary>
+	private static void PermuteTransformation(int row1, int row2, params Matrix<T>[] matrices)
 	{
 		if (row1 == row2) return;
+
 		foreach (Matrix<T> matrix in matrices)
 		{
-			int dimensionX = matrix.Rows;
-			for (int col = 0; col < dimensionX; col++)
+			int cols = matrix.Columns;
+
+			for (int col = 0; col < cols; col++)
 			{
 				T temp = matrix[row1, col];
 				matrix.components[row1, col] = matrix[row2, col];
 				matrix.components[row2, col] = temp;
 			}
-			var isSquare = matrix.IsSquare;
-			matrix.isTriangularised = isSquare ? (bool?)null : false;
-			matrix.isIdentity = isSquare ? (bool?)null : false;
-			matrix.isDiagonalized = isSquare ? (bool?)null : false;
+
+			matrix.ResetMatrixProperties();
 		}
 	}
 
 	/// <summary>
-	/// Calcule le déterminant partiel de la matrice
+	/// Resets the properties related to the matrix's structure.
 	/// </summary>
-	/// <param name="recurrence"></param>
-	/// <param name="columns"></param>
-	/// <returns></returns>
-	private T ComputeDeterminant(int recurrence, ComputeColumns<T> columns)
+	private void ResetMatrixProperties()
 	{
-		T sign = T.One;
-		T result = T.Zero;
-		foreach (int column in columns)
-		{
-			T temp = sign * this.components[recurrence, column];
-
-			var nextColumns = columns.NextLevel(column);
-			if (temp != T.Zero && nextColumns.Level > 0)
-			{
-				T subDeterminant;
-				if (columns.Level <= 2 || columns.Level >= columns.ColumnsCount - 2)
-				{
-					subDeterminant = ComputeDeterminant(recurrence + 1, nextColumns);
-				}
-				else if (!nextColumns.TryGetCache(out subDeterminant))
-				{
-					subDeterminant = ComputeDeterminant(recurrence + 1, nextColumns);
-					nextColumns.SetCache(subDeterminant);
-				}
-				temp *= subDeterminant;
-			}
-			result += temp;
-			sign = -sign;
-		}
-		return result;
+		bool isSquare = IsSquare;
+		isDiagonalized = isSquare ? null : false;
+		isTriangularised = isSquare ? null : false;
+		isIdentity = isSquare ? null : false;
 	}
 
-	public Matrix<T>[] Diagonalize()
+	/// <summary>
+	/// Performs LU decomposition of the current square matrix, resulting in a lower triangular matrix L
+	/// and an upper triangular matrix U such that the original matrix A = L * U.
+	/// </summary>
+	/// <remarks>
+	/// LU decomposition is used to decompose a given square matrix into two triangular matrices:
+	/// L (lower triangular) and U (upper triangular). This decomposition is useful for solving linear
+	/// systems, calculating determinants, and matrix inversion.
+	/// </remarks>
+	/// <returns>
+	/// A tuple containing:
+	/// <list type="bullet">
+	/// <item>
+	/// <description><see cref="Matrix{T}"/> L - The lower triangular matrix with ones on the diagonal.</description>
+	/// </item>
+	/// <item>
+	/// <description><see cref="Matrix{T}"/> U - The upper triangular matrix.</description>
+	/// </item>
+	/// </list>
+	/// </returns>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown if the matrix is not square, as LU decomposition requires a square matrix.
+	/// Thrown if the matrix is singular, meaning that it cannot be decomposed due to the presence of a zero pivot.
+	/// </exception>
+	public (Matrix<T> L, Matrix<T> U) DiagonalizeLU()
 	{
-		if (!this.IsSquare)
+		// Verify that the matrix is square
+		if (!IsSquare)
 		{
-			throw new Exception("la matrice n'est pas une matrice carrée");
-		}
-		if (this.IsDiagonalized)
-		{
-			return [new(this), Identity(this.Rows)];
+			throw new InvalidOperationException("The matrix must be square for LU decomposition.");
 		}
 
-		Matrix<T> start = new Matrix<T>(this);
-		Matrix<T> result = Identity(this.Rows);
-		Matrix<T>[] matrices = [start, result];
+		int n = Rows;
 
-		for (int column = 0; column < this.Rows; column++)
+		// Create L as an identity matrix and U as a clone of the current matrix
+		Matrix<T> L = Matrix<T>.Identity(n);
+		Matrix<T> U = new Matrix<T>(this); // Cloning the original matrix
+
+		T sign = T.One;
+
+		for (int k = 0; k < n; k++)
 		{
-			//vérifie qu'à la ligne correspondant à la colonne considérée, on ait une valeur non nulle, sinon, on inverse avec une ligne suivante qui soit dans ce cas
-			T max = T.Zero;
-			int maxLine = 0;
-			for (int j = column; j < this.Rows; j++)
+			// Partial pivoting: find the row with the largest pivot element
+			int pivotRow = k;
+			for (int i = k + 1; i < n; i++)
 			{
-				T value = T.Abs(this[j, column]);
-				if (max < value)
+				if (T.Abs(U[i, k]) > T.Abs(U[pivotRow, k]))
 				{
-					max = value;
-					maxLine = j;
+					pivotRow = i;
 				}
 			}
-			if (max == T.Zero)
-			{
-				throw new Exception("La matrice n'est pas diagonalisable");
-			}
-			PermuteTransformation(matrices, column, maxLine);
 
-			//ensuite, on essaye d'annuler les colonnes différentes de la colonne considérée
-			T[] transformations = Enumerable.Repeat(T.Zero, this.Rows).ToArray();
-			for (int row = column + 1; row < this.Rows; row++)
+			// If the pivot element is zero, the matrix is singular
+			if (U[pivotRow, k].Equals(T.Zero))
 			{
+				throw new InvalidOperationException("The matrix is singular and cannot be decomposed.");
+			}
+
+			// Swap rows if needed (operating on matrices in the collection)
+			if (pivotRow != k)
+			{
+				PermuteTransformation(k, pivotRow, U, L);
+				sign = -sign; // Change the sign of the determinant due to row swapping
+			}
+
+			// Apply linear transformations to eliminate elements below the pivot
+			T[] transformations = Enumerable.Repeat(T.Zero, Rows).ToArray();
+			for (int row = k + 1; row < n; row++)
+			{
+				// Set the transformation coefficient for the target row to eliminate elements below pivot
 				transformations[row] = T.One;
-				transformations[column] = -start[row, column] / start[column, column];
-				LinearTransformation(matrices, row, transformations);
+				transformations[k] = -U[row, k] / U[k, k];
+
+				ApplyLinearTransformation(row, transformations, U, L);
+
+				// Reset the transformation coefficient for the next iteration
 				transformations[row] = T.Zero;
 			}
 		}
 
-		return matrices;
+		// Return the matrices L and U
+		return (L, U);
 	}
 
+	/// <summary>
+	/// Inverts the matrix if it is invertible.
+	/// </summary>
 	public Matrix<T> Invert()
 	{
-		if (!this.IsSquare)
+		if (!IsSquare)
 		{
-			throw new InvalidOperationException("la matrice n'est pas une matrice carrée");
+			throw new InvalidOperationException("The matrix is not square.");
 		}
-		if (this.IsIdentity)
+		if (IsIdentity)
 		{
 			return new Matrix<T>(this);
 		}
 
-		var matrices = this.Diagonalize();
-		var start = matrices[0];
-		var result = matrices[1];
+		var (start, result) = DiagonalizeLU();
 
-		T[] transformations = Enumerable.Repeat(T.Zero, this.Rows).ToArray();
-		for (int j = this.Rows - 1; j >= 0; j--)
+		T[] transformations = Enumerable.Repeat(T.Zero, Rows).ToArray();
+		for (int j = Rows - 1; j >= 0; j--)
 		{
 			transformations[j] = T.One / start[j, j];
-			LinearTransformation(matrices, j, transformations);
+			ApplyLinearTransformation(j, transformations, start, result);
 			transformations[j] = T.One;
-			for (int i = j + 1; i < this.Rows; i++)
+
+			for (int i = j + 1; i < Rows; i++)
 			{
 				transformations[i] = -start[j, i] / start[i, i];
 			}
-			LinearTransformation(matrices, j, transformations);
-
+			ApplyLinearTransformation(j, transformations, start, result);
 		}
 		return result;
 	}
 
+	/// <summary>
+	/// Helper class to manage columns for determinant computation.
+	/// </summary>
 	private class ComputeColumns<T> : IEnumerable, IEquatable<ComputeColumns<T>>
-    where T : struct,
-        IFloatingPoint<T>,
-        IAdditionOperators<T, T, T>,
-        ISubtractionOperators<T, T, T>,
-        IMultiplyOperators<T, T, T>,
-        IDivisionOperators<T, T, T>,
-        IEquatable<T>,
-        IEqualityOperators<T, T, bool>
-    {
-        public int ColumnsCount { get; }
+		where T : struct,
+		IFloatingPoint<T>,
+		IAdditionOperators<T, T, T>,
+		ISubtractionOperators<T, T, T>,
+		IMultiplyOperators<T, T, T>,
+		IDivisionOperators<T, T, T>,
+		IEquatable<T>,
+		IEqualityOperators<T, T, bool>
+	{
+		public int ColumnsCount { get; }
 		private readonly int[] columns;
-		private Dictionary<ComputeColumns<T>, T> cache { get; }
+		private readonly Dictionary<ComputeColumns<T>, T> cache;
+
 		public int Level => columns.Length;
+
+		public ComputeColumns(int columnsCount)
+		{
+			columns = Enumerable.Range(0, columnsCount).ToArray();
+			cache = new Dictionary<ComputeColumns<T>, T>();
+			ColumnsCount = columnsCount;
+		}
 
 		private ComputeColumns(int[] columns, Dictionary<ComputeColumns<T>, T> cache, int columnsCount)
 		{
 			this.columns = columns;
 			this.cache = cache;
-			this.ColumnsCount = columnsCount;
-		}
-
-		public ComputeColumns(int columnsCount)
-		{
-			this.columns = Enumerable.Range(0, columnsCount).ToArray();
-			this.cache = [];
-			this.ColumnsCount = columnsCount;
+			ColumnsCount = columnsCount;
 		}
 
 		public ComputeColumns<T> NextLevel(int columnToRemove)
 		{
-			return new ComputeColumns<T>(columns.Where(c => c != columnToRemove).ToArray(), this.cache, this.ColumnsCount);
+			return new ComputeColumns<T>(columns.Where(c => c != columnToRemove).ToArray(), cache, ColumnsCount);
 		}
 
-		public bool TryGetCache(out T value)
-		{
-			return cache.TryGetValue(this, out value);
-		}
+		public bool TryGetCache(out T value) => cache.TryGetValue(this, out value);
 
-		public void SetCache(T value)
-		{
-			cache.Add(this, value);
-		}
+		public void SetCache(T value) => cache[this] = value;
 
-		IEnumerator IEnumerable.GetEnumerator() => columns.GetEnumerator();
+		public IEnumerator GetEnumerator() => columns.GetEnumerator();
 
-		public override int GetHashCode() => ObjectUtils.ComputeHash(this.columns);
-		public override bool Equals(object obj) => obj is ComputeColumns<T> other && Equals(other);
-        public bool Equals(ComputeColumns<T> other) => ReferenceEquals(this, other) || Enumerable.SequenceEqual(columns, other.columns);
-        public override string ToString() => string.Join(", ", columns);
+		public override int GetHashCode() => ObjectUtils.ComputeHash(columns);
 
-    }
+		public override bool Equals(object? obj) => obj is ComputeColumns<T> other && Equals(other);
+
+		public bool Equals(ComputeColumns<T>? other) => other is not null && (ReferenceEquals(this, other) || Enumerable.SequenceEqual(columns, other.columns));
+
+		public override string ToString() => string.Join(", ", columns);
+	}
 }

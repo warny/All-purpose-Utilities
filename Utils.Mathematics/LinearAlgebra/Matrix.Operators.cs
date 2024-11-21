@@ -1,152 +1,192 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Objects;
 
-namespace Utils.Mathematics.LinearAlgebra;
-
-public partial class Matrix<T> :
-	IAdditionOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
-    ISubtractionOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
-    IEqualityOperators<Matrix<T>, Matrix<T>, bool>,
-    IEqualityOperators<Matrix<T>, object, bool>,
-    IMultiplyOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
-	IMultiplyOperators<Matrix<T>, T, Matrix<T>>,
-    IMultiplyOperators<Matrix<T>, Vector<T>, Vector<T>>,
-    IDivisionOperators<Matrix<T>, T, Matrix<T>>,
-	IUnaryNegationOperators<Matrix<T>, Matrix<T>>,
-    IUnaryPlusOperators<Matrix<T>, Matrix<T>>
+namespace Utils.Mathematics.LinearAlgebra
 {
-    public static Matrix<T> operator +(Matrix<T> Matrix1, Matrix<T> Matrix2)
+	public partial class Matrix<T> :
+		IAdditionOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
+		ISubtractionOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
+		IEqualityOperators<Matrix<T>, Matrix<T>, bool>,
+		IEqualityOperators<Matrix<T>, object, bool>,
+		IMultiplyOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
+		IMultiplyOperators<Matrix<T>, T, Matrix<T>>,
+		IMultiplyOperators<Matrix<T>, Vector<T>, Vector<T>>,
+		IDivisionOperators<Matrix<T>, T, Matrix<T>>,
+		IUnaryNegationOperators<Matrix<T>, Matrix<T>>,
+		IUnaryPlusOperators<Matrix<T>, Matrix<T>>
 	{
-		if (Matrix1.components.GetLength(0) != Matrix2.components.GetLength(0) || Matrix1.components.GetLength(1) != Matrix2.components.GetLength(1))
+		/// <summary>
+		/// Adds two matrices element-wise.
+		/// </summary>
+		/// <exception cref="InvalidOperationException">Thrown if the matrices have different dimensions.</exception>
+		public static Matrix<T> operator +(Matrix<T> matrix1, Matrix<T> matrix2)
 		{
-			throw new ArgumentException("Les matrices n'ont pas les mêmes dimensions");
-		}
-		var result = new T[Matrix1.components.GetLength(0), Matrix1.components.GetLength(1)];
-		for (int i = 0; i < result.GetLength(0); i++)
-		{
-			for (int j = 0; j < result.GetLength(1); j++)
+			if (matrix1.Rows != matrix2.Rows || matrix1.Columns != matrix2.Columns)
 			{
-				result[i, j] = Matrix1.components[i, j] + Matrix2.components[i, j];
+				throw new InvalidOperationException("The matrices do not have the same dimensions.");
 			}
-		}
-		return new Matrix<T>(result);
-	}
 
-	public static Matrix<T> operator -(Matrix<T> Matrix1, Matrix<T> Matrix2)
-	{
-		if (Matrix1.components.GetLength(0) != Matrix2.components.GetLength(0) || Matrix1.components.GetLength(1) != Matrix2.components.GetLength(1))
-		{
-			throw new ArgumentException("Les matrices n'ont pas les mêmes dimensions");
-		}
-		var result = new T[Matrix1.components.GetLength(0), Matrix1.components.GetLength(1)];
-		for (int i = 0; i < result.GetLength(0); i++)
-		{
-			for (int j = 0; j < result.GetLength(1); j++)
+			var result = new T[matrix1.Rows, matrix1.Columns];
+			for (int i = 0; i < matrix1.Rows; i++)
 			{
-				result[i, j] = Matrix1.components[i, j] - Matrix2.components[i, j];
+				for (int j = 0; j < matrix1.Columns; j++)
+				{
+					result[i, j] = matrix1.components[i, j] + matrix2.components[i, j];
+				}
 			}
+			return new Matrix<T>(result);
 		}
-		return new Matrix<T>(result);
-	}
 
-	public static Matrix<T> operator -(Matrix<T> matrix)
-	{
-		var result = new T[matrix.components.GetLength(0), matrix.components.GetLength(1)];
-		for (int i = 0; i < result.GetLength(0); i++)
+		/// <summary>
+		/// Subtracts one matrix from another element-wise.
+		/// </summary>
+		/// <exception cref="InvalidOperationException">Thrown if the matrices have different dimensions.</exception>
+		public static Matrix<T> operator -(Matrix<T> matrix1, Matrix<T> matrix2)
 		{
-			for (int j = 0; j < result.GetLength(1); j++)
+			if (matrix1.Rows != matrix2.Rows || matrix1.Columns != matrix2.Columns)
 			{
-				result[i, j] = -matrix.components[i, j];
+				throw new InvalidOperationException("The matrices do not have the same dimensions.");
 			}
-		}
-		return new Matrix<T>(result);
-	}
 
-	public static Matrix<T> operator *(T number, Matrix<T> matrix)
-	{
-		var result = new T[matrix.components.GetLength(0), matrix.components.GetLength(1)];
-
-		for (int i = 0; i < result.GetLength(0); i++)
-		{
-			for (int j = 0; j < result.GetLength(1); j++)
+			var result = new T[matrix1.Rows, matrix1.Columns];
+			for (int i = 0; i < matrix1.Rows; i++)
 			{
-				result[i, j] = MathEx.Round(number * matrix.components[i, j], 15);
+				for (int j = 0; j < matrix1.Columns; j++)
+				{
+					result[i, j] = matrix1.components[i, j] - matrix2.components[i, j];
+				}
 			}
+			return new Matrix<T>(result);
 		}
-		return new Matrix<T>(result);
-	}
 
-	public static Matrix<T> operator *(Matrix<T> matrix, T number) => number * matrix;
-
-	public static Matrix<T> operator /(Matrix<T> Matrix, T number)
-	{
-		var result = new T[Matrix.components.GetLength(0), Matrix.components.GetLength(1)];
-
-		for (int i = 0; i < result.GetLength(0); i++)
+		/// <summary>
+		/// Negates all elements of the matrix.
+		/// </summary>
+		public static Matrix<T> operator -(Matrix<T> matrix)
 		{
-			for (int j = 0; j < result.GetLength(1); j++)
+			var result = new T[matrix.Rows, matrix.Columns];
+			for (int i = 0; i < matrix.Rows; i++)
 			{
-				result[i, j] = Matrix.components[i, j] / number;
+				for (int j = 0; j < matrix.Columns; j++)
+				{
+					result[i, j] = -matrix.components[i, j];
+				}
 			}
+			return new Matrix<T>(result);
 		}
-		return new Matrix<T>(result);
-	}
 
-	public static Matrix<T> operator *(Matrix<T> matrix1, Matrix<T> matrix2)
-	{
-		if (matrix1.components.GetLength(0) != matrix2.components.GetLength(1))
+		/// <summary>
+		/// Multiplies a matrix by a scalar.
+		/// </summary>
+		public static Matrix<T> operator *(T scalar, Matrix<T> matrix)
 		{
-			throw new ArgumentException("Les matrices n'ont pas de dimensions compatibles");
+			var result = new T[matrix.Rows, matrix.Columns];
+			for (int i = 0; i < matrix.Rows; i++)
+			{
+				for (int j = 0; j < matrix.Columns; j++)
+				{
+					result[i, j] = scalar * matrix.components[i, j];
+				}
+			}
+			return new Matrix<T>(result);
 		}
-		var depth = matrix1.components.GetLength(0);
-		var result = new T[matrix1.components.GetLength(1), matrix2.components.GetLength(0)];
 
-		for (int i = 0; i < result.GetLength(0); i++)
+		/// <summary>
+		/// Multiplies a matrix by a scalar.
+		/// </summary>
+		public static Matrix<T> operator *(Matrix<T> matrix, T scalar) => scalar * matrix;
+
+		/// <summary>
+		/// Divides a matrix by a scalar.
+		/// </summary>
+		public static Matrix<T> operator /(Matrix<T> matrix, T scalar)
 		{
-			for (int j = 0; j < result.GetLength(1); j++)
+			var result = new T[matrix.Rows, matrix.Columns];
+			for (int i = 0; i < matrix.Rows; i++)
+			{
+				for (int j = 0; j < matrix.Columns; j++)
+				{
+					result[i, j] = matrix.components[i, j] / scalar;
+				}
+			}
+			return new Matrix<T>(result);
+		}
+
+		/// <summary>
+		/// Multiplies two matrices.
+		/// </summary>
+		/// <exception cref="InvalidOperationException">Thrown if the matrices have incompatible dimensions for multiplication.</exception>
+		public static Matrix<T> operator *(Matrix<T> matrix1, Matrix<T> matrix2)
+		{
+			if (matrix1.Columns != matrix2.Rows)
+			{
+				throw new InvalidOperationException("The matrices have incompatible dimensions for multiplication.");
+			}
+
+			var result = new T[matrix1.Rows, matrix2.Columns];
+			for (int i = 0; i < matrix1.Rows; i++)
+			{
+				for (int j = 0; j < matrix2.Columns; j++)
+				{
+					T temp = T.Zero;
+					for (int k = 0; k < matrix1.Columns; k++)
+					{
+						temp += matrix1.components[i, k] * matrix2.components[k, j];
+					}
+					result[i, j] = temp;
+				}
+			}
+			return new Matrix<T>(result);
+		}
+
+		/// <summary>
+		/// Multiplies a matrix by a vector.
+		/// </summary>
+		/// <exception cref="InvalidOperationException">Thrown if the matrix and vector have incompatible dimensions.</exception>
+		public static Vector<T> operator *(Matrix<T> matrix, Vector<T> vector)
+		{
+			if (matrix.Columns != vector.Dimension)
+			{
+				throw new InvalidOperationException("The matrix and vector have incompatible dimensions.");
+			}
+
+			T[] result = new T[matrix.Rows];
+			for (int row = 0; row < matrix.Rows; row++)
 			{
 				T temp = T.Zero;
-				for (int k = 0; k < depth; k++)
+				for (int col = 0; col < matrix.Columns; col++)
 				{
-					temp += matrix1.components[i, k] * matrix2.components[k, j];
+					temp += matrix.components[row, col] * vector[col];
 				}
-				result[i, j] = temp;
+				result[row] = temp;
 			}
+			return new Vector<T>(result);
 		}
 
-		return new Matrix<T>(result);
+		/// <summary>
+		/// Returns the matrix itself (unary plus).
+		/// </summary>
+		public static Matrix<T> operator +(Matrix<T> value) => new(value);
+
+		/// <summary>
+		/// Checks if two matrices are equal.
+		/// </summary>
+		public static bool operator ==(Matrix<T> matrix1, Matrix<T> matrix2) => matrix1?.Equals(matrix2) ?? matrix2 is null;
+
+		/// <summary>
+		/// Checks if two matrices are not equal.
+		/// </summary>
+		public static bool operator !=(Matrix<T> matrix1, Matrix<T> matrix2) => !matrix1?.Equals(matrix2) ?? matrix2 is not null;
+
+		/// <summary>
+		/// Checks if the matrix is equal to an object.
+		/// </summary>
+		public static bool operator ==(Matrix<T> matrix, object obj) => matrix?.Equals(obj) ?? obj is null;
+
+		/// <summary>
+		/// Checks if the matrix is not equal to an object.
+		/// </summary>
+		public static bool operator !=(Matrix<T> matrix, object obj) => !matrix?.Equals(obj) ?? obj is not null;
 	}
-
-    public static Vector<T> operator *(Matrix<T> matrix, Vector<T> vector)
-    {
-        if (matrix.Columns != vector.Dimension)
-        {
-            throw new ArgumentException("Les dimensions de la matrice et du vecteur ne sont pas compatibles avec cette opération");
-        }
-
-        T[] result = new T[vector.Dimension];
-        for (int row = 0; row < matrix.Rows; row++)
-        {
-            T temp = T.Zero;
-            for (int col = 0; col < matrix.Columns; col++)
-            {
-                temp += matrix[row, col] * vector.components[col];
-            }
-            result[row] = temp;
-        }
-        return new Vector<T>(result);
-    }
-
-    public static Matrix<T> operator +(Matrix<T> value) => new Matrix<T>(value);
-
-    public static bool operator ==(Matrix<T> matrix1, Matrix<T> matrix2) => matrix1.Equals(matrix2);
-	public static bool operator !=(Matrix<T> matrix1, Matrix<T> matrix2) => !matrix1.Equals(matrix2);
-	public static bool operator ==(Matrix<T> matrix, object obj) => matrix.Equals(obj);
-	public static bool operator !=(Matrix<T> matrix1, object obj) => !matrix1.Equals(obj);
-
 }

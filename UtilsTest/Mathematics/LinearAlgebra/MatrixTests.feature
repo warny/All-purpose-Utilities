@@ -65,6 +65,15 @@ Scenario: Matrix determinant 3*3
 	| 1  | 13 | 14 |
 	Then det(m) = 350
 
+Scenario: Matrix determinant 4*4
+	Given m is a matrix
+	| C1 | C2  | C3 | C4  | 
+	| 12 | 10  | 9  | -12 | 
+	| 2  | -8  | 6  | 4   | 
+	| 1  | -13 | 14 | 2   | 
+	| 1  | 8   | -6 | 7   | 
+	Then det(m) = -7622
+
 Scenario: Matrix determinant 5*5
 	Given m is a matrix
 	| C1 | C2  | C3 | C4  | C5  |

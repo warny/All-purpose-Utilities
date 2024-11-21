@@ -74,7 +74,8 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		[Given(@"(\w+) is a matrix")]
 		public void IsAThisMatrix(string name, Table values)
 		{
-			context.Add(name, TransformToMatrix(values));
+			var m = TransformToMatrix(values);
+			context.Add(name, m);
 		}
 
 		[Given(@"Given these vectors")]
@@ -165,7 +166,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 		public void MatrixDeterminantIsEqualTo(string name, double value)
 		{
 			Matrix<double> m = (Matrix<double>)context[name];
-			Assert.AreEqual(value, m.Determinant);
+			Assert.AreEqual(value, m.Determinant, 0.00001);
 		}
 	}
 }
