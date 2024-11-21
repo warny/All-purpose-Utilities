@@ -230,12 +230,12 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// <summary>
 	/// Returns a formatted string representation of the matrix.
 	/// </summary>
-	public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
+	public string ToString(string? format) => ToString(format, CultureInfo.CurrentCulture);
 
 	/// <summary>
 	/// Returns a formatted string representation of the matrix using the specified format provider.
 	/// </summary>
-	public string ToString(string format, IFormatProvider formatProvider)
+	public string ToString(string? format, IFormatProvider? formatProvider)
 	{
 		format ??= "";
 		StringBuilder sb = new StringBuilder();
@@ -286,7 +286,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// <summary>
 	/// Checks if this matrix is equal to another object.
 	/// </summary>
-	public override bool Equals(object obj) => obj switch
+	public override bool Equals(object? obj) => obj switch
 	{
 		Matrix<T> m => Equals(m),
 		T[,] a => Equals(a),
@@ -298,7 +298,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// <summary>
 	/// Checks if this matrix is equal to another matrix.
 	/// </summary>
-	public bool Equals(Matrix<T> other)
+	public bool Equals(Matrix<T>? other)
 	{
 		if (other is null) return false;
 		if (ReferenceEquals(this, other)) return true;
@@ -308,7 +308,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// <summary>
 	/// Checks if this matrix is equal to a 2D array.
 	/// </summary>
-	public bool Equals(T[,] other)
+	public bool Equals(T[,]? other)
 	{
 		if (other is null) return false;
 		if (Rows != other.GetLength(0) || Columns != other.GetLength(1)) return false;
@@ -325,7 +325,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// <summary>
 	/// Checks if this matrix is equal to a jagged array.
 	/// </summary>
-	public bool Equals(T[][] other)
+	public bool Equals(T[][]? other)
 	{
 		if (other is null) return false;
 		if (Rows != other.Length) return false;
@@ -343,7 +343,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	/// <summary>
 	/// Checks if this matrix is equal to an array of vectors.
 	/// </summary>
-	public bool Equals(params Vector<T>[] other)
+	public bool Equals(params Vector<T>[]? other)
 	{
 		if (other is null) return false;
 		if (other.Length != Columns) return false;
