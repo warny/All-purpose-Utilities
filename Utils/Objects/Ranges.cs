@@ -47,7 +47,8 @@ namespace Utils.Objects
 		/// <param name="itemSearchPattern">The regex pattern to match the elements in the range.</param>
 		/// <param name="valueParser">A function to parse the string into type T1.</param>
 		/// <returns>An enumerable collection of parsed Range objects.</returns>
-		protected static IEnumerable<Range<T1>> InnerParse<T1>(string range, string itemSearchPattern, IEnumerable<string> separators, Func<string, T1> valueParser) where T1 : IComparable<T1>
+		protected static IEnumerable<Range<T1>> InnerParse<T1>(string range, string itemSearchPattern, IEnumerable<string> separators, Func<string, T1> valueParser) 
+			where T1 : IComparable<T1>
 		{
 			var parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*(" + string.Join ('|', separators) + @")\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
 			var results = parse.Matches(range);

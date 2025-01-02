@@ -29,7 +29,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="str">Chaîne à comparer</param>
 		/// <param name="pattern">Séquence</param>
-		/// <param name="ignoreCase">true : ignore la casse</param>
+		/// <param name="ignoreCase"><see cref="true"/> : ignore la casse</param>
 		/// <returns>true si la chaîne correspond</returns>
 		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, CultureInfo cultureInfo = null)
 		{
