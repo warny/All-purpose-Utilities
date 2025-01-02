@@ -42,4 +42,11 @@ public static class Types
 	public static Type[] _64BitsNumberIF { get; } = { Int64, UInt64, Double };
 	public static Type[] _128BitsNumberIF { get; } = { Decimal };
 
+	public static Type Nullable(this Type type) 
+	{
+		type.ArgMustNotBeNull();
+		type.ArgMustBe(t => t.IsClass || t.IsInterface, "Only a class or an interface can be made nullable");
+		return typeof(Nullable<>).MakeGenericType(type);
+	}
+
 }
