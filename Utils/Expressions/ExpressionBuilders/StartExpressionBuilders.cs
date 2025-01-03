@@ -344,8 +344,10 @@ public class BlockBuilder : IStartExpressionBuilder, IAdditionalTokens
         context.PushContext();
         var expressions = parser.ReadExpressions(context, blockMarkers, false);
         var variables = context.StackVariables;
+        BlockExpressionBuilder builder = new BlockExpressionBuilder(variables, expressions);
+
         context.PopContext();
-        return Expression.Block(variables, expressions);
+        return builder.CreateBlock();
     }
 }
 

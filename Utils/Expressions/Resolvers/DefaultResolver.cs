@@ -64,7 +64,7 @@ public class DefaultResolver : IResolver
 
             var genericStartIndex = name.LastIndexOf(GenericMarkers.Start);
             var genericMarker = name[genericStartIndex..];
-            genericParameters = genericMarker.Trim(' ', '<', '>').SplitCommaSeparatedList(',', [GenericMarkers, ArrayMarkers]).Select(t => ResolveType(t)).ToArray();
+            genericParameters = genericMarker.Trim(' ', '<', '>').SplitCommaSeparatedList(',', [GenericMarkers, ArrayMarkers]).Select(ResolveType).ToArray();
         }
 
         var type = TypeFinder.FindType(name, genericParameters);
@@ -97,7 +97,8 @@ public class DefaultResolver : IResolver
             .Where(c => c.Distance >= 0)
             .OrderBy(c => c.Distance)
             .Select(c => (c.Value, c.Value.AdjustParameters(arguments)))
-            .FirstOrDefault();
+            .Cast<(ConstructorInfo Method, Expression[] Parameters)?>()
+			.FirstOrDefault();
     }
 
     public (MethodInfo Method, Expression[] Parameters)? SelectMethod(IEnumerable<MethodInfo> methods, Expression obj, Type[] genericParameters, Expression[] arguments)
@@ -111,14 +112,17 @@ public class DefaultResolver : IResolver
             .Where(m => m.Distance >= 0)
             .OrderBy(m => m.Distance)
             .Select(m=>(m.Value, m.Value.AdjustParameters(obj, arguments)))
+            .Cast<(MethodInfo Method, Expression[] Parameters)?>()
             .FirstOrDefault();
     }
 
     public MemberInfo GetStaticPropertyOrField(Type type, string name) 
-        => (MemberInfo)type.GetProperty(name, BindingFlags.Public | BindingFlags.Static) ?? (MemberInfo)type.GetField(name, BindingFlags.Public | BindingFlags.Static);
+        => (MemberInfo)type.GetProperty(name, BindingFlags.Public | BindingFlags.Static) 
+        ?? (MemberInfo)type.GetField(name, BindingFlags.Public | BindingFlags.Static);
 
     public MemberInfo GetInstancePropertyOrField(Type type, string name) 
-        => (MemberInfo)type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) ?? (MemberInfo)type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+        => (MemberInfo)type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) 
+        ?? (MemberInfo)type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
 
     public bool TryGetConstant(string name, out ConstantExpression constantExpression) {
         if (Constants.TryGetValue(name, out var value)) {

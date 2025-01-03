@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Utils.Collections;
 using Utils.Expressions;
+using Utils.Expressions.ExpressionBuilders;
 using Utils.Expressions.Resolvers;
 
 namespace Utils.Objects;
@@ -57,74 +58,103 @@ public static partial class StringFormat
 	/// Generates a sequence of commands to parse and execute a formatted string dynamically.
 	/// </summary>
 	/// <param name="handlerType">The handler type to use</param>
+	/// <param name="handlerParameters">Additional parameters for the handler constructor.</param>
+	/// <param name="resolver">A resolver to help find or create instances of needed services.</param>
 	/// <param name="formatString">The format string to parse.</param>
-	/// <param name="formatter">The custom formatter to use.</param>
-	/// <param name="cultureInfo">The culture information for formatting.</param>
-	/// <param name="parameterExpressions">The parameter expressions used in the formatting.</param>
+	/// <param name="formatter">A ParameterExpression holding a custom formatter instance.</param>
+	/// <param name="cultureInfo">A ParameterExpression holding the CultureInfo instance.</param>
+	/// <param name="parameterExpressions">Parameter expressions used in the formatting.</param>
 	/// <param name="defaultFirst">Specifies if default parameters should be prioritized.</param>
-	/// <param name="namespaces">The namespaces for resolving types in expressions.</param>
-	/// <returns>An expression that represents the formatted string operation.</returns>
+	/// <param name="namespaces">Namespaces for resolving types in expressions.</param>
+	/// <returns>An expression (usually a <see cref="BlockExpression"/>) that represents the formatted string operation.</returns>
 	private static Expression GenerateCommands(
-		Type handlerType, 
+		Type handlerType,
 		ParameterExpression[] handlerParameters,
 		IResolver resolver,
-		string formatString, 
-		ParameterExpression formatter, 
-		ParameterExpression cultureInfo, 
-		ParameterExpression[] parameterExpressions, 
-		bool defaultFirst, 
+		string formatString,
+		ParameterExpression formatter,
+		ParameterExpression cultureInfo,
+		ParameterExpression[] parameterExpressions,
+		bool defaultFirst,
 		string[] namespaces
 	)
 	{
-		var result = new List<Expression>();
-		var variables = new List<ParameterExpression>();
+		// 1) Créez une instance de BlockBuilder qui stockera et construira les blocs d'expressions
+		var builder = new BlockExpressionBuilder();
+
+		// 2) ExpressionOrDefault(...) renvoie l'expression "cultureInfo" ou une valeur par défaut.
+		//    On la modifie pour qu'elle s'appuie aussi sur le builder (voir plus bas).
 		var cultureInfoExpression = ExpressionOrDefault(
 			cultureInfo, "@@cultureInfo", typeof(CultureInfo),
-			Expression.Property(null, CurrentCultureProperty), variables, result);
+			Expression.Property(null, CurrentCultureProperty), builder);
 		var formatterExpression = ExpressionOrDefault(
 			formatter, "@@formatter", typeof(ICustomFormatter),
-			Expression.New(NullFormatterConstructor, cultureInfoExpression), variables, result);
+			Expression.New(NullFormatterConstructor, cultureInfoExpression), builder);
 
+		// 4) On parse la chaîne d'interpolation pour séparer les parties littérales et formatées
 		var parser = new InterpolatedStringParser(formatString);
 
-		// Using DefaultInterpolatedStringHandler to build the interpolated string.
+		// 5) On récupère la méthode AppendLiteral(string) du handler
 		var handlerAppendLiteral = handlerType.GetMethod("AppendLiteral", [typeof(string)]);
 
-		var handlerVariable = Expression.Variable(handlerType, "handler");
-		variables.Add(handlerVariable);
+		// 6) On déclare (ou récupère) la variable 'handler'
+		var handlerVariable = builder.GetOrCreateVariable(handlerType, "handler");
 
+		// 7) Calculs pour initier le handler (longueur des parties littérales, nombre de parties formatées)
 		var literalLength = parser.OfType<LiteralPart>().Sum(p => p.Length);
 		var formattedCount = parser.OfType<FormattedPart>().Count();
 
-		// Initialize the DefaultInterpolatedStringHandler
-		result.Add(Expression.Assign(handlerVariable, CreateNewHandlerExpression(handlerType, literalLength, formattedCount, formatter, handlerParameters, resolver)));
+		// 8) On ajoute l'affectation : handler = new DefaultInterpolatedStringHandler(literalLength, formattedCount, ...)
+		builder.Add(
+			Expression.Assign(
+				handlerVariable,
+				CreateNewHandlerExpression(handlerType, literalLength, formattedCount,
+										   formatterExpression, handlerParameters, resolver)
+			)
+		);
 
+		// 9) Pour chaque partie du texte parsé, on ajoute l'expression correspondante
 		foreach (var part in parser)
 		{
 			switch (part)
 			{
 				case LiteralPart literal:
-					{
-						result.Add(Expression.Call(handlerVariable, handlerAppendLiteral, Expression.Constant(literal.Text)));
-						break;
-					}
-				case FormattedPart formatted:
-					{
-						var expression = Expression.Convert(
-							ExpressionParser.ParseExpression(
-								formatted.ExpressionText, parameterExpressions, null, defaultFirst, namespaces),
-							typeof(object));
+					// handler.AppendLiteral("some literal text");
+					builder.Add(Expression.Call(handlerVariable, handlerAppendLiteral, Expression.Constant(literal.Text)));
+					break;
 
-						result.Add(CreateFormatCallExpression(handlerVariable, resolver, expression, formatted.Alignment, formatted.Format));
-						break;
-					}
+				case FormattedPart formattedPart:
+					// Convertir l'expression en "object" pour l'AppendFormatted
+					var expression = Expression.Convert(
+						ExpressionParser.ParseExpression(
+							formattedPart.ExpressionText,
+							parameterExpressions,
+							null,
+							defaultFirst,
+							namespaces
+						),
+						typeof(object)
+					);
+
+					// handler.AppendFormatted(..., alignment, format)
+					builder.Add(
+						CreateFormatCallExpression(
+							handlerVariable,
+							resolver,
+							expression,
+							formattedPart.Alignment,
+							formattedPart.Format
+						)
+					);
+					break;
 			}
 		}
 
-		// Finalize and return the constructed string
-		result.Add(handlerVariable);
+		// 10) À la fin, on "retourne" la variable handler (utile si l'appelant veut récupérer le résultat)
+		builder.Add(handlerVariable);
 
-		return Expression.Block(variables, result);
+		// 11) Le builder crée un block optimal avec seulement les variables réellement utilisées
+		return builder.CreateBlock();
 	}
 
 	/// <summary>
@@ -344,13 +374,11 @@ public static partial class StringFormat
 	/// <returns>A parameter expression representing the variable.</returns>
 	private static ParameterExpression ExpressionOrDefault(
 		ParameterExpression expression, string name, Type type, Expression defaultValue,
-		List<ParameterExpression> variables, List<Expression> expressions)
+		BlockExpressionBuilder builder)
 	{
 		if (expression != null) return expression;
-
-		var variable = Expression.Variable(type, name);
-		variables.Add(variable);
-		expressions.Add(Expression.Assign(variable, defaultValue));
+		var variable = builder.GetOrCreateVariable(type, name);
+		builder.Add(Expression.Assign(variable, defaultValue));
 		return variable;
 	}
 }
