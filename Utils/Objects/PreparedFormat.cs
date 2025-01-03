@@ -49,7 +49,7 @@ public static partial class StringFormat
 		bool defaultFirst,
 		string[] namespaces) 
 	=> 	Expression.Call(
-			GenerateCommands(typeof(DefaultInterpolatedStringHandler), [], DefaultResolver.Default, formatString, formatter, cultureInfo, parameterExpressions, defaultFirst, namespaces),
+			GenerateCommands(typeof(DefaultInterpolatedStringHandler), [], _defaultResolver, formatString, formatter, cultureInfo, parameterExpressions, defaultFirst, namespaces),
 			typeof(DefaultInterpolatedStringHandler).GetMethod("ToString")
 		);
 
