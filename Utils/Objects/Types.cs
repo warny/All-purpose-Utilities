@@ -45,7 +45,7 @@ public static class Types
 	public static Type Nullable(this Type type) 
 	{
 		type.ArgMustNotBeNull();
-		type.ArgMustBe(t => t.IsClass || t.IsInterface, "Only a class or an interface can be made nullable");
+		type.ArgMustBe(t => t.IsValueType || t.IsInterface, "Only a struct or an interface can be made nullable");
 		return typeof(Nullable<>).MakeGenericType(type);
 	}
 
