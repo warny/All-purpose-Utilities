@@ -92,7 +92,7 @@ public partial class ExpressionSimplifier
 	}
 
 	private IDictionary<Type, TrigonometricMethods> TrigonometricMethodsByType { get; } 
-		= new CachedLoader<Type, TrigonometricMethods>(type=>new TrigonometricMethods (type));
+		= new CachedLoader<Type, TrigonometricMethods>((Type type, out TrigonometricMethods methods)=> { methods = new TrigonometricMethods(type); return true; } );
 
 	[ExpressionSignature(ExpressionType.Add)]
 	protected Expression AdditionOfCos2andSin2Number(Expression e,

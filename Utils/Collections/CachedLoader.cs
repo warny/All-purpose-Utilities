@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Utils.Objects;
 
 namespace Utils.Collections;
 
@@ -11,8 +13,9 @@ namespace Utils.Collections;
 /// <typeparam name="TKey">The type of the keys used to identify resources.</typeparam>
 /// <typeparam name="TValue">The type of the resources being cached.</typeparam>
 public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
+	where TKey : notnull
 {
-	private readonly Func<TKey, TValue> loader;
+	private readonly TryLoadValueDelegate loader;
 	private readonly IDictionary<TKey, TValue> holder;
 
 	/// <summary>
@@ -22,13 +25,14 @@ public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 	{
 		AutoCreateObject = true;
 		holder = new Dictionary<TKey, TValue>();
+		Load = CreateGetValue();
 	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CachedLoader{TKey, TValue}"/> class with a specified loader function.
 	/// </summary>
 	/// <param name="loader">The function used to load resources.</param>
-	public CachedLoader(Func<TKey, TValue> loader)
+	public CachedLoader(TryLoadValueDelegate loader)
 		: this(loader, new Dictionary<TKey, TValue>())
 	{
 	}
@@ -38,12 +42,52 @@ public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 	/// </summary>
 	/// <param name="loader">The function used to load resources.</param>
 	/// <param name="cacheHolder">The dictionary used to hold the cached resources.</param>
-	public CachedLoader(Func<TKey, TValue> loader, IDictionary<TKey, TValue> cacheHolder)
+	public CachedLoader(TryLoadValueDelegate loader, IDictionary<TKey, TValue> cacheHolder)
 	{
 		AutoCreateObject = true;
-		this.loader = loader ?? throw new ArgumentNullException(nameof(loader));
-		this.holder = cacheHolder ?? throw new ArgumentNullException(nameof(cacheHolder));
+		this.loader = loader.ArgMustNotBeNull();
+		this.holder = cacheHolder.ArgMustNotBeNull();
+		Load = CreateGetValue();
 	}
+
+	public delegate bool TryLoadValueDelegate(TKey key, out TValue value);
+
+	private TryLoadValueDelegate CreateGetValue()
+	{
+		return holder switch
+		{
+			Dictionary<TKey, TValue> dictionary =>
+				(TKey key, out TValue value) =>
+				{
+					ref var val = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool exists);
+					if (!exists && AutoCreateObject)
+					{
+						exists = loader(key, out val);
+					}
+					value = val;
+					return exists;
+				},
+			_ =>
+				(TKey key, out TValue value) =>
+				{
+					if (holder.TryGetValue(key, out value))
+					{
+						return true;
+					}
+					if (AutoCreateObject && loader(key, out value))
+					{
+						holder[key] = value;
+						return true;
+					}
+					value = default;
+					return false;
+				}
+		};
+
+
+	}
+
+	private readonly TryLoadValueDelegate Load;
 
 	/// <summary>
 	/// Gets or sets a value indicating whether to automatically create and cache a resource if it is not found.
@@ -59,29 +103,10 @@ public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 	public TValue this[TKey key]
 	{
 		get {
-			if (holder.TryGetValue(key, out TValue value))
-			{
-				return value;
-			}
-			if (AutoCreateObject)
-			{
-				return Load(key);
-			}
-			return default;
+			if (Load(key, out var value)) return value;
+			throw new KeyNotFoundException($"The key \"{key}\" was not found");
 		}
 		set => holder[key] = value;
-	}
-
-	/// <summary>
-	/// Loads and caches the resource associated with the specified key.
-	/// </summary>
-	/// <param name="key">The key of the resource to load.</param>
-	/// <returns>The loaded resource.</returns>
-	private TValue Load(TKey key)
-	{
-		TValue value = loader(key);
-		holder[key] = value;
-		return value;
 	}
 
 	/// <summary>
@@ -119,14 +144,7 @@ public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 	/// <returns><see langword="true"/> if the cache contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
 	public bool TryGetValue(TKey key, out TValue value)
 	{
-		if (holder.TryGetValue(key, out value)) return true;
-		if (AutoCreateObject)
-		{
-			value = Load(key);
-			return true;
-		}
-		value = default;
-		return false;
+		return Load (key, out value);
 	}
 
 	/// <summary>

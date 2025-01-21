@@ -67,7 +67,7 @@ namespace Fractals
 		}
 
 		private readonly CachedLoader<int, ColorArgb32> Brushes = new CachedLoader<int, ColorArgb32>(
-			i => new ColorArgb32((byte)(i * 3), (byte)(70 + i * 3), (byte)(240 + i * 3))
+			(int i, out ColorArgb32 color) => { color = new ColorArgb32((byte)(i * 3), (byte)(70 + i * 3), (byte)(240 + i * 3)); return true; }
 		);
 
 		private void Compute(BitmapArgb32Accessor accessor)
