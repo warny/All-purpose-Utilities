@@ -18,8 +18,8 @@ public class ReturnValue<T, E> where E : class
     public bool IsSuccess => this.Error is null;
     public bool IsError => this.Error is not null;
 
-    T Value { get; }
-    E Error { get; }
+    public T Value { get; }
+    public E Error { get; }
 
     public ReturnValue(T value)
     {

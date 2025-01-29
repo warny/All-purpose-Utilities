@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
@@ -17,18 +18,18 @@ namespace Utils.Net
 			{Uri.UriSchemeHttps, 443},
 			{Uri.UriSchemeNntp, 119},
 			{ "nfs", 2049 },
-			{ "telnet", 23 },
-			{ "sftp", 22 },
-			{ "ssh", 22 },
-			{ "news", 144 },
+			{ Uri.UriSchemeTelnet, 23 },
+			{ Uri.UriSchemeSftp, 22 },
+			{ Uri.UriSchemeSsh, 22 },
+			{ Uri.UriSchemeNews, 144 },
 			{ "smb", 445 },
 			{ "nntps", 563 },
-			{ "ftps", 990 }
-		});
+			{ Uri.UriSchemeFtps, 990 }
+		}).ToImmutableDictionary();
 
 		public UriBuilderEx(Uri uri)
 		{
-			uri.ArgMustNotBeNull();
+			uri.Arg().MustNotBeNull();
 
 			this.Scheme = uri.Scheme;
 			this.Host = uri.Host;
@@ -118,6 +119,9 @@ namespace Utils.Net
 					return GetFullUrl();
 			}
 		}
+
+		public static implicit operator Uri(UriBuilderEx builder) => new Uri(builder.GetUrlWithoutAuthorization());
+
 	}
 
 }

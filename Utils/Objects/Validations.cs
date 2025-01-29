@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -7,8 +9,104 @@ using System.Text;
 
 namespace Utils.Objects;
 
+public abstract class CheckBase<T>
+{
+	private readonly T value;
+
+	public T Value {
+		get {
+			if (Errors.Count > 0) ThrowErrors();
+			return value;
+		}
+	}
+
+	public string Name { get; }
+
+	protected List<Exception> Errors { get; } = new List<Exception>();
+
+	public CheckBase(T value, string name)
+	{
+		this.value = value;
+		this.Name = name;
+	}
+
+	public CheckBase<T> MustNotBeNull()
+	{
+		if (Value is null) OnNull();
+		return this;
+	}
+	public CheckBase<T> Must(params Func<T, Exception>[] checks)
+	{
+		foreach (var check in checks)
+		{
+			var result = check(Value);
+			if (result is not null)
+			{
+				OnError(result);
+			}
+		}
+		return this;
+	}
+
+	protected abstract void OnNull();
+	protected virtual void OnError(Exception exception) => Errors.Add(exception);
+	public virtual void ThrowErrors() 
+	{
+		if (Errors.Count == 0) return;
+		if (Errors.Count == 1) throw Errors[0];
+		throw new Exception($"{Name}{Environment.NewLine} - {string.Join(Environment.NewLine + " - ", Errors.Select(e=>e.Message))}");
+	}
+
+	public static implicit operator T(CheckBase<T> checkBase) => checkBase.Value;
+}
+
+public class Arg<T> : CheckBase<T>
+{
+
+	public Arg(T value, [CallerArgumentExpression(nameof(value))] string name = "")
+		: base(value, name) { }
+
+	protected override void OnNull() => throw new ArgumentNullException(Name);
+
+	public override void ThrowErrors()
+	{
+		if (Errors.Count == 0) return;
+		throw new ArgumentException($"{Name}{Environment.NewLine} - {string.Join(Environment.NewLine + " - ", Errors.Select(e => e.Message))}", Name);
+	}
+}
+
+public class Variable<T> : CheckBase<T>
+{
+	public Variable(T value, [CallerArgumentExpression(nameof(value))] string name = "")
+		: base(value, name) { }
+
+	protected override void OnNull() => throw new NullReferenceException(Name);
+}
+
 public static class Validations
 {
+	public static Arg<T> Arg<T>(this T value, [CallerArgumentExpression(nameof(value))] string name = "") => new Arg<T>(value, name);
+	public static Arg<T> Variable<T>(this T value, [CallerArgumentExpression(nameof(value))] string name = "") => new Arg<T>(value, name);
+
+	public static Exception MustBeOfRank(this Array value, int rank)
+	{
+		if (value.Rank != rank) return null;
+		throw new Exception($"must be of rank {rank}");
+	}
+
+	public static Exception MustBeOfSize(this Array value, int?[] sizes)
+	{
+		if (value.Rank != sizes.Length) return new ArrayDimensionException($"must be of rank {sizes.Length}");
+		for (int i = 0; i < sizes.Length; i++)
+		{
+			if (sizes[i] != null && value.GetLength(i) != sizes[i].Value)
+			{
+				return new ArrayDimensionException($"must be of size [{string.Join(", ", sizes.Select(s=>s is null ? "free" : s.ToString()))}]");
+			}
+		}
+		return null;
+	}
+
 	public static T ArgMustNotBeNull<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		where T : class
 	{
@@ -41,7 +139,7 @@ public static class Validations
 		}
 	}
 
-	public static void ArgMustBeOfSizes(this Array value, int?[] sizes, int size, [CallerArgumentExpression(nameof(value))] string valueName = "")
+	public static void ArgMustBeOfSizes(this Array value, int?[] sizes, [CallerArgumentExpression(nameof(value))] string valueName = "")
 	{
 		if (value.Rank != sizes.Length)
 		{
