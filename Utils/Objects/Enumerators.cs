@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -8,29 +10,37 @@ namespace Utils.Objects;
 
 public static class Enumerators
 {
-    public static IEnumerable<int> Enumerate(string ranges) =>
-        Enumerate(ranges,
-            System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator,
-            System.Globalization.CultureInfo.InvariantCulture.TextInfo.ListSeparator);
+    public static IEnumerable<T> Enumerate<T>(string ranges) 
+        where T : IBinaryInteger<T>
+        => Enumerate<T>(ranges, CultureInfo.CurrentCulture);
 
-    public static IEnumerable<int> Enumerate(string ranges, System.Globalization.CultureInfo cultureInfo) => Enumerate(ranges, cultureInfo.TextInfo.ListSeparator);
-    public static IEnumerable<int> Enumerate(string ranges, System.Globalization.TextInfo textInfo) => Enumerate(ranges, textInfo.ListSeparator);
+    public static IEnumerable<T> Enumerate<T>(string ranges, CultureInfo cultureInfo)
+        where T : IBinaryInteger<T>
+        => Enumerate<T>(ranges, cultureInfo.NumberFormat, cultureInfo.TextInfo.ListSeparator);
+    public static IEnumerable<T> Enumerate<T>(string ranges, TextInfo textInfo)
+		where T : IBinaryInteger<T>
+        => Enumerate<T>(ranges, CultureInfo.CurrentCulture.NumberFormat, textInfo.ListSeparator);
 
-    public static IEnumerable<int> Enumerate(string ranges, params string[] separators)
-    {
-        var matches = Regex.Matches(ranges, @"((?<singleValue>\d+)|(?<start>\d+)-(?<end>\d+))(" + string.Join("|", separators) + "|$)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+    public static IEnumerable<T> Enumerate<T>(string ranges, params string[] separators)
+        where T : IBinaryInteger<T>
+        => Enumerate<T>(ranges, CultureInfo.CurrentCulture.NumberFormat, separators);
+
+	public static IEnumerable<T> Enumerate<T>(string ranges, NumberFormatInfo numberFormatInfo, params string[] separators)
+		where T : IBinaryInteger<T>
+	{
+		var matches = Regex.Matches(ranges, @"((?<singleValue>\d+)|(?<start>\d+)-(?<end>\d+))(" + string.Join("|", separators) + "|$)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
         foreach (Match match in matches)
         {
             if (match.Groups["singleValue"].Success)
             {
-                var value = int.Parse(match.Groups["singleValue"].Value);
+                var value = T.Parse(match.Groups["singleValue"].Value, numberFormatInfo);
                 yield return value;
             }
             else
             {
-                var start = int.Parse(match.Groups["start"].Value);
-                var end = int.Parse(match.Groups["end"].Value);
-                foreach (var value in Enumerate(start, end))
+                var start = T.Parse(match.Groups["start"].Value, numberFormatInfo);
+				var end = T.Parse(match.Groups["end"].Value, numberFormatInfo);
+                foreach (var value in Enumerate<T>(start, end))
                 {
                     yield return value;
                 }
@@ -39,49 +49,30 @@ public static class Enumerators
     }
 
     /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
+    /// Enumerate every <see cref="T"/> between <paramref name="start"/> and <paramref name="end"/> included.
     /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
     /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
     /// </summary>
     /// <param name="start">Start of enumeration</param>
     /// <param name="end">End of enumeration</param>
     /// <returns></returns>
-    public static IEnumerable<byte> Enumerate(byte start, byte end, byte step = 1)
-        => Enumerate((long)start, (long)end, (long)step).Select(v => (byte)v);
+    public static IEnumerable<T> Enumerate<T>(T start, T end)
+        where T : INumber<T>
+        => Enumerate<T>(start, end, T.One);
 
-    /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
-    /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
-    /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
-    /// </summary>
-    /// <param name="start">Start of enumeration</param>
-    /// <param name="end">End of enumeration</param>
-    /// <returns></returns>
-    public static IEnumerable<short> Enumerate(short start, short end, short step = 1)
-        => Enumerate((long)start, (long)end, (long)step).Select(v => (short)v);
 
-    /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
-    /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
-    /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
-    /// </summary>
-    /// <param name="start">Start of enumeration</param>
-    /// <param name="end">End of enumeration</param>
-    /// <returns></returns>
-    public static IEnumerable<int> Enumerate(int start, int end, int step = 1)
-        => Enumerate((long)start, (long)end, (long)step).Select(v => (int)v);
-
-    /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
-    /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
-    /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
-    /// </summary>
-    /// <param name="start">Start of enumeration</param>
-    /// <param name="end">End of enumeration</param>
-    /// <returns></returns>
-    public static IEnumerable<long> Enumerate(long start, long end, long step = 1)
+	/// <summary>
+	/// Enumerate every <see cref="T"/> between <paramref name="start"/> and <paramref name="end"/> included.
+	/// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
+	/// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
+	/// </summary>
+	/// <param name="start">Start of enumeration</param>
+	/// <param name="end">End of enumeration</param>
+	/// <returns></returns>
+	public static IEnumerable<T> Enumerate<T>(T start, T end, T step)
+        where T : INumber<T>
     {
-        if (step <= 0) throw new ArgumentOutOfRangeException(nameof(step), $"{nameof(step)} must be greater than 0");
+        if (step <= T.Zero) throw new ArgumentOutOfRangeException(nameof(step), $"{nameof(step)} must be greater than 0");
         if (start <= end)
         {
             for (var i = start; i <= end; i += step)
@@ -99,66 +90,7 @@ public static class Enumerators
     }
 
     /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
-    /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
-    /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
-    /// </summary>
-    /// <param name="start">Start of enumeration</param>
-    /// <param name="end">End of enumeration</param>
-    /// <returns></returns>
-    public static IEnumerable<float> Enumerate(float start, float end, float step = 1f)
-    {
-        step.ArgMustBeGreaterThan(0);
-        if (start <= end)
-        {
-            for (var i = start; i < end; i += step)
-            {
-                yield return i;
-            }
-            yield return end;
-        }
-        else
-        {
-            for (var i = start; i > end; i -= step)
-            {
-                yield return i;
-            }
-            yield return end;
-        }
-    }
-
-    /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
-    /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
-    /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
-    /// </summary>
-    /// <param name="start">Start of enumeration</param>
-    /// <param name="end">End of enumeration</param>
-    /// <param name="step">step between values</param>
-    /// <returns></returns>
-    public static IEnumerable<double> Enumerate(double start, double end, double step = 1f)
-    {
-        step.ArgMustBeGreaterThan(0);
-        if (start <= end)
-        {
-            for (var i = start; i < end; i += step)
-            {
-                yield return i;
-            }
-            yield return end;
-        }
-        else
-        {
-            for (var i = start; i > end; i -= step)
-            {
-                yield return i;
-            }
-            yield return end;
-        }
-    }
-
-    /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
+    /// Enumerate every <see cref="T"/> between <paramref name="start"/> and <paramref name="end"/> included.
     /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
     /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
     /// </summary>
@@ -166,25 +98,11 @@ public static class Enumerators
     /// <param name="end">End of enumeration</param>
     /// <param name="numberOfValues">Number of values to be returned</param>
     /// <returns></returns>
-    public static IEnumerable<float> EnumerateCount(float start, float end, int numberOfValues)
-    {
-        numberOfValues.ArgMustBeGreaterThan(1);
-        return Enumerate(start, end, Math.Abs(start - end) / (numberOfValues - 1));
-    }
-
-    /// <summary>
-    /// Enumerate every <see cref="System.Int32"/> between <paramref name="start"/> and <paramref name="end"/> included.
-    /// The enumeration is ascending if <paramref name="start"/> &lt;<paramref name="end"/>.
-    /// The enumeration is descending if <paramref name="start"/> &gt;<paramref name="end"/>.
-    /// </summary>
-    /// <param name="start">Start of enumeration</param>
-    /// <param name="end">End of enumeration</param>
-    /// <param name="numberOfValues">Number of values to be returned</param>
-    /// <returns></returns>
-    public static IEnumerable<double> EnumerateCount(double start, double end, int numberOfValues)
+    public static IEnumerable<T> EnumerateCount<T>(T start, T end, int numberOfValues)
+        where T : INumber<T>
     {
         if (numberOfValues < 1) throw new ArgumentOutOfRangeException(nameof(numberOfValues), $"{nameof(numberOfValues)} must be strictly greater than 0");
-        return Enumerate(start, end, Math.Abs(start - end) / (numberOfValues - 1));
+        return Enumerate(start, end, T.Abs(start - end) / T.CreateChecked(numberOfValues - 1));
     }
 
 }

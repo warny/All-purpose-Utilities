@@ -12,16 +12,16 @@ namespace UtilsTest.Objects
 	[TestClass]
 	public class EnumeratorsTests
 	{
-		ArrayEqualityComparer<int> intComparer = new ArrayEqualityComparer<int>();
-		ArrayEqualityComparer<float> floatComparer = new ArrayEqualityComparer<float>();
-		ArrayEqualityComparer<double> doubleComparer = new ArrayEqualityComparer<double>();
+		readonly ArrayEqualityComparer<int> intComparer = new ();
+		readonly ArrayEqualityComparer<float> floatComparer = new ();
+		readonly ArrayEqualityComparer<double> doubleComparer = new ();
 
 		[TestMethod]
 		public void EnumerateRangeTest1()
 		{
 			string range = "1-3;5;3-1";
-			int[] expected = { 1, 2, 3, 5, 3, 2, 1 };
-			var result = Enumerators.Enumerate(range, CultureInfo.GetCultureInfo("fr-FR")).ToArray();
+			int[] expected = [1, 2, 3, 5, 3, 2, 1];
+			var result = Enumerators.Enumerate<int>(range, CultureInfo.GetCultureInfo("fr-FR")).ToArray();
 			Assert.IsTrue(intComparer.Equals(expected, result));
 		}
 
@@ -29,13 +29,13 @@ namespace UtilsTest.Objects
 		public void EnumerateTest1()
 		{
 			var tests = new (int start, int end, int[] expected)[] {
-				(1, 3, new [] {1,2,3 }),
-				(3, 1, new [] { 3,2,1 }),
+				(1, 3, new [] { 1, 2, 3 }),
+				(3, 1, new [] { 3, 2, 1 }),
 			};
-			foreach (var test in tests)
+			foreach (var (start, end, expected) in tests)
 			{
-				var result = Enumerators.Enumerate(test.start, test.end).ToArray();
-				Assert.IsTrue(intComparer.Equals(test.expected, result));
+				var result = Enumerators.Enumerate(start, end).ToArray();
+				Assert.IsTrue(intComparer.Equals(expected, result));
 			}
 		}
 
@@ -46,10 +46,10 @@ namespace UtilsTest.Objects
 				(1, 5, 2, new [] { 1, 3, 5 }),
 				(5, 1, 2, new [] { 5, 3, 1 }),
 			};
-			foreach (var test in tests)
+			foreach (var (start, end, step, expected) in tests)
 			{
-				var result = Enumerators.Enumerate(test.start, test.end, test.step).ToArray();
-				Assert.IsTrue(intComparer.Equals(test.expected, result));
+				var result = Enumerators.Enumerate(start, end, step).ToArray();
+				Assert.IsTrue(intComparer.Equals(expected, result));
 			}
 		}
 
@@ -60,10 +60,10 @@ namespace UtilsTest.Objects
 				(1, 5, 2, new float[] { 1, 3, 5 }),
 				(5, 1, 2, new float[] { 5, 3, 1 }),
 			};
-			foreach (var test in tests)
+			foreach (var (start, end, step, expected) in tests)
 			{
-				var result = Enumerators.Enumerate(test.start, test.end, test.step).ToArray();
-				Assert.IsTrue(floatComparer.Equals(test.expected, result));
+				var result = Enumerators.Enumerate(start, end, step).ToArray();
+				Assert.IsTrue(floatComparer.Equals(expected, result));
 			}
 		}
 
@@ -74,10 +74,10 @@ namespace UtilsTest.Objects
 				(1, 5, 2, new double[] { 1, 3, 5 }),
 				(5, 1, 2, new double[] { 5, 3, 1 }),
 			};
-			foreach (var test in tests)
+			foreach (var (start, end, step, expected) in tests)
 			{
-				var result = Enumerators.Enumerate(test.start, test.end, test.step).ToArray();
-				Assert.IsTrue(doubleComparer.Equals(test.expected, result));
+				var result = Enumerators.Enumerate(start, end, step).ToArray();
+				Assert.IsTrue(doubleComparer.Equals(expected, result));
 			}
 		}
 
@@ -90,10 +90,10 @@ namespace UtilsTest.Objects
 				(1, 5, 3, new float[] { 1, 3, 5 }),
 				(5, 1, 3, new float[] { 5, 3, 1 }),
 			};
-			foreach (var test in tests)
+			foreach (var (start, end, count, expected) in tests)
 			{
-				var result = Enumerators.EnumerateCount(test.start, test.end, test.count).ToArray();
-				Assert.IsTrue(floatComparer.Equals(test.expected, result));
+				var result = Enumerators.EnumerateCount(start, end, count).ToArray();
+				Assert.IsTrue(floatComparer.Equals(expected, result));
 			}
 		}
 
@@ -106,10 +106,10 @@ namespace UtilsTest.Objects
 				(1, 5, 3, new double[] { 1, 3, 5 }),
 				(5, 1, 3, new double[] { 5, 3, 1 }),
 			};
-			foreach (var test in tests)
+			foreach (var (start, end, count, expected) in tests)
 			{
-				var result = Enumerators.EnumerateCount(test.start, test.end, test.count).ToArray();
-				Assert.IsTrue(doubleComparer.Equals(test.expected, result));
+				var result = Enumerators.EnumerateCount(start, end, count).ToArray();
+				Assert.IsTrue(doubleComparer.Equals(expected, result));
 			}
 		}
 	}

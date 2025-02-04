@@ -30,7 +30,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var intRange = new IntRange(test.test, CultureInfo.GetCultureInfo("fr-FR"));
+				var intRange = new IntRange<int>(test.test, CultureInfo.GetCultureInfo("fr-FR"));
 				Assert.AreEqual(test.result, intRange.ToString(CultureInfo.GetCultureInfo("fr-FR")));
 			}
 		}
@@ -53,9 +53,9 @@ namespace UtilsTest.Objects
 
 			void doTest (string test1, string test2, string expected)
 			{
-				var range1 = new IntRange(test1, CultureInfo.GetCultureInfo("fr-FR"));
-				var range2 = new IntRange(test2, CultureInfo.GetCultureInfo("fr-FR"));
-				var result = range1 + range2;
+				var range1 = new IntRange<int>(test1, CultureInfo.GetCultureInfo("fr-FR"));
+				var range2 = new IntRange<int>(test2, CultureInfo.GetCultureInfo("fr-FR"));
+				var result = range1 | range2;
 				Assert.AreEqual(expected, result.ToString(CultureInfo.GetCultureInfo("fr-FR")));
 			}
 
@@ -86,9 +86,9 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range1 = new IntRange(test.test1, CultureInfo.GetCultureInfo("fr-FR"));
-				var range2 = new IntRange(test.test2, CultureInfo.GetCultureInfo("fr-FR"));
-				var result = range1 - range2;
+				var range1 = new IntRange<int>(test.test1, CultureInfo.GetCultureInfo("fr-FR"));
+				var range2 = new IntRange<int>(test.test2, CultureInfo.GetCultureInfo("fr-FR"));
+				var result = range1 & range2;
 				Assert.AreEqual(test.result, result.ToString(CultureInfo.GetCultureInfo("fr-FR")));
 			}
 		}
@@ -109,7 +109,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = new IntRange(test.range, CultureInfo.GetCultureInfo("fr-FR"));
+				var range = new IntRange<int>(test.range, CultureInfo.GetCultureInfo("fr-FR"));
 				foreach (var value in test.values)
 				{
 					Assert.AreEqual(test.result, range.Contains(value), $"{value} {(test.result ? "n'a pas": "a")} été trouvé dans {range}");
@@ -131,7 +131,7 @@ namespace UtilsTest.Objects
 
 			foreach (var test in tests)
 			{
-				var range = new IntRange(test.range, CultureInfo.GetCultureInfo("fr-FR"));
+				var range = new IntRange<int>(test.range, CultureInfo.GetCultureInfo("fr-FR"));
 				var result = range.ToArray();
 				Assert.IsTrue(comparer.Equals(test.result, result), $"{{{string.Join(",", result)}}} est différent de {{{string.Join(",", test.result)}}}");
 			}

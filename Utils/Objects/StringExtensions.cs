@@ -158,6 +158,87 @@ namespace Utils.Objects
 
 		#endregion
 
+		#region Add Prefix/Suffix
+		/// <summary>
+		/// Adds the specified prefix to the string if it's not already present.
+		/// </summary>
+		/// <param name="s">The input string.</param>
+		/// <param name="prefix">The prefix to add if absent.</param>
+		/// <returns>A new string with the prefix present.</returns>
+		public static string AddPrefix(this string s, string prefix)
+		{
+			// If the prefix is null or empty, there's nothing to add.
+			if (string.IsNullOrEmpty(prefix))
+				return s;
+			// If s is null, treat it like an empty string so we can safely add the prefix.
+			s ??= string.Empty;
+			// Only add the prefix if the string does not already start with it.
+			return s.StartsWith(prefix) ? s : prefix + s;
+		}
+
+		/// <summary>
+		/// Adds the specified suffix to the string if it's not already present.
+		/// </summary>
+		/// <param name="s">The input string.</param>
+		/// <param name="suffix">The suffix to add if absent.</param>
+		/// <returns>A new string with the suffix present.</returns>
+		public static string AddSuffix(this string s, string suffix)
+		{
+			// If the suffix is null or empty, there's nothing to add.
+			if (string.IsNullOrEmpty(suffix))
+				return s;
+			// If s is null, treat it like an empty string so we can safely add the suffix.
+			s ??= string.Empty;
+			// Only add the suffix if the string does not already end with it.
+			return s.EndsWith(suffix) ? s : s + suffix;
+		}
+
+		/// <summary>
+		/// Adds the specified prefix to the string if it's not already present,
+		/// using the specified <see cref="StringComparison"/> for checking.
+		/// </summary>
+		/// <param name="s">The input string.</param>
+		/// <param name="prefix">The prefix to add if absent.</param>
+		/// <param name="comparison">The <see cref="StringComparison"/> option to use when checking if <paramref name="s"/> starts with <paramref name="prefix"/>.</param>
+		/// <returns>A new string with the prefix present.</returns>
+		public static string AddPrefix(this string s, string prefix, StringComparison comparison = StringComparison.Ordinal)
+		{
+			// If the prefix is null or empty, there's nothing to add.
+			if (string.IsNullOrEmpty(prefix))
+				return s;
+
+			// If 's' is null, treat it like an empty string so we can safely add the prefix.
+			s ??= string.Empty;
+
+			// Only add the prefix if the string does not already start with it,
+			// according to the specified comparison.
+			return s.StartsWith(prefix, comparison) ? s : prefix + s;
+		}
+
+		/// <summary>
+		/// Adds the specified suffix to the string if it's not already present,
+		/// using the specified <see cref="StringComparison"/> for checking.
+		/// </summary>
+		/// <param name="s">The input string.</param>
+		/// <param name="suffix">The suffix to add if absent.</param>
+		/// <param name="comparison">The <see cref="StringComparison"/> option to use when checking if <paramref name="s"/> ends with <paramref name="suffix"/>.</param>
+		/// <returns>A new string with the suffix present.</returns>
+		public static string AddSuffix(this string s, string suffix, StringComparison comparison = StringComparison.Ordinal)
+		{
+			// If the suffix is null or empty, there's nothing to add.
+			if (string.IsNullOrEmpty(suffix))
+				return s;
+
+			// If 's' is null, treat it like an empty string so we can safely add the suffix.
+			s ??= string.Empty;
+
+			// Only add the suffix if the string does not already end with it,
+			// according to the specified comparison.
+			return s.EndsWith(suffix, comparison) ? s : s + suffix;
+		}
+
+		#endregion
+
 		#region Remove Prefix/Suffix
 
 		/// <summary>
@@ -429,7 +510,6 @@ namespace Utils.Objects
 			// length < 0
 			return s + new string(' ', (0 - length) - s.Length);
 		}
-
 		#endregion
 	}
 }
