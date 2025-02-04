@@ -16,14 +16,14 @@ public static class MathExpressionExtensions
 {
     public static LambdaExpression Derivate(this LambdaExpression e)
     {
-        e.ArgMustNotBeNull();
+        e.Arg().MustNotBeNull();
         e.Parameters.ArgMustBeOfSize(1);
         return e.Derivate(e.Parameters[0].Name);
     }
 
     public static LambdaExpression Derivate(this LambdaExpression e, string paramName)
     {
-        e.ArgMustNotBeNull();
+        e.Arg().MustNotBeNull();
 
         ExpressionDerivation derivation = new ExpressionDerivation(paramName);
         var expression = e.Body.Simplify();

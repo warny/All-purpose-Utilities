@@ -99,7 +99,7 @@ public class IntRange :
 
 	public IntRange(string ranges, params string[] separators)
 	{
-		ranges.ArgMustNotBeNull();
+		ranges.Arg().MustNotBeNull();
 		SortedSet<SimpleRange> result = new SortedSet<SimpleRange>();
 		var matches = Regex.Matches(ranges, @"((?<singleValue>\d+)|(?<start>\d+)-(?<end>\d+))(" + string.Join("|", separators) + "|$)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
 		foreach (Match match in matches)
@@ -121,7 +121,7 @@ public class IntRange :
 
 	private void InitRanges(IEnumerable<SimpleRange> result)
 	{
-		result.ArgMustNotBeNull();
+		result.Arg().MustNotBeNull();
 		SimpleRange current = null;
 		foreach (var simpleRange in result)
 		{

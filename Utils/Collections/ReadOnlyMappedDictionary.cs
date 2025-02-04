@@ -106,8 +106,8 @@ public class ReadOnlyDictionaryMap<K, V> : IReadOnlyDictionaryMap<K, V>
         Func<int> getCount
     )
     {
-		this.getValue = getValue.ArgMustNotBeNull();
-		this.getItems = getItems.ArgMustNotBeNull();
+		this.getValue = getValue.Arg().MustNotBeNull();
+		this.getItems = getItems.Arg().MustNotBeNull();
 		this.getCount = getCount;
     }
 

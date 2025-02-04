@@ -30,7 +30,7 @@ namespace Utils.Objects
 		/// <returns>Chaîne aléatoire</returns>
 		public static string RandomString(this Random r, int minLength, int maxLength, char[] characters = null)
 		{
-			r.ArgMustNotBeNull();
+			r.Arg().MustNotBeNull();
 			characters ??= defaultRandomCharacters;
 			var length = r.Next(minLength, maxLength);
 

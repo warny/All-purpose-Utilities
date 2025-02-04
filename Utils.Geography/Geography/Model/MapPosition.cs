@@ -30,7 +30,7 @@ public class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperators<Map
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="zoomLevel"/> is less than or equal to 0.</exception>
 	public MapPosition(GeoPoint<T> geoPoint, byte zoomLevel)
 	{
-		geoPoint.ArgMustNotBeNull();
+		geoPoint.Arg().MustNotBeNull();
 		zoomLevel.ArgMustBeGreaterThan((byte)0);
 
 		this.GeoPoint = geoPoint;

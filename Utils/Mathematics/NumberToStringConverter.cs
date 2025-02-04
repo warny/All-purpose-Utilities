@@ -55,10 +55,10 @@ namespace Utils.Mathematics
 			Group = group;
 			Separator = separator ?? " ";
 			GroupSeparator = groupSeparator ?? "";
-			Zero = zero.ArgMustNotBeNull();
-			Minus = minus.ArgMustNotBeNull();
-			Groups = groups.ArgMustNotBeNull().ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => (long)d.Digit).ToImmutableDictionary());
-			Exceptions = exceptions.ArgMustNotBeNull().ToImmutableDictionary();
+			Zero = zero.Arg().MustNotBeNull();
+			Minus = minus.Arg().MustNotBeNull();
+			Groups = groups.Arg().MustNotBeNull().Value.ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
+			Exceptions = exceptions.Arg().MustNotBeNull().Value.ToImmutableDictionary();
 			Replacements = replacements?.ToImmutableDictionary() ?? ImmutableDictionary<string, string>.Empty;
 			Scale = scale;
 			AdjustFunction = adjustFunction ?? (s => s);
@@ -199,13 +199,13 @@ namespace Utils.Mathematics
 			IReadOnlyList<string> hundredsPrefixes = null,
 			bool firstLetterUppercase = false)
 		{
-			StaticValues = staticValues.ArgMustNotBeNull().ToImmutableArray();
-			ScaleSuffixes = scaleSuffixes.ArgMustNotBeNull().ToImmutableArray();
+			StaticValues = staticValues.Arg().MustNotBeNull().Value.ToImmutableArray();
+			ScaleSuffixes = scaleSuffixes.Arg().MustNotBeNull().Value.ToImmutableArray();
 			StartIndex = startIndex;
 			FirstLetterUppercase = firstLetterUppercase;
 
-			VoidGroup = voidGroup.NotNullOrEmptyOrDefault("ni");
-			GroupSeparator = groupSeparator.NotNullOrEmptyOrDefault("lli");
+			VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
+			GroupSeparator = groupSeparator.ToDefaultIfNullOrEmpty("lli");
 
 			Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
 			UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;

@@ -45,8 +45,8 @@ public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 	public CachedLoader(TryLoadValueDelegate loader, IDictionary<TKey, TValue> cacheHolder)
 	{
 		AutoCreateObject = true;
-		this.loader = loader.ArgMustNotBeNull();
-		this.holder = cacheHolder.ArgMustNotBeNull();
+		this.loader = loader.Arg().MustNotBeNull();
+		this.holder = cacheHolder.Arg().MustNotBeNull().Value;
 		Load = CreateGetValue();
 	}
 

@@ -8,86 +8,98 @@ using Utils.Collections;
 
 namespace Utils.Objects
 {
+	/// <summary>
+	/// Provides extension methods for string manipulation, trimming, prefix/suffix removal, 
+	/// wildcard matching, default-value substitutions, etc.
+	/// </summary>
 	public static class StringExtensions
 	{
+		#region Like
+
 		/// <summary>
-		/// Compare une chaîne par rapport à une séquence d'échappement
+		/// Compares a string against a wildcard pattern (supports '*' and '?').
 		/// </summary>
-		/// <param name="str">Chaîne à comparer</param>
-		/// <param name="pattern">Séquence</param>
-		/// <param name="ignoreCase">true : ignore la casse</param>
-		/// <returns>true si la chaîne correspond</returns>
+		/// <param name="value">String to compare.</param>
+		/// <param name="pattern">
+		/// Pattern to match. The '*' wildcard matches any sequence of characters. 
+		/// The '?' wildcard matches a single character.
+		/// </param>
+		/// <param name="ignoreCase">If true, performs a case-insensitive comparison.</param>
+		/// <param name="textInfo">
+		/// Optional <see cref="TextInfo"/> used for case conversion when <paramref name="ignoreCase"/> is true. 
+		/// Defaults to <see cref="CultureInfo.CurrentCulture.TextInfo"/> if not provided.
+		/// </param>
+		/// <returns>True if the string matches the pattern; otherwise, false.</returns>
 		public static bool Like(this string value, string pattern, bool ignoreCase = false, TextInfo textInfo = null)
 		{
-			value.ArgMustNotBeNull();
-			pattern.ArgMustNotBeNull();
+			value.Arg().MustNotBeNull();
+			pattern.Arg().MustNotBeNull();
 			return Like(value.AsSpan(), pattern, ignoreCase, textInfo);
 		}
 
 		/// <summary>
-		/// Compare une chaîne par rapport à une séquence d'échappement
+		/// Compares a span of characters against a wildcard pattern (supports '*' and '?').
 		/// </summary>
-		/// <param name="str">Chaîne à comparer</param>
-		/// <param name="pattern">Séquence</param>
-		/// <param name="ignoreCase"><see cref="true"/> : ignore la casse</param>
-		/// <returns>true si la chaîne correspond</returns>
+		/// <param name="value">Span of characters to compare.</param>
+		/// <param name="pattern">Pattern to match.</param>
+		/// <param name="ignoreCase">If true, performs a case-insensitive comparison.</param>
+		/// <param name="cultureInfo">
+		/// Optional <see cref="CultureInfo"/> used to retrieve <see cref="TextInfo"/> for case conversion 
+		/// when <paramref name="ignoreCase"/> is true. Defaults to <see cref="CultureInfo.CurrentCulture"/> if not provided.
+		/// </param>
+		/// <returns>True if the span matches the pattern; otherwise, false.</returns>
 		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, CultureInfo cultureInfo = null)
 		{
-			pattern.ArgMustNotBeNull();
+			pattern.Arg().MustNotBeNull();
+			cultureInfo ??= CultureInfo.CurrentCulture;
 			return Like(value, pattern, ignoreCase, cultureInfo.TextInfo);
 		}
 
-
 		/// <summary>
-		/// Compares a string to an escape pattern.
+		/// Performs the actual wildcard matching on a <see cref="ReadOnlySpan{T}"/>.
 		/// </summary>
-		/// <param name="str">String to compare</param>
-		/// <param name="pattern">Pattern to match</param>
-		/// <param name="ignoreCase">true: ignore case</param>
-		/// <returns>true if the string matches the pattern</returns>
-		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase = false, TextInfo textInfo = null)
+		/// <param name="value">Span of characters to compare.</param>
+		/// <param name="pattern">Pattern to match.</param>
+		/// <param name="ignoreCase">If true, performs a case-insensitive comparison.</param>
+		/// <param name="textInfo">TextInfo used to handle case conversions if <paramref name="ignoreCase"/> is true.</param>
+		/// <returns>True if the span matches the pattern; otherwise, false.</returns>
+		public static bool Like(this ReadOnlySpan<char> value, string pattern, bool ignoreCase, TextInfo textInfo)
 		{
-			pattern.ArgMustNotBeNull(); // Ensure the pattern is not null.
-			if (pattern == "*") return true; // If the pattern is "*", consider it a match.
-			textInfo ??= CultureInfo.CurrentCulture.TextInfo; // Get the TextInfo for culture-specific operations.
+			pattern.Arg().MustNotBeNull();
+			if (pattern == "*") return true;
+			textInfo ??= CultureInfo.CurrentCulture.TextInfo;
 
-			// Define a function 'equals' for character comparison based on 'ignoreCase' option.
 			Func<char, char, bool> equals = ignoreCase
 				? (x, y) => textInfo.ToLower(x) == textInfo.ToLower(y)
 				: (x, y) => x == y;
 
-			// Initialize indices for the string and pattern.
 			int valueIndex = 0, wildcardIndex = 0;
 			int valueNext = 0, wildcardNext = 0;
 
-			// Compare characters until the first '*' in the pattern.
 			while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
 			{
 				if (pattern[wildcardIndex] != '?' && !equals(value[valueIndex], pattern[wildcardIndex]))
 				{
-					return false; // If a character doesn't match, return false.
+					return false;
 				}
 				wildcardIndex++;
 				valueIndex++;
 			}
 
-			// Compare the rest of the string and pattern.
 			while (wildcardIndex < pattern.Length && valueIndex < value.Length)
 			{
 				if (pattern[wildcardIndex] == '*')
 				{
-					// Handle '*' in the pattern.
 					wildcardNext = wildcardIndex;
 					wildcardIndex++;
 					if (wildcardIndex >= pattern.Length)
 					{
-						return true; // If '*' is the last character in the pattern, consider it a match.
+						return true; // A trailing '*' matches everything.
 					}
 					valueNext += 1;
 				}
 				else if (pattern[wildcardIndex] == '?' || equals(value[valueIndex], pattern[wildcardIndex]))
 				{
-					// If character matches or '?' in pattern, move both indices.
 					wildcardIndex++;
 					valueIndex++;
 					if (wildcardIndex >= pattern.Length && valueIndex < value.Length && pattern[wildcardNext] == '*')
@@ -97,13 +109,11 @@ namespace Utils.Objects
 				}
 				else
 				{
-					// Mismatch, reset indices to try matching again.
 					wildcardIndex = wildcardNext + 1;
 					valueIndex = valueNext++;
 				}
 			}
 
-			// Handle remaining '*' characters in the pattern.
 			while (wildcardIndex < pattern.Length && pattern[wildcardIndex] == '*')
 			{
 				wildcardIndex++;
@@ -112,56 +122,87 @@ namespace Utils.Objects
 			return wildcardIndex >= pattern.Length && valueIndex >= value.Length;
 		}
 
+		#endregion
+
+		#region Trimming
+
 		/// <summary>
-		/// Supprime du début et de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// Removes from the start and end of the string all characters for which the specified function returns true.
 		/// </summary>
-		/// <param name="s">Chaîne de référence</param>
-		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
-		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string Trim(this string s, Func<char, bool> trimTester)
 		{
-			s.ArgMustNotBeNull();
-			trimTester.ArgMustNotBeNull();
+			s.Arg().MustNotBeNull();
+			trimTester.Arg().MustNotBeNull();
 			return s.AsSpan().Trim(trimTester).ToString();
 		}
 
 		/// <summary>
-		/// Supprime du début de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// Removes from the start of the string all characters for which the specified function returns true.
 		/// </summary>
-		/// <param name="s">Chaîne de référence</param>
-		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
-		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimStart(this string s, Func<char, bool> trimTester)
 		{
-			s.ArgMustNotBeNull();
-			trimTester.ArgMustNotBeNull();
+			s.Arg().MustNotBeNull();
+			trimTester.Arg().MustNotBeNull();
 			return s.AsSpan().TrimStart(trimTester).ToString();
 		}
 
 		/// <summary>
-		/// Supprime de la fin de la chaîne tous les éléments correspondant au résultat de la fonction spécifiée
+		/// Removes from the end of the string all characters for which the specified function returns true.
 		/// </summary>
-		/// <param name="s">Chaîne de référence</param>
-		/// <param name="trimTester">Fonction de test (renvoi <see cref="true"/> s'il faut supprimer le caractère)</param>
-		/// <returns>Chaîne expurgée des éléments à supprimer</returns>
 		public static string TrimEnd(this string s, Func<char, bool> trimTester)
 		{
-			s.ArgMustNotBeNull();
-			trimTester.ArgMustNotBeNull();
+			s.Arg().MustNotBeNull();
+			trimTester.Arg().MustNotBeNull();
 			return s.AsSpan().TrimEnd(trimTester).ToString();
 		}
 
+		#endregion
+
+		#region Remove Prefix/Suffix
+
 		/// <summary>
-		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre à une position de caractère spécifiée et a une longueur définie.
+		/// Removes the specified prefix from the string if present.
 		/// </summary>
-		/// <param name="s">Chaîne dont on veut extraire la sous-chaîne</param>
-		/// <param name="start">Position de caractère de départ de base zéro d'une sous-chaîne dans String</param>
-		/// <param name="length">Nombre de caractères dans la sous-chaîne</param>
-		/// <returns>
-		/// Un System.String équivalent à la sous-chaîne de longueur length qui commence
-		/// à startIndex dans cette instance, ou System.String.Empty si startIndex est
-		/// égal à la longueur de cette instance et length est égal à zéro.
-		/// </returns>
+		public static string RemovePrefix(this string s, string prefix)
+		{
+			if (!s.StartsWith(prefix)) return s;
+			return s[prefix.Length..];
+		}
+
+		/// <summary>
+		/// Removes the specified prefix from the span if present.
+		/// </summary>
+		public static ReadOnlySpan<char> RemovePrefix(this ReadOnlySpan<char> s, string prefix)
+		{
+			if (!s.StartsWith(prefix)) return s;
+			return s[prefix.Length..];
+		}
+
+		/// <summary>
+		/// Removes the specified suffix from the string if present.
+		/// </summary>
+		public static string RemoveSuffix(this string s, string suffix)
+		{
+			if (!s.EndsWith(suffix)) return s;
+			return s.Mid(-suffix.Length);
+		}
+
+		/// <summary>
+		/// Removes the specified suffix from the span if present.
+		/// </summary>
+		public static ReadOnlySpan<char> RemoveSuffix(this ReadOnlySpan<char> s, string suffix)
+		{
+			if (!s.EndsWith(suffix)) return s;
+			return s.Mid(-suffix.Length);
+		}
+
+		#endregion
+
+		#region Mid / Left / Right
+
+		/// <summary>
+		/// Retrieves a substring from this instance. The substring starts at a specified zero-based character position and has a defined length.
+		/// </summary>
 		public static string Mid(this string s, int start, int length)
 		{
 			if (s is null) return null;
@@ -169,112 +210,125 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
-		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre à une position de caractère spécifiée et a une longueur définie.
+		/// Retrieves a substring from this instance starting at a specified zero-based character position until the end of the string.
 		/// </summary>
-		/// <param name="s">Chaîne dont on veut extraire la sous-chaîne</param>
-		/// <param name="start">Position de caractère de départ de base zéro d'une sous-chaîne dans String</param>
 		public static string Mid(this string s, int start)
 		{
-			if (s == null) return null;
+			if (s is null) return null;
 			return s.AsSpan().Mid(start).ToString();
-			;
 		}
 
 		/// <summary>
-		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre au premier caractère et a une longueur définie.
+		/// Retrieves a substring from the end of this instance. The substring has the specified length.
 		/// </summary>
-		/// <param name="s">Chaîne dont on veut extraire la sous-chaîne</param>
-		/// <param name="length">Nombre de caractères dans la sous-chaîne</param>
-		/// <returns>
-		/// Un System.String équivalent à la sous-chaîne de longueur length qui commence
-		/// au premier caractère de cette instance, ou System.String.Empty si startIndex est
-		/// égal à la longueur de cette instance et length est égal à zéro.
-		/// </returns>
-		public static string Left(this string s, int length)
-			=> Mid(s, 0, length);
-
-		/// <summary>
-		/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre au premier caractère et a une longueur définie.
-		/// </summary>
-		/// <param name="s">Chaîne dont on veut extraire la sous-chaîne</param>
-		/// <param name="length">Nombre de caractères dans la sous-chaîne</param>
-		/// <returns>
-		/// Un System.String équivalent à la sous-chaîne de longueur length qui contient les caractère de la fin de la chaîne de caractère
-		/// pour une logneur équivalente à length
-		/// </returns>
 		public static string Right(this string s, int length)
 		{
 			if (s is null) return null;
 			if (length > s.Length) return s;
-			return s.Substring(s.Length - length);
+			// Use s.Mid(-length) to get last 'length' chars
+			return s.Mid(-length);
 		}
 
 		/// <summary>
-		/// Turn the first letter of a string to uppercase
+		/// Retrieves a substring from the beginning (first character) of this instance, of the specified length.
 		/// </summary>
-		/// <param name="text">text to transform</param>
-		/// <param name="endToLowerCase">True if the end of input string must be set to lowercase</param>
-		/// <returns></returns>
+		public static string Left(this string s, int length)
+			=> Mid(s, 0, length);
+
+		#endregion
+
+		#region Case Conversions
+
+		/// <summary>
+		/// Turns the first letter of the string to uppercase. Optionally converts the remainder of the string to lowercase.
+		/// </summary>
 		public static string FirstLetterUpperCase(this string text, bool endToLowerCase = false)
 		{
 			if (text.IsNullOrEmpty())
 			{
 				return text;
 			}
-			else
-			{
-				return (text.Mid(0, 1).ToUpper() + (endToLowerCase ? text.Mid(1).ToLower() : text.Mid(1)));
-			}
+			return text.Mid(0, 1).ToUpper()
+				+ (endToLowerCase ? text.Mid(1).ToLower() : text.Mid(1));
 		}
 
+		#endregion
+
+		#region Null/Empty/Whitespace Checks
+
 		/// <summary>
-		/// Returns true if text is null or empty string
-		/// (same as System.String.IsNullOrEmpty(...))
+		/// Returns true if <paramref name="text"/> is null or an empty string.
+		/// (Equivalent to <see cref="string.IsNullOrEmpty(string)"/>).
 		/// </summary>
-		/// <param name="text"></param>
-		/// <returns></returns>
 		public static bool IsNullOrEmpty(this string text)
 			=> string.IsNullOrEmpty(text);
 
 		/// <summary>
-		/// Returns true if text is null or contains only white spaces
-		/// (same as System.String.IsNullOrWhiteSpace(...))
+		/// Returns true if <paramref name="text"/> is null or consists only of white-space characters.
+		/// (Equivalent to <see cref="string.IsNullOrWhiteSpace(string)"/>).
 		/// </summary>
-		/// <param name="text"></param>
-		/// <returns></returns>
 		public static bool IsNullOrWhiteSpace(this string text)
 			=> string.IsNullOrWhiteSpace(text);
 
-		/// <summary>
-		/// Return <paramref name="text"/> if not null and not empty or <paramref name="defaultValue"/>
-		/// </summary>
-		/// <param name="text"></param>
-		/// <param name="defaultValue"></param>
-		/// <returns></returns>
-		public static string NotNullOrEmptyOrDefault(this string text, string defaultValue) => string.IsNullOrEmpty(text) ? defaultValue : text;
+		#endregion
+
+		#region Default Value Handling
 
 		/// <summary>
-		/// Return <paramref name="text"/> if not null and not white space or <paramref name="defaultValue"/>
+		/// Returns <paramref name="text"/> if it is not null or empty; otherwise returns <paramref name="defaultValue"/>.
 		/// </summary>
-		/// <param name="text"></param>
-		/// <param name="defaultValue"></param>
-		/// <returns></returns>
-		public static string NotNullOrWhiteSpaceOrDefault(this string text, string defaultValue) => string.IsNullOrWhiteSpace(text) ? defaultValue : text;
+		public static string ToDefaultIfNullOrEmpty(this string text, string defaultValue)
+			=> string.IsNullOrEmpty(text) ? defaultValue : text;
 
 		/// <summary>
-		/// Vérifie si la chaîne représente un nombre
+		/// Returns <paramref name="text"/> if it is not null or whitespace; otherwise returns <paramref name="defaultValue"/>.
 		/// </summary>
-		/// <param name="text"></param>
-		/// <param name="format"></param>
-		/// <returns></returns>
+		public static string ToDefaultIfNullOrWhiteSpace(this string text, string defaultValue)
+			=> string.IsNullOrWhiteSpace(text) ? defaultValue : text;
+
+		/// <summary>
+		/// Returns <paramref name="defaultValue"/> if <paramref name="text"/> is found in <paramref name="candidates"/>; 
+		/// otherwise returns <paramref name="text"/>.
+		/// </summary>
+		public static string ToDefaultIfIn(this string text, IEnumerable<string> candidates, string defaultValue)
+		{
+			if (text is null) return null;
+			if (candidates is null) return text;
+			return candidates.Contains(text) ? defaultValue : text;
+		}
+
+		/// <summary>
+		/// Returns <paramref name="defaultValue"/> if <paramref name="text"/> is *not* found in <paramref name="candidates"/>; 
+		/// otherwise returns <paramref name="text"/>.
+		/// </summary>
+		public static string ToDefaultIfNotIn(this string text, IEnumerable<string> candidates, string defaultValue)
+		{
+			if (text is null) return null;
+			if (candidates is null) return defaultValue;
+			return candidates.Contains(text) ? text : defaultValue;
+		}
+
+		#endregion
+
+		#region IsNumber
+
+		/// <summary>
+		/// Checks if the string represents a number based on the specified <see cref="NumberFormatInfo"/>.
+		/// </summary>
 		public static bool IsNumber(this string text, NumberFormatInfo format = null)
 		{
 			format ??= CultureInfo.CurrentCulture.NumberFormat;
 			if (text.IsNullOrWhiteSpace()) return false;
+
 			char[] digits = format.NativeDigits.Select(d => d[0]).ToArray();
 			text = text.Trim();
-			if (text[0] != format.NegativeSign[0] && text[0].NotIn(digits) && text[0] != format.NumberDecimalSeparator[0]) return false;
-			bool decimalSeparated = text[0] == format.NumberDecimalSeparator[0];
+
+			if (text[0] != format.NegativeSign[0]
+				&& text[0].NotIn(digits)
+				&& text[0] != format.NumberDecimalSeparator[0])
+				return false;
+
+			bool decimalSeparated = (text[0] == format.NumberDecimalSeparator[0]);
 			for (int i = 1; i < text.Length; i++)
 			{
 				if (!decimalSeparated && text[i] == format.NumberDecimalSeparator[0])
@@ -289,25 +343,24 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
-		/// Vérifie si la chaîne représente un nombre
+		/// Checks if the string represents a number based on the specified <see cref="CultureInfo"/>.
 		/// </summary>
-		/// <param name="text"></param>
-		/// <param name="format"></param>
-		/// <returns></returns>
 		public static bool IsNumber(this string text, CultureInfo culture)
 			=> IsNumber(text, culture.NumberFormat);
 
+		#endregion
+
+		#region Special Characters
+
 		/// <summary>
-		/// Supprime les caractères spéciaux de la chaîne
+		/// Removes characters from the string that do not pass the given condition. 
+		/// If a character is removed, it is replaced with the specified replacement character (if any).
 		/// </summary>
-		/// <param name="s">Chaîne à traiter</param>
-		/// <param name="keepFunction">fonction qui indique s'il faut garder un caractère particulier</param>
-		/// <param name="replacement">Caractère de remplacement</param>
-		/// <returns>chaîne expurgée</returns>
 		public static string PurgeString(this string s, Func<char, bool> keepFunction, char? replacement = null)
 		{
-			keepFunction.ArgMustNotBeNull();
+			keepFunction.Arg().MustNotBeNull();
 			if (s is null) return null;
+
 			StringBuilder result = new StringBuilder(s.Length);
 			foreach (var c in s)
 			{
@@ -315,75 +368,68 @@ namespace Utils.Objects
 				{
 					result.Append(c);
 				}
-				else
+				else if (replacement.HasValue)
 				{
-					result.Append(replacement);
+					result.Append(replacement.Value);
 				}
 			}
 			return result.ToString();
-
 		}
 
 		/// <summary>
-		/// Supprime les caractères spéciaux de la chaîne
+		/// Removes the specified special characters from the string.
 		/// </summary>
-		/// <param name="s">Chaîne à traiter</param>
-		/// <param name="specialChars">Caractères à supprimer</param>
-		/// <param name="replacement">Caractère de remplacement</param>
-		/// <returns>chaîne expurgée</returns>
 		public static string RemoveSpecialChars(this string s, string specialChars, char? replacement = null)
 			=> s.RemoveSpecialChars(specialChars?.ToCharArray(), replacement);
 
 		/// <summary>
-		/// Supprime les caractères spéciaux de la chaîne
+		/// Removes the specified special characters from the string.
 		/// </summary>
-		/// <param name="s">Chaîne à traiter</param>
-		/// <param name="specialChars">Caractères à supprimer</param>
-		/// <param name="replacement">Caractère de remplacement</param>
-		/// <returns>chaîne expurgée</returns>
 		public static string RemoveSpecialChars(this string s, char[] specialChars, char? replacement = null)
 		{
-			specialChars.ArgMustNotBeNull();
+			specialChars.Arg().MustNotBeNull();
 			return s.PurgeString(c => !specialChars.Contains(c), replacement);
 		}
 
 		/// <summary>
-		/// Conserve les caractères de la chaîne
+		/// Keeps only the specified characters in the string, removing all others.
 		/// </summary>
-		/// <param name="s">Chaîne à traiter</param>
-		/// <param name="chars">Caractères à conserver</param>
-		/// <param name="replacement">Caractère de remplacement</param>
-		/// <returns>chaîne expurgée</returns>
 		public static string KeepOnlyChars(this string s, string chars, char? replacement = null)
 			=> s.KeepOnlyChars(chars?.ToCharArray(), replacement);
 
 		/// <summary>
-		/// Conserve les caractères de la chaîne
+		/// Keeps only the specified characters in the string, removing all others.
 		/// </summary>
-		/// <param name="s">Chaîne à traiter</param>
-		/// <param name="chars">Caractères à conserver</param>
-		/// <param name="replacement">Caractère de remplacement</param>
-		/// <returns>chaîne expurgée</returns>
 		public static string KeepOnlyChars(this string s, char[] chars, char? replacement = null)
 		{
-			chars.ArgMustNotBeNull();
+			chars.Arg().MustNotBeNull();
 			return s.PurgeString(c => chars.Contains(c), replacement);
 		}
 
+		#endregion
+
+		#region Align
+
 		/// <summary>
-		/// Create a string of <paramref name="length"/> characters where <paramref name="s"/> is align right or left
+		/// Creates a new string with a specified width. 
+		/// If <paramref name="length"/> is positive, the original string is right-aligned; 
+		/// if negative, it is left-aligned.
 		/// </summary>
-		/// <param name="s">String to be aligned</param>
-		/// <param name="width">Width of the string, align right if positive, left if negative</param>
-		/// <returns></returns>
+		/// <param name="s">The input string.</param>
+		/// <param name="length">The width of the output string. Positive for right alignment, negative for left.</param>
+		/// <returns>A new string of the specified width with the original string aligned accordingly.</returns>
 		public static string Align(this string s, int length)
 		{
 			s ??= "";
-			if (int.Abs(s.Length) >= int.Abs(length)) return s;
-			if (length > 0) return new string(' ', length - s.Length) + s;
-			if (length < 0) return s + new string(' ', -length - s.Length);
-			return s;
+			if (s.Length >= int.Abs(length)) return s;
+
+			if (length > 0)
+				return new string(' ', length - s.Length) + s;
+
+			// length < 0
+			return s + new string(' ', (0 - length) - s.Length);
 		}
 
+		#endregion
 	}
 }

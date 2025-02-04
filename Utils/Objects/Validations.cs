@@ -107,16 +107,6 @@ public static class Validations
 		return null;
 	}
 
-	public static T ArgMustNotBeNull<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "")
-		where T : class
-	{
-		if (value is null)
-		{
-			throw new ArgumentNullException(valueName);
-		}
-		return value;
-	}
-
 	public static T ValueMustNotBeNull<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "")
 		where T : class
 	{
@@ -286,14 +276,14 @@ public static class Validations
 
 	public static T ArgMustBe<T>(this T value, Func<T, bool> validationFunction, string message, [CallerArgumentExpression(nameof(value))] string valueName = "")
 	{
-		validationFunction.ArgMustNotBeNull();
+		validationFunction.Arg().MustNotBeNull();
 		if (!validationFunction(value)) throw new ArgumentException(message, valueName);
 		return value;
 	}
 
 	public static T ArgMustNotBe<T>(this T value, Func<T, bool> validationFunction, string message, [CallerArgumentExpression(nameof(value))] string valueName = "")
 	{
-		validationFunction.ArgMustNotBeNull();
+		validationFunction.Arg().MustNotBeNull();
 		if (validationFunction(value)) throw new ArgumentException(message, valueName);
 		return value;
 	}

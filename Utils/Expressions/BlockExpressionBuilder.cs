@@ -24,8 +24,8 @@ namespace Utils.Expressions
 
 		public BlockExpressionBuilder(IEnumerable<ParameterExpression> variables, IEnumerable<Expression> expressions)
 		{
-			this._variables = [..variables.ArgMustNotBeNull()];
-			this._expressions = [..expressions.ArgMustNotBeNull()];
+			this._variables = [..variables.Arg().MustNotBeNull().Value];
+			this._expressions = [..expressions.Arg().MustNotBeNull().Value];
 		}
 
 

@@ -34,7 +34,7 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	protected ArrayAccessor(D obj, params int[] sizes)
 	{
 		this.innerObject = obj  ?? throw new ArgumentNullException(nameof(obj));
-		this.Sizes = sizes.ArgMustNotBeNull();
+		this.Sizes = sizes.Arg().MustNotBeNull();
 		if (!CheckSize()) throw new ArgumentOutOfRangeException("The underlying object does not match the specified dimensions.");
 	}
 

@@ -31,7 +31,7 @@ public static class SpanExtensions
             if (!trimTester(s[start])) break;
         }
         if (start >= end) return ReadOnlySpan<T>.Empty;
-        return s.Slice(start, end - start);
+        return s[start..end];
     }
 
     /// <summary>
@@ -90,10 +90,10 @@ public static class SpanExtensions
             }
         }
         if (start < 0) start = s.Length + start;
-        if (start <= -length) return ReadOnlySpan<T>.Empty;
-        if (start < 0) return s.Slice(0, length + start);
-        if (start > s.Length) return ReadOnlySpan<T>.Empty;
-        if (start + length > s.Length) return s.Slice(start);
+        if (start <= -length) return [];
+        if (start < 0) return s[..(length + start)];
+        if (start > s.Length) return [];
+        if (start + length > s.Length) return s[start..];
         return s.Slice(start, length);
     }
 

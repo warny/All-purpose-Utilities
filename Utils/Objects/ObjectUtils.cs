@@ -82,7 +82,7 @@ public static class ObjectUtils
 	/// <returns>The computed hash code.</returns>
 	public static int ComputeHash(this Array array)
 	{
-		array.ArgMustNotBeNull();
+		array.Arg().MustNotBeNull();
 		unchecked
 		{
 			int hash = 23;
@@ -116,8 +116,8 @@ public static class ObjectUtils
 	/// <returns>The computed hash code.</returns>
 	public static int ComputeHash<T>(this Array array, Func<T, int> getHashCode)
 	{
-		array.ArgMustNotBeNull();
-		getHashCode.ArgMustNotBeNull();
+		array.Arg().MustNotBeNull();
+		getHashCode.Arg().MustNotBeNull();
 
 		unchecked
 		{

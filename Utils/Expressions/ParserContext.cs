@@ -12,7 +12,7 @@ public class ParserContext
 {
     public ParserContext(Type delegateType, string[] paramNames, Type defaultStaticType, Tokenizer tokenizer, bool firstArgumentIsDefaultInstance)
     {
-        DelegateType = delegateType.ArgMustNotBeNull();
+        DelegateType = delegateType.Arg().MustNotBeNull();
         ParameterInfo[] invokeMethodParameters = DelegateType.GetMethod("Invoke")?.GetParameters();
 
         Tokenizer = tokenizer;

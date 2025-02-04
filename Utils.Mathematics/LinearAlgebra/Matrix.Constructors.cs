@@ -17,7 +17,7 @@ public sealed partial class Matrix<T>
 
 	private Matrix(T[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, T? determinant)
 	{
-		array.ArgMustNotBeNull();
+		array.Arg().MustNotBeNull();
 		this.components = array;
 		this.isDiagonalized = isDiagonalized;
 		this.isTriangularised = isTriangularised;
@@ -27,7 +27,7 @@ public sealed partial class Matrix<T>
 
 	public Matrix(T[,] array)
 	{
-		array.ArgMustNotBeNull();
+		array.Arg().MustNotBeNull();
 		components = new T[array.GetLength(0), array.GetLength(1)];
 		Array.Copy(array, this.components, array.Length);
 		var isSquare = IsSquare;
@@ -39,7 +39,7 @@ public sealed partial class Matrix<T>
 
 	public Matrix(T[][] array)
 	{
-		array.ArgMustNotBeNull();
+		array.Arg().MustNotBeNull();
 		int maxYLength = array.Select(a => a.Length).Max();
 		components = new T[array.Length, maxYLength];
 
@@ -58,7 +58,7 @@ public sealed partial class Matrix<T>
 
 	public Matrix(params Vector<T>[] vectors)
 	{
-		vectors.ArgMustNotBeNull();
+		vectors.Arg().MustNotBeNull();
 		if (vectors.Any(v => v.Dimension != vectors[0].Dimension)) throw new ArgumentException("Les vecteurs doivent tous avoir la même dimension", nameof(vectors));
 		components = new T[vectors[0].Dimension, vectors.Length];
 		for (int i = 0; i < vectors.Length; i++)
@@ -80,7 +80,7 @@ public sealed partial class Matrix<T>
 	/// <param name="matrix"></param>
 	public Matrix(Matrix<T> matrix)
 	{
-		matrix.ArgMustNotBeNull();
+		matrix.Arg().MustNotBeNull();
 
 		this.components = new T[matrix.components.GetLength(0), matrix.components.GetLength(1)];
 		Array.Copy(matrix.components, this.components, matrix.components.Length);

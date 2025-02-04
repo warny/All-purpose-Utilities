@@ -235,7 +235,7 @@ namespace Utils.Net.DNS
 		/// <returns>The string that was read.</returns>
 		private string ReadString(int position, Encoding encoding)
 		{
-			encoding.ArgMustNotBeNull();
+			encoding.Arg().MustNotBeNull();
 
 			bool restorePosition = position != this.Position;
 			int tempPosition = this.Position;

@@ -36,7 +36,7 @@ public static class Parsers
 		/// <param name="type">The type to build parsing methods for.</param>
 		public ParseMethods(Type type)
 		{
-			type.ArgMustNotBeNull();
+			type.Arg().MustNotBeNull();
 
 			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
 			{
@@ -85,7 +85,7 @@ public static class Parsers
 		/// </summary>
 		private TryParseDelegate BuildTryParse(Type type)
 		{
-			type.ArgMustNotBeNull();
+			type.Arg().MustNotBeNull();
 			MethodInfo numberTryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeof(NumberStyles), typeOfIFormatProvider, type.MakeByRefType() }, null);
 			if (numberTryParseMethod is not null)
 			{
@@ -219,7 +219,7 @@ public static class Parsers
 	/// <returns>The <see cref="ParseMethods"/> instance containing the parsing methods for the specified type.</returns>
 	private static ParseMethods GetParseMethods(Type type)
 	{
-		type.ArgMustNotBeNull();
+		type.Arg().MustNotBeNull();
 
 		if (!parsers.TryGetValue(type, out var parseMethods))
 		{
@@ -244,7 +244,7 @@ public static class Parsers
 	/// <returns><c>true</c> if the type can be parsed; otherwise, <c>false</c>.</returns>
 	public static bool CanParse(Type type)
 	{
-		type.ArgMustNotBeNull();
+		type.Arg().MustNotBeNull();
 
 		if (type.IsEnum) return true;
 

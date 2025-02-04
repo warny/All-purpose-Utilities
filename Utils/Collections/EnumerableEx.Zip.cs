@@ -22,7 +22,7 @@ public static partial class EnumerableEx
 	/// <exception cref="ArgumentNullException">Raise if dictionary is null</exception>
 	public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default(TValue))
 	{
-		dictionary.ArgMustNotBeNull();
+		dictionary.Arg().MustNotBeNull();
 		if (dictionary.TryGetValue(key, out TValue result)) return result;
 		return defaultValue;
 	}

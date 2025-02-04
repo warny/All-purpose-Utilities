@@ -315,8 +315,8 @@ public static class ArrayUtils
 	/// <exception cref="ArgumentNullException">si <paramref name="values"/> ou <paramref name="elementType"/> est null</exception>
 	public static Array ConvertToArrayOf(this IEnumerable<string> values, Type elementType)
 	{
-		values.ArgMustNotBeNull();
-		elementType.ArgMustNotBeNull();
+		values.Arg().MustNotBeNull();
+		elementType.Arg().MustNotBeNull();
 
 		var results = new System.Collections.ArrayList();
 

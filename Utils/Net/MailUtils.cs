@@ -1,69 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net;
-using System.Net.Mail;
-using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Net.Mail;
+using System.Text;
+using System.Text.RegularExpressions;
 using Utils.Objects;
 
 namespace Utils.Net
 {
 	public static partial class MailUtils
 	{
+		/// <summary>
+		/// A compiled <see cref="Regex"/> pattern for parsing a mail address of the form:
+		/// <c>user@domain.com</c> or <c>Name &lt;user@domain.com&gt;</c>.
+		/// </summary>
+		/// <remarks>
+		/// Culture is set to "fr-FR" for the pattern, but it generally applies to standard email addresses.
+		/// </remarks>
+		[GeneratedRegex("^(((?<name>[^;,<>\\n]+)\\s*)?\\<(?<mail>[^@<>;,\\s]+@(\\w+\\.)*\\w+)\\>|(?<mail>[^@<>;,\\s]+@(\\w+\\.)*\\w+))$",
+			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.Singleline,
+			"fr-FR")]
+		private static partial Regex mailAddressParserRegex();
 
-        [GeneratedRegex("^(((?<name>[^;,<>\\n]+)\\s*)?\\<(?<mail>[^@<>;,\\s]+@(\\w+\\.)*\\w+)\\>|(?<mail>[^@<>;,\\s]+@(\\w+\\.)*\\w+))$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.Singleline, "fr-FR")]
-        private static partial Regex mailAddressParserRegex();
-        
 		private static readonly Regex mailAddressParser = mailAddressParserRegex();
 
 		/// <summary>
-		/// Transforme une chaîne en adresse mail
+		/// Parses a string into a <see cref="MailAddress"/> instance.
+		/// The string may be of the form <c>user@domain.com</c> or <c>Name &lt;user@domain.com&gt;</c>.
 		/// </summary>
-		/// <param name="mailAddress">Chaîne décrivant une adresse de la forme "boite@domaine.com" ou "boite@domaine.com &lt;Nom du recipiendaire&qt;"</param>
-		/// <returns></returns>
-		/// <exception cref="ArgumentException"></exception>
+		/// <param name="mailAddress">The string containing the mail address.</param>
+		/// <returns>An instance of <see cref="MailAddress"/> representing the parsed address.</returns>
+		/// <exception cref="ArgumentException">Thrown if the string does not match a valid mail address pattern.</exception>
 		public static MailAddress ParseMailAddress(string mailAddress)
 		{
-			mailAddress.ArgMustNotBeNull();
-			var m = mailAddressParser.Match(mailAddress);
-			if (!m.Success) throw new ArgumentException($"{mailAddress} n'est pas une adresse valide", nameof(mailAddress));
-			if (m.Groups["name"].Success) return new MailAddress(m.Groups["mail"].Value, m.Groups["name"].Value);
-			return new MailAddress(m.Groups["mail"].Value);
+			mailAddress.Arg().MustNotBeNull();
+
+			var match = mailAddressParser.Match(mailAddress);
+			if (!match.Success)
+				throw new ArgumentException($"{mailAddress} is not a valid mail address", nameof(mailAddress));
+
+			if (match.Groups["name"].Success)
+				return new MailAddress(match.Groups["mail"].Value, match.Groups["name"].Value);
+
+			return new MailAddress(match.Groups["mail"].Value);
 		}
 
 		/// <summary>
-		/// Transforme une chaine contenant plusieurs adresse mail en un tableau d'adresses
+		/// Parses a string containing multiple mail addresses separated by 
+		/// semicolons, commas, or newlines into an array of <see cref="MailAddress"/> objects.
 		/// </summary>
-		/// <param name="mailAddresses"></param>
-		/// <returns></returns>
+		/// <param name="mailAddresses">A string with one or more email addresses.</param>
+		/// <returns>An array of <see cref="MailAddress"/> objects.</returns>
 		public static MailAddress[] ParseMailAddresses(string mailAddresses)
 		{
-			mailAddresses.ArgMustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
+
 			return mailAddresses
 				.Split(new[] { ';', ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
-				.Select(s=> ParseMailAddress(s.Trim(' ', '\t')))
+				.Select(s => ParseMailAddress(s.Trim(' ', '\t')))
 				.ToArray();
 		}
 
 		/// <summary>
-		/// Ajoute un tableau contenant des adresses à une liste d'adresses
+		/// Adds multiple <see cref="MailAddress"/> objects to this <see cref="MailAddressCollection"/>.
 		/// </summary>
-		/// <param name="addresses"></param>
-		/// <param name="mailAddresses"></param>
+		/// <param name="addresses">The mail address collection to extend.</param>
+		/// <param name="mailAddresses">An array of <see cref="MailAddress"/> objects to add.</param>
 		public static void AddRange(this MailAddressCollection addresses, params MailAddress[] mailAddresses)
 			=> addresses.AddRange((IEnumerable<MailAddress>)mailAddresses);
 
 		/// <summary>
-		/// Ajoute une énumration d'adresses à une liste d'adresses
+		/// Adds multiple <see cref="MailAddress"/> objects to this <see cref="MailAddressCollection"/>.
 		/// </summary>
-		/// <param name="addresses"></param>
-		/// <param name="mailAddresses"></param>
+		/// <param name="addresses">The mail address collection to extend.</param>
+		/// <param name="mailAddresses">An enumeration of <see cref="MailAddress"/> objects to add.</param>
 		public static void AddRange(this MailAddressCollection addresses, IEnumerable<MailAddress> mailAddresses)
 		{
-			mailAddresses.ArgMustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
 
 			foreach (var mailAddress in mailAddresses)
 			{
@@ -72,154 +86,167 @@ namespace Utils.Net
 		}
 
 		/// <summary>
-		/// Ajoute un tableau d'adresses sous forme de chaînes à une liste d'adresses
+		/// Adds multiple email addresses (as strings) to this <see cref="MailAddressCollection"/>.
 		/// </summary>
-		/// <param name="addresses"></param>
-		/// <param name="mailAddresses"></param>
+		/// <param name="addresses">The mail address collection to extend.</param>
+		/// <param name="mailAddresses">An array of email address strings.</param>
 		public static void AddRange(this MailAddressCollection addresses, params string[] mailAddresses)
 			=> addresses.AddRange((IEnumerable<string>)mailAddresses);
 
 		/// <summary>
-		/// Ajoute une énumration d'adresses sous forme de chaînes à une liste d'adresses
+		/// Adds multiple email addresses (as strings) to this <see cref="MailAddressCollection"/>.
 		/// </summary>
-		/// <param name="addresses"></param>
-		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses) {
-			mailAddresses.ArgMustNotBeNull();
+		/// <param name="addresses">The mail address collection to extend.</param>
+		/// <param name="mailAddresses">An enumeration of email address strings.</param>
+		public static void AddRange(this MailAddressCollection addresses, IEnumerable<string> mailAddresses)
+		{
+			mailAddresses.Arg().MustNotBeNull();
 
-			addresses.AddRange(mailAddresses.Select(ma => ParseMailAddress(ma)));
+			addresses.AddRange(mailAddresses.Select(ParseMailAddress));
 		}
 
 		/// <summary>
-		/// Ajoute une liste d'adresses sous forme d'une chaîne à une liste d'adresses
+		/// Adds one or more email addresses (given as a single string) to this <see cref="MailAddressCollection"/>.
 		/// </summary>
-		/// <param name="addresses"></param>
-		/// <param name="mailAddresses"></param>
-		public static void AddRange(this MailAddressCollection addresses, string mailAddresses) {
-			mailAddresses.ArgMustNotBeNull();
+		/// <param name="addresses">The mail address collection to extend.</param>
+		/// <param name="mailAddresses">A string with one or more email addresses.</param>
+		public static void AddRange(this MailAddressCollection addresses, string mailAddresses)
+		{
+			mailAddresses.Arg().MustNotBeNull();
+
 			addresses.AddRange((IEnumerable<MailAddress>)ParseMailAddresses(mailAddresses));
 		}
 
 		/// <summary>
-		/// Ajoute une ou des adresses en destinataire
+		/// Adds one or more recipients (To) to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add addresses to.</param>
+		/// <param name="mailAddresses">A string containing one or more email addresses.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage To(this MailMessage mailMessage, string mailAddresses)
 		{
-			mailMessage.ArgMustNotBeNull();
-			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
+
 			mailMessage.To.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ajoute une ou des adresses en destinataire
+		/// Adds one or more recipients (To) to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
-		public static MailMessage To(this MailMessage mailMessage, params string[] mailAdresses) => mailMessage.To((IEnumerable<string>)mailAdresses);
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add addresses to.</param>
+		/// <param name="mailAddresses">An array of email address strings.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
+		public static MailMessage To(this MailMessage mailMessage, params string[] mailAddresses)
+			=> mailMessage.To((IEnumerable<string>)mailAddresses);
 
 		/// <summary>
-		/// Ajoute une ou des adresses en destinataire
+		/// Adds one or more recipients (To) to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add addresses to.</param>
+		/// <param name="mailAddresses">An enumeration of email address strings.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage To(this MailMessage mailMessage, IEnumerable<string> mailAddresses)
 		{
-			mailMessage.ArgMustNotBeNull();
-			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
 
 			mailMessage.To.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ajoute une ou des adresses en copie 
+		/// Adds one or more CC (carbon copy) recipients to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add CC addresses to.</param>
+		/// <param name="mailAddresses">A string containing one or more email addresses.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage CC(this MailMessage mailMessage, string mailAddresses)
 		{
-			mailMessage.ArgMustNotBeNull();
-			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
+
 			mailMessage.CC.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ajoute une ou des adresses en copie 
+		/// Adds one or more CC (carbon copy) recipients to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
-		public static MailMessage CC(this MailMessage mailMessage, params string[] mailAdresses) => mailMessage.CC((IEnumerable<string>) mailAdresses);
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add CC addresses to.</param>
+		/// <param name="mailAddresses">An array of email address strings.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
+		public static MailMessage CC(this MailMessage mailMessage, params string[] mailAddresses)
+			=> mailMessage.CC((IEnumerable<string>)mailAddresses);
 
 		/// <summary>
-		/// Ajoute une ou des adresses en copie 
+		/// Adds one or more CC (carbon copy) recipients to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add CC addresses to.</param>
+		/// <param name="mailAddresses">An enumeration of email address strings.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage CC(this MailMessage mailMessage, IEnumerable<string> mailAddresses)
 		{
-			mailMessage.ArgMustNotBeNull();
-			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
+
 			mailMessage.CC.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ajoute une ou des adresses en copie cachée
+		/// Adds one or more BCC (blind carbon copy) recipients to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add BCC addresses to.</param>
+		/// <param name="mailAddresses">A string containing one or more email addresses.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage BCC(this MailMessage mailMessage, string mailAddresses)
 		{
-			mailMessage.ArgMustNotBeNull();
-			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
+
 			mailMessage.Bcc.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ajoute une ou des adresses en copie cachée
+		/// Adds one or more BCC (blind carbon copy) recipients to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
-		public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAddresses) => mailMessage.BCC((IEnumerable<string>)mailAddresses);
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add BCC addresses to.</param>
+		/// <param name="mailAddresses">An array of email address strings.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
+		public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAddresses)
+			=> mailMessage.BCC((IEnumerable<string>)mailAddresses);
 
 		/// <summary>
-		/// Ajoute une ou des adresses en copie cachée
+		/// Adds one or more BCC (blind carbon copy) recipients to this <see cref="MailMessage"/>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="mailAdresses">Adresses à ajouter</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to add BCC addresses to.</param>
+		/// <param name="mailAddresses">An enumeration of email address strings.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage BCC(this MailMessage mailMessage, IEnumerable<string> mailAddresses)
 		{
-			mailMessage.ArgMustNotBeNull();
-			mailAddresses.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			mailAddresses.Arg().MustNotBeNull();
+
 			mailMessage.Bcc.AddRange(mailAddresses);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ecrit le sujet du message 
+		/// Sets the subject of the mail message.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="body">Sujet du message</param>
-		/// <param name="encoding">Encodage du sujet (par défaut <see cref="Encoding.UTF8"/>)</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="subject">The subject text.</param>
+		/// <param name="encoding">
+		/// An optional <see cref="Encoding"/> for the subject. Defaults to <see cref="Encoding.UTF8"/>.
+		/// </param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage Subject(this MailMessage mailMessage, string subject, Encoding encoding = null)
 		{
-			mailMessage.ArgMustNotBeNull();
-			subject.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			subject.Arg().MustNotBeNull();
 
 			mailMessage.Subject = subject;
 			mailMessage.SubjectEncoding = encoding ?? Encoding.UTF8;
@@ -227,107 +254,135 @@ namespace Utils.Net
 		}
 
 		/// <summary>
-		/// Ecrit le corps du message 
+		/// Sets the body of the mail message. Automatically sets <see cref="MailMessage.IsBodyHtml"/>
+		/// to <c>true</c> if the body starts with <c>&lt;html</c>, otherwise <c>false</c>.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="body">Corps de message</param>
-		/// <param name="encoding">Encodage du corps (par défaut <see cref="Encoding.UTF8"/>)</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="body">The body content of the message.</param>
+		/// <param name="encoding">
+		/// An optional <see cref="Encoding"/> for the body. Defaults to <see cref="Encoding.UTF8"/>.
+		/// </param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage Body(this MailMessage mailMessage, string body, Encoding encoding = null)
 		{
-			mailMessage.ArgMustNotBeNull();
-			body.ArgMustNotBeNull();
- 
+			mailMessage.Arg().MustNotBeNull();
+			body.Arg().MustNotBeNull();
+
 			mailMessage.Body = body;
 			mailMessage.BodyEncoding = encoding ?? Encoding.UTF8;
-			mailMessage.IsBodyHtml = body.TrimStart().StartsWith("<html");
+			mailMessage.IsBodyHtml = body.TrimStart().StartsWith("<html", StringComparison.OrdinalIgnoreCase);
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Envoi le fichier en tant que fichier joint
+		/// Attaches a file (by path) to the mail message.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="fileName">Fichier à envoyer en pièce jointe</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="fileName">The file path to attach.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage Attachment(this MailMessage mailMessage, string fileName)
 		{
-			mailMessage.ArgMustNotBeNull();
-			fileName.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			fileName.Arg().MustNotBeNull();
+
 			mailMessage.Attachments.Add(new Attachment(fileName));
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Envoi le fichier en tant que fichier joint
+		/// Attaches a <see cref="FileInfo"/> to the mail message.
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="fileInfo">Fichier à envoyer en pièce jointe</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="fileInfo">The <see cref="FileInfo"/> representing the file to attach.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage Attachment(this MailMessage mailMessage, FileInfo fileInfo)
 		{
+			mailMessage.Arg().MustNotBeNull();
+			fileInfo.Arg().MustNotBeNull();
+
 			mailMessage.Attachments.Add(new Attachment(fileInfo.FullName));
 			return mailMessage;
 		}
-		
+
 		/// <summary>
-		/// Ecrit un flux en tant que fichier joint
+		/// Attaches a stream to the mail message as a file. 
+		/// <para>
+		/// <strong>Note:</strong> The stream is used by the <see cref="Attachment"/>.
+		/// Do not dispose this stream until the <see cref="MailMessage"/> (and its attachments) 
+		/// is disposed or the mail is sent.
+		/// </para>
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="filename">Nom du chier joint</param>
-		/// <param name="contentStream">Contenu du fichier</param>
-		/// <returns></returns>
-		public static MailMessage Attachement(this MailMessage mailMessage, string filename, Stream contentStream)
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="filename">The name of the file to represent the attached stream.</param>
+		/// <param name="contentStream">A <see cref="Stream"/> containing the file content.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
+		public static MailMessage Attachment(this MailMessage mailMessage, string filename, Stream contentStream)
 		{
-			mailMessage.ArgMustNotBeNull();
-			filename.ArgMustNotBeNull();
-			contentStream.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			filename.Arg().MustNotBeNull();
+			contentStream.Arg().MustNotBeNull();
+
+			// Do not dispose the stream here. It needs to remain alive for the attachment.
 			mailMessage.Attachments.Add(new Attachment(contentStream, filename));
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ecrit un tableau d'octet en tant que fichier joint
+		/// Attaches a byte array to the mail message as a file.
+		/// <para>
+		/// <strong>Note:</strong> The in-memory stream is kept alive by the <see cref="Attachment"/>.
+		/// It is disposed when the <see cref="MailMessage"/> or the <see cref="Attachment"/> is disposed.
+		/// </para>
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="filename">Nom du fichier joint</param>
-		/// <param name="content">Contenu du fichier</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="filename">The name of the file to represent the attached byte array.</param>
+		/// <param name="content">A byte array containing the file content.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage Attachment(this MailMessage mailMessage, string filename, byte[] content)
 		{
-			mailMessage.ArgMustNotBeNull();
-			filename.ArgMustNotBeNull();
-			content.ArgMustNotBeNull();
-			using (MemoryStream contentStream = new MemoryStream(content)) {
-				contentStream.Position = 0;
-				mailMessage.Attachments.Add(new Attachment(contentStream, filename));
-			}
+			mailMessage.Arg().MustNotBeNull();
+			filename.Arg().MustNotBeNull();
+			content.Arg().MustNotBeNull();
+
+			// Keep stream open for attachment usage.
+			var contentStream = new MemoryStream(content)
+			{
+				Position = 0
+			};
+			mailMessage.Attachments.Add(new Attachment(contentStream, filename));
 			return mailMessage;
 		}
 
 		/// <summary>
-		/// Ecrit une chaîne en tant que fichier joint
+		/// Attaches a string as a file to the mail message.
+		/// <para>
+		/// <strong>Note:</strong> The in-memory stream is kept alive by the <see cref="Attachment"/>.
+		/// It is disposed when the <see cref="MailMessage"/> or the <see cref="Attachment"/> is disposed.
+		/// </para>
 		/// </summary>
-		/// <param name="mailMessage">Message</param>
-		/// <param name="filename">Nom du fichier joint</param>
-		/// <param name="content">Contenu du fichier</param>
-		/// <param name="encoding">Encodage (par défaut <see cref="Encoding.UTF8"/>)</param>
-		/// <returns></returns>
+		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
+		/// <param name="filename">The file name for the attached content.</param>
+		/// <param name="content">The string content to attach.</param>
+		/// <param name="encoding">An optional encoding. Defaults to <see cref="Encoding.UTF8"/>.</param>
+		/// <returns>The updated <see cref="MailMessage"/> instance for chaining.</returns>
 		public static MailMessage Attachment(this MailMessage mailMessage, string filename, string content, Encoding encoding = null)
 		{
-			mailMessage.ArgMustNotBeNull();
-			filename.ArgMustNotBeNull();
-			content.ArgMustNotBeNull();
+			mailMessage.Arg().MustNotBeNull();
+			filename.Arg().MustNotBeNull();
+			content.Arg().MustNotBeNull();
+
 			encoding ??= Encoding.UTF8;
-			using (MemoryStream contentStream = new MemoryStream())
+
+			// Keep stream open for attachment usage.
+			var contentStream = new MemoryStream();
+			using (var writer = new StreamWriter(contentStream, encoding, leaveOpen: true))
 			{
-				StreamWriter sw = new StreamWriter(contentStream, encoding);
-				sw.Write(content);
-				sw.Flush();
-				contentStream.Position = 0;
-				mailMessage.Attachments.Add(new Attachment(contentStream, filename));
+				writer.Write(content);
 			}
+			contentStream.Position = 0;
+
+			mailMessage.Attachments.Add(new Attachment(contentStream, filename));
 			return mailMessage;
 		}
-    }
+	}
 }
