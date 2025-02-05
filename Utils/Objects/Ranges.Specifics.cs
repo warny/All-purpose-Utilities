@@ -75,7 +75,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="ranges">The string representation of the ranges to add.</param>
 		/// <param name="formatInfo">The number format information to use for parsing.</param>
-		public void Add(string ranges, System.Globalization.NumberFormatInfo formatInfo) => this.Add(InnerParse(ranges, formatInfo));
+		public void Add(string ranges, System.Globalization.NumberFormatInfo formatInfo) => this.AddAll(InnerParse(ranges, formatInfo));
 	}
 
 	/// <summary>
@@ -145,7 +145,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="ranges">The string representation of the ranges to add.</param>
 		/// <param name="formatInfo">The number format information to use for parsing.</param>
-		public void Add(string ranges, System.Globalization.NumberFormatInfo formatInfo) => this.Add(InnerParse(ranges, formatInfo));
+		public void Add(string ranges, System.Globalization.NumberFormatInfo formatInfo) => this.AddAll(InnerParse(ranges, formatInfo));
 	}
 
 	/// <summary>
@@ -291,6 +291,6 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="ranges">The string representation of the ranges to add.</param>
 		/// <param name="formatInfo">The DateTime format information to use for parsing.</param>
-		public void Add(string ranges, System.Globalization.DateTimeFormatInfo formatInfo) => this.Add(InnerParse(ranges, formatInfo));
+		public void Add(string ranges, System.Globalization.DateTimeFormatInfo formatInfo) => this.AddAll(InnerParse(ranges, formatInfo));
 	}
 }
