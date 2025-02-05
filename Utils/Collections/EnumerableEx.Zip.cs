@@ -213,4 +213,10 @@ public static partial class EnumerableEx
 
 }
 
-public record Pack<T>(T Value, int Repetition);
+/// <summary>
+/// Represents a value and its consecutive repetition count (used in packing).
+/// </summary>
+/// <typeparam name="T">Type of the packed value.</typeparam>
+/// <param name="Value">The value being packed.</param>
+/// <param name="Repetition">How many times it repeats consecutively.</param>
+public record struct Pack<T>(T Value, int Repetition);

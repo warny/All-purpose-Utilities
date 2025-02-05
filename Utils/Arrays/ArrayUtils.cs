@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace Utils.Arrays;
@@ -102,7 +103,7 @@ public static class ArrayUtils
 		{
 			if (!trimTester(obj[start])) break;
 		}
-		if (start >= end) return new T[0];
+		if (start >= end) return [];
 		T[] result = new T[end - start];
 		Array.Copy(obj, start, result, 0, result.Length);
 		return result;
@@ -336,4 +337,36 @@ public static class ArrayUtils
 	/// <exception cref="ArgumentNullException"></exception>
 	public static T[] ConvertToArrayOf<T>(this IEnumerable<string> values)
 		=> (T[])values.ConvertToArrayOf(typeof(T));
+
+
+	/// <summary>
+	/// Scans the <paramref name="source"/> for occurrences of the subsequence <paramref name="toReplace"/>,
+	/// and replaces them with the subsequence <paramref name="replacement"/>. 
+	/// A naive, non-overlapping approach is used.
+	/// </summary>
+	/// <typeparam name="T">
+	/// The element type; must implement <see cref="IEquatable{T}"/> for equality checks.
+	/// </typeparam>
+	/// <param name="source">The source sequence in which to perform replacements.</param>
+	/// <param name="toReplace">The subsequence to find and replace.</param>
+	/// <param name="replacement">The subsequence to substitute in place of <paramref name="toReplace"/>.</param>
+	/// <returns>A new sequence with the replacements applied where the pattern is matched.</returns>
+	/// <remarks>
+	/// <para>
+	/// Overlapping matches are not recognized. For example, if <c>toReplace</c> is
+	/// <c>[1, 2, 1]</c>, and the source is <c>[1, 2, 1, 2, 1]</c>, this method
+	/// only replaces the first match, ignoring the second (overlapping) match.
+	/// </para>
+	/// <para>
+	/// If <paramref name="toReplace"/> is empty, no replacement is done and the 
+	/// original <paramref name="source"/> is returned as-is.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException">
+	/// Thrown if any of the parameters (<paramref name="source"/>, <paramref name="toReplace"/>, or <paramref name="replacement"/>)
+	/// is <see langword="null"/>.
+	/// </exception>
+	public static T[] Replace<T>(this T[] array, T[] toReplace, T[] replacement)
+		where T : IEquatable<T>
+		=> EnumerableEx.Replace(array, toReplace, replacement).ToArray();
 }

@@ -1,9 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Utils.Objects;
 
 namespace UtilsTest.Objects
@@ -12,7 +9,7 @@ namespace UtilsTest.Objects
 	public class IntRangeTests
 	{
 		[TestMethod]
-		public void IntRangeTest1()
+		public void IntRangeParseTest()
 		{
 			var tests = new (string test, string result)[] {
 				("1;2;3", "1-3"),
@@ -36,7 +33,7 @@ namespace UtilsTest.Objects
 		}
 
 		[TestMethod]
-		public void IntRangeTest2()
+		public void IntRangeUnionTest()
 		{
 			var tests = new (string test1, string test2, string result)[] {
 				("1", "3", "1;3"),
@@ -67,7 +64,56 @@ namespace UtilsTest.Objects
 		}
 
 		[TestMethod]
-		public void IntRangeTest3()
+		public void IntRangeIntersectTest()
+		{
+			// Each tuple: (range1 string, range2 string, expected intersection)
+			// An empty string "" indicates that the intersection is empty (no intervals).
+			var tests = new (string test1, string test2, string result)[]
+			{
+				// Disjoint single values => no intersection
+				("1",        "3",         ""),
+				// Same single value => intersection is that value
+				("1",        "1",         "1"),
+				// Simple overlapping intervals => "1-3" and "2-4" => intersection is "2-3"
+				("1-3",      "2-4",       "2-3"),
+				// One overlaps the end of the other => "1-4" and "4-8" => intersection is "4"
+				("1-4",      "4-8",       "4"),
+				// Multiple intervals vs single interval => "1-2;5-7" & "2-5" => intersection is "2;5"
+				("1-2;5-7",  "2-5",       "2;5"),
+				// Slightly more complex intervals => "1-4;6-8" & "4-6" => intersection is "4;6"
+				("1-4;6-8",  "4-6",       "4;6"),
+				// Contained intervals => "1-9" & "2-3;5-7" => intersection is exactly "2-3;5-7"
+				("1-9",      "2-3;5-7",   "2-3;5-7"),
+				// Edge overlap => "1-9" & "9-10" => intersection is "9"
+				("1-9",      "9-10",      "9"),
+				// Single points vs intervals => "2;4;6" & "3-5;6-7" => intersection is "4;6"
+				("2;4;6",    "3-5;6-7",   "4;6"),
+			};
+
+			void doTest(string test1, string test2, string expected)
+			{
+				var range1 = new IntRange<int>(test1, CultureInfo.GetCultureInfo("fr-FR"));
+				var range2 = new IntRange<int>(test2, CultureInfo.GetCultureInfo("fr-FR"));
+
+				// Intersect using the bitwise AND operator '&'
+				var result = range1 & range2;
+
+				// Convert the result back to string and compare
+				Assert.AreEqual(expected, result.ToString(CultureInfo.GetCultureInfo("fr-FR")));
+			}
+
+			// Run each test in both directions, 
+			// since intersection is commutative (A & B == B & A).
+			foreach (var test in tests)
+			{
+				doTest(test.test1, test.test2, test.result);
+				doTest(test.test2, test.test1, test.result);
+			}
+		}
+
+
+		[TestMethod]
+		public void IntRangeExceptTest()
 		{
 			var tests = new (string test1, string test2, string result)[] {
 				("1", "3", "1"),
@@ -88,13 +134,13 @@ namespace UtilsTest.Objects
 			{
 				var range1 = new IntRange<int>(test.test1, CultureInfo.GetCultureInfo("fr-FR"));
 				var range2 = new IntRange<int>(test.test2, CultureInfo.GetCultureInfo("fr-FR"));
-				var result = range1 & range2;
+				var result = range1 - range2;
 				Assert.AreEqual(test.result, result.ToString(CultureInfo.GetCultureInfo("fr-FR")));
 			}
 		}
 
 		[TestMethod]
-		public void IntRangeTest4()
+		public void IntRangeContainsTest()
 		{
 			var tests = new (string range, int[] values, bool result)[] {
 				("1", new [] { 1 }, true),
@@ -118,7 +164,7 @@ namespace UtilsTest.Objects
 		}
 
 		[TestMethod]
-		public void IntRangeTest5()
+		public void IntRangeToArrayTest()
 		{
 			var comparer = new Utils.Arrays.ArrayEqualityComparer<int>();
 

@@ -5,7 +5,8 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Numerics;
-using Utils.Mathematics; // If needed for IAdditionOperators, etc.
+using Utils.Mathematics;
+using System.Formats.Tar; // If needed for IAdditionOperators, etc.
 
 namespace Utils.Objects
 {
@@ -26,6 +27,7 @@ namespace Utils.Objects
 	public sealed class IntRange<T> : 
 		IEnumerable<T>,
 		IBitwiseOperators<IntRange<T>, IntRange<T>, IntRange<T>>,
+		ISubtractionOperators<IntRange<T>, IntRange<T>, IntRange<T>>,
 		IFormattable
 		where T : struct, IBinaryInteger<T>, IComparable<T>, IMinMaxValue<T>
 	{
@@ -35,7 +37,7 @@ namespace Utils.Objects
 		/// Represents a single contiguous interval of integers, 
 		/// where endpoints can be null to indicate -∞ or +∞.
 		/// </summary>
-		private struct SimpleRange : IComparable<SimpleRange?>, IFormattable
+		private struct SimpleRange : IComparable<SimpleRange?>, IComparable, IFormattable
 		{
 			/// <summary>
 			/// Creates a new range [minimum, maximum].
@@ -93,6 +95,14 @@ namespace Utils.Objects
 				int maxCompare = CompareNullableInt(Maximum, other.Value.Maximum, isMin: false);
 				return maxCompare;
 			}
+
+			public int CompareTo(object obj)
+				=> obj switch
+				{
+					SimpleRange r => CompareTo(r),
+					_ => throw new NotImplementedException()
+				};
+
 
 			/// <summary>
 			/// Helper that compares two int? endpoints. 
@@ -290,6 +300,7 @@ namespace Utils.Objects
 				var maxStr = Maximum.HasValue
 					? Maximum.Value.ToString(format, fp)
 					: "∞"; // +∞
+				if (minStr != "∞" && minStr == maxStr) return minStr;
 				return $"{minStr}-{maxStr}";
 			}
 
@@ -331,7 +342,19 @@ namespace Utils.Objects
 		///   "42"  => single value [42..42]
 		/// And possibly multiple intervals separated by commas or semicolons, e.g. "∞-0, 5-10, 42".
 		/// </summary>
-		public IntRange(string input, IFormatProvider formatProvider) : this(input, formatProvider.GetTextInfo().ListSeparator) { }
+		public IntRange(string input, TextInfo textInfo) : this(input, textInfo.ListSeparator) { }
+
+		/// <summary>
+		/// Creates a set of intervals from a string. 
+		/// Expects forms like:
+		///   "∞-∞" => all integers
+		///   "∞-5" => [-∞..5]
+		///   "5-∞" => [5..+∞]
+		///   "2-5" => [2..5]
+		///   "42"  => single value [42..42]
+		/// And possibly multiple intervals separated by commas or semicolons, e.g. "∞-0, 5-10, 42".
+		/// </summary>
+		public IntRange(string input, CultureInfo cultureInfo) : this(input, cultureInfo.TextInfo.ListSeparator) { }
 
 		/// <summary>
 		/// Creates a set of intervals from a string. 
@@ -624,6 +647,7 @@ namespace Utils.Objects
 					{
 						// no second piece
 						current = null;
+						break;
 					}
 					else
 					{
@@ -673,6 +697,10 @@ namespace Utils.Objects
 		public static IntRange<T> operator ^(IntRange<T> left, IntRange<T> right)
 			=> SymmetricDifference(left, right);
 
+		/// <summary>Substraction => Except</summary>
+		public static IntRange<T> operator -(IntRange<T> left, IntRange<T> right)
+			=> Except(left, right);
+
 		/// <summary>Bitwise NOT => Complement (everything in [-∞..+∞] not in this range).</summary>
 		public static IntRange<T> operator ~(IntRange<T> range)
 			=> range.Complement();
@@ -721,7 +749,7 @@ namespace Utils.Objects
 		public string ToString(string format, IFormatProvider formatProvider)
 		{
 			var culture = formatProvider as CultureInfo ?? CultureInfo.CurrentCulture;
-			var sep = culture.TextInfo.ListSeparator + " ";
+			var sep = culture.TextInfo.ListSeparator;
 			return string.Join(sep, _ranges.Select(r => r.ToString(format, culture)));
 		}
 
