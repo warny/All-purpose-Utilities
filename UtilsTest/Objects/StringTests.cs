@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml.Schema;
 using Utils.Arrays;
+using Utils.Collections;
 using Utils.Mathematics;
 using Utils.Objects;
 
@@ -64,9 +65,9 @@ namespace UtilsTest.Objects
 				( Start: -1, End: 2, Result: "E"),
 				};
 
-			foreach (var test in tests)
+			foreach (var (Start, End, Result) in tests)
 			{
-				Assert.AreEqual(test.Result, testString.Mid(test.Start, test.End));
+				Assert.AreEqual(Result, testString.Mid(Start, End));
 			}
 		}
 
@@ -81,9 +82,9 @@ namespace UtilsTest.Objects
 				( Length: 6, Result: "ABCDE")
 			};
 
-			foreach (var test in tests)
+			foreach (var (Length, Result) in tests)
 			{
-				Assert.AreEqual(test.Result, testString.Left(test.Length));
+				Assert.AreEqual(Result, testString.Left(Length));
 			}
 		}
 
@@ -98,9 +99,9 @@ namespace UtilsTest.Objects
 				( Length: 6, Result: "ABCDE")
 				};
 
-			foreach (var test in tests)
+			foreach (var (Length, Result) in tests)
 			{
-				Assert.AreEqual(test.Result, testString.Right(test.Length));
+				Assert.AreEqual(Result, testString.Right(Length));
 			}
 		}
 
@@ -115,11 +116,11 @@ namespace UtilsTest.Objects
 				( Function: (char c) => c.In('/'), Result: "-+/ABCDE-+", ResultLeft: "-+/ABCDE-+/", ResultRight: "-+/ABCDE-+"),
 				};
 
-			foreach (var test in tests)
+			foreach (var (Function, Result, ResultLeft, ResultRight) in tests)
 			{
-				Assert.AreEqual(test.Result, testString.Trim(test.Function));
-				Assert.AreEqual(test.ResultLeft, testString.TrimStart(test.Function));
-				Assert.AreEqual(test.ResultRight, testString.TrimEnd(test.Function));
+				Assert.AreEqual(Result, testString.Trim(Function));
+				Assert.AreEqual(ResultLeft, testString.TrimStart(Function));
+				Assert.AreEqual(ResultRight, testString.TrimEnd(Function));
 			}
 		}
 
@@ -140,9 +141,9 @@ namespace UtilsTest.Objects
 				( WildCard: "*C*", IgnoreCase: false)
 				};
 
-			foreach (var test in tests)
+			foreach (var (WildCard, IgnoreCase) in tests)
 			{
-				Assert.IsTrue(testString.Like(test.WildCard, test.IgnoreCase));
+				Assert.IsTrue(testString.Like(WildCard, IgnoreCase));
 			}
 		}
 
@@ -164,9 +165,9 @@ namespace UtilsTest.Objects
 				( WildCard: "C*", IgnoreCase: false)
 				};
 
-			foreach (var test in tests)
+			foreach (var (WildCard, IgnoreCase) in tests)
 			{
-				Assert.IsFalse(testString.Like(test.WildCard, test.IgnoreCase));
+				Assert.IsFalse(testString.Like(WildCard, IgnoreCase));
 			}
 		}
 
@@ -182,16 +183,16 @@ namespace UtilsTest.Objects
 				("chev(al|aux)", 2, "chevaux"),
 			};
 
-			foreach (var test in tests)
+			foreach (var (input, number, expected) in tests)
 			{
-				Assert.AreEqual(test.expected, test.input.ToPlural(test.number));
+				Assert.AreEqual(expected, input.ToPlural(number));
 			}
 		}
 
 		[TestMethod]
 		public void CommandLineParser()
 		{
-			var comparer = new ArrayEqualityComparer<string>();
+			var comparer = EnumerableEqualityComparer<string>.Default;
 
 			var tests = new (string line, string[] expected)[] {
 				("", new string [] { }),
@@ -203,10 +204,10 @@ namespace UtilsTest.Objects
 				(@"/src:""C:\tmp\Some Folder\Sub Folder"" /users:""abcdefg@hijkl.com"" tasks:""SomeTask,Some Other Task"" -someParam", new string[] { @"/src:""C:\tmp\Some Folder\Sub Folder""", @"/users:""abcdefg@hijkl.com""", @"tasks:""SomeTask,Some Other Task""", @"-someParam" })
 			};
 
-			foreach (var test in tests)
+			foreach (var (line, expected) in tests)
 			{
-				var result = StringUtils.ParseCommandLine(test.line);
-				Assert.IsTrue(comparer.Equals(test.expected, result));
+				var result = StringUtils.ParseCommandLine(line);
+				Assert.IsTrue(comparer.Equals(expected, result));
 			}
 		}
 

@@ -22,7 +22,7 @@ namespace UtilsTest.Lists
 		[Given("An empty DoubleIndexedDictionary")]
 		public void AnEmptyDoubleIndexedDictionary()
 		{
-			d = new();
+			d = [];
 		}
 
 		[Given("A prefilled DoubleIndexedDictionary")]

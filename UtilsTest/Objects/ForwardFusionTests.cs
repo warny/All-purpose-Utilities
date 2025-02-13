@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Objects
@@ -29,7 +30,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2);
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2)=>i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2)=>i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 
@@ -50,7 +51,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2);
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 
@@ -71,7 +72,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2);
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 		}
@@ -92,7 +93,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2);
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 		}
@@ -113,7 +114,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2);
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 		}
@@ -137,7 +138,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2, itemComparer);
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 
@@ -161,7 +162,7 @@ namespace UtilsTest.Objects
 			var fusion = new ForwardFusion<int, int>(list1, list2, (l, r) => l.CompareTo(r));
 			var result = fusion.ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+			var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
 
 			Assert.AreEqual(expected, result, comparer);
 

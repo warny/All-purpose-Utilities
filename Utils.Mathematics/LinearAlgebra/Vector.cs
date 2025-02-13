@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Utils.Arrays;
+using Utils.Collections;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
@@ -12,7 +13,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable
     where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
-    private static ArrayEqualityComparer<T> ComponentComparer { get; } = new();
+    private static EnumerableEqualityComparer<T> ComponentComparer { get; } = EnumerableEqualityComparer<T>.Default;
 
     /// <summary>
     /// composantes du vecteur

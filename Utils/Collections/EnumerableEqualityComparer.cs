@@ -1,139 +1,156 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.InteropServices;
 using Utils.Objects;
 
-namespace Utils.List
+namespace Utils.Collections;
+
+/// <summary>
+/// A comparer for enumerables that allows comparison of sequences 
+/// based on custom or default equality logic for each element.
+/// 
+/// If both sequences implement <see cref="IReadOnlyList{T}"/>, 
+/// the comparison first checks <see cref="IReadOnlyList{T}.Count"/> for an early exit.
+/// Uses <see cref="Span{T}"/> when applicable for performance.
+/// </summary>
+/// <typeparam name="T">The type of elements in the enumerable.</typeparam>
+public sealed class EnumerableEqualityComparer<T> : IEqualityComparer<IEnumerable<T>>
 {
+	private readonly IEqualityComparer<T> elementComparer;
+
 	/// <summary>
-	/// A comparer for enumerables that allows comparison based on custom equality logic.
+	/// A thread-safe, cached instance of <see cref="EnumerableEqualityComparer{T}"/>
+	/// using the default comparison logic for elements.
 	/// </summary>
-	/// <typeparam name="T">The type of elements in the enumerable.</typeparam>
-	public class EnumerableEqualityComparer<T> : IEqualityComparer<IEnumerable<T>>
-	{
-		private readonly Func<T, T, bool> areEquals;
-		private readonly Func<T, int> getHashCode;
-		private readonly Type typeOfT = typeof(T);
+	public static EnumerableEqualityComparer<T> Default { get; } = new EnumerableEqualityComparer<T>();
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class.
-		/// The constructor attempts to resolve equality logic using the provided equality comparers,
-		/// or by using default implementations based on the type T.
-		/// </summary>
-		/// <param name="equalityComparers">Optional custom equality comparers.</param>
-		public EnumerableEqualityComparer(params object[] equalityComparers)
+	/// <summary>
+	/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class
+	/// using a provided element equality comparer.
+	/// </summary>
+	private EnumerableEqualityComparer() {
+		Type tType = typeof(T);
+		if (tType.IsArray)
 		{
-			var externalEqualityComparer = equalityComparers.OfType<IEqualityComparer<T>>().FirstOrDefault();
-			if (externalEqualityComparer is not null)
-			{
-				// Use the external IEqualityComparer provided
-				areEquals = (e1, e2) => externalEqualityComparer.Equals(e1, e2);
-				getHashCode = e => externalEqualityComparer.GetHashCode(e);
-				return;
-			}
-			else if (typeof(IEquatable<T>).IsAssignableFrom(typeOfT))
-			{
-				// Use IEquatable<T> if T implements it
-				areEquals = (e1, e2) => ((IEquatable<T>)e1).Equals(e2);
-			}
-			else if (typeof(IComparable<T>).IsAssignableFrom(typeOfT))
-			{
-				// Use IComparable<T> if T implements it
-				areEquals = (e1, e2) => ((IComparable<T>)e1).CompareTo(e2) == 0;
-			}
-			else if (typeOfT.IsArray)
-			{
-				// Special case for arrays: use a nested EnumerableEqualityComparer for the element type
-				var typeOfElement = typeOfT.GetElementType();
-				Type equalityComparerGenericType = typeof(EnumerableEqualityComparer<>);
-				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
-				object subComparer = Activator.CreateInstance(equalityComparerType);
-				areEquals = (Func<T, T, bool>)equalityComparerType
-					.GetMethod(nameof(Equals), [typeOfT, typeOfT])
-					.CreateDelegate(typeof(Func<T, T, bool>), subComparer);
-				getHashCode = (Func<T, int>)equalityComparerType
-					.GetMethod(nameof(GetHashCode), [typeOfT])
-					.CreateDelegate(typeof(Func<T, int>), subComparer);
-				return;
-			}
-			else
-			{
-				// Default case: use object.Equals
-				areEquals = (e1, e2) => e1.Equals(e2);
-			}
-
-			// Default hash code logic
-			getHashCode = e => e.GetHashCode();
+			var elementComparerType = typeof(EnumerableEqualityComparer<>).MakeGenericType(tType.GetElementType());
+			var defaultProperty = elementComparerType.GetProperty(nameof(Default));
+			this.elementComparer = (IEqualityComparer<T>)defaultProperty.GetValue(null);
 		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class 
-		/// using a provided IEqualityComparer.
-		/// </summary>
-		/// <param name="equalityComparer">An equality comparer for elements of type T.</param>
-		public EnumerableEqualityComparer(IEqualityComparer<T> equalityComparer)
+		else
 		{
-			areEquals = equalityComparer.Equals;
-			getHashCode = equalityComparer.GetHashCode;
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class 
-		/// using a provided IComparer and optional hash code function.
-		/// </summary>
-		/// <param name="equalityComparer">A comparer for elements of type T.</param>
-		/// <param name="getHashCode">A function to compute the hash code for elements, defaults to object.GetHashCode.</param>
-		public EnumerableEqualityComparer(IComparer<T> equalityComparer, Func<T, int> getHashCode = null)
-		{
-			areEquals = (e1, e2) => equalityComparer.Compare(e1, e2) == 0;
-			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class 
-		/// using provided equality and hash code functions.
-		/// </summary>
-		/// <param name="areEquals">A function to determine if two elements of type T are equal.</param>
-		/// <param name="getHashCode">A function to compute the hash code for elements, defaults to object.GetHashCode.</param>
-		public EnumerableEqualityComparer(Func<T, T, bool> areEquals, Func<T, int> getHashCode = null)
-		{
-			this.areEquals = areEquals ?? throw new ArgumentNullException(nameof(areEquals));
-			this.getHashCode = getHashCode ?? (e => e.GetHashCode());
-		}
-
-		/// <summary>
-		/// Determines whether two enumerable sequences are equal.
-		/// </summary>
-		/// <param name="x">The first enumerable sequence to compare.</param>
-		/// <param name="y">The second enumerable sequence to compare.</param>
-		/// <returns>True if the sequences are equal; otherwise, false.</returns>
-		public bool Equals(IEnumerable<T> x, IEnumerable<T> y)
-		{
-			if (x is null && y is null) return true;
-			if (x is null || y is null) return false;
-
-			using var enumx = x.GetEnumerator();
-			using var enumy = y.GetEnumerator();
-
-			while (true)
-			{
-				bool readx = enumx.MoveNext();
-				bool ready = enumy.MoveNext();
-				if (!readx && !ready) return true; // Both reached the end
-				if (!readx || !ready) return false; // One reached the end before the other
-				if (!areEquals(enumx.Current, enumy.Current)) return false; // Elements differ
-			}
-		}
-
-		/// <summary>
-		/// Returns a hash code for the specified enumerable sequence.
-		/// </summary>
-		/// <param name="obj">The enumerable sequence for which to get a hash code.</param>
-		/// <returns>A hash code for the specified sequence.</returns>
-		public int GetHashCode(IEnumerable<T> obj)
-		{
-			if (obj == null) throw new ArgumentNullException(nameof(obj));
-			return ObjectUtils.ComputeHash(obj, getHashCode);
+			this.elementComparer = EqualityComparer<T>.Default;
 		}
 	}
+
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class
+	/// using a provided element equality comparer.
+	/// </summary>
+	public EnumerableEqualityComparer(Func<T, T, bool> comparer, Func<T, int> hasher = null) : this(new QuickEqualityComparer<T>(comparer, hasher)) { }
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="EnumerableEqualityComparer{T}"/> class
+	/// using a provided element equality comparer.
+	/// </summary>
+	/// <param name="elementComparer">An equality comparer for elements of type <typeparamref name="T"/>.</param>
+	public EnumerableEqualityComparer(IEqualityComparer<T> elementComparer)
+	{
+		ArgumentNullException.ThrowIfNull(elementComparer);
+		this.elementComparer = elementComparer;
+	}
+
+	/// <inheritdoc/>
+	public bool Equals(IEnumerable<T> x, IEnumerable<T> y)
+	{
+		if (ReferenceEquals(x, y)) return true;
+		if (x is null || y is null) return false;
+
+		// Try to get spans for both
+		if (GetSpan(x, out var spanX) && GetSpan(y, out var spanY))
+			return CompareSpans(spanX, spanY);
+
+		// If both are IReadOnlyList<T>, compare Count first
+		if (x is IReadOnlyList<T> roListX && y is IReadOnlyList<T> roListY)
+		{
+			if (roListX.Count != roListY.Count)
+				return false;
+
+			for (int i = 0; i < roListX.Count; i++)
+			{
+				if (!elementComparer.Equals(roListX[i], roListY[i]))
+					return false;
+			}
+			return true;
+		}
+
+		// Fall back to enumeration-based comparison
+		using var enumX = x.GetEnumerator();
+		using var enumY = y.GetEnumerator();
+
+		while (true)
+		{
+			bool hasNextX = enumX.MoveNext();
+			bool hasNextY = enumY.MoveNext();
+
+			if (!hasNextX && !hasNextY)
+				return true;
+
+			if (!hasNextX || !hasNextY || !elementComparer.Equals(enumX.Current, enumY.Current))
+				return false;
+		}
+	}
+
+	/// <inheritdoc/>
+	public int GetHashCode(IEnumerable<T> obj)
+	{
+		ArgumentNullException.ThrowIfNull(obj);
+		return obj.ComputeHash(elementComparer.GetHashCode);
+	}
+
+	/// <summary>
+	/// Efficiently compares two spans using the element comparer.
+	/// </summary>
+	private bool CompareSpans(ReadOnlySpan<T> spanX, ReadOnlySpan<T> spanY)
+	{
+		if (spanX.Length != spanY.Length) return false;
+
+		for (int i = 0; i < spanX.Length; i++)
+		{
+			if (!elementComparer.Equals(spanX[i], spanY[i]))
+				return false;
+		}
+		return true;
+	}
+
+	/// <summary>
+	/// Tries to retrieve a <see cref="Span{T}"/> from an enumerable.
+	/// Returns <c>true</c> if successful, along with the extracted span.
+	/// Otherwise, returns <c>false</c>.
+	/// </summary>
+	private static bool GetSpan(IEnumerable<T> obj, out ReadOnlySpan<T> span)
+	{
+		switch (obj)
+		{
+			//case string str:
+			//	span = (ReadOnlySpan<T>)str.AsSpan();
+			//	return true;
+			case T[] array:
+				span = array;
+				return true;
+			case List<T> list:
+				span = CollectionsMarshal.AsSpan(list);
+				return true;
+			case Memory<T> memory:
+				span = memory.Span;
+				return true;
+			case ReadOnlyMemory<T> rom:
+				span = rom.Span;
+				return true;
+			default:
+				span = default;
+				return false;
+		}
+	}
+
 }

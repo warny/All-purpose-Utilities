@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Utils.Arrays;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Objects
@@ -10,7 +11,7 @@ namespace UtilsTest.Objects
 	[TestClass]
 	public class RangeTests
 	{
-		ArrayEqualityComparer<int> comparer = new ArrayEqualityComparer<int>();
+		EnumerableEqualityComparer<int> comparer = EnumerableEqualityComparer<int>.Default;
 
 		[TestMethod]
 		public void RangeTestFrom1()

@@ -1,10 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Utils.Arrays;
 using Utils.Collections;
 
 namespace UtilsTest.Collections
@@ -26,7 +21,7 @@ namespace UtilsTest.Collections
 
 			var test = EnumerableEx.Zip(left, right).ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int, string)>();
+			var comparer = EnumerableEqualityComparer<(int, string)>.Default;
 			Assert.IsTrue(comparer.Equals(expected, test));
 		}
 
@@ -45,7 +40,7 @@ namespace UtilsTest.Collections
 
 			var test = EnumerableEx.Zip(left, right).ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int, string)>();
+			var comparer = EnumerableEqualityComparer<(int, string)>.Default;
 			Assert.IsTrue(comparer.Equals(expected, test));
 		}
 
@@ -64,7 +59,7 @@ namespace UtilsTest.Collections
 
 			var test = EnumerableEx.Zip(left, right).ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int, string)>();
+			var comparer = EnumerableEqualityComparer<(int, string)>.Default;
 			Assert.IsTrue(comparer.Equals(expected, test));
 		}
 
@@ -82,7 +77,7 @@ namespace UtilsTest.Collections
 
 			var test = EnumerableEx.Zip(left, right, continueAfterShortestListEnds: false).ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int, string)>();
+			var comparer = EnumerableEqualityComparer<(int, string)>.Default;
 			Assert.IsTrue(comparer.Equals(expected, test));
 		}
 
@@ -100,7 +95,7 @@ namespace UtilsTest.Collections
 
 			var test = EnumerableEx.Zip(left, right, continueAfterShortestListEnds: false).ToArray();
 
-			var comparer = new ArrayEqualityComparer<(int, string)>();
+			var comparer = EnumerableEqualityComparer<(int, string)>.Default;
 			Assert.IsTrue(comparer.Equals(expected, test));
 		}
 
@@ -117,7 +112,7 @@ namespace UtilsTest.Collections
 
 			var result = EnumerableEx.Pack(test).ToArray();
 
-			var comparer = new ArrayEqualityComparer<Pack<string>>();
+			var comparer = EnumerableEqualityComparer<Pack<string>>.Default;
 			Assert.IsTrue(comparer.Equals(expected, result));
 		}
 
@@ -134,7 +129,7 @@ namespace UtilsTest.Collections
 
 			var result = EnumerableEx.Unpack(test).ToArray();
 
-			var comparer = new ArrayEqualityComparer<string>();
+			var comparer = EnumerableEqualityComparer<string>.Default;
 			Assert.IsTrue(comparer.Equals(expected, result));
 		}
 
@@ -145,15 +140,15 @@ namespace UtilsTest.Collections
 			var indexes = new int[] { 1, 4 };
 
 			var expected = new string[][] {
-				new [] { "a" },
-				new [] { "b", "c", "d" },
-				new [] { "e", "f" }
+				["a"],
+				["b", "c", "d"],
+				["e", "f"]
 			};
 
 			var result = EnumerableEx.Slice(test, indexes).Select(c=>c.ToArray()).ToArray();
 
-			var innerComparer = new ArrayEqualityComparer<string>();
-			var comparer = new ArrayEqualityComparer<string[]>(innerComparer);
+			var innerComparer = EnumerableEqualityComparer<string>.Default;
+			var comparer = new EnumerableEqualityComparer<string[]>(innerComparer);
 
 			Assert.IsTrue(comparer.Equals(expected, result));
 		}
@@ -162,16 +157,16 @@ namespace UtilsTest.Collections
 		public void FlattenTest()
 		{
 			var test = new string[][] {
-				new [] { "a" },
-				new [] { "b", "c", "d" },
-				new [] { "e", "f" }
+				["a"],
+				["b", "c", "d"],
+				["e", "f"]
 			};
 
 			var expected = new string[] { "a", "b", "c", "d", "e", "f" };
 
 			var result = EnumerableEx.Flatten(test).ToArray();
 			
-			var comparer = new ArrayEqualityComparer<string>();
+			var comparer = EnumerableEqualityComparer<string>.Default;
 			Assert.IsTrue(comparer.Equals(expected, result));
 		}
 	}

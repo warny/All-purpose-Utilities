@@ -3,86 +3,45 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Utils.Arrays;
+using Utils.Collections;
 
 namespace Utils.Objects;
 
-public class QuickEqualityComparer<T> : IEqualityComparer<T>
+/// <summary>
+/// A helper class to encapsulate element equality and hash logic, 
+/// optimizing for <see cref="IEquatable{T}"/>, <see cref="IComparable{T}"/>, and array types.
+/// </summary>
+public sealed class QuickEqualityComparer<TElement> : IEqualityComparer<TElement>
 {
-	private readonly Type typeOfT = typeof(T);
-	private readonly Func<T, T, bool> areEquals;
-	private readonly Func<T, int> getHashCode;
+	public static readonly IEqualityComparer<TElement> Instance = CreateComparer();
 
-	public QuickEqualityComparer()
+	public QuickEqualityComparer(Func<TElement, TElement, bool> comparer, Func<TElement, int> hasher = null)
 	{
-		if (typeof(IEquatable<T>).IsAssignableFrom(typeOfT))
-		{
-			if (typeOfT.IsClass)
-			{
-				areEquals = (e1, e2)
-					=> (e1 is null && e2 is null)
-					|| (
-						!(e1 is null || e2 is null)
-						&& ((IEquatable<T>)e1).Equals(e2)
-					);
-			}
-			else
-			{
-				areEquals = (e1, e2) => ((IEquatable<T>)e1).Equals(e2);
-			}
-		}
-		else if (typeof(IComparable<T>).IsAssignableFrom(typeOfT))
-		{
-			if (typeOfT.IsClass)
-			{
-				areEquals = (e1, e2)
-					=> (e1 is null && e2 is null)
-					|| (
-						!(e1 is null || e2 is null)
-						&& ((IComparable<T>)e1).CompareTo(e2) == 0
-					);
-			}
-			else
-			{
-				areEquals = (e1, e2) => ((IComparable<T>)e1).CompareTo(e2) == 0;
-			}
-		}
-		else if (typeof(IComparable).IsAssignableFrom(typeOfT))
-		{
-			if (typeOfT.IsClass)
-			{
-				areEquals = (e1, e2)
-					=> (e1 is null && e2 is null)
-					&& !(e1 is null || e2 is null)
-					&& ((IComparable)e1).CompareTo(e2) == 0;
-			}
-			else
-			{
-				areEquals = (e1, e2) => ((IComparable)e1).CompareTo(e2) == 0;
-			}
-		}
-		else if (typeOfT.IsArray)
-		{
-			var typeOfElement = typeOfT.GetElementType();
-			Type equalityComparerGenericType = typeof(MultiDimensionalArrayEqualityComparer<>);
-			Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
-			object subComparer = Activator.CreateInstance(equalityComparerType);
-			areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), [typeOfT, typeOfT]).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
-			getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), [typeOfT]).CreateDelegate(typeof(Func<T, int>), subComparer);
-			return;
-		}
-		else areEquals = (e1, e2) => e1.Equals(e2);
-
-		getHashCode = e => e.GetHashCode();
-
+		this.Comparer = comparer ?? throw new ArgumentNullException(nameof(comparer));
+		this.Hasher = hasher ?? (e => e.GetHashCode());
 	}
 
-	public QuickEqualityComparer(Func<T, T, bool> areEquals, Func<T, int> getHashCode = null)
+	public bool Equals(TElement x, TElement y) => Comparer(x, y);
+	public int GetHashCode(TElement obj) => Hasher(obj);
+
+	private readonly Func<TElement, TElement, bool> Comparer;
+	private readonly Func<TElement, int> Hasher;
+
+	private static IEqualityComparer<TElement> CreateComparer()
 	{
-		this.areEquals = areEquals ?? throw new ArgumentNullException(nameof(areEquals));
-		this.getHashCode = getHashCode ?? (e => e.GetHashCode());
+		var typeOfElement = typeof(TElement);
+
+		if (typeof(IEqualityComparer<TElement>).IsAssignableFrom(typeOfElement))
+			return EqualityComparer<TElement>.Default;
+
+		if (typeOfElement.IsArray)
+			return (IEqualityComparer<TElement>)Activator.CreateInstance(
+				typeof(EnumerableEqualityComparer<>).MakeGenericType(typeOfElement.GetElementType()));
+
+		return new QuickEqualityComparer<TElement>(
+			EqualityComparer<TElement>.Default.Equals,
+			EqualityComparer<TElement>.Default.GetHashCode
+		);
 	}
-
-	public bool Equals([AllowNull] T x, [AllowNull] T y) => areEquals(x, y);
-
-	public int GetHashCode([DisallowNull] T obj) => GetHashCode(obj);
 }
+

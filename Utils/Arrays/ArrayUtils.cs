@@ -1,9 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Collections;
 using Utils.Objects;
 
@@ -12,285 +10,423 @@ namespace Utils.Arrays;
 public static class ArrayUtils
 {
 	/// <summary>
-	/// Récupère une partie de ce tableau. La sous-parte démarre à une position de caractère spécifiée et a une longueur définie.
+	/// Retrieves a slice (sub-part) of this array.
+	/// The slice starts at the specified <paramref name="start"/> index and contains <paramref name="length"/> elements.
 	/// </summary>
-	/// <param name="s">Tableau dont on veut extraire une partie</param>
-	/// <param name="start">Position de caractère de départ de base zéro de la partie à extaire</param>
-	/// <param name="length">Nombre d'éléments à extraires</param>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="s">The source array from which to extract the slice.</param>
+	/// <param name="start">
+	/// The starting index of the slice. Can be negative, in which case it counts from the end of the array.
+	/// For example, -1 would refer to the last element.
+	/// </param>
+	/// <param name="length">The number of elements to extract.</param>
 	/// <returns>
-	/// Un tableau de longueur length qui commence
-	/// à startIndex dans cette instance, ou System.String.Empty si startIndex est
-	/// égal à la longueur de cette instance et length est égal à zéro.
+	/// A new array containing the requested slice.
+	/// If <paramref name="start"/> is out of range, this may return <see cref="Array.Empty{T}()"/>.
 	/// </returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="s"/> is null.</exception>
 	public static T[] Mid<T>(this T[] s, int start, int length)
 	{
-		if (s is null) return null;
-		if (start < 0) start = s.Length + start;
-		if (start <= -length) return [];
-		if (start < 0) return s.Copy(0, length + start);
-		if (start > s.Length) return [];
-		if (start + length > s.Length) return s.Copy(start);
+		ArgumentNullException.ThrowIfNull(s);
+
+		// For negative indexes, shift by the array length.
+		if (start < 0)
+			start = s.Length + start;
+
+		// If start is still beyond the beginning, return an empty array.
+		if (start <= -length)
+			return Array.Empty<T>();
+		if (start < 0)
+			return s.Copy(0, length + start);
+
+		if (start >= s.Length)
+			return Array.Empty<T>();
+
+		// If the slice extends beyond the array length, copy from start to the end.
+		if (start + length > s.Length)
+			return s.Copy(start);
+
 		return s.Copy(start, length);
 	}
 
 	/// <summary>
-	/// Récupère une sous-chaîne de cette instance. La sous-chaîne démarre à une position de caractère spécifiée et a une longueur définie.
+	/// Retrieves a slice (sub-part) of this array starting at the specified <paramref name="start"/> index to the end.
 	/// </summary>
-	/// <param name="s">Tableau dont on veut extraire une partie</param>
-	/// <param name="start">Position de caractère de départ de base zéro de la partie à extaire</param>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="s">The source array from which to extract the slice.</param>
+	/// <param name="start">
+	/// The starting index. Can be negative, in which case it counts from the end of the array.
+	/// For example, -1 would refer to the last element.
+	/// </param>
+	/// <returns>
+	/// A new array containing elements from <paramref name="start"/> to the end.
+	/// Returns an empty array if <paramref name="start"/> is out of range.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="s"/> is null.</exception>
 	public static T[] Mid<T>(this T[] s, int start)
 	{
-		if (s is null) return null;
-		if (start < 0) start = s.Length + start;
-		if (start < 0) return s;
-		if (start > s.Length) return [];
+		ArgumentNullException.ThrowIfNull(s);
+
+		if (start < 0)
+			start = s.Length + start;
+		if (start < 0)
+			return s;
+		if (start >= s.Length)
+			return Array.Empty<T>();
+
 		return s.Copy(start);
 	}
 
 	/// <summary>
-	/// Return array without values at start and end
+	/// Returns a new array without the values at the start or end that match <paramref name="values"/>.
 	/// </summary>
-	/// <typeparam name="T">Type of elements</typeparam>
-	/// <param name="obj">Array to trim</param>
-	/// <param name="values">Values to trim from array</param>
-	/// <returns></returns>
-	public static T[] Trim<T>(this T[] obj, params T[] values) => obj.Trim(value => values.Contains(value));
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="obj">The source array.</param>
+	/// <param name="values">Values to remove from both ends.</param>
+	/// <returns>A new array with those values removed from the start and end.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="values"/> is null.</exception>
+	public static T[] Trim<T>(this T[] obj, params T[] values)
+	{
+		ArgumentNullException.ThrowIfNull(obj);
+		ArgumentNullException.ThrowIfNull(values);
+
+		return obj.Trim(value => values.Contains(value));
+	}
 
 	/// <summary>
-	/// Retourne un tableau sans les éléments au début et à la fin qui correspondent à la fonction passée en paramètre
+	/// Returns a new array without the elements at the start or end that match the given <paramref name="trimTester"/> predicate.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments du tableau</typeparam>
-	/// <param name="obj">Tableau à traiter</param>
-	/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
-	/// <returns>Tableau sans les éléments supprimés</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="obj">The source array.</param>
+	/// <param name="trimTester">
+	/// A function that returns <c>true</c> for elements that should be trimmed from the start and end.
+	/// </param>
+	/// <returns>A new array with the matching elements removed from both ends.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="trimTester"/> is null.</exception>
 	public static T[] Trim<T>(this T[] obj, Func<T, bool> trimTester)
 	{
-		int start, end = obj.Length;
-		for (start = 0; start < end; start++)
-		{
-			if (!trimTester(obj[start])) break;
-		}
-		for (end = obj.Length - 1; end > start; end--)
-		{
-			if (!trimTester(obj[end])) break;
-		}
-		if (start >= end) return new T[0];
-		T[] result = new T[end - start + 1];
-		Array.Copy(obj, start, result, 0, result.Length);
+		ArgumentNullException.ThrowIfNull(obj);
+		ArgumentNullException.ThrowIfNull(trimTester);
+
+		int start = 0;
+		int end = obj.Length - 1;
+
+		// Move start forward while elements match.
+		while (start <= end && trimTester(obj[start]))
+			start++;
+
+		// Move end backward while elements match.
+		while (end >= start && trimTester(obj[end]))
+			end--;
+
+		if (start > end)
+			return Array.Empty<T>();
+
+		int count = end - start + 1;
+		T[] result = new T[count];
+		Array.Copy(obj, start, result, 0, count);
 		return result;
 	}
 
 	/// <summary>
-	/// Return array without values at start and end
+	/// Returns a new array without the values at the start (those in <paramref name="values"/>).
 	/// </summary>
-	/// <typeparam name="T">Type of elements</typeparam>
-	/// <param name="obj">Array to trim</param>
-	/// <param name="values">Values to trim from array</param>
-	/// <returns></returns>
-	public static T[] TrimStart<T>(this T[] obj, params T[] values) => obj.TrimStart(value => values.Contains(value));
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="obj">The source array.</param>
+	/// <param name="values">Values to remove from the start.</param>
+	/// <returns>A new array with those values removed from the start only.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="values"/> is null.</exception>
+	public static T[] TrimStart<T>(this T[] obj, params T[] values)
+	{
+		ArgumentNullException.ThrowIfNull(obj);
+		ArgumentNullException.ThrowIfNull(values);
+
+		return obj.TrimStart(value => values.Contains(value));
+	}
 
 	/// <summary>
-	/// Retourne un tableau sans les éléments au début qui correspondent à la fonction passée en paramètre
+	/// Returns a new array without the elements at the start that match the given <paramref name="trimTester"/> predicate.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments du tableau</typeparam>
-	/// <param name="obj">Tableau à traiter</param>
-	/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
-	/// <returns>Tableau sans les éléments supprimés</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="obj">The source array.</param>
+	/// <param name="trimTester">
+	/// A function that returns <c>true</c> for elements that should be trimmed from the start.
+	/// </param>
+	/// <returns>A new array with matching elements removed from the start only.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="trimTester"/> is null.</exception>
 	public static T[] TrimStart<T>(this T[] obj, Func<T, bool> trimTester)
 	{
-		int start, end = obj.Length;
-		for (start = 0; start < end; start++)
-		{
-			if (!trimTester(obj[start])) break;
-		}
-		if (start >= end) return [];
-		T[] result = new T[end - start];
-		Array.Copy(obj, start, result, 0, result.Length);
+		ArgumentNullException.ThrowIfNull(obj);
+		ArgumentNullException.ThrowIfNull(trimTester);
+
+		int start = 0;
+		int end = obj.Length;
+
+		while (start < end && trimTester(obj[start]))
+			start++;
+
+		if (start >= end)
+			return Array.Empty<T>();
+
+		int count = end - start;
+		T[] result = new T[count];
+		Array.Copy(obj, start, result, 0, count);
 		return result;
 	}
 
 	/// <summary>
-	/// Return array without values at start and end
+	/// Returns a new array without the values at the end (those in <paramref name="values"/>).
 	/// </summary>
-	/// <typeparam name="T">Type of elements</typeparam>
-	/// <param name="obj">Array to trim</param>
-	/// <param name="values">Values to trim from array</param>
-	/// <returns></returns>
-	public static T[] TrimEnd<T>(this T[] obj, params T[] values) => obj.TrimEnd(value => values.Contains(value));
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="obj">The source array.</param>
+	/// <param name="values">Values to remove from the end.</param>
+	/// <returns>A new array with those values removed from the end only.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="values"/> is null.</exception>
+	public static T[] TrimEnd<T>(this T[] obj, params T[] values)
+	{
+		ArgumentNullException.ThrowIfNull(obj);
+		ArgumentNullException.ThrowIfNull(values);
+
+		return obj.TrimEnd(value => values.Contains(value));
+	}
 
 	/// <summary>
-	/// Retourne un tableau sans les éléments au début et à la fin qui correspondent à la fonction passée en paramètre
+	/// Returns a new array without the elements at the end that match the given <paramref name="trimTester"/> predicate.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments du tableau</typeparam>
-	/// <param name="obj">Tableau à traiter</param>
-	/// <param name="trimTester">Fonction qui renvoie vrai sui l'élément doit être supprimé</param>
-	/// <returns>Tableau sans les éléments supprimés</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="obj">The source array.</param>
+	/// <param name="trimTester">
+	/// A function that returns <c>true</c> for elements that should be trimmed from the end.
+	/// </param>
+	/// <returns>A new array with matching elements removed from the end only.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="trimTester"/> is null.</exception>
 	public static T[] TrimEnd<T>(this T[] obj, Func<T, bool> trimTester)
 	{
-		int start = 0, end;
-		for (end = obj.Length - 1; end > start; end--)
-		{
-			if (!trimTester(obj[end])) break;
-		}
-		if (start >= end) return new T[0];
-		T[] result = new T[end - start + 1];
-		Array.Copy(obj, start, result, 0, result.Length);
+		ArgumentNullException.ThrowIfNull(obj);
+		ArgumentNullException.ThrowIfNull(trimTester);
+
+		int start = 0;
+		int end = obj.Length - 1;
+
+		while (end >= start && trimTester(obj[end]))
+			end--;
+
+		if (start > end)
+			return Array.Empty<T>();
+
+		int count = end - start + 1;
+		T[] result = new T[count];
+		Array.Copy(obj, start, result, 0, count);
 		return result;
 	}
 
 	/// <summary>
-	/// Vérifie si le tableau commence par les valeurs indiqués
+	/// Checks whether the array <paramref name="array"/> starts with the sequence <paramref name="prefix"/>.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments du tableau</typeparam>
-	/// <param name="obj">Tableau de référence</param>
-	/// <param name="start">Elements à tester</param>
-	/// <returns>Vrai si le tableau commence par les éléments en paramètre</returns>
-	public static bool StartWith<T>(this T[] obj, params T[] start)
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="prefix">The sequence to check at the start.</param>
+	/// <returns>True if <paramref name="array"/> starts with <paramref name="prefix"/>, false otherwise.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// Thrown if <paramref name="array"/> or <paramref name="prefix"/> is null.
+	/// </exception>
+	public static bool StartWith<T>(this T[] array, params T[] prefix)
 	{
-		if (obj.Length == 0) return start.Length == 0;
-		if (start.Length > obj.Length) return false;
+		ArgumentNullException.ThrowIfNull(array);
+		ArgumentNullException.ThrowIfNull(prefix);
 
-		Func<T, T, bool> areEquals;
-		if (typeof(IEquatable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IEquatable<T>)obj1).Equals(obj2);
-		else if (typeof(IComparable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IComparable<T>)obj1).CompareTo(obj2) == 0;
-		else areEquals = (T obj1, T obj2) => obj1.Equals(obj2);
+		if (prefix.Length > array.Length)
+			return false;
 
-		if (start.Length > obj.Length) return false;
-		for (int i = 0; i < start.Length; i++)
+		var comparer = EqualityComparer<T>.Default;
+		for (int i = 0; i < prefix.Length; i++)
 		{
-			if (!areEquals(obj[i], start[i]))
-			{
+			if (!comparer.Equals(array[i], prefix[i]))
 				return false;
-			}
-		}
-		return true;
-	}
-
-    /// <summary>
-    /// Vérifie si le tableau commence par les valeurs indiqués
-    /// </summary>
-    /// <typeparam name="T">Type des éléments du tableau</typeparam>
-    /// <param name="obj">Tableau de référence</param>
-    /// <param name="start">Elements à tester</param>
-    /// <returns>Vrai si le tableau se termine par les éléments en paramètre</returns>
-    public static bool EndWith<T>(this T[] obj, params T[] end)
-	{
-		if (obj.Length == 0) return end.Length == 0;
-		if (end.Length > obj.Length) return false;
-
-		int shift = obj.Length - end.Length;
-
-		Func<T, T, bool> areEquals;
-		if (typeof(IEquatable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IEquatable<T>)obj1).Equals(obj2);
-		else if (typeof(IComparable<T>).IsAssignableFrom(typeof(T))) areEquals = (T obj1, T obj2) => ((IComparable<T>)obj1).CompareTo(obj2) == 0;
-		else areEquals = (T obj1, T obj2) => obj1.Equals(obj2);
-
-		if (end.Length > obj.Length) return false;
-		for (int i = 0; i < end.Length; i++)
-		{
-			if (!areEquals(obj[i + shift], end[i]))
-			{
-				return false;
-			}
 		}
 		return true;
 	}
 
 	/// <summary>
-	/// Renvoie la copie des valeurs d'un tableau
+	/// Checks whether the array <paramref name="array"/> ends with the sequence <paramref name="suffix"/>.
 	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="array">Tableau à copier</param>
-	/// <param name="start">Position de départ</param>
-	/// <param name="length">Nombre d'éléments à copier</param>
-	/// <returns>Tableau contenant le sous ensemble des éléments</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="suffix">The sequence to check at the end.</param>
+	/// <returns>True if <paramref name="array"/> ends with <paramref name="suffix"/>, false otherwise.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// Thrown if <paramref name="array"/> or <paramref name="suffix"/> is null.
+	/// </exception>
+	public static bool EndWith<T>(this T[] array, params T[] suffix)
+	{
+		ArgumentNullException.ThrowIfNull(array);
+		ArgumentNullException.ThrowIfNull(suffix);
+
+		if (suffix.Length > array.Length)
+			return false;
+
+		var comparer = EqualityComparer<T>.Default;
+		int start = array.Length - suffix.Length;
+		for (int i = 0; i < suffix.Length; i++)
+		{
+			if (!comparer.Equals(array[i + start], suffix[i]))
+				return false;
+		}
+		return true;
+	}
+
+	/// <summary>
+	/// Copies a portion of the array <paramref name="array"/> (from <paramref name="start"/> over <paramref name="length"/> elements)
+	/// into a new array.
+	/// </summary>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="start">The starting index of the slice.</param>
+	/// <param name="length">The number of elements to copy.</param>
+	/// <returns>A new array containing the copied elements.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="array"/> is null.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="start"/> or <paramref name="length"/> is invalid.</exception>
 	public static T[] Copy<T>(this T[] array, int start, int length)
 	{
+		ArgumentNullException.ThrowIfNull(array);
+		if (start < 0 || length < 0 || start + length > array.Length)
+			throw new ArgumentOutOfRangeException("The slice boundaries are outside the array.");
+
 		T[] result = new T[length];
 		Array.Copy(array, start, result, 0, length);
 		return result;
 	}
 
 	/// <summary>
-	/// Renvoie la copie des éléments d'un tableau à partir de l'index donné
+	/// Copies the array <paramref name="array"/> starting at <paramref name="start"/> until the end
+	/// into a new array.
 	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="array">Tableau à copier</param>
-	/// <param name="start">Position de départ</param>
-	/// <returns></returns>
-	public static T[] Copy<T>(this T[] array, int start) => array.Copy(start, array.Length - start);
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="start">The starting index.</param>
+	/// <returns>A new array containing elements from <paramref name="start"/> to the end.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="array"/> is null.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="start"/> is invalid.</exception>
+	public static T[] Copy<T>(this T[] array, int start)
+	{
+		ArgumentNullException.ThrowIfNull(array);
+		if (start < 0 || start > array.Length)
+			throw new ArgumentOutOfRangeException(nameof(start), "Start index is outside the array.");
+
+		return array.Copy(start, array.Length - start);
+	}
 
 	/// <summary>
-	/// Copie le tableau multidimentionnel
+	/// Creates a copy of a multidimensional array (2D/3D/etc.).
 	/// </summary>
-	/// <param name="array"></param>
-	/// <returns></returns>
+	/// <param name="array">The source multidimensional array.</param>
+	/// <returns>A new multidimensional array with the same dimensions and contents.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="array"/> is null.</exception>
 	public static Array Copy(Array array)
 	{
+		ArgumentNullException.ThrowIfNull(array);
+
 		var elementType = array.GetType().GetElementType();
-		int[] lowerBounds = new int[array.Rank];
-		int[] dimensions = new int[array.Rank];
-		for (int i = 0; i < dimensions.Length; i++)
+		int rank = array.Rank;
+
+		int[] lowerBounds = new int[rank];
+		int[] lengths = new int[rank];
+		for (int i = 0; i < rank; i++)
 		{
 			lowerBounds[i] = array.GetLowerBound(i);
-			dimensions[i] = array.GetUpperBound(i) - array.GetLowerBound(i) + 1;
+			lengths[i] = array.GetLength(i);
 		}
-		var result = Array.CreateInstance(elementType, dimensions, lowerBounds);
+
+		var result = Array.CreateInstance(elementType, lengths, lowerBounds);
 		Array.Copy(array, result, array.Length);
 		return result;
 	}
 
 	/// <summary>
-	/// Redimensionne le tableau et rajoute un remplissage à gauche
+	/// Resizes the array to have length <paramref name="length"/>,
+	/// padding on the left with <paramref name="value"/> if necessary.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments</typeparam>
-	/// <param name="array">Tableau à redimensionner</param>
-	/// <param name="length">Longueur</param>
-	/// <param name="value">Valeur à ajouter aux nouveau éléments</param>
-	/// <returns>Tableau redimensionner</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="length">The new length of the array.</param>
+	/// <param name="value">The padding value to insert on the left if the array is enlarged.</param>
+	/// <returns>A new array of size <paramref name="length"/>, padded on the left as needed.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="array"/> is null.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="length"/> is smaller than the current array size.</exception>
 	public static T[] PadLeft<T>(this T[] array, int length, T value = default)
 	{
-		if (array.Length > length) throw new ArgumentOutOfRangeException(nameof(length));
+		ArgumentNullException.ThrowIfNull(array);
+		if (array.Length > length)
+			throw new ArgumentOutOfRangeException(nameof(length), "Target length is smaller than the original array length.");
+
 		T[] result = new T[length];
 		int start = length - array.Length;
-		for (int i = 0; i < start; i++) result[i] = value;
-		for (int i = start; i < length; i++) result[i] = array[i - start];
+
+		// Fill the left portion with the specified value.
+		for (int i = 0; i < start; i++)
+			result[i] = value;
+
+		// Copy the original array.
+		for (int i = 0; i < array.Length; i++)
+			result[i + start] = array[i];
+
 		return result;
 	}
 
 	/// <summary>
-	/// Redimensionne le tableau et rajoute un remplissage à droite
+	/// Resizes the array to have length <paramref name="length"/>,
+	/// padding on the right with <paramref name="value"/> if necessary.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments</typeparam>
-	/// <param name="array">Tableau à redimensionner</param>
-	/// <param name="length">Longueur</param>
-	/// <param name="value">Valeur à ajouter aux nouveau éléments</param>
-	/// <returns>Tableau redimensionner</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="length">The new length of the array.</param>
+	/// <param name="value">The padding value to insert on the right if the array is enlarged.</param>
+	/// <returns>A new array of size <paramref name="length"/>, padded on the right as needed.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="array"/> is null.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="length"/> is smaller than the current array size.</exception>
 	public static T[] PadRight<T>(this T[] array, int length, T value = default)
 	{
-		if (array.Length > length) throw new ArgumentOutOfRangeException(nameof(length));
+		ArgumentNullException.ThrowIfNull(array);
+		if (array.Length > length)
+			throw new ArgumentOutOfRangeException(nameof(length), "Target length is smaller than the original array length.");
+
 		T[] result = new T[length];
-		int end = array.Length;
-		for (int i = 0; i < end; i++) result[i] = array[i];
-		for (int i = end; i < length; i++) result[i] = value;
+		// Copy the original array.
+		for (int i = 0; i < array.Length; i++)
+			result[i] = array[i];
+
+		// Fill the remainder with the specified value.
+		for (int i = array.Length; i < length; i++)
+			result[i] = value;
+
 		return result;
 	}
 
 	/// <summary>
-	/// Ajuste la taille d'un tableau à une taille déterminée pour l'encodage des nombres
+	/// Adjusts the size of the array to <paramref name="fullLength"/>, optionally reversing the order of new elements if <paramref name="invert"/> is true.
 	/// </summary>
-	/// <typeparam name="T">Type des éléments du tableau</typeparam>
-	/// <param name="array">Tableau à ajuster</param>
-	/// <param name="invert">Indique s'il faut inverser l'ordre des éléments</param>
-	/// <param name="fullLength">Longueur finale</param>
-	/// <returns>Tableau ajusté</returns>
+	/// <typeparam name="T">Type of elements in the array.</typeparam>
+	/// <param name="array">The source array.</param>
+	/// <param name="invert">
+	/// If true, the existing elements remain in the same order at the start of the new array.
+	/// If false, they are placed starting from the end of the new array.
+	/// </param>
+	/// <param name="fullLength">The final desired length.</param>
+	/// <returns>A new array of length <paramref name="fullLength"/> with the original elements in the specified arrangement.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="array"/> is null.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="fullLength"/> is negative.</exception>
 	public static T[] Adjust<T>(this T[] array, bool invert, int fullLength)
 	{
+		ArgumentNullException.ThrowIfNull(array);
+		ArgumentOutOfRangeException.ThrowIfNegative(fullLength);
+
 		int length = Math.Min(fullLength, array.Length);
 		T[] result = new T[fullLength];
 		Array.Clear(result, 0, fullLength);
+
 		if (invert)
 		{
+			// Copy in normal order at the start
 			for (int i = 0; i < length; i++)
 			{
 				result[i] = array[i];
@@ -298,75 +434,76 @@ public static class ArrayUtils
 		}
 		else
 		{
+			// Copy from the end
 			for (int i = 0; i < length; i++)
 			{
 				result[fullLength - 1 - i] = array[i];
 			}
 		}
-		array = result;
-		return array;
+
+		return result;
 	}
 
 	/// <summary>
-	/// Converti la liste de chaine de caractère en tableau
+	/// Converts a collection of strings <paramref name="values"/> into an array of a specified <paramref name="elementType"/>.
 	/// </summary>
-	/// <param name="values">Valeurs à convertir</param>
-	/// <param name="elementType">Type cible</param>
-	/// <returns></returns>
-	/// <exception cref="ArgumentNullException">si <paramref name="values"/> ou <paramref name="elementType"/> est null</exception>
+	/// <param name="values">The source collection of strings.</param>
+	/// <param name="elementType">The target element type.</param>
+	/// <returns>
+	/// A new array of type <paramref name="elementType"/> containing parsed values from <paramref name="values"/>.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="values"/> or <paramref name="elementType"/> is null.</exception>
+	/// <exception cref="FormatException">May be thrown if parsing fails for a given string.</exception>
 	public static Array ConvertToArrayOf(this IEnumerable<string> values, Type elementType)
 	{
-		values.Arg().MustNotBeNull();
-		elementType.Arg().MustNotBeNull();
+		ArgumentNullException.ThrowIfNull(values);
+		ArgumentNullException.ThrowIfNull(elementType);
 
-		var results = new System.Collections.ArrayList();
-
+		var results = new ArrayList();
 		foreach (var value in values)
 		{
-			results.Add(Parsers.Parse(value, elementType));
+			// Assume 'Parsers.Parse' converts string -> object based on 'elementType'.
+			object parsedValue = Parsers.Parse(value, elementType);
+			results.Add(parsedValue);
 		}
 		return results.ToArray(elementType);
 	}
 
 	/// <summary>
-	/// Converti la liste de chaine de caractère en tableau
+	/// Converts a collection of strings <paramref name="values"/> into an array of type <typeparamref name="T"/>.
 	/// </summary>
-	/// <param name="values">Valeurs à convertir</param>
-	/// <typeparam name="T">Type cible</typeparam>
-	/// <returns></returns>
-	/// <exception cref="ArgumentNullException"></exception>
+	/// <typeparam name="T">The target element type.</typeparam>
+	/// <param name="values">The source collection of strings.</param>
+	/// <returns>A new array of type <typeparamref name="T"/> containing parsed values.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="values"/> is null.</exception>
+	/// <exception cref="FormatException">May be thrown if parsing fails for a given string.</exception>
 	public static T[] ConvertToArrayOf<T>(this IEnumerable<string> values)
 		=> (T[])values.ConvertToArrayOf(typeof(T));
 
-
 	/// <summary>
-	/// Scans the <paramref name="source"/> for occurrences of the subsequence <paramref name="toReplace"/>,
-	/// and replaces them with the subsequence <paramref name="replacement"/>. 
-	/// A naive, non-overlapping approach is used.
+	/// Replaces non-overlapping occurrences of the subsequence <paramref name="toReplace"/> in <paramref name="array"/>
+	/// with the subsequence <paramref name="replacement"/>.
 	/// </summary>
-	/// <typeparam name="T">
-	/// The element type; must implement <see cref="IEquatable{T}"/> for equality checks.
-	/// </typeparam>
-	/// <param name="source">The source sequence in which to perform replacements.</param>
+	/// <typeparam name="T">Type of elements, must implement <see cref="IEquatable{T}"/> for equality checks.</typeparam>
+	/// <param name="array">The source array in which to perform replacements.</param>
 	/// <param name="toReplace">The subsequence to find and replace.</param>
 	/// <param name="replacement">The subsequence to substitute in place of <paramref name="toReplace"/>.</param>
-	/// <returns>A new sequence with the replacements applied where the pattern is matched.</returns>
+	/// <returns>A new array with the replacements applied where the pattern is matched.</returns>
 	/// <remarks>
-	/// <para>
-	/// Overlapping matches are not recognized. For example, if <c>toReplace</c> is
-	/// <c>[1, 2, 1]</c>, and the source is <c>[1, 2, 1, 2, 1]</c>, this method
-	/// only replaces the first match, ignoring the second (overlapping) match.
-	/// </para>
-	/// <para>
-	/// If <paramref name="toReplace"/> is empty, no replacement is done and the 
-	/// original <paramref name="source"/> is returned as-is.
-	/// </para>
+	/// <para>Overlapping matches are not detected. Only distinct, non-overlapping occurrences are replaced.</para>
+	/// <para>If <paramref name="toReplace"/> is empty, no replacement is done and the original array is returned as-is.</para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException">
-	/// Thrown if any of the parameters (<paramref name="source"/>, <paramref name="toReplace"/>, or <paramref name="replacement"/>)
-	/// is <see langword="null"/>.
+	/// Thrown if <paramref name="array"/>, <paramref name="toReplace"/>, or <paramref name="replacement"/> is null.
 	/// </exception>
 	public static T[] Replace<T>(this T[] array, T[] toReplace, T[] replacement)
 		where T : IEquatable<T>
-		=> EnumerableEx.Replace(array, toReplace, replacement).ToArray();
+	{
+		ArgumentNullException.ThrowIfNull(array);
+		ArgumentNullException.ThrowIfNull(toReplace);
+		ArgumentNullException.ThrowIfNull(replacement);
+
+		// Assumes there's an EnumerableEx.Replace() extension to handle the logic.
+		return EnumerableEx.Replace(array, toReplace, replacement).ToArray();
+	}
 }

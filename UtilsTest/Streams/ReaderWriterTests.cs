@@ -6,6 +6,7 @@ using System.Text;
 using Utils.Arrays;
 using Utils.Objects;
 using Utils.IO.Serialization;
+using Utils.Collections;
 
 namespace UtilsTest.Streams
 {
@@ -263,11 +264,11 @@ namespace UtilsTest.Streams
 				Assert.AreEqual(obj.s1, result.s1);
 				Assert.AreEqual(obj.s2, result.s2);
 				Assert.AreEqual(obj.s3, result.s3);
-				var stringsArrayComparer = new ArrayEqualityComparer<string>();
+				var stringsArrayComparer = EnumerableEqualityComparer<string>.Default;
 				Assert.IsTrue(stringsArrayComparer.Equals(obj.stringsArray, result.stringsArray));
-				Assert.IsTrue(stringsArrayComparer.Equals(obj.stringsList.ToArray(), result.stringsList.ToArray()));
-				var doubleArrayComparer = new ArrayEqualityComparer<double>();
-				Assert.IsTrue(doubleArrayComparer.Equals(obj.doubleList.ToArray(), result.doubleList.ToArray()));
+				Assert.IsTrue(stringsArrayComparer.Equals([.. obj.stringsList], result.stringsList.ToArray()));
+				var doubleArrayComparer = EnumerableEqualityComparer<double>.Default;
+				Assert.IsTrue(doubleArrayComparer.Equals([.. obj.doubleList], result.doubleList.ToArray()));
 			}
 		}
 	}

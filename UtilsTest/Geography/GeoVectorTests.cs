@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Utils.Arrays;
 using Utils.Geography.Model;
+using Utils.Collections;
 using Utils.Mathematics;
 
 namespace UtilsTest.Geography
@@ -97,7 +98,7 @@ namespace UtilsTest.Geography
 				(new (0, 0, 45), new (0, -90, 0), [ new (45, 90), new (-45, 270) ]),
 			};
 
-			var geoPointsComparer = new ArrayEqualityComparer<GeoPoint<double>>();
+			var geoPointsComparer = EnumerableEqualityComparer<GeoPoint<double>>.Default;
 
 			foreach (var test in tests)
 			{

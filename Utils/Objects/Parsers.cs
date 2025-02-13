@@ -61,9 +61,9 @@ public static class Parsers
 		/// <summary>
 		/// Builds a constructor delegate for types that have a constructor accepting a string parameter.
 		/// </summary>
-		private ConstructorDelegate BuildConstructor(Type type)
+		private static ConstructorDelegate BuildConstructor(Type type)
 		{
-			var constructorInfo = type.GetConstructor(new[] { typeOfString });
+			var constructorInfo = type.GetConstructor([typeOfString]);
 			if (constructorInfo != null)
 			{
 				var sParameter = Expression.Parameter(typeOfString, "s");
@@ -83,7 +83,7 @@ public static class Parsers
 		/// <summary>
 		/// Builds a TryParse delegate for the specified type.
 		/// </summary>
-		private TryParseDelegate BuildTryParse(Type type)
+		private static TryParseDelegate BuildTryParse(Type type)
 		{
 			type.Arg().MustNotBeNull();
 			MethodInfo numberTryParseMethod = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeOfString, typeof(NumberStyles), typeOfIFormatProvider, type.MakeByRefType() }, null);

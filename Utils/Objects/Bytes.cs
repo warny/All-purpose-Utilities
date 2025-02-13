@@ -157,7 +157,7 @@ public readonly struct Bytes :
 	/// <summary>
 	/// Implicitly converts a <see cref="Bytes"/> instance to a <see cref="byte"/> array.
 	/// </summary>
-	public static implicit operator byte[](Bytes bytes) => bytes.ToArray();
+	public static implicit operator byte[](Bytes bytes) => [.. bytes];
 
 	public static bool operator ==(Bytes left, Bytes right) => left.Equals(right);
 	public static bool operator ==(Bytes left, byte[] right) => left.Equals(right);
@@ -365,7 +365,7 @@ public readonly struct Bytes :
 		if (string.IsNullOrWhiteSpace(s))
 			return Empty;
 
-		var values = s.Split(new[] { ' ', '\n', '\t', '\r', ',', ';' },
+		var values = s.Split([' ', '\n', '\t', '\r', ',', ';'],
 							 StringSplitOptions.RemoveEmptyEntries);
 
 		var bytes = values.Select(v => byte.Parse(v, System.Globalization.NumberStyles.HexNumber))
@@ -425,7 +425,7 @@ public static class BytesExtensions
 	/// <returns>A <see cref="Bytes"/> that contains all data from <paramref name="byteArrays"/>.</returns>
 	public static Bytes Join(IEnumerable<byte[]> byteArrays)
 	{
-		return Join(byteArrays?.ToArray() ?? Array.Empty<byte[]>());
+		return Join(byteArrays?.ToArray() ?? []);
 	}
 
 	/// <summary>
@@ -445,7 +445,7 @@ public static class BytesExtensions
 	/// <returns>A <see cref="Bytes"/> that contains all data.</returns>
 	public static Bytes Join(IEnumerable<Bytes> byteArrays)
 	{
-		return Join(byteArrays?.ToArray() ?? Array.Empty<Bytes>());
+		return Join(byteArrays?.ToArray() ?? []);
 	}
 
 	/// <summary>

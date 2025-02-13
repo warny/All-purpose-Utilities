@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Objects
@@ -12,9 +13,9 @@ namespace UtilsTest.Objects
 	[TestClass]
 	public class EnumeratorsTests
 	{
-		readonly ArrayEqualityComparer<int> intComparer = new ();
-		readonly ArrayEqualityComparer<float> floatComparer = new ();
-		readonly ArrayEqualityComparer<double> doubleComparer = new ();
+		readonly EnumerableEqualityComparer<int> intComparer = EnumerableEqualityComparer<int>.Default;
+		readonly EnumerableEqualityComparer<float> floatComparer = EnumerableEqualityComparer<float>.Default;
+		readonly EnumerableEqualityComparer<double> doubleComparer = EnumerableEqualityComparer<double>.Default;
 
 		[TestMethod]
 		public void EnumerateRangeTest1()

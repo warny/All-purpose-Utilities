@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Utils.Arrays;
+using Utils.Collections;
 using Utils.Mathematics;
 using Utils.Objects;
 
@@ -175,7 +176,7 @@ public class MathExTests
 			( 7, new[] { 1, 7, 21, 35, 35, 21, 7, 1, } ) // récupère le cache de la 7 calculé par la ligne précédente
 		};
 
-		var comparer = new ArrayEqualityComparer<int>();
+		var comparer = EnumerableEqualityComparer<int>.Default;
 
 		foreach (var test in tests)
 		{

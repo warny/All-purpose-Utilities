@@ -167,10 +167,10 @@ public static class ObjectUtils
 	/// Computes a hash code based on a custom hash function and the given objects.
 	/// </summary>
 	/// <typeparam name="T">The type of objects to hash.</typeparam>
-	/// <param name="getHashCode">The custom hash function.</param>
 	/// <param name="objects">The objects to include in the hash computation.</param>
+	/// <param name="getHashCode">The custom hash function.</param>
 	/// <returns>The computed hash code.</returns>
-	public static int ComputeHash<T>(Func<T, int> getHashCode, IEnumerable<T> objects)
+	public static int ComputeHash<T>(this IEnumerable<T> objects, Func<T, int> getHashCode)
 	{
 		unchecked
 		{
@@ -182,10 +182,50 @@ public static class ObjectUtils
 	/// Computes a hash code based on a custom hash function and the given objects.
 	/// </summary>
 	/// <typeparam name="T">The type of objects to hash.</typeparam>
+	/// <param name="objects">The objects to include in the hash computation.</param>
+	/// <param name="getHashCode">The custom hash function.</param>
+	/// <returns>The computed hash code.</returns>
+	public static int ComputeHash<T>(this ReadOnlySpan<T> objects)
+	{
+		unchecked
+		{
+			var result = 23;
+			for (int i = 0; i < objects.Length; i++)
+			{
+				result = result * 31 + objects[i].GetHashCode();
+			}
+			return result;
+		}
+	}
+
+	/// <summary>
+	/// Computes a hash code based on a custom hash function and the given objects.
+	/// </summary>
+	/// <typeparam name="T">The type of objects to hash.</typeparam>
+	/// <param name="objects">The objects to include in the hash computation.</param>
+	/// <param name="getHashCode">The custom hash function.</param>
+	/// <returns>The computed hash code.</returns>
+	public static int ComputeHash<T>(this ReadOnlySpan<T> objects, Func<T, int> getHashCode)
+	{
+		unchecked
+		{
+			var result = 23;
+			for (int i = 0; i < objects.Length; i++)
+			{
+				result = result * 31 + getHashCode(objects[i]);
+			}
+			return result;
+		}
+	}
+
+	/// <summary>
+	/// Computes a hash code based on a custom hash function and the given objects.
+	/// </summary>
+	/// <typeparam name="T">The type of objects to hash.</typeparam>
 	/// <param name="getHashCode">The custom hash function.</param>
 	/// <param name="objects">The objects to include in the hash computation.</param>
 	/// <returns>The computed hash code.</returns>
-	public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects) => ComputeHash(getHashCode, (IEnumerable<T>)objects);
+	public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects) => ComputeHash((IEnumerable<T>)objects, getHashCode);
 
 	/// <summary>
 	/// Swaps the values of two objects.

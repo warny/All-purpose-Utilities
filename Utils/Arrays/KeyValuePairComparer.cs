@@ -12,16 +12,16 @@ namespace Utils.Arrays
 	/// <typeparam name="V">The type of the value in the key-value pair.</typeparam>
 	public class KeyValuePairComparer<K, V> : IEqualityComparer<KeyValuePair<K, V>>
 	{
-		private readonly QuickEqualityComparer<K> keyComparer;
-		private readonly QuickEqualityComparer<V> valueComparer;
+		private readonly IEqualityComparer<K> keyComparer;
+		private readonly IEqualityComparer<V> valueComparer;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="KeyValuePairComparer{K, V}"/> class with default equality comparers for both keys and values.
 		/// </summary>
 		public KeyValuePairComparer()
 		{
-			keyComparer = new QuickEqualityComparer<K>();
-			valueComparer = new QuickEqualityComparer<V>();
+			keyComparer = EqualityComparer<K>.Default;
+			valueComparer = EqualityComparer<V>.Default;
 		}
 
 		/// <summary>
@@ -29,10 +29,10 @@ namespace Utils.Arrays
 		/// </summary>
 		/// <param name="keyComparer">The equality comparer to use for the keys. If null, a default comparer will be used.</param>
 		/// <param name="valueComparer">The equality comparer to use for the values. If null, a default comparer will be used.</param>
-		public KeyValuePairComparer(QuickEqualityComparer<K> keyComparer, QuickEqualityComparer<V> valueComparer)
+		public KeyValuePairComparer(IEqualityComparer<K> keyComparer, IEqualityComparer<V> valueComparer)
 		{
-			this.keyComparer = keyComparer ?? new QuickEqualityComparer<K>();
-			this.valueComparer = valueComparer ?? new QuickEqualityComparer<V>();
+			this.keyComparer = keyComparer ?? EqualityComparer<K>.Default;
+			this.valueComparer = valueComparer ?? EqualityComparer<V>.Default;
 		}
 
 		/// <summary>

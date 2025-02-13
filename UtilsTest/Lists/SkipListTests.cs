@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Utils.Arrays;
 using Utils.Collections;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Lists
@@ -14,22 +15,19 @@ namespace UtilsTest.Lists
 	[Ignore]
 	public class SkipListTests
 	{
-		ArrayEqualityComparer<int> comparer = new ArrayEqualityComparer<int>();
+		private static EnumerableEqualityComparer<int> comparer { get; } = EnumerableEqualityComparer<int>.Default;
 
 		[TestMethod]
 		public void AddTest()
 		{
-			SkipList<int> list = new SkipList<int>();
-			list.Add(2);
-			list.Add(3);
-			list.Add(1);
+			SkipList<int> list = [2, 3, 1];
 
-			int[] result = new[] { 1, 2, 3 };
+			int[] result = [1, 2, 3];
 
 			var value = new int[3];
 			list.CopyTo(value, 0);
 
-			Assert.IsTrue(comparer.Equals(result, value));
+			Assert.AreEqual(result, value, comparer);
 		}
 
 		[TestMethod]

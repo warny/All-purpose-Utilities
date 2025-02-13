@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Utils.Arrays;
 using Utils.Objects;
 using Utils.IO;
+using Utils.Collections;
 
 namespace UtilsTest.Streams
 {
@@ -37,7 +38,7 @@ namespace UtilsTest.Streams
 				byte[] test1 = target1.ToArray();
 				byte[] test2 = target2.ToArray();
 
-				var comparer = new ArrayEqualityComparer<byte>();
+				var comparer = EnumerableEqualityComparer<byte>.Default;
 
 
 				Assert.IsTrue(comparer.Equals(reference, test1));

@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Globalization;
 using System.Linq;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Objects
@@ -166,7 +167,7 @@ namespace UtilsTest.Objects
 		[TestMethod]
 		public void IntRangeToArrayTest()
 		{
-			var comparer = new Utils.Arrays.ArrayEqualityComparer<int>();
+			var comparer = EnumerableEqualityComparer<int>.Default;
 
 			var tests = new (string range, int[] result)[] {
 				("1", new [] { 1 }),

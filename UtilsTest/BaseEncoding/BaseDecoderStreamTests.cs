@@ -2,6 +2,7 @@
 using System.IO;
 using Utils.Arrays;
 using Utils.IO.BaseEncoding;
+using Utils.Collections;
 
 namespace UtilsTest.BaseEncoding
 {
@@ -21,7 +22,7 @@ namespace UtilsTest.BaseEncoding
 
 			byte[] result = stream.ToArray();
 
-			var comparer = new ArrayEqualityComparer<byte>();
+			var comparer = EnumerableEqualityComparer<byte>.Default;
 			Assert.IsTrue(comparer.Equals(target, result));
 		}
 
@@ -38,7 +39,7 @@ namespace UtilsTest.BaseEncoding
 
 			byte[] result = stream.ToArray();
 
-			var comparer = new ArrayEqualityComparer<byte>();
+			var comparer = EnumerableEqualityComparer<byte>.Default;
 			Assert.IsTrue(comparer.Equals(target, result));
 		}
 
@@ -55,7 +56,7 @@ namespace UtilsTest.BaseEncoding
 
 			byte[] result = stream.ToArray();
 
-			var comparer = new ArrayEqualityComparer<byte>();
+			var comparer = EnumerableEqualityComparer<byte>.Default;
 			Assert.IsTrue(comparer.Equals(target, result));
 		}
 
@@ -72,7 +73,7 @@ namespace UtilsTest.BaseEncoding
 
 			byte[] result = stream.ToArray();
 
-			var comparer = new ArrayEqualityComparer<byte>();
+			var comparer = EnumerableEqualityComparer<byte>.Default;
 			Assert.IsTrue(comparer.Equals(target, result));
 		}
 
@@ -89,7 +90,7 @@ namespace UtilsTest.BaseEncoding
 
 			byte[] result = stream.ToArray();
 
-			var comparer = new ArrayEqualityComparer<byte>();
+			var comparer = EnumerableEqualityComparer<byte>.Default;
 			Assert.IsTrue(comparer.Equals(target, result));
 		}
 
@@ -106,7 +107,7 @@ namespace UtilsTest.BaseEncoding
 
 			byte[] result = stream.ToArray();
 
-			var comparer = new ArrayEqualityComparer<byte>();
+			var comparer = EnumerableEqualityComparer<byte>.Default;
 			Assert.IsTrue(comparer.Equals(target, result));
 		}
 
