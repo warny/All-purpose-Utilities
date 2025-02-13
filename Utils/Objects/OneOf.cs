@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Numerics;
 
 namespace Utils.Objects;
 
-public struct OneOf<T1, T2>
+public readonly struct OneOf<T1, T2> :
+	IEqualityOperators<OneOf<T1, T2>, OneOf<T1, T2>, bool>
 {
 	private readonly int _h;
 	private readonly T1 _o1;
@@ -17,7 +19,7 @@ public struct OneOf<T1, T2>
 	public static implicit operator T1(OneOf<T1, T2> oo) => oo._o1;
 	public static implicit operator T2(OneOf<T1, T2> oo) => oo._o2;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2
 	)
@@ -29,7 +31,7 @@ public struct OneOf<T1, T2>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2
 	)
@@ -42,7 +44,7 @@ public struct OneOf<T1, T2>
 		};
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return _h switch
 		{
@@ -52,7 +54,7 @@ public struct OneOf<T1, T2>
 		};
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return _h switch
 		{
@@ -62,7 +64,7 @@ public struct OneOf<T1, T2>
 		};
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		return _h switch
 		{
@@ -71,9 +73,13 @@ public struct OneOf<T1, T2>
 			_ => 0,
 		};
 	}
+	public static bool operator ==(OneOf<T1, T2> left, OneOf<T1, T2> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2> left, OneOf<T1, T2> right) => !(left == right);
 }
 
-public struct OneOf<T1, T2, T3>
+public readonly struct OneOf<T1, T2, T3> :
+	IEqualityOperators<OneOf<T1, T2, T3>, OneOf<T1, T2, T3>, bool>
 {
 	private readonly int _h;
 	private readonly T1 _o1;
@@ -92,7 +98,7 @@ public struct OneOf<T1, T2, T3>
 	public static implicit operator T2(OneOf<T1, T2, T3> oo) => oo._o2;
 	public static implicit operator T3(OneOf<T1, T2, T3> oo) => oo._o3;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2,
 		Action<T3> action3
@@ -106,7 +112,7 @@ public struct OneOf<T1, T2, T3>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2,
 		Func<T3, T> func3
@@ -121,7 +127,7 @@ public struct OneOf<T1, T2, T3>
 		};
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return _h switch
 		{
@@ -132,7 +138,7 @@ public struct OneOf<T1, T2, T3>
 		};
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return _h switch
 		{
@@ -143,7 +149,7 @@ public struct OneOf<T1, T2, T3>
 		};
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		return _h switch
 		{
@@ -153,9 +159,13 @@ public struct OneOf<T1, T2, T3>
 			_ => 0,
 		};
 	}
+	public static bool operator ==(OneOf<T1, T2, T3> left, OneOf<T1, T2, T3> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2, T3> left, OneOf<T1, T2, T3> right) => !(left == right);
 }
 
-public struct OneOf<T1, T2, T3, T4>
+public readonly struct OneOf<T1, T2, T3, T4> :
+	IEqualityOperators<OneOf<T1, T2, T3, T4>, OneOf<T1, T2, T3, T4>, bool>
 {
 	private readonly int _h;
 	private readonly T1 _o1;
@@ -178,7 +188,7 @@ public struct OneOf<T1, T2, T3, T4>
 	public static implicit operator T3(OneOf<T1, T2, T3, T4> oo) => oo._o3;
 	public static implicit operator T4(OneOf<T1, T2, T3, T4> oo) => oo._o4;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2,
 		Action<T3> action3,
@@ -194,7 +204,7 @@ public struct OneOf<T1, T2, T3, T4>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2,
 		Func<T3, T> func3,
@@ -211,7 +221,7 @@ public struct OneOf<T1, T2, T3, T4>
 		};
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return _h switch
 		{
@@ -223,7 +233,7 @@ public struct OneOf<T1, T2, T3, T4>
 		};
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return _h switch
 		{
@@ -235,7 +245,7 @@ public struct OneOf<T1, T2, T3, T4>
 		};
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		return _h switch
 		{
@@ -246,9 +256,13 @@ public struct OneOf<T1, T2, T3, T4>
 			_ => 0,
 		};
 	}
+	public static bool operator ==(OneOf<T1, T2, T3, T4> left, OneOf<T1, T2, T3, T4> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2, T3, T4> left, OneOf<T1, T2, T3, T4> right) => !(left == right);
 }
 
-public struct OneOf<T1, T2, T3, T4, T5>
+public readonly struct OneOf<T1, T2, T3, T4, T5> :
+	IEqualityOperators<OneOf<T1, T2, T3, T4, T5>, OneOf<T1, T2, T3, T4, T5>, bool>
 {
 	private readonly int _h;
 	private readonly T1 _o1;
@@ -275,7 +289,7 @@ public struct OneOf<T1, T2, T3, T4, T5>
 	public static implicit operator T4(OneOf<T1, T2, T3, T4, T5> oo) => oo._o4;
 	public static implicit operator T5(OneOf<T1, T2, T3, T4, T5> oo) => oo._o5;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2,
 		Action<T3> action3,
@@ -293,7 +307,7 @@ public struct OneOf<T1, T2, T3, T4, T5>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2,
 		Func<T3, T> func3,
@@ -312,7 +326,7 @@ public struct OneOf<T1, T2, T3, T4, T5>
 		};
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return _h switch
 		{
@@ -325,7 +339,7 @@ public struct OneOf<T1, T2, T3, T4, T5>
 		};
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return _h switch
 		{
@@ -338,7 +352,7 @@ public struct OneOf<T1, T2, T3, T4, T5>
 		};
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		return _h switch
 		{
@@ -350,8 +364,12 @@ public struct OneOf<T1, T2, T3, T4, T5>
 			_ => 0,
 		};
 	}
+	public static bool operator ==(OneOf<T1, T2, T3, T4, T5> left, OneOf<T1, T2, T3, T4, T5> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2, T3, T4, T5> left, OneOf<T1, T2, T3, T4, T5> right) => !(left == right);
 }
-public struct OneOf<T1, T2, T3, T4, T5, T6>
+public readonly struct OneOf<T1, T2, T3, T4, T5, T6> :
+	IEqualityOperators<OneOf<T1, T2, T3, T4, T5, T6>, OneOf<T1, T2, T3, T4, T5, T6>, bool>
 {
 	private readonly int _h;
 	private readonly T1 _o1;
@@ -382,7 +400,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6>
 	public static implicit operator T5(OneOf<T1, T2, T3, T4, T5, T6> oo) => oo._o5;
 	public static implicit operator T6(OneOf<T1, T2, T3, T4, T5, T6> oo) => oo._o6;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2,
 		Action<T3> action3,
@@ -402,7 +420,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2,
 		Func<T3, T> func3,
@@ -420,7 +438,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6>
 		return default;
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		if (_h == 1) return _o1.ToString();
 		else if (_h == 2) return _o2.ToString();
@@ -431,7 +449,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6>
 		return string.Empty;
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		if (_h == 1) return _o1.Equals(obj);
 		else if (_h == 2) return _o2.Equals(obj);
@@ -442,7 +460,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6>
 		return false;
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		if (_h == 1) return _o1.GetHashCode();
 		else if (_h == 2) return _o2.GetHashCode();
@@ -452,9 +470,13 @@ public struct OneOf<T1, T2, T3, T4, T5, T6>
 		else if (_h == 6) return _o6.GetHashCode();
 		return 0;
 	}
+	public static bool operator ==(OneOf<T1, T2, T3, T4, T5, T6> left, OneOf<T1, T2, T3, T4, T5, T6> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2, T3, T4, T5, T6> left, OneOf<T1, T2, T3, T4, T5, T6> right) => !(left == right);
 }
 
-public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
+public readonly struct OneOf<T1, T2, T3, T4, T5, T6, T7> :
+	IEqualityOperators<OneOf<T1, T2, T3, T4, T5, T6, T7>, OneOf<T1, T2, T3, T4, T5, T6, T7>, bool>
 {
 	private readonly int _h;
 	
@@ -491,7 +513,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
 	public static implicit operator T6(OneOf<T1, T2, T3, T4, T5, T6, T7> oo) => oo._o6;
 	public static implicit operator T7(OneOf<T1, T2, T3, T4, T5, T6, T7> oo) => oo._o7;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2,
 		Action<T3> action3,
@@ -513,7 +535,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2,
 		Func<T3, T> func3,
@@ -536,7 +558,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
 		};
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return _h switch
 		{
@@ -551,7 +573,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
 		};
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return _h switch
 		{
@@ -566,7 +588,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
 		};
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		return _h switch
 		{
@@ -580,10 +602,14 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7>
 			_ => 0,
 		};
 	}
+	public static bool operator ==(OneOf<T1, T2, T3, T4, T5, T6, T7> left, OneOf<T1, T2, T3, T4, T5, T6, T7> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2, T3, T4, T5, T6, T7> left, OneOf<T1, T2, T3, T4, T5, T6, T7> right) => !(left == right);
 }
-public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
+public readonly struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8> :
+	IEqualityOperators<OneOf<T1, T2, T3, T4, T5, T6, T7, T8>, OneOf<T1, T2, T3, T4, T5, T6, T7, T8>, bool>
 {
-	private int _h;
+	private readonly int _h;
 
 	private readonly T1 _o1;
 	private readonly T2 _o2;
@@ -622,7 +648,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
 	public static implicit operator T7(OneOf<T1, T2, T3, T4, T5, T6, T7, T8> oo) => oo._o7;
 	public static implicit operator T8(OneOf<T1, T2, T3, T4, T5, T6, T7, T8> oo) => oo._o8;
 
-	public void Switch(
+	public readonly void Switch(
 		Action<T1> action1,
 		Action<T2> action2,
 		Action<T3> action3,
@@ -646,7 +672,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
 		}
 	}
 
-	public T Switch<T>(
+	public readonly T Switch<T>(
 		Func<T1, T> func1,
 		Func<T2, T> func2,
 		Func<T3, T> func3,
@@ -671,7 +697,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
 		};
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return _h switch
 		{
@@ -687,7 +713,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
 		};
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return _h switch
 		{
@@ -703,7 +729,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
 		};
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		return _h switch
 		{
@@ -718,4 +744,7 @@ public struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8>
 			_ => 0,
 		};
 	}
+	public static bool operator ==(OneOf<T1, T2, T3, T4, T5, T6, T7, T8> left, OneOf<T1, T2, T3, T4, T5, T6, T7, T8> right) => left.Equals(right);
+
+	public static bool operator !=(OneOf<T1, T2, T3, T4, T5, T6, T7, T8> left, OneOf<T1, T2, T3, T4, T5, T6, T7, T8> right) => !(left == right);
 }
