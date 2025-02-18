@@ -1,21 +1,16 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using Utils.Arrays;
-using Utils.Collections;
 using Utils.Collections;
 using Utils.Objects;
 
 namespace UtilsTest.Lists
 {
 	[TestClass]
-	[Ignore]
 	public class SkipListTests
 	{
-		private static EnumerableEqualityComparer<int> comparer { get; } = EnumerableEqualityComparer<int>.Default;
+		private static EnumerableEqualityComparer<int> Comparer { get; } = EnumerableEqualityComparer<int>.Default;
 
 		[TestMethod]
 		public void AddTest()
@@ -24,10 +19,7 @@ namespace UtilsTest.Lists
 
 			int[] result = [1, 2, 3];
 
-			var value = new int[3];
-			list.CopyTo(value, 0);
-
-			Assert.AreEqual(result, value, comparer);
+			Assert.AreEqual(result, list, Comparer, string.Format($"[{string.Join(",", result)}] != [{string.Join(",", list)}]"));
 		}
 
 		[TestMethod]
@@ -45,36 +37,37 @@ namespace UtilsTest.Lists
 		[TestMethod]
 		public void LargeArrayTest()
 		{
-			SkipList<int> list = new SkipList<int>();
+			SkipList<int> list = new SkipList<int>(2);
 			Random rng = new Random();
-			int[] result = new int[10000];
+			//int[] result = [315257807,-841631303,140604031,830723831,1884102399,-584640210,-1263055896,-1587260726,1366135807,1312344665,-1303799965,-94870107,1990441821,-1847527116,1473890267,-1117619141,556307842,1170806024,720161059,-1200388556,-269357910,42367756,-1914091390,-1071643002,-1115613744];
+			//foreach ((int item, int i) in result.Select((item, i) => (item, i)))
+			//{
+			//	Debug.WriteLine($"{i} : {item}");
+			//	list.Add(item);
+			//	Debug.WriteLine($"{i} : [{string.Join(",", list)}]");
+
+			//}
+			int[] result = rng.RandomArray(10000, (i) => rng.RandomInt());
 			for (int i = 0; i < result.Length; i++)
 			{
-				var number = rng.RandomInt();
-				result[i] = number;
-				list.Add(number);
+				list.Add(result[i]);
 			}
+
 			System.Array.Sort(result);
 
-			var value = new int[result.Length];
-			list.CopyTo(value, 0);
-
-			Assert.IsTrue(comparer.Equals(result, value));
+			Assert.AreEqual(result, list, Comparer, String.Format($"[{string.Join(",", result)}] != [{string.Join(",", list)}]"));
 
 		}
 
 		[TestMethod]
 		public void ContainsTest()
 		{
-			SkipList<int> list = new SkipList<int>();
 			Random rng = new Random();
-			int[] result = new int[10000];
+			int[] result = rng.RandomArray(10000, (i) => rng.RandomInt());
+			SkipList<int> list = new SkipList<int>();
 			for (int i = 0; i < result.Length; i++)
 			{
-				var number = rng.RandomInt();
-				if (number == 0) Debugger.Break();
-				result[i] = number;
-				list.Add(number);
+				list.Add(result[i]);
 			}
 			System.Array.Sort(result);
 
@@ -88,16 +81,16 @@ namespace UtilsTest.Lists
 		}
 
 		[TestMethod]
+		[Ignore]
 		public void RemoveTest()
 		{
-			SkipList<int> list = new SkipList<int>();
+			SkipList<int> list = new SkipList<int>(2);
 			Random rng = new Random();
-			int[] result = new int[10000];
+			int[] result = rng.RandomArray(1000, (i) => rng.RandomInt());
+			result = [.. result.Distinct()];
 			for (int i = 0; i < result.Length; i++)
 			{
-				var number = rng.RandomInt();
-				result[i] = number;
-				list.Add(number);
+				list.Add(result[i]);
 			}
 
 			foreach (var item in result)

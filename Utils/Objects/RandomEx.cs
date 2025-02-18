@@ -8,7 +8,18 @@ namespace Utils.Objects
 {
     public static class RandomEx
     {
-        public static T[] RandomArray<T>(this Random r, int minSize, int maxSize, Func<int, T> value)
+
+		public static T[] RandomArray<T>(this Random r, int size, Func<int, T> value)
+		{
+			T[] result = new T[size];
+			for (int i = 0; i < result.Length; i++)
+			{
+				result[i] = value(i);
+			}
+			return result;
+		}
+
+		public static T[] RandomArray<T>(this Random r, int minSize, int maxSize, Func<int, T> value)
         {
             T[] result = new T[r.Next(minSize, maxSize)];
             for (int i = 0; i < result.Length; i++)
