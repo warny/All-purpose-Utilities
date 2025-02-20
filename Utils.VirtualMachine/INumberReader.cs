@@ -40,62 +40,62 @@ namespace Utils.VirtualMachine
 	{
 		public byte ReadByte(Context context)
 		{
-			return context.Datas[context.IntructionPointer++];
+			return context.Data[context.InstructionPointer++];
 		}
 
 		public short ReadInt16(Context context)
 		{
-			var result = BitConverter.ToInt16(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(Int16);
+			var result = BitConverter.ToInt16(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(Int16);
 			return result;
 		}
 
 		public int ReadInt32(Context context)
 		{
-			var result = BitConverter.ToInt32(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(Int32);
+			var result = BitConverter.ToInt32(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(Int32);
 			return result;
 		}
 
 		public long ReadInt64(Context context)
 		{
-			var result = BitConverter.ToInt64(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(Int64);
+			var result = BitConverter.ToInt64(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(Int64);
 			return result;
 		}
 
 		public ushort ReadUInt16(Context context)
 		{
-			var result = BitConverter.ToUInt16(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(UInt16);
+			var result = BitConverter.ToUInt16(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(UInt16);
 			return result;
 		}
 
 		public uint ReadUInt32(Context context)
 		{
-			var result = BitConverter.ToUInt32(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(UInt32);
+			var result = BitConverter.ToUInt32(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(UInt32);
 			return result;
 		}
 
 		public ulong ReadUInt64(Context context)
 		{
-			var result = BitConverter.ToUInt64(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(UInt64);
+			var result = BitConverter.ToUInt64(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(UInt64);
 			return result;
 		}
 
 		public float ReadSingle(Context context)
 		{
-			var result = BitConverter.ToSingle(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(Single);
+			var result = BitConverter.ToSingle(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(Single);
 			return result;
 		}
 
 		public double ReadDouble(Context context)
 		{
-			var result = BitConverter.ToDouble(context.Datas, context.IntructionPointer);
-			context.IntructionPointer += sizeof(Double);
+			var result = BitConverter.ToDouble(context.Data, context.InstructionPointer);
+			context.InstructionPointer += sizeof(Double);
 			return result;
 		}
 
@@ -108,13 +108,13 @@ namespace Utils.VirtualMachine
 		{
 			for (int i = target.Length - 1; i >= 0; i--)
 			{
-				target[i] = context.Datas[context.IntructionPointer++];
+				target[i] = context.Data[context.InstructionPointer++];
 			}
 		}
 
 		public byte ReadByte(Context context)
 		{
-			return context.Datas[context.IntructionPointer++];
+			return context.Data[context.InstructionPointer++];
 		}
 
 		public short ReadInt16(Context context)
