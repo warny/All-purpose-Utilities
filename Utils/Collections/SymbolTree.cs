@@ -5,14 +5,14 @@ using System.Linq;
 namespace Utils.Collections;
 
 /// <summary>
-/// Represents a tree structure that stores symbols (strings) in a way that allows for efficient prefix searching.
+/// Represents a prefix tree (trie) structure for storing and retrieving symbols (strings) efficiently.
 /// </summary>
-public class SymbolTree : IEnumerable<string>
+public sealed class SymbolTree : IEnumerable<string>
 {
 	/// <summary>
-	/// Gets the dictionary of character to <see cref="SymbolLeaf"/> mappings for the current level of the tree.
+	/// Internal dictionary mapping characters to <see cref="SymbolLeaf"/> at the root level.
 	/// </summary>
-	internal IDictionary<char, SymbolLeaf> SubItems { get; } = new Dictionary<char, SymbolLeaf>();
+	internal Dictionary<char, SymbolLeaf> SubItems { get; } = [];
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SymbolTree"/> class.
@@ -20,138 +20,184 @@ public class SymbolTree : IEnumerable<string>
 	public SymbolTree() { }
 
 	/// <summary>
-	/// Adds a range of symbols (strings) to the tree.
+	/// Adds multiple symbols to the tree.
 	/// </summary>
-	/// <param name="symbols">The symbols to add.</param>
-	public void AddRange(params string[] symbols) => AddRange((IEnumerable<string>)symbols);
+	/// <param name="symbols">An array of symbols to add.</param>
+	public void AddRange(params string[] symbols)
+		=> AddRange((IEnumerable<string>)symbols);
 
 	/// <summary>
-	/// Adds a range of symbols (strings) to the tree.
+	/// Adds multiple symbols to the tree.
 	/// </summary>
-	/// <param name="symbols">The symbols to add.</param>
+	/// <param name="symbols">A sequence of symbols to add.</param>
 	public void AddRange(IEnumerable<string> symbols)
 	{
-		foreach (string symbol in symbols) Add(symbol);
+		foreach (var symbol in symbols)
+		{
+			Add(symbol);
+		}
 	}
 
 	/// <summary>
-	/// Adds a single symbol (string) to the tree.
+	/// Adds a single symbol to the tree.
 	/// </summary>
 	/// <param name="symbol">The symbol to add.</param>
 	public void Add(string symbol)
 	{
+		if (string.IsNullOrEmpty(symbol))
+			return;
+
 		var subItems = SubItems;
-		for (int index = 0; index < symbol.Length; index++)
+		int length = symbol.Length;
+
+		for (int i = 0; i < length; i++)
 		{
-			if (!subItems.TryGetValue(symbol[index], out SymbolLeaf leaf))
+			char c = symbol[i];
+
+			// Attempt to retrieve existing leaf; otherwise create a new one
+			if (!subItems.TryGetValue(c, out var leaf))
 			{
-				leaf = new SymbolLeaf(symbol, index);
-				subItems[leaf.Character] = leaf;
+				leaf = new SymbolLeaf(c);
+				subItems[c] = leaf;
 			}
+
+			// Move deeper into the tree
 			subItems = leaf.SubItems;
-			if (symbol.Length == index + 1) leaf.Value = symbol;
+
+			// Mark the end of the symbol
+			if (i == length - 1)
+			{
+				leaf.Value = symbol;
+			}
 		}
 	}
 
 	/// <summary>
 	/// Removes all symbols from the tree.
 	/// </summary>
-	public void Clear() => SubItems.Clear();
+	public void Clear()
+		=> SubItems.Clear();
 
 	/// <summary>
-	/// Gets the <see cref="SymbolLeaf"/> associated with the specified character at the current level of the tree.
+	/// Returns the <see cref="SymbolLeaf"/> associated with the specified character
+	/// at the root level. Throws if the character is not present.
 	/// </summary>
-	/// <param name="character">The character whose <see cref="SymbolLeaf"/> to get.</param>
-	/// <returns>The <see cref="SymbolLeaf"/> associated with the specified character.</returns>
-	public SymbolLeaf this[char character] => SubItems[character];
+	/// <param name="character">The character to retrieve.</param>
+	/// <returns>A <see cref="SymbolLeaf"/> instance.</returns>
+	/// <exception cref="KeyNotFoundException">Thrown if the character is not found.</exception>
+	public SymbolLeaf this[char character]
+		=> SubItems[character];
 
 	/// <summary>
-	/// Attempts to get the <see cref="SymbolLeaf"/> associated with the specified character.
+	/// Tries to retrieve the <see cref="SymbolLeaf"/> for the given character
+	/// at the root level.
 	/// </summary>
-	/// <param name="c">The character to search for.</param>
-	/// <param name="leaf">When this method returns, contains the <see cref="SymbolLeaf"/> associated with the specified character, if found; otherwise, null.</param>
-	/// <returns><see langword="true"/> if the <see cref="SymbolLeaf"/> was found; otherwise, <see langword="false"/>.</returns>
-	internal bool TryGetValue(char c, out SymbolLeaf leaf) => SubItems.TryGetValue(c, out leaf);
+	/// <param name="c">The character to look up.</param>
+	/// <param name="leaf">When this method returns, contains the <see cref="SymbolLeaf"/> if found; otherwise, null.</param>
+	/// <returns><see langword="true"/> if a leaf is found; <see langword="false"/> otherwise.</returns>
+	public bool TryGetValue(char c, out SymbolLeaf leaf)
+		=> SubItems.TryGetValue(c, out leaf);
 
 	/// <summary>
-	/// Determines whether the tree contains the specified symbol.
+	/// Determines whether a given symbol is contained in the tree.
 	/// </summary>
-	/// <param name="symbol">The symbol to search for.</param>
-	/// <returns><see langword="true"/> if the tree contains the specified symbol; otherwise, <see langword="false"/>.</returns>
+	/// <param name="symbol">The symbol to check for.</param>
+	/// <returns><see langword="true"/> if the symbol is found; <see langword="false"/> otherwise.</returns>
 	public bool Contains(string symbol)
 	{
+		if (string.IsNullOrEmpty(symbol))
+			return false;
+
 		var subItems = SubItems;
-		SymbolLeaf leaf = null;
-		for (int index = 0; index < symbol.Length; index++)
+		int length = symbol.Length;
+
+		for (int i = 0; i < length; i++)
 		{
-			if (!subItems.TryGetValue(symbol[index], out leaf)) return false;
+			char c = symbol[i];
+
+			if (!subItems.TryGetValue(c, out var leaf))
+				return false;
+
+			// Move deeper into the tree
 			subItems = leaf.SubItems;
+
+			// Check if this node marks the end of the symbol
+			if (i == length - 1 && leaf.Value is not null)
+				return true;
 		}
-		return leaf?.Value is not null;
+
+		return false;
 	}
 
 	/// <summary>
-	/// Returns an enumerator that iterates through all the symbols stored in the tree.
+	/// Returns an enumerator that iterates through all symbols in the tree.
 	/// </summary>
-	/// <returns>An enumerator for the symbols in the tree.</returns>
-	public IEnumerator<string> GetEnumerator() => Values.GetEnumerator();
+	/// <returns>An enumerator of strings.</returns>
+	public IEnumerator<string> GetEnumerator()
+		=> Values.GetEnumerator();
 
-	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator()
+		=> GetEnumerator();
 
 	/// <summary>
-	/// Gets all the symbols stored in the tree.
+	/// Gets an enumerable collection of all symbols stored in the tree.
 	/// </summary>
-	public IEnumerable<string> Values => SubItems.SelectMany(i => i.Value.Values);
+	public IEnumerable<string> Values
+		=> SubItems.Values.SelectMany(leaf => leaf.Values);
 }
 
 /// <summary>
-/// Represents a leaf node in the <see cref="SymbolTree"/>, which contains a single character and may have child nodes.
+/// Represents a node (leaf) within the <see cref="SymbolTree"/>.
+/// Stores one character and potentially references child nodes.
 /// </summary>
-public class SymbolLeaf
+public sealed class SymbolLeaf
 {
 	/// <summary>
-	/// Gets the character represented by this leaf node.
+	/// The character this leaf node represents.
 	/// </summary>
 	public char Character { get; }
 
 	/// <summary>
-	/// Gets or sets the complete symbol (string) if this leaf node represents the end of a symbol.
+	/// The full symbol if this leaf node terminates a string, otherwise <see langword="null"/>.
 	/// </summary>
 	public string Value { get; internal set; }
 
 	/// <summary>
-	/// Gets a value indicating whether this leaf node is a terminal node (i.e., it has no children).
+	/// A dictionary of child leaf nodes, keyed by character.
 	/// </summary>
-	public bool IsFinal => SubItems is null || !SubItems.Any();
+	internal Dictionary<char, SymbolLeaf> SubItems { get; } = new();
 
 	/// <summary>
-	/// Gets the dictionary of character to <see cref="SymbolLeaf"/> mappings for the child nodes.
+	/// Indicates whether this leaf has no children.
 	/// </summary>
-	internal IDictionary<char, SymbolLeaf> SubItems { get; } = new Dictionary<char, SymbolLeaf>();
+	public bool IsFinal => SubItems.Count == 0;
 
 	/// <summary>
-	/// Attempts to find the next <see cref="SymbolLeaf"/> in the sequence, based on the specified character.
-	/// </summary>
-	/// <param name="c">The character to search for.</param>
-	/// <param name="leaf">When this method returns, contains the <see cref="SymbolLeaf"/> associated with the specified character, if found; otherwise, null.</param>
-	/// <returns><see langword="true"/> if the next <see cref="SymbolLeaf"/> was found; otherwise, <see langword="false"/>.</returns>
-	public bool TryFindNext(char c, out SymbolLeaf leaf) => SubItems.TryGetValue(c, out leaf);
-
-	/// <summary>
-	/// Gets all the symbols stored in the subtree rooted at this leaf node.
+	/// Retrieves all symbols rooted at this node.
+	/// This includes this node's symbol (if it terminates one) plus
+	/// all symbols in child nodes.
 	/// </summary>
 	public IEnumerable<string> Values
-		=> Value is not null
-			? SubItems.SelectMany(i => i.Value.Values).Prepend(Value)
-			: SubItems.SelectMany(i => i.Value.Values);
+		=> (Value is not null
+			? [Value]
+			: Enumerable.Empty<string>())
+		   .Concat(SubItems.Values.SelectMany(child => child.Values));
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SymbolLeaf"/> class with the specified value and character index.
+	/// Initializes a new <see cref="SymbolLeaf"/> with the specified character.
 	/// </summary>
-	/// <param name="value">The symbol (string) associated with this leaf node.</param>
-	/// <param name="index">The index of the character in the symbol.</param>
-	internal SymbolLeaf(string value, int index)
+	/// <param name="character">The character for which this leaf is responsible.</param>
+	internal SymbolLeaf(char character)
 	{
-		Character = value[index];
+		Character = character;
 	}
+
+	/// <summary>
+	/// Attempts to find a child leaf matching the specified character.
+	/// </summary>
+	/// <param name="c">The character to find.</param>
+	/// <param name="leaf">When this method returns, contains the <see cref="SymbolLeaf"/> if found; otherwise, null.</param>
+	/// <returns><see langword="true"/> if a child leaf is found, <see langword="false"/> otherwise.</returns>
+	public bool TryFindNext(char c, out SymbolLeaf leaf)
+		=> SubItems.TryGetValue(c, out leaf);
 }

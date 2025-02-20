@@ -11,26 +11,52 @@ namespace Utils.Collections;
 public class SkipList<T> : ICollection<T>
 {
 	private readonly IComparer<T> comparer;
+
+	/// <summary>
+	/// Maximum number of nodes we traverse at a given level before forcing a new
+	/// structure node to be created in the upper level (if the next node has no Up link).
+	/// </summary>
 	private readonly int threshold;
+
+	/// <summary>
+	/// Points to the leftmost element in the top level.
+	/// Once we get to the bottom level (following Sub links), we can traverse horizontally
+	/// to enumerate all items in ascending order.
+	/// </summary>
 	private Element firstElement;
+
+	/// <summary>
+	/// Points to the rightmost element in the top level.
+	/// Once we get to the bottom level (following Sub links), we can traverse horizontally
+	/// leftwards or do other operations if needed.
+	/// </summary>
 	private Element lastElement;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SkipList{T}"/> class with the default comparer and a default density of 0.02.
+	/// Initializes a new instance of the <see cref="SkipList{T}"/> class
+	/// using the default comparer and a threshold of 10.
 	/// </summary>
 	public SkipList() : this(Comparer<T>.Default, 10) { }
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SkipList{T}"/> class with the specified density.
+	/// Initializes a new instance of the <see cref="SkipList{T}"/> class
+	/// with the specified threshold.
 	/// </summary>
-	/// <param name="density">The probability that a new element is promoted to a higher level.</param>
+	/// <param name="threshold">
+	/// The maximum distance at a given level before forcing the creation of a structure node.
+	/// Must be &gt;= 2.
+	/// </param>
 	public SkipList(int threshold) : this(Comparer<T>.Default, threshold) { }
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SkipList{T}"/> class with the specified comparer and density.
+	/// Initializes a new instance of the <see cref="SkipList{T}"/> class
+	/// with the specified comparer and threshold.
 	/// </summary>
 	/// <param name="comparer">The comparer to use when comparing elements.</param>
-	/// <param name="density">The probability that a new element is promoted to a higher level.</param>
+	/// <param name="threshold">
+	/// The maximum number of nodes to traverse at a given level before forcing
+	/// the creation of a structure node. Must be &gt;= 2.
+	/// </param>
 	public SkipList(IComparer<T> comparer, int threshold = 10)
 	{
 		if (threshold < 2)
@@ -46,12 +72,17 @@ public class SkipList<T> : ICollection<T>
 	public int Count { get; private set; }
 
 	/// <summary>
-	/// Gets a value indicating whether the skip list is read-only.
+	/// Gets a value indicating whether the skip list is read-only (always <see langword="false"/>).
 	/// </summary>
 	public bool IsReadOnly => false;
 
 	/// <summary>
-	/// Adds an element to the skip list.
+	/// Adds an element to the skip list at the appropriate position.
+	/// If the list is empty, the element becomes the first and last element.
+	/// Otherwise, we locate the insertion point and insert accordingly.
+	/// If the element is inserted before <see cref="firstElement"/>, it becomes the new first.
+	/// If it's inserted after <see cref="lastElement"/>, it becomes the new last.
+	/// Otherwise, it is inserted in between two existing nodes at the bottom level.
 	/// </summary>
 	/// <param name="item">The element to add.</param>
 	public void Add(T item)
@@ -185,6 +216,12 @@ public class SkipList<T> : ICollection<T>
 
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+	/// <summary>
+	/// Finds the position where 'value' should be inserted:
+	/// (ElementBefore, ElementAfter). If they are the same, it means we've found
+	/// a match for 'value'. If 'ElementBefore' is null => insertion is at the front.
+	/// If 'ElementAfter' is null => insertion is at the end.
+	/// </summary>
 	private (Element ElementBefore, Element ElementAfter) FindElementPosition(T value)
 	{
 		Element startElement = firstElement;
@@ -200,6 +237,14 @@ public class SkipList<T> : ICollection<T>
 
 	}
 
+	/// <summary>
+	/// Finds, at the current level (from 'startElement' to 'endElement'),
+	/// the two nodes that sandwich 'value'. If 'value' matches one node's Value,
+	/// that node is returned in both 'ElementBefore' and 'ElementAfter'.
+	/// 
+	/// Along the way, if we traverse more than 'threshold' nodes
+	/// without encountering a skip node, we create a new skip node in the upper level.
+	/// </summary>
 	private (Element ElementBefore, Element ElementAfter) FindElementPositionAtLevel(Element startElement, Element endElement, T value)
 	{
 		if (startElement == null) return (startElement, endElement);
@@ -213,29 +258,7 @@ public class SkipList<T> : ICollection<T>
 			if (currentElement.Up is not null) counter = 0;
 			if (counter > threshold && currentElement.Next is not null && currentElement.Next?.Up is null)
 			{
-				Element previousUp, nextUp;
-
-				Element newElement = new Element(currentElement.Value)
-				{
-					Sub = currentElement
-				};
-				if (startElement.Up is null)
-				{
-					// create new upper level
-					previousUp = new Element(firstElement.Value) { Sub = firstElement };
-					firstElement = previousUp;
-					nextUp = new Element(lastElement.Value) { Sub = lastElement };
-					lastElement = nextUp;
-					firstElement.Next = lastElement;
-				}
-				else
-				{
-					// insert into existing upper level
-					previousUp = startElement.Up;
-					nextUp = endElement.Up;
-				}
-				newElement.Previous = previousUp;
-				newElement.Next = nextUp;
+				CreateNewSkipNode(startElement, endElement, currentElement);
 				counter = 0;
 			}
 			int comparison = comparer.Compare(value, currentElement.Value);
@@ -250,6 +273,33 @@ public class SkipList<T> : ICollection<T>
 		return (previousElement, null);
 	}
 
+	private void CreateNewSkipNode(Element startElement, Element endElement, Element currentElement)
+	{
+		Element previousUp, nextUp;
+
+		Element newElement = new Element(currentElement.Value)
+		{
+			Sub = currentElement
+		};
+		if (startElement.Up is null)
+		{
+			// create new upper level
+			previousUp = new Element(firstElement.Value) { Sub = firstElement };
+			firstElement = previousUp;
+			nextUp = new Element(lastElement.Value) { Sub = lastElement };
+			lastElement = nextUp;
+			firstElement.Next = lastElement;
+		}
+		else
+		{
+			// insert into existing upper level
+			previousUp = startElement.Up;
+			nextUp = endElement.Up;
+		}
+		newElement.Previous = previousUp;
+		newElement.Next = nextUp;
+	}
+
 	private IEnumerable<T> Enumerate()
 	{
 		var element = firstElement;
@@ -261,6 +311,10 @@ public class SkipList<T> : ICollection<T>
 		}
 	}
 
+	/// <summary>
+	/// Represents a node in the skip list, with horizontal links (Previous, Next)
+	/// and vertical links (Up, Sub).
+	/// </summary>
 	private sealed class Element(T value)
 	{
 		private Element _previous, _next;

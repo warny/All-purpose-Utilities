@@ -12,7 +12,7 @@ namespace UtilsTest.Reflection
 		uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
 	}
 
-	public class User32 : DllMapper
+	public class User32 : LibraryMapper
 	{
 		private delegate uint GetTempPathDelegate(uint nBufferLength, [Out] StringBuilder lpBuffer);
 
@@ -32,7 +32,7 @@ namespace UtilsTest.Reflection
 		[TestMethod]
 		public void MapFromInterfaceTest()
 		{
-			using (var kernel32 = DllMapper.Emit<IKernel32>("kernel32.dll", CallingConvention.Winapi))
+			using (var kernel32 = LibraryMapper.Emit<IKernel32>("kernel32.dll", CallingConvention.Winapi))
 			{
 				StringBuilder tempPath = new StringBuilder(' ', 1024);
 				var i = kernel32.GetTempPath(261, tempPath);
@@ -43,7 +43,7 @@ namespace UtilsTest.Reflection
 		[TestMethod]
 		public void MapFromClassTest()
 		{
-			using (User32 kernel32 = DllMapper.Create<User32>("kernel32.dll"))
+			using (User32 kernel32 = LibraryMapper.Create<User32>("kernel32.dll"))
 			{
 				StringBuilder tempPath = new StringBuilder(' ', 1024);
 				var i = kernel32.GetTempPath(261, tempPath);

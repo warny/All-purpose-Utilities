@@ -55,7 +55,7 @@ public static class EmitDllMappableClass
 			StringBuilder csCode = new StringBuilder();
 			csCode.AppendLine("namespace DllMapperClasses {");
 			csCode.AppendLine("[System.Runtime.CompilerServices.CompilerGenerated]");
-			csCode.AppendLine($"\tpublic class {className} : {typeof(DllMapper).FullName}, {type.FullName}");
+			csCode.AppendLine($"\tpublic class {className} : {typeof(LibraryMapper).FullName}, {type.FullName}");
 			csCode.AppendLine("\t{");
 
 			// Generate methods and delegate fields for each interface method
@@ -200,7 +200,7 @@ public static class EmitDllMappableClass
 		{
 			MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
 			MetadataReference.CreateFromFile(type.Assembly.Location),
-			MetadataReference.CreateFromFile(typeof(DllMapper).Assembly.Location),
+			MetadataReference.CreateFromFile(typeof(LibraryMapper).Assembly.Location),
 			MetadataReference.CreateFromFile(systemRuntime.Location),
 			MetadataReference.CreateFromFile(netStandard.Location)
 		};
