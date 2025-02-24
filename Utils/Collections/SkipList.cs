@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using Utils.Expressions.ExpressionBuilders;
 
 namespace Utils.Collections;
 
@@ -16,21 +18,21 @@ public class SkipList<T> : ICollection<T>
 	/// Maximum number of nodes we traverse at a given level before forcing a new
 	/// structure node to be created in the upper level (if the next node has no Up link).
 	/// </summary>
-	private readonly int threshold;
+	private readonly int _threshold;
 
 	/// <summary>
 	/// Points to the leftmost element in the top level.
 	/// Once we get to the bottom level (following Sub links), we can traverse horizontally
 	/// to enumerate all items in ascending order.
 	/// </summary>
-	private Element firstElement;
+	private Element _firstElement;
 
 	/// <summary>
 	/// Points to the rightmost element in the top level.
 	/// Once we get to the bottom level (following Sub links), we can traverse horizontally
 	/// leftwards or do other operations if needed.
 	/// </summary>
-	private Element lastElement;
+	private Element _lastElement;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SkipList{T}"/> class
@@ -63,7 +65,7 @@ public class SkipList<T> : ICollection<T>
 			throw new ArgumentOutOfRangeException(nameof(threshold), "Density must be between 0.001 and 0.5.");
 
 		this.comparer = comparer ?? throw new ArgumentNullException(nameof(comparer));
-		this.threshold = threshold;
+		this._threshold = threshold;
 	}
 
 	/// <summary>
@@ -80,74 +82,51 @@ public class SkipList<T> : ICollection<T>
 	/// Adds an element to the skip list at the appropriate position.
 	/// If the list is empty, the element becomes the first and last element.
 	/// Otherwise, we locate the insertion point and insert accordingly.
-	/// If the element is inserted before <see cref="firstElement"/>, it becomes the new first.
-	/// If it's inserted after <see cref="lastElement"/>, it becomes the new last.
+	/// If the element is inserted before <see cref="_firstElement"/>, it becomes the new first.
+	/// If it's inserted after <see cref="_lastElement"/>, it becomes the new last.
 	/// Otherwise, it is inserted in between two existing nodes at the bottom level.
 	/// </summary>
 	/// <param name="item">The element to add.</param>
 	public void Add(T item)
 	{
 		var newElement = new Element(item);
-		if (firstElement is null)
+		if (_firstElement is null)
 		{
-			firstElement = newElement;
-			lastElement = newElement;
+			_firstElement = newElement;
+			_lastElement = newElement;
 			Count = 1;
 			return;
 		}
 
-		var position = FindElementPosition(item);
-		if (position.ElementBefore is null)
+		var (elementBefore, elementAfter) = FindElementPosition(item);
+		if (elementBefore is null)
 		{
 			// add the new element before the first element
-			newElement.Next = position.ElementAfter;
+			 elementAfter.InsertBefore(newElement);
 
 			// make it the first element in the object hierarchy
-			for (var levelElement = position.ElementAfter?.Up; levelElement != null; levelElement = levelElement.Up)
+			for (var levelElement = elementAfter?.Up; levelElement != null; levelElement = levelElement.Up)
 			{
-				//create and attach a new first element
-				Element newFirst = new Element(item);
-				newFirst.Next = levelElement.Next;
-				newFirst.Sub = newElement;
-				newElement.Up = newFirst;
-
-				//detach the previous first element
-				levelElement.Sub = null;
-
-				//prepare for next level
-				newElement = newFirst;
+				newElement.CreateUp(null, levelElement);
 			}
-			firstElement = newElement;
+			elementAfter?.RemoveUp();
+			_firstElement = newElement;
 		}
-		else if (position.ElementAfter is null)
+		else if (elementAfter is null)
 		{
 			//add the new element after the last element
-			newElement.Previous = position.ElementBefore;
-			position.ElementBefore.Next = newElement;
+			elementBefore.InsertAfter(newElement);
 			// make it the last element in the object hierarchy
-			for (var levelElement = position.ElementBefore?.Up; levelElement != null; levelElement = levelElement.Up)
+			for (var levelElement = elementBefore?.Up; levelElement != null; levelElement = levelElement.Up)
 			{
-				//create and attach a new last element
-				Element newLast = new Element(item);
-				newLast.Previous = levelElement.Previous;
-				newLast.Previous.Next = newLast;
-				newLast.Sub = newElement;
-				newElement.Up = newLast;
-
-				//detach the previous first element
-				levelElement.Sub.Up = null;
-				levelElement.Sub = null;
-
-				//prepare for next level
-				newElement = newLast;
+				newElement = newElement.CreateUp(levelElement, null);
 			}
-			lastElement = newElement;
+			elementBefore?.RemoveUp();
+			_lastElement = newElement;
 		}
 		else
 		{
-			newElement.Next = position.ElementBefore.Next;
-			newElement.Previous = position.ElementBefore;
-			position.ElementBefore.Next = newElement;
+			elementBefore.InsertAfter(newElement);
 		}
 		Count++;
 	}
@@ -157,8 +136,8 @@ public class SkipList<T> : ICollection<T>
 	/// </summary>
 	public void Clear()
 	{
-		firstElement = null;
-		lastElement = null;
+		_firstElement = null;
+		_lastElement = null;
 		Count = 0;
 	}
 
@@ -169,8 +148,8 @@ public class SkipList<T> : ICollection<T>
 	/// <returns><see langword="true"/> if the element is found; otherwise, <see langword="false"/>.</returns>
 	public bool Contains(T item)
 	{
-		var elementPosition = FindElementPosition(item);
-		return elementPosition.ElementBefore is not null && elementPosition.ElementAfter is not null && elementPosition.ElementBefore == elementPosition.ElementAfter;
+		var (elementBefore, elementAfter) = FindElementPosition(item);
+		return elementBefore is not null && elementAfter is not null && elementBefore == elementAfter;
 	}
 
 	/// <summary>
@@ -193,22 +172,42 @@ public class SkipList<T> : ICollection<T>
 	/// <returns><see langword="true"/> if the element was successfully removed; otherwise, <see langword="false"/>.</returns>
 	public bool Remove(T item)
 	{
-		var elementPosition = FindElementPosition(item);
-		if (elementPosition.ElementBefore != elementPosition.ElementAfter) return false;
+		var (elementBefore, elementAfter) = FindElementPosition(item);
+		if (elementBefore != elementAfter) return false;
+		var element = elementBefore;
 
-		for (var element = elementPosition.ElementBefore; element != null; element = element.Up)
+		if (element.Previous is null && element.Next is not null)
 		{
-			Element previous = element.Previous;
-			Element next = element.Next;
-
-			if (element == firstElement) firstElement = element.Next;
-			if (element == lastElement) lastElement = element.Previous;
-
-			if (previous is not null) previous.Next = next;
-			if (next is not null) next.Previous = previous;
+			var next = element.Next;
+			for (var levelElement = element?.Up; levelElement != null; levelElement = levelElement.Up)
+			{
+				next = next.CreateUp(levelElement, levelElement.Next);
+			}
 		}
-
+		else if (element.Next is null && element.Previous is not null)
+		{
+			var previous = element.Previous;
+			for (var levelElement = element?.Up; levelElement != null; levelElement = levelElement.Up)
+			{
+				previous = previous.CreateUp(levelElement.Previous, levelElement);
+			}
+		}
+		if (element == _firstElement) _firstElement = element.Next;
+		if (element == _lastElement) _lastElement = element.Previous;
+		element.Remove();
+		while (_firstElement?.Sub is not null && _lastElement?.Sub is not null && _firstElement.Next == _lastElement)
+		{
+			_firstElement = _firstElement.Sub;
+			_lastElement = _lastElement.Sub;
+			_firstElement.Up.Remove();
+			_lastElement.Up.Remove();
+		}
 		Count--;
+		if (Count == 0)
+		{
+			_firstElement = null;
+			_lastElement = null;
+		}
 		return true;
 	}
 
@@ -224,8 +223,8 @@ public class SkipList<T> : ICollection<T>
 	/// </summary>
 	private (Element ElementBefore, Element ElementAfter) FindElementPosition(T value)
 	{
-		Element startElement = firstElement;
-		Element endElement = lastElement;
+		Element startElement = _firstElement;
+		Element endElement = _lastElement;
 
 		while(true)
 		{
@@ -256,7 +255,7 @@ public class SkipList<T> : ICollection<T>
 		for (currentElement = startElement; currentElement != null; currentElement = currentElement.Next)
 		{
 			if (currentElement.Up is not null) counter = 0;
-			if (counter > threshold && currentElement.Next is not null && currentElement.Next?.Up is null)
+			if (counter > _threshold && currentElement.Next is not null && currentElement.Next?.Up is null)
 			{
 				CreateNewSkipNode(startElement, endElement, currentElement);
 				counter = 0;
@@ -275,20 +274,17 @@ public class SkipList<T> : ICollection<T>
 
 	private void CreateNewSkipNode(Element startElement, Element endElement, Element currentElement)
 	{
+		Debug.Print($"CreateNewSkipNode({startElement}, {endElement}, {currentElement})");
 		Element previousUp, nextUp;
 
-		Element newElement = new Element(currentElement.Value)
-		{
-			Sub = currentElement
-		};
 		if (startElement.Up is null)
 		{
 			// create new upper level
-			previousUp = new Element(firstElement.Value) { Sub = firstElement };
-			firstElement = previousUp;
-			nextUp = new Element(lastElement.Value) { Sub = lastElement };
-			lastElement = nextUp;
-			firstElement.Next = lastElement;
+			previousUp = _firstElement.CreateUp(null, null);
+			_firstElement = previousUp;
+			nextUp = _lastElement.CreateUp(null, null);
+			_lastElement = nextUp;
+			_firstElement.InsertAfter(_lastElement);
 		}
 		else
 		{
@@ -296,13 +292,12 @@ public class SkipList<T> : ICollection<T>
 			previousUp = startElement.Up;
 			nextUp = endElement.Up;
 		}
-		newElement.Previous = previousUp;
-		newElement.Next = nextUp;
+		currentElement.CreateUp(previousUp, nextUp);
 	}
 
 	private IEnumerable<T> Enumerate()
 	{
-		var element = firstElement;
+		var element = _firstElement;
 		while (element?.Sub is not null) element = element.Sub;
 		while (element is not null)
 		{
@@ -315,45 +310,69 @@ public class SkipList<T> : ICollection<T>
 	/// Represents a node in the skip list, with horizontal links (Previous, Next)
 	/// and vertical links (Up, Sub).
 	/// </summary>
-	private sealed class Element(T value)
+	private sealed class Element
 	{
-		private Element _previous, _next;
-		private Element _up, _sub;
+		public T Value { get; }
+		public Element Next { get; private set; } = null;
+		public Element Previous { get; private set; } = null;
+		public Element Sub { get; private set; } = null;
+		public Element Up { get; private set; } = null;
 
+		public Element(T value)
+		{
+			this.Value = value;
+		}
 
-		public T Value { get; } = value;
-		public Element Next {
-			get => _next;
-			set {
-				if (_next is not null) _next._previous = null;
-				_next = value;
-				if (value is not null) value._previous = this;
+		private Element(T value, Element sub)
+		{
+			this.Value = value;
+			this.Sub = sub;
+		}
+
+		public void Remove()
+		{
+			Up?.Remove();
+			var previous = Previous;
+			var next = Next;
+			if (Previous is not null) Previous.Next = next;
+			if (Next is not null) Next.Previous = previous;
+			if (Sub is not null) Sub.Up = null;
+		}
+
+		public void RemoveUp()
+		{
+			if (Previous is not null && Next is not null)
+			{
+				Up?.Remove();
 			}
 		}
 
-		public Element Previous {
-			get => _previous;
-			set {
-				if (_previous is not null) _previous.Next = null;
-				_previous = value;
-				if (value is not null) value._next = this;
-			}
+		public void InsertAfter(Element element)
+		{
+			element.Next = this.Next;
+			if (element.Next is not null) element.Next.Previous = element;
+			this.Next = element;
+			element.Previous = this;
 		}
-		public Element Sub {
-			get => _sub;
-			set {
-				if (_sub is not null) _sub._up = null;
-				_sub = value;
-				if (value is not null) value._up = this;
-			}
+
+		public void InsertBefore(Element element)
+		{
+			element.Previous = this.Previous;
+			if (element.Previous is not null) element.Previous.Next = element;
+			this.Previous = element;
+			element.Next = this;
 		}
-		public Element Up {
-			get => _up;
-			set {
-				if (_up is not null) _up._sub = null;
-				_up = value;
-				if (value is not null) value._sub = this;
-			}
+
+		public Element CreateUp(Element elementBefore, Element elementAfert)
+		{
+			if (Up is not null) return Up;
+			Element element = new(Value, this );
+			this.Up = element;
+			element.Previous = elementBefore;
+			if (elementBefore is not null) elementBefore.Next = element;
+			element.Next = elementAfert;
+			if (elementAfert is not null) elementAfert.Previous = element;
+			return element;
 		}
 
 		public override string ToString() => $"{{ Value = {Value}, Up = {(Up == null ? "null" : Up.Value)}, Sub = {(Sub == null ? "null" : Sub.Value)}, Prev = {(Previous == null ? "null" : Previous.Value)}, Next = {(Next == null ? "null" : Next.Value)}}}";
