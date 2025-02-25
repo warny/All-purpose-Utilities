@@ -363,15 +363,15 @@ public class SkipList<T> : ICollection<T>
 			element.Next = this;
 		}
 
-		public Element CreateUp(Element elementBefore, Element elementAfert)
+		public Element CreateUp(Element elementBefore, Element elementAfter)
 		{
 			if (Up is not null) return Up;
 			Element element = new(Value, this );
 			this.Up = element;
 			element.Previous = elementBefore;
 			if (elementBefore is not null) elementBefore.Next = element;
-			element.Next = elementAfert;
-			if (elementAfert is not null) elementAfert.Previous = element;
+			element.Next = elementAfter;
+			if (elementAfter is not null) elementAfter.Previous = element;
 			return element;
 		}
 

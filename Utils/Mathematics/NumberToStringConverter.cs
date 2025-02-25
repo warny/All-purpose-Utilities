@@ -185,7 +185,7 @@ namespace Utils.Mathematics
 	/// <summary>
 	/// Represents the scale used for large number names (e.g., thousand, million).
 	/// </summary>
-	public class NumberScale
+	public partial class NumberScale
 	{
 		public NumberScale(
 			IReadOnlyList<string> staticValues,
@@ -221,7 +221,7 @@ namespace Utils.Mathematics
 		private readonly string VoidGroup;
 		private readonly string GroupSeparator;
 
-		private static readonly Regex PrefixParser = new(@"(\((?<start>\w+)\))?(?<value>\w+)(\((?<end>\w+)\))?", RegexOptions.Compiled);
+		private static readonly Regex PrefixParser = PrefixParserRegex();
 
 		public IReadOnlyList<string> Scale0Prefixes { get; } = [
 			"",
@@ -347,5 +347,8 @@ namespace Utils.Mathematics
 
 			return string.Join(GroupSeparator, prefixes.AsEnumerable().Reverse()) + GroupSeparator + suffix;
 		}
+
+		[GeneratedRegex(@"(\((?<start>\w+)\))?(?<value>\w+)(\((?<end>\w+)\))?", RegexOptions.Compiled)]
+		private static partial Regex PrefixParserRegex();
 	}
 }
