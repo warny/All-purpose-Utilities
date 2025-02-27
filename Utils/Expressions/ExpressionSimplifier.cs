@@ -159,7 +159,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 	[ExpressionSignature(ExpressionType.Subtract)]
 	protected Expression SubstractionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
 	{
-		return Expression.Constant((double)left.Value - (double)right.Value);
+		return Expression.Constant((object)((dynamic)left.Value - (double)right.Value));
 	}
 
 	[ExpressionSignature(ExpressionType.Add)]
