@@ -17,12 +17,17 @@ namespace UtilsTest.Mathematics.Expressions
 		public void SimpleExpressionTest1()
 		{
 			(Expression<Func<double, double>> Expression, Expression<Func<double, double>> Expected)[] Test = [
-				(x => Math.Pow(Math.Cos(x), 2) + Math.Pow(Math.Sin(x), 2), x => 1),
-				(x => Math.Sin(x) / Math.Cos(x), x => Math.Tan(x)),
-				(x => Math.Cos(x) / Math.Sin(x), x => 1 / Math.Tan(x)),
-				(x => Math.Cos(x) * Math.Tan(x), x => Math.Sin(x)),
-				(x => Math.Tan(x) * Math.Cos(x), x => Math.Sin(x)),
-				(x => Math.Sin(x) / Math.Tan(x), x => Math.Cos(x)),
+				(x => double.Pow(double.Cos(x), 2) + double.Pow(double.Sin(x), 2), x => 1),
+				(x => double.Sin(x) / double.Cos(x), x => double.Tan(x)),
+				(x => double.Cos(x) / double.Sin(x), x => 1 / double.Tan(x)),
+				(x => double.Cos(x) * double.Tan(x), x => double.Sin(x)),
+				(x => double.Tan(x) * double.Cos(x), x => double.Sin(x)),
+				(x => double.Sin(x) / double.Tan(x), x => double.Cos(x)),
+				(x => 3 * x + 2 * x, x => 5 * x),
+				(x => x + 2 * x, x => 3 * x),
+				(x => x - 2 * x, x => -x),
+				(x => 2 * x - 2 * x, x => 0),
+				(x => -2 * x + 2 * x, x => 0)
 			];
 
 			var simplifier = new ExpressionSimplifier();

@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Collections;
 using Utils.Expressions;
-using Utils.Objects;
 using Utils.Reflection;
 
 namespace Utils.Mathematics.Expressions;
@@ -17,8 +13,14 @@ public partial class ExpressionSimplifier
 {
 	#region Power
 
-	[ExpressionCallSignature(typeof(IPowerFunctions<>), nameof(IPowerFunctions<double>.Pow))]
-	protected Expression PowerConvertionNumber(Expression e, Expression left, Expression right)
+	[ExpressionCallSignature(typeof(double), nameof(IPowerFunctions<double>.Pow))]
+	protected Expression PowerConvertionNumber1(Expression e, Expression left, Expression right)
+	{
+		return Transform(Expression.Power(left, right));
+	}
+
+	[ExpressionCallSignature(typeof(Math), nameof(Math.Pow))]
+	protected Expression PowerConvertionNumber2(Expression e, Expression left, Expression right)
 	{
 		return Transform(Expression.Power(left, right));
 	}
@@ -28,8 +30,8 @@ public partial class ExpressionSimplifier
 
 	[ExpressionSignature(ExpressionType.Add)]
 	protected Expression LogarithmSimplificationAddNumber(Expression e,
-		[ExpressionCallSignature(typeof(ILogarithmicFunctions<>), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression left,
-		[ExpressionCallSignature(typeof(ILogarithmicFunctions<>), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression right)
+		[ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression left,
+		[ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression right)
 	{
 		return Expression.Call(
 			typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log", [left.Type]),
@@ -38,8 +40,8 @@ public partial class ExpressionSimplifier
 
 	[ExpressionSignature(ExpressionType.Subtract)]
 	protected Expression LogarithmSimplificationSubstractNumber(Expression e,
-		[ExpressionCallSignature(typeof(ILogarithmicFunctions<>), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression left,
-		[ExpressionCallSignature(typeof(ILogarithmicFunctions<>), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression right)
+		[ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression left,
+		[ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression right)
 	{
 		return Expression.Call(
             typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log", [left.Type]),
@@ -47,8 +49,8 @@ public partial class ExpressionSimplifier
 	}
 
 	protected Expression Logarithm10SimplificationAddNumber(Expression e,
-		[ExpressionCallSignature(typeof(ILogarithmicFunctions<>), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression left,
-		[ExpressionCallSignature(typeof(ILogarithmicFunctions<>), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression right)
+		[ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression left,
+		[ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression right)
 	{
 		return Expression.Call(
             typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log10", [left.Type]),
@@ -78,9 +80,9 @@ public partial class ExpressionSimplifier
 		public TrigonometricMethods(Type type)
 		{
 			ReferenceType = typeof(ITrigonometricFunctions<>).MakeGenericType(type);
-			Cos = ReferenceType.GetMethod(nameof(ITrigonometricFunctions<double>.Cos), BindingFlags.Static | BindingFlags.Public, [type]);
-			Sin = ReferenceType.GetMethod(nameof(ITrigonometricFunctions<double>.Sin), BindingFlags.Static | BindingFlags.Public, [type]);
-			Tan = ReferenceType.GetMethod(nameof(ITrigonometricFunctions<double>.Tan), BindingFlags.Static | BindingFlags.Public, [type]);
+			Cos = type.GetMethod(nameof(ITrigonometricFunctions<double>.Cos), BindingFlags.Static | BindingFlags.Public, [type]);
+			Sin = type.GetMethod(nameof(ITrigonometricFunctions<double>.Sin), BindingFlags.Static | BindingFlags.Public, [type]);
+			Tan = type.GetMethod(nameof(ITrigonometricFunctions<double>.Tan), BindingFlags.Static | BindingFlags.Public, [type]);
 		}
 
 		public void Deconstruct(out MethodInfo cos, out MethodInfo sin, out MethodInfo tan)
@@ -104,7 +106,7 @@ public partial class ExpressionSimplifier
 
 		var leftRight = left.Right as ConstantExpression;
 		var rightRight = right.Right as ConstantExpression;
-		if ((double)leftRight.Value != 2 || (double)rightRight.Value != 2) return null;
+		if (leftRight.Value as double? != 2 || rightRight.Value as double? != 2) return null;
 
 		if (left.Left is not MethodCallExpression leftLeft) return null;
 		if (right.Left is not MethodCallExpression rightLeft) return null;

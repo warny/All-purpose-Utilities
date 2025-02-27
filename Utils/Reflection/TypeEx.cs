@@ -97,32 +97,76 @@ public static class TypeEx
 	}
 
 	/// <summary>
-	/// Checks if a given type is defined by a specific base type, including support for generic types.
+	/// Determines whether the specified <paramref name="type"/> is derived from, implements, 
+	/// or is the same as the <paramref name="baseType"/>. This includes handling for generic 
+	/// type definitions (e.g. <code>List&lt;&gt;</code>).
 	/// </summary>
-	/// <param name="type">The type to check.</param>
-	/// <param name="baseType">The base type to check against.</param>
-	/// <returns>True if <paramref name="type"/> is derived from or implements <paramref name="baseType"/>; otherwise, false.</returns>
+	/// <param name="type">The concrete type to check.</param>
+	/// <param name="baseType">The base or interface type to check against. May be generic.</param>
+	/// <returns>
+	/// <c>true</c> if <paramref name="type"/> is or inherits from <paramref name="baseType"/>, 
+	/// or implements <paramref name="baseType"/> (if it's an interface), including handling for 
+	/// generic type definitions; otherwise, <c>false</c>.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// Thrown if either <paramref name="type"/> or <paramref name="baseType"/> is <c>null</c>.
+	/// </exception>
 	public static bool IsDefinedBy(this Type type, Type baseType)
 	{
+		ArgumentNullException.ThrowIfNull(type);
+		ArgumentNullException.ThrowIfNull(baseType);
+
+		// Quick check: if they're the exact same Type instance, return true
 		if (type == baseType) return true;
 
+		// Handle interface logic first
 		if (baseType.IsInterface)
 		{
+			// If the base is a generic interface definition (e.g., IEnumerable<>)
 			if (baseType.IsGenericTypeDefinition)
 			{
-				return (type.IsGenericType && type.GetGenericTypeDefinition() == baseType)
-					   || type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == baseType);
+				// Example: if type is List<int>, then
+				//   type.GetGenericTypeDefinition() == typeof(List<>)
+				//   type.GetInterfaces() might contain IEnumerable<int>, etc.
+				if (type.IsGenericType
+					&& type.GetGenericTypeDefinition() == baseType)
+				{
+					return true;
+				}
+
+				// Check if any of the type’s interfaces is a generic instantiation
+				// of the given base interface
+				return type.GetInterfaces().Any(i =>
+					i.IsGenericType
+					&& i.GetGenericTypeDefinition() == baseType);
 			}
-
-			return baseType.GetInterfaces().Any(i => i == baseType);
+			else
+			{
+				// Non-generic interface: simply check if 'type' implements it
+				return type.GetInterfaces().Any(i => i == baseType);
+			}
 		}
 
-		for (var t = type.BaseType; t is not null; t = t.BaseType)
+		// If we get here, baseType is a class (not an interface).
+		// We'll walk up the inheritance chain of 'type' until we reach null.
+		for (var current = type; current != null; current = current.BaseType)
 		{
-			if (t == baseType) return true;
-			if (t.IsGenericType && baseType.IsGenericTypeDefinition && t.GetGenericTypeDefinition() == baseType) return true;
+			// If we find the baseType up the chain, it matches
+			if (current == baseType)
+				return true;
+
+			// If baseType is a generic type definition, see if 'current' is 
+			// an instantiation of that base type. 
+			// Example: current might be List<int>, baseType might be List<>
+			if (current.IsGenericType
+				&& baseType.IsGenericTypeDefinition
+				&& current.GetGenericTypeDefinition() == baseType)
+			{
+				return true;
+			}
 		}
 
+		// No match found
 		return false;
 	}
 

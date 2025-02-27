@@ -8,7 +8,7 @@ using Utils.Expressions;
 
 namespace Utils.Mathematics.Expressions;
 
-public class ExpressionIntegration : ExpressionTranformer
+public class ExpressionIntegration : ExpressionTransformer
 {
     public string ParameterName { get; }
     private ParameterExpression parameter { get; set; }

@@ -9,7 +9,7 @@ using Utils.Expressions;
 
 namespace Utils.Mathematics.Expressions;
 
-public class ExpressionDerivation : ExpressionTranformer
+public class ExpressionDerivation : ExpressionTransformer
 {
     public string ParameterName { get; }
 

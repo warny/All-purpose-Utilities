@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
 
-public partial class ExpressionSimplifier : ExpressionTranformer
+public partial class ExpressionSimplifier : ExpressionTransformer
 {
 	public Expression Simplify(Expression e)
 	{
@@ -24,77 +20,80 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 
 	#region operations avec 0 et 1
 	[ExpressionSignature(ExpressionType.Add)]
-	public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0.0)] ConstantExpression right)
+	public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
 	{
-		if ((double)right.Value == 0.0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, 0) == 0) { return left; }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Add)]
-	public Expression AdditionWithZero(BinaryExpression e, [ConstantNumeric(0.0)] ConstantExpression left, Expression right)
+	public Expression AdditionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
 	{
-		if ((double)left.Value == 0.0) { return right; }
+		if (NumberUtils.CompareNumeric(left.Value, 0) == 0) { return right; }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Subtract)]
-	public Expression SubstractionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0.0)] ConstantExpression right)
+	public Expression SubstractionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
 	{
-		if ((double)right.Value == 0.0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, 0) == 0) { return left; }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Subtract)]
-	public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0.0)] ConstantExpression left, Expression right)
+	public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
 	{
-		if ((double)left.Value == 0.0) { return Transform(Expression.Negate(right)); }
+		if (NumberUtils.CompareNumeric(left.Value, 0) == 0) { return Transform(Expression.Negate(right)); }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Multiply)]
-	public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)] ConstantExpression right)
+	public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
 	{
-		if ((double)right.Value == 0.0) { return right; }
-		if ((double)right.Value == 1.0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, 0) == 0) { return right; }
+		if (NumberUtils.CompareNumeric(right.Value, 1) == 0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, -1) == 0) { return Expression.Negate(left); }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Multiply)]
-	public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0.0, 1.0)] ConstantExpression left, Expression right)
+	public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1, -1)] ConstantExpression left, Expression right)
 	{
-		if ((double)left.Value == 0.0) { return left; }
-		if ((double)left.Value == 1.0) { return right; }
+		if (NumberUtils.CompareNumeric(left.Value, 0) == 0) { return left; }
+		if (NumberUtils.CompareNumeric(left.Value, 1) == 0) { return right; }
+		if (NumberUtils.CompareNumeric(left.Value, -1) == 0) { return Expression.Negate(right); }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Divide)]
-	public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)] ConstantExpression right)
+	public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
 	{
-		if ((double)right.Value == 0.0) { throw new DivideByZeroException(); }
-		if ((double)right.Value == 1.0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, 0) == 0) { throw new DivideByZeroException(); }
+		if (NumberUtils.CompareNumeric(right.Value, 1) == 0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, -1) == 0) { return Expression.Negate(left); }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Divide)]
-	public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0.0)] ConstantExpression left, Expression right)
+	public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
 	{
-		if ((double)left.Value == 0.0) { return left; }
+		if (NumberUtils.CompareNumeric(left.Value, 0) == 0) { return left; }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Power)]
-	public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0.0, 1.0)] ConstantExpression left, Expression right)
+	public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1)] ConstantExpression left, Expression right)
 	{
-		if ((double)left.Value == 0.0) { return left; }
-		if ((double)left.Value == 1.0) { return left; }
+		if (NumberUtils.CompareNumeric(left.Value, 0) == 0) { return left; }
+		if (NumberUtils.CompareNumeric(left.Value, 1) == 0) { return left; }
 		return null;
 	}
 
 	[ExpressionSignature(ExpressionType.Power)]
-	public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0.0, 1.0)] ConstantExpression right)
+	public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1)] ConstantExpression right)
 	{
-		if ((double)right.Value == 0.0) { return Expression.Constant(Convert.ChangeType(1.0, right.Type)); }
-		if ((double)right.Value == 1.0) { return left; }
+		if (NumberUtils.CompareNumeric(right.Value, 0) == 0) { return Expression.Constant(Convert.ChangeType(1, right.Type)); }
+		if (NumberUtils.CompareNumeric(right.Value, 1) == 0) { return left; }
 		return null;
 	}
 
@@ -104,7 +103,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 	[ExpressionSignature(ExpressionType.Add)]
 	protected Expression AdditionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
 	{
-		return Expression.Constant((double)left.Value + (double)right.Value);
+		return Expression.Constant((object)((dynamic)left.Value + (dynamic)right.Value));
 	}
 
 	[ExpressionSignature(ExpressionType.Add)]
@@ -159,7 +158,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 	[ExpressionSignature(ExpressionType.Subtract)]
 	protected Expression SubstractionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
 	{
-		return Expression.Constant((object)((dynamic)left.Value - (double)right.Value));
+		return Expression.Constant((object)((dynamic)left.Value - (dynamic)right.Value));
 	}
 
 	[ExpressionSignature(ExpressionType.Add)]
@@ -176,7 +175,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		else
 		{
 			leftAugmented = true;
-			leftleft = Expression.Constant(1.0);
+			leftleft = Expression.Constant(Convert.ChangeType(1, left.Type));
 			leftright = left;
 		}
 
@@ -191,15 +190,15 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		else
 		{
 			rightAugmented = true;
-			rightleft = Expression.Constant(1.0);
+			rightleft = Expression.Constant(Convert.ChangeType(1, right.Type));
 			rightright = right;
 		}
 
-		if (leftAugmented && leftright is ConstantExpression && ((ConstantExpression)rightright).Value as double? == 1.0) return null;
-		if (rightAugmented && rightright is ConstantExpression && ((ConstantExpression)rightright).Value as double? == 1.0) return null;
+		if (leftAugmented && leftright is ConstantExpression leftRightConst && NumberUtils.CompareNumeric(leftRightConst.Value, 1) == 0) return null;
+		if (rightAugmented && rightright is ConstantExpression rightRightConst && NumberUtils.CompareNumeric(rightRightConst.Value, 1) == 0) return null;
 
 		//on pousse à droite les termes à factoriser
-		if ((!leftAugmented && !rightAugmented) && ExpressionComparer.Default.Equals(leftleft, rightleft))
+		if (!leftAugmented && !rightAugmented && ExpressionComparer.Default.Equals(leftleft, rightleft))
 		{
 			ObjectUtils.Swap(ref leftleft, ref leftright);
 			ObjectUtils.Swap(ref rightleft, ref rightright);
@@ -241,7 +240,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		else
 		{
 			leftAugmented = true;
-			leftleft = Expression.Constant(1.0);
+			leftleft = Expression.Constant(Convert.ChangeType(1, left.Type));
 			leftright = left;
 		}
 
@@ -256,7 +255,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		else
 		{
 			rightAugmented = true;
-			rightleft = Expression.Constant(1.0);
+			rightleft = Expression.Constant(Convert.ChangeType(1, right.Type));
 			rightright = right;
 		}
 
@@ -298,7 +297,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		[ConstantNumeric] ConstantExpression right
 	)
 	{
-		return Expression.Constant((double)left.Value * (double)right.Value);
+		return Expression.Constant((object)((dynamic)left.Value * (dynamic)right.Value));
 	}
 
 	[ExpressionSignature(ExpressionType.Multiply)]
@@ -318,10 +317,10 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		[ExpressionSignature(ExpressionType.Multiply)] BinaryExpression right
 	)
 	{
-		if (right.Left is ConstantExpression)
+		if (right.Left is ConstantExpression rightLeftConst)
 		{
 			return Expression.Multiply(
-				Expression.Constant((double)left.Value * (double)((ConstantExpression)right.Left).Value),
+				Expression.Constant((object)((dynamic)left.Value * (dynamic)rightLeftConst.Value)),
 				right.Right
 			);
 		}
@@ -335,10 +334,10 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		[ExpressionSignature(ExpressionType.Multiply)] BinaryExpression right
 	)
 	{
-		if (left.Left is ConstantExpression && right.Left is ConstantExpression)
+		if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft)
 		{
 			return Expression.Multiply(
-				Expression.Constant((double)((ConstantExpression)left.Left).Value * (double)((ConstantExpression)right.Left).Value),
+				Expression.Constant((object)((dynamic)leftLeft.Value * (dynamic)rightLeft.Value)),
 				Transform(Expression.Multiply(left.Right, right.Right))
 			);
 		}
@@ -352,7 +351,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		[ConstantNumeric] ConstantExpression right
 	)
 	{
-		return Expression.Constant((double)left.Value / (double)right.Value);
+		return Expression.Constant((object)((dynamic)left.Value / (dynamic)right.Value));
 	}
 
 	[ExpressionSignature(ExpressionType.Multiply)]
@@ -486,7 +485,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		else
 		{
 			leftleft = left;
-			leftright = Expression.Constant(1.0);
+			leftright = Expression.Constant(Convert.ChangeType(1, left.Type));
 		}
 
 		Expression rightleft;
@@ -499,7 +498,7 @@ public partial class ExpressionSimplifier : ExpressionTranformer
 		else
 		{
 			rightleft = right;
-			rightright = Expression.Constant(1.0);
+			rightright = Expression.Constant(Convert.ChangeType(1, right.Type));
 		}
 
 		//on pousse à droite les termes à factoriser

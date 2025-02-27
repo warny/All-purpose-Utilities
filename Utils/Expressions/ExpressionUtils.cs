@@ -27,9 +27,9 @@ namespace Utils.Expressions
                 return val.Equals(checkValue);
             }
 
-            if (NumberUtils.IsBaseNumeric(value) && NumberUtils.IsBaseNumeric(checkValue))
+            if (NumberUtils.IsNumeric(value) && NumberUtils.IsNumeric(checkValue))
             {
-                return (double)value == (double)Convert.ChangeType(checkValue, typeof(double));
+                return (decimal)value == (decimal)Convert.ChangeType(checkValue, typeof(double));
             }
             return false;
         }
