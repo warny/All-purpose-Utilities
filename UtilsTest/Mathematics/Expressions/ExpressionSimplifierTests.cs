@@ -24,6 +24,7 @@ namespace UtilsTest.Mathematics.Expressions
 				(x => double.Tan(x) * double.Cos(x), x => double.Sin(x)),
 				(x => double.Sin(x) / double.Tan(x), x => double.Cos(x)),
 				(x => 3 * x + 2 * x, x => 5 * x),
+				(x => 3 * x + x * 2, x => 5 * x),
 				(x => x + 2 * x, x => 3 * x),
 				(x => x - 2 * x, x => -x),
 				(x => 2 * x - 2 * x, x => 0),

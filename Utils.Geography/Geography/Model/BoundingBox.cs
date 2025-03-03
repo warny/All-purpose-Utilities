@@ -1,260 +1,227 @@
-/*
- * Copyright 2010, 2011, 2012 mapsforge.org
- *
- * This program is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
- */
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
-using System.Runtime.Serialization;
-using System.Text;
 using Utils.Geography.Display;
 
-namespace Utils.Geography.Model;
-
-
-/**
- * A BoundingBox<T> represents an immutable set of two latitude and two longitude coordinates.
- */
-public class BoundingBox<T> : IFormattable
-	where T : struct, IFloatingPointIeee754<T>
+namespace Utils.Geography.Model
 {
-	private const long serialVersionUID = 1L;
-
-	/**
-	 * Creates a new BoundingBox<T> from a comma-separated string of coordinates in the order minLat, minLon, maxLat,
-	 * maxLon. All coordinate values must be in degrees.
-	 * 
-	 * @param boundingBoxstring
-	 *            the string that describes the BoundingBox<T>.
-	 * @return a new BoundingBox<T> with the given coordinates.
-	 * @throws IllegalArgumentException
-	 *             if the string cannot be parsed or describes an invalid BoundingBox<T>.
-	 */
-	public static BoundingBox<T> FromString(string boundingBoxstring)
+	/// <summary>
+	/// A BoundingBox&lt;T&gt; represents an immutable set of two latitude and two longitude coordinates.
+	/// </summary>
+	/// <typeparam name="T">
+	/// Numeric type implementing <see cref="IFloatingPointIeee754{T}"/> (e.g., <c>float</c>, <c>double</c>, <c>decimal</c>).
+	/// You may optionally add <c>IDivisionOperators&lt;T, T, T&gt;</c> if you need advanced math capabilities.
+	/// </typeparam>
+	public class BoundingBox<T> : IFormattable, IEquatable<BoundingBox<T>>, IEqualityOperators<BoundingBox<T>, BoundingBox<T>, bool>
+		where T : struct, IFloatingPointIeee754<T>
 	{
-		T[] coordinates = CoordinatesUtil<T>.ParseCoordinatestring(boundingBoxstring, 4);
-		return new BoundingBox<T>(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
-	}
-
-	public GeoPoint<T> point1 { get; private set; }
-	public GeoPoint<T> point2 { get; private set; }
-
-
-	/**
-	 * The maximum latitude coordinate of this BoundingBox<T> in degrees.
-	 */
-	public T MaxLatitude
-	{
-		get { return point2.Latitude; }
-		set
+		/// <summary>
+		/// Creates a new <see cref="BoundingBox{T}"/> from a comma-separated string of coordinates in the order
+		/// <c>minLat, minLon, maxLat, maxLon</c>. All coordinate values must be in degrees.
+		/// </summary>
+		/// <param name="boundingBoxstring">The string that describes the BoundingBox.</param>
+		/// <returns>A new BoundingBox&lt;T&gt; with the given coordinates.</returns>
+		/// <exception cref="ArgumentException">If the string cannot be parsed or describes an invalid bounding box.</exception>
+		public static BoundingBox<T> FromString(string boundingBoxstring)
 		{
-			if (value < point1.Latitude)
-			{
-				point2.Latitude = point1.Latitude;
-				point1.Latitude = value;
-			}
-			else
-			{
-				point2.Latitude = value;
-			}
+			// ParseCoordinatestring is presumably a utility that splits into T[] of length 4.
+			T[] coordinates = CoordinatesUtil<T>.ParseCoordinatestring(boundingBoxstring, 4);
+			return new BoundingBox<T>(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
 		}
-	}
 
-	/**
-	 * The maximum longitude coordinate of this BoundingBox<T> in degrees.
-	 */
-	public T MaxLongitude
-	{
-		get { return point2.Longitude; }
-		set
+		/// <summary>
+		/// The lower-left point of this bounding box (stores min lat, min lon).
+		/// </summary>
+		private readonly GeoPoint<T> point1;
+
+		/// <summary>
+		/// The upper-right point of this bounding box (stores max lat, max lon).
+		/// </summary>
+		private readonly GeoPoint<T> point2;
+
+		/// <summary>
+		/// The maximum latitude coordinate of this bounding box in degrees.
+		/// </summary>
+		public T MaxLatitude => point2.Latitude;
+
+		/// <summary>
+		/// The maximum longitude coordinate of this bounding box in degrees.
+		/// </summary>
+		public T MaxLongitude => point2.Longitude;
+
+		/// <summary>
+		/// The minimum latitude coordinate of this bounding box in degrees.
+		/// </summary>
+		public T MinLatitude => point1.Latitude;
+
+		/// <summary>
+		/// The minimum longitude coordinate of this bounding box in degrees.
+		/// </summary>
+		public T MinLongitude => point1.Longitude;
+
+		/// <summary>
+		/// Creates a <see cref="BoundingBox{T}"/> from four latitude/longitude strings.
+		/// </summary>
+		/// <param name="minLatitude">Minimum latitude string.</param>
+		/// <param name="minLongitude">Minimum longitude string.</param>
+		/// <param name="maxLatitude">Maximum latitude string.</param>
+		/// <param name="maxLongitude">Maximum longitude string.</param>
+		/// <exception cref="ArgumentException">If any coordinate is invalid or the bounding box is invalid.</exception>
+		public BoundingBox(string minLatitude, string minLongitude, string maxLatitude, string maxLongitude)
 		{
-			if (value < point1.Longitude)
-			{
-				point2.Longitude = point1.Longitude;
-				point1.Longitude = value;
-			}
-			else
-			{
-				point2.Longitude = value;
-			}
+			// Construct the points
+			var p1 = new GeoPoint<T>(minLatitude, minLongitude);
+			var p2 = new GeoPoint<T>(maxLatitude, maxLongitude);
+
+			// Ensure p1 is "lower-left" and p2 is "upper-right"
+			(point1, point2) = ValidateBoundingBox(p1, p2);
 		}
-	}
 
-
-	/**
-	 * The minimum latitude coordinate of this BoundingBox<T> in degrees.
-	 */
-	public T MinLatitude
-	{
-		get { return point1.Latitude; }
-		set
+		/// <summary>
+		/// Creates a <see cref="BoundingBox{T}"/> from four numeric coordinates.
+		/// </summary>
+		/// <param name="minLatitude">The minimum latitude coordinate in degrees.</param>
+		/// <param name="minLongitude">The minimum longitude coordinate in degrees.</param>
+		/// <param name="maxLatitude">The maximum latitude coordinate in degrees.</param>
+		/// <param name="maxLongitude">The maximum longitude coordinate in degrees.</param>
+		/// <exception cref="ArgumentException">If the coordinates describe an invalid bounding box.</exception>
+		public BoundingBox(T minLatitude, T minLongitude, T maxLatitude, T maxLongitude)
 		{
-			if (value > point2.Latitude)
-			{
-				point2.Latitude = point1.Latitude;
-				point1.Latitude = value;
-			}
-			else
-			{
-				point1.Latitude = value;
-			}
+			var p1 = new GeoPoint<T>(minLatitude, minLongitude);
+			var p2 = new GeoPoint<T>(maxLatitude, maxLongitude);
+
+			(point1, point2) = ValidateBoundingBox(p1, p2);
 		}
-	}
 
-	/**
-	 * The minimum longitude coordinate of this BoundingBox<T> in degrees.
-	 */
-	public T MinLongitude
-	{
-		get { return point1.Longitude; }
-		set
+		/// <summary>
+		/// Ensures that point1 is always the lower-left corner and point2 is always the upper-right corner.
+		/// </summary>
+		/// <param name="p1">Candidate first point.</param>
+		/// <param name="p2">Candidate second point.</param>
+		/// <returns>A tuple containing the corrected <c>(point1, point2)</c> order.</returns>
+		/// <exception cref="ArgumentException">If the bounding box is invalid (e.g., minLat > maxLat if they can't be swapped).</exception>
+		private static (GeoPoint<T> lowerLeft, GeoPoint<T> upperRight) ValidateBoundingBox(
+			GeoPoint<T> p1,
+			GeoPoint<T> p2
+		)
 		{
-			if (value > point2.Longitude)
-			{
-				point2.Longitude = point1.Longitude;
-				point1.Longitude = value;
-			}
-			else
-			{
-				point1.Longitude = value;
-			}
+			// We want to reorder if p1 is not actually the min corner.
+			T minLat = T.Min(p1.Latitude, p2.Latitude);
+			T maxLat = T.Max(p1.Latitude, p2.Latitude);
+			T minLon = T.Min(p1.Longitude, p2.Longitude);
+			T maxLon = T.Max(p1.Longitude, p2.Longitude);
+
+			// Recreate points in the correct order
+			var lowerLeft = new GeoPoint<T>(minLat, minLon);
+			var upperRight = new GeoPoint<T>(maxLat, maxLon);
+
+			// If needed, add any logic to check for degenerate bounding boxes.
+			// For now, we simply allow min == max as a degenerate bounding box.
+			return (lowerLeft, upperRight);
 		}
-	}
 
-	public BoundingBox(string minLatitude, string minLongitude, string maxLatitude, string maxLongitude)
-	{
-		this.point1 = new GeoPoint<T>(minLatitude, minLongitude);
-		this.point2 = new GeoPoint<T>(maxLatitude, maxLongitude);
-		ValidateBoundingBox();
-	}
-
-
-	/**
-	 * @param minLatitude
-	 *            the minimum latitude coordinate in degrees.
-	 * @param minLongitude
-	 *            the minimum longitude coordinate in degrees.
-	 * @param maxLatitude
-	 *            the maximum latitude coordinate in degrees.
-	 * @param maxLongitude
-	 *            the maximum longitude coordinate in degrees.
-	 * @throws IllegalArgumentException
-	 *             if a coordinate is invalid.
-	 */
-	public BoundingBox(T minLatitude, T minLongitude, T maxLatitude, T maxLongitude)
-	{
-		this.point1 = new GeoPoint<T>(minLatitude, minLongitude);
-		this.point2 = new GeoPoint<T>(maxLatitude, maxLongitude);
-		ValidateBoundingBox();
-	}
-
-	private void ValidateBoundingBox()
-	{
-		if (point1.Latitude > point2.Latitude)
+		/// <summary>
+		/// Determines if this bounding box contains the given <paramref name="geoPoint"/>.
+		/// </summary>
+		/// <param name="geoPoint">A geographic point.</param>
+		/// <returns><c>true</c> if the bounding box contains the point, otherwise <c>false</c>.</returns>
+		public bool Contains(GeoPoint<T> geoPoint)
 		{
-			T temp = point1.Latitude;
-			point1.Latitude = point2.Latitude;
-			point2.Latitude = temp;
+			return (MinLatitude <= geoPoint.Latitude && MaxLatitude >= geoPoint.Latitude)
+				&& (MinLongitude <= geoPoint.Longitude && MaxLongitude >= geoPoint.Longitude);
 		}
-		if (point1.Longitude > point2.Longitude)
-		{
-			T temp = point1.Longitude;
-			point1.Longitude = point2.Longitude;
-			point2.Longitude = temp;
-		}
-	}
 
-	/**
-	 * @param GeoPoint<T>
-	 *            the GeoPoint<T> whose coordinates should be checked.
-	 * @return true if this BoundingBox<T> contains the given GeoPoint<T>, false otherwise.
-	 */
-	public bool Contains(GeoPoint<T> geoPoint)
-	{
-		return this.MinLatitude <= geoPoint.Latitude && this.MaxLatitude >= geoPoint.Latitude
-				&& this.MinLongitude <= geoPoint.Longitude && this.MaxLongitude >= geoPoint.Longitude;
-	}
-
-	public override bool Equals(object obj)
-	{
-		if (this == obj)
+		/// <summary>
+		/// Checks if this <see cref="BoundingBox{T}"/> intersects with another one.
+		/// </summary>
+		/// <param name="boundingBox">The bounding box to test.</param>
+		/// <returns><c>true</c> if the two bounding boxes intersect; otherwise <c>false</c>.</returns>
+		public bool Intersects(BoundingBox<T> boundingBox)
 		{
-			return true;
+			// Quick reference to boundaries
+			return (this.MaxLatitude >= boundingBox.MinLatitude)
+				&& (this.MaxLongitude >= boundingBox.MinLongitude)
+				&& (this.MinLatitude <= boundingBox.MaxLatitude)
+				&& (this.MinLongitude <= boundingBox.MaxLongitude);
 		}
-		else if (!(obj is BoundingBox<T>))
+
+		/// <summary>
+		/// Gets a new <see cref="GeoPoint{T}"/> at the center of this bounding box.
+		/// </summary>
+		/// <returns>A <see cref="GeoPoint{T}"/> representing the center.</returns>
+		public GeoPoint<T> GetCenterpoint()
 		{
+			// (minLat + maxLat)/2, (minLon + maxLon)/2
+			T latOffset = (MaxLatitude - MinLatitude) / T.CreateChecked(2);
+			T lonOffset = (MaxLongitude - MinLongitude) / T.CreateChecked(2);
+			return new GeoPoint<T>(MinLatitude + latOffset, MinLongitude + lonOffset);
+		}
+
+		/// <summary>
+		/// Returns the latitude span of this bounding box in degrees.
+		/// </summary>
+		public T LatitudeSpan => MaxLatitude - MinLatitude;
+
+		/// <summary>
+		/// Returns the longitude span of this bounding box in degrees.
+		/// </summary>
+		public T LongitudeSpan => MaxLongitude - MinLongitude;
+
+		public bool Equals(BoundingBox<T> other)
+		{
+			return this.MaxLatitude.Equals(other.MaxLatitude)
+				&& this.MaxLongitude.Equals(other.MaxLongitude)
+				&& this.MinLatitude.Equals(other.MinLatitude)
+				&& this.MinLongitude.Equals(other.MinLongitude);
+		}
+
+		/// <inheritdoc/>
+		public override bool Equals(object obj)
+		{
+			if (ReferenceEquals(this, obj)) return true;
+			if (obj is BoundingBox<T> other) return Equals(other);
 			return false;
+			
 		}
-		BoundingBox<T> other = (BoundingBox<T>)obj;
-		if (this.MaxLatitude != other.MaxLatitude)
+
+		/// <inheritdoc/>
+		public override int GetHashCode()
 		{
-			return false;
+			return Objects.ObjectUtils.ComputeHash(this.MaxLatitude, this.MaxLongitude, this.MinLatitude, this.MinLongitude);
 		}
-		else if (this.MaxLongitude != other.MaxLongitude)
+
+		/// <summary>
+		/// Returns a string that represents this bounding box using default formatting.
+		/// </summary>
+		public override string ToString() => $"minLatitude={this.MinLatitude}, minLongitude={this.MinLongitude}, maxLatitude={this.MaxLatitude}, maxLongitude={this.MaxLongitude}";
+
+		/// <summary>
+		/// Returns a string that represents this bounding box in a given format.
+		/// </summary>
+		/// <param name="format">Format string for numeric values.</param>
+		/// <returns>A string representing this bounding box.</returns>
+		public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
+
+		/// <summary>
+		/// Returns a string that represents this bounding box in a given format and culture.
+		/// </summary>
+		/// <param name="format">Format string for numeric values.</param>
+		/// <param name="formatProvider">Culture-specific format provider.</param>
+		/// <returns>A string representing this bounding box.</returns>
+		public string ToString(string format, IFormatProvider formatProvider)
 		{
-			return false;
+			return string.Format(
+				formatProvider,
+				"minLatitude={0}, minLongitude={1}, maxLatitude={2}, maxLongitude={3}",
+				MinLatitude.ToString(format, formatProvider),
+				MinLongitude.ToString(format, formatProvider),
+				MaxLatitude.ToString(format, formatProvider),
+				MaxLongitude.ToString(format, formatProvider)
+			);
 		}
-		else if (this.MinLatitude != other.MinLatitude)
-		{
-			return false;
-		}
-		else if (this.MinLongitude != other.MinLongitude)
-		{
-			return false;
-		}
-		return true;
+
+		public static bool operator ==(BoundingBox<T> left, BoundingBox<T> right) => left.Equals(right);
+
+		public static bool operator !=(BoundingBox<T> left, BoundingBox<T> right) => !left.Equals(right);
 	}
-
-	/**
-	 * @return a new GeoPoint<T> at the horizontal and vertical center of this BoundingBox<T>.
-	 */
-	public GeoPoint<T> getCenterpoint()
-	{
-		T latitudeOffset = (this.MaxLatitude - this.MinLatitude) / (T.One + T.One);
-		T longitudeOffset = (this.MaxLongitude - this.MinLongitude) / (T.One + T.One);
-		return new GeoPoint<T>(this.MinLatitude + latitudeOffset, this.MinLongitude + longitudeOffset);
-	}
-
-	/**
-	 * @return the latitude span of this BoundingBox<T> in degrees.
-	 */
-	public T LatitudeSpan { get { return this.MaxLatitude - this.MinLatitude; } }
-
-	/**
-	 * @return the longitude span of this BoundingBox<T> in degrees.
-	 */
-	public T LongitudeSpan { get { return this.MaxLongitude - this.MinLongitude; } }
-
-	public override int GetHashCode() => Objects.ObjectUtils.ComputeHash(this.MaxLatitude, this.MaxLongitude, this.MinLatitude, this.MinLongitude);
-
-	/**
-	 * @param boundingBox
-	 *            the BoundingBox<T> which should be checked for intersection with this BoundingBox<T>.
-	 * @return true if this BoundingBox<T> intersects with the given BoundingBox<T>, false otherwise.
-	 */
-	public bool Intersects(BoundingBox<T> boundingBox)
-	{
-		if (this == boundingBox)
-		{
-			return true;
-		}
-
-		return this.MaxLatitude >= boundingBox.MinLatitude && this.MaxLongitude >= boundingBox.MinLongitude
-				&& this.MinLatitude <= boundingBox.MaxLatitude && this.MinLongitude <= boundingBox.MaxLongitude;
-	}
-
-	public override string ToString() => $"minLatitude={this.MinLatitude}, minLongitude={this.MinLongitude}, maxLatitude={this.MaxLatitude}, maxLongitude={this.MaxLongitude}";
-	public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
-	public string ToString(string format, IFormatProvider formatProvider) => $"minLatitude={this.MinLatitude.ToString(format, formatProvider)}, minLongitude={this.MinLongitude.ToString(format, formatProvider)}, maxLatitude={this.MaxLatitude.ToString(format, formatProvider)}, maxLongitude={this.MaxLongitude.ToString(format, formatProvider)}";
 }
