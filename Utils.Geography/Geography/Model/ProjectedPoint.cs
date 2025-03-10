@@ -9,11 +9,9 @@ namespace Utils.Geography.Model
 	/// Represents an immutable point in a projected coordinate system with an associated projection transformation.
 	/// </summary>
 	/// <typeparam name="T">A numeric type that supports IEEE 754 floating-point operations.</typeparam>
-	public class ProjectedPoint<T> : IEquatable<ProjectedPoint<T>>, IFormattable
+	public sealed class ProjectedPoint<T> : IEquatable<ProjectedPoint<T>>, IFormattable
 		where T : struct, IFloatingPointIeee754<T>
 	{
-		private const long SerialVersionUID = 1L;
-
 		/// <summary>
 		/// The projection transformation associated with this point.
 		/// </summary>

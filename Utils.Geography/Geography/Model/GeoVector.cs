@@ -14,11 +14,7 @@ namespace Utils.Geography.Model
 	/// Represents a vector of displacement on a spherical geodesic with a bearing (heading direction).
 	/// </summary>
 	/// <typeparam name="T">The numeric type used for calculations, typically a floating point.</typeparam>
-	/// <remarks>
-	/// This class is fully ported from the JavaScript implementation presented in
-	/// https://www.movable-type.co.uk/scripts/latlong.html
-	/// </remarks>
-	public class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>
+	public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>
 		where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 	{
 		/// <summary>
@@ -300,6 +296,50 @@ namespace Utils.Geography.Model
 
 		#endregion
 
+		#region recenter
+
+		/// <summary>
+		/// Returns a new GeoVector such that:
+		/// - The current vector ("this") is mapped to (0°, 0°, 0°).
+		/// - The new latitude = spherical distance (central angle) from "this" to "other".
+		/// - The new longitude = difference in initial bearings, so that "this.Bearing" becomes 0°.
+		/// - The new bearing = difference in heading from "this.Bearing".
+		/// 
+		/// Change the reference so that the current vector is effectively the new origin with heading=0.
+		/// </summary>
+		/// <returns>The point recentered with the current vector as new reference</returns>
+		public GeoVector<T> Recenter(GeoVector<T> other)
+		{
+			// If the caller passes null or the same object, handle gracefully.
+			if (other is null) return null;
+
+			// If "other" IS the same instance as "this," map to (0,0,0).
+			if (this == other)
+			{
+				return new GeoVector<T>(T.Zero, T.Zero, T.Zero);
+			}
+
+			// 1) New latitude = central angle between "reference" and "other".
+			//    (This uses the sphere-based "AngleWith" method you already have.)
+			T newLat = this.AngleWith(other);
+
+			// 2) We define "new longitude" by the difference in initial bearings
+			//    so that reference.Bearing becomes 0 in the new system.
+			T bearingRefToOther = ComputeBearing(this, other); // from your static "ComputeBearing" method
+															  // We want to shift so that reference.Bearing => 0.
+			T newLon = MathEx.Mod(bearingRefToOther - this.Bearing, degree.Perigon);
+
+			// 3) We define the new bearing as the difference from reference.Bearing.
+			//    So if "other" had bearing=someValue, we shift by -reference.Bearing.
+			T newBearing = MathEx.Mod(other.Bearing - this.Bearing, degree.Perigon);
+
+			// Now we have a new (lat, lon, bearing) in the recentered system.
+			// By design, "this" -> (0,0,0).
+			return new GeoVector<T>(newLat, newLon, newBearing);
+		}
+
+		#endregion
+
 		#region Intersections
 
 		/// <summary>
@@ -327,31 +367,31 @@ namespace Utils.Geography.Model
 			if (MathEx.Mod(this.Bearing, degree.StraightAngle) == T.Zero
 				&& MathEx.Mod(other.Bearing, degree.StraightAngle) == T.Zero)
 			{
-				return new[]
-				{
+				return
+				[
 					new GeoPoint<T>(degree.RightAngle, T.Zero),
 					new GeoPoint<T>(-degree.RightAngle, degree.StraightAngle)
-				};
+				];
 			}
 
 			if (MathEx.Mod(this.Bearing, degree.StraightAngle) == T.Zero)
 			{
 				var result = other.Travel(this.λ - other.λ);
-				return new[]
-				{
+				return
+				[
 					new GeoPoint<T>(result.φ, result.λ),
 					new GeoPoint<T>(-result.φ, result.λ + degree.StraightAngle),
-				};
+				];
 			}
 
 			if (MathEx.Mod(other.Bearing, degree.StraightAngle) == T.Zero)
 			{
 				var result = this.Travel(this.λ - other.λ);
-				return new[]
-				{
+				return
+				[
 					new GeoPoint<T>(result.φ, result.λ),
 					new GeoPoint<T>(-result.φ, result.λ + degree.StraightAngle),
-				};
+				];
 			}
 
 			T Δφ = this.φ - other.φ;
@@ -410,11 +450,11 @@ namespace Utils.Geography.Model
 			φ3 = T.Round(φ3, 5);
 			λ3 = T.Round(λ3, 5);
 
-			return new[]
-			{
+			return
+			[
 				new GeoPoint<T>(φ3, λ3),
 				new GeoPoint<T>(-φ3, λ3 + degree.StraightAngle)
-			};
+			];
 		}
 
 		#endregion

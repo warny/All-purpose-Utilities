@@ -12,7 +12,7 @@ namespace Utils.Geography.Model
 	/// Numeric type implementing <see cref="IFloatingPointIeee754{T}"/> (e.g., <c>float</c>, <c>double</c>, <c>decimal</c>).
 	/// You may optionally add <c>IDivisionOperators&lt;T, T, T&gt;</c> if you need advanced math capabilities.
 	/// </typeparam>
-	public class BoundingBox<T> : IFormattable, IEquatable<BoundingBox<T>>, IEqualityOperators<BoundingBox<T>, BoundingBox<T>, bool>
+	public sealed class BoundingBox<T> : IFormattable, IEquatable<BoundingBox<T>>, IEqualityOperators<BoundingBox<T>, BoundingBox<T>, bool>
 		where T : struct, IFloatingPointIeee754<T>
 	{
 		/// <summary>

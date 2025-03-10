@@ -8,7 +8,7 @@ namespace Utils.Geography.Model;
 /// Represents an immutable map position defined by geographical coordinates and a zoom level.
 /// </summary>
 /// <typeparam name="T">The numeric type used for calculations, typically a floating point.</typeparam>
-public class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperators<MapPosition<T>, MapPosition<T>, bool>
+public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperators<MapPosition<T>, MapPosition<T>, bool>
 	where T : struct, IFloatingPointIeee754<T>
 {
 	/// <summary>

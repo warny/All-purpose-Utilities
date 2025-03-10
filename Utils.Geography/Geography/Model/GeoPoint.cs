@@ -29,9 +29,9 @@ namespace Utils.Geography.Model
 		where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 	{
 		// Constants for degrees, minutes, and seconds conversions
-		private static readonly T MinutesInDegree = T.CreateChecked(60);
-		private static readonly T SecondsInDegree = T.CreateChecked(3600);
-		private static readonly T SecondsInMinute = T.CreateChecked(60);
+		protected static readonly T MinutesInDegree = T.CreateChecked(60);
+		protected static readonly T SecondsInDegree = T.CreateChecked(3600);
+		protected static readonly T SecondsInMinute = T.CreateChecked(60);
 
 		protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 		protected static readonly FloatingPointComparer<T> comparer = new(5);
@@ -266,6 +266,7 @@ namespace Utils.Geography.Model
 				* degree.Cos(Longitude - other.Longitude)
 			);
 		}
+
 
 		#region Equality & Formatting
 

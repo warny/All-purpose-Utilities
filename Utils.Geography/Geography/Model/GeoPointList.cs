@@ -121,7 +121,7 @@ namespace Utils.Geography.Model
 		{
 			foreach (var value in values)
 			{
-				this.Add(new GeoPointList<T>(value));
+				this.Add([.. value]);
 			}
 		}
 
