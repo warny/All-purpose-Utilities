@@ -12,7 +12,7 @@ namespace Utils.Geography.Model;
 [DebuggerDisplay("{Name} (Equatorial Radius={EquatorialRadius}, Circumference={EquatorialCircumference})")]
 public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 {
-	private static readonly IAngleCalculator<T> Degree = Trigonometry<T>.Degree;
+	private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Planet{T}"/> class.
@@ -48,7 +48,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 	/// <returns>The degrees of latitude corresponding to the given distance.</returns>
 	public T LatitudeDistance(T meters)
 	{
-		return (meters * Degree.Perigon) / (T.Pi * T.CreateChecked(2) * EquatorialRadius);
+		return (meters * degree.Perigon) / (T.Pi * T.CreateChecked(2) * EquatorialRadius);
 	}
 
 	/// <summary>
@@ -59,7 +59,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 	/// <returns>The degrees of longitude corresponding to the given distance at the specified latitude.</returns>
 	public T LongitudeDistance(T meters, T latitude)
 	{
-		return (meters * Degree.Perigon) / (T.Pi * T.CreateChecked(2) * EquatorialRadius * Degree.Cos(latitude));
+		return (meters * degree.Perigon) / (T.Pi * T.CreateChecked(2) * EquatorialRadius * degree.Cos(latitude));
 	}
 
 	/// <summary>
@@ -70,7 +70,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 	/// <returns>The distance between the two points in meters.</returns>
 	public T Distance(GeoPoint<T> geoPoint1, GeoPoint<T> geoPoint2)
 	{
-		return Degree.ToRadian(geoPoint1.AngleWith(geoPoint2)) * EquatorialRadius;
+		return degree.ToRadian(geoPoint1.AngleWith(geoPoint2)) * EquatorialRadius;
 	}
 
 	/// <summary>
@@ -81,7 +81,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 	/// <returns>A new <see cref="GeoVector{T}"/> representing the destination point.</returns>
 	public GeoVector<T> Travel(GeoVector<T> geoVector, T distance)
 	{
-		return geoVector.Travel(Degree.FromRadian(distance / EquatorialRadius));
+		return geoVector.Travel(degree.FromRadian(distance / EquatorialRadius));
 	}
 }
 

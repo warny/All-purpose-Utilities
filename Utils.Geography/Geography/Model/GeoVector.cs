@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
-using System.Text.RegularExpressions;
-using Utils.Geography.Display;
 using Utils.Mathematics;
 using Utils.Objects;
 
@@ -14,7 +10,7 @@ namespace Utils.Geography.Model
 	/// Represents a vector of displacement on a spherical geodesic with a bearing (heading direction).
 	/// </summary>
 	/// <typeparam name="T">The numeric type used for calculations, typically a floating point.</typeparam>
-	public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>
+	public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>
 		where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 	{
 		/// <summary>
@@ -115,7 +111,7 @@ namespace Utils.Geography.Model
 			foreach (var cultureInfo in cultureInfos)
 			{
 				var parts = coordinates.Split(
-					new[] { cultureInfo.TextInfo.ListSeparator },
+					[cultureInfo.TextInfo.ListSeparator],
 					StringSplitOptions.None
 				);
 
@@ -492,6 +488,12 @@ namespace Utils.Geography.Model
 				geoVector.λ,
 				degree.StraightAngle + geoVector.θ
 			);
+
+		public static bool operator ==(GeoVector<T> left, GeoVector<T> right)
+			=> left?.Equals(right) ?? right is null;
+
+		public static bool operator !=(GeoVector<T> left, GeoVector<T> right)
+			=> !(left?.Equals(right) ?? right is null);
 
 		/// <inheritdoc />
 		public override string ToString(string format, IFormatProvider formatProvider)

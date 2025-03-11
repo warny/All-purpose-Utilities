@@ -25,7 +25,7 @@ namespace Utils.Geography.Model
 	/// <typeparam name="T">
 	/// Numeric type implementing IFloatingPointIeee754 (e.g., float, double, decimal).
 	/// </typeparam>
-	public class GeoPoint<T> : IEquatable<GeoPoint<T>>, IFormattable
+	public class GeoPoint<T> : IEquatable<GeoPoint<T>>, IFormattable, IEqualityOperators<GeoPoint<T>, GeoPoint<T>, bool>
 		where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 	{
 		// Constants for degrees, minutes, and seconds conversions
@@ -315,7 +315,7 @@ namespace Utils.Geography.Model
 				   $"{FormatPosition(Longitude, "E", "W", format, formatProvider)}";
 		}
 
-		private string FormatPosition(
+		private static string FormatPosition(
 			T position,
 			string positiveMark,
 			string negativeMark,
