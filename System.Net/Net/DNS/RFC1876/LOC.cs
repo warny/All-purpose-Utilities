@@ -5,7 +5,7 @@ using Utils.Net;
 
 namespace Utils.Net.DNS.RFC1876;
 
-[DNSRecord("IN", 0x1D)]
+[DNSRecord(DNSClass.IN, 0x1D)]
 public class LOC : DNSResponseDetail
 {
     /*

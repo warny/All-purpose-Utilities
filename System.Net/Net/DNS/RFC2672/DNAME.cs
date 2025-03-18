@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC2672
 {
-    [DNSRecord("IN", 0x27)]
+    [DNSRecord(DNSClass.IN, 0x27)]
     public class DNAME 
     {
         [DNSField]

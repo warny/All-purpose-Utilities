@@ -5,7 +5,7 @@ using System.Text;
 namespace Utils.Net.DNS.RFC2230
 {
 
-    [DNSRecord("IN", 0x24)]
+    [DNSRecord(DNSClass.IN, 0x24)]
     public class KX : DNSResponseDetail
     {
         /*

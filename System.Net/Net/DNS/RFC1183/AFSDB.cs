@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1183;
 
-[DNSRecord("IN", 0x12)]
+[DNSRecord(DNSClass.IN, 0x12)]
 public class AFSDB : DNSResponseDetail
 {
     /*

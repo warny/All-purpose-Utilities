@@ -10,9 +10,9 @@ namespace Utils.Net.DNS.RFC1035;
 /// <summary>
 /// IPAddress, used for both RFC1035.A and RFC1886.AAAA records
 /// </summary>
-[DNSRecord("IN", 0x01, "A")]
-[DNSRecord("IN", 0x1C, "AAAA")]
-[DNSRecord("IN", 0x17, "NSAP")]
+[DNSRecord(DNSClass.IN, 0x01, "A")]
+[DNSRecord(DNSClass.IN, 0x1C, "AAAA")]
+[DNSRecord(DNSClass.IN, 0x17, "NSAP")]
 public sealed class Address : DNSResponseDetail
 {
     /*
@@ -51,7 +51,7 @@ public sealed class Address : DNSResponseDetail
     };
 
     [DNSField]
-    private System.Net.IPAddress ipAddress = null;
+    private IPAddress ipAddress = null;
 
     public IPAddress IPAddress
     {

@@ -5,7 +5,7 @@ using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC5205
 {
-    [DNSRecord("IN", 0x37)]
+    [DNSRecord(DNSClass.IN, 0x37)]
     public class HIP : DNSResponseDetail
     {
         [DNSField]

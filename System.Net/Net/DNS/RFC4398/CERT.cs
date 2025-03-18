@@ -5,7 +5,7 @@ using System.Text;
 namespace Utils.Net.DNS.RFC4398
 {
 
-    [DNSRecord("IN", 0x25)]
+    [DNSRecord(DNSClass.IN, 0x25)]
     public class CERT: DNSResponseDetail
     {
         /*

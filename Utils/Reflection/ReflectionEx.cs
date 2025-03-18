@@ -38,7 +38,7 @@ public static class ReflectionEx
 	/// <returns>An enumerable of directly implemented interfaces.</returns>
 	public static IEnumerable<Type> GetDirectInterfaces(this Type type)
 		=> type.BaseType == null
-		? Enumerable.Empty<Type>()
+		? []
 		: type.GetInterfaces().Except(type.BaseType.GetInterfaces());
 
 	/// <summary>

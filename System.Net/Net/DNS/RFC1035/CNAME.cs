@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1035;
 
-[DNSRecord("IN", 0x05)]
+[DNSRecord(DNSClass.IN, 0x05)]
 public sealed class CNAME : DNSResponseDetail
 {
     /*

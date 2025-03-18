@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC2915
 {
-    [DNSRecord("IN", 0x23)]
+    [DNSRecord(DNSClass.IN, 0x23)]
     public class NAPTR : DNSResponseDetail
     {
         // DNSField attribute is used to associate a name with each field

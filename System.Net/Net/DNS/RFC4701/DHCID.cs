@@ -5,7 +5,7 @@ using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC4701
 {
-    [DNSRecord("IN", 0x31)]
+    [DNSRecord(DNSClass.IN, 0x31)]
     public class DHCID : DNSResponseDetail
     {
         /*

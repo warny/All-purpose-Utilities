@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC2671
 {
-    [DNSRecord("IN", 0x29)]
+    [DNSRecord(DNSClass.IN, 0x29)]
     public class OPT : DNSResponseDetail
     {
         /*

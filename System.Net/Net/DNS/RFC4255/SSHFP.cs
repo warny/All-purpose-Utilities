@@ -5,7 +5,7 @@ using System.Text;
 namespace Utils.Net.DNS.RFC4255
 {
 
-    [DNSRecord("IN", 0x2C)]
+    [DNSRecord(DNSClass.IN, 0x2C)]
     public class SSHFP : DNSResponseDetail
     {
         [DNSField]

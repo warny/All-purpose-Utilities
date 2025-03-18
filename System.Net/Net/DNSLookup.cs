@@ -10,8 +10,8 @@ namespace Utils.Net
     /// </summary>
     public class DNSLookup
     {
-        private DNSPacketWriter packetWriter;
-        private DNSPacketReader packetReader;
+        private readonly DNSPacketWriter packetWriter;
+        private readonly DNSPacketReader packetReader;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DNSLookup"/> class with default name servers.

@@ -4,12 +4,6 @@ using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
 using System.Reflection;
-using Utils.Net.DNS.RFC1035;
-using Utils.Net.DNS.RFC1183;
-using Utils.Net.DNS.RFC1876;
-using Utils.Net.DNS.RFC2052;
-using Utils.Net.DNS.RFC2535;
-using Utils.Net.DNS.RFC2915;
 
 namespace Utils.Net.DNS
 {
@@ -27,26 +21,26 @@ namespace Utils.Net.DNS
                 .ToImmutableList();
 
         public IReadOnlyList<Type> DNSTypes { get; }
-        private IReadOnlyDictionary<ushort, Type> DNSResponsesById { get; }
-        private IReadOnlyDictionary<string, ushort> DNSClassIdByName { get; }
-        private IReadOnlyDictionary<ushort, string> DNSClassNameById { get; }
+        private IReadOnlyDictionary<UshortRecordKey, Type> DNSResponsesById { get; }
+        private IReadOnlyDictionary<StringRecordKey, ushort> DNSClassIdByName { get; }
+        private IReadOnlyDictionary<UshortRecordKey, string> DNSClassNameById { get; }
 
         public DNSFactory()
         {
             DNSTypes = GetDNSClassesFromAssembly(typeof(DNSFactory).Assembly);
 
-            var dnsResponsesById = new Dictionary<ushort, Type>();
-            var dnsClassNameById = new Dictionary<ushort, string>();
-            var dnsClassIdByName = new Dictionary<string, ushort>();
+            var dnsResponsesById = new Dictionary<UshortRecordKey, Type>();
+            var dnsClassNameById = new Dictionary<UshortRecordKey, string>();
+            var dnsClassIdByName = new Dictionary<StringRecordKey, ushort>();
 
             foreach (var dnsType in DNSTypes)
             {
                 foreach (var dnsClass in dnsType.GetCustomAttributes<DNSRecordAttribute>())
                 {
                     string name = dnsClass.Name ?? dnsType.Name;
-                    dnsResponsesById.Add(dnsClass.RecordId, dnsType);
-                    dnsClassNameById.Add(dnsClass.RecordId, name);
-                    dnsClassIdByName.Add(name, dnsClass.RecordId);
+                    dnsResponsesById.Add(new(dnsClass.Class, dnsClass.RecordId), dnsType);
+                    dnsClassNameById.Add(new(dnsClass.Class, dnsClass.RecordId), name);
+                    dnsClassIdByName.Add(new(dnsClass.Class, dnsClass.Name ?? dnsType.Name), dnsClass.RecordId);
                 }
             }
             this.DNSResponsesById = dnsResponsesById.ToImmutableDictionary();
@@ -54,12 +48,10 @@ namespace Utils.Net.DNS
             this.DNSClassNameById = dnsClassNameById.ToImmutableDictionary();
         }
 
-        public DNSFactory(params DNSFactory[] factories) : this((IEnumerable<DNSFactory>)factories) { }
-
-        public DNSFactory(IEnumerable<DNSFactory> factories) {
-            var dnsResponsesById = new Dictionary<ushort, Type>();
-            var dnsClassNameById = new Dictionary<ushort, string>();
-            var dnsClassIdByName = new Dictionary<string, ushort>();
+        public DNSFactory(params IEnumerable<DNSFactory> factories) {
+            var dnsResponsesById = new Dictionary<UshortRecordKey, Type>();
+            var dnsClassNameById = new Dictionary<UshortRecordKey, string>();
+            var dnsClassIdByName = new Dictionary<StringRecordKey, ushort>();
 
             foreach (var factory in factories)
             {
@@ -81,12 +73,12 @@ namespace Utils.Net.DNS
             this.DNSClassNameById = dnsClassNameById.ToImmutableDictionary();
         }
 
-        public DNSFactory(params Type[] types)
+        public DNSFactory(params IEnumerable<Type> types)
         {
             DNSTypes = GetDNSClasses(types);
         }
 
-        public DNSFactory(params Assembly[] assemblies)
+        public DNSFactory(params IEnumerable<Assembly> assemblies)
         {
             var dnsTypes = new List<Type>();
             foreach (Assembly assembly in assemblies)
@@ -97,11 +89,48 @@ namespace Utils.Net.DNS
         }
 
 
-        public string GetClassName(ushort classId) => DNSClassNameById[classId];
-        public ushort GetClassId(string className) => DNSClassIdByName[className];
-        public Type GetDNSType(ushort classId) => DNSResponsesById[classId];
-        public Type GetDNSType(string className) => DNSResponsesById[DNSClassIdByName[className]];
+        public string GetClassName(DNSClass @class, ushort classId) => DNSClassNameById[new (@class, classId)];
+        public ushort GetClassId(DNSClass @class, string className) => DNSClassIdByName[new (@class, className)];
+        public Type GetDNSType(DNSClass @class, ushort classId) => DNSResponsesById[new(@class, classId)];
+        public Type GetDNSType(DNSClass @class, string className) => DNSResponsesById[new (@class, GetClassId(@class, className))];
 
-        public static DNSFactory operator+(DNSFactory left, DNSFactory right) => new DNSFactory(left, right);
-    }
+        public static DNSFactory operator+(DNSFactory left, DNSFactory right) => new(left, right);
+
+
+		private sealed class UshortRecordKey(DNSClass @class, ushort recordId) : IEquatable<UshortRecordKey>
+		{
+			public DNSClass Class { get; } = @class;
+			public ushort RecordId { get; } = recordId;
+
+			public bool Equals(UshortRecordKey other) 
+				=> this.Class == other.Class && this.RecordId == other.RecordId;
+
+			public override bool Equals(object obj)
+				=> obj switch
+				{
+					UshortRecordKey other => Equals(other),
+					_ => false,
+				};
+
+			public override int GetHashCode() => HashCode.Combine(Class, RecordId);
+		}
+
+		private sealed class StringRecordKey(DNSClass @class, string recordName) : IEquatable<StringRecordKey>
+		{
+			public DNSClass Class { get; } = @class;
+			public string RecordName { get; } = recordName;
+
+			public bool Equals(StringRecordKey other)
+				=> this.Class == other.Class && this.RecordName == other.RecordName;
+
+			public override bool Equals(object obj)
+				=> obj switch
+				{
+					UshortRecordKey other => Equals(other),
+					_ => false,
+				};
+
+			public override int GetHashCode() => HashCode.Combine(Class, RecordName);
+		}
+	}
 }

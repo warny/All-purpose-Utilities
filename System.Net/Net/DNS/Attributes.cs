@@ -7,9 +7,9 @@ using System.Text;
 namespace Utils.Net.DNS
 {
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-	public class DNSRecordAttribute(string @class, ushort recordId, string name = null) : Attribute
+	public class DNSRecordAttribute(DNSClass @class, ushort recordId, string name = null) : Attribute
 	{
-		public string Class => @class;
+		public DNSClass Class => @class;
 		public ushort RecordId => recordId;
 		public string Name => name;
 	}

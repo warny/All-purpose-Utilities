@@ -5,7 +5,7 @@ using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1183;
 
-[DNSRecord("IN", 0x15)]
+[DNSRecord(DNSClass.IN, 0x15)]
 public class RT : DNSResponseDetail
 {
     [DNSField]

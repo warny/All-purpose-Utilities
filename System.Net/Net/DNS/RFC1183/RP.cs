@@ -7,7 +7,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// <summary>
 /// Responsible person
 /// </summary>
-[DNSRecord("IN", 0x11)]
+[DNSRecord(DNSClass.IN, 0x11)]
 public class RP : DNSResponseDetail
 {
     [DNSField]

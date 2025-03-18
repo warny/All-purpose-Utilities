@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1183;
 
-[DNSRecord("IN", 0x14)]
+[DNSRecord(DNSClass.IN, 0x14)]
 public class ISDN : DNSResponseDetail
 {
     //La représentation du ISDN est fausse, mais je n'ai pas trouvé les specs détaillées de l'enregistrement

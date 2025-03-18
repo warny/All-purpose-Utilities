@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1035;
 
-	[DNSRecord("IN", 0x0A)]
+	[DNSRecord(DNSClass.IN, 0x0A)]
 	public class NULL : DNSResponseDetail
 	{
     /*

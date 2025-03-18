@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC4025
 {
-    [DNSRecord("IN", 0x2D)]
+    [DNSRecord(DNSClass.IN, 0x2D)]
     public class IPSECKEY : DNSResponseDetail
     {
         /*

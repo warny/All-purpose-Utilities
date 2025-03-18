@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC3123
 {
-    [DNSRecord("IN", 0x2A)]
+    [DNSRecord(DNSClass.IN, 0x2A)]
     public class APL : DNSResponseDetail
     {
         /*

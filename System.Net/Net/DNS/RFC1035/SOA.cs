@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC1035;
 
-[DNSRecord("IN", 0x06)]
+[DNSRecord(DNSClass.IN, 0x06)]
 public class SOA : DNSResponseDetail
 {
     /*

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS.RFC5155
 {
-    [DNSRecord("IN", 0x33)]
+    [DNSRecord(DNSClass.IN, 0x33)]
     public class NSEC3PARAM : DNSResponseDetail
     {
         /*
