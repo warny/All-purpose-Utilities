@@ -58,7 +58,6 @@
     <Resource Include="Resources\TextFile1.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Resources\TextFileEmbedded.txt" />
   </ItemGroup>
 
   <ItemGroup>

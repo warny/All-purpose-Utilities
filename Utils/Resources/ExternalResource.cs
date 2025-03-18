@@ -289,7 +289,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 	/// <summary>
 	/// Gets the resource value for the specified key.
 	/// </summary>
-	public object this[string key] => _resources[key];
+	public object this[string key] => _resources[key] is IResXValue value ? value.Value : _resources[key];
 
 	/// <summary>
 	/// Gets all resource keys in the dictionary.
@@ -428,11 +428,18 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 						// If we have no type, default to raw binary
 						_instance = File.ReadAllBytes(fullPath);
 					}
+					else if (_type == typeof(string))
+					{
+						// If the type has a constructor that takes (string path), 
+						// create an instance:
+						_instance = File.ReadAllText(_filePath);
+					}
 					else
 					{
 						// If the type has a constructor that takes (string path), 
 						// create an instance:
-						_instance = Activator.CreateInstance(_type, [fullPath]);
+						var datas = File.ReadAllBytes(fullPath);
+						_instance = Activator.CreateInstance(_type, datas);
 					}
 				}
 				return _instance;
