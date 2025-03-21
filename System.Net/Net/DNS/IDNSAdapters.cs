@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-
-namespace Utils.Net.DNS
+﻿namespace Utils.Net.DNS
 {
     public interface IDNSReader<T>
     {

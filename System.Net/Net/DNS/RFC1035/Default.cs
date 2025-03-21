@@ -1,29 +1,51 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1035;
 
+/// <summary>
+/// Represents a fallback or "default" DNS record for scenarios where the record type is unrecognized,
+/// or when a custom processing path is desired for type code zero (which is reserved/unused).
+/// Despite the TXT-like comment, this class is annotated with <c>[DNSRecord(DNSClass.IN, 0x00)]</c>,
+/// indicating it is treated as a placeholder for type <c>0</c>. It can store textual data via the
+/// <see cref="Text"/> property.
+/// </summary>
+/// <remarks>
+/// <para>
+/// In standard DNS, record type <c>0</c> is undefined/reserved. This class may serve as a fallback
+/// for unrecognized record types or experimental usage. If you intend to store actual TXT records,
+/// consider using the official TXT record type code (<c>0x10</c>, decimal 16) instead.
+/// </para>
+/// </remarks>
 [DNSRecord(DNSClass.IN, 0x00)]
 public class Default : DNSResponseDetail
 {
-    /*
-        TXT RDATA format
+	/*
+            Example of a TXT-like RDATA format:
 
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                   TXT-DATA                    /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+                /                   TXT-DATA                    /
+                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-        where:
+            where:
 
-        TXT-DATA        One or more <character-string>s.
+            TXT-DATA    One or more <character-string>s.
 
-        TXT RRs are used to hold descriptive text.  The semantics of the text
-        depends on the domain where it is found.
-    */
-    [DNSField]
-    string Text { get; set; }
+            Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
+            class uses type code 0 for demonstration or fallback.
+        */
 
-    public override string ToString() => Text;
+	/// <summary>
+	/// Gets or sets an arbitrary string of text for this fallback record.
+	/// </summary>
+	[DNSField]
+	public string Text { get; set; }
 
+	/// <summary>
+	/// Returns the text content of this fallback record.
+	/// </summary>
+	/// <returns>
+	/// The value of the <see cref="Text"/> property, or an empty string if it is <c>null</c>.
+	/// </returns>
+	public override string ToString() => Text ?? string.Empty;
 }

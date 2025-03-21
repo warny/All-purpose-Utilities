@@ -1,14 +1,32 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Utils.Net.DNS;
 
-namespace Utils.Net.DNS.RFC1035;
-
-[DNSRecord(DNSClass.IN, 0x0E)]
-public class MINFO : DNSResponseDetail
+namespace Utils.Net.DNS.RFC1035
 {
-    /*
-        MINFO RDATA format (EXPERIMENTAL)
+	/// <summary>
+	/// Represents a MINFO record, considered experimental and largely obsolete as per RFC 1035.
+	/// The MINFO record provides mail-related information (responsible mailbox, error mailbox)
+	/// for a mailing list or mailbox owner.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// In modern DNS usage, <c>MINFO</c> has been superseded by <c>MX</c> records and other mechanisms. 
+	/// It is marked with <see cref="ObsoleteAttribute"/> to indicate it should generally not be 
+	/// used in production.
+	/// </para>
+	/// <para>
+	/// <strong>RMAILBX</strong> (<see cref="RMailBx"/>) is the mailbox responsible for the mailing list or 
+	/// mailbox. <strong>EMAILBX</strong> (<see cref="EMailBx"/>) is the mailbox for error messages related 
+	/// to that list or mailbox. Each is stored as a <see cref="DNSDomainName"/> struct, which cannot be null, 
+	/// but can be an empty or default domain name.
+	/// </para>
+	/// </remarks>
+	[DNSRecord(DNSClass.IN, 0x0E)]
+	[Obsolete("MINFO (mail info) records are obsolete; use MX records instead.")]
+	public class MINFO : DNSResponseDetail
+	{
+		/*
+            MINFO RDATA format (EXPERIMENTAL)
 
             +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
             /                    RMAILBX                    /
@@ -16,36 +34,30 @@ public class MINFO : DNSResponseDetail
             /                    EMAILBX                    /
             +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-        where:
+            RMAILBX  A <domain-name> for the mailbox responsible for the list/mailbox.
+            EMAILBX  A <domain-name> for the mailbox receiving errors for this list/mailbox.
+            MINFO records cause no additional section processing.
+        */
 
-        RMAILBX         A <domain-name> which specifies a mailbox which is
-                        responsible for the mailing list or mailbox.  If this
-                        domain name names the root, the owner of the MINFO RR is
-                        responsible for itself.  Note that many existing mailing
-                        lists use a mailbox X-request for the RMAILBX field of
-                        mailing list X, e.g., Msgroup-request for Msgroup.  This
-                        field provides a more general mechanism.
+		/// <summary>
+		/// Gets or sets the <see cref="DNSDomainName"/> of the mailbox that will receive error messages (EMAILBX).
+		/// </summary>
+		[DNSField]
+		public DNSDomainName EMailBx { get; set; }
 
+		/// <summary>
+		/// Gets or sets the <see cref="DNSDomainName"/> of the mailbox responsible for the mailing list or mailbox (RMAILBX).
+		/// </summary>
+		[DNSField]
+		public DNSDomainName RMailBx { get; set; }
 
-        EMAILBX         A <domain-name> which specifies a mailbox which is to
-                        receive error messages related to the mailing list or
-                        mailbox specified by the owner of the MINFO RR (similar
-                        to the ERRORS-TO: field which has been proposed).  If
-                        this domain name names the root, errors should be
-                        returned to the sender of the message.
-
-        MINFO records cause no additional section processing.  Although these
-        records can be associated with a simple mailbox, they are usually used
-        with a mailing list.
-
-
-    */
-    [DNSField]
-    public DNSDomainName EMailBx { get; set; }
-    [DNSField]
-    public DNSDomainName RMailBx { get; set; }
-
-    public override string ToString() {
-        return $"EMAILBX : \t{EMailBx}\n\tRMAILBX : \t{RMailBx}";
-    }
+		/// <summary>
+		/// Returns a formatted string containing the EMAILBX and RMAILBX values. Because
+		/// <see cref="DNSDomainName"/> is a struct, these fields can never be null, but may be empty.
+		/// </summary>
+		public override string ToString()
+		{
+			return $"EMAILBX:\t{EMailBx}\nRMAILBX:\t{RMailBx}";
+		}
+	}
 }

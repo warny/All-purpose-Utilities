@@ -32,7 +32,5 @@ public class AFSDB : DNSResponseDetail
     [DNSField] 
     public DNSDomainName AFSServer { get; set; }
 
-    public override string ToString() {
-        return $"{AFSServer} ({Preference})";
-    }
+	public override string ToString() => $"{AFSServer} ({Preference})";
 }
