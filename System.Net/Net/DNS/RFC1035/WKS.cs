@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1035;
 

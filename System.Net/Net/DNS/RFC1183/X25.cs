@@ -1,6 +1,3 @@
-using System;
-using Utils.Net.DNS;
-
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
@@ -23,15 +20,15 @@ namespace Utils.Net.DNS.RFC1183;
 public class X25 : DNSResponseDetail
 {
 	/*
-        X25 RDATA format (RFC 1183, Section 3.1):
+            X25 RDATA format (RFC 1183, Section 3.1):
 
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        /                   PSDN                      /
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            /                   PSDN                      /
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-        where "PSDN" is a single character-string specifying the
-        X.25 PSDN address, e.g., "311061700956".
-    */
+            where "PSDN" is a single character-string specifying the
+            X.25 PSDN address, e.g., "311061700956".
+        */
 
 	/// <summary>
 	/// Gets or sets the PSDN (Public Switched Data Network) address as a string.

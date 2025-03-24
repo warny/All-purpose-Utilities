@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1035;
@@ -21,15 +22,15 @@ namespace Utils.Net.DNS.RFC1035;
 public class Default : DNSResponseDetail
 {
 	/*
-            Example of a TXT-like RDATA format:
+            Example of a bytes RDATA format:
 
                 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                   TXT-DATA                    /
+                /                   DATAS                       /
                 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
             where:
 
-            TXT-DATA    One or more <character-string>s.
+            bytes    One or more bytes
 
             Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
             class uses type code 0 for demonstration or fallback.
@@ -39,7 +40,7 @@ public class Default : DNSResponseDetail
 	/// Gets or sets an arbitrary string of text for this fallback record.
 	/// </summary>
 	[DNSField]
-	public string Text { get; set; }
+	public byte[] Datas { get; set; }
 
 	/// <summary>
 	/// Returns the text content of this fallback record.
@@ -47,5 +48,5 @@ public class Default : DNSResponseDetail
 	/// <returns>
 	/// The value of the <see cref="Text"/> property, or an empty string if it is <c>null</c>.
 	/// </returns>
-	public override string ToString() => Text ?? string.Empty;
+	public override string ToString() => "[ " + String.Join(" ", Datas.Select(x=>x.ToString("X2"))) + " ]" ?? string.Empty;
 }

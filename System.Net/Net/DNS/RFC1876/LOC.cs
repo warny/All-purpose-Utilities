@@ -1,170 +1,231 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Utils.Net;
 
 namespace Utils.Net.DNS.RFC1876;
 
+/// <summary>
+/// Represents a LOC (Location) record in DNS as defined in RFC 1876.
+/// The LOC record specifies the physical location associated with a domain name,
+/// including its geographical coordinates, altitude, and precision values.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The binary format of the LOC record is defined as follows (each field is one or more octets):
+/// </para>
+/// <code>
+///   MSB                                           LSB
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// 0 |        VERSION        |         SIZE          |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// 2 |       HORIZ PRE       |       VERT PRE        |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// 4 |                   LATITUDE                    |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// 6 |                   LATITUDE                    |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// 8 |                   LONGITUDE                   |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+///10 |                   LONGITUDE                   |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+///12 |                   ALTITUDE                    |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+///14 |                   ALTITUDE                    |
+///   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// (octet)
+/// </code>
+/// <para>
+/// The fields are defined as:
+/// <list type="bullet">
+///   <item>
+///     <description><b>VERSION</b>: A one-octet version number (must be zero).</description>
+///   </item>
+///   <item>
+///     <description><b>SIZE</b>: The diameter of a sphere enclosing the described entity, in centimeters.
+///     It is represented as a pair of four-bit unsigned integers: the first (most significant)
+///     is the base, and the second is the exponent (power of 10). For example, 0x15 represents 1e5 cm.</description>
+///   </item>
+///   <item>
+///     <description><b>HORIZ PRE</b>: The horizontal precision of the location (i.e., the diameter of the
+///     horizontal "circle of error"), expressed in centimeters with the same exponential representation as SIZE.
+///     To obtain the value in meters, divide by 100.</description>
+///   </item>
+///   <item>
+///     <description><b>VERT PRE</b>: The vertical precision, representing the total potential vertical error,
+///     expressed in centimeters using the same exponential representation. To convert to meters, divide by 100.</description>
+///   </item>
+///   <item>
+///     <description><b>LATITUDE</b>: The latitude of the location, stored as a 32-bit integer in network byte order,
+///     representing thousandths of a second of arc. A value of 2^31 indicates the equator; values above that are north.</description>
+///   </item>
+///   <item>
+///     <description><b>LONGITUDE</b>: The longitude of the location, stored as a 32-bit integer in network byte order,
+///     representing thousandths of a second of arc, rounded away from the prime meridian (2^31). Values above 2^31 are east.</description>
+///   </item>
+///   <item>
+///     <description><b>ALTITUDE</b>: The altitude of the location, stored as a 32-bit integer in centimeters,
+///     with an offset such that a value of <c>altitudeZeroCorrection</c> represents 0 meters relative to the WGS 84 spheroid.
+///     To convert to meters, divide by 100.</description>
+///   </item>
+/// </list>
+/// </para>
+/// <para>
+/// The class also provides properties that convert the exponential representation into standard
+/// double values (e.g., meters for precision, seconds of arc for latitude/longitude, etc.),
+/// and vice versa.
+/// </para>
+/// </remarks>
 [DNSRecord(DNSClass.IN, 0x1D)]
 public class LOC : DNSResponseDetail
 {
-    /*
-           MSB                                           LSB
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-          0|        VERSION        |         SIZE          |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-          2|       HORIZ PRE       |       VERT PRE        |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-          4|                   LATITUDE                    |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-          6|                   LATITUDE                    |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-          8|                   LONGITUDE                   |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         10|                   LONGITUDE                   |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         12|                   ALTITUDE                    |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-         14|                   ALTITUDE                    |
-           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        (octet)
+	// The fields below are annotated with [DNSField] so that they are automatically
+	// serialized/deserialized as per the DNS LOC RDATA format.
 
-        where:
+	/// <summary>
+	/// Gets or sets the version number of the LOC record format. This must be 0.
+	/// </summary>
+	[DNSField]
+	public byte Version { get; set; }
 
-        VERSION      Version number of the representation.  This must be zero.
-                 Implementations are required to check this field and make
-                 no assumptions about the format of unrecognized versions.
+	/// <summary>
+	/// Private field storing the SIZE value in its exponential representation (one byte).
+	/// </summary>
+	[DNSField]
+	private byte size { get; set; }
 
-        SIZE         The diameter of a sphere enclosing the described entity, in
-                 centimeters, expressed as a pair of four-bit unsigned
-                 integers, each ranging from zero to nine, with the most
-                 significant four bits representing the base and the second
-                 number representing the power of ten by which to multiply
-                 the base.  This allows sizes from 0e0 (<1cm) to 9e9
-                 (90,000km) to be expressed.  This representation was chosen
-                 such that the hexadecimal representation can be read by
-                 eye; 0x15 = 1e5.  Four-bit values greater than 9 are
-                 undefined, as are values with a base of zero and a non-zero
-                 exponent.
+	/// <summary>
+	/// Private field storing the horizontal precision (HORIZ PRE) in exponential representation (one byte).
+	/// </summary>
+	[DNSField]
+	private byte horizontalPrecision { get; set; }
 
-                 Since 20000000m (represented by the value 0x29) is greater
-                 than the equatorial diameter of the WGS 84 ellipsoid
-                 (12756274m), it is therefore suitable for use as a
-                 "worldwide" size.
+	/// <summary>
+	/// Private field storing the vertical precision (VERT PRE) in exponential representation (one byte).
+	/// </summary>
+	[DNSField]
+	private byte verticalPrecision { get; set; }
 
-        HORIZ PRE    The horizontal precision of the data, in centimeters,
-                 expressed using the same representation as SIZE.  This is
-                 the diameter of the horizontal "circle of error", rather
-                 than a "plus or minus" value.  (This was chosen to match
-                 the interpretation of SIZE; to get a "plus or minus" value,
-                 divide by 2.)
+	/// <summary>
+	/// Private field storing the latitude as a 32-bit unsigned integer (network byte order).
+	/// The value is in thousandths of a second of arc.
+	/// </summary>
+	[DNSField]
+	private uint latitude { get; set; }
 
-        VERT PRE     The vertical precision of the data, in centimeters,
-                 expressed using the sane representation as for SIZE.  This
-                 is the total potential vertical error, rather than a "plus
-                 or minus" value.  (This was chosen to match the
-                 interpretation of SIZE; to get a "plus or minus" value,
-                 divide by 2.)  Note that if altitude above or below sea
-                 level is used as an approximation for altitude relative to
-                 the [WGS 84] ellipsoid, the precision value should be
-                 adjusted.
+	/// <summary>
+	/// Private field storing the longitude as a 32-bit unsigned integer (network byte order).
+	/// The value is in thousandths of a second of arc.
+	/// </summary>
+	[DNSField]
+	private uint longitude { get; set; }
 
-        LATITUDE     The latitude of the center of the sphere described by the
-                 SIZE field, expressed as a 32-bit integer, most significant
-                 octet first (network standard byte order), in thousandths
-                 of a second of arc.  2^31 represents the equator; numbers
-                 above that are north latitude.
+	/// <summary>
+	/// Private field storing the altitude as a 32-bit unsigned integer (network byte order).
+	/// The altitude is stored in centimeters.
+	/// </summary>
+	[DNSField]
+	private uint altitude { get; set; }
 
-        LONGITUDE    The longitude of the center of the sphere described by the
-                 SIZE field, expressed as a 32-bit integer, most significant
-                 octet first (network standard byte order), in thousandths
-                 of a second of arc, rounded away from the prime meridian.
-                 2^31 represents the prime meridian; numbers above that are
-                 east longitude.
+	// Constants used for conversion:
+	private const double equatorLatitude = 2_147_483_648; // 2^31, represents 0° latitude.
+	private const double primeMeridian = 2_147_483_648;     // 2^31, represents 0° longitude.
+	private const double altitudeZeroCorrection = 100_000_00; // Represents 0 m altitude relative to a base 100,000 m below WGS 84.
+	private const double arcSec = 1_296_000;                // Thousandths of seconds of arc per degree? (Typically 3600 sec/degree * 360 degrees = 1,296,000)
+	private const double meter2Centimeter = 100;
 
-        ALTITUDE     The altitude of the center of the sphere described by the
-                 SIZE field, expressed as a 32-bit integer, most significant
-                 octet first (network standard byte order), in centimeters,
-                 from a base of 100,000m below the [WGS 84] reference
-                 spheroid used by GPS (semimajor axis a=6378137.0,
-                 reciprocal flattening rf=298.257223563).  Altitude above
-                 (or below) sea level may be used as an approximation of
-                 altitude relative to the the [WGS 84] spheroid, though due
-                 to the Earth's surface not being a perfect spheroid, there
-                 will be differences.  (For example, the geoid (which sea
-                 level approximates) for the continental US ranges from 10
-                 meters to 50 meters below the [WGS 84] spheroid.
-                 Adjustments to ALTITUDE and/or VERT PRE will be necessary
-                 in most cases.  The Defense Mapping Agency publishes geoid
-                 height values relative to the [WGS 84] ellipsoid.
-    */
-    [DNSField]
-    public byte Version { get; set; }
-    [DNSField]
-    private byte size { get; set; }
-    [DNSField]
-    private byte horizontalPrecision { get; set; }
-    [DNSField]
-    private byte verticalPrecision { get; set; }
+	/// <summary>
+	/// Converts an exponential value (stored in one byte) to a double.
+	/// The high 4 bits represent the base and the low 4 bits represent the exponent.
+	/// </summary>
+	/// <param name="value">The byte to convert.</param>
+	/// <returns>The computed value.</returns>
+	private double ExponentialValueConvert(byte value) => (value >> 4) * Math.Pow(10, value & 0xF);
 
-    [DNSField]
-    private uint latitude { get; set; }
-    [DNSField]
-    private uint longitude { get; set; }
-    [DNSField]
-    private uint altitude { get; set; }
+	/// <summary>
+	/// Converts a double into its exponential representation in one byte.
+	/// The high 4 bits will store the mantissa and the low 4 bits the exponent.
+	/// </summary>
+	/// <param name="value">The double value to convert.</param>
+	/// <returns>A byte representing the exponential encoding.</returns>
+	private byte InverseExponentialValueConvert(double value)
+	{
+		int exponent = (int)Math.Floor(Math.Log10(value));
+		int mantissa = (int)Math.Round(value / Math.Pow(10, exponent));
+		return (byte)((mantissa << 4) + exponent);
+	}
 
-    private const double equatorLatitude = 2_147_483_648;
-    private const double primeMeridian = 2_147_483_648;
-    private const double altitudeZeroCorrection = 100_000_00;
-    private const double arcSec = 1_296_000;
-    private const double meter2Centimeter = 100;
+	/// <summary>
+	/// Gets or sets the size (the diameter of the sphere enclosing the entity) in centimeters.
+	/// The value is stored internally in an exponential representation.
+	/// </summary>
+	public double Size
+	{
+		get => ExponentialValueConvert(size);
+		set => size = InverseExponentialValueConvert(value);
+	}
 
-    private double ExponentialValueConvert(byte value) => (value >> 4) * Math.Pow(10, value & 0xF);
-    byte InverseExponentialValueConvert(double value)
-    {
-        int exponent = (int)Math.Floor(Math.Log10(value));
-        int mantissa = (int)Math.Round(value /  Math.Pow(10, exponent));
-        return (byte)((mantissa << 4) + exponent);
-    }
+	/// <summary>
+	/// Gets or sets the horizontal precision (diameter of the circle of error) in meters.
+	/// Internally stored as centimeters in an exponential representation.
+	/// </summary>
+	public double HorizontalPrecision
+	{
+		get => ExponentialValueConvert(horizontalPrecision) / meter2Centimeter;
+		set => horizontalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+	}
 
-    public double Size
-    {
-        get => ExponentialValueConvert(size);
-        set => size = InverseExponentialValueConvert(value);
-    }
+	/// <summary>
+	/// Gets or sets the vertical precision (total potential vertical error) in meters.
+	/// Internally stored as centimeters in an exponential representation.
+	/// </summary>
+	public double VerticalPrecision
+	{
+		get => ExponentialValueConvert(verticalPrecision) / meter2Centimeter;
+		set => verticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+	}
 
-    public double HorizontalPrecision {
-        get => ExponentialValueConvert(horizontalPrecision) / meter2Centimeter;
-        set => horizontalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
-    }
+	/// <summary>
+	/// Gets or sets the latitude of the location, in seconds of arc.
+	/// The latitude is stored as a 32-bit integer (network byte order) where a value of 2^31
+	/// represents the equator. Values above 2^31 are interpreted as north.
+	/// </summary>
+	public double Latitude
+	{
+		get => (latitude - equatorLatitude) / arcSec;
+		set => latitude = (uint)((value * arcSec) + equatorLatitude);
+	}
 
-    public double VerticalPrecision
-    {
-        get => ExponentialValueConvert(verticalPrecision) / meter2Centimeter;
-        set => verticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
-    }
+	/// <summary>
+	/// Gets or sets the longitude of the location, in seconds of arc.
+	/// The longitude is stored as a 32-bit integer (network byte order) where a value of 2^31
+	/// represents the prime meridian. Values above 2^31 are interpreted as east.
+	/// </summary>
+	public double Longitude
+	{
+		get => (longitude - primeMeridian) / arcSec;
+		set => longitude = (uint)((value * arcSec) + primeMeridian);
+	}
 
-    public double Latitude
-    {
-        get => (latitude - equatorLatitude) / arcSec;
-        set => latitude = (uint)((value * arcSec) + equatorLatitude);
-    }
+	/// <summary>
+	/// Gets or sets the altitude of the location, in meters.
+	/// The altitude is stored as a 32-bit integer (network byte order) in centimeters,
+	/// with a base offset so that a specific value corresponds to 0 meters relative to the WGS 84 spheroid.
+	/// </summary>
+	public double Altitude
+	{
+		get => (altitude - altitudeZeroCorrection) / meter2Centimeter;
+		set => altitude = (uint)((value * meter2Centimeter) + altitudeZeroCorrection);
+	}
 
-    public double Longitude
-    {
-        get => (longitude - primeMeridian) / arcSec;
-        set => longitude = (uint)((value * arcSec) + primeMeridian);
-    }
-
-    public double Altitude
-    {
-        get => (altitude - altitudeZeroCorrection) / meter2Centimeter;
-        set => altitude = (uint)((value * meter2Centimeter) + altitudeZeroCorrection);
-    }
-
-
-    public override string ToString() {
-        return $"L:{Latitude} l:{Longitude} A:{Altitude} \n\t Size:{Size} Precision (h:{HorizontalPrecision}, v:{VerticalPrecision})" ;
-    }
+	/// <summary>
+	/// Returns a string representation of the LOC record, including the geographic coordinates,
+	/// altitude, and the size and precision of the location.
+	/// </summary>
+	/// <returns>A formatted string representing the LOC record.</returns>
+	public override string ToString()
+	{
+		return $"L: {Latitude}°  l: {Longitude}°  A: {Altitude}m \n" +
+			   $"\tSize: {Size}cm  Precision (H: {HorizontalPrecision}m, V: {VerticalPrecision}m)";
+	}
 }

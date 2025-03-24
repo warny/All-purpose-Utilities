@@ -30,22 +30,22 @@
 public class KEY : DNSResponseDetail
 {
 	/*
-            3.1 KEY RDATA Format
+        3.1 KEY RDATA Format
 
-            The KEY RR RDATA consists of:
-              - a 16-bit Flags field
-              - an 8-bit Protocol field
-              - an 8-bit Algorithm field
-              - a variable-length Public Key field (algorithm-specific)
+        The KEY RR RDATA consists of:
+            - a 16-bit Flags field
+            - an 8-bit Protocol field
+            - an 8-bit Algorithm field
+            - a variable-length Public Key field (algorithm-specific)
 
-            Bits in the Flags field control whether the key is present (or "no key"),
-            whether it is used for authentication or confidentiality, and whether it is
-            a zone, user, or host key, among other options.
+        Bits in the Flags field control whether the key is present (or "no key"),
+        whether it is used for authentication or confidentiality, and whether it is
+        a zone, user, or host key, among other options.
 
-            The Protocol octet defines how the key is intended to be used (e.g., DNSSEC = 3,
-            IPSEC = 4, TLS = 1, etc.). The Algorithm octet indicates the cryptographic algorithm
-            used (RSA, DSA, etc.). The Public Key portion is algorithm-dependent.
-        */
+        The Protocol octet defines how the key is intended to be used (e.g., DNSSEC = 3,
+        IPSEC = 4, TLS = 1, etc.). The Algorithm octet indicates the cryptographic algorithm
+        used (RSA, DSA, etc.). The Public Key portion is algorithm-dependent.
+    */
 
 	/// <summary>
 	/// Gets the 16-bit flags field which indicates key usage, key owner type, extension flags,

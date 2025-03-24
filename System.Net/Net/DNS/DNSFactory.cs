@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -71,6 +72,7 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 			foreach (var dnsClass in dnsType.GetCustomAttributes<DNSRecordAttribute>())
 			{
 				string name = dnsClass.Name ?? dnsType.Name;
+				Debug.Print($"{dnsClass.Class} {name} ({dnsClass.RecordId:x2})");
 				dnsResponsesById.Add(new UshortRecordKey(dnsClass.Class, dnsClass.RecordId), dnsType);
 				dnsClassNameById.Add(new UshortRecordKey(dnsClass.Class, dnsClass.RecordId), name);
 				dnsClassIdByName.Add(new StringRecordKey(dnsClass.Class, dnsClass.Name ?? dnsType.Name), dnsClass.RecordId);
