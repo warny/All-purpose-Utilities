@@ -1,20 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace Utils.Fonts.TTF
+namespace Utils.Fonts.TTF;
+
+/// <summary>
+/// Indicates the TrueType table associated with a class and specifies its dependencies.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+public class TTFTableAttribute : Attribute
 {
-	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-	public class TTFTableAttribute : Attribute
+	/// <summary>
+	/// Initializes a new instance of the <see cref="TTFTableAttribute"/> class.
+	/// </summary>
+	/// <param name="tableTag">The table tag associated with the class.</param>
+	/// <param name="dependsOn">
+	/// Zero or more table tags that this table depends on.
+	/// </param>
+	public TTFTableAttribute(TableTypes.Tags tableTag, params TableTypes.Tags[] dependsOn)
 	{
-		public TTFTableAttribute(TrueTypeTableTypes.Tags tableTag, params TrueTypeTableTypes.Tags[] dependsOn)
-		{
-			TableTag = new Tag((int)tableTag);
-			DependsOn = dependsOn.Select(d=>new Tag((int)d)).ToArray() ?? new Tag[0];
-		}
-
-		public Tag TableTag { get; }
-		public Tag[] DependsOn { get; }
+		TableTag = new Tag((int)tableTag);
+		DependsOn = dependsOn.Select(d => new Tag((int)d)).ToArray() ?? [];
 	}
+
+	/// <summary>
+	/// Gets the table tag.
+	/// </summary>
+	public Tag TableTag { get; }
+
+	/// <summary>
+	/// Gets the array of table tags this table depends on.
+	/// </summary>
+	public Tag[] DependsOn { get; }
 }

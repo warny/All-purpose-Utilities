@@ -1,66 +1,91 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Utils.IO.Serialization;
-using Utils.Objects;
 
-namespace Utils.Fonts.TTF.Tables;
+namespace Utils.Fonts.TTF;
 
 /// <summary>
-/// The name table (tag: 'name') allows you to include human-readable names for features and settings, copyright notices, font names, style names, and other information 
-/// related to your font. These name character strings containing font-related information can be provided in any language. Entries in the name table are referenced by 
-/// other TrueType font tables and can be used by applications and utilities to provide useful information to the user. Name table entries can be added by the font 
-/// designer in any language at any time to provide information to world-wide users of the font.
+/// The name table (tag: 'name') allows inclusion of human‑readable names for features and settings,
+/// copyright notices, font names, style names, and other information related to the font. These
+/// name strings can be provided in any language, and are referenced by other TrueType tables.
 /// </summary>
 /// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html"/>
-[TTFTable(TrueTypeTableTypes.Tags.name)]
+[TTFTable(TableTypes.Tags.NAME)]
 public class NameTable : TrueTypeTable
 {
+	/// <summary>
+	/// Represents a record in the name table, defined by the triplet
+	/// (PlatformId, PlatformSpecificId, LanguageId) and a NameId.
+	/// </summary>
 	public class NameRecord : IEquatable<NameRecord>
 	{
+		/// <summary>
+		/// Gets the platform ID.
+		/// </summary>
 		public TtfPlatFormId PlatformID { get; }
+
+		/// <summary>
+		/// Gets the platform-specific ID.
+		/// </summary>
 		public TtfPlatformSpecificID PlatformSpecificID { get; }
+
+		/// <summary>
+		/// Gets the language ID.
+		/// </summary>
 		public TtfLanguageID LanguageID { get; }
+
+		/// <summary>
+		/// Gets the name ID.
+		/// </summary>
 		public TtfNameID NameID { get; }
 
 		internal NameRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID)
 		{
-			this.PlatformID = platformID;
-			this.PlatformSpecificID = platformSpecificID;
-			this.LanguageID = languageID;
-			this.NameID = nameID;
+			PlatformID = platformID;
+			PlatformSpecificID = platformSpecificID;
+			LanguageID = languageID;
+			NameID = nameID;
 		}
 
+		/// <inheritdoc/>
 		public virtual bool Equals(NameRecord other)
 		{
-			return this.PlatformID == other.PlatformID
-				&& this.PlatformSpecificID == other.PlatformSpecificID
-				&& this.LanguageID == other.LanguageID
-				&& this.NameID == other.NameID;
+			return other != null
+				&& PlatformID == other.PlatformID
+				&& PlatformSpecificID == other.PlatformSpecificID
+				&& LanguageID == other.LanguageID
+				&& NameID == other.NameID;
 		}
-		public override bool Equals(object obj) => obj is NameRecord nameRecord && Equals(nameRecord);
-		public override int GetHashCode() => ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID, LanguageID, NameID);
-		public override string ToString() => $"{PlatformID} - {PlatformSpecificID} - {LanguageID} - {NameID}";
 
+		/// <inheritdoc/>
+		public override bool Equals(object obj) => obj is NameRecord nr && Equals(nr);
+
+		/// <inheritdoc/>
+		public override int GetHashCode() => Utils.Objects.ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID, LanguageID, NameID);
+
+		/// <inheritdoc/>
+		public override string ToString() => $"{PlatformID} - {PlatformSpecificID} - {LanguageID} - {NameID}";
 	}
 
 	private readonly Dictionary<NameRecord, string> records = new Dictionary<NameRecord, string>();
 
-	protected internal NameTable() : base(TrueTypeTableTypes.name) { }
+	/// <summary>
+	/// Initializes a new instance of the <see cref="NameTable"/> class.
+	/// </summary>
+	protected internal NameTable() : base(TableTypes.NAME) { }
 
-	public static Encoding GetEncoding(NameRecord record) => GetEncoding(record.PlatformID, record.PlatformSpecificID, record.LanguageID);
+	/// <summary>
+	/// Gets the appropriate encoding for a given name record by using the TtfEncoderFactory.
+	/// </summary>
+	/// <param name="record">The name record for which to obtain the encoding.</param>
+	/// <returns>The selected <see cref="Encoding"/>.</returns>
+	public static Encoding GetEncoding(NameRecord record) =>
+		TtfEncoderFactory.GetEncoding(record.PlatformID, record.PlatformSpecificID, record.LanguageID);
 
-	public static Encoding GetEncoding(TtfPlatFormId ttfPlatformID, TtfPlatformSpecificID ttfPlatformSpecificID, TtfLanguageID ttfLanguageID)
-	{
-			
-		return ttfPlatformID switch
-		{
-			TtfPlatFormId.Macintosh => Encoding.ASCII,
-			_ => Encoding.BigEndianUnicode
-		};
-	}
-
+	/// <summary>
+	/// Gets the total length (in bytes) of the name table.
+	/// </summary>
 	public override int Length
 	{
 		get {
@@ -74,41 +99,80 @@ public class NameTable : TrueTypeTable
 		}
 	}
 
+	/// <summary>
+	/// Gets the number of name records in the table.
+	/// </summary>
 	public virtual short Count => (short)records.Count;
 
+	/// <summary>
+	/// Gets or sets the table format.
+	/// </summary>
 	public virtual short Format { get; set; }
 
-	public virtual string GetRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID) 
+	/// <summary>
+	/// Retrieves the name string associated with the specified name record triplet.
+	/// </summary>
+	/// <param name="platformID">The platform ID.</param>
+	/// <param name="platformSpecificID">The platform-specific ID.</param>
+	/// <param name="languageID">The language ID.</param>
+	/// <param name="nameID">The name ID.</param>
+	/// <returns>The corresponding name string.</returns>
+	public virtual string GetRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID)
 		=> records[new NameRecord(platformID, platformSpecificID, languageID, nameID)];
 
-	public virtual void AddRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID, string str) 
-		=> this.records[new NameRecord(platformID, platformSpecificID, languageID, nameID)] = str;
+	/// <summary>
+	/// Adds a name record to the table.
+	/// </summary>
+	/// <param name="platformID">The platform ID.</param>
+	/// <param name="platformSpecificID">The platform-specific ID.</param>
+	/// <param name="languageID">The language ID.</param>
+	/// <param name="nameID">The name ID.</param>
+	/// <param name="str">The name string.</param>
+	public virtual void AddRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID, string str)
+		=> records[new NameRecord(platformID, platformSpecificID, languageID, nameID)] = str;
 
-	public virtual void RemoveRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID) 
-		=> this.records.Remove(new NameRecord(platformID, platformSpecificID, languageID, nameID));
+	/// <summary>
+	/// Removes the specified name record from the table.
+	/// </summary>
+	/// <param name="platformID">The platform ID.</param>
+	/// <param name="platformSpecificID">The platform-specific ID.</param>
+	/// <param name="languageID">The language ID.</param>
+	/// <param name="nameID">The name ID.</param>
+	public virtual void RemoveRecord(TtfPlatFormId platformID, TtfPlatformSpecificID platformSpecificID, TtfLanguageID languageID, TtfNameID nameID)
+		=> records.Remove(new NameRecord(platformID, platformSpecificID, languageID, nameID));
 
+	/// <summary>
+	/// Determines whether the table contains any records for the specified platform.
+	/// </summary>
+	/// <param name="platformId">The platform ID.</param>
+	/// <returns><c>true</c> if records exist for the specified platform; otherwise, <c>false</c>.</returns>
 	public virtual bool HasRecords(TtfPlatFormId platformId)
 	{
-		foreach (NameRecord nameRecord in records.Keys) {
+		foreach (NameRecord nameRecord in records.Keys)
+		{
 			if (nameRecord.PlatformID == platformId)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
 
+	/// <summary>
+	/// Determines whether the table contains any records for the specified platform and platform-specific ID.
+	/// </summary>
+	/// <param name="platformId">The platform ID.</param>
+	/// <param name="platformSpecificID">The platform-specific ID.</param>
+	/// <returns><c>true</c> if records exist for the specified platform and platform-specific ID; otherwise, <c>false</c>.</returns>
 	public virtual bool HasRecords(TtfPlatFormId platformId, TtfPlatformSpecificID platformSpecificID)
 	{
-		foreach (NameRecord nameRecord in records.Keys) {
+		foreach (NameRecord nameRecord in records.Keys)
+		{
 			if (nameRecord.PlatformID == platformId && nameRecord.PlatformSpecificID == platformSpecificID)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
 
+	/// <inheritdoc/>
 	public override void ReadData(Reader data)
 	{
 		Format = data.ReadInt16(true);
@@ -125,22 +189,24 @@ public class NameTable : TrueTypeTable
 			data.Push();
 			Reader val = data.Slice(stringOffset + offset, length);
 			data.Pop();
-			var encoding = GetEncoding(platformId, platformSpecificId, languageId);
+			Encoding encoding = TtfEncoderFactory.GetEncoding(platformId, platformSpecificId, languageId);
 			string str = val.ReadFixedLengthString(length, encoding);
 			AddRecord(platformId, platformSpecificId, languageId, nameId, str);
 		}
 	}
 
+	/// <inheritdoc/>
 	public override void WriteData(Writer data)
 	{
 		data.WriteInt16(Format, true);
 		data.WriteInt16(Count, true);
-		data.WriteInt16((short)(6 + 12 * this.Count), true);
+		data.WriteInt16((short)(6 + 12 * Count), true);
 		int offset = 0;
-		foreach (var record in records) {
+		foreach (var record in records)
+		{
 			NameRecord nameRecord = record.Key;
 			string text = record.Value;
-			Encoding encoding = GetEncoding(nameRecord.PlatformID, nameRecord.PlatformSpecificID, nameRecord.LanguageID);
+			Encoding encoding = TtfEncoderFactory.GetEncoding(nameRecord.PlatformID, nameRecord.PlatformSpecificID, nameRecord.LanguageID);
 			int length = encoding.GetByteCount(text);
 			data.WriteInt16((short)nameRecord.PlatformID, true);
 			data.WriteInt16((short)nameRecord.PlatformSpecificID, true);
@@ -149,13 +215,14 @@ public class NameTable : TrueTypeTable
 			data.WriteInt16((short)length, true);
 			data.WriteInt16((short)offset, true);
 			data.Push();
-			data.Seek((6 + 12 * this.Count) + offset, System.IO.SeekOrigin.Begin);
+			data.Seek((6 + 12 * Count) + offset, System.IO.SeekOrigin.Begin);
 			data.WriteFixedLengthString(text, text.Length, encoding);
 			data.Pop();
-			offset = (short)(offset + length);
+			offset += length;
 		}
 	}
 
+	/// <inheritdoc/>
 	public override string ToString()
 	{
 		StringBuilder result = new StringBuilder();
