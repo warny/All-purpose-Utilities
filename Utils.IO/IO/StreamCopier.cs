@@ -28,11 +28,11 @@ public class StreamCopier : Stream, IList<Stream>
 	/// <summary>
 	/// The collection of streams to which all written data will be copied.
 	/// </summary>
-	private readonly List<Stream> targets;
+	private readonly List<Stream> _targets;
 
 	/// <summary>
 	/// If set to <c>true</c>, disposing this <see cref="StreamCopier"/> will also
-	/// dispose/close all target streams in <see cref="targets"/>.
+	/// dispose/close all target streams in <see cref="_targets"/>.
 	/// </summary>
 	private readonly bool closeAllTargetsOnDispose;
 
@@ -44,28 +44,12 @@ public class StreamCopier : Stream, IList<Stream>
 	/// </summary>
 	/// <param name="closeAllTargetsOnDispose">
 	/// If <c>true</c>, disposing this <see cref="StreamCopier"/> will also dispose/close
-	/// all streams in <see cref="targets"/>.
+	/// all streams in <see cref="_targets"/>.
 	/// </param>
 	public StreamCopier(bool closeAllTargetsOnDispose = false)
 	{
 		this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
-		targets = new List<Stream>();
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="StreamCopier"/> class and adds
-	/// the specified collection of streams to its targets.
-	/// </summary>
-	/// <param name="streams">A sequence of streams to which data should be written.</param>
-	/// <param name="closeAllTargetsOnDispose">
-	/// If <c>true</c>, disposing this <see cref="StreamCopier"/> will also dispose/close
-	/// all streams in <see cref="targets"/>.
-	/// </param>
-	public StreamCopier(IEnumerable<Stream> streams, bool closeAllTargetsOnDispose = false)
-	{
-		this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
-		targets = new List<Stream>();
-		targets.AddRange(streams);
+		_targets = [];
 	}
 
 	/// <summary>
@@ -74,12 +58,13 @@ public class StreamCopier : Stream, IList<Stream>
 	/// </summary>
 	/// <param name="closeAllTargetsOnDispose">
 	/// If <c>true</c>, disposing this <see cref="StreamCopier"/> will also dispose/close
-	/// all streams in <see cref="targets"/>.
+	/// all streams in <see cref="_targets"/>.
 	/// </param>
 	/// <param name="streams">An array of streams to which data should be written.</param>
-	public StreamCopier(bool closeAllTargetsOnDispose, params Stream[] streams)
-		: this((IEnumerable<Stream>)streams, closeAllTargetsOnDispose)
+	public StreamCopier(bool closeAllTargetsOnDispose, params IEnumerable<Stream> streams)
 	{
+		this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
+		_targets = [.. streams];
 	}
 
 	/// <summary>
@@ -87,10 +72,8 @@ public class StreamCopier : Stream, IList<Stream>
 	/// adds the specified array of streams to its targets (with <c>closeAllTargetsOnDispose</c> = false).
 	/// </summary>
 	/// <param name="streams">An array of streams to which data should be written.</param>
-	public StreamCopier(params Stream[] streams)
-		: this((IEnumerable<Stream>)streams, closeAllTargetsOnDispose: false)
-	{
-	}
+	public StreamCopier(params IEnumerable<Stream> streams)
+		: this(false, streams) { }
 
 	#endregion
 
@@ -122,7 +105,7 @@ public class StreamCopier : Stream, IList<Stream>
 	public override void Flush()
 	{
 		// We call Flush on each target to ensure any buffered data is written.
-		foreach (Stream s in targets)
+		foreach (Stream s in _targets)
 		{
 			s.Flush();
 		}
@@ -155,7 +138,7 @@ public class StreamCopier : Stream, IList<Stream>
 	public override void Write(byte[] buffer, int offset, int count)
 	{
 		// Forward the write to all underlying target streams
-		foreach (Stream s in targets)
+		foreach (Stream s in _targets)
 		{
 			s.Write(buffer, offset, count);
 		}
@@ -173,11 +156,11 @@ public class StreamCopier : Stream, IList<Stream>
 		if (disposing && closeAllTargetsOnDispose)
 		{
 			// Close/Dispose each stream in the list
-			foreach (Stream s in targets)
+			foreach (Stream s in _targets)
 			{
 				s?.Dispose();
 			}
-			targets.Clear();
+			_targets.Clear();
 		}
 	}
 
@@ -188,7 +171,7 @@ public class StreamCopier : Stream, IList<Stream>
 	/// <summary>
 	/// Gets the number of target streams in the list.
 	/// </summary>
-	public int Count => targets.Count;
+	public int Count => _targets.Count;
 
 	/// <summary>
 	/// Gets a value indicating whether the list of streams is read-only. This is always <c>false</c>.
@@ -202,8 +185,8 @@ public class StreamCopier : Stream, IList<Stream>
 	/// <returns>The stream at the specified index.</returns>
 	public Stream this[int index]
 	{
-		get => targets[index];
-		set => targets[index] = value;
+		get => _targets[index];
+		set => _targets[index] = value;
 	}
 
 	/// <summary>
@@ -211,56 +194,38 @@ public class StreamCopier : Stream, IList<Stream>
 	/// </summary>
 	/// <param name="item">The stream to locate in the list.</param>
 	/// <returns>The index of the stream if found; otherwise, -1.</returns>
-	public int IndexOf(Stream item)
-	{
-		return targets.IndexOf(item);
-	}
+	public int IndexOf(Stream item) => _targets.IndexOf(item);
 
 	/// <summary>
 	/// Inserts a stream at the specified index.
 	/// </summary>
 	/// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
 	/// <param name="item">The stream to insert.</param>
-	public void Insert(int index, Stream item)
-	{
-		targets.Insert(index, item);
-	}
+	public void Insert(int index, Stream item) => _targets.Insert(index, item);
 
 	/// <summary>
 	/// Removes the stream at the specified index.
 	/// </summary>
 	/// <param name="index">The zero-based index of the stream to remove.</param>
-	public void RemoveAt(int index)
-	{
-		targets.RemoveAt(index);
-	}
+	public void RemoveAt(int index) => _targets.RemoveAt(index);
 
 	/// <summary>
 	/// Adds a stream to the end of the list of targets.
 	/// </summary>
 	/// <param name="item">The stream to add.</param>
-	public void Add(Stream item)
-	{
-		targets.Add(item);
-	}
+	public void Add(Stream item) => _targets.Add(item);
 
 	/// <summary>
 	/// Removes all streams from the targets list.
 	/// </summary>
-	public void Clear()
-	{
-		targets.Clear();
-	}
+	public void Clear() => _targets.Clear();
 
 	/// <summary>
 	/// Determines whether the targets list contains a specific stream.
 	/// </summary>
 	/// <param name="item">The stream to locate in the list.</param>
 	/// <returns><c>true</c> if the stream is found in the list; otherwise, <c>false</c>.</returns>
-	public bool Contains(Stream item)
-	{
-		return targets.Contains(item);
-	}
+	public bool Contains(Stream item) => _targets.Contains(item);
 
 	/// <summary>
 	/// Copies the entire list of streams to a compatible one-dimensional array, 
@@ -268,38 +233,26 @@ public class StreamCopier : Stream, IList<Stream>
 	/// </summary>
 	/// <param name="array">The one-dimensional array that is the destination of the elements copied from the list.</param>
 	/// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
-	public void CopyTo(Stream[] array, int arrayIndex)
-	{
-		targets.CopyTo(array, arrayIndex);
-	}
+	public void CopyTo(Stream[] array, int arrayIndex) => _targets.CopyTo(array, arrayIndex);
 
 	/// <summary>
 	/// Removes the first occurrence of a specific stream from the list.
 	/// </summary>
 	/// <param name="item">The stream to remove.</param>
 	/// <returns><c>true</c> if the stream was successfully removed; otherwise, <c>false</c>.</returns>
-	public bool Remove(Stream item)
-	{
-		return targets.Remove(item);
-	}
+	public bool Remove(Stream item) => _targets.Remove(item);
 
 	/// <summary>
 	/// Returns an enumerator that iterates through the list of target streams.
 	/// </summary>
 	/// <returns>An enumerator for the underlying list of streams.</returns>
-	public IEnumerator<Stream> GetEnumerator()
-	{
-		return targets.GetEnumerator();
-	}
+	public IEnumerator<Stream> GetEnumerator() => _targets.GetEnumerator();
 
 	/// <summary>
 	/// Returns an enumerator that iterates through the list of target streams.
 	/// </summary>
 	/// <returns>An enumerator for the underlying list of streams.</returns>
-	IEnumerator IEnumerable.GetEnumerator()
-	{
-		return targets.GetEnumerator();
-	}
+	IEnumerator IEnumerable.GetEnumerator() => _targets.GetEnumerator();
 
 	#endregion
 }

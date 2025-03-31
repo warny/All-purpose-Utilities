@@ -50,7 +50,7 @@ public partial class InterpolatedStringParser : IEnumerable<IInterpolatedStringP
 	/// <exception cref="FormatException">Thrown when the string contains unmatched or incorrect braces.</exception>
 	public InterpolatedStringParser(string interpolatedString)
 	{
-		ArgumentNullException.ThrowIfNull(interpolatedString, nameof(interpolatedString));
+		ArgumentNullException.ThrowIfNull(interpolatedString);
 
 		var parts = new List<IInterpolatedStringPart>();
 
@@ -126,7 +126,7 @@ public class LiteralPart : IInterpolatedStringPart
 	/// <param name="value">The text content of the literal part.</param>
 	public LiteralPart(string value)
 	{
-		ArgumentNullException.ThrowIfNull(value, nameof(value));
+		ArgumentNullException.ThrowIfNull(value);
 		_value.Append(value);
 	}
 
@@ -163,7 +163,7 @@ public class FormattedPart : IInterpolatedStringPart
 	/// <param name="expressionText">The text of the expression within the interpolated string.</param>
 	public FormattedPart(string expressionText)
 	{
-		ArgumentNullException.ThrowIfNull(expressionText, nameof(expressionText));
+		ArgumentNullException.ThrowIfNull(expressionText);
 		ExpressionText = expressionText;
 	}
 }
