@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using Utils.Arrays;
 using Utils.Collections;
 
@@ -60,6 +63,10 @@ namespace Utils.VirtualMachine
                 ArrayEqualityComparers.Byte
             );
 
+			var numberReaderType = typeof(INumberReader);
+			var numberReaderTypeMethods = numberReaderType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+				.ToDictionary(m=>m.ReturnType, m=>m);
+
             var methods = GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             foreach (var method in methods)
@@ -68,14 +75,40 @@ namespace Utils.VirtualMachine
                 if (instructionAttributes.IsNullOrEmptyCollection())
                     continue;
 
-                if (method.CreateDelegate(typeof(InstructionDelegate), this) is InstructionDelegate instructionDelegate)
-                {
-                    foreach (InstructionAttribute attr in instructionAttributes.OfType<InstructionAttribute>())
-                    {
-                        result.Add(attr.Instruction, (attr.Name, instructionDelegate));
-                        _maxInstructionSize = Math.Max(_maxInstructionSize, attr.Instruction.Length);
-                    }
-                }
+				var parameters = method.GetParameters();
+				if (parameters[0].ParameterType != typeof(T)) continue;
+				InstructionDelegate instructionDelegate;
+				if (parameters.Length == 1)
+				{
+					instructionDelegate = (InstructionDelegate)method.CreateDelegate(typeof(InstructionDelegate), this);
+				}
+				else
+				{
+					var contextParameter = Expression.Parameter(typeof(T), "context");
+					var numberReaderExpression = Expression.Constant(_numberReader);
+
+					List<Expression> methodParameters = [
+						contextParameter
+					];
+
+					foreach (var parameter in parameters.Skip(1))
+					{
+						var readerMethod = numberReaderTypeMethods[parameter.ParameterType];
+						var methodCallExpression = Expression.Call(numberReaderExpression, readerMethod, [contextParameter]);
+						methodParameters.Add(methodCallExpression);
+					}
+
+					var expression = Expression.Lambda<InstructionDelegate>(Expression.Call(Expression.Constant(this), method, methodParameters.ToArray()), [contextParameter]);
+					instructionDelegate = expression.Compile();
+				}
+
+				foreach (InstructionAttribute attr in instructionAttributes.OfType<InstructionAttribute>())
+				{
+					result.Add(attr.Instruction, (attr.Name, instructionDelegate));
+					_maxInstructionSize = Math.Max(_maxInstructionSize, attr.Instruction.Length);
+				}
+
+
             }
 
             return result;
