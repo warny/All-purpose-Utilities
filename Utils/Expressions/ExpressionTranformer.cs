@@ -16,14 +16,17 @@ namespace Utils.Expressions;
 /// </summary>
 public abstract class ExpressionTransformer
 {
-	private static readonly Type TypeOfExpression = typeof(Expression);
+	/// <summary>
+	/// A reference to the <see cref="System.Linq.Expressions.Expression"/> type, used for validation checks.
+	/// </summary>
+	private static readonly Type _typeOfExpression = typeof(Expression);
 
 	/// <summary>
 	/// A list of instance methods on this transformer type that are decorated with
 	/// <see cref="ExpressionSignatureAttribute"/>. Each entry stores the method,
 	/// the attribute itself, and its parameter info.
 	/// </summary>
-	private IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)> TransformMethods { get; }
+	private readonly IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)> _transformMethods;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ExpressionTransformer"/> class.
@@ -33,7 +36,7 @@ public abstract class ExpressionTransformer
 	protected ExpressionTransformer()
 	{
 		Type t = GetType();
-		TransformMethods =
+		_transformMethods =
 			t.GetMethods(Public | NonPublic | InvokeMethod | Instance)
 			 .Select(m => (Method: m, Attr: m.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault()))
 			 .Where(ma => ma.Attr != null)
@@ -43,7 +46,7 @@ public abstract class ExpressionTransformer
 
 	/// <summary>
 	/// Prepares an expression for transformation. Subclasses can override this to apply
-	/// initial logic before the main <see cref="Transform(Expression)"/> switch (e.g. caching).
+	/// initial logic before the main <see cref="Transform(Expression)"/> switch (e.g., caching).
 	/// The default implementation returns the expression unchanged.
 	/// </summary>
 	/// <param name="e">The expression to prepare.</param>
@@ -132,15 +135,17 @@ public abstract class ExpressionTransformer
 		}
 
 		// Attempt to find a matching transform method marked with ExpressionSignatureAttribute.
-		foreach ((var method, var attr, var parametersInfo) in TransformMethods)
+		foreach ((MethodInfo method, ExpressionSignatureAttribute attr, ParameterInfo[] parametersInfo) in _transformMethods)
 		{
 			// If the attribute doesn't match the expression type, skip
 			if (!attr.Match(e))
 				continue;
 
 			// The method must return an Expression (or derived) type
-			if (!TypeOfExpression.IsAssignableFrom(method.ReturnType))
+			if (!_typeOfExpression.IsAssignableFrom(method.ReturnType))
+			{
 				throw new InvalidProgramException("Transform method must return an Expression type.");
+			}
 
 			// The first parameter must match the main expression
 			if (!parametersInfo[0].ParameterType.IsInstanceOfType(parameters[0]))
@@ -279,8 +284,10 @@ public abstract class ExpressionTransformer
 	/// </summary>
 	/// <param name="e">The original expression to copy.</param>
 	/// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
-	/// <returns>A new expression replicating the structure of <paramref name="e"/> with
-	/// possibly different sub-expressions.</returns>
+	/// <returns>
+	/// A new expression replicating the structure of <paramref name="e"/> with
+	/// possibly different sub-expressions.
+	/// </returns>
 	protected Expression CopyExpression(Expression e, params Expression[] parameters)
 	{
 		return e.NodeType switch
@@ -438,7 +445,7 @@ public class ExpressionSignatureAttribute : Attribute
 public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
 {
 	/// <summary>
-	/// Gets the declaring type that should match the method call.
+	/// Gets the declaring type(s) that should match the method call.
 	/// </summary>
 	public Type[] Types { get; }
 
@@ -462,9 +469,9 @@ public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
 
 	/// <summary>
 	/// Creates a new instance of <see cref="ExpressionCallSignatureAttribute"/> for calls
-	/// to <paramref name="type"/>.<paramref name="functionName"/>.
+	/// to <paramref name="types"/>.<paramref name="functionName"/>.
 	/// </summary>
-	/// <param name="type">The declaring type of the target method.</param>
+	/// <param name="types">One or more declaring types of the target method.</param>
 	/// <param name="functionName">The name of the method to match.</param>
 	public ExpressionCallSignatureAttribute(Type[] types, string functionName)
 		: base(ExpressionType.Call)
@@ -496,7 +503,8 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
 	/// <summary>
 	/// Creates a new instance allowing any numeric constant.
 	/// </summary>
-	public ConstantNumericAttribute() : base(ExpressionType.Constant)
+	public ConstantNumericAttribute()
+		: base(ExpressionType.Constant)
 	{
 		Values = null;
 	}
@@ -505,7 +513,8 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
 	/// Creates a new instance allowing only the specified numeric values.
 	/// </summary>
 	/// <param name="values">The allowed numeric values.</param>
-	public ConstantNumericAttribute(params double[] values) : base(ExpressionType.Constant)
+	public ConstantNumericAttribute(params double[] values)
+		: base(ExpressionType.Constant)
 	{
 		Values = values;
 	}

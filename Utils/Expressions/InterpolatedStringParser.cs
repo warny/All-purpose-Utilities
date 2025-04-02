@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -12,39 +9,45 @@ namespace Utils.Expressions;
 /// </summary>
 public partial class InterpolatedStringParser : IEnumerable<IInterpolatedStringPart>
 {
-	// Regex pattern for parsing the interpolated string.
+	/// <summary>
+	/// A compiled regex pattern for parsing the interpolated string syntax. 
+	/// This regex is generated at compile time via the <see cref="GeneratedRegexAttribute"/>.
+	/// </summary>
 	[GeneratedRegex(@"
-        (
-            \{(?<text>\{)                 # Escaped opening brace '{{'
-            |
-            \}(?<text>\})                 # Escaped closing brace '}}'
-            |
-            \{\s*(?<expression>          # Expression within braces
-                (
-                    (?>\(((?<p>\()|(?<-p>\))|[^()]*)*\))(?(p)(?!)) # Match nested parentheses
-                    | [^():,]*?            # Match non-parentheses characters
-                )
-            )(,(?<alignment>[+-]?\d+))?   # Optional alignment specifier
-            (:(?<format>.+?))?            # Optional format specifier
-            \s*\}
-            |
-            (?<text>[^{}]+)               # Plain text
-            |
-            (?<error>[{}])                # Unexpected or unmatched braces
-        )
-    ", RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace)]
+            (
+                \{(?<text>\{)                 # Escaped opening brace '{{'
+                |
+                \}(?<text>\})                 # Escaped closing brace '}}'
+                |
+                \{\s*(?<expression>          # Expression within braces
+                    (
+                        (?>\(((?<p>\()|(?<-p>\))|[^()]*)*\))(?(p)(?!)) # Match nested parentheses
+                        | [^():,]*?            # Match non-parentheses characters
+                    )
+                )(,(?<alignment>[+-]?\d+))?   # Optional alignment specifier
+                (:(?<format>.+?))?            # Optional format specifier
+                \s*\}
+                |
+                (?<text>[^{}]+)               # Plain text
+                |
+                (?<error>[{}])                # Unexpected or unmatched braces
+            )
+        ", RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace)]
 	private static partial Regex CreateParsingRegex();
 
 	/// <summary>
-	/// The compiled regex used to parse interpolated strings.
+	/// The compiled regex used to parse format-like interpolated strings.
 	/// </summary>
-	private static readonly Regex ParseFormatStringRegex = CreateParsingRegex();
+	private static readonly Regex _parseFormatStringRegex = CreateParsingRegex();
 
+	/// <summary>
+	/// A read-only list of parsed string parts, which can be literal or formatted.
+	/// </summary>
 	private readonly IReadOnlyList<IInterpolatedStringPart> _parts;
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="InterpolatedStringParser" />
-	/// by parsing the provided interpolated string.
+	/// Initializes a new instance of <see cref="InterpolatedStringParser"/> by parsing
+	/// the provided interpolated string.
 	/// </summary>
 	/// <param name="interpolatedString">The interpolated string to parse.</param>
 	/// <exception cref="FormatException">Thrown when the string contains unmatched or incorrect braces.</exception>
@@ -54,30 +57,40 @@ public partial class InterpolatedStringParser : IEnumerable<IInterpolatedStringP
 
 		var parts = new List<IInterpolatedStringPart>();
 
-		foreach (Match match in ParseFormatStringRegex.Matches(interpolatedString))
+		foreach (Match match in _parseFormatStringRegex.Matches(interpolatedString))
 		{
+			// If there's an unexpected brace or a mismatch, throw
 			if (match.Groups["error"].Success)
 			{
-				throw new FormatException($"Incorrect format string: '{match.Groups["error"].Value}' was unexpected at index {match.Groups["error"].Index}.");
+				throw new FormatException(
+					$"Incorrect format string: '{match.Groups["error"].Value}' was unexpected at index {match.Groups["error"].Index}."
+				);
 			}
 
+			// Plain text segment
 			if (match.Groups["text"].Success)
 			{
 				string text = match.Groups["text"].Value;
+
 				if (parts.LastOrDefault() is LiteralPart lastLiteral)
 				{
+					// Append consecutive text to the same literal part
 					lastLiteral.Append(text);
 				}
 				else
 				{
+					// Create a new literal part
 					parts.Add(new LiteralPart(text));
 				}
 			}
+			// Expression segment (with optional alignment and format)
 			else if (match.Groups["expression"].Success)
 			{
 				string expression = match.Groups["expression"].Value;
 				string? format = match.Groups["format"].Success ? match.Groups["format"].Value : null;
-				int? alignment = match.Groups["alignment"].Success ? int.Parse(match.Groups["alignment"].Value) : null;
+				int? alignment = match.Groups["alignment"].Success
+					? int.Parse(match.Groups["alignment"].Value)
+					: null;
 
 				parts.Add(new FormattedPart(expression)
 				{
@@ -87,11 +100,12 @@ public partial class InterpolatedStringParser : IEnumerable<IInterpolatedStringP
 			}
 		}
 
+		// Finalize the parts list
 		_parts = parts.AsReadOnly();
 	}
 
 	/// <summary>
-	/// Returns an enumerator that iterates through the parsed string parts.
+	/// Returns an enumerator over the parsed string parts.
 	/// </summary>
 	public IEnumerator<IInterpolatedStringPart> GetEnumerator() => _parts.GetEnumerator();
 
@@ -121,7 +135,7 @@ public class LiteralPart : IInterpolatedStringPart
 	public int Length => _value.Length;
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="LiteralPart" /> with the specified text.
+	/// Initializes a new instance of <see cref="LiteralPart"/> with the specified text.
 	/// </summary>
 	/// <param name="value">The text content of the literal part.</param>
 	public LiteralPart(string value)
@@ -134,11 +148,15 @@ public class LiteralPart : IInterpolatedStringPart
 	/// Appends additional text to this literal part.
 	/// </summary>
 	/// <param name="value">The text to append.</param>
-	public void Append(string value) => _value.Append(value);
+	public void Append(string value)
+	{
+		_value.Append(value);
+	}
 }
 
 /// <summary>
-/// Represents a formatted part of an interpolated string, containing an expression and optional format/alignment specifications.
+/// Represents a formatted part of an interpolated string, containing an expression
+/// and optional format/alignment specifications.
 /// </summary>
 public class FormattedPart : IInterpolatedStringPart
 {
@@ -158,7 +176,7 @@ public class FormattedPart : IInterpolatedStringPart
 	public int? Alignment { get; init; }
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="FormattedPart" /> with the specified expression text.
+	/// Initializes a new instance of <see cref="FormattedPart"/> with the specified expression text.
 	/// </summary>
 	/// <param name="expressionText">The text of the expression within the interpolated string.</param>
 	public FormattedPart(string expressionText)

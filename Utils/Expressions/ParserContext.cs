@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
-using Utils.Collections;
 using Utils.Objects;
 
 namespace Utils.Expressions;
@@ -18,7 +14,7 @@ public class ParserContext
         Tokenizer = tokenizer;
         DefaultStaticType = defaultStaticType;
         FirstArgumentIsDefaultInstance = firstArgumentIsDefaultInstance;
-        stack = new ContextStackElement(null, false);
+        Stack = new ContextStackElement(null, false);
 
         if (paramNames.IsNullOrEmptyCollection()) paramNames = null;
         if (paramNames is not null && paramNames.Length != invokeMethodParameters.Length) throw new ArgumentException("paramNames for delegate name overriding must be of the same length than the delegate type argument count", nameof(paramNames));
@@ -40,7 +36,7 @@ public class ParserContext
         DefaultStaticType = defaultStaticType;
         FirstArgumentIsDefaultInstance = firstTypeIsDefaultInstance;
         DefaultInstanceParam = firstTypeIsDefaultInstance && parameters.Length > 0 ? parameters[0] : null;
-        stack = new ContextStackElement(null, false);
+        Stack = new ContextStackElement(null, false);
 
         // Get the parameter types of the delegate
         foreach (var p in parameters)
@@ -59,23 +55,23 @@ public class ParserContext
     public bool FirstArgumentIsDefaultInstance { get; }
     public ParameterExpression DefaultInstanceParam { get; }
 
-    private ContextStackElement stack { get; set; }
-    public int Depth => stack?.Depth ?? -1;
-    public ICollection<ParameterExpression> StackVariables => stack.Variables;
+    private ContextStackElement Stack { get; set; }
+    public int Depth => Stack?.Depth ?? -1;
+    public ICollection<ParameterExpression> StackVariables => Stack.Variables;
 
-    public LabelTarget ContinueLabel { get { ContextStackElement s; for (s = stack; s != null && s.ContinueLabel == null; s = s.parent) ; return s?.ContinueLabel; } }
-    public LabelTarget BreakLabel { get { ContextStackElement s; for (s = stack; s != null && s.ContinueLabel == null; s = s.parent) ; return s?.BreakLabel; } }
+    public LabelTarget ContinueLabel { get { ContextStackElement s; for (s = Stack; s != null && s.ContinueLabel == null; s = s.parent) ; return s?.ContinueLabel; } }
+    public LabelTarget BreakLabel { get { ContextStackElement s; for (s = Stack; s != null && s.ContinueLabel == null; s = s.parent) ; return s?.BreakLabel; } }
 
     public ParameterExpression FirstParameter => Parameters.FirstOrDefault();
 
     public void PushContext(bool lambdaExpression = false)
     {
-        stack = new ContextStackElement(stack, lambdaExpression); 
+        Stack = new ContextStackElement(Stack, lambdaExpression); 
     }
 
     public void PushContext(LabelTarget continueLabel, LabelTarget breakLabel, bool lambdaExpression = false)
     {
-        stack = new ContextStackElement(stack, lambdaExpression)
+        Stack = new ContextStackElement(Stack, lambdaExpression)
         {
             ContinueLabel = continueLabel,
             BreakLabel = breakLabel
@@ -85,21 +81,21 @@ public class ParserContext
 
     public bool PopContext()
     {
-        stack = stack.parent;
-        return stack.parent != null;
+        Stack = Stack.parent;
+        return Stack.parent != null;
     }
 
-    public bool AddLabel(LabelTarget label) => stack.AddLabel(label);
+    public bool AddLabel(LabelTarget label) => Stack.AddLabel(label);
     public bool[] AddLabels(params LabelTarget[] labels) => AddLabels((IEnumerable<LabelTarget>)labels);
     public bool[] AddLabels(IEnumerable<LabelTarget> labels) => labels.Select(AddLabel).ToArray();
 
-    public bool AddVariable(ParameterExpression variable) => stack.AddVariable(variable);
+    public bool AddVariable(ParameterExpression variable) => Stack.AddVariable(variable);
     public bool[] AddVariables(params ParameterExpression[] variables) => AddVariables((IEnumerable<ParameterExpression>)variables);
     public bool[] AddVariables(IEnumerable<ParameterExpression> variables) => variables.Select(AddVariable).ToArray();
 
     public bool TryFindVariable(string name, out ParameterExpression parameter)
     {
-        if (stack.TryFindParameter(name, out parameter)) return true;
+        if (Stack.TryFindParameter(name, out parameter)) return true;
         parameter = Parameters.FirstOrDefault(p => p.Name == name);
         return parameter != null;
     }
