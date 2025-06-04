@@ -4,39 +4,52 @@ using System.Text;
 
 namespace Utils.VirtualMachine
 {
-	public interface INumberReader
-	{
-		byte ReadByte(Context context);
-		Int16 ReadInt16(Context context);
-		Int32 ReadInt32(Context context);
-		Int64 ReadInt64(Context context);
-		UInt16 ReadUInt16(Context context);
-		UInt32 ReadUInt32(Context context);
-		UInt64 ReadUInt64(Context context);
-		float ReadSingle(Context context);
-		double ReadDouble(Context context);
-	}
+        /// <summary>
+        /// Provides methods to read numbers from a virtual machine context.
+        /// </summary>
+        public interface INumberReader
+        {
+                byte ReadByte(Context context);
+                Int16 ReadInt16(Context context);
+                Int32 ReadInt32(Context context);
+                Int64 ReadInt64(Context context);
+                UInt16 ReadUInt16(Context context);
+                UInt32 ReadUInt32(Context context);
+                UInt64 ReadUInt64(Context context);
+                float ReadSingle(Context context);
+                double ReadDouble(Context context);
+        }
 
-	public static class NumberReader
+        /// <summary>
+        /// Factory methods for obtaining <see cref="INumberReader"/> instances.
+        /// </summary>
+        public static class NumberReader
 	{
 		private static INumberReader NormalReader { get; } = new NormalReader();
 		private static INumberReader InvertedReader { get; } = new InvertedReader();
 
-		public static INumberReader GetReader(bool littleIndian)
-		{
-			if (!littleIndian ^ BitConverter.IsLittleEndian)
-			{
-				return NormalReader;
-			}
-			else
-			{
-				return InvertedReader;
-			}
+                /// <summary>
+                /// Returns a reader configured for the specified endianness.
+                /// </summary>
+                /// <param name="littleIndian">True for little-endian reading.</param>
+                public static INumberReader GetReader(bool littleIndian)
+                {
+                        if (!littleIndian ^ BitConverter.IsLittleEndian)
+                        {
+                                return NormalReader;
+                        }
+                        else
+                        {
+                                return InvertedReader;
+                        }
 
-		}
+                }
 	}
 
-	internal class NormalReader : INumberReader
+        /// <summary>
+        /// Reader implementation matching the system endianness.
+        /// </summary>
+        internal class NormalReader : INumberReader
 	{
 		public byte ReadByte(Context context)
 		{
@@ -102,15 +115,21 @@ namespace Utils.VirtualMachine
 
 	}
 
-	internal class InvertedReader : INumberReader
+        /// <summary>
+        /// Reader implementation that swaps endianness when reading values.
+        /// </summary>
+        internal class InvertedReader : INumberReader
 	{
-		private static void ReadDatas(Context context, byte[] target)
-		{
-			for (int i = target.Length - 1; i >= 0; i--)
-			{
-				target[i] = context.Data[context.InstructionPointer++];
-			}
-		}
+                /// <summary>
+                /// Reads bytes from the context in reverse order to handle endian swapping.
+                /// </summary>
+                private static void ReadDatas(Context context, byte[] target)
+                {
+                        for (int i = target.Length - 1; i >= 0; i--)
+                        {
+                                target[i] = context.Data[context.InstructionPointer++];
+                        }
+                }
 
 		public byte ReadByte(Context context)
 		{
