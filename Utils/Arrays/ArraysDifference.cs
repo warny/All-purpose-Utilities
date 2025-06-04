@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Utils.Arrays;
 
@@ -19,13 +14,13 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 
     public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new)
         where ET : IEquatable<ET>
-        => new ArraysDifference<ET>(old, @new, (o, n) => o.Equals(n));
+        => new(old, @new, (o, n) => o.Equals(n));
 
 	public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IEqualityComparer<ET> comparer)
-    	=> new ArraysDifference<ET>(old, @new, comparer.Equals);
+    	=> new (old, @new, comparer.Equals);
 
 	public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IComparer<ET> comparer)
-		=> new ArraysDifference<ET>(old, @new, (o, n) => comparer.Compare(o, n) == 0);
+		=> new (old, @new, (o, n) => comparer.Compare(o, n) == 0);
 
 	/// <summary>
 	/// Compares two strings and returns the modifications needed to transform the first string into the second.
@@ -54,7 +49,7 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 			}
 		}
 
-		List<ArraysChange<T>> changes = new List<ArraysChange<T>>();
+		List<ArraysChange<T>> changes = [];
 		StringComparisonStatus currentStatus = StringComparisonStatus.Unchanged;
 		int previousStatePosition = old.Length - lengthEnd;
 
@@ -115,7 +110,7 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 		}
 
 		changes.Reverse();
-		return changes.ToImmutableArray();
+		return [.. changes];
 	}
 
 	private static void AddChange(List<ArraysChange<T>> changes, ReadOnlySpan<T> old, ReadOnlySpan<T> @new, StringComparisonStatus currentStatus, int previousStatePosition, int oldPosition, int newPosition)
