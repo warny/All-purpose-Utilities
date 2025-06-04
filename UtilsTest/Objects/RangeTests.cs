@@ -126,8 +126,8 @@ namespace UtilsTest.Objects
 		[TestMethod]
 		public void RangeTestBetween2()
 		{
-			int[] table = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-			int[] expected = { 4, 6 };
+			int[] table = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+			int[] expected = [4, 6];
 			var range = table.Between(3, 6, 2);
 			Assert.AreEqual(expected[0], range[0]);
 			Assert.AreEqual(expected[1], range[1]);
@@ -137,8 +137,8 @@ namespace UtilsTest.Objects
 		[TestMethod]
 		public void RangeTestBetween3()
 		{
-			int[] table = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-			int[] expected = { 7, 5 };
+			int[] table = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+			int[] expected = [7, 5];
 			var range = table.Between(3, 6, -2);
 			Assert.AreEqual(expected[0], range[0]);
 			Assert.AreEqual(expected[1], range[1]);
@@ -150,10 +150,10 @@ namespace UtilsTest.Objects
 		{
 			int[] table = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 			int[] expected = { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
-			var range = table.Reverse();
-			Assert.AreEqual(expected[0], range[0]);
-			Assert.AreEqual(expected[1], range[1]);
-			Assert.IsTrue(comparer.Equals(expected, range));
+			table.Reverse();
+			Assert.AreEqual(expected[0], table[0]);
+			Assert.AreEqual(expected[1], table[1]);
+			Assert.IsTrue(comparer.Equals(expected, table));
 		}
 
 	}

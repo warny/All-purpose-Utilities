@@ -133,14 +133,15 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 		//     <value>filename;System.Text.UTF8Encoding</value>
 		//   </data>
 		// </root>
-		while (xmlReader.Read())
-		{
-			// Advance to "data" elements
-			if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "data")
-			{
-				ProcessDataElement(xmlReader);
-			}
-		}
+                string basePath = Path.GetDirectoryName(file.FullName) ?? string.Empty;
+                while (xmlReader.Read())
+                {
+                        // Advance to "data" elements
+                        if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "data")
+                        {
+                                ProcessDataElement(xmlReader, basePath);
+                        }
+                }
 	}
 
 	/// <summary>
@@ -148,7 +149,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 	/// reading "name", "type" attributes, and nested &lt;value&gt;.
 	/// </summary>
 	/// <param name="xmlReader">The XmlReader positioned on &lt;data&gt; start.</param>
-	private void ProcessDataElement(XmlReader xmlReader)
+        private void ProcessDataElement(XmlReader xmlReader, string basePath)
 	{
 		// We want to read the attributes of <data> before we move on:
 		// e.g. <data name="MyKey" type="System.Resources.ResXFileRef, ...">
@@ -203,7 +204,13 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 				// splitted[0] = path
 				// splitted[1] = type or encoding
 				// splitted[2..] = more optional parameters (e.g. for text encoding or reflection type info)
-				string filePath = splitted[0];
+                                string relativePath = splitted[0].Replace('\\', Path.DirectorySeparatorChar);
+                                string candidatePath = Path.GetFullPath(Path.Combine(basePath, relativePath));
+                                if (!File.Exists(candidatePath))
+                                {
+                                        candidatePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(basePath) ?? string.Empty, relativePath));
+                                }
+                                string filePath = candidatePath;
 				string typeOrEncoding = splitted[1];
 
 				// If it’s a recognized encoding name (like "System.Text.UTF8Encoding"), 
@@ -432,7 +439,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 					{
 						// If the type has a constructor that takes (string path), 
 						// create an instance:
-						_instance = File.ReadAllText(_filePath);
+                                                _instance = File.ReadAllText(fullPath);
 					}
 					else
 					{

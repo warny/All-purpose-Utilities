@@ -105,7 +105,7 @@ public class RawWriter
 
 	public void WriteChar(IWriter writer, char value)
 	{
-		var data = Encoding.GetBytes([value]);
+                var data = Encoding.GetBytes([value]);
 		WriteByte(writer, (byte)data.Length);
 		writer.WriteBytes(data);
 	}

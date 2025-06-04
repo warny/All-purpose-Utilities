@@ -64,7 +64,7 @@ public class UriBuilderEx
 		AbsolutePath = uri.AbsolutePath;
 
 		// Parse username and password from user info (if present).
-		string[] userInfos = uri.UserInfo.Split([':'], 2);
+                string[] userInfos = uri.UserInfo.Split([':'], 2);
 		if (userInfos.Length >= 1)
 		{
 			Username = System.Web.HttpUtility.UrlDecode(userInfos[0]);
