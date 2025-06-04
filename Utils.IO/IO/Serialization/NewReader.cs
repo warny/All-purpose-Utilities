@@ -23,23 +23,24 @@ public class NewReader : IReader, IStreamMapping<NewReader>
 
 	public NewReader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
 
-	public NewReader(Stream stream, params IEnumerable<Delegate> converters)
-	{
-		this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
-		foreach (var converter in converters.Union(new RawReader().ReaderDelegates))
-		{
-			var method = converter.GetMethodInfo();
-			var arguments = method.GetParameters();
-			arguments.ArgMustBeOfSize(1);
-			arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument of the function is not IReader");
-			if (!readers.ContainsKey(method.ReturnType))
-			{
-				readers.Add(method.ReturnType, converter);
-			}
-		}
-	}
+        public NewReader(Stream stream, params IEnumerable<Delegate> converters)
+        {
+                this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+                foreach (var converter in converters.Union(new RawReader().ReaderDelegates))
+                {
+                        var method = converter.GetMethodInfo();
+                        var arguments = method.GetParameters();
+                        arguments.ArgMustBeOfSize(1);
+                        arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument of the function is not IReader");
+                        if (!readers.ContainsKey(method.ReturnType))
+                        {
+                                readers.Add(method.ReturnType, converter);
+                        }
+                }
+        }
 
-	public NewReader(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters) : this(stream, converters.SelectMany(c => c)) { }
+        public NewReader(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
+                : this(stream, converters.SelectMany(c => c)) { }
 
 
 	/// <summary>

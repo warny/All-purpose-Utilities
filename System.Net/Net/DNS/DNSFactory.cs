@@ -94,8 +94,8 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	/// If duplicates occur for the same (<see cref="DNSClass"/>, ID) or (<see cref="DNSClass"/>, name) pair,
 	/// the last entry encountered overwrites previous ones.
 	/// </remarks>
-	public DNSFactory(params IEnumerable<DNSFactory> factories)
-	{
+       public DNSFactory(params IEnumerable<DNSFactory> factories)
+        {
 		var dnsResponsesById = new Dictionary<UshortRecordKey, Type>();
 		var dnsClassNameById = new Dictionary<UshortRecordKey, string>();
 		var dnsClassIdByName = new Dictionary<StringRecordKey, ushort>();
@@ -132,8 +132,8 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	/// unless you combine it with another factory. For a fully initialized factory, see <see cref="DNSFactory()"/>
 	/// or <see cref="DNSFactory(IEnumerable{Assembly})"/>.
 	/// </remarks>
-	public DNSFactory(params IEnumerable<Type> types)
-	{
+       public DNSFactory(params IEnumerable<Type> types)
+        {
 		DNSTypes = GetDNSClasses(types);
 	}
 
@@ -147,8 +147,8 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	/// unless you combine it with another factory. For a fully initialized factory, see <see cref="DNSFactory()"/>
 	/// or use <see cref="operator+"/> to merge with another factory.
 	/// </remarks>
-	public DNSFactory(params IEnumerable<Assembly> assemblies)
-	{
+       public DNSFactory(params IEnumerable<Assembly> assemblies)
+        {
 		var dnsTypes = new List<Type>();
 		foreach (Assembly assembly in assemblies)
 		{
