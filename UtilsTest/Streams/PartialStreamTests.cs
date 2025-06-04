@@ -62,7 +62,7 @@ public class PartialStreamTests
         Assert.AreEqual(10, ps.Position);
         Assert.AreEqual(0, baseStream.Position);
         var expected = new byte[20];
-        Array.Copy(toWrite, 0, expected, 5, 10);
+        System.Array.Copy(toWrite, 0, expected, 5, 10);
         var comparer = EnumerableEqualityComparer<byte>.Default;
         Assert.AreEqual(expected, baseStream.ToArray(), comparer);
     }
