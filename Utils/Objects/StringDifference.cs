@@ -55,7 +55,7 @@ public class StringDifference : IReadOnlyList<StringChange>
 			}
 		}
 
-		List<StringChange> changes = new List<StringChange>();
+		List<StringChange> changes = [];
 		StringComparisonStatus currentStatus = StringComparisonStatus.Unchanged;
 		int previousStatePosition = old.Length - lengthEnd;
 
