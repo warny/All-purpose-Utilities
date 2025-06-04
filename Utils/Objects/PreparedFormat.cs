@@ -20,18 +20,6 @@ namespace Utils.Objects
 		private static readonly string[] _defaultNamespaces = { "System", "System.Linq", "System.Text", "Utils.Objects" };
 
 		/// <summary>
-		/// A reference to the <c>Align</c> extension method on <see cref="StringExtensions"/>.
-		/// </summary>
-		private static readonly MethodInfo _alignMethod =
-			typeof(StringExtensions).GetMethod(nameof(StringExtensions.Align), [typeof(string), typeof(int)]);
-
-		/// <summary>
-		/// A reference to the <c>Format</c> method on <see cref="ICustomFormatter"/>.
-		/// </summary>
-		private static readonly MethodInfo _customFormatMethod =
-			typeof(ICustomFormatter).GetMethod("Format", [typeof(string), typeof(object), typeof(IFormatProvider)]);
-
-		/// <summary>
 		/// A reference to the <see cref="CultureInfo.CurrentCulture"/> property.
 		/// </summary>
 		private static readonly PropertyInfo _currentCultureProperty =

@@ -36,8 +36,8 @@ namespace Utils.Arrays
 				Type equalityComparerGenericType = typeof(MultiDimensionalArrayEqualityComparer<>);
 				Type equalityComparerType = equalityComparerGenericType.MakeGenericType(typeOfElement);
 				object subComparer = Activator.CreateInstance(equalityComparerType);
-				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), new[] { typeOfT, typeOfT }).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
-				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), new[] { typeOfT }).CreateDelegate(typeof(Func<T, int>), subComparer);
+				areEquals = (Func<T, T, bool>)equalityComparerType.GetMethod(nameof(Equals), [typeOfT, typeOfT]).CreateDelegate(typeof(Func<T, T, bool>), subComparer);
+				getHashCode = (Func<T, int>)equalityComparerType.GetMethod(nameof(GetHashCode), [typeOfT]).CreateDelegate(typeof(Func<T, int>), subComparer);
 				return;
 			}
 			else
