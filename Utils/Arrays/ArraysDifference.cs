@@ -129,6 +129,9 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 	IEnumerator IEnumerable.GetEnumerator() => changes.GetEnumerator();
 }
 
+/// <summary>
+/// Indicates the type of change between two arrays.
+/// </summary>
 public enum StringComparisonStatus
 {
     Removed = -1,
@@ -136,14 +139,27 @@ public enum StringComparisonStatus
     Added = 1
 }
 
+/// <summary>
+/// Represents a single change between two arrays.
+/// </summary>
 public class ArraysChange<T>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ArraysChange{T}"/> class.
+    /// </summary>
     internal ArraysChange(StringComparisonStatus status, ReadOnlySpan<T> value)
     {
         this.Status = status;
         this.Value = value.ToImmutableArray();
     }
 
-	public StringComparisonStatus Status { get; }
+        /// <summary>
+        /// Gets the status of this change.
+        /// </summary>
+        public StringComparisonStatus Status { get; }
+
+    /// <summary>
+    /// Gets the values involved in the change.
+    /// </summary>
     public IReadOnlyList<T> Value { get; }
 }
