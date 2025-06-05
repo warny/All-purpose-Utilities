@@ -10,8 +10,9 @@
     <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
     <PackageId>omy.Utils.Imaging</PackageId>
     <Copyright>Olivier MARTY</Copyright>
-    <Description>Accesseurs d'images
-Gestion des couleurs 8, 32 et 64 bits en Argb et Ahsv</Description>
+    <Description>Image accessors and drawing primitives
+        - Bitmap manipulation helpers
+        - 8, 32 and 64 bit color handling in ARGB and AHSV</Description>
     <RootNamespace>Utils</RootNamespace>
   </PropertyGroup>
 

@@ -2,9 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <LangVersion>Latest</LangVersion>
-</PropertyGroup>
+          <EnablePreviewFeatures>True</EnablePreviewFeatures>
+          <LangVersion>Latest</LangVersion>
+    <Description>Data mapping utilities
+        - Attributes to describe data fields
+        - Fill objects from IDataRecord/IDataReader</Description>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Utils\Utils.csproj" />

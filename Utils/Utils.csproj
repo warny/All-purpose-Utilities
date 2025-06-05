@@ -47,6 +47,10 @@
         - Cancelable Stream
     Web
         - Advanced URI Builder
+    XML
+        - XML processing helpers
+    Network
+        - Mail utilities and query string handling
 </Description>
   </PropertyGroup>
 
