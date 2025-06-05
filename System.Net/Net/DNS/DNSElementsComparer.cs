@@ -167,7 +167,7 @@ namespace Utils.Net.DNS
 			var comparerLambda = Expression.Lambda<Func<DNSElement, DNSElement, bool>>(
 				Expression.Block(
 					typeof(bool),
-					new[] { variable1, variable2, comparison },
+					[variable1, variable2, comparison],
 					comparerExpressions
 				),
 				"Compare" + type.Name,
@@ -198,13 +198,13 @@ namespace Utils.Net.DNS
 			var member2 = PropertyOrField(variable2, field.Member);
 
 			// First compare the array lengths. If they differ, comparison is already false.
-			var lengthMethod = member1.Type.GetMethod("Length");
+			var lengthProperty = member1.Type.GetProperty("Length");
 			comparer.Add(
 				Expression.Assign(
 					comparison,
 					Expression.Equal(
-						Expression.Call(member1, lengthMethod),
-						Expression.Call(member2, lengthMethod)
+						Expression.Property(member1, lengthProperty),
+						Expression.Property(member2, lengthProperty)
 					)
 				)
 			);
@@ -224,8 +224,9 @@ namespace Utils.Net.DNS
 				Expression.IfThen(
 					comparison,
 					Expression.Block(
+						[ variableI, variableLength ],
 						Expression.Assign(variableI, Expression.Constant(0)),
-						Expression.Assign(variableLength, Expression.Call(member1, lengthMethod)),
+						Expression.Assign(variableLength, Expression.Property(member1, lengthProperty)),
 						Expression.Loop(
 							Expression.Block(
 								Expression.IfThen(
