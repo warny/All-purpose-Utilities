@@ -2,8 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+          <EnablePreviewFeatures>True</EnablePreviewFeatures>
+          <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+    <Description>Reflection helpers
+        - Dynamic DLL mapping utilities
+        - Runtime code generation support</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,9 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+          <EnablePreviewFeatures>True</EnablePreviewFeatures>
     <AssemblyName>Utils.Net</AssemblyName>
     <RootNamespace>Utils</RootNamespace>
+    <Description>Network utilities
+        - DNS protocol implementation
+        - ICMP helpers and system network info</Description>
   </PropertyGroup>
 
   <ItemGroup>

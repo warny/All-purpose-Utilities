@@ -2,8 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <LangVersion>Latest</LangVersion>
+          <EnablePreviewFeatures>True</EnablePreviewFeatures>
+          <LangVersion>Latest</LangVersion>
+    <Description>Font management utilities
+        - TrueType font parsing and encoding
+        - Font flags and metrics helpers</Description>
   </PropertyGroup>
 
   <ItemGroup>
