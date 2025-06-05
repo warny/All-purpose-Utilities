@@ -43,7 +43,7 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Add)]
 		public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
 		{
-			if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return left;
+			if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return Transform(left);
 			return null;
 		}
 
@@ -84,7 +84,7 @@ namespace Utils.Mathematics.Expressions
 		public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
 		{
 			if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return right;  // x * 0 => 0
-			if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;   // x * 1 => x
+			if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return Transform(left);   // x * 1 => x
 			if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left); // x * -1 => -x
 			return null;
 		}
@@ -105,7 +105,7 @@ namespace Utils.Mathematics.Expressions
 		/// Simplifies division by 0, 1, or -1 (throwing if 0).
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Divide)]
-		public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
+		public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
 		{
 			if (NumberUtils.CompareNumeric(right.Value, 0) == 0) throw new DivideByZeroException();
 			if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;
@@ -138,10 +138,12 @@ namespace Utils.Mathematics.Expressions
 		/// Simplifies <c>x^0</c> or <c>x^1</c> to <c>1</c> or <c>x</c> respectively.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Power)]
-		public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1)] ConstantExpression right)
+		public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
 		{
 			if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
-			if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;
+			if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return Transform(left);
+			if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Transform(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
+			if (NumberUtils.CompareNumeric(right.Value, 0) == -1) return Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), Transform(Expression.Power(left, Expression.Constant(-(double)Convert.ChangeType(right.Value, typeof(double))))));
 			return null;
 		}
 
@@ -654,7 +656,7 @@ namespace Utils.Mathematics.Expressions
 		[ExpressionSignature(ExpressionType.Power)]
 		protected Expression PowerOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
 		{
-			var result = Math.Pow((double)left.Value, (double)right.Value);
+			var result = double.Pow((double)left.Value, (double)right.Value);
 			return Expression.Constant(result);
 		}
 

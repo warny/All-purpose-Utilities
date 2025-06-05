@@ -120,295 +120,331 @@ public class ExpressionIntegration : ExpressionTransformer
         return Expression.Divide(Transform(left), right);
     }
 
-    [ExpressionSignature(ExpressionType.Divide)]
-    public Expression Divide(
-        BinaryExpression e,
-        [ConstantNumeric] ConstantExpression left,
-        ParameterExpression right
-    )
-    {
-        if (right.Name == ParameterName)
-        {
-            return Expression.Multiply(
-                left,
-                Expression.Call(typeof(Math).GetMethod("Log"), right)
-            );
-        }
-        return null;
-    }
+	[ExpressionSignature(ExpressionType.Divide)]
+	public Expression Divide(
+		BinaryExpression e,
+		[ConstantNumeric] ConstantExpression left,
+		ParameterExpression right
+	)
+	{
+		if (right.Name != ParameterName) return null;
+		return Expression.Multiply(
+				left,
+				Expression.Call(typeof(double).GetMethod(nameof(double.Log), [ typeof(double) ]), right)
+			);
+	}
 
-    [ExpressionSignature(ExpressionType.Divide)]
+	[ExpressionSignature(ExpressionType.Divide)]
     public Expression Divide(
         BinaryExpression e,
         [ConstantNumeric] ConstantExpression left,
         [ExpressionSignature(ExpressionType.Power)] BinaryExpression right
     )
-    {
-        if (right.Left is ParameterExpression p && p.Name == ParameterName &&
-            right.Right is ConstantExpression expo && NumberUtils.IsNumeric(expo.Value))
-        {
-            double n = Convert.ToDouble(expo.Value);
-            if (Math.Abs(n - 1.0) < double.Epsilon)
-            {
-                return Expression.Multiply(
-                    left,
-                    Expression.Call(typeof(Math).GetMethod("Log"), p)
-                );
-            }
+	{
+		if (right.Left is not ParameterExpression p || p.Name != ParameterName ||
+			right.Right is not ConstantExpression expo || !NumberUtils.IsNumeric(expo.Value))
+		{
+			return null;
+		}
+		double n = Convert.ToDouble(expo.Value);
+		if (Math.Abs(n - 1.0) < double.Epsilon)
+		{
+			return Expression.Multiply(
+				left,
+				Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), p)
+			);
+		}
 
-            double newExpo = 1.0 - n;
-            return Expression.Divide(
-                Expression.Multiply(left, Expression.Power(p, Expression.Constant(newExpo))),
-                Expression.Constant(newExpo)
-            );
-        }
-        return null;
-    }
+		double newExpo = 1.0 - n;
+		return Expression.Divide(
+			Expression.Multiply(left, Expression.Power(p, Expression.Constant(newExpo))),
+			Expression.Constant(newExpo)
+		);
+	}
 
-    [ExpressionSignature(ExpressionType.Divide)]
+	[ExpressionSignature(ExpressionType.Divide)]
     public Expression Divide(
         BinaryExpression e,
         [ConstantNumeric] ConstantExpression left,
         MethodCallExpression right
     )
-    {
-        if (right.Method.Name == nameof(Math.Sqrt) &&
-            right.Arguments.Count == 1 &&
-            right.Arguments[0] is ParameterExpression p && p.Name == ParameterName)
-        {
-            double factor = 2.0 * Convert.ToDouble(left.Value);
-            return Expression.Multiply(
-                Expression.Constant(factor),
-                Expression.Call(typeof(Math).GetMethod(nameof(Math.Sqrt)), p)
-            );
-        }
-        return null;
-    }
+	{
+		if (right.Method.Name != nameof(Math.Sqrt) ||
+			right.Arguments.Count != 1 ||
+			right.Arguments[0] is not ParameterExpression p || p.Name != ParameterName)
+		{
+			return null;
+		}
+		double factor = 2.0 * Convert.ToDouble(left.Value);
+		return Expression.Multiply(
+			Expression.Constant(factor),
+			Expression.Call(typeof(double).GetMethod(nameof(double.Sqrt), [typeof(double)]), p)
+		);
+	}
 
-    [ExpressionCallSignature(typeof(Math), "Log")]
-    public Expression Log(
-        MethodCallExpression e,
-        ParameterExpression p
-    )
-    {
-        if (p.Name == ParameterName)
-        {
-            return Expression.Multiply(
-                    parameter,
-                    Expression.Subtract(
-                        Expression.Call(typeof(Math).GetMethod("Log"), parameter),
-                        Expression.Constant(1.0)
-                        )
-                );
-        }
-        return null;
-    }
+	[ExpressionCallSignature(typeof(Math), "Log")]
+	public Expression Log(
+		MethodCallExpression e,
+		ParameterExpression p
+	)
+	{
+		if (p.Name != ParameterName) return null;
+		return Expression.Multiply(
+					parameter,
+					Expression.Subtract(
+						Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), parameter),
+						Expression.Constant(1.0)
+						)
+				);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Log10))]
-    public Expression Log10(
-        MethodCallExpression e,
-        ParameterExpression p
-    )
-    {
-        if (p.Name == ParameterName)
-        {
-            var ln10 = Expression.Constant(Math.Log(10.0));
-            return Expression.Subtract(
-                Expression.Multiply(p,
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Log10)), p)),
-                Expression.Divide(p, ln10)
-            );
-        }
-        return null;
-    }
+	[ExpressionCallSignature(typeof(double), nameof(double.Log10))]
+	public Expression Log10(
+		MethodCallExpression e,
+		ParameterExpression p
+	)
+	{
+		if (p.Name != ParameterName) return null;
+		var ln10 = Expression.Constant(Math.Log(10.0));
+		return Expression.Subtract(
+			Expression.Multiply(p,
+				Expression.Call(typeof(double).GetMethod(nameof(double.Log10), [typeof(double)]), p)),
+			Expression.Divide(p, ln10)
+		);
+	}
 
-    [ExpressionSignature(ExpressionType.Power)]
+	[ExpressionSignature(ExpressionType.Power)]
     public Expression Power(
         BinaryExpression e,
         ParameterExpression p,
         [ConstantNumeric] ConstantExpression expo
     )
-    {
-        if (p.Name == ParameterName)
-        {
-            double n = Convert.ToDouble(expo.Value);
-            if (Math.Abs(n + 1.0) < double.Epsilon)
-            {
-                return Expression.Call(typeof(Math).GetMethod("Log"), p);
-            }
-            return Expression.Divide(
-                Expression.Power(p, Expression.Constant(n + 1.0)),
-                Expression.Constant(n + 1.0)
-            );
-        }
-        return null;
-    }
+	{
+		if (p.Name != ParameterName) return null;
+		double n = Convert.ToDouble(expo.Value);
+		if (Math.Abs(n + 1.0) < double.Epsilon)
+		{
+			return Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), p);
+		}
+		return Expression.Divide(
+			Expression.Power(p, Expression.Constant(n + 1.0)),
+			Expression.Constant(n + 1.0)
+		);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Exp))]
+	[ExpressionCallSignature(typeof(double), nameof(double.Exp))]
     public Expression Exp(
         MethodCallExpression e,
         ParameterExpression op
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Call(typeof(double).GetMethod(nameof(double.Exp)), op);
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Exp)), op),
-                c
-            );
-        }
-        return null;
-    }
+	{
+		if (op.Name != ParameterName) return null;
+		return Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), op);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Sin))]
+	[ExpressionCallSignature(typeof(double), nameof(double.Exp))]
+	public Expression Exp(
+		MethodCallExpression e,
+		BinaryExpression be
+	)
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), be),
+				c
+			);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Sin))]
     public Expression Sin(
         MethodCallExpression e,
         ParameterExpression op
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Negate(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), op)
-            );
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), op)),
-                c
-            );
-        }
-        return null;
-    }
+	{
+		if (op.Name != ParameterName) return null;
+		return Expression.Negate(
+				Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), op)
+			);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Cos))]
+	[ExpressionCallSignature(typeof(double), nameof(double.Sin))]
+	public Expression Sin(
+		MethodCallExpression e,
+		BinaryExpression be
+	)
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Negate(Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), be)),
+				c
+			);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Cos))]
     public Expression Cos(
         MethodCallExpression e,
         ParameterExpression op
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Call(typeof(double).GetMethod(nameof(double.Sin)), op);
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Sin)), op),
-                c
-            );
-        }
-        return null;
-    }
+	{
+		if (op.Name != ParameterName) return null;
+		return Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), op);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Tan))]
+	[ExpressionCallSignature(typeof(double), nameof(double.Cos))]
+	public Expression Cos(
+	MethodCallExpression e,
+	BinaryExpression be
+)
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), be),
+				c
+			);
+	}
+
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Tan))]
     public Expression Tan(
         MethodCallExpression e,
         ParameterExpression op
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Negate(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Log)),
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), op))
-            );
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(double).GetMethod(nameof(double.Log)),
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), op))),
-                c
-            );
-        }
-        return null;
-    }
+	{
+		if (op.Name != ParameterName) return null;
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Sinh))]
+		return Expression.Negate(
+				Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
+					Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), op))
+			);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Tan))]
+    public Expression Tan(
+        MethodCallExpression e,
+		BinaryExpression be
+    )
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Negate(Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
+					Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), be))),
+				c
+			);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Sinh))]
     public Expression Sinh(
         MethodCallExpression e,
         ParameterExpression op
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Call(typeof(double).GetMethod(nameof(double.Cosh)), op);
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Cosh)), op),
-                c
-            );
-        }
-        return null;
-    }
+	{
+		if (op.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), op);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Cosh))]
-    public Expression Cosh(
+	[ExpressionCallSignature(typeof(double), nameof(double.Sinh))]
+    public Expression Sinh(
         MethodCallExpression e,
-        ParameterExpression op
+		BinaryExpression be
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Call(typeof(double).GetMethod(nameof(double.Sinh)), op);
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Sinh)), op),
-                c
-            );
-        }
-        return null;
-    }
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), be),
+				c
+			);
+	}
 
-    [ExpressionCallSignature(typeof(double), nameof(double.Tanh))]
+	[ExpressionCallSignature(typeof(double), nameof(double.Cosh))]
+	public Expression Cosh(
+		MethodCallExpression e,
+		ParameterExpression op
+	)
+	{
+		if (op.Name != ParameterName) return null;
+
+		return Expression.Call(typeof(double).GetMethod(nameof(double.Sinh), [typeof(double)]), op);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Cosh))]
+	public Expression Cosh(
+		MethodCallExpression e,
+		BinaryExpression be
+	)
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Call(typeof(double).GetMethod(nameof(double.Sinh), [typeof(double)]), be),
+				c
+			);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Tanh))]
+	public Expression Tanh(
+		MethodCallExpression e,
+		ParameterExpression op
+	)
+	{
+		if (op.Name != ParameterName) return null;
+
+		return Expression.Call(
+				typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
+				Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [ typeof(double) ]), op)
+			);
+	}
+
+	[ExpressionCallSignature(typeof(double), nameof(double.Tanh))]
     public Expression Tanh(
         MethodCallExpression e,
-        ParameterExpression op
+		BinaryExpression be
     )
-    {
-        if (op.Name == ParameterName)
-        {
-            return Expression.Call(
-                typeof(double).GetMethod(nameof(double.Log)),
-                Expression.Call(typeof(double).GetMethod(nameof(double.Cosh)), op)
-            );
-        }
-        if (op is BinaryExpression be && be.NodeType == ExpressionType.Multiply &&
-            be.Left is ConstantExpression c && NumberUtils.IsNumeric(c.Value) &&
-            be.Right is ParameterExpression p2 && p2.Name == ParameterName)
-        {
-            return Expression.Divide(
-                Expression.Call(
-                    typeof(double).GetMethod(nameof(double.Log)),
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Cosh)), op)
-                ),
-                c
-            );
-        }
-        return null;
-    }
-
+	{
+		if (be.NodeType != ExpressionType.Multiply ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+		{
+			return null;
+		}
+		return Expression.Divide(
+				Expression.Call(
+					typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
+					Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), be)
+				),
+				c
+			);
+	}
 
 }
