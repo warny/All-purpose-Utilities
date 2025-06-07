@@ -27,7 +27,7 @@ namespace Utils.Files
 
 			// 4) Split on directory separators to get each segment
                         var segments = remainder.Split(
-                                new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+                                [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
                                 StringSplitOptions.RemoveEmptyEntries
                         );
 

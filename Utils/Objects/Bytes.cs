@@ -366,7 +366,7 @@ public readonly struct Bytes :
 			return Empty;
 
                 var values = s.Split(
-                        new[] { ' ', '\n', '\t', '\r', ',', ';' },
+                        [' ', '\n', '\t', '\r', ',', ';'],
                         StringSplitOptions.RemoveEmptyEntries);
 
 		var bytes = values.Select(v => byte.Parse(v, System.Globalization.NumberStyles.HexNumber))
