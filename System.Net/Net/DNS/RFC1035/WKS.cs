@@ -50,6 +50,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x0B)]
+[DNSTextRecord("{IPAddress} {Protocol} {Bitmap}")]
 public class WKS : DNSResponseDetail
 {
 	/*

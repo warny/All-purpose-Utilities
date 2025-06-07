@@ -43,4 +43,30 @@ public class DNSTextParserTests
         var text = DNSText.Default.Write(header).Trim();
         Assert.AreEqual("example.com. 3600 IN TXT \"hello world\"", text);
     }
+
+    [TestMethod]
+    public void ParseAndWriteWKS()
+    {
+        var line = "services.example.com. 3600 IN WKS 192.0.2.1 6 AAE=";
+        var rec = DNSText.ParseLine(line);
+        Assert.IsInstanceOfType(rec.RData, typeof(WKS));
+        var wks = (WKS)rec.RData;
+        CollectionAssert.AreEqual(new byte[] { 0x00, 0x01 }, wks.Bitmap);
+        Assert.AreEqual((byte)6, wks.Protocol);
+        Assert.AreEqual("192.0.2.1", wks.IPAddress.ToString());
+
+        var header = new DNSHeader();
+        header.Responses.Add(rec);
+        var round = DNSText.Default.Write(header).Trim();
+        Assert.AreEqual(line, round);
+    }
+
+    [TestMethod]
+    public void ParseNullRecord()
+    {
+        var line = "null.example.com. 3600 IN NULL AQID"; // base64 for {1,2,3}
+        var rec = DNSText.ParseLine(line);
+        Assert.IsInstanceOfType(rec.RData, typeof(NULL));
+        CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, ((NULL)rec.RData).Datas);
+    }
 }

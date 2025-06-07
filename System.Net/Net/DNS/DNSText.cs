@@ -117,11 +117,13 @@ public class DNSText : IDNSWriter<string>
     private static object ConvertTo(string value, Type targetType)
     {
         if (targetType == typeof(string)) return value.Trim('"');
+        if (targetType == typeof(byte)) return byte.Parse(value);
         if (targetType == typeof(ushort)) return ushort.Parse(value);
         if (targetType == typeof(uint)) return uint.Parse(value);
         if (targetType == typeof(int)) return int.Parse(value);
         if (targetType == typeof(IPAddress)) return IPAddress.Parse(value);
         if (targetType == typeof(DNSDomainName)) return new DNSDomainName(value);
+        if (targetType == typeof(byte[])) return Convert.FromBase64String(value);
         if (targetType.IsEnum) return Enum.Parse(targetType, value, true);
         return Convert.ChangeType(value, targetType);
     }
@@ -132,6 +134,8 @@ public class DNSText : IDNSWriter<string>
         {
             return s.Contains(' ') ? $"\"{s}\"" : s;
         }
+        if (value is byte[] bytes)
+            return Convert.ToBase64String(bytes);
         return Convert.ToString(value);
     }
 
