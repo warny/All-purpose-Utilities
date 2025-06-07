@@ -1,3 +1,5 @@
+using Utils.Net.DNS;
+
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
@@ -17,6 +19,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x13)]
+[DNSTextRecord("{PSDN}")]
 public class X25 : DNSResponseDetail
 {
 	/*

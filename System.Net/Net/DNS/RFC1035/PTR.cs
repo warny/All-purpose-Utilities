@@ -22,6 +22,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x0C)]
+[DNSTextRecord("{PTRName}")]
 public class PTR : DNSResponseDetail
 {
 	/*

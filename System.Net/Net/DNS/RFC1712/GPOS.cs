@@ -1,4 +1,5 @@
-﻿using Utils.Net.Structures;
+using Utils.Net.Structures;
+using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1712;
 
@@ -21,6 +22,7 @@ namespace Utils.Net.DNS.RFC1712;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x1B)]
+[DNSTextRecord("{Longitude} {Latitude} {Altitude}")]
 public class GPOS : DNSResponseDetail
 {
 	/// <summary>

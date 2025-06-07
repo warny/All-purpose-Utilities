@@ -1,4 +1,6 @@
-﻿namespace Utils.Net.DNS.RFC1348;
+using Utils.Net.DNS;
+
+namespace Utils.Net.DNS.RFC1348;
 
 /// <summary>
 /// Represents an NSAP-PTR record, which provides a mapping from a domain name to an NSAP address.
@@ -21,6 +23,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x16, "NSAP-PTR")]
+[DNSTextRecord("{DomainName}")]
 public class NSAP_PTR : DNSResponseDetail
 {
 	/// <summary>

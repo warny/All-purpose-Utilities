@@ -19,6 +19,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x09)]
+[DNSTextRecord("{NewName}")]
 [Obsolete("MR (mail redirection) records are obsolete; use MX records instead.")]
 public class MR : DNSResponseDetail
 {

@@ -19,6 +19,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x00)]
+[DNSTextRecord("{Datas}")]
 public class Default : DNSResponseDetail
 {
 	/*

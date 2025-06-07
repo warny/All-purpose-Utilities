@@ -1,4 +1,6 @@
-﻿namespace Utils.Net.DNS.RFC2535;
+using Utils.Net.DNS;
+
+namespace Utils.Net.DNS.RFC2535;
 
 /// <summary>
 /// Represents a DNS KEY record (type = 25) as specified in RFC 2535 Section 3.
@@ -27,6 +29,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x19)]
+[DNSTextRecord("{Flags} {Protocol} {Algorithm} {PublicKey}")]
 public class KEY : DNSResponseDetail
 {
 	/*

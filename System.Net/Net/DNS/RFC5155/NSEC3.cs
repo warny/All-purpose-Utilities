@@ -78,8 +78,9 @@ namespace Utils.Net.DNS.RFC5155
 	/// This record type is used to securely indicate non-existence of names while preventing zone enumeration.
 	/// </para>
 	/// </remarks>
-	[DNSRecord(DNSClass.IN, 0x32)]
-	public class NSEC3 : DNSResponseDetail
+        [DNSRecord(DNSClass.IN, 0x32)]
+        [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt} {NextHashOwnerName} {TypeBitMaps}")]
+        public class NSEC3 : DNSResponseDetail
 	{
 		/// <summary>
 		/// Gets or sets the hash algorithm used in the NSEC3 record.
