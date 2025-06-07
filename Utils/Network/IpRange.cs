@@ -36,7 +36,7 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     /// <summary>
     /// Gets the cached hash code for this instance.
     /// </summary>
-    public int HashCode => _hashCode ??= HashCode.Combine(Start, End);
+    public int HashCode => _hashCode ??= System.HashCode.Combine(Start, End);
 
     /// <summary>
     /// The private 10.0.0.0/8 IPv4 range.
