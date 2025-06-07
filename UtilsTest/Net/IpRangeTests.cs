@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 using System.Linq;
-using Utils.Network;
+using Utils.Net;
 
 namespace UtilsTest.Net;
 

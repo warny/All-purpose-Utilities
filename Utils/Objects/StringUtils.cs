@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
-using Utils.Collections;
 using Utils.Expressions;
-using Utils.Mathematics;
 
 namespace Utils.Objects;
 
@@ -150,9 +143,9 @@ public static class StringUtils
 	/// <returns>chaine nettoyée</returns>
 	private static string TrimQuotes(string str)
 	{
-		if (str.StartsWith("\"") && str.EndsWith("\""))
+		if (str.Length>=2 &&  str[0] == '\"' && str[^1] == '\"')
 		{
-			return str.Substring(1, str.Length - 2).Replace("\"\"", "\"");
+			return str[1..^1].Replace("\"\"", "\"");
 		}
 		return str;
 	}
@@ -198,7 +191,7 @@ public static class StringUtils
 				depth.Push(m);
 				continue;
 			}
-			if ((m = depthMarkerChars.FirstOrDefault(m => m.End[0] == current)) != null)
+			if (depthMarkerChars.FirstOrDefault(m => m.End[0] == current) is not null)
 			{
 				var startChar = depth.Pop();
 				if (startChar.End[0] == current) continue;
@@ -239,7 +232,7 @@ public class Brackets
 	public static Brackets SquareBrackets { get; } = new Brackets('[', ']');
 	public static Brackets Braces { get; } = new Brackets('{', '}');
 
-	public static Brackets[] All { get; } = new[] { RoundBrackets, SquareBrackets, Braces };
+	public static Brackets[] All { get; } = [RoundBrackets, SquareBrackets, Braces];
 
 	public override string ToString() => $" {Open} ... {Close} ";
 }

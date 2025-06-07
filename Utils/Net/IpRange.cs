@@ -1,11 +1,9 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Net;
 using System.Numerics;
 using Utils.Objects;
 
-namespace Utils.Network;
+namespace Utils.Net;
 
 /// <summary>
 /// Represents a contiguous range of IP addresses. Instances are immutable and
@@ -104,9 +102,7 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
         start.Arg().MustNotBeNull();
         end.Arg().MustNotBeNull();
         if (start.AddressFamily != end.AddressFamily)
-        {
             throw new ArgumentException("Addresses must be of the same family");
-        }
 
         Start = start;
         End = end;
@@ -159,10 +155,10 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     }
 
     /// <inheritdoc/>
-    public static IpRange Parse(string s, IFormatProvider? provider) => Parse(s);
+    public static IpRange Parse(string s, IFormatProvider provider) => Parse(s);
 
     /// <inheritdoc/>
-    public static bool TryParse(string? s, IFormatProvider? provider, out IpRange result)
+    public static bool TryParse(string s, IFormatProvider provider, out IpRange result)
     {
         if (string.IsNullOrWhiteSpace(s))
         {
@@ -203,19 +199,19 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
         var startValue = new BigInteger(startBytes, isUnsigned: true, isBigEndian: true);
         var endValue = new BigInteger(endBytes, isUnsigned: true, isBigEndian: true);
         var diff = endValue - startValue + BigInteger.One;
-        if (diff <= BigInteger.Zero || (diff & (diff - BigInteger.One)) != BigInteger.Zero)
+        if (diff <= BigInteger.Zero || (diff & diff - BigInteger.One) != BigInteger.Zero)
         {
             maskLength = 0;
             return false;
         }
 
-        if ((startValue & (diff - BigInteger.One)) != BigInteger.Zero)
+        if ((startValue & diff - BigInteger.One) != BigInteger.Zero)
         {
             maskLength = 0;
             return false;
         }
 
-        int hostBits = 0;
+        var hostBits = 0;
         var temp = diff;
         while (temp > BigInteger.One)
         {
@@ -236,10 +232,10 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
         var start = new byte[bytes.Length];
         var end = new byte[bytes.Length];
 
-        int full = maskLength / 8;
-        int rem = maskLength % 8;
+        var full = maskLength / 8;
+        var rem = maskLength % 8;
 
-        for (int i = 0; i < full; i++)
+        for (var i = 0; i < full; i++)
         {
             start[i] = bytes[i];
             end[i] = bytes[i];
@@ -247,10 +243,10 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
 
         if (full < bytes.Length)
         {
-            byte mask = (byte)(0xFF << (8 - rem));
+            var mask = (byte)(0xFF << 8 - rem);
             start[full] = (byte)(bytes[full] & mask);
             end[full] = (byte)(bytes[full] | ~mask);
-            for (int i = full + 1; i < bytes.Length; i++)
+            for (var i = full + 1; i < bytes.Length; i++)
             {
                 start[i] = 0;
                 end[i] = 0xFF;
@@ -263,11 +259,11 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     #region Equality
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj)
+    public override bool Equals(object obj)
         => obj is IpRange other && Equals(other);
 
     /// <inheritdoc/>
-    public bool Equals(IpRange? other)
+    public bool Equals(IpRange other)
     {
         if (other is null) return false;
         return Start.Equals(other.Start) && End.Equals(other.End);
@@ -279,13 +275,13 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     /// <summary>
     /// Equality operator comparing two <see cref="IpRange"/> instances.
     /// </summary>
-    public static bool operator ==(IpRange? left, IpRange? right)
+    public static bool operator ==(IpRange left, IpRange right)
         => left?.Equals(right) ?? right is null;
 
     /// <summary>
     /// Inequality operator comparing two <see cref="IpRange"/> instances.
     /// </summary>
-    public static bool operator !=(IpRange? left, IpRange? right)
+    public static bool operator !=(IpRange left, IpRange right)
         => !(left == right);
 
     #endregion
@@ -343,9 +339,7 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
 
         var result = new byte[byteCount];
         if (bytes.Length > byteCount)
-        {
             Array.Copy(bytes, bytes.Length - byteCount, result, 0, byteCount);
-        }
         else
         {
             Array.Copy(bytes, 0, result, byteCount - bytes.Length, bytes.Length);
