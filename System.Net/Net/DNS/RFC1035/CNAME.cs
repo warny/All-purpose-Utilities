@@ -20,6 +20,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x05)]
+[DNSTextRecord("{CName}")]
 public sealed class CNAME : DNSResponseDetail
 {
 	/*

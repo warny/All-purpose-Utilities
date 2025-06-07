@@ -19,6 +19,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x07)]
+[DNSTextRecord("{MadName}")]
 [Obsolete("MB (Mailbox) records are obsolete; use MX records instead.")]
 public class MB : DNSResponseDetail
 {

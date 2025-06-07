@@ -99,12 +99,12 @@ namespace Utils.Net.DNS
 	/// <summary>
 	/// Enumerates the supported prefixed-size mechanisms for array or field lengths.
 	/// </summary>
-	public enum FieldsSizeOptions
-	{
-		/// <summary>
-		/// The field's size is prefixed by a one-byte (8-bit) length indicator.
-		/// </summary>
-		PrefixedSize1B,
+        public enum FieldsSizeOptions
+        {
+                /// <summary>
+                /// The field's size is prefixed by a one-byte (8-bit) length indicator.
+                /// </summary>
+                PrefixedSize1B,
 
 		/// <summary>
 		/// The field's size is prefixed by a two-byte (16-bit) length indicator.
@@ -114,7 +114,22 @@ namespace Utils.Net.DNS
 		/// <summary>
 		/// The field's size is prefixed in bits (1B indicating length in bits),
 		/// rather than bytes.
-		/// </summary>
-		PrefixedSizeBits1B
-	}
+                /// </summary>
+                PrefixedSizeBits1B
+        }
+
+        /// <summary>
+        /// Specifies the textual format for a DNS record. The format string may contain
+        /// property or field names enclosed in curly braces (e.g. <c>{Preference}</c>)
+        /// that will be replaced when converting to or from text.
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
+        public sealed class DNSTextRecordAttribute(string format) : Attribute
+        {
+                /// <summary>
+                /// Gets the format string describing how the record should be represented
+                /// in zone file text.
+                /// </summary>
+                public string Format { get; } = format;
+        }
 }

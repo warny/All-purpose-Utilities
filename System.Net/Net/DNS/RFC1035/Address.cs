@@ -32,6 +32,7 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSRecord(DNSClass.IN, 0x01, "A")]
 [DNSRecord(DNSClass.IN, 0x1C, "AAAA")]
 [DNSRecord(DNSClass.IN, 0x17, "NSAP")]
+[DNSTextRecord("{IPAddress}")]
 public sealed class Address : DNSResponseDetail
 {
 	/// <inheritdoc />

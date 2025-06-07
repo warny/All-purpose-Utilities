@@ -19,6 +19,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x08)]
+[DNSTextRecord("{MGName}")]
 [Obsolete("MG (Mail Group) records are obsolete; use MX records instead.")]
 public class MG : DNSResponseDetail
 {

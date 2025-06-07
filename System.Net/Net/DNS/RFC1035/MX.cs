@@ -37,8 +37,9 @@ namespace Utils.Net.DNS.RFC1035
 	/// of the <see cref="Exchange"/>) when resolving MX records.
 	/// </para>
 	/// </remarks>
-	[DNSRecord(DNSClass.IN, 0x0F)]
-	public class MX : DNSResponseDetail
+[DNSRecord(DNSClass.IN, 0x0F)]
+[DNSTextRecord("{Preference} {Exchange}")]
+public class MX : DNSResponseDetail
 	{
 		/*
             MX RDATA format (RFC 1035, Section 3.3.9):
