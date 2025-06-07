@@ -69,6 +69,7 @@ namespace Utils.Net.DNS.RFC2915;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x23)]
+[DNSTextRecord("{Order} {Preference} {Flags} {Service} {Regexp} {Replacement}")]
 public class NAPTR : DNSResponseDetail
 {
 	/// <summary>

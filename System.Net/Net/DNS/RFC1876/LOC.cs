@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Utils.Net;
+using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC1876;
 
@@ -77,6 +78,7 @@ namespace Utils.Net.DNS.RFC1876;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x1D)]
+[DNSTextRecord("{Latitude} {Longitude} {Altitude}")]
 public class LOC : DNSResponseDetail
 {
 	// The fields below are annotated with [DNSField] so that they are automatically
@@ -128,8 +130,8 @@ public class LOC : DNSResponseDetail
 	private uint altitude { get; set; }
 
 	// Constants used for conversion:
-	private const double equatorLatitude = 2_147_483_648; // 2^31, represents 0° latitude.
-	private const double primeMeridian = 2_147_483_648;     // 2^31, represents 0° longitude.
+	private const double equatorLatitude = 2_147_483_648; // 2^31, represents 0Â° latitude.
+	private const double primeMeridian = 2_147_483_648;     // 2^31, represents 0Â° longitude.
 	private const double altitudeZeroCorrection = 100_000_00; // Represents 0 m altitude relative to a base 100,000 m below WGS 84.
 	private const double arcSec = 1_296_000;                // Thousandths of seconds of arc per degree? (Typically 3600 sec/degree * 360 degrees = 1,296,000)
 	private const double meter2Centimeter = 100;
@@ -225,7 +227,7 @@ public class LOC : DNSResponseDetail
 	/// <returns>A formatted string representing the LOC record.</returns>
 	public override string ToString()
 	{
-		return $"L: {Latitude}°  l: {Longitude}°  A: {Altitude}m \n" +
+		return $"L: {Latitude}Â°  l: {Longitude}Â°  A: {Altitude}m \n" +
 			   $"\tSize: {Size}cm  Precision (H: {HorizontalPrecision}m, V: {VerticalPrecision}m)";
 	}
 }

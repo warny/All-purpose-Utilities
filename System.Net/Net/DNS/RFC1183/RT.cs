@@ -1,3 +1,5 @@
+using Utils.Net.DNS;
+
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
@@ -39,6 +41,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x15)]
+[DNSTextRecord("{Preference} {DnsName}")]
 public class RT : DNSResponseDetail
 {
 	/*

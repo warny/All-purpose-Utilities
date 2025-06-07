@@ -1,3 +1,5 @@
+using Utils.Net.DNS;
+
 namespace Utils.Net.DNS.RFC2052;
 
 /// <summary>
@@ -33,6 +35,7 @@ namespace Utils.Net.DNS.RFC2052;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x21)]
+[DNSTextRecord("{Priority} {Weight} {Port} {Server}")]
 public class SRV : DNSResponseDetail
 {
 	/// <summary>

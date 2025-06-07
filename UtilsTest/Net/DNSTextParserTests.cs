@@ -15,20 +15,23 @@ public class DNSTextParserTests
         var lines = new List<string>
         {
             "example.com. 3600 IN A 192.0.2.1",
+            "example.com. 3600 IN AAAA 2001:db8::1",
             "example.com. 3600 IN MX 10 mail.example.com.",
             "example.com. 3600 IN TXT \"hello world\""
         };
         var path = Path.GetTempFileName();
         File.WriteAllLines(path, lines);
         var records = DNSText.ParseFile(path);
-        Assert.AreEqual(3, records.Count);
+        Assert.AreEqual(4, records.Count);
         Assert.IsInstanceOfType(records[0].RData, typeof(Address));
         Assert.AreEqual("192.0.2.1", ((Address)records[0].RData).IPAddress.ToString());
-        Assert.IsInstanceOfType(records[1].RData, typeof(MX));
-        Assert.AreEqual((ushort)10, ((MX)records[1].RData).Preference);
-        Assert.AreEqual("mail.example.com.", ((MX)records[1].RData).Exchange.Value);
-        Assert.IsInstanceOfType(records[2].RData, typeof(TXT));
-        Assert.AreEqual("hello world", ((TXT)records[2].RData).Text);
+        Assert.IsInstanceOfType(records[1].RData, typeof(Address));
+        Assert.AreEqual("2001:db8::1", ((Address)records[1].RData).IPAddress.ToString());
+        Assert.IsInstanceOfType(records[2].RData, typeof(MX));
+        Assert.AreEqual((ushort)10, ((MX)records[2].RData).Preference);
+        Assert.AreEqual("mail.example.com.", ((MX)records[2].RData).Exchange.Value);
+        Assert.IsInstanceOfType(records[3].RData, typeof(TXT));
+        Assert.AreEqual("hello world", ((TXT)records[3].RData).Text);
     }
 
     [TestMethod]

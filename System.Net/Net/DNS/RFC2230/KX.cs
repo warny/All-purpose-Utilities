@@ -1,4 +1,6 @@
-﻿namespace Utils.Net.DNS.RFC2230;
+using Utils.Net.DNS;
+
+namespace Utils.Net.DNS.RFC2230;
 
 /// <summary>
 /// Represents a KX (Key Exchange) record in DNS as defined by RFC 2230.
@@ -38,6 +40,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x24)]
+[DNSTextRecord("{Preference} {Exchanger}")]
 public class KX : DNSResponseDetail
 {
 	/// <summary>
