@@ -22,6 +22,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// See RFC 1010 for standard values of CPU and OS.
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x0D)]
+[DNSTextRecord("{Info}")]
 public class HINFO : DNSResponseDetail
 {
 	/*

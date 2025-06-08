@@ -25,8 +25,9 @@ namespace Utils.Net.DNS.RFC1183
 	/// representation (including subaddresses).
 	/// </para>
 	/// </remarks>
-	[DNSRecord(DNSClass.IN, 0x14)]
-	public class ISDN : DNSResponseDetail
+[DNSRecord(DNSClass.IN, 0x14)]
+[DNSTextRecord("{PhoneNumber}")]
+public class ISDN : DNSResponseDetail
 	{
 		/*
             RFC 1183 (Section 3.2) describes the ISDN RR format approximately as:

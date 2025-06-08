@@ -1,3 +1,5 @@
+using Utils.Net.DNS;
+
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
@@ -35,6 +37,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x11)]
+[DNSTextRecord("{MBoxDName} {TxtDName}")]
 public class RP : DNSResponseDetail
 {
 	/*

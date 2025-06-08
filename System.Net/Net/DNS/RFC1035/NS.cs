@@ -21,8 +21,9 @@ namespace Utils.Net.DNS.RFC1035
 	/// the IP addresses of these name servers.
 	/// </para>
 	/// </remarks>
-	[DNSRecord(DNSClass.IN, 0x02)]
-	public class NS : DNSResponseDetail
+        [DNSRecord(DNSClass.IN, 0x02)]
+        [DNSTextRecord("{DNSName}")]
+        public class NS : DNSResponseDetail
 	{
 		/*
             NS RDATA format (RFC 1035 Section 3.3.11):
