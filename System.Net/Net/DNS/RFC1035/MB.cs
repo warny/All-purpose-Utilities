@@ -15,10 +15,10 @@ namespace Utils.Net.DNS.RFC1035;
 /// experimental or legacy scenarios.
 /// </para>
 /// <para>
-/// Type code is set to <c>0x07</c> for class <see cref="DNSClass.IN"/>, as per RFC 1035.
+/// Type code is set to <c>0x07</c> for class <see cref="DNSClassId.IN"/>, as per RFC 1035.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x07)]
+[DNSRecord(DNSClassId.IN, 0x07)]
 [DNSTextRecord("{MadName}")]
 [Obsolete("MB (Mailbox) records are obsolete; use MX records instead.")]
 public class MB : DNSResponseDetail

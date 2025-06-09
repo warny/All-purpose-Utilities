@@ -68,7 +68,7 @@ namespace Utils.Net.DNS.RFC2915;
 /// The NAPTR record provides a flexible mechanism for service discovery and URI rewriting in a DNS namespace.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x23)]
+[DNSRecord(DNSClassId.IN, 0x23)]
 [DNSTextRecord("{Order} {Preference} {Flags} {Service} {Regexp} {Replacement}")]
 public class NAPTR : DNSResponseDetail
 {

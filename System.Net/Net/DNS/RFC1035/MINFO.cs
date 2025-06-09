@@ -21,7 +21,7 @@ namespace Utils.Net.DNS.RFC1035
 	/// but can be an empty or default domain name.
 	/// </para>
 	/// </remarks>
-[DNSRecord(DNSClass.IN, 0x0E)]
+[DNSRecord(DNSClassId.IN, 0x0E)]
 [DNSTextRecord("{RMailBx} {EMailBx}")]
 [Obsolete("MINFO (mail info) records are obsolete; use MX records instead.")]
 public class MINFO : DNSResponseDetail

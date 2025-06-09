@@ -44,7 +44,7 @@
 /// along with its signature (RRSIG).
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x2F)]
+[DNSRecord(DNSClassId.IN, 0x2F)]
 [DNSTextRecord("{NextDomainName} {TypeBitmaps}")]
 public class NSEC : DNSResponseDetail
 {

@@ -5,7 +5,7 @@ using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC5155
 {
-    [DNSRecord(DNSClass.IN, 0x33)]
+    [DNSRecord(DNSClassId.IN, 0x33)]
     [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt}")]
     public class NSEC3PARAM : DNSResponseDetail
     {

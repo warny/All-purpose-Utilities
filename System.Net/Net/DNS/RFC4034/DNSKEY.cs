@@ -36,7 +36,7 @@
 /// These fields are used in conjunction with RRSIG records to validate the authenticity and integrity of DNS data.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x30)]
+[DNSRecord(DNSClassId.IN, 0x30)]
 [DNSTextRecord("{Flags} {Protocol} {Algorithm} {Key}")]
 public class DNSKEY : DNSResponseDetail
 {

@@ -12,13 +12,13 @@ namespace Utils.Net.DNS.RFC1035;
 /// additional section processing in DNS resolution.
 /// </para>
 /// <para>
-/// The record type is <c>0x08</c> for <see cref="DNSClass.IN"/>. Although it may still be
+/// The record type is <c>0x08</c> for <see cref="DNSClassId.IN"/>. Although it may still be
 /// encountered, MG is considered part of an older, less common suite of experimental mail
 /// group DNS records. Modern mail routing largely relies on MX, but MG is included here for
 /// completeness.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x08)]
+[DNSRecord(DNSClassId.IN, 0x08)]
 [DNSTextRecord("{MGName}")]
 [Obsolete("MG (Mail Group) records are obsolete; use MX records instead.")]
 public class MG : DNSResponseDetail

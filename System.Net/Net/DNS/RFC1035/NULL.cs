@@ -19,7 +19,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// data in DNS. Use of this record for production services is discouraged.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x0A)]
+[DNSRecord(DNSClassId.IN, 0x0A)]
 [DNSTextRecord("{Datas}")]
 public class NULL : DNSResponseDetail
 {

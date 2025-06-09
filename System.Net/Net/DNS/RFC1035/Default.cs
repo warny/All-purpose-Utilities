@@ -18,7 +18,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// consider using the official TXT record type code (<c>0x10</c>, decimal 16) instead.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x00)]
+[DNSRecord(DNSClassId.IN, 0x00)]
 [DNSTextRecord("{Datas}")]
 public class Default : DNSResponseDetail
 {

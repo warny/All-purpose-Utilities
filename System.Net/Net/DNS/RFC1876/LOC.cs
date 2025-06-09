@@ -77,7 +77,7 @@ namespace Utils.Net.DNS.RFC1876;
 /// and vice versa.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x1D)]
+[DNSRecord(DNSClassId.IN, 0x1D)]
 [DNSTextRecord("{Latitude} {Longitude} {Altitude}")]
 public class LOC : DNSResponseDetail
 {

@@ -16,10 +16,10 @@
 /// in RFC 1034 Section 3.6.2.
 /// </para>
 /// <para>
-/// This class corresponds to a DNS record with type code <c>0x05</c> and DNS class <see cref="DNSClass.IN"/>.
+/// This class corresponds to a DNS record with type code <c>0x05</c> and DNS class <see cref="DNSClassId.IN"/>.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x05)]
+[DNSRecord(DNSClassId.IN, 0x05)]
 [DNSTextRecord("{CName}")]
 public sealed class CNAME : DNSResponseDetail
 {

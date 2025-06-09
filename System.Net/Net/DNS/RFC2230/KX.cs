@@ -39,7 +39,7 @@ namespace Utils.Net.DNS.RFC2230;
 /// should also look up the AAAA record for the exchanger.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x24)]
+[DNSRecord(DNSClassId.IN, 0x24)]
 [DNSTextRecord("{Preference} {Exchanger}")]
 public class KX : DNSResponseDetail
 {

@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Utils.Net.DNS;
@@ -41,10 +42,7 @@ public class DNSTextParserTests
     public void WriteZoneFile()
     {
         var header = new DNSHeader();
-        var record = new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello world" })
-        {
-            Class = DNSClass.IN
-        };
+		var record = new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello world" });
         header.Responses.Add(record);
         var text = DNSText.Default.Write(header).Trim();
         Assert.AreEqual("example.com. 3600 IN TXT \"hello world\"", text);
@@ -105,6 +103,37 @@ public class DNSTextParserTests
     }
 
     [TestMethod]
+    public void ParseSoaWithCommentsAcrossLines()
+    {
+        var lines = new List<string>
+        {
+            "example.com. 3600 IN SOA ns1.example.com. hostmaster.example.com. (",
+            "    2023031501 ; serial",
+            "    10800      ; refresh",
+            "    3600       ; retry",
+            "    604800     ; expire",
+            "    3600       ; minimum",
+            ")",
+            "example.com. 3600 IN A 192.0.2.1"
+        };
+        var path = Path.GetTempFileName();
+        File.WriteAllLines(path, lines);
+
+        var records = DNSText.ParseFile(path);
+
+        Assert.AreEqual(2, records.Count);
+        Assert.IsInstanceOfType(records[0].RData, typeof(SOA));
+        var soa = (SOA)records[0].RData;
+        Assert.AreEqual(2023031501u, soa.Serial);
+        Assert.AreEqual(10800u, soa.Refresh);
+        Assert.AreEqual(3600u, soa.Retry);
+        Assert.AreEqual(604800u, soa.Expire);
+        Assert.AreEqual(3600u, soa.Minimum);
+        Assert.IsInstanceOfType(records[1].RData, typeof(Address));
+    }
+
+
+    [TestMethod]
     public void ParseAdditionalRecords()
     {
         var lines = new List<string>
@@ -126,21 +155,13 @@ public class DNSTextParserTests
     [TestMethod]
     public void WriteRecordsToFile()
     {
-        var records = new List<DNSResponseRecord>
-        {
-            new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" })
-            {
-                Class = DNSClass.IN
-            },
-            new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") })
-            {
-                Class = DNSClass.IN
-            }
-        };
-        var path = Path.GetTempFileName();
-        var writer = new DNSTextFileWriter(path);
-        writer.WriteRecords(records);
-        var lines = File.ReadAllLines(path);
+		var header = new DNSHeader();
+		header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" }));
+		header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") }));
+        var writer = new DNSText();
+		
+		string content = writer.Write(header);
+		var lines = content.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         Assert.AreEqual(2, lines.Length);
         Assert.AreEqual("example.com. 3600 IN TXT hello", lines[0]);
         Assert.AreEqual("example.com. 3600 IN MX 10 mail.example.com.", lines[1]);
@@ -150,17 +171,10 @@ public class DNSTextParserTests
     public void FileWriterImplementsInterface()
     {
         var header = new DNSHeader();
-        header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hi" })
-        {
-            Class = DNSClass.IN
-        });
+        header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hi" }));
 
-        var path = Path.GetTempFileName();
-        var writer = new DNSTextFileWriter(path);
-        string written = writer.Write(header);
-
-        Assert.AreEqual(path, written);
-        var content = File.ReadAllText(path).Trim();
+        var writer = new DNSText();
+        string content = writer.Write(header).TrimEnd();
         Assert.AreEqual("example.com. 3600 IN TXT hi", content);
     }
 }

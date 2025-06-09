@@ -26,7 +26,7 @@ namespace Utils.Net.DNS
 	/// <list type="bullet">
 	/// <item><description><see cref="Name"/>: The domain name being queried.</description></item>
 	/// <item><description><see cref="RequestType"/>: A 16-bit identifier for the query type (e.g., 0x01 for A records).</description></item>
-	/// <item><description><see cref="Class"/>: The DNS class, typically <see cref="DNSClass.IN"/> or <see cref="DNSClass.ALL"/>.</description></item>
+	/// <item><description><see cref="Class"/>: The DNS class, typically <see cref="DNSClassId.IN"/> or <see cref="DNSClassId.ALL"/>.</description></item>
 	/// </list>
 	/// It also provides an explicit <see cref="Type"/> property representing the record type in string format.
 	/// The <see cref="Clone"/> method returns a shallow copy of this record’s essential fields.
@@ -46,11 +46,11 @@ namespace Utils.Net.DNS
 		/// </summary>
 		/// <param name="type">The string identifier for the requested record type (e.g., "A", "AAAA").</param>
 		/// <param name="name">The domain name being queried.</param>
-		/// <param name="class">The DNS class for the query (default is <see cref="DNSClass.ALL"/>).</param>
+		/// <param name="class">The DNS class for the query (default is <see cref="DNSClassId.ALL"/>).</param>
 		/// <exception cref="ArgumentNullException">
 		/// Thrown when <paramref name="type"/> or <paramref name="name"/> is <c>null</c>.
 		/// </exception>
-		public DNSRequestRecord(string type, string name, DNSClass @class = DNSClass.ALL)
+		public DNSRequestRecord(string type, string name, DNSClassId @class = DNSClassId.ALL)
 		{
 			Name = name ?? throw new ArgumentNullException(nameof(name));
 			Class = @class;
@@ -76,7 +76,7 @@ namespace Utils.Net.DNS
 		/// Gets or sets the DNS class of the request (e.g., IN or ALL).
 		/// </summary>
 		[DNSField]
-		public DNSClass Class { get; set; }
+		public DNSClassId Class { get; set; }
 
 		/// <summary>
 		/// Gets or sets the string identifier for the requested DNS record type (e.g., "A", "AAAA", "MX").

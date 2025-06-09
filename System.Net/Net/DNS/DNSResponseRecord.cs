@@ -34,8 +34,8 @@ namespace Utils.Net.DNS;
 /// A DNS response record includes:
 /// <list type="bullet">
 /// <item><description>The queried <see cref="Name"/> (DNSDomainName).</description></item>
-/// <item><description>The numeric <see cref="Type"/> of the response (e.g., 1 for A, 28 for AAAA), stored in <see cref="DNSResponseDetail.ClassId"/>.</description></item>
-/// <item><description>The DNS class (<see cref="Class"/>), typically <see cref="DNSClass.IN"/>.</description></item>
+/// <item><description>The numeric <see cref="Class"/> of the response (e.g., 1 for A, 28 for AAAA), stored in <see cref="DNSResponseDetail.ClassId"/>.</description></item>
+/// <item><description>The DNS class (<see cref="ClassId"/>), typically <see cref="DNSClassId.IN"/>.</description></item>
 /// <item><description>The <see cref="TTL"/>, or time-to-live, indicating how long the record may be cached.</description></item>
 /// <item><description>An <see cref="RDLength"/> (2 bytes) indicating the size of the resource data.</description></item>
 /// <item><description>The <see cref="RData"/>, which is a <see cref="DNSResponseDetail"/> object representing the record-specific data (e.g., IP addresses, mail server, etc.).</description></item>
@@ -78,13 +78,13 @@ public sealed class DNSResponseRecord : DNSElement, ICloneable
 	/// Typically set by <see cref="RData"/>'s <see cref="DNSResponseDetail.ClassId"/>.
 	/// </summary>
 	[DNSField]
-	public ushort Type { get; internal set; }
+	public ushort Class { get; internal set; }
 
 	/// <summary>
-	/// Gets or sets the DNS class for this response (commonly <see cref="DNSClass.IN"/>).
+	/// Gets or sets the DNS class for this response (commonly <see cref="DNSClassId.IN"/>).
 	/// </summary>
 	[DNSField]
-	public DNSClass Class { get; set; }
+	public DNSClassId ClassId { get; internal set; }
 
 	/// <summary>
 	/// Gets or sets the time-to-live (TTL) for this record, indicating how long it may be cached.
@@ -102,14 +102,15 @@ public sealed class DNSResponseRecord : DNSElement, ICloneable
 
 	/// <summary>
 	/// Gets or sets the <see cref="DNSResponseDetail"/> describing the record data (RDATA).
-	/// Setting this value updates <see cref="Type"/> to reflect the RData's <see cref="DNSResponseDetail.ClassId"/>.
+	/// Setting this value updates <see cref="Class"/> to reflect the RData's <see cref="DNSResponseDetail.ClassId"/>.
 	/// </summary>
 	public DNSResponseDetail RData
 	{
 		get => rData;
 		set {
 			// Ensure the Type property is in sync with the RData's declared ClassId.
-			Type = value.ClassId;
+			Class = value.ClassId;
+			ClassId = value.Class;
 			rData = value;
 		}
 	}
@@ -121,7 +122,7 @@ public sealed class DNSResponseRecord : DNSElement, ICloneable
 	/// <returns>A human-readable summary of this DNS response record.</returns>
 	public override string ToString() =>
 		$"""
-            {RData.Name} {Name} {Class}, TTL : {TTL}
+            {RData.Name} {Name} {ClassId}, TTL : {TTL}
             	{RData.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")}
             """;
 
@@ -139,7 +140,7 @@ public sealed class DNSResponseRecord : DNSElement, ICloneable
 	{
 		Name,
 		TTL,
-		Class,
+		ClassId,
 		RDLength,
 		RData = (DNSResponseDetail)rData?.Clone()
 	};

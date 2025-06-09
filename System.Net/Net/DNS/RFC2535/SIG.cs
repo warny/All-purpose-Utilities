@@ -163,7 +163,7 @@
 ///    "meta-type" such as ANY, AXFR, etc. (but see section 5.6.2 regarding IXFR).
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x18)]
+[DNSRecord(DNSClassId.IN, 0x18)]
 [DNSTextRecord("{TypeCovered} {Algorithm} {Labels} {OriginalTtl} {SignatureExpiration} {SignatureInception} {KeyTag} {SignerName} {Signature}")]
 public class SIG : DNSResponseDetail
 {

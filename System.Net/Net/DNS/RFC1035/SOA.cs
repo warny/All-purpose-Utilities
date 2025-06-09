@@ -54,7 +54,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// See RFC 1035 Section 3.3.13 and related documentation for more details.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x06)]
+[DNSRecord(DNSClassId.IN, 0x06)]
 [DNSTextRecord("{MName} {RName} {Serial} {Refresh} {Retry} {Expire} {Minimum}")]
 public class SOA : DNSResponseDetail
 {

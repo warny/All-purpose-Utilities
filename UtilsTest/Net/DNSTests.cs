@@ -32,7 +32,7 @@ namespace UtilsTest.Net
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("gmail.com", dnsRequestRecord.Name.Value);
-            Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+            Assert.AreEqual(DNSClassId.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("ALL", dnsRequestRecord.Type);
 
             Assert.IsTrue(header.Responses.Count == 1);
@@ -143,7 +143,7 @@ namespace UtilsTest.Net
 
 			var dnsRequestRecord = header.Requests[0];
 			Assert.AreEqual("gmail.com", dnsRequestRecord.Name.Value);
-			Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+			Assert.AreEqual(DNSClassId.ALL, dnsRequestRecord.Class);
 			Assert.AreEqual("ALL", dnsRequestRecord.Type);
 
 			Assert.IsTrue(header.Responses.Count > 0, "No response from DNS");

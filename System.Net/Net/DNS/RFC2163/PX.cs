@@ -37,7 +37,7 @@ namespace Utils.Net.DNS.RFC2163;
 /// ensuring compatibility between different email protocols.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x1A)]
+[DNSRecord(DNSClassId.IN, 0x1A)]
 [DNSTextRecord("{Preference} {Map822} {MapX400}")]
 internal class PX : DNSResponseDetail
 {

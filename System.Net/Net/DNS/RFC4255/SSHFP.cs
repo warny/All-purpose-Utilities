@@ -35,7 +35,7 @@
 /// This provides an additional layer of security by ensuring the key is trusted.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x2C)]
+[DNSRecord(DNSClassId.IN, 0x2C)]
 [DNSTextRecord("{Algorithm} {FingerPrintType} {FingerPrint}")]
 public class SSHFP : DNSResponseDetail
 {

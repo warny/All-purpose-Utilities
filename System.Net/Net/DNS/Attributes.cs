@@ -5,20 +5,20 @@ namespace Utils.Net.DNS
 {
 	/// <summary>
 	/// Specifies a DNS record attribute that can be applied at the class level to identify
-	/// the DNS <see cref="DNSClass"/>, record ID, and an optional descriptive name.
+	/// the DNS <see cref="DNSClassId"/>, record ID, and an optional descriptive name.
 	/// </summary>
 	/// <remarks>
 	/// Multiple <see cref="DNSRecordAttribute"/> instances can be applied to the same class
 	/// if a single DNS record maps to multiple class/record ID pairs.
 	/// </remarks>
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-	public class DNSRecordAttribute(DNSClass @class, ushort recordId, string name = null) : Attribute
+	public class DNSRecordAttribute(DNSClassId classId, ushort recordId, string name = null) : Attribute
 	{
 		/// <summary>
 		/// Gets the DNS class of the record. This indicates the protocol group or
 		/// namespace in which the record is used.
 		/// </summary>
-		public DNSClass Class => @class;
+		public DNSClassId ClassId => classId;
 
 		/// <summary>
 		/// Gets the numerical DNS record type identifier.

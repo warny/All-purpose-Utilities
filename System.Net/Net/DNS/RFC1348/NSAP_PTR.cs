@@ -22,7 +22,7 @@ namespace Utils.Net.DNS.RFC1348;
 /// For additional details, see <see href="https://datatracker.ietf.org/doc/html/rfc1348"/>.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x16, "NSAP-PTR")]
+[DNSRecord(DNSClassId.IN, 0x16, "NSAP-PTR")]
 [DNSTextRecord("{DomainName}")]
 public class NSAP_PTR : DNSResponseDetail
 {

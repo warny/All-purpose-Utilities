@@ -19,7 +19,7 @@ namespace Utils.Net.DNS.RFC6844;
 /// Example usage might be <c>0 issue "letsencrypt.org"</c> meaning that only
 /// Let's Encrypt is authorized to issue certificates for this domain.
 /// </remarks>
-[DNSRecord(DNSClass.IN, 257, "CAA")]
+[DNSRecord(DNSClassId.IN, 257, "CAA")]
 [DNSTextRecord("{Flags} {Tag} {Value}")]
 public class CAA : DNSResponseDetail
 {

@@ -20,7 +20,7 @@ namespace Utils.Net.DNS.RFC7553;
 /// example.com.  3600  IN  URI  10  1  "https://www.example.com"
 /// </code>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 256, "URI")]
+[DNSRecord(DNSClassId.IN, 256, "URI")]
 [DNSTextRecord("{Priority} {Weight} {Target}")]
 public class URI : DNSResponseDetail
 {
