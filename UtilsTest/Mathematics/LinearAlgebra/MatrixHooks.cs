@@ -8,9 +8,14 @@ using Utils.Mathematics.LinearAlgebra;
 namespace UtilsTest.Mathematics.LinearAlgebra
 {
 	[Binding]
-	public sealed class MatrixHooks
-	{
-		readonly ScenarioContext context = ScenarioContext.Current;
+        public sealed class MatrixHooks
+        {
+                readonly ScenarioContext context;
+
+                public MatrixHooks(ScenarioContext context)
+                {
+                        this.context = context;
+                }
 
 		private static Matrix<double> TransformToMatrix(Table values)
 		{
