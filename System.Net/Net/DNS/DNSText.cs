@@ -14,7 +14,7 @@ namespace Utils.Net.DNS;
 /// representation commonly used in zone files.
 /// </summary>
 
-public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextReader>
+public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextReader>
 {
     private static readonly Regex FormatRegex = CreateFormatRegex();
     private static readonly Regex TokenRegex = CreateTokenRegex();
@@ -84,6 +84,7 @@ public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextRe
         int commentIndex = line.IndexOfAny([';', '#']);
         if (commentIndex >= 0)
             line = line[..commentIndex];
+        line = line.Replace("(", " ").Replace(")", " ");
         var tokens = TokenRegex.Matches(line).Select(m => m.Value).ToArray();
         if (tokens.Length < 5)
             return null;
@@ -194,8 +195,18 @@ public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextRe
 	/// <returns>A list of <see cref="DNSResponseRecord"/> objects.</returns>
 	public static List<DNSResponseRecord> ParseFile(string path) => ParseTextReader(File.OpenText(path));
 
-	public static List<DNSResponseRecord> ParseString(string records) => ParseTextReader(new StringReader(records));
+	/// <summary>
+	/// Parses all records contained in a string.
+	/// </summary>
+	/// <param name="string">Zone records content</param>
+	/// <returns>A list of <see cref="DNSResponseRecord"/> objects.</returns>
+  public static List<DNSResponseRecord> ParseString(string records) => ParseTextReader(new StringReader(records));
 
+	/// <summary>
+	/// Parses all records from a text reader.
+	/// </summary>
+	/// <param name="reader">Zone records content</param>
+	/// <returns>A list of <see cref="DNSResponseRecord"/> objects.</returns>
 	public static List<DNSResponseRecord> ParseTextReader(TextReader reader)
 	{
 		var list = new List<DNSResponseRecord>();
