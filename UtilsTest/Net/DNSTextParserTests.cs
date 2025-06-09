@@ -41,10 +41,7 @@ public class DNSTextParserTests
     public void WriteZoneFile()
     {
         var header = new DNSHeader();
-        var record = new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello world" })
-        {
-            Class = DNSClass.IN
-        };
+		var record = new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello world" });
         header.Responses.Add(record);
         var text = DNSText.Default.Write(header).Trim();
         Assert.AreEqual("example.com. 3600 IN TXT \"hello world\"", text);
@@ -159,14 +156,8 @@ public class DNSTextParserTests
     {
         var records = new List<DNSResponseRecord>
         {
-            new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" })
-            {
-                Class = DNSClass.IN
-            },
+            new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" }),
             new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") })
-            {
-                Class = DNSClass.IN
-            }
         };
         var path = Path.GetTempFileName();
         var writer = new DNSTextFileWriter(path);
@@ -181,10 +172,7 @@ public class DNSTextParserTests
     public void FileWriterImplementsInterface()
     {
         var header = new DNSHeader();
-        header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hi" })
-        {
-            Class = DNSClass.IN
-        });
+        header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hi" }));
 
         var path = Path.GetTempFileName();
         var writer = new DNSTextFileWriter(path);

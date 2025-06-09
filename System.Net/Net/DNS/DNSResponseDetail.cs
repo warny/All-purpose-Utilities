@@ -24,6 +24,18 @@ namespace Utils.Net.DNS
 		/// This ID identifies the record type on the wire. Each derived class must be decorated
 		/// with at least one <see cref="DNSRecordAttribute"/> to provide this value.
 		/// </remarks>
+		internal virtual DNSClassId Class
+			=> GetType().GetCustomAttribute<DNSRecordAttribute>()?.ClassId
+			   ?? throw new InvalidOperationException($"No DNSRecordAttribute found on {GetType().FullName}.");
+
+		/// <summary>
+		/// Gets the numeric DNS record ID (e.g., 0x01 for A, 0x1C for AAAA) via reflection on
+		/// the <see cref="DNSRecordAttribute"/>. 
+		/// </summary>
+		/// <remarks>
+		/// This ID identifies the record type on the wire. Each derived class must be decorated
+		/// with at least one <see cref="DNSRecordAttribute"/> to provide this value.
+		/// </remarks>
 		internal virtual ushort ClassId
 			=> GetType().GetCustomAttribute<DNSRecordAttribute>()?.RecordId
 			   ?? throw new InvalidOperationException($"No DNSRecordAttribute found on {GetType().FullName}.");

@@ -92,7 +92,7 @@ namespace Utils.Net.DNS.RFC4034;
 ///   </item>
 /// </list>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x2E)]
+[DNSRecord(DNSClassId.IN, 0x2E)]
 [DNSTextRecord("{TypeCovered} {Algorithm} {Labels} {OriginalTTL} {SignatureExpiration} {SignatureInception} {KeyTag} {SignerName} {Signature}")]
 public class RRSIG : DNSResponseDetail
 {

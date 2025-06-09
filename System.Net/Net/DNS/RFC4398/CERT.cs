@@ -39,7 +39,7 @@ namespace Utils.Net.DNS.RFC4398
 	///   the algorithm field MUST be zero and the key tag is meaningless.
 	/// </para>
 	/// </remarks>
-        [DNSRecord(DNSClass.IN, 0x25)]
+        [DNSRecord(DNSClassId.IN, 0x25)]
         [DNSTextRecord("{Type} {KeyTag} {Algorithm} {ObjectDatas}")]
         public class CERT : DNSResponseDetail
 	{

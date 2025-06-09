@@ -46,7 +46,7 @@ namespace UtilsTest.Net
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("test.example.com", dnsRequestRecord.Name.Value);
-            Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+            Assert.AreEqual(DNSClassId.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("A", dnsRequestRecord.Type);
 
             Assert.IsTrue(header.Responses.Count == 1);
@@ -99,7 +99,7 @@ namespace UtilsTest.Net
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("test.example.com", dnsRequestRecord.Name.Value);
-            Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+            Assert.AreEqual(DNSClassId.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("ALL", dnsRequestRecord.Type);
 
             Assert.AreEqual(2, header.Responses.Count);
@@ -180,7 +180,7 @@ namespace UtilsTest.Net
 
             var dnsRequestRecord = header.Requests[0];
             Assert.AreEqual("example.com", dnsRequestRecord.Name.Value);
-            Assert.AreEqual(DNSClass.ALL, dnsRequestRecord.Class);
+            Assert.AreEqual(DNSClassId.ALL, dnsRequestRecord.Class);
             Assert.AreEqual("MX", dnsRequestRecord.Type);
 
             var expectedResponses = new (string Name, ushort Priority, string Exchange)[] {

@@ -57,7 +57,7 @@ namespace Utils.Net
         /// <param name="name">Domain name to query.</param>
         /// <param name="class">DNS class (default is DNSClass.ALL).</param>
         /// <returns>The DNS response header containing the query result.</returns>
-        public DNSHeader Request(string type, string name, DNSClass @class = DNSClass.ALL)
+        public DNSHeader Request(string type, string name, DNSClassId @class = DNSClassId.ALL)
         {
             DNSHeader request = new DNSHeader();
             request.RecursionDesired = true;

@@ -28,7 +28,7 @@ namespace Utils.Net.DNS.RFC2535;
 /// </list>
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x19)]
+[DNSRecord(DNSClassId.IN, 0x19)]
 [DNSTextRecord("{Flags} {Protocol} {Algorithm} {PublicKey}")]
 public class KEY : DNSResponseDetail
 {

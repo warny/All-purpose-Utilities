@@ -87,7 +87,7 @@ namespace UtilsTest.Net
             Random random = new Random();
 
             var header1 = new DNSHeader();
-            header1.Requests.Add(new DNSRequestRecord("NAPTR", "example.com", DNSClass.IN));
+            header1.Requests.Add(new DNSRequestRecord("NAPTR", "example.com", DNSClassId.IN));
             header1.Responses.Add(new DNSResponseRecord("example.com", 3600, new NAPTR
             {
                 Order = (ushort)random.Next(0, 65535),

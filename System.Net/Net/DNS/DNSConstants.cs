@@ -136,7 +136,7 @@ namespace Utils.Net.DNS
 		/// </summary>
 		public const ushort Error = 0x000F;
 	}
-	public enum DNSClass : ushort
+	public enum DNSClassId : ushort
 	{
 		/// <summary>
 		/// the Internet

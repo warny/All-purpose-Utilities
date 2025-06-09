@@ -29,12 +29,20 @@ namespace Utils.Net.DNS.RFC1035;
 /// to ensure the wire-format ID matches the address type.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x01, "A")]
-[DNSRecord(DNSClass.IN, 0x1C, "AAAA")]
-[DNSRecord(DNSClass.IN, 0x17, "NSAP")]
+[DNSRecord(DNSClassId.IN, 0x01, "A")]
+[DNSRecord(DNSClassId.IN, 0x1C, "AAAA")]
+[DNSRecord(DNSClassId.IN, 0x17, "NSAP")]
 [DNSTextRecord("{IPAddress}")]
 public sealed class Address : DNSResponseDetail
 {
+
+	/// <inheritdoc />
+	/// <summary>
+	/// Gets the DNS record class <see cref="DNSClassId.IN"/>.
+	/// </summary>
+	/// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
+	internal override DNSClassId Class => DNSClassId.IN;
+
 	/// <inheritdoc />
 	/// <summary>
 	/// Gets the DNS record ID based on the <see cref="System.Net.Sockets.AddressFamily"/> of <see cref="IPAddress"/>.

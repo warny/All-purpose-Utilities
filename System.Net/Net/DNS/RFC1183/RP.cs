@@ -36,7 +36,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// <c>info.example.com</c> might hold a TXT record with further contact or host data.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x11)]
+[DNSRecord(DNSClassId.IN, 0x11)]
 [DNSTextRecord("{MBoxDName} {TxtDName}")]
 public class RP : DNSResponseDetail
 {

@@ -39,7 +39,7 @@ namespace Utils.Net.DNS.RFC4701
 	/// perform dynamic DNS updates to the same zone.
 	/// </para>
 	/// </remarks>
-        [DNSRecord(DNSClass.IN, 0x31)]
+        [DNSRecord(DNSClassId.IN, 0x31)]
         [DNSTextRecord("{IdentifierTypes} {DigestTypeCode} {Digest}")]
         public class DHCID : DNSResponseDetail
 	{

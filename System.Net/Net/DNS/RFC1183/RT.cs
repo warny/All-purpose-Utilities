@@ -40,7 +40,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// via DNS is rarely practiced, and the RT record is largely historical.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x15)]
+[DNSRecord(DNSClassId.IN, 0x15)]
 [DNSTextRecord("{Preference} {DnsName}")]
 public class RT : DNSResponseDetail
 {

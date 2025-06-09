@@ -49,7 +49,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// effectively deprecated in modern DNS practice.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x0B)]
+[DNSRecord(DNSClassId.IN, 0x0B)]
 [DNSTextRecord("{IPAddress} {Protocol} {Bitmap}")]
 public class WKS : DNSResponseDetail
 {

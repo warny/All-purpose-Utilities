@@ -34,7 +34,7 @@ namespace Utils.Net.DNS.RFC2052;
 /// higher-priority servers first.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x21)]
+[DNSRecord(DNSClassId.IN, 0x21)]
 [DNSTextRecord("{Priority} {Weight} {Port} {Server}")]
 public class SRV : DNSResponseDetail
 {

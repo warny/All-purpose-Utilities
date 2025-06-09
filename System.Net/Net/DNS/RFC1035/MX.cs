@@ -37,7 +37,7 @@ namespace Utils.Net.DNS.RFC1035
 	/// of the <see cref="Exchange"/>) when resolving MX records.
 	/// </para>
 	/// </remarks>
-[DNSRecord(DNSClass.IN, 0x0F)]
+[DNSRecord(DNSClassId.IN, 0x0F)]
 [DNSTextRecord("{Preference} {Exchange}")]
 public class MX : DNSResponseDetail
 	{

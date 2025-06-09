@@ -23,7 +23,7 @@ namespace Utils.Net.DNS.RFC1035
 	/// for completeness but should not be used in modern DNS scenarios.
 	/// </para>
 	/// </remarks>
-[DNSRecord(DNSClass.IN, 0x03)]
+[DNSRecord(DNSClassId.IN, 0x03)]
 [DNSTextRecord("{MadName}")]
 [Obsolete("MD (Mail Destination) records are obsolete; use MX records instead.")]
 public class MD : DNSResponseDetail

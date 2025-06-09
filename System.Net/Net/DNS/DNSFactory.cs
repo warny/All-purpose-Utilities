@@ -37,17 +37,17 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	public IReadOnlyList<Type> DNSTypes { get; }
 
 	/// <summary>
-	/// Maps a (<see cref="DNSClass"/>, <c>ushort</c>) pair to the corresponding DNS response type.
+	/// Maps a (<see cref="DNSClassId"/>, <c>ushort</c>) pair to the corresponding DNS response type.
 	/// </summary>
 	private IReadOnlyDictionary<UshortRecordKey, Type> DNSResponsesById { get; }
 
 	/// <summary>
-	/// Maps a (<see cref="DNSClass"/>, record name) pair to the corresponding record ID (<c>ushort</c>).
+	/// Maps a (<see cref="DNSClassId"/>, record name) pair to the corresponding record ID (<c>ushort</c>).
 	/// </summary>
 	private IReadOnlyDictionary<StringRecordKey, ushort> DNSClassIdByName { get; }
 
 	/// <summary>
-	/// Maps a (<see cref="DNSClass"/>, record ID) pair to the associated record name (<see cref="string"/>).
+	/// Maps a (<see cref="DNSClassId"/>, record ID) pair to the associated record name (<see cref="string"/>).
 	/// </summary>
 	private IReadOnlyDictionary<UshortRecordKey, string> DNSClassNameById { get; }
 
@@ -72,10 +72,10 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 			foreach (var dnsClass in dnsType.GetCustomAttributes<DNSRecordAttribute>())
 			{
 				string name = dnsClass.Name ?? dnsType.Name;
-				Debug.Print($"{dnsClass.Class} {name} ({dnsClass.RecordId:x2})");
-				dnsResponsesById.Add(new UshortRecordKey(dnsClass.Class, dnsClass.RecordId), dnsType);
-				dnsClassNameById.Add(new UshortRecordKey(dnsClass.Class, dnsClass.RecordId), name);
-				dnsClassIdByName.Add(new StringRecordKey(dnsClass.Class, dnsClass.Name ?? dnsType.Name), dnsClass.RecordId);
+				Debug.Print($"{dnsClass.ClassId} {name} ({dnsClass.RecordId:x2})");
+				dnsResponsesById.Add(new UshortRecordKey(dnsClass.ClassId, dnsClass.RecordId), dnsType);
+				dnsClassNameById.Add(new UshortRecordKey(dnsClass.ClassId, dnsClass.RecordId), name);
+				dnsClassIdByName.Add(new StringRecordKey(dnsClass.ClassId, dnsClass.Name ?? dnsType.Name), dnsClass.RecordId);
 			}
 		}
 
@@ -91,7 +91,7 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	/// <param name="factories">A collection of <see cref="DNSFactory"/> instances to combine.</param>
 	/// <remarks>
 	/// The aggregated factory merges the mappings from all specified <paramref name="factories"/>.
-	/// If duplicates occur for the same (<see cref="DNSClass"/>, ID) or (<see cref="DNSClass"/>, name) pair,
+	/// If duplicates occur for the same (<see cref="DNSClassId"/>, ID) or (<see cref="DNSClassId"/>, name) pair,
 	/// the last entry encountered overwrites previous ones.
 	/// </remarks>
        public DNSFactory(params IEnumerable<DNSFactory> factories)
@@ -158,39 +158,39 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	}
 
 	/// <summary>
-	/// Retrieves the recorded name for a specific (<see cref="DNSClass"/>, <c>ushort</c>) combination.
+	/// Retrieves the recorded name for a specific (<see cref="DNSClassId"/>, <c>ushort</c>) combination.
 	/// </summary>
-	/// <param name="class">The <see cref="DNSClass"/>.</param>
+	/// <param name="class">The <see cref="DNSClassId"/>.</param>
 	/// <param name="classId">The record identifier.</param>
 	/// <returns>The stored record name.</returns>
-	public string GetClassName(DNSClass @class, ushort classId)
+	public string GetClassName(DNSClassId @class, ushort classId)
 		=> DNSClassNameById[new UshortRecordKey(@class, classId)];
 
 	/// <summary>
-	/// Retrieves the recorded ID for a specific (<see cref="DNSClass"/>, record name) combination.
+	/// Retrieves the recorded ID for a specific (<see cref="DNSClassId"/>, record name) combination.
 	/// </summary>
-	/// <param name="class">The <see cref="DNSClass"/>.</param>
+	/// <param name="class">The <see cref="DNSClassId"/>.</param>
 	/// <param name="className">The record name.</param>
 	/// <returns>The stored record ID.</returns>
-	public ushort GetClassId(DNSClass @class, string className)
+	public ushort GetClassId(DNSClassId @class, string className)
 		=> DNSClassIdByName[new StringRecordKey(@class, className)];
 
 	/// <summary>
-	/// Retrieves the DNS response <see cref="Type"/> for a specific (<see cref="DNSClass"/>, <c>ushort</c>) combination.
+	/// Retrieves the DNS response <see cref="Type"/> for a specific (<see cref="DNSClassId"/>, <c>ushort</c>) combination.
 	/// </summary>
-	/// <param name="class">The <see cref="DNSClass"/>.</param>
+	/// <param name="class">The <see cref="DNSClassId"/>.</param>
 	/// <param name="classId">The record identifier.</param>
 	/// <returns>A <see cref="Type"/> that implements <see cref="DNSResponseDetail"/>.</returns>
-	public Type GetDNSType(DNSClass @class, ushort classId)
+	public Type GetDNSType(DNSClassId @class, ushort classId)
 		=> DNSResponsesById[new UshortRecordKey(@class, classId)];
 
 	/// <summary>
-	/// Retrieves the DNS response <see cref="Type"/> for a specific (<see cref="DNSClass"/>, record name) combination.
+	/// Retrieves the DNS response <see cref="Type"/> for a specific (<see cref="DNSClassId"/>, record name) combination.
 	/// </summary>
-	/// <param name="class">The <see cref="DNSClass"/>.</param>
+	/// <param name="class">The <see cref="DNSClassId"/>.</param>
 	/// <param name="className">The record name.</param>
 	/// <returns>A <see cref="Type"/> that implements <see cref="DNSResponseDetail"/>.</returns>
-	public Type GetDNSType(DNSClass @class, string className)
+	public Type GetDNSType(DNSClassId @class, string className)
 		=> DNSResponsesById[new UshortRecordKey(@class, GetClassId(@class, className))];
 
 	/// <summary>
@@ -224,11 +224,11 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 			.ToImmutableList();
 
 	/// <summary>
-	/// Serves as a unique dictionary key for records identified by a (<see cref="DNSClass"/>, <c>ushort</c>) tuple.
+	/// Serves as a unique dictionary key for records identified by a (<see cref="DNSClassId"/>, <c>ushort</c>) tuple.
 	/// </summary>
-	private sealed class UshortRecordKey(DNSClass @class, ushort recordId) : IEquatable<UshortRecordKey>
+	private sealed class UshortRecordKey(DNSClassId @class, ushort recordId) : IEquatable<UshortRecordKey>
 	{
-		public DNSClass Class { get; } = @class;
+		public DNSClassId Class { get; } = @class;
 		public ushort RecordId { get; } = recordId;
 
 		public bool Equals(UshortRecordKey other)
@@ -241,11 +241,11 @@ public sealed class DNSFactory : IAdditionOperators	 <DNSFactory, DNSFactory, DN
 	}
 
 	/// <summary>
-	/// Serves as a unique dictionary key for records identified by a (<see cref="DNSClass"/>, <c>string</c>) tuple.
+	/// Serves as a unique dictionary key for records identified by a (<see cref="DNSClassId"/>, <c>string</c>) tuple.
 	/// </summary>
-	private sealed class StringRecordKey(DNSClass @class, string recordName) : IEquatable<StringRecordKey>
+	private sealed class StringRecordKey(DNSClassId @class, string recordName) : IEquatable<StringRecordKey>
 	{
-		public DNSClass Class { get; } = @class;
+		public DNSClassId Class { get; } = @class;
 		public string RecordName { get; } = recordName;
 
 		public bool Equals(StringRecordKey other)

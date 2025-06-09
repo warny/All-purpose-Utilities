@@ -17,7 +17,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private readonly Func<Datas, DNSHeader> ReadHeader;
     private readonly Func<Datas, DNSRequestRecord> ReadRequestRecord;
     private readonly Func<Datas, DNSResponseRecord> ReadResponseRecord;
-    private readonly Dictionary<int, Func<Datas, DNSResponseDetail>> readers = new();
+    private readonly Dictionary<(int Class, DNSClassId ClassId), Func<Datas, DNSResponseDetail>> readers = new();
     private readonly Dictionary<int, string> requestClassNames = new() { { 0xFF, "ALL" } };
 
     public static DNSPacketReader Default { get; } = new DNSPacketReader(DNSFactory.Default);
@@ -42,7 +42,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var reader = CreateReader<DNSResponseDetail>(dnsElementType);
         foreach (var dnsClass in dnsClasses)
         {
-            readers.Add(dnsClass.RecordId, reader);
+            readers.Add((dnsClass.RecordId, dnsClass.ClassId), reader);
             requestClassNames.Add(dnsClass.RecordId, dnsClass.Name ?? dnsElementType.Name);
         }
     }
@@ -156,7 +156,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         return assignExpression;
     }
 
-    private class Datas
+    private sealed class Datas
     {
         public byte[] Datagram { get; init; }
         public int Length { get; init; }
@@ -251,7 +251,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         public string ReadString(int length) => Encoding.UTF8.GetString(ReadBytes(length));
     }
 
-    private class Context
+    private sealed class Context
     {
         public int Length { get; init; }
         public int BytesLeft { get; set; }
@@ -319,8 +319,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
              BytesLeft = responseRecord.RDLength,
              Length = responseRecord.RDLength
         };
-        Debug.WriteLine($"Read record {requestClassNames[responseRecord.Type]}. Length = {responseRecord.RDLength}");
-        var responseDetail = readers[responseRecord.Type](datas);
+        Debug.WriteLine($"Read record {requestClassNames[responseRecord.Class]}. Length = {responseRecord.RDLength}");
+        var responseDetail = readers[(responseRecord.Class, responseRecord.ClassId)](datas);
         responseRecord.RData = responseDetail;
         datas.Context = null;
         return responseRecord;

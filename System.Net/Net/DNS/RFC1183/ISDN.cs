@@ -25,7 +25,7 @@ namespace Utils.Net.DNS.RFC1183
 	/// representation (including subaddresses).
 	/// </para>
 	/// </remarks>
-[DNSRecord(DNSClass.IN, 0x14)]
+[DNSRecord(DNSClassId.IN, 0x14)]
 [DNSTextRecord("{PhoneNumber}")]
 public class ISDN : DNSResponseDetail
 	{

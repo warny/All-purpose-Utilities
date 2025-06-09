@@ -52,7 +52,7 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
             return value != null ? FormatValue(value) : m.Value;
             
         }
-        return $"{record.Name} {record.TTL} {record.Class} {rdata.Name} {rdataText}".TrimEnd();
+        return $"{record.Name} {record.TTL} {record.ClassId} {rdata.Name} {rdataText}".TrimEnd();
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
         var name = new DNSDomainName(tokens[0]);
         if (!uint.TryParse(tokens[1], out uint ttl))
             return null;
-        if (!Enum.TryParse(tokens[2], true, out DNSClass dnsClass))
+        if (!Enum.TryParse(tokens[2], true, out DNSClassId dnsClass))
             return null;
         string typeName = tokens[3];
         var rdataTokens = tokens.Skip(4).ToArray();
@@ -93,7 +93,7 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
         }
         var record = new DNSResponseRecord(name.Value, ttl, rdata)
         {
-            Class = dnsClass
+            ClassId = dnsClass
         };
         return record;
     }

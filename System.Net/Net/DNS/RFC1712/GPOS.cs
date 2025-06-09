@@ -21,7 +21,7 @@ namespace Utils.Net.DNS.RFC1712;
 /// is prefixed with a one-byte length indicator during DNS packet serialization.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x1B)]
+[DNSRecord(DNSClassId.IN, 0x1B)]
 [DNSTextRecord("{Longitude} {Latitude} {Altitude}")]
 public class GPOS : DNSResponseDetail
 {

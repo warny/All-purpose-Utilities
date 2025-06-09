@@ -18,7 +18,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// to parse any optional subaddress or additional fields.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x13)]
+[DNSRecord(DNSClassId.IN, 0x13)]
 [DNSTextRecord("{PSDN}")]
 public class X25 : DNSResponseDetail
 {

@@ -28,7 +28,7 @@ namespace Utils.Net.DNS.RFC1035;
 /// additional logic for splitting or concatenating strings if required by a specific environment.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x10)]
+[DNSRecord(DNSClassId.IN, 0x10)]
 [DNSTextRecord("{Text}")]
 public class TXT : DNSResponseDetail
 {

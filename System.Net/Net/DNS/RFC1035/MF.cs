@@ -19,7 +19,7 @@ namespace Utils.Net.DNS.RFC1035
 	/// be used in modern DNS configurations.
 	/// </para>
 	/// </remarks>
-[DNSRecord(DNSClass.IN, 0x04)]
+[DNSRecord(DNSClassId.IN, 0x04)]
 [DNSTextRecord("{MadName}")]
 [Obsolete("MF (Mail Forwarder) records are obsolete; use MX records instead.")]
 public class MF : DNSResponseDetail

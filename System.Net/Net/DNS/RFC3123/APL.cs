@@ -56,7 +56,7 @@ namespace Utils.Net.DNS.RFC3123;
 /// This class encapsulates a single APL item. In a full APL record, there may be zero or more such items.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x2A)]
+[DNSRecord(DNSClassId.IN, 0x2A)]
 [DNSTextRecord("{AddressFamily} {Prefix} {flagAndAfdLength} {AfdPart}")]
 public class APL : DNSResponseDetail
 {

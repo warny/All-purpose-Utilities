@@ -30,7 +30,7 @@ namespace Utils.Net.DNS.RFC1183;
 /// documents for more details on AFS usage and potential multi-server configurations.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x12)]
+[DNSRecord(DNSClassId.IN, 0x12)]
 [DNSTextRecord("{Preference} {AFSServer}")]
 public class AFSDB : DNSResponseDetail
 {

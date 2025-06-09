@@ -48,7 +48,7 @@ namespace Utils.Net.DNS.RFC2671;
 /// OPT records are typically used as part of EDNS to extend the size and functionality of DNS messages.
 /// </para>
 /// </remarks>
-[DNSRecord(DNSClass.IN, 0x29)]
+[DNSRecord(DNSClassId.IN, 0x29)]
 [DNSTextRecord("{OptionCode} {OptionsData}")]
 public class OPT : DNSResponseDetail
 {
