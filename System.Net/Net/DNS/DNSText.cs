@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -35,24 +36,40 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
 		var rdata = record.RData;
 		var attr = rdata.GetType().GetCustomAttribute<DNSTextRecordAttribute>();
 		string rdataText = "";
-		if (attr == null)
+		if (attr is null)
 		{
 			var fields = rdata.GetType().GetMembers()
 				.Where(m => m.GetCustomAttribute<DNSFieldAttribute>() != null)
-				.ToArray();
+				.Select(m=>
+				{
+					var member = rdata.GetType().GetMember(m.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault();
+					return member switch
+					{
+						PropertyInfo pi => FormatValue(pi.GetValue(rdata)),
+						FieldInfo fi => FormatValue(fi.GetValue(rdata)),
+						_ => null
+					};
+				});
 
-			var m = FormatRegex.Match(attr.Format);
-			var name = m.Groups["name"].Value;
-			var member = rdata.GetType().GetMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault();
-			object value = null;
-            if (member is PropertyInfo pi)
-				value = pi.GetValue(rdata);
-            else if (member is FieldInfo fi)
-				value = fi.GetValue(rdata);
-            return value != null ? FormatValue(value) : m.Value;
-            
-        }
-        return $"{record.Name} {record.TTL} {record.ClassId} {rdata.Name} {rdataText}".TrimEnd();
+			rdataText = string.Join(' ', fields);
+		}
+		else
+		{
+			var fields = rdata.GetType().GetMembers()
+				.Where(m=>m is PropertyInfo || m is FieldInfo)
+				.ToDictionary(m=>m.Name);
+			rdataText = FormatRegex.Replace(attr.Format, m=>
+				fields[m.Groups["name"].Value] switch
+				{
+					PropertyInfo pi => FormatValue(pi.GetValue(rdata)),
+					FieldInfo fi => FormatValue(fi.GetValue(rdata)),
+					_ => null
+				}
+			);
+		}
+
+
+		return $"{record.Name} {record.TTL} {record.ClassId} {rdata.Name} {rdataText}".TrimEnd();
     }
 
     /// <summary>
@@ -111,7 +128,7 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
     /// Parses records from a string containing the zone file content.
     /// </summary>
     public static List<DNSResponseRecord> ParseText(string text)
-        => ParseLines(text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+        => ParseLines(text.Split(["\r\n", "\n"], StringSplitOptions.None));
 
     /// <summary>
     /// Parses records from a <see cref="TextReader"/>.
@@ -202,16 +219,13 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
         return Convert.ChangeType(value, targetType);
     }
 
-    private static string FormatValue(object value)
-    {
-        if (value is string s)
-        {
-            return s.Contains(' ') ? $"\"{s}\"" : s;
-        }
-        if (value is byte[] bytes)
-            return Convert.ToBase64String(bytes);
-        return Convert.ToString(value);
-    }
+	private static string FormatValue(object value) 
+		=> value switch
+		{
+			string s => s.Contains(' ') ? $"\"{s}\"" : s,
+			byte[] bytes => Convert.ToBase64String(bytes),
+			_ => Convert.ToString(value)
+		};
 
 	/// <summary>
 	/// Parses all records contained in a text file.

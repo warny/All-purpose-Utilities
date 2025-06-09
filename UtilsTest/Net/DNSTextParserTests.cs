@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Utils.Net.DNS;
@@ -154,15 +155,13 @@ public class DNSTextParserTests
     [TestMethod]
     public void WriteRecordsToFile()
     {
-        var records = new List<DNSResponseRecord>
-        {
-            new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" }),
-            new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") })
-        };
-        var path = Path.GetTempFileName();
-        var writer = new DNSTextFileWriter(path);
-        writer.WriteRecords(records);
-        var lines = File.ReadAllLines(path);
+		var header = new DNSHeader();
+		header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" }));
+		header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") }));
+        var writer = new DNSText();
+		
+		string content = writer.Write(header);
+		var lines = content.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         Assert.AreEqual(2, lines.Length);
         Assert.AreEqual("example.com. 3600 IN TXT hello", lines[0]);
         Assert.AreEqual("example.com. 3600 IN MX 10 mail.example.com.", lines[1]);
@@ -174,12 +173,8 @@ public class DNSTextParserTests
         var header = new DNSHeader();
         header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hi" }));
 
-        var path = Path.GetTempFileName();
-        var writer = new DNSTextFileWriter(path);
-        string written = writer.Write(header);
-
-        Assert.AreEqual(path, written);
-        var content = File.ReadAllText(path).Trim();
+        var writer = new DNSText();
+        string content = writer.Write(header).TrimEnd();
         Assert.AreEqual("example.com. 3600 IN TXT hi", content);
     }
 }
