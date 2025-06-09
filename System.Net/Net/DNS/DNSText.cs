@@ -14,7 +14,7 @@ namespace Utils.Net.DNS;
 /// representation commonly used in zone files.
 /// </summary>
 
-public partial class DNSText : IDNSWriter<string>
+public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextReader>
 {
     private static readonly Regex FormatRegex = CreateFormatRegex();
     private static readonly Regex TokenRegex = CreateTokenRegex();
@@ -51,7 +51,10 @@ public partial class DNSText : IDNSWriter<string>
                 return FormatValue(val);
             }));
         }
-        else
+        var tokens = TokenRegex.Matches(line)
+            .Select(m => m.Value)
+            .Where(t => t != "(" && t != ")")
+            .ToArray();
         {
             rdataText = FormatRegex.Replace(attr.Format, m =>
             {
@@ -120,8 +123,47 @@ public partial class DNSText : IDNSWriter<string>
             fi.SetValue(obj, ConvertTo(value, fi.FieldType));
     }
 
-    private static object ConvertTo(string value, Type targetType)
+        => ParseLines(File.ReadLines(path));
+
+    /// <summary>
+    /// Parses records from a string containing the zone file content.
+    /// </summary>
+    public static List<DNSResponseRecord> ParseText(string text)
+        => ParseLines(text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+
+    /// <summary>
+    /// Parses records from a <see cref="TextReader"/>.
+    /// </summary>
+    public static List<DNSResponseRecord> Parse(TextReader reader)
     {
+        string line;
+        var lines = new List<string>();
+        while ((line = reader.ReadLine()) != null)
+            lines.Add(line);
+        return ParseLines(lines);
+    }
+
+    private static List<DNSResponseRecord> ParseLines(IEnumerable<string> lines)
+        foreach (var raw in lines)
+    {
+
+    /// <inheritdoc />
+    public DNSHeader Read(string text)
+    {
+        var header = new DNSHeader();
+        foreach (var r in ParseText(text))
+            header.Responses.Add(r);
+        return header;
+    }
+
+    /// <inheritdoc />
+    public DNSHeader Read(TextReader reader)
+    {
+        var header = new DNSHeader();
+        foreach (var r in Parse(reader))
+            header.Responses.Add(r);
+        return header;
+    }
         if (targetType == typeof(string)) return value.Trim('"');
         if (targetType == typeof(byte)) return byte.Parse(value);
         if (targetType == typeof(ushort)) return ushort.Parse(value);
