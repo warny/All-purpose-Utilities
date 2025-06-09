@@ -147,12 +147,45 @@ public class DNSText : IDNSWriter<string>
     public static List<DNSResponseRecord> ParseFile(string path)
     {
         var list = new List<DNSResponseRecord>();
-        foreach (var line in File.ReadLines(path))
+        var sb = new StringBuilder();
+        int paren = 0;
+
+        foreach (var raw in File.ReadLines(path))
         {
-            var rec = ParseLine(line);
+            var line = raw;
+            int idx = line.IndexOfAny(new[] { ';', '#' });
+            if (idx >= 0)
+                line = line[..idx];
+
+            if (sb.Length > 0 && line.Length > 0)
+                sb.Append(' ');
+            sb.Append(line.Trim());
+
+            foreach (var c in line)
+            {
+                if (c == '(')
+                    paren++;
+                else if (c == ')')
+                    paren--;
+            }
+
+            if (paren <= 0 && sb.Length > 0)
+            {
+                var rec = ParseLine(sb.ToString());
+                if (rec != null)
+                    list.Add(rec);
+                sb.Clear();
+                paren = 0;
+            }
+        }
+
+        if (sb.Length > 0)
+        {
+            var rec = ParseLine(sb.ToString());
             if (rec != null)
                 list.Add(rec);
         }
+
         return list;
     }
 

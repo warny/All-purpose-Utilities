@@ -72,4 +72,34 @@ public class DNSTextParserTests
         Assert.IsInstanceOfType(rec.RData, typeof(NULL));
         CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, ((NULL)rec.RData).Datas);
     }
+
+    [TestMethod]
+    public void ParseSoaWithCommentsAcrossLines()
+    {
+        var lines = new List<string>
+        {
+            "example.com. 3600 IN SOA ns1.example.com. hostmaster.example.com. (",
+            "    2023031501 ; serial",
+            "    10800      ; refresh",
+            "    3600       ; retry",
+            "    604800     ; expire",
+            "    3600       ; minimum",
+            ")",
+            "example.com. 3600 IN A 192.0.2.1"
+        };
+        var path = Path.GetTempFileName();
+        File.WriteAllLines(path, lines);
+
+        var records = DNSText.ParseFile(path);
+
+        Assert.AreEqual(2, records.Count);
+        Assert.IsInstanceOfType(records[0].RData, typeof(SOA));
+        var soa = (SOA)records[0].RData;
+        Assert.AreEqual(2023031501u, soa.Serial);
+        Assert.AreEqual(10800u, soa.Refresh);
+        Assert.AreEqual(3600u, soa.Retry);
+        Assert.AreEqual(604800u, soa.Expire);
+        Assert.AreEqual(3600u, soa.Minimum);
+        Assert.IsInstanceOfType(records[1].RData, typeof(Address));
+    }
 }
