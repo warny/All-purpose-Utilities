@@ -14,7 +14,7 @@ namespace Utils.Net.DNS;
 /// representation commonly used in zone files.
 /// </summary>
 
-public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextReader>
+public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextReader>
 {
     private static readonly Regex FormatRegex = CreateFormatRegex();
     private static readonly Regex TokenRegex = CreateTokenRegex();
@@ -32,42 +32,25 @@ public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextRe
     /// <returns>A line representing the record.</returns>
     public static string ToText(DNSResponseRecord record)
     {
-        var rdata = record.RData;
-        var attr = rdata.GetType().GetCustomAttribute<DNSTextRecordAttribute>();
-        string rdataText;
-        if (attr == null)
-        {
-            var fields = rdata.GetType().GetMembers()
-                .Where(m => m.GetCustomAttribute<DNSFieldAttribute>() != null)
-                .ToArray();
-            rdataText = string.Join(" ", fields.Select(m =>
-            {
-				object val = m switch
-				{
-					PropertyInfo pi => pi.GetValue(rdata),
-					FieldInfo fi => fi.GetValue(rdata),
-					_ => null
-				};
-                return FormatValue(val);
-            }));
-        }
-        var tokens = TokenRegex.Matches(line)
-            .Select(m => m.Value)
-            .Where(t => t != "(" && t != ")")
-            .ToArray();
-        {
-            rdataText = FormatRegex.Replace(attr.Format, m =>
-            {
-                var name = m.Groups["name"].Value;
-                var member = rdata.GetType().GetMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault();
-				object value = member switch
-				{
-					PropertyInfo pi => pi.GetValue(rdata),
-					FieldInfo fi => fi.GetValue(rdata),
-					_ => null
-				};
-				return value != null ? FormatValue(value) : m.Value;
-            });
+		var rdata = record.RData;
+		var attr = rdata.GetType().GetCustomAttribute<DNSTextRecordAttribute>();
+		string rdataText = "";
+		if (attr == null)
+		{
+			var fields = rdata.GetType().GetMembers()
+				.Where(m => m.GetCustomAttribute<DNSFieldAttribute>() != null)
+				.ToArray();
+
+			var m = FormatRegex.Match(attr.Format);
+			var name = m.Groups["name"].Value;
+			var member = rdata.GetType().GetMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault();
+			object value = null;
+            if (member is PropertyInfo pi)
+				value = pi.GetValue(rdata);
+            else if (member is FieldInfo fi)
+				value = fi.GetValue(rdata);
+            return value != null ? FormatValue(value) : m.Value;
+            
         }
         return $"{record.Name} {record.TTL} {record.Class} {rdata.Name} {rdataText}".TrimEnd();
     }
@@ -123,8 +106,6 @@ public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextRe
             fi.SetValue(obj, ConvertTo(value, fi.FieldType));
     }
 
-        => ParseLines(File.ReadLines(path));
-
     /// <summary>
     /// Parses records from a string containing the zone file content.
     /// </summary>
@@ -143,12 +124,54 @@ public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextRe
         return ParseLines(lines);
     }
 
-    private static List<DNSResponseRecord> ParseLines(IEnumerable<string> lines)
-        foreach (var raw in lines)
-    {
 
-    /// <inheritdoc />
-    public DNSHeader Read(string text)
+	private static List<DNSResponseRecord> ParseLines(IEnumerable<string> lines)
+	{
+		var list = new List<DNSResponseRecord>();
+		var sb = new StringBuilder();
+		int paren = 0;
+
+		foreach (var raw in lines)
+		{
+			var line = raw;
+			int idx = line.IndexOfAny([';', '#']);
+			if (idx >= 0)
+				line = line[..idx];
+
+			if (sb.Length > 0 && line.Length > 0)
+				sb.Append(' ');
+			sb.Append(line.Trim());
+
+			foreach (var c in line)
+			{
+				if (c == '(')
+					paren++;
+				else if (c == ')')
+					paren--;
+			}
+
+			if (paren <= 0 && sb.Length > 0)
+			{
+				var rec = ParseLine(sb.ToString());
+				if (rec != null)
+					list.Add(rec);
+				sb.Clear();
+				paren = 0;
+			}
+		}
+
+		if (sb.Length > 0)
+		{
+			var rec = ParseLine(sb.ToString());
+			if (rec != null)
+				list.Add(rec);
+		}
+
+		return list;
+	}
+
+	/// <inheritdoc />
+	public DNSHeader Read(string text)
     {
         var header = new DNSHeader();
         foreach (var r in ParseText(text))
@@ -164,6 +187,8 @@ public class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReader<TextRe
             header.Responses.Add(r);
         return header;
     }
+
+	private static object ConvertTo(string value, Type targetType) {
         if (targetType == typeof(string)) return value.Trim('"');
         if (targetType == typeof(byte)) return byte.Parse(value);
         if (targetType == typeof(ushort)) return ushort.Parse(value);
