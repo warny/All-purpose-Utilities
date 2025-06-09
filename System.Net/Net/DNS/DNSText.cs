@@ -75,6 +75,7 @@ public class DNSText : IDNSWriter<string>
         int commentIndex = line.IndexOfAny(new[] { ';', '#' });
         if (commentIndex >= 0)
             line = line[..commentIndex];
+        line = line.Replace("(", " ").Replace(")", " ");
         var tokens = TokenRegex.Matches(line).Select(m => m.Value).ToArray();
         if (tokens.Length < 5)
             return null;
@@ -147,11 +148,25 @@ public class DNSText : IDNSWriter<string>
     public static List<DNSResponseRecord> ParseFile(string path)
     {
         var list = new List<DNSResponseRecord>();
-        foreach (var line in File.ReadLines(path))
+        var builder = new StringBuilder();
+        int depth = 0;
+        foreach (var raw in File.ReadLines(path))
         {
-            var rec = ParseLine(line);
+            var line = raw.Trim();
+            if (builder.Length > 0)
+                builder.Append(' ');
+            builder.Append(line);
+
+            depth += line.Count(c => c == '(') - line.Count(c => c == ')');
+            if (depth > 0)
+                continue;
+
+            var rec = ParseLine(builder.ToString());
             if (rec != null)
                 list.Add(rec);
+
+            builder.Clear();
+            depth = 0;
         }
         return list;
     }

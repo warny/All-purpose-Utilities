@@ -45,6 +45,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x2F)]
+[DNSTextRecord("{NextDomainName} {TypeBitmaps}")]
 public class NSEC : DNSResponseDetail
 {
 	/// <summary>

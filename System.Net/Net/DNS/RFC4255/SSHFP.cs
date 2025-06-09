@@ -36,6 +36,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x2C)]
+[DNSTextRecord("{Algorithm} {FingerPrintType} {FingerPrint}")]
 public class SSHFP : DNSResponseDetail
 {
 	/// <summary>
