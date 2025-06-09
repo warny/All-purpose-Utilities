@@ -21,6 +21,7 @@ namespace Utils.Net.DNS.RFC7553;
 /// </code>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 256, "URI")]
+[DNSTextRecord("{Priority} {Weight} {Target}")]
 public class URI : DNSResponseDetail
 {
 	/// <summary>

@@ -54,8 +54,9 @@ namespace Utils.Net.DNS.RFC4034
 	/// The DS record is a critical element in DNSSEC, providing a secure link between a parent zone and its child.
 	/// </para>
 	/// </remarks>
-	[DNSRecord(DNSClass.IN, 0x2B)]
-	public class DS : DNSResponseDetail
+        [DNSRecord(DNSClass.IN, 0x2B)]
+        [DNSTextRecord("{KeyTag} {Algorithm} {DigestType} {Digest}")]
+        public class DS : DNSResponseDetail
 	{
 		/// <summary>
 		/// Gets or sets the Key Tag, a 16-bit integer used to identify the DNSKEY record that corresponds to this DS record.

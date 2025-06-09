@@ -25,6 +25,7 @@ namespace Utils.Net.DNS.RFC2672;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x27)]
+[DNSTextRecord("{Target}")]
 public class DNAME : DNSResponseDetail
 {
 	/// <summary>

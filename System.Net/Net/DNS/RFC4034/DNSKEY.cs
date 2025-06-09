@@ -37,6 +37,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x30)]
+[DNSTextRecord("{Flags} {Protocol} {Algorithm} {Key}")]
 public class DNSKEY : DNSResponseDetail
 {
 	/// <summary>

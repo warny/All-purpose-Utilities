@@ -39,8 +39,9 @@ namespace Utils.Net.DNS.RFC4398
 	///   the algorithm field MUST be zero and the key tag is meaningless.
 	/// </para>
 	/// </remarks>
-	[DNSRecord(DNSClass.IN, 0x25)]
-	public class CERT : DNSResponseDetail
+        [DNSRecord(DNSClass.IN, 0x25)]
+        [DNSTextRecord("{Type} {KeyTag} {Algorithm} {ObjectDatas}")]
+        public class CERT : DNSResponseDetail
 	{
 		/// <summary>
 		/// Gets or sets the certificate type, as defined in RFC 4398 Section 2.1.
