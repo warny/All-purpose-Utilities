@@ -71,6 +71,7 @@ namespace Utils.Net.DNS.RFC5205;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x37)]
+[DNSTextRecord("{PKAlgorithm} {HIT} {PublicKey}")]
 public class HIP : DNSResponseDetail
 {
 	/// <summary>

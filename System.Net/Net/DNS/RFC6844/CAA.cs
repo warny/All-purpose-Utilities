@@ -20,6 +20,7 @@ namespace Utils.Net.DNS.RFC6844;
 /// Let's Encrypt is authorized to issue certificates for this domain.
 /// </remarks>
 [DNSRecord(DNSClass.IN, 257, "CAA")]
+[DNSTextRecord("{Flags} {Tag} {Value}")]
 public class CAA : DNSResponseDetail
 {
 	/// <summary>

@@ -57,6 +57,7 @@ namespace Utils.Net.DNS.RFC3123;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x2A)]
+[DNSTextRecord("{AddressFamily} {Prefix} {flagAndAfdLength} {AfdPart}")]
 public class APL : DNSResponseDetail
 {
 	/*

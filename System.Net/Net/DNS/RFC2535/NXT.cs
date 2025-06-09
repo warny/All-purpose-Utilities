@@ -37,6 +37,7 @@
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x1E)]
+[DNSTextRecord("{NextDomainName} {TypeBitMap}")]
 public class NXT : DNSResponseDetail
 {
 	/*

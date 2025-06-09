@@ -49,6 +49,7 @@ namespace Utils.Net.DNS.RFC2671;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x29)]
+[DNSTextRecord("{OptionCode} {OptionsData}")]
 public class OPT : DNSResponseDetail
 {
 	/// <summary>

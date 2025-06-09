@@ -37,6 +37,7 @@ namespace Utils.Net.DNS.RFC4025;
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClass.IN, 0x2D)]
+[DNSTextRecord("{Precedence} {gatewayType} {SecAlgorithm} {gatewayAddressIPv4} {gatewayAddressIPv6} {gatewayDomainName} {PublicKey}")]
 public class IPSECKEY : DNSResponseDetail
 {
 	/*
