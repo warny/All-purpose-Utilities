@@ -9,9 +9,14 @@ using TechTalk.SpecFlow;
 namespace UtilsTest
 {
 	[Binding]
-	public sealed class DefaultHooks
-	{
-		readonly ScenarioContext context = ScenarioContext.Current;
+        public sealed class DefaultHooks
+        {
+                readonly ScenarioContext context;
+
+                public DefaultHooks(ScenarioContext context)
+                {
+                        this.context = context;
+                }
 
 		[Then("I expect an exception")]
 		public void ThenIExpectAnException()

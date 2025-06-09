@@ -11,9 +11,14 @@ using Utils.Objects;
 namespace UtilsTest.Lists
 {
 	[Binding]
-	public sealed class ListsHooks
-	{
-		readonly ScenarioContext context = ScenarioContext.Current;
+        public sealed class ListsHooks
+        {
+                readonly ScenarioContext context;
+
+                public ListsHooks(ScenarioContext context)
+                {
+                        this.context = context;
+                }
 
 		// For additional details on SpecFlow hooks see http://go.specflow.org/doc-hooks
 		DoubleIndexedDictionary<int, string> d;
