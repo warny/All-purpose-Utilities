@@ -227,7 +227,7 @@ public class PostScriptFont : IFont
         return bytes;
     }
 
-    internal static byte[] DecryptType1(byte[] data, int r, int discard)
+    public static byte[] DecryptType1(byte[] data, int r, int discard)
     {
         byte[] result = new byte[data.Length];
         for (int i = 0; i < data.Length; i++)
