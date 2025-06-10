@@ -4,9 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
           <EnablePreviewFeatures>True</EnablePreviewFeatures>
           <LangVersion>Latest</LangVersion>
-    <Description>Font management utilities
-        - TrueType font parsing and encoding
-        - Font flags and metrics helpers</Description>
+    <Description>Font management library handling TrueType and PostScript fonts. Key classes include PostScriptFont, TrueTypeGlyph, TtfHinting and the Tag utilities.</Description>
   </PropertyGroup>
 
   <ItemGroup>

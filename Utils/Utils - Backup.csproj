@@ -9,44 +9,7 @@
     <PackageId>omy.Utils</PackageId>
     <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
     <Copyright>Olivier MARTY</Copyright>
-    <Description>Fonctions générales
-- Utilitaires de tableaux
-- Utilitaires de fichiers
-- Listes
-  - Liste avec chargement différé des éléments et cache
-  - Liste doublement chaînée
-  - Liste indexée
-  - Liste avec cache LRU
-  - Dictionnaire à clef induite
-- Mathématiques
-  - Classe de base de transformateur d'expression
-  - Dérivation d'expression
-  - Simplificateur d'expresssion
-  - Fourrier rapide
-  - Conversion en système international (beta)
-  - Algèbre linéaire (matrices en dimensions quelconques)
-  - Fonctions mathématiques
-- Objets
-  - Utilitaires de dates
-  - Utilitaires de nombres
-  - Extensions d'objets
-  - Parser de chaînes (remplace Convert.FromString)
-  - Formatteur de chaîne avancé
-  - Comparateur de chaînes
-  - Utilitaires sur chaînes
-- Reflection
-  - Classe de traitement FieldOrPropertyInfo
-- Sécurité 
-  - Calcul de l'autentification Google
-- Streams
-  - Convertisseurs Base16, Base32 et Base64
-  - Sérialization binaire
-  - Copie de stream de lecture vers plusieurs stream d'écriture
-  - Utilitaires (copie de données entre streams)
-  - Stream annulable
-- Web 
-  - Constructeur d'URI avancé
-</Description>
+    <Description>General-purpose helpers such as IndexedList, LRUCache, ExpressionParser and PropertyOrFieldInfo.</Description>
   </PropertyGroup>
 
   <ItemGroup>

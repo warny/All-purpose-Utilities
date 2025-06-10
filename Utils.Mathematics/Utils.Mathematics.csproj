@@ -5,12 +5,7 @@
 	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
 	  <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Description>    Mathematics
-        - Expression derivation and integration
-        - Fast Fourier Transform
-        - Conversion to International System (beta)
-        - Linear algebra in any dimension
-</Description>
+    <Description>Math helpers for calculus and linear algebra. Contains ExpressionDerivation, ExpressionIntegration, FastFourrierTransform and generic Matrix<T> and Vector<T> types.</Description>
     <Copyright>Olivier MARTY 2023</Copyright>
   </PropertyGroup>
 

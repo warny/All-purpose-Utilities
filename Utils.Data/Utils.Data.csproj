@@ -4,9 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
           <EnablePreviewFeatures>True</EnablePreviewFeatures>
           <LangVersion>Latest</LangVersion>
-    <Description>Data mapping utilities
-        - Attributes to describe data fields
-        - Fill objects from IDataRecord/IDataReader</Description>
+    <Description>Lightweight data mapper exposing DataUtils, FieldAttribute and FieldMap to populate objects from IDataReader records.</Description>
   </PropertyGroup>
 
   <ItemGroup>

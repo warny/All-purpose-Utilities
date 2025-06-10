@@ -6,10 +6,7 @@
           <LangVersion>Latest</LangVersion>
     <RootNamespace>Utils</RootNamespace>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Description>Input/Output helpers
-        - Base16/32/64 stream encoding
-        - Stream copying and validation
-        - Binary serialization framework</Description>
+    <Description>Stream and serialization helpers. Features BaseEncoderStream for base16/32/64, StreamCopier and StreamValidator, PartialStream support and binary serializer attributes.</Description>
   </PropertyGroup>
 
   <ItemGroup>
