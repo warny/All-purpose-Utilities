@@ -9,9 +9,11 @@ using System.Text.RegularExpressions;
 namespace Utils.Fonts.PostScript;
 
 /// <summary>
-/// Very small PostScript font loader based on a simple text representation.
-/// Each glyph is defined in the following form:
+/// Very small PostScript font loader based on a custom text representation.
+/// The intention is to mimic a subset of the Type&nbsp;1 syntax without parsing
+/// the full PostScript language.  Each glyph is declared as shown below:
 ///
+/// <code>
 /// Glyph: A
 /// Width: 500
 /// Height: 600
@@ -21,17 +23,34 @@ namespace Utils.Fonts.PostScript;
 /// L 10 0
 /// ...
 /// EndGlyph
+/// </code>
+///
+/// For a description of the real Type&nbsp;1 format see
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
 /// </summary>
 public class PostScriptFont : IFont
 {
+    /// <summary>
+    /// Storage of glyphs indexed by character code.
+    /// </summary>
     private readonly Dictionary<char, PostScriptGlyph> _glyphs;
 
+    /// <summary>
+    /// Initializes the font with a set of parsed glyphs.
+    /// </summary>
+    /// <param name="glyphs">Glyph table built by one of the loader methods.</param>
     private PostScriptFont(Dictionary<char, PostScriptGlyph> glyphs)
     {
         _glyphs = glyphs;
     }
 
-    /// <summary>Loads a PostScript font from the provided stream.</summary>
+    /// <summary>
+    /// Loads a font in the simplified text form used by this demo.  This is
+    /// <strong>not</strong> a full Type&nbsp;1 parser but follows a similar
+    /// structure for learning purposes.
+    /// </summary>
+    /// <param name="stream">Stream containing the custom font text.</param>
+    /// <returns>Parsed <see cref="PostScriptFont"/> instance.</returns>
     public static PostScriptFont Load(Stream stream)
     {
         using var reader = new StreamReader(stream);
@@ -79,6 +98,12 @@ public class PostScriptFont : IFont
         return new PostScriptFont(glyphs);
     }
 
+    /// <summary>
+    /// Parses a single <c>Path:</c> line from the simplified format and appends
+    /// the resulting drawing command to <paramref name="commands"/>.
+    /// </summary>
+    /// <param name="line">Line of text describing a path command.</param>
+    /// <param name="commands">Collection receiving the parsed command.</param>
     private static void ParsePathLine(string line, List<PostScriptGlyph.PathCommand> commands)
     {
         if (string.IsNullOrWhiteSpace(line))
@@ -108,13 +133,19 @@ public class PostScriptFont : IFont
     }
 
     /// <inheritdoc />
+    /// <remarks>Only glyphs defined in the input are available.</remarks>
     public IGlyph GetGlyph(char c) => _glyphs.TryGetValue(c, out var g) ? g : null;
 
     /// <inheritdoc />
+    /// <remarks>Kerning is not supported for this simple implementation.</remarks>
     public float GetSpacingCorrection(char before, char after) => 0f;
 
     /// <summary>
-    /// Loads a PostScript Type 1 PFA font stream.
+    /// Loads a PostScript Type&nbsp;1 <em>PFA</em> font stream.  The implementation
+    /// only understands a tiny fraction of the format sufficient for the unit
+    /// tests.  See
+    /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>
+    /// for the real specification.
     /// </summary>
     /// <param name="stream">Input PFA stream.</param>
     /// <returns>Instance of <see cref="PostScriptFont"/>.</returns>
@@ -142,7 +173,9 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Loads a PostScript Type 1 PFB font stream.
+    /// Loads a binary Type&nbsp;1 (<em>PFB</em>) font stream.  Blocks from the
+    /// PFB file are concatenated and translated to the ASCII representation used
+    /// by the <see cref="LoadPfa"/> method.
     /// </summary>
     /// <param name="stream">Input PFB stream.</param>
     /// <returns>Instance of <see cref="PostScriptFont"/>.</returns>
@@ -177,6 +210,14 @@ public class PostScriptFont : IFont
         return LoadPfa(ms);
     }
 
+    /// <summary>
+    /// Parses the decrypted portion of a Type&nbsp;1 font.  Only the
+    /// <c>CharStrings</c> dictionary is interpreted.  For the complete
+    /// specification refer to
+    /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
+    /// </summary>
+    /// <param name="text">ASCII text starting after the <c>eexec</c> section.</param>
+    /// <returns>Newly created <see cref="PostScriptFont"/>.</returns>
     private static PostScriptFont ParseType1(string text)
     {
         var glyphs = new Dictionary<char, PostScriptGlyph>();
@@ -203,6 +244,12 @@ public class PostScriptFont : IFont
         return new PostScriptFont(glyphs);
     }
 
+    /// <summary>
+    /// Maps a glyph name from the font to a Unicode character.  Only a few
+    /// names are recognised as this loader is intentionally minimal.
+    /// </summary>
+    /// <param name="name">Glyph name from the CharStrings dictionary.</param>
+    /// <returns>Approximate character code.</returns>
     private static char MapName(string name)
     {
         if (name.Length == 1)
@@ -213,10 +260,15 @@ public class PostScriptFont : IFont
             "comma" => ',',
             "period" => '.',
             "hyphen" => '-',
-            _ => '?'
+            _ => '?' // unknown names map to '?'
         };
     }
 
+    /// <summary>
+    /// Converts an ASCII hex string to a byte array.
+    /// </summary>
+    /// <param name="hex">Hexadecimal characters with no separators.</param>
+    /// <returns>Decoded binary data.</returns>
     internal static byte[] ConvertHex(string hex)
     {
         var bytes = new byte[hex.Length / 2];
@@ -227,6 +279,25 @@ public class PostScriptFont : IFont
         return bytes;
     }
 
+    /// <summary>
+    /// Decrypts Type&nbsp;1 charstring data using the algorithm described in the
+    /// specification (<see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">section 4</see>).
+    /// </summary>
+    /// <param name="data">Encrypted bytes.</param>
+    /// <param name="r">Initial random number value.</param>
+    /// <param name="discard">Number of decrypted bytes to discard from the beginning.</param>
+    /// <returns>Decrypted byte array.</returns>
+    /// <summary>
+    /// Decodes a Type&nbsp;1 charstring into a list of drawing commands.  Only a
+    /// very small subset of operators is supported.  The algorithm roughly
+    /// follows the description in
+    /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
+    /// </summary>
+    /// <param name="data">Plain (already decrypted) charstring bytes.</param>
+    /// <param name="width">Receives the glyph width.</param>
+    /// <param name="height">Receives the glyph height.</param>
+    /// <param name="baseLine">Receives the baseline value.</param>
+    /// <returns>List of parsed path commands.</returns>
     public static byte[] DecryptType1(byte[] data, int r, int discard)
     {
         byte[] result = new byte[data.Length];
@@ -371,9 +442,15 @@ public class PostScriptFont : IFont
         baseLine = -minY;
         return cmds;
 
+        /// <summary>
+        /// Updates the bounding box while parsing the charstring.
+        /// </summary>
         void UpdateBounds()
         {
-            if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
         }
     }
 }

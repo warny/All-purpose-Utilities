@@ -5,7 +5,9 @@ using Utils.Fonts;
 namespace Utils.Fonts.PostScript;
 
 /// <summary>
-/// Represents a glyph defined by simple PostScript path commands.
+/// Represents a glyph defined by a sequence of basic PostScript path commands.
+/// The commands correspond loosely to the operators described in
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe's Type&nbsp;1 specification</see>.
 /// </summary>
 public class PostScriptGlyph : IGlyph
 {
@@ -35,6 +37,11 @@ public class PostScriptGlyph : IGlyph
     public float BaseLine { get; }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The drawing callbacks correspond to <c>moveto</c>, <c>lineto</c> and
+    /// <c>curveto</c> operations in PostScript.  The <c>closepath</c> operator is
+    /// implemented by drawing a line back to the starting point.
+    /// </remarks>
     public void ToGraphic(IGraphicConverter graphicConverter)
     {
         if (graphicConverter == null) throw new ArgumentNullException(nameof(graphicConverter));
@@ -61,10 +68,16 @@ public class PostScriptGlyph : IGlyph
         }
     }
 
-    /// <summary>Represents a single path command for a glyph.</summary>
+    /// <summary>
+    /// Represents a single drawing command extracted from the font.  The
+    /// coordinates use the same units as the original charstring.
+    /// </summary>
     public record struct PathCommand(PathCommandType Type, float X1, float Y1, float X2, float Y2, float X3, float Y3);
 
-    /// <summary>Enumeration of path command types.</summary>
+    /// <summary>
+    /// Enumeration of possible path command types supported by this
+    /// simplified glyph representation.
+    /// </summary>
     public enum PathCommandType
     {
         MoveTo,

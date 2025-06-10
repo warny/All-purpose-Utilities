@@ -9,27 +9,38 @@ using System.Text.RegularExpressions;
 namespace Utils.Fonts.PostScript;
 
 /// <summary>
-/// Very small loader for CID-Keyed Type 1 PostScript fonts.
-/// Only a subset of the format is implemented.
+/// Very small loader for CID-Keyed Type&nbsp;1 PostScript fonts. Only a subset
+/// of the format is implemented. Refer to
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5014.CIDFont_Spec.pdf">Adobe Technical Note 5014</see>
+/// for the full specification.
 /// </summary>
 public class CidKeyedFont : IFont
 {
+    /// <summary>Glyph table indexed by CID.</summary>
     private readonly Dictionary<int, PostScriptGlyph> _glyphs;
 
+    /// <summary>
+    /// Initializes a new instance with the specified glyph collection.
+    /// </summary>
+    /// <param name="glyphs">Mapping from CID to glyph.</param>
     private CidKeyedFont(Dictionary<int, PostScriptGlyph> glyphs)
     {
         _glyphs = glyphs;
     }
 
     /// <inheritdoc />
+    /// <remarks>Glyphs are looked up by their character code treated as CID.</remarks>
     public IGlyph GetGlyph(char c) => _glyphs.TryGetValue(c, out var g) ? g : null;
 
     /// <inheritdoc />
+    /// <remarks>No kerning data is parsed from the font.</remarks>
     public float GetSpacingCorrection(char before, char after) => 0f;
 
     /// <summary>
-    /// Loads a CID-Keyed PostScript Type 1 PFA font stream.
+    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFA</em> font stream.
     /// </summary>
+    /// <param name="stream">ASCII Type&nbsp;1 font stream.</param>
+    /// <returns>A new <see cref="CidKeyedFont"/>.</returns>
     public static CidKeyedFont LoadPfa(Stream stream)
     {
         using var reader = new StreamReader(stream, Encoding.ASCII);
@@ -56,8 +67,10 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Loads a CID-Keyed PostScript Type 1 PFB font stream.
+    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFB</em> font stream.
     /// </summary>
+    /// <param name="stream">Binary PFB font data.</param>
+    /// <returns>A new <see cref="CidKeyedFont"/>.</returns>
     public static CidKeyedFont LoadPfb(Stream stream)
     {
         using var br = new BinaryReader(stream, Encoding.ASCII, leaveOpen: true);
@@ -89,6 +102,11 @@ public class CidKeyedFont : IFont
         return LoadPfa(ms);
     }
 
+    /// <summary>
+    /// Parses the decrypted portion of a CID-keyed Type&nbsp;1 font.
+    /// </summary>
+    /// <param name="text">ASCII text after eexec decryption.</param>
+    /// <returns>Constructed <see cref="CidKeyedFont"/>.</returns>
     private static CidKeyedFont ParseCidType1(string text)
     {
         var glyphs = new Dictionary<int, PostScriptGlyph>();
