@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-          <EnablePreviewFeatures>True</EnablePreviewFeatures>
-          <LangVersion>Latest</LangVersion>
+	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	  <LangVersion>Latest</LangVersion>
     <RootNamespace>Utils</RootNamespace>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Description>Input/Output helpers

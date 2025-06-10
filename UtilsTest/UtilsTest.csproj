@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <IsPackable>false</IsPackable>
+          <EnablePreviewFeatures>True</EnablePreviewFeatures>
+          <IsPackable>false</IsPackable>
     <Authors>Olivier MARTY</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
   </PropertyGroup>
 
   <ItemGroup>
