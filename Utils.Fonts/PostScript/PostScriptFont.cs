@@ -315,142 +315,246 @@ public class PostScriptFont : IFont
 
     internal static List<PostScriptGlyph.PathCommand> ParseCharString(byte[] data, out float width, out float height, out float baseLine)
     {
-        var cmds = new List<PostScriptGlyph.PathCommand>();
-        var stack = new Stack<int>();
-        float x = 0, y = 0;
-        float minX = 0, minY = 0, maxX = 0, maxY = 0;
-        width = 0; baseLine = 0; height = 0;
-        int i = 0;
-        while (i < data.Length)
+        var state = new CharStringParserState(data);
+        while (state.Index < data.Length)
         {
-            int b = data[i++];
+            int b = data[state.Index++];
             if (b >= 32 && b <= 246)
             {
-                stack.Push(b - 139);
+                state.Stack.Push(b - 139);
             }
             else if (b >= 247 && b <= 250)
             {
-                int b2 = data[i++];
-                stack.Push((b - 247) * 256 + b2 + 108);
+                int b2 = data[state.Index++];
+                state.Stack.Push((b - 247) * 256 + b2 + 108);
             }
             else if (b >= 251 && b <= 254)
             {
-                int b2 = data[i++];
-                stack.Push(-(b - 251) * 256 - b2 - 108);
+                int b2 = data[state.Index++];
+                state.Stack.Push(-(b - 251) * 256 - b2 - 108);
             }
             else if (b == 255)
             {
-                int num = (data[i] << 24) | (data[i + 1] << 16) | (data[i + 2] << 8) | data[i + 3];
-                i += 4;
-                stack.Push(num);
+                int num = (data[state.Index] << 24) | (data[state.Index + 1] << 16) | (data[state.Index + 2] << 8) | data[state.Index + 3];
+                state.Index += 4;
+                state.Stack.Push(num);
+            }
+            else if (s_charStringHandlers.TryGetValue(b, out var handler))
+            {
+                handler(state);
             }
             else
             {
-                switch (b)
-                {
-                    case 4: // vmoveto
-                        y += stack.Pop();
-                        cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, x, y, 0, 0, 0, 0));
-                        UpdateBounds();
-                        break;
-                    case 5: // rlineto
-                        while (stack.Count >= 2)
-                        {
-                            int dy = stack.Pop();
-                            int dx = stack.Pop();
-                            x += dx; y += dy; cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
-                            UpdateBounds();
-                        }
-                        break;
-                    case 6: // hlineto
-                        while (stack.Count > 0)
-                        {
-                            int dx = stack.Pop();
-                            x += dx; cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
-                            UpdateBounds();
-                            if (stack.Count > 0)
-                            {
-                                int dy = stack.Pop();
-                                y += dy; cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
-                                UpdateBounds();
-                            }
-                        }
-                        break;
-                    case 7: // vlineto
-                        while (stack.Count > 0)
-                        {
-                            int dy = stack.Pop();
-                            y += dy; cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
-                            UpdateBounds();
-                            if (stack.Count > 0)
-                            {
-                                int dx = stack.Pop();
-                                x += dx; cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
-                                UpdateBounds();
-                            }
-                        }
-                        break;
-                    case 8: // rrcurveto
-                        while (stack.Count >= 6)
-                        {
-                            int dy3 = stack.Pop();
-                            int dx3 = stack.Pop();
-                            int dy2 = stack.Pop();
-                            int dx2 = stack.Pop();
-                            int dy1 = stack.Pop();
-                            int dx1 = stack.Pop();
-                            float x1 = x + dx1; float y1 = y + dy1;
-                            float x2 = x1 + dx2; float y2 = y1 + dy2;
-                            float x3 = x2 + dx3; float y3 = y2 + dy3;
-                            cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.BezierTo, x1, y1, x2, y2, x3, y3));
-                            x = x3; y = y3; UpdateBounds();
-                        }
-                        break;
-                    case 9: // closepath
-                        cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.Close, 0, 0, 0, 0, 0, 0));
-                        break;
-                    case 13: // hsbw
-                        width = stack.Pop();
-                        x = stack.Pop();
-                        stack.Clear();
-                        break;
-                    case 21: // rmoveto
-                        {
-                            int dy = stack.Pop();
-                            int dx = stack.Pop();
-                            x += dx; y += dy;
-                            cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, x, y, 0, 0, 0, 0));
-                            UpdateBounds();
-                        }
-                        break;
-                    case 22: // hmoveto
-                        x += stack.Pop();
-                        cmds.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, x, y, 0, 0, 0, 0));
-                        UpdateBounds();
-                        break;
-                    case 14: // endchar
-                        i = data.Length;
-                        break;
-                    default:
-                        stack.Clear();
-                        break;
-                }
+                state.Stack.Clear();
             }
         }
 
-        height = maxY - minY;
-        baseLine = -minY;
-        return cmds;
+        width = state.Width;
+        height = state.MaxY - state.MinY;
+        baseLine = -state.MinY;
+        return state.Commands;
+    }
 
-        /// <summary>
-        /// Updates the bounding box while parsing the charstring.
-        /// </summary>
-        void UpdateBounds()
+    /// <summary>
+    /// Internal parser state used when interpreting Type&nbsp;1 charstrings.
+    /// </summary>
+    private sealed class CharStringParserState
+    {
+        /// <summary>Initialises the state with the data being parsed.</summary>
+        /// <param name="data">Charstring bytes.</param>
+        public CharStringParserState(byte[] data)
         {
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
+            DataLength = data.Length;
         }
+
+        /// <summary>Index of the next byte to read.</summary>
+        public int Index { get; set; }
+
+        /// <summary>Length of the input data.</summary>
+        public int DataLength { get; }
+
+        /// <summary>Current horizontal position.</summary>
+        public float X { get; set; }
+
+        /// <summary>Current vertical position.</summary>
+        public float Y { get; set; }
+
+        /// <summary>Minimum X seen so far.</summary>
+        public float MinX { get; private set; }
+
+        /// <summary>Minimum Y seen so far.</summary>
+        public float MinY { get; private set; }
+
+        /// <summary>Maximum X seen so far.</summary>
+        public float MaxX { get; private set; }
+
+        /// <summary>Maximum Y seen so far.</summary>
+        public float MaxY { get; private set; }
+
+        /// <summary>Width extracted from the charstring.</summary>
+        public float Width { get; set; }
+
+        /// <summary>Working stack used by the charstring operators.</summary>
+        public Stack<int> Stack { get; } = new();
+
+        /// <summary>List of parsed drawing commands.</summary>
+        public List<PostScriptGlyph.PathCommand> Commands { get; } = new();
+
+        /// <summary>Updates the bounding box.</summary>
+        public void UpdateBounds()
+        {
+            if (X < MinX) MinX = X;
+            if (X > MaxX) MaxX = X;
+            if (Y < MinY) MinY = Y;
+            if (Y > MaxY) MaxY = Y;
+        }
+    }
+
+    /// <summary>
+    /// Delegate representing a charstring operator implementation.
+    /// </summary>
+    /// <param name="state">Parser state to update.</param>
+    private delegate void CharStringHandler(CharStringParserState state);
+
+    private static readonly Dictionary<int, CharStringHandler> s_charStringHandlers = new()
+    {
+        { 4, HandleVMoveTo },
+        { 5, HandleRLineTo },
+        { 6, HandleHLineTo },
+        { 7, HandleVLineTo },
+        { 8, HandleRRCurveTo },
+        { 9, HandleClosePath },
+        { 13, HandleHsbw },
+        { 21, HandleRMoveTo },
+        { 22, HandleHMoveTo },
+        { 14, HandleEndChar }
+    };
+
+    /// <summary>Implements the <c>vmoveto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleVMoveTo(CharStringParserState state)
+    {
+        state.Y += state.Stack.Pop();
+        state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, state.X, state.Y, 0, 0, 0, 0));
+        state.UpdateBounds();
+    }
+
+    /// <summary>Implements the <c>rlineto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleRLineTo(CharStringParserState state)
+    {
+        while (state.Stack.Count >= 2)
+        {
+            int dy = state.Stack.Pop();
+            int dx = state.Stack.Pop();
+            state.X += dx;
+            state.Y += dy;
+            state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, state.X, state.Y, 0, 0, 0, 0));
+            state.UpdateBounds();
+        }
+    }
+
+    /// <summary>Implements the <c>hlineto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleHLineTo(CharStringParserState state)
+    {
+        while (state.Stack.Count > 0)
+        {
+            int dx = state.Stack.Pop();
+            state.X += dx;
+            state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, state.X, state.Y, 0, 0, 0, 0));
+            state.UpdateBounds();
+            if (state.Stack.Count > 0)
+            {
+                int dy = state.Stack.Pop();
+                state.Y += dy;
+                state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, state.X, state.Y, 0, 0, 0, 0));
+                state.UpdateBounds();
+            }
+        }
+    }
+
+    /// <summary>Implements the <c>vlineto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleVLineTo(CharStringParserState state)
+    {
+        while (state.Stack.Count > 0)
+        {
+            int dy = state.Stack.Pop();
+            state.Y += dy;
+            state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, state.X, state.Y, 0, 0, 0, 0));
+            state.UpdateBounds();
+            if (state.Stack.Count > 0)
+            {
+                int dx = state.Stack.Pop();
+                state.X += dx;
+                state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, state.X, state.Y, 0, 0, 0, 0));
+                state.UpdateBounds();
+            }
+        }
+    }
+
+    /// <summary>Implements the <c>rrcurveto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleRRCurveTo(CharStringParserState state)
+    {
+        while (state.Stack.Count >= 6)
+        {
+            int dy3 = state.Stack.Pop();
+            int dx3 = state.Stack.Pop();
+            int dy2 = state.Stack.Pop();
+            int dx2 = state.Stack.Pop();
+            int dy1 = state.Stack.Pop();
+            int dx1 = state.Stack.Pop();
+            float x1 = state.X + dx1; float y1 = state.Y + dy1;
+            float x2 = x1 + dx2; float y2 = y1 + dy2;
+            float x3 = x2 + dx3; float y3 = y2 + dy3;
+            state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.BezierTo, x1, y1, x2, y2, x3, y3));
+            state.X = x3; state.Y = y3; state.UpdateBounds();
+        }
+    }
+
+    /// <summary>Implements the <c>closepath</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleClosePath(CharStringParserState state)
+    {
+        state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.Close, 0, 0, 0, 0, 0, 0));
+    }
+
+    /// <summary>Implements the <c>hsbw</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleHsbw(CharStringParserState state)
+    {
+        state.Width = state.Stack.Pop();
+        state.X = state.Stack.Pop();
+        state.Stack.Clear();
+    }
+
+    /// <summary>Implements the <c>rmoveto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleRMoveTo(CharStringParserState state)
+    {
+        int dy = state.Stack.Pop();
+        int dx = state.Stack.Pop();
+        state.X += dx;
+        state.Y += dy;
+        state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, state.X, state.Y, 0, 0, 0, 0));
+        state.UpdateBounds();
+    }
+
+    /// <summary>Implements the <c>hmoveto</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleHMoveTo(CharStringParserState state)
+    {
+        state.X += state.Stack.Pop();
+        state.Commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, state.X, state.Y, 0, 0, 0, 0));
+        state.UpdateBounds();
+    }
+
+    /// <summary>Implements the <c>endchar</c> operator.</summary>
+    /// <param name="state">Parser state to update.</param>
+    private static void HandleEndChar(CharStringParserState state)
+    {
+        state.Index = state.DataLength;
     }
 }
