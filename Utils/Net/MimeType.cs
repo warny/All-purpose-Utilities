@@ -1,0 +1,127 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+
+namespace Utils.Net;
+
+/// <summary>
+/// Represents a MIME type with optional parameters.
+/// </summary>
+public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeType, bool>
+{
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MimeType"/> class.
+        /// </summary>
+        /// <param name="type">The primary type, such as "text".</param>
+        /// <param name="subType">The subtype, such as "plain".</param>
+        /// <param name="parameters">Optional parameters associated with the MIME type.</param>
+        public MimeType(string type, string subType, IDictionary<string, string>? parameters = null)
+        {
+                Type = type ?? throw new ArgumentNullException(nameof(type));
+                SubType = subType ?? throw new ArgumentNullException(nameof(subType));
+                Parameters = parameters != null
+                        ? new Dictionary<string, string>(parameters, StringComparer.OrdinalIgnoreCase)
+                        : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Gets the primary type (e.g. "text" or "application").
+        /// </summary>
+        public string Type { get; }
+
+        /// <summary>
+        /// Gets the MIME subtype (e.g. "plain" or "json").
+        /// </summary>
+        public string SubType { get; }
+
+        /// <summary>
+        /// Gets the parameters for this MIME type.
+        /// </summary>
+        public IDictionary<string, string> Parameters { get; }
+
+        /// <summary>
+        /// Parses a MIME type string of the form
+        /// "type/subtype; param1=value1; param2=value2".
+        /// </summary>
+        /// <param name="text">The textual representation.</param>
+        /// <returns>A new <see cref="MimeType"/> instance.</returns>
+        public static MimeType Parse(string text)
+        {
+                if (text == null) throw new ArgumentNullException(nameof(text));
+                var parts = text.Split(';', 2, StringSplitOptions.TrimEntries);
+                var types = parts[0].Split('/', 2, StringSplitOptions.TrimEntries);
+                var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                if (parts.Length > 1)
+                {
+                        foreach (var p in parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        {
+                                var kv = p.Split('=', 2, StringSplitOptions.TrimEntries);
+                                if (kv.Length == 2)
+                                        parameters[kv[0]] = kv[1].Trim('"');
+                        }
+                }
+                return new MimeType(types[0], types.Length > 1 ? types[1] : string.Empty, parameters);
+        }
+
+        /// <summary>
+        /// Attempts to get the specified parameter value.
+        /// </summary>
+        /// <param name="name">The parameter name.</param>
+        /// <param name="value">When this method returns, contains the parameter value if found.</param>
+        /// <returns><c>true</c> if the parameter exists; otherwise, <c>false</c>.</returns>
+        public bool TryGetParameter(string name, out string? value)
+                => Parameters.TryGetValue(name, out value);
+
+        /// <summary>
+        /// Sets a parameter value, replacing any existing value with the same name.
+        /// </summary>
+        /// <param name="name">The parameter name.</param>
+        /// <param name="value">The parameter value.</param>
+        public void SetParameter(string name, string value)
+        {
+                Parameters[name] = value;
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+                var paramString = string.Join("; ", Parameters.Select(kv => $"{kv.Key}={kv.Value}"));
+                return string.IsNullOrEmpty(paramString) ? $"{Type}/{SubType}" : $"{Type}/{SubType}; {paramString}";
+        }
+
+        /// <inheritdoc />
+        public bool Equals(MimeType? other)
+        {
+                if (other == null) return false;
+                if (!Type.Equals(other.Type, StringComparison.OrdinalIgnoreCase)) return false;
+                if (!SubType.Equals(other.SubType, StringComparison.OrdinalIgnoreCase)) return false;
+                return Parameters.OrderBy(k => k.Key).SequenceEqual(other.Parameters.OrderBy(k => k.Key), StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj) => Equals(obj as MimeType);
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+                int hash = StringComparer.OrdinalIgnoreCase.GetHashCode(Type);
+                hash = HashCode.Combine(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(SubType));
+                foreach (var kv in Parameters.OrderBy(k => k.Key))
+                {
+                        hash = HashCode.Combine(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(kv.Key));
+                        hash = HashCode.Combine(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(kv.Value));
+                }
+                return hash;
+        }
+
+        /// <summary>
+        /// Equality operator comparing two <see cref="MimeType"/> instances.
+        /// </summary>
+        public static bool operator ==(MimeType? left, MimeType? right) => left?.Equals(right) ?? right is null;
+
+        /// <summary>
+        /// Inequality operator comparing two <see cref="MimeType"/> instances.
+        /// </summary>
+        public static bool operator !=(MimeType? left, MimeType? right) => !(left == right);
+}
