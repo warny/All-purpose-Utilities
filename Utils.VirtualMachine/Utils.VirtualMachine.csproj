@@ -3,7 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
           <EnablePreviewFeatures>True</EnablePreviewFeatures>
-    <Description>Simple virtual machine framework exposing VirtualProcessor, InstructionAttribute, INumberReader and VirtualProcessorException for custom byte-code execution.</Description>
+    <Description>Virtual machine framework
+        - Attribute based instruction definitions
+        - Little-endian and big-endian support</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,7 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
           <EnablePreviewFeatures>True</EnablePreviewFeatures>
           <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
-    <Description>Runtime reflection helpers including LibraryMapper for dynamic DLL mapping, Platform for OS detection and EmitDllMappableClass for on-the-fly type generation.</Description>
+    <Description>Reflection helpers
+        - Dynamic DLL mapping utilities
+        - Runtime code generation support</Description>
   </PropertyGroup>
 
   <ItemGroup>

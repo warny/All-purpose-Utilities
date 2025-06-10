@@ -2,10 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-          <EnablePreviewFeatures>True</EnablePreviewFeatures>
+	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
     <AssemblyName>Utils.Net</AssemblyName>
     <RootNamespace>Utils</RootNamespace>
-    <Description>Networking utilities implementing DNSDatagram and DNSLookup for DNS queries, IcmpUtils for ping/traceroute operations and NetworkParameters to inspect local interfaces.</Description>
+    <Description>Network utilities
+        - DNS protocol implementation
+        - ICMP helpers and system network info</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -11,7 +11,10 @@
     <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
     <PackageId>omy.Utils.Geography</PackageId>
     <Copyright>Olivier MARTY</Copyright>
-    <Description>Geographic models and projections such as GeoPoint, BoundingBox, MercatorProjection and TileIndex with helpers for coordinate transforms.</Description>
+    <Description>Coordinate utilities
+        - Map to polar conversions
+        - Distance computations
+        - Map projections and tile helpers</Description>
   </PropertyGroup>
 
   <ItemGroup>
