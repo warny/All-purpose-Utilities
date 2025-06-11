@@ -124,4 +124,47 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// Inequality operator comparing two <see cref="MimeType"/> instances.
         /// </summary>
         public static bool operator !=(MimeType? left, MimeType? right) => !(left == right);
+
+        /// <summary>
+        /// Creates a <see cref="MimeType"/> instance for plain text.
+        /// </summary>
+        /// <param name="charset">Optional text encoding. Defaults to UTF-8.</param>
+        /// <returns>A new <see cref="MimeType"/> representing <c>text/plain</c>.</returns>
+        public static MimeType CreateTextPlain(string charset = "utf-8")
+        {
+                var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                        ["charset"] = charset
+                };
+                return new MimeType("text", "plain", parameters);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="MimeType"/> instance for JSON content.
+        /// </summary>
+        /// <param name="charset">Optional text encoding. Defaults to UTF-8.</param>
+        /// <returns>A new <see cref="MimeType"/> representing <c>application/json</c>.</returns>
+        public static MimeType CreateApplicationJson(string charset = "utf-8")
+        {
+                var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                        ["charset"] = charset
+                };
+                return new MimeType("application", "json", parameters);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="MimeType"/> instance for a multipart entity.
+        /// </summary>
+        /// <param name="subType">Multipart subtype (e.g. "mixed" or "form-data").</param>
+        /// <param name="boundary">Boundary used to separate MIME parts.</param>
+        /// <returns>A new <see cref="MimeType"/> representing <c>multipart/&lt;subType&gt;</c>.</returns>
+        public static MimeType CreateMultipart(string subType, string boundary)
+        {
+                var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                        ["boundary"] = boundary
+                };
+                return new MimeType("multipart", subType, parameters);
+        }
 }

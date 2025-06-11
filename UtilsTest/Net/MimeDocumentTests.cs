@@ -63,4 +63,26 @@ public class MimeDocumentTests
                 p2.Body = "World";
                 Assert.IsTrue(p1 != p2);
         }
+
+        [TestMethod]
+        public void MimeTypeStaticFactories()
+        {
+                var plain = MimeType.CreateTextPlain();
+                Assert.AreEqual("text", plain.Type);
+                Assert.AreEqual("plain", plain.SubType);
+                Assert.IsTrue(plain.TryGetParameter("charset", out var cs1));
+                Assert.AreEqual("utf-8", cs1);
+
+                var json = MimeType.CreateApplicationJson();
+                Assert.AreEqual("application", json.Type);
+                Assert.AreEqual("json", json.SubType);
+                Assert.IsTrue(json.TryGetParameter("charset", out var cs2));
+                Assert.AreEqual("utf-8", cs2);
+
+                var multi = MimeType.CreateMultipart("mixed", "b");
+                Assert.AreEqual("multipart", multi.Type);
+                Assert.AreEqual("mixed", multi.SubType);
+                Assert.IsTrue(multi.TryGetParameter("boundary", out var b));
+                Assert.AreEqual("b", b);
+        }
 }
