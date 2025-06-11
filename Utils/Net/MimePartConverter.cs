@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Xml;
 using System.Xml.Linq;
 using System.Text.Json;
@@ -31,7 +30,28 @@ public interface IMimePartConverter
     /// <param name="rawContent">The raw body content.</param>
     /// <param name="content">When this method returns, contains the converted content.</param>
     /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
-    bool TryConvert<T>(string rawContent, out T? content);
+    bool TryConvert<T>(string rawContent, out T? content)
+    {
+        if (this is IMimePartConverter<T> typed)
+            return typed.TryConvert(rawContent, out content);
+        content = default;
+        return false;
+    }
+}
+
+/// <summary>
+/// Generic interface implemented by converters supporting a specific target type.
+/// </summary>
+/// <typeparam name="T">Target type handled by the converter.</typeparam>
+public interface IMimePartConverter<T> : IMimePartConverter
+{
+    /// <summary>
+    /// Attempts to convert the raw content to <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="rawContent">The raw textual content.</param>
+    /// <param name="content">When this method returns, contains the converted content.</param>
+    /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
+    bool TryConvert(string rawContent, out T? content);
 }
 
 /// <summary>
@@ -144,140 +164,128 @@ public class MimePartConverter
     }
 }
 
-internal sealed class TextPartConverter : IMimePartConverter
+internal sealed class TextPartConverter :
+    IMimePartConverter<string>,
+    IMimePartConverter<TextReader>
 {
     public string MimeType => "text/*";
 
     public Type[] SupportedTypes { get; } = [typeof(string), typeof(TextReader)];
 
-    public bool TryConvert<T>(string rawContent, out T? content)
+    bool IMimePartConverter<string>.TryConvert(string rawContent, out string? content)
     {
-        content = default;
-        var target = typeof(T);
-        if (target == typeof(string))
-        {
-            content = (T)(object)rawContent;
-            return true;
-        }
-        if (typeof(TextReader).IsAssignableFrom(target))
-        {
-            content = (T)(object)new StringReader(rawContent);
-            return true;
-        }
-        return false;
+        content = rawContent;
+        return true;
+    }
+
+    bool IMimePartConverter<TextReader>.TryConvert(string rawContent, out TextReader? content)
+    {
+        content = new StringReader(rawContent);
+        return true;
     }
 }
 
-internal sealed class XmlPartConverter : IMimePartConverter
+internal sealed class XmlPartConverter :
+    IMimePartConverter<XDocument>,
+    IMimePartConverter<XmlDocument>
 {
     public string MimeType => "text/xml";
 
     public Type[] SupportedTypes { get; } = [typeof(XDocument), typeof(XmlDocument)];
 
-    public bool TryConvert<T>(string rawContent, out T? content)
+    bool IMimePartConverter<XDocument>.TryConvert(string rawContent, out XDocument? content)
     {
-        content = default;
-        var target = typeof(T);
-        if (target == typeof(XDocument))
-        {
-            content = (T)(object)XDocument.Parse(rawContent);
-            return true;
-        }
-        if (target == typeof(XmlDocument))
-        {
-            var doc = new XmlDocument();
-            doc.LoadXml(rawContent);
-            content = (T)(object)doc;
-            return true;
-        }
-        return false;
+        content = XDocument.Parse(rawContent);
+        return true;
+    }
+
+    bool IMimePartConverter<XmlDocument>.TryConvert(string rawContent, out XmlDocument? content)
+    {
+        var doc = new XmlDocument();
+        doc.LoadXml(rawContent);
+        content = doc;
+        return true;
     }
 }
 
-internal sealed class JsonPartConverter : IMimePartConverter
+internal sealed class JsonPartConverter : IMimePartConverter<JsonDocument>
 {
     public string MimeType => "*/json";
 
     public Type[] SupportedTypes { get; } = [typeof(JsonDocument)];
 
-    public bool TryConvert<T>(string rawContent, out T? content)
+    bool IMimePartConverter<JsonDocument>.TryConvert(string rawContent, out JsonDocument? content)
     {
-        content = default;
-        var target = typeof(T);
-        if (target == typeof(JsonDocument))
+        try
         {
-            try
-            {
-                content = (T)(object)JsonDocument.Parse(rawContent);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            content = JsonDocument.Parse(rawContent);
+            return true;
         }
-        return false;
+        catch
+        {
+            content = default;
+            return false;
+        }
     }
 }
 
-internal sealed class MultipartPartConverter : IMimePartConverter
+internal sealed class MultipartPartConverter : IMimePartConverter<MimeDocument>
 {
     public string MimeType => "multipart/*";
 
     public Type[] SupportedTypes { get; } = [typeof(MimeDocument)];
 
-    public bool TryConvert<T>(string rawContent, out T? content)
+    bool IMimePartConverter<MimeDocument>.TryConvert(string rawContent, out MimeDocument? content)
     {
-        content = default;
-        var target = typeof(T);
-        if (target == typeof(MimeDocument) || target.IsAssignableFrom(typeof(MimeDocument)))
-        {
-            content = (T)(object)MimeReader.Read(rawContent);
-            return true;
-        }
-        return false;
+        content = MimeReader.Read(rawContent);
+        return true;
     }
 }
 
-internal sealed class BinaryPartConverter : IMimePartConverter
+internal sealed class BinaryPartConverter :
+    IMimePartConverter<byte[]>,
+    IMimePartConverter<Stream>
 {
     public string MimeType => "application/*";
 
     public Type[] SupportedTypes { get; } = [typeof(byte[]), typeof(Stream)];
 
-    public bool TryConvert<T>(string rawContent, out T? content)
+    bool IMimePartConverter<byte[]>.TryConvert(string rawContent, out byte[]? content)
     {
-        content = default;
-        var target = typeof(T);
-        if (target == typeof(byte[]))
+        if (string.IsNullOrEmpty(rawContent))
         {
-            if (string.IsNullOrEmpty(rawContent))
-                return true;
-            try
-            {
-                content = (T)(object)Convert.FromBase64String(rawContent);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            content = Array.Empty<byte>();
+            return true;
         }
-        if (typeof(Stream).IsAssignableFrom(target))
+        try
         {
-            if (string.IsNullOrEmpty(rawContent))
-                return true;
-            try
-            {
-                var bytes = Convert.FromBase64String(rawContent);
-                content = (T)(object)new MemoryStream(bytes);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            content = Convert.FromBase64String(rawContent);
+            return true;
         }
-        return false;
+        catch
+        {
+            content = default;
+            return false;
+        }
+    }
+
+    bool IMimePartConverter<Stream>.TryConvert(string rawContent, out Stream? content)
+    {
+        if (string.IsNullOrEmpty(rawContent))
+        {
+            content = new MemoryStream();
+            return true;
+        }
+        try
+        {
+            var bytes = Convert.FromBase64String(rawContent);
+            content = new MemoryStream(bytes);
+            return true;
+        }
+        catch
+        {
+            content = default;
+            return false;
+        }
     }
 }
