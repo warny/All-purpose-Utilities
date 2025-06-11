@@ -151,65 +151,7 @@ public class MimePart : IEquatable<MimePart>, IEqualityOperators<MimePart, MimeP
         /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
         public bool TryGetContentAs<T>(out T? content)
         {
-                content = default;
-
-                if (!Headers.TryGetValue("Content-Type", out var contentType))
-                {
-                        return false;
-                }
-
-                var mime = MimeType.Parse(contentType);
-                var target = typeof(T);
-
-                if (mime.Type.Equals("multipart", StringComparison.OrdinalIgnoreCase))
-                {
-                        if (target == typeof(MimeDocument) || target.IsAssignableFrom(typeof(MimeDocument)))
-                        {
-                                content = (T)(object)MimeReader.Read(Body);
-                                return true;
-                        }
-                        return false;
-                }
-
-                if (mime.Type.Equals("text", StringComparison.OrdinalIgnoreCase))
-                {
-                        if (target == typeof(string))
-                        {
-                                content = (T)(object)Body;
-                                return true;
-                        }
-
-                        if (typeof(TextReader).IsAssignableFrom(target))
-                        {
-                                content = (T)(object)new StringReader(Body);
-                                return true;
-                        }
-
-                        return false;
-                }
-
-                try
-                {
-                        var bytes = Convert.FromBase64String(Body);
-
-                        if (target == typeof(byte[]))
-                        {
-                                content = (T)(object)bytes;
-                                return true;
-                        }
-
-                        if (typeof(Stream).IsAssignableFrom(target))
-                        {
-                                content = (T)(object)new MemoryStream(bytes);
-                                return true;
-                        }
-                }
-                catch (FormatException)
-                {
-                        // Body is not valid base64
-                }
-
-                return false;
+                return MimePartConverter.Default.TryConvertTo(this, out content);
         }
 
         private static bool DictionaryEquals(IDictionary<string, string> left, IDictionary<string, string> right)
@@ -335,23 +277,32 @@ internal class SimpleMimeFormatter : IMimeFormatter
 
         private static void ReadMultipart(TextReader reader, string boundary, MimeDocument document)
         {
-                string? line;
-                while ((line = reader.ReadLine()) != null)
+                string boundaryStart = "--" + boundary;
+                string boundaryEnd = boundaryStart + "--";
+
+                string? line = reader.ReadLine();
+                while (line != null)
                 {
-                        if (line == "--" + boundary)
+                        if (line == boundaryStart)
                         {
                                 var part = new MimePart();
                                 ReadHeaders(reader, part.Headers);
                                 var sb = new StringBuilder();
-                                while ((line = reader.ReadLine()) != null && line != "--" + boundary && line != "--" + boundary + "--")
+                                while ((line = reader.ReadLine()) != null && line != boundaryStart && line != boundaryEnd)
                                 {
                                         sb.AppendLine(line);
                                 }
                                 part.Body = sb.ToString();
                                 document.Parts.Add(part);
-                                if (line == "--" + boundary + "--")
+                                if (line == boundaryEnd || line == null)
                                         break;
+                                continue; // process boundary line in next iteration
                         }
+
+                        if (line == boundaryEnd)
+                                break;
+
+                        line = reader.ReadLine();
                 }
         }
 

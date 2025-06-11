@@ -133,16 +133,7 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// <returns><c>true</c> if the MIME content can be mapped to the specified type; otherwise, <c>false</c>.</returns>
         public bool IsCompatibleWith(Type type)
         {
-                if (type == typeof(MimeDocument))
-                        return Type.Equals("multipart", StringComparison.OrdinalIgnoreCase);
-
-                if (type == typeof(string) || typeof(TextReader).IsAssignableFrom(type))
-                        return Type.Equals("text", StringComparison.OrdinalIgnoreCase);
-
-                if (type == typeof(byte[]) || typeof(Stream).IsAssignableFrom(type))
-                        return !Type.Equals("multipart", StringComparison.OrdinalIgnoreCase);
-
-                return false;
+                return MimePartConverter.Default.CanConvertTo(type, this);
         }
 
         /// <summary>
@@ -150,7 +141,7 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// </summary>
         /// <typeparam name="T">The target type.</typeparam>
         /// <returns><c>true</c> if compatible; otherwise, <c>false</c>.</returns>
-        public bool IsCompatibleWith<T>() => IsCompatibleWith(typeof(T));
+        public bool IsCompatibleWith<T>() => MimePartConverter.Default.CanConvertTo<T>(this);
 
         private static bool DictionaryEquals(IDictionary<string, string> left, IDictionary<string, string> right)
         {
