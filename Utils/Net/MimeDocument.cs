@@ -143,12 +143,94 @@ public class MimePart : IEquatable<MimePart>, IEqualityOperators<MimePart, MimeP
         /// </summary>
         public string Body { get; set; }
 
+        /// <summary>
+        /// Attempts to return the body content as the requested type.
+        /// </summary>
+        /// <typeparam name="T">Desired content type.</typeparam>
+        /// <param name="content">When this method returns, contains the content if compatible.</param>
+        /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
+        public bool TryGetContentAs<T>(out T? content)
+        {
+                content = default;
+
+                if (!Headers.TryGetValue("Content-Type", out var contentType))
+                {
+                        return false;
+                }
+
+                var mime = MimeType.Parse(contentType);
+                var target = typeof(T);
+
+                if (mime.Type.Equals("multipart", StringComparison.OrdinalIgnoreCase))
+                {
+                        if (target == typeof(MimeDocument) || target.IsAssignableFrom(typeof(MimeDocument)))
+                        {
+                                content = (T)(object)MimeReader.Read(Body);
+                                return true;
+                        }
+                        return false;
+                }
+
+                if (mime.Type.Equals("text", StringComparison.OrdinalIgnoreCase))
+                {
+                        if (target == typeof(string))
+                        {
+                                content = (T)(object)Body;
+                                return true;
+                        }
+
+                        if (typeof(TextReader).IsAssignableFrom(target))
+                        {
+                                content = (T)(object)new StringReader(Body);
+                                return true;
+                        }
+
+                        return false;
+                }
+
+                try
+                {
+                        var bytes = Convert.FromBase64String(Body);
+
+                        if (target == typeof(byte[]))
+                        {
+                                content = (T)(object)bytes;
+                                return true;
+                        }
+
+                        if (typeof(Stream).IsAssignableFrom(target))
+                        {
+                                content = (T)(object)new MemoryStream(bytes);
+                                return true;
+                        }
+                }
+                catch (FormatException)
+                {
+                        // Body is not valid base64
+                }
+
+                return false;
+        }
+
+        private static bool DictionaryEquals(IDictionary<string, string> left, IDictionary<string, string> right)
+        {
+                if (left.Count != right.Count)
+                        return false;
+                foreach (var kv in left)
+                {
+                        if (!right.TryGetValue(kv.Key, out var value))
+                                return false;
+                        if (!kv.Value.Equals(value, StringComparison.OrdinalIgnoreCase))
+                                return false;
+                }
+                return true;
+        }
+
         /// <inheritdoc />
         public bool Equals(MimePart? other)
         {
                 if (other is null) return false;
-                return Headers.OrderBy(k => k.Key).SequenceEqual(other.Headers.OrderBy(k => k.Key), StringComparer.OrdinalIgnoreCase)
-                        && Body == other.Body;
+                return DictionaryEquals(Headers, other.Headers) && Body == other.Body;
         }
 
         /// <inheritdoc />

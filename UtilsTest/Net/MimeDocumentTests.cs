@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
+using System.Text;
 using Utils.Net;
 
 namespace UtilsTest.Net;
@@ -84,5 +86,74 @@ public class MimeDocumentTests
                 Assert.AreEqual("mixed", multi.SubType);
                 Assert.IsTrue(multi.TryGetParameter("boundary", out var b));
                 Assert.AreEqual("b", b);
+        }
+
+        [TestMethod]
+        public void MimePartTryGetContentAsText()
+        {
+                var part = new MimePart
+                {
+                        Body = "Hello",
+                };
+                part.Headers["Content-Type"] = "text/plain";
+
+                Assert.IsTrue(part.TryGetContentAs<string>(out var str));
+                Assert.AreEqual("Hello", str);
+                Assert.IsTrue(part.TryGetContentAs<TextReader>(out var reader));
+                Assert.AreEqual("Hello", reader.ReadToEnd());
+
+                var mime = MimeType.Parse(part.Headers["Content-Type"]);
+                Assert.IsTrue(mime.IsCompatibleWith<string>());
+                Assert.IsTrue(mime.IsCompatibleWith<TextReader>());
+                Assert.IsFalse(mime.IsCompatibleWith<byte[]>());
+        }
+
+        [TestMethod]
+        public void MimePartTryGetContentAsBinary()
+        {
+                var bytes = System.Text.Encoding.UTF8.GetBytes("Hello");
+                var part = new MimePart
+                {
+                        Body = Convert.ToBase64String(bytes),
+                };
+                part.Headers["Content-Type"] = "application/octet-stream";
+
+                Assert.IsTrue(part.TryGetContentAs<byte[]>(out var arr));
+                CollectionAssert.AreEqual(bytes, arr);
+                Assert.IsTrue(part.TryGetContentAs<Stream>(out var stream));
+                using var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                CollectionAssert.AreEqual(bytes, ms.ToArray());
+
+                var mime = MimeType.Parse(part.Headers["Content-Type"]);
+                Assert.IsTrue(mime.IsCompatibleWith<byte[]>());
+                Assert.IsTrue(mime.IsCompatibleWith<Stream>());
+                Assert.IsFalse(mime.IsCompatibleWith<string>());
+        }
+
+        [TestMethod]
+        public void MimePartTryGetContentAsMultipart()
+        {
+                var child = new MimeDocument();
+                var cp = new MimePart();
+                cp.Headers["Content-Type"] = "text/plain";
+                cp.Body = "Hi";
+                child.Parts.Add(cp);
+                child.Headers["Content-Type"] = "multipart/mixed; boundary=bb";
+
+                var text = MimeWriter.Write(child);
+
+                var part = new MimePart
+                {
+                        Body = text
+                };
+                part.Headers["Content-Type"] = "multipart/mixed; boundary=bb";
+
+                Assert.IsTrue(part.TryGetContentAs<MimeDocument>(out var doc));
+                Assert.AreEqual(1, doc.Parts.Count);
+
+                var mime = MimeType.Parse(part.Headers["Content-Type"]);
+                Assert.IsTrue(mime.IsCompatibleWith<MimeDocument>());
+                Assert.IsFalse(mime.IsCompatibleWith<byte[]>());
         }
 }

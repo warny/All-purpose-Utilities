@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.IO;
 
 namespace Utils.Net;
 
@@ -96,7 +97,7 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
                 if (other == null) return false;
                 if (!Type.Equals(other.Type, StringComparison.OrdinalIgnoreCase)) return false;
                 if (!SubType.Equals(other.SubType, StringComparison.OrdinalIgnoreCase)) return false;
-                return Parameters.OrderBy(k => k.Key).SequenceEqual(other.Parameters.OrderBy(k => k.Key), StringComparer.OrdinalIgnoreCase);
+                return DictionaryEquals(Parameters, other.Parameters);
         }
 
         /// <inheritdoc />
@@ -124,6 +125,46 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// Inequality operator comparing two <see cref="MimeType"/> instances.
         /// </summary>
         public static bool operator !=(MimeType? left, MimeType? right) => !(left == right);
+
+        /// <summary>
+        /// Determines whether the content of this MIME type can be represented by the specified <see cref="Type"/>.
+        /// </summary>
+        /// <param name="type">The target type.</param>
+        /// <returns><c>true</c> if the MIME content can be mapped to the specified type; otherwise, <c>false</c>.</returns>
+        public bool IsCompatibleWith(Type type)
+        {
+                if (type == typeof(MimeDocument))
+                        return Type.Equals("multipart", StringComparison.OrdinalIgnoreCase);
+
+                if (type == typeof(string) || typeof(TextReader).IsAssignableFrom(type))
+                        return Type.Equals("text", StringComparison.OrdinalIgnoreCase);
+
+                if (type == typeof(byte[]) || typeof(Stream).IsAssignableFrom(type))
+                        return !Type.Equals("multipart", StringComparison.OrdinalIgnoreCase);
+
+                return false;
+        }
+
+        /// <summary>
+        /// Determines whether the content of this MIME type can be represented by <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The target type.</typeparam>
+        /// <returns><c>true</c> if compatible; otherwise, <c>false</c>.</returns>
+        public bool IsCompatibleWith<T>() => IsCompatibleWith(typeof(T));
+
+        private static bool DictionaryEquals(IDictionary<string, string> left, IDictionary<string, string> right)
+        {
+                if (left.Count != right.Count)
+                        return false;
+                foreach (var kv in left)
+                {
+                        if (!right.TryGetValue(kv.Key, out var value))
+                                return false;
+                        if (!kv.Value.Equals(value, StringComparison.OrdinalIgnoreCase))
+                                return false;
+                }
+                return true;
+        }
 
         /// <summary>
         /// Creates a <see cref="MimeType"/> instance for plain text.
