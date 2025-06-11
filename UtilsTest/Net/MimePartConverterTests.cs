@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Xml.Linq;
+using System.Text.Json;
 using Utils.Net;
 
 namespace UtilsTest.Net;
@@ -47,5 +48,16 @@ public class MimePartConverterTests
         using var ms = new MemoryStream();
         stream.CopyTo(ms);
         CollectionAssert.AreEqual(bytes, ms.ToArray());
+    }
+
+    [TestMethod]
+    public void ConvertJsonPart()
+    {
+        var part = new MimePart { Body = "{\"name\":\"test\"}" };
+        part.Headers["Content-Type"] = "application/json";
+        var converter = MimePartConverter.Default;
+        Assert.IsTrue(converter.CanConvertTo<System.Text.Json.JsonDocument>(MimeType.Parse(part.Headers["Content-Type"]!)));
+        Assert.IsTrue(converter.TryConvertTo<System.Text.Json.JsonDocument>(part, out var doc));
+        Assert.AreEqual("test", doc.RootElement.GetProperty("name").GetString());
     }
 }

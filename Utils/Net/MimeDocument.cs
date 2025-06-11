@@ -143,16 +143,6 @@ public class MimePart : IEquatable<MimePart>, IEqualityOperators<MimePart, MimeP
         /// </summary>
         public string Body { get; set; }
 
-        /// <summary>
-        /// Attempts to return the body content as the requested type.
-        /// </summary>
-        /// <typeparam name="T">Desired content type.</typeparam>
-        /// <param name="content">When this method returns, contains the content if compatible.</param>
-        /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
-        public bool TryGetContentAs<T>(out T? content)
-        {
-                return MimePartConverter.Default.TryConvertTo(this, out content);
-        }
 
         private static bool DictionaryEquals(IDictionary<string, string> left, IDictionary<string, string> right)
         {

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Linq;
+using System.Text.Json;
 
 namespace Utils.Net;
 
@@ -17,6 +18,11 @@ public interface IMimePartConverter
     /// Gets the MIME type mask handled by this converter. Wildcards are allowed.
     /// </summary>
     string MimeType { get; }
+
+    /// <summary>
+    /// Gets the list of target types this converter can produce.
+    /// </summary>
+    Type[] SupportedTypes { get; }
 
     /// <summary>
     /// Attempts to convert the raw textual content to the specified type.
@@ -59,7 +65,9 @@ public class MimePartConverter
     public bool CanConvertTo<T>(MimeType mimeType)
     {
         ArgumentNullException.ThrowIfNull(mimeType);
-        return GetConverters(mimeType).Any(c => c.TryConvert(string.Empty, out T? _));
+        var requested = typeof(T);
+        return GetConverters(mimeType)
+            .Any(c => c.SupportedTypes.Any(t => requested.IsAssignableFrom(t)));
     }
 
     /// <summary>
@@ -72,14 +80,8 @@ public class MimePartConverter
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentNullException.ThrowIfNull(mimeType);
-        foreach (var conv in GetConverters(mimeType))
-        {
-            var method = conv.GetType().GetMethod("TryConvert")!.MakeGenericMethod(type);
-            var args = new object?[] { string.Empty, null };
-            if ((bool)method.Invoke(conv, args)!)
-                return true;
-        }
-        return false;
+        return GetConverters(mimeType)
+            .Any(c => c.SupportedTypes.Any(t => type.IsAssignableFrom(t)));
     }
 
     /// <summary>
@@ -109,6 +111,7 @@ public class MimePartConverter
         var conv = new MimePartConverter();
         conv.Add(new TextPartConverter());
         conv.Add(new XmlPartConverter());
+        conv.Add(new JsonPartConverter());
         conv.Add(new MultipartPartConverter());
         conv.Add(new BinaryPartConverter());
         return conv;
@@ -145,6 +148,8 @@ internal sealed class TextPartConverter : IMimePartConverter
 {
     public string MimeType => "text/*";
 
+    public Type[] SupportedTypes { get; } = [typeof(string), typeof(TextReader)];
+
     public bool TryConvert<T>(string rawContent, out T? content)
     {
         content = default;
@@ -167,6 +172,8 @@ internal sealed class XmlPartConverter : IMimePartConverter
 {
     public string MimeType => "text/xml";
 
+    public Type[] SupportedTypes { get; } = [typeof(XDocument), typeof(XmlDocument)];
+
     public bool TryConvert<T>(string rawContent, out T? content)
     {
         content = default;
@@ -187,9 +194,37 @@ internal sealed class XmlPartConverter : IMimePartConverter
     }
 }
 
+internal sealed class JsonPartConverter : IMimePartConverter
+{
+    public string MimeType => "*/json";
+
+    public Type[] SupportedTypes { get; } = [typeof(JsonDocument)];
+
+    public bool TryConvert<T>(string rawContent, out T? content)
+    {
+        content = default;
+        var target = typeof(T);
+        if (target == typeof(JsonDocument))
+        {
+            try
+            {
+                content = (T)(object)JsonDocument.Parse(rawContent);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        return false;
+    }
+}
+
 internal sealed class MultipartPartConverter : IMimePartConverter
 {
     public string MimeType => "multipart/*";
+
+    public Type[] SupportedTypes { get; } = [typeof(MimeDocument)];
 
     public bool TryConvert<T>(string rawContent, out T? content)
     {
@@ -207,6 +242,8 @@ internal sealed class MultipartPartConverter : IMimePartConverter
 internal sealed class BinaryPartConverter : IMimePartConverter
 {
     public string MimeType => "application/*";
+
+    public Type[] SupportedTypes { get; } = [typeof(byte[]), typeof(Stream)];
 
     public bool TryConvert<T>(string rawContent, out T? content)
     {
