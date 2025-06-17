@@ -158,5 +158,10 @@ public static class DataUtils
 		_ => DbType.Object,
 	};
 
-	public static object ToDbValue(this object? value) => value is null ? DBNull.Value : value;
+        /// <summary>
+        /// Converts a nullable value to an object suitable for database commands.
+        /// </summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns><see cref="DBNull.Value"/> when <paramref name="value"/> is null; otherwise the original value.</returns>
+        public static object ToDbValue(this object? value) => value is null ? DBNull.Value : value;
 }
