@@ -72,6 +72,13 @@ Another Windows Forms sample demonstrating the drawing primitives available in `
 ### `UtilsTest`
 Unit test suite using MSTest and SpecFlow covering the utilities and components from the other projects.
 
+## NuGet packages
+
+All libraries are configured to generate NuGet packages. Pushing changes to the
+`release` branch triggers the **Publish NuGet** workflow. The workflow builds
+the solution, packs only the library projects and publishes the resulting
+`.nupkg` files to NuGet.org using the `NUGET_API_KEY` secret.
+
 ## License
 
 This project is distributed under the Apache 2.0 license (see `LICENSE-apache-2.0.txt`).

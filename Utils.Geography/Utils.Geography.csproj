@@ -8,8 +8,9 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Olivier MARTY</Authors>
     <Company>Olivier MARTY</Company>
-    <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageId>omy.Utils.Geography</PackageId>
+    <Version>1.0.0</Version>
     <Copyright>Olivier MARTY</Copyright>
     <Description>Coordinate utilities
         - Map to polar conversions
@@ -18,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
+    <None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
       <PackagePath></PackagePath>
       <Pack>True</Pack>
     </None>
