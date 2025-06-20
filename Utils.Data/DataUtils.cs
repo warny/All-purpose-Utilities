@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using Utils.Objects;
 
 namespace Utils.Data;
 
@@ -44,7 +45,7 @@ public static class DataUtils
 	/// <param name="record">The IDataRecord containing the data.</param>
 	/// <param name="obj">The object to populate.</param>
 	/// <param name="fieldsOrProperties">The FieldMap[] containing the mappings of fields or properties.</param>
-	private static void FillObject(IDataRecord record, object obj, FieldMap[] fieldsOrProperties)
+	private static void FillObject(IDataRecord record, object obj, params IEnumerable<FieldMap> fieldsOrProperties)
 	{
 		foreach (var fieldOrProperty in fieldsOrProperties)
 		{
@@ -100,4 +101,67 @@ public static class DataUtils
 
 		return fieldsOrProperties;
 	}
+
+	/// <summary>
+	/// Maps a value to the corresponding <see cref="DbType"/>.
+	/// </summary>
+	/// <param name="value">Value for which to determine the <see cref="DbType"/>.</param>
+	/// <returns>The inferred <see cref="DbType"/> for the given value.</returns>
+	public static DbType GetDbType(object? value)
+	{
+		if (value is null)
+		{
+			return DbType.Object;
+		}
+
+		return GetDbType(value.GetType());
+	}
+
+	/// <summary>
+	/// Maps a value to the corresponding <see cref="DbType"/>.
+	/// </summary>
+	/// <param name="value">Value for which to determine the <see cref="DbType"/>.</param>
+	/// <returns>The inferred <see cref="DbType"/> for the given value.</returns>
+	public static DbType GetDbType<T>(T value)
+	{
+		return GetDbType(typeof(T));
+	}
+
+	/// <summary>
+	/// Maps a <see cref="Type"/> to the corresponding <see cref="DbType"/>.
+	/// </summary>
+	/// <param name="type"><see cref="Type"/> for which to determine the <see cref="DbType"/>.</param>
+	/// <returns>The inferred <see cref="DbType"/> for the given value.</returns>
+	public static DbType GetDbType(Type type) => type switch
+	{
+		var t when t == typeof(string) => DbType.String,
+		var t when t == typeof(bool) => DbType.Boolean,
+		var t when t == typeof(byte) => DbType.Byte,
+		var t when t == typeof(sbyte) => DbType.SByte,
+		var t when t == typeof(short) => DbType.Int16,
+		var t when t == typeof(ushort) => DbType.UInt16,
+		var t when t == typeof(int) => DbType.Int32,
+		var t when t == typeof(uint) => DbType.UInt32,
+		var t when t == typeof(long) => DbType.Int64,
+		var t when t == typeof(ulong) => DbType.UInt64,
+		var t when t == typeof(float) => DbType.Single,
+		var t when t == typeof(double) => DbType.Double,
+		var t when t == typeof(decimal) => DbType.Decimal,
+		var t when t == typeof(Guid) => DbType.Guid,
+		var t when t == typeof(DateTime) => DbType.DateTime,
+		var t when t == typeof(DateOnly) => DbType.Date,
+		var t when t == typeof(TimeOnly) => DbType.Time,
+		var t when t == typeof(DateTimeOffset) => DbType.DateTimeOffset,
+		var t when t == typeof(TimeSpan) => DbType.Time,
+		var t when t == typeof(byte[]) => DbType.Binary,
+		var t when t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>) => GetDbType(Nullable.GetUnderlyingType(t)),
+		_ => DbType.Object,
+	};
+
+        /// <summary>
+        /// Converts a nullable value to an object suitable for database commands.
+        /// </summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns><see cref="DBNull.Value"/> when <paramref name="value"/> is null; otherwise the original value.</returns>
+        public static object ToDbValue(this object? value) => value is null ? DBNull.Value : value;
 }
