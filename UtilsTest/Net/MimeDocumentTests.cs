@@ -12,11 +12,25 @@ public class MimeDocumentTests
         [TestMethod]
         public void ParseAndWriteSimpleMultipartDocument()
         {
-                const string input = "Content-Type: multipart/mixed; boundary=\"b\"\n\n--b\nContent-Type: text/plain\n\nHello\n--b\nContent-Type: text/plain\n\nWorld\n--b--\n";
-                var doc = MimeReader.Read(input);
+                const string input = 
+					"""
+					Content-Type: multipart/mixed; boundary="b"
+
+					--b
+					Content-Type: text/plain
+
+					Hello
+					--b
+					Content-Type: text/plain
+
+					World
+					--b--
+
+					""";
+                var doc = MimeReader.Read(input.ReplaceLineEndings());
                 Assert.AreEqual(2, doc.Parts.Count);
-                Assert.AreEqual("Hello\n", doc.Parts[0].Body);
-                Assert.AreEqual("World\n", doc.Parts[1].Body);
+                Assert.AreEqual("Hello" + Environment.NewLine, doc.Parts[0].Body);
+                Assert.AreEqual("World" + Environment.NewLine, doc.Parts[1].Body);
 
                 using var ms = new MemoryStream();
                 MimeWriter.Write(doc, ms);

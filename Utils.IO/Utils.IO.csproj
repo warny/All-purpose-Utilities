@@ -10,8 +10,9 @@
     <Company>Olivier MARTY</Company>
     <PackageId>omy.Utils.IO</PackageId>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Description>Input/Output helpers
         - Base16/32/64 stream encoding
         - Stream copying and validation
@@ -21,5 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Utils\Utils.csproj" />
   </ItemGroup>
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 
 </Project>

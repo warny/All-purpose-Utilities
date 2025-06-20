@@ -10,7 +10,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>omy.Utils</PackageId>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <Version>1.0.0</Version>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.1</Version>
     <Copyright>Olivier MARTY 2023</Copyright>
     <Description>General Functions
 
@@ -85,4 +86,7 @@
     </EmbeddedResource>
   </ItemGroup>
 
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 </Project>

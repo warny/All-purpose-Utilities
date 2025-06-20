@@ -8,8 +8,9 @@
     <Company>Olivier MARTY</Company>
     <PackageId>omy.Utils.Fonts</PackageId>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Description>Font management utilities
         - TrueType font parsing and encoding
         - Font flags and metrics helpers</Description>
@@ -20,5 +21,8 @@
     <ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
     <ProjectReference Include="..\Utils\Utils.csproj" />
   </ItemGroup>
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 
 </Project>

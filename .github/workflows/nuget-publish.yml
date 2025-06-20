@@ -21,9 +21,11 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --configuration Release
-      - name: Pack libraries
+      - name: Pack and publish updated libraries
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          for csproj in \
+          PROJECTS="\
             Utils/Utils.csproj \
             Utils.Data/Utils.Data.csproj \
             Utils.Fonts/Utils.Fonts.csproj \
@@ -33,10 +35,16 @@ jobs:
             Utils.Mathematics/Utils.Mathematics.csproj \
             Utils.Reflection/Utils.Reflection.csproj \
             Utils.VirtualMachine/Utils.VirtualMachine.csproj \
-            System.Net/Utils.Net.csproj; do
-            dotnet pack $csproj --configuration Release --no-build
+            System.Net/Utils.Net.csproj"
+          mkdir -p packages
+          for csproj in $PROJECTS; do
+            pkg_id=$(grep -oPm1 '(?<=<PackageId>)[^<]+' "$csproj")
+            version=$(grep -oPm1 '(?<=<Version>)[^<]+' "$csproj")
+            url="https://api.nuget.org/v3-flatcontainer/$(echo "$pkg_id" | tr '[:upper:]' '[:lower:]')/index.json"
+            if curl -fsSL "$url" 2>/dev/null | grep -q "\"$version\""; then
+              echo "Skipping $pkg_id version $version"
+            else
+              dotnet pack "$csproj" --configuration Release --no-build --no-restore -o packages
+              dotnet nuget push "packages/$pkg_id.$version.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+            fi
           done
-      - name: Publish
-        run: dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}

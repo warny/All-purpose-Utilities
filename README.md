@@ -76,8 +76,10 @@ Unit test suite using MSTest and SpecFlow covering the utilities and components 
 
 All libraries are configured to generate NuGet packages. Pushing changes to the
 `release` branch triggers the **Publish NuGet** workflow. The workflow builds
-the solution, packs only the library projects and publishes the resulting
-`.nupkg` files to NuGet.org using the `NUGET_API_KEY` secret.
+the solution and publishes the library projects only when their version number
+has changed. The script queries NuGet to verify that the package version is not
+already available before packaging and uploading the corresponding `.nupkg`
+file using the `NUGET_API_KEY` secret.
 
 ## License
 
