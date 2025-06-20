@@ -1,0 +1,42 @@
+name: Publish NuGet
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: ['9.0.x']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release
+      - name: Pack libraries
+        run: |
+          for csproj in \
+            Utils/Utils.csproj \
+            Utils.Data/Utils.Data.csproj \
+            Utils.Fonts/Utils.Fonts.csproj \
+            Utils.Geography/Utils.Geography.csproj \
+            Utils.IO/Utils.IO.csproj \
+            Utils.Imaging/Utils.Imaging.csproj \
+            Utils.Mathematics/Utils.Mathematics.csproj \
+            Utils.Reflection/Utils.Reflection.csproj \
+            Utils.VirtualMachine/Utils.VirtualMachine.csproj \
+            System.Net/Utils.Net.csproj; do
+            dotnet pack $csproj --configuration Release --no-build
+          done
+      - name: Publish
+        run: dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
