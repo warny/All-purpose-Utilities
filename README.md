@@ -74,9 +74,9 @@ Unit test suite using MSTest and SpecFlow covering the utilities and components 
 
 ## NuGet packages
 
-All libraries are configured to generate NuGet packages. Create a tag starting
-with `v` to trigger the **Publish NuGet** workflow. The workflow builds the
-solution, packs all libraries and publishes the resulting `.nupkg` files to
+All libraries are configured to generate NuGet packages. Pushing changes to the
+`release` branch triggers the **Publish NuGet** workflow. The workflow builds
+the solution, packs all libraries and publishes the resulting `.nupkg` files to
 NuGet.org using the `NUGET_API_KEY` secret.
 
 ## License
