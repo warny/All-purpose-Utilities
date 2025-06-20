@@ -1,0 +1,50 @@
+name: Publish NuGet
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: ['9.0.x']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release
+      - name: Pack and publish updated libraries
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          PROJECTS="\
+            Utils/Utils.csproj \
+            Utils.Data/Utils.Data.csproj \
+            Utils.Fonts/Utils.Fonts.csproj \
+            Utils.Geography/Utils.Geography.csproj \
+            Utils.IO/Utils.IO.csproj \
+            Utils.Imaging/Utils.Imaging.csproj \
+            Utils.Mathematics/Utils.Mathematics.csproj \
+            Utils.Reflection/Utils.Reflection.csproj \
+            Utils.VirtualMachine/Utils.VirtualMachine.csproj \
+            System.Net/Utils.Net.csproj"
+          mkdir -p packages
+          for csproj in $PROJECTS; do
+            pkg_id=$(grep -oPm1 '(?<=<PackageId>)[^<]+' "$csproj")
+            version=$(grep -oPm1 '(?<=<Version>)[^<]+' "$csproj")
+            url="https://api.nuget.org/v3-flatcontainer/$(echo "$pkg_id" | tr '[:upper:]' '[:lower:]')/index.json"
+            if curl -fsSL "$url" 2>/dev/null | grep -q "\"$version\""; then
+              echo "Skipping $pkg_id version $version"
+            else
+              dotnet pack "$csproj" --configuration Release --no-build --no-restore -o packages
+              dotnet nuget push "packages/$pkg_id.$version.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+            fi
+          done

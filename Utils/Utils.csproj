@@ -6,9 +6,12 @@
 	  <LangVersion>latest</LangVersion>
 	  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Authors>Olivier MARTY</Authors>
+    <Company>Olivier MARTY</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>omy.Utils</PackageId>
-    <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.0</Version>
     <Copyright>Olivier MARTY 2023</Copyright>
     <Description>General Functions
 
@@ -57,7 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE-apache-2.0.txt">
+    <None Include="../LICENSE-apache-2.0.txt">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

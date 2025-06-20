@@ -7,8 +7,10 @@
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Olivier MARTY</Authors>
     <Company>Olivier MARTY</Company>
-    <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageId>omy.Utils.Imaging</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.0</Version>
     <Copyright>Olivier MARTY</Copyright>
     <Description>Image accessors and drawing primitives
         - Bitmap manipulation helpers
@@ -35,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE-apache-2.0.txt">
+    <None Include="../LICENSE-apache-2.0.txt">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

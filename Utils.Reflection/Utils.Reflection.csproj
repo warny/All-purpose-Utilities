@@ -3,14 +3,20 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
           <EnablePreviewFeatures>True</EnablePreviewFeatures>
-          <PackageLicenseFile>LICENSE-apache-2.0.txt</PackageLicenseFile>
+          <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Authors>Olivier MARTY</Authors>
+    <Company>Olivier MARTY</Company>
+    <PackageId>omy.Utils.Reflection</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.0</Version>
     <Description>Reflection helpers
         - Dynamic DLL mapping utilities
         - Runtime code generation support</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
+    <None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
       <PackagePath></PackagePath>
       <Pack>True</Pack>
     </None>

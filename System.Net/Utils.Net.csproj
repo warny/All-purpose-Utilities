@@ -2,9 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
+          <EnablePreviewFeatures>True</EnablePreviewFeatures>
     <AssemblyName>Utils.Net</AssemblyName>
     <RootNamespace>Utils</RootNamespace>
+    <Authors>Olivier MARTY</Authors>
+    <Company>Olivier MARTY</Company>
+    <PackageId>omy.Utils.Net</PackageId>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0</Version>
     <Description>Network utilities
         - DNS protocol implementation
         - ICMP helpers and system network info</Description>
