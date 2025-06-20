@@ -11,7 +11,7 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageId>omy.Utils.Geography</PackageId>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Copyright>Olivier MARTY</Copyright>
     <Description>Coordinate utilities
         - Map to polar conversions
@@ -24,13 +24,6 @@
       <PackagePath></PackagePath>
       <Pack>True</Pack>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="PolySharp" Version="1.14.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
