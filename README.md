@@ -73,6 +73,7 @@ Another Windows Forms sample demonstrating the drawing primitives available in `
 Unit test suite using MSTest and SpecFlow covering the utilities and components from the other projects.
 
 ## NuGet packages
+
 All libraries are configured to generate NuGet packages. Pushing changes to the
 `release` branch triggers the **Publish NuGet** workflow. The workflow builds
 the solution, packs only the library projects and publishes the resulting

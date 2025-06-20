@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-          <EnablePreviewFeatures>True</EnablePreviewFeatures>
-          <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <EnablePreviewFeatures>True</EnablePreviewFeatures>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <Description>Windows Forms sample demonstrating the drawing primitives provided by Utils.Imaging. The TestForm class displays lines, curves and text rendered with custom fonts.</Description>
   </PropertyGroup>
