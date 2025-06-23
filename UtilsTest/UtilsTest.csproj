@@ -51,6 +51,7 @@
     <ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
     <ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
     <ProjectReference Include="..\Utils\Utils.csproj" />
+    <ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
   </ItemGroup>
 
   <ItemGroup>

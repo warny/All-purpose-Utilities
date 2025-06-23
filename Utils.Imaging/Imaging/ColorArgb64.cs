@@ -194,15 +194,19 @@ namespace Utils.Imaging
 			);
 		}
 
-		public IColorArgb<ushort> Substract(IColorArgb<ushort> other)
-		{
-			return new ColorArgb64(
-					MathEx.Min(this.Alpha, other.Alpha),
-					MathEx.Min(this.Red, other.Red),
-					MathEx.Min(this.Green, other.Green),
-					MathEx.Min(this.Blue, other.Blue)
-				);
-		}
+                public IColorArgb<ushort> Substract(IColorArgb<ushort> other)
+                {
+                        return new ColorArgb64(
+                                        MathEx.Min(this.Alpha, other.Alpha),
+                                        MathEx.Min(this.Red, other.Red),
+                                        MathEx.Min(this.Green, other.Green),
+                                        MathEx.Min(this.Blue, other.Blue)
+                                );
+                }
+
+                /// <summary>
+                /// Multiplies this color by another color component wise.
+                /// </summary>
 
 		public void Deconstruct(out ushort alpha, out ushort red, out ushort green, out ushort blue)
 		{

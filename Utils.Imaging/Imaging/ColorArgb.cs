@@ -199,15 +199,16 @@ namespace Utils.Imaging
 				);
 		}
 
-		public IColorArgb<double> Substract(IColorArgb<double> other)
-		{
-			return new ColorArgb(
-					MathEx.Min(this.Alpha, other.Alpha),
-					MathEx.Min(this.Red, other.Red),
-					MathEx.Min(this.Green, other.Green),
-					MathEx.Min(this.Blue, other.Blue)
-				);
-		}
+                public IColorArgb<double> Substract(IColorArgb<double> other)
+                {
+                        return new ColorArgb(
+                                        MathEx.Min(this.Alpha, other.Alpha),
+                                        MathEx.Min(this.Red, other.Red),
+                                        MathEx.Min(this.Green, other.Green),
+                                        MathEx.Min(this.Blue, other.Blue)
+                                );
+                }
+
 
 		public void Deconstruct(out double alpha, out double red, out double green, out double blue)
 		{
