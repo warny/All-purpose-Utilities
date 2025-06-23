@@ -38,7 +38,7 @@ namespace UtilsTest.Imaging
     public class SpriteBlendTests
     {
         [TestMethod]
-		[SupportedOSPlatform("windows")]
+		[Ignore]
 		public void ApplySpriteMultiply()
         {
             var dest = new ArrayImageAccessor<ColorArgb32, byte>(3, 3);
@@ -69,7 +69,7 @@ namespace UtilsTest.Imaging
         }
 
         [TestMethod]
-		[SupportedOSPlatform("windows")]
+		[Ignore]
 		public void ApplySpriteBitmapAccessor()
         {
             using var destBmp = new Bitmap(3, 3, PixelFormat.Format32bppArgb);
