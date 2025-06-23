@@ -24,12 +24,12 @@ namespace Utils.Imaging
 		T Green { get; set; }
 		T Blue { get; set; }
 
-		IColorArgb<T> Over(IColorArgb<T> other);
-		IColorArgb<T> Add(IColorArgb<T> other);
-		IColorArgb<T> Substract(IColorArgb<T> other);
-		void Deconstruct(out T alpha, out T red, out T green, out T blue);
-		void Deconstruct(out T red, out T green, out T blue);
-	}
+               IColorArgb<T> Over(IColorArgb<T> other);
+               IColorArgb<T> Add(IColorArgb<T> other);
+               IColorArgb<T> Substract(IColorArgb<T> other);
+               void Deconstruct(out T alpha, out T red, out T green, out T blue);
+               void Deconstruct(out T red, out T green, out T blue);
+       }
 
 	public interface IColorAhsv<T> where T : struct
 	{
