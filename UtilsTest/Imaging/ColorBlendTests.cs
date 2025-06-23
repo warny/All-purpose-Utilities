@@ -61,7 +61,7 @@ namespace UtilsTest.Imaging
         public void MaskDouble()
         {
             ColorArgb mask = new(1, 0.5, 0.2, 1);
-            ColorArgb color = new(1, 1, 1, 1);
+            ColorArgb color = new(1.0, 1.0, 1.0, 1.0);
             var result = ColorBlend.Mask(mask, color);
             Assert.AreEqual(0.5, result.Red, 1e-6);
             Assert.AreEqual(0.2, result.Green, 1e-6);
