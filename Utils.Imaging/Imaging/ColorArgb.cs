@@ -59,10 +59,10 @@ namespace Utils.Imaging
 
 		public ColorArgb( double alpha, double red, double green, double blue )
 		{
-			if (!alpha.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(alpha));
-			if (!red.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(red));
-			if (!green.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(green));
-			if (!blue.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(blue));
+			alpha.ArgMustBeBetween(0.0, 1.0);
+			red.ArgMustBeBetween(0.0, 1.0);
+			green.ArgMustBeBetween(0.0, 1.0);
+			blue.ArgMustBeBetween(0.0, 1.0);
 
 			this.alpha = alpha;
 			this.red = red;
@@ -70,24 +70,9 @@ namespace Utils.Imaging
 			this.blue = blue;
 		}
 
-		public ColorArgb( byte alpha, byte red, byte green, byte blue )
-		{
-			this.alpha = (double)alpha / 255;
-			this.red = (double)red / 255;
-			this.green = (double)green / 255;
-			this.blue = (double)blue / 255;
-		}
+		public ColorArgb(ColorArgb32 color) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
 
-		public ColorArgb( ColorArgb32 color ) : this(color.Alpha, color.Red, color.Green, color.Blue) { }
-
-		public ColorArgb( ushort alpha, ushort red, ushort green, ushort blue )
-		{
-			this.alpha = (double)alpha / 65535;
-			this.red = (double)red / 65535;
-			this.green = (double)green / 65535;
-			this.blue = (double)blue / 65535;
-		}
-		public ColorArgb( ColorArgb64 color ) : this(color.Alpha, color.Red, color.Green, color.Blue) { }
+		public ColorArgb( ColorArgb64 color ) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
 
 		public ColorArgb( ColorAhsv color )
 		{
@@ -146,25 +131,13 @@ namespace Utils.Imaging
 			}
 		}
 
-		public static implicit operator ColorArgb( ColorAhsv color )
-		{
-			return new ColorArgb(color);
-		}
+		public static implicit operator ColorArgb(ColorAhsv color) => new (color);
 
-		public static implicit operator ColorArgb( ColorArgb32 color )
-		{
-			return new ColorArgb(color);
-		}
+		public static implicit operator ColorArgb(ColorArgb32 color) => new (color);
 
-		public static implicit operator ColorArgb( ColorArgb64 color )
-		{
-			return new ColorArgb(color);
-		}
+		public static implicit operator ColorArgb(ColorArgb64 color) => new (color);
 
-		public static implicit operator ColorArgb( System.Drawing.Color color )
-		{
-			return new ColorArgb((double)color.A / 255, (double)color.R / 255, (double) color.G / 255, (double)color.B / 255);
-		}
+		public static implicit operator ColorArgb(System.Drawing.Color color) => new (color.A / 255.0, color.R / 255.0, color.G / 255.0, color.B / 255.0);
 
 		public static ColorArgb Gradient( ColorArgb color1, ColorArgb color2, double percent )
 		{
@@ -177,37 +150,29 @@ namespace Utils.Imaging
 				Math.Sqrt(Math.Pow(color1.blue, 2) * (1-percent) + Math.Pow(color2.blue, 2) * percent)
 			);
 		}
-		public override string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
+		public override readonly string ToString() => $"a:{alpha} R:{red} G:{green} B:{blue}";
 
-		public IColorArgb<double> Over(IColorArgb<double> other)
-		{
-			return new ColorArgb(
-					this.Alpha + (1.0 - this.Alpha) * other.Alpha,
-					this.Red * this.Alpha + (1.0 - this.Alpha) * other.Red,
-					this.Green * this.Alpha + (1.0 - this.Alpha) * other.Green,
-					this.Blue * this.Alpha + (1.0 - this.Alpha) * other.Blue
-				);
-		}
+		public IColorArgb<double> Over(IColorArgb<double> other) => new ColorArgb(
+			this.Alpha + (1.0 - this.Alpha) * other.Alpha,
+			this.Red * this.Alpha + (1.0 - this.Alpha) * other.Red,
+			this.Green * this.Alpha + (1.0 - this.Alpha) * other.Green,
+			this.Blue * this.Alpha + (1.0 - this.Alpha) * other.Blue
+		);
 
-		public IColorArgb<double> Add(IColorArgb<double> other)
-		{
-			return new ColorArgb(
-					MathEx.Min(1.0, this.Alpha + other.Alpha),
-					MathEx.Min(1.0, this.Red + other.Red),
-					MathEx.Min(1.0, this.Green + other.Green),
-					MathEx.Min(1.0, this.Blue + other.Blue)
-				);
-		}
+		public IColorArgb<double> Add(IColorArgb<double> other) => new ColorArgb(
+			MathEx.Min(1.0, this.Alpha + other.Alpha),
+			MathEx.Min(1.0, this.Red + other.Red),
+			MathEx.Min(1.0, this.Green + other.Green),
+			MathEx.Min(1.0, this.Blue + other.Blue)
+		);
 
-		public IColorArgb<double> Substract(IColorArgb<double> other)
-		{
-			return new ColorArgb(
-					MathEx.Min(this.Alpha, other.Alpha),
-					MathEx.Min(this.Red, other.Red),
-					MathEx.Min(this.Green, other.Green),
-					MathEx.Min(this.Blue, other.Blue)
-				);
-		}
+		public IColorArgb<double> Substract(IColorArgb<double> other) => new ColorArgb(
+				MathEx.Min(this.Alpha, other.Alpha),
+				MathEx.Min(this.Red, other.Red),
+				MathEx.Min(this.Green, other.Green),
+				MathEx.Min(this.Blue, other.Blue)
+		);
+
 
 		public void Deconstruct(out double alpha, out double red, out double green, out double blue)
 		{

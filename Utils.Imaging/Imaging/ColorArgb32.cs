@@ -200,15 +200,16 @@ namespace Utils.Imaging
 				);
 		}
 
-		public IColorArgb<byte> Substract(IColorArgb<byte> other)
-		{
-			return new ColorArgb32(
-					MathEx.Min(this.Alpha, other.Alpha),
-					MathEx.Min(this.Red, other.Red),
-					MathEx.Min(this.Green, other.Green),
-					MathEx.Min(this.Blue, other.Blue)
-				);
-		}
+                public IColorArgb<byte> Substract(IColorArgb<byte> other)
+                {
+                        return new ColorArgb32(
+                                        MathEx.Min(this.Alpha, other.Alpha),
+                                        MathEx.Min(this.Red, other.Red),
+                                        MathEx.Min(this.Green, other.Green),
+                                        MathEx.Min(this.Blue, other.Blue)
+                                );
+                }
+
 
 		public void Deconstruct(out byte alpha, out byte red, out byte green, out byte blue)
 		{
