@@ -1,6 +1,8 @@
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 using Utils.Imaging;
 
 namespace UtilsTest.Imaging
@@ -36,7 +38,8 @@ namespace UtilsTest.Imaging
     public class SpriteBlendTests
     {
         [TestMethod]
-        public void ApplySpriteMultiply()
+		[SupportedOSPlatform("windows")]
+		public void ApplySpriteMultiply()
         {
             var dest = new ArrayImageAccessor<ColorArgb32, byte>(3, 3);
             var sprite = new ArrayImageAccessor<ColorArgb32, byte>(2, 2);
@@ -66,7 +69,8 @@ namespace UtilsTest.Imaging
         }
 
         [TestMethod]
-        public void ApplySpriteBitmapAccessor()
+		[SupportedOSPlatform("windows")]
+		public void ApplySpriteBitmapAccessor()
         {
             using var destBmp = new Bitmap(3, 3, PixelFormat.Format32bppArgb);
             using var spriteBmp = new Bitmap(2, 2, PixelFormat.Format32bppArgb);
