@@ -20,21 +20,21 @@ public class FastFourrierTransform
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 
-	private void Separate( ref Complex[] array, int start, int end )
+	private void Separate(Complex[] array, int start, int end)
 	{
-		int n = end-start;
-		Complex[] buffer = new Complex[n/2];  // get temp heap storage
-		for (int i = 0 ; i<n/2 ; i++)    // copy all odd elements to heap storage
-			buffer[i] = array[i*2+1];
-		for (int i = 0 ; i<n/2 ; i++)    // copy all even elements to lower-half of a[]
-			array[i] = array[i*2];
-		for (int i = 0 ; i<n/2 ; i++)    // copy all odd (from heap) to upper-half of a[]
-			array[i+n/2] = buffer[i];
+		int n = end - start;
+		Complex[] buffer = new Complex[n / 2];  // get temp heap storage
+		for (int i = 0; i < n / 2; i++)    // copy all odd elements to heap storage
+			buffer[i] = array[i * 2 + 1];
+		for (int i = 0; i < n / 2; i++)    // copy all even elements to lower-half of a[]
+			array[i] = array[i * 2];
+		for (int i = 0; i < n / 2; i++)    // copy all odd (from heap) to upper-half of a[]
+			array[i + n / 2] = buffer[i];
 	}
 
-	public void Transform( ref Complex[] array )
+	public void Transform(Complex[] array)
 	{
-		Transform(ref array, 0, array.Length);
+		Transform(array, 0, array.Length);
 	}
 
 	// N must be a power-of-2, or bad things will happen.
@@ -44,24 +44,26 @@ public class FastFourrierTransform
 	// Because of Nyquist theorem, N samples means 
 	// only first N/2 FFT results in X[] are the answer.
 	// (upper half of X[] is a reflection with no new information).
-	public void Transform( ref Complex[] array, int start, int end )
+	public void Transform(Complex[] array, int start, int end)
 	{
 		int N = end - start;
-		if (N < 2) {
+		if (N < 2)
+		{
 			return;
 		}
 
-		Separate(ref array, start, end);      // all evens to lower half, all odds to upper half
-		Transform(ref array, start, start + N/2);   // recurse even items
-		Transform(ref array, start + N/2, end);   // recurse odd  items
-												  // combine results of two half recursions
-		for (int k = 0 ; k<N/2 ; k++) {
+		Separate(array, start, end);      // all evens to lower half, all odds to upper half
+		Transform(array, start, start + N / 2);   // recurse even items
+		Transform(array, start + N / 2, end);   // recurse odd  items
+												// combine results of two half recursions
+		for (int k = 0; k < N / 2; k++)
+		{
 			Complex e = array[k];   // even
-			Complex o = array[k+N/2];   // odd
-										// w is the "twiddle-factor"
+			Complex o = array[k + N / 2];   // odd
+											// w is the "twiddle-factor"
 			Complex w = Complex.Exp(new Complex(0, -2 * Math.PI * k / N));
 			array[k] = e + w * o;
-			array[k+N/2] = e - w * o;
+			array[k + N / 2] = e - w * o;
 		}
 	}
 }
