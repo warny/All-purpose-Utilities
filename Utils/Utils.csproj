@@ -86,6 +86,12 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Objects\DateFormulaConfigurations\DateFormulaConfiguration.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
