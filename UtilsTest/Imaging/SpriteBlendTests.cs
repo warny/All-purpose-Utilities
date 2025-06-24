@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.Versioning;
@@ -69,9 +70,13 @@ namespace UtilsTest.Imaging
         }
 
         [TestMethod]
-		[Ignore]
-		public void ApplySpriteBitmapAccessor()
+        [SupportedOSPlatform("windows")]
+        public void ApplySpriteBitmapAccessor()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.Inconclusive("BitmapAccessor is only supported on Windows.");
+            }
             using var destBmp = new Bitmap(3, 3, PixelFormat.Format32bppArgb);
             using var spriteBmp = new Bitmap(2, 2, PixelFormat.Format32bppArgb);
             using var dest = new BitmapAccessor(destBmp);
