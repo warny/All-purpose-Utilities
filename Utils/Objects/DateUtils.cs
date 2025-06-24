@@ -15,8 +15,8 @@ public static class DateUtils
 	/// <param name="dateTime">The reference date.</param>
 	/// <param name="period">The period type to calculate the start date for.</param>
 	/// <returns>The start date of the specified period.</returns>
-	public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period)
-		=> StartOf(dateTime, period, CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek);
+        public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period)
+                => StartOf(dateTime, period, CultureInfo.CurrentCulture);
 
 	/// <summary>
 	/// Gets the start date of the specified period that contains the given date using the provided culture info.
@@ -25,8 +25,8 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the start date for.</param>
 	/// <param name="cultureInfo">The culture info to determine the first day of the week.</param>
 	/// <returns>The start date of the specified period.</returns>
-	public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)
-		=> StartOf(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek);
+        public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)
+                => StartOfInternal(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek, cultureInfo.Calendar);
 
 	/// <summary>
 	/// Gets the start date of the specified period that contains the given date using the provided DateTimeFormatInfo.
@@ -35,8 +35,8 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the start date for.</param>
 	/// <param name="dateTimeFormatInfo">The DateTimeFormatInfo to determine the first day of the week.</param>
 	/// <returns>The start date of the specified period.</returns>
-	public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DateTimeFormatInfo dateTimeFormatInfo)
-		=> StartOf(dateTime, period, dateTimeFormatInfo.FirstDayOfWeek);
+        public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DateTimeFormatInfo dateTimeFormatInfo)
+                => StartOfInternal(dateTime, period, dateTimeFormatInfo.FirstDayOfWeek, dateTimeFormatInfo.Calendar);
 
 	/// <summary>
 	/// Gets the start date of the specified period that contains the given date using the provided first day of the week.
@@ -45,29 +45,42 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the start date for.</param>
 	/// <param name="firstDayOfWeek">The first day of the week.</param>
 	/// <returns>The start date of the specified period.</returns>
-	public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)
-	{
-		switch (period)
-		{
-			case PeriodTypeEnum.None:
-				return dateTime;
-			case PeriodTypeEnum.Day:
-				return dateTime.Date;
-			case PeriodTypeEnum.Week:
-				int difference = (7 + (dateTime.DayOfWeek - firstDayOfWeek)) % 7;
-				return dateTime.Date.AddDays(-difference);
-			case PeriodTypeEnum.Month:
-				return new DateTime(dateTime.Year, dateTime.Month, 1);
-			case PeriodTypeEnum.Quarter:
-				int quarterNumber = (dateTime.Month - 1) / 3 + 1;
-				int startMonth = (quarterNumber - 1) * 3 + 1;
-				return new DateTime(dateTime.Year, startMonth, 1);
-			case PeriodTypeEnum.Year:
-				return new DateTime(dateTime.Year, 1, 1);
-			default:
-				throw new ArgumentOutOfRangeException(nameof(period), period, null);
-		}
-	}
+        public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)
+                => StartOfInternal(dateTime, period, firstDayOfWeek, CultureInfo.CurrentCulture.Calendar);
+
+        /// <summary>
+        /// Calculates the start date of a period using the provided calendar.
+        /// </summary>
+        /// <param name="dateTime">The reference date.</param>
+        /// <param name="period">The period type.</param>
+        /// <param name="firstDayOfWeek">First day of the week.</param>
+        /// <param name="calendar">Calendar used for computations.</param>
+        /// <returns>The start date of the period.</returns>
+        private static DateTime StartOfInternal(DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek, Calendar calendar)
+        {
+                switch (period)
+                {
+                        case PeriodTypeEnum.None:
+                                return dateTime;
+                        case PeriodTypeEnum.Day:
+                                return calendar.AddDays(dateTime, 0).Date;
+                        case PeriodTypeEnum.Week:
+                                int difference = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
+                                DateTime weekDate = calendar.AddDays(dateTime.Date, -difference);
+                                return calendar.AddDays(weekDate, 0).Date;
+                        case PeriodTypeEnum.Month:
+                                return calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
+                        case PeriodTypeEnum.Quarter:
+                                int month = calendar.GetMonth(dateTime);
+                                int quarter = (month - 1) / 3;
+                                int startMonth = quarter * 3 + 1;
+                                return calendar.ToDateTime(calendar.GetYear(dateTime), startMonth, 1, 0, 0, 0, 0);
+                        case PeriodTypeEnum.Year:
+                                return calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
+                        default:
+                                throw new ArgumentOutOfRangeException(nameof(period), period, null);
+                }
+        }
 
 	/// <summary>
 	/// Gets the end date of the specified period that contains the given date.
@@ -75,8 +88,8 @@ public static class DateUtils
 	/// <param name="dateTime">The reference date.</param>
 	/// <param name="period">The period type to calculate the end date for.</param>
 	/// <returns>The end date of the specified period.</returns>
-	public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period)
-		=> EndOf(dateTime, period, CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek);
+        public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period)
+                => EndOf(dateTime, period, CultureInfo.CurrentCulture);
 
 	/// <summary>
 	/// Gets the end date of the specified period that contains the given date using the provided culture info.
@@ -85,8 +98,8 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the end date for.</param>
 	/// <param name="cultureInfo">The culture info to determine the first day of the week.</param>
 	/// <returns>The end date of the specified period.</returns>
-	public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)
-		=> EndOf(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek);
+        public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)
+                => EndOfInternal(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek, cultureInfo.Calendar);
 
 	/// <summary>
 	/// Gets the end date of the specified period that contains the given date using the provided DateTimeFormatInfo.
@@ -95,8 +108,8 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the end date for.</param>
 	/// <param name="dateTimeFormatInfo">The DateTimeFormatInfo to determine the first day of the week.</param>
 	/// <returns>The end date of the specified period.</returns>
-	public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DateTimeFormatInfo dateTimeFormatInfo)
-		=> EndOf(dateTime, period, dateTimeFormatInfo.FirstDayOfWeek);
+        public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DateTimeFormatInfo dateTimeFormatInfo)
+                => EndOfInternal(dateTime, period, dateTimeFormatInfo.FirstDayOfWeek, dateTimeFormatInfo.Calendar);
 
 	/// <summary>
 	/// Gets the end date of the specified period that contains the given date using the provided first day of the week.
@@ -105,35 +118,48 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the end date for.</param>
 	/// <param name="firstDayOfWeek">The first day of the week.</param>
 	/// <returns>The end date of the specified period.</returns>
-	public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)
-	{
-		switch (period)
-		{
-			case PeriodTypeEnum.None:
-				return dateTime;
-			case PeriodTypeEnum.Day:
-				return dateTime.Date.AddDays(1).AddTicks(-1);
-			case PeriodTypeEnum.Week:
-				int difference = (7 - (dateTime.DayOfWeek - firstDayOfWeek)) % 7;
-				return dateTime.Date.AddDays(difference).AddDays(1).AddTicks(-1);
-			case PeriodTypeEnum.Month:
-				DateTime startOfMonth = new DateTime(dateTime.Year, dateTime.Month, 1);
-				DateTime startOfNextMonth = startOfMonth.AddMonths(1);
-				return startOfNextMonth.AddTicks(-1);
-			case PeriodTypeEnum.Quarter:
-				int quarterNumber = (dateTime.Month - 1) / 3 + 1;
-				int endMonth = quarterNumber * 3;
-				DateTime startOfQuarter = new DateTime(dateTime.Year, endMonth, 1);
-				DateTime startOfNextQuarter = startOfQuarter.AddMonths(1);
-				return startOfNextQuarter.AddTicks(-1);
-			case PeriodTypeEnum.Year:
-				DateTime startOfYear = new DateTime(dateTime.Year, 1, 1);
-				DateTime startOfNextYear = startOfYear.AddYears(1);
-				return startOfNextYear.AddTicks(-1);
-			default:
-				throw new ArgumentOutOfRangeException(nameof(period), period, null);
-		}
-	}
+        public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)
+                => EndOfInternal(dateTime, period, firstDayOfWeek, CultureInfo.CurrentCulture.Calendar);
+
+        /// <summary>
+        /// Calculates the end date of a period using the provided calendar.
+        /// </summary>
+        /// <param name="dateTime">The reference date.</param>
+        /// <param name="period">The period type.</param>
+        /// <param name="firstDayOfWeek">First day of the week.</param>
+        /// <param name="calendar">Calendar used for computations.</param>
+        /// <returns>The end date of the period.</returns>
+        private static DateTime EndOfInternal(DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek, Calendar calendar)
+        {
+                switch (period)
+                {
+                        case PeriodTypeEnum.None:
+                                return dateTime;
+                        case PeriodTypeEnum.Day:
+                                return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
+                        case PeriodTypeEnum.Week:
+                                int difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
+                                DateTime endWeek = calendar.AddDays(dateTime.Date, difference);
+                                return calendar.AddDays(endWeek, 1).AddTicks(-1);
+                        case PeriodTypeEnum.Month:
+                                DateTime startOfMonth = calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
+                                DateTime startOfNextMonth = calendar.AddMonths(startOfMonth, 1);
+                                return startOfNextMonth.AddTicks(-1);
+                        case PeriodTypeEnum.Quarter:
+                                int month = calendar.GetMonth(dateTime);
+                                int quarter = (month - 1) / 3 + 1;
+                                int endMonth = quarter * 3;
+                                DateTime startOfQuarter = calendar.ToDateTime(calendar.GetYear(dateTime), endMonth, 1, 0, 0, 0, 0);
+                                DateTime startOfNextQuarter = calendar.AddMonths(startOfQuarter, 1);
+                                return startOfNextQuarter.AddTicks(-1);
+                        case PeriodTypeEnum.Year:
+                                DateTime startOfYear = calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
+                                DateTime startOfNextYear = calendar.AddYears(startOfYear, 1);
+                                return startOfNextYear.AddTicks(-1);
+                        default:
+                                throw new ArgumentOutOfRangeException(nameof(period), period, null);
+                }
+        }
 
 	/// <summary>
 	/// Represents the Unix Epoch date and time (January 1, 1970, UTC).
