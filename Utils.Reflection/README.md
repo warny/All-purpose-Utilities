@@ -9,3 +9,20 @@ It provides abstractions that help split platform-specific logic from high level
 - Support for compiling and emitting C# code at runtime
 - Platform detection helpers and `PropertyOrFieldInfo` wrapper
 - Designed to work together with `Utils.VirtualMachine` for dynamic instruction handling
+
+## Usage example
+
+```csharp
+// Detect the current OS
+if (Utils.Reflection.Platform.IsWindows)
+    Console.WriteLine("Windows detected");
+
+// Map a native method from a DLL
+class KernelApi : Utils.Reflection.LibraryMapper
+{
+    [Utils.Reflection.LibraryMapper.External("GetTickCount")]
+    public Func<uint> GetTickCount = null!;
+}
+using var kernel = Utils.Reflection.LibraryMapper.Create<KernelApi>("kernel32.dll");
+uint ticks = kernel.GetTickCount();
+```

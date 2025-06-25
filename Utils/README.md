@@ -19,3 +19,81 @@ It targets **.NET 8** and is the base dependency for the other utility packages 
 - **XML** – helpers for XML processing
 
 The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
+
+## Usage examples
+
+Short snippets demonstrating typical API usage:
+
+### Arrays
+```csharp
+using Utils.Arrays;
+int[] values = [0, 1, 2, 0];
+int[] trimmed = values.Trim(0); // [1, 2]
+```
+
+### Collections
+```csharp
+var cache = new Utils.Collections.LRUCache<int, string>(2);
+cache.Add(1, "one");
+cache.Add(2, "two");
+cache[1];
+cache.Add(3, "three"); // evicts key 2
+```
+
+### Files
+```csharp
+// Search executables four levels deep under "Program Files"
+foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\\*\\*\\*\\*.exe"))
+{
+    Console.WriteLine(exe);
+}
+```
+
+### Reflection
+```csharp
+var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
+int id = (int)info.GetValue(myObj);
+info.SetValue(myObj, 42);
+```
+
+### Resources
+```csharp
+var res = new Utils.Resources.ExternalResource("Strings");
+string text = (string)res["Welcome"];
+```
+
+### Strings
+```csharp
+using Utils.Objects;
+bool match = "File123.log".Like("File???.log");
+string normalized = "---hello---".Trim(c => c == '-');
+string path = "report".AddPrefix("out_").AddSuffix(".txt");
+string title = "hello world".FirstLetterUpperCase();
+```
+
+### Security
+```csharp
+byte[] key = Convert.FromBase64String("MFRGGZDFMZTWQ2LK");
+var authenticator = Utils.Security.Authenticator.GoogleAuthenticator(key);
+string code = authenticator.ComputeAuthenticator();
+bool ok = authenticator.VerifyAuthenticator(1, code);
+```
+
+### Expressions
+```csharp
+var expression = "(items) => items[0] + items[1]";
+var lambda = Utils.Expressions.ExpressionParser.Parse<Func<string[], string>>(expression);
+Func<string[], string> concat = lambda.Compile();
+string result = concat(new[] { "Hello", "World" });
+```
+
+### XML
+```csharp
+using var reader = XmlReader.Create("items.xml");
+reader.ReadToDescendant("item");
+foreach (var child in reader.ReadChildElements())
+{
+    Console.WriteLine(child.ReadOuterXml());
+}
+```
+

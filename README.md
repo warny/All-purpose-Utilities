@@ -69,8 +69,13 @@ Windows Forms sample application that renders fractals using the imaging library
 ### `DrawTest`
 Another Windows Forms sample demonstrating the drawing primitives available in `Utils.Imaging`.
 
+
 ### `UtilsTest`
 Unit test suite using MSTest and SpecFlow covering the utilities and components from the other projects.
+
+## Usage examples
+
+Each project contains a dedicated README with sample code. Refer to those files for detailed snippets demonstrating typical API usage.
 
 ## NuGet packages
 
@@ -80,6 +85,10 @@ the solution and publishes the library projects only when their version number
 has changed. The script queries NuGet to verify that the package version is not
 already available before packaging and uploading the corresponding `.nupkg`
 file using the `NUGET_API_KEY` secret.
+
+The NuGet package metadata links back to this GitHub repository:
+<https://github.com/warny/All-purpose-Utilities>. French translations of the
+XML documentation are available under `docs/fr`.
 
 ## License
 
