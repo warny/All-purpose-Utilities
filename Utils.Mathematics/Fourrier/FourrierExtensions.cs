@@ -17,7 +17,7 @@ public static class FourrierExtensions
     public static double[] GetFrequencies(this Complex[] transform, double sampleRate)
     {
         int length = transform.Length;
-        double[] frequencies = new double[length / 2];
+        double[] frequencies = new double[length >> 1];
         double step = sampleRate / length;
 
         for (int i = 0; i < frequencies.Length; i++)
