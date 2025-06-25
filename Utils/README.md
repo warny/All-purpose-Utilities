@@ -54,6 +54,16 @@ foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\
 var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
 int id = (int)info.GetValue(myObj);
 info.SetValue(myObj, 42);
+
+// Map a native DLL function
+class KernelApi : Utils.Reflection.LibraryMapper
+{
+    [Utils.Reflection.LibraryMapper.External("GetTickCount")]
+    public Func<uint> GetTickCount = null!;
+}
+var api = Utils.Reflection.LibraryMapper.Create<KernelApi>(
+    Utils.Reflection.Platform.IsWindows ? "kernel32.dll" : "libc.so.6");
+uint ticks = api.GetTickCount();
 ```
 
 ### Resources

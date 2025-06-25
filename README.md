@@ -157,6 +157,16 @@ float glyphWidth = ttf.GetGlyph('A').Width;
 
 // Look up glyph names from the standard table
 string name = Utils.Fonts.FontSupport.GetName(65); // "A"
+
+// Dynamically map native functions
+class KernelApi : Utils.Reflection.LibraryMapper
+{
+    [Utils.Reflection.LibraryMapper.External("GetTickCount")]
+    public Func<uint> GetTickCount = null!;
+}
+var kernel = Utils.Reflection.LibraryMapper.Create<KernelApi>(
+    Utils.Reflection.Platform.IsWindows ? "kernel32.dll" : "libc.so.6");
+uint ticks = kernel.GetTickCount();
 ```
 
 ## NuGet packages
