@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Utils.IO.Serialization;
+using Utils.Objects;
 
 namespace Utils.Fonts.TTF;
 
@@ -62,7 +63,7 @@ public class NameTable : TrueTypeTable
 		public override bool Equals(object obj) => obj is NameRecord nr && Equals(nr);
 
 		/// <inheritdoc/>
-		public override int GetHashCode() => Utils.Objects.ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID, LanguageID, NameID);
+		public override int GetHashCode() => ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID, LanguageID, NameID);
 
 		/// <inheritdoc/>
 		public override string ToString() => $"{PlatformID} - {PlatformSpecificID} - {LanguageID} - {NameID}";

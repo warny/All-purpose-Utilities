@@ -100,7 +100,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
                         throw new ArgumentException("At least three points are required", nameof(points));
 
                 double radius = double.CreateChecked(EquatorialRadius);
-                var deg = Utils.Mathematics.Trigonometry<double>.Degree;
+                var deg = Trigonometry<double>.Degree;
 
                 double total = 0d;
                 for (int i = 0; i < points.Count; i++)

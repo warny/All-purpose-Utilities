@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Utils.Objects;
+using Utils.String;
 
 namespace UtilsTest.Objects
 {

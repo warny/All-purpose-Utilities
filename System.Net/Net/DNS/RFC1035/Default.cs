@@ -49,5 +49,5 @@ public class Default : DNSResponseDetail
 	/// <returns>
 	/// The value of the <see cref="Text"/> property, or an empty string if it is <c>null</c>.
 	/// </returns>
-	public override string ToString() => "[ " + String.Join(" ", Datas.Select(x=>x.ToString("X2"))) + " ]" ?? string.Empty;
+	public override string ToString() => "[ " + string.Join(" ", Datas.Select(x=>x.ToString("X2"))) + " ]" ?? string.Empty;
 }
