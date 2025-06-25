@@ -5,8 +5,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Utils.Expressions;
 using Utils.Expressions.Resolvers;
+using Utils.Objects;
 
-namespace Utils.Objects
+namespace Utils.String
 {
 	/// <summary>
 	/// Provides utilities for creating and managing string formatting operations,
@@ -207,9 +208,7 @@ namespace Utils.Objects
 			{
 				var constructor = resolver.SelectConstructor(constructors, parameterCase);
 				if (constructor is not null)
-				{
 					return Expression.New(constructor.Value.Method, constructor.Value.Parameters);
-				}
 			}
 
 			throw new Exception("No suitable constructor was found");
@@ -228,17 +227,11 @@ namespace Utils.Objects
 			var parametersCases = new List<Expression[]>();
 
 			if (alignment is not null && format is not null)
-			{
 				parametersCases.Add([expression, Expression.Constant(alignment), Expression.Constant(format)]);
-			}
 			if (format is not null)
-			{
 				parametersCases.Add([expression, Expression.Constant(format)]);
-			}
 			if (alignment is not null)
-			{
 				parametersCases.Add([expression, Expression.Constant(alignment)]);
-			}
 			parametersCases.Add([expression]);
 
 			var methods = handlerExpression.Type
@@ -250,9 +243,7 @@ namespace Utils.Objects
 			{
 				var method = resolver.SelectMethod(methods, handlerExpression, null, parametersCase);
 				if (method is not null)
-				{
 					return Expression.Call(handlerExpression, method.Value.Method, method.Value.Parameters);
-				}
 			}
 
 			throw new Exception("No suitable function was found for AppendFormatted");
@@ -289,9 +280,7 @@ namespace Utils.Objects
 		{
 			var delegateParameters = typeof(T).GetMethod("Invoke")?.GetParameters() ?? [];
 			if (names.Length != 0 && names.Length != delegateParameters.Length)
-			{
 				throw new ArgumentException("Invalid number of names", nameof(names));
-			}
 
 			var parameters = delegateParameters
 				.Select((p, i) => Expression.Parameter(p.ParameterType, names.Length > 0 ? names[i] : p.Name))
@@ -357,7 +346,7 @@ namespace Utils.Objects
 			var fieldVariables = new List<ParameterExpression>();
 
 			var fields = new List<(int Index, string Name, Type Type)>();
-			for (int i = 0; i < dataRecord.FieldCount; i++)
+			for (var i = 0; i < dataRecord.FieldCount; i++)
 			{
 				fields.Add((i, dataRecord.GetName(i), dataRecord.GetFieldType(i)));
 			}

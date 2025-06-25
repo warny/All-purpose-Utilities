@@ -6,9 +6,10 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml;
 using Utils.Mathematics;
+using Utils.Objects;
 using Utils.Reflection;
 
-namespace Utils.Objects
+namespace Utils.String
 {
 	/// <summary>
 	/// Provides functionality to convert strings into various types using custom and predefined converters.
@@ -103,9 +104,7 @@ namespace Utils.Objects
 		/// <returns>True if conversion is possible; otherwise, false.</returns>
 		public bool CanConvert(Type from, Type to)
 		{
-			if (from != Types.String) { return false; }
-			if (converters.ContainsKey(to)) { return true; }
-			return CreateConverter(to) != null;
+			if (from != Types.String) return false; 			if (converters.ContainsKey(to)) return true; 			return CreateConverter(to) != null;
 		}
 
 		/// <summary>
@@ -126,10 +125,8 @@ namespace Utils.Objects
 		/// <exception cref="InvalidOperationException">Thrown when conversion is not possible.</exception>
 		public TTo Convert<TFrom, TTo>(TFrom value)
 		{
-			if (!TryConvert(value, typeof(TFrom), typeof(TTo), out object result))
-			{
+			if (!TryConvert(value, typeof(TFrom), typeof(TTo), out var result))
 				throw new InvalidOperationException($"Conversion from \"{value}\" to {typeof(TTo).FullName} is not possible.");
-			}
 			return (TTo)result;
 		}
 
@@ -142,10 +139,8 @@ namespace Utils.Objects
 		/// <exception cref="InvalidOperationException">Thrown when conversion is not possible.</exception>
 		public object Convert(object value, Type to)
 		{
-			if (!TryConvert(value, value.GetType(), to, out object result))
-			{
+			if (!TryConvert(value, value.GetType(), to, out var result))
 				throw new InvalidOperationException($"Conversion from \"{value}\" to {to.FullName} is not possible.");
-			}
 			return result;
 		}
 
@@ -160,12 +155,10 @@ namespace Utils.Objects
 		public bool TryConvert(object value, Type from, Type to, out object result)
 		{
 			result = null;
-			if (from != Types.String) { return false; }
-			if (!converters.TryGetValue(to, out var converter))
+			if (from != Types.String) return false; 			if (!converters.TryGetValue(to, out var converter))
 			{
 				converter = CreateConverter(to);
-				if (converter == null) { return false; }
-			}
+				if (converter == null) return false; 			}
 			try
 			{
 				result = converter.DynamicInvoke(value);
@@ -190,8 +183,7 @@ namespace Utils.Objects
 				?? CreateFromMethod(target)
 				?? CreateFromConstructor(target);
 
-			if (result != null) { converters.Add(target, result); }
-			return result;
+			if (result != null) converters.Add(target, result); 			return result;
 		}
 
 		/// <summary>
@@ -202,15 +194,10 @@ namespace Utils.Objects
 		private Delegate CreateFromNullable(Type target)
 		{
 			if (!target.IsGenericType || target.GetGenericTypeDefinition() != typeof(Nullable<>))
-			{
 				return null;
-			}
 			if (!converters.TryGetValue(target.GetGenericArguments()[0], out var converter))
-			{
 				converter = CreateConverter(target.GetGenericArguments()[0]);
-			}
-			if (converter == null) { return null; }
-			var result = (string value) => string.IsNullOrWhiteSpace(value) ? null : converter.DynamicInvoke(value);
+			if (converter == null) return null; 			var result = (string value) => string.IsNullOrWhiteSpace(value) ? null : converter.DynamicInvoke(value);
 			return result;
 		}
 
@@ -221,10 +208,9 @@ namespace Utils.Objects
 		/// <returns>A delegate that converts strings to the enum, or null if not applicable.</returns>
 		private Delegate CreateFromEnum(Type target)
 		{
-			if (!target.IsEnum) { return null; }
-
+			if (!target.IsEnum) return null; 
 			// Expression tree construction to handle enum conversion.
-			List<Expression> expressions = new List<Expression>();
+			var expressions = new List<Expression>();
 			var separator = defaultFormatProvider.TextInfo.ListSeparator;
 			var underlyingType = Enum.GetUnderlyingType(target);
 			var constZero = Expression.Constant(System.Convert.ChangeType(0, underlyingType), underlyingType);
@@ -248,7 +234,7 @@ namespace Utils.Objects
 			// Populate the dictionary with additional values for each enum field, if provided.
 			foreach (var field in target.GetFields(BindingFlags.Public | BindingFlags.Static))
 			{
-				long key = System.Convert.ToInt64(field.GetValue(null));
+				var key = System.Convert.ToInt64(field.GetValue(null));
 
 				if (!convertions.TryGetValue(key, out var values))
 				{
@@ -262,9 +248,7 @@ namespace Utils.Objects
 					foreach (Attribute attribute in field.GetCustomAttributes(true))
 					{
 						if (enumAdditionalValuesSelectors.TryInvoke(attribute, out var value))
-						{
 							values.Add(value.ToLower());
-						}
 					}
 				}
 			}
@@ -365,9 +349,7 @@ namespace Utils.Objects
 
 			// Filter constructors based on the types of parameters they accept.
 			if (dateTimeStringFormats == null)
-			{
 				constructors = constructors.Where(c => c.Parameters.All(p => p.ParameterType.In(Types.String, typeof(IFormatProvider), typeof(NumberStyles), typeof(DateTimeStyles))));
-			}
 			else
 			{
 				constructors = constructors.Where(c => c.Parameters.All(p => p.ParameterType.In(Types.String, typeof(IFormatProvider), typeof(NumberStyles), typeof(DateTimeStyles)) || p.Name == "formats"));
@@ -375,15 +357,12 @@ namespace Utils.Objects
 
 			var constructor = constructors.OrderByDescending(m => m.Parameters.Length).FirstOrDefault();
 
-			if (constructor == null) { return null; }
-
+			if (constructor == null) return null; 
 			var formatProvider = defaultFormatProvider;
 
 			// Choose the appropriate format provider based on the constructor's parameters.
 			if (constructor.Parameters.Any(p => p.ParameterType == typeof(NumberStyles)))
-			{
 				formatProvider = defaultFormatProvider;
-			}
 			else if (constructor.Parameters.Any(p => p.ParameterType == typeof(DateTimeStyles)))
 			{
 				formatProvider = defaultFormatProvider;
@@ -421,7 +400,7 @@ namespace Utils.Objects
 		/// <returns>A delegate that converts strings using the static method, or null if not applicable.</returns>
 		private Delegate CreateFromMethod(Type target)
 		{
-			var methods = target.GetMethods(System.Reflection.BindingFlags.Static | BindingFlags.Public)
+			var methods = target.GetMethods(BindingFlags.Static | BindingFlags.Public)
 				.Where(m => m.ReturnType == target)
 				.Select(m => new
 				{
@@ -432,24 +411,19 @@ namespace Utils.Objects
 
 			// Filter methods based on the types of parameters they accept.
 			if (dateTimeStringFormats == null)
-			{
 				methods = methods.Where(m => m.Parameters.All(p => p.ParameterType.In(Types.String, typeof(IFormatProvider), typeof(NumberStyles), typeof(DateTimeStyles))));
-			}
 			else
 			{
 				methods = methods.Where(m => m.Parameters.All(p => p.ParameterType.In(Types.String, typeof(IFormatProvider), typeof(NumberStyles), typeof(DateTimeStyles)) || p.Name == "formats"));
 			}
 			var method = methods.OrderByDescending(m => m.Parameters.Length).FirstOrDefault();
 
-			if (method == null) { return null; }
-
+			if (method == null) return null; 
 			var formatProvider = defaultFormatProvider;
 
 			// Choose the appropriate format provider based on the method's parameters.
 			if (method.Parameters.Any(p => p.ParameterType == typeof(NumberStyles)))
-			{
 				formatProvider = defaultFormatProvider;
-			}
 			else if (method.Parameters.Any(p => p.ParameterType == typeof(DateTimeStyles)))
 			{
 				formatProvider = defaultFormatProvider;

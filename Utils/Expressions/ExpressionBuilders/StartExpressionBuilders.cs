@@ -4,8 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
-using Utils.Objects;
 using Utils.Reflection;
+using Utils.String;
 
 namespace Utils.Expressions.ExpressionBuilders
 {

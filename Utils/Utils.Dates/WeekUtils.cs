@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using Utils.Objects;
 
-namespace Utils.Objects;
+namespace Utils.Utils.Dates;
 
 public static class WeekUtils
 {
@@ -119,10 +120,10 @@ public static class WeekUtils
 		weekNumber.ArgMustBeBetween(1, 53);
 
 		// Get the first day of the year.
-		DateTime firstDayOfYear = new DateTime(year, 1, 1);
+		var firstDayOfYear = new DateTime(year, 1, 1);
 
 		// Calculate the offset to the pivot day
-		int pivotOffset = (int)pivotDay - (int)firstDayOfYear.DayOfWeek;
+		var pivotOffset = (int)pivotDay - (int)firstDayOfYear.DayOfWeek;
 
 		// Adjust first day of the year to the nearest pivot day (if necessary)
 		DateTime firstPivotDate = firstDayOfYear.AddDays(pivotOffset > 0 ? pivotOffset : pivotOffset + 7);
@@ -138,9 +139,7 @@ public static class WeekUtils
 
 		// If the calculated end date falls into the next year, adjust it.
 		if (endDate.Year > year)
-		{
 			endDate = new DateTime(year, 12, 31);
-		}
 
 		return new(startDate, endDate);
 	}
@@ -193,27 +192,25 @@ public static class WeekUtils
 	public static Week GetWeekOfYear(this DateTime date, DayOfWeek firstDayOfWeek, DayOfWeek pivotDay = DayOfWeek.Thursday)
 	{
 		// Get the first day of the year
-		DateTime firstDayOfYear = new DateTime(date.Year, 1, 1);
+		var firstDayOfYear = new DateTime(date.Year, 1, 1);
 
 		// Calculate the offset from the first day of the year to the pivot day
-		int pivotOffset = (int)pivotDay - (int)firstDayOfYear.DayOfWeek;
+		var pivotOffset = (int)pivotDay - (int)firstDayOfYear.DayOfWeek;
 		DateTime firstPivotDate = firstDayOfYear.AddDays(pivotOffset >= 0 ? pivotOffset : pivotOffset + 7);
 
 		// Adjust the first pivot date to the correct week start
-		DateTime firstWeekStartDate = firstPivotDate.AddDays(-(int)(firstPivotDate.DayOfWeek - firstDayOfWeek));
+		DateTime firstWeekStartDate = firstPivotDate.AddDays(-(firstPivotDate.DayOfWeek - firstDayOfWeek));
 
 		// Calculate the difference in days between the input date and the start of the first week
-		int daysDifference = (date - firstWeekStartDate).Days;
+		var daysDifference = (date - firstWeekStartDate).Days;
 
 		// Calculate the week number (1-based index)
-		int weekNumber = (daysDifference / 7) + 1;
+		var weekNumber = daysDifference / 7 + 1;
 
 		// If the date falls before the first pivot date (e.g., in the previous year)
 		if (date < firstWeekStartDate)
-		{
 			// Handle dates in the previous year
-			return GetWeekOfYear(date.AddDays(-daysDifference), firstDayOfWeek, pivotDay);
-		}
+			return date.AddDays(-daysDifference).GetWeekOfYear(firstDayOfWeek, pivotDay);
 
 		return new(date.Year, weekNumber);
 	}

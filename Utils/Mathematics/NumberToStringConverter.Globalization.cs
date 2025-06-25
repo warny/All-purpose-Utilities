@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using Utils.Expressions;
-using Utils.Objects;
+using Utils.String;
 
 namespace Utils.Mathematics
 {

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
 
-namespace Utils.Objects;
+namespace Utils.String;
 
 /// <summary>
 /// Compares two strings and returns their differences as a list of changes.
@@ -41,26 +41,26 @@ public class StringDifference : IReadOnlyList<StringChange>
 	{
 		// Allocate a span for storing lengths to avoid excessive memory allocations.
 		Span<int> lengths = stackalloc int[(old.Length + 1) * (@new.Length + 1)];
-		int width = @new.Length + 1;
+		var width = @new.Length + 1;
 
 		// Fill the lengths array using dynamic programming to find the longest common subsequence.
-		for (int i = lengthStart; i < old.Length - lengthEnd; i++)
+		for (var i = lengthStart; i < old.Length - lengthEnd; i++)
 		{
-			for (int j = lengthStart; j < @new.Length - lengthEnd; j++)
+			for (var j = lengthStart; j < @new.Length - lengthEnd; j++)
 			{
 				if (old[i] == @new[j])
-					lengths[(i + 1) * width + (j + 1)] = lengths[i * width + j] + 1;
+					lengths[(i + 1) * width + j + 1] = lengths[i * width + j] + 1;
 				else
-					lengths[(i + 1) * width + (j + 1)] = Math.Max(lengths[(i + 1) * width + j], lengths[i * width + (j + 1)]);
+					lengths[(i + 1) * width + j + 1] = Math.Max(lengths[(i + 1) * width + j], lengths[i * width + j + 1]);
 			}
 		}
 
 		List<StringChange> changes = [];
 		StringComparisonStatus currentStatus = StringComparisonStatus.Unchanged;
-		int previousStatePosition = old.Length - lengthEnd;
+		var previousStatePosition = old.Length - lengthEnd;
 
-		int oldPosition = old.Length - lengthEnd;
-		int newPosition = @new.Length - lengthEnd;
+		var oldPosition = old.Length - lengthEnd;
+		var newPosition = @new.Length - lengthEnd;
 
 		// Trace back through the lengths array to determine the differences.
 		while (oldPosition > lengthStart && newPosition > lengthStart)
@@ -88,9 +88,7 @@ public class StringDifference : IReadOnlyList<StringChange>
 			else
 			{
 				if (old[oldPosition - 1] != @new[newPosition - 1])
-				{
 					throw new InvalidOperationException($"Inconsistency detected in {nameof(Compare)} method.");
-				}
 
 				if (currentStatus != StringComparisonStatus.Unchanged)
 				{
@@ -108,14 +106,10 @@ public class StringDifference : IReadOnlyList<StringChange>
 		AddChange(changes, old, @new, currentStatus, previousStatePosition, oldPosition, newPosition);
 
 		if (newPosition > lengthStart)
-		{
 			AddChange(changes, old, @new, StringComparisonStatus.Added, newPosition, oldPosition, lengthStart);
-		}
 
 		if (oldPosition > lengthStart)
-		{
 			AddChange(changes, old, @new, StringComparisonStatus.Removed, oldPosition, lengthStart, oldPosition);
-		}
 
 		// Reverse the changes to present them in the correct order.
 		changes.Reverse();
@@ -136,9 +130,7 @@ public class StringDifference : IReadOnlyList<StringChange>
 	{
 		var change = currentStatus == StringComparisonStatus.Added ? @new[newPosition..previousStatePosition] : old[oldPosition..previousStatePosition];
 		if (change.Length > 0)
-		{
 			changes.Add(new StringChange(currentStatus, change.ToString()));
-		}
 	}
 
 	// Indexer to access a specific change by its index.

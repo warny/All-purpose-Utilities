@@ -5,8 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Collections;
+using Utils.Objects;
+using Utils.String;
 
-namespace Utils.Objects
+namespace Utils.String
 {
 	/// <summary>
 	/// Provides extension methods for string manipulation, trimming, prefix/suffix removal, 
@@ -34,7 +36,7 @@ namespace Utils.Objects
 		{
 			value.Arg().MustNotBeNull();
 			pattern.Arg().MustNotBeNull();
-			return Like(value.AsSpan(), pattern, ignoreCase, textInfo);
+			return value.AsSpan().Like(pattern, ignoreCase, textInfo);
 		}
 
 		/// <summary>
@@ -52,7 +54,7 @@ namespace Utils.Objects
 		{
 			pattern.Arg().MustNotBeNull();
 			cultureInfo ??= CultureInfo.CurrentCulture;
-			return Like(value, pattern, ignoreCase, cultureInfo.TextInfo);
+			return value.Like(pattern, ignoreCase, cultureInfo.TextInfo);
 		}
 
 		/// <summary>
@@ -79,9 +81,7 @@ namespace Utils.Objects
 			while (valueIndex < value.Length && wildcardIndex < pattern.Length && pattern[wildcardIndex] != '*')
 			{
 				if (pattern[wildcardIndex] != '?' && !equals(value[valueIndex], pattern[wildcardIndex]))
-				{
 					return false;
-				}
 				wildcardIndex++;
 				valueIndex++;
 			}
@@ -93,9 +93,7 @@ namespace Utils.Objects
 					wildcardNext = wildcardIndex;
 					wildcardIndex++;
 					if (wildcardIndex >= pattern.Length)
-					{
 						return true; // A trailing '*' matches everything.
-					}
 					valueNext += 1;
 				}
 				else if (pattern[wildcardIndex] == '?' || equals(value[valueIndex], pattern[wildcardIndex]))
@@ -103,9 +101,7 @@ namespace Utils.Objects
 					wildcardIndex++;
 					valueIndex++;
 					if (wildcardIndex >= pattern.Length && valueIndex < value.Length && pattern[wildcardNext] == '*')
-					{
 						wildcardIndex = wildcardNext + 1;
-					}
 				}
 				else
 				{
@@ -314,7 +310,7 @@ namespace Utils.Objects
 		/// Retrieves a substring from the beginning (first character) of this instance, of the specified length.
 		/// </summary>
 		public static string Left(this string s, int length)
-			=> Mid(s, 0, length);
+			=> s.Mid(0, length);
 
 		#endregion
 
@@ -326,9 +322,7 @@ namespace Utils.Objects
 		public static string FirstLetterUpperCase(this string text, bool endToLowerCase = false)
 		{
 			if (text.IsNullOrEmpty())
-			{
 				return text;
-			}
 			return text.Mid(0, 1).ToUpper()
 				+ (endToLowerCase ? text.Mid(1).ToLower() : text.Mid(1));
 		}
@@ -401,7 +395,7 @@ namespace Utils.Objects
 			format ??= CultureInfo.CurrentCulture.NumberFormat;
 			if (text.IsNullOrWhiteSpace()) return false;
 
-			char[] digits = format.NativeDigits.Select(d => d[0]).ToArray();
+			var digits = format.NativeDigits.Select(d => d[0]).ToArray();
 			text = text.Trim();
 
 			if (text[0] != format.NegativeSign[0]
@@ -409,8 +403,8 @@ namespace Utils.Objects
 				&& text[0] != format.NumberDecimalSeparator[0])
 				return false;
 
-			bool decimalSeparated = (text[0] == format.NumberDecimalSeparator[0]);
-			for (int i = 1; i < text.Length; i++)
+			var decimalSeparated = text[0] == format.NumberDecimalSeparator[0];
+			for (var i = 1; i < text.Length; i++)
 			{
 				if (!decimalSeparated && text[i] == format.NumberDecimalSeparator[0])
 				{
@@ -427,7 +421,7 @@ namespace Utils.Objects
 		/// Checks if the string represents a number based on the specified <see cref="CultureInfo"/>.
 		/// </summary>
 		public static bool IsNumber(this string text, CultureInfo culture)
-			=> IsNumber(text, culture.NumberFormat);
+			=> text.IsNumber(culture.NumberFormat);
 
 		#endregion
 
@@ -442,13 +436,11 @@ namespace Utils.Objects
 			keepFunction.Arg().MustNotBeNull();
 			if (s is null) return null;
 
-			StringBuilder result = new StringBuilder(s.Length);
+			var result = new StringBuilder(s.Length);
 			foreach (var c in s)
 			{
 				if (keepFunction(c))
-				{
 					result.Append(c);
-				}
 				else if (replacement.HasValue)
 				{
 					result.Append(replacement.Value);
@@ -508,7 +500,7 @@ namespace Utils.Objects
 				return new string(' ', length - s.Length) + s;
 
 			// length < 0
-			return s + new string(' ', (0 - length) - s.Length);
+			return s + new string(' ', 0 - length - s.Length);
 		}
 		#endregion
 	}

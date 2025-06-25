@@ -10,6 +10,7 @@ using Utils.Arrays;
 using Utils.Collections;
 using Utils.Mathematics;
 using Utils.Objects;
+using Utils.String;
 
 namespace UtilsTest.Objects
 {

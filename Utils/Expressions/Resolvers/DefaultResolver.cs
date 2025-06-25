@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
-using Utils.Objects;
+using Utils.String;
 
 namespace Utils.Expressions.Resolvers;
 

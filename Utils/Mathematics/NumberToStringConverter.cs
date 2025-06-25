@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Objects;
+using Utils.String;
 
 namespace Utils.Mathematics
 {

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Utils.Objects;
 
-namespace Utils.Objects;
+namespace Utils.Utils.Dates;
 
 /// <summary>
 /// Provides utility methods for date and time calculations and manipulations.
@@ -16,7 +17,7 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the start date for.</param>
 	/// <returns>The start date of the specified period.</returns>
         public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period)
-                => StartOf(dateTime, period, CultureInfo.CurrentCulture);
+                => dateTime.StartOf(period, CultureInfo.CurrentCulture);
 
 	/// <summary>
 	/// Gets the start date of the specified period that contains the given date using the provided culture info.
@@ -65,15 +66,15 @@ public static class DateUtils
                         case PeriodTypeEnum.Day:
                                 return calendar.AddDays(dateTime, 0).Date;
                         case PeriodTypeEnum.Week:
-                                int difference = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
+                                var difference = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
                                 DateTime weekDate = calendar.AddDays(dateTime.Date, -difference);
                                 return calendar.AddDays(weekDate, 0).Date;
                         case PeriodTypeEnum.Month:
                                 return calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
                         case PeriodTypeEnum.Quarter:
-                                int month = calendar.GetMonth(dateTime);
-                                int quarter = (month - 1) / 3;
-                                int startMonth = quarter * 3 + 1;
+                                var month = calendar.GetMonth(dateTime);
+                                var quarter = (month - 1) / 3;
+                                var startMonth = quarter * 3 + 1;
                                 return calendar.ToDateTime(calendar.GetYear(dateTime), startMonth, 1, 0, 0, 0, 0);
                         case PeriodTypeEnum.Year:
                                 return calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
@@ -89,7 +90,7 @@ public static class DateUtils
 	/// <param name="period">The period type to calculate the end date for.</param>
 	/// <returns>The end date of the specified period.</returns>
         public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period)
-                => EndOf(dateTime, period, CultureInfo.CurrentCulture);
+                => dateTime.EndOf(period, CultureInfo.CurrentCulture);
 
 	/// <summary>
 	/// Gets the end date of the specified period that contains the given date using the provided culture info.
@@ -138,22 +139,22 @@ public static class DateUtils
                         case PeriodTypeEnum.Day:
                                 return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
                         case PeriodTypeEnum.Week:
-                                int difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
+                                var difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
                                 DateTime endWeek = calendar.AddDays(dateTime.Date, difference);
                                 return calendar.AddDays(endWeek, 1).AddTicks(-1);
                         case PeriodTypeEnum.Month:
-                                DateTime startOfMonth = calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
+                                var startOfMonth = calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
                                 DateTime startOfNextMonth = calendar.AddMonths(startOfMonth, 1);
                                 return startOfNextMonth.AddTicks(-1);
                         case PeriodTypeEnum.Quarter:
-                                int month = calendar.GetMonth(dateTime);
-                                int quarter = (month - 1) / 3 + 1;
-                                int endMonth = quarter * 3;
-                                DateTime startOfQuarter = calendar.ToDateTime(calendar.GetYear(dateTime), endMonth, 1, 0, 0, 0, 0);
+                                var month = calendar.GetMonth(dateTime);
+                                var quarter = (month - 1) / 3 + 1;
+                                var endMonth = quarter * 3;
+                                var startOfQuarter = calendar.ToDateTime(calendar.GetYear(dateTime), endMonth, 1, 0, 0, 0, 0);
                                 DateTime startOfNextQuarter = calendar.AddMonths(startOfQuarter, 1);
                                 return startOfNextQuarter.AddTicks(-1);
                         case PeriodTypeEnum.Year:
-                                DateTime startOfYear = calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
+                                var startOfYear = calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
                                 DateTime startOfNextYear = calendar.AddYears(startOfYear, 1);
                                 return startOfNextYear.AddTicks(-1);
                         default:
@@ -192,33 +193,33 @@ public static class DateUtils
 		year.ArgMustBeGreaterThan(0);
 
 		//calcul du cycle de méton
-		int metonCycle = year % 19;
+		var metonCycle = year % 19;
 
 		//calcul du siècle et du rang de l'année dans le siècle
-		int century = year / 100;
-		int yearRank = year % 100;
+		var century = year / 100;
+		var yearRank = year % 100;
 		//calcul siècle bissextile
-		int century_s = century / 4;
-		int century_t = century % 4;
+		var century_s = century / 4;
+		var century_t = century % 4;
 		//calcul année bissextile
-		int leapYear_b = yearRank / 4;
-		int leapYear_d = yearRank % 4;
+		var leapYear_b = yearRank / 4;
+		var leapYear_d = yearRank % 4;
 
 		//calcul du cycle de proemptose
-		int proemptoseCycle = (century + 8) / 25;
-		int proemptose = (century - proemptoseCycle + 1) / 3;
+		var proemptoseCycle = (century + 8) / 25;
+		var proemptose = (century - proemptoseCycle + 1) / 3;
 
 		//calcul épacte
-		int epacte = (19 * metonCycle + century - century_s - proemptose + 15) % 30;
+		var epacte = (19 * metonCycle + century - century_s - proemptose + 15) % 30;
 
 
 		//calcul lettre dominicale
-		int sundayLetter = (2 * century_t + 2 * leapYear_b - epacte - leapYear_d + 32) % 7;
+		var sundayLetter = (2 * century_t + 2 * leapYear_b - epacte - leapYear_d + 32) % 7;
 
 		//correction
-		int correction = (metonCycle + 11 * epacte + 22 * sundayLetter) / 451;
+		var correction = (metonCycle + 11 * epacte + 22 * sundayLetter) / 451;
 
-		int easterDate = (epacte + sundayLetter - 7 * correction + 114);
+		var easterDate = epacte + sundayLetter - 7 * correction + 114;
 
 		//calcul de la date de pâque
 		return new DateTime(year, easterDate / 31, 1).AddDays(easterDate % 31);
@@ -235,7 +236,7 @@ public static class DateUtils
 		if (startYear > endYear)
 			throw new ArgumentException("Start year must be less than or equal to end year.");
 
-		for (int year = startYear; year <= endYear; year++)
+		for (var year = startYear; year <= endYear; year++)
 		{
 			yield return ComputeEaster(year);
 		}

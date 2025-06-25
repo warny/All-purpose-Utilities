@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Utils.Objects;
+using Utils.String;
 
 namespace UtilsTest.Objects
 {

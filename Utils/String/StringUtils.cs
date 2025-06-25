@@ -1,8 +1,9 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Expressions;
+using Utils.Objects;
 
-namespace Utils.Objects;
+namespace Utils.String;
 
 public static class StringUtils
 {
@@ -30,15 +31,13 @@ public static class StringUtils
 	public static string TrimBrackets(string str, params Brackets[] brackets)
 	{
 		if (brackets.IsNullOrEmptyCollection())
-		{
 			brackets = Brackets.All;
-		}
 		if (str.IsNullOrWhiteSpace()) return "";
 
 		int start = 0, end = str.Length - 1;
 		while (str[end] == ' ') end--;
 
-		for (int i = 0; i < str.Length; i++)
+		for (var i = 0; i < str.Length; i++)
 		{
 			var c = str[i];
 			if (c == ' ')
@@ -67,13 +66,11 @@ public static class StringUtils
 	/// <returns></returns>
 	public static string ToPlural(this string str, long number)
 	{
-		Regex regex = new Regex(@"\((?<singular>\w+)\|(?<plural>\w+)\)|\((?<plural>\w+)\)");
+		var regex = new Regex(@"\((?<singular>\w+)\|(?<plural>\w+)\)|\((?<plural>\w+)\)");
 		return regex.Replace(str, m =>
 		{
 			if (number.Between(-1, 1))
-			{
 				return m.Groups["singular"]?.Value ?? "";
-			}
 			else
 			{
 				return m.Groups["plural"].Value;
@@ -92,10 +89,10 @@ public static class StringUtils
 		const int normal = 0;
 		const int instring = 1;
 
-		List<string> result = new List<string>();
+		var result = new List<string>();
 		var lastindex = 0;
-		int state = normal;
-		for (int i = 0; i < line.Length; i++)
+		var state = normal;
+		for (var i = 0; i < line.Length; i++)
 		{
 			var c = line[i];
 			switch (state)
@@ -144,9 +141,7 @@ public static class StringUtils
 	private static string TrimQuotes(string str)
 	{
 		if (str.Length>=2 &&  str[0] == '\"' && str[^1] == '\"')
-		{
 			return str[1..^1].Replace("\"\"", "\"");
-		}
 		return str;
 	}
 
@@ -157,28 +152,26 @@ public static class StringUtils
 	/// <returns>Chaîne où les caractères spéciaux sont echappés</returns>
 	public static string EscapeForRegex(string str)
 	{
-		StringBuilder result = new StringBuilder(str.Length * 2);
+		var result = new StringBuilder(str.Length * 2);
 		foreach (var c in str)
 		{
 			if (!char.IsLetter(c) && !char.IsDigit(c))
-			{
 				result.Append('\\');
-			}
 			result.Append(c);
 		}
 		return result.ToString();
 	}
 
 	public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, params Parenthesis[] depthMarkerChars)
-			=> SplitCommaSeparatedList(commaSeparatedValues, commaChar, false, depthMarkerChars);
+			=> commaSeparatedValues.SplitCommaSeparatedList(commaChar, false, depthMarkerChars);
 
 	public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, bool removeEmptyEntries, params Parenthesis[] depthMarkerChars)
 	{
 		var lastTypeIndex = 0;
 		var depth = new Stack<Parenthesis>();
-		for (int i = 0; i < commaSeparatedValues.Length; i++)
+		for (var i = 0; i < commaSeparatedValues.Length; i++)
 		{
-			char current = commaSeparatedValues[i];
+			var current = commaSeparatedValues[i];
 			Parenthesis m;
 			if ((m = depthMarkerChars.FirstOrDefault(m => m.Start[0] == current)) != null)
 			{

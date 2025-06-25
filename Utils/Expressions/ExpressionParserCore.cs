@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using Utils.Objects;
+using Utils.String;
 
 namespace Utils.Expressions
 {

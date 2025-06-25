@@ -2,8 +2,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
+using Utils.Objects;
 
-namespace Utils.Objects;
+namespace Utils.Utils.Dates;
 /// <summary>
 /// Represents a specific week in a given year.
 /// </summary>
@@ -94,7 +95,7 @@ public struct Week :
 	/// </returns>
 	public int CompareTo(Week other)
 	{
-		int yearComparison = Year.CompareTo(other.Year);
+		var yearComparison = Year.CompareTo(other.Year);
 		if (yearComparison != 0)
 			return yearComparison;
 
