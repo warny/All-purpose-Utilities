@@ -54,16 +54,6 @@ foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\
 var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
 int id = (int)info.GetValue(myObj);
 info.SetValue(myObj, 42);
-
-// Map a native DLL function
-class KernelApi : Utils.Reflection.LibraryMapper
-{
-    [Utils.Reflection.LibraryMapper.External("GetTickCount")]
-    public Func<uint> GetTickCount = null!;
-}
-var api = Utils.Reflection.LibraryMapper.Create<KernelApi>(
-    Utils.Reflection.Platform.IsWindows ? "kernel32.dll" : "libc.so.6");
-uint ticks = api.GetTickCount();
 ```
 
 ### Resources
@@ -81,20 +71,12 @@ string path = "report".AddPrefix("out_").AddSuffix(".txt");
 string title = "hello world".FirstLetterUpperCase();
 ```
 
-### Streams
+### Security
 ```csharp
-using var fs = File.OpenRead("data.bin");
-byte[] header = fs.ReadBytes(16);
-using var slice = new Utils.IO.PartialStream(fs, 16, 32);
-byte[] chunk = slice.ReadBytes((int)slice.Length);
-using var a = new MemoryStream();
-using var b = new MemoryStream();
-using var copier = new Utils.IO.StreamCopier(a, b);
-copier.Write(chunk, 0, chunk.Length);
-using var target = new MemoryStream();
-using var validator = new Utils.IO.StreamValidator(target);
-validator.Write(chunk, 0, chunk.Length);
-validator.Validate();
+byte[] key = Convert.FromBase64String("MFRGGZDFMZTWQ2LK");
+var authenticator = Utils.Security.Authenticator.GoogleAuthenticator(key);
+string code = authenticator.ComputeAuthenticator();
+bool ok = authenticator.VerifyAuthenticator(1, code);
 ```
 
 ### Expressions
@@ -105,22 +87,6 @@ Func<string[], string> concat = lambda.Compile();
 string result = concat(new[] { "Hello", "World" });
 ```
 
-### Mathematics
-```csharp
-double rounded = Utils.Mathematics.MathEx.Round(1.26, 0.5); // 1.5
-int[] pascal = Utils.Mathematics.MathEx.ComputePascalTriangleLine(4); // [1,4,6,4,1]
-var vector = new Utils.Mathematics.LinearAlgebra.Vector<double>([1, 2]);
-var identity = Utils.Mathematics.LinearAlgebra.Matrix<double>.Identity(2);
-var result = identity * vector; // [1, 2]
-Complex[] data = [1, 1, 0, 0];
-var fft = new Utils.Mathematics.Fourrier.FastFourrierTransform();
-fft.Transform(data);
-Expression<Func<double, double>> func = x => x * x;
-var derivative = (Expression<Func<double, double>>)func.Derivate();
-var integrator = new Utils.Mathematics.Expressions.ExpressionIntegration("x");
-var simplifier = new Utils.Mathematics.Expressions.ExpressionSimplifier();
-var integral = (Expression<Func<double, double>>)simplifier.Simplify(integrator.Integrate(func));
-```
 ### XML
 ```csharp
 using var reader = XmlReader.Create("items.xml");
@@ -131,42 +97,3 @@ foreach (var child in reader.ReadChildElements())
 }
 ```
 
-### Net
-```csharp
-var lookup = new Utils.Net.DNSLookup();
-Utils.Net.DNS.DNSHeader result = lookup.Request("A", "example.com");
-var ip = ((Utils.Net.DNS.RFC1035.Address)result.Responses[0].RData).IPAddress;
-
-var packet = new Utils.Net.Icmp.IcmpPacket
-{
-    PacketType = Utils.Net.Icmp.IcmpPacketType.IcmpV4EchoRequest
-};
-packet.CreateRandomPayload(8);
-byte[] bytes = packet.ToBytes();
-var parsed = Utils.Net.Icmp.IcmpPacket.ReadPacket(bytes);
-```
-
-### Geography
-```csharp
-var projection = new Utils.Geography.Projections.MercatorProjection<double>();
-var paris = new Utils.Geography.Model.GeoPoint<double>(48.8566, 2.3522);
-var mapPoint = projection.GeoPointToMapPoint(paris);
-var newYork = new Utils.Geography.Model.GeoPoint<double>(40.7128, -74.0060);
-double dist = Utils.Geography.Model.Planets<double>.Earth.Distance(paris, newYork);
-var vector = new Utils.Geography.Model.GeoVector<double>(paris, 90);
-var travelled = Utils.Geography.Model.Planets<double>.Earth.Travel(vector, 1000);
-var lambert = Utils.Geography.Projections.Projections<double>.Lambert;
-var planar = lambert.GeoPointToMapPoint(paris);
-```
-
-### Fonts
-```csharp
-// Parse a TrueType font
-byte[] bytes = File.ReadAllBytes("arial.ttf");
-var font = Utils.Fonts.TTF.TrueTypeFont.ParseFont(bytes);
-var glyph = font.GetGlyph('A');
-float width = glyph.Width;
-
-// Retrieve glyph name from encoding table
-string glyphName = Utils.Fonts.FontSupport.GetName(65); // "A"
-```
