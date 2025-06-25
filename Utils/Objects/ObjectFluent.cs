@@ -136,7 +136,7 @@ public static class FluentExtensions
 	/// </summary>
 	/// <param name="value">The fluent result containing the string.</param>
 	/// <returns>A new <see cref="FluentResult{T}"/> with the string converted to null if it was null or empty.</returns>
-	public static FluentResult<string> NullOrEmptyIsNull(this FluentResult<string> value)
+	public static FluentResult<string> NullOrEmptyToNull(this FluentResult<string> value)
 		=> new(value.Value.IsNullOrEmpty() ? null : value.Value, value.Result);
 
 	/// <summary>
@@ -151,7 +151,7 @@ public static class FluentExtensions
 	/// </summary>
 	/// <param name="value">The fluent result containing the string.</param>
 	/// <returns>A new <see cref="FluentResult{T}"/> with the string converted to null if it was null or whitespace-only.</returns>
-	public static FluentResult<string> NullOrWhiteSpaceIsNull(this FluentResult<string> value)
+	public static FluentResult<string> NullOrWhiteSpaceToNull(this FluentResult<string> value)
 		=> new(value.Value.IsNullOrWhiteSpace() ? null : value.Value, value.Result);
 }
 

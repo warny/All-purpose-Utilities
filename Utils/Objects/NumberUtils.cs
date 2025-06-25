@@ -113,12 +113,17 @@ public static class NumberUtils
 		// If both are integral, attempt integer-based comparison first
 		if (IsIntegralType(left) && IsIntegralType(right))
 		{
+			if (left is BigInteger || right is BigInteger)
+			{
+				BigInteger lVal = left is BigInteger ? (BigInteger)left : (BigInteger)Convert.ChangeType(left, typeof(BigInteger));
+				BigInteger rVal = right is BigInteger ? (BigInteger)right : (BigInteger)Convert.ChangeType(right, typeof(BigInteger));
+				return lVal.Equals(rVal);
+			}
 			try
 			{
 				long lVal = Convert.ToInt64(left, CultureInfo.InvariantCulture);
 				long rVal = Convert.ToInt64(right, CultureInfo.InvariantCulture);
-				result = lVal.CompareTo(rVal);
-				return true;
+				return lVal.Equals(rVal);
 			}
 			catch
 			{
