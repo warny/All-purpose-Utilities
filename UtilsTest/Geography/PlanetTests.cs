@@ -82,9 +82,9 @@ namespace UtilsTest.Geography
 		}
 
 		[TestMethod]
-		public void TestVector()
-		{
-			var earth = Planets<double>.Earth;
+        public void TestVector()
+        {
+                var earth = Planets<double>.Earth;
 			var paris = new GeoPoint<double>("N48°51',E2°21'");
 			var newyork = new GeoPoint<double>("N40°43',W74°00'");
 
@@ -97,7 +97,24 @@ namespace UtilsTest.Geography
 
 			var vector2 = new GeoVector<double>(baghdad, osaka);
 			Assert.AreEqual(60.1, vector2.Bearing, 0.1);
-			Assert.AreEqual(osaka, new GeoPoint<double>(earth.Travel(vector2, earth.Distance(baghdad, osaka))));
-		}
+                Assert.AreEqual(osaka, new GeoPoint<double>(earth.Travel(vector2, earth.Distance(baghdad, osaka))));
+        }
+
+        [TestMethod]
+        public void PolygonAreaReturnsExpectedValue()
+        {
+                var earth = Planets<double>.Earth;
+                var polygon = new List<GeoPoint<double>>
+                {
+                        new(0, 0),
+                        new(0, 1),
+                        new(1, 1),
+                        new(1, 0)
+                };
+
+                double area = earth.Area(polygon);
+                double expected = 12391399902.071106; // computed separately
+                Assert.AreEqual(expected, area, expected * 1e-6);
+        }
 	}
 }

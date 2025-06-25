@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../LICENSE-apache-2.0.txt">

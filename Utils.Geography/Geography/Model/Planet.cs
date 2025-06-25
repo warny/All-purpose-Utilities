@@ -79,10 +79,48 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 	/// <param name="geoVector">The starting vector.</param>
 	/// <param name="distance">The distance to travel in meters.</param>
 	/// <returns>A new <see cref="GeoVector{T}"/> representing the destination point.</returns>
-	public GeoVector<T> Travel(GeoVector<T> geoVector, T distance)
-	{
-		return geoVector.Travel(degree.FromRadian(distance / EquatorialRadius));
-	}
+        public GeoVector<T> Travel(GeoVector<T> geoVector, T distance)
+        {
+                return geoVector.Travel(degree.FromRadian(distance / EquatorialRadius));
+        }
+
+        /// <summary>
+        /// Calculates the surface area of a spherical polygon defined by a list of geographic points.
+        /// </summary>
+        /// <param name="points">The polygon vertices in order. The first and last point need not be equal.</param>
+        /// <returns>The area of the polygon in square meters.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="points"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when fewer than three points are supplied.</exception>
+        public T Area(IReadOnlyList<GeoPoint<T>> points)
+        {
+                ArgumentNullException.ThrowIfNull(points);
+                if (points.Count < 3)
+                        throw new ArgumentException("At least three points are required", nameof(points));
+
+                double radius = double.CreateChecked(EquatorialRadius);
+                var deg = Utils.Mathematics.Trigonometry<double>.Degree;
+
+                double total = 0d;
+                for (int i = 0; i < points.Count; i++)
+                {
+                        var a = points[i];
+                        var b = points[(i + 1) % points.Count];
+
+                        double lon1 = deg.ToRadian(double.CreateChecked(a.Longitude));
+                        double lon2 = deg.ToRadian(double.CreateChecked(b.Longitude));
+                        double lat1 = deg.ToRadian(double.CreateChecked(a.Latitude));
+                        double lat2 = deg.ToRadian(double.CreateChecked(b.Latitude));
+
+                        double dLon = lon2 - lon1;
+                        if (dLon < -Math.PI) dLon += Math.Tau;
+                        if (dLon > Math.PI) dLon -= Math.Tau;
+
+                        total += dLon * (Math.Sin(lat1) + Math.Sin(lat2));
+                }
+
+                double area = Math.Abs(total) * radius * radius / 2d;
+                return T.CreateChecked(area);
+        }
 }
 
 /// <summary>

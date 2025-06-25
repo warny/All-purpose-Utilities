@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Utils</name>
+  </assembly>
+  <members>
+    <member name="T:Utils.Security.Authenticator">
+      <summary>Fournit un moyen de générer et de vérifier des mots de passe à usage unique basés sur le temps (TOTP).</summary>
+    </member>
+    <member name="M:Utils.Security.Authenticator.ComputeAuthenticator">
+      <summary>Calcule le code d'authentification en utilisant l'horodatage courant.</summary>
+      <returns>Le mot de passe à usage unique courant.</returns>
+    </member>
+  </members>
+</doc>
