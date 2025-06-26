@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Collections.Generic;
 using Utils.Objects;
 
 namespace Utils.Dates;
@@ -21,6 +22,33 @@ public static class DateFormula
                 var json = File.ReadAllText(path);
                 return new JsonDateFormulaLanguageProvider(json);
         });
+
+        /// <summary>Cache for compiled formulas.</summary>
+        private static readonly Dictionary<FormulaCacheKey, Func<DateTime, DateTime>> _cache = new();
+
+        /// <summary>Represents a unique key for the formula cache.</summary>
+        private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, string Formula);
+
+        /// <summary>
+        /// Retrieves a compiled formula from the cache or compiles it if missing.
+        /// </summary>
+        /// <param name="formula">Formula to compile.</param>
+        /// <param name="provider">Language provider.</param>
+        /// <param name="culture">Culture used for token interpretation.</param>
+        /// <returns>A delegate computing the date from a base value.</returns>
+        private static Func<DateTime, DateTime> GetCompiledFormula(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture)
+        {
+                var key = new FormulaCacheKey(provider, culture.Name, formula);
+                lock (_cache)
+                {
+                        if (!_cache.TryGetValue(key, out var compiled))
+                        {
+                                compiled = Compile(formula, provider, culture);
+                                _cache[key] = compiled;
+                        }
+                        return compiled;
+                }
+        }
 
         /// <summary>
         /// Calculates the date described by <paramref name="formula"/>.
@@ -43,51 +71,8 @@ public static class DateFormula
         public static DateTime Calculate(this DateTime date, string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null)
         {
                 culture ??= CultureInfo.CurrentCulture;
-                var lang = provider.GetLanguage(culture);
-
-                if (formula.Length < 2)
-                        throw new ArgumentException("Formula is too short.", nameof(formula));
-
-                var start = formula[0] == lang.Start;
-                var end = formula[0] == lang.End;
-                if (!start && !end)
-                        throw new ArgumentException("Invalid formula start token.", nameof(formula));
-
-                var period = ParsePeriod(formula[1], lang);
-                DateTime result = start ? date.StartOf(period, culture) : date.EndOf(period, culture);
-
-                var index = 2;
-                // numeric adjustments
-                while (index < formula.Length && (formula[index] == '+' || formula[index] == '-'))
-                {
-                        var sign = formula[index];
-                        var pos = index + 1;
-                        if (pos < formula.Length && char.IsDigit(formula[pos]))
-                        {
-                                var startPos = pos;
-                                while (pos < formula.Length && char.IsDigit(formula[pos])) pos++;
-                                var value = int.Parse(formula[startPos..pos], CultureInfo.InvariantCulture);
-                                if (sign == '-') value = -value;
-                                if (pos >= formula.Length)
-                                        throw new ArgumentException("Missing unit token.", nameof(formula));
-                                var unit = ParsePeriod(formula[pos], lang);
-                                result = AddPeriod(result, unit, value, culture.Calendar);
-                                index = pos + 1;
-                        }
-                        else
-                        {
-                                var day = formula.Substring(pos, 2);
-                                result = AdjustToDayOfWeek(result, lang.Days[day], sign == '+');
-                                index = pos + 2;
-                                return result.Date;
-                        }
-                }
-                if (index < formula.Length)
-                {
-                        var day = formula.Substring(index, 2);
-                        result = MoveToSameWeekDay(result, lang.Days[day], culture.DateTimeFormat.FirstDayOfWeek);
-                }
-                return result.Date;
+                var compiled = GetCompiledFormula(formula, provider, culture);
+                return compiled(date);
         }
 
         /// <summary>

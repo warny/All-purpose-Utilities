@@ -60,4 +60,16 @@ public class DateFormulaTests
                 var result = func(new DateTime(2023, 3, 15));
                 Assert.AreEqual(new DateTime(2023, 4, 1), result);
         }
+
+        [TestMethod]
+        public void CalculateUsesCache()
+        {
+                var culture = new CultureInfo("fr-FR");
+                var expected = DateFormula.Compile("FM+1J", culture)(new DateTime(2023, 3, 15));
+                for (int i = 0; i < 3; i++)
+                {
+                        var result = new DateTime(2023, 3, 15).Calculate("FM+1J", culture);
+                        Assert.AreEqual(expected, result);
+                }
+        }
 }
