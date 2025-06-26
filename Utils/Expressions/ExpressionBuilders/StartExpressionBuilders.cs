@@ -581,15 +581,19 @@ namespace Utils.Expressions.ExpressionBuilders
 		{
 			var firstChar = val[0];
 
-			// If it's a valid name token
-			if (val.IsName())
-			{
-				return ReadName(parser, context, val);
-			}
-			else
-			{
+                        // If token starts with a quote, treat it as a string or char literal
+                        if (firstChar == '"' || firstChar == '\'' || firstChar == '@' || firstChar == '$')
+                        {
                                 return ReadStringOrChar(parser, context, val, firstChar);
-			}
+                        }
+
+                        // Otherwise, attempt to parse it as a name
+                        if (val.IsName())
+                        {
+                                return ReadName(parser, context, val);
+                        }
+
+                        throw new ParseUnknownException(val, context.Tokenizer.Position.Index);
 		}
 
 		/// <summary>
@@ -796,8 +800,8 @@ namespace Utils.Expressions.ExpressionBuilders
 	/// returning an <see cref="Expression.Break"/> that effectively simulates a continue
 	/// (jumping to the loop's continue label).
 	/// </summary>
-	public class ContinueBuilder : IStartExpressionBuilder
-	{
+        public class ContinueBuilder : IStartExpressionBuilder
+        {
 		/// <inheritdoc/>
 		public Expression Build(
 			ExpressionParserCore parser,
@@ -811,10 +815,32 @@ namespace Utils.Expressions.ExpressionBuilders
 			if (target == null)
 				throw new ParseWrongSymbolException("", val, context.Tokenizer.Position.Index);
 
-			// Use Expression.Break with the continue label
-			return Expression.Break(target);
-		}
-	}
+                        // Use Expression.Break with the continue label
+                        return Expression.Break(target);
+                }
+        }
+
+        /// <summary>
+        /// Implements <see cref="IStartExpressionBuilder"/> for the "return" statement.
+        /// The builder simply reads the following expression and returns it,
+        /// ignoring early-exit semantics.
+        /// </summary>
+        public class ReturnBuilder : IStartExpressionBuilder
+        {
+                /// <inheritdoc/>
+                public Expression Build(
+                        ExpressionParserCore parser,
+                        ParserContext context,
+                        string val,
+                        int priorityLevel,
+                        Parenthesis markers,
+                        ref bool isClosedWrap)
+                {
+                        var expr = parser.ReadExpression(context, 0, null, out _);
+                        context.Tokenizer.ReadSymbol(";");
+                        return expr ?? Expression.Empty();
+                }
+        }
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for a "while" loop construct,
@@ -1137,7 +1163,17 @@ namespace Utils.Expressions.ExpressionBuilders
                                                 context.Tokenizer.ReadSymbol(";");
                                         }
                                         if (testValue.Type != switchValue.Type)
-                                                testValue = Expression.Convert(testValue, switchValue.Type);
+                                        {
+                                                if (testValue is ConstantExpression ce)
+                                                {
+                                                        object constantValue = ce.Value;
+                                                        if (constantValue != null)
+                                                                constantValue = Convert.ChangeType(constantValue, switchValue.Type);
+                                                        testValue = Expression.Constant(constantValue, switchValue.Type);
+                                                }
+                                                else
+                                                        testValue = Expression.Convert(testValue, switchValue.Type);
+                                        }
                                         cases.Add(Expression.SwitchCase(body, testValue));
                                 }
                                 else if (token == "default")
@@ -1162,7 +1198,8 @@ namespace Utils.Expressions.ExpressionBuilders
                                 }
                         }
 
-                        return Expression.Switch(switchValue, defaultBody, cases.ToArray());
+                        var switchExpr = Expression.Switch(switchValue, defaultBody, cases.ToArray());
+                        return Expression.Block(switchExpr);
                 }
         }
 }

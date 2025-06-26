@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Utils.Expressions;
 using Utils.Expressions.Resolvers;
 using Utils.Objects;
@@ -364,11 +365,28 @@ namespace Utils.String
                         var formatter = CreateAndAssignVariable(customFormatter, "formatter", expressions.Add);
                         var culture = CreateAndAssignVariable(cultureInfo, "culture", expressions.Add);
 
-                        var body = GenerateCommands(typeof(THandler), Array.Empty<ParameterExpression>(), _defaultResolver, formatString, formatter, culture, parameterExpressions, false, _defaultNamespaces);
+                        ParameterExpression handlerSb = null;
+                        var handlerType = typeof(THandler);
+                        if (handlerType.GetConstructors().Any(c => c.GetParameters().Any(p => p.ParameterType == typeof(StringBuilder))))
+                        {
+                                handlerSb = Expression.Variable(typeof(StringBuilder), "builder");
+                                expressions.Add(Expression.Assign(handlerSb, Expression.New(typeof(StringBuilder))));
+                        }
+
+                        var body = GenerateCommands(
+                                handlerType,
+                                handlerSb != null ? [handlerSb] : Array.Empty<ParameterExpression>(),
+                                _defaultResolver,
+                                formatString,
+                                formatter,
+                                culture,
+                                parameterExpressions,
+                                false,
+                                _defaultNamespaces);
                         expressions.Add(body);
 
                         var block = Expression.Block(
-                                new[] { formatter, culture }.Where(e => e != null),
+                                new[] { formatter, culture, handlerSb }.Where(e => e != null),
                                 expressions
                         );
                         return Expression.Lambda<T>(block, parameterExpressions).Compile();

@@ -22,7 +22,7 @@ public class SwitchTests
     [TestMethod]
     public void SwitchStatement()
     {
-        var expression = "(int i) => { int v = 0; switch(i) { case 1: v = 10; break; case 2: v = 20; break; default: v = 0; break; } return v; }";
+        var expression = "(int i) => { int v = 0; switch(i) { case 1: v = 10; break; case 2: v = 20; break; default: v = 0; break; }; return v; }";
         var lambda = ExpressionParser.Parse<Func<int, int>>(expression);
         var func = lambda.Compile();
 

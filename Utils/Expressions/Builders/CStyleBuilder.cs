@@ -75,6 +75,7 @@ public class CStyleBuilder : IBuilder
         { "switch", new SwitchBuilder() },
         { "break", new BreakBuilder() },
         { "continue", new ContinueBuilder() },
+        { "return", new ReturnBuilder() },
 
         { "+", new ReadNextExpressionBuilder() }, // ignore + sign and read the next expression
         { "-", new UnaryMinusBuilder() },
