@@ -4,7 +4,7 @@ using System.Linq;
 using System.Numerics;
 using Utils.Objects;
 
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 /// <summary>
 /// Represents a specific week in a given year.
 /// </summary>

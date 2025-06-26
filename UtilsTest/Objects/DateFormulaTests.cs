@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Globalization;
-using Utils.Utils.Dates;
+using Utils.Dates;
 
 namespace UtilsTest.Objects;
 
@@ -51,5 +51,13 @@ public class DateFormulaTests
         {
                 var date = new DateTime(2023, 3, 15);
                 Assert.AreEqual(new DateTime(2023, 4, 1), date.Calculate("EM+1D", new CultureInfo("zh-CN")));
+        }
+
+        [TestMethod]
+        public void CompiledFormula()
+        {
+                var func = DateFormula.Compile("FM+1J", new CultureInfo("fr-FR"));
+                var result = func(new DateTime(2023, 3, 15));
+                Assert.AreEqual(new DateTime(2023, 4, 1), result);
         }
 }

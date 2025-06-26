@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 
 /// <summary>
 /// Loads <see cref="DateFormulaLanguage"/> data from a JSON configuration.

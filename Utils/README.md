@@ -79,6 +79,12 @@ string code = authenticator.ComputeAuthenticator();
 bool ok = authenticator.VerifyAuthenticator(1, code);
 ```
 
+### Dates
+```csharp
+var compiled = Utils.Dates.DateFormula.Compile("FM+1J", new CultureInfo("fr-FR"));
+DateTime result = compiled(new DateTime(2023, 3, 15)); // 2023-04-01
+```
+
 ### Expressions
 ```csharp
 var expression = "(items) => items[0] + items[1]";

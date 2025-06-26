@@ -1,4 +1,4 @@
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 
 /// <summary>
 /// Represents culture specific tokens used to interpret date formulas.
