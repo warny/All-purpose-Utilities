@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
 using Utils.Objects;
 
 namespace Utils.Dates;
@@ -86,6 +88,93 @@ public static class DateFormula
                         result = MoveToSameWeekDay(result, lang.Days[day], culture.DateTimeFormat.FirstDayOfWeek);
                 }
                 return result.Date;
+        }
+
+        /// <summary>
+        /// Compiles the provided <paramref name="formula"/> into a delegate.
+        /// </summary>
+        /// <param name="formula">Formula to compile.</param>
+        /// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
+        /// <returns>A delegate computing the resulting date.</returns>
+        public static Func<DateTime, DateTime> Compile(string formula, CultureInfo culture = null)
+                => Compile(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture);
+
+        /// <summary>
+        /// Compiles the provided <paramref name="formula"/> using a custom provider.
+        /// </summary>
+        /// <param name="formula">Formula to compile.</param>
+        /// <param name="provider">Language provider.</param>
+        /// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
+        /// <returns>A delegate computing the resulting date.</returns>
+        public static Func<DateTime, DateTime> Compile(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null)
+        {
+                culture ??= CultureInfo.CurrentCulture;
+                var lang = provider.GetLanguage(culture);
+
+                if (formula.Length < 2)
+                        throw new ArgumentException("Formula is too short.", nameof(formula));
+
+                var start = formula[0] == lang.Start;
+                var end = formula[0] == lang.End;
+                if (!start && !end)
+                        throw new ArgumentException("Invalid formula start token.", nameof(formula));
+
+                var period = ParsePeriod(formula[1], lang);
+
+                var param = Expression.Parameter(typeof(DateTime), "d");
+                Expression expr = Expression.Call(
+                        typeof(DateUtils),
+                        start ? nameof(DateUtils.StartOf) : nameof(DateUtils.EndOf),
+                        null,
+                        param,
+                        Expression.Constant(period),
+                        Expression.Constant(culture));
+
+                var index = 2;
+                while (index < formula.Length && (formula[index] == '+' || formula[index] == '-'))
+                {
+                        var sign = formula[index];
+                        var pos = index + 1;
+                        if (pos < formula.Length && char.IsDigit(formula[pos]))
+                        {
+                                var startPos = pos;
+                                while (pos < formula.Length && char.IsDigit(formula[pos])) pos++;
+                                var value = int.Parse(formula[startPos..pos], CultureInfo.InvariantCulture);
+                                if (sign == '-') value = -value;
+                                if (pos >= formula.Length)
+                                        throw new ArgumentException("Missing unit token.", nameof(formula));
+                                var unit = ParsePeriod(formula[pos], lang);
+                                expr = Expression.Call(
+                                        typeof(DateFormula).GetMethod("AddPeriod", BindingFlags.NonPublic | BindingFlags.Static)!,
+                                        expr,
+                                        Expression.Constant(unit),
+                                        Expression.Constant(value),
+                                        Expression.Constant(culture.Calendar));
+                                index = pos + 1;
+                        }
+                        else
+                        {
+                                var day = formula.Substring(pos, 2);
+                                expr = Expression.Call(
+                                        typeof(DateFormula).GetMethod("AdjustToDayOfWeek", BindingFlags.NonPublic | BindingFlags.Static)!,
+                                        expr,
+                                        Expression.Constant(lang.Days[day]),
+                                        Expression.Constant(sign == '+'));
+                                index = pos + 2;
+                                return Expression.Lambda<Func<DateTime, DateTime>>(Expression.Property(expr, nameof(DateTime.Date)), param).Compile();
+                        }
+                }
+                if (index < formula.Length)
+                {
+                        var day = formula.Substring(index, 2);
+                        expr = Expression.Call(
+                                typeof(DateFormula).GetMethod("MoveToSameWeekDay", BindingFlags.NonPublic | BindingFlags.Static)!,
+                                expr,
+                                Expression.Constant(lang.Days[day]),
+                                Expression.Constant(culture.DateTimeFormat.FirstDayOfWeek));
+                }
+                expr = Expression.Property(expr, nameof(DateTime.Date));
+                return Expression.Lambda<Func<DateTime, DateTime>>(expr, param).Compile();
         }
 
         private static PeriodTypeEnum ParsePeriod(char token, DateFormulaLanguage lang)
