@@ -444,8 +444,9 @@ public static class ExpressionParser
 			options,
 			builder,
 			new DefaultResolver(new TypeFinder(options, namespaces, []), constants));
-		var context = new ParserContext(typeof(TDelegate), paramNames, defaultStaticType, tokenizer, firstTypeIsDefaultInstance);
-		return Expression.Lambda(parser.ReadExpression(context), context.Parameters);
+                var context = new ParserContext(typeof(TDelegate), paramNames, defaultStaticType, tokenizer, firstTypeIsDefaultInstance);
+                var body = parser.ReadExpression(context);
+                return Expression.Lambda(typeof(TDelegate), body, context.Parameters);
 	}
 
 	/// <summary>
@@ -478,8 +479,9 @@ public static class ExpressionParser
 			options,
 			builder,
 			new DefaultResolver(new TypeFinder(options, namespaces, []), constants));
-		var context = new ParserContext(parameters, defaultStaticType, tokenizer, firstTypeIsDefaultInstance);
-		return Expression.Lambda(parser.ReadExpression(context), context.Parameters);
+                var context = new ParserContext(parameters, defaultStaticType, tokenizer, firstTypeIsDefaultInstance);
+                var body = parser.ReadExpression(context);
+                return Expression.Lambda(body, context.Parameters);
 	}
 
 	/// <summary>

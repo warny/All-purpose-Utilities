@@ -75,5 +75,24 @@ namespace UtilsTest.Objects
 
             Assert.AreEqual(expected, format(dr));
         }
+
+        private struct SimpleHandler
+        {
+            private readonly StringBuilder _sb;
+            public SimpleHandler(int literalLength, int formattedCount, StringBuilder sb)
+            {
+                _sb = sb;
+            }
+            public void AppendLiteral(string s) => _sb.Append(s);
+            public void AppendFormatted<T>(T value) => _sb.Append(value);
+            public override string ToString() => _sb.ToString();
+        }
+
+        [TestMethod]
+        public void CustomHandlerTest()
+        {
+            var format = StringFormat.Create<Func<string, string>, SimpleHandler>("Value: {text}", "text");
+            Assert.AreEqual("Value: hello", format("hello"));
+        }
     }
 }
