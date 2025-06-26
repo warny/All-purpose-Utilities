@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Utils.Reflection;
 using Utils.String;
 
@@ -579,36 +581,41 @@ namespace Utils.Expressions.ExpressionBuilders
 		{
 			var firstChar = val[0];
 
-			// If it's a valid name token
-			if (val.IsName())
-			{
-				return ReadName(parser, context, val);
-			}
-			else
-			{
-				return ReadStringOrChar(context, val, firstChar);
-			}
+                        // If token starts with a quote, treat it as a string or char literal
+                        if (firstChar == '"' || firstChar == '\'' || firstChar == '@' || firstChar == '$')
+                        {
+                                return ReadStringOrChar(parser, context, val, firstChar);
+                        }
+
+                        // Otherwise, attempt to parse it as a name
+                        if (val.IsName())
+                        {
+                                return ReadName(parser, context, val);
+                        }
+
+                        throw new ParseUnknownException(val, context.Tokenizer.Position.Index);
 		}
 
 		/// <summary>
 		/// Reads a string or char literal from <paramref name="val"/>.
 		/// </summary>
-		private static Expression ReadStringOrChar(ParserContext context, string val, char firstChar)
+                private static Expression ReadStringOrChar(ExpressionParserCore parser, ParserContext context, string val, char firstChar)
 		{
-			return firstChar switch
-			{
-				'\"' or '@' => Expression.Constant(context.Tokenizer.DefineString),
-				'\'' => Expression.Constant(context.Tokenizer.DefineString[0]),
-				_ => throw new ParseUnknownException(val, context.Tokenizer.Position.Index),
-			};
+                        return firstChar switch
+                        {
+                                '\"' or '@' => Expression.Constant(context.Tokenizer.DefineString),
+                                '\'' => Expression.Constant(context.Tokenizer.DefineString[0]),
+                                '$' => BuildInterpolatedString(parser, context, context.Tokenizer.DefineString),
+                                _ => throw new ParseUnknownException(val, context.Tokenizer.Position.Index),
+                        };
 		}
 
 		/// <summary>
 		/// Interprets <paramref name="val"/> as a variable, constant, type, or member access,
 		/// returning the appropriate <see cref="Expression"/>.
 		/// </summary>
-		private static Expression ReadName(ExpressionParserCore parser, ParserContext context, string val)
-		{
+                private static Expression ReadName(ExpressionParserCore parser, ParserContext context, string val)
+                {
 			// If it matches a declared variable or a known constant
 			if (context.TryFindVariable(val, out var parameter))
 				return parameter;
@@ -655,9 +662,43 @@ namespace Utils.Expressions.ExpressionBuilders
 				return newVariable;
 			}
 
-			throw new ParseWrongSymbolException("", token, context.Tokenizer.Position.Index);
-		}
-	}
+                        throw new ParseWrongSymbolException("", token, context.Tokenizer.Position.Index);
+                }
+
+                private static Expression BuildInterpolatedString(ExpressionParserCore parser, ParserContext context, string format)
+                {
+                        var parsed = new InterpolatedStringParser(format);
+                        var pieces = new List<Expression>();
+
+                        foreach (var part in parsed)
+                        {
+                                switch (part)
+                                {
+                                        case LiteralPart lit:
+                                                pieces.Add(Expression.Constant(lit.Text));
+                                                break;
+                                        case FormattedPart fp:
+                                                var expr = ExpressionParser.ParseExpression(
+                                                        fp.ExpressionText,
+                                                        [.. context.Parameters],
+                                                        context.DefaultStaticType,
+                                                        context.FirstArgumentIsDefaultInstance);
+                                                pieces.Add(
+                                                        Expression.Call(
+                                                                Expression.Convert(expr, typeof(object)),
+                                                                typeof(object).GetMethod("ToString")!
+                                                        )
+                                                );
+                                                break;
+                                }
+                        }
+
+                        return Expression.Call(
+                                typeof(string).GetMethod("Concat", [typeof(string[])])!,
+                                Expression.NewArrayInit(typeof(string), pieces)
+                        );
+                }
+        }
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for "if" statements, optionally
@@ -749,8 +790,8 @@ namespace Utils.Expressions.ExpressionBuilders
 	/// returning an <see cref="Expression.Break"/> that effectively simulates a continue
 	/// (jumping to the loop's continue label).
 	/// </summary>
-	public class ContinueBuilder : IStartExpressionBuilder
-	{
+        public class ContinueBuilder : IStartExpressionBuilder
+        {
 		/// <inheritdoc/>
 		public Expression Build(
 			ExpressionParserCore parser,
@@ -764,10 +805,32 @@ namespace Utils.Expressions.ExpressionBuilders
 			if (target == null)
 				throw new ParseWrongSymbolException("", val, context.Tokenizer.Position.Index);
 
-			// Use Expression.Break with the continue label
-			return Expression.Break(target);
-		}
-	}
+                        // Use Expression.Break with the continue label
+                        return Expression.Break(target);
+                }
+        }
+
+        /// <summary>
+        /// Implements <see cref="IStartExpressionBuilder"/> for the "return" statement.
+        /// The builder simply reads the following expression and returns it,
+        /// ignoring early-exit semantics.
+        /// </summary>
+        public class ReturnBuilder : IStartExpressionBuilder
+        {
+                /// <inheritdoc/>
+                public Expression Build(
+                        ExpressionParserCore parser,
+                        ParserContext context,
+                        string val,
+                        int priorityLevel,
+                        Parenthesis markers,
+                        ref bool isClosedWrap)
+                {
+                        var expr = parser.ReadExpression(context, 0, null, out _);
+                        context.Tokenizer.ReadSymbol(";");
+                        return expr ?? Expression.Empty();
+                }
+        }
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for a "while" loop construct,
@@ -1046,4 +1109,91 @@ namespace Utils.Expressions.ExpressionBuilders
 			);
 		}
 	}
+
+        /// <summary>
+        /// Implements <see cref="IStartExpressionBuilder"/> for <c>switch</c> statements.
+        /// This builder supports both expression-style switches and the classic
+        /// statement form where each case ends with <c>break;</c>.
+        /// </summary>
+        public class SwitchBuilder : IStartExpressionBuilder, IAdditionalTokens
+        {
+                /// <inheritdoc/>
+                public IEnumerable<string> AdditionalTokens => ["(", ")", "{", "}", "case", "default", ":", ";", "break"];
+
+                /// <inheritdoc/>
+                public Expression Build(
+                        ExpressionParserCore parser,
+                        ParserContext context,
+                        string val,
+                        int priorityLevel,
+                        Parenthesis markers,
+                        ref bool isClosedWrap)
+                {
+                        context.Tokenizer.ReadSymbol("(");
+                        var switchValue = parser.ReadExpression(context, 0, new Parenthesis("(", ")", null), out _);
+                        context.Tokenizer.ReadSymbol(")");
+                        context.Tokenizer.ReadSymbol("{");
+
+                        List<SwitchCase> cases = new();
+                        Expression defaultBody = Expression.Empty();
+
+                        while (true)
+                        {
+                                string token = context.Tokenizer.ReadToken();
+                                if (token == "case")
+                                {
+                                        var testValue = parser.ReadExpression(context, 0, null, out _);
+                                        context.Tokenizer.ReadSymbol(":");
+                                        var body = parser.ReadExpression(context, 0, null, out _);
+                                        if (body.Type != switchValue.Type)
+                                                body = Expression.Convert(body, switchValue.Type);
+                                        context.Tokenizer.ReadSymbol(";");
+                                        var next = context.Tokenizer.PeekToken();
+                                        if (next == "break")
+                                        {
+                                                context.Tokenizer.ReadToken();
+                                                context.Tokenizer.ReadSymbol(";");
+                                        }
+                                        if (testValue.Type != switchValue.Type)
+                                        {
+                                                if (testValue is ConstantExpression ce)
+                                                {
+                                                        object constantValue = ce.Value;
+                                                        if (constantValue != null)
+                                                                constantValue = Convert.ChangeType(constantValue, switchValue.Type);
+                                                        testValue = Expression.Constant(constantValue, switchValue.Type);
+                                                }
+                                                else
+                                                        testValue = Expression.Convert(testValue, switchValue.Type);
+                                        }
+                                        cases.Add(Expression.SwitchCase(body, testValue));
+                                }
+                                else if (token == "default")
+                                {
+                                        context.Tokenizer.ReadSymbol(":");
+                                        defaultBody = parser.ReadExpression(context, 0, null, out _);
+                                        if (defaultBody.Type != switchValue.Type)
+                                                defaultBody = Expression.Convert(defaultBody, switchValue.Type);
+                                        context.Tokenizer.ReadSymbol(";");
+                                        var next = context.Tokenizer.PeekToken();
+                                        if (next == "break")
+                                        {
+                                                context.Tokenizer.ReadToken();
+                                                context.Tokenizer.ReadSymbol(";");
+                                        }
+                                }
+                                else if (token == "}")
+                                {
+                                        break;
+                                }
+                                else
+                                {
+                                        throw new ParseUnknownException(token, context.Tokenizer.Position.Index);
+                                }
+                        }
+
+                        var switchExpr = Expression.Switch(switchValue, defaultBody, cases.ToArray());
+                        return switchExpr;
+                }
+        }
 }

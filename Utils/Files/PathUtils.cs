@@ -26,10 +26,8 @@ namespace Utils.Files
 			string remainder = fullPath[root.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
 			// 4) Split on directory separators to get each segment
-                        var segments = remainder.Split(
-                                [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-                                StringSplitOptions.RemoveEmptyEntries
-                        );
+                        var separators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+                        var segments = remainder.Split(separators, StringSplitOptions.RemoveEmptyEntries);
 
 			return (root, segments);
 		}
