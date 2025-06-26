@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Globalization;
-using Utils.Utils.Dates;
+using Utils.Dates;
 
 namespace UtilsTest.Objects;
 
