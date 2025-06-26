@@ -51,17 +51,18 @@ namespace Utils.String
 			bool defaultFirst,
 			string[] namespaces) 
 			=> Expression.Call(
-				GenerateCommands(
-					typeof(DefaultInterpolatedStringHandler),
-					Array.Empty<ParameterExpression>(),
-					_defaultResolver,
-					formatString,
-					formatter,
-					cultureInfo,
-					parameterExpressions,
-					defaultFirst,
-					namespaces
-				),
+                                GenerateCommands(
+                                        typeof(DefaultInterpolatedStringHandler),
+                                        Array.Empty<ParameterExpression>(),
+                                        _defaultResolver,
+                                        formatString,
+                                        formatter,
+                                        cultureInfo,
+                                        parameterExpressions,
+                                        defaultFirst,
+                                        namespaces,
+                                        true
+                                  ),
 				typeof(DefaultInterpolatedStringHandler).GetMethod("ToString")
 			);
 
@@ -69,17 +70,18 @@ namespace Utils.String
 		/// Generates a sequence of commands to parse and execute a formatted string dynamically,
 		/// returning an expression (usually a <see cref="BlockExpression"/>) that performs the necessary operations.
 		/// </summary>
-		private static Expression GenerateCommands(
-			Type handlerType,
-			ParameterExpression[] handlerParameters,
-			IResolver resolver,
-			string formatString,
-			ParameterExpression formatter,
-			ParameterExpression cultureInfo,
-			ParameterExpression[] parameterExpressions,
-			bool defaultFirst,
-			string[] namespaces)
-		{
+                private static Expression GenerateCommands(
+                        Type handlerType,
+                        ParameterExpression[] handlerParameters,
+                        IResolver resolver,
+                        string formatString,
+                        ParameterExpression formatter,
+                        ParameterExpression cultureInfo,
+                        ParameterExpression[] parameterExpressions,
+                        bool defaultFirst,
+                        string[] namespaces,
+                        bool returnHandler)
+                {
 			// 1) Create a BlockExpressionBuilder to hold and build the block of expressions
 			var builder = new BlockExpressionBuilder();
 
@@ -162,8 +164,12 @@ namespace Utils.String
 				}
 			}
 
-			// 10) At the end, we "return" the handler variable (if the caller wants the result)
-			builder.Add(handlerVariable);
+                        // 10) At the end, we return either the handler itself or its ToString()
+                        builder.Add(
+                                returnHandler
+                                        ? (Expression)handlerVariable
+                                        : Expression.Call(handlerVariable, handlerType.GetMethod("ToString", []))
+                        );
 
 			// 11) The builder creates an optimal block that uses only the variables actually needed
 			return builder.CreateBlock();
@@ -373,6 +379,9 @@ namespace Utils.String
                                 expressions.Add(Expression.Assign(handlerSb, Expression.New(typeof(StringBuilder))));
                         }
 
+                        var delegateReturn = typeof(T).GetMethod("Invoke")?.ReturnType ?? typeof(void);
+                        bool returnHandler = delegateReturn.IsAssignableFrom(handlerType);
+
                         var body = GenerateCommands(
                                 handlerType,
                                 handlerSb != null ? [handlerSb] : Array.Empty<ParameterExpression>(),
@@ -382,7 +391,8 @@ namespace Utils.String
                                 culture,
                                 parameterExpressions,
                                 false,
-                                _defaultNamespaces);
+                                _defaultNamespaces,
+                                returnHandler);
                         expressions.Add(body);
 
                         var block = Expression.Block(

@@ -667,27 +667,15 @@ namespace Utils.Expressions.ExpressionBuilders
 
                 private static Expression BuildInterpolatedString(ExpressionParserCore parser, ParserContext context, string format)
                 {
-                        var handlerVar = Expression.Variable(typeof(DefaultInterpolatedStringHandler), "handler");
-                        var block = new BlockExpressionBuilder();
-
                         var parsed = new InterpolatedStringParser(format);
-                        int literalLength = parsed.OfType<LiteralPart>().Sum(p => p.Length);
-                        int formattedCount = parsed.OfType<FormattedPart>().Count();
+                        var pieces = new List<Expression>();
 
-                        var ctor = typeof(DefaultInterpolatedStringHandler).GetConstructor([typeof(int), typeof(int)]);
-                        block.Add(Expression.Assign(
-                                handlerVar,
-                                Expression.New(ctor, Expression.Constant(literalLength), Expression.Constant(formattedCount))
-                        ));
-
-                        var appendLiteral = typeof(DefaultInterpolatedStringHandler).GetMethod("AppendLiteral", [typeof(string)]);
-                        var appendFormattedGeneric = typeof(DefaultInterpolatedStringHandler).GetMethods().First(m => m.Name == "AppendFormatted" && m.IsGenericMethod && m.GetParameters().Length == 1);
                         foreach (var part in parsed)
                         {
                                 switch (part)
                                 {
                                         case LiteralPart lit:
-                                                block.Add(Expression.Call(handlerVar, appendLiteral, Expression.Constant(lit.Text)));
+                                                pieces.Add(Expression.Constant(lit.Text));
                                                 break;
                                         case FormattedPart fp:
                                                 var expr = ExpressionParser.ParseExpression(
@@ -695,18 +683,20 @@ namespace Utils.Expressions.ExpressionBuilders
                                                         [.. context.Parameters],
                                                         context.DefaultStaticType,
                                                         context.FirstArgumentIsDefaultInstance);
-                                                var call = Expression.Call(
-                                                        handlerVar,
-                                                        appendFormattedGeneric.MakeGenericMethod(expr.Type),
-                                                        expr);
-                                                block.Add(call);
+                                                pieces.Add(
+                                                        Expression.Call(
+                                                                Expression.Convert(expr, typeof(object)),
+                                                                typeof(object).GetMethod("ToString")!
+                                                        )
+                                                );
                                                 break;
                                 }
                         }
 
-                        var toString = typeof(DefaultInterpolatedStringHandler).GetMethod("ToString", []);
-                        block.Add(Expression.Call(handlerVar, toString));
-                        return block.CreateBlock();
+                        return Expression.Call(
+                                typeof(string).GetMethod("Concat", [typeof(string[])])!,
+                                Expression.NewArrayInit(typeof(string), pieces)
+                        );
                 }
         }
 
@@ -1155,6 +1145,8 @@ namespace Utils.Expressions.ExpressionBuilders
                                         var testValue = parser.ReadExpression(context, 0, null, out _);
                                         context.Tokenizer.ReadSymbol(":");
                                         var body = parser.ReadExpression(context, 0, null, out _);
+                                        if (body.Type != switchValue.Type)
+                                                body = Expression.Convert(body, switchValue.Type);
                                         context.Tokenizer.ReadSymbol(";");
                                         var next = context.Tokenizer.PeekToken();
                                         if (next == "break")
@@ -1180,6 +1172,8 @@ namespace Utils.Expressions.ExpressionBuilders
                                 {
                                         context.Tokenizer.ReadSymbol(":");
                                         defaultBody = parser.ReadExpression(context, 0, null, out _);
+                                        if (defaultBody.Type != switchValue.Type)
+                                                defaultBody = Expression.Convert(defaultBody, switchValue.Type);
                                         context.Tokenizer.ReadSymbol(";");
                                         var next = context.Tokenizer.PeekToken();
                                         if (next == "break")
@@ -1199,7 +1193,7 @@ namespace Utils.Expressions.ExpressionBuilders
                         }
 
                         var switchExpr = Expression.Switch(switchValue, defaultBody, cases.ToArray());
-                        return Expression.Block(switchExpr);
+                        return switchExpr;
                 }
         }
 }
