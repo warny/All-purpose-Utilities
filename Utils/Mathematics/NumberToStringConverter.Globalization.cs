@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
+using System.Numerics;
 using System.Xml;
 using System.Xml.Serialization;
 using Utils.Expressions;
@@ -18,22 +20,39 @@ namespace Utils.Mathematics
                 NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
                 NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DE,
-                NumberConverterResources.NumberConvertionConfiguration_EN
+                NumberConverterResources.NumberConvertionConfiguration_EN,
+                NumberConverterResources.NumberConvertionConfiguration_ES,
+                NumberConverterResources.NumberConvertionConfiguration_IT,
+                NumberConverterResources.NumberConvertionConfiguration_FI,
+                NumberConverterResources.NumberConvertionConfiguration_AR,
+                NumberConverterResources.NumberConvertionConfiguration_HE,
+                NumberConverterResources.NumberConvertionConfiguration_ZH,
+                NumberConverterResources.NumberConvertionConfiguration_KO,
+                NumberConverterResources.NumberConvertionConfiguration_JA,
+                NumberConverterResources.NumberConvertionConfiguration_PT,
+                NumberConverterResources.NumberConvertionConfiguration_PL,
+                NumberConverterResources.NumberConvertionConfiguration_HI,
+                NumberConverterResources.NumberConvertionConfiguration_EL,
+                NumberConverterResources.NumberConvertionConfiguration_NL,
+                NumberConverterResources.NumberConvertionConfiguration_RU,
+                NumberConverterResources.NumberConvertionConfiguration_ZU,
+                NumberConverterResources.NumberConvertionConfiguration_EE,
+                NumberConverterResources.NumberConvertionConfiguration_WO
             );
         }
 
-		// Caches configurations for different cultures
-		private static readonly Dictionary<string, NumberToStringConverter> configurations = new Dictionary<string, NumberToStringConverter>(StringComparer.InvariantCultureIgnoreCase);
+                // Caches configurations for different cultures
+                private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
-		public static void InitializeConfigurations(params string[] configurations)
-            => RegisterConfigurations((IEnumerable<string>)configurations);
-        public static void RegisterConfigurations(IEnumerable<string> configurations) {
-            foreach (var configuration in configurations)
+                public static void InitializeConfigurations(params string[] configs)
+            => RegisterConfigurations((IEnumerable<string>)configs);
+        public static void RegisterConfigurations(IEnumerable<string> configs) {
+            foreach (var configuration in configs)
             {
                 var languages = ReadConfiguration(configuration);
                 foreach (var language in languages)
                 {
-                    NumberToStringConverter.configurations.Add(language.Key, language.Value);
+                    CachedConfigurations.Add(language.Key, language.Value);
                 }
             }
         }
@@ -84,6 +103,13 @@ namespace Utils.Mathematics
                 var e = ExpressionParser.Parse<Func<string, string>>(language.AdjustFunction, ["System.Text", "System.Text.RegularExpressions"]);
                 adjustFunction = e.Compile();
             }
+            var fractions = language.Fractions?.Fractions?.ToDictionary(f => f.Digits, f => f.StringValue) ?? new Dictionary<int, string>();
+
+            BigInteger? maxNumber = null;
+            if (!string.IsNullOrWhiteSpace(language.MaxNumber))
+            {
+                maxNumber = BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture);
+            }
 
             return new NumberToStringConverter(
                 language.GroupSize,
@@ -91,11 +117,14 @@ namespace Utils.Mathematics
                 language.GroupSeparator,
                 language.Zero,
                 language.Minus,
+                language.DecimalSeparator,
                 language.Groups.Groups.ToDictionary(g=>g.Level, g=>(DigitListType)g),
-                language.Exceptions.Numbers.ToDictionary(e=>(long)e.Value, e=>e.StringValue),
+                language.Exceptions?.Numbers?.ToDictionary(e=>(long)e.Value, e=>e.StringValue) ?? new Dictionary<long, string>(),
                 language.Replacements?.Replacements.ToDictionary(r=>r.OldValue, r=>r.NewValue),
                 scale,
-                adjustFunction
+                adjustFunction,
+                fractions,
+                maxNumber
             );
         }
     }

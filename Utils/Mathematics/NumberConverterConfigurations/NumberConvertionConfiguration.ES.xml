@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-	<Language
+        <Language
         groupSize="3"
         separator=" "
         groupSeparator=""
         zero="cero"
         minus="menos *"
+        decimalSeparator="coma"
     >
 		<Culture>ES</Culture>
 		<Groups>
@@ -60,15 +61,13 @@
 		<Replacements>
 			<Replacement oldValue="uno mil" newValue="mil" />
 		</Replacements>
-		<Exceptions>
-			<Exceptions>
-				<Number value="11" string="once" />
-				<Number value="12" string="doce" />
-				<Number value="13" string="trece" />
-				<Number value="14" string="catorce" />
-				<Number value="15" string="quince" />
-				<Number value="16" string="dieciséis" />
-			</Exceptions>
-		</Exceptions>
-	</Language>
+                <Exceptions>
+                        <Number value="11" string="once" />
+                        <Number value="12" string="doce" />
+                        <Number value="13" string="trece" />
+                        <Number value="14" string="catorce" />
+                        <Number value="15" string="quince" />
+                        <Number value="16" string="dieciséis" />
+                </Exceptions>
+        </Language>
 </Numbers>

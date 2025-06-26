@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="शून्य"
+        minus="माइनस *"
+        decimalSeparator="दशमलव"
+    >
+        <Culture>HI</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="एक" />
+                <Digit digit="2" string="दो" />
+                <Digit digit="3" string="तीन" />
+                <Digit digit="4" string="चार" />
+                <Digit digit="5" string="पांच" />
+                <Digit digit="6" string="छह" />
+                <Digit digit="7" string="सात" />
+                <Digit digit="8" string="आठ" />
+                <Digit digit="9" string="नौ" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="दस" buildString="दस *" />
+                <Digit digit="2" string="बीस" buildString="बीस *" />
+                <Digit digit="3" string="तीस" buildString="तीस *" />
+                <Digit digit="4" string="चालीस" buildString="चालीस *" />
+                <Digit digit="5" string="पचास" buildString="पचास *" />
+                <Digit digit="6" string="साठ" buildString="साठ *" />
+                <Digit digit="7" string="सत्तर" buildString="सत्तर *" />
+                <Digit digit="8" string="अस्सी" buildString="अस्सी *" />
+                <Digit digit="9" string="नब्बे" buildString="नब्बे *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="एक सौ" buildString="एक सौ *" />
+                <Digit digit="2" string="दो सौ" buildString="दो सौ *" />
+                <Digit digit="3" string="तीन सौ" buildString="तीन सौ *" />
+                <Digit digit="4" string="चार सौ" buildString="चार सौ *" />
+                <Digit digit="5" string="पांच सौ" buildString="पांच सौ *" />
+                <Digit digit="6" string="छह सौ" buildString="छह सौ *" />
+                <Digit digit="7" string="सात सौ" buildString="सात सौ *" />
+                <Digit digit="8" string="आठ सौ" buildString="आठ सौ *" />
+                <Digit digit="9" string="नौ सौ" buildString="नौ सौ *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="हज़ार" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>मिलियन</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <Replacement oldValue="एक हज़ार" newValue="हज़ार" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="ग्यारह" />
+            <Number value="12" string="बारह" />
+            <Number value="13" string="तेरह" />
+            <Number value="14" string="चौदह" />
+            <Number value="15" string="पन्द्रह" />
+            <Number value="16" string="सोलह" />
+            <Number value="17" string="सत्रह" />
+            <Number value="18" string="अठारह" />
+            <Number value="19" string="उन्नीस" />
+        </Exceptions>
+    </Language>
+</Numbers>

@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-	<Language
-		groupSize="3"
-		separator=" "
-		groupSeparator=""
-		zero="null"
-		minus="minus *"
-	>
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="null"
+                minus="minus *"
+                decimalSeparator="komma"
+        >
 		<Culture>DE</Culture>
 		<Groups>
 			<Group level="1">
@@ -25,12 +26,12 @@
 				<Digit digit="0" string="" buildString="*" />
 				<Digit digit="1" string="zehn" buildString="*zehn" />
 				<Digit digit="2" string="zwanzig" buildString="*undzwanzig" />
-				<Digit digit="3" string="dreizig" buildString="*unddreizig" />
+                                <Digit digit="3" string="dreißig" buildString="*unddreißig" />
 				<Digit digit="4" string="vierzig" buildString="*undvierzig" />
 				<Digit digit="5" string="fünfzig" buildString="*undfünfzig" />
 				<Digit digit="6" string="sechzig" buildString="*undsechzig" />
 				<Digit digit="7" string="siebzig" buildString="*undsiebzig" />
-				<Digit digit="8" string="achtzich" buildString="undachtzich" />
+                                <Digit digit="8" string="achtzig" buildString="undachtzig" />
 				<Digit digit="9" string="neunzig" buildString="*undneunzig" />
 			</Group>
 			<Group level="3">

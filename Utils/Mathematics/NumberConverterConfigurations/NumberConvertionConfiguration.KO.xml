@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="영"
+        minus="마이너스 *"
+        decimalSeparator="점"
+        maxNumber="999999999"
+    >
+        <Culture>KO</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="일" />
+                <Digit digit="2" string="이" />
+                <Digit digit="3" string="삼" />
+                <Digit digit="4" string="사" />
+                <Digit digit="5" string="오" />
+                <Digit digit="6" string="육" />
+                <Digit digit="7" string="칠" />
+                <Digit digit="8" string="팔" />
+                <Digit digit="9" string="구" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="십" buildString="십*" />
+                <Digit digit="2" string="이십" buildString="이십*" />
+                <Digit digit="3" string="삼십" buildString="삼십*" />
+                <Digit digit="4" string="사십" buildString="사십*" />
+                <Digit digit="5" string="오십" buildString="오십*" />
+                <Digit digit="6" string="육십" buildString="육십*" />
+                <Digit digit="7" string="칠십" buildString="칠십*" />
+                <Digit digit="8" string="팔십" buildString="팔십*" />
+                <Digit digit="9" string="구십" buildString="구십*" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="백" buildString="백*" />
+                <Digit digit="2" string="이백" buildString="이백*" />
+                <Digit digit="3" string="삼백" buildString="삼백*" />
+                <Digit digit="4" string="사백" buildString="사백*" />
+                <Digit digit="5" string="오백" buildString="오백*" />
+                <Digit digit="6" string="육백" buildString="육백*" />
+                <Digit digit="7" string="칠백" buildString="칠백*" />
+                <Digit digit="8" string="팔백" buildString="팔백*" />
+                <Digit digit="9" string="구백" buildString="구백*" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="천" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>만</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Exceptions />
+    </Language>
+</Numbers>

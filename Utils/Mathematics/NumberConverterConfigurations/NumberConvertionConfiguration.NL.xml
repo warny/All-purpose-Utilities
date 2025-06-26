@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="nul"
+        minus="min *"
+        decimalSeparator="komma"
+    >
+        <Culture>NL</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="een" />
+                <Digit digit="2" string="twee" />
+                <Digit digit="3" string="drie" />
+                <Digit digit="4" string="vier" />
+                <Digit digit="5" string="vijf" />
+                <Digit digit="6" string="zes" />
+                <Digit digit="7" string="zeven" />
+                <Digit digit="8" string="acht" />
+                <Digit digit="9" string="negen" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="tien" buildString="tien *" />
+                <Digit digit="2" string="twintig" buildString="*entwintig" />
+                <Digit digit="3" string="dertig" buildString="*endertig" />
+                <Digit digit="4" string="veertig" buildString="*enveertig" />
+                <Digit digit="5" string="vijftig" buildString="*envijftig" />
+                <Digit digit="6" string="zestig" buildString="*enzestig" />
+                <Digit digit="7" string="zeventig" buildString="*enzeventig" />
+                <Digit digit="8" string="tachtig" buildString="*entachtig" />
+                <Digit digit="9" string="negentig" buildString="*ennegentig" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="honderd" buildString="honderd *" />
+                <Digit digit="2" string="tweehonderd" buildString="tweehonderd *" />
+                <Digit digit="3" string="driehonderd" buildString="driehonderd *" />
+                <Digit digit="4" string="vierhonderd" buildString="vierhonderd *" />
+                <Digit digit="5" string="vijfhonderd" buildString="vijfhonderd *" />
+                <Digit digit="6" string="zeshonderd" buildString="zeshonderd *" />
+                <Digit digit="7" string="zevenhonderd" buildString="zevenhonderd *" />
+                <Digit digit="8" string="achthonderd" buildString="achthonderd *" />
+                <Digit digit="9" string="negenhonderd" buildString="negenhonderd *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="duizend" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>miljoen</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <Replacement oldValue="een duizend" newValue="duizend" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="elf" />
+            <Number value="12" string="twaalf" />
+            <Number value="13" string="dertien" />
+            <Number value="14" string="veertien" />
+            <Number value="15" string="vijftien" />
+            <Number value="16" string="zestien" />
+            <Number value="17" string="zeventien" />
+            <Number value="18" string="achttien" />
+            <Number value="19" string="negentien" />
+        </Exceptions>
+    </Language>
+</Numbers>

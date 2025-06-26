@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="ноль"
+        minus="минус *"
+        decimalSeparator="запятая"
+    >
+        <Culture>RU</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="один" />
+                <Digit digit="2" string="два" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="четыре" />
+                <Digit digit="5" string="пять" />
+                <Digit digit="6" string="шесть" />
+                <Digit digit="7" string="семь" />
+                <Digit digit="8" string="восемь" />
+                <Digit digit="9" string="девять" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="десять" buildString="десять *" />
+                <Digit digit="2" string="двадцать" buildString="двадцать *" />
+                <Digit digit="3" string="тридцать" buildString="тридцать *" />
+                <Digit digit="4" string="сорок" buildString="сорок *" />
+                <Digit digit="5" string="пятьдесят" buildString="пятьдесят *" />
+                <Digit digit="6" string="шестьдесят" buildString="шестьдесят *" />
+                <Digit digit="7" string="семьдесят" buildString="семьдесят *" />
+                <Digit digit="8" string="восемьдесят" buildString="восемьдесят *" />
+                <Digit digit="9" string="девяносто" buildString="девяносто *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="сто" buildString="сто *" />
+                <Digit digit="2" string="двести" buildString="двести *" />
+                <Digit digit="3" string="триста" buildString="триста *" />
+                <Digit digit="4" string="четыреста" buildString="четыреста *" />
+                <Digit digit="5" string="пятьсот" buildString="пятьсот *" />
+                <Digit digit="6" string="шестьсот" buildString="шестьсот *" />
+                <Digit digit="7" string="семьсот" buildString="семьсот *" />
+                <Digit digit="8" string="восемьсот" buildString="восемьсот *" />
+                <Digit digit="9" string="девятьсот" buildString="девятьсот *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="тысяча" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>миллион</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <Replacement oldValue="один тысяча" newValue="тысяча" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="одиннадцать" />
+            <Number value="12" string="двенадцать" />
+            <Number value="13" string="тринадцать" />
+            <Number value="14" string="четырнадцать" />
+            <Number value="15" string="пятнадцать" />
+            <Number value="16" string="шестнадцать" />
+            <Number value="17" string="семнадцать" />
+            <Number value="18" string="восемнадцать" />
+            <Number value="19" string="девятнадцать" />
+        </Exceptions>
+    </Language>
+</Numbers>

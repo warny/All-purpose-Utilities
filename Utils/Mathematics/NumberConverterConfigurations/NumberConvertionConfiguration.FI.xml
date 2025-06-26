@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="nolla"
+        minus="miinus *"
+        decimalSeparator="pilkku"
+        maxNumber="999999999"
+    >
+        <Culture>FI</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="yksi" />
+                <Digit digit="2" string="kaksi" />
+                <Digit digit="3" string="kolme" />
+                <Digit digit="4" string="neljä" />
+                <Digit digit="5" string="viisi" />
+                <Digit digit="6" string="kuusi" />
+                <Digit digit="7" string="seitsemän" />
+                <Digit digit="8" string="kahdeksan" />
+                <Digit digit="9" string="yhdeksän" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="kymmenen" buildString="kymmenen *" />
+                <Digit digit="2" string="kaksikymmentä" buildString="kaksikymmentä *" />
+                <Digit digit="3" string="kolmekymmentä" buildString="kolmekymmentä *" />
+                <Digit digit="4" string="neljäkymmentä" buildString="neljäkymmentä *" />
+                <Digit digit="5" string="viisikymmentä" buildString="viisikymmentä *" />
+                <Digit digit="6" string="kuusikymmentä" buildString="kuusikymmentä *" />
+                <Digit digit="7" string="seitsemänkymmentä" buildString="seitsemänkymmentä *" />
+                <Digit digit="8" string="kahdeksankymmentä" buildString="kahdeksankymmentä *" />
+                <Digit digit="9" string="yhdeksänkymmentä" buildString="yhdeksänkymmentä *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="sata" buildString="sata *" />
+                <Digit digit="2" string="kaksisataa" buildString="kaksisataa *" />
+                <Digit digit="3" string="kolmesataa" buildString="kolmesataa *" />
+                <Digit digit="4" string="neljäsataa" buildString="neljäsataa *" />
+                <Digit digit="5" string="viisisataa" buildString="viisisataa *" />
+                <Digit digit="6" string="kuusisataa" buildString="kuusisataa *" />
+                <Digit digit="7" string="seitsemänsataa" buildString="seitsemänsataa *" />
+                <Digit digit="8" string="kahdeksansataa" buildString="kahdeksansataa *" />
+                <Digit digit="9" string="yhdeksänsataa" buildString="yhdeksänsataa *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="tuhat" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>miljoona</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Exceptions>
+            <Number value="11" string="yksitoista" />
+            <Number value="12" string="kaksitoista" />
+            <Number value="13" string="kolmetoista" />
+            <Number value="14" string="neljätoista" />
+            <Number value="15" string="viisitoista" />
+            <Number value="16" string="kuusitoista" />
+            <Number value="17" string="seitsemäntoista" />
+            <Number value="18" string="kahdeksantoista" />
+            <Number value="19" string="yhdeksäntoista" />
+        </Exceptions>
+    </Language>
+</Numbers>

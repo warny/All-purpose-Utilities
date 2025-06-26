@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="iqanda"
+        minus="minus *"
+        decimalSeparator="phuzu"
+    >
+        <Culture>ZU</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="kunye" />
+                <Digit digit="2" string="kubili" />
+                <Digit digit="3" string="kuthathu" />
+                <Digit digit="4" string="kune" />
+                <Digit digit="5" string="isihlanu" />
+                <Digit digit="6" string="isithupha" />
+                <Digit digit="7" string="isikhombisa" />
+                <Digit digit="8" string="isishiyagalombili" />
+                <Digit digit="9" string="isishiyagalolunye" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ishumi" buildString="ishumi n*" />
+                <Digit digit="2" string="amashumi amabili" buildString="amashumi amabili n*" />
+                <Digit digit="3" string="amashumi amathathu" buildString="amashumi amathathu n*" />
+                <Digit digit="4" string="amashumi amane" buildString="amashumi amane n*" />
+                <Digit digit="5" string="amashumi amahlanu" buildString="amashumi amahlanu n*" />
+                <Digit digit="6" string="amashumi ayisithupha" buildString="amashumi ayisithupha n*" />
+                <Digit digit="7" string="amashumi ayisikhombisa" buildString="amashumi ayisikhombisa n*" />
+                <Digit digit="8" string="amashumi ayisishiyagalombili" buildString="amashumi ayisishiyagalombili n*" />
+                <Digit digit="9" string="amashumi ayisishiyagalolunye" buildString="amashumi ayisishiyagalolunye n*" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ikhulu" buildString="ikhulu n*" />
+                <Digit digit="2" string="amakhulu amabili" buildString="amakhulu amabili n*" />
+                <Digit digit="3" string="amakhulu amathathu" buildString="amakhulu amathathu n*" />
+                <Digit digit="4" string="amakhulu amane" buildString="amakhulu amane n*" />
+                <Digit digit="5" string="amakhulu amahlanu" buildString="amakhulu amahlanu n*" />
+                <Digit digit="6" string="amakhulu ayisithupha" buildString="amakhulu ayisithupha n*" />
+                <Digit digit="7" string="amakhulu ayisikhombisa" buildString="amakhulu ayisikhombisa n*" />
+                <Digit digit="8" string="amakhulu ayisishiyagalombili" buildString="amakhulu ayisishiyagalombili n*" />
+                <Digit digit="9" string="amakhulu ayisishiyagalolunye" buildString="amakhulu ayisishiyagalolunye n*" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="inkulungwane" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>isigidi</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Exceptions>
+            <Number value="11" string="ishumi nanye" />
+            <Number value="12" string="ishumi nambili" />
+            <Number value="13" string="ishumi nantathu" />
+            <Number value="14" string="ishumi nane" />
+            <Number value="15" string="ishumi nesihlanu" />
+            <Number value="16" string="ishumi nesithupha" />
+            <Number value="17" string="ishumi nesikhombisa" />
+            <Number value="18" string="ishumi nesishiyagalombili" />
+            <Number value="19" string="ishumi nesishiyagalolunye" />
+        </Exceptions>
+    </Language>
+</Numbers>

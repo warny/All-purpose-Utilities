@@ -87,6 +87,21 @@ public class ReplacementType
     public string NewValue { get; set; }
 }
 
+public class FractionType
+{
+    [XmlAttribute("digits")]
+    public int Digits { get; set; }
+
+    [XmlAttribute("string")]
+    public string StringValue { get; set; }
+}
+
+public class FractionListType
+{
+    [XmlElement("Fraction")]
+    public List<FractionType> Fractions { get; set; }
+}
+
 // Correspond à l'élément 'Language' dans votre schéma
 public class LanguageType
 {
@@ -111,6 +126,12 @@ public class LanguageType
     [XmlAttribute("minus")]
     public string Minus { get; set; }
 
+    [XmlAttribute("decimalSeparator")]
+    public string DecimalSeparator { get; set; }
+
+    [XmlAttribute("maxNumber")]
+    public string MaxNumber { get; set; }
+
     [XmlElement(ElementName = "Groups")]
     public GroupsListType Groups { get; set; }
 
@@ -125,6 +146,9 @@ public class LanguageType
 
     [XmlElement(ElementName = "AdjustFunction")]
     public string AdjustFunction { get; set; }
+
+    [XmlElement(ElementName = "Fractions")]
+    public FractionListType Fractions { get; set; }
 }
 
 public class GroupType : DigitListType

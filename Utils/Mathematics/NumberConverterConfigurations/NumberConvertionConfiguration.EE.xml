@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="zero"
+        minus="minus *"
+        decimalSeparator="kpɔ"
+    >
+        <Culture>EE</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="deka" />
+                <Digit digit="2" string="eve" />
+                <Digit digit="3" string="eto" />
+                <Digit digit="4" string="ene" />
+                <Digit digit="5" string="atɔ" />
+                <Digit digit="6" string="ade" />
+                <Digit digit="7" string="adre" />
+                <Digit digit="8" string="enyi" />
+                <Digit digit="9" string="asea" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ewo" buildString="ewo kple *" />
+                <Digit digit="2" string="blavo eve" buildString="blavo eve kple *" />
+                <Digit digit="3" string="blavo eto" buildString="blavo eto kple *" />
+                <Digit digit="4" string="blavo ene" buildString="blavo ene kple *" />
+                <Digit digit="5" string="blavo atɔ" buildString="blavo atɔ kple *" />
+                <Digit digit="6" string="blavo ade" buildString="blavo ade kple *" />
+                <Digit digit="7" string="blavo adre" buildString="blavo adre kple *" />
+                <Digit digit="8" string="blavo enyi" buildString="blavo enyi kple *" />
+                <Digit digit="9" string="blavo asea" buildString="blavo asea kple *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="kpeɖe" buildString="kpeɖe kple *" />
+                <Digit digit="2" string="kpeɖe eve" buildString="kpeɖe eve kple *" />
+                <Digit digit="3" string="kpeɖe eto" buildString="kpeɖe eto kple *" />
+                <Digit digit="4" string="kpeɖe ene" buildString="kpeɖe ene kple *" />
+                <Digit digit="5" string="kpeɖe atɔ" buildString="kpeɖe atɔ kple *" />
+                <Digit digit="6" string="kpeɖe ade" buildString="kpeɖe ade kple *" />
+                <Digit digit="7" string="kpeɖe adre" buildString="kpeɖe adre kple *" />
+                <Digit digit="8" string="kpeɖe enyi" buildString="kpeɖe enyi kple *" />
+                <Digit digit="9" string="kpeɖe asea" buildString="kpeɖe asea kple *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="akpe" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>miliɔn</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Exceptions>
+            <Number value="11" string="ewo kple deka" />
+            <Number value="12" string="ewo kple eve" />
+            <Number value="13" string="ewo kple eto" />
+            <Number value="14" string="ewo kple ene" />
+            <Number value="15" string="ewo kple atɔ" />
+            <Number value="16" string="ewo kple ade" />
+            <Number value="17" string="ewo kple adre" />
+            <Number value="18" string="ewo kple enyi" />
+            <Number value="19" string="ewo kple asea" />
+        </Exceptions>
+    </Language>
+</Numbers>

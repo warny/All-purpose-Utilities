@@ -144,12 +144,28 @@ namespace UtilsTest.Mathematics.Numbers
         }
 
         [TestMethod]
+        public void DecimalTest()
+        {
+            (decimal Number, string Expected)[] tests = [
+                (1.5m, "eins komma fünf"),
+                (12.34m, "zwölf komma drei vier"),
+            ];
+
+            var converter = NumberToStringConverter.GetConverter("de-DE");
+
+            foreach (var test in tests)
+            {
+                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
+            }
+        }
+
+        [TestMethod]
         public void BigIntTest()
         {
             (BigInteger Number, string Expected)[] tests = [
                 (
                     new BigInteger([0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], true, true),
-                    "eine Tredezillion achthundertzweiundfünfzig Duodezilliarden sechshundertdreiundsiebzig Duodezillionen vierhundertsiebenundzwanzig Unidezilliarden siebenhundertsiebenundneunzig Unidezillionen neunundfünfzig Dezilliarden einhundertsechsundzwanzig Dezillionen siebenhundertsiebenundsiebzig Nonilliarden einhundertfünfunddreizig Nonillionen siebenhundertsechzig Octilliarden einhundertneununddreizig Octillionen sechs Septilliarden fünfhundertfünfundzwanzig Septillionen sechshundertzweiundfünfzig Sextilliarden dreihundertneunzehn Sextillionen siebenhundertvierundfünfzig Quintilliarden sechshundertfünfzig Quintillionen zweihundertneunundvierzig Quadrilliarden vierundzwanzig Quadrillionen sechshunderteinunddreizig Trilliarden dreihunderteinundzwanzig Trillionen dreihundertvierundvierzig Billiarden einhundertsechsundzwanzig Billionen sechshundertzehn Milliarden vierundsiebzig Millionen zweihundertachtunddreizig tausend neunhundertfünfundsiebzig"
+                    "eine Tredezillion achthundertzweiundfünfzig Duodezilliarden sechshundertdreiundsiebzig Duodezillionen vierhundertsiebenundzwanzig Unidezilliarden siebenhundertsiebenundneunzig Unidezillionen neunundfünfzig Dezilliarden einhundertsechsundzwanzig Dezillionen siebenhundertsiebenundsiebzig Nonilliarden einhundertfünfunddreißig Nonillionen siebenhundertsechzig Octilliarden einhundertneununddreißig Octillionen sechs Septilliarden fünfhundertfünfundzwanzig Septillionen sechshundertzweiundfünfzig Sextilliarden dreihundertneunzehn Sextillionen siebenhundertvierundfünfzig Quintilliarden sechshundertfünfzig Quintillionen zweihundertneunundvierzig Quadrilliarden vierundzwanzig Quadrillionen sechshunderteinunddreißig Trilliarden dreihunderteinundzwanzig Trillionen dreihundertvierundvierzig Billiarden einhundertsechsundzwanzig Billionen sechshundertzehn Milliarden vierundsiebzig Millionen zweihundertachtunddreißig tausend neunhundertfünfundsiebzig"
                 ),
             ];
 
