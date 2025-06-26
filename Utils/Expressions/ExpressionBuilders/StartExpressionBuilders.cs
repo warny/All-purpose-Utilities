@@ -877,8 +877,8 @@ namespace Utils.Expressions.ExpressionBuilders
 	/// building either an <see cref="Expression.Block"/> that enumerates an array
 	/// or uses <see cref="IEnumerator"/> for other enumerables.
 	/// </summary>
-	public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens
-	{
+        public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens
+        {
 		/// <inheritdoc/>
 		public IEnumerable<string> AdditionalTokens => ["(", ")", "in"];
 
@@ -1044,6 +1044,82 @@ namespace Utils.Expressions.ExpressionBuilders
 					)
 				]
 			);
-		}
-	}
+        }
+
+        /// <summary>
+        /// Implements <see cref="IStartExpressionBuilder"/> for <c>switch</c> statements.
+        /// This builder supports both expression-style switches and the classic
+        /// statement form where each case ends with <c>break;</c>.
+        /// </summary>
+        public class SwitchBuilder : IStartExpressionBuilder, IAdditionalTokens
+        {
+                /// <inheritdoc/>
+                public IEnumerable<string> AdditionalTokens => ["(", ")", "{", "}", "case", "default", ":", ";", "break"];
+
+                /// <inheritdoc/>
+                public Expression Build(
+                        ExpressionParserCore parser,
+                        ParserContext context,
+                        string val,
+                        int priorityLevel,
+                        Parenthesis markers,
+                        ref bool isClosedWrap)
+                {
+                        context.Tokenizer.ReadSymbol("(");
+                        var switchValue = parser.ReadExpression(context, 0, new Parenthesis("(", ")", null), out _);
+                        context.Tokenizer.ReadSymbol(")");
+                        context.Tokenizer.ReadSymbol("{");
+
+                        List<SwitchCase> cases = new();
+                        Expression defaultBody = Expression.Empty();
+
+                        while (true)
+                        {
+                                string token = context.Tokenizer.ReadToken();
+                                if (token == "case")
+                                {
+                                        var testValue = parser.ReadExpression(context, 0, null, out _);
+                                        context.Tokenizer.ReadSymbol(":");
+                                        var body = parser.ReadExpression(context, 0, null, out _);
+                                        var next = context.Tokenizer.PeekToken();
+                                        if (next == "break")
+                                        {
+                                                context.Tokenizer.ReadToken();
+                                                context.Tokenizer.ReadSymbol(";");
+                                        }
+                                        else
+                                        {
+                                                context.Tokenizer.ReadSymbol(";");
+                                        }
+                                        cases.Add(Expression.SwitchCase(body, testValue));
+                                }
+                                else if (token == "default")
+                                {
+                                        context.Tokenizer.ReadSymbol(":");
+                                        defaultBody = parser.ReadExpression(context, 0, null, out _);
+                                        var next = context.Tokenizer.PeekToken();
+                                        if (next == "break")
+                                        {
+                                                context.Tokenizer.ReadToken();
+                                                context.Tokenizer.ReadSymbol(";");
+                                        }
+                                        else
+                                        {
+                                                context.Tokenizer.ReadSymbol(";");
+                                        }
+                                }
+                                else if (token == "}")
+                                {
+                                        break;
+                                }
+                                else
+                                {
+                                        throw new ParseUnknownException(token, context.Tokenizer.Position.Index);
+                                }
+                        }
+
+                        return Expression.Switch(switchValue, defaultBody, cases.ToArray());
+                }
+        }
+}
 }

@@ -256,11 +256,20 @@ namespace Utils.String
 		/// <param name="formatString">The interpolated format string.</param>
 		/// <param name="names">The parameter names used in the format string.</param>
 		/// <returns>A delegate that formats strings based on the provided parameters.</returns>
-		public static T Create<T>(string formatString, params string[] names)
-			where T : Delegate
-		{
-			return Create<T>(formatString, null, null, names);
-		}
+                public static T Create<T>(string formatString, params string[] names)
+                        where T : Delegate
+                {
+                        return Create<T>(formatString, null, null, names);
+                }
+
+                /// <summary>
+                /// Creates a string formatter delegate using a custom interpolated string handler.
+                /// </summary>
+                public static T Create<T, THandler>(string formatString, params string[] names)
+                        where T : Delegate
+                {
+                        return Create<T, THandler>(formatString, null, null, names);
+                }
 
 		/// <summary>
 		/// Creates a string formatter delegate of the specified type <typeparamref name="T"/>, with a custom formatter and culture info.
@@ -271,13 +280,13 @@ namespace Utils.String
 		/// <param name="cultureInfo">The culture info for formatting (optional).</param>
 		/// <param name="names">The parameter names used in the format string.</param>
 		/// <returns>A delegate that formats strings based on the provided parameters.</returns>
-		public static T Create<T>(
-			string formatString,
-			ICustomFormatter customFormatter,
-			CultureInfo cultureInfo,
-			params string[] names)
-			where T : Delegate
-		{
+                public static T Create<T>(
+                        string formatString,
+                        ICustomFormatter customFormatter,
+                        CultureInfo cultureInfo,
+                        params string[] names)
+                        where T : Delegate
+                {
 			var delegateParameters = typeof(T).GetMethod("Invoke")?.GetParameters() ?? [];
 			if (names.Length != 0 && names.Length != delegateParameters.Length)
 				throw new ArgumentException("Invalid number of names", nameof(names));
@@ -286,8 +295,29 @@ namespace Utils.String
 				.Select((p, i) => Expression.Parameter(p.ParameterType, names.Length > 0 ? names[i] : p.Name))
 				.ToArray();
 
-			return Create<T>(formatString, customFormatter, cultureInfo, parameters);
-		}
+                        return Create<T>(formatString, customFormatter, cultureInfo, parameters);
+                }
+
+                /// <summary>
+                /// Creates a string formatter delegate using a custom interpolated string handler.
+                /// </summary>
+                public static T Create<T, THandler>(
+                        string formatString,
+                        ICustomFormatter customFormatter,
+                        CultureInfo cultureInfo,
+                        params string[] names)
+                        where T : Delegate
+                {
+                        var delegateParameters = typeof(T).GetMethod("Invoke")?.GetParameters() ?? [];
+                        if (names.Length != 0 && names.Length != delegateParameters.Length)
+                                throw new ArgumentException("Invalid number of names", nameof(names));
+
+                        var parameters = delegateParameters
+                                .Select((p, i) => Expression.Parameter(p.ParameterType, names.Length > 0 ? names[i] : p.Name))
+                                .ToArray();
+
+                        return Create<T, THandler>(formatString, customFormatter, cultureInfo, parameters);
+                }
 
 		/// <summary>
 		/// Creates a string formatter delegate of the specified type <typeparamref name="T"/>,
@@ -299,13 +329,13 @@ namespace Utils.String
 		/// <param name="cultureInfo">The culture info for formatting (optional).</param>
 		/// <param name="parameterExpressions">The parameter expressions used in the delegate.</param>
 		/// <returns>A delegate that formats strings based on the provided parameters.</returns>
-		public static T Create<T>(
-			string formatString,
-			ICustomFormatter customFormatter,
-			CultureInfo cultureInfo,
-			params ParameterExpression[] parameterExpressions)
-			where T : Delegate
-		{
+                public static T Create<T>(
+                        string formatString,
+                        ICustomFormatter customFormatter,
+                        CultureInfo cultureInfo,
+                        params ParameterExpression[] parameterExpressions)
+                        where T : Delegate
+                {
 			var expressions = new List<Expression>();
 			var formatter = CreateAndAssignVariable(customFormatter, "formatter", expressions.Add);
 			var culture = CreateAndAssignVariable(cultureInfo, "culture", expressions.Add);
@@ -317,8 +347,32 @@ namespace Utils.String
 				new[] { formatter, culture }.Where(e => e != null),
 				expressions
 			);
-			return Expression.Lambda<T>(block, parameterExpressions).Compile();
-		}
+                        return Expression.Lambda<T>(block, parameterExpressions).Compile();
+                }
+
+                /// <summary>
+                /// Creates a string formatter delegate with a custom interpolated string handler and explicit parameters.
+                /// </summary>
+                public static T Create<T, THandler>(
+                        string formatString,
+                        ICustomFormatter customFormatter,
+                        CultureInfo cultureInfo,
+                        params ParameterExpression[] parameterExpressions)
+                        where T : Delegate
+                {
+                        var expressions = new List<Expression>();
+                        var formatter = CreateAndAssignVariable(customFormatter, "formatter", expressions.Add);
+                        var culture = CreateAndAssignVariable(cultureInfo, "culture", expressions.Add);
+
+                        var body = GenerateCommands(typeof(THandler), Array.Empty<ParameterExpression>(), _defaultResolver, formatString, formatter, culture, parameterExpressions, false, _defaultNamespaces);
+                        expressions.Add(body);
+
+                        var block = Expression.Block(
+                                new[] { formatter, culture }.Where(e => e != null),
+                                expressions
+                        );
+                        return Expression.Lambda<T>(block, parameterExpressions).Compile();
+                }
 
 		/// <summary>
 		/// Creates a string formatter function for an <see cref="IDataRecord"/>,

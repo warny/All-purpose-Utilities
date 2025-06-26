@@ -86,6 +86,20 @@ var lambda = Utils.Expressions.ExpressionParser.Parse<Func<string[], string>>(ex
 Func<string[], string> concat = lambda.Compile();
 string result = concat(new[] { "Hello", "World" });
 ```
+```csharp
+var switchExpr = "(i) => switch(i) { case 1: 10; case 2: 20; default: 0; }";
+var switchLambda = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchExpr);
+int value = switchLambda.Compile()(2); // 20
+```
+```csharp
+var switchStmt = "(int i) => { int v = 0; switch(i) { case 1: v = 10; break; case 2: v = 20; break; default: v = 0; break; } return v; }";
+var switchFunc = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchStmt).Compile();
+int result = switchFunc(1); // 10
+```
+```csharp
+var formatter = Utils.String.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
+string formatted = formatter("John");
+```
 
 ### XML
 ```csharp
