@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Utils.Objects;
 
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 
 /// <summary>
 /// Provides utility methods for date and time calculations and manipulations.

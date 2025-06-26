@@ -3,7 +3,7 @@ using System.Globalization;
 using System.IO;
 using Utils.Objects;
 
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 
 /// <summary>
 /// Evaluates date formulas using culture specific tokens.

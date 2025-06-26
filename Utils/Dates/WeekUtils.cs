@@ -2,7 +2,7 @@
 using System.Globalization;
 using Utils.Objects;
 
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 
 public static class WeekUtils
 {

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Utils.Utils.Dates;
+namespace Utils.Dates;
 
 /// <summary>
 /// Provides culture specific <see cref="DateFormulaLanguage"/> instances.
