@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
@@ -877,8 +878,8 @@ namespace Utils.Expressions.ExpressionBuilders
 	/// building either an <see cref="Expression.Block"/> that enumerates an array
 	/// or uses <see cref="IEnumerator"/> for other enumerables.
 	/// </summary>
-        public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens
-        {
+	public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens
+	{
 		/// <inheritdoc/>
 		public IEnumerable<string> AdditionalTokens => ["(", ")", "in"];
 
@@ -1044,7 +1045,8 @@ namespace Utils.Expressions.ExpressionBuilders
 					)
 				]
 			);
-        }
+		}
+	}
 
         /// <summary>
         /// Implements <see cref="IStartExpressionBuilder"/> for <c>switch</c> statements.
@@ -1121,5 +1123,4 @@ namespace Utils.Expressions.ExpressionBuilders
                         return Expression.Switch(switchValue, defaultBody, cases.ToArray());
                 }
         }
-}
 }

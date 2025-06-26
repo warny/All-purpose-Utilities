@@ -365,9 +365,8 @@ public readonly struct Bytes :
 		if (string.IsNullOrWhiteSpace(s))
 			return Empty;
 
-                var values = s.Split(
-                        [' ', '\n', '\t', '\r', ',', ';'],
-                        StringSplitOptions.RemoveEmptyEntries);
+                var separators = new[] { ' ', '\n', '\t', '\r', ',', ';' };
+                var values = s.Split(separators, StringSplitOptions.RemoveEmptyEntries);
 
 		var bytes = values.Select(v => byte.Parse(v, System.Globalization.NumberStyles.HexNumber))
 						  .ToArray();
