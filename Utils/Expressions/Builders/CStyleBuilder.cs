@@ -28,6 +28,9 @@ public class CStyleBuilder : IBuilder
 
     public IEnumerable<TryReadToken> TokenReaders { get; } =
     [
+        TryReadInterpolatedString1,
+        TryReadInterpolatedString2,
+        TryReadInterpolatedString3,
         TryReadName,
         TryReadNumber,
         TryReadComment,
@@ -39,6 +42,9 @@ public class CStyleBuilder : IBuilder
 
     public IEnumerable<StringTransformer> StringTransformers { get; } =
     [
+        StringTransformInterpolated1,
+        StringTransformInterpolated2,
+        StringTransformInterpolated3,
         StringTransform1,
         StringTransform2,
         StringTransform3,
@@ -359,6 +365,35 @@ public class CStyleBuilder : IBuilder
         throw new ParseNoEndException(prefix, index);
     }
 
+    private static bool TryReadInterpolatedString1(string content, int index, out int length)
+    {
+        length = 0;
+        if (content.Length < index + 2 || content[index] != '$') return false;
+        return TryReadString1(content, index + 1, out length) && (length += 1) > 0;
+    }
+
+    private static bool TryReadInterpolatedString2(string content, int index, out int length)
+    {
+        length = 0;
+        if (content.Length < index + 3) return false;
+        if (content[index] == '$' && content[index + 1] == '@')
+        {
+            if (TryReadString2(content, index + 1, out length)) { length += 1; return true; }
+        }
+        else if (content[index] == '@' && content[index + 1] == '$')
+        {
+            if (TryReadString2(content, index + 1, out length)) return true;
+        }
+        return false;
+    }
+
+    private static bool TryReadInterpolatedString3(string content, int index, out int length)
+    {
+        length = 0;
+        if (content.Length < index + 4 || content[index] != '$') return false;
+        return TryReadString3(content, index + 1, out length) && (length += 1) > 0;
+    }
+
 
     private static bool StringTransform1(string token, out string result)
     {
@@ -401,5 +436,30 @@ public class CStyleBuilder : IBuilder
         if (!token.StartsWith("\"\"\"")) return false;
         result = token[token.Length..^token.Length];
         return true;
+    }
+
+    private static bool StringTransformInterpolated1(string token, out string result)
+    {
+        result = null;
+        if (!token.StartsWith("$\"") || token.StartsWith("$@")) return false;
+        return StringTransform1(token[1..], out result);
+    }
+
+    private static bool StringTransformInterpolated2(string token, out string result)
+    {
+        result = null;
+        if (token.StartsWith("$@\"") || token.StartsWith("@$\""))
+        {
+            var t = token.Remove(token.IndexOf('$'), 1);
+            return StringTransform2(t, out result);
+        }
+        return false;
+    }
+
+    private static bool StringTransformInterpolated3(string token, out string result)
+    {
+        result = null;
+        if (!token.StartsWith("$\"\"\"")) return false;
+        return StringTransform3(token[1..], out result);
     }
 }

@@ -100,6 +100,10 @@ int result = switchFunc(1); // 10
 var formatter = Utils.String.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
 string formatted = formatter("John");
 ```
+```csharp
+var interp = Utils.Expressions.ExpressionParser.Parse<Func<string, string, string>>("(a,b)=>$\"{a} {b}!\"").Compile();
+string hello = interp("hello", "world"); // hello world!
+```
 
 ### XML
 ```csharp

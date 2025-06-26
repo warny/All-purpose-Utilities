@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Utils.Reflection;
 using Utils.String;
 
@@ -587,29 +588,30 @@ namespace Utils.Expressions.ExpressionBuilders
 			}
 			else
 			{
-				return ReadStringOrChar(context, val, firstChar);
+                                return ReadStringOrChar(parser, context, val, firstChar);
 			}
 		}
 
 		/// <summary>
 		/// Reads a string or char literal from <paramref name="val"/>.
 		/// </summary>
-		private static Expression ReadStringOrChar(ParserContext context, string val, char firstChar)
+                private static Expression ReadStringOrChar(ExpressionParserCore parser, ParserContext context, string val, char firstChar)
 		{
-			return firstChar switch
-			{
-				'\"' or '@' => Expression.Constant(context.Tokenizer.DefineString),
-				'\'' => Expression.Constant(context.Tokenizer.DefineString[0]),
-				_ => throw new ParseUnknownException(val, context.Tokenizer.Position.Index),
-			};
+                        return firstChar switch
+                        {
+                                '\"' or '@' => Expression.Constant(context.Tokenizer.DefineString),
+                                '\'' => Expression.Constant(context.Tokenizer.DefineString[0]),
+                                '$' => BuildInterpolatedString(parser, context, context.Tokenizer.DefineString),
+                                _ => throw new ParseUnknownException(val, context.Tokenizer.Position.Index),
+                        };
 		}
 
 		/// <summary>
 		/// Interprets <paramref name="val"/> as a variable, constant, type, or member access,
 		/// returning the appropriate <see cref="Expression"/>.
 		/// </summary>
-		private static Expression ReadName(ExpressionParserCore parser, ParserContext context, string val)
-		{
+                private static Expression ReadName(ExpressionParserCore parser, ParserContext context, string val)
+                {
 			// If it matches a declared variable or a known constant
 			if (context.TryFindVariable(val, out var parameter))
 				return parameter;
@@ -656,9 +658,53 @@ namespace Utils.Expressions.ExpressionBuilders
 				return newVariable;
 			}
 
-			throw new ParseWrongSymbolException("", token, context.Tokenizer.Position.Index);
-		}
-	}
+                        throw new ParseWrongSymbolException("", token, context.Tokenizer.Position.Index);
+                }
+
+                private static Expression BuildInterpolatedString(ExpressionParserCore parser, ParserContext context, string format)
+                {
+                        var handlerVar = Expression.Variable(typeof(DefaultInterpolatedStringHandler), "handler");
+                        var block = new BlockExpressionBuilder();
+
+                        var parsed = new InterpolatedStringParser(format);
+                        int literalLength = parsed.OfType<LiteralPart>().Sum(p => p.Length);
+                        int formattedCount = parsed.OfType<FormattedPart>().Count();
+
+                        var ctor = typeof(DefaultInterpolatedStringHandler).GetConstructor([typeof(int), typeof(int)]);
+                        block.Add(Expression.Assign(
+                                handlerVar,
+                                Expression.New(ctor, Expression.Constant(literalLength), Expression.Constant(formattedCount))
+                        ));
+
+                        var appendLiteral = typeof(DefaultInterpolatedStringHandler).GetMethod("AppendLiteral", [typeof(string)]);
+                        var appendFormattedGeneric = typeof(DefaultInterpolatedStringHandler).GetMethods().First(m => m.Name == "AppendFormatted" && m.IsGenericMethod && m.GetParameters().Length == 1);
+                        foreach (var part in parsed)
+                        {
+                                switch (part)
+                                {
+                                        case LiteralPart lit:
+                                                block.Add(Expression.Call(handlerVar, appendLiteral, Expression.Constant(lit.Text)));
+                                                break;
+                                        case FormattedPart fp:
+                                                var expr = ExpressionParser.ParseExpression(
+                                                        fp.ExpressionText,
+                                                        [.. context.Parameters],
+                                                        context.DefaultStaticType,
+                                                        context.FirstArgumentIsDefaultInstance);
+                                                var call = Expression.Call(
+                                                        handlerVar,
+                                                        appendFormattedGeneric.MakeGenericMethod(expr.Type),
+                                                        expr);
+                                                block.Add(call);
+                                                break;
+                                }
+                        }
+
+                        var toString = typeof(DefaultInterpolatedStringHandler).GetMethod("ToString", []);
+                        block.Add(Expression.Call(handlerVar, toString));
+                        return block.CreateBlock();
+                }
+        }
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for "if" statements, optionally
@@ -1083,30 +1129,26 @@ namespace Utils.Expressions.ExpressionBuilders
                                         var testValue = parser.ReadExpression(context, 0, null, out _);
                                         context.Tokenizer.ReadSymbol(":");
                                         var body = parser.ReadExpression(context, 0, null, out _);
+                                        context.Tokenizer.ReadSymbol(";");
                                         var next = context.Tokenizer.PeekToken();
                                         if (next == "break")
                                         {
                                                 context.Tokenizer.ReadToken();
                                                 context.Tokenizer.ReadSymbol(";");
                                         }
-                                        else
-                                        {
-                                                context.Tokenizer.ReadSymbol(";");
-                                        }
+                                        if (testValue.Type != switchValue.Type)
+                                                testValue = Expression.Convert(testValue, switchValue.Type);
                                         cases.Add(Expression.SwitchCase(body, testValue));
                                 }
                                 else if (token == "default")
                                 {
                                         context.Tokenizer.ReadSymbol(":");
                                         defaultBody = parser.ReadExpression(context, 0, null, out _);
+                                        context.Tokenizer.ReadSymbol(";");
                                         var next = context.Tokenizer.PeekToken();
                                         if (next == "break")
                                         {
                                                 context.Tokenizer.ReadToken();
-                                                context.Tokenizer.ReadSymbol(";");
-                                        }
-                                        else
-                                        {
                                                 context.Tokenizer.ReadSymbol(";");
                                         }
                                 }
