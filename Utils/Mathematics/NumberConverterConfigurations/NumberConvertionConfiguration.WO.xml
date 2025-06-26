@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="sero"
+        minus="minus *"
+        decimalSeparator="pojint"
+    >
+        <Culture>WO</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="benn" />
+                <Digit digit="2" string="ñaar" />
+                <Digit digit="3" string="ñett" />
+                <Digit digit="4" string="ñent" />
+                <Digit digit="5" string="juróom" />
+                <Digit digit="6" string="juróom-benn" />
+                <Digit digit="7" string="juróom-ñaar" />
+                <Digit digit="8" string="juróom-ñett" />
+                <Digit digit="9" string="juróom-ñent" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="fukk" buildString="fukk ak *" />
+                <Digit digit="2" string="ñaar-fukk" buildString="ñaar-fukk ak *" />
+                <Digit digit="3" string="ñett-fukk" buildString="ñett-fukk ak *" />
+                <Digit digit="4" string="ñent-fukk" buildString="ñent-fukk ak *" />
+                <Digit digit="5" string="juróom-fukk" buildString="juróom-fukk ak *" />
+                <Digit digit="6" string="juróom-benn-fukk" buildString="juróom-benn-fukk ak *" />
+                <Digit digit="7" string="juróom-ñaar-fukk" buildString="juróom-ñaar-fukk ak *" />
+                <Digit digit="8" string="juróom-ñett-fukk" buildString="juróom-ñett-fukk ak *" />
+                <Digit digit="9" string="juróom-ñent-fukk" buildString="juróom-ñent-fukk ak *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="téeméer" buildString="téeméer ak *" />
+                <Digit digit="2" string="ñaar téeméer" buildString="ñaar téeméer ak *" />
+                <Digit digit="3" string="ñett téeméer" buildString="ñett téeméer ak *" />
+                <Digit digit="4" string="ñent téeméer" buildString="ñent téeméer ak *" />
+                <Digit digit="5" string="juróom téeméer" buildString="juróom téeméer ak *" />
+                <Digit digit="6" string="juróom-benn téeméer" buildString="juróom-benn téeméer ak *" />
+                <Digit digit="7" string="juróom-ñaar téeméer" buildString="juróom-ñaar téeméer ak *" />
+                <Digit digit="8" string="juróom-ñett téeméer" buildString="juróom-ñett téeméer ak *" />
+                <Digit digit="9" string="juróom-ñent téeméer" buildString="juróom-ñent téeméer ak *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="junni" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>milyon</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Exceptions>
+            <Number value="11" string="fukk ak benn" />
+            <Number value="12" string="fukk ak ñaar" />
+            <Number value="13" string="fukk ak ñett" />
+            <Number value="14" string="fukk ak ñent" />
+            <Number value="15" string="fukk ak juróom" />
+            <Number value="16" string="fukk ak juróom-benn" />
+            <Number value="17" string="fukk ak juróom-ñaar" />
+            <Number value="18" string="fukk ak juróom-ñett" />
+            <Number value="19" string="fukk ak juróom-ñent" />
+        </Exceptions>
+    </Language>
+</Numbers>

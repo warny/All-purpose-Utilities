@@ -26,3 +26,9 @@ var simplifier = new Utils.Mathematics.Expressions.ExpressionSimplifier();
 var integral = (Expression<Func<double, double>>)simplifier.Simplify(integrator.Integrate(func));
 ```
 
+```csharp
+var converter = Utils.Mathematics.NumberToStringConverter.GetConverter("EN");
+string text = converter.Convert(12.34m); // "twelve point thirty four hundredths"
+var limit = converter.MaxNumber; // null when unlimited
+```
+

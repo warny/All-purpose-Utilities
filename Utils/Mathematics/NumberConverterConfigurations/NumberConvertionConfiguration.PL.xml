@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="zero"
+        minus="minus *"
+        decimalSeparator="przecinek"
+    >
+        <Culture>PL</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="jeden" />
+                <Digit digit="2" string="dwa" />
+                <Digit digit="3" string="trzy" />
+                <Digit digit="4" string="cztery" />
+                <Digit digit="5" string="pięć" />
+                <Digit digit="6" string="sześć" />
+                <Digit digit="7" string="siedem" />
+                <Digit digit="8" string="osiem" />
+                <Digit digit="9" string="dziewięć" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="dziesięć" buildString="dziesięć *" />
+                <Digit digit="2" string="dwadzieścia" buildString="dwadzieścia *" />
+                <Digit digit="3" string="trzydzieści" buildString="trzydzieści *" />
+                <Digit digit="4" string="czterdzieści" buildString="czterdzieści *" />
+                <Digit digit="5" string="pięćdziesiąt" buildString="pięćdziesiąt *" />
+                <Digit digit="6" string="sześćdziesiąt" buildString="sześćdziesiąt *" />
+                <Digit digit="7" string="siedemdziesiąt" buildString="siedemdziesiąt *" />
+                <Digit digit="8" string="osiemdziesiąt" buildString="osiemdziesiąt *" />
+                <Digit digit="9" string="dziewięćdziesiąt" buildString="dziewięćdziesiąt *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="sto" buildString="sto *" />
+                <Digit digit="2" string="dwieście" buildString="dwieście *" />
+                <Digit digit="3" string="trzysta" buildString="trzysta *" />
+                <Digit digit="4" string="czterysta" buildString="czterysta *" />
+                <Digit digit="5" string="pięćset" buildString="pięćset *" />
+                <Digit digit="6" string="sześćset" buildString="sześćset *" />
+                <Digit digit="7" string="siedemset" buildString="siedemset *" />
+                <Digit digit="8" string="osiemset" buildString="osiemset *" />
+                <Digit digit="9" string="dziewięćset" buildString="dziewięćset *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="tysiąc" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>milion</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <Replacement oldValue="jeden tysiąc" newValue="tysiąc" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="jedenaście" />
+            <Number value="12" string="dwanaście" />
+            <Number value="13" string="trzynaście" />
+            <Number value="14" string="czternaście" />
+            <Number value="15" string="piętnaście" />
+            <Number value="16" string="szesnaście" />
+            <Number value="17" string="siedemnaście" />
+            <Number value="18" string="osiemnaście" />
+            <Number value="19" string="dziewiętnaście" />
+        </Exceptions>
+    </Language>
+</Numbers>

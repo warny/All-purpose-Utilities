@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="μηδέν"
+        minus="μείον *"
+        decimalSeparator="κόμμα"
+    >
+        <Culture>EL</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="ένα" />
+                <Digit digit="2" string="δύο" />
+                <Digit digit="3" string="τρία" />
+                <Digit digit="4" string="τέσσερα" />
+                <Digit digit="5" string="πέντε" />
+                <Digit digit="6" string="έξι" />
+                <Digit digit="7" string="επτά" />
+                <Digit digit="8" string="οκτώ" />
+                <Digit digit="9" string="εννέα" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="δέκα" buildString="δέκα *" />
+                <Digit digit="2" string="είκοσι" buildString="είκοσι *" />
+                <Digit digit="3" string="τριάντα" buildString="τριάντα *" />
+                <Digit digit="4" string="σαράντα" buildString="σαράντα *" />
+                <Digit digit="5" string="πενήντα" buildString="πενήντα *" />
+                <Digit digit="6" string="εξήντα" buildString="εξήντα *" />
+                <Digit digit="7" string="εβδομήντα" buildString="εβδομήντα *" />
+                <Digit digit="8" string="ογδόντα" buildString="ογδόντα *" />
+                <Digit digit="9" string="ενενήντα" buildString="ενενήντα *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="εκατό" buildString="εκατό *" />
+                <Digit digit="2" string="διακόσια" buildString="διακόσια *" />
+                <Digit digit="3" string="τριακόσια" buildString="τριακόσια *" />
+                <Digit digit="4" string="τετρακόσια" buildString="τετρακόσια *" />
+                <Digit digit="5" string="πεντακόσια" buildString="πεντακόσια *" />
+                <Digit digit="6" string="εξακόσια" buildString="εξακόσια *" />
+                <Digit digit="7" string="επτακόσια" buildString="επτακόσια *" />
+                <Digit digit="8" string="οκτακόσια" buildString="οκτακόσια *" />
+                <Digit digit="9" string="εννιακόσια" buildString="εννιακόσια *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="χίλια" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>εκατομμύριο</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <Replacement oldValue="ένα χίλια" newValue="χίλια" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="έντεκα" />
+            <Number value="12" string="δώδεκα" />
+            <Number value="13" string="δεκατρία" />
+            <Number value="14" string="δεκατέσσερα" />
+            <Number value="15" string="δεκαπέντε" />
+            <Number value="16" string="δεκαέξι" />
+            <Number value="17" string="δεκαεπτά" />
+            <Number value="18" string="δεκαοκτώ" />
+            <Number value="19" string="δεκαεννέα" />
+        </Exceptions>
+    </Language>
+</Numbers>

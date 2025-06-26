@@ -162,5 +162,21 @@ namespace UtilsTest.Mathematics.Numbers
                 Assert.AreEqual(test.Expected, converter.Convert(test.Number));
             }
         }
+
+        [TestMethod]
+        public void DecimalTest()
+        {
+            (decimal Number, string Expected)[] tests = [
+                (1.5m, "un virgule cinq dixièmes"),
+                (12.34m, "douze virgule trente quatre centièmes"),
+            ];
+
+            var converter = NumberToStringConverter.GetConverter("FR-fr");
+
+            foreach (var test in tests)
+            {
+                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
+            }
+        }
     }
 }

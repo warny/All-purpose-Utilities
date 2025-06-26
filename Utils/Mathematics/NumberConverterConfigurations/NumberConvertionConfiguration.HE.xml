@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="אפס"
+        minus="מינוס *"
+        decimalSeparator="נקודה"
+        maxNumber="999999999"
+    >
+        <Culture>HE</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="אחד" />
+                <Digit digit="2" string="שתיים" />
+                <Digit digit="3" string="שלוש" />
+                <Digit digit="4" string="ארבע" />
+                <Digit digit="5" string="חמש" />
+                <Digit digit="6" string="שש" />
+                <Digit digit="7" string="שבע" />
+                <Digit digit="8" string="שמונה" />
+                <Digit digit="9" string="תשע" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="עשר" buildString="עשר *" />
+                <Digit digit="2" string="עשרים" buildString="עשרים *" />
+                <Digit digit="3" string="שלושים" buildString="שלושים *" />
+                <Digit digit="4" string="ארבעים" buildString="ארבעים *" />
+                <Digit digit="5" string="חמישים" buildString="חמישים *" />
+                <Digit digit="6" string="שישים" buildString="שישים *" />
+                <Digit digit="7" string="שבעים" buildString="שבעים *" />
+                <Digit digit="8" string="שמונים" buildString="שמונים *" />
+                <Digit digit="9" string="תשעים" buildString="תשעים *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="מאה" buildString="מאה *" />
+                <Digit digit="2" string="מאתיים" buildString="מאתיים *" />
+                <Digit digit="3" string="שלוש מאות" buildString="שלוש מאות *" />
+                <Digit digit="4" string="ארבע מאות" buildString="ארבע מאות *" />
+                <Digit digit="5" string="חמש מאות" buildString="חמש מאות *" />
+                <Digit digit="6" string="שש מאות" buildString="שש מאות *" />
+                <Digit digit="7" string="שבע מאות" buildString="שבע מאות *" />
+                <Digit digit="8" string="שמונה מאות" buildString="שמונה מאות *" />
+                <Digit digit="9" string="תשע מאות" buildString="תשע מאות *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="אלף" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>מיליון</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Exceptions />
+    </Language>
+</Numbers>

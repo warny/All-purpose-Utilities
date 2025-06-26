@@ -164,5 +164,21 @@ namespace UtilsTest.Mathematics.Numbers
                 Assert.AreEqual(test.Expected, converter.Convert(test.Number));
             }
         }
+
+        [TestMethod]
+        public void DecimalTest()
+        {
+            (decimal Number, string Expected)[] tests = [
+                (1.5m, "one point five tenths"),
+                (12.34m, "twelve point thirty four hundredths"),
+            ];
+
+            var converter = NumberToStringConverter.GetConverter("en-UK");
+
+            foreach (var test in tests)
+            {
+                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
+            }
+        }
     }
 }

@@ -32,11 +32,22 @@
 		<xs:attribute name="string" type="xs:string" use="required"/>
 	</xs:complexType>
 	
-	<xs:complexType name="NumberListType">
-		<xs:sequence>
-			<xs:element name="Number" type="NumberType" maxOccurs="unbounded"/>
-		</xs:sequence>
-	</xs:complexType>
+        <xs:complexType name="NumberListType">
+                <xs:sequence>
+                        <xs:element name="Number" type="NumberType" maxOccurs="unbounded"/>
+                </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name="FractionType">
+                <xs:attribute name="digits" type="xs:int" use="required"/>
+                <xs:attribute name="string" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="FractionListType">
+                <xs:sequence>
+                        <xs:element name="Fraction" type="FractionType" maxOccurs="unbounded"/>
+                </xs:sequence>
+        </xs:complexType>
 
 	<xs:element name="Numbers">
 		<xs:complexType>
@@ -101,22 +112,25 @@
 								</xs:complexType>
 							</xs:element>
 							<xs:element name="Exceptions" type="NumberListType" />
-							<xs:element name="AdjustFunction" minOccurs="0" maxOccurs="1">
-								<xs:complexType>
-									<xs:simpleContent>
-										<xs:extension base="xs:string"/>
-									</xs:simpleContent>
-								</xs:complexType>
-							</xs:element>
-						</xs:sequence>
-						<xs:attribute name="baseOn" type="xs:string"/>
-						<xs:attribute name="groupSize" type="xs:long" use="required"/>
-						<xs:attribute name="separator" type="xs:string" use="required"/>
-						<xs:attribute name="groupSeparator" type="xs:string" use="required"/>
+                                                        <xs:element name="AdjustFunction" minOccurs="0" maxOccurs="1">
+                                                                <xs:complexType>
+                                                                        <xs:simpleContent>
+                                                                                <xs:extension base="xs:string"/>
+                                                                        </xs:simpleContent>
+                                                                </xs:complexType>
+                                                        </xs:element>
+                                                        <xs:element name="Fractions" type="FractionListType" minOccurs="0" />
+                                                </xs:sequence>
+                                                <xs:attribute name="baseOn" type="xs:string"/>
+                                                <xs:attribute name="groupSize" type="xs:long" use="required"/>
+                                                <xs:attribute name="separator" type="xs:string" use="required"/>
+                                                <xs:attribute name="groupSeparator" type="xs:string" use="required"/>
 						<xs:attribute name="zero" type="xs:string" use="required"/>
-						<xs:attribute name="minus" type="xs:string" use="required"/>
-					</xs:complexType>
-				</xs:element>
+                                                <xs:attribute name="minus" type="xs:string" use="required"/>
+                                                <xs:attribute name="decimalSeparator" type="xs:string" use="optional"/>
+                                                <xs:attribute name="maxNumber" type="xs:integer" use="optional"/>
+                                        </xs:complexType>
+                                </xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>

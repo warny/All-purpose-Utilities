@@ -192,5 +192,106 @@ namespace Utils.Mathematics {
                 return ResourceManager.GetString("NumberConvertionConfiguration_FR_fr_ca", resourceCulture);
             }
         }
+
+        internal static string NumberConvertionConfiguration_ES {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_ES", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_IT {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_IT", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_FI {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_FI", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_AR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_AR", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_HE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_HE", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_ZH {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_ZH", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_KO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_KO", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_JA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_JA", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_PT {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_PT", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_NL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_NL", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_RU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_RU", resourceCulture);
+            }
+        }
+        internal static string NumberConvertionConfiguration_PL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_PL", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_HI {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_HI", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_EL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_EL", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_ZU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_ZU", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_EE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_EE", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_WO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration_WO", resourceCulture);
+            }
+        }
     }
 }

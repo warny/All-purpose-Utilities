@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="zero"
+        minus="menos *"
+        decimalSeparator="vírgula"
+    >
+        <Culture>PT</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="um" />
+                <Digit digit="2" string="dois" />
+                <Digit digit="3" string="três" />
+                <Digit digit="4" string="quatro" />
+                <Digit digit="5" string="cinco" />
+                <Digit digit="6" string="seis" />
+                <Digit digit="7" string="sete" />
+                <Digit digit="8" string="oito" />
+                <Digit digit="9" string="nove" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="dez" buildString="dez *" />
+                <Digit digit="2" string="vinte" buildString="vinte e *" />
+                <Digit digit="3" string="trinta" buildString="trinta e *" />
+                <Digit digit="4" string="quarenta" buildString="quarenta e *" />
+                <Digit digit="5" string="cinquenta" buildString="cinquenta e *" />
+                <Digit digit="6" string="sessenta" buildString="sessenta e *" />
+                <Digit digit="7" string="setenta" buildString="setenta e *" />
+                <Digit digit="8" string="oitenta" buildString="oitenta e *" />
+                <Digit digit="9" string="noventa" buildString="noventa e *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="cem" buildString="cento e *" />
+                <Digit digit="2" string="duzentos" buildString="duzentos e *" />
+                <Digit digit="3" string="trezentos" buildString="trezentos e *" />
+                <Digit digit="4" string="quatrocentos" buildString="quatrocentos e *" />
+                <Digit digit="5" string="quinhentos" buildString="quinhentos e *" />
+                <Digit digit="6" string="seiscentos" buildString="seiscentos e *" />
+                <Digit digit="7" string="setecentos" buildString="setecentos e *" />
+                <Digit digit="8" string="oitocentos" buildString="oitocentos e *" />
+                <Digit digit="9" string="novecentos" buildString="novecentos e *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="mil" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>lh(ão|ões)</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <Replacement oldValue="um mil" newValue="mil" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="onze" />
+            <Number value="12" string="doze" />
+            <Number value="13" string="treze" />
+            <Number value="14" string="catorze" />
+            <Number value="15" string="quinze" />
+            <Number value="16" string="dezesseis" />
+            <Number value="17" string="dezessete" />
+            <Number value="18" string="dezoito" />
+            <Number value="19" string="dezenove" />
+        </Exceptions>
+    </Language>
+</Numbers>

@@ -144,6 +144,22 @@ namespace UtilsTest.Mathematics.Numbers
         }
 
         [TestMethod]
+        public void DecimalTest()
+        {
+            (decimal Number, string Expected)[] tests = [
+                (1.5m, "eins komma fünf"),
+                (12.34m, "zwölf komma drei vier"),
+            ];
+
+            var converter = NumberToStringConverter.GetConverter("de-DE");
+
+            foreach (var test in tests)
+            {
+                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
+            }
+        }
+
+        [TestMethod]
         public void BigIntTest()
         {
             (BigInteger Number, string Expected)[] tests = [

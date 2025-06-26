@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-	<Language
+        <Language
         groupSize="3"
         separator=" "
         groupSeparator=""
         zero="zero"
         minus="meno *"
+        decimalSeparator="virgola"
     >
 		<Culture>IT</Culture>
 		<Groups>
@@ -59,18 +60,16 @@
 		<Replacements>
 			<Replacement oldValue="uno mille" newValue="mille" />
 		</Replacements>
-		<Exceptions>
-			<Exceptions>
-				<Number value="11" string="undici" />
-				<Number value="12" string="dodici" />
-				<Number value="13" string="tredici" />
-				<Number value="14" string="quattordici" />
-				<Number value="15" string="quindici" />
-				<Number value="16" string="sedici" />
-				<Number value="17" string="diciassette" />
-				<Number value="18" string="diciotto" />
-				<Number value="19" string="diciannove" />
-			</Exceptions>
-		</Exceptions>
-	</Language>
+                <Exceptions>
+                        <Number value="11" string="undici" />
+                        <Number value="12" string="dodici" />
+                        <Number value="13" string="tredici" />
+                        <Number value="14" string="quattordici" />
+                        <Number value="15" string="quindici" />
+                        <Number value="16" string="sedici" />
+                        <Number value="17" string="diciassette" />
+                        <Number value="18" string="diciotto" />
+                        <Number value="19" string="diciannove" />
+                </Exceptions>
+        </Language>
 </Numbers>
