@@ -180,8 +180,42 @@ public static class DateUtils
 	/// </summary>
 	/// <param name="timestamp">The Unix timestamp to convert.</param>
 	/// <returns>A DateTime representing the specified Unix timestamp.</returns>
-	public static DateTime FromUnixTimeStamp(long timestamp)
-		=> UnixEpoch.AddSeconds(timestamp).ToLocalTime();
+        public static DateTime FromUnixTimeStamp(long timestamp)
+                => UnixEpoch.AddSeconds(timestamp).ToLocalTime();
+
+        /// <summary>
+        /// Adds a number of working days to the specified <paramref name="date"/>.
+        /// </summary>
+        /// <param name="date">Base date.</param>
+        /// <param name="workingDays">Number of working days to add.</param>
+        /// <param name="calendarProvider">Calendar providing working day information.</param>
+        /// <returns>The resulting date including additional non working days.</returns>
+        public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)
+        {
+                workingDays.ArgMustBeGreaterOrEqualsThan(0);
+                calendarProvider.Arg().MustNotBeNull();
+
+                var toAdd = workingDays;
+                var current = date;
+
+                while (toAdd > 0)
+                {
+                        var end = current.AddDays(toAdd);
+                        toAdd = calendarProvider.GetNonWorkingDaysCount(current.AddDays(1), end);
+                        current = end;
+                }
+
+                while (calendarProvider.GetNonWorkingDaysCount(current.AddDays(1), current.AddDays(1)) > 0)
+                {
+                        current = current.AddDays(1);
+                        while (calendarProvider.GetNonWorkingDaysCount(current, current) > 0)
+                        {
+                                current = current.AddDays(1);
+                        }
+                }
+
+                return current;
+        }
 
 	/// <summary>
 	/// Calculates the date of Easter Sunday for the specified year using the Anonymous Gregorian algorithm.
