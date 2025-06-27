@@ -1,34 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <TargetFramework>net8.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <LangVersion>Latest</LangVersion>
-	  <RootNamespace>Utils</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Olivier MARTY</Authors>
-    <Company>Olivier MARTY</Company>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageId>omy.Utils.Geography</PackageId>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.1</Version>
-    <Copyright>Olivier MARTY</Copyright>
-    <Description>Coordinate utilities
-        - Map to polar conversions
-        - Distance computations
-        - Map projections and tile helpers</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<LangVersion>Latest</LangVersion>
+		<RootNamespace>Utils</RootNamespace>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageId>omy.Utils.Geography</PackageId>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>1.0.1</Version>
+		<Copyright>Olivier MARTY</Copyright>
+		<Description>
+			Coordinate utilities
+			- Map to polar conversions
+			- Distance computations
+			- Map projections and tile helpers
+		</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
-      <PackagePath></PackagePath>
-      <Pack>True</Pack>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
+			<PackagePath></PackagePath>
+			<Pack>True</Pack>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Utils\Utils.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Utils\Utils.csproj" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>

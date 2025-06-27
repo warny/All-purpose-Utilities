@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
-
-namespace Utils.Objects;
+﻿namespace Utils.Objects;
 
 /// <summary>
 /// Return value with error management

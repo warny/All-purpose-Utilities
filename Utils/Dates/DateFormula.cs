@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using Utils.Objects;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Utils.Dates;
 
@@ -17,9 +14,9 @@ public static class DateFormula
 	private static readonly Lazy<IDateFormulaLanguageProvider> _defaultProvider = new(() =>
 	{
 		var path = Path.Combine(AppContext.BaseDirectory,
-					"Objects",
-					"DateFormulaConfigurations",
-					"DateFormulaConfiguration.json");
+			"Objects",
+			"DateFormulaConfigurations",
+			"DateFormulaConfiguration.json");
 		var json = File.ReadAllText(path);
 		return new JsonDateFormulaLanguageProvider(json);
 	});
@@ -111,7 +108,7 @@ public static class DateFormula
 				Expression.Constant(culture));
 
 		var index = 2;
-		while (index < formula.Length && (formula[index] == '+' || formula[index] == '-'))
+		while (index < formula.Length && (formula[index].In('+', '-')))
 		{
 			var sign = formula[index];
 			var pos = index + 1;

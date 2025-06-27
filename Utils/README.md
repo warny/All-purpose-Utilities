@@ -84,6 +84,11 @@ bool ok = authenticator.VerifyAuthenticator(1, code);
 DateTime result = new DateTime(2023, 3, 15)
     .Calculate("FM+1J", new CultureInfo("fr-FR")); // 2023-04-01
 ```
+```csharp
+// Adding three working days while skipping weekends
+ICalendarProvider calendar = new WeekEndCalendarProvider();
+DateTime dueDate = new DateTime(2024, 4, 5).AddWorkingDays(3, calendar); // 2024-04-10
+```
 
 ### Expressions
 ```csharp

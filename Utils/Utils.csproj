@@ -1,96 +1,97 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <TargetFramework>net8.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <LangVersion>latest</LangVersion>
-	  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Authors>Olivier MARTY</Authors>
-    <Company>Olivier MARTY</Company>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>omy.Utils</PackageId>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.1</Version>
-    <Copyright>Olivier MARTY 2023</Copyright>
-    <Description>General Functions
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>omy.Utils</PackageId>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>1.0.1</Version>
+		<Copyright>Olivier MARTY 2023</Copyright>
+		<Description>
+			General Functions
 
-    Expressions
-        - LambdaExpression Compiler
-    Array Utilities
-    File Utilities
-    Lists
-        - List with lazy loading of elements and cache
-        - Doubly Linked List
-        - Indexed List
-        - List with LRU cache
-        - Induced Key Dictionary
-    Mathematics
-        - Base Class for Expression Transformer
-        - Expression Simplifier
-        - Mathematical extended functions
-    Objects
-        - Date Utilities
-        - Number Utilities
-        - Object Extensions
-        - String Parser (replaces Convert.FromString)
-        - Advanced String Formatter
-        - String Comparator
-        - String Utilities
-		- Runtime string interpolation system
-    Reflection
-        - FieldOrPropertyInfo Processing Class
-    Security
-        - Google Authentication Calculation
-    Streams
-        - Base16, Base32, and Base64 Converters
-        - Binary Serialization
-        - Copying read stream to multiple write streams
-        - Utilities (copying data between streams)
-        - Cancelable Stream
-    Web
-        - Advanced URI Builder
-</Description>
-  </PropertyGroup>
+			Expressions
+			- LambdaExpression Compiler
+			Array Utilities
+			File Utilities
+			Lists
+			- List with lazy loading of elements and cache
+			- Doubly Linked List
+			- Indexed List
+			- List with LRU cache
+			- Induced Key Dictionary
+			Mathematics
+			- Base Class for Expression Transformer
+			- Expression Simplifier
+			- Mathematical extended functions
+			Objects
+			- Date Utilities
+			- Number Utilities
+			- Object Extensions
+			- String Parser (replaces Convert.FromString)
+			- Advanced String Formatter
+			- String Comparator
+			- String Utilities
+			- Runtime string interpolation system
+			Reflection
+			- FieldOrPropertyInfo Processing Class
+			Security
+			- Google Authentication Calculation
+			Streams
+			- Base16, Base32, and Base64 Converters
+			- Binary Serialization
+			- Copying read stream to multiple write streams
+			- Utilities (copying data between streams)
+			- Cancelable Stream
+			Web
+			- Advanced URI Builder
+		</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Globalization\**" />
-    <EmbeddedResource Remove="Globalization\**" />
-    <None Remove="Globalization\**" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Globalization\**" />
+		<EmbeddedResource Remove="Globalization\**" />
+		<None Remove="Globalization\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="../LICENSE-apache-2.0.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="../LICENSE-apache-2.0.txt">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Runtime" Version="4.3.1" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Runtime" Version="4.3.1" />
+		<PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>NumberConverterResources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Update="Mathematics\NumberConverterResources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>NumberConverterResources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="Mathematics\NumberConverterResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Update="Mathematics\NumberConverterResources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="Objects\DateFormulaConfigurations\DateFormulaConfiguration.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="Objects\DateFormulaConfigurations\DateFormulaConfiguration.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\" />
