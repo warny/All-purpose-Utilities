@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-        <Language
-                groupSize="3"
-                separator=" "
-                groupSeparator=""
-                zero="zéro"
-                minus="moins *"
-                decimalSeparator="virgule"
+	<Language
+			groupSize="3"
+			separator=" "
+			groupSeparator=""
+			zero="zéro"
+			minus="moins *"
+			decimalSeparator="virgule"
         >
 		<Culture>FR-be</Culture>
 		<Culture>FR-ch</Culture>
@@ -61,19 +61,19 @@
 		<Replacements>
 			<Replacement oldValue="un mille" newValue="mille" />
 		</Replacements>
-                <Exceptions>
+		<Exceptions>
 			<Number value="1" string="un" />
 			<Number value="11" string="onze" />
 			<Number value="12" string="douze" />
 			<Number value="13" string="treize" />
 			<Number value="14" string="quatorze" />
 			<Number value="15" string="quinze" />
-                        <Number value="16" string="seize" />
-                </Exceptions>
-                <Fractions>
-                        <Fraction digits="1" string="dixième(s)" />
-                        <Fraction digits="2" string="centième(s)" />
-                        <Fraction digits="3" string="millième(s)" />
-                </Fractions>
-        </Language>
+			<Number value="16" string="seize" />
+		</Exceptions>
+		<Fractions>
+			<Fraction digits="1" string="dixième(s)" />
+			<Fraction digits="2" string="centième(s)" />
+			<Fraction digits="3" string="millième(s)" />
+		</Fractions>
+	</Language>
 </Numbers>

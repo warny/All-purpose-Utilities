@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-        <Language
-                groupSize="3"
-                separator=" "
-                groupSeparator="," 
-                zero="zero"
-                minus="minus *"
-                decimalSeparator="point"
+	<Language
+			groupSize="3"
+			separator=" "
+			groupSeparator=","
+			zero="zero"
+			minus="minus *"
+			decimalSeparator="point"
         >
 		<Culture>EN</Culture>
 		<Culture>EN-uk</Culture>
@@ -21,7 +21,7 @@
 				<Digit digit="5" string="five" />
 				<Digit digit="6" string="six"  />
 				<Digit digit="7" string="seven"  />
-                                <Digit digit="8" string="eight" />
+				<Digit digit="8" string="eight" />
 				<Digit digit="9" string="nine" />
 			</Group>
 			<Group level="2">
@@ -45,7 +45,7 @@
 				<Digit digit="5" string="five hundred" buildString="five hundred and *" />
 				<Digit digit="6" string="six hundred" buildString="six hundred and *" />
 				<Digit digit="7" string="seven hundred" buildString="seven hundred and *" />
-                                <Digit digit="8" string="eight hundred" buildString="eight hundred and *" />
+				<Digit digit="8" string="eight hundred" buildString="eight hundred and *" />
 				<Digit digit="9" string="nine hundred" buildString="nine hundred and *" />
 			</Group>
 		</Groups>
@@ -58,7 +58,7 @@
 				<Suffix>on</Suffix>
 			</Suffixes>
 		</NumberScale>
-                <Exceptions>
+		<Exceptions>
 			<Number value="11" string="eleven" />
 			<Number value="12" string="twelve" />
 			<Number value="13" string="thirteen" />
@@ -67,12 +67,12 @@
 			<Number value="16" string="sixteen" />
 			<Number value="17" string="seventeen" />
 			<Number value="18" string="eighteen" />
-                        <Number value="19" string="nineteen" />
-                </Exceptions>
-                <Fractions>
-                        <Fraction digits="1" string="tenth(s)" />
-                        <Fraction digits="2" string="hundredth(s)" />
-                        <Fraction digits="3" string="thousandth(s)" />
-                </Fractions>
-        </Language>
+			<Number value="19" string="nineteen" />
+		</Exceptions>
+		<Fractions>
+			<Fraction digits="1" string="tenth(s)" />
+			<Fraction digits="2" string="hundredth(s)" />
+			<Fraction digits="3" string="thousandth(s)" />
+		</Fractions>
+	</Language>
 </Numbers>

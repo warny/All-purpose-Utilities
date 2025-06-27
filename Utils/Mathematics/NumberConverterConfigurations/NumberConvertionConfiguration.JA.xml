@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-    <Language
+	<Language
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -9,54 +9,54 @@
         decimalSeparator="点"
         maxNumber="999999999"
     >
-        <Culture>JA</Culture>
-        <Groups>
-            <Group level="1">
-                <Digit digit="0" string="" />
-                <Digit digit="1" string="一" />
-                <Digit digit="2" string="二" />
-                <Digit digit="3" string="三" />
-                <Digit digit="4" string="四" />
-                <Digit digit="5" string="五" />
-                <Digit digit="6" string="六" />
-                <Digit digit="7" string="七" />
-                <Digit digit="8" string="八" />
-                <Digit digit="9" string="九" />
-            </Group>
-            <Group level="2">
-                <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="十" buildString="十*" />
-                <Digit digit="2" string="二十" buildString="二十*" />
-                <Digit digit="3" string="三十" buildString="三十*" />
-                <Digit digit="4" string="四十" buildString="四十*" />
-                <Digit digit="5" string="五十" buildString="五十*" />
-                <Digit digit="6" string="六十" buildString="六十*" />
-                <Digit digit="7" string="七十" buildString="七十*" />
-                <Digit digit="8" string="八十" buildString="八十*" />
-                <Digit digit="9" string="九十" buildString="九十*" />
-            </Group>
-            <Group level="3">
-                <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="百" buildString="百*" />
-                <Digit digit="2" string="二百" buildString="二百*" />
-                <Digit digit="3" string="三百" buildString="三百*" />
-                <Digit digit="4" string="四百" buildString="四百*" />
-                <Digit digit="5" string="五百" buildString="五百*" />
-                <Digit digit="6" string="六百" buildString="六百*" />
-                <Digit digit="7" string="七百" buildString="七百*" />
-                <Digit digit="8" string="八百" buildString="八百*" />
-                <Digit digit="9" string="九百" buildString="九百*" />
-            </Group>
-        </Groups>
-        <NumberScale firstLetterUpperCase="false">
-            <StaticNames>
-                <Scale value="0" string="" />
-                <Scale value="1" string="千" />
-            </StaticNames>
-            <Suffixes>
-                <Suffix>万</Suffix>
-            </Suffixes>
-        </NumberScale>
-        <Exceptions />
-    </Language>
+		<Culture>JA</Culture>
+		<Groups>
+			<Group level="1">
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="一" />
+				<Digit digit="2" string="二" />
+				<Digit digit="3" string="三" />
+				<Digit digit="4" string="四" />
+				<Digit digit="5" string="五" />
+				<Digit digit="6" string="六" />
+				<Digit digit="7" string="七" />
+				<Digit digit="8" string="八" />
+				<Digit digit="9" string="九" />
+			</Group>
+			<Group level="2">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="十" buildString="十*" />
+				<Digit digit="2" string="二十" buildString="二十*" />
+				<Digit digit="3" string="三十" buildString="三十*" />
+				<Digit digit="4" string="四十" buildString="四十*" />
+				<Digit digit="5" string="五十" buildString="五十*" />
+				<Digit digit="6" string="六十" buildString="六十*" />
+				<Digit digit="7" string="七十" buildString="七十*" />
+				<Digit digit="8" string="八十" buildString="八十*" />
+				<Digit digit="9" string="九十" buildString="九十*" />
+			</Group>
+			<Group level="3">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="百" buildString="百*" />
+				<Digit digit="2" string="二百" buildString="二百*" />
+				<Digit digit="3" string="三百" buildString="三百*" />
+				<Digit digit="4" string="四百" buildString="四百*" />
+				<Digit digit="5" string="五百" buildString="五百*" />
+				<Digit digit="6" string="六百" buildString="六百*" />
+				<Digit digit="7" string="七百" buildString="七百*" />
+				<Digit digit="8" string="八百" buildString="八百*" />
+				<Digit digit="9" string="九百" buildString="九百*" />
+			</Group>
+		</Groups>
+		<NumberScale firstLetterUpperCase="false">
+			<StaticNames>
+				<Scale value="0" string="" />
+				<Scale value="1" string="千" />
+			</StaticNames>
+			<Suffixes>
+				<Suffix>万</Suffix>
+			</Suffixes>
+		</NumberScale>
+		<Exceptions />
+	</Language>
 </Numbers>

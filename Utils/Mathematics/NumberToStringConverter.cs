@@ -33,10 +33,10 @@ namespace Utils.Mathematics
 		{
 			culture.Length.ArgMustBeIn([2, 5]);  // Ensure culture code length is valid.
 
-                        if (CachedConfigurations.TryGetValue(culture, out var result)) return result;
-                        if (culture.Length == 5) return GetConverter(culture[..2]);  // Fallback to the language-only code if region-specific code is not found.
-                        return CachedConfigurations["EN"];  // Default to English converter.
-                }
+			if (CachedConfigurations.TryGetValue(culture, out var result)) return result;
+			if (culture.Length == 5) return GetConverter(culture[..2]);  // Fallback to the language-only code if region-specific code is not found.
+			return CachedConfigurations["EN"];  // Default to English converter.
+		}
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="NumberToStringConverter"/> class with the specified configuration.
@@ -44,32 +44,32 @@ namespace Utils.Mathematics
 		public NumberToStringConverter(
 			int group,
 			string separator,
-                        string groupSeparator,
-                        string zero,
-                        string minus,
-                        string decimalSeparator,
-                        IReadOnlyDictionary<int, DigitListType> groups,
-                        IReadOnlyDictionary<long, string> exceptions,
-                        IReadOnlyDictionary<string, string> replacements,
-                        NumberScale scale,
-                        Func<string, string> adjustFunction = null,
-                        IReadOnlyDictionary<int, string> fractions = null,
-                        BigInteger? maxNumber = null)
-                {
+						string groupSeparator,
+						string zero,
+						string minus,
+						string decimalSeparator,
+						IReadOnlyDictionary<int, DigitListType> groups,
+						IReadOnlyDictionary<long, string> exceptions,
+						IReadOnlyDictionary<string, string> replacements,
+						NumberScale scale,
+						Func<string, string> adjustFunction = null,
+						IReadOnlyDictionary<int, string> fractions = null,
+						BigInteger? maxNumber = null)
+		{
 			Group = group;
 			Separator = separator ?? " ";
 			GroupSeparator = groupSeparator ?? "";
 			Zero = zero.Arg().MustNotBeNull();
-                        Minus = minus.Arg().MustNotBeNull();
-                        DecimalSeparator = decimalSeparator ?? ",";
+			Minus = minus.Arg().MustNotBeNull();
+			DecimalSeparator = decimalSeparator ?? ",";
 			Groups = groups.Arg().MustNotBeNull().Value.ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
 			Exceptions = exceptions.Arg().MustNotBeNull().Value.ToImmutableDictionary();
 			Replacements = replacements?.ToImmutableDictionary() ?? ImmutableDictionary<string, string>.Empty;
-                        Scale = scale;
-                        AdjustFunction = adjustFunction ?? (s => s);
-                        Fractions = fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
-                        MaxNumber = maxNumber;
-                }
+			Scale = scale;
+			AdjustFunction = adjustFunction ?? (s => s);
+			Fractions = fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
+			MaxNumber = maxNumber;
+		}
 
 		/// <summary>
 		/// Default grouping size (e.g., thousands)
@@ -90,12 +90,12 @@ namespace Utils.Mathematics
 		/// <summary>
 		/// String representation of the minus sign
 		/// </summary>
-                public string Minus { get; }
-                /// <summary>
-                /// Word used as decimal separator
-                /// </summary>
-                public string DecimalSeparator { get; }
-                /// <summary>
+		public string Minus { get; }
+		/// <summary>
+		/// Word used as decimal separator
+		/// </summary>
+		public string DecimalSeparator { get; }
+		/// <summary>
 		/// Function to adjust the final output string
 		/// </summary>
 		public Func<string, string> AdjustFunction { get; }
@@ -106,18 +106,18 @@ namespace Utils.Mathematics
 		/// <summary>
 		/// Replacements for specific text segments
 		/// </summary>
-                public IReadOnlyDictionary<string, string> Replacements { get; }
-                /// <summary>
-                /// Names for decimal fractions by digit count
-                /// </summary>
-                public IReadOnlyDictionary<int, string> Fractions { get; }
-                /// <summary>
-                /// Maximum number that can be converted or null when unlimited.
-                /// </summary>
-                public BigInteger? MaxNumber { get; }
-                /// <summary>
-                /// Group definitions for digits
-                /// </summary>
+		public IReadOnlyDictionary<string, string> Replacements { get; }
+		/// <summary>
+		/// Names for decimal fractions by digit count
+		/// </summary>
+		public IReadOnlyDictionary<int, string> Fractions { get; }
+		/// <summary>
+		/// Maximum number that can be converted or null when unlimited.
+		/// </summary>
+		public BigInteger? MaxNumber { get; }
+		/// <summary>
+		/// Group definitions for digits
+		/// </summary>
 		public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
 		/// <summary>
 		/// Scale definition for large numbers
@@ -132,44 +132,44 @@ namespace Utils.Mathematics
 		/// <summary>
 		/// Converts a long integer to its string representation.
 		/// </summary>
-                public string Convert(long number) => Convert((BigInteger)number);
+		public string Convert(long number) => Convert((BigInteger)number);
 
-                /// <summary>
-                /// Converts a decimal number to its string representation.
-                /// </summary>
-                public string Convert(decimal number)
-                {
-                        bool isNegative = number < 0;
-                        if (isNegative) number = -number;
+		/// <summary>
+		/// Converts a decimal number to its string representation.
+		/// </summary>
+		public string Convert(decimal number)
+		{
+			bool isNegative = number < 0;
+			if (isNegative) number = -number;
 
-                        decimal integerPart = decimal.Truncate(number);
-                        decimal fraction = number - integerPart;
+			decimal integerPart = decimal.Truncate(number);
+			decimal fraction = number - integerPart;
 
-                        var result = new StringBuilder(Convert((BigInteger)integerPart));
+			var result = new StringBuilder(Convert((BigInteger)integerPart));
 
-                        if (fraction != 0)
-                        {
-                                string digits = fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1];
-                                result.Append(Separator).Append(DecimalSeparator).Append(Separator);
+			if (fraction != 0)
+			{
+				string digits = fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1];
+				result.Append(Separator).Append(DecimalSeparator).Append(Separator);
 
-                                if (Fractions.TryGetValue(digits.Length, out var suffix))
-                                {
-                                        var valueText = Convert(BigInteger.Parse(digits)).Replace("-", " ");
-                                        result.Append(valueText).Append(Separator).Append(suffix.ToPlural(long.Parse(digits)));
-                                }
-                                else
-                                {
-                                        foreach (char c in digits)
-                                        {
-                                                int d = c - '0';
-                                                result.Append(Groups[1][d].StringValue).Append(Separator);
-                                        }
-                                }
-                        }
+				if (Fractions.TryGetValue(digits.Length, out var suffix))
+				{
+					var valueText = Convert(BigInteger.Parse(digits)).Replace("-", " ");
+					result.Append(valueText).Append(Separator).Append(suffix.ToPlural(long.Parse(digits)));
+				}
+				else
+				{
+					foreach (char c in digits)
+					{
+						int d = c - '0';
+						result.Append(Groups[1][d].StringValue).Append(Separator);
+					}
+				}
+			}
 
-                        var final = result.ToString().Trim();
-                        return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
-                }
+			var final = result.ToString().Trim();
+			return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
+		}
 
 		/// <summary>
 		/// Converts a BigInteger to its string representation.
