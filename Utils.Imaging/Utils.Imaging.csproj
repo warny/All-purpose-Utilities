@@ -1,47 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <TargetFramework>net8.0</TargetFramework>
-	  <EnablePreviewFeatures>True</EnablePreviewFeatures>
-	  <LangVersion>Latest</LangVersion>
-	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Olivier MARTY</Authors>
-    <Company>Olivier MARTY</Company>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageId>omy.Utils.Imaging</PackageId>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.1</Version>
-    <Copyright>Olivier MARTY</Copyright>
-    <Description>Image accessors and drawing primitives
-        - Bitmap manipulation helpers
-        - 8, 32 and 64 bit color handling in ARGB and AHSV</Description>
-    <RootNamespace>Utils</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<LangVersion>Latest</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageId>omy.Utils.Imaging</PackageId>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>1.0.1</Version>
+		<Copyright>Olivier MARTY</Copyright>
+		<Description>
+			Image accessors and drawing primitives
+			- Bitmap manipulation helpers
+			- 8, 32 and 64 bit color handling in ARGB and AHSV
+		</Description>
+		<RootNamespace>Utils</RootNamespace>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="9.0.6" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Drawing.Common" Version="9.0.6" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
-    <ProjectReference Include="..\Utils.Mathematics\Utils.Mathematics.csproj" />
-    <ProjectReference Include="..\Utils\Utils.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
+		<ProjectReference Include="..\Utils.Mathematics\Utils.Mathematics.csproj" />
+		<ProjectReference Include="..\Utils\Utils.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="../LICENSE-apache-2.0.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="../LICENSE-apache-2.0.txt">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>

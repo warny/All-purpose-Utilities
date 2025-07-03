@@ -23,19 +23,19 @@ namespace Utils.Net.DNS.RFC1035;
 public class Default : DNSResponseDetail
 {
 	/*
-            Example of a bytes RDATA format:
+        Example of a bytes RDATA format:
 
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                   DATAS                       /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            /                   DATAS                       /
+            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-            where:
+        where:
 
-            bytes    One or more bytes
+        bytes    One or more bytes
 
-            Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
-            class uses type code 0 for demonstration or fallback.
-        */
+        Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
+        class uses type code 0 for demonstration or fallback.
+    */
 
 	/// <summary>
 	/// Gets or sets an arbitrary string of text for this fallback record.

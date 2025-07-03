@@ -84,6 +84,11 @@ bool ok = authenticator.VerifyAuthenticator(1, code);
 DateTime result = new DateTime(2023, 3, 15)
     .Calculate("FM+1J", new CultureInfo("fr-FR")); // 2023-04-01
 ```
+```csharp
+// Adding three working days while skipping weekends
+ICalendarProvider calendar = new WeekEndCalendarProvider();
+DateTime dueDate = new DateTime(2024, 4, 5).AddWorkingDays(3, calendar); // 2024-04-10
+```
 
 ### Expressions
 ```csharp
@@ -109,6 +114,18 @@ string formatted = formatter("John");
 ```csharp
 var interp = Utils.Expressions.ExpressionParser.Parse<Func<string, string, string>>("(a,b)=>$\"{a} {b}!\"").Compile();
 string hello = interp("hello", "world"); // hello world!
+```
+
+### Numerics
+```csharp
+using Utils.Numerics;
+
+Number a = Number.Parse("0.1");
+Number b = Number.Parse("0.2");
+Number sum = a + b; // 0.3
+Number big = Number.Parse("123456789012345678901234567890") + 1;
+Number.TryParse("42", null, out Number parsed);
+Number pow = Number.Pow(2, 3); // 8
 ```
 
 ### XML

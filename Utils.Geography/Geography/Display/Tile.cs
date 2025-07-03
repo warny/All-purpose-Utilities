@@ -14,24 +14,20 @@
  */
 
 using System;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Linq;
 using Utils.Geography.Model;
 using System.Diagnostics;
 using System.Numerics;
-using Utils.Arrays;
 using Utils.Objects;
 
-namespace Utils.Geography.Display
-{
+namespace Utils.Geography.Display;
 
-	/**
-	 * A tile represents a rectangular part of the world map. All tiles can be identified by their X and Y number together
-	 * with their zoom level. The actual area that a tile covers on a map depends on the underlying map projection.
-	 */
-	[DebuggerDisplay("Size={TileSize}px, X={TileX}, Y={TileY}, ZoomFactor={ZoomFactor}")]
-	public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Tile<T>, Tile<T>, bool>
+
+/**
+ * A tile represents a rectangular part of the world map. All tiles can be identified by their X and Y number together
+ * with their zoom level. The actual area that a tile covers on a map depends on the underlying map projection.
+ */
+[DebuggerDisplay("Size={TileSize}px, X={TileX}, Y={TileY}, ZoomFactor={ZoomFactor}")]
+public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Tile<T>, Tile<T>, bool>
         where T : struct, IFloatingPointIeee754<T>
     {
         /// <summary>
@@ -39,100 +35,99 @@ namespace Utils.Geography.Display
         /// </summary>
         public int TileSize { get; }
 
-		private const long serialVersionUID = 1L;
+	private const long serialVersionUID = 1L;
 
-		/// <summary>
-		/// The X number of this tile.
-		/// </summary>
-		public long TileX { get; }
+	/// <summary>
+	/// The X number of this tile.
+	/// </summary>
+	public long TileX { get; }
 
-		/// <summary>
-		/// The Y number of this tile.
-		/// </summary>
-		public long TileY { get; }
+	/// <summary>
+	/// The Y number of this tile.
+	/// </summary>
+	public long TileY { get; }
 
-		/// <summary>
-		/// The zoom level of this tile.
-		/// </summary>
-		public byte ZoomFactor { get; }
+	/// <summary>
+	/// The zoom level of this tile.
+	/// </summary>
+	public byte ZoomFactor { get; }
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="tileX">the X number of the tile</param>
-		/// <param name="tileY">the Y number of the tile</param>
-		/// <param name="zoomFactor">the zoom level of the tile</param>
-		/// <param name="tileSize">The size of the tile</param>
-		public Tile ( long tileX, long tileY, byte zoomFactor, int tileSize )
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="tileX">the X number of the tile</param>
+	/// <param name="tileY">the Y number of the tile</param>
+	/// <param name="zoomFactor">the zoom level of the tile</param>
+	/// <param name="tileSize">The size of the tile</param>
+	public Tile ( long tileX, long tileY, byte zoomFactor, int tileSize )
+	{
+		this.TileX = tileX;
+		this.TileY = tileY;
+		this.ZoomFactor = zoomFactor;
+		this.TileSize = tileSize;
+	}
+
+	/// <summary>
+	/// Upper left point of this tile
+	/// </summary>
+	public MapPoint<T> MapPoint1
+	{
+		get
 		{
-			this.TileX = tileX;
-			this.TileY = tileY;
-			this.ZoomFactor = zoomFactor;
-			this.TileSize = tileSize;
+			return new MapPoint<T>(
+				this.TileX * TileSize,
+				this.TileY * TileSize,
+				ZoomFactor,
+				TileSize
+			);
 		}
+	}
 
-		/// <summary>
-		/// Upper left point of this tile
-		/// </summary>
-		public MapPoint<T> MapPoint1
+	/// <summary>
+	/// Lowerright point of this tile
+	/// </summary>
+	public MapPoint<T> MapPoint2
+	{
+		get
 		{
-			get
-			{
-				return new MapPoint<T>(
-					this.TileX * TileSize,
-					this.TileY * TileSize,
-					ZoomFactor,
-					TileSize
-				);
-			}
-		}
-
-		/// <summary>
-		/// Lowerright point of this tile
-		/// </summary>
-		public MapPoint<T> MapPoint2
-		{
-			get
-			{
-				return new MapPoint<T>(
-					(this.TileX + 1) * TileSize,
+			return new MapPoint<T>(
+				(this.TileX + 1) * TileSize,
                     (this.TileY + 1) * TileSize,
                     ZoomFactor,
-					TileSize
-				);
-			}
+				TileSize
+			);
 		}
+	}
 
-		/// <summary>
-		/// Test if a point is contained
-		/// </summary>
-		/// <param name="mappoint">point to test</param>
-		/// <returns>True if contained</returns>
-		public bool Contains ( ProjectedPoint<T> mappoint )
-		{
-			if (mappoint.X < (T)Convert.ChangeType(this.TileX * TileSize, typeof(T)) || mappoint.X > (T)Convert.ChangeType((this.TileX + 1) * TileSize, typeof(T))) return false;
+	/// <summary>
+	/// Test if a point is contained
+	/// </summary>
+	/// <param name="mappoint">point to test</param>
+	/// <returns>True if contained</returns>
+	public bool Contains ( ProjectedPoint<T> mappoint )
+	{
+		if (mappoint.X < (T)Convert.ChangeType(this.TileX * TileSize, typeof(T)) || mappoint.X > (T)Convert.ChangeType((this.TileX + 1) * TileSize, typeof(T))) return false;
             if (mappoint.Y < (T)Convert.ChangeType(this.TileY * TileSize, typeof(T)) || mappoint.Y > (T)Convert.ChangeType((this.TileY + 1) * TileSize, typeof(T))) return false;
             return true;
-		}
-
-		public override int GetHashCode() => ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
-
-		public override string ToString() => $"tileX={this.TileX}, tileY={this.TileY}, zoomLevel={this.ZoomFactor}";
-		public string ToString(string format) => $"tileX={this.TileX.ToString(format)}, tileY={this.TileY.ToString(format)}, zoomLevel={this.ZoomFactor}";
-		public string ToString(string format, IFormatProvider formatProvider) => $"tileX={this.TileX.ToString(format, formatProvider)}, tileY={this.TileY.ToString(format, formatProvider)}, zoomLevel={this.ZoomFactor}";
-
-		public override bool Equals(object obj)
-			=> obj switch {
-				Tile<T> tile => Equals(tile),
-				_ => false
-			};
-		public bool Equals(Tile<T> other)
-			=> this.TileX == other.TileX
-			&& this.TileY == other.TileY
-			&& this.ZoomFactor == other.ZoomFactor
-			&& this.TileSize == other.TileSize;
-
-		public static bool operator ==(Tile<T> tile1, Tile<T> tile2) => tile1.Equals(tile2);
-		public static bool operator !=(Tile<T> tile1, Tile<T> tile2) => !tile1.Equals(tile2);
 	}
+
+	public override int GetHashCode() => ObjectUtils.ComputeHash(this.TileX, this.TileY, this.ZoomFactor);
+
+	public override string ToString() => $"tileX={this.TileX}, tileY={this.TileY}, zoomLevel={this.ZoomFactor}";
+	public string ToString(string format) => $"tileX={this.TileX.ToString(format)}, tileY={this.TileY.ToString(format)}, zoomLevel={this.ZoomFactor}";
+	public string ToString(string format, IFormatProvider formatProvider) => $"tileX={this.TileX.ToString(format, formatProvider)}, tileY={this.TileY.ToString(format, formatProvider)}, zoomLevel={this.ZoomFactor}";
+
+	public override bool Equals(object obj)
+		=> obj switch {
+			Tile<T> tile => Equals(tile),
+			_ => false
+		};
+	public bool Equals(Tile<T> other)
+		=> this.TileX == other.TileX
+		&& this.TileY == other.TileY
+		&& this.ZoomFactor == other.ZoomFactor
+		&& this.TileSize == other.TileSize;
+
+	public static bool operator ==(Tile<T> tile1, Tile<T> tile2) => tile1.Equals(tile2);
+	public static bool operator !=(Tile<T> tile1, Tile<T> tile2) => !tile1.Equals(tile2);
 }
