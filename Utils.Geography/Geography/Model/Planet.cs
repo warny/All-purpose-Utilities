@@ -99,29 +99,29 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
                 if (points.Count < 3)
                         throw new ArgumentException("At least three points are required", nameof(points));
 
-                double radius = double.CreateChecked(EquatorialRadius);
-                var deg = Trigonometry<double>.Degree;
+                T radius = T.CreateChecked(EquatorialRadius);
+                var deg = Trigonometry<T>.Degree;
 
-                double total = 0d;
+                T total = T.Zero;
                 for (int i = 0; i < points.Count; i++)
                 {
                         var a = points[i];
                         var b = points[(i + 1) % points.Count];
 
-                        double lon1 = deg.ToRadian(double.CreateChecked(a.Longitude));
-                        double lon2 = deg.ToRadian(double.CreateChecked(b.Longitude));
-                        double lat1 = deg.ToRadian(double.CreateChecked(a.Latitude));
-                        double lat2 = deg.ToRadian(double.CreateChecked(b.Latitude));
+                        T lon1 = deg.ToRadian(T.CreateChecked(a.Longitude));
+                        T lon2 = deg.ToRadian(T.CreateChecked(b.Longitude));
+                        T lat1 = deg.ToRadian(T.CreateChecked(a.Latitude));
+                        T lat2 = deg.ToRadian(T.CreateChecked(b.Latitude));
 
-                        double dLon = lon2 - lon1;
-                        if (dLon < -Math.PI) dLon += Math.Tau;
-                        if (dLon > Math.PI) dLon -= Math.Tau;
+                        T dLon = lon2 - lon1;
+                        if (dLon < -T.Pi) dLon += T.Tau;
+                        if (dLon > T.Pi) dLon -= T.Tau;
 
-                        total += dLon * (Math.Sin(lat1) + Math.Sin(lat2));
+                        total += dLon * (T.Sin(lat1) + T.Sin(lat2));
                 }
 
-                double area = Math.Abs(total) * radius * radius / 2d;
-                return T.CreateChecked(area);
+                T area = T.Abs(total) * radius * radius / T.CreateChecked(2);
+                return area;
         }
 }
 
