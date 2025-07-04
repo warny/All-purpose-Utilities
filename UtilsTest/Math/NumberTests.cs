@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Numerics;
+using System;
+using System.Globalization;
 
 namespace UtilsTest.Numerics;
 
@@ -64,5 +66,22 @@ public class NumberTests
         Number baseValue = 2;
         Number exponent = 3;
         Assert.AreEqual("8", Number.Pow(baseValue, exponent).ToString());
+    }
+
+    [TestMethod]
+    public void SqrtTest()
+    {
+        Number value = 9;
+        Number result = Number.Sqrt(value);
+        Assert.AreEqual("3", result.ToString());
+    }
+
+    [TestMethod]
+    public void CosTest()
+    {
+        Number angle = Number.Parse("0.5");
+        Number result = Number.Cos(angle);
+        string expected = Math.Cos(0.5).ToString("R", CultureInfo.InvariantCulture);
+        Assert.AreEqual(expected, result.ToString());
     }
 }
