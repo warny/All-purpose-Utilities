@@ -10,8 +10,12 @@ namespace Utils.Numerics;
 /// provides basic arithmetic operations.
 /// </summary>
 public readonly struct Number :
-    INumber<Number>,
-    IPowerFunctions<Number>
+    IFloatingPoint<Number>,
+    IPowerFunctions<Number>,
+    ITrigonometricFunctions<Number>,
+    IRootFunctions<Number>,
+    IComparable<Number>,
+    IComparable
 {
     private readonly BigInteger _numerator;
     private readonly BigInteger _denominator;
@@ -35,6 +39,26 @@ public readonly struct Number :
     /// Gets the multiplicative identity value.
     /// </summary>
     public static Number MultiplicativeIdentity => One;
+
+    /// <summary>
+    /// Gets the value negative one.
+    /// </summary>
+    public static Number NegativeOne => new(BigInteger.MinusOne);
+
+    /// <summary>
+    /// Gets the mathematical constant e.
+    /// </summary>
+    public static Number E => Parse(Math.E.ToString("R", CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// Gets the mathematical constant pi.
+    /// </summary>
+    public static Number Pi => Parse(Math.PI.ToString("R", CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// Gets the mathematical constant tau (2 * pi).
+    /// </summary>
+    public static Number Tau => Parse((Math.PI * 2).ToString("R", CultureInfo.InvariantCulture));
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Number"/> struct from a
@@ -318,6 +342,178 @@ public readonly struct Number :
 
     /// <inheritdoc/>
     static Number IPowerFunctions<Number>.Pow(Number x, Number y) => Pow(x, y);
+
+    private static double ToDouble(Number value)
+        => double.Parse(value.ToString(), CultureInfo.InvariantCulture);
+
+    private static Number FromDouble(double value)
+        => Parse(value.ToString("R", CultureInfo.InvariantCulture));
+
+    /// <inheritdoc/>
+    public static Number Sqrt(Number x) => FromDouble(Math.Sqrt(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Cbrt(Number x) => FromDouble(Math.Cbrt(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Hypot(Number x, Number y)
+        => FromDouble(Math.Sqrt(Math.Pow(ToDouble(x), 2) + Math.Pow(ToDouble(y), 2)));
+
+    /// <inheritdoc/>
+    public static Number RootN(Number x, int n)
+        => FromDouble(Math.Pow(ToDouble(x), 1.0 / n));
+
+    /// <inheritdoc/>
+    public static Number Sin(Number x) => FromDouble(Math.Sin(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Cos(Number x) => FromDouble(Math.Cos(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Tan(Number x) => FromDouble(Math.Tan(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Asin(Number x) => FromDouble(Math.Asin(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Acos(Number x) => FromDouble(Math.Acos(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Atan(Number x) => FromDouble(Math.Atan(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number AsinPi(Number x) => FromDouble(Math.Asin(ToDouble(x)) / Math.PI);
+
+    /// <inheritdoc/>
+    public static Number AcosPi(Number x) => FromDouble(Math.Acos(ToDouble(x)) / Math.PI);
+
+    /// <inheritdoc/>
+    public static Number AtanPi(Number x) => FromDouble(Math.Atan(ToDouble(x)) / Math.PI);
+
+    /// <inheritdoc/>
+    public static Number SinPi(Number x) => FromDouble(Math.Sin(ToDouble(x) * Math.PI));
+
+    /// <inheritdoc/>
+    public static Number CosPi(Number x) => FromDouble(Math.Cos(ToDouble(x) * Math.PI));
+
+    /// <inheritdoc/>
+    public static Number TanPi(Number x) => FromDouble(Math.Tan(ToDouble(x) * Math.PI));
+
+    /// <inheritdoc/>
+    public static (Number Sin, Number Cos) SinCos(Number x)
+    {
+        double d = ToDouble(x);
+        (double s, double c) = Math.SinCos(d);
+        return (FromDouble(s), FromDouble(c));
+    }
+
+    /// <inheritdoc/>
+    public static (Number SinPi, Number CosPi) SinCosPi(Number x)
+    {
+        double d = ToDouble(x) * Math.PI;
+        (double s, double c) = Math.SinCos(d);
+        return (FromDouble(s), FromDouble(c));
+    }
+
+    /// <inheritdoc/>
+    public static Number DegreesToRadians(Number degrees)
+        => FromDouble(ToDouble(degrees) * Math.PI / 180.0);
+
+    /// <inheritdoc/>
+    public static Number RadiansToDegrees(Number radians)
+        => FromDouble(ToDouble(radians) * 180.0 / Math.PI);
+
+    /// <inheritdoc/>
+    public static Number Ceiling(Number x) => FromDouble(Math.Ceiling(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Floor(Number x) => FromDouble(Math.Floor(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Round(Number x) => FromDouble(Math.Round(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static Number Round(Number x, int digits) => FromDouble(Math.Round(ToDouble(x), digits));
+
+    /// <inheritdoc/>
+    public static Number Round(Number x, MidpointRounding mode) => FromDouble(Math.Round(ToDouble(x), mode));
+
+    /// <inheritdoc/>
+    public static Number Round(Number x, int digits, MidpointRounding mode)
+        => FromDouble(Math.Round(ToDouble(x), digits, mode));
+
+    /// <inheritdoc/>
+    public static Number Truncate(Number x) => FromDouble(Math.Truncate(ToDouble(x)));
+
+    /// <inheritdoc/>
+    public static TInteger ConvertToInteger<TInteger>(Number value)
+        where TInteger : IBinaryInteger<TInteger>
+        => TInteger.CreateTruncating(ToDouble(value));
+
+    /// <inheritdoc/>
+    public static TInteger ConvertToIntegerNative<TInteger>(Number value)
+        where TInteger : IBinaryInteger<TInteger>
+        => TInteger.CreateTruncating(ToDouble(value));
+
+    int IFloatingPoint<Number>.GetExponentByteCount()
+        => ((IFloatingPoint<double>)ToDouble(this)).GetExponentByteCount();
+
+    int IFloatingPoint<Number>.GetExponentShortestBitLength()
+        => ((IFloatingPoint<double>)ToDouble(this)).GetExponentShortestBitLength();
+
+    int IFloatingPoint<Number>.GetSignificandBitLength()
+        => ((IFloatingPoint<double>)ToDouble(this)).GetSignificandBitLength();
+
+    int IFloatingPoint<Number>.GetSignificandByteCount()
+        => ((IFloatingPoint<double>)ToDouble(this)).GetSignificandByteCount();
+
+    bool IFloatingPoint<Number>.TryWriteExponentBigEndian(Span<byte> destination, out int bytesWritten)
+        => ((IFloatingPoint<double>)ToDouble(this)).TryWriteExponentBigEndian(destination, out bytesWritten);
+
+    bool IFloatingPoint<Number>.TryWriteExponentLittleEndian(Span<byte> destination, out int bytesWritten)
+        => ((IFloatingPoint<double>)ToDouble(this)).TryWriteExponentLittleEndian(destination, out bytesWritten);
+
+    bool IFloatingPoint<Number>.TryWriteSignificandBigEndian(Span<byte> destination, out int bytesWritten)
+        => ((IFloatingPoint<double>)ToDouble(this)).TryWriteSignificandBigEndian(destination, out bytesWritten);
+
+    bool IFloatingPoint<Number>.TryWriteSignificandLittleEndian(Span<byte> destination, out int bytesWritten)
+        => ((IFloatingPoint<double>)ToDouble(this)).TryWriteSignificandLittleEndian(destination, out bytesWritten);
+
+    int IFloatingPoint<Number>.WriteExponentBigEndian(byte[] destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteExponentBigEndian(destination);
+
+    int IFloatingPoint<Number>.WriteExponentBigEndian(byte[] destination, int startIndex)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteExponentBigEndian(destination, startIndex);
+
+    int IFloatingPoint<Number>.WriteExponentBigEndian(Span<byte> destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteExponentBigEndian(destination);
+
+    int IFloatingPoint<Number>.WriteExponentLittleEndian(byte[] destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteExponentLittleEndian(destination);
+
+    int IFloatingPoint<Number>.WriteExponentLittleEndian(byte[] destination, int startIndex)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteExponentLittleEndian(destination, startIndex);
+
+    int IFloatingPoint<Number>.WriteExponentLittleEndian(Span<byte> destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteExponentLittleEndian(destination);
+
+    int IFloatingPoint<Number>.WriteSignificandBigEndian(byte[] destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteSignificandBigEndian(destination);
+
+    int IFloatingPoint<Number>.WriteSignificandBigEndian(byte[] destination, int startIndex)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteSignificandBigEndian(destination, startIndex);
+
+    int IFloatingPoint<Number>.WriteSignificandBigEndian(Span<byte> destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteSignificandBigEndian(destination);
+
+    int IFloatingPoint<Number>.WriteSignificandLittleEndian(byte[] destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteSignificandLittleEndian(destination);
+
+    int IFloatingPoint<Number>.WriteSignificandLittleEndian(byte[] destination, int startIndex)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteSignificandLittleEndian(destination, startIndex);
+
+    int IFloatingPoint<Number>.WriteSignificandLittleEndian(Span<byte> destination)
+        => ((IFloatingPoint<double>)ToDouble(this)).WriteSignificandLittleEndian(destination);
 
     /// <summary>
     /// Adds two numbers.
