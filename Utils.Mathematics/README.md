@@ -17,7 +17,7 @@ Complex[] signal = [1, 1, 0, 0];
 var fft = new Utils.Mathematics.Fourrier.FastFourrierTransform();
 fft.Transform(signal);
 var vector = new Utils.Mathematics.LinearAlgebra.Vector<double>([1, 2]);
-var identity = Utils.Mathematics.LinearAlgebra.Matrix<double>.Identity(2);
+var identity = Utils.Mathematics.LinearAlgebra.MatrixTransformations.Identity<double>(2);
 var result = identity * vector; // [1, 2]
 Expression<Func<double, double>> func = x => x * x;
 var derivative = (Expression<Func<double, double>>)func.Derivate();

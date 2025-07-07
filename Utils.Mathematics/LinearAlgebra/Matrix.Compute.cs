@@ -63,7 +63,7 @@ public partial class Matrix<T>
 	/// <summary>
 	/// Resets the properties related to the matrix's structure.
 	/// </summary>
-	private void ResetMatrixProperties()
+        internal void ResetMatrixProperties()
 	{
 		bool isSquare = IsSquare;
 		isDiagonalized = isSquare ? null : false;
@@ -105,8 +105,8 @@ public partial class Matrix<T>
 
 		int n = Rows;
 
-		// Create L as an identity matrix and U as a clone of the current matrix
-		Matrix<T> L = Matrix<T>.Identity(n);
+                // Create L as an identity matrix and U as a clone of the current matrix
+                Matrix<T> L = MatrixTransformations.Identity<T>(n);
 		Matrix<T> U = new Matrix<T>(this); // Cloning the original matrix
 
 		T sign = T.One;

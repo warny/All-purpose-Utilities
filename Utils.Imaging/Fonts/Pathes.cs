@@ -15,10 +15,10 @@ namespace Utils.Fonts
 		private Matrix<double> transformation;
 
 		public Paths()
-		{
-			this.transformation = Matrix<double>.Identity(3);
-			this.paths = new List<Path>();
-		}
+                {
+                        this.transformation = MatrixTransformations.Identity<double>(3);
+                        this.paths = new List<Path>();
+                }
 
 		public Paths(Matrix<double> transformation)
 		{
