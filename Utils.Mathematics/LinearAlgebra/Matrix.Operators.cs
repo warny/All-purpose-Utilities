@@ -11,7 +11,6 @@ namespace Utils.Mathematics.LinearAlgebra
 		IEqualityOperators<Matrix<T>, object, bool>,
 		IMultiplyOperators<Matrix<T>, Matrix<T>, Matrix<T>>,
 		IMultiplyOperators<Matrix<T>, T, Matrix<T>>,
-		IMultiplyOperators<Matrix<T>, Vector<T>, Vector<T>>,
 		IDivisionOperators<Matrix<T>, T, Matrix<T>>,
 		IUnaryNegationOperators<Matrix<T>, Matrix<T>>,
 		IUnaryPlusOperators<Matrix<T>, Matrix<T>>
@@ -140,29 +139,6 @@ namespace Utils.Mathematics.LinearAlgebra
 			return new Matrix<T>(result);
 		}
 
-		/// <summary>
-		/// Multiplies a matrix by a vector.
-		/// </summary>
-		/// <exception cref="InvalidOperationException">Thrown if the matrix and vector have incompatible dimensions.</exception>
-		public static Vector<T> operator *(Matrix<T> matrix, Vector<T> vector)
-		{
-			if (matrix.Columns != vector.Dimension)
-			{
-				throw new InvalidOperationException("The matrix and vector have incompatible dimensions.");
-			}
-
-			T[] result = new T[matrix.Rows];
-			for (int row = 0; row < matrix.Rows; row++)
-			{
-				T temp = T.Zero;
-				for (int col = 0; col < matrix.Columns; col++)
-				{
-					temp += matrix.components[row, col] * vector[col];
-				}
-				result[row] = temp;
-			}
-			return new Vector<T>(result);
-		}
 
 		/// <summary>
 		/// Returns the matrix itself (unary plus).

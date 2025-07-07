@@ -114,7 +114,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 			var m1 = (Matrix<double>)context[m1Name];
 			var m2 = (Matrix<double>)context[m2Name];
 
-			Compute(resName, () => m1 * m2);
+                        Compute(resName, () => m1 * m2);
 		}
 
 		[When(@"I compute vector (\w+) \= (\w+) \+ (\w+)")]
@@ -139,7 +139,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 			var m1 = (Matrix<double>)context[m1Name];
 			var m2 = (Vector<double>)context[v2Name];
 
-			Compute(resName, () => m1 * m2);
+                        Compute(resName, () => MatrixOperations.Multiply(m1, m2));
 		}
 
 		[Then(@"I expect matrix (\w+) equals")]

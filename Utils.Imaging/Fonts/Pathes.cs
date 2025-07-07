@@ -15,10 +15,10 @@ namespace Utils.Fonts
 		private Matrix<double> transformation;
 
 		public Paths()
-		{
-			this.transformation = Matrix<double>.Identity(3);
-			this.paths = new List<Path>();
-		}
+                {
+                        this.transformation = MatrixTransformations.Identity<double>(3);
+                        this.paths = new List<Path>();
+                }
 
 		public Paths(Matrix<double> transformation)
 		{
@@ -32,8 +32,8 @@ namespace Utils.Fonts
 
 		public void StartAt(float x, float y)
 		{
-			var p = new Mathematics.LinearAlgebra.Vector<double>(x, y, 1);
-			p = transformation * p;
+                        var p = new Mathematics.LinearAlgebra.Vector<double>(x, y, 1);
+                        p = MatrixOperations.Multiply(transformation, p);
 
 			path = new Path(new PointF((short)p[0], (short)p[1]));
 			paths.Add(path);
@@ -41,15 +41,15 @@ namespace Utils.Fonts
 
 		public void LineTo(float x, float y)
 		{
-			var p = new Mathematics.LinearAlgebra.Vector<double>(x, y, 1);
-			p = transformation * p;
+                        var p = new Mathematics.LinearAlgebra.Vector<double>(x, y, 1);
+                        p = MatrixOperations.Multiply(transformation, p);
 			path.LineTo(new PointF((short)p[0], (short)p[1])); ;
 		}
 
 		public void BezierTo(params (float x, float y)[] points)
 		{
 			var tPoints = points
-				.Select(p => transformation * new Mathematics.LinearAlgebra.Vector<double>(p.x, p.y, 1))
+                                .Select(p => MatrixOperations.Multiply(transformation, new Mathematics.LinearAlgebra.Vector<double>(p.x, p.y, 1)))
 				.Select(p => new PointF((short)p[0], (short)p[1]));
 
 			path.BezierTo(tPoints.ToArray());
