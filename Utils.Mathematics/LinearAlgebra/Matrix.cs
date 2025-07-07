@@ -275,7 +275,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 			for (int col = 0; col < Columns; col++)
 			{
 				if (col > 0) sb.Append(componentsSeparator);
-                                sb.Append(T.CreateChecked(Math.Round(double.CreateChecked(components[row, col]), decimals)));
+				sb.Append(T.Round(components[row, col], decimals));
 			}
 			sb.Append(" }");
 		}
