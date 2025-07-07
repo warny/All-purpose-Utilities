@@ -11,7 +11,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// Vecteur
 /// </summary>
 public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable
-    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+    where T : struct, IFloatingPoint<T>
 {
     private static EnumerableEqualityComparer<T> ComponentComparer { get; } = EnumerableEqualityComparer<T>.Default;
 
@@ -77,7 +77,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
             {
                 temp += this.components[i] * this.components[i];
             }
-            norm = T.Sqrt(temp);
+            norm = T.CreateChecked(Math.Sqrt(double.CreateChecked(temp)));
             return norm.Value;
         }
     }
