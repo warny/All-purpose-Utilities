@@ -16,18 +16,15 @@ public partial class Vector<T> :
 {
 	public (T weight, Vector<T> vector) ComputeBarycenter(params Vector<T>[] points)
 		=> ComputeBarycenter((IEnumerable<Vector<T>>)points);
-	public (T weight, Vector<T> vector) ComputeBarycenter<T>(IEnumerable<Vector<T>> vectors)
-		where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
-		=> ComputeBarycenter<T, Vector<T>>(wp => T.One, vector => vector, vectors);
+	public (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<Vector<T>> vectors)
+		=> ComputeBarycenter(wp => T.One, vector => vector, vectors);
 	public (T weight, Vector<T> vector) ComputeBarycenter(params (T weight, Vector<T> point)[] weightedPoints)
 		=> ComputeBarycenter((IEnumerable<(T weight, Vector<T> vector)>)weightedPoints);
 	public (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<(T weight, Vector<T> vector)> weightedPoints)
 		=> ComputeBarycenter(wp => wp.weight, wp => wp.vector, weightedPoints);
-	public static (T weigth, Vector<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, params TW[] weightedPoints)
-		where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+	public static (T weigth, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, params TW[] weightedPoints)
 		=> ComputeBarycenter(getWeight, getVector, (IEnumerable<TW>)weightedPoints);
-	public static (T weigth, Vector<T> point) ComputeBarycenter<T, TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, IEnumerable<TW> weightedPoints)
-		where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+	public static (T weigth, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, IEnumerable<TW> weightedPoints)
 	{
 		var enumerator = weightedPoints.GetEnumerator();
 

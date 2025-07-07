@@ -11,7 +11,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// Vecteur
 /// </summary>
 public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable
-    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
+    where T : struct, IFloatingPoint<T>, IRootFunctions<T>
 {
     private static EnumerableEqualityComparer<T> ComponentComparer { get; } = EnumerableEqualityComparer<T>.Default;
 
