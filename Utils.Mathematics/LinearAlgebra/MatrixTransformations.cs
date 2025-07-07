@@ -35,7 +35,7 @@ public static class MatrixTransformations
     /// <param name="values">Diagonal values.</param>
     /// <returns>New diagonal matrix.</returns>
     public static Matrix<T> Diagonal<T>(params T[] values)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         int dimension = values.Length;
         var array = new T[dimension, dimension];
@@ -69,7 +69,7 @@ public static class MatrixTransformations
     /// <param name="coefficients">Scaling factors for each axis.</param>
     /// <returns>New scaling matrix.</returns>
     public static Matrix<T> Scaling<T>(params T[] coefficients)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         Matrix<T> matrix = Identity<T>(coefficients.Length + 1);
         for (int i = 0; i < coefficients.Length; i++)
@@ -87,7 +87,7 @@ public static class MatrixTransformations
     /// <param name="angles">Angles of the shear.</param>
     /// <returns>New shear matrix.</returns>
     public static Matrix<T> Skew<T>(params T[] angles)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
         var dimension = (Math.Sqrt(4 * angles.Length + 1) + 1) / 2;
         if (dimension != Math.Floor(dimension))
@@ -114,7 +114,7 @@ public static class MatrixTransformations
     /// <param name="angles">Angles of rotation.</param>
     /// <returns>New rotation matrix.</returns>
     public static Matrix<T> Rotation<T>(params T[] angles)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
         double baseComputeDimension = (1 + Math.Sqrt(8 * angles.Length + 1)) / 2;
         int dimension = (int)Math.Floor(baseComputeDimension);
@@ -156,7 +156,7 @@ public static class MatrixTransformations
     /// <param name="values">Translation values.</param>
     /// <returns>New translation matrix.</returns>
     public static Matrix<T> Translation<T>(params T[] values)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         Matrix<T> matrix = Identity<T>(values.Length + 1);
         int lastRow = matrix.Rows - 1;
@@ -175,7 +175,7 @@ public static class MatrixTransformations
     /// <param name="values">Transformation coefficients.</param>
     /// <returns>New transformation matrix.</returns>
     public static Matrix<T> Transform<T>(params T[] values)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         var dimension = (Math.Sqrt(4 * values.Length + 1) + 1) / 2;
         if (dimension != Math.Floor(dimension))
