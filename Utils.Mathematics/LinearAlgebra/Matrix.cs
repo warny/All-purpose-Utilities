@@ -11,7 +11,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// Represents a matrix of elements of type T.
 /// </summary>
 public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEquatable<T[,]>, IEquatable<T[][]>, IEquatable<Vector<T>[]>, ICloneable
-        where T : struct, IFloatingPoint<T>
+        where T : struct, IFloatingPoint<T>, IRootFunctions<T>
 {
 	internal readonly T[,] components;
 	private bool? isDiagonalized;
@@ -275,7 +275,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 			for (int col = 0; col < Columns; col++)
 			{
 				if (col > 0) sb.Append(componentsSeparator);
-				sb.Append(MathEx.Round(components[row, col], decimals));
+				sb.Append(T.Round(components[row, col], decimals));
 			}
 			sb.Append(" }");
 		}

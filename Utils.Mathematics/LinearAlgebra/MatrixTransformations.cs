@@ -15,7 +15,7 @@ public static class MatrixTransformations
     /// <param name="dimension">Matrix dimension.</param>
     /// <returns>New identity matrix.</returns>
     public static Matrix<T> Identity<T>(int dimension)
-        where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+        where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         var array = new T[dimension, dimension];
         for (int i = 0; i < dimension; i++)
