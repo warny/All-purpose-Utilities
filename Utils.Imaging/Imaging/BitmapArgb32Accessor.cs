@@ -70,6 +70,33 @@ namespace Utils.Imaging
 			return copy;
 		}
 
+		/// <summary>
+		/// Draws a sprite bitmap onto this bitmap at the specified location using the
+		/// provided blending function.
+		/// </summary>
+		/// <param name="location">Top-left destination coordinates.</param>
+		/// <param name="sprite">Bitmap containing the sprite.</param>
+		/// <param name="blend">Function blending sprite and destination colors.</param>
+		public void ApplySprite(Point location, BitmapArgb32Accessor sprite, Func<ColorArgb32, ColorArgb32, ColorArgb32> blend)
+		{
+			for (int sy = 0; sy < sprite.Height; sy++)
+			{
+				int dy = location.Y + sy;
+				if (dy < 0 || dy >= Height) continue;
+
+				for (int sx = 0; sx < sprite.Width; sx++)
+				{
+					int dx = location.X + sx;
+					if (dx < 0 || dx >= Width) continue;
+
+					ColorArgb32 src = sprite[sx, sy];
+					ColorArgb32 dst = this[dx, dy];
+					ColorArgb32 result = blend(src, dst);
+					this[dx, dy] = result;
+				}
+			}
+		}
+
 		public void Dispose()
 		{
 			Dispose(true);

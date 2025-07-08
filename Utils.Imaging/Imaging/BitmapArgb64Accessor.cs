@@ -48,6 +48,34 @@ namespace Utils.Imaging
 			set { ulongdata[y * bmpdata.Width + x] = value.Value; }
 		}
 
+		/// <summary>
+		/// Draws a sprite bitmap onto this bitmap at the specified location using the
+		/// provided blending function.
+		/// </summary>
+		/// <param name="location">Top-left destination coordinates.</param>
+		/// <param name="sprite">Bitmap containing the sprite.</param>
+		/// <param name="blend">Function blending sprite and destination colors.</param>
+		public void ApplySprite(Point location, BitmapArgb64Accessor sprite, Func<ColorArgb64, ColorArgb64, ColorArgb64> blend)
+		{
+			for (int sy = 0; sy < sprite.Height; sy++)
+			{
+				int dy = location.Y + sy;
+				if (dy < 0 || dy >= Height) continue;
+
+				for (int sx = 0; sx < sprite.Width; sx++)
+				{
+					int dx = location.X + sx;
+					if (dx < 0 || dx >= Width) continue;
+
+					ColorArgb64 src = sprite[sx, sy];
+					ColorArgb64 dst = this[dx, dy];
+					ColorArgb64 result = blend(src, dst);
+					this[dx, dy] = result;
+				}
+			}
+		}
+
+
 		public void Dispose()
 		{
 			Dispose(true);
