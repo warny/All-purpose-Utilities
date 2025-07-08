@@ -38,6 +38,9 @@ cache.Add(1, "one");
 cache.Add(2, "two");
 cache[1];
 cache.Add(3, "three"); // evicts key 2
+var dict = new Dictionary<string, int>();
+// Thread-safe dictionary insertion
+int one = dict.GetOrAdd("one", () => 1);
 ```
 
 ### Files

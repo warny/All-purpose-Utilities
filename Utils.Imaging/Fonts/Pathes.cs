@@ -12,10 +12,9 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
 	private Path path = null;
 	private readonly Matrix<double> transformation;
 
-	/// <inheritdoc/>
 	public Paths()
 	{
-		this.transformation = Matrix<double>.Identity(3);
+		this.transformation = MatrixTransformations.Identity<double>(3);
 		this.paths = new List<Path>();
 	}
 
