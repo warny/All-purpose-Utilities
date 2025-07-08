@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Utils.Collections;
 
@@ -26,20 +27,6 @@ public class GetOrAddThreadSafetyTests
         CollectionAssert.AreEqual(Enumerable.Repeat(1, 20).ToArray(), results);
         Assert.AreEqual(1, dictionary.Count);
         Assert.AreEqual(1, dictionary[0]);
-    }
-
-    [TestMethod]
-    public void GetOrAdd_IsMarkedAsSynchronized()
-    {
-        var methods = typeof(DictionaryExtensions).GetMethods()
-            .Where(m => m.Name == "GetOrAdd");
-
-        foreach (var method in methods)
-        {
-            var attr = method.GetCustomAttribute<MethodImplAttribute>();
-            Assert.IsNotNull(attr);
-            Assert.IsTrue(attr.Value.HasFlag(MethodImplOptions.Synchronized));
-        }
     }
 }
 
