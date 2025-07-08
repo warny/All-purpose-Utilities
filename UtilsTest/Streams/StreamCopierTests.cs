@@ -10,6 +10,9 @@ namespace UtilsTest.Streams;
 [TestClass]
 public class StreamCopierTests
 {
+	/// <summary>
+	/// Stream copier test
+	/// </summary>
 	[TestMethod]
 	public void StreamTest1()
 	{

@@ -111,6 +111,7 @@ namespace Utils.Reflection
 			GC.SuppressFinalize(this);
 		}
 
+		/// <inheritdoc/>
 		protected virtual void Dispose(bool disposing)
 		{
 			if (dllHandle != IntPtr.Zero)
@@ -120,6 +121,7 @@ namespace Utils.Reflection
 			}
 		}
 
+		/// <inheritdoc/>
 		~LibraryMapper() => Dispose(false);
 
 		#endregion
