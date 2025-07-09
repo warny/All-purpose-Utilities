@@ -74,8 +74,8 @@ public struct ColorArgb : IColorArgb<double>
 
 	public ColorArgb( ColorArgb64 color ) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
 
-	public ColorArgb( ColorAhsv color )
-	{
+        public ColorArgb( ColorAhsv color )
+        {
 		this.alpha = color.Alpha;
 
 		double hh, p, q, t, ff;
@@ -96,12 +96,12 @@ public struct ColorArgb : IColorArgb<double>
 		q = color.Value * (1.0 - (color.Saturation* ff));
 		t = color.Value * (1.0 - (color.Saturation * (1.0 - ff)));
 
-		switch (i) {
-			case 0:
-				this.red = color.Value;
-				this.green = t;
-				this.blue = p;
-				break;
+                switch (i) {
+                        case 0:
+                                this.red = color.Value;
+                                this.green = t;
+                                this.blue = p;
+                                break;
 			case 1:
 				this.red = q;
 				this.green = color.Value;
@@ -124,12 +124,42 @@ public struct ColorArgb : IColorArgb<double>
 				this.blue = color.Value;
 				break;
 			default:
-				this.red = color.Value;
-				this.green = p;
-				this.blue = q;
-				break;
-		}
-	}
+                                this.red = color.Value;
+                                this.green = p;
+                                this.blue = q;
+                                break;
+                }
+        }
+
+        /// <summary>
+        /// Initializes a new instance from an <see cref="ColorAlab"/> value.
+        /// </summary>
+        /// <param name="color">Color in the ALab space.</param>
+        public ColorArgb(ColorAlab color)
+            : this()
+        {
+            this = color.ToArgb();
+        }
+
+        /// <summary>
+        /// Initializes a new instance from an <see cref="ColorAcym"/> value.
+        /// </summary>
+        /// <param name="color">Color in the ACYM space.</param>
+        public ColorArgb(ColorAcym color)
+            : this()
+        {
+            this = color.ToArgb();
+        }
+
+        /// <summary>
+        /// Initializes a new instance from an <see cref="ColorAcmyk"/> value.
+        /// </summary>
+        /// <param name="color">Color in the ACMYK space.</param>
+        public ColorArgb(ColorAcmyk color)
+            : this()
+        {
+            this = color.ToArgb();
+        }
 
 	public static implicit operator ColorArgb(ColorAhsv color) => new (color);
 
