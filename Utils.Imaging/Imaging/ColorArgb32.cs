@@ -110,48 +110,14 @@ public struct ColorArgb32 : IColorArgb<byte>
 		Blue = color.B;
 	}
 
-	public ColorArgb32(ColorAhsv32 colorAHSV) : this()
-	{
-		this.alpha = colorAHSV.Alpha;
-		byte region, remainder, p, q, t;
-
-		if (colorAHSV.Saturation == 0)
-		{
-			this.red = colorAHSV.Value;
-			this.green = colorAHSV.Value;
-			this.blue = colorAHSV.Value;
-			return;
-		}
-
-		region = (byte)(colorAHSV.Hue / 43);
-		remainder = (byte)((colorAHSV.Hue - (region * 43)) * 6);
-
-		p = (byte)((colorAHSV.Value * (255 - colorAHSV.Saturation)) >> 8);
-		q = (byte)((colorAHSV.Value * (255 - ((colorAHSV.Saturation * remainder) >> 8))) >> 8);
-		t = (byte)((colorAHSV.Value * (255 - ((colorAHSV.Saturation * (255 - remainder)) >> 8))) >> 8);
-
-		switch (region)
-		{
-			case 0:
-				this.red = colorAHSV.Value; this.green = t; this.blue = p;
-				break;
-			case 1:
-				this.red = q; this.green = colorAHSV.Value; this.blue = p;
-				break;
-			case 2:
-				this.red = p; this.green = colorAHSV.Value; this.blue = t;
-				break;
-			case 3:
-				this.red = p; this.green = q; this.blue = colorAHSV.Value;
-				break;
-			case 4:
-				this.red = t; this.green = p; this.blue = colorAHSV.Value;
-				break;
-			default:
-				this.red = colorAHSV.Value; this.green = p; this.blue = q;
-				break;
-		}
-	}
+        public ColorArgb32(ColorAhsv32 colorAHSV) : this()
+        {
+                ColorArgb32 tmp = colorAHSV.ToArgbColor();
+                alpha = tmp.alpha;
+                red = tmp.red;
+                green = tmp.green;
+                blue = tmp.blue;
+        }
 
 	public override bool Equals(object obj)
 	{

@@ -78,62 +78,14 @@ public struct ColorArgb : IColorArgb<double>
 
 	public ColorArgb( ColorArgb64 color ) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
 
-	public ColorArgb( ColorAhsv color )
-	{
-		this.alpha = color.Alpha;
-
-		double hh, p, q, t, ff;
-		long i;
-
-		if (color.Saturation <= 0.0) {       // < is bogus, just shuts up warnings
-			this.red = color.Value;
-			this.green = color.Value;
-			this.blue = color.Value;
-			return;
-		}
-		hh = color.Hue;
-		if (hh >= 360.0) hh = 0.0;
-		hh /= 60.0;
-		i = (long)hh;
-		ff = hh - i;
-		p = color.Value * (1.0 - color.Saturation);
-		q = color.Value * (1.0 - (color.Saturation* ff));
-		t = color.Value * (1.0 - (color.Saturation * (1.0 - ff)));
-
-		switch (i) {
-			case 0:
-				this.red = color.Value;
-				this.green = t;
-				this.blue = p;
-				break;
-			case 1:
-				this.red = q;
-				this.green = color.Value;
-				this.blue = p;
-				break;
-			case 2:
-				this.red = p;
-				this.green = color.Value;
-				this.blue = t;
-				break;
-
-			case 3:
-				this.red = p;
-				this.green = q;
-				this.blue = color.Value;
-				break;
-			case 4:
-				this.red = t;
-				this.green = p;
-				this.blue = color.Value;
-				break;
-			default:
-				this.red = color.Value;
-				this.green = p;
-				this.blue = q;
-				break;
-		}
-	}
+        public ColorArgb(ColorAhsv color)
+        {
+                ColorArgb tmp = color.ToArgbColor();
+                alpha = tmp.alpha;
+                red = tmp.red;
+                green = tmp.green;
+                blue = tmp.blue;
+        }
 
 	public static implicit operator ColorArgb(ColorAhsv color) => new (color);
 

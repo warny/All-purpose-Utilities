@@ -107,48 +107,14 @@ public struct ColorArgb64 : IColorArgb<ushort>
 		this.blue = array[index + 3];
 	}
 
-	public ColorArgb64(ColorAhsv64 colorAHSV) : this()
-	{
-		alpha = colorAHSV.Alpha;
-		ushort region, remainder, p, q, t;
-
-		if (colorAHSV.Saturation == 0)
-		{
-			red = colorAHSV.Value;
-			green = colorAHSV.Value;
-			blue = colorAHSV.Value;
-			return;
-		}
-
-		region = (ushort)(colorAHSV.Hue / 10923);
-		remainder = (ushort)((colorAHSV.Hue - (region * 10923)) * 6);
-
-		p = (ushort)((colorAHSV.Value * (65535 - colorAHSV.Saturation)) >> 16);
-		q = (ushort)((colorAHSV.Value * (65535 - ((colorAHSV.Saturation * remainder) >> 16))) >> 16);
-		t = (ushort)((colorAHSV.Value * (65535 - ((colorAHSV.Saturation * (65535 - remainder)) >> 16))) >> 16);
-
-		switch (region)
-		{
-			case 0:
-				red = colorAHSV.Value; green = t; blue = p;
-				break;
-			case 1:
-				red = q; green = colorAHSV.Value; blue = p;
-				break;
-			case 2:
-				red = p; green = colorAHSV.Value; blue = t;
-				break;
-			case 3:
-				red = p; green = q; blue = colorAHSV.Value;
-				break;
-			case 4:
-				red = t; green = p; blue = colorAHSV.Value;
-				break;
-			default:
-				red = colorAHSV.Value; green = p; blue = q;
-				break;
-		}
-	}
+        public ColorArgb64(ColorAhsv64 colorAHSV) : this()
+        {
+                ColorArgb64 tmp = colorAHSV.ToArgbColor();
+                alpha = tmp.alpha;
+                red = tmp.red;
+                green = tmp.green;
+                blue = tmp.blue;
+        }
 
 	public override bool Equals(object obj)
 	{

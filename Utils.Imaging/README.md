@@ -9,3 +9,10 @@ It provides the graphical foundation used by the sample applications in this rep
 - Helpers to manipulate bitmaps and pixel data efficiently
 - A minimal vector drawing system for basic shapes and paths
 - Integration with the `Utils.Fonts` and `Utils.Mathematics` packages
+
+## Usage example
+```csharp
+var hsv = new ColorAhsv(0.5, 180, 1, 1); // cyan
+ColorArgb argb = hsv.ToArgbColor();
+ColorAhsv32 compact = ColorAhsv32.FromArgbColor((ColorArgb32)argb);
+```
