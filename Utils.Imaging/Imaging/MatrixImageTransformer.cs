@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Numerics;
 
 namespace Utils.Imaging
 {
@@ -10,7 +11,7 @@ namespace Utils.Imaging
     /// <typeparam name="T">Component type.</typeparam>
     public class MatrixImageTransformer<A, T> : IImageTransformer<A, T>
         where A : struct, IColorArgb<T>
-        where T : struct, IConvertible
+        where T : struct, IConvertible, INumber<T>
     {
         private readonly double[,] weights;
         private readonly Point offset;

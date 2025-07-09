@@ -6,6 +6,10 @@ namespace Utils.Imaging;
 
 public struct ColorArgb : IColorArgb<double>
 {
+
+	public static double MinValue { get; } = 0.0;
+	public static double MaxValue { get; } = 1.0;
+
 	private double alpha;
 	private double red;
 	private double green;
@@ -17,7 +21,7 @@ public struct ColorArgb : IColorArgb<double>
 
 		set
 		{
-			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Alpha));
+			value.ArgMustBeBetween(MinValue, MaxValue);
 			this.alpha=value;
 		}
 	}
@@ -28,7 +32,7 @@ public struct ColorArgb : IColorArgb<double>
 
 		set
 		{
-			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Red));
+			value.ArgMustBeBetween(MinValue, MaxValue);
 			this.red=value;
 		}
 	}
@@ -39,7 +43,7 @@ public struct ColorArgb : IColorArgb<double>
 
 		set
 		{
-			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Green));
+			value.ArgMustBeBetween(MinValue, MaxValue);
 			this.green=value;
 		}
 	}
@@ -50,7 +54,7 @@ public struct ColorArgb : IColorArgb<double>
 
 		set
 		{
-			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Blue));
+			value.ArgMustBeBetween(MinValue, MaxValue);
 			this.blue=value;
 		}
 	}
@@ -59,10 +63,10 @@ public struct ColorArgb : IColorArgb<double>
 
 	public ColorArgb( double alpha, double red, double green, double blue )
 	{
-		alpha.ArgMustBeBetween(0.0, 1.0);
-		red.ArgMustBeBetween(0.0, 1.0);
-		green.ArgMustBeBetween(0.0, 1.0);
-		blue.ArgMustBeBetween(0.0, 1.0);
+		alpha.ArgMustBeBetween(MinValue, MaxValue);
+		red.ArgMustBeBetween(MinValue, MaxValue);
+		green.ArgMustBeBetween(MinValue, MaxValue);
+		blue.ArgMustBeBetween(MinValue, MaxValue);
 
 		this.alpha = alpha;
 		this.red = red;
@@ -173,19 +177,4 @@ public struct ColorArgb : IColorArgb<double>
 			MathEx.Min(this.Blue, other.Blue)
 	);
 
-
-	public void Deconstruct(out double alpha, out double red, out double green, out double blue)
-	{
-		alpha = Alpha;
-		red = Red;
-		green = Green;
-		blue = Blue;
-	}
-
-	public void Deconstruct(out double red, out double green, out double blue)
-	{
-		red = Red;
-		green = Green;
-		blue = Blue;
-	}
 }

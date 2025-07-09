@@ -1,93 +1,119 @@
-﻿namespace Utils.Imaging
+﻿namespace Utils.Imaging;
+
+public class ColorAhsv32 : IColorAhsv<byte>, IColorArgbConvertible<ColorAhsv32, ColorArgb32, byte>
 {
-	public class ColorAhsv32 : IColorAhsv<byte>
+	public static byte MinValue { get; } = 0;
+	public static byte MaxValue { get; } = byte.MaxValue;
+
+	public byte Alpha { get; set; }
+	public byte Hue { get; set; }
+	public byte Saturation { get; set; }
+	public byte Value { get; set; }
+
+	public ColorAhsv32( byte alpha, byte hue, byte saturation, byte value )
 	{
-		public byte Alpha { get; set; }
-		public byte Hue { get; set; }
-		public byte Saturation { get; set; }
-		public byte Value { get; set; }
+		this.Alpha = alpha;
+		this.Hue = hue;
+		this.Saturation = saturation;
+		this.Value = value;
+	}
+	public ColorAhsv32( ColorAhsv64 color )
+	{
+		this.Alpha = (byte)(color.Alpha >> 8);
+		this.Hue = (byte)(color.Hue >> 8);
+		this.Saturation = (byte)(color.Saturation >> 8);
+		this.Value = (byte)(color.Value >> 8);
+	}
 
-		public ColorAhsv32( byte alpha, byte hue, byte saturation, byte value )
+	public ColorAhsv32( ColorAhsv color )
+	{
+		this.Alpha = (byte)(color.Alpha * 255);
+		this.Hue = (byte)(color.Hue / 360 * 255);
+		this.Saturation = (byte)(color.Saturation * 255);
+		this.Value = (byte)(color.Value * 255);
+	}
+
+	public ColorAhsv32(System.Drawing.Color colorArgb) { FromArgbColor(colorArgb.A, colorArgb.R, colorArgb.G, colorArgb.B); }
+
+	public static ColorAhsv32 FromArgbColor(ColorArgb32 colorArgb) => FromArgbColor(colorArgb.Alpha, colorArgb.Red, colorArgb.Green, colorArgb.Blue);
+
+	public static ColorAhsv32 FromArgbColor(byte alpha, byte red, byte green, byte blue)
+	{
+		byte hue;
+		byte saturation;
+		byte value;
+
+
+		byte rgbMin, rgbMax;
+
+		rgbMin = Mathematics.MathEx.Min(red, green, blue);
+		rgbMax = Mathematics.MathEx.Max(red, green, blue);
+
+		//cas du gris
+		if (rgbMin == rgbMax)
 		{
-			this.Alpha = alpha;
-			this.Hue = hue;
-			this.Saturation = saturation;
-			this.Value = value;
+			return new(alpha, rgbMin, rgbMin, rgbMin);
 		}
-		public ColorAhsv32( ColorAhsv64 color )
+		value = rgbMax;
+
+		int delta = rgbMax - rgbMin;
+
+		saturation = (byte)(255 * delta / value);
+		if (saturation == 0)
 		{
-			this.Alpha = (byte)(color.Alpha >> 8);
-			this.Hue = (byte)(color.Hue >> 8);
-			this.Saturation = (byte)(color.Saturation >> 8);
-			this.Value = (byte)(color.Value >> 8);
-		}
-
-		public ColorAhsv32( ColorAhsv color )
-		{
-			this.Alpha = (byte)(color.Alpha * 255);
-			this.Hue = (byte)(color.Hue / 360 * 255);
-			this.Saturation = (byte)(color.Saturation * 255);
-			this.Value = (byte)(color.Value * 255);
-		}
-
-		public ColorAhsv32( ColorArgb32 colorArgb )	{ FromARGB(colorArgb.Alpha, colorArgb.Red, colorArgb.Green, colorArgb.Blue); }
-		public ColorAhsv32(System.Drawing.Color colorArgb) { FromARGB(colorArgb.A, colorArgb.R, colorArgb.G, colorArgb.B); }
-
-		private void FromARGB(byte alpha, byte red, byte green, byte blue)
-		{
-			Alpha = alpha;
-			byte rgbMin, rgbMax;
-
-			rgbMin = Mathematics.MathEx.Min(red, green, blue);
-			rgbMax = Mathematics.MathEx.Max(red, green, blue);
-
-			//cas du noir
-			if (Value == 0)
-			{
-				Value = rgbMax;
-				Hue = 0;
-				Saturation = 0;
-				return;
-			}
-
-			int delta = rgbMax - rgbMin;
-
-			Saturation = (byte)(255 * delta / Value);
-			if (Saturation == 0)
-			{
-				Hue = 0;
-				return;
-			}
-
-			if (rgbMax == red)
-				this.Hue = (byte)(0 + 43 * (green - blue) / delta);
-			else if (rgbMax == green)
-				this.Hue = (byte)(85 + 43 * (blue - red) / delta);
-			else
-				this.Hue = (byte)(171 + 43 * (red - green) / delta);
-
+			return new(alpha, 0, saturation, value);
 		}
 
-		public static implicit operator ColorAhsv32(ColorArgb32 color) => new ColorAhsv32(color);
-		public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
-		public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
-		public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
+		if (rgbMax == red)
+			hue = (byte)(0 + 43 * (green - blue) / delta);
+		else if (rgbMax == green)
+			hue = (byte)(85 + 43 * (blue - red) / delta);
+		else
+			hue = (byte)(171 + 43 * (red - green) / delta);
 
-		public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
+		return new (alpha, hue, saturation, value);
+	}
 
-		public void Deconstruct(out byte alpha, out byte hue, out byte saturation, out byte value)
+	public ColorArgb32 ToArgbColor()
+	{
+		double hh, p, q, t, ff;
+		long i;
+
+		if (Saturation <= 0.0)
 		{
-			alpha = Alpha;
-			hue = Hue;
-			saturation = Saturation;
-			value = Value;
+			return new ColorArgb32(Alpha, Value, Value, Value);
 		}
 
-		public void Deconstruct(out byte hue, out byte saturation, out byte value)
+		hh = Hue;
+		if (hh >= 360.0) hh = 0.0;
+		hh /= 60.0;
+		i = (long)hh;
+		ff = hh - i;
+		p = Value * (1.0 - Saturation);
+		q = Value * (1.0 - (Saturation * ff));
+		t = Value * (1.0 - (Saturation * (1.0 - ff)));
+
+		switch (i)
 		{
-			hue = Hue;
-			saturation = Saturation;
-			value = Value;
+			case 0:
+				return new ColorArgb32(Alpha, Value, (byte)t, (byte)p);
+			case 1:
+				return new ColorArgb32(Alpha, (byte)q, Value, (byte)p);
+			case 2:
+				return new ColorArgb32(Alpha, (byte)p, Value, (byte)t);
+			case 3:
+				return new ColorArgb32(Alpha, (byte)p, (byte)q, Value);
+			case 4:
+				return new ColorArgb32(Alpha, (byte)t, (byte)p, Value);
+			default:
+				return new ColorArgb32(Alpha, Value, (byte)p, (byte)q);
 		}
 	}
+
+
+	public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
+	public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
+	public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
+
+	public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
 }

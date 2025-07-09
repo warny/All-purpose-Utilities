@@ -25,12 +25,6 @@ namespace Utils.Imaging
 			this.bytedata = (byte*)(void*)bmpdata.Scan0;
 		}
 
-		public byte this[Point point]
-		{
-			get { return bytedata[point.Y * bmpdata.Stride + point.X]; }
-			set { bytedata[point.Y * bmpdata.Stride + point.X] = value; }
-		}
-
 		public byte this[int x, int y]
 		{
 			get { return bytedata[y * bmpdata.Stride + x]; }

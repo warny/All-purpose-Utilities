@@ -15,12 +15,6 @@ namespace Utils.Imaging
 		public int Width => bmpdata.Width;
 		public int Height => bmpdata.Height;
 
-		uint IImageAccessor<uint>.this[Point point]
-		{
-			get { return uintdata[point.Y * bmpdata.Width + point.X]; }
-			set { uintdata[point.Y * bmpdata.Width + point.X] = value; }
-		}
-
 		uint IImageAccessor<uint>.this[int x, int y]
 		{
 			get { return uintdata[y * bmpdata.Width + x]; }
@@ -37,13 +31,6 @@ namespace Utils.Imaging
 
 			this.uintdata = (uint*)(void*)bmpdata.Scan0;
 		}
-
-		public ColorArgb32 this[Point point]
-		{
-			get { return new ColorArgb32(uintdata[point.Y * bmpdata.Width + point.X]); }
-			set { uintdata[point.Y * bmpdata.Width + point.X] = value.Value; }
-		}
-
 		public ColorArgb32 this[int x, int y]
 		{
 			get { return new ColorArgb32(uintdata[y * bmpdata.Width + x]); }

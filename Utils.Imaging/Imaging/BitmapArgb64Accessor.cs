@@ -14,12 +14,6 @@ namespace Utils.Imaging
 		public int Width => bmpdata.Width;
 		public int Height => bmpdata.Height;
 
-		ulong IImageAccessor<ulong>.this[Point point]
-		{
-			get { return ulongdata[point.Y * bmpdata.Width + point.X]; }
-			set { ulongdata[point.Y * bmpdata.Width + point.X] = value; }
-		}
-
 		ulong IImageAccessor<ulong>.this[int x, int y]
 		{
 			get { return ulongdata[y * bmpdata.Width + x]; }
@@ -36,12 +30,6 @@ namespace Utils.Imaging
 
 			this.ulongdata = (ulong*)(void*)bmpdata.Scan0;
 		}
-		public ColorArgb64 this[Point point]
-		{
-			get { return new ColorArgb64(ulongdata[point.Y * bmpdata.Width + point.X]); }
-			set { ulongdata[point.Y * bmpdata.Width + point.X] = value.Value; }
-		}
-
 		public ColorArgb64 this[int x, int y]
 		{
 			get { return new ColorArgb64(ulongdata[y * bmpdata.Width + x]); }

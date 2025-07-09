@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Numerics;
 
 namespace Utils.Imaging
 {
@@ -22,7 +23,7 @@ namespace Utils.Imaging
                                              Point location,
                                              Func<A, A, A> blend)
             where A : struct, IColorArgb<T>
-            where T : struct
+            where T : struct, INumber<T>
         {
             for (int y = 0; y < sprite.Height; y++)
             {
@@ -55,8 +56,8 @@ namespace Utils.Imaging
                                                      Point offset,
                                                      Func<T, T, T, T, A> creator)
             where A : struct, IColorArgb<T>
-            where T : struct, IConvertible
-        {
+            where T : struct, IConvertible, INumber<T>
+		{
             var transformer = new MatrixImageTransformer<A, T>(weights, offset, creator);
             transformer.Transform(image);
         }

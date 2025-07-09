@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Numerics;
 using Utils.Mathematics;
 using Utils.Objects;
 
 namespace Utils.Imaging
 {
-	public class ColorAhsv : IColorAhsv<double>
+	public class ColorAhsv : IColorAhsv<double>, IColorArgbConvertible<ColorAhsv, ColorArgb, double>
 	{
+		public static double MinValue { get; } = 0.0;
+		public static double MaxValue { get; } = 1.0;
+
 		private double alpha;
 		private double hue;
 		private double saturation;
@@ -16,7 +20,7 @@ namespace Utils.Imaging
 			get => alpha;
 			set
 			{
-				if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Alpha));
+				value.ArgMustBeBetween(MinValue, MaxValue);
 				alpha = value;
 			}
 		}
@@ -33,7 +37,7 @@ namespace Utils.Imaging
 
 			set
 			{
-				if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Saturation));
+				value.ArgMustBeBetween(MinValue, MaxValue);
 				this.saturation=value;
 			}
 		}
@@ -44,16 +48,16 @@ namespace Utils.Imaging
 
 			set
 			{
-				if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(Value));
+				value.ArgMustBeBetween(MinValue, MaxValue);
 				this.value=value;
 			}
 		}
 
 		public ColorAhsv( double alpha, double hue, double saturation, double value )
 		{
-			if (!alpha.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(alpha));
-			if (!saturation.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(saturation));
-			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
+			alpha.ArgMustBeBetween(MinValue, MaxValue);
+			saturation.ArgMustBeBetween(MinValue, MaxValue);
+			value.ArgMustBeBetween(MinValue, MaxValue);
 
 			this.alpha = alpha;
 			this.Hue = MathEx.Mod(hue, 360.0);
@@ -62,92 +66,75 @@ namespace Utils.Imaging
 		}
 
 
-		public ColorAhsv( double hue, double saturation, double value )
+		public ColorAhsv(double hue, double saturation, double value) : this(MaxValue, hue, saturation, value) { }
+
+		public static ColorAhsv FromColorAshv<TColorAshv, T>(TColorAshv color)
+			where TColorAshv : IColorAhsv<T>
+			where T : struct, INumber<T> 
 		{
-			if (!saturation.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(saturation));
-			if (!value.Between(0.0, 1.0)) throw new ArgumentOutOfRangeException(nameof(value));
-
-			this.alpha = 1;
-			this.Hue = MathEx.Mod(hue, 360.0);
-			this.saturation = saturation;
-			this.value = value;
-		}
-
-		public ColorAhsv( ColorAhsv32 color ) {
-			this.alpha = (double)color.Alpha / 255;
-			this.Hue = (double)color.Alpha / 255 * 360;
-			this.saturation = (double)color.Alpha / 255;
-			this.value = (double)color.Alpha / 255;
-		}
-
-		public ColorAhsv( ColorAhsv64 color )
-		{
-			this.alpha = (double)color.Alpha / 65535;
-			this.Hue = (double)color.Alpha / 65535 * 360;
-			this.saturation = (double)color.Alpha / 65535;
-			this.value = (double)color.Alpha / 65535;
+			double maxValue = double.CreateChecked(TColorAshv.MaxValue);
+			double alpha = double.CreateChecked(color.Alpha) / maxValue;
+			double hue = double.CreateChecked(color.Hue) / maxValue * 360;
+			double saturation = double.CreateChecked(color.Saturation) / maxValue;
+			double value = double.CreateChecked(color.Value) / maxValue;
+			return new (alpha, hue, saturation, value);
 		}
 
 		public ColorAhsv( ColorArgb color )
 		{
-			this.alpha = color.Alpha;
-			double min, max, delta;
-
-			min = color.Red < color.Green ? color.Red : color.Green;
-			min = min  < color.Blue ? min : color.Blue;
-
-			max = color.Red > color.Green ? color.Red : color.Green;
-			max = max  > color.Blue ? max : color.Blue;
-
-			this.value = max;                                // v
-			delta = max - min;
-			if (delta < 0.00001) {
-				this.saturation = 0;
-				this.hue = 0; // undefined, maybe nan?
-				return;
-			}
-			if (max > 0.0) { // NOTE: if Max is == 0, this divide would cause a crash
-				Saturation = (delta / max);                  // s
-			} else {
-				// if max is 0, then r = g = b = 0              
-				// s = 0, v is undefined
-				Saturation = 0.0;
-				Hue = 0.0;                            // its now undefined
-				return;
-			}
-			if (color.Red >= max)                           // > is bogus, just keeps compilor happy
-				this.hue = (color.Green - color.Blue) / delta;        // between yellow & magenta
-			else if (color.Green >= max)
-				this.hue = 2.0 + (color.Blue - color.Red) / delta;  // between cyan & yellow
-			else
-				this.hue = 4.0 + (color.Red - color.Green) / delta;  // between magenta & cyan
-
-			this.hue *= 60.0;                              // degrees
-
-			if (this.hue < 0.0)
-				this.hue += 360.0;
 
 		}
 
 		public static implicit operator ColorAhsv(ColorArgb color) => new ColorAhsv(color);
-		public static implicit operator ColorAhsv(ColorAhsv32 color) => new ColorAhsv(color);
-		public static implicit operator ColorAhsv(ColorAhsv64 color) => new ColorAhsv(color);
+		public static implicit operator ColorAhsv(ColorAhsv32 color) => FromColorAshv<ColorAhsv32, byte>(color);
+		public static implicit operator ColorAhsv(ColorAhsv64 color) => FromColorAshv<ColorAhsv64, ushort>(color);
 
 		public override string ToString() => $"a:{alpha} h:{hue} s:{saturation} v:{value}";
-
-		public void Deconstruct(out double alpha, out double hue, out double saturation, out double value)
+		public static ColorAhsv FromArgbColor(ColorArgb color)
 		{
-			alpha = Alpha;
-			hue = Hue;
-			saturation = Saturation;
-			value = Value;
-		}
+			double min, max, delta;
 
-		public void Deconstruct(out double hue, out double saturation, out double value)
-		{
-			hue = Hue;
-			saturation = Saturation;
-			value = Value;
+			min = color.Red < color.Green ? color.Red : color.Green;
+			min = min < color.Blue ? min : color.Blue;
+
+			max = color.Red > color.Green ? color.Red : color.Green;
+			max = max > color.Blue ? max : color.Blue;
+
+			double value = max;                                // v
+			delta = max - min;
+			if (delta < 0.00001)
+			{
+				return new(color.Alpha, 0, 0, 0);
+			}
+
+			double saturation, hue;
+			if (max > 0.0)
+			{ // NOTE: if Max is == 0, this divide would cause a crash
+				saturation = (delta / max);                  // s
+			}
+			else
+			{
+				// if max is 0, then r = g = b = 0              
+				// s = 0, v is undefined
+				saturation = 0.0;
+				hue = 0.0;                            // its now undefined
+				return new(color.Alpha, hue, saturation, value);
+			}
+			if (color.Red >= max)                           // > is bogus, just keeps compilor happy
+				hue = (color.Green - color.Blue) / delta;        // between yellow & magenta
+			else if (color.Green >= max)
+				hue = 2.0 + (color.Blue - color.Red) / delta;  // between cyan & yellow
+			else
+				hue = 4.0 + (color.Red - color.Green) / delta;  // between magenta & cyan
+
+			hue *= 60.0;                              // degrees
+
+			if (hue < 0.0)
+				hue += 360.0;
+
+			return new (color.Alpha, hue, saturation, value);
 		}
+		public ColorArgb ToArgbColor() => throw new NotImplementedException();
 	}
+
 }

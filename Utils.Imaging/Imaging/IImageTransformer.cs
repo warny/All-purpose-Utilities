@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Numerics;
 
 namespace Utils.Imaging
 {
@@ -9,7 +10,7 @@ namespace Utils.Imaging
     /// <typeparam name="T">Component type.</typeparam>
     public interface IImageTransformer<A, T>
         where A : struct, IColorArgb<T>
-        where T : struct
+        where T : struct, INumber<T>
     {
         /// <summary>
         /// Transforms the specified image in place.

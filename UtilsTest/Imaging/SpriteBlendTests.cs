@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Numerics;
 using System.Runtime.Versioning;
 using Utils.Imaging;
 
@@ -9,7 +10,7 @@ namespace UtilsTest.Imaging;
 
 internal class ArrayImageAccessor<A, T> : IImageAccessor<A, T>
 	where A : struct, IColorArgb<T>
-	where T : struct
+	where T : struct, INumber<T>
 {
 	private readonly A[,] data;
 
@@ -27,20 +28,18 @@ internal class ArrayImageAccessor<A, T> : IImageAccessor<A, T>
 		get => data[x, y];
 		set => data[x, y] = value;
 	}
-	public A this[Point p]
-	{
-		get => data[p.X, p.Y];
-		set => data[p.X, p.Y] = value;
-	}
 }
-
 [TestClass]
 public class SpriteBlendTests
 {
 	[TestMethod]
-	[Ignore]
+	[SupportedOSPlatform("windows")]
 	public void ApplySpriteMultiply()
 	{
+		if (!OperatingSystem.IsWindows())
+		{
+			Assert.Inconclusive("BitmapAccessor is only supported on Windows.");
+		}
 		var dest = new ArrayImageAccessor<ColorArgb32, byte>(3, 3);
 		var sprite = new ArrayImageAccessor<ColorArgb32, byte>(2, 2);
 
