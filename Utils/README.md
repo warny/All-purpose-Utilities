@@ -98,6 +98,18 @@ ICalendarProvider calendar = new WeekEndCalendarProvider();
 DateTime value = new DateTime(2024, 4, 5)
     .Calculate("DO+3O", new CultureInfo("fr-FR"), calendar); // 2024-04-10
 ```
+```csharp
+// Finding the next or previous working day
+ICalendarProvider calendar = new WeekEndCalendarProvider();
+DateTime next = new DateTime(2024, 4, 6).NextWorkingDay(calendar);     // 2024-04-08
+DateTime prev = new DateTime(2024, 4, 6).PreviousWorkingDay(calendar); // 2024-04-05
+```
+```csharp
+// Adjusting the result of a formula to the next working day
+ICalendarProvider calendar = new WeekEndCalendarProvider();
+DateTime adjusted = new DateTime(2024, 4, 6)
+    .Calculate("DOO+", new CultureInfo("fr-FR"), calendar); // 2024-04-08
+```
 
 ### Expressions
 ```csharp

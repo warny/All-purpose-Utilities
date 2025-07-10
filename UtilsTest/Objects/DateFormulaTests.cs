@@ -117,4 +117,35 @@ public class DateFormulaTests
                 var date = new DateTime(2024, 4, 5);
                 _ = date.Calculate("DO+1O", culture);
         }
+
+        [TestMethod]
+        public void NextAndPreviousWorkingDay()
+        {
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                Assert.AreEqual(new DateTime(2024, 4, 5), new DateTime(2024, 4, 5).NextWorkingDay(provider));
+                Assert.AreEqual(new DateTime(2024, 4, 5), new DateTime(2024, 4, 5).PreviousWorkingDay(provider));
+                Assert.AreEqual(new DateTime(2024, 4, 8), new DateTime(2024, 4, 6).NextWorkingDay(provider));
+                Assert.AreEqual(new DateTime(2024, 4, 5), new DateTime(2024, 4, 6).PreviousWorkingDay(provider));
+        }
+
+        [TestMethod]
+        public void FormulaWorkingDayAdjust()
+        {
+                var culture = new CultureInfo("fr-FR");
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                var date = new DateTime(2024, 4, 6); // Saturday
+                var result = date.Calculate("DOO+", culture, provider);
+                Assert.AreEqual(new DateTime(2024, 4, 8), result);
+                result = date.Calculate("DOO-", culture, provider);
+                Assert.AreEqual(new DateTime(2024, 4, 5), result);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void FormulaWorkingDayAdjustRequiresCalendar()
+        {
+                var culture = new CultureInfo("fr-FR");
+                var date = new DateTime(2024, 4, 6);
+                _ = date.Calculate("DOO+", culture);
+        }
 }

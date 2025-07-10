@@ -192,10 +192,10 @@ public static class DateUtils
 	/// <param name="workingDays">Number of working days to add.</param>
 	/// <param name="calendarProvider">Calendar providing working day information.</param>
 	/// <returns>The resulting date including additional non working days.</returns>
-	public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)
-	{
-		workingDays.ArgMustBeGreaterOrEqualsThan(0);
-		calendarProvider.Arg().MustNotBeNull();
+        public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)
+        {
+                workingDays.ArgMustBeGreaterOrEqualsThan(0);
+                calendarProvider.Arg().MustNotBeNull();
 
 		var toAdd = workingDays;
 		var current = date;
@@ -207,8 +207,44 @@ public static class DateUtils
 			current = end;
 		}
 
-		return current;
-	}
+                return current;
+        }
+
+        /// <summary>
+        /// Gets the next working day starting at the provided <paramref name="date"/>.
+        /// </summary>
+        /// <param name="date">Base date.</param>
+        /// <param name="calendarProvider">Calendar providing working day information.</param>
+        /// <returns>The first working day on or after <paramref name="date"/>.</returns>
+        public static DateTime NextWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
+        {
+                calendarProvider.Arg().MustNotBeNull();
+
+                if (calendarProvider.GetNonWorkingDaysCount(date, date) == 0)
+                        return date;
+
+                return date.AddWorkingDays(1, calendarProvider);
+        }
+
+        /// <summary>
+        /// Gets the previous working day ending at the provided <paramref name="date"/>.
+        /// </summary>
+        /// <param name="date">Base date.</param>
+        /// <param name="calendarProvider">Calendar providing working day information.</param>
+        /// <returns>The first working day on or before <paramref name="date"/>.</returns>
+        public static DateTime PreviousWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
+        {
+                calendarProvider.Arg().MustNotBeNull();
+
+                if (calendarProvider.GetNonWorkingDaysCount(date, date) == 0)
+                        return date;
+
+                var current = date.AddDays(-1);
+                while (calendarProvider.GetNonWorkingDaysCount(current, current) > 0)
+                        current = current.AddDays(-1);
+
+                return current;
+        }
 
 	/// <summary>
 	/// Calculates the date of Easter Sunday for the specified year using the Anonymous Gregorian algorithm.

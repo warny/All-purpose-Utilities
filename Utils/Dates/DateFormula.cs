@@ -108,11 +108,11 @@ public static class DateFormula
 				Expression.Constant(culture));
 
 		var index = 2;
-		while (index < formula.Length && (formula[index].In('+', '-')))
-		{
-			var sign = formula[index];
-			var pos = index + 1;
-			if (pos < formula.Length && char.IsDigit(formula[pos]))
+                while (index < formula.Length && (formula[index].In('+', '-')))
+                {
+                        var sign = formula[index];
+                        var pos = index + 1;
+                        if (pos < formula.Length && char.IsDigit(formula[pos]))
 			{
 				var startPos = pos;
 				while (pos < formula.Length && char.IsDigit(formula[pos])) pos++;
@@ -132,22 +132,35 @@ public static class DateFormula
 						expr,
 						Expression.Constant(lang.Days[day]),
 						Expression.Constant(sign == '+'));
-				index = pos + 2;
-				return Expression.Lambda<Func<DateTime, DateTime>>(Expression.Property(expr, nameof(DateTime.Date)), param).Compile();
-			}
-		}
-		if (index < formula.Length)
-		{
-			var day = formula.Substring(index, 2);
-			expr = Expression.Call(
-					typeof(DateFormula).GetMethod("MoveToSameWeekDay", BindingFlags.NonPublic | BindingFlags.Static)!,
-					expr,
-					Expression.Constant(lang.Days[day]),
-					Expression.Constant(culture.DateTimeFormat.FirstDayOfWeek));
-		}
-		expr = Expression.Property(expr, nameof(DateTime.Date));
-		return Expression.Lambda<Func<DateTime, DateTime>>(expr, param).Compile();
-	}
+                                index = pos + 2;
+                                return Expression.Lambda<Func<DateTime, DateTime>>(Expression.Property(expr, nameof(DateTime.Date)), param).Compile();
+                        }
+                }
+                if (index < formula.Length)
+                {
+                        var token = formula.Substring(index, 2);
+                        if (token.Length == 2 && token[0] == lang.WorkingDay && token[1].In('+', '-'))
+                        {
+                                if (calendarProvider is null)
+                                        throw new InvalidOperationException("Working day operations require a calendar provider.");
+                                var method = token[1] == '+' ? nameof(DateUtils.NextWorkingDay) : nameof(DateUtils.PreviousWorkingDay);
+                                expr = Expression.Call(
+                                                typeof(DateUtils).GetMethod(method, BindingFlags.Public | BindingFlags.Static)!,
+                                                expr,
+                                                Expression.Constant(calendarProvider));
+                        }
+                        else
+                        {
+                                expr = Expression.Call(
+                                                typeof(DateFormula).GetMethod("MoveToSameWeekDay", BindingFlags.NonPublic | BindingFlags.Static)!,
+                                                expr,
+                                                Expression.Constant(lang.Days[token]),
+                                                Expression.Constant(culture.DateTimeFormat.FirstDayOfWeek));
+                        }
+                }
+                expr = Expression.Property(expr, nameof(DateTime.Date));
+                return Expression.Lambda<Func<DateTime, DateTime>>(expr, param).Compile();
+        }
 
         private static Expression CreateCalendarCall(CultureInfo culture, Expression expr, PeriodTypeEnum period, int value, ICalendarProvider? calendarProvider)
         {
