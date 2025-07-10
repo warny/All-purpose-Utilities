@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Numerics;
 using Utils.Mathematics;
 using Utils.Objects;
 
 namespace Utils.Imaging;
 
-public struct ColorArgb : IColorArgb<double>
+/// <summary>
+/// Represents an ARGB color using <see cref="double"/> components.
+/// </summary>
+public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOperators<ColorArgb, ColorArgb, bool>
 {
 
 	public static double MinValue { get; } = 0.0;
@@ -78,62 +82,10 @@ public struct ColorArgb : IColorArgb<double>
 
 	public ColorArgb( ColorArgb64 color ) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
 
-	public ColorArgb( ColorAhsv color )
-	{
-		this.alpha = color.Alpha;
-
-		double hh, p, q, t, ff;
-		long i;
-
-		if (color.Saturation <= 0.0) {       // < is bogus, just shuts up warnings
-			this.red = color.Value;
-			this.green = color.Value;
-			this.blue = color.Value;
-			return;
-		}
-		hh = color.Hue;
-		if (hh >= 360.0) hh = 0.0;
-		hh /= 60.0;
-		i = (long)hh;
-		ff = hh - i;
-		p = color.Value * (1.0 - color.Saturation);
-		q = color.Value * (1.0 - (color.Saturation* ff));
-		t = color.Value * (1.0 - (color.Saturation * (1.0 - ff)));
-
-		switch (i) {
-			case 0:
-				this.red = color.Value;
-				this.green = t;
-				this.blue = p;
-				break;
-			case 1:
-				this.red = q;
-				this.green = color.Value;
-				this.blue = p;
-				break;
-			case 2:
-				this.red = p;
-				this.green = color.Value;
-				this.blue = t;
-				break;
-
-			case 3:
-				this.red = p;
-				this.green = q;
-				this.blue = color.Value;
-				break;
-			case 4:
-				this.red = t;
-				this.green = p;
-				this.blue = color.Value;
-				break;
-			default:
-				this.red = color.Value;
-				this.green = p;
-				this.blue = q;
-				break;
-		}
-	}
+        public ColorArgb(ColorAhsv color) : this()
+        {
+                this = color.ToArgbColor();
+        }
 
 	public static implicit operator ColorArgb(ColorAhsv color) => new (color);
 
@@ -141,9 +93,9 @@ public struct ColorArgb : IColorArgb<double>
 
 	public static implicit operator ColorArgb(ColorArgb64 color) => new (color);
 
-	public static implicit operator ColorArgb(System.Drawing.Color color) => new (color.A / 255.0, color.R / 255.0, color.G / 255.0, color.B / 255.0);
+        public static implicit operator ColorArgb(System.Drawing.Color color) => new (color.A / 255.0, color.R / 255.0, color.G / 255.0, color.B / 255.0);
 
-	public static ColorArgb Gradient( ColorArgb color1, ColorArgb color2, double percent )
+        public static ColorArgb Gradient( ColorArgb color1, ColorArgb color2, double percent )
 	{
 		if (percent < 0) percent = 0;
 		else if (percent > 1) percent = 1;
@@ -167,14 +119,37 @@ public struct ColorArgb : IColorArgb<double>
 		MathEx.Min(1.0, this.Alpha + other.Alpha),
 		MathEx.Min(1.0, this.Red + other.Red),
 		MathEx.Min(1.0, this.Green + other.Green),
-		MathEx.Min(1.0, this.Blue + other.Blue)
-	);
+                MathEx.Min(1.0, this.Blue + other.Blue)
+        );
 
-	public IColorArgb<double> Substract(IColorArgb<double> other) => new ColorArgb(
-			MathEx.Min(this.Alpha, other.Alpha),
-			MathEx.Min(this.Red, other.Red),
-			MathEx.Min(this.Green, other.Green),
-			MathEx.Min(this.Blue, other.Blue)
-	);
+        public IColorArgb<double> Substract(IColorArgb<double> other) => new ColorArgb(
+                        MathEx.Min(this.Alpha, other.Alpha),
+                        MathEx.Min(this.Red, other.Red),
+                        MathEx.Min(this.Green, other.Green),
+                        MathEx.Min(this.Blue, other.Blue)
+        );
+
+        /// <inheritdoc/>
+        public bool Equals(ColorArgb other) =>
+                Alpha == other.Alpha &&
+                Red == other.Red &&
+                Green == other.Green &&
+                Blue == other.Blue;
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is ColorArgb other && Equals(other);
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => HashCode.Combine(Alpha, Red, Green, Blue);
+
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
+        public static bool operator ==(ColorArgb left, ColorArgb right) => left.Equals(right);
+
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
+        public static bool operator !=(ColorArgb left, ColorArgb right) => !left.Equals(right);
 
 }
