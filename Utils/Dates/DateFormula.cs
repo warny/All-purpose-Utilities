@@ -22,10 +22,10 @@ public static class DateFormula
 	});
 
 	/// <summary>Cache for compiled formulas.</summary>
-	private static readonly Dictionary<FormulaCacheKey, Func<DateTime, DateTime>> _cache = [];
+        private static readonly Dictionary<FormulaCacheKey, Func<DateTime, DateTime>> _cache = [];
 
 	/// <summary>Represents a unique key for the formula cache.</summary>
-	private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, string Formula);
+        private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, string Formula, ICalendarProvider? CalendarProvider);
 
 	/// <summary>
 	/// Retrieves a compiled formula from the cache or compiles it if missing.
@@ -34,14 +34,14 @@ public static class DateFormula
 	/// <param name="provider">Language provider.</param>
 	/// <param name="culture">Culture used for token interpretation.</param>
 	/// <returns>A delegate computing the date from a base value.</returns>
-	private static Func<DateTime, DateTime> GetCompiledFormula(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture)
-	{
-		var key = new FormulaCacheKey(provider, culture.Name, formula);
-		lock (_cache)
-		{
-			return _cache.GetOrAdd(key, () => Compile(formula, provider, culture));
-		}
-	}
+        private static Func<DateTime, DateTime> GetCompiledFormula(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture, ICalendarProvider? calendarProvider)
+        {
+                var key = new FormulaCacheKey(provider, culture.Name, formula, calendarProvider);
+                lock (_cache)
+                {
+                        return _cache.GetOrAdd(key, () => Compile(formula, provider, culture, calendarProvider));
+                }
+        }
 
 	/// <summary>
 	/// Calculates the date described by <paramref name="formula"/>.
@@ -50,8 +50,8 @@ public static class DateFormula
 	/// <param name="formula">Formula to evaluate.</param>
 	/// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
 	/// <returns>The computed date.</returns>
-	public static DateTime Calculate(this DateTime date, string formula, CultureInfo culture = null)
-			=> date.Calculate(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture);
+        public static DateTime Calculate(this DateTime date, string formula, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
+                        => date.Calculate(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture, calendarProvider);
 
 	/// <summary>
 	/// Calculates the date described by <paramref name="formula"/> using a custom provider.
@@ -61,12 +61,12 @@ public static class DateFormula
 	/// <param name="provider">Language provider.</param>
 	/// <param name="culture">Culture to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
 	/// <returns>The computed date.</returns>
-	public static DateTime Calculate(this DateTime date, string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null)
-	{
-		culture ??= CultureInfo.CurrentCulture;
-		var compiled = GetCompiledFormula(formula, provider, culture);
-		return compiled(date);
-	}
+        public static DateTime Calculate(this DateTime date, string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
+        {
+                culture ??= CultureInfo.CurrentCulture;
+                var compiled = GetCompiledFormula(formula, provider, culture, calendarProvider);
+                return compiled(date);
+        }
 
 	/// <summary>
 	/// Compiles the provided <paramref name="formula"/> into a delegate.
@@ -74,8 +74,8 @@ public static class DateFormula
 	/// <param name="formula">Formula to compile.</param>
 	/// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
 	/// <returns>A delegate computing the resulting date.</returns>
-	public static Func<DateTime, DateTime> Compile(string formula, CultureInfo culture = null)
-			=> Compile(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture);
+        public static Func<DateTime, DateTime> Compile(string formula, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
+                        => Compile(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture, calendarProvider);
 
 	/// <summary>
 	/// Compiles the provided <paramref name="formula"/> using a custom provider.
@@ -84,10 +84,10 @@ public static class DateFormula
 	/// <param name="provider">Language provider.</param>
 	/// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
 	/// <returns>A delegate computing the resulting date.</returns>
-	public static Func<DateTime, DateTime> Compile(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null)
-	{
-		culture ??= CultureInfo.CurrentCulture;
-		var lang = provider.GetLanguage(culture);
+        public static Func<DateTime, DateTime> Compile(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
+        {
+                culture ??= CultureInfo.CurrentCulture;
+                var lang = provider.GetLanguage(culture);
 
 		if (formula.Length < 2)
 			throw new ArgumentException("Formula is too short.", nameof(formula));
@@ -120,8 +120,8 @@ public static class DateFormula
 				if (sign == '-') value = -value;
 				if (pos >= formula.Length)
 					throw new ArgumentException("Missing unit token.", nameof(formula));
-				var unit = ParsePeriod(formula[pos], lang);
-				expr = CreateCalendarCall(culture, expr, unit, value);
+                                var unit = ParsePeriod(formula[pos], lang);
+                                expr = CreateCalendarCall(culture, expr, unit, value, calendarProvider);
 				index = pos + 1;
 			}
 			else
@@ -149,38 +149,50 @@ public static class DateFormula
 		return Expression.Lambda<Func<DateTime, DateTime>>(expr, param).Compile();
 	}
 
-	private static Expression CreateCalendarCall(CultureInfo culture, Expression expr, PeriodTypeEnum period, int value)
-	{
-		(string methodName, value) = period switch
-		{
-			PeriodTypeEnum.Day => ("AddDays", value),
-			PeriodTypeEnum.Week => ("AddDays", value * 7),
-			PeriodTypeEnum.Month => ("AddMonths", value),
-			PeriodTypeEnum.Quarter => ("AddMonths", value * 3),
-			PeriodTypeEnum.Year => ("AddYears", value),
-			_ => (null, value)
+        private static Expression CreateCalendarCall(CultureInfo culture, Expression expr, PeriodTypeEnum period, int value, ICalendarProvider? calendarProvider)
+        {
+                if (period == PeriodTypeEnum.WorkingDay)
+                {
+                        if (calendarProvider is null)
+                                throw new InvalidOperationException("Working day operations require a calendar provider.");
+                        return Expression.Call(
+                                typeof(DateUtils).GetMethod(nameof(DateUtils.AddWorkingDays), BindingFlags.Public | BindingFlags.Static)!,
+                                expr,
+                                Expression.Constant(value),
+                                Expression.Constant(calendarProvider));
+                }
 
-		};
-		if (methodName is null) return expr;
+                (string methodName, value) = period switch
+                {
+                        PeriodTypeEnum.Day => ("AddDays", value),
+                        PeriodTypeEnum.Week => ("AddDays", value * 7),
+                        PeriodTypeEnum.Month => ("AddMonths", value),
+                        PeriodTypeEnum.Quarter => ("AddMonths", value * 3),
+                        PeriodTypeEnum.Year => ("AddYears", value),
+                        _ => (null, value)
 
-		var calendarExpression = Expression.Constant(culture.Calendar);
-		return Expression.Call(
-			calendarExpression,
-			typeof(Calendar).GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance)!,
-			expr,
-			Expression.Constant(value));
-	}
+                };
+                if (methodName is null) return expr;
+
+                var calendarExpression = Expression.Constant(culture.Calendar);
+                return Expression.Call(
+                        calendarExpression,
+                        typeof(Calendar).GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance)!,
+                        expr,
+                        Expression.Constant(value));
+        }
 
 	private static PeriodTypeEnum ParsePeriod(char token, DateFormulaLanguage lang)
 		=> token switch
 		{
-			var t when t == lang.Day => PeriodTypeEnum.Day,
-			var t when t == lang.Week => PeriodTypeEnum.Week,
-			var t when t == lang.Month => PeriodTypeEnum.Month,
-			var t when t == lang.Quarter => PeriodTypeEnum.Quarter,
-			var t when t == lang.Year => PeriodTypeEnum.Year,
-			_ => throw new ArgumentException($"Unknown period token '{token}'.")
-		};
+                        var t when t == lang.Day => PeriodTypeEnum.Day,
+                        var t when t == lang.Week => PeriodTypeEnum.Week,
+                        var t when t == lang.Month => PeriodTypeEnum.Month,
+                        var t when t == lang.Quarter => PeriodTypeEnum.Quarter,
+                        var t when t == lang.Year => PeriodTypeEnum.Year,
+                        var t when t == lang.WorkingDay => PeriodTypeEnum.WorkingDay,
+                        _ => throw new ArgumentException($"Unknown period token '{token}'.")
+                };
 
 	private static DateTime AdjustToDayOfWeek(DateTime date, DayOfWeek day, bool after)
 	{

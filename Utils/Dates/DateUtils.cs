@@ -63,8 +63,9 @@ public static class DateUtils
 		{
 			case PeriodTypeEnum.None:
 				return dateTime;
-			case PeriodTypeEnum.Day:
-				return calendar.AddDays(dateTime, 0).Date;
+                        case PeriodTypeEnum.Day:
+                        case PeriodTypeEnum.WorkingDay:
+                                return calendar.AddDays(dateTime, 0).Date;
 			case PeriodTypeEnum.Week:
 				var difference = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
 				DateTime weekDate = calendar.AddDays(dateTime.Date, -difference);
@@ -136,8 +137,9 @@ public static class DateUtils
 		{
 			case PeriodTypeEnum.None:
 				return dateTime;
-			case PeriodTypeEnum.Day:
-				return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
+                        case PeriodTypeEnum.Day:
+                        case PeriodTypeEnum.WorkingDay:
+                                return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
 			case PeriodTypeEnum.Week:
 				var difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
 				DateTime endWeek = calendar.AddDays(dateTime.Date, difference);
@@ -280,10 +282,15 @@ public enum PeriodTypeEnum
 	/// </summary>
 	None = 0,
 
-	/// <summary>
-	/// Represents a single day.
-	/// </summary>
-	Day,
+        /// <summary>
+        /// Represents a single day.
+        /// </summary>
+        Day,
+
+        /// <summary>
+        /// Represents a working day.
+        /// </summary>
+        WorkingDay,
 
 	/// <summary>
 	/// Represents a week.

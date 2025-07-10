@@ -92,6 +92,12 @@ DateTime result = new DateTime(2023, 3, 15)
 ICalendarProvider calendar = new WeekEndCalendarProvider();
 DateTime dueDate = new DateTime(2024, 4, 5).AddWorkingDays(3, calendar); // 2024-04-10
 ```
+```csharp
+// Using working days inside a formula
+ICalendarProvider calendar = new WeekEndCalendarProvider();
+DateTime value = new DateTime(2024, 4, 5)
+    .Calculate("DO+3O", new CultureInfo("fr-FR"), calendar); // 2024-04-10
+```
 
 ### Expressions
 ```csharp
