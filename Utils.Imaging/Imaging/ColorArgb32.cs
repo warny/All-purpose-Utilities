@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Utils.Mathematics;
 
 namespace Utils.Imaging;
 
 [StructLayout(LayoutKind.Explicit)]
-public struct ColorArgb32 : IColorArgb<byte>
+/// <summary>
+/// Represents a 32-bit ARGB color using byte components.
+/// </summary>
+public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEqualityOperators<ColorArgb32, ColorArgb32, bool>
 {
 	public static byte MinValue { get; } = 0;
 	public static byte MaxValue { get; } = byte.MaxValue;
@@ -110,58 +114,29 @@ public struct ColorArgb32 : IColorArgb<byte>
 		Blue = color.B;
 	}
 
-	public ColorArgb32(ColorAhsv32 colorAHSV) : this()
-	{
-		this.alpha = colorAHSV.Alpha;
-		byte region, remainder, p, q, t;
+        public ColorArgb32(ColorAhsv32 colorAHSV) : this()
+        {
+                this = colorAHSV.ToArgbColor();
+        }
 
-		if (colorAHSV.Saturation == 0)
-		{
-			this.red = colorAHSV.Value;
-			this.green = colorAHSV.Value;
-			this.blue = colorAHSV.Value;
-			return;
-		}
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is ColorArgb32 other && Equals(other);
 
-		region = (byte)(colorAHSV.Hue / 43);
-		remainder = (byte)((colorAHSV.Hue - (region * 43)) * 6);
+        /// <inheritdoc/>
+        public bool Equals(ColorArgb32 other) => Value == other.Value;
 
-		p = (byte)((colorAHSV.Value * (255 - colorAHSV.Saturation)) >> 8);
-		q = (byte)((colorAHSV.Value * (255 - ((colorAHSV.Saturation * remainder) >> 8))) >> 8);
-		t = (byte)((colorAHSV.Value * (255 - ((colorAHSV.Saturation * (255 - remainder)) >> 8))) >> 8);
+        /// <inheritdoc/>
+        public override int GetHashCode() => (int)Value;
 
-		switch (region)
-		{
-			case 0:
-				this.red = colorAHSV.Value; this.green = t; this.blue = p;
-				break;
-			case 1:
-				this.red = q; this.green = colorAHSV.Value; this.blue = p;
-				break;
-			case 2:
-				this.red = p; this.green = colorAHSV.Value; this.blue = t;
-				break;
-			case 3:
-				this.red = p; this.green = q; this.blue = colorAHSV.Value;
-				break;
-			case 4:
-				this.red = t; this.green = p; this.blue = colorAHSV.Value;
-				break;
-			default:
-				this.red = colorAHSV.Value; this.green = p; this.blue = q;
-				break;
-		}
-	}
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
+        public static bool operator ==(ColorArgb32 left, ColorArgb32 right) => left.Equals(right);
 
-	public override bool Equals(object obj)
-	{
-		return obj is ColorArgb32 && Value == ((ColorArgb32)obj).Value;
-	}
-
-	public override int GetHashCode()
-	{
-		return (int)Value;
-	}
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
+        public static bool operator !=(ColorArgb32 left, ColorArgb32 right) => !left.Equals(right);
 
 	public static implicit operator ColorArgb32(ColorAhsv32 color)
 	{

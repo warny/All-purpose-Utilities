@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Utils.Mathematics;
 
@@ -6,7 +7,10 @@ namespace Utils.Imaging;
 
 
 [StructLayout(LayoutKind.Explicit)]
-public struct ColorArgb64 : IColorArgb<ushort>
+/// <summary>
+/// Represents a 64-bit ARGB color using 16-bit components.
+/// </summary>
+public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEqualityOperators<ColorArgb64, ColorArgb64, bool>
 {
 	public static ushort MinValue { get; } = 0;
 	public static ushort MaxValue { get; } = ushort.MaxValue;
@@ -107,58 +111,29 @@ public struct ColorArgb64 : IColorArgb<ushort>
 		this.blue = array[index + 3];
 	}
 
-	public ColorArgb64(ColorAhsv64 colorAHSV) : this()
-	{
-		alpha = colorAHSV.Alpha;
-		ushort region, remainder, p, q, t;
+        public ColorArgb64(ColorAhsv64 colorAHSV) : this()
+        {
+                this = colorAHSV.ToArgbColor();
+        }
 
-		if (colorAHSV.Saturation == 0)
-		{
-			red = colorAHSV.Value;
-			green = colorAHSV.Value;
-			blue = colorAHSV.Value;
-			return;
-		}
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is ColorArgb64 other && Equals(other);
 
-		region = (ushort)(colorAHSV.Hue / 10923);
-		remainder = (ushort)((colorAHSV.Hue - (region * 10923)) * 6);
+        /// <inheritdoc/>
+        public bool Equals(ColorArgb64 other) => Value == other.Value;
 
-		p = (ushort)((colorAHSV.Value * (65535 - colorAHSV.Saturation)) >> 16);
-		q = (ushort)((colorAHSV.Value * (65535 - ((colorAHSV.Saturation * remainder) >> 16))) >> 16);
-		t = (ushort)((colorAHSV.Value * (65535 - ((colorAHSV.Saturation * (65535 - remainder)) >> 16))) >> 16);
+        /// <inheritdoc/>
+        public override int GetHashCode() => Value.GetHashCode();
 
-		switch (region)
-		{
-			case 0:
-				red = colorAHSV.Value; green = t; blue = p;
-				break;
-			case 1:
-				red = q; green = colorAHSV.Value; blue = p;
-				break;
-			case 2:
-				red = p; green = colorAHSV.Value; blue = t;
-				break;
-			case 3:
-				red = p; green = q; blue = colorAHSV.Value;
-				break;
-			case 4:
-				red = t; green = p; blue = colorAHSV.Value;
-				break;
-			default:
-				red = colorAHSV.Value; green = p; blue = q;
-				break;
-		}
-	}
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
+        public static bool operator ==(ColorArgb64 left, ColorArgb64 right) => left.Equals(right);
 
-	public override bool Equals(object obj)
-	{
-		return obj is ColorArgb64 && Value == ((ColorArgb64)obj).Value;
-	}
-
-	public override int GetHashCode()
-	{
-		return Value.GetHashCode();
-	}
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
+        public static bool operator !=(ColorArgb64 left, ColorArgb64 right) => !left.Equals(right);
 
 	public static implicit operator ColorArgb64(ColorArgb color) => new ColorArgb64(color);
 	public static implicit operator ColorArgb64(ColorArgb32 color) => new ColorArgb64(color);
