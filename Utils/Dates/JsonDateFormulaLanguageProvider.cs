@@ -26,11 +26,12 @@ public sealed class JsonDateFormulaLanguageProvider : IDateFormulaLanguageProvid
                                 End = p.Value.End[0],
                                 Day = p.Value.Units.Day[0],
                                 Week = p.Value.Units.Week[0],
-                                Month = p.Value.Units.Month[0],
-                                Quarter = p.Value.Units.Quarter[0],
-                                Year = p.Value.Units.Year[0],
-                                Days = p.Value.Days.ToDictionary(d => d.Key, d => Enum.Parse<DayOfWeek>(d.Value))
-                        });
+                               Month = p.Value.Units.Month[0],
+                               Quarter = p.Value.Units.Quarter[0],
+                               Year = p.Value.Units.Year[0],
+                               WorkingDay = p.Value.Units.Workday[0],
+                               Days = p.Value.Days.ToDictionary(d => d.Key, d => Enum.Parse<DayOfWeek>(d.Value))
+                       });
         }
 
         /// <inheritdoc />
@@ -59,5 +60,6 @@ public sealed class JsonDateFormulaLanguageProvider : IDateFormulaLanguageProvid
                 public string Month { get; set; } = string.Empty;
                 public string Quarter { get; set; } = string.Empty;
                 public string Year { get; set; } = string.Empty;
+                public string Workday { get; set; } = string.Empty;
         }
 }

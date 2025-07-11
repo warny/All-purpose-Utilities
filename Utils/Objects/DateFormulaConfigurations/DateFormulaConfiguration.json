@@ -2,7 +2,7 @@
   "fr": {
     "start": "D",
     "end": "F",
-    "units": {"day": "J", "week": "S", "month": "M", "quarter": "T", "year": "A"},
+    "units": {"day": "J", "week": "S", "month": "M", "quarter": "T", "year": "A", "workday": "O"},
     "days": {
       "Lu": "Monday",
       "Ma": "Tuesday",
@@ -16,7 +16,7 @@
   "en": {
     "start": "S",
     "end": "E",
-    "units": {"day": "D", "week": "W", "month": "M", "quarter": "Q", "year": "Y"},
+    "units": {"day": "D", "week": "W", "month": "M", "quarter": "Q", "year": "Y", "workday": "O"},
     "days": {
       "Mo": "Monday",
       "Tu": "Tuesday",
@@ -30,7 +30,7 @@
   "es": {
     "start": "I",
     "end": "F",
-    "units": {"day": "D", "week": "S", "month": "M", "quarter": "T", "year": "A"},
+    "units": {"day": "D", "week": "S", "month": "M", "quarter": "T", "year": "A", "workday": "O"},
     "days": {
       "Lu": "Monday",
       "Ma": "Tuesday",
@@ -44,7 +44,7 @@
   "de": {
     "start": "A",
     "end": "E",
-    "units": {"day": "T", "week": "W", "month": "M", "quarter": "Q", "year": "J"},
+    "units": {"day": "T", "week": "W", "month": "M", "quarter": "Q", "year": "J", "workday": "O"},
     "days": {
       "Mo": "Monday",
       "Di": "Tuesday",
@@ -58,7 +58,7 @@
   "ar": {
     "start": "B",
     "end": "N",
-    "units": {"day": "Y", "week": "U", "month": "S", "quarter": "R", "year": "A"},
+    "units": {"day": "Y", "week": "U", "month": "S", "quarter": "R", "year": "A", "workday": "O"},
     "days": {
       "Ah": "Sunday",
       "It": "Monday",
@@ -72,7 +72,7 @@
   "zh": {
     "start": "S",
     "end": "E",
-    "units": {"day": "D", "week": "Z", "month": "M", "quarter": "J", "year": "N"},
+    "units": {"day": "D", "week": "Z", "month": "M", "quarter": "J", "year": "N", "workday": "O"},
     "days": {
       "Mo": "Monday",
       "Tu": "Tuesday",
