@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Utils.Reflection;
 
-namespace QueryOData.Injection;
+namespace Utils.DependencyInjection;
 
 public static class ServiceConfigurationHelper
 {

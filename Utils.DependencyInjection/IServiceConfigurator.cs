@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace QueryOData.Injection;
+namespace Utils.DependencyInjection;
 
 public interface IServiceConfigurator
 {
