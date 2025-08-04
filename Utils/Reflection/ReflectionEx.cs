@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using Utils.Files;
 
-namespace Utils.Net.Expressions;
+namespace Utils.Reflection;
 
 /// <summary>
 /// Provides extension methods to simplify reflection-based operations.
@@ -52,6 +54,72 @@ public static class ReflectionEx
 		for (var t = type; t != null; t = t.BaseType)
 		{
 			yield return (t, t.GetDirectInterfaces().ToArray());
+		}
+	}
+
+	/// <summary>
+	/// Get types given the specified predicate
+	/// </summary>
+	/// <param name="filter">Filter to apply to types</param>
+	/// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
+	public static IEnumerable<Type> GetTypes(Func<Type, bool> filter)
+	{
+		Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+		foreach (var type in assemblies.SelectMany(a=>a.GetTypes(filter)))
+		{
+			yield return type;
+		}
+	}
+
+	/// <summary>
+	/// Get types given the specified predicate
+	/// </summary>
+	/// <param name="assembly">Assembly to load types from</param>
+	/// <param name="filter">Filter to apply to types</param>
+	/// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
+	public static IEnumerable<Type> GetTypes(this Assembly assembly, Func<Type, bool> filter)
+	{
+		Type[] types = assembly.GetTypes();
+
+		foreach (var type in types.Where(filter))
+		{
+			yield return type;
+		}
+	}
+
+	/// <summary>
+	/// Get types given the specified predicate
+	/// </summary>
+	/// <param name="assemblies">Assemblies to load types from</param>
+	/// <param name="filter">Filter to apply to types</param>
+	/// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
+	public static IEnumerable<Type> GetTypes(this IEnumerable<Assembly> assemblies, Func<Type, bool> filter)
+	{
+		foreach (var assembly in assemblies)
+		{
+			foreach (var type in assembly.GetTypes(filter))
+			{
+				yield return type;
+			}
+		}
+	}
+
+	public static IEnumerable<Assembly> LoadAssemblies(string path, bool raiseError = false)
+	{
+		foreach (var file in PathUtils.EnumerateFiles(path))
+		{
+			Assembly assembly;
+			try
+			{
+				assembly = Assembly.Load(file);
+			}
+			catch
+			{
+				if (raiseError) throw;
+				continue;
+			}
+			yield return assembly;
 		}
 	}
 }
