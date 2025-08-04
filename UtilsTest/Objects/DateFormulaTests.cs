@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Utils.Dates;
 
 namespace UtilsTest.Objects;
@@ -8,6 +10,30 @@ namespace UtilsTest.Objects;
 [TestClass]
 public class DateFormulaTests
 {
+        private sealed class WeekEndCalendarProvider : ICalendarProvider
+        {
+                private static readonly DayOfWeek[] _weekEnds = [DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+                public int GetNonWorkingDaysCount(DateTime start, DateTime end)
+                                => GetHollydays(start, end).Count();
+
+                public IEnumerable<DateTime> GetHollydays(DateTime start, DateTime end)
+                {
+                        for (var d = start.Date; d <= end.Date; d = d.AddDays(1))
+                                if (System.Array.IndexOf(_weekEnds, d.DayOfWeek) >= 0)
+                                        yield return d;
+                }
+
+                public IEnumerable<DateTime> GetWorkingDays(DateTime start, DateTime end)
+                {
+                        for (var d = start.Date; d <= end.Date; d = d.AddDays(1))
+                                if (System.Array.IndexOf(_weekEnds, d.DayOfWeek) < 0)
+                                        yield return d;
+                }
+
+                public int GetWorkingDaysCount(DateTime start, DateTime end)
+                                => GetWorkingDays(start, end).Count();
+        }
 	[TestMethod]
 	public void BasicFrenchFormulas()
 	{
@@ -62,14 +88,98 @@ public class DateFormulaTests
 	}
 
 	[TestMethod]
-	public void CalculateUsesCache()
-	{
-		var culture = new CultureInfo("fr-FR");
-		var expected = DateFormula.Compile("FM+1J", culture)(new DateTime(2023, 3, 15));
-		for (int i = 0; i < 3; i++)
-		{
-			var result = new DateTime(2023, 3, 15).Calculate("FM+1J", culture);
-			Assert.AreEqual(expected, result);
-		}
-	}
+        public void CalculateUsesCache()
+        {
+                var culture = new CultureInfo("fr-FR");
+                var expected = DateFormula.Compile("FM+1J", culture)(new DateTime(2023, 3, 15));
+                for (int i = 0; i < 3; i++)
+                {
+                        var result = new DateTime(2023, 3, 15).Calculate("FM+1J", culture);
+                        Assert.AreEqual(expected, result);
+                }
+        }
+
+        [TestMethod]
+        public void FormulaWorkingDaysUsesCalendar()
+        {
+                var culture = new CultureInfo("fr-FR");
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                var date = new DateTime(2024, 4, 5); // Friday
+                var result = date.Calculate("FS+3O", culture, provider);
+                Assert.AreEqual(new DateTime(2024, 4, 11), result);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void FormulaWorkingDaysRequiresCalendar()
+        {
+                var culture = new CultureInfo("fr-FR");
+                var date = new DateTime(2024, 4, 5);
+                _ = date.Calculate("FS+1O", culture);
+        }
+
+        [TestMethod]
+        public void NextAndPreviousWorkingDay()
+        {
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                Assert.AreEqual(new DateTime(2024, 4, 5), new DateTime(2024, 4, 5).NextWorkingDay(provider));
+                Assert.AreEqual(new DateTime(2024, 4, 5), new DateTime(2024, 4, 5).PreviousWorkingDay(provider));
+                Assert.AreEqual(new DateTime(2024, 4, 8), new DateTime(2024, 4, 6).NextWorkingDay(provider));
+                Assert.AreEqual(new DateTime(2024, 4, 5), new DateTime(2024, 4, 6).PreviousWorkingDay(provider));
+        }
+
+        [TestMethod]
+        public void FormulaWorkingDayAdjust()
+        {
+                var culture = new CultureInfo("fr-FR");
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                var date = new DateTime(2024, 4, 6); // Saturday
+                var result = date.Calculate("FS+O", culture, provider);
+                Assert.AreEqual(new DateTime(2024, 4, 8), result);
+                result = date.Calculate("FS-O", culture, provider);
+                Assert.AreEqual(new DateTime(2024, 4, 8), result);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void FormulaWorkingDayAdjustRequiresCalendar()
+        {
+                var culture = new CultureInfo("fr-FR");
+                var date = new DateTime(2024, 4, 6);
+                _ = date.Calculate("FS+O", culture);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void StartOfDayIsInvalid()
+        {
+                var culture = new CultureInfo("fr-FR");
+                _ = new DateTime(2024, 4, 6).Calculate("DJ", culture);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void StartOfWorkingDayIsInvalid()
+        {
+                var culture = new CultureInfo("fr-FR");
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                _ = new DateTime(2024, 4, 6).Calculate("DO", culture, provider);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void EndOfDayIsInvalid()
+        {
+                var culture = new CultureInfo("fr-FR");
+                _ = new DateTime(2024, 4, 6).Calculate("FJ", culture);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void EndOfWorkingDayIsInvalid()
+        {
+                var culture = new CultureInfo("fr-FR");
+                ICalendarProvider provider = new WeekEndCalendarProvider();
+                _ = new DateTime(2024, 4, 6).Calculate("FO", culture, provider);
+        }
 }

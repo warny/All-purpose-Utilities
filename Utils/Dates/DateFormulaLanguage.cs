@@ -19,6 +19,8 @@ public sealed class DateFormulaLanguage
         public required char Quarter { get; init; }
         /// <summary>Token representing a year unit.</summary>
         public required char Year { get; init; }
+        /// <summary>Token representing a working day unit.</summary>
+        public required char WorkingDay { get; init; }
         /// <summary>Mapping between two-letter day names and <see cref="DayOfWeek"/>.</summary>
         public required IReadOnlyDictionary<string, DayOfWeek> Days { get; init; }
 }
