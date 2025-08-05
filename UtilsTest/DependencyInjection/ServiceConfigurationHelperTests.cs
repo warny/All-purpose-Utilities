@@ -8,35 +8,40 @@ namespace UtilsTest.DependencyInjection;
 [TestClass]
 public class ServiceConfigurationHelperTests
 {
-        [TestMethod]
-        public void ConfigureServices_RegistersAttributedTypes()
-        {
-                var services = new ServiceCollection();
-                Assembly.GetExecutingAssembly().ConfigureServices(services);
-                var provider = services.BuildServiceProvider();
+	[TestMethod]
+	public void ConfigureServices_RegistersAttributedTypes()
+	{
+		var services = new ServiceCollection();
+		new System.Type[] {
+			typeof(SingletonService),
+			typeof(DomainSingletonService),
+			typeof(TransientService)
+		}.ConfigureServices(services);
 
-                var singleton1 = provider.GetRequiredService<ISingletonService>();
-                var singleton2 = provider.GetRequiredService<ISingletonService>();
-                Assert.AreSame(singleton1, singleton2);
+		var provider = services.BuildServiceProvider();
 
-                var transient1 = provider.GetRequiredService<TransientService>();
-                var transient2 = provider.GetRequiredService<TransientService>();
-                Assert.AreNotSame(transient1, transient2);
+		var singleton1 = provider.GetRequiredService<ISingletonService>();
+		var singleton2 = provider.GetRequiredService<ISingletonService>();
+		Assert.AreSame(singleton1, singleton2);
 
-                var keyed = provider.GetRequiredKeyedService<ISingletonService>("domain");
-                Assert.AreNotSame(singleton1, keyed);
-        }
+		var transient1 = provider.GetRequiredService<TransientService>();
+		var transient2 = provider.GetRequiredService<TransientService>();
+		Assert.AreNotSame(transient1, transient2);
 
-        [Injectable]
-        public interface ISingletonService { }
+		var keyed = provider.GetRequiredKeyedService<ISingletonService>("domain");
+		Assert.AreNotSame(singleton1, keyed);
+	}
 
-        [Singleton]
-        private class SingletonService : ISingletonService { }
+	[Injectable]
+	public interface ISingletonService { }
 
-        [Singleton("domain")]
-        private class DomainSingletonService : ISingletonService { }
+	[Singleton]
+	private class SingletonService : ISingletonService { }
 
-        [Transient]
-        private class TransientService { }
+	[Singleton("domain")]
+	private class DomainSingletonService : ISingletonService { }
+
+	[Transient]
+	private class TransientService { }
 }
 
