@@ -87,3 +87,11 @@ public class TransientAttribute : InjectableClassAttribute
         public TransientAttribute(string domain) : base(domain) { }
 }
 
+
+/// <summary>
+/// Applies to an <see cref="IServiceConfigurator"/> implementation to trigger compile-time generation of service registrations.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class StaticAutoAttribute : Attribute
+{
+}
