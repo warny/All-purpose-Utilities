@@ -9,6 +9,7 @@ provided attributes are automatically added to an `IServiceCollection`.
 ```csharp
 using System.Reflection;
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Utils.DependencyInjection;
 
@@ -28,6 +29,7 @@ The generator can also register handlers and their checks:
 
 ```csharp
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Utils.DependencyInjection;
 
@@ -36,15 +38,14 @@ public class Ping { public bool Valid { get; set; } }
 [Singleton]
 public class PingCheck : ICheck<Ping, string>
 {
-    public bool Check(Ping message, out string error)
+    public bool Check(Ping message, List<string> errors)
     {
         if (message.Valid)
         {
-            error = string.Empty;
             return true;
         }
 
-        error = "invalid";
+        errors.Add("invalid");
         return false;
     }
 }
@@ -68,7 +69,8 @@ var services = new ServiceCollection();
 new PingConfigurator().ConfigureServices(services);
 var provider = services.BuildServiceProvider();
 var caller = provider.GetRequiredService<IHandlerCaller>();
-caller.Handle<string>(new Ping { Valid = true }, out _);
+var errors = new List<string>();
+caller.Handle<string>(new Ping { Valid = true }, errors);
 ```
 
 ## Handler system
@@ -77,6 +79,7 @@ The library also provides a simple message handler pattern with optional message
 
 ```csharp
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Utils.DependencyInjection;
 
@@ -85,9 +88,8 @@ public class Ping { }
 [Singleton]
 public class PingCheck : ICheck<Ping, string>
 {
-    public bool Check(Ping message, out string error)
+    public bool Check(Ping message, List<string> errors)
     {
-        error = string.Empty;
         return true;
     }
 }
@@ -102,7 +104,8 @@ var services = new ServiceCollection();
 new Type[] { typeof(PingCheck), typeof(PingHandler), typeof(HandlerCaller) }.ConfigureServices(services);
 var provider = services.BuildServiceProvider();
 var caller = provider.GetRequiredService<IHandlerCaller>();
-caller.Handle<string>(new Ping(), out _);
+var errors = new List<string>();
+caller.Handle<string>(new Ping(), errors);
 ```
 
 

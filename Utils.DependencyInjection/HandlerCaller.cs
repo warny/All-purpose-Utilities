@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Utils.DependencyInjection;
 
@@ -13,9 +14,9 @@ public interface IHandlerCaller : IInjectable
         /// </summary>
         /// <typeparam name="E">Type of validation error.</typeparam>
         /// <param name="message">Message instance to dispatch.</param>
-        /// <param name="error">Validation error returned when the method yields <see langword="false"/>.</param>
+        /// <param name="errors">Collection receiving validation errors when the method yields <see langword="false"/>.</param>
         /// <returns><see langword="true"/> when the message has been handled; otherwise, <see langword="false"/>.</returns>
-        bool Handle<E>(object message, out E error);
+        bool Handle<E>(object message, List<E> errors);
 }
 
 /// <summary>
@@ -36,14 +37,19 @@ public class HandlerCaller : IHandlerCaller
         }
 
         /// <inheritdoc />
-        public bool Handle<E>(object message, out E error)
+        public bool Handle<E>(object message, List<E> errors)
         {
                 if (message is null)
                 {
                         throw new ArgumentNullException(nameof(message));
                 }
 
-                error = default!;
+                if (errors is null)
+                {
+                        throw new ArgumentNullException(nameof(errors));
+                }
+
+                errors.Clear();
                 var messageType = message.GetType();
 
                 var checkType = typeof(ICheck<,>).MakeGenericType(messageType, typeof(E));
@@ -51,15 +57,10 @@ public class HandlerCaller : IHandlerCaller
                 if (check is not null)
                 {
                         var checkMethod = checkType.GetMethod("Check");
-                        var parameters = new object?[] { message, null };
+                        var parameters = new object?[] { message, errors };
                         var isValid = (bool)(checkMethod?.Invoke(check, parameters) ?? false);
                         if (!isValid)
                         {
-                                if (parameters[1] is E typedError)
-                                {
-                                        error = typedError;
-                                }
-
                                 return false;
                         }
                 }

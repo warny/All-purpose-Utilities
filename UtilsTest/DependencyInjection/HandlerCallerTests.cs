@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.DependencyInjection;
@@ -24,10 +25,11 @@ public class HandlerCallerTests
 
                 var caller = provider.GetRequiredService<IHandlerCaller>();
                 var message = new SampleMessage { Valid = true };
-                var handled = caller.Handle<string>(message, out var error);
+                List<string> errors = new();
+                var handled = caller.Handle<string>(message, errors);
 
                 Assert.IsTrue(handled);
-                Assert.IsNull(error);
+                Assert.AreEqual(0, errors.Count);
                 var handler = (SampleHandler)provider.GetRequiredService<IHandler<SampleMessage>>();
                 Assert.AreSame(message, handler.LastMessage);
         }
@@ -45,10 +47,11 @@ public class HandlerCallerTests
 
                 var caller = provider.GetRequiredService<IHandlerCaller>();
                 var message = new SampleMessage { Valid = false };
-                var handled = caller.Handle<string>(message, out var error);
+                List<string> errors = new();
+                var handled = caller.Handle<string>(message, errors);
 
                 Assert.IsFalse(handled);
-                Assert.AreEqual("invalid", error);
+                CollectionAssert.AreEqual(new[] { "invalid", "still invalid" }, errors);
                 var handler = (SampleHandler)provider.GetRequiredService<IHandler<SampleMessage>>();
                 Assert.IsNull(handler.LastMessage);
         }
@@ -89,15 +92,15 @@ public class HandlerCallerTests
         private class SampleCheck : ICheck<SampleMessage, string>
         {
                 /// <inheritdoc />
-                public bool Check(SampleMessage message, out string error)
+                public bool Check(SampleMessage message, List<string> errors)
                 {
                         if (message.Valid)
                         {
-                                error = string.Empty;
                                 return true;
                         }
 
-                        error = "invalid";
+                        errors.Add("invalid");
+                        errors.Add("still invalid");
                         return false;
                 }
         }
