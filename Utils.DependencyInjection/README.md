@@ -69,7 +69,7 @@ var services = new ServiceCollection();
 new PingConfigurator().ConfigureServices(services);
 var provider = services.BuildServiceProvider();
 var caller = provider.GetRequiredService<IHandlerCaller>();
-var errors = new List<string>();
+var errors = new List<CheckError<string>>();
 caller.Handle<string>(new Ping { Valid = true }, errors);
 ```
 
@@ -77,7 +77,7 @@ caller.Handle<string>(new Ping { Valid = true }, errors);
 
 The library also provides a simple message handler pattern with optional message validation.
 Multiple handlers and checks can target the same message; every check runs before all
-handlers execute.
+handlers execute. When validation fails, each error is associated with the type of the check that produced it.
 
 ```csharp
 using System;
@@ -121,7 +121,7 @@ var services = new ServiceCollection();
 new Type[] { typeof(PingContentCheck), typeof(PingSecurityCheck), typeof(PingHandler), typeof(PingLogger), typeof(HandlerCaller) }.ConfigureServices(services);
 var provider = services.BuildServiceProvider();
 var caller = provider.GetRequiredService<IHandlerCaller>();
-var errors = new List<string>();
+var errors = new List<CheckError<string>>();
 caller.Handle<string>(new Ping(), errors);
 ```
 

@@ -25,7 +25,7 @@ public class HandlerCallerTests
 
                 var caller = provider.GetRequiredService<IHandlerCaller>();
                 var message = new SampleMessage { Valid = true };
-                List<string> errors = new();
+                List<CheckError<string>> errors = new();
                 var handled = caller.Handle<string>(message, errors);
 
                 Assert.IsTrue(handled);
@@ -47,11 +47,11 @@ public class HandlerCallerTests
 
                 var caller = provider.GetRequiredService<IHandlerCaller>();
                 var message = new SampleMessage { Valid = false };
-                List<string> errors = new();
+                List<CheckError<string>> errors = new();
                 var handled = caller.Handle<string>(message, errors);
 
                 Assert.IsFalse(handled);
-                CollectionAssert.AreEqual(new[] { "invalid", "still invalid" }, errors);
+                CollectionAssert.AreEqual(new[] { new CheckError<string>(typeof(SampleCheck), "invalid"), new CheckError<string>(typeof(SampleCheck), "still invalid") }, errors);
                 var handler = (SampleHandler)provider.GetRequiredService<IHandler<SampleMessage>>();
                 Assert.IsNull(handler.LastMessage);
         }
@@ -69,7 +69,7 @@ public class HandlerCallerTests
 
                 var caller = provider.GetRequiredService<IHandlerCaller>();
                 var message = new MultiMessage();
-                List<string> errors = new();
+                List<CheckError<string>> errors = new();
                 var handled = caller.Handle<string>(message, errors);
 
                 Assert.IsTrue(handled);
@@ -108,11 +108,11 @@ public class HandlerCallerTests
 
                 var caller = provider.GetRequiredService<IHandlerCaller>();
                 var message = new MultiMessage();
-                List<string> errors = new();
+                List<CheckError<string>> errors = new();
                 var handled = caller.Handle<string>(message, errors);
 
                 Assert.IsFalse(handled);
-                CollectionAssert.AreEquivalent(new[] { "errorA", "errorB" }, errors);
+                CollectionAssert.AreEquivalent(new[] { new CheckError<string>(typeof(MultiFailCheckA), "errorA"), new CheckError<string>(typeof(MultiFailCheckB), "errorB") }, errors);
 
                 foreach (var handler in provider.GetServices<IHandler<MultiMessage>>())
                 {

@@ -14,9 +14,9 @@ public interface IHandlerCaller : IInjectable
         /// </summary>
         /// <typeparam name="E">Type of validation error.</typeparam>
         /// <param name="message">Message instance to dispatch.</param>
-        /// <param name="errors">Collection receiving validation errors when the method yields <see langword="false"/>.</param>
+        /// <param name="errors">Collection receiving validation errors when the method yields <see langword="false"/>. Each entry also contains the source check type.</param>
         /// <returns><see langword="true"/> when the message has been handled; otherwise, <see langword="false"/>.</returns>
-        bool Handle<E>(object message, List<E> errors);
+        bool Handle<E>(object message, List<CheckError<E>> errors);
 }
 
 /// <summary>
@@ -37,7 +37,7 @@ public class HandlerCaller : IHandlerCaller
         }
 
         /// <inheritdoc />
-        public bool Handle<E>(object message, List<E> errors)
+        public bool Handle<E>(object message, List<CheckError<E>> errors)
         {
                 if (message is null)
                 {
@@ -56,12 +56,17 @@ public class HandlerCaller : IHandlerCaller
                 var checksType = typeof(IEnumerable<>).MakeGenericType(checkType);
                 var checks = (IEnumerable<object>?)this.serviceProvider.GetService(checksType) ?? [];
                 var checkMethod = checkType.GetMethod("Check");
-                object?[] parameters = [message, errors];
                 var isValid = true;
                 foreach (var check in checks)
                 {
+                        var checkErrors = new List<E>();
+                        object?[] parameters = [message, checkErrors];
                         if (!(bool)(checkMethod?.Invoke(check, parameters) ?? false))
                         {
+                                foreach (var error in checkErrors)
+                                {
+                                        errors.Add(new CheckError<E>(check.GetType(), error));
+                                }
                                 isValid = false;
                         }
                 }
