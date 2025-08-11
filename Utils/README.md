@@ -5,6 +5,7 @@ It targets **.NET 8** and is the base dependency for the other utility packages 
 
 ## Features
 
+- **Async** – asynchronous execution helpers
 - **Arrays** – helpers for comparing arrays, working with multi-dimensional data and specialized comparers
 - **Collections** – indexed lists, skip lists, LRU caches and dictionary extensions
 - **Expressions** – creation and transformation of expression trees and lambda utilities
@@ -23,6 +24,19 @@ The design separates data structures from processing logic wherever possible and
 ## Usage examples
 
 Short snippets demonstrating typical API usage:
+
+### Async
+```csharp
+using Utils.Async;
+IAsyncExecutor executor = new AsyncExecutor();
+Func<Task>[] actions =
+[
+    async () => await Task.Delay(100),
+    async () => await Task.Delay(100),
+    async () => await Task.Delay(100),
+];
+await executor.ExecuteAsync(actions, 3); // chooses parallel execution
+```
 
 ### Arrays
 ```csharp
