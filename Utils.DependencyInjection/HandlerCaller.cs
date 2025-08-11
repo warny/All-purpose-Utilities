@@ -10,7 +10,7 @@ namespace Utils.DependencyInjection;
 public interface IHandlerCaller : IInjectable
 {
         /// <summary>
-        /// Validates and handles the provided message using the registered handler for its type.
+        /// Validates and handles the provided message using the registered handlers for its type.
         /// </summary>
         /// <typeparam name="E">Type of validation error.</typeparam>
         /// <param name="message">Message instance to dispatch.</param>
@@ -53,27 +53,38 @@ public class HandlerCaller : IHandlerCaller
                 var messageType = message.GetType();
 
                 var checkType = typeof(ICheck<,>).MakeGenericType(messageType, typeof(E));
-                var check = this.serviceProvider.GetService(checkType);
-                if (check is not null)
+                var checksType = typeof(IEnumerable<>).MakeGenericType(checkType);
+                var checks = (IEnumerable<object>?)this.serviceProvider.GetService(checksType) ?? [];
+                var checkMethod = checkType.GetMethod("Check");
+                object?[] parameters = [message, errors];
+                var isValid = true;
+                foreach (var check in checks)
                 {
-                        var checkMethod = checkType.GetMethod("Check");
-                        var parameters = new object?[] { message, errors };
-                        var isValid = (bool)(checkMethod?.Invoke(check, parameters) ?? false);
-                        if (!isValid)
+                        if (!(bool)(checkMethod?.Invoke(check, parameters) ?? false))
                         {
-                                return false;
+                                isValid = false;
                         }
+                }
+                if (!isValid)
+                {
+                        return false;
                 }
 
                 var handlerType = typeof(IHandler<>).MakeGenericType(messageType);
-                var handler = this.serviceProvider.GetService(handlerType);
-                if (handler is null)
+                var handlerCollectionType = typeof(IEnumerable<>).MakeGenericType(handlerType);
+                var handlers = (IEnumerable<object>?)this.serviceProvider.GetService(handlerCollectionType) ?? [];
+                var handleMethod = handlerType.GetMethod("Handle");
+                var invoked = false;
+                foreach (var handler in handlers)
+                {
+                        handleMethod?.Invoke(handler, [message]);
+                        invoked = true;
+                }
+                if (!invoked)
                 {
                         throw new InvalidOperationException($"No handler registered for type {messageType}");
                 }
 
-                var handleMethod = handlerType.GetMethod("Handle");
-                handleMethod?.Invoke(handler, new[] { message });
                 return true;
         }
 }

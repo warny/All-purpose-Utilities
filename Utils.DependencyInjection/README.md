@@ -76,6 +76,8 @@ caller.Handle<string>(new Ping { Valid = true }, errors);
 ## Handler system
 
 The library also provides a simple message handler pattern with optional message validation.
+Multiple handlers and checks can target the same message; every check runs before all
+handlers execute.
 
 ```csharp
 using System;
@@ -86,7 +88,16 @@ using Utils.DependencyInjection;
 public class Ping { }
 
 [Singleton]
-public class PingCheck : ICheck<Ping, string>
+public class PingContentCheck : ICheck<Ping, string>
+{
+    public bool Check(Ping message, List<string> errors)
+    {
+        return true;
+    }
+}
+
+[Singleton]
+public class PingSecurityCheck : ICheck<Ping, string>
 {
     public bool Check(Ping message, List<string> errors)
     {
@@ -100,8 +111,14 @@ public class PingHandler : IHandler<Ping>
     public void Handle(Ping message) => Console.WriteLine("pong");
 }
 
+[Singleton]
+public class PingLogger : IHandler<Ping>
+{
+    public void Handle(Ping message) => Console.WriteLine("log");
+}
+
 var services = new ServiceCollection();
-new Type[] { typeof(PingCheck), typeof(PingHandler), typeof(HandlerCaller) }.ConfigureServices(services);
+new Type[] { typeof(PingContentCheck), typeof(PingSecurityCheck), typeof(PingHandler), typeof(PingLogger), typeof(HandlerCaller) }.ConfigureServices(services);
 var provider = services.BuildServiceProvider();
 var caller = provider.GetRequiredService<IHandlerCaller>();
 var errors = new List<string>();
