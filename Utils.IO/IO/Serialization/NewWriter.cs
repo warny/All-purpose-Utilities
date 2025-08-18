@@ -27,10 +27,10 @@ public class NewWriter : IWriter, IStreamMapping<NewWriter>
 
 	public NewWriter(Stream stream) : this(stream, new RawWriter().WriterDelegates) { }
 
-                public NewWriter(Stream stream, params IEnumerable<Delegate> converters)
-                {
-                        this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
-                        foreach (var converter in converters.Union(new RawWriter().WriterDelegates))
+	public NewWriter(Stream stream, params IEnumerable<Delegate> converters)
+	{
+		this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+		foreach (var converter in converters.Union(new RawWriter().WriterDelegates))
 		{
 			var method = converter.GetMethodInfo();
 			var arguments = method.GetParameters();
@@ -43,8 +43,8 @@ public class NewWriter : IWriter, IStreamMapping<NewWriter>
 		}
 	}
 
-                public NewWriter(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
-                        : this(stream, converters.SelectMany(c => c)) { }
+	public NewWriter(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
+			: this(stream, converters.SelectMany(c => c)) { }
 
 
 	public void WriteByte(byte value) => Stream.WriteByte(value);
