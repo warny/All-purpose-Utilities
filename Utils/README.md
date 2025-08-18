@@ -5,6 +5,7 @@ It targets **.NET 8** and is the base dependency for the other utility packages 
 
 ## Features
 
+- **Async** – asynchronous execution helpers
 - **Arrays** – helpers for comparing arrays, working with multi-dimensional data and specialized comparers
 - **Collections** – indexed lists, skip lists, LRU caches and dictionary extensions
 - **Expressions** – creation and transformation of expression trees and lambda utilities
@@ -16,6 +17,7 @@ It targets **.NET 8** and is the base dependency for the other utility packages 
 - **Resources** – utilities for working with embedded resources
 - **Security** – Google Authenticator helpers
 - **Streams** – base16/base32/base64 converters and binary serialization
+- **Transactions** – execute a batch of reversible actions and commit or rollback as a group
 - **XML** – helpers for XML processing
 
 The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
@@ -23,6 +25,37 @@ The design separates data structures from processing logic wherever possible and
 ## Usage examples
 
 Short snippets demonstrating typical API usage:
+
+### Transactions
+```csharp
+using Utils.Transactions;
+
+class SampleAction : ITransactionalAction
+{
+    public void Execute() { /* work */ }
+    public void Commit() { /* finalize */ }
+    public void Rollback() { /* undo */ }
+}
+
+TransactionExecutor executor = new TransactionExecutor();
+executor.Execute([
+    new SampleAction(),
+    new SampleAction(),
+]);
+```
+
+### Async
+```csharp
+using Utils.Async;
+IAsyncExecutor executor = new AsyncExecutor();
+Func<Task>[] actions =
+[
+    async () => await Task.Delay(100),
+    async () => await Task.Delay(100),
+    async () => await Task.Delay(100),
+];
+await executor.ExecuteAsync(actions, 3); // chooses parallel execution
+```
 
 ### Arrays
 ```csharp
