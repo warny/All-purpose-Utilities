@@ -36,7 +36,7 @@ public class TrueTypeTable
 	/// Reads the table data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which to read the table data.</param>
-	public virtual void ReadData(Reader data)
+	public virtual void ReadData(NewReader data)
 	{
 		this.data = data.ReadBytes((int)data.BytesLeft);
 	}
@@ -45,7 +45,7 @@ public class TrueTypeTable
 	/// Writes the table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the table data is written.</param>
-	public virtual void WriteData(Writer data)
+	public virtual void WriteData(NewWriter data)
 	{
 		data.WriteBytes(this.data);
 	}

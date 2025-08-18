@@ -60,7 +60,7 @@ public class TrueTypeFont : IFont
 	public static TrueTypeFont ParseFont(byte[] bytes)
 	{
 		using var ms = new MemoryStream(bytes);
-		var data = new Reader(ms);
+		var data = new NewReader(ms);
 		return ParseFont(data);
 	}
 
@@ -79,16 +79,16 @@ public class TrueTypeFont : IFont
 			s.CopyTo(ms);
 			s = ms;
 		}
-		var reader = new Reader(s);
+		var reader = new NewReader(s);
 		return ParseFont(reader);
 	}
 
 	/// <summary>
-	/// Parses a TrueType font from a Reader.
+	/// Parses a TrueType font from a NewReader.
 	/// </summary>
 	/// <param name="data">The reader containing the font data.</param>
 	/// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
-	public static TrueTypeFont ParseFont(Reader data)
+	public static TrueTypeFont ParseFont(NewReader data)
 	{
 		int type = data.ReadInt32(true);
 		int numTables = data.ReadInt16(true);
@@ -108,7 +108,7 @@ public class TrueTypeFont : IFont
 	public virtual byte[] WriteFont()
 	{
 		using var ms = new MemoryStream(Length);
-		var data = new Writer(ms);
+		var data = new NewWriter(ms);
 
 		data.WriteInt32(Type, true);
 		data.WriteInt16(TablesCount, true);
@@ -122,7 +122,7 @@ public class TrueTypeFont : IFont
 			TrueTypeTable obj = tagTable.Value;
 
 			using var datasStream = new MemoryStream();
-			Writer w = new Writer(datasStream);
+			NewWriter w = new NewWriter(datasStream);
 			obj.WriteData(w);
 			var datas = datasStream.ToArray();
 			int dataLength = datas.Length;
@@ -152,7 +152,7 @@ public class TrueTypeFont : IFont
 	/// <param name="data">The reader from which to read the table directory.</param>
 	/// <param name="numTables">The number of tables.</param>
 	/// <param name="ttf">The TrueTypeFont instance to populate.</param>
-	private static void ParseDirectories(Reader data, int numTables, TrueTypeFont ttf)
+	private static void ParseDirectories(NewReader data, int numTables, TrueTypeFont ttf)
 	{
 		var tables = new SortedSet<TableDeclaration>();
 
@@ -198,7 +198,7 @@ public class TrueTypeFont : IFont
 				ttt = new TrueTypeTable(table.Tag);
 			}
 			ttf.AddTable(table.Tag, ttt);
-			ttt.ReadData(new Reader(table.Data));
+			ttt.ReadData(new NewReader(table.Data));
 		}
 
 		while (tables.Count > 0)

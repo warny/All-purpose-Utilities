@@ -13,7 +13,7 @@ internal class AcntFormat1 : AcntFormatBase
 	/// For Format 1, no additional data is expected.
 	/// </summary>
 	/// <param name="data">The reader from which to read the data.</param>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		// No additional data is stored in Format 1.
 		// If the specification is extended later, implement reading of extra fields here.
@@ -25,7 +25,7 @@ internal class AcntFormat1 : AcntFormatBase
 	/// For Format 1, writes the primary glyph index with the high bit set.
 	/// </summary>
 	/// <param name="data">The writer to which to write the data.</param>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		// Write the primary glyph index with the high bit set to indicate Format 1.
 		data.WriteInt16((short)(PrimaryGlyphIndex | 0x8000));

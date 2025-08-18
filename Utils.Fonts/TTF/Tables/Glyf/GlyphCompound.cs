@@ -148,7 +148,7 @@ public class GlyphCompound : GlyphBase
 	protected internal GlyphCompound() { }
 
 	/// <inheritdoc/>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		List<GlyfComponent> comps = new List<GlyfComponent>();
 		bool hasInstructions = false;

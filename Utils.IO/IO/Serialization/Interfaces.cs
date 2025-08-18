@@ -5,16 +5,42 @@ using System.Text;
 
 namespace Utils.IO.Serialization;
 
+/// <summary>
+/// Defines a reader capable of deserializing objects of specific types using a generic <see cref="IReader"/>.
+/// </summary>
 public interface IObjectReader
 {
-	Type[] Types { get; }
-	bool Read(Reader reader, out object result);
+        /// <summary>
+        /// Gets the types that this reader can deserialize.
+        /// </summary>
+        Type[] Types { get; }
+
+        /// <summary>
+        /// Attempts to read an object from the supplied <paramref name="reader"/>.
+        /// </summary>
+        /// <param name="reader">Source reader providing the data stream.</param>
+        /// <param name="result">When this method returns, contains the deserialized object.</param>
+        /// <returns><c>true</c> if the object was successfully read; otherwise, <c>false</c>.</returns>
+        bool Read(IReader reader, out object result);
 }
 
+/// <summary>
+/// Defines a writer capable of serializing objects of specific types using a generic <see cref="IWriter"/>.
+/// </summary>
 public interface IObjectWriter
 {
-	Type[] Types { get; }
-	bool Write(Writer writer, object obj);
+        /// <summary>
+        /// Gets the types that this writer can serialize.
+        /// </summary>
+        Type[] Types { get; }
+
+        /// <summary>
+        /// Writes an object to the supplied <paramref name="writer"/>.
+        /// </summary>
+        /// <param name="writer">Destination writer receiving the serialized data.</param>
+        /// <param name="obj">Object instance to write.</param>
+        /// <returns><c>true</c> if the object was successfully written; otherwise, <c>false</c>.</returns>
+        bool Write(IWriter writer, object obj);
 }
 
 /// <summary>

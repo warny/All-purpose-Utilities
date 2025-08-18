@@ -93,7 +93,7 @@ public class CMapFormat0 : CMapFormatBase
 	/// Writes the CMap Format 0 data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		data.WriteInt16(Format, true);
 		data.WriteInt16(Length, true);
@@ -110,7 +110,7 @@ public class CMapFormat0 : CMapFormatBase
 	/// <exception cref="ArgumentException">
 	/// Thrown if the data length is not 262 or if there are insufficient bytes to read the mapping table.
 	/// </exception>
-	public override void ReadData(int i, Reader data)
+	public override void ReadData(int i, NewReader data)
 	{
 		i.ArgMustBeEqualsTo(262);
 		if (data.BytesLeft < 256)

@@ -76,7 +76,7 @@ public class GlyphBase
 	/// <exception cref="ArgumentException">
 	/// Thrown if an unknown glyph type is encountered.
 	/// </exception>
-	public static GlyphBase CreateGlyf(Reader data, GlyfTable glyfTable)
+	public static GlyphBase CreateGlyf(NewReader data, GlyfTable glyfTable)
 	{
 		var numContours = data.ReadInt16(true);
 		GlyphBase glyf;
@@ -110,13 +110,13 @@ public class GlyphBase
 	/// The default implementation does nothing; derived classes may override this.
 	/// </summary>
 	/// <param name="data">The reader from which to read the data.</param>
-	public virtual void ReadData(Reader data) { }
+	public virtual void ReadData(NewReader data) { }
 
 	/// <summary>
 	/// Writes the basic glyph data to the provided writer.
 	/// </summary>
 	/// <param name="data">The writer to which the glyph data is written.</param>
-	public virtual void WriteData(Writer data)
+	public virtual void WriteData(NewWriter data)
 	{
 		data.WriteInt16(NumContours, true);
 		data.WriteInt16(MinX, true);

@@ -20,7 +20,7 @@ namespace Utils.Fonts.TTF.Tables
 		protected internal CvtTable() : base(TableTypes.CVT) { }
 
 		/// <inheritdoc/>
-		public override void ReadData(Reader data)
+		public override void ReadData(NewReader data)
 		{
 			int count = (int)(data.BytesLeft >> 1);
 			ControlValues = new short[count];
@@ -31,7 +31,7 @@ namespace Utils.Fonts.TTF.Tables
 		}
 
 		/// <inheritdoc/>
-		public override void WriteData(Writer data)
+		public override void WriteData(NewWriter data)
 		{
 			if (ControlValues != null)
 			{

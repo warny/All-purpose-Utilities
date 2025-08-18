@@ -114,7 +114,7 @@ public class HeadTable : TrueTypeTable
 	/// </summary>
 	/// <param name="data">The reader from which to read the data.</param>
 	/// <exception cref="ArgumentException">Thrown if the remaining data does not equal 54 bytes.</exception>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		if (data.BytesLeft != 54)
 		{
@@ -144,7 +144,7 @@ public class HeadTable : TrueTypeTable
 	/// Writes the head table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		data.WriteInt32(Version, true);
 		data.WriteInt32(FontRevision, true);

@@ -115,7 +115,7 @@ public abstract class GlyphSimple : GlyphBase
 	}
 
 	/// <inheritdoc/>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		// Read contour end points and adjust them (TTF spec: end point index + 1).
 		var contourEndPoints = data.ReadArray<short>(NumContours, true)
@@ -186,7 +186,7 @@ public abstract class GlyphSimple : GlyphBase
 	}
 
 	/// <inheritdoc/>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		var points = EnumerableEx.Flatten(contours).ToArray();
 		var flags = GetFlags(points).ToArray();

@@ -174,7 +174,7 @@ public class NameTable : TrueTypeTable
 	}
 
 	/// <inheritdoc/>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		Format = data.ReadInt16(true);
 		int count = data.ReadInt16(true);
@@ -188,7 +188,7 @@ public class NameTable : TrueTypeTable
 			var length = data.ReadInt16(true);
 			var offset = data.ReadInt16(true);
 			data.Push();
-			Reader val = data.Slice(stringOffset + offset, length);
+			NewReader val = data.Slice(stringOffset + offset, length);
 			data.Pop();
 			Encoding encoding = TtfEncoderFactory.GetEncoding(platformId, platformSpecificId, languageId);
 			string str = val.ReadFixedLengthString(length, encoding);
@@ -197,7 +197,7 @@ public class NameTable : TrueTypeTable
 	}
 
 	/// <inheritdoc/>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		data.WriteInt16(Format, true);
 		data.WriteInt16(Count, true);

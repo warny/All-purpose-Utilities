@@ -47,13 +47,13 @@ public class PostTable : TrueTypeTable
 		/// Writes the mapping data to the specified writer.
 		/// </summary>
 		/// <param name="data">The writer.</param>
-		internal virtual void WriteData(Writer data) { }
+		internal virtual void WriteData(NewWriter data) { }
 
 		/// <summary>
 		/// Reads the mapping data from the specified reader.
 		/// </summary>
 		/// <param name="data">The reader.</param>
-		internal virtual void ReadData(Reader data) { }
+		internal virtual void ReadData(NewReader data) { }
 	}
 
 	/// <summary>
@@ -199,7 +199,7 @@ public class PostTable : TrueTypeTable
 		/// Writes the mapping data for Format 2 to the specified writer.
 		/// </summary>
 		/// <param name="data">The writer to which data is written.</param>
-		internal override void WriteData(Writer data)
+		internal override void WriteData(NewWriter data)
 		{
 			data.WriteInt16((short)glyphNameIndex.Length, true);
 			for (int i = 0; i < glyphNameIndex.Length; i++)
@@ -208,7 +208,7 @@ public class PostTable : TrueTypeTable
 			}
 			for (int i = 0; i < glyphNames.Length; i++)
 			{
-				data.WriteVariableLengthString(glyphNames[i], Encoding.Default, bigIndian: true, sizeLength: 1);
+                                data.WriteVariableLengthString(glyphNames[i], Encoding.Default, bigEndian: true, sizeLength: 1);
 			}
 			data.Seek(0, SeekOrigin.Begin);
 		}
@@ -217,7 +217,7 @@ public class PostTable : TrueTypeTable
 		/// Reads the mapping data for Format 2 from the specified reader.
 		/// </summary>
 		/// <param name="data">The reader from which to read data.</param>
-		internal override void ReadData(Reader data)
+		internal override void ReadData(NewReader data)
 		{
 			int length = data.ReadInt16(true);
 			glyphNameIndex = new short[length];
@@ -235,7 +235,7 @@ public class PostTable : TrueTypeTable
 			Array.Fill(glyphNames, "");
 			for (int i = 0; i < maxGlyph; i++)
 			{
-				glyphNames[i] = data.ReadVariableLengthString(Encoding.Default, sizeLength: 1);
+                                glyphNames[i] = data.ReadVariableLengthString(Encoding.Default, sizeLength: 1);
 			}
 		}
 	}
@@ -327,7 +327,7 @@ public class PostTable : TrueTypeTable
 	/// Writes the post table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		data.WriteInt32(Format, true);
 		data.WriteInt32(ItalicAngle, true);
@@ -346,7 +346,7 @@ public class PostTable : TrueTypeTable
 	/// Reads the post table data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which the data is read.</param>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		Format = data.ReadInt32(true);
 		ItalicAngle = data.ReadInt32(true);

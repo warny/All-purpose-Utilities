@@ -19,15 +19,19 @@ public class NewReader : IReader, IStreamMapping<NewReader>
 	/// </summary>
 	public Stream Stream { get; }
 
-	/// <summary>
-	/// Gets the number of bytes remaining in the stream.
-	/// </summary>
-	public long BytesLeft { get; }
+        /// <summary>
+        /// Gets the number of bytes remaining in the stream.
+        /// </summary>
+        public long BytesLeft => Stream.Length - Stream.Position;
 
-	/// <summary>
-	/// Gets or sets the current position within the stream.
-	/// </summary>
-	public long Position { get; set; }
+        /// <summary>
+        /// Gets or sets the current position within the stream.
+        /// </summary>
+        public long Position
+        {
+                get => Stream.Position;
+                set => Stream.Position = value;
+        }
 
 	private readonly Stack<long> positionsStack = new Stack<long>();
 

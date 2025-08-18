@@ -80,7 +80,7 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
 	/// Writes the loca table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the table data is written.</param>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		if (IsLongFormat)
 		{
@@ -102,7 +102,7 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
 	/// Reads the loca table data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which the table data is read.</param>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		if (IsLongFormat)
 		{

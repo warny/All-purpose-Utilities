@@ -22,13 +22,13 @@ namespace Utils.Fonts.TTF.Tables
 		protected internal FpgmTable() : base(TableTypes.FPGM) { }
 
 		/// <inheritdoc/>
-		public override void ReadData(Reader data)
+		public override void ReadData(NewReader data)
 		{
 			Instructions = data.ReadBytes((int)data.BytesLeft);
 		}
 
 		/// <inheritdoc/>
-		public override void WriteData(Writer data)
+		public override void WriteData(NewWriter data)
 		{
 			data.WriteBytes(Instructions);
 		}

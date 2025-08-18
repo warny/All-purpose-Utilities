@@ -161,7 +161,7 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
 	}
 
 	/// <inheritdoc/>
-	public override void ReadData(Reader data)
+	public override void ReadData(NewReader data)
 	{
 		Version = data.ReadInt16(true);
 		int numberSubtables = data.ReadInt16(true);
@@ -183,7 +183,7 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
 		for (int i = 0; i < numberSubtables; i++)
 		{
 			var subTable = subTables[i];
-			Reader mapData = data.Slice(subTable.offset, subTable.length);
+			NewReader mapData = data.Slice(subTable.offset, subTable.length);
 			try
 			{
 				CMap.CMapFormatBase cMap = CMap.CMapFormatBase.GetMap(mapData);
@@ -206,7 +206,7 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
 	/// Writes the cmap table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(Writer data)
+	public override void WriteData(NewWriter data)
 	{
 		data.WriteInt16(Version, true);
 		data.WriteInt16(NumberSubtables, true);
