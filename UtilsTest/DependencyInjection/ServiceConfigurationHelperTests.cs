@@ -12,7 +12,12 @@ public class ServiceConfigurationHelperTests
 	public void ConfigureServices_RegistersAttributedTypes()
 	{
 		var services = new ServiceCollection();
-		Assembly.GetExecutingAssembly().ConfigureServices(services);
+		new System.Type[] {
+			typeof(SingletonService),
+			typeof(DomainSingletonService),
+			typeof(TransientService)
+		}.ConfigureServices(services);
+
 		var provider = services.BuildServiceProvider();
 
 		var singleton1 = provider.GetRequiredService<ISingletonService>();

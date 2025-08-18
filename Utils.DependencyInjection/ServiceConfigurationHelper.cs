@@ -42,29 +42,28 @@ public static class ServiceConfigurationHelper
 			}
 		}
 
-		AutomaticConfigureServices(assembly, serviceCollection);
+		ConfigureServices(assemblyTypes.Where(t => t.GetCustomAttributes(true).OfType<Attribute>().Any(a => a is InjectableClassAttribute)), serviceCollection);
+	}
+
+	/// <summary>
+	/// Configures services using the assembly of the service collection type.
+	/// </summary>
+	/// <param name="serviceConfiguration">Unused parameter allowing generic invocation.</param>
+	/// <param name="serviceCollection">Collection to populate.</param>
+	public static void ConfigureServices(this IServiceConfigurator serviceConfiguration, IServiceCollection serviceCollection)
+	{
+		Assembly assembly = serviceCollection.GetType().Assembly;
+		var types = assembly.GetTypes(t => t.GetCustomAttributes(true).OfType<Attribute>().Any(a => a is InjectableClassAttribute));
+		ConfigureServices(types, serviceCollection);
 	}
 
 	/// <summary>
 	/// Configures services using the assembly of the service collection type.
 	/// </summary>
 	/// <param name="serviceCollection">Collection to populate.</param>
-	/// <param name="serviceConfiguration">Unused parameter allowing generic invocation.</param>
-	public static void ConfigureServices(this IServiceCollection serviceCollection, IServiceConfigurator serviceConfiguration)
+	/// <param name="types">types to use in services.</param>
+	public static void ConfigureServices(this IEnumerable<Type> types, IServiceCollection serviceCollection)
 	{
-		Assembly assembly = serviceCollection.GetType().Assembly;
-		AutomaticConfigureServices(assembly, serviceCollection);
-	}
-
-	/// <summary>
-	/// Scans the assembly and registers all injectable types.
-	/// </summary>
-	/// <param name="assembly">Assembly to scan.</param>
-	/// <param name="serviceCollection">Collection to populate.</param>
-	private static void AutomaticConfigureServices(Assembly assembly, IServiceCollection serviceCollection)
-	{
-		var types = ReflectionEx.GetTypes(assembly, t => t.GetCustomAttributes(true).OfType<Attribute>().Any(a => a is InjectableClassAttribute));
-
 		foreach (var type in types)
 		{
 			IEnumerable<Type> interfaces = type.GetInterfaces().Where(i => i.GetCustomAttribute<InjectableAttribute>() != null);
@@ -88,7 +87,7 @@ public static class ServiceConfigurationHelper
 	/// <param name="serviceCollection">Collection to populate.</param>
 	/// <param name="interface">Interface representing the service.</param>
 	/// <param name="type">Implementation type.</param>
-	private static void AddInjection(IServiceCollection serviceCollection, Type @interface, Type type)
+	public static void AddInjection(this IServiceCollection serviceCollection, Type @interface, Type type)
 	{
 		switch (type.GetCustomAttribute<InjectableClassAttribute>())
 		{

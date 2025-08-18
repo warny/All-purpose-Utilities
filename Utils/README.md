@@ -12,7 +12,7 @@ It targets **.NET 8** and is the base dependency for the other utility packages 
 - **Mathematics** – base classes for expression transformation and math functions
 - **Net** – advanced URI builder and network helpers
 - **Objects** – data conversion routines and an advanced string formatter
-- **Reflection** – additional reflection primitives such as `PropertyOrFieldInfo`
+- **Reflection** – additional reflection primitives such as `PropertyOrFieldInfo` and delegate invocation helpers
 - **Resources** – utilities for working with embedded resources
 - **Security** – Google Authenticator helpers
 - **Streams** – base16/base32/base64 converters and binary serialization
@@ -57,6 +57,12 @@ foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\
 var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
 int id = (int)info.GetValue(myObj);
 info.SetValue(myObj, 42);
+```
+```csharp
+var invoker = new Utils.Reflection.MultiDelegateInvoker<int, int>(2);
+invoker.Add(i => i + 1);
+invoker.Add(i => i + 2);
+int[] values = await invoker.InvokeSmartAsync(3); // [4, 5]
 ```
 
 ### Resources
