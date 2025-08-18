@@ -65,7 +65,7 @@ public class GlyfTable : TrueTypeTable
 	/// Writes the glyf table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the glyf table data is written.</param>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		foreach (var glyf in glyphs)
 		{
@@ -79,7 +79,7 @@ public class GlyfTable : TrueTypeTable
 	/// creates the appropriate glyph instance.
 	/// </summary>
 	/// <param name="data">The reader from which the glyf table data is read.</param>
-	public override void ReadData(NewReader data)
+	public override void ReadData(Reader data)
 	{
 		// Allocate an array to hold all glyphs based on the number provided in the maxp table.
 		glyphs = new GlyphBase[maxp.NumGlyphs];

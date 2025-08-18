@@ -47,13 +47,13 @@ public class PostTable : TrueTypeTable
 		/// Writes the mapping data to the specified writer.
 		/// </summary>
 		/// <param name="data">The writer.</param>
-		internal virtual void WriteData(NewWriter data) { }
+		internal virtual void WriteData(Writer data) { }
 
 		/// <summary>
 		/// Reads the mapping data from the specified reader.
 		/// </summary>
 		/// <param name="data">The reader.</param>
-		internal virtual void ReadData(NewReader data) { }
+		internal virtual void ReadData(Reader data) { }
 	}
 
 	/// <summary>
@@ -199,7 +199,7 @@ public class PostTable : TrueTypeTable
 		/// Writes the mapping data for Format 2 to the specified writer.
 		/// </summary>
 		/// <param name="data">The writer to which data is written.</param>
-		internal override void WriteData(NewWriter data)
+		internal override void WriteData(Writer data)
 		{
 			data.WriteInt16((short)glyphNameIndex.Length, true);
 			for (int i = 0; i < glyphNameIndex.Length; i++)
@@ -217,7 +217,7 @@ public class PostTable : TrueTypeTable
 		/// Reads the mapping data for Format 2 from the specified reader.
 		/// </summary>
 		/// <param name="data">The reader from which to read data.</param>
-		internal override void ReadData(NewReader data)
+		internal override void ReadData(Reader data)
 		{
 			int length = data.ReadInt16(true);
 			glyphNameIndex = new short[length];
@@ -327,7 +327,7 @@ public class PostTable : TrueTypeTable
 	/// Writes the post table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		data.WriteInt32(Format, true);
 		data.WriteInt32(ItalicAngle, true);
@@ -346,7 +346,7 @@ public class PostTable : TrueTypeTable
 	/// Reads the post table data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which the data is read.</param>
-	public override void ReadData(NewReader data)
+	public override void ReadData(Reader data)
 	{
 		Format = data.ReadInt32(true);
 		ItalicAngle = data.ReadInt32(true);

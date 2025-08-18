@@ -295,7 +295,7 @@ public class CMapFormat4 : CMapFormatBase
 	}
 
 	/// <inheritdoc/>
-	public override void ReadData(int length, NewReader data)
+	public override void ReadData(int length, Reader data)
 	{
 		int segCount = (short)(data.ReadInt16(true) / 2);
 		// Read header fields (length, language, etc.); here we ignore some fields.
@@ -342,7 +342,7 @@ public class CMapFormat4 : CMapFormatBase
 	}
 
 	/// <inheritdoc/>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		data.WriteInt16(Format, true);
 		data.WriteInt16(Length, true);

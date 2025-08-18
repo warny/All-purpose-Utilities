@@ -5,7 +5,7 @@ using System.IO;
 namespace Utils.IO.Serialization;
 
 /// <summary>
-/// Helper class exposing a <see cref="NewReader"/> and a <see cref="NewWriter"/> over the same stream.
+/// Helper class exposing a <see cref="Serialization.Reader"/> and a <see cref="Serialization.Writer"/> over the same stream.
 /// </summary>
 public class ReaderWriter
 {
@@ -17,12 +17,12 @@ public class ReaderWriter
         /// <summary>
         /// Gets the reader used to read from the stream.
         /// </summary>
-        public NewReader Reader { get; }
+        public Reader Reader { get; }
 
         /// <summary>
         /// Gets the writer used to write to the stream.
         /// </summary>
-        public NewWriter Writer { get; }
+        public Writer Writer { get; }
 
         private readonly Stack<long> savedPositions = new();
 
@@ -33,8 +33,8 @@ public class ReaderWriter
         public ReaderWriter(Stream stream)
         {
                 Stream = stream;
-                Reader = new NewReader(stream);
-                Writer = new NewWriter(stream);
+                Reader = new Reader(stream);
+                Writer = new Writer(stream);
         }
 
         /// <summary>

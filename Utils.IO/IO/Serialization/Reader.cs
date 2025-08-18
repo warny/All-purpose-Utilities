@@ -12,26 +12,26 @@ namespace Utils.IO.Serialization;
 /// <summary>
 /// Generic reader capable of dynamically reading objects from a stream.
 /// </summary>
-public class NewReader : IReader, IStreamMapping<NewReader>
+public class Reader : IReader, IStreamMapping<Reader>
 {
 	/// <summary>
 	/// Gets the underlying stream used by the reader.
 	/// </summary>
 	public Stream Stream { get; }
 
-        /// <summary>
-        /// Gets the number of bytes remaining in the stream.
-        /// </summary>
-        public long BytesLeft => Stream.Length - Stream.Position;
+	/// <summary>
+	/// Gets the number of bytes remaining in the stream.
+	/// </summary>
+	public long BytesLeft => Stream.Length - Stream.Position;
 
-        /// <summary>
-        /// Gets or sets the current position within the stream.
-        /// </summary>
-        public long Position
-        {
-                get => Stream.Position;
-                set => Stream.Position = value;
-        }
+	/// <summary>
+	/// Gets or sets the current position within the stream.
+	/// </summary>
+	public long Position
+	{
+		get => Stream.Position;
+		set => Stream.Position = value;
+	}
 
 	private readonly Stack<long> positionsStack = new Stack<long>();
 
@@ -39,35 +39,32 @@ public class NewReader : IReader, IStreamMapping<NewReader>
 	private readonly Dictionary<Type, Delegate> readers = [];
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="NewReader"/> using default converters.
+	/// Initializes a new instance of <see cref="Reader"/> using default converters.
 	/// </summary>
-	public NewReader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
+	public Reader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="NewReader"/> with custom converters.
+	/// Initializes a new instance of <see cref="Reader"/> with custom converters.
 	/// </summary>
 	/// <param name="stream">Stream to read from.</param>
 	/// <param name="converters">Reader delegates used to deserialize objects.</param>
-	public NewReader(Stream stream, params IEnumerable<Delegate> converters)
+	public Reader(Stream stream, params IEnumerable<Delegate> converters)
 	{
 		this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
 		foreach (var converter in converters.Union(new RawReader().ReaderDelegates))
 		{
 			var method = converter.GetMethodInfo();
 			var arguments = method.GetParameters();
-			arguments.ArgMustBeOfSize(1);
-			arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument of the function is not IReader");
-			if (!readers.ContainsKey(method.ReturnType))
-			{
-				readers.Add(method.ReturnType, converter);
-			}
+			arguments.ArgMustBeOfSizes([1]);
+			arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument of the function {method.Name} is not IReader");
+			readers.TryAdd(method.ReturnType, converter);
 		}
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="NewReader"/> with multiple converter collections.
+	/// Initializes a new instance of <see cref="Reader"/> with multiple converter collections.
 	/// </summary>
-	public NewReader(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
+	public Reader(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
 			: this(stream, converters.SelectMany(c => c)) { }
 
 
@@ -85,7 +82,6 @@ public class NewReader : IReader, IStreamMapping<NewReader>
 		return readerDelegate.DynamicInvoke(Stream);
 	}
 
-	/// <summary>
 	/// <summary>
 	/// Reads a strongly-typed object.
 	/// </summary>
@@ -135,7 +131,17 @@ public class NewReader : IReader, IStreamMapping<NewReader>
 	public void Seek(int offset, SeekOrigin origin) => Stream.Seek(offset, origin);
 
 
+	/// <summary>
+	/// Read one byte from the underlying <see cref="Stream"/>
+	/// </summary>
+	/// <returns>The byte value or -1 if read failed</returns>
 	public int ReadByte() => Stream.ReadByte();
+
+	/// <summary>
+	/// Read a <see cref="byte"/> array from the <see cref="Stream"/> of <paramref name="length"/>
+	/// </summary>
+	/// <param name="length">bytes to be read</param>
+	/// <returns><see cref="byte"/>array</returns>
 	public byte[] ReadBytes(int length) => Stream.ReadBytes(length);
 
 	/// <summary>
@@ -143,10 +149,10 @@ public class NewReader : IReader, IStreamMapping<NewReader>
 	/// </summary>
 	/// <param name="position">Start position of the slice.</param>
 	/// <param name="length">Length of the slice.</param>
-	public NewReader Slice(long position, long length)
+	public Reader Slice(long position, long length)
 	{
 		PartialStream s = new PartialStream(Stream, position, length);
-		return new NewReader(s);
+		return new Reader(s);
 	}
 
 	/// <summary>

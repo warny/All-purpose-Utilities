@@ -29,10 +29,10 @@ namespace UtilsTest.Fonts
                 public void BigEndianReadWriteTest()
                 {
                         using var ms = new MemoryStream();
-                        NewWriter writer = new NewWriter(ms);
+                        Writer writer = new Writer(ms);
                         writer.WriteInt16(0x1234, true);
                         ms.Position = 0;
-                        NewReader reader = new NewReader(ms);
+                        Reader reader = new Reader(ms);
                         Assert.AreEqual(0x1234, reader.ReadInt16(true));
                 }
 

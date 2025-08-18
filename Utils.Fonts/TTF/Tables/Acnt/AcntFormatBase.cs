@@ -35,7 +35,7 @@ public abstract class AcntFormatBase
 	/// </summary>
 	/// <param name="reader">The reader from which to read the ACNT format data.</param>
 	/// <returns>An <see cref="AcntFormatBase"/> instance containing the parsed data.</returns>
-	public static AcntFormatBase GetActn(NewReader reader)
+	public static AcntFormatBase GetActn(Reader reader)
 	{
 		// Read a 16-bit value that contains both the description and the primary glyph index.
 		var descriptionAndIndex = reader.ReadInt16();
@@ -49,11 +49,11 @@ public abstract class AcntFormatBase
 	/// Reads additional format-specific data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which to read the format-specific data.</param>
-	public abstract void ReadData(NewReader data);
+	public abstract void ReadData(Reader data);
 
 	/// <summary>
 	/// Writes the format-specific data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the format-specific data is written.</param>
-	public abstract void WriteData(NewWriter data);
+	public abstract void WriteData(Writer data);
 }

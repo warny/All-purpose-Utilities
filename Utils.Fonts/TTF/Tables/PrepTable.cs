@@ -21,13 +21,13 @@ namespace Utils.Fonts.TTF.Tables
 		protected internal PrepTable() : base(TableTypes.PREP) { }
 
 		/// <inheritdoc/>
-		public override void ReadData(NewReader data)
+		public override void ReadData(Reader data)
 		{
 			Instructions = data.ReadBytes((int)data.BytesLeft);
 		}
 
 		/// <inheritdoc/>
-		public override void WriteData(NewWriter data)
+		public override void WriteData(Writer data)
 		{
 			data.WriteBytes(Instructions);
 		}

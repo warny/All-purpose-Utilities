@@ -79,7 +79,7 @@ public class HmtxTable : TrueTypeTable
 	/// For each glyph, if an advance width is available, it is written followed by the left side bearing.
 	/// </summary>
 	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		// The first part: advance widths for the first 'n' glyphs
 		// (where n = number of long horizontal metrics from the hhea table)
@@ -97,7 +97,7 @@ public class HmtxTable : TrueTypeTable
 	/// Reads the hmtx table data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which the data is read.</param>
-	public override void ReadData(NewReader data)
+	public override void ReadData(Reader data)
 	{
 		// Initialize arrays with zero.
 		Array.Fill(advanceWidths, (short)0);

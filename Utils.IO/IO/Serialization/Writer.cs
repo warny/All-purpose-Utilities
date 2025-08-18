@@ -9,7 +9,7 @@ using Utils.Reflection;
 
 namespace Utils.IO.Serialization;
 
-public class NewWriter : IWriter, IStreamMapping<NewWriter>
+public class Writer : IWriter, IStreamMapping<Writer>
 {
 	public Stream Stream { get; }
 
@@ -25,9 +25,9 @@ public class NewWriter : IWriter, IStreamMapping<NewWriter>
 	}
 	public long BytesLeft => Stream.Length - Stream.Position;
 
-	public NewWriter(Stream stream) : this(stream, new RawWriter().WriterDelegates) { }
+	public Writer(Stream stream) : this(stream, new RawWriter().WriterDelegates) { }
 
-	public NewWriter(Stream stream, params IEnumerable<Delegate> converters)
+	public Writer(Stream stream, params IEnumerable<Delegate> converters)
 	{
 		this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
 		foreach (var converter in converters.Union(new RawWriter().WriterDelegates))
@@ -43,7 +43,7 @@ public class NewWriter : IWriter, IStreamMapping<NewWriter>
 		}
 	}
 
-	public NewWriter(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
+	public Writer(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
 			: this(stream, converters.SelectMany(c => c)) { }
 
 
@@ -98,10 +98,10 @@ public class NewWriter : IWriter, IStreamMapping<NewWriter>
 		Stream.Seek(this.positionsStack.Pop(), SeekOrigin.Begin);
 	}
 
-	public NewWriter Slice(long position, long length)
+	public Writer Slice(long position, long length)
 	{
 		PartialStream s = new PartialStream(Stream, position, length);
-		return new NewWriter(s);
+		return new Writer(s);
 	}
 
 

@@ -23,7 +23,7 @@ public class AcntFormat0 : AcntFormatBase
 	/// Reads the ACNT format 0 data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which to read the data.</param>
-	public override void ReadData(NewReader data)
+	public override void ReadData(Reader data)
 	{
                 PrimaryAttachmentPoint = (byte)data.ReadByte();
                 SecondaryInfoIndex = (byte)data.ReadByte();
@@ -33,7 +33,7 @@ public class AcntFormat0 : AcntFormatBase
 	/// Writes the ACNT format 0 data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which to write the data.</param>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		data.WriteInt16(PrimaryGlyphIndex);
 		data.WriteByte(PrimaryAttachmentPoint);

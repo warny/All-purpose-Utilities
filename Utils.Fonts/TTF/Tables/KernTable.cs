@@ -41,7 +41,7 @@ namespace Utils.Fonts.TTF.Tables
 		}
 
 		/// <inheritdoc/>
-		public override void ReadData(NewReader data)
+		public override void ReadData(Reader data)
 		{
 			// Read the kern table header.
 			// Header: version (uint16) and number of subtables (uint16)
@@ -72,7 +72,7 @@ namespace Utils.Fonts.TTF.Tables
 		}
 
 		/// <inheritdoc/>
-		public override void WriteData(NewWriter data)
+		public override void WriteData(Writer data)
 		{
 			// Write kern table header: version = 0, nTables = 1.
 			data.WriteUInt16(0, true);

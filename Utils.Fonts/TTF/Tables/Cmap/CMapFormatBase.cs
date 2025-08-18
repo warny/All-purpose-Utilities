@@ -68,20 +68,20 @@ public abstract class CMapFormatBase
 	/// </summary>
 	/// <param name="i">The length (in bytes) of the data to read.</param>
 	/// <param name="data">The reader to read data from.</param>
-	public abstract void ReadData(int i, NewReader data);
+	public abstract void ReadData(int i, Reader data);
 
 	/// <summary>
 	/// Writes the format-specific data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to write data to.</param>
-	public abstract void WriteData(NewWriter data);
+	public abstract void WriteData(Writer data);
 
 	/// <summary>
 	/// Reads a CMap format record from the provided reader.
 	/// </summary>
 	/// <param name="data">The reader from which to read the CMap data.</param>
 	/// <returns>An instance of <see cref="CMapFormatBase"/> containing the parsed data.</returns>
-	public static CMapFormatBase GetMap(NewReader data)
+	public static CMapFormatBase GetMap(Reader data)
 	{
 		var format = data.ReadInt16(true);
 		var length = data.ReadInt16(true);

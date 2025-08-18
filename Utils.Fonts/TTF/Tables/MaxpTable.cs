@@ -102,7 +102,7 @@ public class MaxpTable : TrueTypeTable
 	/// </summary>
 	/// <param name="data">The reader from which to read the table data.</param>
 	/// <exception cref="ArgumentException">Thrown if the remaining data is not exactly 32 bytes.</exception>
-	public override void ReadData(NewReader data)
+	public override void ReadData(Reader data)
 	{
 		if (data.BytesLeft != 32)
 		{
@@ -129,7 +129,7 @@ public class MaxpTable : TrueTypeTable
 	/// Writes the maxp table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which to write the table data.</param>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		data.WriteInt32(Version, true);
 		data.WriteInt16(NumGlyphs, true);

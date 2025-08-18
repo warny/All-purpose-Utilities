@@ -4,21 +4,21 @@ using System.Text;
 namespace Utils.IO.Serialization;
 
 /// <summary>
-/// Extension methods providing convenience helpers for <see cref="NewReader"/> and <see cref="NewWriter"/>.
+/// Extension methods providing convenience helpers for <see cref="Reader"/> and <see cref="Writer"/>.
 /// </summary>
 public static class NewReaderWriterExtensions
 {
-        private static readonly RawReader LittleEndianReader = new() { BigIndian = false };
-        private static readonly RawReader BigEndianReader = new() { BigIndian = true };
-        private static readonly RawWriter LittleEndianWriter = new() { BigIndian = false };
-        private static readonly RawWriter BigEndianWriter = new() { BigIndian = true };
+        private static readonly RawReader LittleEndianReader = new() { BigEndian = false };
+        private static readonly RawReader BigEndianReader = new() { BigEndian = true };
+        private static readonly RawWriter LittleEndianWriter = new() { BigEndian = false };
+        private static readonly RawWriter BigEndianWriter = new() { BigEndian = true };
 
         /// <summary>
         /// Reads a 16-bit signed integer from the reader using the specified endianness.
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
         /// <param name="bigEndian">Whether to read the value in big-endian order.</param>
-        public static short ReadInt16(this NewReader reader, bool bigEndian = false)
+        public static short ReadInt16(this Reader reader, bool bigEndian = false)
                 => (bigEndian ? BigEndianReader : LittleEndianReader).ReadShort(reader);
 
         /// <summary>
@@ -26,7 +26,7 @@ public static class NewReaderWriterExtensions
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
         /// <param name="bigEndian">Whether to read the value in big-endian order.</param>
-        public static int ReadInt32(this NewReader reader, bool bigEndian = false)
+        public static int ReadInt32(this Reader reader, bool bigEndian = false)
                 => (bigEndian ? BigEndianReader : LittleEndianReader).ReadInt(reader);
 
         /// <summary>
@@ -34,7 +34,7 @@ public static class NewReaderWriterExtensions
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
         /// <param name="bigEndian">Whether to read the value in big-endian order.</param>
-        public static ushort ReadUInt16(this NewReader reader, bool bigEndian = false)
+        public static ushort ReadUInt16(this Reader reader, bool bigEndian = false)
                 => (bigEndian ? BigEndianReader : LittleEndianReader).ReadUShort(reader);
 
         /// <summary>
@@ -42,7 +42,7 @@ public static class NewReaderWriterExtensions
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
         /// <param name="bigEndian">Whether to read the value in big-endian order.</param>
-        public static uint ReadUInt32(this NewReader reader, bool bigEndian = false)
+        public static uint ReadUInt32(this Reader reader, bool bigEndian = false)
                 => (bigEndian ? BigEndianReader : LittleEndianReader).ReadUInt(reader);
 
         /// <summary>
@@ -50,7 +50,7 @@ public static class NewReaderWriterExtensions
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
         /// <param name="bigEndian">Whether to read the value in big-endian order.</param>
-        public static long ReadInt64(this NewReader reader, bool bigEndian = false)
+        public static long ReadInt64(this Reader reader, bool bigEndian = false)
                 => (bigEndian ? BigEndianReader : LittleEndianReader).ReadLong(reader);
 
         /// <summary>
@@ -60,7 +60,7 @@ public static class NewReaderWriterExtensions
         /// <param name="length">Number of bytes to read.</param>
         /// <param name="encoding">Encoding of the string.</param>
         /// <returns>The decoded string with trailing null or space characters removed.</returns>
-        public static string ReadFixedLengthString(this NewReader reader, int length, Encoding encoding)
+        public static string ReadFixedLengthString(this Reader reader, int length, Encoding encoding)
         {
                 var bytes = reader.ReadBytes(length);
                 return encoding.GetString(bytes).TrimEnd('\0', ' ');
@@ -72,7 +72,7 @@ public static class NewReaderWriterExtensions
         /// <param name="reader">The reader to read from.</param>
         /// <param name="encoding">Encoding of the string.</param>
         /// <param name="bigEndian">Whether the length is stored in big-endian order.</param>
-        public static string ReadVariableLengthString(this NewReader reader, Encoding encoding, bool bigEndian = false, int sizeLength = sizeof(int))
+        public static string ReadVariableLengthString(this Reader reader, Encoding encoding, bool bigEndian = false, int sizeLength = sizeof(int))
         {
                 int length = sizeLength switch
                 {
@@ -90,7 +90,7 @@ public static class NewReaderWriterExtensions
         /// <param name="reader">The reader to read from.</param>
         /// <param name="count">Number of elements to read.</param>
         /// <param name="bigEndian">Whether numeric values are stored in big-endian order.</param>
-        public static T[] ReadArray<T>(this NewReader reader, int count, bool bigEndian = false)
+        public static T[] ReadArray<T>(this Reader reader, int count, bool bigEndian = false)
         {
                 var result = new T[count];
                 for (int i = 0; i < count; i++)
@@ -121,7 +121,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="bigEndian">Whether to write the value in big-endian order.</param>
-        public static void WriteInt16(this NewWriter writer, short value, bool bigEndian = false)
+        public static void WriteInt16(this Writer writer, short value, bool bigEndian = false)
                 => (bigEndian ? BigEndianWriter : LittleEndianWriter).WriteShort(writer, value);
 
         /// <summary>
@@ -130,7 +130,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="bigEndian">Whether to write the value in big-endian order.</param>
-        public static void WriteInt32(this NewWriter writer, int value, bool bigEndian = false)
+        public static void WriteInt32(this Writer writer, int value, bool bigEndian = false)
                 => (bigEndian ? BigEndianWriter : LittleEndianWriter).WriteInt(writer, value);
 
         /// <summary>
@@ -139,7 +139,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="bigEndian">Whether to write the value in big-endian order.</param>
-        public static void WriteUInt16(this NewWriter writer, ushort value, bool bigEndian = false)
+        public static void WriteUInt16(this Writer writer, ushort value, bool bigEndian = false)
                 => (bigEndian ? BigEndianWriter : LittleEndianWriter).WriteUShort(writer, value);
 
         /// <summary>
@@ -148,7 +148,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="bigEndian">Whether to write the value in big-endian order.</param>
-        public static void WriteUInt32(this NewWriter writer, uint value, bool bigEndian = false)
+        public static void WriteUInt32(this Writer writer, uint value, bool bigEndian = false)
                 => (bigEndian ? BigEndianWriter : LittleEndianWriter).WriteUInt(writer, value);
 
         /// <summary>
@@ -157,7 +157,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="bigEndian">Whether to write the value in big-endian order.</param>
-        public static void WriteInt64(this NewWriter writer, long value, bool bigEndian = false)
+        public static void WriteInt64(this Writer writer, long value, bool bigEndian = false)
                 => (bigEndian ? BigEndianWriter : LittleEndianWriter).WriteLong(writer, value);
 
         /// <summary>
@@ -167,7 +167,7 @@ public static class NewReaderWriterExtensions
         /// <param name="value">String value to write.</param>
         /// <param name="length">Desired length in bytes.</param>
         /// <param name="encoding">Encoding of the string.</param>
-        public static void WriteFixedLengthString(this NewWriter writer, string value, int length, Encoding encoding)
+        public static void WriteFixedLengthString(this Writer writer, string value, int length, Encoding encoding)
         {
                 var buffer = new byte[length];
                 encoding.GetBytes(value, 0, value.Length, buffer, 0);
@@ -181,7 +181,7 @@ public static class NewReaderWriterExtensions
         /// <param name="value">String value to write.</param>
         /// <param name="encoding">Encoding of the string.</param>
         /// <param name="bigEndian">Whether the length is stored in big-endian order.</param>
-        public static void WriteVariableLengthString(this NewWriter writer, string value, Encoding encoding, bool bigEndian = false, int sizeLength = sizeof(int))
+        public static void WriteVariableLengthString(this Writer writer, string value, Encoding encoding, bool bigEndian = false, int sizeLength = sizeof(int))
         {
                 var bytes = encoding.GetBytes(value);
                 switch (sizeLength)
@@ -206,7 +206,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="values">Array of values to write.</param>
         /// <param name="bigEndian">Whether numeric values are written in big-endian order.</param>
-        public static void WriteArray<T>(this NewWriter writer, T[] values, bool bigEndian = false)
+        public static void WriteArray<T>(this Writer writer, T[] values, bool bigEndian = false)
         {
                 foreach (var v in values)
                 {
@@ -240,7 +240,7 @@ public static class NewReaderWriterExtensions
         /// <param name="writer">The writer to write to.</param>
         /// <param name="value">Date to write.</param>
         /// <param name="bigEndian">Whether to write in big-endian order.</param>
-        public static void WriteDateTime(this NewWriter writer, DateTime value, bool bigEndian = false)
+        public static void WriteDateTime(this Writer writer, DateTime value, bool bigEndian = false)
                 => writer.WriteInt64(value.Ticks, bigEndian);
 
         /// <summary>
@@ -248,7 +248,7 @@ public static class NewReaderWriterExtensions
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
         /// <param name="bigEndian">Whether the value is stored in big-endian order.</param>
-        public static DateTime ReadDateTime(this NewReader reader, bool bigEndian = false)
+        public static DateTime ReadDateTime(this Reader reader, bool bigEndian = false)
                 => new DateTime(reader.ReadInt64(bigEndian));
 }
 

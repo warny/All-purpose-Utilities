@@ -71,7 +71,7 @@ public class AcntTable : TrueTypeTable
 	/// Reads the ACNT table data from the specified reader.
 	/// </summary>
 	/// <param name="data">The reader from which to read the ACNT table data.</param>
-	public override void ReadData(NewReader data)
+	public override void ReadData(Reader data)
 	{
 		Version = data.ReadInt16(true);
 		FirstAccentGlyphIndex = data.ReadInt16(true);
@@ -87,7 +87,7 @@ public class AcntTable : TrueTypeTable
 	/// Writes the ACNT table data to the specified writer.
 	/// </summary>
 	/// <param name="data">The writer to which the ACNT table data is written.</param>
-	public override void WriteData(NewWriter data)
+	public override void WriteData(Writer data)
 	{
 		data.WriteInt16(Version, true);
 		data.WriteInt16(FirstAccentGlyphIndex, true);
