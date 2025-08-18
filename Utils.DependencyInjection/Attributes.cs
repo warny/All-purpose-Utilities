@@ -1,5 +1,3 @@
-using System;
-
 namespace Utils.DependencyInjection;
 
 /// <summary>
@@ -18,19 +16,19 @@ public class InjectableAttribute : Attribute
 [AttributeUsage(AttributeTargets.Class)]
 public abstract class InjectableClassAttribute : Attribute
 {
-        /// <summary>
-        /// Optional domain used as a key for keyed registrations.
-        /// </summary>
-        public string? Domain { get; }
+	/// <summary>
+	/// Optional domain used as a key for keyed registrations.
+	/// </summary>
+	public string? Domain { get; }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InjectableClassAttribute"/> class.
-        /// </summary>
-        /// <param name="domain">Optional domain key for the service.</param>
-        public InjectableClassAttribute(string? domain)
-        {
-                this.Domain = domain;
-        }
+	/// <summary>
+	/// Initializes a new instance of the <see cref="InjectableClassAttribute"/> class.
+	/// </summary>
+	/// <param name="domain">Optional domain key for the service.</param>
+	public InjectableClassAttribute(string? domain)
+	{
+		this.Domain = domain;
+	}
 }
 
 /// <summary>
@@ -39,16 +37,16 @@ public abstract class InjectableClassAttribute : Attribute
 [AttributeUsage(AttributeTargets.Class)]
 public class SingletonAttribute : InjectableClassAttribute
 {
-        /// <summary>
-        /// Initializes a new <see cref="SingletonAttribute"/> with the default domain.
-        /// </summary>
-        public SingletonAttribute() : base(null) { }
+	/// <summary>
+	/// Initializes a new <see cref="SingletonAttribute"/> with the default domain.
+	/// </summary>
+	public SingletonAttribute() : base(null) { }
 
-        /// <summary>
-        /// Initializes a new <see cref="SingletonAttribute"/> with the specified domain.
-        /// </summary>
-        /// <param name="domain">Domain key for the service.</param>
-        public SingletonAttribute(string domain) : base(domain) { }
+	/// <summary>
+	/// Initializes a new <see cref="SingletonAttribute"/> with the specified domain.
+	/// </summary>
+	/// <param name="domain">Domain key for the service.</param>
+	public SingletonAttribute(string domain) : base(domain) { }
 }
 
 /// <summary>
@@ -57,16 +55,16 @@ public class SingletonAttribute : InjectableClassAttribute
 [AttributeUsage(AttributeTargets.Class)]
 public class ScopedAttribute : InjectableClassAttribute
 {
-        /// <summary>
-        /// Initializes a new <see cref="ScopedAttribute"/> with the default domain.
-        /// </summary>
-        public ScopedAttribute() : base(null) { }
+	/// <summary>
+	/// Initializes a new <see cref="ScopedAttribute"/> with the default domain.
+	/// </summary>
+	public ScopedAttribute() : base(null) { }
 
-        /// <summary>
-        /// Initializes a new <see cref="ScopedAttribute"/> with the specified domain.
-        /// </summary>
-        /// <param name="domain">Domain key for the service.</param>
-        public ScopedAttribute(string domain) : base(domain) { }
+	/// <summary>
+	/// Initializes a new <see cref="ScopedAttribute"/> with the specified domain.
+	/// </summary>
+	/// <param name="domain">Domain key for the service.</param>
+	public ScopedAttribute(string domain) : base(domain) { }
 }
 
 /// <summary>
@@ -75,16 +73,16 @@ public class ScopedAttribute : InjectableClassAttribute
 [AttributeUsage(AttributeTargets.Class)]
 public class TransientAttribute : InjectableClassAttribute
 {
-        /// <summary>
-        /// Initializes a new <see cref="TransientAttribute"/> with the default domain.
-        /// </summary>
-        public TransientAttribute() : base(null) { }
+	/// <summary>
+	/// Initializes a new <see cref="TransientAttribute"/> with the default domain.
+	/// </summary>
+	public TransientAttribute() : base(null) { }
 
-        /// <summary>
-        /// Initializes a new <see cref="TransientAttribute"/> with the specified domain.
-        /// </summary>
-        /// <param name="domain">Domain key for the service.</param>
-        public TransientAttribute(string domain) : base(domain) { }
+	/// <summary>
+	/// Initializes a new <see cref="TransientAttribute"/> with the specified domain.
+	/// </summary>
+	/// <param name="domain">Domain key for the service.</param>
+	public TransientAttribute(string domain) : base(domain) { }
 }
 
 

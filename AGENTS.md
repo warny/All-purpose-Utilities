@@ -1,14 +1,41 @@
-Ce projet utilise dotnet 9.
-Toutes les méthodes et les classes doivent être documentées en anglais, même si elles sont privées.
-Les méthodes qui manipulent des flux de données doivent être commentées.
-Dans la mesure du possible, je préfère m'appuyer sur des classes contenant des données d'un côté et des classes contenant leur traitement de l'autre. Je préfère quand le traitement s'appuie sur une interface, y compris sur une interface générique si nécessaire.
+# AGENTS Guidelines
 
-Il faut systématiquement écrire un test, sauf en cas de modification des métadonnées des bibliothèques.
-Il faut mettre une snippet exemple dans le fichier README.md du projet
+This project targets **.NET 9**.  
 
-Les tableaux doivent utiliser la syntaxe avec des crochets.
-Si une méthode utilise des params, et si la lecture des éléments est séquentielle, alors elle doit utiliser params IEnumerable<T>
+---
 
-Si une méthode doit lire le contenu d'un fichier, alors elle doit seulement ouvrir le fichier et appeler une méthode qui traite le contenu lui-même
+## Documentation  
+- All classes and methods **must be documented in English**, including private ones.  
+- Methods that handle **data streams** or **binary data transformations** must include clear comments.  
 
-Si on rencontre un switch avec un grand nombre de cas différents (le code dépasse 10 cas ou 30 lignes au total), celui-ci doit être remplacé par dictionnaire <cas, méthode> ou chaque méthode traite un cas particulier ou par un dictionnaire<cas, classe> suivant la complexité du code.
+---
+
+## Design Principles  
+- Follow the **separation of concerns** principle:  
+  - **Data classes** should only hold data.  
+  - **Processing classes** should contain logic.  
+- Processing logic should rely on **interfaces**, including **generic interfaces** where appropriate.  
+
+---
+
+## Testing  
+- Every change must include a corresponding **test**.  
+- The only exception is when modifying **library metadata**.  
+
+---
+
+## README  
+- The project’s **README.md** must include an **example snippet**.  
+
+---
+
+## Coding Standards  
+- Arrays must use **bracket syntax** (`[]`).  
+- If a method uses `params` and elements are read sequentially, prefer `params IEnumerable<T>`.  
+- File-reading methods must **only open the file** and then delegate content processing to a dedicated method.  
+- Large `switch` statements (more than **10 cases** or **30 lines**) must be replaced by either:  
+  - `Dictionary<case, method>` (each method handling one case), or  
+  - `Dictionary<case, class>` depending on code complexity.  
+- Code indentation must use **spaces, 4 per level**.  
+
+---
