@@ -37,7 +37,7 @@ jobs:
             Utils.Mathematics/Utils.Mathematics.csproj \
             Utils.Reflection/Utils.Reflection.csproj \
             Utils.VirtualMachine/Utils.VirtualMachine.csproj \
-            System.Net/Utils.Net.csproj"
+            Utils.Net/Utils.Net.csproj"
           mkdir -p packages
           for csproj in $PROJECTS; do
             pkg_id=$(grep -oPm1 '(?<=<PackageId>)[^<]+' "$csproj")
