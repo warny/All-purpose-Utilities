@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.IO.Serialization;
 
 namespace Utils.Fonts.PostScript;
 
@@ -67,24 +68,25 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFB</em> font stream.
+    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFB</em> font using a
+    /// <see cref="Reader"/>. Blocks are concatenated and converted to the
+    /// ASCII representation consumed by the <see cref="LoadPfa"/> method.
     /// </summary>
-    /// <param name="stream">Binary PFB font data.</param>
+    /// <param name="reader">Reader providing PFB data.</param>
     /// <returns>A new <see cref="CidKeyedFont"/>.</returns>
-    public static CidKeyedFont LoadPfb(Stream stream)
+    public static CidKeyedFont LoadPfb(Reader reader)
     {
-        using var br = new BinaryReader(stream, Encoding.ASCII, leaveOpen: true);
         var sb = new StringBuilder();
         while (true)
         {
-            int marker = br.ReadByte();
+            int marker = reader.ReadByte();
             if (marker != 0x80)
                 throw new InvalidDataException("Invalid PFB marker");
-            int type = br.ReadByte();
+            int type = reader.ReadByte();
             if (type == 3)
                 break;
-            int len = br.ReadInt32();
-            byte[] data = br.ReadBytes(len);
+            int len = reader.Read<int>();
+            byte[] data = reader.ReadBytes(len);
             switch (type)
             {
                 case 1:
@@ -100,6 +102,39 @@ public class CidKeyedFont : IFont
         }
         using var ms = new MemoryStream(Encoding.ASCII.GetBytes(sb.ToString()));
         return LoadPfa(ms);
+    }
+
+    /// <summary>
+    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFB</em> font stream.
+    /// </summary>
+    /// <param name="stream">Binary PFB font data.</param>
+    /// <returns>A new <see cref="CidKeyedFont"/>.</returns>
+    public static CidKeyedFont LoadPfb(Stream stream)
+    {
+        var reader = new Reader(stream);
+        return LoadPfb(reader);
+    }
+
+    /// <summary>
+    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format using a
+    /// <see cref="Writer"/>.
+    /// </summary>
+    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="writer">Destination binary writer.</param>
+    public static void WritePfb(string ascii, Writer writer)
+    {
+        PostScriptFont.WritePfb(ascii, writer);
+    }
+
+    /// <summary>
+    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format.
+    /// </summary>
+    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="stream">Destination stream.</param>
+    public static void WritePfb(string ascii, Stream stream)
+    {
+        var writer = new Writer(stream);
+        WritePfb(ascii, writer);
     }
 
     /// <summary>

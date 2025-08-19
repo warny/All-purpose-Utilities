@@ -4,6 +4,7 @@ using System.Text;
 using Utils.Fonts.PostScript;
 using Utils.Fonts.TTF;
 using Utils.Fonts;
+using Utils.IO.Serialization;
 using Moq;
 
 namespace UtilsTest.Fonts
@@ -105,6 +106,50 @@ namespace UtilsTest.Fonts
             var method = typeof(CidKeyedFont).GetMethod("ParseCidType1", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var font = (CidKeyedFont)method.Invoke(null, new object[] { plain });
             Assert.IsNotNull(font.GetGlyph('a'));
+        }
+
+        [TestMethod]
+        public void WritePfbProducesValidStructure()
+        {
+            string ascii = "%!PS-AdobeFont-1.0\neexec\ncleartomark\n";
+            using var ms = new MemoryStream();
+            PostScriptFont.WritePfb(ascii, ms);
+            ms.Position = 0;
+            var reader = new Reader(ms);
+            Assert.AreEqual(0x80, reader.ReadByte());
+            Assert.AreEqual(1, reader.ReadByte());
+            int len = reader.Read<int>();
+            string txt = Encoding.ASCII.GetString(reader.ReadBytes(len));
+            Assert.AreEqual(ascii, txt);
+            Assert.AreEqual(0x80, reader.ReadByte());
+            Assert.AreEqual(2, reader.ReadByte());
+            Assert.AreEqual(0, reader.Read<int>());
+            Assert.AreEqual(0x80, reader.ReadByte());
+            Assert.AreEqual(3, reader.ReadByte());
+        }
+
+        [TestMethod]
+        public void LoadPfbFromReader()
+        {
+            string ascii = "%!PS-AdobeFont-1.0\neexec\ncleartomark\n";
+            using var ms = new MemoryStream();
+            PostScriptFont.WritePfb(ascii, ms);
+            ms.Position = 0;
+            var reader = new Reader(ms);
+            var font = PostScriptFont.LoadPfb(reader);
+            Assert.IsNotNull(font);
+        }
+
+        [TestMethod]
+        public void CidKeyedWriteAndLoadPfb()
+        {
+            string ascii = "%!PS-AdobeFont-1.0\neexec\ncleartomark\n";
+            using var ms = new MemoryStream();
+            CidKeyedFont.WritePfb(ascii, ms);
+            ms.Position = 0;
+            var reader = new Reader(ms);
+            var font = CidKeyedFont.LoadPfb(reader);
+            Assert.IsNotNull(font);
         }
     }
 }

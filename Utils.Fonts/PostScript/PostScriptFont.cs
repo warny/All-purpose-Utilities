@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.IO.Serialization;
 
 namespace Utils.Fonts.PostScript;
 
@@ -173,26 +174,25 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Loads a binary Type&nbsp;1 (<em>PFB</em>) font stream.  Blocks from the
-    /// PFB file are concatenated and translated to the ASCII representation used
-    /// by the <see cref="LoadPfa"/> method.
+    /// Loads a binary Type&nbsp;1 (<em>PFB</em>) font using a <see cref="Reader"/>.
+    /// Blocks from the PFB file are concatenated and translated to the ASCII
+    /// representation consumed by the <see cref="LoadPfa"/> method.
     /// </summary>
-    /// <param name="stream">Input PFB stream.</param>
+    /// <param name="reader">Reader supplying PFB data.</param>
     /// <returns>Instance of <see cref="PostScriptFont"/>.</returns>
-    public static PostScriptFont LoadPfb(Stream stream)
+    public static PostScriptFont LoadPfb(Reader reader)
     {
-        using var br = new BinaryReader(stream, Encoding.ASCII, leaveOpen: true);
         var sb = new StringBuilder();
         while (true)
         {
-            int marker = br.ReadByte();
+            int marker = reader.ReadByte();
             if (marker != 0x80)
                 throw new InvalidDataException("Invalid PFB marker");
-            int type = br.ReadByte();
+            int type = reader.ReadByte();
             if (type == 3)
                 break;
-            int len = br.ReadInt32();
-            byte[] data = br.ReadBytes(len);
+            int len = reader.Read<int>();
+            byte[] data = reader.ReadBytes(len);
             switch (type)
             {
                 case 1:
@@ -208,6 +208,51 @@ public class PostScriptFont : IFont
         }
         using var ms = new MemoryStream(Encoding.ASCII.GetBytes(sb.ToString()));
         return LoadPfa(ms);
+    }
+
+    /// <summary>
+    /// Loads a binary Type&nbsp;1 (<em>PFB</em>) font stream.
+    /// </summary>
+    /// <param name="stream">Input PFB stream.</param>
+    /// <returns>Instance of <see cref="PostScriptFont"/>.</returns>
+    public static PostScriptFont LoadPfb(Stream stream)
+    {
+        var reader = new Reader(stream);
+        return LoadPfb(reader);
+    }
+
+    /// <summary>
+    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format using a
+    /// <see cref="Writer"/>.
+    /// </summary>
+    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="writer">Destination binary writer.</param>
+    public static void WritePfb(string ascii, Writer writer)
+    {
+        if (ascii == null) throw new ArgumentNullException(nameof(ascii));
+        if (writer == null) throw new ArgumentNullException(nameof(writer));
+
+        byte[] asciiBytes = Encoding.ASCII.GetBytes(ascii);
+        writer.WriteByte(0x80);
+        writer.WriteByte(1);
+        writer.Write<int>(asciiBytes.Length);
+        writer.WriteBytes(asciiBytes);
+        writer.WriteByte(0x80);
+        writer.WriteByte(2);
+        writer.Write<int>(0); // no binary segment present
+        writer.WriteByte(0x80);
+        writer.WriteByte(3);
+    }
+
+    /// <summary>
+    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format.
+    /// </summary>
+    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="stream">Destination stream receiving the binary data.</param>
+    public static void WritePfb(string ascii, Stream stream)
+    {
+        var writer = new Writer(stream);
+        WritePfb(ascii, writer);
     }
 
     /// <summary>
