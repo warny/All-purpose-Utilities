@@ -14,10 +14,10 @@ namespace Utils.IO.Serialization;
 /// </summary>
 public class Reader : IReader, IStreamMapping<Reader>
 {
-        /// <summary>
-        /// Gets the underlying stream used by the reader.
-        /// </summary>
-        public Stream Stream { get; }
+	/// <summary>
+	/// Gets the underlying stream used by the reader.
+	/// </summary>
+	public Stream Stream { get; }
 
 	/// <summary>
 	/// Gets the number of bytes remaining in the stream.
@@ -33,15 +33,15 @@ public class Reader : IReader, IStreamMapping<Reader>
 		set => Stream.Position = value;
 	}
 
-        /// <summary>
-        /// Stack storing stream positions pushed with <see cref="Push"/>.
-        /// </summary>
-        private readonly Stack<long> positionsStack = new Stack<long>();
+	/// <summary>
+	/// Stack storing stream positions pushed with <see cref="Push"/>.
+	/// </summary>
+	private readonly Stack<long> positionsStack = new();
 
-        /// <summary>
-        /// Dictionary mapping a type to its reader delegate.
-        /// </summary>
-        private readonly Dictionary<Type, Delegate> readers = [];
+	/// <summary>
+	/// Dictionary mapping a type to its reader delegate.
+	/// </summary>
+	private readonly Dictionary<Type, Delegate> readers = [];
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="Reader"/> using default converters.
@@ -51,7 +51,7 @@ public class Reader : IReader, IStreamMapping<Reader>
 	/// <summary>
 	/// Initializes a new instance of <see cref="Reader"/> copying converters.
 	/// </summary>
-	private Reader(Stream stream, IDictionary<Type, Delegate> readers) 
+	private Reader(Stream stream, IDictionary<Type, Delegate> readers)
 	{
 		this.Stream = stream;
 		this.readers = readers.ToDictionary();
@@ -82,19 +82,19 @@ public class Reader : IReader, IStreamMapping<Reader>
 			: this(stream, converters.SelectMany(c => c)) { }
 
 
-        /// <summary>
-        /// Reads an object dynamically by resolving the appropriate reader.
-        /// </summary>
-        /// <param name="type">Type of object to read.</param>
-        public object Read(Type type)
-        {
-                if (type is null) throw new ArgumentNullException(nameof(type));
-                if (!TryFindReaderFor(type, out var readerDelegate))
-                {
-                        readerDelegate = CreateReaderFor(type);
-                }
-                return readerDelegate.DynamicInvoke(this);
-        }
+	/// <summary>
+	/// Reads an object dynamically by resolving the appropriate reader.
+	/// </summary>
+	/// <param name="type">Type of object to read.</param>
+	public object Read(Type type)
+	{
+		if (type is null) throw new ArgumentNullException(nameof(type));
+		if (!TryFindReaderFor(type, out var readerDelegate))
+		{
+			readerDelegate = CreateReaderFor(type);
+		}
+		return readerDelegate.DynamicInvoke(this);
+	}
 
 	/// <summary>
 	/// Reads a strongly-typed object.
