@@ -33,9 +33,14 @@ public class Reader : IReader, IStreamMapping<Reader>
 		set => Stream.Position = value;
 	}
 
-	private readonly Stack<long> positionsStack = new Stack<long>();
+	/// <summary>
+	/// Stack storing stream positions pushed with <see cref="Push"/>.
+	/// </summary>
+	private readonly Stack<long> positionsStack = new();
 
-	// Dictionary to store reader delegates for each type
+	/// <summary>
+	/// Dictionary mapping a type to its reader delegate.
+	/// </summary>
 	private readonly Dictionary<Type, Delegate> readers = [];
 
 	/// <summary>
@@ -46,7 +51,7 @@ public class Reader : IReader, IStreamMapping<Reader>
 	/// <summary>
 	/// Initializes a new instance of <see cref="Reader"/> copying converters.
 	/// </summary>
-	private Reader(Stream stream, IDictionary<Type, Delegate> readers) 
+	private Reader(Stream stream, IDictionary<Type, Delegate> readers)
 	{
 		this.Stream = stream;
 		this.readers = readers.ToDictionary();
@@ -78,17 +83,17 @@ public class Reader : IReader, IStreamMapping<Reader>
 
 
 	/// <summary>
-	/// <summary>
 	/// Reads an object dynamically by resolving the appropriate reader.
 	/// </summary>
 	/// <param name="type">Type of object to read.</param>
 	public object Read(Type type)
 	{
+		if (type is null) throw new ArgumentNullException(nameof(type));
 		if (!TryFindReaderFor(type, out var readerDelegate))
 		{
 			readerDelegate = CreateReaderFor(type);
 		}
-		return readerDelegate.DynamicInvoke(Stream);
+		return readerDelegate.DynamicInvoke(this);
 	}
 
 	/// <summary>

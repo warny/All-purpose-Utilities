@@ -81,4 +81,44 @@ public class NewReaderWriterTest
 			}
 		}
 	}
+
+	[TestMethod]
+	public void ReadByTypeReturnsValue()
+	{
+		using MemoryStream stream = new MemoryStream();
+		Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
+		writer.Write(123);
+
+		stream.Position = 0;
+		Reader reader = new Reader(stream, new RawReader().ReaderDelegates);
+		object value = reader.Read(typeof(int));
+
+		Assert.AreEqual(123, value);
+	}
+
+	[TestMethod]
+	public void SlicePreservesWriters()
+	{
+		using MemoryStream stream = new MemoryStream();
+		Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
+		writer.Write(0);
+
+		Writer slice = writer.Slice(0, stream.Length);
+		slice.Write(42);
+
+		writer.Position = 0;
+		Reader reader = new Reader(stream, new RawReader().ReaderDelegates);
+		int value = reader.Read<int>();
+
+		Assert.AreEqual(42, value);
+	}
+
+	[TestMethod]
+	public void WriteNullObjectThrows()
+	{
+		using MemoryStream stream = new MemoryStream();
+		Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
+
+		Assert.ThrowsException<ArgumentNullException>(() => writer.Write((object)null));
+	}
 }
