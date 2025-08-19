@@ -1,8 +1,8 @@
 # Utils.DependencyInjection Library
 
 **Utils.DependencyInjection** enables attribute-based registration of services with
-the `Microsoft.Extensions.DependencyInjection` framework. Types annotated with the
-provided attributes are automatically added to an `IServiceCollection`.
+the `Microsoft.Extensions.DependencyInjection` framework. It targets **.NET 9** and
+automatically adds annotated types to an `IServiceCollection`.
 
 ## Usage example
 

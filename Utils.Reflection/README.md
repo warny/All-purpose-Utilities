@@ -1,7 +1,7 @@
 # Utils.Reflection Library
 
 **Utils.Reflection** extends the .NET reflection APIs with helpers for dynamic loading and runtime code generation.
-It provides abstractions that help split platform-specific logic from high level processing.
+It targets **.NET 9** and provides abstractions that help split platform-specific logic from high level processing.
 
 ## Features
 

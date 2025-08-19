@@ -1,7 +1,7 @@
 # Utils.Imaging Library
 
 The **Utils.Imaging** package contains bitmap accessors, color structures and drawing primitives built on top of `System.Drawing`.
-It provides the graphical foundation used by the sample applications in this repository.
+It targets **.NET 9** and provides the graphical foundation used by the sample applications in this repository.
 
 ## Features
 
