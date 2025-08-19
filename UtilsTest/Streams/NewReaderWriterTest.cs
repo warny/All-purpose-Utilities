@@ -1,14 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using Utils.IO.Serialization;
 using Utils.Objects;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace UtilsTest.Streams;
 
@@ -52,39 +46,37 @@ public class NewReaderWriterTest
 		{
 			foreach (var converter in converters)
 			{
-				using (MemoryStream stream = new MemoryStream())
-				{
-					NewWriter writer = new NewWriter(stream, converter.Writer.WriterDelegates);
-					writer.WriteByte(test.b);
-					writer.Write(test.s);
-					writer.Write(test.i);
-					writer.Write(test.l);
-					writer.Write(test.f);
-					writer.Write(test.d);
-					writer.Write(test.dt1);
+				using MemoryStream stream = new MemoryStream();
 
-					stream.Seek(0, SeekOrigin.Begin);
+				Writer writer = new Writer(stream, converter.Writer.WriterDelegates);
+				writer.WriteByte(test.b);
+				writer.Write(test.s);
+				writer.Write(test.i);
+				writer.Write(test.l);
+				writer.Write(test.f);
+				writer.Write(test.d);
+				writer.Write(test.dt1);
 
-					NewReader reader = new NewReader(stream, converter.Reader.ReaderDelegates);
-					byte rb = reader.Read<byte>();
-					short rs = reader.Read<short>();
-					int ri = reader.Read<int>();
-					long rl = reader.Read<long>();
-					float rf = reader.Read<float>();
-					double rd = reader.Read<double>();
-					DateTime rdt1 = reader.Read<DateTime>();
+				stream.Seek(0, SeekOrigin.Begin);
 
-					AssertAreEquals(test.b, rb, converter.Writer, converter.Reader);
-					AssertAreEquals(test.s, rs, converter.Writer, converter.Reader);
-					AssertAreEquals(test.i, ri, converter.Writer, converter.Reader);
-					AssertAreEquals(test.l, rl, converter.Writer, converter.Reader);
+				Reader reader = new Reader(stream, converter.Reader.ReaderDelegates);
+				byte rb = reader.Read<byte>();
+				short rs = reader.Read<short>();
+				int ri = reader.Read<int>();
+				long rl = reader.Read<long>();
+				float rf = reader.Read<float>();
+				double rd = reader.Read<double>();
+				DateTime rdt1 = reader.Read<DateTime>();
 
-					AssertAreEquals(test.f, rf, converter.Writer, converter.Reader);
-					AssertAreEquals(test.d, rd, converter.Writer, converter.Reader);
+				AssertAreEquals(test.b, rb, converter.Writer, converter.Reader);
+				AssertAreEquals(test.s, rs, converter.Writer, converter.Reader);
+				AssertAreEquals(test.i, ri, converter.Writer, converter.Reader);
+				AssertAreEquals(test.l, rl, converter.Writer, converter.Reader);
 
-					AssertAreEquals(test.dt1, rdt1, converter.Writer, converter.Reader);
+				AssertAreEquals(test.f, rf, converter.Writer, converter.Reader);
+				AssertAreEquals(test.d, rd, converter.Writer, converter.Reader);
 
-				}
+				AssertAreEquals(test.dt1, rdt1, converter.Writer, converter.Reader);
 
 			}
 		}

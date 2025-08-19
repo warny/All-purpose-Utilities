@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Utils.Objects;
@@ -14,9 +16,9 @@ public class RawReader
 	public IEnumerable<Delegate> ReaderDelegates =>
 	[
 		ReadByte, ReadSByte,
-		ReadShort, ReadUShort,
-		ReadInt, ReadUInt,
-		ReadLong, ReadULong,
+		CreateReadNumberDelegate<short>(), CreateReadNumberDelegate<ushort>(),
+		CreateReadNumberDelegate<int>(), CreateReadNumberDelegate<uint>(),
+		CreateReadNumberDelegate<long>(), CreateReadNumberDelegate<ulong>(),
 		ReadSingle, ReadDouble, ReadDecimal, ReadHalf,
 		ReadBigInteger, ReadInt128, ReadUInt128, ReadComplex,
 		ReadDateTime, ReadDate, ReadTime, ReadTimeSpan,
@@ -25,7 +27,7 @@ public class RawReader
 	];
 
 	public Encoding Encoding { get; init; } = Encoding.UTF8;
-	public bool BigIndian { get; init; } = false;
+	public bool BigEndian { get; init; } = false;
 
 
 	// Integer reading methods
@@ -44,22 +46,36 @@ public class RawReader
 	public decimal ReadDecimal(IReader reader) => BitConverterEx.ToDecimal(ReadNumberBytes(reader, sizeof(decimal)));
 	public Half ReadHalf(IReader reader) => BitConverter.ToHalf(ReadNumberBytes(reader, Marshal.SizeOf(typeof(Half))));
 
+	private Delegate CreateReadNumberDelegate<T>()
+		where T : IBinaryInteger<T>
+	{
+		unchecked
+		{
+			var size = Marshal.SizeOf(typeof(T));
+			var isUnsigned = T.Sign(T.Zero - T.One) == 1;
+
+			Func<IReader, T> d = BigEndian
+				? (IReader reader) => T.ReadBigEndian(reader.ReadBytes(size), isUnsigned)
+				: (IReader reader) => T.ReadLittleEndian(reader.ReadBytes(size), isUnsigned);
+			return d;
+		}
+	}
+
 	// Helper methods for reading numbers
 	private T ReadNumber<T>(IReader reader, bool isUnsigned) where T : struct, IBinaryInteger<T>
 	{
 		int size = Marshal.SizeOf(typeof(T));
 		byte[] bytes = reader.ReadBytes(size);
-		T value = BigIndian 
+		T value = BigEndian 
 			? T.ReadBigEndian(bytes, isUnsigned) 
 			: T.ReadLittleEndian(bytes, isUnsigned);
-
 		return value; 
 	}
 
 	private byte[] ReadNumberBytes(IReader reader, int length)
 	{
 		byte[] bytes = reader.ReadBytes(length);
-		return (BitConverter.IsLittleEndian ^ BigIndian) ? [.. bytes.Reverse()] : bytes;
+		return (BitConverter.IsLittleEndian ^ BigEndian) ? [.. bytes.Reverse()] : bytes;
 
 	}
 
@@ -183,7 +199,7 @@ public class UTF8IntReader : IBasicReader, IIntegerNumberReaders
 		int prefixBitsInLastPrefixByte = byte.LeadingZeroCount((byte)~prefixByte);
 		totalBytes += prefixBitsInLastPrefixByte;
 
-		//read value on this last prefix byte 
+		//read size on this last prefix byte 
 		int mask = 0xFF;
 		for (int i = 0; i <= prefixBitsInLastPrefixByte; i++)
 		{
@@ -191,7 +207,7 @@ public class UTF8IntReader : IBasicReader, IIntegerNumberReaders
 		}
 		T value = T.CreateChecked(prefixByte & mask);
 
-		// Read the remaining bytes for the value itself
+		// Read the remaining bytes for the size itself
 		var valueBytes = reader.ReadBytes(totalBytes - 1);
 		foreach (var b in valueBytes)
 		{

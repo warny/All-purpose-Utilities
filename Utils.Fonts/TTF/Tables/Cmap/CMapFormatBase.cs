@@ -83,9 +83,9 @@ public abstract class CMapFormatBase
 	/// <returns>An instance of <see cref="CMapFormatBase"/> containing the parsed data.</returns>
 	public static CMapFormatBase GetMap(Reader data)
 	{
-		var format = data.ReadInt16(true);
-		var length = data.ReadInt16(true);
-		var language = data.ReadInt16(true);
+		var format = data.Read<Int16>();
+		var length = data.Read<Int16>();
+		var language = data.Read<Int16>();
 		CMapFormatBase cMap = CreateCMap(format, language);
 		cMap?.ReadData(length, data);
 		return cMap;

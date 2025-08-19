@@ -29,7 +29,7 @@ namespace Utils.Fonts.TTF.Tables
 		/// <inheritdoc/>
 		public override void WriteData(Writer data)
 		{
-			data.WriteBytes(Instructions);
+			data.Write<byte[]>(Instructions);
 		}
 
 		/// <inheritdoc/>

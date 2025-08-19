@@ -156,35 +156,35 @@ public class GlyphCompound : GlyphBase
 		do
 		{
 			current = new GlyfComponent();
-			current.flags = (CompoundGlyfFlags)data.ReadInt16(true);
-			current.GlyphIndex = data.ReadInt16(true);
+			current.flags = (CompoundGlyfFlags)data.Read<Int16>();
+			current.GlyphIndex = data.Read<Int16>();
 			if (current.flags.HasFlag(CompoundGlyfFlags.ArgsAreXY))
 			{
-				current.e = data.ReadInt16(true);
-				current.f = data.ReadInt16(true);
+				current.e = data.Read<Int16>();
+				current.f = data.Read<Int16>();
 			}
 			else
 			{
-				current.CompoundPoint = data.ReadInt16(true);
-				current.ComponentPoint = data.ReadInt16(true);
+				current.CompoundPoint = data.Read<Int16>();
+				current.ComponentPoint = data.Read<Int16>();
 			}
 
 			if (current.flags.HasFlag(CompoundGlyfFlags.HasScale))
 			{
-				current.a = data.ReadInt16(true) / 16384f;
+				current.a = data.Read<Int16>() / 16384f;
 				current.d = current.a;
 			}
 			else if (current.flags.HasFlag(CompoundGlyfFlags.HasXYScale))
 			{
-				current.a = data.ReadInt16(true) / 16384f;
-				current.d = data.ReadInt16(true) / 16384f;
+				current.a = data.Read<Int16>() / 16384f;
+				current.d = data.Read<Int16>() / 16384f;
 			}
 			else if (current.flags.HasFlag(CompoundGlyfFlags.HasTwoByTwo))
 			{
-				current.a = data.ReadInt16(true) / 16384f;
-				current.b = data.ReadInt16(true) / 16384f;
-				current.c = data.ReadInt16(true) / 16384f;
-				current.d = data.ReadInt16(true) / 16384f;
+				current.a = data.Read<Int16>() / 16384f;
+				current.b = data.Read<Int16>() / 16384f;
+				current.c = data.Read<Int16>() / 16384f;
+				current.d = data.Read<Int16>() / 16384f;
 			}
 			if (current.flags.HasFlag(CompoundGlyfFlags.HasInstructions))
 			{
@@ -197,7 +197,7 @@ public class GlyphCompound : GlyphBase
 		byte[] instructions;
 		if (hasInstructions)
 		{
-			int instructionsCount = data.ReadUInt16(true);
+			int instructionsCount = data.Read<UInt16>();
 			instructions = data.ReadBytes(instructionsCount);
 		}
 		else

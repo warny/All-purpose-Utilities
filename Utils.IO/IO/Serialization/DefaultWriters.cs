@@ -15,16 +15,16 @@ public class RawWriter
 	: IBasicWriter, IIntegerNumberWriters, IFloatingNumberWriters, IExtendedNumberWriters, IDateWriters, IStringWriters, IMiscelaneousWriters
 {
 	public Encoding Encoding { get; init; } = Encoding.UTF8;
-	public bool BigIndian { get; init; } = false;
+	public bool BigEndian { get; init; } = false;
 
 	public IEnumerable<Delegate> WriterDelegates =>
 	[
 		WriteBytesEnumeration,
 		WriteBytes,
 		WriteByte, WriteSByte,
-		WriteShort, WriteUShort,
-		WriteInt, WriteUInt,
-		WriteLong, WriteULong,
+		CreateWriteNumberDelegate<short>(), CreateWriteNumberDelegate<ushort>(),
+		CreateWriteNumberDelegate<int>(), CreateWriteNumberDelegate<uint>(),
+		CreateWriteNumberDelegate<long>(), CreateWriteNumberDelegate<ulong>(),
 		WriteSingle, WriteDouble, WriteDecimal, WriteHalf,
 		WriteBigInteger, WriteUInt128, WriteInt128, WriteComplex,
 		WriteDateTime, WriteDate, WriteTime, WriteTimeSpan,
@@ -38,11 +38,37 @@ public class RawWriter
 		writer.WriteBytes(value);
 	}
 
+	private Delegate CreateWriteNumberDelegate<T>()
+		where T : IBinaryInteger<T>
+	{
+		unchecked
+		{
+			var size = Marshal.SizeOf(typeof(T));
+			var isUnsigned = T.Sign(T.Zero - T.One) == 1;
+
+			Action<IWriter, T> d = BigEndian
+				? (IWriter writer, T number) =>
+				{
+					Span<byte> bytes = stackalloc byte[Marshal.SizeOf<T>()];
+					number.WriteBigEndian(bytes);
+					writer.WriteBytes(bytes);
+				}
+				: (IWriter writer, T number) =>
+				{
+					Span<byte> bytes = stackalloc byte[Marshal.SizeOf<T>()];
+					number.WriteLittleEndian(bytes);
+					writer.WriteBytes(bytes);
+				};
+
+			return d;
+		}
+	}
+
 	public void WriteNumber<T>(IWriter writer, T number) where T : struct, IBinaryInteger<T>
 	{
 		Span<byte> bytes = stackalloc byte[Marshal.SizeOf<T>()];
 
-		if (BigIndian)
+		if (BigEndian)
 		{
 			number.WriteBigEndian(bytes);
 		}
@@ -63,7 +89,7 @@ public class RawWriter
 
 	protected void WriteNumberBytes(IWriter writer, byte[] bytes)
 	{
-		Span<byte> data = (BitConverter.IsLittleEndian ^ BigIndian) ? bytes.Reverse().ToArray() : bytes;
+		Span<byte> data = (BitConverter.IsLittleEndian ^ BigEndian) ? bytes.Reverse().ToArray() : bytes;
 		writer.WriteBytes(data);
 	}
 
@@ -105,7 +131,7 @@ public class RawWriter
 
 	public void WriteChar(IWriter writer, char value)
 	{
-                var data = Encoding.GetBytes([value]);
+        var data = Encoding.GetBytes([value]);
 		WriteByte(writer, (byte)data.Length);
 		writer.WriteBytes(data);
 	}

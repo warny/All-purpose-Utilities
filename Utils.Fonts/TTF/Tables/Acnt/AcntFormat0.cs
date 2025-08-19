@@ -25,8 +25,8 @@ public class AcntFormat0 : AcntFormatBase
 	/// <param name="data">The reader from which to read the data.</param>
 	public override void ReadData(Reader data)
 	{
-		PrimaryAttachmentPoint = data.ReadByte();
-		SecondaryInfoIndex = data.ReadByte();
+        PrimaryAttachmentPoint = data.Read<Byte>();
+        SecondaryInfoIndex = data.Read<Byte>();
 	}
 
 	/// <summary>
@@ -35,8 +35,8 @@ public class AcntFormat0 : AcntFormatBase
 	/// <param name="data">The writer to which to write the data.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt16(PrimaryGlyphIndex);
-		data.WriteByte(PrimaryAttachmentPoint);
-		data.WriteByte(SecondaryInfoIndex);
+		data.Write<Int16>(PrimaryGlyphIndex);
+		data.Write<Byte>(PrimaryAttachmentPoint);
+		data.Write<Byte>(SecondaryInfoIndex);
 	}
 }

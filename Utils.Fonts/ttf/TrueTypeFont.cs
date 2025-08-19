@@ -18,6 +18,9 @@ namespace Utils.Fonts.TTF;
 /// </remarks>
 public class TrueTypeFont : IFont
 {
+	private static readonly RawReader rawReader = new RawReader() { BigEndian = true };
+	private static readonly RawWriter rawWriter = new RawWriter() { BigEndian = true };
+
 	// Dictionary associating a table tag with its descriptor and type.
 	private static readonly Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> TablesType = [];
 
@@ -60,7 +63,7 @@ public class TrueTypeFont : IFont
 	public static TrueTypeFont ParseFont(byte[] bytes)
 	{
 		using var ms = new MemoryStream(bytes);
-		var data = new Reader(ms);
+		var data = new Reader(ms, rawReader.ReaderDelegates);
 		return ParseFont(data);
 	}
 
@@ -79,7 +82,7 @@ public class TrueTypeFont : IFont
 			s.CopyTo(ms);
 			s = ms;
 		}
-		var reader = new Reader(s);
+		var reader = new Reader(s, rawReader.ReaderDelegates);
 		return ParseFont(reader);
 	}
 
@@ -88,14 +91,14 @@ public class TrueTypeFont : IFont
 	/// </summary>
 	/// <param name="data">The reader containing the font data.</param>
 	/// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
-	public static TrueTypeFont ParseFont(Reader data)
+	private static TrueTypeFont ParseFont(Reader data)
 	{
-		int type = data.ReadInt32(true);
-		int numTables = data.ReadInt16(true);
+		int type = data.Read<Int32>();
+		int numTables = data.Read<Int16>();
 		// Skip searchRange, entrySelector and rangeShift.
-		data.ReadInt16(true);
-		data.ReadInt16(true);
-		data.ReadInt16(true);
+		data.Read<Int16>();
+		data.Read<Int16>();
+		data.Read<Int16>();
 		TrueTypeFont trueTypeFont = new TrueTypeFont(type);
 		ParseDirectories(data, numTables, trueTypeFont);
 		return trueTypeFont;
@@ -110,11 +113,11 @@ public class TrueTypeFont : IFont
 		using var ms = new MemoryStream(Length);
 		var data = new Writer(ms);
 
-		data.WriteInt32(Type, true);
-		data.WriteInt16(TablesCount, true);
-		data.WriteInt16(SearchRange, true);
-		data.WriteInt16(EntrySelector, true);
-		data.WriteInt16(RangeShift, true);
+		data.Write<Int32>(Type);
+		data.Write<Int16>(TablesCount);
+		data.Write<Int16>(SearchRange);
+		data.Write<Int16>(EntrySelector);
+		data.Write<Int16>(RangeShift);
 		int currentoffset = 12 + TablesCount * 16;
 		foreach (var tagTable in tables)
 		{
@@ -122,17 +125,17 @@ public class TrueTypeFont : IFont
 			TrueTypeTable obj = tagTable.Value;
 
 			using var datasStream = new MemoryStream();
-			Writer w = new Writer(datasStream);
+			Writer w = new Writer(datasStream, rawWriter.WriterDelegates);
 			obj.WriteData(w);
 			var datas = datasStream.ToArray();
 			int dataLength = datas.Length;
 			data.WriteFixedLengthString(tag, 4, Encoding.ASCII);
-			data.WriteInt32(ComputeChecksum(tag, new ReaderWriter(new MemoryStream(datas))), true);
-			data.WriteInt32(currentoffset, true);
-			data.WriteInt32(dataLength, true);
+			data.Write<Int32>(ComputeChecksum(tag, new ReaderWriter(new MemoryStream(datas))));
+			data.Write<Int32>(currentoffset);
+			data.Write<Int32>(dataLength);
 			data.Push();
 			data.Seek(currentoffset, SeekOrigin.Begin);
-			data.WriteBytes(datas);
+			data.Write<byte[]>(datas);
 			data.Pop();
 			currentoffset += dataLength;
 			while (currentoffset % 4 > 0)
@@ -161,9 +164,9 @@ public class TrueTypeFont : IFont
 			tables.Add(new TableDeclaration()
 			{
 				Tag = data.ReadFixedLengthString(4, Encoding.ASCII),
-				CheckSum = data.ReadInt32(true),
-				Offset = data.ReadInt32(true),
-				DataLength = data.ReadInt32(true),
+				CheckSum = data.Read<Int32>(),
+				Offset = data.Read<Int32>(),
+				DataLength = data.Read<Int32>(),
 			});
 		}
 
@@ -198,7 +201,7 @@ public class TrueTypeFont : IFont
 				ttt = new TrueTypeTable(table.Tag);
 			}
 			ttf.AddTable(table.Tag, ttt);
-			ttt.ReadData(new Reader(table.Data));
+			ttt.ReadData(new Reader(table.Data, rawReader.ReaderDelegates));
 		}
 
 		while (tables.Count > 0)
@@ -280,14 +283,14 @@ public class TrueTypeFont : IFont
 			if (tagString == "head")
 			{
 				data.Position = 8;
-				data.Writer.WriteInt32(0);
+				data.Writer.Write<Int32>(0);
 			}
 			int nLongs = ((int)data.BytesLeft + 3) / 4;
 			while (nLongs-- > 0)
 			{
 				if (data.BytesLeft > 3)
 				{
-					result += data.Reader.ReadInt32(true);
+					result += data.Reader.Read<Int32>();
 					continue;
 				}
 				int b0 = (data.BytesLeft > 0) ? data.Reader.ReadByte() : 0;
@@ -317,7 +320,7 @@ public class TrueTypeFont : IFont
 				if (tag == TableTypes.HEAD)
 				{
 					data.Seek(offset + 8);
-					data.Writer.WriteUInt32((uint)checksumAdj);
+					data.Writer.Write<UInt32>((uint)checksumAdj);
 					break;
 				}
 				offset += table.Value.Length;

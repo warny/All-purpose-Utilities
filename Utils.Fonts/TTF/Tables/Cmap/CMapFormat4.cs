@@ -115,10 +115,7 @@ public class CMapFormat4 : CMapFormatBase
 		}
 
 		/// <inheritdoc/>
-		public override char this[short index]
-		{
-			get => reverseMap.TryGetValue(index, out var result) ? result : '\0';
-		}
+		public override char this[short index] => reverseMap.TryGetValue(index, out var result) ? result : '\0';
 
 		/// <inheritdoc/>
 		public override short this[char c] => Map[c - StartCode];
@@ -150,10 +147,7 @@ public class CMapFormat4 : CMapFormatBase
 		/// <param name="endCode">The ending character code.</param>
 		/// <param name="delta">The delta value to apply.</param>
 		public DeltaMap(char startCode, char endCode, short delta)
-			: base(startCode, endCode)
-		{
-			Delta = delta;
-		}
+			: base(startCode, endCode) => Delta = delta;
 
 		/// <inheritdoc/>
 		public override char this[short index]
@@ -180,7 +174,7 @@ public class CMapFormat4 : CMapFormatBase
 	protected internal CMapFormat4(short language)
 		: base(4, language)
 	{
-		segments = new SortedSet<Segment>();
+		segments = [];
 	}
 
 	/// <summary>
@@ -297,35 +291,35 @@ public class CMapFormat4 : CMapFormatBase
 	/// <inheritdoc/>
 	public override void ReadData(int length, Reader data)
 	{
-		int segCount = (short)(data.ReadInt16(true) / 2);
+		int segCount = (short)(data.Read<Int16>() << 1);
 		// Read header fields (length, language, etc.); here we ignore some fields.
-		data.ReadInt16(true); // overall length (unused)
-		data.ReadInt16(true); // language
-		data.ReadInt16(true); // segCountX2 (already used)
+		data.Read<Int16>(); // overall length (unused)
+		data.Read<Int16>(); // language
+		data.Read<Int16>(); // segCountX2 (already used)
 
 		short[] endCodes = new short[segCount];
 		for (int i = 0; i < segCount; i++)
 		{
-			endCodes[i] = data.ReadInt16(true);
+			endCodes[i] = data.Read<Int16>();
 		}
-		data.ReadInt16(true); // reservedPad
+		data.Read<Int16>(); // reservedPad
 
 		short[] startCodes = new short[segCount];
 		for (int i = 0; i < segCount; i++)
 		{
-			startCodes[i] = data.ReadInt16(true);
+			startCodes[i] = data.Read<Int16>();
 		}
 
 		short[] idDeltas = new short[segCount];
 		for (int i = 0; i < segCount; i++)
 		{
-			idDeltas[i] = data.ReadInt16(true);
+			idDeltas[i] = data.Read<Int16>();
 		}
 
 		short[] idRangeOffsets = new short[segCount];
 		for (int i = 0; i < segCount; i++)
 		{
-			idRangeOffsets[i] = data.ReadInt16(true);
+			idRangeOffsets[i] = data.Read<Int16>();
 			if (idRangeOffsets[i] <= 0)
 			{
 				AddSegment((char)startCodes[i], (char)endCodes[i], idDeltas[i]);
@@ -344,25 +338,25 @@ public class CMapFormat4 : CMapFormatBase
 	/// <inheritdoc/>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt16(Format, true);
-		data.WriteInt16(Length, true);
-		data.WriteInt16(Language, true);
-		data.WriteInt16((short)(SegmentCount * 2), true);
-		data.WriteInt16(SearchRange, true);
-		data.WriteInt16(EntrySelector, true);
-		data.WriteInt16(RangeShift, true);
+		data.Write<Int16>(Format);
+		data.Write<Int16>(Length);
+		data.Write<Int16>(Language);
+		data.Write<Int16>((short)(SegmentCount >> 1));
+		data.Write<Int16>(SearchRange);
+		data.Write<Int16>(EntrySelector);
+		data.Write<Int16>(RangeShift);
 
 		// Write start codes for each segment.
 		foreach (Segment segment in segments)
 		{
-			data.WriteInt16((short)segment.StartCode, true);
+			data.Write<Int16>((short)segment.StartCode);
 		}
-		data.WriteInt16(0, true);
+		data.Write<Int16>(0);
 
 		// Write end codes for each segment.
 		foreach (Segment segment in segments)
 		{
-			data.WriteInt16((short)segment.EndCode, true);
+			data.Write<Int16>((short)segment.EndCode);
 		}
 
 		// Write idDeltas or 0 if a mapping table is present.
@@ -370,11 +364,11 @@ public class CMapFormat4 : CMapFormatBase
 		{
 			if (segment is DeltaMap deltaMap)
 			{
-				data.WriteInt16(deltaMap.Delta, true);
+				data.Write<Int16>(deltaMap.Delta);
 			}
 			else if (segment is TableMap)
 			{
-				data.WriteInt16(0, true);
+				data.Write<Int16>(0);
 			}
 		}
 
@@ -384,19 +378,19 @@ public class CMapFormat4 : CMapFormatBase
 		{
 			if (segment is TableMap tableMap)
 			{
-				data.WriteInt16((short)(glyphArrayOffset - data.Stream.Position), true);
+				data.Write<Int16>((short)(glyphArrayOffset - data.Stream.Position));
 				data.Push();
 				data.Seek(glyphArrayOffset, SeekOrigin.Begin);
 				foreach (var index in tableMap.Map)
 				{
-					data.WriteByte((byte)index);
+					data.Write<Byte>((byte)index);
 				}
 				data.Pop();
 				glyphArrayOffset += tableMap.Map.Count * 2;
 			}
 			else
 			{
-				data.WriteInt16(0, true);
+				data.Write<Int16>(0);
 			}
 		}
 	}

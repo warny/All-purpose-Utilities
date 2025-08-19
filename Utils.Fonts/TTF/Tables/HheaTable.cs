@@ -99,23 +99,23 @@ public class HheaTable : TrueTypeTable
 		{
 			throw new ArgumentException("Bad hhea table size");
 		}
-		Version = data.ReadInt32(true);
-		Ascent = data.ReadInt16(true);
-		Descent = data.ReadInt16(true);
-		LineGap = data.ReadInt16(true);
-		AdvanceWidthMax = data.ReadInt16(true);
-		MinLeftSideBearing = data.ReadInt16(true);
-		MinRightSideBearing = data.ReadInt16(true);
-		XMaxExtent = data.ReadInt16(true);
-		CaretSlopeRise = data.ReadInt16(true);
-		CaretSlopeRun = data.ReadInt16(true);
-		CaretOffset = data.ReadInt16(true);
-		data.ReadInt16(true); // reserved
-		data.ReadInt16(true); // reserved
-		data.ReadInt16(true); // reserved
-		data.ReadInt16(true); // reserved
-		MetricDataFormat = data.ReadInt16(true);
-		NumOfLongHorMetrics = data.ReadInt16(true);
+		Version = data.Read<Int32>();
+		Ascent = data.Read<Int16>();
+		Descent = data.Read<Int16>();
+		LineGap = data.Read<Int16>();
+		AdvanceWidthMax = data.Read<Int16>();
+		MinLeftSideBearing = data.Read<Int16>();
+		MinRightSideBearing = data.Read<Int16>();
+		XMaxExtent = data.Read<Int16>();
+		CaretSlopeRise = data.Read<Int16>();
+		CaretSlopeRun = data.Read<Int16>();
+		CaretOffset = data.Read<Int16>();
+		data.Read<Int16>(); // reserved
+		data.Read<Int16>(); // reserved
+		data.Read<Int16>(); // reserved
+		data.Read<Int16>(); // reserved
+		MetricDataFormat = data.Read<Int16>();
+		NumOfLongHorMetrics = data.Read<Int16>();
 	}
 
 	/// <summary>
@@ -124,23 +124,23 @@ public class HheaTable : TrueTypeTable
 	/// <param name="data">The writer to which the hhea table data is written.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt32(Version, true);
-		data.WriteInt16(Ascent, true);
-		data.WriteInt16(Descent, true);
-		data.WriteInt16(LineGap, true);
-		data.WriteInt16(AdvanceWidthMax, true);
-		data.WriteInt16(MinLeftSideBearing, true);
-		data.WriteInt16(MinRightSideBearing, true);
-		data.WriteInt16(XMaxExtent, true);
-		data.WriteInt16(CaretSlopeRise, true);
-		data.WriteInt16(CaretSlopeRun, true);
-		data.WriteInt16(CaretOffset, true);
-		data.WriteInt16(0, true); // reserved
-		data.WriteInt16(0, true); // reserved
-		data.WriteInt16(0, true); // reserved
-		data.WriteInt16(0, true); // reserved
-		data.WriteInt16(MetricDataFormat, true);
-		data.WriteInt16(NumOfLongHorMetrics, true);
+		data.Write<Int32>(Version);
+		data.Write<Int16>(Ascent);
+		data.Write<Int16>(Descent);
+		data.Write<Int16>(LineGap);
+		data.Write<Int16>(AdvanceWidthMax);
+		data.Write<Int16>(MinLeftSideBearing);
+		data.Write<Int16>(MinRightSideBearing);
+		data.Write<Int16>(XMaxExtent);
+		data.Write<Int16>(CaretSlopeRise);
+		data.Write<Int16>(CaretSlopeRun);
+		data.Write<Int16>(CaretOffset);
+		data.Write<Int16>(0); // reserved
+		data.Write<Int16>(0); // reserved
+		data.Write<Int16>(0); // reserved
+		data.Write<Int16>(0); // reserved
+		data.Write<Int16>(MetricDataFormat);
+		data.Write<Int16>(NumOfLongHorMetrics);
 	}
 
 	/// <summary>

@@ -163,17 +163,17 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
 	/// <inheritdoc/>
 	public override void ReadData(Reader data)
 	{
-		Version = data.ReadInt16(true);
-		int numberSubtables = data.ReadInt16(true);
+		Version = data.Read<Int16>();
+		int numberSubtables = data.Read<Int16>();
 
 		// Read subtable directory records.
 		var subTables = new (short platformID, short platformSpecificID, int offset, int length)[numberSubtables];
 		int lastOffset = 0;
 		for (int i = 0; i < numberSubtables; i++)
 		{
-			var platformID = data.ReadInt16(true);
-			var platformSpecificID = data.ReadInt16(true);
-			var offset = data.ReadInt32(true);
+			var platformID = data.Read<Int16>();
+			var platformSpecificID = data.Read<Int16>();
+			var offset = data.Read<Int32>();
 			// Length is calculated as the difference between current and previous offset.
 			subTables[i] = (platformID, platformSpecificID, offset, offset - lastOffset);
 			lastOffset = offset;
@@ -208,16 +208,16 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
 	/// <param name="data">The writer to which the data is written.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt16(Version, true);
-		data.WriteInt16(NumberSubtables, true);
+		data.Write<Int16>(Version);
+		data.Write<Int16>(NumberSubtables);
 		int length = 4 + NumberSubtables * 8;
 		foreach (var subTable in subtables)
 		{
 			CmapSubtable cmapSubtable = subTable.Key;
 			CMap.CMapFormatBase cMap = subTable.Value;
-			data.WriteInt16(cmapSubtable.PlatformID, true);
-			data.WriteInt16(cmapSubtable.PlatformSpecificID, true);
-			data.WriteInt32(length, true);
+			data.Write<Int16>(cmapSubtable.PlatformID);
+			data.Write<Int16>(cmapSubtable.PlatformSpecificID);
+			data.Write<Int32>(length);
 			length += cMap.Length;
 		}
 		foreach (var cMapEntry in subtables)

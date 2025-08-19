@@ -78,7 +78,7 @@ public class GlyphBase
 	/// </exception>
 	public static GlyphBase CreateGlyf(Reader data, GlyfTable glyfTable)
 	{
-		var numContours = data.ReadInt16(true);
+		var numContours = data.Read<Int16>();
 		GlyphBase glyf;
 		if (numContours >= 0)
 			glyf = new GlyphBase();
@@ -97,10 +97,10 @@ public class GlyphBase
 		}
 		glyf.GlyfTable = glyfTable;
 		glyf.NumContours = numContours;
-		glyf.MinX = data.ReadInt16(true);
-		glyf.MinY = data.ReadInt16(true);
-		glyf.MaxX = data.ReadInt16(true);
-		glyf.MaxY = data.ReadInt16(true);
+		glyf.MinX = data.Read<Int16>();
+		glyf.MinY = data.Read<Int16>();
+		glyf.MaxX = data.Read<Int16>();
+		glyf.MaxY = data.Read<Int16>();
 		glyf.ReadData(data);
 		return glyf;
 	}
@@ -118,11 +118,11 @@ public class GlyphBase
 	/// <param name="data">The writer to which the glyph data is written.</param>
 	public virtual void WriteData(Writer data)
 	{
-		data.WriteInt16(NumContours, true);
-		data.WriteInt16(MinX, true);
-		data.WriteInt16(MinY, true);
-		data.WriteInt16(MaxX, true);
-		data.WriteInt16(MaxY, true);
+		data.Write<Int16>(NumContours);
+		data.Write<Int16>(MinX);
+		data.Write<Int16>(MinY);
+		data.Write<Int16>(MaxX);
+		data.Write<Int16>(MaxY);
 	}
 
 	/// <summary>

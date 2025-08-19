@@ -1,4 +1,5 @@
-﻿using Utils.IO.Serialization;
+﻿using System;
+using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Acnt;
 
@@ -17,7 +18,7 @@ internal class AcntFormat1 : AcntFormatBase
 	{
 		// No additional data is stored in Format 1.
 		// If the specification is extended later, implement reading of extra fields here.
-		PrimaryGlyphIndex = data.ReadInt16();
+		PrimaryGlyphIndex = data.Read<Int16>();
 	}
 
 	/// <summary>
@@ -28,7 +29,7 @@ internal class AcntFormat1 : AcntFormatBase
 	public override void WriteData(Writer data)
 	{
 		// Write the primary glyph index with the high bit set to indicate Format 1.
-		data.WriteInt16((short)(PrimaryGlyphIndex | 0x8000));
+		data.Write<Int16>((short)(PrimaryGlyphIndex | 0x8000));
 		// No additional data is stored in Format 1.
 		// If the specification is extended later, implement writing of extra fields here.
 	}

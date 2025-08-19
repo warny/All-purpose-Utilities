@@ -2,339 +2,249 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using Utils.Arrays;
 using Utils.Reflection;
+using Utils.Objects;
 
 namespace Utils.IO.Serialization;
 
-public class Reader
-    {
-	private static Dictionary<Type, PropertyOrFieldInfo[]> TypesAccessors = new Dictionary<Type, PropertyOrFieldInfo[]>();
-	private readonly Stack<long> positionsStack = new Stack<long>();
-	private readonly Dictionary<Type, IObjectReader> Readers = new Dictionary<Type, IObjectReader>();	
+/// <summary>
+/// Generic reader capable of dynamically reading objects from a stream.
+/// </summary>
+public class Reader : IReader, IStreamMapping<Reader>
+{
+	/// <summary>
+	/// Gets the underlying stream used by the reader.
+	/// </summary>
+	public Stream Stream { get; }
 
-	public System.IO.Stream Stream { get; }
+	/// <summary>
+	/// Gets the number of bytes remaining in the stream.
+	/// </summary>
+	public long BytesLeft => Stream.Length - Stream.Position;
+
+	/// <summary>
+	/// Gets or sets the current position within the stream.
+	/// </summary>
 	public long Position
 	{
 		get => Stream.Position;
 		set => Stream.Position = value;
 	}
-	public long BytesLeft => Stream.Length - Stream.Position;
 
-	public Reader(Stream s) : this(s, Enumerable.Empty<IObjectReader>()) { }
-	public Reader(Stream s, params IObjectReader[] readers) : this(s, (IEnumerable<IObjectReader>)readers) { }
-	public Reader(Stream s, params IEnumerable<IObjectReader>[] readers) : this (s, readers.SelectMany(r=>r)) { }
-	public Reader(Stream s, IEnumerable<IObjectReader> readers)
+	private readonly Stack<long> positionsStack = new Stack<long>();
+
+	// Dictionary to store reader delegates for each type
+	private readonly Dictionary<Type, Delegate> readers = [];
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="Reader"/> using default converters.
+	/// </summary>
+	public Reader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="Reader"/> copying converters.
+	/// </summary>
+	private Reader(Stream stream, IDictionary<Type, Delegate> readers) 
 	{
-		this.Stream = s;
-		if (!this.Stream.CanRead) throw new NotSupportedException();
-		Readers = new Dictionary<Type, IObjectReader>();
-		foreach (var reader in readers)
+		this.Stream = stream;
+		this.readers = readers.ToDictionary();
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="Reader"/> with custom converters.
+	/// </summary>
+	/// <param name="stream">Stream to read from.</param>
+	/// <param name="converters">Reader delegates used to deserialize objects.</param>
+	public Reader(Stream stream, params IEnumerable<Delegate> converters)
+	{
+		this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+		foreach (var converter in converters.Union(new RawReader().ReaderDelegates))
 		{
-			foreach (var type in reader.Types)
-			{
-				Readers[type] = reader;
-			}
+			var method = converter.GetMethodInfo();
+			var arguments = method.GetParameters();
+			arguments.ArgMustBeOfSizes([1]);
+			arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument of the function {method.Name} is not IReader");
+			readers.TryAdd(method.ReturnType, converter);
 		}
 	}
 
-	public void AddReader(IObjectReader reader)
+	/// <summary>
+	/// Initializes a new instance of <see cref="Reader"/> with multiple converter collections.
+	/// </summary>
+	public Reader(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
+			: this(stream, converters.SelectMany(c => c)) { }
+
+
+	/// <summary>
+	/// <summary>
+	/// Reads an object dynamically by resolving the appropriate reader.
+	/// </summary>
+	/// <param name="type">Type of object to read.</param>
+	public object Read(Type type)
 	{
-		foreach (var type in reader.Types)
+		if (!TryFindReaderFor(type, out var readerDelegate))
 		{
-			Readers.Add(type, reader);
+			readerDelegate = CreateReaderFor(type);
 		}
+		return readerDelegate.DynamicInvoke(Stream);
 	}
 
-	public void Seek( int offset , SeekOrigin origin)
+	/// <summary>
+	/// Reads a strongly-typed object.
+	/// </summary>
+	/// <typeparam name="T">Type of object to read.</typeparam>
+	public T Read<T>()
 	{
-		this.Stream.Seek(offset, origin);
+		if (!TryFindReaderFor(typeof(T), out var readerDelegate))
+		{
+			readerDelegate = CreateReaderFor(typeof(T));
+		}
+		var reader = (Func<IReader, T>)readerDelegate;
+		return reader.Invoke(this);
 	}
 
+	/// <summary>
+	/// Saves the current stream position onto the internal stack.
+	/// </summary>
 	public void Push()
 	{
-		if (!this.Stream.CanSeek) throw new NotSupportedException();
-		positionsStack.Push(this.Stream.Position);
+		if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
+		this.positionsStack.Push(Stream.Position);
 	}
 
-	public void Push( int offset, SeekOrigin origin )
+	/// <summary>
+	/// Saves the current position and seeks relative to the given offset.
+	/// </summary>
+	/// <param name="offset">Offset to seek to.</param>
+	/// <param name="origin">Reference point for seeking.</param>
+	public void Push(int offset, SeekOrigin origin)
 	{
-		if (!this.Stream.CanSeek) throw new NotSupportedException();
-		positionsStack.Push(this.Stream.Position);
-		this.Stream.Seek(offset, origin);
+		if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
+		this.positionsStack.Push(Stream.Position);
+		Stream.Seek(offset, origin);
 	}
 
+	/// <summary>
+	/// Restores the last saved stream position.
+	/// </summary>
 	public void Pop()
 	{
-		if (!this.Stream.CanSeek) throw new NotSupportedException();
-		this.Stream.Seek(positionsStack.Pop(), SeekOrigin.Begin);
+		if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
+		Stream.Seek(this.positionsStack.Pop(), SeekOrigin.Begin);
 	}
+	/// <summary>
+	/// Moves the stream position without saving it.
+	/// </summary>
+	public void Seek(int offset, SeekOrigin origin) => Stream.Seek(offset, origin);
 
+
+	/// <summary>
+	/// Read one byte from the underlying <see cref="Stream"/>
+	/// </summary>
+	/// <returns>The byte value or -1 if read failed</returns>
+	public int ReadByte() => Stream.ReadByte();
+
+	/// <summary>
+	/// Read a <see cref="byte"/> array from the <see cref="Stream"/> of <paramref name="length"/>
+	/// </summary>
+	/// <param name="length">bytes to be read</param>
+	/// <returns><see cref="byte"/>array</returns>
+	public byte[] ReadBytes(int length) => Stream.ReadBytes(length);
+
+	/// <summary>
+	/// Creates a new reader that is limited to a slice of the underlying stream.
+	/// </summary>
+	/// <param name="position">Start position of the slice.</param>
+	/// <param name="length">Length of the slice.</param>
 	public Reader Slice(long position, long length)
 	{
 		PartialStream s = new PartialStream(Stream, position, length);
-		return new Reader(s);
+		return new Reader(s, this.readers);
 	}
 
-	public T Read<T>() where T : IReadable, new()
+	/// <summary>
+	/// Attempts to find a reader delegate for a given type.
+	/// </summary>
+	/// <param name="type">Type to find a reader for.</param>
+	/// <param name="reader">Found reader delegate if any.</param>
+	/// <returns><c>true</c> if a reader was found.</returns>
+	private bool TryFindReaderFor(Type type, out Delegate reader)
 	{
-		T result = new T();
-		Read(result);
-		return result;
-	}
-
-	public bool Read(Type t, out object result)
-	{
-		if (Readers.TryGetValue(t, out var reader))
+		foreach (var t in type.GetTypeHierarchy().SelectMany(h => h.Interfaces.Prepend(h.Type)))
 		{
-			return reader.Read(this, out result);
+			if (readers.TryGetValue(t, out reader))
+			{
+				return true;
+			}
 		}
-		else
+		reader = null;
+		return false;
+	}
+
+	/// <summary>
+	/// Creates a reader for a given type dynamically using expression trees.
+	/// </summary>
+	/// <param name="type">Type to create a reader for.</param>
+	/// <returns>A delegate capable of reading the given type.</returns>
+	private Delegate CreateReaderFor(Type type)
+	{
+		var propertiesOrFields = type.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+			.Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
+			.Select(m => new PropertyOrFieldInfo(m))
+			.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
+			.ToArray();
+
+		var readerArgument = Expression.Parameter(typeof(IReader), "reader");
+
+		// Create a variable to store the result object
+		var resultVariable = Expression.Variable(type, "result");
+
+		// Initialize the result object
+		var newObjectExpression = Expression.New(type);
+		var assignNewObject = Expression.Assign(resultVariable, newObjectExpression);
+
+		var blockExpressions = new List<Expression> { assignNewObject };
+
+		foreach (var propertyOrField in propertiesOrFields)
 		{
-			result = Activator.CreateInstance(t);
-			return Read(result, t);
-		}
-	}
+			if (!TryFindReaderFor(propertyOrField.Type, out var fieldReader))
+			{
+				fieldReader = CreateReaderFor(propertyOrField.Type);
+			}
 
-	public bool Read( object result )
-	{
-		Type t = result.GetType();
-		return Read(result, t);
-	}
+			// Generate the call to the reader delegate
+			var readerMethod = fieldReader.GetType().GetMethod("Invoke");
 
-	private bool Read(object result, Type t)
-	{
-		if (!TypesAccessors.TryGetValue(t, out PropertyOrFieldInfo[] fields))
-		{
-			fields = t.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-				.Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
-				.Select(m => new PropertyOrFieldInfo(m))
-				.OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
-				.ToArray();
-			TypesAccessors.Add(t, fields);
-		}
-		if (!fields.Any()) return false;
-		foreach (var field in fields)
-		{
-			var attribute = field.GetCustomAttribute<FieldAttribute>();
-			System.Diagnostics.Debug.WriteLine($"{attribute.Order} {field} {attribute.FieldEncoding} {attribute.Length}");
-			System.Diagnostics.Debug.WriteLine($"Start : {Stream.Position}");
-			field.SetValue(result, ReadValue(field.Type, attribute.Length, attribute.BigIndian, attribute.Terminators, attribute.FieldEncoding, attribute.StringEncoding));
-			System.Diagnostics.Debug.WriteLine($"End : {Stream.Position}");
-		}
-		return true;
-	}
+			var readCall = Expression.Call(
+				Expression.Constant(fieldReader),
+				readerMethod,
+				readerArgument
+			);
 
-	private object ReadValue( Type type, int? length, bool bigIndian, byte[] terminators, FieldEncodingEnum fieldEncoding, Encoding stringEncoding)
-	{
-		if (typeof(IReadable).IsAssignableFrom(type)) {
-			return Read(type);
-		} else if (type == typeof(byte)) {
-			return ReadByte();
-		} else if (type == typeof(byte[])) {
-			if (fieldEncoding == FieldEncodingEnum.VariableLength) {
-				return ReadVariableLengthBytes(bigIndian, length ?? sizeof(Int32));
-			} else if (fieldEncoding== FieldEncodingEnum.NullTerminated) {
-				return ReadTerminatedBytes(terminators);
-			} else {
-				return ReadBytes(length.Value);
-			}
-		} else if (type == typeof(Int16)) {
-			return ReadInt16(bigIndian, length ?? sizeof(Int16));
-		} else if (type == typeof(Int32)) {
-			return ReadInt32(bigIndian, length ?? sizeof(Int32));
-		} else if (type == typeof(Int64)) {
-			return ReadInt64(bigIndian, length ?? sizeof(Int64));
-		} else if (type == typeof(UInt16)) {
-			return ReadUInt16(bigIndian, length ?? sizeof(UInt16));
-		} else if (type == typeof(UInt32)) {
-			return ReadUInt32(bigIndian, length ?? sizeof(UInt32));
-		} else if (type == typeof(UInt64)) {
-			return ReadUInt64(bigIndian, length ?? sizeof(UInt64));
-		} else if (type == typeof(Single)) {
-			return ReadSingle(bigIndian);
-		} else if (type == typeof(Double)) {
-			return ReadDouble(bigIndian);
-		} else if (type == typeof(string)) {
-			if (fieldEncoding == FieldEncodingEnum.VariableLength) {
-				return ReadVariableLengthString(stringEncoding, bigIndian, length ?? sizeof(Int32));
-			} else if (fieldEncoding== FieldEncodingEnum.FixedLength) {
-				return ReadFixedLengthString(length.Value, stringEncoding);
-			} else {
-				return ReadNullTerminatedString(stringEncoding, terminators);
-			}
-		} else if (type == typeof(DateTime)) {
-			if (fieldEncoding == FieldEncodingEnum.TimeStamp) {
-				return ReadTimeStamp(bigIndian, length ?? sizeof(Int32));
-			} else if (fieldEncoding == FieldEncodingEnum.DateTime) {
-				return ReadOleDateTime(bigIndian);
-			} else {
-				return ReadDateTime(bigIndian);
-			}
-		} else if (type == typeof(TimeSpan)) {
-			return new TimeSpan(ReadInt64(bigIndian, length ?? sizeof(Int64)));
-		} else if (type.IsArray) {
-			if (fieldEncoding == FieldEncodingEnum.FixedLength) {
-				return ReadArray(length.Value, type.GetElementType(), bigIndian, stringEncoding);
-			} else {
-				return ReadVariableLengthArray(type.GetElementType(), bigIndian, stringEncoding, length ?? sizeof(int));
-			}
-		} else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)) {
-			Type argumentType = type.GenericTypeArguments[0];
-			if (argumentType==typeof(object)) throw new NotSupportedException();
-			Array result;
-			if (fieldEncoding == FieldEncodingEnum.FixedLength) {
-				result = ReadArray(length.Value, argumentType, bigIndian, stringEncoding);
-			}
-			else {
-				result = ReadVariableLengthArray(argumentType, bigIndian, stringEncoding, length ?? sizeof(int));
-			}
-			return type.GetConstructor(new Type[] { result.GetType() }).Invoke(new[] { result });
+			// Set the read value to the corresponding property or field
+			var memberAccess = propertyOrField.Member switch
+			{
+				PropertyInfo property => Expression.Property(resultVariable, property),
+				FieldInfo field => Expression.Field(resultVariable, field),
+				_ => throw new NotSupportedException("Unsupported member type.")
+			};
+
+			var assignValue = Expression.Assign(memberAccess, Expression.Convert(readCall, propertyOrField.Type));
+
+			blockExpressions.Add(assignValue);
 		}
 
-		throw new NotSupportedException();
-	}
+		// Return the result object
+		blockExpressions.Add(resultVariable);
 
-	public byte[] ReadBytes(int length )
-	{
-		byte[] buffer = new byte[length];
-		Stream.Read(buffer, 0, length);
-		return buffer;
-	}
+		// Create the final block and lambda
+		var block = Expression.Block([resultVariable], blockExpressions);
+		var lambda = Expression.Lambda(block, readerArgument);
 
-	public byte[] ReadVariableLengthBytes( bool bigIndian = false, int sizeLength = sizeof(Int32) )
-	{
-		int length = ReadInt32(bigIndian, sizeLength);
-		return ReadBytes(length);
+		var compiledLambda = lambda.Compile();
+		readers.Add(type, compiledLambda);
+		return compiledLambda;
 	}
-
-	public List<byte> ReadTerminatedBytes( params byte[] terminators )
-	{
-		if (terminators is null || terminators.Length == 0) terminators = new byte[] { 0x0 };
-		var bytes = new List<byte>();
-		for (int b = ReadByte() ; !terminators.Contains((byte)b) ; b = ReadByte()) {
-			bytes.Add((byte)b);
-		}
-
-		return bytes;
-	}
-
-	public T[] ReadArray<T>(int length, bool bigIndian = false, Encoding stringEncoding = null) 
-		=> (T[])ReadArray(length, typeof(T), bigIndian, stringEncoding);
-
-	public Array ReadArray( int length, Type elementType, bool bigIndian = false, Encoding stringEncoding = null ) {
-		Array result = Array.CreateInstance (elementType, length);
-		for (int i = 0 ; i < length ; i++) {
-			object value = ReadValue(elementType, null, bigIndian, new byte[0], FieldEncodingEnum.None, stringEncoding);
-			result.SetValue(value,i);
-		}
-		return result;
-	}
-
-	public T[] ReadVariableLengthArray<T>(bool bigIndian = false, Encoding stringEncoding = null, int arraySizeLength = sizeof(Int32)) 
-		=> (T[])ReadVariableLengthArray(typeof(T), bigIndian, stringEncoding, arraySizeLength);
-
-	public Array ReadVariableLengthArray( Type elementType, bool bigIndian = false, Encoding stringEncoding = null, int arraySizeLength = sizeof(Int32) )
-	{
-		int length = ReadInt32(bigIndian, arraySizeLength);
-		return ReadArray(length, elementType, bigIndian, stringEncoding);
-	}
-
-	public string ReadFixedLengthString(int length, Encoding encoding )
-	{
-		byte[] bytes = ReadBytes(length);
-		return encoding.GetString(bytes).TrimEnd('\0', ' ');
-	}
-
-	public string ReadNullTerminatedString( Encoding encoding, params byte[] terminators )
-	{
-		List<byte> bytes = ReadTerminatedBytes(terminators);
-		return encoding.GetString(bytes.ToArray());
-	}
-
-	public string ReadVariableLengthString(Encoding encoding, bool bigIndian = false, int sizeLength = sizeof(Int32) )
-	{
-		int stringLength = ReadInt32(bigIndian, sizeLength);
-		return ReadFixedLengthString(stringLength, encoding);
-	}
-
-	public sbyte ReadSByte() => (sbyte)ReadByte();
-	public byte ReadByte()
-	{
-		int result = Stream.ReadByte();
-		if (result <0) throw new EndOfStreamException ();
-		return (byte)result;
-	}
-	public short ReadInt16(bool bigIndian = false, int length = sizeof(Int16) )
-	{
-		byte[] buffer = ReadBytes(length);
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(Int16));
-		return BitConverter.ToInt16(buffer, 0);
-	}
-	public int ReadInt32(bool bigIndian = false, int length = sizeof(Int32))
-	{
-		byte[] buffer = ReadBytes(length);
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(Int32));
-		return BitConverter.ToInt32(buffer, 0);
-	}
-
-	public long ReadInt64(bool bigIndian = false, int length = sizeof(Int64) )
-	{
-		byte[] buffer = ReadBytes(length);
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(Int64));
-		return BitConverter.ToInt64(buffer, 0);
-	}
-
-	public ushort ReadUInt16(bool bigIndian = false, int length = sizeof(UInt16) )
-	{
-		byte[] buffer = ReadBytes(length);
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(UInt16));
-		return BitConverter.ToUInt16(buffer, 0);
-	}
-	public uint ReadUInt32(bool bigIndian = false, int length = sizeof(UInt32) )
-	{
-		byte[] buffer = ReadBytes(length);
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(UInt32));
-		return BitConverter.ToUInt32(buffer, 0);
-	}
-
-	public ulong ReadUInt64(bool bigIndian = false, int length = sizeof(UInt64) )
-	{
-		byte[] buffer = ReadBytes(length);
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(UInt64));
-		return BitConverter.ToUInt64(buffer, 0);
-	}
-
-	public float ReadSingle(bool bigIndian = false)
-	{
-		byte[] buffer = ReadBytes(sizeof(Single));
-		buffer= ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(Single));
-		return BitConverter.ToSingle(buffer, 0);
-	}
-
-	public double ReadDouble(bool bigIndian = false)
-	{
-		byte[] buffer = ReadBytes(sizeof(Double));
-		buffer=ArrayUtils.Adjust(buffer, bigIndian ^ BitConverter.IsLittleEndian, sizeof(Double));
-		return BitConverter.ToDouble(buffer, 0);
-	}
-
-	public DateTime ReadTimeStamp(bool bigIndian = false, int length = sizeof(UInt32) )
-	{
-		DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-		return dtDateTime.AddSeconds(ReadInt64(bigIndian, length)).ToLocalTime();
-	}
-
-	public DateTime ReadOleDateTime(bool bigIndian = false)
-	{
-		return DateTime.FromOADate(ReadDouble(bigIndian));
-	}
-
-	public DateTime ReadDateTime(bool bigIndian = false )
-	{
-		return new DateTime(ReadInt64(bigIndian));
-	}
-
 }

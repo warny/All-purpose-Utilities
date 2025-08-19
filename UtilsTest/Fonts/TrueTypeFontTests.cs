@@ -1,8 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Utils.Fonts.TTF;
+using Utils.IO.Serialization;
 
 namespace UtilsTest.Fonts
 {

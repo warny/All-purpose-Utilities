@@ -108,21 +108,21 @@ public class MaxpTable : TrueTypeTable
 		{
 			throw new ArgumentException("Bad size for Maxp table");
 		}
-		Version = data.ReadInt32(true);
-		NumGlyphs = data.ReadInt16(true);
-		MaxPoints = data.ReadInt16(true);
-		MaxContours = data.ReadInt16(true);
-		MaxComponentPoints = data.ReadInt16(true);
-		MaxComponentContours = data.ReadInt16(true);
-		MaxZones = data.ReadInt16(true);
-		MaxTwilightPoints = data.ReadInt16(true);
-		MaxStorage = data.ReadInt16(true);
-		MaxFunctionDefs = data.ReadInt16(true);
-		MaxInstructionDefs = data.ReadInt16(true);
-		MaxStackElements = data.ReadInt16(true);
-		MaxSizeOfInstructions = data.ReadInt16(true);
-		MaxComponentElements = data.ReadInt16(true);
-		MaxComponentDepth = data.ReadInt16(true);
+		Version = data.Read<Int32>();
+		NumGlyphs = data.Read<Int16>();
+		MaxPoints = data.Read<Int16>();
+		MaxContours = data.Read<Int16>();
+		MaxComponentPoints = data.Read<Int16>();
+		MaxComponentContours = data.Read<Int16>();
+		MaxZones = data.Read<Int16>();
+		MaxTwilightPoints = data.Read<Int16>();
+		MaxStorage = data.Read<Int16>();
+		MaxFunctionDefs = data.Read<Int16>();
+		MaxInstructionDefs = data.Read<Int16>();
+		MaxStackElements = data.Read<Int16>();
+		MaxSizeOfInstructions = data.Read<Int16>();
+		MaxComponentElements = data.Read<Int16>();
+		MaxComponentDepth = data.Read<Int16>();
 	}
 
 	/// <summary>
@@ -131,21 +131,21 @@ public class MaxpTable : TrueTypeTable
 	/// <param name="data">The writer to which to write the table data.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt32(Version, true);
-		data.WriteInt16(NumGlyphs, true);
-		data.WriteInt16(MaxPoints, true);
-		data.WriteInt16(MaxContours, true);
-		data.WriteInt16(MaxComponentPoints, true);
-		data.WriteInt16(MaxComponentContours, true);
-		data.WriteInt16(MaxZones, true);
-		data.WriteInt16(MaxTwilightPoints, true);
-		data.WriteInt16(MaxStorage, true);
-		data.WriteInt16(MaxFunctionDefs, true);
-		data.WriteInt16(MaxInstructionDefs, true);
-		data.WriteInt16(MaxStackElements, true);
-		data.WriteInt16(MaxSizeOfInstructions, true);
-		data.WriteInt16(MaxComponentElements, true);
-		data.WriteInt16(MaxComponentDepth, true);
+		data.Write<Int32>(Version);
+		data.Write<Int16>(NumGlyphs);
+		data.Write<Int16>(MaxPoints);
+		data.Write<Int16>(MaxContours);
+		data.Write<Int16>(MaxComponentPoints);
+		data.Write<Int16>(MaxComponentContours);
+		data.Write<Int16>(MaxZones);
+		data.Write<Int16>(MaxTwilightPoints);
+		data.Write<Int16>(MaxStorage);
+		data.Write<Int16>(MaxFunctionDefs);
+		data.Write<Int16>(MaxInstructionDefs);
+		data.Write<Int16>(MaxStackElements);
+		data.Write<Int16>(MaxSizeOfInstructions);
+		data.Write<Int16>(MaxComponentElements);
+		data.Write<Int16>(MaxComponentDepth);
 	}
 
 	/// <summary>
