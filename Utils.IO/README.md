@@ -1,7 +1,7 @@
 # Utils.IO Library
 
 **Utils.IO** provides input/output helpers used across the other utility packages.
-It focuses on working with streams and binary data while keeping processing logic separate from data structures.
+It targets **.NET 9** and focuses on working with streams and binary data while keeping processing logic separate from data structures.
 
 ## Features
 

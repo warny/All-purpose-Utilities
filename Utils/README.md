@@ -1,7 +1,7 @@
 # Utils Library
 
 The **Utils** library is a large collection of helper namespaces covering many common programming needs.
-It targets **.NET 8** and is the base dependency for the other utility packages contained in this repository.
+It targets **.NET 9** and is the base dependency for the other utility packages contained in this repository.
 
 ## Features
 

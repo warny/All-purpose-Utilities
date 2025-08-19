@@ -1,7 +1,7 @@
 # Utils.Geography Library
 
 **Utils.Geography** provides models and helpers for working with geographic coordinates, map projections and tile systems.
-It is suitable for GIS style applications and mapping tools.
+It targets **.NET 9** and is suitable for GIS style applications and mapping tools.
 
 ## Features
 

@@ -1,6 +1,6 @@
 # All-purpose Utilities
 
-This repository contains a collection of utility libraries and sample applications targeting **.NET 8** and **.NET 9**. The solution aggregates several projects under the `Utils` family, ranging from low level helpers to Windows Forms samples.
+This repository contains a collection of utility libraries and sample applications targeting **.NET 9**. The solution aggregates several projects under the `Utils` family, ranging from low level helpers to Windows Forms samples.
 
 ## Requirements
 
@@ -32,7 +32,7 @@ I/O related helpers including:
 - binary serialization framework
 - stream copying and validation utilities
 
-### `Utils.Net` (System.Net)
+### `Utils.Net`
 Network focused utilities:
 - full DNS protocol implementation and packet helpers
 - ICMP utilities and basic traceroute support
@@ -73,9 +73,17 @@ Another Windows Forms sample demonstrating the drawing primitives available in `
 ### `UtilsTest`
 Unit test suite using MSTest and SpecFlow covering the utilities and components from the other projects.
 
-## Usage examples
+## Usage example
 
-Each project contains a dedicated README with sample code. Refer to those files for detailed snippets demonstrating typical API usage.
+```csharp
+using Utils.Net;
+
+var builder = new UriBuilderEx("http://example.com");
+builder.QueryString["key"].Add("value");
+Console.WriteLine(builder.ToString());
+```
+
+For more examples, each project contains a dedicated README with additional snippets.
 
 ## NuGet packages
 
