@@ -37,7 +37,7 @@ jobs:
             Utils.Mathematics/Utils.Mathematics.csproj \
             Utils.Reflection/Utils.Reflection.csproj \
             Utils.VirtualMachine/Utils.VirtualMachine.csproj \
-            System.Net/Utils.Net.csproj"
+            Utils.Net/Utils.Net.csproj"
           mkdir -p packages
           for csproj in $PROJECTS; do
             pkg_id=$(grep -oPm1 '(?<=<PackageId>)[^<]+' "$csproj")
@@ -46,7 +46,15 @@ jobs:
             if curl -fsSL "$url" 2>/dev/null | grep -q "\"$version\""; then
               echo "Skipping $pkg_id version $version"
             else
-              dotnet pack "$csproj" --configuration Release --no-build --no-restore -o packages
-              dotnet nuget push "packages/$pkg_id.$version.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+              if ! dotnet pack "$csproj" --configuration Release --no-build --no-restore -o packages; then
+                echo "Error packing $pkg_id version $version"
+                exit 1
+              fi
+              push_output=$(dotnet nuget push "packages/$pkg_id.$version.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json 2>&1)
+              if [ $? -ne 0 ]; then
+                echo "Error publishing $pkg_id version $version"
+                echo "$push_output"
+                exit 1
+              fi
             fi
           done

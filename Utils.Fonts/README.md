@@ -1,7 +1,7 @@
 # Utils.Fonts Library
 
 **Utils.Fonts** handles font parsing and metrics extraction for TrueType and PostScript fonts.
-It is used by the imaging library to render glyphs accurately.
+It targets **.NET 9** and is used by the imaging library to render glyphs accurately.
 
 ## Features
 
