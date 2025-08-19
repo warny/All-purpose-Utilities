@@ -42,11 +42,11 @@ public class NewReaderWriterTest
 			(new UTF8IntWriter(), new UTF8IntReader()),
 		};
 
-		foreach (var test in tests)
-		{
-			foreach (var converter in converters)
-			{
-				using MemoryStream stream = new MemoryStream();
+                foreach (var test in tests)
+                {
+                        foreach (var converter in converters)
+                        {
+                                using MemoryStream stream = new MemoryStream();
 
 				Writer writer = new Writer(stream, converter.Writer.WriterDelegates);
 				writer.WriteByte(test.b);
@@ -76,9 +76,49 @@ public class NewReaderWriterTest
 				AssertAreEquals(test.f, rf, converter.Writer, converter.Reader);
 				AssertAreEquals(test.d, rd, converter.Writer, converter.Reader);
 
-				AssertAreEquals(test.dt1, rdt1, converter.Writer, converter.Reader);
+                                AssertAreEquals(test.dt1, rdt1, converter.Writer, converter.Reader);
 
-			}
-		}
-	}
+                        }
+                }
+        }
+
+        [TestMethod]
+        public void ReadByTypeReturnsValue()
+        {
+                using MemoryStream stream = new MemoryStream();
+                Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
+                writer.Write(123);
+
+                stream.Position = 0;
+                Reader reader = new Reader(stream, new RawReader().ReaderDelegates);
+                object value = reader.Read(typeof(int));
+
+                Assert.AreEqual(123, value);
+        }
+
+        [TestMethod]
+        public void SlicePreservesWriters()
+        {
+                using MemoryStream stream = new MemoryStream();
+                Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
+                writer.Write(0);
+
+                Writer slice = writer.Slice(0, stream.Length);
+                slice.Write(42);
+
+                writer.Position = 0;
+                Reader reader = new Reader(stream, new RawReader().ReaderDelegates);
+                int value = reader.Read<int>();
+
+                Assert.AreEqual(42, value);
+        }
+
+        [TestMethod]
+        public void WriteNullObjectThrows()
+        {
+                using MemoryStream stream = new MemoryStream();
+                Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
+
+                Assert.ThrowsException<ArgumentNullException>(() => writer.Write((object)null));
+        }
 }
