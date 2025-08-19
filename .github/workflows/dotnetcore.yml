@@ -1,24 +1,27 @@
 name: Utils
 
-on: [push]
+on:
+    push:
+        branches-ignore:
+            - release
 
 jobs:
-  build:
+    build:
 
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet-version: ['9.0.x' ]
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                dotnet-version: ['9.0.x' ]
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup .NET ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: ${{ matrix.dotnet-version }}
-      #- name: Install dependencies
-      #  run: dotnet restore --ignore-failed-sources
-      - name: Build
-        run: dotnet build --configuration GitHub # --no-restore
-      - name: Test
-        run: dotnet test --no-restore --verbosity normal
+        steps:
+            - uses: actions/checkout@v2
+            - name: Setup .NET ${{ matrix.dotnet-version }}
+              uses: actions/setup-dotnet@v3
+              with:
+                  dotnet-version: ${{ matrix.dotnet-version }}
+            #- name: Install dependencies
+            #  run: dotnet restore --ignore-failed-sources
+            - name: Build
+              run: dotnet build --configuration GitHub # --no-restore
+            - name: Test
+              run: dotnet test --no-restore --verbosity normal
