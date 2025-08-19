@@ -86,14 +86,14 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
 		{
 			for (int i = 0; i < offsets.Length; i++)
 			{
-				data.WriteInt32(offsets[i], true);
+				data.Write<Int32>(offsets[i]);
 			}
 		}
 		else
 		{
 			for (int i = 0; i < offsets.Length; i++)
 			{
-				data.WriteInt16((short)(offsets[i] >> 1), true);
+				data.Write<Int16>((short)(offsets[i] >> 1));
 			}
 		}
 	}

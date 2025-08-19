@@ -87,9 +87,9 @@ public class HmtxTable : TrueTypeTable
 		{
 			if (i < advanceWidths.Length)
 			{
-				data.WriteInt16(advanceWidths[i], true);
+				data.Write<Int16>(advanceWidths[i]);
 			}
-			data.WriteInt16(leftSideBearings[i], true);
+			data.Write<Int16>(leftSideBearings[i]);
 		}
 	}
 
@@ -108,9 +108,9 @@ public class HmtxTable : TrueTypeTable
 		{
 			if (i < advanceWidths.Length)
 			{
-				advanceWidths[i] = data.ReadInt16(true);
+				advanceWidths[i] = data.Read<Int16>();
 			}
-			leftSideBearings[i] = data.ReadInt16(true);
+			leftSideBearings[i] = data.Read<Int16>();
 		}
 	}
 }

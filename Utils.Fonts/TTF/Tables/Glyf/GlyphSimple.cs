@@ -124,18 +124,18 @@ public abstract class GlyphSimple : GlyphBase
 		int numPoints = contourEndPoints[contourEndPoints.Length - 1];
 
 		// Read instructions
-		int length = data.ReadInt16(true);
+		int length = data.Read<Int16>();
 		Instructions = data.ReadArray<byte>(length);
 
 		// Read flags for each point, handling repeats.
 		OutlineFlags[] flags = new OutlineFlags[numPoints];
 		for (int i = 0; i < flags.Length; i++)
 		{
-			OutlineFlags flag = (OutlineFlags)data.ReadByte();
+			OutlineFlags flag = (OutlineFlags)data.Read<Byte>();
 			flags[i] = flag;
 			if ((flag & OutlineFlags.Repeat) != 0)
 			{
-				int n = data.ReadByte();
+				int n = data.Read<Byte>();
 				for (int l = 0; l < n; l++)
 				{
 					i++;
@@ -157,7 +157,7 @@ public abstract class GlyphSimple : GlyphBase
 				}
 				if (flag.HasFlag(isByte))
 				{
-					int val = data.ReadByte();
+					int val = data.Read<Byte>();
 					if (!flag.HasFlag(isSame))
 					{
 						val = -val;
@@ -166,7 +166,7 @@ public abstract class GlyphSimple : GlyphBase
 				}
 				else if (!flag.HasFlag(isSame))
 				{
-					result[i] += data.ReadInt16(true);
+					result[i] += data.Read<Int16>();
 				}
 			}
 			return result;
@@ -198,14 +198,14 @@ public abstract class GlyphSimple : GlyphBase
 		// Write the number of points per contour.
 		for (int i = 0; i < NumContours; i++)
 		{
-			data.WriteInt16((short)contours[i].Length, true);
+			data.Write<Int16>((short)contours[i].Length);
 		}
 
 		// Write instruction count and instructions.
-		data.WriteInt16(InstructionsCount, true);
+		data.Write<Int16>(InstructionsCount);
 		for (int i = 0; i < InstructionsCount; i++)
 		{
-			data.WriteByte(GetInstruction(i));
+			data.Write<Byte>(GetInstruction(i));
 		}
 
 		// Write the flags in a compact format.
@@ -238,7 +238,7 @@ public abstract class GlyphSimple : GlyphBase
 				{
 					if (flag.HasFlag(isSame))
 					{
-						data.WriteInt16(value, true);
+						data.Write<Int16>(value);
 					}
 				}
 				else if (flag.HasFlag(isSame))

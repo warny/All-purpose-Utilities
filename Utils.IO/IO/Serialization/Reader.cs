@@ -44,6 +44,15 @@ public class Reader : IReader, IStreamMapping<Reader>
 	public Reader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
 
 	/// <summary>
+	/// Initializes a new instance of <see cref="Reader"/> copying converters.
+	/// </summary>
+	private Reader(Stream stream, IDictionary<Type, Delegate> readers) 
+	{
+		this.Stream = stream;
+		this.readers = readers.ToDictionary();
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="Reader"/> with custom converters.
 	/// </summary>
 	/// <param name="stream">Stream to read from.</param>
@@ -152,10 +161,9 @@ public class Reader : IReader, IStreamMapping<Reader>
 	public Reader Slice(long position, long length)
 	{
 		PartialStream s = new PartialStream(Stream, position, length);
-		return new Reader(s);
+		return new Reader(s, this.readers);
 	}
 
-	/// <summary>
 	/// <summary>
 	/// Attempts to find a reader delegate for a given type.
 	/// </summary>
@@ -176,15 +184,12 @@ public class Reader : IReader, IStreamMapping<Reader>
 	}
 
 	/// <summary>
-	/// <summary>
 	/// Creates a reader for a given type dynamically using expression trees.
 	/// </summary>
 	/// <param name="type">Type to create a reader for.</param>
 	/// <returns>A delegate capable of reading the given type.</returns>
 	private Delegate CreateReaderFor(Type type)
 	{
-		var expressions = new List<Expression>();
-
 		var propertiesOrFields = type.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 			.Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
 			.Select(m => new PropertyOrFieldInfo(m))

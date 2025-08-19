@@ -201,10 +201,10 @@ public class PostTable : TrueTypeTable
 		/// <param name="data">The writer to which data is written.</param>
 		internal override void WriteData(Writer data)
 		{
-			data.WriteInt16((short)glyphNameIndex.Length, true);
+			data.Write<Int16>((short)glyphNameIndex.Length);
 			for (int i = 0; i < glyphNameIndex.Length; i++)
 			{
-				data.WriteInt16(glyphNameIndex[i], true);
+				data.Write<Int16>(glyphNameIndex[i]);
 			}
 			for (int i = 0; i < glyphNames.Length; i++)
 			{
@@ -219,12 +219,12 @@ public class PostTable : TrueTypeTable
 		/// <param name="data">The reader from which to read data.</param>
 		internal override void ReadData(Reader data)
 		{
-			int length = data.ReadInt16(true);
+			int length = data.Read<Int16>();
 			glyphNameIndex = new short[length];
 			int maxGlyph = 257;
 			for (int i = 0; i < length; i++)
 			{
-				glyphNameIndex[i] = data.ReadInt16(true);
+				glyphNameIndex[i] = data.Read<Int16>();
 				if (glyphNameIndex[i] > maxGlyph)
 				{
 					maxGlyph = glyphNameIndex[i];
@@ -235,7 +235,7 @@ public class PostTable : TrueTypeTable
 			Array.Fill(glyphNames, "");
 			for (int i = 0; i < maxGlyph; i++)
 			{
-                                glyphNames[i] = data.ReadVariableLengthString(Encoding.Default, sizeLength: 1);
+                glyphNames[i] = data.ReadVariableLengthString(Encoding.Default, sizeLength: 1);
 			}
 		}
 	}
@@ -329,16 +329,16 @@ public class PostTable : TrueTypeTable
 	/// <param name="data">The writer to which the data is written.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt32(Format, true);
-		data.WriteInt32(ItalicAngle, true);
-		data.WriteInt16(UnderlinePosition, true);
-		data.WriteInt16(UnderlineThickness, true);
-		data.WriteInt16(IsFixedPitch, true);
-		data.WriteInt16(0, true);
-		data.WriteInt32(MinMemType42, true);
-		data.WriteInt32(MaxMemType42, true);
-		data.WriteInt32(MinMemType1, true);
-		data.WriteInt32(MaxMemType1, true);
+		data.Write<Int32>(Format);
+		data.Write<Int32>(ItalicAngle);
+		data.Write<Int16>(UnderlinePosition);
+		data.Write<Int16>(UnderlineThickness);
+		data.Write<Int16>(IsFixedPitch);
+		data.Write<Int16>(0);
+		data.Write<Int32>(MinMemType42);
+		data.Write<Int32>(MaxMemType42);
+		data.Write<Int32>(MinMemType1);
+		data.Write<Int32>(MaxMemType1);
 		this.nameMap?.WriteData(data);
 	}
 
@@ -348,16 +348,16 @@ public class PostTable : TrueTypeTable
 	/// <param name="data">The reader from which the data is read.</param>
 	public override void ReadData(Reader data)
 	{
-		Format = data.ReadInt32(true);
-		ItalicAngle = data.ReadInt32(true);
-		UnderlinePosition = data.ReadInt16(true);
-		UnderlineThickness = data.ReadInt16(true);
-		IsFixedPitch = data.ReadInt16(true);
-		data.ReadInt16(true);
-		MinMemType42 = data.ReadInt32(true);
-		MaxMemType42 = data.ReadInt32(true);
-		MinMemType1 = data.ReadInt32(true);
-		MaxMemType1 = data.ReadInt32(true);
+		Format = data.Read<Int32>();
+		ItalicAngle = data.Read<Int32>();
+		UnderlinePosition = data.Read<Int16>();
+		UnderlineThickness = data.Read<Int16>();
+		IsFixedPitch = data.Read<Int16>();
+		data.Read<Int16>();
+		MinMemType42 = data.Read<Int32>();
+		MaxMemType42 = data.Read<Int32>();
+		MinMemType1 = data.Read<Int32>();
+		MaxMemType1 = data.Read<Int32>();
 
 		nameMap = Format switch
 		{

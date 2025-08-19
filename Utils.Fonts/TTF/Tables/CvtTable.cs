@@ -1,4 +1,5 @@
-﻿using Utils.IO.Serialization;
+﻿using System;
+using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables
 {
@@ -26,7 +27,7 @@ namespace Utils.Fonts.TTF.Tables
 			ControlValues = new short[count];
 			for (int i = 0; i < count; i++)
 			{
-				ControlValues[i] = data.ReadInt16(true);
+				ControlValues[i] = data.Read<Int16>();
 			}
 		}
 
@@ -37,7 +38,7 @@ namespace Utils.Fonts.TTF.Tables
 			{
 				foreach (var value in ControlValues)
 				{
-					data.WriteInt16(value, true);
+					data.Write<Int16>(value);
 				}
 			}
 		}

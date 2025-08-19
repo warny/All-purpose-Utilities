@@ -73,12 +73,12 @@ public class AcntTable : TrueTypeTable
 	/// <param name="data">The reader from which to read the ACNT table data.</param>
 	public override void ReadData(Reader data)
 	{
-		Version = data.ReadInt16(true);
-		FirstAccentGlyphIndex = data.ReadInt16(true);
-		LastAccentGlyphIndex = data.ReadInt16(true);
-		DescriptionOffset = data.ReadInt32(true);
-		ExtensionOffset = data.ReadInt32(true);
-		SecondaryOffset = data.ReadInt32(true);
+		Version = data.Read<Int16>();
+		FirstAccentGlyphIndex = data.Read<Int16>();
+		LastAccentGlyphIndex = data.Read<Int16>();
+		DescriptionOffset = data.Read<Int32>();
+		ExtensionOffset = data.Read<Int32>();
+		SecondaryOffset = data.Read<Int32>();
 
 		// TODO: Implement reading of the Glyphs, Extension, and Accent sub-tables based on the offsets.
 	}
@@ -89,12 +89,12 @@ public class AcntTable : TrueTypeTable
 	/// <param name="data">The writer to which the ACNT table data is written.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt16(Version, true);
-		data.WriteInt16(FirstAccentGlyphIndex, true);
-		data.WriteInt16(LastAccentGlyphIndex, true);
-		data.WriteInt32(DescriptionOffset, true);
-		data.WriteInt32(ExtensionOffset, true);
-		data.WriteInt32(SecondaryOffset, true);
+		data.Write<Int16>(Version);
+		data.Write<Int16>(FirstAccentGlyphIndex);
+		data.Write<Int16>(LastAccentGlyphIndex);
+		data.Write<Int32>(DescriptionOffset);
+		data.Write<Int32>(ExtensionOffset);
+		data.Write<Int32>(SecondaryOffset);
 
 		// TODO: Implement writing of the Glyphs, Extension, and Accent sub-tables.
 	}

@@ -43,6 +43,12 @@ public class Writer : IWriter, IStreamMapping<Writer>
 		}
 	}
 
+	private Writer(Stream stream, IDictionary<Type, Delegate> writers)
+	{
+		this.Stream = stream;
+		writers = writers.ToDictionary();
+	}
+
 	public Writer(Stream stream, params IEnumerable<IEnumerable<Delegate>> converters)
 			: this(stream, converters.SelectMany(c => c)) { }
 
@@ -101,7 +107,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
 	public Writer Slice(long position, long length)
 	{
 		PartialStream s = new PartialStream(Stream, position, length);
-		return new Writer(s);
+		return new Writer(s, writers);
 	}
 
 

@@ -95,10 +95,10 @@ public class CMapFormat0 : CMapFormatBase
 	/// <param name="data">The writer to which the data is written.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt16(Format, true);
-		data.WriteInt16(Length, true);
-		data.WriteInt16(Language, true);
-		data.WriteBytes(MapBytes);
+		data.Write<Int16>(Format);
+		data.Write<Int16>(Length);
+		data.Write<Int16>(Language);
+		data.Write<byte[]>(MapBytes);
 	}
 
 	/// <summary>

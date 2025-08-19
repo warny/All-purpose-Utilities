@@ -121,23 +121,23 @@ public class HeadTable : TrueTypeTable
 			throw new ArgumentException("Bad Head table size");
 		}
 
-		Version = data.ReadInt32(true);
-		FontRevision = data.ReadInt32(true);
-		ChecksumAdjustment = data.ReadInt32(true);
-		MagicNumber = data.ReadInt32(true);
-		Flags = (HeadFlags)data.ReadInt16(true);
-		UnitsPerEm = data.ReadInt16(true);
-		Created = data.ReadDateTime(true);
-		Modified = data.ReadDateTime(true);
-		XMin = data.ReadInt16(true);
-		XMax = data.ReadInt16(true);
-		YMin = data.ReadInt16(true);
-		YMax = data.ReadInt16(true);
-		MacStyle = (MacStyleFlags)data.ReadInt16(true);
-		LowestRecPPem = data.ReadInt16(true);
-		FontDirectionHint = (FontDirectionHintEnum)data.ReadInt16(true);
-		IndexToLocFormat = data.ReadInt16(true);
-		GlyphDataFormat = data.ReadInt16(true);
+		Version = data.Read<Int32>();
+		FontRevision = data.Read<Int32>();
+		ChecksumAdjustment = data.Read<Int32>();
+		MagicNumber = data.Read<Int32>();
+		Flags = (HeadFlags)data.Read<Int16>();
+		UnitsPerEm = data.Read<Int16>();
+		Created = data.Read<DateTime>();
+		Modified = data.Read<DateTime>();
+		XMin = data.Read<Int16>();
+		XMax = data.Read<Int16>();
+		YMin = data.Read<Int16>();
+		YMax = data.Read<Int16>();
+		MacStyle = (MacStyleFlags)data.Read<Int16>();
+		LowestRecPPem = data.Read<Int16>();
+		FontDirectionHint = (FontDirectionHintEnum)data.Read<Int16>();
+		IndexToLocFormat = data.Read<Int16>();
+		GlyphDataFormat = data.Read<Int16>();
 	}
 
 	/// <summary>
@@ -146,23 +146,23 @@ public class HeadTable : TrueTypeTable
 	/// <param name="data">The writer to which the data is written.</param>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt32(Version, true);
-		data.WriteInt32(FontRevision, true);
-		data.WriteInt32(ChecksumAdjustment, true);
-		data.WriteInt32(MagicNumber, true);
-		data.WriteInt16((short)Flags, true);
-		data.WriteInt16(UnitsPerEm, true);
-		data.WriteDateTime(Created, true);
-		data.WriteDateTime(Modified, true);
-		data.WriteInt16(XMin, true);
-		data.WriteInt16(XMax, true);
-		data.WriteInt16(YMin, true);
-		data.WriteInt16(YMax, true);
-		data.WriteInt16((short)MacStyle, true);
-		data.WriteInt16(LowestRecPPem, true);
-		data.WriteInt16((short)FontDirectionHint, true);
-		data.WriteInt16(IndexToLocFormat, true);
-		data.WriteInt16(GlyphDataFormat, true);
+		data.Write<Int32>(Version);
+		data.Write<Int32>(FontRevision);
+		data.Write<Int32>(ChecksumAdjustment);
+		data.Write<Int32>(MagicNumber);
+		data.Write<Int16>((short)Flags);
+		data.Write<Int16>(UnitsPerEm);
+		data.Write<DateTime>(Created);
+		data.Write<DateTime>(Modified);
+		data.Write<Int16>(XMin);
+		data.Write<Int16>(XMax);
+		data.Write<Int16>(YMin);
+		data.Write<Int16>(YMax);
+		data.Write<Int16>((short)MacStyle);
+		data.Write<Int16>(LowestRecPPem);
+		data.Write<Int16>((short)FontDirectionHint);
+		data.Write<Int16>(IndexToLocFormat);
+		data.Write<Int16>(GlyphDataFormat);
 	}
 
 	/// <summary>

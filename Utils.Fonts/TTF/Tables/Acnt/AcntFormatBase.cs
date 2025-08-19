@@ -1,4 +1,5 @@
-﻿using Utils.IO.Serialization;
+﻿using System;
+using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Acnt;
 
@@ -38,7 +39,7 @@ public abstract class AcntFormatBase
 	public static AcntFormatBase GetActn(Reader reader)
 	{
 		// Read a 16-bit value that contains both the description and the primary glyph index.
-		var descriptionAndIndex = reader.ReadInt16();
+		var descriptionAndIndex = reader.Read<Int16>();
 		var result = CreateActn(descriptionAndIndex);
 		result.PrimaryGlyphIndex = (short)(descriptionAndIndex & 0x7FFF);
 		result.ReadData(reader);

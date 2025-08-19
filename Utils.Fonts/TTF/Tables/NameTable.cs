@@ -176,17 +176,17 @@ public class NameTable : TrueTypeTable
 	/// <inheritdoc/>
 	public override void ReadData(Reader data)
 	{
-		Format = data.ReadInt16(true);
-		int count = data.ReadInt16(true);
-		int stringOffset = data.ReadInt16(true);
+		Format = data.Read<Int16>();
+		int count = data.Read<Int16>();
+		int stringOffset = data.Read<Int16>();
 		for (int i = 0; i < count; i++)
 		{
-			var platformId = (TtfPlatFormId)data.ReadInt16(true);
-			var platformSpecificId = (TtfPlatformSpecificID)data.ReadInt16(true);
-			var languageId = (TtfLanguageID)data.ReadInt16(true);
-			var nameId = (TtfNameID)data.ReadInt16(true);
-			var length = data.ReadInt16(true);
-			var offset = data.ReadInt16(true);
+			var platformId = (TtfPlatFormId)data.Read<Int16>();
+			var platformSpecificId = (TtfPlatformSpecificID)data.Read<Int16>();
+			var languageId = (TtfLanguageID)data.Read<Int16>();
+			var nameId = (TtfNameID)data.Read<Int16>();
+			var length = data.Read<Int16>();
+			var offset = data.Read<Int16>();
 			data.Push();
 			Reader val = data.Slice(stringOffset + offset, length);
 			data.Pop();
@@ -199,9 +199,9 @@ public class NameTable : TrueTypeTable
 	/// <inheritdoc/>
 	public override void WriteData(Writer data)
 	{
-		data.WriteInt16(Format, true);
-		data.WriteInt16(Count, true);
-		data.WriteInt16((short)(6 + 12 * Count), true);
+		data.Write<Int16>(Format);
+		data.Write<Int16>(Count);
+		data.Write<Int16>((short)(6 + 12 * Count));
 		int offset = 0;
 		foreach (var record in records)
 		{
@@ -209,12 +209,12 @@ public class NameTable : TrueTypeTable
 			string text = record.Value;
 			Encoding encoding = TtfEncoderFactory.GetEncoding(nameRecord.PlatformID, nameRecord.PlatformSpecificID, nameRecord.LanguageID);
 			int length = encoding.GetByteCount(text);
-			data.WriteInt16((short)nameRecord.PlatformID, true);
-			data.WriteInt16((short)nameRecord.PlatformSpecificID, true);
-			data.WriteInt16((short)nameRecord.LanguageID, true);
-			data.WriteInt16((short)nameRecord.NameID, true);
-			data.WriteInt16((short)length, true);
-			data.WriteInt16((short)offset, true);
+			data.Write<Int16>((short)nameRecord.PlatformID);
+			data.Write<Int16>((short)nameRecord.PlatformSpecificID);
+			data.Write<Int16>((short)nameRecord.LanguageID);
+			data.Write<Int16>((short)nameRecord.NameID);
+			data.Write<Int16>((short)length);
+			data.Write<Int16>((short)offset);
 			data.Push();
 			data.Seek((6 + 12 * Count) + offset, System.IO.SeekOrigin.Begin);
 			data.WriteFixedLengthString(text, text.Length, encoding);
