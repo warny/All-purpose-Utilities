@@ -1,23 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-          <EnablePreviewFeatures>True</EnablePreviewFeatures>
-    <Authors>Olivier MARTY</Authors>
-    <Company>Olivier MARTY</Company>
-    <PackageId>omy.Utils.VirtualMachine</PackageId>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.0</Version>
-    <Description>Virtual machine framework
-        - Attribute based instruction definitions
-        - Little-endian and big-endian support</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<PackageId>omy.Utils.VirtualMachine</PackageId>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>1.1.0</Version>
+		<Description>
+			Virtual machine framework
+			- Attribute based instruction definitions
+			- Little-endian and big-endian support
+		</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Utils\Utils.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Utils\Utils.csproj" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>

@@ -10,7 +10,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageId>omy.Utils.Imaging</PackageId>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.0.1</Version>
+		<Version>1.1.0</Version>
 		<Copyright>Olivier MARTY</Copyright>
 		<Description>
 			Image accessors and drawing primitives

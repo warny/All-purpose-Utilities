@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Reflection", "Utils.R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fractals", "Fractals\Fractals.csproj", "{4EE3D033-7384-4BF7-8159-8589BF00DC03}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Net", "System.Net\Utils.Net.csproj", "{88E4D245-F817-4F24-B029-44EC41836F91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.Net", "Utils.Net\Utils.Net.csproj", "{88E4D245-F817-4F24-B029-44EC41836F91}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils.IO", "Utils.IO\Utils.IO.csproj", "{A5395030-8D5C-41DB-8B43-3C9E16A8EE1E}"
 EndProject

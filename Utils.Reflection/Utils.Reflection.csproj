@@ -1,34 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-          <EnablePreviewFeatures>True</EnablePreviewFeatures>
-          <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <Authors>Olivier MARTY</Authors>
-    <Company>Olivier MARTY</Company>
-    <PackageId>omy.Utils.Reflection</PackageId>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.0.1</Version>
-    <Description>Reflection helpers
-        - Dynamic DLL mapping utilities
-        - Runtime code generation support</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<PackageId>omy.Utils.Reflection</PackageId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>1.1.0</Version>
+		<Description>
+			Reflection helpers
+			- Dynamic DLL mapping utilities
+			- Runtime code generation support
+		</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
-      <PackagePath></PackagePath>
-      <Pack>True</Pack>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
+			<PackagePath></PackagePath>
+			<Pack>True</Pack>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Compilers" Version="4.14.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
-    <PackageReference Include="System.Runtime" Version="4.3.1" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Compilers" Version="4.14.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+		<PackageReference Include="System.Runtime" Version="4.3.1" />
+		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+		<PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>

@@ -10,7 +10,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>1.0.1</Version>
+		<Version>1.1.0</Version>
 		<Description>
 			Data mapping utilities
 			- Attributes to describe data fields

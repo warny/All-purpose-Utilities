@@ -1,31 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
-		<LangVersion>Latest</LangVersion>
+		<AssemblyName>Utils.Net</AssemblyName>
 		<RootNamespace>Utils</RootNamespace>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
+		<PackageId>omy.Utils.Net</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-		<PackageId>omy.Utils.Geography</PackageId>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>1.1.0</Version>
-		<Copyright>Olivier MARTY</Copyright>
 		<Description>
-			Coordinate utilities
-			- Map to polar conversions
-			- Distance computations
-			- Map projections and tile helpers
+			Network utilities
+			- DNS protocol implementation
+			- ICMP helpers and system network info
 		</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
-			<PackagePath></PackagePath>
-			<Pack>True</Pack>
-		</None>
+		<PackageReference Include="System.Management" Version="9.0.6" />
 	</ItemGroup>
 
 	<ItemGroup>

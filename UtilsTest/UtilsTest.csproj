@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\System.Net\Utils.Net.csproj" />
+    <ProjectReference Include="..\Utils.Net\Utils.Net.csproj" />
     <ProjectReference Include="..\Utils.Data\Utils.Data.csproj" />
     <ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
     <ProjectReference Include="..\Utils.Geography\Utils.Geography.csproj" />

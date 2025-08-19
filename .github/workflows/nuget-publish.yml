@@ -31,6 +31,8 @@ jobs:
             Utils.Fonts/Utils.Fonts.csproj \
             Utils.Geography/Utils.Geography.csproj \
             Utils.IO/Utils.IO.csproj \
+            Utils.DependencyInjection/Utils.DependencyInjection.csproj \
+            Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj \
             Utils.Imaging/Utils.Imaging.csproj \
             Utils.Mathematics/Utils.Mathematics.csproj \
             Utils.Reflection/Utils.Reflection.csproj \
