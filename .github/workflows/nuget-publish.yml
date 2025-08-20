@@ -24,40 +24,54 @@ jobs:
             - name: Pack and publish updated libraries
               env:
                   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+              shell: pwsh
               run: |
-                  PROJECTS="\
-                    Utils/Utils.csproj \
-                    Utils.Data/Utils.Data.csproj \
-                    Utils.Fonts/Utils.Fonts.csproj \
-                    Utils.Geography/Utils.Geography.csproj \
-                    Utils.IO/Utils.IO.csproj \
-                    Utils.DependencyInjection/Utils.DependencyInjection.csproj \
-                    Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj \
-                    Utils.Imaging/Utils.Imaging.csproj \
-                    Utils.Mathematics/Utils.Mathematics.csproj \
-                    Utils.Reflection/Utils.Reflection.csproj \
-                    Utils.VirtualMachine/Utils.VirtualMachine.csproj \
-                    Utils.Net/Utils.Net.csproj"
-                  mkdir -p packages
-                  for csproj in $PROJECTS; do
-                      pkg_id=$(grep -oPm1 '(?<=<PackageId>)[^<]+' "$csproj")
-                      version=$(grep -oPm1 '(?<=<Version>)[^<]+' "$csproj")
-                      url="https://api.nuget.org/v3-flatcontainer/$(echo "$pkg_id" | tr '[:upper:]' '[:lower:]')/index.json"
-                      if curl -sSL "$url" 2>/dev/null | grep -q "\"$version\""; then
-                          echo "Skipping $pkg_id version $version"
-                      else
-                          if ! dotnet pack "$csproj" --configuration Release --no-build --no-restore -o packages -p:ContinuousIntegrationBuild=true; then
-                              echo "Error packing $pkg_id version $version"
-                              exit 1
-                          fi
-                          push_output=$(dotnet nuget push "packages/$pkg_id.$version.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json 2>&1)
-                          if [ $? -ne 0 ]; then
-                              echo "Error publishing $pkg_id version $version"
-                              echo "$push_output"
-                              exit 1
-                          fi
-                          if [ -f "packages/$pkg_id.$version.snupkg" ]; then
-                              dotnet nuget push "packages/$pkg_id.$version.snupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json || true
-                          fi
-                      fi
-                  done
+                  $projects = @(
+                      "Utils/Utils.csproj",
+                      "Utils.Data/Utils.Data.csproj",
+                      "Utils.Fonts/Utils.Fonts.csproj",
+                      "Utils.Geography/Utils.Geography.csproj",
+                      "Utils.IO/Utils.IO.csproj",
+                      "Utils.DependencyInjection/Utils.DependencyInjection.csproj",
+                      "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
+                      "Utils.Imaging/Utils.Imaging.csproj",
+                      "Utils.Mathematics/Utils.Mathematics.csproj",
+                      "Utils.Reflection/Utils.Reflection.csproj",
+                      "Utils.VirtualMachine/Utils.VirtualMachine.csproj",
+                      "Utils.Net/Utils.Net.csproj"
+                  )
+                  New-Item -ItemType Directory -Path packages -Force | Out-Null
+                  $errors = @()
+                  foreach ($csproj in $projects) {
+                      $pkgId = (Select-String -Path $csproj -Pattern '<PackageId>([^<]+)' -First 1).Matches[0].Groups[1].Value
+                      $version = (Select-String -Path $csproj -Pattern '<Version>([^<]+)' -First 1).Matches[0].Groups[1].Value
+                      $url = "https://api.nuget.org/v3-flatcontainer/$($pkgId.ToLower())/index.json"
+                      $versions = @()
+                      try {
+                          $versions = (Invoke-RestMethod -Uri $url -ErrorAction Stop).versions
+                      } catch {
+                          $versions = @()
+                      }
+                      if ($versions -contains $version) {
+                          Write-Host "Skipping $pkgId version $version"
+                          continue
+                      }
+                      try {
+                          dotnet pack $csproj --configuration Release --no-build --no-restore -o packages -p:ContinuousIntegrationBuild=true
+                      } catch {
+                          $errors += "Error packing $pkgId version $version: $($_.Exception.Message)"
+                          continue
+                      }
+                      $pushOutput = dotnet nuget push "packages/$pkgId.$version.nupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" 2>&1
+                      if ($LASTEXITCODE -ne 0) {
+                          $errors += "Error publishing $pkgId version $version: $pushOutput"
+                          continue
+                      }
+                      if (Test-Path "packages/$pkgId.$version.snupkg") {
+                          dotnet nuget push "packages/$pkgId.$version.snupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" | Out-Null
+                      }
+                  }
+                  if ($errors.Count -gt 0) {
+                      $errors | ForEach-Object { Write-Host $_ }
+                      exit 1
+                  }
