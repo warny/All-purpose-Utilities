@@ -59,7 +59,7 @@ jobs:
                       try {
                           dotnet pack $csproj --configuration Release --no-build --no-restore -o packages -p:ContinuousIntegrationBuild=true
                       } catch {
-                          $errors += "Error packing $pkgId version $version: $($_.Exception.Message)"
+                          $errors += "Error packing $pkgId version $($version): $($_.Exception.Message)"
                           continue
                       }
                       $pushOutput = dotnet nuget push "packages/$pkgId.$version.nupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" 2>&1
