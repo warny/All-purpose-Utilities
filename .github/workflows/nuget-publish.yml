@@ -46,8 +46,8 @@ jobs:
                       $pkgIdMatches = (Select-String -Path $csproj -Pattern '<PackageId>([^<]+)' | Select-Object -First 1)
                       $versionMatches = (Select-String -Path $csproj -Pattern '<Version>([^<]+)' | Select-Object -First 1)
                       
-                      if ($pkgIdMatches.Count -gt 0) { continue; }
-                      if ($versionMatches.Count -gt 0) { continue; }
+                      if ($pkgIdMatches.Count -eq 0) { continue; }
+                      if ($versionMatches.Count -eq 0) { continue; }
                       
                       $pkgId = $pkgIdMatches.Matches[0].Groups[1].Value
                       $version = $versionMatches.Matches[0].Groups[1].Value
