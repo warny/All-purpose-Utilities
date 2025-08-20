@@ -43,8 +43,8 @@ jobs:
                   New-Item -ItemType Directory -Path packages -Force | Out-Null
                   $errors = @()
                   foreach ($csproj in $projects) {
-                      $pkgId = (Select-String -Path $csproj -Pattern '<PackageId>([^<]+)' -First 1).Matches[0].Groups[1].Value
-                      $version = (Select-String -Path $csproj -Pattern '<Version>([^<]+)' -First 1).Matches[0].Groups[1].Value
+                      $pkgId = (Select-String -Path $csproj -Pattern '<PackageId>([^<]+)' | Select-Object -First 1).Matches[0].Groups[1].Value
+                      $version = (Select-String -Path $csproj -Pattern '<Version>([^<]+)' | Select-Object -First 1).Matches[0].Groups[1].Value
                       $url = "https://api.nuget.org/v3-flatcontainer/$($pkgId.ToLower())/index.json"
                       $versions = @()
                       try {
