@@ -64,7 +64,7 @@ jobs:
                       }
                       $pushOutput = dotnet nuget push "packages/$pkgId.$version.nupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" 2>&1
                       if ($LASTEXITCODE -ne 0) {
-                          $errors += "Error publishing $pkgId version $version: $pushOutput"
+                          $errors += "Error publishing $pkgId version $($version): $pushOutput"
                           continue
                       }
                       if (Test-Path "packages/$pkgId.$version.snupkg") {
