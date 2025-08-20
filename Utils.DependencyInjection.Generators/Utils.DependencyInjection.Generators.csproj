@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<IsRoslynAnalyzer>true</IsRoslynAnalyzer>
+		<PackageId>omy.Utils.DependencyInjection.Generators</PackageId>
 		<Version>1.1.1.1</Version>
 	</PropertyGroup>
 	<ItemGroup>
