@@ -28,10 +28,10 @@ jobs:
               run: |
                   $projects = @(
                       "Utils/Utils.csproj",
+                      "Utils.IO/Utils.IO.csproj",
                       "Utils.Data/Utils.Data.csproj",
                       "Utils.Fonts/Utils.Fonts.csproj",
                       "Utils.Geography/Utils.Geography.csproj",
-                      "Utils.IO/Utils.IO.csproj",
                       "Utils.DependencyInjection/Utils.DependencyInjection.csproj",
                       "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
                       "Utils.Imaging/Utils.Imaging.csproj",
@@ -53,6 +53,7 @@ jobs:
                       $version = $versionMatches.Matches[0].Groups[1].Value
                       
                       $url = "https://api.nuget.org/v3-flatcontainer/$($pkgId.ToLower())/index.json"
+                      Write-Host "Checking package $pkgId version $version"
                       $versions = @()
                       try {
                           $versions = (Invoke-RestMethod -Uri $url -ErrorAction Stop).versions

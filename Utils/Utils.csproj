@@ -11,7 +11,7 @@
 		<PackageId>omy.Utils</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.1.0</Version>
+		<Version>1.1.1.1</Version>
 		<Copyright>Olivier MARTY 2023</Copyright>
 		<Description>
 			General Functions
