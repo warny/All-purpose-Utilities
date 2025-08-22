@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using Utils.Objects;
-
-namespace Utils.Mathematics.LinearAlgebra;
+﻿namespace Utils.Mathematics.LinearAlgebra;
 
 public partial class Matrix<T>
 {
