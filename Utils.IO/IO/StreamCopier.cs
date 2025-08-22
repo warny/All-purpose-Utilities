@@ -61,19 +61,19 @@ public class StreamCopier : Stream, IList<Stream>
 	/// all streams in <see cref="_targets"/>.
 	/// </param>
 	/// <param name="streams">An array of streams to which data should be written.</param>
-        public StreamCopier(bool closeAllTargetsOnDispose, params IEnumerable<Stream> streams)
-        {
-                this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
-                _targets = [.. streams];
-        }
+	public StreamCopier(bool closeAllTargetsOnDispose, params IEnumerable<Stream> streams)
+	{
+		this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
+		_targets = [.. streams];
+	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="StreamCopier"/> class and
 	/// adds the specified array of streams to its targets (with <c>closeAllTargetsOnDispose</c> = false).
 	/// </summary>
 	/// <param name="streams">An array of streams to which data should be written.</param>
-        public StreamCopier(params IEnumerable<Stream> streams)
-                : this(false, streams) { }
+	public StreamCopier(params IEnumerable<Stream> streams)
+			: this(false, streams) { }
 
 	#endregion
 
