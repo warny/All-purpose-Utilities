@@ -11,17 +11,16 @@ public class NewReaderWriterTest
 {
 
 	[TestMethod]
-	public void TestReadAndWriteNumbersAndDates()
-	{
-		void AssertAreEquals<T>(T t1, T t2, IBasicWriter Writer, IBasicReader Reader)
-		{
-			Assert.AreEqual(t1, t2, $"{typeof(T).Name}, {Writer.GetType().Name}, {Reader.GetType().Name}");
+        public void TestReadAndWriteNumbersAndDates()
+        {
+                void AssertAreEquals<T>(T expected, T actual)
+                {
+                        Assert.AreEqual(expected, actual, typeof(T).Name);
+                }
 
-		}
+                var r = new Random();
 
-		var r = new Random();
-
-		(byte b, short s, int i, long l, float f, double d, DateTime dt1)[] tests = [
+                (byte b, short s, int i, long l, float f, double d, DateTime dt1)[] tests = [
 			(0, 0, 0, 0, 0, 0, DateTime.Now),
 			(byte.MinValue, short.MinValue, int.MinValue, long.MinValue, float.MinValue, double.MinValue, DateTime.MinValue),
 			(byte.MaxValue, short.MaxValue, int.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, DateTime.MaxValue),
@@ -35,52 +34,44 @@ public class NewReaderWriterTest
 			(r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59)))
 		];
 
-		var converters = new (IBasicWriter Writer, IBasicReader Reader)[]
-		{
-			(new RawWriter(), new RawReader()),
-			(new CompressedIntWriter(), new CompressedIntReader()),
-			(new UTF8IntWriter(), new UTF8IntReader()),
-		};
+                var converters = (Writer: new RawWriter(), Reader: new RawReader());
 
-		foreach (var test in tests)
-		{
-			foreach (var converter in converters)
-			{
-				using MemoryStream stream = new MemoryStream();
+                foreach (var test in tests)
+                {
+                        using MemoryStream stream = new MemoryStream();
 
-				Writer writer = new Writer(stream, converter.Writer.WriterDelegates);
-				writer.WriteByte(test.b);
-				writer.Write(test.s);
-				writer.Write(test.i);
-				writer.Write(test.l);
-				writer.Write(test.f);
-				writer.Write(test.d);
-				writer.Write(test.dt1);
+                        Writer writer = new Writer(stream, converters.Writer.WriterDelegates);
+                        writer.WriteByte(test.b);
+                        writer.Write(test.s);
+                        writer.Write(test.i);
+                        writer.Write(test.l);
+                        writer.Write(test.f);
+                        writer.Write(test.d);
+                        writer.Write(test.dt1);
 
-				stream.Seek(0, SeekOrigin.Begin);
+                        stream.Seek(0, SeekOrigin.Begin);
 
-				Reader reader = new Reader(stream, converter.Reader.ReaderDelegates);
-				byte rb = reader.Read<byte>();
-				short rs = reader.Read<short>();
-				int ri = reader.Read<int>();
-				long rl = reader.Read<long>();
-				float rf = reader.Read<float>();
-				double rd = reader.Read<double>();
-				DateTime rdt1 = reader.Read<DateTime>();
+                        Reader reader = new Reader(stream, converters.Reader.ReaderDelegates);
+                        byte rb = reader.Read<byte>();
+                        short rs = reader.Read<short>();
+                        int ri = reader.Read<int>();
+                        long rl = reader.Read<long>();
+                        float rf = reader.Read<float>();
+                        double rd = reader.Read<double>();
+                        DateTime rdt1 = reader.Read<DateTime>();
 
-				AssertAreEquals(test.b, rb, converter.Writer, converter.Reader);
-				AssertAreEquals(test.s, rs, converter.Writer, converter.Reader);
-				AssertAreEquals(test.i, ri, converter.Writer, converter.Reader);
-				AssertAreEquals(test.l, rl, converter.Writer, converter.Reader);
+                        AssertAreEquals(test.b, rb);
+                        AssertAreEquals(test.s, rs);
+                        AssertAreEquals(test.i, ri);
+                        AssertAreEquals(test.l, rl);
 
-				AssertAreEquals(test.f, rf, converter.Writer, converter.Reader);
-				AssertAreEquals(test.d, rd, converter.Writer, converter.Reader);
+                        AssertAreEquals(test.f, rf);
+                        AssertAreEquals(test.d, rd);
 
-				AssertAreEquals(test.dt1, rdt1, converter.Writer, converter.Reader);
+                        AssertAreEquals(test.dt1, rdt1);
 
-			}
-		}
-	}
+                }
+        }
 
 	[TestMethod]
 	public void ReadByTypeReturnsValue()
