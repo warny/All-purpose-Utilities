@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -6,63 +6,95 @@ using Utils.Objects;
 
 namespace Utils.IO.BaseEncoding;
 
+/// <summary>
+/// Writes base-encoded characters and produces binary output to an underlying <see cref="Stream"/>.
+/// </summary>
 public class BaseDecoderStream : TextWriter
 {
-	public Stream Stream { get; }
-	protected IBaseDescriptor BaseDescriptor { get; }
-	private readonly char[] toIgnore;
+    /// <summary>
+    /// Gets the target binary stream.
+    /// </summary>
+    public Stream Stream { get; }
 
-	public override Encoding Encoding { get; }
+    /// <summary>
+    /// Gets the descriptor that defines the base encoding alphabet.
+    /// </summary>
+    protected IBaseDescriptor BaseDescriptor { get; }
 
-	int currentValue = 0;
-	int dataLength = 0;
+    private readonly char[] toIgnore;
 
-	public BaseDecoderStream(Stream stream, IBaseDescriptor baseDescriptor)
-	{
-		this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
-		this.BaseDescriptor = baseDescriptor ?? throw new ArgumentNullException(nameof(baseDescriptor));
+    /// <inheritdoc />
+    public override Encoding Encoding { get; }
 
-		toIgnore = BaseDescriptor.Filler is not null
-			? BaseDescriptor.Separator.Union([' ', BaseDescriptor.Filler.Value]).ToArray()
-			: BaseDescriptor.Separator.Union([' ']).ToArray();
-	}
+    private int currentValue;
+    private int dataLength;
+    private int sourceLength;
+    private int actualTargetLength;
 
-	int sourceLength = 0;
-	int actualTargetLength = 0;
-	public override void Write(char value)
-	{
-		if (value.In(toIgnore)) return;
-		sourceLength++;
-		int charValue = BaseDescriptor[value];
-		currentValue = (currentValue << BaseDescriptor.BitsWidth) | charValue;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BaseDecoderStream"/> class.
+    /// </summary>
+    /// <param name="stream">The target binary stream.</param>
+    /// <param name="baseDescriptor">Descriptor defining the base alphabet.</param>
+    public BaseDecoderStream(Stream stream, IBaseDescriptor baseDescriptor)
+    {
+        Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        BaseDescriptor = baseDescriptor ?? throw new ArgumentNullException(nameof(baseDescriptor));
 
-		dataLength += BaseDescriptor.BitsWidth;
+        toIgnore = BaseDescriptor.Filler is not null
+            ? BaseDescriptor.Separator.Union(new[] { ' ', BaseDescriptor.Filler.Value }).ToArray()
+            : BaseDescriptor.Separator.Union(new[] { ' ' }).ToArray();
+    }
 
-		if (dataLength >= 8)
-		{
-			actualTargetLength++;
-			dataLength -= 8;
-			Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
-		}
-	}
+    /// <summary>
+    /// Writes a single base character to the decoder.
+    /// </summary>
+    /// <param name="value">The encoded character.</param>
+    public override void Write(char value)
+    {
+        if (value.In(toIgnore))
+        {
+            return;
+        }
 
-	public override void Close()
-	{
-		if (dataLength > 0)
-		{
-			int targetLength = (int)Math.Floor(sourceLength * BaseDescriptor.BitsWidth / 8d);
-			if (actualTargetLength > targetLength)
-			{
-				currentValue = currentValue << BaseDescriptor.BitsWidth;
-				dataLength += BaseDescriptor.BitsWidth - 8;
-				Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
-			}
-		}
-		Flush();
-	}
+        sourceLength++;
+        int charValue = BaseDescriptor[value];
+        currentValue = (currentValue << BaseDescriptor.BitsWidth) | charValue;
 
-	public override void Flush()
-	{
-		Stream.Flush();
-	}
+        dataLength += BaseDescriptor.BitsWidth;
+
+        // When at least one byte has been accumulated, write it to the output stream.
+        if (dataLength >= 8)
+        {
+            actualTargetLength++;
+            dataLength -= 8;
+            Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
+        }
+    }
+
+    /// <summary>
+    /// Finalizes the decoding process and flushes remaining bits.
+    /// </summary>
+    public override void Close()
+    {
+        if (dataLength > 0)
+        {
+            int targetLength = (int)Math.Floor(sourceLength * BaseDescriptor.BitsWidth / 8d);
+            if (actualTargetLength > targetLength)
+            {
+                // Align remaining bits and write the last byte.
+                currentValue <<= BaseDescriptor.BitsWidth;
+                dataLength += BaseDescriptor.BitsWidth - 8;
+                Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
+            }
+        }
+
+        Flush();
+    }
+
+    /// <inheritdoc />
+    public override void Flush()
+    {
+        Stream.Flush();
+    }
 }
