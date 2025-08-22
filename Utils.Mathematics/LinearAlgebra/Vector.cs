@@ -1,30 +1,33 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Utils.Collections;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
 /// <summary>
-/// Vecteur
+/// Represents a mathematical vector.
 /// </summary>
 public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable
     where T : struct, IFloatingPoint<T>, IRootFunctions<T>
 {
+    /// <summary>
+    /// Equality comparer used to evaluate component arrays.
+    /// </summary>
     private static EnumerableEqualityComparer<T> ComponentComparer { get; } = EnumerableEqualityComparer<T>.Default;
 
     /// <summary>
-    /// composantes du vecteur
+    /// Vector components.
     /// </summary>
     internal readonly T[] components;
 
     /// <summary>
-    /// Longueur du vecteur	(calculée à la demande)
+    /// Length of the vector (computed lazily).
     /// </summary>
     private T? norm;
 
     /// <summary>
-    /// constructeur par dimensions
+    /// Initializes a vector with the given dimension.
     /// </summary>
-    /// <param name="dimensions"></param>
+    /// <param name="dimensions">Number of dimensions.</param>
     private Vector(int dimensions)
     {
         components = new T[dimensions];
@@ -32,16 +35,21 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     }
 
     /// <summary>
-    /// constructeur par valeurs
+    /// Initializes a vector with the provided components.
     /// </summary>
-    /// <param name="components"></param>
+    /// <param name="components">Component values of the vector.</param>
+    /// <exception cref="ArgumentException">Thrown when no components are provided.</exception>
     public Vector(params T[] components)
     {
-        if (components.Length == 0) throw new ArgumentException("La dimension du vecteur ne peut pas être 0", nameof(components));
+        if (components.Length == 0) throw new ArgumentException("Vector dimension cannot be 0", nameof(components));
         this.components = new T[components.Length];
         Array.Copy(components, this.components, components.Length);
     }
 
+    /// <summary>
+    /// Initializes a new instance by copying another vector.
+    /// </summary>
+    /// <param name="vector">Vector to copy.</param>
     public Vector(Vector<T> vector)
     {
         components = new T[vector.components.Length];
@@ -49,19 +57,18 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     }
 
     /// <summary>
-    /// Retourne ou défini la valeur de la dimension indiquée
+    /// Gets the value of the specified component.
     /// </summary>
-    /// <param name="dimension"></param>
-    /// <returns></returns>
+    /// <param name="dimension">Component index.</param>
     public T this[int dimension] => this.components[dimension];
 
     /// <summary>
-    /// dimension du vecteur
+    /// Gets the vector dimension.
     /// </summary>
     public int Dimension => this.components.Length;
 
     /// <summary>
-    /// Longueur du vecteur
+    /// Gets the length of the vector.
     /// </summary>
     public T Norm
     {
@@ -78,8 +85,13 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         }
     }
 
+    /// <summary>
+    /// Returns a normalized version of the vector.
+    /// </summary>
+    /// <returns>The normalized vector.</returns>
     public Vector<T> Normalize() => this / Norm;
 
+    /// <inheritdoc/>
     public override bool Equals(object? obj) => obj switch
     {
         Vector<T> v => Equals(v),
@@ -87,6 +99,11 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         _ => false,
     };
 
+    /// <summary>
+    /// Determines whether the current vector is equal to another vector.
+    /// </summary>
+    /// <param name="other">The vector to compare with.</param>
+    /// <returns><c>true</c> if vectors are equal; otherwise, <c>false</c>.</returns>
     public bool Equals(Vector<T>? other)
     {
         if (other is null) return false;
@@ -94,12 +111,21 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         return Equals(other.components);
     }
 
+    /// <summary>
+    /// Determines whether the current vector is equal to the specified component array.
+    /// </summary>
+    /// <param name="other">Component array to compare with.</param>
+    /// <returns><c>true</c> if arrays are equal; otherwise, <c>false</c>.</returns>
     public bool Equals(T[] other)
     {
         if (other is null) return false;
         return ComponentComparer.Equals(this.components, other);
     }
 
+    /// <summary>
+    /// Returns a string that represents the current vector.
+    /// </summary>
+    /// <returns>A string representation of the vector.</returns>
     public override string ToString()
         => $"({string.Join(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ListSeparator, components)})";
 
@@ -109,7 +135,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <returns>The converted vector for normal space.</returns>
     public Vector<T> ToNormalSpace()
     {
-        Vector<T> result = new (Dimension + 1);
+        Vector<T> result = new(Dimension + 1);
         Array.Copy(components, result.components, Dimension);
         result.components[Dimension] = T.One;
         return result;
@@ -126,7 +152,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         {
             temp /= temp[temp.Dimension - 1];
         }
-        Vector<T> result = new (Dimension - 1);
+        Vector<T> result = new(Dimension - 1);
         Array.Copy(temp.components, result.components, Dimension - 1);
         return result;
     }
@@ -136,7 +162,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// </summary>
     /// <param name="vectors">Vectors of dimension n.</param>
     /// <returns>A normal vector.</returns>
-    /// <exception cref="ArgumentException">Throws an exception if vectors are not all of dimension n.</exception>
+    /// <exception cref="ArgumentException">Thrown if vectors are not all of dimension n.</exception>
     public static Vector<T> Product(params Vector<T>[] vectors)
     {
         int dimensions = vectors.Length + 1;
@@ -144,7 +170,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         {
             if (vector.components.Length != dimensions)
             {
-                throw new ArgumentException(string.Format("Tous les vecteurs ne sont pas de dimension {0}", dimensions), "vectors");
+                throw new ArgumentException(string.Format("All vectors are not of dimension {0}", dimensions), "vectors");
             }
         }
 
@@ -191,6 +217,9 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         return result;
     }
 
+    /// <summary>
+    /// Returns a hash code for the vector.
+    /// </summary>
     public override int GetHashCode()
     {
         unchecked
@@ -204,6 +233,10 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         }
     }
 
+    /// <summary>
+    /// Creates a copy of the vector.
+    /// </summary>
+    /// <returns>A new vector with the same components.</returns>
     public object Clone() => new Vector<T>(this);
 }
 
