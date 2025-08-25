@@ -37,6 +37,8 @@ Network focused utilities:
 - full DNS protocol implementation and packet helpers
 - ICMP utilities and basic traceroute support
 - gathering system network parameters
+- Wake-on-LAN magic packet generation
+- ARP packet helpers
 
 ### `Utils.Data`
 Attributes and helpers to map `IDataRecord`/`IDataReader` data to typed objects.
