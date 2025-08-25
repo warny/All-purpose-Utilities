@@ -40,4 +40,18 @@ DateTime utcNow = await Utils.Net.NtpClient.GetTimeAsync("pool.ntp.org");
 
 // Fetch the quote of the day
 string quote = await Utils.Net.QuoteOfTheDayClient.GetQuoteAsync("djxmmx.net");
+
+// Communicate with a command/response service
+using var tcp = new System.Net.Sockets.TcpClient();
+await tcp.ConnectAsync("localhost", 25);
+using var cmdClient = new Utils.Net.CommandResponseClient { NoOpInterval = TimeSpan.FromMinutes(1) };
+await cmdClient.ConnectAsync(tcp.GetStream());
+IReadOnlyList<Utils.Net.ServerResponse> replies = await cmdClient.SendCommandAsync("NOOP");
+
+// Build a simple command/response server
+var server = new Utils.Net.CommandResponseServer();
+server.CommandReceived += cmd =>
+    System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
+        new[] { new Utils.Net.ServerResponse(200, "OK") });
+await server.StartAsync(tcp.GetStream());
 ```
