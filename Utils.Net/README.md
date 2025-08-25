@@ -12,6 +12,7 @@ It targets **.NET 9** and is designed to be portable across platforms.
 - ARP packet creation utilities
 - URI and query string manipulation helpers
 - Parsing of mail addresses and IP range calculations
+- Clients for basic network services like Echo, Quote of the Day, Time protocol and NTP
 
 ## Usage examples
 ```csharp
@@ -33,4 +34,10 @@ await Utils.Net.WakeOnLan.SendMagicPacketAsync(System.Net.NetworkInformation.Phy
 
 // Build an ARP request
 var arpRequest = Utils.Net.ArpUtils.CreateRequest(System.Net.IPAddress.Parse("192.168.1.1"), System.Net.NetworkInformation.PhysicalAddress.Parse("00-11-22-33-44-55"), System.Net.IPAddress.Parse("192.168.1.2"));
+
+// Retrieve time using NTP
+DateTime utcNow = await Utils.Net.NtpClient.GetTimeAsync("pool.ntp.org");
+
+// Fetch the quote of the day
+string quote = await Utils.Net.QuoteOfTheDayClient.GetQuoteAsync("djxmmx.net");
 ```
