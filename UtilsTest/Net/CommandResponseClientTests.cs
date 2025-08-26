@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -84,6 +85,51 @@ public class CommandResponseClientTests
         }
         await serverTask;
         Assert.AreEqual("NOOP", received);
+    }
+
+    /// <summary>
+    /// Verifies that the server processes commands sent before previous responses are fully transmitted.
+    /// </summary>
+    [TestMethod]
+    public async Task Server_ProcessesPipelinedCommands()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using CommandResponseServer server = new();
+            server.CommandReceived += async cmd =>
+            {
+                if (cmd == "FIRST")
+                {
+                    await Task.Delay(200);
+                }
+                return new[] { new ServerResponse(200, cmd) };
+            };
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        using TcpClient client = new();
+        await client.ConnectAsync(IPAddress.Loopback, port);
+        using NetworkStream ns = client.GetStream();
+        using StreamWriter writer = new(ns) { NewLine = "\r\n", AutoFlush = true };
+        using StreamReader reader = new(ns);
+
+        await writer.WriteLineAsync("FIRST");
+        await writer.WriteLineAsync("SECOND");
+
+        string? response1 = await reader.ReadLineAsync();
+        string? response2 = await reader.ReadLineAsync();
+
+        Assert.AreEqual("200 FIRST", response1);
+        Assert.AreEqual("200 SECOND", response2);
+
+        client.Close();
+        await serverTask;
     }
 }
 

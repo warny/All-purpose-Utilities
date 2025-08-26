@@ -22,6 +22,7 @@ public class CommandResponseClient : IDisposable
     private readonly SemaphoreSlim _responseSignal = new(0);
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private CancellationTokenSource? _listenTokenSource;
+    private Thread? _listenThread;
     private Timer? _keepAliveTimer;
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
@@ -84,7 +85,11 @@ public class CommandResponseClient : IDisposable
             AutoFlush = true
         };
         _listenTokenSource = new CancellationTokenSource();
-        _ = Task.Run(() => ListenAsync(_listenTokenSource.Token), cancellationToken);
+        _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+        {
+            IsBackground = true
+        };
+        _listenThread.Start();
         if (_noOpInterval != Timeout.InfiniteTimeSpan)
         {
             _keepAliveTimer = new Timer(async _ => await SendNoOpAsync(), null, _noOpInterval, Timeout.InfiniteTimeSpan);
@@ -133,26 +138,33 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Listens for responses from the server and enqueues them for processing.
+    /// Listens for responses from the server on a dedicated thread and enqueues them for processing.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    private async Task ListenAsync(CancellationToken cancellationToken)
+    private void ListenLoop(CancellationToken cancellationToken)
     {
         if (_reader is null)
         {
             return;
         }
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            string? line = await _reader.ReadLineAsync(cancellationToken);
-            if (line is null)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                break;
+                string? line = _reader.ReadLineAsync(cancellationToken).GetAwaiter().GetResult();
+                if (line is null)
+                {
+                    break;
+                }
+                ServerResponse response = ParseResponse(line);
+                _responseQueue.Enqueue(response);
+                _responseSignal.Release();
+                UnsolicitedResponseReceived?.Invoke(response);
             }
-            ServerResponse response = ParseResponse(line);
-            _responseQueue.Enqueue(response);
-            _responseSignal.Release();
-            UnsolicitedResponseReceived?.Invoke(response);
+        }
+        catch (OperationCanceledException)
+        {
+            // Listening was canceled.
         }
     }
 
@@ -202,6 +214,7 @@ public class CommandResponseClient : IDisposable
     public void Dispose()
     {
         _listenTokenSource?.Cancel();
+        _listenThread?.Join();
         _keepAliveTimer?.Dispose();
         _reader?.Dispose();
         _writer?.Dispose();
