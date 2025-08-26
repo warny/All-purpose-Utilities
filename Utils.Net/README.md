@@ -13,6 +13,7 @@ It targets **.NET 9** and is designed to be portable across platforms.
 - URI and query string manipulation helpers
 - Parsing of mail addresses and IP range calculations
 - Clients for basic network services like Echo, Quote of the Day, Time protocol and NTP
+- POP3 client for retrieving e-mail using a command/response model
 
 ## Usage examples
 ```csharp
@@ -62,4 +63,12 @@ server.RegisterCommand("LIST", (ctx, args) =>
         new[] { new Utils.Net.ServerResponse(200, "Listed") }),
     "AUTH");
 await server.StartAsync(tcp.GetStream());
+
+// Retrieve messages using the POP3 client
+using var pop3 = new Utils.Net.Pop3Client();
+await pop3.ConnectAsync("mail.example.com", 110);
+await pop3.AuthenticateAsync("user", "pass");
+var messages = await pop3.ListAsync();
+string firstMessage = await pop3.RetrieveAsync(1);
+await pop3.QuitAsync();
 ```

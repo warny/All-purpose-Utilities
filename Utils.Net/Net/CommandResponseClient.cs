@@ -14,6 +14,7 @@ namespace Utils.Net;
 /// </summary>
 public class CommandResponseClient : IDisposable
 {
+    private readonly Func<string, ServerResponse> _parser;
     private TcpClient? _client;
     private Stream? _stream;
     private StreamReader? _reader;
@@ -28,6 +29,15 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _disconnected;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandResponseClient"/> class.
+    /// </summary>
+    /// <param name="parser">Optional delegate used to parse response lines. When null, a numeric code parser is used.</param>
+    public CommandResponseClient(Func<string, ServerResponse>? parser = null)
+    {
+        _parser = parser ?? DefaultParser;
+    }
 
     /// <summary>
     /// Occurs when a response is received from the server.
@@ -161,7 +171,7 @@ public class CommandResponseClient : IDisposable
                 {
                     break;
                 }
-                ServerResponse response = ParseResponse(line);
+                ServerResponse response = _parser(line);
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
                 UnsolicitedResponseReceived?.Invoke(response);
@@ -179,11 +189,11 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Parses a response line into a <see cref="ServerResponse"/> structure.
+    /// Default parser that extracts a numeric status code and optional text from a response line.
     /// </summary>
     /// <param name="line">Response line from the server.</param>
     /// <returns>Parsed response.</returns>
-    private static ServerResponse ParseResponse(string line)
+    private static ServerResponse DefaultParser(string line)
     {
         int code = 0;
         string? text = null;
