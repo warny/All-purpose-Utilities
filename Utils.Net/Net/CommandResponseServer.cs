@@ -25,6 +25,26 @@ public class CommandResponseServer : IDisposable
     private bool _leaveOpen;
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _contexts = new();
+    private readonly Func<ServerResponse, string> _formatter;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandResponseServer"/> class.
+    /// </summary>
+    /// <param name="formatter">Optional formatter used to convert responses to textual lines.</param>
+    public CommandResponseServer(Func<ServerResponse, string>? formatter = null)
+    {
+        _formatter = formatter ?? DefaultFormatter;
+    }
+
+    /// <summary>
+    /// Formats a response using the default numeric code representation.
+    /// </summary>
+    /// <param name="response">Response to format.</param>
+    /// <returns>Formatted textual line.</returns>
+    private static string DefaultFormatter(ServerResponse response)
+    {
+        return response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
+    }
 
     /// <summary>
     /// Occurs when a command is received from the client. The handler must return the responses to send.
@@ -108,7 +128,7 @@ public class CommandResponseServer : IDisposable
         {
             throw new InvalidOperationException("Server is not started.");
         }
-        string line = response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
+        string line = _formatter(response);
         return _writer.WriteLineAsync(line);
     }
 
@@ -192,7 +212,7 @@ public class CommandResponseServer : IDisposable
                 responses ??= new[] { new ServerResponse(502, "Command not implemented") };
                 foreach (ServerResponse response in responses)
                 {
-                    string line = response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
+                    string line = _formatter(response);
                     await _writer.WriteLineAsync(line);
                 }
             }

@@ -71,4 +71,16 @@ await pop3.AuthenticateAsync("user", "pass");
 var messages = await pop3.ListAsync();
 string firstMessage = await pop3.RetrieveAsync(1);
 await pop3.QuitAsync();
+
+// Host a POP3 server with a custom mailbox
+class MemoryMailbox : Utils.Net.IPop3Mailbox
+{
+    public Task<bool> AuthenticateAsync(string user, string password, CancellationToken token = default) => Task.FromResult(true);
+    public Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken token = default) => Task.FromResult<IReadOnlyDictionary<int, int>>(new Dictionary<int, int>());
+    public Task<string> RetrieveAsync(int id, CancellationToken token = default) => Task.FromResult(string.Empty);
+    public Task DeleteAsync(int id, CancellationToken token = default) => Task.CompletedTask;
+}
+var mailbox = new MemoryMailbox();
+var pop3Server = new Utils.Net.Pop3Server(mailbox);
+await pop3Server.StartAsync(tcp.GetStream());
 ```
