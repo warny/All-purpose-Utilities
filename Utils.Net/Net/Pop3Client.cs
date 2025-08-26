@@ -38,9 +38,11 @@ public class Pop3Client : IDisposable
     /// <param name="host">Server host name or IP address.</param>
     /// <param name="port">Server port, default is 110.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public Task ConnectAsync(string host, int port = 110, CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(string host, int port = 110, CancellationToken cancellationToken = default)
     {
-        return _client.ConnectAsync(host, port, cancellationToken);
+        await _client.ConnectAsync(host, port, cancellationToken);
+        IReadOnlyList<ServerResponse> greeting = await _client.ReadAsync(cancellationToken);
+        await EnsureOkAsync(greeting);
     }
 
     /// <summary>
@@ -49,9 +51,11 @@ public class Pop3Client : IDisposable
     /// <param name="stream">Connected stream used to send commands and receive responses.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        return _client.ConnectAsync(stream, leaveOpen, cancellationToken);
+        await _client.ConnectAsync(stream, leaveOpen, cancellationToken);
+        IReadOnlyList<ServerResponse> greeting = await _client.ReadAsync(cancellationToken);
+        await EnsureOkAsync(greeting);
     }
 
     /// <summary>

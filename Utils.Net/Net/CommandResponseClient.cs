@@ -124,6 +124,7 @@ public class CommandResponseClient : IDisposable
         await _sendLock.WaitAsync(cancellationToken);
         try
         {
+            DrainPendingResponses();
             await _writer.WriteLineAsync(command);
             List<ServerResponse> responses = new();
             while (true)
@@ -149,6 +150,42 @@ public class CommandResponseClient : IDisposable
         finally
         {
             _sendLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Reads and returns responses that have been received without sending a command.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of responses read from the server.</returns>
+    public async Task<IReadOnlyList<ServerResponse>> ReadAsync(CancellationToken cancellationToken = default)
+    {
+        List<ServerResponse> responses = new();
+        await _responseSignal.WaitAsync(cancellationToken);
+        do
+        {
+            if (_responseQueue.TryDequeue(out ServerResponse response))
+            {
+                responses.Add(response);
+            }
+        }
+        while (_responseSignal.Wait(0));
+        ResetKeepAlive();
+        return responses;
+    }
+
+    /// <summary>
+    /// Removes any queued responses that were not consumed by previous commands.
+    /// </summary>
+    private void DrainPendingResponses()
+    {
+        while (_responseQueue.TryDequeue(out ServerResponse leftover))
+        {
+            UnsolicitedResponseReceived?.Invoke(leftover);
+        }
+        while (_responseSignal.CurrentCount > 0)
+        {
+            _responseSignal.Wait(0);
         }
     }
 

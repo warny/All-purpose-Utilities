@@ -208,5 +208,38 @@ public class CommandResponseClientTests
         client.Close();
         await serverTask;
     }
+
+    /// <summary>
+    /// Verifies that <see cref="CommandResponseClient.ReadAsync"/> retrieves server greetings before any command is sent.
+    /// </summary>
+    [TestMethod]
+    public async Task ReadAsync_RetrievesInitialGreeting()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using NetworkStream ns = serverClient.GetStream();
+            using StreamWriter writer = new(ns) { NewLine = "\r\n", AutoFlush = true };
+            using StreamReader reader = new(ns);
+            await writer.WriteLineAsync("200 Ready");
+            string? command = await reader.ReadLineAsync();
+            if (command == "PING")
+            {
+                await writer.WriteLineAsync("200 Pong");
+            }
+            listener.Stop();
+        });
+
+        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        IReadOnlyList<ServerResponse> greeting = await client.ReadAsync();
+        Assert.AreEqual(200, greeting[0].Code);
+        IReadOnlyList<ServerResponse> response = await client.SendCommandAsync("PING");
+        Assert.AreEqual(200, response[0].Code);
+        await serverTask;
+    }
 }
 
