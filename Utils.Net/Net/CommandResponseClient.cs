@@ -27,6 +27,7 @@ public class CommandResponseClient : IDisposable
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
+    private bool _disconnected;
 
     /// <summary>
     /// Occurs when a response is received from the server.
@@ -120,6 +121,10 @@ public class CommandResponseClient : IDisposable
                 await _responseSignal.WaitAsync(cancellationToken);
                 if (!_responseQueue.TryDequeue(out ServerResponse response))
                 {
+                    if (_disconnected)
+                    {
+                        throw new IOException("Connection closed.");
+                    }
                     continue;
                 }
                 responses.Add(response);
@@ -166,6 +171,11 @@ public class CommandResponseClient : IDisposable
         {
             // Listening was canceled.
         }
+        finally
+        {
+            _disconnected = true;
+            _responseSignal.Release();
+        }
     }
 
     /// <summary>
@@ -198,6 +208,43 @@ public class CommandResponseClient : IDisposable
         {
             // Ignore keep-alive exceptions.
         }
+    }
+
+    /// <summary>
+    /// Disconnects from the server, optionally sending a termination command.
+    /// </summary>
+    /// <param name="command">Termination command to send. Null to close immediately.</param>
+    /// <param name="timeout">Time to wait for a positive (2xx) response.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task DisconnectAsync(string? command = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        if (_writer is not null && command is not null)
+        {
+            try
+            {
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                if (timeout.HasValue && timeout.Value != Timeout.InfiniteTimeSpan)
+                {
+                    cts.CancelAfter(timeout.Value);
+                }
+                IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cts.Token);
+                if (responses.Count == 0 || responses[^1].Code < 200 || responses[^1].Code >= 300)
+                {
+                    // Force disconnect on missing positive reply.
+                    _listenTokenSource?.Cancel();
+                }
+            }
+            catch
+            {
+                _listenTokenSource?.Cancel();
+            }
+        }
+        else
+        {
+            _listenTokenSource?.Cancel();
+        }
+
+        Dispose();
     }
 
     /// <summary>

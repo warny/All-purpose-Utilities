@@ -88,6 +88,83 @@ public class CommandResponseClientTests
     }
 
     /// <summary>
+    /// Verifies that the client detects a dropped connection and throws.
+    /// </summary>
+    [TestMethod]
+    public async Task SendCommandAsync_ThrowsOnConnectionLoss()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using NetworkStream ns = serverClient.GetStream();
+            using StreamReader reader = new(ns);
+            await reader.ReadLineAsync();
+            serverClient.Close();
+            listener.Stop();
+        });
+
+        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("PING"));
+        await serverTask;
+    }
+
+    /// <summary>
+    /// Verifies that DisconnectAsync waits for a positive response before closing.
+    /// </summary>
+    [TestMethod]
+    public async Task DisconnectAsync_CompletesOnPositiveResponse()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using CommandResponseServer server = new();
+            server.CommandReceived += cmd => Task.FromResult<IEnumerable<ServerResponse>>(cmd == "QUIT"
+                ? new[] { new ServerResponse(200, "Bye") }
+                : System.Array.Empty<ServerResponse>());
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        await client.DisconnectAsync("QUIT", TimeSpan.FromMilliseconds(500));
+        await serverTask;
+    }
+
+    /// <summary>
+    /// Verifies that DisconnectAsync forces the connection to close when no response is received.
+    /// </summary>
+    [TestMethod]
+    public async Task DisconnectAsync_ForcesWhenNoResponse()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using NetworkStream ns = serverClient.GetStream();
+            using StreamReader reader = new(ns);
+            await reader.ReadLineAsync();
+            await reader.ReadLineAsync();
+            listener.Stop();
+        });
+
+        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        await client.DisconnectAsync("QUIT", TimeSpan.FromMilliseconds(100));
+        await serverTask;
+    }
+
+    /// <summary>
     /// Verifies that the server processes commands sent before previous responses are fully transmitted.
     /// </summary>
     [TestMethod]

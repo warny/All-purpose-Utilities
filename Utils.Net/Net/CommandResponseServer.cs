@@ -90,6 +90,7 @@ public class CommandResponseServer : IDisposable
                 string? command = _reader.ReadLineAsync(cancellationToken).GetAwaiter().GetResult();
                 if (command is null)
                 {
+                    _listenTokenSource?.Cancel();
                     break;
                 }
                 _commandQueue.Enqueue(command);
@@ -116,28 +117,35 @@ public class CommandResponseServer : IDisposable
         {
             return;
         }
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            await _commandSignal.WaitAsync(cancellationToken);
-            if (!_commandQueue.TryDequeue(out string? command))
+            while (true)
             {
+                await _commandSignal.WaitAsync(cancellationToken);
                 if (cancellationToken.IsCancellationRequested)
                 {
                     break;
                 }
-                continue;
+                if (!_commandQueue.TryDequeue(out string? command))
+                {
+                    continue;
+                }
+                IEnumerable<ServerResponse>? responses = null;
+                if (CommandReceived is not null)
+                {
+                    responses = await CommandReceived.Invoke(command);
+                }
+                responses ??= new[] { new ServerResponse(500, "Command handler not set") };
+                foreach (ServerResponse response in responses)
+                {
+                    string line = response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
+                    await _writer.WriteLineAsync(line);
+                }
             }
-            IEnumerable<ServerResponse>? responses = null;
-            if (CommandReceived is not null)
-            {
-                responses = await CommandReceived.Invoke(command);
-            }
-            responses ??= new[] { new ServerResponse(500, "Command handler not set") };
-            foreach (ServerResponse response in responses)
-            {
-                string line = response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
-                await _writer.WriteLineAsync(line);
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Processing canceled.
         }
     }
 

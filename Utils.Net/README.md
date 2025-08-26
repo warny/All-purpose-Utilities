@@ -47,6 +47,7 @@ await tcp.ConnectAsync("localhost", 25);
 using var cmdClient = new Utils.Net.CommandResponseClient { NoOpInterval = TimeSpan.FromMinutes(1) };
 await cmdClient.ConnectAsync(tcp.GetStream());
 IReadOnlyList<Utils.Net.ServerResponse> replies = await cmdClient.SendCommandAsync("NOOP");
+await cmdClient.DisconnectAsync("QUIT", TimeSpan.FromSeconds(1));
 
 // Build a simple command/response server
 var server = new Utils.Net.CommandResponseServer();
