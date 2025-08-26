@@ -45,7 +45,12 @@ string quote = await Utils.Net.QuoteOfTheDayClient.GetQuoteAsync("djxmmx.net");
 // Communicate with a command/response service
 using var tcp = new System.Net.Sockets.TcpClient();
 await tcp.ConnectAsync("localhost", 25);
-using var cmdClient = new Utils.Net.CommandResponseClient { NoOpInterval = TimeSpan.FromMinutes(1) };
+var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(b => b.AddConsole());
+using var cmdClient = new Utils.Net.CommandResponseClient
+{
+    NoOpInterval = TimeSpan.FromMinutes(1),
+    Logger = loggerFactory.CreateLogger<Utils.Net.CommandResponseClient>()
+};
 await cmdClient.ConnectAsync(tcp.GetStream());
 IReadOnlyList<Utils.Net.ServerResponse> replies = await cmdClient.SendCommandAsync("NOOP");
 await cmdClient.DisconnectAsync("QUIT", TimeSpan.FromSeconds(1));
@@ -62,6 +67,8 @@ server.RegisterCommand("LIST", (ctx, args) =>
     System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
         new[] { new Utils.Net.ServerResponse(200, "Listed") }),
     "AUTH");
+// Attach logging
+server.Logger = loggerFactory.CreateLogger<Utils.Net.CommandResponseServer>();
 await server.StartAsync(tcp.GetStream());
 
 // Retrieve messages using the POP3 client

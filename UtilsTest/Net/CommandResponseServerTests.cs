@@ -52,5 +52,35 @@ public class CommandResponseServerTests
         client.Dispose();
         await serverTask;
     }
+
+    /// <summary>
+    /// Ensures that server logging captures commands and responses.
+    /// </summary>
+    [TestMethod]
+    public async Task Server_LogsExchanges()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        ListLogger logger = new();
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using CommandResponseServer server = new() { Logger = logger };
+            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "Pong") }));
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        await client.SendCommandAsync("PING");
+        client.Dispose();
+        await serverTask;
+
+        Assert.IsTrue(logger.Entries.Exists(e => e.Contains("Received: PING")), "Command not logged");
+        Assert.IsTrue(logger.Entries.Exists(e => e.Contains("Sending: 200 Pong")), "Response not logged");
+    }
 }
 

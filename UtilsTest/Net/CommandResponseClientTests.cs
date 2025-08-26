@@ -241,5 +241,35 @@ public class CommandResponseClientTests
         Assert.AreEqual(200, response[0].Code);
         await serverTask;
     }
+
+    /// <summary>
+    /// Verifies that client logging captures sent commands and received responses.
+    /// </summary>
+    [TestMethod]
+    public async Task Client_LogsExchanges()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using CommandResponseServer server = new();
+            server.CommandReceived += cmd => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "Pong") });
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        ListLogger logger = new();
+        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan, Logger = logger };
+        await client.ConnectAsync("127.0.0.1", port);
+        await client.SendCommandAsync("PING");
+        await client.DisconnectAsync();
+        await serverTask;
+
+        Assert.IsTrue(logger.Entries.Exists(e => e.Contains("Sending: PING")), "Command send not logged");
+        Assert.IsTrue(logger.Entries.Exists(e => e.Contains("Received: 200 Pong")), "Response receive not logged");
+    }
 }
 

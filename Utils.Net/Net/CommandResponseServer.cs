@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Utils.Net;
 
@@ -26,6 +27,11 @@ public class CommandResponseServer : IDisposable
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
+    
+    /// <summary>
+    /// Gets or sets the logger used to trace server activity.
+    /// </summary>
+    public ILogger? Logger { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseServer"/> class.
@@ -60,6 +66,7 @@ public class CommandResponseServer : IDisposable
     public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
         _handlers[command] = new CommandRegistration(handler, requiredContexts);
+        Logger?.LogDebug("Command registered: {Command}", command);
     }
 
     /// <summary>
@@ -69,6 +76,7 @@ public class CommandResponseServer : IDisposable
     public void AddContext(string context)
     {
         _contexts.Add(context);
+        Logger?.LogDebug("Context added: {Context}", context);
     }
 
     /// <summary>
@@ -78,6 +86,7 @@ public class CommandResponseServer : IDisposable
     public void RemoveContext(string context)
     {
         _contexts.Remove(context);
+        Logger?.LogDebug("Context removed: {Context}", context);
     }
 
     /// <summary>
@@ -109,6 +118,7 @@ public class CommandResponseServer : IDisposable
             IsBackground = true
         };
         _listenThread.Start();
+        Logger?.LogInformation("Server started");
         _processTask = ProcessQueueAsync(_listenTokenSource.Token);
         return Task.CompletedTask;
     }
@@ -129,6 +139,7 @@ public class CommandResponseServer : IDisposable
             throw new InvalidOperationException("Server is not started.");
         }
         string line = _formatter(response);
+        Logger?.LogInformation("Sending: {Line}", line);
         return _writer.WriteLineAsync(line);
     }
 
@@ -152,6 +163,7 @@ public class CommandResponseServer : IDisposable
                     _listenTokenSource?.Cancel();
                     break;
                 }
+                Logger?.LogInformation("Received: {Command}", command);
                 _commandQueue.Enqueue(command);
                 _commandSignal.Release();
             }
@@ -163,6 +175,7 @@ public class CommandResponseServer : IDisposable
         finally
         {
             _commandSignal.Release();
+            Logger?.LogWarning("Listener thread terminated");
         }
     }
 
@@ -213,6 +226,7 @@ public class CommandResponseServer : IDisposable
                 foreach (ServerResponse response in responses)
                 {
                     string line = _formatter(response);
+                    Logger?.LogInformation("Sending: {Line}", line);
                     await _writer.WriteLineAsync(line);
                 }
             }
@@ -246,6 +260,7 @@ public class CommandResponseServer : IDisposable
         }
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
+        Logger?.LogInformation("Server stopped");
     }
 
     /// <summary>

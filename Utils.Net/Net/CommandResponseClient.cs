@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Utils.Net;
 
@@ -29,6 +30,11 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _disconnected;
+
+    /// <summary>
+    /// Gets or sets the logger used to trace client activity.
+    /// </summary>
+    public ILogger? Logger { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseClient"/> class.
@@ -74,6 +80,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ConnectAsync(string host, int port, CancellationToken cancellationToken = default)
     {
+        Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
         _client = new TcpClient();
         await _client.ConnectAsync(host, port, cancellationToken);
         await ConnectAsync(_client.GetStream(), false, cancellationToken);
@@ -101,6 +108,7 @@ public class CommandResponseClient : IDisposable
             IsBackground = true
         };
         _listenThread.Start();
+        Logger?.LogInformation("Client connected to stream");
         if (_noOpInterval != Timeout.InfiniteTimeSpan)
         {
             _keepAliveTimer = new Timer(async _ => await SendNoOpAsync(), null, _noOpInterval, Timeout.InfiniteTimeSpan);
@@ -125,6 +133,7 @@ public class CommandResponseClient : IDisposable
         try
         {
             DrainPendingResponses();
+            Logger?.LogInformation("Sending: {Command}", command);
             await _writer.WriteLineAsync(command);
             List<ServerResponse> responses = new();
             while (true)
@@ -209,6 +218,7 @@ public class CommandResponseClient : IDisposable
                     break;
                 }
                 ServerResponse response = _parser(line);
+                Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
                 UnsolicitedResponseReceived?.Invoke(response);
@@ -222,6 +232,7 @@ public class CommandResponseClient : IDisposable
         {
             _disconnected = true;
             _responseSignal.Release();
+            Logger?.LogWarning("Listener thread terminated");
         }
     }
 
@@ -249,6 +260,7 @@ public class CommandResponseClient : IDisposable
     {
         try
         {
+            Logger?.LogDebug("Sending keep-alive: {Command}", _noOpCommand);
             await SendCommandAsync(_noOpCommand);
         }
         catch
@@ -265,6 +277,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task DisconnectAsync(string? command = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
+        Logger?.LogInformation("Disconnecting");
         if (_writer is not null && command is not null)
         {
             try
@@ -292,6 +305,7 @@ public class CommandResponseClient : IDisposable
         }
 
         Dispose();
+        Logger?.LogInformation("Disconnected");
     }
 
     /// <summary>
