@@ -49,10 +49,17 @@ await cmdClient.ConnectAsync(tcp.GetStream());
 IReadOnlyList<Utils.Net.ServerResponse> replies = await cmdClient.SendCommandAsync("NOOP");
 await cmdClient.DisconnectAsync("QUIT", TimeSpan.FromSeconds(1));
 
-// Build a simple command/response server
+// Build a command/response server with command mapping and contexts
 var server = new Utils.Net.CommandResponseServer();
-server.CommandReceived += cmd =>
+server.RegisterCommand("LOGIN", (ctx, args) =>
+{
+    ctx.Add("AUTH");
+    return System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
+        new[] { new Utils.Net.ServerResponse(200, "Logged in") });
+});
+server.RegisterCommand("LIST", (ctx, args) =>
     System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
-        new[] { new Utils.Net.ServerResponse(200, "OK") });
+        new[] { new Utils.Net.ServerResponse(200, "Listed") }),
+    "AUTH");
 await server.StartAsync(tcp.GetStream());
 ```

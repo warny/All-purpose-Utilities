@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,11 +23,49 @@ public class CommandResponseServer : IDisposable
     private readonly ConcurrentQueue<string> _commandQueue = new();
     private readonly SemaphoreSlim _commandSignal = new(0);
     private bool _leaveOpen;
+    private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _contexts = new();
 
     /// <summary>
     /// Occurs when a command is received from the client. The handler must return the responses to send.
     /// </summary>
     public event Func<string, Task<IEnumerable<ServerResponse>>>? CommandReceived;
+
+    /// <summary>
+    /// Registers a command handler.
+    /// </summary>
+    /// <param name="command">Command name.</param>
+    /// <param name="handler">Handler invoked when the command is received.</param>
+    /// <param name="requiredContexts">Contexts required for the command to execute.</param>
+    public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
+    {
+        _handlers[command] = new CommandRegistration(handler, requiredContexts);
+    }
+
+    /// <summary>
+    /// Adds a context to the server.
+    /// </summary>
+    /// <param name="context">Context to add.</param>
+    public void AddContext(string context)
+    {
+        _contexts.Add(context);
+    }
+
+    /// <summary>
+    /// Removes a context from the server.
+    /// </summary>
+    /// <param name="context">Context to remove.</param>
+    public void RemoveContext(string context)
+    {
+        _contexts.Remove(context);
+    }
+
+    /// <summary>
+    /// Determines whether the specified context is active.
+    /// </summary>
+    /// <param name="context">Context to check.</param>
+    /// <returns><see langword="true"/> if the context is active; otherwise, <see langword="false"/>.</returns>
+    public bool HasContext(string context) => _contexts.Contains(context);
 
     /// <summary>
     /// Starts processing commands using the specified stream.
@@ -130,12 +169,27 @@ public class CommandResponseServer : IDisposable
                 {
                     continue;
                 }
+                string[] parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string verb = parts.Length > 0 ? parts[0] : string.Empty;
+                string[] args = parts.Length > 1 ? parts[1..] : Array.Empty<string>();
                 IEnumerable<ServerResponse>? responses = null;
-                if (CommandReceived is not null)
+                if (_handlers.TryGetValue(verb, out CommandRegistration? registration))
+                {
+                    if (registration.RequiredContexts.All(c => _contexts.Contains(c)))
+                    {
+                        CommandContext ctx = new(_contexts);
+                        responses = await registration.Handler(ctx, args);
+                    }
+                    else
+                    {
+                        responses = new[] { new ServerResponse(503, "Bad sequence of commands") };
+                    }
+                }
+                else if (CommandReceived is not null)
                 {
                     responses = await CommandReceived.Invoke(command);
                 }
-                responses ??= new[] { new ServerResponse(500, "Command handler not set") };
+                responses ??= new[] { new ServerResponse(502, "Command not implemented") };
                 foreach (ServerResponse response in responses)
                 {
                     string line = response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
@@ -173,5 +227,45 @@ public class CommandResponseServer : IDisposable
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
     }
+
+    /// <summary>
+    /// Represents a registered command handler.
+    /// </summary>
+    private sealed record CommandRegistration(
+        Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> Handler,
+        IReadOnlyCollection<string> RequiredContexts);
+}
+
+/// <summary>
+/// Provides access to the server contexts during command execution.
+/// </summary>
+public sealed class CommandContext
+{
+    private readonly HashSet<string> _contexts;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandContext"/> class.
+    /// </summary>
+    /// <param name="contexts">Active contexts.</param>
+    internal CommandContext(HashSet<string> contexts) => _contexts = contexts;
+
+    /// <summary>
+    /// Adds a context to the active set.
+    /// </summary>
+    /// <param name="context">Context to add.</param>
+    public void Add(string context) => _contexts.Add(context);
+
+    /// <summary>
+    /// Removes a context from the active set.
+    /// </summary>
+    /// <param name="context">Context to remove.</param>
+    public void Remove(string context) => _contexts.Remove(context);
+
+    /// <summary>
+    /// Determines whether the specified context is active.
+    /// </summary>
+    /// <param name="context">Context to check.</param>
+    /// <returns><see langword="true"/> if the context is active; otherwise, <see langword="false"/>.</returns>
+    public bool Has(string context) => _contexts.Contains(context);
 }
 
