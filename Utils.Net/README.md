@@ -57,6 +57,7 @@ await cmdClient.DisconnectAsync("QUIT", TimeSpan.FromSeconds(1));
 
 // Build a command/response server with command mapping and contexts
 var server = new Utils.Net.CommandResponseServer();
+server.MaxConsecutiveErrors = 3; // Shutdown after three consecutive errors
 server.RegisterCommand("LOGIN", (ctx, args) =>
 {
     ctx.Add("AUTH");

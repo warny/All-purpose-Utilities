@@ -27,11 +27,18 @@ public class CommandResponseServer : IDisposable
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
-    
+    private int _errorCount;
+
     /// <summary>
     /// Gets or sets the logger used to trace server activity.
     /// </summary>
     public ILogger? Logger { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of consecutive error responses allowed before the server shuts down.
+    /// A value of <c>0</c> disables automatic shutdown.
+    /// </summary>
+    public int MaxConsecutiveErrors { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseServer"/> class.
@@ -223,11 +230,31 @@ public class CommandResponseServer : IDisposable
                     responses = await CommandReceived.Invoke(command);
                 }
                 responses ??= new[] { new ServerResponse(502, "Command not implemented") };
-                foreach (ServerResponse response in responses)
+                List<ServerResponse> responseList = responses.ToList();
+                foreach (ServerResponse response in responseList)
                 {
                     string line = _formatter(response);
                     Logger?.LogInformation("Sending: {Line}", line);
                     await _writer.WriteLineAsync(line);
+                }
+
+                if (MaxConsecutiveErrors > 0)
+                {
+                    int finalCode = responseList[^1].Code;
+                    if (finalCode >= 500)
+                    {
+                        _errorCount++;
+                        if (_errorCount >= MaxConsecutiveErrors)
+                        {
+                            Logger?.LogWarning("Maximum consecutive errors reached");
+                            _listenTokenSource?.Cancel();
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        _errorCount = 0;
+                    }
                 }
             }
         }
