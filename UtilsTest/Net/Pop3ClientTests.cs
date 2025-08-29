@@ -99,4 +99,53 @@ public class Pop3ClientTests
         await client.QuitAsync();
         await serverTask;
     }
+
+    /// <summary>
+    /// Ensures that the POP3 client preserves server response codes without numeric conversion.
+    /// </summary>
+    [TestMethod]
+    public async Task Pop3Client_RawCodes()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using NetworkStream ns = serverClient.GetStream();
+            using StreamWriter writer = new(ns) { NewLine = "\r\n", AutoFlush = true };
+            using StreamReader reader = new(ns);
+            await writer.WriteLineAsync("+OK ready");
+            bool quit = false;
+            while (!quit && await reader.ReadLineAsync() is string line)
+            {
+                switch (line)
+                {
+                    case "NOOP":
+                        await writer.WriteLineAsync("+OK");
+                        break;
+                    case "FAIL":
+                        await writer.WriteLineAsync("-ERR failure");
+                        break;
+                    case "QUIT":
+                        await writer.WriteLineAsync("+OK bye");
+                        quit = true;
+                        break;
+                    default:
+                        await writer.WriteLineAsync("-ERR");
+                        break;
+                }
+            }
+            listener.Stop();
+        });
+
+        using Pop3Client client = new();
+        await client.ConnectAsync("127.0.0.1", port);
+        IReadOnlyList<ServerResponse> ok = await client.SendCommandAsync("NOOP");
+        Assert.AreEqual("+OK", ok[0].Code);
+        IReadOnlyList<ServerResponse> err = await client.SendCommandAsync("FAIL");
+        Assert.AreEqual("-ERR", err[0].Code);
+        await client.QuitAsync();
+        await serverTask;
+    }
 }
