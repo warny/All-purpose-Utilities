@@ -277,5 +277,33 @@ public class CommandResponseClientTests
         Assert.IsTrue(logger.Entries.Exists(e => e.Contains("Sending: PING")), "Command send not logged");
         Assert.IsTrue(logger.Entries.Exists(e => e.Contains("Received: 200 Pong")), "Response receive not logged");
     }
+
+    /// <summary>
+    /// Ensures that response lines are split into code and message segments.
+    /// </summary>
+    [TestMethod]
+    public void SplitCodeAndMessage_SplitsCorrectly()
+    {
+        TestClient client = new();
+        (string code, string? message) = client.Split("123 Example message");
+        Assert.AreEqual("123", code);
+        Assert.AreEqual("Example message", message);
+        (code, message) = client.Split("LINE");
+        Assert.AreEqual("LINE", code);
+        Assert.IsNull(message);
+    }
+
+    /// <summary>
+    /// Test client exposing the split helper.
+    /// </summary>
+    private class TestClient : CommandResponseClient
+    {
+        /// <summary>
+        /// Exposes <see cref="CommandResponseClient.SplitCodeAndMessage(string)"/> for testing.
+        /// </summary>
+        /// <param name="line">Line to split.</param>
+        /// <returns>Tuple containing code and optional message.</returns>
+        public (string code, string? message) Split(string line) => SplitCodeAndMessage(line);
+    }
 }
 

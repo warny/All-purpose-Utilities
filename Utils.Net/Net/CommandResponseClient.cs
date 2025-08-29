@@ -234,26 +234,38 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Parses a single response line. The default implementation expects a three digit
+    /// Splits a response line into the status code and the remaining text.
+    /// </summary>
+    /// <param name="line">Line to split.</param>
+    /// <returns>Tuple containing the code and optional message.</returns>
+    protected static (string code, string? message) SplitCodeAndMessage(string line)
+    {
+        int index = line.IndexOf(' ');
+        return index >= 0
+            ? (line[..index], line[(index + 1)..])
+            : (line, null);
+    }
+
+    /// <summary>
+    /// Parses a single response line. The default implementation expects a numeric
     /// status code followed by an optional text message.
     /// </summary>
     /// <param name="line">Response line from the server.</param>
     /// <returns>Parsed response.</returns>
     protected virtual ServerResponse ParseResponseLine(string line)
     {
-        if (line.Length >= 3 && char.IsDigit(line[0]))
+        (string code, string? text) = SplitCodeAndMessage(line);
+        if (code.Length > 0 && char.IsDigit(code[0]))
         {
-            string code = line[..3];
-            string? text = line.Length > 4 ? line[4..] : string.Empty;
             ResponseSeverity severity = ResponseSeverity.Unknown;
-            int digit = line[0] - '0';
+            int digit = code[0] - '0';
             if (digit >= 0 && digit <= 5)
             {
                 severity = (ResponseSeverity)digit;
             }
-            return new ServerResponse(code, severity, text);
+            return new ServerResponse(code, severity, text ?? string.Empty);
         }
-        return new ServerResponse(string.Empty, ResponseSeverity.Unknown, line);
+        return new ServerResponse(code, ResponseSeverity.Unknown, text);
     }
 
     /// <summary>

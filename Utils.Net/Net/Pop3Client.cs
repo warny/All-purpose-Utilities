@@ -12,7 +12,6 @@ namespace Utils.Net;
 /// </summary>
 public class Pop3Client : CommandResponseClient
 {
-    private bool _expectMultiLine;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Client"/> class.
@@ -81,13 +80,13 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Dictionary mapping message number to its size.</returns>
     public async Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken cancellationToken = default)
     {
-        _expectMultiLine = true;
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync("LIST", cancellationToken);
         await EnsureOkAsync(responses);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken);
         Dictionary<int, int> result = new();
-        for (int i = 1; i < responses.Count - 1; i++)
+        foreach (string line in lines)
         {
-            string[] parts = responses[i].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 2 && int.TryParse(parts[0], out int id) && int.TryParse(parts[1], out int size))
             {
                 result[id] = size;
@@ -104,18 +103,14 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Text of the message with dot-stuffing removed.</returns>
     public async Task<string> RetrieveAsync(int id, CancellationToken cancellationToken = default)
     {
-        _expectMultiLine = true;
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"RETR {id}", cancellationToken);
         await EnsureOkAsync(responses);
         StringBuilder builder = new();
-        for (int i = 1; i < responses.Count - 1; i++)
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken);
+        foreach (string line in lines)
         {
-            string line = responses[i].Message ?? string.Empty;
-            if (line.StartsWith("..", StringComparison.Ordinal))
-            {
-                line = line[1..];
-            }
-            builder.AppendLine(line);
+            string content = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
+            builder.AppendLine(content);
         }
         return builder.ToString();
     }
@@ -168,35 +163,38 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Parsed response.</returns>
     protected override ServerResponse ParseResponseLine(string line)
     {
-        if (_expectMultiLine)
+        (string code, string? message) = SplitCodeAndMessage(line);
+        if (string.Equals(code, "+OK", StringComparison.OrdinalIgnoreCase))
         {
-            if (line == ".")
-            {
-                _expectMultiLine = false;
-                return new ServerResponse(".", ResponseSeverity.Completion, string.Empty);
-            }
-            if (line.StartsWith("+OK", StringComparison.OrdinalIgnoreCase))
-            {
-                return new ServerResponse("+OK", ResponseSeverity.Preliminary, line.Length > 3 ? line[3..].TrimStart() : string.Empty);
-            }
-            if (line.StartsWith("-ERR", StringComparison.OrdinalIgnoreCase))
-            {
-                _expectMultiLine = false;
-                return new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, line.Length > 4 ? line[4..].TrimStart() : string.Empty);
-            }
-            return new ServerResponse(string.Empty, ResponseSeverity.Preliminary, line);
+            return new ServerResponse(code, ResponseSeverity.Completion, message ?? string.Empty);
         }
-        else
+        if (string.Equals(code, "-ERR", StringComparison.OrdinalIgnoreCase))
         {
-            if (line.StartsWith("+OK", StringComparison.OrdinalIgnoreCase))
+            return new ServerResponse(code, ResponseSeverity.PermanentNegative, message ?? string.Empty);
+        }
+        return new ServerResponse(code, ResponseSeverity.Unknown, message);
+    }
+
+    /// <summary>
+    /// Reads lines from the server until a single dot line is encountered.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Collection of lines excluding the terminating dot.</returns>
+    private async Task<IReadOnlyList<string>> ReadMultilineAsync(CancellationToken cancellationToken)
+    {
+        List<string> lines = new();
+        while (true)
+        {
+            IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken);
+            foreach (ServerResponse response in batch)
             {
-                return new ServerResponse("+OK", ResponseSeverity.Completion, line.Length > 3 ? line[3..].TrimStart() : string.Empty);
+                string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
+                if (line == ".")
+                {
+                    return lines;
+                }
+                lines.Add(line);
             }
-            if (line.StartsWith("-ERR", StringComparison.OrdinalIgnoreCase))
-            {
-                return new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, line.Length > 4 ? line[4..].TrimStart() : string.Empty);
-            }
-            return new ServerResponse(string.Empty, ResponseSeverity.Unknown, line);
         }
     }
 }
