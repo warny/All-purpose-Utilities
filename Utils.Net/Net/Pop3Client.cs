@@ -10,9 +10,8 @@ namespace Utils.Net;
 /// <summary>
 /// Client for the Post Office Protocol version 3 (POP3).
 /// </summary>
-public class Pop3Client : IDisposable
+public class Pop3Client : CommandResponseClient
 {
-    private readonly CommandResponseClient _client;
     private bool _expectMultiLine;
 
     /// <summary>
@@ -20,16 +19,6 @@ public class Pop3Client : IDisposable
     /// </summary>
     public Pop3Client()
     {
-        _client = new CommandResponseClient(ParseResponse);
-    }
-
-    /// <summary>
-    /// Gets or sets the interval at which a NOOP command is automatically sent.
-    /// </summary>
-    public TimeSpan NoOpInterval
-    {
-        get => _client.NoOpInterval;
-        set => _client.NoOpInterval = value;
     }
 
     /// <summary>
@@ -40,8 +29,8 @@ public class Pop3Client : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ConnectAsync(string host, int port = 110, CancellationToken cancellationToken = default)
     {
-        await _client.ConnectAsync(host, port, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await _client.ReadAsync(cancellationToken);
+        await base.ConnectAsync(host, port, cancellationToken);
+        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
         await EnsureOkAsync(greeting);
     }
 
@@ -53,8 +42,8 @@ public class Pop3Client : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        await _client.ConnectAsync(stream, leaveOpen, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await _client.ReadAsync(cancellationToken);
+        await base.ConnectAsync(stream, leaveOpen, cancellationToken);
+        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
         await EnsureOkAsync(greeting);
     }
 
@@ -66,8 +55,8 @@ public class Pop3Client : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken = default)
     {
-        await EnsureOkAsync(await _client.SendCommandAsync($"USER {user}", cancellationToken));
-        await EnsureOkAsync(await _client.SendCommandAsync($"PASS {password}", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync($"PASS {password}", cancellationToken));
     }
 
     /// <summary>
@@ -77,7 +66,7 @@ public class Pop3Client : IDisposable
     /// <returns>Tuple containing number of messages and total mailbox size.</returns>
     public async Task<(int messageCount, int mailboxSize)> GetStatAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await _client.SendCommandAsync("STAT", cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("STAT", cancellationToken);
         await EnsureOkAsync(responses);
         string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
         int count = parts.Length > 0 ? int.Parse(parts[0]) : 0;
@@ -93,7 +82,7 @@ public class Pop3Client : IDisposable
     public async Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken cancellationToken = default)
     {
         _expectMultiLine = true;
-        IReadOnlyList<ServerResponse> responses = await _client.SendCommandAsync("LIST", cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("LIST", cancellationToken);
         await EnsureOkAsync(responses);
         Dictionary<int, int> result = new();
         for (int i = 1; i < responses.Count - 1; i++)
@@ -116,7 +105,7 @@ public class Pop3Client : IDisposable
     public async Task<string> RetrieveAsync(int id, CancellationToken cancellationToken = default)
     {
         _expectMultiLine = true;
-        IReadOnlyList<ServerResponse> responses = await _client.SendCommandAsync($"RETR {id}", cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"RETR {id}", cancellationToken);
         await EnsureOkAsync(responses);
         StringBuilder builder = new();
         for (int i = 1; i < responses.Count - 1; i++)
@@ -138,7 +127,7 @@ public class Pop3Client : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        await EnsureOkAsync(await _client.SendCommandAsync($"DELE {id}", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync($"DELE {id}", cancellationToken));
     }
 
     /// <summary>
@@ -147,7 +136,7 @@ public class Pop3Client : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public Task NoOpAsync(CancellationToken cancellationToken = default)
     {
-        return _client.SendCommandAsync("NOOP", cancellationToken);
+        return SendCommandAsync("NOOP", cancellationToken);
     }
 
     /// <summary>
@@ -156,15 +145,7 @@ public class Pop3Client : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public Task QuitAsync(CancellationToken cancellationToken = default)
     {
-        return _client.DisconnectAsync("QUIT", TimeSpan.FromSeconds(5), cancellationToken);
-    }
-
-    /// <summary>
-    /// Releases the resources used by the client.
-    /// </summary>
-    public void Dispose()
-    {
-        _client.Dispose();
+        return DisconnectAsync("QUIT", TimeSpan.FromSeconds(5), cancellationToken);
     }
 
     /// <summary>
@@ -185,7 +166,7 @@ public class Pop3Client : IDisposable
     /// </summary>
     /// <param name="line">Line received from the server.</param>
     /// <returns>Parsed response.</returns>
-    private ServerResponse ParseResponse(string line)
+    protected override ServerResponse ParseResponseLine(string line)
     {
         if (_expectMultiLine)
         {

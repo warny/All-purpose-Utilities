@@ -15,7 +15,6 @@ namespace Utils.Net;
 /// </summary>
 public class CommandResponseClient : IDisposable
 {
-    private readonly Func<string, ServerResponse> _parser;
     private TcpClient? _client;
     private Stream? _stream;
     private StreamReader? _reader;
@@ -39,10 +38,8 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseClient"/> class.
     /// </summary>
-    /// <param name="parser">Optional delegate used to parse response lines. When null, a numeric code parser is used.</param>
-    public CommandResponseClient(Func<string, ServerResponse>? parser = null)
+    public CommandResponseClient()
     {
-        _parser = parser ?? DefaultParser;
     }
 
     /// <summary>
@@ -217,7 +214,7 @@ public class CommandResponseClient : IDisposable
                 {
                     break;
                 }
-                ServerResponse response = _parser(line);
+                ServerResponse response = ParseResponseLine(line);
                 Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
@@ -237,17 +234,24 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Default parser that extracts a numeric status code and optional text from a response line.
+    /// Parses a single response line. The default implementation expects a three digit
+    /// status code followed by an optional text message.
     /// </summary>
     /// <param name="line">Response line from the server.</param>
     /// <returns>Parsed response.</returns>
-    private static ServerResponse DefaultParser(string line)
+    protected virtual ServerResponse ParseResponseLine(string line)
     {
         if (line.Length >= 3 && char.IsDigit(line[0]))
         {
             string code = line[..3];
             string? text = line.Length > 4 ? line[4..] : string.Empty;
-            return new ServerResponse(code, text);
+            ResponseSeverity severity = ResponseSeverity.Unknown;
+            int digit = line[0] - '0';
+            if (digit >= 0 && digit <= 5)
+            {
+                severity = (ResponseSeverity)digit;
+            }
+            return new ServerResponse(code, severity, text);
         }
         return new ServerResponse(string.Empty, ResponseSeverity.Unknown, line);
     }

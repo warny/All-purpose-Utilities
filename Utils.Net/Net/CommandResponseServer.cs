@@ -222,14 +222,14 @@ public class CommandResponseServer : IDisposable
                     }
                     else
                     {
-                        responses = new[] { new ServerResponse("503", "Bad sequence of commands") };
+                        responses = new[] { new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands") };
                     }
                 }
                 else if (CommandReceived is not null)
                 {
                     responses = await CommandReceived.Invoke(command);
                 }
-                responses ??= new[] { new ServerResponse("502", "Command not implemented") };
+                responses ??= new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented") };
                 List<ServerResponse> responseList = responses.ToList();
                 foreach (ServerResponse response in responseList)
                 {

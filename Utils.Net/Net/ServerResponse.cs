@@ -1,5 +1,3 @@
-using Utils.Objects;
-
 namespace Utils.Net;
 
 /// <summary>
@@ -39,7 +37,7 @@ public enum ResponseSeverity
 }
 
 /// <summary>
-/// Represents a single server response line consisting of a numeric code, its severity and an optional message.
+/// Represents a single server response line consisting of a code, its severity and an optional message.
 /// </summary>
 public readonly record struct ServerResponse
 {
@@ -61,7 +59,7 @@ public readonly record struct ServerResponse
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerResponse"/> struct.
     /// </summary>
-    /// <param name="code">Numeric status code.</param>
+    /// <param name="code">Status code returned by the server.</param>
     /// <param name="severity">Severity of the response.</param>
     /// <param name="message">Optional associated message.</param>
     public ServerResponse(string code, ResponseSeverity severity, string? message)
@@ -69,16 +67,5 @@ public readonly record struct ServerResponse
         Code = code;
         Severity = severity;
         Message = message;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ServerResponse"/> struct inferring severity from the status code.
-    /// </summary>
-    /// <param name="code">Numeric status code.</param>
-    /// <param name="message">Optional associated message.</param>
-    public ServerResponse(string code, string? message)
-        : this(code, (ResponseSeverity)(code[0] - '0'), message)
-    {
-        code[0].ArgMustBeBetween('0', '5', nameof(code));
     }
 }

@@ -31,7 +31,11 @@ public class CommandResponseClientTests
             using CommandResponseServer server = new();
             server.CommandReceived += cmd =>
                 Task.FromResult<IEnumerable<ServerResponse>>(cmd == "MULTI"
-                    ? new[] { new ServerResponse("100", "Continue"), new ServerResponse("200", "Done") }
+                    ? new[]
+                    {
+                        new ServerResponse("100", ResponseSeverity.Preliminary, "Continue"),
+                        new ServerResponse("200", ResponseSeverity.Completion, "Done")
+                    }
                     : System.Array.Empty<ServerResponse>());
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -69,7 +73,7 @@ public class CommandResponseClientTests
             server.CommandReceived += cmd =>
             {
                 received = cmd;
-                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "OK") });
+                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "OK") });
             };
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -128,7 +132,7 @@ public class CommandResponseClientTests
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new();
             server.CommandReceived += cmd => Task.FromResult<IEnumerable<ServerResponse>>(cmd == "QUIT"
-                ? new[] { new ServerResponse("200", "Bye") }
+                ? new[] { new ServerResponse("200", ResponseSeverity.Completion, "Bye") }
                 : System.Array.Empty<ServerResponse>());
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -185,7 +189,7 @@ public class CommandResponseClientTests
                 {
                     await Task.Delay(200);
                 }
-                return new[] { new ServerResponse("200", cmd) };
+                return new[] { new ServerResponse("200", ResponseSeverity.Completion, cmd) };
             };
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -257,7 +261,7 @@ public class CommandResponseClientTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new();
-            server.CommandReceived += cmd => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "Pong") });
+            server.CommandReceived += cmd => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Pong") });
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();

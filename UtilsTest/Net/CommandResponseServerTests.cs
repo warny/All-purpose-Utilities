@@ -32,10 +32,10 @@ public class CommandResponseServerTests
             server.RegisterCommand("LOGIN", (ctx, args) =>
             {
                 ctx.Add("AUTH");
-                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "OK") });
+                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "OK") });
             });
             server.RegisterCommand("LIST", (ctx, args) =>
-                Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "Listed") }),
+                Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Listed") }),
                 "AUTH");
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -68,7 +68,7 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new() { Logger = logger };
-            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "Pong") }));
+            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Pong") }));
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();
