@@ -78,17 +78,20 @@ await server.StartAsync(tcp.GetStream());
 // Retrieve messages using the POP3 client
 using var pop3 = new Utils.Net.Pop3Client();
 await pop3.ConnectAsync("mail.example.com", 110);
-await pop3.AuthenticateAsync("user", "pass");
-var messages = await pop3.ListAsync();
+await pop3.AuthenticateApopAsync("user", "pass");
+IReadOnlyDictionary<int, string> uids = await pop3.ListUniqueIdsAsync();
 string firstMessage = await pop3.RetrieveAsync(1);
+await pop3.ResetAsync();
 await pop3.QuitAsync();
 
 // Host a POP3 server with a custom mailbox
 class MemoryMailbox : Utils.Net.IPop3Mailbox
 {
     public Task<bool> AuthenticateAsync(string user, string password, CancellationToken token = default) => Task.FromResult(true);
+    public Task<bool> AuthenticateApopAsync(string user, string timestamp, string digest, CancellationToken token = default) => Task.FromResult(true);
     public Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken token = default) => Task.FromResult<IReadOnlyDictionary<int, int>>(new Dictionary<int, int>());
     public Task<string> RetrieveAsync(int id, CancellationToken token = default) => Task.FromResult(string.Empty);
+    public Task<IReadOnlyDictionary<int, string>> ListUidsAsync(CancellationToken token = default) => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
     public Task DeleteAsync(int id, CancellationToken token = default) => Task.CompletedTask;
 }
 var mailbox = new MemoryMailbox();

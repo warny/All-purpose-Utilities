@@ -19,6 +19,16 @@ public interface IPop3Mailbox
     Task<bool> AuthenticateAsync(string user, string password, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Authenticates a user using the APOP challenge-response mechanism.
+    /// </summary>
+    /// <param name="user">User name.</param>
+    /// <param name="timestamp">Timestamp provided in the server greeting.</param>
+    /// <param name="digest">MD5 digest of <paramref name="timestamp"/> and the user password.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true"/> if authentication succeeds; otherwise, <see langword="false"/>.</returns>
+    Task<bool> AuthenticateApopAsync(string user, string timestamp, string digest, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Retrieves a list of available messages with their sizes.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -32,6 +42,13 @@ public interface IPop3Mailbox
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Message text.</returns>
     Task<string> RetrieveAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a list of available messages with their unique identifiers.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Dictionary mapping message identifiers to unique identifiers.</returns>
+    Task<IReadOnlyDictionary<int, string>> ListUidsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes the specified message.

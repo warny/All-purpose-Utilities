@@ -14,6 +14,8 @@ public sealed class Pop3Server : IDisposable
     private readonly CommandResponseServer _server;
     private readonly IPop3Mailbox _mailbox;
     private string? _user;
+    private string? _timestamp;
+    private readonly HashSet<int> _deleted = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Server"/> class.
@@ -25,10 +27,14 @@ public sealed class Pop3Server : IDisposable
         _server = new CommandResponseServer(FormatResponse);
         _server.RegisterCommand("USER", HandleUser);
         _server.RegisterCommand("PASS", HandlePass, "USER");
+        _server.RegisterCommand("APOP", HandleApop);
         _server.RegisterCommand("STAT", HandleStat, "AUTH");
         _server.RegisterCommand("LIST", HandleList, "AUTH");
+        _server.RegisterCommand("UIDL", HandleUidl, "AUTH");
         _server.RegisterCommand("RETR", HandleRetr, "AUTH");
         _server.RegisterCommand("DELE", HandleDele, "AUTH");
+        _server.RegisterCommand("RSET", HandleRset, "AUTH");
+        _server.RegisterCommand("CAPA", HandleCapa);
         _server.RegisterCommand("NOOP", HandleNoOp, "AUTH");
         _server.RegisterCommand("QUIT", HandleQuit);
     }
@@ -42,7 +48,8 @@ public sealed class Pop3Server : IDisposable
     public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         await _server.StartAsync(stream, leaveOpen, cancellationToken);
-        await _server.SendResponseAsync(new ServerResponse("+OK", ResponseSeverity.Completion, "POP3 ready"));
+        _timestamp = $"<{DateTime.UtcNow:yyyyMMddHHmmss}.{Guid.NewGuid():N}@localhost>";
+        await _server.SendResponseAsync(new ServerResponse("+OK", ResponseSeverity.Completion, _timestamp));
     }
 
     /// <summary>
@@ -114,11 +121,17 @@ public sealed class Pop3Server : IDisposable
     {
         IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
         int total = 0;
-        foreach (int size in list.Values)
+        int count = 0;
+        foreach (KeyValuePair<int, int> pair in list)
         {
-            total += size;
+            if (_deleted.Contains(pair.Key))
+            {
+                continue;
+            }
+            count++;
+            total += pair.Value;
         }
-        return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, $"{list.Count} {total}") };
+        return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, $"{count} {total}") };
     }
 
     /// <summary>
@@ -132,15 +145,21 @@ public sealed class Pop3Server : IDisposable
         IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
         if (args.Length > 0 && int.TryParse(args[0], out int id))
         {
-            if (list.TryGetValue(id, out int size))
+            if (!
+                _deleted.Contains(id) &&
+                list.TryGetValue(id, out int size))
             {
                 return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, $"{id} {size}") };
             }
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
         }
-        List<ServerResponse> responses = new() { new ServerResponse("+OK", ResponseSeverity.Preliminary, $"{list.Count} messages") };
+        List<ServerResponse> responses = new() { new ServerResponse("+OK", ResponseSeverity.Preliminary, string.Empty) };
         foreach (KeyValuePair<int, int> pair in list)
         {
+            if (_deleted.Contains(pair.Key))
+            {
+                continue;
+            }
             responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, $"{pair.Key} {pair.Value}"));
         }
         responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
@@ -160,7 +179,7 @@ public sealed class Pop3Server : IDisposable
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid id") };
         }
         IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
-        if (!list.ContainsKey(id))
+        if (_deleted.Contains(id) || !list.ContainsKey(id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
         }
@@ -193,11 +212,11 @@ public sealed class Pop3Server : IDisposable
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid id") };
         }
         IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
-        if (!list.ContainsKey(id))
+        if (_deleted.Contains(id) || !list.ContainsKey(id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
         }
-        await _mailbox.DeleteAsync(id);
+        _deleted.Add(id);
         return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "deleted") };
     }
 
@@ -213,13 +232,102 @@ public sealed class Pop3Server : IDisposable
     }
 
     /// <summary>
+    /// Handles the RSET command.
+    /// </summary>
+    /// <param name="ctx">Command context.</param>
+    /// <param name="args">Command arguments.</param>
+    /// <returns>Responses to send.</returns>
+    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args)
+    {
+        _deleted.Clear();
+        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("+OK", ResponseSeverity.Completion, string.Empty) });
+    }
+
+    /// <summary>
+    /// Handles the CAPA command.
+    /// </summary>
+    /// <param name="ctx">Command context.</param>
+    /// <param name="args">Command arguments.</param>
+    /// <returns>Responses to send.</returns>
+    private Task<IEnumerable<ServerResponse>> HandleCapa(CommandContext ctx, string[] args)
+    {
+        List<ServerResponse> responses = new()
+        {
+            new ServerResponse("+OK", ResponseSeverity.Preliminary, "Capability list follows"),
+            new ServerResponse(string.Empty, ResponseSeverity.Preliminary, "USER"),
+            new ServerResponse(string.Empty, ResponseSeverity.Preliminary, "APOP"),
+            new ServerResponse(string.Empty, ResponseSeverity.Preliminary, "UIDL"),
+            new ServerResponse(".", ResponseSeverity.Completion, string.Empty)
+        };
+        return Task.FromResult<IEnumerable<ServerResponse>>(responses);
+    }
+
+    /// <summary>
+    /// Handles the UIDL command.
+    /// </summary>
+    /// <param name="ctx">Command context.</param>
+    /// <param name="args">Command arguments.</param>
+    /// <returns>Responses to send.</returns>
+    private async Task<IEnumerable<ServerResponse>> HandleUidl(CommandContext ctx, string[] args)
+    {
+        IReadOnlyDictionary<int, string> list = await _mailbox.ListUidsAsync();
+        if (args.Length > 0 && int.TryParse(args[0], out int id))
+        {
+            if (!_deleted.Contains(id) && list.TryGetValue(id, out string uid))
+            {
+                return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, $"{id} {uid}") };
+            }
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
+        }
+        List<ServerResponse> responses = new() { new ServerResponse("+OK", ResponseSeverity.Preliminary, string.Empty) };
+        foreach (KeyValuePair<int, string> pair in list)
+        {
+            if (_deleted.Contains(pair.Key))
+            {
+                continue;
+            }
+            responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, $"{pair.Key} {pair.Value}"));
+        }
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        return responses;
+    }
+
+    /// <summary>
+    /// Handles the APOP command.
+    /// </summary>
+    /// <param name="ctx">Command context.</param>
+    /// <param name="args">Command arguments.</param>
+    /// <returns>Responses to send.</returns>
+    private async Task<IEnumerable<ServerResponse>> HandleApop(CommandContext ctx, string[] args)
+    {
+        if (_timestamp is null || args.Length < 2)
+        {
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid arguments") };
+        }
+        string user = args[0];
+        string digest = args[1];
+        bool ok = await _mailbox.AuthenticateApopAsync(user, _timestamp, digest);
+        if (ok)
+        {
+            ctx.Add("AUTH");
+            return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "authentication successful") };
+        }
+        return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };
+    }
+
+    /// <summary>
     /// Handles the QUIT command.
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
     {
-        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "bye") });
+        foreach (int id in _deleted)
+        {
+            await _mailbox.DeleteAsync(id);
+        }
+        _deleted.Clear();
+        return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "bye") };
     }
 }

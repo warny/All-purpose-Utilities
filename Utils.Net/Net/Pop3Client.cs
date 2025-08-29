@@ -12,6 +12,7 @@ namespace Utils.Net;
 /// </summary>
 public class Pop3Client : CommandResponseClient
 {
+    private string? _timestamp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Client"/> class.
@@ -31,6 +32,7 @@ public class Pop3Client : CommandResponseClient
         await base.ConnectAsync(host, port, cancellationToken);
         IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
         await EnsureOkAsync(greeting);
+        _timestamp = ExtractTimestamp(greeting);
     }
 
     /// <summary>
@@ -44,6 +46,7 @@ public class Pop3Client : CommandResponseClient
         await base.ConnectAsync(stream, leaveOpen, cancellationToken);
         IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
         await EnsureOkAsync(greeting);
+        _timestamp = ExtractTimestamp(greeting);
     }
 
     /// <summary>
@@ -56,6 +59,24 @@ public class Pop3Client : CommandResponseClient
     {
         await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken));
         await EnsureOkAsync(await SendCommandAsync($"PASS {password}", cancellationToken));
+    }
+
+    /// <summary>
+    /// Authenticates the user using the APOP challenge-response mechanism.
+    /// </summary>
+    /// <param name="user">User name.</param>
+    /// <param name="password">Password.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task AuthenticateApopAsync(string user, string password, CancellationToken cancellationToken = default)
+    {
+        if (_timestamp is null)
+        {
+            throw new InvalidOperationException("Server greeting did not contain APOP timestamp");
+        }
+        using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+        byte[] hash = md5.ComputeHash(Encoding.ASCII.GetBytes(_timestamp + password));
+        string digest = Convert.ToHexString(hash).ToLowerInvariant();
+        await EnsureOkAsync(await SendCommandAsync($"APOP {user} {digest}", cancellationToken));
     }
 
     /// <summary>
@@ -126,6 +147,15 @@ public class Pop3Client : CommandResponseClient
     }
 
     /// <summary>
+    /// Resets the deletion marks for all messages.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task ResetAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureOkAsync(await SendCommandAsync("RSET", cancellationToken));
+    }
+
+    /// <summary>
     /// Sends the NOOP command.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -141,6 +171,54 @@ public class Pop3Client : CommandResponseClient
     public Task QuitAsync(CancellationToken cancellationToken = default)
     {
         return DisconnectAsync("QUIT", TimeSpan.FromSeconds(5), cancellationToken);
+    }
+
+    /// <summary>
+    /// Retrieves the server capabilities.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Collection of capability names.</returns>
+    public async Task<IReadOnlyList<string>> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("CAPA", cancellationToken);
+        await EnsureOkAsync(responses);
+        return await ReadMultilineAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Retrieves unique identifiers for all messages.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Dictionary mapping message numbers to unique identifiers.</returns>
+    public async Task<IReadOnlyDictionary<int, string>> ListUniqueIdsAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("UIDL", cancellationToken);
+        await EnsureOkAsync(responses);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken);
+        Dictionary<int, string> result = new();
+        foreach (string line in lines)
+        {
+            string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2 && int.TryParse(parts[0], out int id))
+            {
+                result[id] = parts[1];
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Retrieves the unique identifier for a single message.
+    /// </summary>
+    /// <param name="id">Message identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Unique identifier or <see langword="null"/> if not found.</returns>
+    public async Task<string?> GetUniqueIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"UIDL {id}", cancellationToken);
+        await EnsureOkAsync(responses);
+        string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        return parts.Length > 1 ? parts[1] : null;
     }
 
     /// <summary>
@@ -196,5 +274,26 @@ public class Pop3Client : CommandResponseClient
                 lines.Add(line);
             }
         }
+    }
+
+    /// <summary>
+    /// Extracts the APOP timestamp from the greeting responses.
+    /// </summary>
+    /// <param name="responses">Greeting responses.</param>
+    /// <returns>Timestamp string or <see langword="null"/> if not found.</returns>
+    private static string? ExtractTimestamp(IReadOnlyList<ServerResponse> responses)
+    {
+        if (responses.Count == 0)
+        {
+            return null;
+        }
+        string? msg = responses[0].Message;
+        if (msg is null)
+        {
+            return null;
+        }
+        int start = msg.IndexOf('<');
+        int end = msg.IndexOf('>', start + 1);
+        return start >= 0 && end > start ? msg[start..(end + 1)] : null;
     }
 }
