@@ -45,7 +45,9 @@ public class CommandResponseClientTests
             responses = await client.SendCommandAsync("MULTI");
             Assert.AreEqual(2, responses.Count);
             Assert.AreEqual(100, responses[0].Code);
+            Assert.AreEqual(ResponseSeverity.Preliminary, responses[0].Severity);
             Assert.AreEqual(200, responses[1].Code);
+            Assert.AreEqual(ResponseSeverity.Completion, responses[1].Severity);
         }
         await serverTask;
     }

@@ -117,7 +117,7 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Sends a command and collects responses until a non 1xx status code is received.
+    /// Sends a command and collects responses until a response with at least completion severity is received.
     /// </summary>
     /// <param name="command">Command to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -148,7 +148,7 @@ public class CommandResponseClient : IDisposable
                     continue;
                 }
                 responses.Add(response);
-                if (response.Code < 100 || response.Code >= 200)
+                if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
                 {
                     break;
                 }
@@ -243,14 +243,12 @@ public class CommandResponseClient : IDisposable
     /// <returns>Parsed response.</returns>
     private static ServerResponse DefaultParser(string line)
     {
-        int code = 0;
-        string? text = null;
-        if (line.Length >= 3 && int.TryParse(line[..3], out int parsed))
+        if (line.Length >= 3 && int.TryParse(line[..3], out int code))
         {
-            code = parsed;
-            text = line.Length > 4 ? line[4..] : string.Empty;
+            string? text = line.Length > 4 ? line[4..] : string.Empty;
+            return new ServerResponse(code, text);
         }
-        return new ServerResponse(code, text);
+        return new ServerResponse(0, ResponseSeverity.Unknown, line);
     }
 
     /// <summary>
@@ -288,7 +286,7 @@ public class CommandResponseClient : IDisposable
                     cts.CancelAfter(timeout.Value);
                 }
                 IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cts.Token);
-                if (responses.Count == 0 || responses[^1].Code < 200 || responses[^1].Code >= 300)
+                if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Completion)
                 {
                     // Force disconnect on missing positive reply.
                     _listenTokenSource?.Cancel();

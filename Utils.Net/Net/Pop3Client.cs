@@ -173,7 +173,7 @@ public class Pop3Client : IDisposable
     /// <param name="responses">Responses to inspect.</param>
     private static Task EnsureOkAsync(IReadOnlyList<ServerResponse> responses)
     {
-        if (responses.Count == 0 || responses[^1].Code < 200 || responses[^1].Code >= 300)
+        if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Completion)
         {
             throw new IOException(responses.Count > 0 ? responses[^1].Message : "Server closed connection");
         }

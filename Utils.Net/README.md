@@ -53,6 +53,9 @@ using var cmdClient = new Utils.Net.CommandResponseClient
 };
 await cmdClient.ConnectAsync(tcp.GetStream());
 IReadOnlyList<Utils.Net.ServerResponse> replies = await cmdClient.SendCommandAsync("NOOP");
+// Each response line exposes a Severity value allowing callers to inspect
+// preliminary, completion or error statuses. The client waits until a line
+// with at least completion severity is received before returning all lines.
 await cmdClient.DisconnectAsync("QUIT", TimeSpan.FromSeconds(1));
 
 // Build a command/response server with command mapping and contexts

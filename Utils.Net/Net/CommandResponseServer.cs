@@ -240,8 +240,8 @@ public class CommandResponseServer : IDisposable
 
                 if (MaxConsecutiveErrors > 0)
                 {
-                    int finalCode = responseList[^1].Code;
-                    if (finalCode >= 500)
+                    ResponseSeverity finalSeverity = responseList[^1].Severity;
+                    if (finalSeverity >= ResponseSeverity.TransientNegative)
                     {
                         _errorCount++;
                         if (_errorCount >= MaxConsecutiveErrors)
