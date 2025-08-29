@@ -65,11 +65,11 @@ server.RegisterCommand("LOGIN", (ctx, args) =>
 {
     ctx.Add("AUTH");
     return System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
-        new[] { new Utils.Net.ServerResponse(200, "Logged in") });
+        new[] { new Utils.Net.ServerResponse("200", "Logged in") });
 });
 server.RegisterCommand("LIST", (ctx, args) =>
     System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
-        new[] { new Utils.Net.ServerResponse(200, "Listed") }),
+        new[] { new Utils.Net.ServerResponse("200", "Listed") }),
     "AUTH");
 // Attach logging
 server.Logger = loggerFactory.CreateLogger<Utils.Net.CommandResponseServer>();

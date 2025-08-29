@@ -192,30 +192,30 @@ public class Pop3Client : IDisposable
             if (line == ".")
             {
                 _expectMultiLine = false;
-                return new ServerResponse(200, string.Empty);
+                return new ServerResponse(".", ResponseSeverity.Completion, string.Empty);
             }
             if (line.StartsWith("+OK", StringComparison.OrdinalIgnoreCase))
             {
-                return new ServerResponse(100, line.Length > 3 ? line[3..].TrimStart() : string.Empty);
+                return new ServerResponse("+OK", ResponseSeverity.Preliminary, line.Length > 3 ? line[3..].TrimStart() : string.Empty);
             }
             if (line.StartsWith("-ERR", StringComparison.OrdinalIgnoreCase))
             {
                 _expectMultiLine = false;
-                return new ServerResponse(500, line.Length > 4 ? line[4..].TrimStart() : string.Empty);
+                return new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, line.Length > 4 ? line[4..].TrimStart() : string.Empty);
             }
-            return new ServerResponse(100, line);
+            return new ServerResponse(string.Empty, ResponseSeverity.Preliminary, line);
         }
         else
         {
             if (line.StartsWith("+OK", StringComparison.OrdinalIgnoreCase))
             {
-                return new ServerResponse(200, line.Length > 3 ? line[3..].TrimStart() : string.Empty);
+                return new ServerResponse("+OK", ResponseSeverity.Completion, line.Length > 3 ? line[3..].TrimStart() : string.Empty);
             }
             if (line.StartsWith("-ERR", StringComparison.OrdinalIgnoreCase))
             {
-                return new ServerResponse(500, line.Length > 4 ? line[4..].TrimStart() : string.Empty);
+                return new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, line.Length > 4 ? line[4..].TrimStart() : string.Empty);
             }
-            return new ServerResponse(0, line);
+            return new ServerResponse(string.Empty, ResponseSeverity.Unknown, line);
         }
     }
 }

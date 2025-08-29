@@ -1,3 +1,5 @@
+using Utils.Objects;
+
 namespace Utils.Net;
 
 /// <summary>
@@ -44,7 +46,7 @@ public readonly record struct ServerResponse
     /// <summary>
     /// Numeric status code.
     /// </summary>
-    public int Code { get; }
+    public string Code { get; }
 
     /// <summary>
     /// Severity of the response.
@@ -62,7 +64,7 @@ public readonly record struct ServerResponse
     /// <param name="code">Numeric status code.</param>
     /// <param name="severity">Severity of the response.</param>
     /// <param name="message">Optional associated message.</param>
-    public ServerResponse(int code, ResponseSeverity severity, string? message)
+    public ServerResponse(string code, ResponseSeverity severity, string? message)
     {
         Code = code;
         Severity = severity;
@@ -74,8 +76,9 @@ public readonly record struct ServerResponse
     /// </summary>
     /// <param name="code">Numeric status code.</param>
     /// <param name="message">Optional associated message.</param>
-    public ServerResponse(int code, string? message)
-        : this(code, (ResponseSeverity)(code / 100), message)
+    public ServerResponse(string code, string? message)
+        : this(code, (ResponseSeverity)(code[0] - '0'), message)
     {
+        code[0].ArgMustBeBetween('0', '5', nameof(code));
     }
 }

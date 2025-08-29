@@ -32,10 +32,10 @@ public class CommandResponseServerTests
             server.RegisterCommand("LOGIN", (ctx, args) =>
             {
                 ctx.Add("AUTH");
-                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "OK") });
+                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "OK") });
             });
             server.RegisterCommand("LIST", (ctx, args) =>
-                Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "Listed") }),
+                Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "Listed") }),
                 "AUTH");
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -45,11 +45,11 @@ public class CommandResponseServerTests
         using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
         IReadOnlyList<ServerResponse> responses = await client.SendCommandAsync("LIST");
-        Assert.AreEqual(503, responses[0].Code);
+        Assert.AreEqual("503", responses[0].Code);
         responses = await client.SendCommandAsync("LOGIN");
-        Assert.AreEqual(200, responses[0].Code);
+        Assert.AreEqual("200", responses[0].Code);
         responses = await client.SendCommandAsync("LIST");
-        Assert.AreEqual(200, responses[0].Code);
+        Assert.AreEqual("200", responses[0].Code);
         client.Dispose();
         await serverTask;
     }
@@ -68,7 +68,7 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new() { Logger = logger };
-            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "Pong") }));
+            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "Pong") }));
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();
@@ -107,7 +107,7 @@ public class CommandResponseServerTests
         for (int i = 0; i < 3; i++)
         {
             IReadOnlyList<ServerResponse> replies = await client.SendCommandAsync("BOGUS");
-            Assert.AreEqual(502, replies[0].Code);
+            Assert.AreEqual("502", replies[0].Code);
         }
         await serverTask; // should complete after third error
         await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("BOGUS"));

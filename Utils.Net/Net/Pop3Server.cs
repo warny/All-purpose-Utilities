@@ -42,7 +42,7 @@ public sealed class Pop3Server : IDisposable
     public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         await _server.StartAsync(stream, leaveOpen, cancellationToken);
-        await _server.SendResponseAsync(new ServerResponse(200, "POP3 ready"));
+        await _server.SendResponseAsync(new ServerResponse("200", "POP3 ready"));
     }
 
     /// <summary>
@@ -65,15 +65,12 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Formatted line.</returns>
     private static string FormatResponse(ServerResponse response)
     {
-        if (response.Code >= 200 && response.Code < 300)
+        return response.Severity switch
         {
-            return response.Message is null ? "+OK" : $"+OK {response.Message}";
-        }
-        if (response.Code >= 400)
-        {
-            return response.Message is null ? "-ERR" : $"-ERR {response.Message}";
-        }
-        return response.Message ?? string.Empty;
+            >= ResponseSeverity.TransientNegative => response.Message is null ? "-ERR" : $"-ERR {response.Message}",
+            >= ResponseSeverity.Completion => response.Message is null ? "+OK" : $"+OK {response.Message}",
+            _ => response.Message ?? string.Empty
+        };
     }
 
     /// <summary>
@@ -86,7 +83,7 @@ public sealed class Pop3Server : IDisposable
     {
         _user = args.Length > 0 ? args[0] : string.Empty;
         ctx.Add("USER");
-        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "user accepted") });
+        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "user accepted") });
     }
 
     /// <summary>
@@ -103,9 +100,9 @@ public sealed class Pop3Server : IDisposable
         {
             ctx.Remove("USER");
             ctx.Add("AUTH");
-            return new[] { new ServerResponse(200, "authentication successful") };
+            return new[] { new ServerResponse("200", "authentication successful") };
         }
-        return new[] { new ServerResponse(500, "authentication failed") };
+        return new[] { new ServerResponse("500", "authentication failed") };
     }
 
     /// <summary>
@@ -122,7 +119,7 @@ public sealed class Pop3Server : IDisposable
         {
             total += size;
         }
-        return new[] { new ServerResponse(200, $"{list.Count} {total}") };
+        return new[] { new ServerResponse("200", $"{list.Count} {total}") };
     }
 
     /// <summary>
@@ -138,16 +135,16 @@ public sealed class Pop3Server : IDisposable
         {
             if (list.TryGetValue(id, out int size))
             {
-                return new[] { new ServerResponse(200, $"{id} {size}") };
+                return new[] { new ServerResponse("200", $"{id} {size}") };
             }
-            return new[] { new ServerResponse(500, "no such message") };
+            return new[] { new ServerResponse("500", "no such message") };
         }
-        List<ServerResponse> responses = new() { new ServerResponse(200, $"{list.Count} messages") };
+        List<ServerResponse> responses = new() { new ServerResponse("200", $"{list.Count} messages") };
         foreach (KeyValuePair<int, int> pair in list)
         {
-            responses.Add(new ServerResponse(100, $"{pair.Key} {pair.Value}"));
+            responses.Add(new ServerResponse("100", $"{pair.Key} {pair.Value}"));
         }
-        responses.Add(new ServerResponse(100, "."));
+        responses.Add(new ServerResponse("100", "."));
         return responses;
     }
 
@@ -161,10 +158,10 @@ public sealed class Pop3Server : IDisposable
     {
         if (args.Length == 0 || !int.TryParse(args[0], out int id))
         {
-            return new[] { new ServerResponse(500, "invalid id") };
+            return new[] { new ServerResponse("500", "invalid id") };
         }
         string message = await _mailbox.RetrieveAsync(id);
-        List<ServerResponse> responses = new() { new ServerResponse(200, "message follows") };
+        List<ServerResponse> responses = new() { new ServerResponse("200", "message follows") };
         using StringReader reader = new(message);
         string? line;
         while ((line = await reader.ReadLineAsync()) is not null)
@@ -173,9 +170,9 @@ public sealed class Pop3Server : IDisposable
             {
                 line = "." + line;
             }
-            responses.Add(new ServerResponse(100, line));
+            responses.Add(new ServerResponse("100", line));
         }
-        responses.Add(new ServerResponse(100, "."));
+        responses.Add(new ServerResponse("100", "."));
         return responses;
     }
 
@@ -189,10 +186,10 @@ public sealed class Pop3Server : IDisposable
     {
         if (args.Length == 0 || !int.TryParse(args[0], out int id))
         {
-            return new[] { new ServerResponse(500, "invalid id") };
+            return new[] { new ServerResponse("500", "invalid id") };
         }
         await _mailbox.DeleteAsync(id);
-        return new[] { new ServerResponse(200, "deleted") };
+        return new[] { new ServerResponse("200", "deleted") };
     }
 
     /// <summary>
@@ -203,7 +200,7 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args)
     {
-        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, string.Empty) });
+        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", string.Empty) });
     }
 
     /// <summary>
@@ -214,6 +211,6 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
     {
-        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse(200, "bye") });
+        return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", "bye") });
     }
 }

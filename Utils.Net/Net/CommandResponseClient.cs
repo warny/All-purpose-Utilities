@@ -243,12 +243,13 @@ public class CommandResponseClient : IDisposable
     /// <returns>Parsed response.</returns>
     private static ServerResponse DefaultParser(string line)
     {
-        if (line.Length >= 3 && int.TryParse(line[..3], out int code))
+        if (line.Length >= 3 && char.IsDigit(line[0]))
         {
+            string code = line[..3];
             string? text = line.Length > 4 ? line[4..] : string.Empty;
             return new ServerResponse(code, text);
         }
-        return new ServerResponse(0, ResponseSeverity.Unknown, line);
+        return new ServerResponse(string.Empty, ResponseSeverity.Unknown, line);
     }
 
     /// <summary>

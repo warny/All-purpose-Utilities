@@ -56,7 +56,7 @@ public class CommandResponseServer : IDisposable
     /// <returns>Formatted textual line.</returns>
     private static string DefaultFormatter(ServerResponse response)
     {
-        return response.Message is null ? $"{response.Code:D3}" : $"{response.Code:D3} {response.Message}";
+        return response.Message is null ? response.Code : $"{response.Code} {response.Message}";
     }
 
     /// <summary>
@@ -222,14 +222,14 @@ public class CommandResponseServer : IDisposable
                     }
                     else
                     {
-                        responses = new[] { new ServerResponse(503, "Bad sequence of commands") };
+                        responses = new[] { new ServerResponse("503", "Bad sequence of commands") };
                     }
                 }
                 else if (CommandReceived is not null)
                 {
                     responses = await CommandReceived.Invoke(command);
                 }
-                responses ??= new[] { new ServerResponse(502, "Command not implemented") };
+                responses ??= new[] { new ServerResponse("502", "Command not implemented") };
                 List<ServerResponse> responseList = responses.ToList();
                 foreach (ServerResponse response in responseList)
                 {
