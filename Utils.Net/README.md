@@ -14,6 +14,7 @@ It targets **.NET 9** and is designed to be portable across platforms.
 - Parsing of mail addresses and IP range calculations
 - Clients for basic network services like Echo, Quote of the Day, Time protocol and NTP
 - POP3 client for retrieving e-mail using a command/response model
+- SMTP client and server for transmitting e-mail using a command/response model with optional authentication (PLAIN and LOGIN), relay control, VRFY/EXPN/HELP commands and ESMTP extensions
 
 ## Usage examples
 ```csharp
@@ -98,4 +99,28 @@ class MemoryMailbox : Utils.Net.IPop3Mailbox
 var mailbox = new MemoryMailbox();
 var pop3Server = new Utils.Net.Pop3Server(mailbox);
 await pop3Server.StartAsync(tcp.GetStream());
+
+// Send an e-mail using the SMTP client
+using var smtp = new Utils.Net.SmtpClient();
+await smtp.ConnectAsync("mail.example.com", 25);
+await smtp.EhloAsync("client.example.com");
+await smtp.AuthenticateAsync("user", "pass", Utils.Net.SmtpAuthenticationMechanism.Login);
+await smtp.HelpAsync();
+await smtp.SendMailAsync("alice@example.com", new[] { "bob@example.com" }, "Subject: Hi\r\n\r\nHello");
+await smtp.QuitAsync();
+
+// Host an SMTP server with an in-memory store
+class MemoryStore : Utils.Net.ISmtpMessageStore
+{
+    public Task StoreAsync(Utils.Net.SmtpMessage message, CancellationToken token = default) => Task.CompletedTask;
+}
+class MemoryAuthenticator : Utils.Net.ISmtpAuthenticator
+{
+    public Task<Utils.Net.SmtpAuthenticationResult> AuthenticateAsync(string user, string password, CancellationToken token = default) =>
+        Task.FromResult(new Utils.Net.SmtpAuthenticationResult(true, true));
+}
+var authenticator = new MemoryAuthenticator();
+var store = new MemoryStore();
+var smtpServer = new Utils.Net.SmtpServer(store, d => d == "example.com", authenticator);
+await smtpServer.StartAsync(tcp.GetStream());
 ```
