@@ -200,6 +200,34 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Sends raw lines to the server without waiting for a response.
+    /// </summary>
+    /// <param name="lines">Lines to send.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
+    protected async Task SendLinesAsync(IEnumerable<string> lines, CancellationToken cancellationToken = default)
+    {
+        if (_writer is null)
+        {
+            throw new InvalidOperationException("Client is not connected.");
+        }
+
+        await _sendLock.WaitAsync(cancellationToken);
+        try
+        {
+            foreach (string line in lines)
+            {
+                await _writer.WriteLineAsync(line);
+            }
+            ResetKeepAlive();
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
+    }
+
+    /// <summary>
     /// Removes any queued responses that were not consumed by previous commands.
     /// </summary>
     private void DrainPendingResponses()
@@ -345,7 +373,7 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Resets the keep alive timer.
     /// </summary>
-    private void ResetKeepAlive()
+    protected void ResetKeepAlive()
     {
         _keepAliveTimer?.Change(_noOpInterval, Timeout.InfiniteTimeSpan);
     }

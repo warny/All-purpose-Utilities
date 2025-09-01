@@ -61,6 +61,7 @@ public class CommandResponseServer : IDisposable
 
     /// <summary>
     /// Occurs when a command is received from the client. The handler must return the responses to send.
+    /// Returning an empty sequence results in no response being written to the client.
     /// </summary>
     public event Func<string, Task<IEnumerable<ServerResponse>>>? CommandReceived;
 
@@ -238,7 +239,7 @@ public class CommandResponseServer : IDisposable
                     await _writer.WriteLineAsync(line);
                 }
 
-                if (MaxConsecutiveErrors > 0)
+                if (responseList.Count > 0 && MaxConsecutiveErrors > 0)
                 {
                     ResponseSeverity finalSeverity = responseList[^1].Severity;
                     if (finalSeverity >= ResponseSeverity.TransientNegative)

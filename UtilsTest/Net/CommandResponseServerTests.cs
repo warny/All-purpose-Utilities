@@ -112,5 +112,36 @@ public class CommandResponseServerTests
         await serverTask; // should complete after third error
         await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("BOGUS"));
     }
+
+    /// <summary>
+    /// Ensures that handlers can return no responses.
+    /// </summary>
+    [TestMethod]
+    public async Task CommandReceived_AllowsEmptyResponses()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using CommandResponseServer server = new();
+            server.CommandReceived += _ => Task.FromResult<IEnumerable<ServerResponse>>(System.Array.Empty<ServerResponse>());
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        using TcpClient client = new();
+        await client.ConnectAsync("127.0.0.1", port);
+        using (StreamWriter writer = new(client.GetStream()))
+        {
+            writer.NewLine = "\r\n";
+            await writer.WriteLineAsync("TEST");
+            await writer.FlushAsync();
+        }
+        client.Close();
+        await serverTask;
+    }
 }
 
