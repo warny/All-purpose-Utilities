@@ -279,6 +279,29 @@ public class CommandResponseClientTests
     }
 
     /// <summary>
+    /// Ensures that disposing the client completes even when the server remains silent.
+    /// </summary>
+    [TestMethod]
+    public async Task Dispose_CompletesWhenServerSilent()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            await Task.Delay(200);
+            listener.Stop();
+        });
+
+        CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        Task disposeTask = Task.Run(client.Dispose);
+        Assert.IsTrue(disposeTask.Wait(TimeSpan.FromSeconds(1)), "Dispose timed out");
+        await serverTask;
+    }
+
+    /// <summary>
     /// Ensures that response lines are split into code and message segments.
     /// </summary>
     [TestMethod]

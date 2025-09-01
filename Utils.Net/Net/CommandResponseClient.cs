@@ -337,14 +337,14 @@ public class CommandResponseClient : IDisposable
     public void Dispose()
     {
         _listenTokenSource?.Cancel();
-        _listenThread?.Join();
-        _keepAliveTimer?.Dispose();
         _reader?.Dispose();
         _writer?.Dispose();
         if (!_leaveOpen)
         {
             _stream?.Dispose();
         }
+        _listenThread?.Join(TimeSpan.FromSeconds(1));
+        _keepAliveTimer?.Dispose();
         _client?.Dispose();
         _responseSignal.Dispose();
         _sendLock.Dispose();

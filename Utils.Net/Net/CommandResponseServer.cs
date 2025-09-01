@@ -270,7 +270,13 @@ public class CommandResponseServer : IDisposable
     public void Dispose()
     {
         _listenTokenSource?.Cancel();
-        _listenThread?.Join();
+        _reader?.Dispose();
+        _writer?.Dispose();
+        if (!_leaveOpen)
+        {
+            _stream?.Dispose();
+        }
+        _listenThread?.Join(TimeSpan.FromSeconds(1));
         try
         {
             _processTask?.Wait();
@@ -278,12 +284,6 @@ public class CommandResponseServer : IDisposable
         catch
         {
             // Ignore exceptions during shutdown.
-        }
-        _reader?.Dispose();
-        _writer?.Dispose();
-        if (!_leaveOpen)
-        {
-            _stream?.Dispose();
         }
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
