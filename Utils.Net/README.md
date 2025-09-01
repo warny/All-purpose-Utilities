@@ -13,6 +13,7 @@ It targets **.NET 9** and is designed to be portable across platforms.
 - URI and query string manipulation helpers
 - Parsing of mail addresses and IP range calculations
 - Clients for basic network services like Echo, Quote of the Day, Time protocol and NTP
+- POP3 client for retrieving e-mail using a command/response model
 
 ## Usage examples
 ```csharp
@@ -40,4 +41,61 @@ DateTime utcNow = await Utils.Net.NtpClient.GetTimeAsync("pool.ntp.org");
 
 // Fetch the quote of the day
 string quote = await Utils.Net.QuoteOfTheDayClient.GetQuoteAsync("djxmmx.net");
+
+// Communicate with a command/response service
+using var tcp = new System.Net.Sockets.TcpClient();
+await tcp.ConnectAsync("localhost", 25);
+var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(b => b.AddConsole());
+using var cmdClient = new Utils.Net.CommandResponseClient
+{
+    NoOpInterval = TimeSpan.FromMinutes(1),
+    Logger = loggerFactory.CreateLogger<Utils.Net.CommandResponseClient>()
+};
+await cmdClient.ConnectAsync(tcp.GetStream());
+IReadOnlyList<Utils.Net.ServerResponse> replies = await cmdClient.SendCommandAsync("NOOP");
+// Each response line exposes a Severity value allowing callers to inspect
+// preliminary, completion or error statuses. The client waits until a line
+// with at least completion severity is received before returning all lines.
+bool stillConnected = cmdClient.IsConnected;
+await cmdClient.DisconnectAsync("QUIT", TimeSpan.FromSeconds(1));
+
+// Build a command/response server with command mapping and contexts
+var server = new Utils.Net.CommandResponseServer();
+server.MaxConsecutiveErrors = 3; // Shutdown after three consecutive errors
+server.RegisterCommand("LOGIN", (ctx, args) =>
+{
+    ctx.Add("AUTH");
+    return System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
+        new[] { new Utils.Net.ServerResponse("200", Utils.Net.ResponseSeverity.Completion, "Logged in") });
+});
+server.RegisterCommand("LIST", (ctx, args) =>
+    System.Threading.Tasks.Task.FromResult<IEnumerable<Utils.Net.ServerResponse>>(
+        new[] { new Utils.Net.ServerResponse("200", Utils.Net.ResponseSeverity.Completion, "Listed") }),
+    "AUTH");
+// Attach logging
+server.Logger = loggerFactory.CreateLogger<Utils.Net.CommandResponseServer>();
+await server.StartAsync(tcp.GetStream());
+
+// Retrieve messages using the POP3 client
+using var pop3 = new Utils.Net.Pop3Client();
+await pop3.ConnectAsync("mail.example.com", 110);
+await pop3.AuthenticateApopAsync("user", "pass");
+IReadOnlyDictionary<int, string> uids = await pop3.ListUniqueIdsAsync();
+string firstMessage = await pop3.RetrieveAsync(1);
+await pop3.ResetAsync();
+await pop3.QuitAsync();
+
+// Host a POP3 server with a custom mailbox
+class MemoryMailbox : Utils.Net.IPop3Mailbox
+{
+    public Task<bool> AuthenticateAsync(string user, string password, CancellationToken token = default) => Task.FromResult(true);
+    public Task<bool> AuthenticateApopAsync(string user, string timestamp, string digest, CancellationToken token = default) => Task.FromResult(true);
+    public Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken token = default) => Task.FromResult<IReadOnlyDictionary<int, int>>(new Dictionary<int, int>());
+    public Task<string> RetrieveAsync(int id, CancellationToken token = default) => Task.FromResult(string.Empty);
+    public Task<IReadOnlyDictionary<int, string>> ListUidsAsync(CancellationToken token = default) => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
+    public Task DeleteAsync(int id, CancellationToken token = default) => Task.CompletedTask;
+}
+var mailbox = new MemoryMailbox();
+var pop3Server = new Utils.Net.Pop3Server(mailbox);
+await pop3Server.StartAsync(tcp.GetStream());
 ```
