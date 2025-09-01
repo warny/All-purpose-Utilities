@@ -14,6 +14,7 @@ It targets **.NET 9** and is designed to be portable across platforms.
 - Parsing of mail addresses and IP range calculations
 - Clients for basic network services like Echo, Quote of the Day, Time protocol and NTP
 - POP3 client for retrieving e-mail using a command/response model
+- NNTP client and server for reading, listing and posting Usenet articles
 - SMTP client and server for transmitting e-mail using a command/response model with optional authentication (PLAIN and LOGIN), relay control, VRFY/EXPN/HELP commands and ESMTP extensions
 
 ## Usage examples
@@ -99,6 +100,15 @@ class MemoryMailbox : Utils.Net.IPop3Mailbox
 var mailbox = new MemoryMailbox();
 var pop3Server = new Utils.Net.Pop3Server(mailbox);
 await pop3Server.StartAsync(tcp.GetStream());
+
+// Retrieve and post articles using NNTP
+using var nntp = new Utils.Net.NntpClient();
+await nntp.ConnectAsync("news.example.com", 119);
+IReadOnlyList<(string group, int last, int first)> groups = await nntp.ListAsync();
+await nntp.GroupAsync("comp.test");
+string headers = await nntp.HeaderAsync(1);
+await nntp.PostAsync("Subject: Hi\r\n\r\nHello world");
+await nntp.QuitAsync();
 
 // Send an e-mail using the SMTP client
 using var smtp = new Utils.Net.SmtpClient();
