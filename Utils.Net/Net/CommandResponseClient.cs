@@ -70,6 +70,11 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Gets a value indicating whether the client is still connected.
+    /// </summary>
+    public bool IsConnected => !_disconnected;
+
+    /// <summary>
     /// Connects to the specified host and port using a TCP connection.
     /// </summary>
     /// <param name="host">Server host name or IP address.</param>
@@ -119,6 +124,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="command">Command to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of responses returned by the server.</returns>
+    /// <exception cref="IOException">Thrown when the connection has been closed.</exception>
     public async Task<IReadOnlyList<ServerResponse>> SendCommandAsync(string command, CancellationToken cancellationToken = default)
     {
         if (_writer is null)
@@ -129,6 +135,10 @@ public class CommandResponseClient : IDisposable
         await _sendLock.WaitAsync(cancellationToken);
         try
         {
+            if (_disconnected)
+            {
+                throw new IOException("Connection closed.");
+            }
             DrainPendingResponses();
             Logger?.LogInformation("Sending: {Command}", command);
             await _writer.WriteLineAsync(command);
@@ -164,8 +174,13 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of responses read from the server.</returns>
+    /// <exception cref="IOException">Thrown when the connection has been closed.</exception>
     public async Task<IReadOnlyList<ServerResponse>> ReadAsync(CancellationToken cancellationToken = default)
     {
+        if (_disconnected && _responseSignal.CurrentCount == 0)
+        {
+            throw new IOException("Connection closed.");
+        }
         List<ServerResponse> responses = new();
         await _responseSignal.WaitAsync(cancellationToken);
         do
@@ -173,6 +188,10 @@ public class CommandResponseClient : IDisposable
             if (_responseQueue.TryDequeue(out ServerResponse response))
             {
                 responses.Add(response);
+            }
+            else if (_disconnected)
+            {
+                throw new IOException("Connection closed.");
             }
         }
         while (_responseSignal.Wait(0));
