@@ -256,7 +256,7 @@ public class CommandResponseClient : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? line = _reader.ReadLineAsync(cancellationToken).GetAwaiter().GetResult();
+                string? line = _reader.ReadLine();
                 if (line is null)
                 {
                     break;
@@ -268,9 +268,13 @@ public class CommandResponseClient : IDisposable
                 UnsolicitedResponseReceived?.Invoke(response);
             }
         }
-        catch (OperationCanceledException)
+        catch (IOException)
         {
-            // Listening was canceled.
+            // Connection closed.
+        }
+        catch (ObjectDisposedException)
+        {
+            // Stream disposed.
         }
         finally
         {
