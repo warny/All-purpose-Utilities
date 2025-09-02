@@ -287,17 +287,19 @@ public class CommandResponseClientTests
         TcpListener listener = new(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        TaskCompletionSource tcs = new();
         Task serverTask = Task.Run(async () =>
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
-            await Task.Delay(200);
-            listener.Stop();
+            await tcs.Task;
         });
 
         CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
         Task disposeTask = Task.Run(client.Dispose);
         Assert.IsTrue(disposeTask.Wait(TimeSpan.FromSeconds(1)), "Dispose timed out");
+        tcs.SetResult();
+        listener.Stop();
         await serverTask;
     }
 

@@ -29,6 +29,7 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _disconnected;
+    private TimeSpan _listenTimeout = TimeSpan.FromMilliseconds(200);
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
@@ -70,6 +71,22 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Gets or sets the timeout applied to read operations in the listener loop.
+    /// </summary>
+    public TimeSpan ListenTimeout
+    {
+        get => _listenTimeout;
+        set
+        {
+            _listenTimeout = value;
+            if (_stream is not null && _stream.CanTimeout)
+            {
+                _stream.ReadTimeout = value == Timeout.InfiniteTimeSpan ? -1 : (int)value.TotalMilliseconds;
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets a value indicating whether the client is still connected.
     /// </summary>
     public bool IsConnected => !_disconnected;
@@ -98,6 +115,10 @@ public class CommandResponseClient : IDisposable
     {
         _stream = stream;
         _leaveOpen = leaveOpen;
+        if (stream.CanTimeout)
+        {
+            stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
+        }
         _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
         _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
         {
@@ -256,11 +277,21 @@ public class CommandResponseClient : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? line = _reader.ReadLine();
+                string? line;
+                try
+                {
+                    line = _reader.ReadLine();
+                }
+                catch (IOException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
+                {
+                    continue;
+                }
+
                 if (line is null)
                 {
                     break;
                 }
+
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
                 _responseQueue.Enqueue(response);
