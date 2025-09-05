@@ -29,7 +29,7 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _disconnected;
-    private TimeSpan _listenTimeout = TimeSpan.FromMilliseconds(200);
+    private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
@@ -284,7 +284,8 @@ public class CommandResponseClient : IDisposable
                 }
                 catch (IOException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
                 {
-                    continue;
+                    // Exit the loop when no data is received within the read timeout.
+                    break;
                 }
 
                 if (line is null)

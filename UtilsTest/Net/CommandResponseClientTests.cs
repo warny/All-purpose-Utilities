@@ -119,6 +119,34 @@ public class CommandResponseClientTests
     }
 
     /// <summary>
+    /// Verifies that the client stops waiting when the server stays silent beyond the listen timeout.
+    /// </summary>
+    [TestMethod]
+    public async Task SendCommandAsync_ThrowsWhenServerSilent()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        TaskCompletionSource tcs = new();
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            await tcs.Task;
+            listener.Stop();
+        });
+
+        using CommandResponseClient client = new()
+        {
+            NoOpInterval = Timeout.InfiniteTimeSpan,
+            ListenTimeout = TimeSpan.FromMilliseconds(100)
+        };
+        await client.ConnectAsync("127.0.0.1", port);
+        await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("PING"));
+        tcs.SetResult();
+        await serverTask;
+    }
+
+    /// <summary>
     /// Verifies that DisconnectAsync waits for a positive response before closing.
     /// </summary>
     [TestMethod]
