@@ -165,7 +165,7 @@ public class CommandResponseServer : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? command = _reader.ReadLineAsync(cancellationToken).GetAwaiter().GetResult();
+                string? command = _reader.ReadLine();
                 if (command is null)
                 {
                     _listenTokenSource?.Cancel();
@@ -176,9 +176,15 @@ public class CommandResponseServer : IDisposable
                 _commandSignal.Release();
             }
         }
-        catch (OperationCanceledException)
+        catch (IOException)
         {
-            // Listening canceled.
+            // Connection closed.
+            _listenTokenSource?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Stream disposed.
+            _listenTokenSource?.Cancel();
         }
         finally
         {

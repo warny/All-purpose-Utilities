@@ -29,6 +29,7 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _disconnected;
+    private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
@@ -70,6 +71,22 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Gets or sets the timeout applied to read operations in the listener loop.
+    /// </summary>
+    public TimeSpan ListenTimeout
+    {
+        get => _listenTimeout;
+        set
+        {
+            _listenTimeout = value;
+            if (_stream is not null && _stream.CanTimeout)
+            {
+                _stream.ReadTimeout = value == Timeout.InfiniteTimeSpan ? -1 : (int)value.TotalMilliseconds;
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets a value indicating whether the client is still connected.
     /// </summary>
     public bool IsConnected => !_disconnected;
@@ -98,6 +115,10 @@ public class CommandResponseClient : IDisposable
     {
         _stream = stream;
         _leaveOpen = leaveOpen;
+        if (stream.CanTimeout)
+        {
+            stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
+        }
         _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
         _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
         {
@@ -256,11 +277,22 @@ public class CommandResponseClient : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? line = _reader.ReadLineAsync(cancellationToken).GetAwaiter().GetResult();
+                string? line;
+                try
+                {
+                    line = _reader.ReadLine();
+                }
+                catch (IOException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
+                {
+                    // Exit the loop when no data is received within the read timeout.
+                    break;
+                }
+
                 if (line is null)
                 {
                     break;
                 }
+
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
                 _responseQueue.Enqueue(response);
@@ -268,9 +300,13 @@ public class CommandResponseClient : IDisposable
                 UnsolicitedResponseReceived?.Invoke(response);
             }
         }
-        catch (OperationCanceledException)
+        catch (IOException)
         {
-            // Listening was canceled.
+            // Connection closed.
+        }
+        catch (ObjectDisposedException)
+        {
+            // Stream disposed.
         }
         finally
         {
@@ -294,25 +330,31 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Parses a single response line. The default implementation expects a numeric
-    /// status code followed by an optional text message.
+    /// Parses a single response line. The default implementation expects a three-digit
+    /// numeric status code followed by an optional text message. Lines that do not start
+    /// with a numeric code are treated as raw text payloads.
     /// </summary>
     /// <param name="line">Response line from the server.</param>
     /// <returns>Parsed response.</returns>
     protected virtual ServerResponse ParseResponseLine(string line)
     {
-        (string code, string? text) = SplitCodeAndMessage(line);
-        if (code.Length > 0 && char.IsDigit(code[0]))
+        if (line.Length >= 3 &&
+            char.IsDigit(line[0]) &&
+            char.IsDigit(line[1]) &&
+            char.IsDigit(line[2]) &&
+            (line.Length == 3 || line[3] == ' '))
         {
+            string code = line[..3];
+            string? text = line.Length > 4 ? line[4..] : (line.Length == 4 ? string.Empty : null);
             ResponseSeverity severity = ResponseSeverity.Unknown;
             int digit = code[0] - '0';
             if (digit >= 0 && digit <= 5)
             {
                 severity = (ResponseSeverity)digit;
             }
-            return new ServerResponse(code, severity, text ?? string.Empty);
+            return new ServerResponse(code, severity, text);
         }
-        return new ServerResponse(code, ResponseSeverity.Unknown, text);
+        return new ServerResponse(line, ResponseSeverity.Unknown, null);
     }
 
     /// <summary>
