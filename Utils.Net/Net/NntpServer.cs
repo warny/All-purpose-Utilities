@@ -134,9 +134,9 @@ public sealed class NntpServer : IDisposable
             {
                 line = "." + line;
             }
-            responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, line));
+            responses.Add(new ServerResponse(line, ResponseSeverity.Preliminary, null));
         }
-        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;
     }
 
@@ -174,9 +174,9 @@ public sealed class NntpServer : IDisposable
                 first = 0;
                 last = 0;
             }
-            responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, $"{group} {last} {first} y"));
+            responses.Add(new ServerResponse($"{group} {last} {first} y", ResponseSeverity.Preliminary, null));
         }
-        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;
     }
 
@@ -202,10 +202,10 @@ public sealed class NntpServer : IDisposable
             DateTime? created = await _store.GetGroupCreationDateAsync(group);
             if (created is not null && created.Value.ToUniversalTime() >= since)
             {
-                responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, group));
+                responses.Add(new ServerResponse(group, ResponseSeverity.Preliminary, null));
             }
         }
-        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;
     }
 
@@ -229,9 +229,9 @@ public sealed class NntpServer : IDisposable
         };
         foreach (int id in ids)
         {
-            responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, id.ToString()));
+            responses.Add(new ServerResponse(id.ToString(), ResponseSeverity.Preliminary, null));
         }
-        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;
     }
 
@@ -279,9 +279,9 @@ public sealed class NntpServer : IDisposable
             {
                 line = "." + line;
             }
-            responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, line));
+            responses.Add(new ServerResponse(line, ResponseSeverity.Preliminary, null));
         }
-        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;
     }
 
@@ -327,9 +327,9 @@ public sealed class NntpServer : IDisposable
             {
                 line = "." + line;
             }
-            responses.Add(new ServerResponse(string.Empty, ResponseSeverity.Preliminary, line));
+            responses.Add(new ServerResponse(line, ResponseSeverity.Preliminary, null));
         }
-        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, string.Empty));
+        responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;
     }
 

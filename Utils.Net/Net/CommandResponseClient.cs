@@ -330,25 +330,31 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Parses a single response line. The default implementation expects a numeric
-    /// status code followed by an optional text message.
+    /// Parses a single response line. The default implementation expects a three-digit
+    /// numeric status code followed by an optional text message. Lines that do not start
+    /// with a numeric code are treated as raw text payloads.
     /// </summary>
     /// <param name="line">Response line from the server.</param>
     /// <returns>Parsed response.</returns>
     protected virtual ServerResponse ParseResponseLine(string line)
     {
-        (string code, string? text) = SplitCodeAndMessage(line);
-        if (code.Length > 0 && char.IsDigit(code[0]))
+        if (line.Length >= 3 &&
+            char.IsDigit(line[0]) &&
+            char.IsDigit(line[1]) &&
+            char.IsDigit(line[2]) &&
+            (line.Length == 3 || line[3] == ' '))
         {
+            string code = line[..3];
+            string? text = line.Length > 4 ? line[4..] : (line.Length == 4 ? string.Empty : null);
             ResponseSeverity severity = ResponseSeverity.Unknown;
             int digit = code[0] - '0';
             if (digit >= 0 && digit <= 5)
             {
                 severity = (ResponseSeverity)digit;
             }
-            return new ServerResponse(code, severity, text ?? string.Empty);
+            return new ServerResponse(code, severity, text);
         }
-        return new ServerResponse(code, ResponseSeverity.Unknown, text);
+        return new ServerResponse(line, ResponseSeverity.Unknown, null);
     }
 
     /// <summary>

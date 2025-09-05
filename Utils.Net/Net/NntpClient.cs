@@ -304,7 +304,7 @@ public class NntpClient : CommandResponseClient
             foreach (ServerResponse response in batch)
             {
                 string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
-                if (line == ".")
+                if (line.TrimEnd() == ".")
                 {
                     return lines;
                 }

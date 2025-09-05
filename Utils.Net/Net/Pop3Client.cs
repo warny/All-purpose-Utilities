@@ -250,7 +250,7 @@ public class Pop3Client : CommandResponseClient
         {
             return new ServerResponse(code, ResponseSeverity.PermanentNegative, message ?? string.Empty);
         }
-        return new ServerResponse(code, ResponseSeverity.Unknown, message);
+        return new ServerResponse(line, ResponseSeverity.Unknown, null);
     }
 
     /// <summary>
@@ -267,7 +267,7 @@ public class Pop3Client : CommandResponseClient
             foreach (ServerResponse response in batch)
             {
                 string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
-                if (line == ".")
+                if (line.TrimEnd() == ".")
                 {
                     return lines;
                 }

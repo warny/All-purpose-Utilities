@@ -49,9 +49,9 @@ public class NntpClientServerTests
         int? nextId = await client.NextAsync();
         Assert.AreEqual(1, nextId);
         string header = await client.HeaderAsync(1);
-        StringAssert.Contains(header, "header");
+        Assert.AreEqual("header\r\n", header);
         string body = await client.BodyAsync(1);
-        StringAssert.Contains(body, "hello");
+        Assert.AreEqual("hello\r\n", body);
         (int id, string messageId) stat = await client.StatAsync(1);
         Assert.AreEqual(1, stat.id);
         await client.PostAsync("header2\r\n\r\nposted\r\n");
