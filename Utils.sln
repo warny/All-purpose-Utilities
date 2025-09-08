@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.DependencyInjection",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.DependencyInjection.Generators", "Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj", "{5BAC102A-5A28-4659-B0D8-AA174C94E873}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.IO.Serialization.Generators", "Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj", "{855513D6-067A-4791-9831-59D7312428FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -314,6 +316,24 @@ Global
 		{5BAC102A-5A28-4659-B0D8-AA174C94E873}.Release|x64.Build.0 = Release|Any CPU
 		{5BAC102A-5A28-4659-B0D8-AA174C94E873}.Release|x86.ActiveCfg = Release|Any CPU
 		{5BAC102A-5A28-4659-B0D8-AA174C94E873}.Release|x86.Build.0 = Release|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Debug|x64.Build.0 = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Debug|x86.Build.0 = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.GitHub|x64.Build.0 = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.GitHub|x86.Build.0 = Debug|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Release|x64.ActiveCfg = Release|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Release|x64.Build.0 = Release|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Release|x86.ActiveCfg = Release|Any CPU
+		{855513D6-067A-4791-9831-59D7312428FC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
