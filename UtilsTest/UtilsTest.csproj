@@ -55,6 +55,7 @@
     <ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
     <ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
     <ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
