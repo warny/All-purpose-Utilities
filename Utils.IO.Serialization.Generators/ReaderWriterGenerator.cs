@@ -30,9 +30,65 @@ public class ReaderWriterGenerator : ISourceGenerator
 
         var generateAttr = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.GenerateReaderWriterAttribute");
         var fieldAttr = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.FieldAttribute");
-        if (generateAttr is null || fieldAttr is null)
+        var iReader = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.IReader");
+        var iWriter = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWriter");
+        if (generateAttr is null || fieldAttr is null || iReader is null || iWriter is null)
         {
             return;
+        }
+
+        /// <summary>
+        /// Determines whether a type has a dedicated reader method or is marked for generation.
+        /// </summary>
+        /// <param name="type">Type to inspect.</param>
+        /// <returns><c>true</c> if a custom reader should be invoked.</returns>
+        bool HasCustomReader(ITypeSymbol type)
+        {
+            if (type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, generateAttr)))
+            {
+                return true;
+            }
+
+            string methodName = "Read" + type.Name;
+            foreach (var symbol in context.Compilation.GetSymbolsWithName(methodName, SymbolFilter.Member, context.CancellationToken))
+            {
+                if (symbol is IMethodSymbol method &&
+                    method.IsExtensionMethod &&
+                    method.Parameters.Length == 1 &&
+                    SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, iReader) &&
+                    SymbolEqualityComparer.Default.Equals(method.ReturnType, type))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether a type has a dedicated writer method or is marked for generation.
+        /// </summary>
+        /// <param name="type">Type to inspect.</param>
+        /// <returns><c>true</c> if a custom writer should be invoked.</returns>
+        bool HasCustomWriter(ITypeSymbol type)
+        {
+            if (type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, generateAttr)))
+            {
+                return true;
+            }
+
+            string methodName = "Write" + type.Name;
+            foreach (var symbol in context.Compilation.GetSymbolsWithName(methodName, SymbolFilter.Member, context.CancellationToken))
+            {
+                if (symbol is IMethodSymbol method &&
+                    method.IsExtensionMethod &&
+                    method.Parameters.Length == 2 &&
+                    SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, iWriter) &&
+                    SymbolEqualityComparer.Default.Equals(method.Parameters[1].Type, type))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         foreach (var candidate in receiver.Candidates)
@@ -83,7 +139,10 @@ public class ReaderWriterGenerator : ISourceGenerator
                 var memberName = m.Symbol.Name;
                 var memberType = (m.Symbol as IPropertySymbol)?.Type ?? ((IFieldSymbol)m.Symbol).Type;
                 string memberTypeName = memberType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                sb.AppendLine($"        result.{memberName} = reader.Read<{memberTypeName}>();");
+                string readExpr = HasCustomReader(memberType)
+                    ? $"reader.Read{memberType.Name}()"
+                    : $"reader.Read<{memberTypeName}>()";
+                sb.AppendLine($"        result.{memberName} = {readExpr};");
             }
             sb.AppendLine("        return result;");
             sb.AppendLine("    }");
@@ -100,7 +159,10 @@ public class ReaderWriterGenerator : ISourceGenerator
                 string memberName = m.Symbol.Name;
                 var memberType = (m.Symbol as IPropertySymbol)?.Type ?? ((IFieldSymbol)m.Symbol).Type;
                 string memberTypeName = memberType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                sb.AppendLine($"        writer.Write<{memberTypeName}>(value.{memberName});");
+                string writeExpr = HasCustomWriter(memberType)
+                    ? $"writer.Write{memberType.Name}(value.{memberName});"
+                    : $"writer.Write<{memberTypeName}>(value.{memberName});";
+                sb.AppendLine($"        {writeExpr}");
             }
             sb.AppendLine("    }");
             sb.AppendLine("}");
