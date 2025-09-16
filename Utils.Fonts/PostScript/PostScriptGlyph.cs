@@ -7,7 +7,7 @@ namespace Utils.Fonts.PostScript;
 /// <summary>
 /// Represents a glyph defined by a sequence of basic PostScript path commands.
 /// The commands correspond loosely to the operators described in
-/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe's Type&nbsp;1 specification</see>.
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe's Type&#160;1 specification</see>.
 /// </summary>
 public class PostScriptGlyph : IGlyph
 {

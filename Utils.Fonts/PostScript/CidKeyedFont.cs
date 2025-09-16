@@ -10,7 +10,7 @@ using Utils.IO.Serialization;
 namespace Utils.Fonts.PostScript;
 
 /// <summary>
-/// Very small loader for CID-Keyed Type&nbsp;1 PostScript fonts. Only a subset
+/// Very small loader for CID-Keyed Type&#160;1 PostScript fonts. Only a subset
 /// of the format is implemented. Refer to
 /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5014.CIDFont_Spec.pdf">Adobe Technical Note 5014</see>
 /// for the full specification.
@@ -38,9 +38,9 @@ public class CidKeyedFont : IFont
     public float GetSpacingCorrection(char before, char after) => 0f;
 
     /// <summary>
-    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFA</em> font stream.
+    /// Loads a CID-Keyed PostScript Type&#160;1 <em>PFA</em> font stream.
     /// </summary>
-    /// <param name="stream">ASCII Type&nbsp;1 font stream.</param>
+    /// <param name="stream">ASCII Type&#160;1 font stream.</param>
     /// <returns>A new <see cref="CidKeyedFont"/>.</returns>
     public static CidKeyedFont LoadPfa(Stream stream)
     {
@@ -68,7 +68,7 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFB</em> font using a
+    /// Loads a CID-Keyed PostScript Type&#160;1 <em>PFB</em> font using a
     /// <see cref="Reader"/>. Blocks are concatenated and converted to the
     /// ASCII representation consumed by the <see cref="LoadPfa"/> method.
     /// </summary>
@@ -105,7 +105,7 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Loads a CID-Keyed PostScript Type&nbsp;1 <em>PFB</em> font stream.
+    /// Loads a CID-Keyed PostScript Type&#160;1 <em>PFB</em> font stream.
     /// </summary>
     /// <param name="stream">Binary PFB font data.</param>
     /// <returns>A new <see cref="CidKeyedFont"/>.</returns>
@@ -116,10 +116,10 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format using a
+    /// Writes ASCII Type&#160;1 content to the binary <em>PFB</em> format using a
     /// <see cref="Writer"/>.
     /// </summary>
-    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="ascii">Plain ASCII Type&#160;1 data.</param>
     /// <param name="writer">Destination binary writer.</param>
     public static void WritePfb(string ascii, Writer writer)
     {
@@ -127,9 +127,9 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format.
+    /// Writes ASCII Type&#160;1 content to the binary <em>PFB</em> format.
     /// </summary>
-    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="ascii">Plain ASCII Type&#160;1 data.</param>
     /// <param name="stream">Destination stream.</param>
     public static void WritePfb(string ascii, Stream stream)
     {
@@ -138,7 +138,7 @@ public class CidKeyedFont : IFont
     }
 
     /// <summary>
-    /// Parses the decrypted portion of a CID-keyed Type&nbsp;1 font.
+    /// Parses the decrypted portion of a CID-keyed Type&#160;1 font.
     /// </summary>
     /// <param name="text">ASCII text after eexec decryption.</param>
     /// <returns>Constructed <see cref="CidKeyedFont"/>.</returns>
