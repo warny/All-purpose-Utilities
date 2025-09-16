@@ -5,6 +5,7 @@
                 <EnablePreviewFeatures>True</EnablePreviewFeatures>
                 <LangVersion>latest</LangVersion>
                 <RootNamespace>Utils.XML</RootNamespace>
+                <AssemblyName>Utils.XML</AssemblyName>
                 <Authors>Olivier MARTY</Authors>
                 <Company>Olivier MARTY</Company>
                 <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

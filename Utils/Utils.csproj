@@ -73,10 +73,6 @@
         </ItemGroup>
 
         <ItemGroup>
-                <ProjectReference Include="..\Utils.Xml\Utils.Xml.csproj" />
-        </ItemGroup>
-
-        <ItemGroup>
                 <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
                         <DesignTime>True</DesignTime>
                         <AutoGen>True</AutoGen>

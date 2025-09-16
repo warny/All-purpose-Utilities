@@ -22,6 +22,8 @@ It targets **.NET 9** and is the base dependency for the other utility packages 
 The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
 
 > **Note:** XML helpers are now packaged separately inside the `Utils.XML` library.
+> Add a reference to the `Utils.XML` package to access `XmlDataProcessor` and
+> the related helper extensions.
 
 ## Usage examples
 
