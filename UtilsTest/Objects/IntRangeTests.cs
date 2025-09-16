@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using Utils.Collections;
-using Utils.Objects;
+using Utils.Range;
 
 namespace UtilsTest.Objects
 {

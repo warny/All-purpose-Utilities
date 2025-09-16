@@ -42,8 +42,8 @@ namespace Utils.Mathematics
 		}
 
 		/// <summary>
-		/// Compares a <= b. Null is interpreted as +∞ here for convenience.
-		/// If a is +∞ => then a <= b is false unless b is also +∞.
+		/// Compares a &lt;= b. Null is interpreted as +∞ here for convenience.
+		/// If a is +∞ =&gt; then a &lt;= b is false unless b is also +∞.
 		/// </summary>
 		public static bool LessOrEqual<T>(this T? a, T? b)
 			where T : struct, IBinaryInteger<T>, IComparable<T>
@@ -56,7 +56,7 @@ namespace Utils.Mathematics
 		}
 
 		/// <summary>
-		/// Compares a < b. Uses LessOrEqual but excludes equality.
+		/// Compares a &lt; b. Uses LessOrEqual but excludes equality.
 		/// </summary>
 		public static bool Less<T>(this T? a, T? b)
 			where T : struct, IBinaryInteger<T>, IComparable<T>
@@ -67,7 +67,7 @@ namespace Utils.Mathematics
 		}
 
 		/// <summary>
-		/// Compares a >= b. Null => +∞ is always >= any finite.
+		/// Compares a &gt;= b. Null =&gt; +∞ is always &gt;= any finite.
 		/// </summary>
 		public static bool GreaterOrEqual<T>(T? a, T? b)
 			where T : struct, IBinaryInteger<T>, IComparable<T>
@@ -78,10 +78,10 @@ namespace Utils.Mathematics
 
 		/// <summary>
 		/// Decrements an endpoint if finite. 
-		/// If already null => -∞ or +∞? We have to interpret usage.
+		/// If already null =&gt; -∞ or +∞? We have to interpret usage.
 		/// 
 		/// This method is used for subtracting an interval: we want (r2.Min - 1) etc.
-		/// But if r2.Min = null => that's -∞ => (r2.Min - 1) => -∞ => no difference.
+		/// But if r2.Min = null =&gt; that's -∞ =&gt; (r2.Min - 1) =&gt; -∞ =&gt; no difference.
 		/// </summary>
 		public static T? Decrement<T>(this T? x)
 			where T : struct, IBinaryInteger<T>, IMinMaxValue<T>
@@ -103,8 +103,8 @@ namespace Utils.Mathematics
 
 		/// <summary>
 		/// Increments an endpoint if finite. 
-		/// If x is +∞ => stays +∞,
-		/// if x is -∞ => stays -∞.
+		/// If x is +∞ =&gt; stays +∞,
+		/// if x is -∞ =&gt; stays -∞.
 		/// </summary>
 		public static T? Increment<T>(this T? x)
 			where T : struct, IBinaryInteger<T>, IMinMaxValue<T>
@@ -124,8 +124,8 @@ namespace Utils.Mathematics
 
 		/// <summary>
 		/// A specialized compare for intersection checks
-		/// (start <= end). 
-		/// If isMinForComparison => treat null as -∞ for 'start' 
+		/// (start &lt;= end). 
+		/// If isMinForComparison =&gt; treat null as -∞ for 'start' 
 		/// else treat null as +∞ for 'end'. 
 		/// 
 		/// This is an attempt to unify a compare approach, but keep in mind 

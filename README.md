@@ -24,7 +24,6 @@ A general purpose library exposing many helper namespaces:
 - **`Utils.Reflection`** – extra reflection helpers like `PropertyOrFieldInfo`.
 - **`Utils.Resources`** – utilities for working with embedded resources.
 - **`Utils.Security`** – Google authenticator helpers.
-- **`Utils.XML`** – XML processing helpers.
 
 ### `Utils.IO`
 I/O related helpers including:
@@ -61,6 +60,10 @@ Advanced mathematics library featuring:
 
 ### `Utils.Reflection`
 Runtime reflection helpers, notably a dynamic DLL mapping system and platform detection utilities.
+
+### `Utils.XML`
+XML processing helpers providing an attribute-driven `XmlDataProcessor` and utilities to traverse
+`XmlReader` instances and compute XPath expressions.
 
 ### `Utils.VirtualMachine`
 Minimal virtual machine framework. Instructions are defined using attributes and executed through a byte‑code processor with configurable endianness.

@@ -218,8 +218,8 @@ public class SkipList<T> : ICollection<T>
 	/// <summary>
 	/// Finds the position where 'value' should be inserted:
 	/// (ElementBefore, ElementAfter). If they are the same, it means we've found
-	/// a match for 'value'. If 'ElementBefore' is null => insertion is at the front.
-	/// If 'ElementAfter' is null => insertion is at the end.
+        /// a match for 'value'. If 'ElementBefore' is null =&gt; insertion is at the front.
+        /// If 'ElementAfter' is null =&gt; insertion is at the end.
 	/// </summary>
 	private (Element ElementBefore, Element ElementAfter) FindElementPosition(T value)
 	{

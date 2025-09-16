@@ -458,7 +458,7 @@ namespace Utils.Expressions.ExpressionBuilders
 		}
 
 		/// <summary>
-		/// Builds a lambda expression if the content in parentheses is followed by "=>",
+                /// Builds a lambda expression if the content in parentheses is followed by &quot;=&gt;&quot;,
 		/// indicating a lambda definition with explicitly typed parameters.
 		/// </summary>
 		/// <param name="parser">The main <see cref="ExpressionParserCore"/> instance.</param>

@@ -398,7 +398,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		/// <summary>
-		/// Combines a constant with another multiply expression, e.g., <c>c * (c2 * rest)</c> => <c>(c*c2) * rest</c>.
+                /// Combines a constant with another multiply expression, e.g., <c>c * (c2 * rest)</c> =&gt; <c>(c*c2) * rest</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression Multiplication(
@@ -418,7 +418,7 @@ namespace Utils.Mathematics.Expressions
 
 		/// <summary>
 		/// Combines two multiply expressions if both have a constant factor,
-		/// e.g. <c>(c1 * x) * (c2 * y)</c> => <c>(c1*c2) * (x*y)</c>.
+                /// e.g. <c>(c1 * x) * (c2 * y)</c> =&gt; <c>(c1*c2) * (x*y)</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression Multiplication(
@@ -494,7 +494,7 @@ namespace Utils.Mathematics.Expressions
 
 		/// <summary>
 		/// Distributes multiplication if one side is <c>(constant * part)</c>, e.g.,
-		/// <c>(c * x) * y</c> => <c>c * (x * y)</c>.
+                /// <c>(c * x) * y</c> =&gt; <c>c * (x * y)</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression MultiplicationOfEqualsElements(BinaryExpression e, [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression left, Expression right)
@@ -527,7 +527,7 @@ namespace Utils.Mathematics.Expressions
 
 		/// <summary>
 		/// Distributes multiplication if one side is <c>(constant * part)</c>, e.g.,
-		/// <c>x * (c * y)</c> => <c>c * (x * y)</c>.
+                /// <c>x * (c * y)</c> =&gt; <c>c * (x * y)</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression MultiplicationOfEqualsElements(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression right)
@@ -560,7 +560,7 @@ namespace Utils.Mathematics.Expressions
 
 		/// <summary>
 		/// Attempts to combine exponent factors if they share a common base, e.g.
-		/// <c>(x^a) * (x^b)</c> => <c>x^(a+b)</c>.
+                /// <c>(x^a) * (x^b)</c> =&gt; <c>x^(a+b)</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Multiply)]
 		protected Expression MultiplicationOfEqualsElements(BinaryExpression e, Expression left, Expression right)
@@ -606,7 +606,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		/// <summary>
-		/// Simplifies nested divisions, e.g. <c>(x / y) / (z / w)</c> => <c>(x*w) / (y*z)</c>.
+                /// Simplifies nested divisions, e.g. <c>(x / y) / (z / w)</c> =&gt; <c>(x*w) / (y*z)</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Divide)]
 		protected Expression DivisionOfDivision(BinaryExpression e,
@@ -620,7 +620,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		/// <summary>
-		/// Simplifies nested divisions, e.g. <c>x / (y / z)</c> => <c>(x*z) / y</c>.
+                /// Simplifies nested divisions, e.g. <c>x / (y / z)</c> =&gt; <c>(x*z) / y</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Divide)]
 		protected Expression DivisionOfDivision(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
@@ -632,7 +632,7 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		/// <summary>
-		/// Simplifies nested divisions, e.g. <c>(x / y) / z</c> => <c>x / (y*z)</c>.
+                /// Simplifies nested divisions, e.g. <c>(x / y) / z</c> =&gt; <c>x / (y*z)</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Divide)]
 		protected Expression DivisionOfDivision(BinaryExpression e,
@@ -651,7 +651,7 @@ namespace Utils.Mathematics.Expressions
 
 		/// <summary>
 		/// Simplifies power expressions when both base and exponent are numeric constants,
-		/// e.g. <c>(2)^(3)</c> => <c>8</c>.
+                /// e.g. <c>(2)^(3)</c> =&gt; <c>8</c>.
 		/// </summary>
 		[ExpressionSignature(ExpressionType.Power)]
 		protected Expression PowerOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)

@@ -1,4 +1,4 @@
-﻿namespace Utils.Objects;
+namespace Utils.Randomization;
 
 public static class RandomEx
 {

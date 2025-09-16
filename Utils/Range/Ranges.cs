@@ -6,17 +6,17 @@ using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 
-namespace Utils.Objects
+namespace Utils.Range
 {
 	/// <summary>
 	/// Represents a set of intervals (ranges) for an ordered type <typeparamref name="T"/>.
 	/// Provides set-like operations (union, intersection, difference, symmetric difference)
-	/// via bitwise operators:
-	///   | => Union,
-	///   & => Intersection,
-	///   ^ => Symmetric Difference,
-	///   ~ => Complement (relative to entire domain, if desired),
-	///   - => Difference (Except).
+        /// via bitwise operators:
+        ///   | =&gt; Union,
+        ///   &amp; =&gt; Intersection,
+        ///   ^ =&gt; Symmetric Difference,
+        ///   ~ =&gt; Complement (relative to entire domain, if desired),
+        ///   - =&gt; Difference (Except).
 	/// 
 	/// The intervals are stored internally as disjoint, sorted <see cref="Range{T}"/> objects.
 	/// </summary>
@@ -400,23 +400,23 @@ namespace Utils.Objects
 
 		#region Bitwise Operators
 
-		/// <summary>Union => bitwise OR operator.</summary>
+                /// <summary>Union =&gt; bitwise OR operator.</summary>
 		public static Ranges<T> operator |(Ranges<T> left, Ranges<T> right)
 			=> Union(left, right);
 
-		/// <summary>Intersection => bitwise AND operator.</summary>
+                /// <summary>Intersection =&gt; bitwise AND operator.</summary>
 		public static Ranges<T> operator &(Ranges<T> left, Ranges<T> right)
 			=> Intersect(left, right);
 
-		/// <summary>Symmetric Difference => bitwise XOR operator.</summary>
+                /// <summary>Symmetric Difference =&gt; bitwise XOR operator.</summary>
 		public static Ranges<T> operator ^(Ranges<T> left, Ranges<T> right)
 			=> SymmetricDifference(left, right);
 
-		/// <summary>Complement => bitwise NOT operator.</summary>
+                /// <summary>Complement =&gt; bitwise NOT operator.</summary>
 		public static Ranges<T> operator ~(Ranges<T> range)
 			=> Complement(range);
 
-		/// <summary>Difference => set except operator.</summary>
+                /// <summary>Difference =&gt; set except operator.</summary>
 		public static Ranges<T> operator -(Ranges<T> left, Ranges<T> right)
 			=> Except(left, right);
 
@@ -477,8 +477,8 @@ namespace Utils.Objects
 		/// Checks if <paramref name="p"/> is strictly after or before <paramref name="current"/>
 		/// so that there's no overlap/adjacency.
 		/// 
-		/// <paramref name="after"/> = true => means "is newStart after 'current'?"
-		/// <paramref name="after"/> = false => means "is newEnd before 'current'?"
+                /// <paramref name="after"/> = true =&gt; means "is newStart after 'current'?"
+                /// <paramref name="after"/> = false =&gt; means "is newEnd before 'current'?"
 		/// 
 		/// If it returns false, we skip merging in one direction.
 		/// </summary>

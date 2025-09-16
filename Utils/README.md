@@ -18,9 +18,10 @@ It targets **.NET 9** and is the base dependency for the other utility packages 
 - **Security** – Google Authenticator helpers
 - **Streams** – base16/base32/base64 converters and binary serialization
 - **Transactions** – execute a batch of reversible actions and commit or rollback as a group
-- **XML** – helpers for XML processing
 
 The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
+
+> **Note:** XML helpers are now packaged separately inside the `Utils.XML` library.
 
 ## Usage examples
 
@@ -168,7 +169,7 @@ var switchFunc = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switch
 int result = switchFunc(1); // 10
 ```
 ```csharp
-var formatter = Utils.String.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
+var formatter = Utils.Format.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
 string formatted = formatter("John");
 ```
 ```csharp

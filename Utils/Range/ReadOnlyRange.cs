@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Utils.Objects;
+namespace Utils.Range;
 
 /// <summary>
 /// Represents a read-only range of elements in a list, supporting custom stepping and indexing.

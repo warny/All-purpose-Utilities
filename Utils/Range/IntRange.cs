@@ -8,7 +8,7 @@ using System.Numerics;
 using Utils.Mathematics;
 using System.Formats.Tar; // If needed for IAdditionOperators, etc.
 
-namespace Utils.Objects
+namespace Utils.Range
 {
 	/// <summary>
 	/// Represents a collection of integer intervals (ranges),
@@ -16,13 +16,13 @@ namespace Utils.Objects
 	/// 
 	/// Bitwise-like operators for set operations:
 	///   | (Union),
-	///   & (Intersection),
+	///   &amp; (Intersection),
 	///   ^ (Symmetric Difference),
 	///   ~ (Complement).
 	/// 
 	/// Internally stores multiple non-overlapping intervals sorted by their (Min, Max).
-	/// A null Minimum => -∞.
-	/// A null Maximum => +∞.
+	/// A null Minimum =&gt; -∞.
+	/// A null Maximum =&gt; +∞.
 	/// </summary>
 	public sealed class IntRange<T> : 
 		IEnumerable<T>,
@@ -42,8 +42,8 @@ namespace Utils.Objects
 			/// <summary>
 			/// Creates a new range [minimum, maximum].
 			/// Any endpoint may be null for ±∞.
-			/// If <paramref name="minimum"/> is null => -∞,
-			/// if <paramref name="maximum"/> is null => +∞.
+			/// If <paramref name="minimum"/> is null =&gt; -∞,
+			/// if <paramref name="maximum"/> is null =&gt; +∞.
 			/// </summary>
 			public SimpleRange(T? minimum, T? maximum)
 			{
@@ -55,13 +55,13 @@ namespace Utils.Objects
 
 			/// <summary>
 			/// The inclusive lower bound of this range.
-			/// A value of <c>null</c> => -∞.
+			/// A value of <c>null</c> =&gt; -∞.
 			/// </summary>
 			public T? Minimum { get; }
 
 			/// <summary>
 			/// The inclusive upper bound of this range.
-			/// A value of <c>null</c> => +∞.
+			/// A value of <c>null</c> =&gt; +∞.
 			/// </summary>
 			public T? Maximum { get; }
 
@@ -77,10 +77,10 @@ namespace Utils.Objects
 			/// Null endpoints are considered -∞ if it's Minimum, +∞ if it's Maximum.
 			/// 
 			/// Order: 
-			///   (null minimum) < any finite minimum
-			///   among finite mins => normal int comparison
-			///   if mins are equal => compare max similarly 
-			///   (finite max) < (null max).
+			///   (null minimum) &lt; any finite minimum
+			///   among finite mins =&gt; normal int comparison
+			///   if mins are equal =&gt; compare max similarly 
+			///   (finite max) &lt; (null max).
 			/// </summary>
 			public readonly int CompareTo(SimpleRange? other)
 			{
@@ -106,12 +106,12 @@ namespace Utils.Objects
 
 			/// <summary>
 			/// Helper that compares two int? endpoints. 
-			/// If 'isMin' is true => a null means -∞. 
-			/// If 'isMin' is false => a null means +∞.
+			/// If 'isMin' is true =&gt; a null means -∞. 
+			/// If 'isMin' is false =&gt; a null means +∞.
 			/// 
-			/// Returns negative if left < right,
+			/// Returns negative if left &lt; right,
 			/// zero if equal,
-			/// positive if left > right.
+			/// positive if left &gt; right.
 			/// </summary>
 			private static int CompareNullableInt(T? left, T? right, bool isMin)
 			{
@@ -212,7 +212,7 @@ namespace Utils.Objects
 			}
 
 			/// <summary>
-			/// Subtracts <paramref name="r2"/> from <paramref name="r1"/> => 0..2 intervals.
+			/// Subtracts <paramref name="r2"/> from <paramref name="r1"/> =&gt; 0..2 intervals.
 			/// </summary>
 			public static SimpleRange[] Except(SimpleRange r1, SimpleRange? r2)
 			{
@@ -285,11 +285,11 @@ namespace Utils.Objects
 			public readonly string ToString(IFormatProvider? formatProvider) => ToString(string.Empty, formatProvider);
 
 			/// <summary>
-			/// If both endpoints are null => "∞-∞",
-			/// if only Minimum is null => "∞-X",
-			/// if only Maximum is null => "X-∞",
+			/// If both endpoints are null =&gt; "∞-∞",
+			/// if only Minimum is null =&gt; "∞-X",
+			/// if only Maximum is null =&gt; "X-∞",
 			/// else "X-Y".
-			/// If X == Y => still prints "X-Y" (you could special-case a single value).
+			/// If X == Y =&gt; still prints "X-Y" (you could special-case a single value).
 			/// </summary>
 			public readonly string ToString(string? format, IFormatProvider? formatProvider)
 			{
@@ -335,11 +335,11 @@ namespace Utils.Objects
 		/// <summary>
 		/// Creates a set of intervals from a string. 
 		/// Expects forms like:
-		///   "∞-∞" => all integers
-		///   "∞-5" => [-∞..5]
-		///   "5-∞" => [5..+∞]
-		///   "2-5" => [2..5]
-		///   "42"  => single value [42..42]
+		///   "∞-∞" =&gt; all integers
+		///   "∞-5" =&gt; [-∞..5]
+		///   "5-∞" =&gt; [5..+∞]
+		///   "2-5" =&gt; [2..5]
+		///   "42"  =&gt; single value [42..42]
 		/// And possibly multiple intervals separated by commas or semicolons, e.g. "∞-0, 5-10, 42".
 		/// </summary>
 		public IntRange(string input, TextInfo textInfo) : this(input, textInfo.ListSeparator) { }
@@ -347,11 +347,11 @@ namespace Utils.Objects
 		/// <summary>
 		/// Creates a set of intervals from a string. 
 		/// Expects forms like:
-		///   "∞-∞" => all integers
-		///   "∞-5" => [-∞..5]
-		///   "5-∞" => [5..+∞]
-		///   "2-5" => [2..5]
-		///   "42"  => single value [42..42]
+		///   "∞-∞" =&gt; all integers
+		///   "∞-5" =&gt; [-∞..5]
+		///   "5-∞" =&gt; [5..+∞]
+		///   "2-5" =&gt; [2..5]
+		///   "42"  =&gt; single value [42..42]
 		/// And possibly multiple intervals separated by commas or semicolons, e.g. "∞-0, 5-10, 42".
 		/// </summary>
 		public IntRange(string input, CultureInfo cultureInfo) : this(input, cultureInfo.TextInfo.ListSeparator) { }
@@ -359,11 +359,11 @@ namespace Utils.Objects
 		/// <summary>
 		/// Creates a set of intervals from a string. 
 		/// Expects forms like:
-		///   "∞-∞" => all integers
-		///   "∞-5" => [-∞..5]
-		///   "5-∞" => [5..+∞]
-		///   "2-5" => [2..5]
-		///   "42"  => single value [42..42]
+		///   "∞-∞" =&gt; all integers
+		///   "∞-5" =&gt; [-∞..5]
+		///   "5-∞" =&gt; [5..+∞]
+		///   "2-5" =&gt; [2..5]
+		///   "42"  =&gt; single value [42..42]
 		/// And possibly multiple intervals separated by commas or semicolons, e.g. "∞-0, 5-10, 42".
 		/// </summary>
 		public IntRange(string input, params string[] separators)
@@ -531,7 +531,7 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
-		/// Produces the intersection of two IntRange sets (&).
+		/// Produces the intersection of two IntRange sets (&amp;).
 		/// </summary>
 		public static IntRange<T> Intersect(IntRange<T> left, IntRange<T> right)
 		{
@@ -664,7 +664,7 @@ namespace Utils.Objects
 		}
 
 		/// <summary>
-		/// Symmetric difference => (A \ B) ∪ (B \ A).
+		/// Symmetric difference =&gt; (A \ B) ∪ (B \ A).
 		/// </summary>
 		public static IntRange<T> SymmetricDifference(IntRange<T> left, IntRange<T> right)
 		{
@@ -685,23 +685,23 @@ namespace Utils.Objects
 
 		#region Operators (|, &, ^, ~)
 
-		/// <summary>Bitwise OR => Union</summary>
+		/// <summary>Bitwise OR =&gt; Union</summary>
 		public static IntRange<T> operator |(IntRange<T> left, IntRange<T> right)
 			=> Union(left, right);
 
-		/// <summary>Bitwise AND => Intersection</summary>
+		/// <summary>Bitwise AND =&gt; Intersection</summary>
 		public static IntRange<T> operator &(IntRange<T> left, IntRange<T> right)
 			=> Intersect(left, right);
 
-		/// <summary>Bitwise XOR => Symmetric Difference</summary>
+		/// <summary>Bitwise XOR =&gt; Symmetric Difference</summary>
 		public static IntRange<T> operator ^(IntRange<T> left, IntRange<T> right)
 			=> SymmetricDifference(left, right);
 
-		/// <summary>Substraction => Except</summary>
+		/// <summary>Substraction =&gt; Except</summary>
 		public static IntRange<T> operator -(IntRange<T> left, IntRange<T> right)
 			=> Except(left, right);
 
-		/// <summary>Bitwise NOT => Complement (everything in [-∞..+∞] not in this range).</summary>
+		/// <summary>Bitwise NOT =&gt; Complement (everything in [-∞..+∞] not in this range).</summary>
 		public static IntRange<T> operator ~(IntRange<T> range)
 			=> range.Complement();
 

@@ -276,7 +276,7 @@ public class SimpleConverter : IConverter, IEnumerable<Delegate>
 /// public class NewConverter : ConverterBase
 /// {
 ///     // This method will automatically be registered to convert string to int.
-///     public int ToInt32(string value) => int.Parse(value);
+///     public int ToInt32(string value) =&gt; int.Parse(value);
 /// }
 /// </code>
 /// </remarks>

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
+using Utils.Objects;
 
-namespace Utils.Objects;
+namespace Utils.Randomization;
 
 /// <summary>
 /// Generates random numbers according to a specified distribution function (repartition function).

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Utils.Objects
+namespace Utils.Format
 {
 	public static class FormatProviderEx
 	{

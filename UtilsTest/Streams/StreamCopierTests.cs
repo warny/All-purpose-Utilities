@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using Utils.Collections;
 using Utils.IO;
-using Utils.Objects;
+using Utils.Randomization;
 
 namespace UtilsTest.Streams;
 
