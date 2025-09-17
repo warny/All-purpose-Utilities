@@ -7,14 +7,14 @@ using Utils.Fonts.TTF;
 namespace Utils.Fonts.PostScript;
 
 /// <summary>
-/// Minimal loader for PostScript Type&nbsp;42 fonts which encapsulate a TrueType font.
+/// Minimal loader for PostScript Type&#160;42 fonts which encapsulate a TrueType font.
 /// This implementation extracts the embedded TrueType data from the <c>/sfnts</c> array and
 /// delegates glyph retrieval to <see cref="TrueTypeFont"/>.  For the official format see
 /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5012.Type42_Spec.pdf">Adobe Technical Note 5012</see>.
 /// </summary>
 public class Type42Font : IFont
 {
-    /// <summary>Parsed TrueType font extracted from the Type&nbsp;42 wrapper.</summary>
+    /// <summary>Parsed TrueType font extracted from the Type&#160;42 wrapper.</summary>
     private readonly TrueTypeFont _ttf;
 
     /// <summary>
@@ -27,9 +27,9 @@ public class Type42Font : IFont
     }
 
     /// <summary>
-    /// Loads a Type&nbsp;42 font from the provided PostScript stream.
+    /// Loads a Type&#160;42 font from the provided PostScript stream.
     /// </summary>
-    /// <param name="stream">Stream containing the Type&nbsp;42 font.</param>
+    /// <param name="stream">Stream containing the Type&#160;42 font.</param>
     /// <returns>An instance of <see cref="Type42Font"/>.</returns>
     public static Type42Font Load(Stream stream)
     {

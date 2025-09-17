@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using Utils.IO.Serialization;
-using Utils.Objects;
+using Utils.Randomization;
 
 namespace UtilsTest.Streams;
 

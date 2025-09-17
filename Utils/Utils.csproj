@@ -67,16 +67,16 @@
 		</None>
 	</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="System.Runtime" Version="4.3.1" />
-		<PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
-	</ItemGroup>
+        <ItemGroup>
+                <PackageReference Include="System.Runtime" Version="4.3.1" />
+                <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
+        </ItemGroup>
 
-	<ItemGroup>
-		<Compile Update="Mathematics\NumberConverterResources.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>NumberConverterResources.resx</DependentUpon>
+        <ItemGroup>
+                <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
+                        <DesignTime>True</DesignTime>
+                        <AutoGen>True</AutoGen>
+                        <DependentUpon>NumberConverterResources.resx</DependentUpon>
 		</Compile>
 	</ItemGroup>
 

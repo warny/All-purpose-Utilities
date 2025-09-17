@@ -44,7 +44,7 @@ namespace Utils.Net;
 /// qs.Remove("key4");
 /// 
 /// // Build the final query string
-/// string finalQuery = qs.ToString();  // "key1=val1&key2=val2_1&key2=val2_2&key2=val2_3&key3=val3"
+/// string finalQuery = qs.ToString();  // "key1=val1&amp;key2=val2_1&amp;key2=val2_2&amp;key2=val2_3&amp;key3=val3"
 /// 
 /// // Convert to NameValueCollection
 /// NameValueCollection nameValue = (NameValueCollection)qs;

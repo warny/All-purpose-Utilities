@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using Utils.Collections;
 using Utils.Mathematics;
 
-namespace Utils.Objects
+namespace Utils.Range
 {
 	/// <summary>
 	/// Represents a collection of ranges for double values, with parsing support from string representations.
@@ -46,7 +46,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="range">The string representation of the ranges.</param>
 		/// <param name="formatInfo">The number format information to use for parsing.</param>
-		/// <returns>An enumerable collection of Range<double> objects parsed from the string.</returns>
+                /// <returns>An enumerable collection of Range&lt;double&gt; objects parsed from the string.</returns>
 		protected static IEnumerable<Range<double>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
 		{
 			// Construct a regex pattern to match double values based on the provided number format.
@@ -116,7 +116,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="range">The string representation of the ranges.</param>
 		/// <param name="formatInfo">The number format information to use for parsing.</param>
-		/// <returns>An enumerable collection of Range<float> objects parsed from the string.</returns>
+                /// <returns>An enumerable collection of Range&lt;float&gt; objects parsed from the string.</returns>
 		protected static IEnumerable<Range<float>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
 		{
 			// Construct a regex pattern to match float values based on the provided number format.
@@ -178,7 +178,7 @@ namespace Utils.Objects
 		/// </summary>
 		/// <param name="range">The string representation of the ranges.</param>
 		/// <param name="formatInfo">The DateTime format information to use for parsing.</param>
-		/// <returns>An enumerable collection of Range<DateTime> objects parsed from the string.</returns>
+                /// <returns>An enumerable collection of Range&lt;DateTime&gt; objects parsed from the string.</returns>
 		protected static IEnumerable<Range<DateTime>> InnerParse(string range, System.Globalization.DateTimeFormatInfo formatInfo)
 		{
 			// Construct a regex pattern to match DateTime values based on the provided format.

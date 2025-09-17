@@ -8,8 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Utils.Objects;
-using Utils.String;
+using Utils.Format;
+using Utils.Randomization;
 
 namespace UtilsTest.Objects
 {

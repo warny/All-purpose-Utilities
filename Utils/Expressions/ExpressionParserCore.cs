@@ -52,7 +52,7 @@ namespace Utils.Expressions
 		#region methods
 
 		/// <summary>
-		/// Attempts to parse a lambda prefix (e.g., (x, y) => ) from the current tokenizer context.
+                /// Attempts to parse a lambda prefix (e.g., (x, y) =&gt; ) from the current tokenizer context.
 		/// If successful, the method populates <see cref="ParserContext.Parameters"/> accordingly.
 		/// </summary>
 		/// <param name="context">The parser context containing state and token information.</param>

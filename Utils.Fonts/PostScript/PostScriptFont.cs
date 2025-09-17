@@ -11,7 +11,7 @@ namespace Utils.Fonts.PostScript;
 
 /// <summary>
 /// Very small PostScript font loader based on a custom text representation.
-/// The intention is to mimic a subset of the Type&nbsp;1 syntax without parsing
+/// The intention is to mimic a subset of the Type&#160;1 syntax without parsing
 /// the full PostScript language.  Each glyph is declared as shown below:
 ///
 /// <code>
@@ -26,7 +26,7 @@ namespace Utils.Fonts.PostScript;
 /// EndGlyph
 /// </code>
 ///
-/// For a description of the real Type&nbsp;1 format see
+/// For a description of the real Type&#160;1 format see
 /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
 /// </summary>
 public class PostScriptFont : IFont
@@ -47,7 +47,7 @@ public class PostScriptFont : IFont
 
     /// <summary>
     /// Loads a font in the simplified text form used by this demo.  This is
-    /// <strong>not</strong> a full Type&nbsp;1 parser but follows a similar
+    /// <strong>not</strong> a full Type&#160;1 parser but follows a similar
     /// structure for learning purposes.
     /// </summary>
     /// <param name="stream">Stream containing the custom font text.</param>
@@ -142,7 +142,7 @@ public class PostScriptFont : IFont
     public float GetSpacingCorrection(char before, char after) => 0f;
 
     /// <summary>
-    /// Loads a PostScript Type&nbsp;1 <em>PFA</em> font stream.  The implementation
+    /// Loads a PostScript Type&#160;1 <em>PFA</em> font stream.  The implementation
     /// only understands a tiny fraction of the format sufficient for the unit
     /// tests.  See
     /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>
@@ -174,7 +174,7 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Loads a binary Type&nbsp;1 (<em>PFB</em>) font using a <see cref="Reader"/>.
+    /// Loads a binary Type&#160;1 (<em>PFB</em>) font using a <see cref="Reader"/>.
     /// Blocks from the PFB file are concatenated and translated to the ASCII
     /// representation consumed by the <see cref="LoadPfa"/> method.
     /// </summary>
@@ -211,7 +211,7 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Loads a binary Type&nbsp;1 (<em>PFB</em>) font stream.
+    /// Loads a binary Type&#160;1 (<em>PFB</em>) font stream.
     /// </summary>
     /// <param name="stream">Input PFB stream.</param>
     /// <returns>Instance of <see cref="PostScriptFont"/>.</returns>
@@ -222,10 +222,10 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format using a
+    /// Writes ASCII Type&#160;1 content to the binary <em>PFB</em> format using a
     /// <see cref="Writer"/>.
     /// </summary>
-    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="ascii">Plain ASCII Type&#160;1 data.</param>
     /// <param name="writer">Destination binary writer.</param>
     public static void WritePfb(string ascii, Writer writer)
     {
@@ -245,9 +245,9 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Writes ASCII Type&nbsp;1 content to the binary <em>PFB</em> format.
+    /// Writes ASCII Type&#160;1 content to the binary <em>PFB</em> format.
     /// </summary>
-    /// <param name="ascii">Plain ASCII Type&nbsp;1 data.</param>
+    /// <param name="ascii">Plain ASCII Type&#160;1 data.</param>
     /// <param name="stream">Destination stream receiving the binary data.</param>
     public static void WritePfb(string ascii, Stream stream)
     {
@@ -256,7 +256,7 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Parses the decrypted portion of a Type&nbsp;1 font.  Only the
+    /// Parses the decrypted portion of a Type&#160;1 font.  Only the
     /// <c>CharStrings</c> dictionary is interpreted.  For the complete
     /// specification refer to
     /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
@@ -325,7 +325,7 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Decrypts Type&nbsp;1 charstring data using the algorithm described in the
+    /// Decrypts Type&#160;1 charstring data using the algorithm described in the
     /// specification (<see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">section 4</see>).
     /// </summary>
     /// <param name="data">Encrypted bytes.</param>
@@ -333,7 +333,7 @@ public class PostScriptFont : IFont
     /// <param name="discard">Number of decrypted bytes to discard from the beginning.</param>
     /// <returns>Decrypted byte array.</returns>
     /// <summary>
-    /// Decodes a Type&nbsp;1 charstring into a list of drawing commands.  Only a
+    /// Decodes a Type&#160;1 charstring into a list of drawing commands.  Only a
     /// very small subset of operators is supported.  The algorithm roughly
     /// follows the description in
     /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
@@ -401,7 +401,7 @@ public class PostScriptFont : IFont
     }
 
     /// <summary>
-    /// Internal parser state used when interpreting Type&nbsp;1 charstrings.
+    /// Internal parser state used when interpreting Type&#160;1 charstrings.
     /// </summary>
     private sealed class CharStringParserState
     {

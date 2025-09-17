@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Utils.Objects;
+namespace Utils.Collections;
 
 /// <summary>
 /// Merges two sorted <see cref="IEnumerable{T}"/> collections based on the specified join type. 

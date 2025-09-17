@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using Utils.Arrays;
 using Utils.Collections;
-using Utils.Objects;
 
 namespace UtilsTest.Objects
 {

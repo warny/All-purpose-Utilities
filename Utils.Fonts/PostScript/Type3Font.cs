@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 namespace Utils.Fonts.PostScript;
 
 /// <summary>
-/// Minimal loader for PostScript Type&nbsp;3 fonts. Only a tiny subset of the
+/// Minimal loader for PostScript Type&#160;3 fonts. Only a tiny subset of the
 /// language is interpreted: <c>setcachedevice</c> for metrics and the basic path
 /// commands <c>moveto</c>, <c>lineto</c>, <c>curveto</c> and <c>closepath</c>.
 /// See
@@ -31,7 +31,7 @@ public class Type3Font : IFont
     }
 
     /// <summary>
-    /// Loads a Type&nbsp;3 font from the provided PostScript stream.
+    /// Loads a Type&#160;3 font from the provided PostScript stream.
     /// </summary>
     /// <param name="stream">Stream containing the PostScript font program.</param>
     /// <returns>A <see cref="Type3Font"/> instance.</returns>
@@ -69,7 +69,7 @@ public class Type3Font : IFont
     public float GetSpacingCorrection(char before, char after) => 0f;
 
     /// <summary>
-    /// Parses a single character procedure from a Type&nbsp;3 font.
+    /// Parses a single character procedure from a Type&#160;3 font.
     /// </summary>
     /// <param name="proc">Procedure string extracted from <c>CharProcs</c>.</param>
     /// <param name="width">Receives the glyph width from <c>setcachedevice</c>.</param>
@@ -148,7 +148,7 @@ public class Type3Font : IFont
     /// Maps a glyph name to a character code. Only a handful of common names
     /// are supported.
     /// </summary>
-    /// <param name="name">Glyph name from the Type&nbsp;3 dictionary.</param>
+    /// <param name="name">Glyph name from the Type&#160;3 dictionary.</param>
     /// <returns>Associated character code or '?'.</returns>
     private static char MapName(string name)
     {

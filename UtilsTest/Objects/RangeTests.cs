@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Utils.Arrays;
 using Utils.Collections;
-using Utils.Objects;
+using Utils.Range;
 
 namespace UtilsTest.Objects
 {

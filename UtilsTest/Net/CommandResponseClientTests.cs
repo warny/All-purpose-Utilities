@@ -320,6 +320,7 @@ public class CommandResponseClientTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             await tcs.Task;
+            listener.Stop();
         });
 
         CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
@@ -327,7 +328,6 @@ public class CommandResponseClientTests
         Task disposeTask = Task.Run(client.Dispose);
         Assert.IsTrue(disposeTask.Wait(TimeSpan.FromSeconds(1)), "Dispose timed out");
         tcs.SetResult();
-        listener.Stop();
         await serverTask;
     }
 

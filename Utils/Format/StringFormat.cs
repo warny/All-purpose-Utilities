@@ -8,7 +8,7 @@ using Utils.Expressions;
 using Utils.Expressions.Resolvers;
 using Utils.Objects;
 
-namespace Utils.String
+namespace Utils.Format
 {
 	/// <summary>
 	/// Provides utilities for creating and managing string formatting operations,

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils.Objects;
 
-namespace Utils.Objects
+namespace Utils.Randomization
 {
 	public static class RandomExtensions
 	{
