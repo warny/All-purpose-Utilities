@@ -89,8 +89,8 @@ public sealed class CharsEqualityComparer : IEqualityComparer<IEnumerable<char>>
 
 	/// <summary>
 	/// Tries to retrieve a <see cref="ReadOnlySpan{T}"/> from an enumerable of characters.
-	/// Returns <c>true</c> if successful, along with the extracted span.
-	/// Otherwise, returns <c>false</c>.
+	/// Returns <see langword="true"/> if successful, along with the extracted span.
+	/// Otherwise, returns <see langword="false"/>.
 	/// </summary>
 	private static bool GetSpan(IEnumerable<char> obj, out ReadOnlySpan<char> span)
 	{

@@ -45,17 +45,17 @@ public class StreamValidator : Stream
 	}
 
 	/// <summary>
-	/// Gets a value indicating whether the current stream supports reading. Always <c>false</c>.
+	/// Gets a value indicating whether the current stream supports reading. Always <see langword="false"/>.
 	/// </summary>
 	public override bool CanRead => false;
 
 	/// <summary>
-	/// Gets a value indicating whether the current stream supports seeking. Always <c>false</c>.
+	/// Gets a value indicating whether the current stream supports seeking. Always <see langword="false"/>.
 	/// </summary>
 	public override bool CanSeek => false;
 
 	/// <summary>
-	/// Gets a value indicating whether the current stream supports writing. Always <c>true</c>.
+	/// Gets a value indicating whether the current stream supports writing. Always <see langword="true"/>.
 	/// </summary>
 	public override bool CanWrite => true;
 

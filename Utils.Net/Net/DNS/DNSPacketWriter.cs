@@ -222,7 +222,7 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
 	}
 
 	/// <summary>
-	/// A dictionary mapping known .NET types (e.g., <see cref="ushort"/>, <see cref="byte[]"/>)
+	/// A dictionary mapping known .NET types (e.g., <see cref="ushort"/>, <see cref="T:byte[]"/>)
 	/// to a function that generates an expression which writes that type into the <see cref="Datas"/> structure.
 	/// </summary>
 	private IReadOnlyDictionary<Type, Func<ParameterExpression, Expression, DNSFieldAttribute, Expression[]>> WriterExpressions { get; } =

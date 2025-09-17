@@ -97,7 +97,7 @@ namespace Utils.Net.DNS
 		/// <param name="type">The concrete derived type of <see cref="DNSElement"/> for which to generate the comparer.</param>
 		/// <returns>
 		/// A function that accepts two <see cref="DNSElement"/> instances of the specified type and
-		/// returns <c>true</c> if they are equal; otherwise, <c>false</c>.
+		/// returns <see langword="true"/> if they are equal; otherwise, <see langword="false"/>.
 		/// </returns>
 		private Func<DNSElement, DNSElement, bool> CreateComparer(Type type)
 		{
@@ -258,7 +258,7 @@ namespace Utils.Net.DNS
 		/// </summary>
 		/// <param name="member1">Expression referencing the first member.</param>
 		/// <param name="member2">Expression referencing the second member.</param>
-		/// <returns>An expression that yields <c>true</c> if the members are equal; otherwise, <c>false</c>.</returns>
+		/// <returns>An expression that yields <see langword="true"/> if the members are equal; otherwise, <see langword="false"/>.</returns>
 		private Expression CreateEqualityComparer(Expression member1, Expression member2)
 		{
 			// The core value-based equality expression (e.g., 'm1.Equals(m2)').

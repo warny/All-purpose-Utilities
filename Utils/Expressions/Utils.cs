@@ -12,8 +12,8 @@ public record Parenthesis(string Start, string End, string Separator = null)
     /// Tests whether a token represents the end or separator of the parenthesis set.
     /// </summary>
     /// <param name="token">Token to test.</param>
-    /// <param name="isEnd">Set to <c>true</c> if the token is the closing token.</param>
-    /// <returns><c>true</c> if the token matches one of the markers.</returns>
+    /// <param name="isEnd">Set to <see langword="true"/> if the token is the closing token.</param>
+    /// <returns><see langword="true"/> if the token matches one of the markers.</returns>
     public bool Test(string token, out bool isEnd)
     {
         isEnd = false;
@@ -26,8 +26,8 @@ public record Parenthesis(string Start, string End, string Separator = null)
     /// </summary>
     /// <param name="token">Token to test.</param>
     /// <param name="ignoreSeparator">When true, separator tokens are ignored.</param>
-    /// <param name="isEnd">Set to <c>true</c> if the token is the closing token.</param>
-    /// <returns><c>true</c> if the token matches.</returns>
+    /// <param name="isEnd">Set to <see langword="true"/> if the token is the closing token.</param>
+    /// <returns><see langword="true"/> if the token matches.</returns>
     public bool Test(string token, bool ignoreSeparator, out bool isEnd)
     {
         isEnd = false;

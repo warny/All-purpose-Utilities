@@ -304,7 +304,7 @@ public abstract class XmlDataProcessor
 	/// </summary>
 	/// <param name="expected">Parameter definitions from the reflection-based <see cref="MethodInfo"/>.</param>
 	/// <param name="actualTypes">The actual types of arguments passed in.</param>
-	/// <returns><c>true</c> if the arguments are acceptable; otherwise <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the arguments are acceptable; otherwise <see langword="false"/>.</returns>
 	private static bool ParametersMatch(ParameterInfo[] expected, Type[] actualTypes)
 	{
 		// Quick check: if you don't have enough args for non-optional params, fail fast.

@@ -146,7 +146,7 @@ public class NameTable : TrueTypeTable
 	/// Determines whether the table contains any records for the specified platform.
 	/// </summary>
 	/// <param name="platformId">The platform ID.</param>
-	/// <returns><c>true</c> if records exist for the specified platform; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if records exist for the specified platform; otherwise, <see langword="false"/>.</returns>
 	public virtual bool HasRecords(TtfPlatFormId platformId)
 	{
 		foreach (NameRecord nameRecord in records.Keys)
@@ -162,7 +162,7 @@ public class NameTable : TrueTypeTable
 	/// </summary>
 	/// <param name="platformId">The platform ID.</param>
 	/// <param name="platformSpecificID">The platform-specific ID.</param>
-	/// <returns><c>true</c> if records exist for the specified platform and platform-specific ID; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if records exist for the specified platform and platform-specific ID; otherwise, <see langword="false"/>.</returns>
 	public virtual bool HasRecords(TtfPlatFormId platformId, TtfPlatformSpecificID platformSpecificID)
 	{
 		foreach (NameRecord nameRecord in records.Keys)

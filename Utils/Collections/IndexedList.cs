@@ -73,14 +73,14 @@ public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
     /// Removes a value.
     /// </summary>
     /// <param name="item">Value to remove</param>
-    /// <returns><see cref="true"/> if the value was removed; otherwise, <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if the value was removed; otherwise, <see langword="false"/></returns>
     public bool Remove(V item) => dictionary.Remove(getKey(item));
 
     /// <summary>
     /// Removes a value by its key.
     /// </summary>
     /// <param name="key">Key to remove</param>
-    /// <returns><see cref="true"/> if the value was removed; otherwise, <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if the value was removed; otherwise, <see langword="false"/></returns>
     public bool Remove(K key) => dictionary.Remove(key);
 
     /// <summary>
@@ -92,14 +92,14 @@ public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
     /// Indicates if the list contains the parameter value.
     /// </summary>
     /// <param name="item">Value</param>
-    /// <returns><see cref="true"/> if the value is in the list; otherwise, <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if the value is in the list; otherwise, <see langword="false"/></returns>
     public bool Contains(V item) => dictionary.ContainsValue(item);
 
     /// <summary>
     /// Indicates if the list contains the parameter key.
     /// </summary>
     /// <param name="key">Key</param>
-    /// <returns><see cref="true"/> if the key is in the list; otherwise, <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if the key is in the list; otherwise, <see langword="false"/></returns>
     public bool ContainsKey(K key) => dictionary.ContainsKey(key);
 
     /// <summary>
@@ -114,7 +114,7 @@ public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
     /// </summary>
     /// <param name="key">Key</param>
     /// <param name="value">Output value</param>
-    /// <returns><see cref="true"/> if the value was retrieved; otherwise, <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if the value was retrieved; otherwise, <see langword="false"/></returns>
     public bool TryGetValue(K key, out V value) => dictionary.TryGetValue(key, out value);
 
     IEnumerator<KeyValuePair<K, V>> IEnumerable<KeyValuePair<K, V>>.GetEnumerator() => dictionary.GetEnumerator();

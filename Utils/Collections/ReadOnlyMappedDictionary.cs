@@ -19,7 +19,6 @@ public class ReadOnlyMappedDictionary<K, V> : IReadOnlyDictionary<K, V>
     /// Creates an accessor.
     /// </summary>
     /// <param name="GetValue">Accessor for retrieving a single value</param>
-    /// <param name="RemoveValue">Removing a value from the list</param>
     /// <param name="GetValues">Retrieving all values from the list</param>
     /// <param name="GetCount">Retrieving the number of values in the list</param>
     public ReadOnlyMappedDictionary(

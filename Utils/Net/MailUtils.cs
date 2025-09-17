@@ -255,7 +255,7 @@ namespace Utils.Net
 
 		/// <summary>
 		/// Sets the body of the mail message. Automatically sets <see cref="MailMessage.IsBodyHtml"/>
-		/// to <c>true</c> if the body starts with <c>&lt;html</c>, otherwise <c>false</c>.
+		/// to <see langword="true"/> if the body starts with <c>&lt;html</c>, otherwise <see langword="false"/>.
 		/// </summary>
 		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
 		/// <param name="body">The body content of the message.</param>
@@ -307,7 +307,7 @@ namespace Utils.Net
 		/// <summary>
 		/// Attaches a stream to the mail message as a file. 
 		/// <para>
-		/// <strong>Note:</strong> The stream is used by the <see cref="Attachment"/>.
+		/// <strong>Note:</strong> The stream is used by the <see cref="Attachment(MailMessage, string)"/>.
 		/// Do not dispose this stream until the <see cref="MailMessage"/> (and its attachments) 
 		/// is disposed or the mail is sent.
 		/// </para>
@@ -330,8 +330,8 @@ namespace Utils.Net
 		/// <summary>
 		/// Attaches a byte array to the mail message as a file.
 		/// <para>
-		/// <strong>Note:</strong> The in-memory stream is kept alive by the <see cref="Attachment"/>.
-		/// It is disposed when the <see cref="MailMessage"/> or the <see cref="Attachment"/> is disposed.
+		/// <strong>Note:</strong> The in-memory stream is kept alive by the <see cref="Attachment(MailMessage, string)"/>.
+		/// It is disposed when the <see cref="MailMessage"/> or the <see cref="Attachment(MailMessage, string)"/> is disposed.
 		/// </para>
 		/// </summary>
 		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>
@@ -356,8 +356,8 @@ namespace Utils.Net
 		/// <summary>
 		/// Attaches a string as a file to the mail message.
 		/// <para>
-		/// <strong>Note:</strong> The in-memory stream is kept alive by the <see cref="Attachment"/>.
-		/// It is disposed when the <see cref="MailMessage"/> or the <see cref="Attachment"/> is disposed.
+		/// <strong>Note:</strong> The in-memory stream is kept alive by the <see cref="Attachment(MailMessage, string)"/>.
+		/// It is disposed when the <see cref="MailMessage"/> or the <see cref="Attachment(MailMessage, string)"/> is disposed.
 		/// </para>
 		/// </summary>
 		/// <param name="mailMessage">The <see cref="MailMessage"/> object to modify.</param>

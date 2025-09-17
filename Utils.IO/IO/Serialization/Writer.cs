@@ -99,32 +99,32 @@ public class Writer : IWriter, IStreamMapping<Writer>
 	/// <summary>
 	/// Writes an object dynamically by resolving the appropriate writer.
 	/// </summary>
-	/// <param name="obj">Object to write.</param>
-	public void Write(object obj)
+	/// <param name="value">Object to write.</param>
+	public void Write(object value)
 	{
-		if (obj is null) throw new ArgumentNullException(nameof(obj));
-		var type = obj.GetType();
+		if (value is null) throw new ArgumentNullException(nameof(value));
+		var type = value.GetType();
 		if (!TryFindWriterFor(type, out var writerDelegate))
 		{
 			writerDelegate = CreateWriterFor(type);
 		}
-		writerDelegate.DynamicInvoke(this, obj);
+		writerDelegate.DynamicInvoke(this, value);
 	}
 
 	/// <summary>
 	/// Writes a strongly-typed object using the cached writer delegate.
 	/// </summary>
 	/// <typeparam name="T">Type of the object to write.</typeparam>
-	/// <param name="obj">Object instance to write.</param>
-	public void Write<T>(T obj)
+	/// <param name="value">Object instance to write.</param>
+	public void Write<T>(T value)
 	{
-		if (obj is null) throw new ArgumentNullException(nameof(obj));
+		if (value is null) throw new ArgumentNullException(nameof(value));
 		if (!TryFindWriterFor(typeof(T), out var writerDelegate))
 		{
 			writerDelegate = CreateWriterFor(typeof(T));
 		}
 		var writer = (Action<IWriter, T>)writerDelegate;
-		writer.Invoke(this, obj);
+		writer.Invoke(this, value);
 	}
 
 	/// <summary>
@@ -178,7 +178,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
 	/// </summary>
 	/// <param name="type">Type to find a writer for.</param>
 	/// <param name="writer">Writer delegate if one was found.</param>
-	/// <returns><c>true</c> if a writer was found; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if a writer was found; otherwise, <see langword="false"/>.</returns>
 	private bool TryFindWriterFor(Type type, out Delegate writer)
 	{
 		foreach (var t in type.GetTypeHierarchy().SelectMany(h => h.Interfaces.Prepend(h.Type)))

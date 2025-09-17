@@ -125,8 +125,8 @@ public sealed class EnumerableEqualityComparer<T> : IEqualityComparer<IEnumerabl
 
 	/// <summary>
 	/// Tries to retrieve a <see cref="Span{T}"/> from an enumerable.
-	/// Returns <c>true</c> if successful, along with the extracted span.
-	/// Otherwise, returns <c>false</c>.
+	/// Returns <see langword="true"/> if successful, along with the extracted span.
+	/// Otherwise, returns <see langword="false"/>.
 	/// </summary>
 	private static bool GetSpan(IEnumerable<T> obj, out ReadOnlySpan<T> span)
 	{

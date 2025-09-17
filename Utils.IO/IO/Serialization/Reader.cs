@@ -174,7 +174,7 @@ public class Reader : IReader, IStreamMapping<Reader>
 	/// </summary>
 	/// <param name="type">Type to find a reader for.</param>
 	/// <param name="reader">Found reader delegate if any.</param>
-	/// <returns><c>true</c> if a reader was found.</returns>
+	/// <returns><see langword="true"/> if a reader was found.</returns>
 	private bool TryFindReaderFor(Type type, out Delegate reader)
 	{
 		foreach (var t in type.GetTypeHierarchy().SelectMany(h => h.Interfaces.Prepend(h.Type)))

@@ -150,7 +150,7 @@ public class IPSECKEY : DNSResponseDetail
 	/// <see cref="GatewayType"/> is <see cref="GatewayType.WireEncodedDomain"/>.
 	/// <para>
 	/// This is a nullable struct because <see cref="DNSDomainName"/> is itself a struct
-	/// that cannot be null. The <c>? operator indicates that the entire struct can be absent.
+	/// that cannot be null. The <c>?</c> operator indicates that the entire struct can be absent.
 	/// </para>
 	/// </summary>
 	[DNSField(Condition = "GatewayType==Utils.Net.DNS.GatewayType.WireEncodedDomain")]

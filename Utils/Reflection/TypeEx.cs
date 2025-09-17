@@ -104,9 +104,9 @@ public static class TypeEx
 	/// <param name="type">The concrete type to check.</param>
 	/// <param name="baseType">The base or interface type to check against. May be generic.</param>
 	/// <returns>
-	/// <c>true</c> if <paramref name="type"/> is or inherits from <paramref name="baseType"/>, 
+	/// <see langword="true"/> if <paramref name="type"/> is or inherits from <paramref name="baseType"/>, 
 	/// or implements <paramref name="baseType"/> (if it's an interface), including handling for 
-	/// generic type definitions; otherwise, <c>false</c>.
+	/// generic type definitions; otherwise, <see langword="false"/>.
 	/// </returns>
 	/// <exception cref="ArgumentNullException">
 	/// Thrown if either <paramref name="type"/> or <paramref name="baseType"/> is <c>null</c>.

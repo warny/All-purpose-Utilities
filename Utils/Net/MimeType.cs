@@ -70,7 +70,7 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// </summary>
         /// <param name="name">The parameter name.</param>
         /// <param name="value">When this method returns, contains the parameter value if found.</param>
-        /// <returns><c>true</c> if the parameter exists; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the parameter exists; otherwise, <see langword="false"/>.</returns>
         public bool TryGetParameter(string name, out string? value)
                 => Parameters.TryGetValue(name, out value);
 
@@ -130,7 +130,7 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// Determines whether the content of this MIME type can be represented by the specified <see cref="Type"/>.
         /// </summary>
         /// <param name="type">The target type.</param>
-        /// <returns><c>true</c> if the MIME content can be mapped to the specified type; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the MIME content can be mapped to the specified type; otherwise, <see langword="false"/>.</returns>
         public bool IsCompatibleWith(Type type)
         {
                 return MimePartConverter.Default.CanConvertTo(type, this);
@@ -140,7 +140,7 @@ public class MimeType : IEquatable<MimeType>, IEqualityOperators<MimeType, MimeT
         /// Determines whether the content of this MIME type can be represented by <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The target type.</typeparam>
-        /// <returns><c>true</c> if compatible; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if compatible; otherwise, <see langword="false"/>.</returns>
         public bool IsCompatibleWith<T>() => MimePartConverter.Default.CanConvertTo<T>(this);
 
         private static bool DictionaryEquals(IDictionary<string, string> left, IDictionary<string, string> right)

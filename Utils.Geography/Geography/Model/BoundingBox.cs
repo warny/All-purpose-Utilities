@@ -124,7 +124,7 @@ namespace Utils.Geography.Model
 		/// Determines if this bounding box contains the given <paramref name="geoPoint"/>.
 		/// </summary>
 		/// <param name="geoPoint">A geographic point.</param>
-		/// <returns><c>true</c> if the bounding box contains the point, otherwise <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the bounding box contains the point, otherwise <see langword="false"/>.</returns>
 		public bool Contains(GeoPoint<T> geoPoint)
 		{
 			return (MinLatitude <= geoPoint.Latitude && MaxLatitude >= geoPoint.Latitude)
@@ -135,7 +135,7 @@ namespace Utils.Geography.Model
 		/// Checks if this <see cref="BoundingBox{T}"/> intersects with another one.
 		/// </summary>
 		/// <param name="boundingBox">The bounding box to test.</param>
-		/// <returns><c>true</c> if the two bounding boxes intersect; otherwise <c>false</c>.</returns>
+		/// <returns><see langword="true"/> if the two bounding boxes intersect; otherwise <see langword="false"/>.</returns>
 		public bool Intersects(BoundingBox<T> boundingBox)
 		{
 			// Quick reference to boundaries

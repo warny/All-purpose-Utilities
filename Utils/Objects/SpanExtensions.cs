@@ -7,7 +7,7 @@ public static class SpanExtensions
     /// Removes elements from the beginning and end of <paramref name="s"/> that match the result of the specified function.
     /// </summary>
     /// <param name="s">Reference span</param>
-    /// <param name="trimTester">Test function (returns <see cref="true"/> to remove the element)</param>
+    /// <param name="trimTester">Test function (returns <see langword="true"/> to remove the element)</param>
     /// <returns>Span with removed elements</returns>
     public static ReadOnlySpan<T> Trim<T>(this ReadOnlySpan<T> s, Func<T, bool> trimTester)
     {
@@ -18,7 +18,7 @@ public static class SpanExtensions
     /// Removes elements from the beginning of <paramref name="s"/> that match the result of the specified function.
     /// </summary>
     /// <param name="s">Reference span</param>
-    /// <param name="trimTester">Test function (returns <see cref="true"/> to remove the element)</param>
+    /// <param name="trimTester">Test function (returns <see langword="true"/> to remove the element)</param>
     /// <returns>Span with removed elements</returns>
     public static ReadOnlySpan<T> TrimStart<T>(this ReadOnlySpan<T> s, Func<T, bool> trimTester)
     {
@@ -35,7 +35,7 @@ public static class SpanExtensions
     /// Removes elements from the end of <paramref name="s"/> that match the result of the specified function.
     /// </summary>
     /// <param name="s">Reference span</param>
-    /// <param name="trimTester">Test function (returns <see cref="true"/> to remove the element)</param>
+    /// <param name="trimTester">Test function (returns <see langword="true"/> to remove the element)</param>
     /// <returns>Span with removed elements</returns>
     public static ReadOnlySpan<T> TrimEnd<T>(this ReadOnlySpan<T> s, Func<T, bool> trimTester)
     {

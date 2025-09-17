@@ -29,7 +29,7 @@ public interface IMimePartConverter
     /// <typeparam name="T">Target type.</typeparam>
     /// <param name="rawContent">The raw body content.</param>
     /// <param name="content">When this method returns, contains the converted content.</param>
-    /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if conversion succeeded; otherwise, <see langword="false"/>.</returns>
     bool TryConvert<T>(string rawContent, out T? content)
     {
         if (this is IMimePartConverter<T> typed)
@@ -50,7 +50,7 @@ public interface IMimePartConverter<T> : IMimePartConverter
     /// </summary>
     /// <param name="rawContent">The raw textual content.</param>
     /// <param name="content">When this method returns, contains the converted content.</param>
-    /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if conversion succeeded; otherwise, <see langword="false"/>.</returns>
     bool TryConvert(string rawContent, out T? content);
 }
 
@@ -81,7 +81,7 @@ public class MimePartConverter
     /// </summary>
     /// <typeparam name="T">Desired target type.</typeparam>
     /// <param name="mimeType">The MIME type to test.</param>
-    /// <returns><c>true</c> if a converter exists; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if a converter exists; otherwise, <see langword="false"/>.</returns>
     public bool CanConvertTo<T>(MimeType mimeType)
     {
         ArgumentNullException.ThrowIfNull(mimeType);
@@ -95,7 +95,7 @@ public class MimePartConverter
     /// </summary>
     /// <param name="type">Desired target type.</param>
     /// <param name="mimeType">The MIME type to test.</param>
-    /// <returns><c>true</c> if a converter exists; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if a converter exists; otherwise, <see langword="false"/>.</returns>
     public bool CanConvertTo(Type type, MimeType mimeType)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -110,7 +110,7 @@ public class MimePartConverter
     /// <typeparam name="T">Target type.</typeparam>
     /// <param name="part">The MIME part.</param>
     /// <param name="content">When this method returns, contains the converted content if successful.</param>
-    /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if conversion succeeded; otherwise, <see langword="false"/>.</returns>
     public bool TryConvertTo<T>(MimePart part, out T? content)
     {
         ArgumentNullException.ThrowIfNull(part);

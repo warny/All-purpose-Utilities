@@ -346,7 +346,7 @@ public class TrueTypeFont : IFont
 	/// <typeparam name="T">The type of the table.</typeparam>
 	/// <param name="tag">The table tag.</param>
 	/// <param name="table">When this method returns, contains the table if found; otherwise, null.</param>
-	/// <returns><c>true</c> if the table was found; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the table was found; otherwise, <see langword="false"/>.</returns>
 	public virtual bool TryGetTable<T>(Tag tag, out T table) where T : TrueTypeTable
 	{
 		if (tables.TryGetValue(tag, out var result))
@@ -376,7 +376,7 @@ public class TrueTypeFont : IFont
 	/// Indicates whether the font contains a table with the specified tag.
 	/// </summary>
 	/// <param name="tag">The table tag.</param>
-	/// <returns><c>true</c> if the table exists; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the table exists; otherwise, <see langword="false"/>.</returns>
 	public bool ContainsTable(Tag tag) => tables.ContainsKey(tag);
 
 	/// <summary>

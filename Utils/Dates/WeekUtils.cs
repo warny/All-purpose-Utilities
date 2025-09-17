@@ -11,7 +11,6 @@ public static class WeekUtils
 	/// Computes the date range (start and end date) for the specified week of the specified year, using a specified pivot day.
 	/// </summary>
 	/// <param name="Week">Week.</param>
-	/// <param name="pivotDay">The pivot day that defines the week. Defaults to Thursday for ISO weeks.</param>
 	/// <returns>The date range of the specified week.</returns>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the week number is out of range.</exception>
 	public static Range<DateTime> GetISOWeekDateRange(Week week)
@@ -23,7 +22,6 @@ public static class WeekUtils
 	/// </summary>
 	/// <param name="year">The year in which the week occurs.</param>
 	/// <param name="weekNumber">The week number (1-based).</param>
-	/// <param name="pivotDay">The pivot day that defines the week. Defaults to Thursday for ISO weeks.</param>
 	/// <returns>The date range of the specified week.</returns>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the week number is out of range.</exception>
 	public static Range<DateTime> GetISOWeekDateRange(int year, int weekNumber)
@@ -32,7 +30,7 @@ public static class WeekUtils
 	/// <summary>
 	/// Computes the date range (start and end date) for the specified week of the specified year, using a specified pivot day.
 	/// </summary>
-	/// <param name="Week">Week.</param>
+	/// <param name="week">Week.</param>
 	/// <param name="pivotDay">The pivot day that defines the week. Defaults to Thursday for ISO weeks.</param>
 	/// <returns>The date range of the specified week.</returns>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the week number is out of range.</exception>
@@ -149,7 +147,6 @@ public static class WeekUtils
 	/// Computes the week number for a given date, considering the specified first day of the week and pivot day.
 	/// </summary>
 	/// <param name="date">The date for which to calculate the week number.</param>
-	/// <param name="pivotDay">The pivot day that defines the week (e.g., Thursday for ISO weeks). Defaults to Thursday.</param>
 	/// <returns>The week number for the specified date.</returns>
 	public static Week GetISOWeekOfYear(this DateTime date)
 		=> date.GetWeekOfYear(DayOfWeek.Monday, DayOfWeek.Thursday);

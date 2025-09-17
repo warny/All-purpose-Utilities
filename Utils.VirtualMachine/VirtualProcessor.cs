@@ -40,8 +40,8 @@ namespace Utils.VirtualMachine
         /// specifying whether the byte data should be interpreted as little-endian.
         /// </summary>
         /// <param name="littleEndian">
-        /// If <c>true</c>, uses little-endian byte ordering; otherwise, uses big-endian.
-        /// Defaults to <c>true</c>.
+        /// If <see langword="true"/>, uses little-endian byte ordering; otherwise, uses big-endian.
+        /// Defaults to <see langword="true"/>.
         /// </param>
         protected VirtualProcessor(bool littleEndian = true)
         {

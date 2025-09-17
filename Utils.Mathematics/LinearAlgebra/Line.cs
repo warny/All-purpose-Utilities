@@ -76,7 +76,7 @@ public class Line<T> : IFormattable, IEquatable<Line<T>>, ICloneable
     /// Determines whether the specified line is equal to the current line.
     /// </summary>
     /// <param name="other">Line to compare.</param>
-    /// <returns><c>true</c> if equal; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if equal; otherwise, <see langword="false"/>.</returns>
     public bool Equals(Line<T>? other)
         => other is not null && Point.Equals(other.Point) && Direction.Equals(other.Direction);
 

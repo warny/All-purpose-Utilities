@@ -76,7 +76,7 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	/// <summary>
 	/// Checks if the underlying object has a valid size based on the specified dimensions.
 	/// </summary>
-	/// <returns><c>true</c> if the size is valid; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the size is valid; otherwise, <see langword="false"/>.</returns>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	protected abstract bool CheckSize();
 
@@ -154,7 +154,7 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	/// <summary>
 	/// Validates that the underlying array has sufficient size for the specified dimensions.
 	/// </summary>
-	/// <returns><c>true</c> if the array has sufficient size; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the array has sufficient size; otherwise, <see langword="false"/>.</returns>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	protected override bool CheckSize()
 	{

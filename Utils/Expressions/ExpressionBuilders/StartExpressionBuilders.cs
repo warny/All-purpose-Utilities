@@ -937,7 +937,7 @@ namespace Utils.Expressions.ExpressionBuilders
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for a "foreach" loop,
-	/// building either an <see cref="Expression.Block"/> that enumerates an array
+	/// building either an <see cref="BlockExpression"/> that enumerates an array
 	/// or uses <see cref="IEnumerator"/> for other enumerables.
 	/// </summary>
 	public class ForEachBuilder : IStartExpressionBuilder, IAdditionalTokens

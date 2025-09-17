@@ -17,16 +17,16 @@ public static class StreamUtils
 	/// <param name="s">The source <see cref="Stream"/> to read from.</param>
 	/// <param name="length">The number of bytes to read from the stream.</param>
 	/// <param name="raiseException">
-	/// If <c>true</c> and fewer than <paramref name="length"/> bytes could be read,
+	/// If <see langword="true"/> and fewer than <paramref name="length"/> bytes could be read,
 	/// throws an <see cref="EndOfStreamException"/>.
 	/// </param>
 	/// <returns>
 	/// A byte array containing up to <paramref name="length"/> bytes read from the stream.  
-	/// If <paramref name="raiseException"/> is <c>false</c> and the stream ends, 
+	/// If <paramref name="raiseException"/> is <see langword="false"/> and the stream ends, 
 	/// the returned array might be partially uninitialized for the remainder.
 	/// </returns>
 	/// <exception cref="EndOfStreamException">
-	/// Thrown if <paramref name="raiseException"/> is <c>true</c> and the stream ends before 
+	/// Thrown if <paramref name="raiseException"/> is <see langword="true"/> and the stream ends before 
 	/// <paramref name="length"/> bytes could be read.
 	/// </exception>
 	public static byte[] ReadBytes(this Stream s, int length, bool raiseException = false)

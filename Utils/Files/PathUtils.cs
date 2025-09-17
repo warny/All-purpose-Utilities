@@ -69,7 +69,7 @@ namespace Utils.Files
 		/// Expands the entire path in two phases:
 		///  1) For all but the last segment: enumerate directories only, using <see cref="ExpandDirectories"/>.
 		///  2) For the last segment: call the user-supplied <paramref name="finalEnumerator"/> 
-		///     (e.g. <see cref="Directory.EnumerateFiles"/> or <see cref="Directory.EnumerateFileSystemEntries"/>),
+		///     (e.g. <see cref="Directory.EnumerateFiles(string, string)"/> or <see cref="Directory.EnumerateFileSystemEntries(string, string)"/>),
 		///     against each of the directories collected so far.
 		///  
 		/// That way, intermediate segments (which may have wildcards) are managed as directories,
@@ -77,8 +77,8 @@ namespace Utils.Files
 		/// </summary>
 		/// <param name="path">A path that may have multiple wildcard segments, e.g. "C:\Root\Sub*\Another*\File??.txt"</param>
 		/// <param name="finalEnumerator">
-		/// A function like <see cref="Directory.EnumerateFiles"/>, <see cref="Directory.EnumerateDirectories"/>, 
-		/// or <see cref="Directory.EnumerateFileSystemEntries"/> that is used only on the final segment.
+		/// A function like <see cref="Directory.EnumerateFiles(string, string)"/>, <see cref="Directory.EnumerateDirectories(string, string)"/>, 
+		/// or <see cref="Directory.EnumerateFileSystemEntries(string, string)"/> that is used only on the final segment.
 		/// </param>
 		/// <returns>All matching paths returned by the final enumeration step.</returns>
 		private static IEnumerable<string> EnumeratePath(
@@ -144,7 +144,7 @@ namespace Utils.Files
 		/// <summary>
 		/// Enumerates only directories for the final segment, while managing wildcards 
 		/// in intermediate segments as directories. The final call is 
-		/// <see cref="Directory.EnumerateDirectories"/> on each matched parent.
+		/// <see cref="Directory.EnumerateDirectories(string, string)"/> on each matched parent.
 		/// </summary>
 		/// <param name="path">
 		/// A path that may contain multiple wildcard segments (e.g. "C:\Root\Sub*\Another*\EndDir??").
@@ -161,7 +161,7 @@ namespace Utils.Files
 		/// <summary>
 		/// Enumerates only files for the final segment, while managing wildcards 
 		/// in intermediate segments as directories. The final call is 
-		/// <see cref="Directory.EnumerateFiles"/> on each matched parent.
+		/// <see cref="Directory.EnumerateFiles(string, string)"/> on each matched parent.
 		/// </summary>
 		/// <param name="path">
 		/// A path that may contain multiple wildcard segments (e.g. "C:\Root\Sub*\Another*\File??.txt").
@@ -178,7 +178,7 @@ namespace Utils.Files
 		/// <summary>
 		/// Enumerates both files and directories for the final segment, while managing 
 		/// wildcards in intermediate segments as directories. The final call is 
-		/// <see cref="Directory.EnumerateFileSystemEntries"/> on each matched parent.
+		/// <see cref="Directory.EnumerateFileSystemEntries(string, string)"/> on each matched parent.
 		/// </summary>
 		/// <param name="path">
 		/// A path that may contain multiple wildcard segments (e.g. "C:\Root\Sub*\Another*\*.*").

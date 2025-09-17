@@ -29,7 +29,7 @@ public interface IMimePartSerializer
     /// <typeparam name="T">Type of the value.</typeparam>
     /// <param name="value">The value to convert.</param>
     /// <param name="part">When this method returns, contains the resulting part.</param>
-    /// <returns><c>true</c> if the value was converted; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if the value was converted; otherwise, <see langword="false"/>.</returns>
     bool TrySerialize<T>(T value, out MimePart? part)
     {
         if (this is IMimePartSerializer<T> typed)
@@ -50,7 +50,7 @@ public interface IMimePartSerializer<T> : IMimePartSerializer
     /// </summary>
     /// <param name="value">The value to convert.</param>
     /// <param name="part">The resulting part if successful.</param>
-    /// <returns><c>true</c> if serialization succeeded; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if serialization succeeded; otherwise, <see langword="false"/>.</returns>
     bool TrySerialize(T value, out MimePart? part);
 }
 
@@ -82,7 +82,7 @@ public class MimePartFactory
     /// <typeparam name="T">Type of the value.</typeparam>
     /// <param name="value">The value to convert.</param>
     /// <param name="part">When this method returns, contains the converted part if successful.</param>
-    /// <returns><c>true</c> if conversion succeeded; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if conversion succeeded; otherwise, <see langword="false"/>.</returns>
     public bool TryCreatePart<T>(T value, out MimePart? part)
     {
         ArgumentNullException.ThrowIfNull(value);

@@ -103,7 +103,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// Determines whether the current vector is equal to another vector.
     /// </summary>
     /// <param name="other">The vector to compare with.</param>
-    /// <returns><c>true</c> if vectors are equal; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if vectors are equal; otherwise, <see langword="false"/>.</returns>
     public bool Equals(Vector<T>? other)
     {
         if (other is null) return false;
@@ -115,7 +115,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// Determines whether the current vector is equal to the specified component array.
     /// </summary>
     /// <param name="other">Component array to compare with.</param>
-    /// <returns><c>true</c> if arrays are equal; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> if arrays are equal; otherwise, <see langword="false"/>.</returns>
     public bool Equals(T[] other)
     {
         if (other is null) return false;

@@ -119,7 +119,7 @@ public class Authenticator
 	/// </summary>
 	/// <param name="range">The number of previous and future codes to check.</param>
 	/// <param name="code">The code to verify.</param>
-	/// <returns><c>true</c> if the code is valid; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the code is valid; otherwise, <see langword="false"/>.</returns>
 	public bool VerifyAuthenticator(int range, string code)
 	{
 		long baseMessage = CurrentMessage;

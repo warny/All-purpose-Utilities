@@ -161,7 +161,7 @@ public class CStyleBuilder : IBuilder
     /// <param name="content">Code content</param>
     /// <param name="index">Extraction start index</param>
     /// <param name="length">Returned length</param>
-    /// <returns><see cref="true"/> if a name has been read otherwise <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if a name has been read otherwise <see langword="false"/></returns>
     private static bool TryReadName(string content, int index, out int length)
     {
         length = 0;
@@ -185,7 +185,7 @@ public class CStyleBuilder : IBuilder
     /// <param name="content">Code content</param>
     /// <param name="index">Extraction start index</param>
     /// <param name="length">Returned length</param>
-    /// <returns><see cref="true"/> if a number has been read otherwise <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if a number has been read otherwise <see langword="false"/></returns>
     private static bool TryReadNumber(string content, int index, out int length)
     {
         length = 0;
@@ -234,7 +234,7 @@ public class CStyleBuilder : IBuilder
     /// <param name="content">Code content</param>
     /// <param name="index">Extraction start index</param>
     /// <param name="length">Returned length</param>
-    /// <returns><see cref="true"/> if a comment has been read otherwise <see cref="false"/></returns>
+    /// <returns><see langword="true"/> if a comment has been read otherwise <see langword="false"/></returns>
     private static bool TryReadComment(string content, int index, out int length)
     {
         length = 0;

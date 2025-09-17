@@ -149,7 +149,7 @@ public class ParserContext
     /// <summary>
     /// Pops the current context frame.
     /// </summary>
-    /// <returns><c>true</c> if another frame remains on the stack.</returns>
+    /// <returns><see langword="true"/> if another frame remains on the stack.</returns>
     public bool PopContext()
     {
         Stack = Stack.parent;
@@ -183,7 +183,7 @@ public class ParserContext
     /// </summary>
     /// <param name="name">Name of the variable.</param>
     /// <param name="parameter">Returns the parameter expression if found.</param>
-    /// <returns><c>true</c> if the variable exists.</returns>
+    /// <returns><see langword="true"/> if the variable exists.</returns>
     public bool TryFindVariable(string name, out ParameterExpression parameter)
     {
         if (Stack.TryFindParameter(name, out parameter)) return true;

@@ -42,8 +42,8 @@ public class DNSHeadersComparer : IEqualityComparer<DNSHeader>
 	/// <param name="x">The first <see cref="DNSHeader"/> to compare.</param>
 	/// <param name="y">The second <see cref="DNSHeader"/> to compare.</param>
 	/// <returns>
-	/// <c>true</c> if both <see cref="DNSHeader"/> instances and all their contained records are equal;
-	/// otherwise, <c>false</c>.
+	/// <see langword="true"/> if both <see cref="DNSHeader"/> instances and all their contained records are equal;
+	/// otherwise, <see langword="false"/>.
 	/// </returns>
 	public bool Equals([AllowNull] DNSHeader x, [AllowNull] DNSHeader y)
 	{
@@ -73,8 +73,8 @@ public class DNSHeadersComparer : IEqualityComparer<DNSHeader>
 	/// <param name="record1">The first list of <see cref="DNSResponseRecord"/> to compare.</param>
 	/// <param name="record2">The second list of <see cref="DNSResponseRecord"/> to compare.</param>
 	/// <returns>
-	/// <c>true</c> if both lists have the same number of items and each corresponding record
-	/// is equal (as determined by <see cref="DNSElementsComparer"/>); otherwise, <c>false</c>.
+	/// <see langword="true"/> if both lists have the same number of items and each corresponding record
+	/// is equal (as determined by <see cref="DNSElementsComparer"/>); otherwise, <see langword="false"/>.
 	/// </returns>
 	private bool AreEquals(IList<DNSResponseRecord> record1, IList<DNSResponseRecord> record2)
 	{

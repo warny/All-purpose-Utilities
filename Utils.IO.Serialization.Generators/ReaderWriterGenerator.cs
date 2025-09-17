@@ -41,7 +41,7 @@ public class ReaderWriterGenerator : ISourceGenerator
         /// Determines whether a type has a dedicated reader method or is marked for generation.
         /// </summary>
         /// <param name="type">Type to inspect.</param>
-        /// <returns><c>true</c> if a custom reader should be invoked.</returns>
+        /// <returns><see langword="true"/> if a custom reader should be invoked.</returns>
         bool HasCustomReader(ITypeSymbol type)
         {
             if (type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, generateAttr)))
@@ -68,7 +68,7 @@ public class ReaderWriterGenerator : ISourceGenerator
         /// Determines whether a type has a dedicated writer method or is marked for generation.
         /// </summary>
         /// <param name="type">Type to inspect.</param>
-        /// <returns><c>true</c> if a custom writer should be invoked.</returns>
+        /// <returns><see langword="true"/> if a custom writer should be invoked.</returns>
         bool HasCustomWriter(ITypeSymbol type)
         {
             if (type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, generateAttr)))

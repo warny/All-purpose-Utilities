@@ -7,8 +7,9 @@
     <Authors>Olivier MARTY</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
+	  <NoWarn>1591</NoWarn>
   </PropertyGroup>
-
+	
   <ItemGroup>
     <EmbeddedResource Remove="Resources\TestResource.fr.resx" />
     <EmbeddedResource Remove="Resources\TestResource.resx" />

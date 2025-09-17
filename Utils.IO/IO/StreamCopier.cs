@@ -18,7 +18,7 @@ namespace Utils.IO;
 /// 
 /// <remarks>
 /// By default, disposing this object does not dispose any of the contained streams. If the
-/// parameter <paramref name="closeAllTargetsOnDispose"/> is <c>true</c> when constructing
+/// parameter <paramref name="closeAllTargetsOnDispose"/> is <see langword="true"/> when constructing
 /// this class, all target streams will be disposed when <see cref="StreamCopier.Dispose()"/>
 /// is called.
 /// </remarks>
@@ -31,7 +31,7 @@ public class StreamCopier : Stream, IList<Stream>
 	private readonly List<Stream> _targets;
 
 	/// <summary>
-	/// If set to <c>true</c>, disposing this <see cref="StreamCopier"/> will also
+	/// If set to <see langword="true"/>, disposing this <see cref="StreamCopier"/> will also
 	/// dispose/close all target streams in <see cref="_targets"/>.
 	/// </summary>
 	private readonly bool closeAllTargetsOnDispose;
@@ -43,7 +43,7 @@ public class StreamCopier : Stream, IList<Stream>
 	/// list of target streams.
 	/// </summary>
 	/// <param name="closeAllTargetsOnDispose">
-	/// If <c>true</c>, disposing this <see cref="StreamCopier"/> will also dispose/close
+	/// If <see langword="true"/>, disposing this <see cref="StreamCopier"/> will also dispose/close
 	/// all streams in <see cref="_targets"/>.
 	/// </param>
 	public StreamCopier(bool closeAllTargetsOnDispose = false)
@@ -57,7 +57,7 @@ public class StreamCopier : Stream, IList<Stream>
 	/// adds the specified array of streams to its targets.
 	/// </summary>
 	/// <param name="closeAllTargetsOnDispose">
-	/// If <c>true</c>, disposing this <see cref="StreamCopier"/> will also dispose/close
+	/// If <see langword="true"/>, disposing this <see cref="StreamCopier"/> will also dispose/close
 	/// all streams in <see cref="_targets"/>.
 	/// </param>
 	/// <param name="streams">An array of streams to which data should be written.</param>
@@ -146,7 +146,7 @@ public class StreamCopier : Stream, IList<Stream>
 
 	/// <summary>
 	/// Disposes the current <see cref="StreamCopier"/>. If <see cref="closeAllTargetsOnDispose"/>
-	/// is <c>true</c>, all target streams will also be disposed.
+	/// is <see langword="true"/>, all target streams will also be disposed.
 	/// </summary>
 	/// <param name="disposing">Whether this method is being called from a managed context.</param>
 	protected override void Dispose(bool disposing)
@@ -174,7 +174,7 @@ public class StreamCopier : Stream, IList<Stream>
 	public int Count => _targets.Count;
 
 	/// <summary>
-	/// Gets a value indicating whether the list of streams is read-only. This is always <c>false</c>.
+	/// Gets a value indicating whether the list of streams is read-only. This is always <see langword="false"/>.
 	/// </summary>
 	public bool IsReadOnly => false;
 
@@ -224,7 +224,7 @@ public class StreamCopier : Stream, IList<Stream>
 	/// Determines whether the targets list contains a specific stream.
 	/// </summary>
 	/// <param name="item">The stream to locate in the list.</param>
-	/// <returns><c>true</c> if the stream is found in the list; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the stream is found in the list; otherwise, <see langword="false"/>.</returns>
 	public bool Contains(Stream item) => _targets.Contains(item);
 
 	/// <summary>
@@ -239,7 +239,7 @@ public class StreamCopier : Stream, IList<Stream>
 	/// Removes the first occurrence of a specific stream from the list.
 	/// </summary>
 	/// <param name="item">The stream to remove.</param>
-	/// <returns><c>true</c> if the stream was successfully removed; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the stream was successfully removed; otherwise, <see langword="false"/>.</returns>
 	public bool Remove(Stream item) => _targets.Remove(item);
 
 	/// <summary>

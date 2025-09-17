@@ -156,7 +156,7 @@ namespace Utils.Geography.Model
 
 		/// <summary>
 		/// Attempts to parse the provided latitude and longitude strings using the specified culture and regex.
-		/// If successful, lat/lon will be set and <c>true</c> will be returned.
+		/// If successful, lat/lon will be set and <see langword="true"/> will be returned.
 		/// </summary>
 		protected bool ParseCoordinates(
 			string latitudeString,

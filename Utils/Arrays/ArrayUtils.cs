@@ -99,7 +99,7 @@ public static class ArrayUtils
 	/// <typeparam name="T">Type of elements in the array.</typeparam>
 	/// <param name="obj">The source array.</param>
 	/// <param name="trimTester">
-	/// A function that returns <c>true</c> for elements that should be trimmed from the start and end.
+	/// A function that returns <see langword="true"/> for elements that should be trimmed from the start and end.
 	/// </param>
 	/// <returns>A new array with the matching elements removed from both ends.</returns>
 	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="trimTester"/> is null.</exception>
@@ -150,7 +150,7 @@ public static class ArrayUtils
 	/// <typeparam name="T">Type of elements in the array.</typeparam>
 	/// <param name="obj">The source array.</param>
 	/// <param name="trimTester">
-	/// A function that returns <c>true</c> for elements that should be trimmed from the start.
+	/// A function that returns <see langword="true"/> for elements that should be trimmed from the start.
 	/// </param>
 	/// <returns>A new array with matching elements removed from the start only.</returns>
 	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="trimTester"/> is null.</exception>
@@ -196,7 +196,7 @@ public static class ArrayUtils
 	/// <typeparam name="T">Type of elements in the array.</typeparam>
 	/// <param name="obj">The source array.</param>
 	/// <param name="trimTester">
-	/// A function that returns <c>true</c> for elements that should be trimmed from the end.
+	/// A function that returns <see langword="true"/> for elements that should be trimmed from the end.
 	/// </param>
 	/// <returns>A new array with matching elements removed from the end only.</returns>
 	/// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> or <paramref name="trimTester"/> is null.</exception>

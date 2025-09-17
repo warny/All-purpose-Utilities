@@ -137,7 +137,7 @@ public class QueryString
 	/// Removes all values associated with the specified key.
 	/// </summary>
 	/// <param name="key">The query parameter key to remove.</param>
-	/// <returns><c>true</c> if the key was found and removed; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the key was found and removed; otherwise, <see langword="false"/>.</returns>
 	public bool Remove(string key) => _parameters.Remove(key);
 
 	/// <summary>
@@ -308,8 +308,6 @@ public class QueryString
 			_key = key;
 			_values = values is List<string> l ? l : [..values];
 		}
-
-		/// <summary>
 
 		/// <summary>
 		/// Allows implicit conversion to a comma-separated string of all values.

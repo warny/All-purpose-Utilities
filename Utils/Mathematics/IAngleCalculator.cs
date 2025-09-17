@@ -319,7 +319,7 @@ namespace Utils.Mathematics
 		/// <summary>
 		/// A built-in calculator for Radians (Perigon = 2π).
 		/// </summary>
-		public static IAngleCalculator<T> Radian => new _Radian<T>();
+		public static IAngleCalculator<T> Radian => new Radian<T>();
 
 		/// <summary>
 		/// A built-in calculator for Degrees (Perigon = 360).
@@ -346,10 +346,10 @@ namespace Utils.Mathematics
 	/// Represents an angle calculator operating natively in radians.
 	/// </summary>
 	/// <typeparam name="T">A floating-point numeric type (e.g., float, double) implementing <see cref="IFloatingPointIeee754{T}"/>.</typeparam>
-	private sealed class _Radian<T> : Trigonometry<T>
+	private sealed class Radian<T> : Trigonometry<T>
 		where T : struct, IFloatingPointIeee754<T>
 	{
-		internal _Radian()
+		internal Radian()
 			: base((T.Pi * (T.One + T.One))) // 2π
 		{
 			// For a fully 'native' radian approach, Perigon = 2π

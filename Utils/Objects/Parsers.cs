@@ -234,14 +234,14 @@ public static class Parsers
 	/// Checks if a type can be parsed.
 	/// </summary>
 	/// <param name="type">The type to check.</param>
-	/// <returns><c>true</c> if the type can be parsed; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the type can be parsed; otherwise, <see langword="false"/>.</returns>
 	public static bool CanParse<T>() => CanParse(typeof(T));
 
 	/// <summary>
 	/// Checks if a type can be parsed.
 	/// </summary>
 	/// <param name="type">The type to check.</param>
-	/// <returns><c>true</c> if the type can be parsed; otherwise, <c>false</c>.</returns>
+	/// <returns><see langword="true"/> if the type can be parsed; otherwise, <see langword="false"/>.</returns>
 	public static bool CanParse(Type type)
 	{
 		type.Arg().MustNotBeNull();

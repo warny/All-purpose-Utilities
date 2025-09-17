@@ -69,7 +69,7 @@ public static class DictionaryExtensions
     /// <param name="dictionary">The dictionary to update.</param>
     /// <param name="key">Key of the element to update.</param>
     /// <param name="value">The new value.</param>
-    /// <returns><c>true</c> if the key was present and the value updated.</returns>
+    /// <returns><see langword="true"/> if the key was present and the value updated.</returns>
     [MethodImpl(MethodImplOptions.Synchronized)]
     public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value)
         where TKey : notnull

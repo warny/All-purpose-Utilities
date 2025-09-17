@@ -338,10 +338,6 @@ public class PostScriptFont : IFont
     /// follows the description in
     /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf">Adobe Technical Note 5040</see>.
     /// </summary>
-    /// <param name="data">Plain (already decrypted) charstring bytes.</param>
-    /// <param name="width">Receives the glyph width.</param>
-    /// <param name="height">Receives the glyph height.</param>
-    /// <param name="baseLine">Receives the baseline value.</param>
     /// <returns>List of parsed path commands.</returns>
     public static byte[] DecryptType1(byte[] data, int r, int discard)
     {

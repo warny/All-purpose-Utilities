@@ -237,7 +237,7 @@ public readonly struct Bytes :
 	/// <summary>
 	/// Compares the current instance with another object of the same type.
 	/// </summary>
-	/// <param name="obj">An object to compare, which can be <see cref="Bytes"/> or <see cref="byte[]"/>.</param>
+	/// <param name="obj">An object to compare, which can be <see cref="Bytes"/> or <see cref="T:byte[]"/>.</param>
 	/// <returns>A value indicating the relative order of the objects.</returns>
 	/// <exception cref="InvalidOperationException">If <paramref name="obj"/> is not a valid type.</exception>
 	public int CompareTo(object obj)
