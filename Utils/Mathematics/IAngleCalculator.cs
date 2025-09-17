@@ -319,7 +319,7 @@ namespace Utils.Mathematics
 		/// <summary>
 		/// A built-in calculator for Radians (Perigon = 2π).
 		/// </summary>
-		public static IAngleCalculator<T> Radian => new Radian<T>();
+                public static IAngleCalculator<T> Radian => new RadianCalculator();
 
 		/// <summary>
 		/// A built-in calculator for Degrees (Perigon = 360).
@@ -337,8 +337,13 @@ namespace Utils.Mathematics
 			{  Grade.Perigon, Grade } 
 		};
 
-		public static IAngleCalculator<T> Get(T perigon)
-			=> _angleCalculators.GetOrAdd(perigon, () => new Trigonometry<T>(perigon));
+                /// <summary>
+                /// Retrieves a cached calculator matching the specified perigon value or creates one on demand.
+                /// </summary>
+                /// <param name="perigon">The angle span representing a full rotation in the desired system.</param>
+                /// <returns>An <see cref="IAngleCalculator{T}"/> configured for the requested perigon.</returns>
+                public static IAngleCalculator<T> Get(T perigon)
+                        => _angleCalculators.GetOrAdd(perigon, () => new Trigonometry<T>(perigon));
 
 	#endregion
 
@@ -346,64 +351,113 @@ namespace Utils.Mathematics
 	/// Represents an angle calculator operating natively in radians.
 	/// </summary>
 	/// <typeparam name="T">A floating-point numeric type (e.g., float, double) implementing <see cref="IFloatingPointIeee754{T}"/>.</typeparam>
-	private sealed class Radian<T> : Trigonometry<T>
-		where T : struct, IFloatingPointIeee754<T>
-	{
-		internal Radian()
-			: base((T.Pi * (T.One + T.One))) // 2π
-		{
-			// For a fully 'native' radian approach, Perigon = 2π
-			// so that StraightAngle = π and RightAngle = π/2, etc.
-		}
+        private sealed class RadianCalculator : Trigonometry<T>
+        {
+                /// <summary>
+                /// Initializes a new instance of the <see cref="RadianCalculator"/> class with a 2π perigon.
+                /// </summary>
+                internal RadianCalculator()
+                        : base((T.Pi * (T.One + T.One))) // 2π
+                {
+                        // For a fully 'native' radian approach, Perigon = 2π
+                        // so that StraightAngle = π and RightAngle = π/2, etc.
+                }
 
-		#region Override Basic Trig (No Rounding Needed)
+                #region Override Basic Trig (No Rounding Needed)
 
-		public override T Sin(T angle) => T.Sin(angle);
-		public override T Cos(T angle) => T.Cos(angle);
-		public override T Tan(T angle) => T.Tan(angle);
-		public override T Cot(T angle) => T.One / T.Tan(angle);
-		public override T Sec(T angle) => T.One / T.Cos(angle);
-		public override T Csc(T angle) => T.One / T.Sin(angle);
+                /// <inheritdoc />
+                public override T Sin(T angle) => T.Sin(angle);
+
+                /// <inheritdoc />
+                public override T Cos(T angle) => T.Cos(angle);
+
+                /// <inheritdoc />
+                public override T Tan(T angle) => T.Tan(angle);
+
+                /// <inheritdoc />
+                public override T Cot(T angle) => T.One / T.Tan(angle);
+
+                /// <inheritdoc />
+                public override T Sec(T angle) => T.One / T.Cos(angle);
+
+                /// <inheritdoc />
+                public override T Csc(T angle) => T.One / T.Sin(angle);
 
 		#endregion
 
 		#region Override Inverse Trig
 
-		public override T Asin(T value) => T.Asin(value);
-		public override T Acos(T value) => T.Acos(value);
-		public override T Atan(T value) => T.Atan(value);
-		public override T Acot(T value) => T.Atan2(T.One, value);
-		public override T Asec(T value) => T.Acos(T.One / value);
-		public override T Acsc(T value) => T.Asin(T.One / value);
+                /// <inheritdoc />
+                public override T Asin(T value) => T.Asin(value);
+
+                /// <inheritdoc />
+                public override T Acos(T value) => T.Acos(value);
+
+                /// <inheritdoc />
+                public override T Atan(T value) => T.Atan(value);
+
+                /// <inheritdoc />
+                public override T Acot(T value) => T.Atan2(T.One, value);
+
+                /// <inheritdoc />
+                public override T Asec(T value) => T.Acos(T.One / value);
+
+                /// <inheritdoc />
+                public override T Acsc(T value) => T.Asin(T.One / value);
 
 		#endregion
 
 		#region Override Hyperbolic
 
-		public override T Sinh(T angle) => T.Sinh(angle);
-		public override T Cosh(T angle) => T.Cosh(angle);
-		public override T Tanh(T angle) => T.Tanh(angle);
-		public override T Csch(T angle) => T.One / T.Sinh(angle);
-		public override T Sech(T angle) => T.One / T.Cosh(angle);
-		public override T Coth(T angle) => T.One / T.Tanh(angle);
+                /// <inheritdoc />
+                public override T Sinh(T angle) => T.Sinh(angle);
+
+                /// <inheritdoc />
+                public override T Cosh(T angle) => T.Cosh(angle);
+
+                /// <inheritdoc />
+                public override T Tanh(T angle) => T.Tanh(angle);
+
+                /// <inheritdoc />
+                public override T Csch(T angle) => T.One / T.Sinh(angle);
+
+                /// <inheritdoc />
+                public override T Sech(T angle) => T.One / T.Cosh(angle);
+
+                /// <inheritdoc />
+                public override T Coth(T angle) => T.One / T.Tanh(angle);
 
 		#endregion
 
 		#region Override Inverse Hyperbolic
 
-		public override T Asinh(T value) => T.Asinh(value);
-		public override T Acosh(T value) => T.Acosh(value);
-		public override T Atanh(T value) => T.Atanh(value);
-		public override T Acoth(T value) => T.Atanh(T.One / value);
-		public override T Asech(T value) => T.Acosh(T.One / value);
-		public override T Acsch(T value) => T.Asinh(T.One / value);
+                /// <inheritdoc />
+                public override T Asinh(T value) => T.Asinh(value);
+
+                /// <inheritdoc />
+                public override T Acosh(T value) => T.Acosh(value);
+
+                /// <inheritdoc />
+                public override T Atanh(T value) => T.Atanh(value);
+
+                /// <inheritdoc />
+                public override T Acoth(T value) => T.Atanh(T.One / value);
+
+                /// <inheritdoc />
+                public override T Asech(T value) => T.Acosh(T.One / value);
+
+                /// <inheritdoc />
+                public override T Acsch(T value) => T.Asinh(T.One / value);
 
 		#endregion
 
 		#region Override Angle Arithmetic
 
-		public override T Atan2(T x, T y) => T.Atan2(x, y);
-		public override T Acot2(T x, T y) => T.Atan2(y, x);
+                /// <inheritdoc />
+                public override T Atan2(T x, T y) => T.Atan2(x, y);
+
+                /// <inheritdoc />
+                public override T Acot2(T x, T y) => T.Atan2(y, x);
 
 		/// <summary>
 		/// Normalizes an angle into the range [-π, +π).
@@ -426,8 +480,11 @@ namespace Utils.Mathematics
 
 		#region Override Radian Conversions (No conversion needed natively)
 
-		public override T FromRadian(T angle) => angle;
-		public override T ToRadian(T angle) => angle;
+                /// <inheritdoc />
+                public override T FromRadian(T angle) => angle;
+
+                /// <inheritdoc />
+                public override T ToRadian(T angle) => angle;
 
 		#endregion
 	}
