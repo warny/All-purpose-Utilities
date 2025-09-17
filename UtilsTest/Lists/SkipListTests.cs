@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Collections;
-using Utils.Objects;
+using Utils.Randomization;
 
 namespace UtilsTest.Lists
 {

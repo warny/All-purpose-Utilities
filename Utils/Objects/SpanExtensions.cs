@@ -49,25 +49,25 @@ public static class SpanExtensions
     }
 
     /// <summary>
-    /// Retrieves a sub-<see cref="ReadOnlySpan<T>"/> from this instance. The sub-<see cref="ReadOnlySpan<T>"/> starts at a specified character position and has a defined length.
+    /// Retrieves a sub-<see cref="ReadOnlySpan{T}"/> from this instance. The sub-<see cref="ReadOnlySpan{T}"/> starts at a specified character position and has a defined length.
     /// </summary>
     /// <param name="s">The string from which to extract the sub-string</param>
     /// <param name="start">The zero-based character position at which the sub-string starts</param>
     /// <param name="length">The number of characters in the sub-string</param>
     /// <returns>
-    /// A <see cref="ReadOnlySpan<T>"/> equivalent to the sub-<see cref="ReadOnlySpan<T>"/> of length <paramref name="length"/> that begins
-    /// at <paramref name="start"/> in this instance, or <see cref="ReadOnlySpan<T>"/>.Empty if <paramref name="start"/> is
+    /// A <see cref="ReadOnlySpan{T}"/> equivalent to the sub-<see cref="ReadOnlySpan{T}"/> of length <paramref name="length"/> that begins
+    /// at <paramref name="start"/> in this instance, or <see cref="ReadOnlySpan{T}"/>.Empty if <paramref name="start"/> is
     /// equal to the length of this instance and <paramref name="length"/> is zero.
     /// </returns>
     /// <example>
     /// <code>
     /// // Extract a sub-span of length 5 starting from index 2.
-    /// ReadOnlySpan<char> originalSpan = "Hello, World!".AsSpan();
-    /// ReadOnlySpan<char> subSpan = originalSpan.Mid(2, 5);
+    /// ReadOnlySpan&lt;char&gt; originalSpan = "Hello, World!".AsSpan();
+    /// ReadOnlySpan&lt;char&gt; subSpan = originalSpan.Mid(2, 5);
     /// // subSpan contains "llo, "
     /// 
     /// // Extract a sub-span of length 5 starting from the end.
-    /// ReadOnlySpan<char> endSpan = originalSpan.Mid(-5, 5);
+    /// ReadOnlySpan&lt;char&gt; endSpan = originalSpan.Mid(-5, 5);
     /// // endSpan contains "World"
     /// </code>
     /// </example>
@@ -95,22 +95,22 @@ public static class SpanExtensions
     }
 
     /// <summary>
-    /// Retrieves a sub-<see cref="ReadOnlySpan<T>"/> from this instance. The sub-<see cref="ReadOnlySpan<T>"/> starts at a specified character position.
+    /// Retrieves a sub-<see cref="ReadOnlySpan{T}"/> from this instance. The sub-<see cref="ReadOnlySpan{T}"/> starts at a specified character position.
     /// </summary>
     /// <param name="s">The string from which to extract the sub-string</param>
     /// <param name="start">The zero-based character position at which the sub-string starts</param>
     /// <returns>
-    /// A <see cref="ReadOnlySpan<T>"/> equivalent to the sub-<see cref="ReadOnlySpan<T>"/> starting from the index <paramref name="start"/>
+    /// A <see cref="ReadOnlySpan{T}"/> equivalent to the sub-<see cref="ReadOnlySpan{T}"/> starting from the index <paramref name="start"/>
     /// </returns>
     /// <example>
     /// <code>
     /// // Extract a sub-span starting from index 7 to the end.
-    /// ReadOnlySpan<char> originalSpan = "Hello, World!".AsSpan();
-    /// ReadOnlySpan<char> subSpan = originalSpan.Mid(7);
+    /// ReadOnlySpan&lt;char&gt; originalSpan = "Hello, World!".AsSpan();
+    /// ReadOnlySpan&lt;char&gt; subSpan = originalSpan.Mid(7);
     /// // subSpan contains "World!"
     /// 
     /// // Extract a sub-span starting from the end.
-    /// ReadOnlySpan<char> endSpan = originalSpan.Mid(-6);
+    /// ReadOnlySpan&lt;char&gt; endSpan = originalSpan.Mid(-6);
     /// // endSpan contains "World!"
     /// </code>
     /// </example>

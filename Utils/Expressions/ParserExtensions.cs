@@ -41,7 +41,7 @@ internal static class ParserExtensions
 
 	/// <summary>
 	/// If <paramref name="setNullable"/> is <see langword="true"/>, converts the provided
-	/// <paramref name="type"/> to a nullable version (e.g., int -> int?), otherwise returns
+        /// <paramref name="type"/> to a nullable version (e.g., int -&gt; int?), otherwise returns
 	/// the original <paramref name="type"/>.
 	/// </summary>
 	/// <param name="type">The original <see cref="Type"/>.</param>

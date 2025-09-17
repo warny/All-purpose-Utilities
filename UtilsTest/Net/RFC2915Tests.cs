@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net.DNS;
 using Utils.Net.DNS.RFC1876;
 using Utils.Net.DNS.RFC2915;
-using Utils.Objects;
+using Utils.Randomization;
 
 namespace UtilsTest.Net
 {
