@@ -34,7 +34,7 @@ public class Reader : IReader, IStreamMapping<Reader>
 	}
 
 	/// <summary>
-	/// Stack storing stream positions pushed with <see cref="Push"/>.
+	/// Stack storing stream positions pushed with <see cref="Push()"/>.
 	/// </summary>
 	private readonly Stack<long> positionsStack = new();
 

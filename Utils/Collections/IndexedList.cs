@@ -27,6 +27,7 @@ public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
     /// Indexed list.
     /// </summary>
     /// <param name="getKey">Key extraction function</param>
+	/// <param name="values">Initial values</param>
     public IndexedList(Func<V, K> getKey, IEnumerable<V> values) : this(getKey)
     {
         foreach (var value in values)

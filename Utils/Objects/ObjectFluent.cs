@@ -177,6 +177,7 @@ public struct FluentResult<T>
 	/// <summary>
 	/// Initializes a new instance of the <see cref="FluentResult{T}"/> struct with the provided value, marking it as successful.
 	/// </summary>
+	/// <param name="variableName">name of the variable passed as <paramref name="value"/> parameter</param>
 	/// <param name="value">The value to wrap.</param>
 	public FluentResult(T value, [CallerArgumentExpression(nameof(value))] string variableName = "")
 	{
@@ -190,6 +191,7 @@ public struct FluentResult<T>
 	/// </summary>
 	/// <param name="value">The value to wrap.</param>
 	/// <param name="success">Indicates whether the operation was successful.</param>
+	/// <param name="variableName">name of the variable passed as <paramref name="value"/> parameter</param>
 	public FluentResult(T value, bool success, [CallerArgumentExpression(nameof(value))] string variableName = "")
 	{
 		Value = value;

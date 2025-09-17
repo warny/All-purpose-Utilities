@@ -44,6 +44,7 @@ public static partial class EnumerableEx
 	/// <summary>
 	/// Read several <see cref="IEnumerable"/> in parallel and returns an array of object of elments from the same indexes
 	/// </summary>
+	/// <param name="transform"></param>
 	/// <param name="enumerations"><see cref="IEnumerable"/> to be read</param>
 	/// <returns>Array of objects</returns>
 	public static IEnumerable<TResult> Zip<TResult>(Func<object[], TResult> transform, params IEnumerable[] enumerations)
@@ -79,6 +80,7 @@ public static partial class EnumerableEx
 	/// <summary>
 	/// Read several <see cref="IEnumerable"/> in parallel and returns an array of object of elments from the same indexes
 	/// </summary>
+	/// <param name="transform"></param>
 	/// <param name="enumerations"><see cref="IEnumerable"/> to be read</param>
 	/// <returns>Array of objects</returns>
 	public static IEnumerable<TResult> Zip<TResult>(Func<object[], TResult> transform, params (IEnumerable enumeration, object defaultValue)[] enumerations)
@@ -197,6 +199,7 @@ public static partial class EnumerableEx
 	/// <typeparam name="T1">Type for <paramref name="enumeration1"/> elements</typeparam>
 	/// <typeparam name="T2">Type for <paramref name="enumeration2"/> elements</typeparam>
 	/// <typeparam name="T3">Type for <paramref name="enumeration3"/> elements</typeparam>
+	/// <typeparam name="TResult">Type for resulting elements</typeparam>
 	/// <param name="enumeration1">Enumeration 1</param>
 	/// <param name="enumeration2">Enumeration 2</param>
 	/// <param name="enumeration3">Enumeration 2</param>

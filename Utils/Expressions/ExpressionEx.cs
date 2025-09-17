@@ -46,6 +46,7 @@ public static class ExpressionEx
     /// <summary>
     /// Create a static expression call given the specified arguments
     /// </summary>
+	/// <param name="type"></param>
     /// <param name="name"></param>
     /// <param name="bindingFlags"></param>
     /// <param name="arguments"></param>

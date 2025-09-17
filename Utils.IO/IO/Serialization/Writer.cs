@@ -21,7 +21,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
 	public Stream Stream { get; }
 
 	/// <summary>
-	/// Stack used to store positions when <see cref="Push"/> is called.
+	/// Stack used to store positions when <see cref="Push()"/> is called.
 	/// </summary>
 	private readonly Stack<long> positionsStack = new();
 

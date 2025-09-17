@@ -764,7 +764,7 @@ namespace Utils.Expressions.ExpressionBuilders
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for the "break" statement,
-	/// returning an <see cref="Expression.Break"/> to the nearest loop label.
+	/// returning an <see cref="Expression.Break(LabelTarget)"/> to the nearest loop label.
 	/// </summary>
 	public class BreakBuilder : IStartExpressionBuilder
 	{
@@ -787,7 +787,7 @@ namespace Utils.Expressions.ExpressionBuilders
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for the "continue" statement,
-	/// returning an <see cref="Expression.Break"/> that effectively simulates a continue
+	/// returning an <see cref="Expression.Break(LabelTarget)"/> that effectively simulates a continue
 	/// (jumping to the loop's continue label).
 	/// </summary>
         public class ContinueBuilder : IStartExpressionBuilder
@@ -834,7 +834,7 @@ namespace Utils.Expressions.ExpressionBuilders
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for a "while" loop construct,
-	/// building an <see cref="Expression.Loop"/>. The loop terminates if the condition is false.
+	/// building an <see cref="Expression.Loop(Expression)"/>. The loop terminates if the condition is false.
 	/// </summary>
 	public class WhileBuilder : IStartExpressionBuilder, IAdditionalTokens
 	{
@@ -884,7 +884,7 @@ namespace Utils.Expressions.ExpressionBuilders
 
 	/// <summary>
 	/// Implements <see cref="IStartExpressionBuilder"/> for a "for" loop construct,
-	/// building an <see cref="Expression.Loop"/> with initializers, condition, and increments.
+	/// building an <see cref="Expression.Loop(Expression)"/> with initializers, condition, and increments.
 	/// </summary>
 	public class ForBuilder : IStartExpressionBuilder, IAdditionalTokens
 	{

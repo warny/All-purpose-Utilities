@@ -16,7 +16,7 @@ public partial class ExpressionSimplifier
 	#region Power
 
 	/// <summary>
-	/// Transforms a call to <see cref="Math.Pow"/> into an <see cref="Expression.Power"/> node.
+	/// Transforms a call to <see cref="Math.Pow"/> into an <see cref="Expression.Power(Expression, Expression)"/> node.
 	/// </summary>
 	/// <param name="e">The original expression containing the call.</param>
 	/// <param name="left">An <see cref="Expression"/> representing the base.</param>
@@ -45,7 +45,7 @@ public partial class ExpressionSimplifier
 	/// <param name="e">The original expression node (for reference).</param>
 	/// <param name="expressions">An array of argument expressions to pass into the method call.</param>
 	/// <returns>
-	/// A transformed <see cref="Expression.Call"/> targeting the specified method.
+	/// A transformed <see cref="Expression.Call(MethodInfo, Expression)"/> targeting the specified method.
 	/// </returns>
 	private Expression TransformCall(Type type, string functionName, Expression e, Expression[] expressions)
 	{
@@ -92,7 +92,7 @@ public partial class ExpressionSimplifier
 		=> TransformCall(typeof(IFloatingPoint<double>), nameof(IFloatingPoint<double>.Abs), e, expressions);
 
 	/// <summary>
-	/// Converts a call to <see cref="Math.Round(double)"/> into a call to <see cref="IFloatingPoint{T}.Round"/>.
+	/// Converts a call to <see cref="Math.Round(double)"/> into a call to <see cref="IFloatingPoint{T}.Round(T)"/>.
 	/// </summary>
 	[ExpressionCallSignature(typeof(Math), nameof(Math.Round))]
 	protected Expression RoundConversionMath(Expression e, Expression[] expressions)
@@ -127,7 +127,7 @@ public partial class ExpressionSimplifier
 		=> TransformCall(typeof(IRootFunctions<double>), nameof(IRootFunctions<double>.Cbrt), e, expressions);
 
 	/// <summary>
-	/// Converts a call to <see cref="Math.Log(double)"/> into a call to <see cref="ILogarithmicFunctions{T}.Log"/>.
+	/// Converts a call to <see cref="Math.Log(double)"/> into a call to <see cref="ILogarithmicFunctions{T}.Log(T)"/>.
 	/// </summary>
 	[ExpressionCallSignature(typeof(Math), nameof(Math.Log))]
 	protected Expression LogConversionMath(Expression e, Expression[] expressions)
