@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <EnablePreviewFeatures>True</EnablePreviewFeatures>
-    <UseWindowsForms>true</UseWindowsForms>
-        <LangVersion>Latest</LangVersion>
-    <Description>Windows Forms sample rendering fractal images using Utils.Imaging. Main types are FractalsForm and ComputeFractal for generating visuals.</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<UseWindowsForms>true</UseWindowsForms>
+		<LangVersion>Latest</LangVersion>
+		<Description>Windows Forms sample rendering fractal images using Utils.Imaging. Main types are FractalsForm and ComputeFractal for generating visuals.</Description>
+		<NoWarn>1591</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
-    <ProjectReference Include="..\Utils\Utils.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
+		<ProjectReference Include="..\Utils\Utils.csproj" />
+	</ItemGroup>
 
 </Project>
