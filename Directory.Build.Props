@@ -1,6 +1,7 @@
 <Project>
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
+        <Nullable>annotations</Nullable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeDocumentationFile>true</IncludeDocumentationFile>
         <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
