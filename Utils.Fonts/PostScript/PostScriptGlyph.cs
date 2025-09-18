@@ -80,9 +80,24 @@ public class PostScriptGlyph : IGlyph
     /// </summary>
     public enum PathCommandType
     {
+        /// <summary>
+        /// Starts a new contour at the specified coordinate.
+        /// </summary>
         MoveTo,
+
+        /// <summary>
+        /// Draws a straight line from the current point to the supplied point.
+        /// </summary>
         LineTo,
+
+        /// <summary>
+        /// Draws a cubic Bézier curve using the supplied control and end points.
+        /// </summary>
         BezierTo,
+
+        /// <summary>
+        /// Closes the current contour by returning to its starting point.
+        /// </summary>
         Close
     }
 }
