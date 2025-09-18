@@ -8,6 +8,8 @@ namespace Utils.Fonts;
 [Flags]
 public enum HeadFlags : short
 {
+#pragma warning disable S2346
+
 	/// <summary>
 	/// y=0 specifies the baseline.
 	/// </summary>
@@ -83,6 +85,7 @@ public enum HeadFlags : short
 	/// Font is a symbolic fallback (e.g., Last Resort).
 	/// </summary>
 	IsSymbolFallback = 0x1000
+#pragma warning restore S2346
 }
 
 /// <summary>
@@ -91,45 +94,46 @@ public enum HeadFlags : short
 [Flags]
 public enum MacStyleFlags : short
 {
-        /// <summary>
-        /// No additional macStyle modifiers are applied to the font.
-        /// </summary>
-        None = 0x00,
 
-        /// <summary>
-        /// Indicates that the font should be rendered using a bold weight.
-        /// </summary>
-        Bold = 0x01,
+	/// <summary>
+	/// No additional macStyle modifiers are applied to the font.
+	/// </summary>
+	None = 0x00,
 
-        /// <summary>
-        /// Indicates that the font should be rendered with italic styling.
-        /// </summary>
-        Italic = 0x02,
+	/// <summary>
+	/// Indicates that the font should be rendered using a bold weight.
+	/// </summary>
+	Bold = 0x01,
 
-        /// <summary>
-        /// Marks the font as supporting underlining by default.
-        /// </summary>
-        Underline = 0x04,
+	/// <summary>
+	/// Indicates that the font should be rendered with italic styling.
+	/// </summary>
+	Italic = 0x02,
 
-        /// <summary>
-        /// Specifies that the font outlines should be drawn instead of filled shapes.
-        /// </summary>
-        Outline = 0x08,
+	/// <summary>
+	/// Marks the font as supporting underlining by default.
+	/// </summary>
+	Underline = 0x04,
 
-        /// <summary>
-        /// Applies a drop-shadow effect to the glyphs.
-        /// </summary>
-        Shadow = 0x10,
+	/// <summary>
+	/// Specifies that the font outlines should be drawn instead of filled shapes.
+	/// </summary>
+	Outline = 0x08,
 
-        /// <summary>
-        /// Indicates a condensed version of the font with tighter spacing.
-        /// </summary>
-        Condensed = 0x20,
+	/// <summary>
+	/// Applies a drop-shadow effect to the glyphs.
+	/// </summary>
+	Shadow = 0x10,
 
-        /// <summary>
-        /// Indicates an extended version of the font with wider spacing.
-        /// </summary>
-        Extended = 0x40
+	/// <summary>
+	/// Indicates a condensed version of the font with tighter spacing.
+	/// </summary>
+	Condensed = 0x20,
+
+	/// <summary>
+	/// Indicates an extended version of the font with wider spacing.
+	/// </summary>
+	Extended = 0x40
 }
 
 /// <summary>
@@ -169,10 +173,10 @@ public enum FontDirectionHintEnum : short
 [Flags]
 public enum OutlineFlags : byte
 {
-        /// <summary>
-        /// No outline flags are set for the point.
-        /// </summary>
-        None = 0x00,
+	/// <summary>
+	/// No outline flags are set for the point.
+	/// </summary>
+	None = 0x00,
 
 	/// <summary>
 	/// The point is on the curve (versus a control point).
@@ -268,9 +272,9 @@ public enum CompoundGlyfFlags : short
 public enum TtfPlatFormId : short
 {
 #pragma warning disable CS1591
-        Unicode = 0,
-        Macintosh = 1,
-        Microsoft = 3
+	Unicode = 0,
+	Macintosh = 1,
+	Microsoft = 3
 #pragma warning restore CS1591
 }
 
@@ -280,10 +284,10 @@ public enum TtfPlatFormId : short
 public enum TtfPlatformSpecificID : short
 {
 #pragma warning disable CS1591
-        MAC_ROMAN = 0,
-        UNICODE_DEFAULT = 0,
-        UNICODE_V11 = 1,
-        UNICODE_V2 = 3
+	MAC_ROMAN = 0,
+	UNICODE_DEFAULT = 0,
+	UNICODE_V11 = 1,
+	UNICODE_V2 = 3
 #pragma warning restore CS1591
 }
 
@@ -293,10 +297,10 @@ public enum TtfPlatformSpecificID : short
 public enum TtfLanguageID : ushort
 {
 #pragma warning disable CS1591
-        MAC_English = 0,
-        MAC_French = 1,
-        MAC_German = 2,
-        MAC_Italian = 3,
+	MAC_English = 0,
+	MAC_French = 1,
+	MAC_German = 2,
+	MAC_Italian = 3,
 	MAC_Dutch = 4,
 	MAC_Swedish = 5,
 	MAC_Spanish = 6,
@@ -633,8 +637,8 @@ public enum TtfLanguageID : ushort
 	MS_Spanish_Nicaragua = 19466,
 	MS_Spanish_Puerto_Rico = 20490,
 	MS_Spanish_United_States = 21514,
-        MS_Spanish_Latin_America = 58378,
-        MS_French_North_Africa = 58380,
+	MS_Spanish_Latin_America = 58378,
+	MS_French_North_Africa = 58380,
 #pragma warning restore CS1591
 }
 
@@ -644,10 +648,10 @@ public enum TtfLanguageID : ushort
 public enum TtfNameID : short
 {
 #pragma warning disable CS1591
-        COPYRIGHT = 0,
-        FAMILY = 1,
-        SUBFAMILY = 2,
-        SUBFAMILY_UNIQUE = 3,
+	COPYRIGHT = 0,
+	FAMILY = 1,
+	SUBFAMILY = 2,
+	SUBFAMILY_UNIQUE = 3,
 	FULL_NAME = 4,
 	VERSION = 5,
 	POSTSCRIPT_NAME = 6,
@@ -665,9 +669,9 @@ public enum TtfNameID : short
 	SAMPLETEXT = 19,
 	OPENTYPE1 = 20,
 	OPENTYPE2 = 21,
-        OPENTYPE3 = 22,
-        OPENTYPE4 = 23,
-        OPENTYPE5 = 24,
-        VARIATIONSPOSTSCRIPT_NAMEPREFIX = 25
+	OPENTYPE3 = 22,
+	OPENTYPE4 = 23,
+	OPENTYPE5 = 24,
+	VARIATIONSPOSTSCRIPT_NAMEPREFIX = 25
 #pragma warning restore CS1591
 }

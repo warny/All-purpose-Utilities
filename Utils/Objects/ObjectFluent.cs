@@ -246,7 +246,7 @@ public struct FluentResult<T>
 	/// </summary>
 	/// <param name="values">An array of values to check against.</param>
 	/// <returns>A new <see cref="FluentResult{T}"/> indicating whether the value is in the list.</returns>
-	public readonly FluentResult<T> IsIn(params T[] values) => Is(v=> v.In(values));
+	public readonly FluentResult<T> IsIn(params T[] values) => Is(v => v.In(values));
 
 	/// <summary>
 	/// Checks if the value is not present in a list of values.
