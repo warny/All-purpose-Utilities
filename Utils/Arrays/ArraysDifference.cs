@@ -10,17 +10,43 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 {
     private readonly IReadOnlyList<ArraysChange<T>> changes;
 
+    /// <summary>
+    /// Gets the number of changes detected between the compared sequences.
+    /// </summary>
     public int Count => changes.Count;
 
+    /// <summary>
+    /// Creates a new <see cref="ArraysDifference{T}"/> instance by comparing two read-only spans using the default equality comparison.
+    /// </summary>
+    /// <typeparam name="ET">The element type contained in the spans.</typeparam>
+    /// <param name="old">The original sequence.</param>
+    /// <param name="new">The updated sequence.</param>
+    /// <returns>An <see cref="ArraysDifference{T}"/> describing the changes between the two sequences.</returns>
     public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new)
         where ET : IEquatable<ET>
         => new(old, @new, (o, n) => o.Equals(n));
 
-	public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IEqualityComparer<ET> comparer)
-    	=> new (old, @new, comparer.Equals);
+        /// <summary>
+        /// Creates a new <see cref="ArraysDifference{T}"/> instance by comparing two read-only spans with a specific equality comparer.
+        /// </summary>
+        /// <typeparam name="ET">The element type contained in the spans.</typeparam>
+        /// <param name="old">The original sequence.</param>
+        /// <param name="new">The updated sequence.</param>
+        /// <param name="comparer">The equality comparer used to determine whether elements are identical.</param>
+        /// <returns>An <see cref="ArraysDifference{T}"/> describing the changes between the two sequences.</returns>
+        public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IEqualityComparer<ET> comparer)
+        => new (old, @new, comparer.Equals);
 
-	public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IComparer<ET> comparer)
-		=> new (old, @new, (o, n) => comparer.Compare(o, n) == 0);
+        /// <summary>
+        /// Creates a new <see cref="ArraysDifference{T}"/> instance by comparing two read-only spans with a specific ordering comparer.
+        /// </summary>
+        /// <typeparam name="ET">The element type contained in the spans.</typeparam>
+        /// <param name="old">The original sequence.</param>
+        /// <param name="new">The updated sequence.</param>
+        /// <param name="comparer">The comparer used to determine whether two elements should be considered equivalent.</param>
+        /// <returns>An <see cref="ArraysDifference{T}"/> describing the changes between the two sequences.</returns>
+        public static ArraysDifference<ET> GetDifferences<ET>(ReadOnlySpan<ET> old, ReadOnlySpan<ET> @new, IComparer<ET> comparer)
+                => new (old, @new, (o, n) => comparer.Compare(o, n) == 0);
 
 	/// <summary>
 	/// Compares two strings and returns the modifications needed to transform the first string into the second.
@@ -122,11 +148,16 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
         }
     }
 
+    /// <summary>
+    /// Gets the change at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the change to retrieve.</param>
     public ArraysChange<T> this[int index] => changes[index];
 
-	public IEnumerator<ArraysChange<T>> GetEnumerator() => changes.GetEnumerator();
+        /// <inheritdoc />
+        public IEnumerator<ArraysChange<T>> GetEnumerator() => changes.GetEnumerator();
 
-	IEnumerator IEnumerable.GetEnumerator() => changes.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => changes.GetEnumerator();
 }
 
 /// <summary>
@@ -134,8 +165,19 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 /// </summary>
 public enum StringComparisonStatus
 {
+    /// <summary>
+    /// Indicates that an element was removed from the original sequence.
+    /// </summary>
     Removed = -1,
+
+    /// <summary>
+    /// Indicates that an element is present in both sequences without modification.
+    /// </summary>
     Unchanged = 0,
+
+    /// <summary>
+    /// Indicates that an element was added to the updated sequence.
+    /// </summary>
     Added = 1
 }
 

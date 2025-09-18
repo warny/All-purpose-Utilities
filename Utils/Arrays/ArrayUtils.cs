@@ -7,6 +7,9 @@ using Utils.Objects;
 
 namespace Utils.Arrays;
 
+/// <summary>
+/// Provides helper methods for manipulating arrays, including slicing and trimming utilities.
+/// </summary>
 public static class ArrayUtils
 {
 	/// <summary>

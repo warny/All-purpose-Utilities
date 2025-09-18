@@ -34,41 +34,193 @@ public interface IAngleCalculator<T>
 	/// </summary>
 	T Graduation { get; }
 
-	#region Basic Trigonometric
-	T Sin(T angle);
-	T Cos(T angle);
-	T Tan(T angle);
-	T Cot(T angle);
-	T Sec(T angle);
-	T Csc(T angle);
-	#endregion
+        #region Basic Trigonometric
+        /// <summary>
+        /// Computes the sine of the supplied <paramref name="angle"/> measured in the
+        /// current angle system.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The sine of <paramref name="angle"/>.</returns>
+        T Sin(T angle);
 
-	#region Inverse Trigonometric
-	T Asin(T value);
-	T Acos(T value);
-	T Atan(T value);
-	T Acot(T value);
-	T Asec(T value);
-	T Acsc(T value);
-	#endregion
+        /// <summary>
+        /// Computes the cosine of the supplied <paramref name="angle"/> measured in the
+        /// current angle system.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The cosine of <paramref name="angle"/>.</returns>
+        T Cos(T angle);
 
-	#region Hyperbolic
-	T Sinh(T angle);
-	T Cosh(T angle);
-	T Tanh(T angle);
-	T Csch(T angle);
-	T Sech(T angle);
-	T Coth(T angle);
-	#endregion
+        /// <summary>
+        /// Computes the tangent of the supplied <paramref name="angle"/> measured in the
+        /// current angle system.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The tangent of <paramref name="angle"/>.</returns>
+        T Tan(T angle);
 
-	#region Inverse Hyperbolic
-	T Asinh(T value);
-	T Acosh(T value);
-	T Atanh(T value);
-	T Acoth(T value);
-	T Asech(T value);
-	T Acsch(T value);
-	#endregion
+        /// <summary>
+        /// Computes the cotangent of the supplied <paramref name="angle"/> measured in the
+        /// current angle system.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The cotangent of <paramref name="angle"/>.</returns>
+        T Cot(T angle);
+
+        /// <summary>
+        /// Computes the secant of the supplied <paramref name="angle"/> measured in the
+        /// current angle system.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The secant of <paramref name="angle"/>.</returns>
+        T Sec(T angle);
+
+        /// <summary>
+        /// Computes the cosecant of the supplied <paramref name="angle"/> measured in the
+        /// current angle system.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The cosecant of <paramref name="angle"/>.</returns>
+        T Csc(T angle);
+        #endregion
+
+        #region Inverse Trigonometric
+        /// <summary>
+        /// Computes the arcsine of the specified <paramref name="value"/> and returns the
+        /// corresponding angle in the current measurement system.
+        /// </summary>
+        /// <param name="value">The sine ratio whose angle should be determined.</param>
+        /// <returns>An angle whose sine is <paramref name="value"/>.</returns>
+        T Asin(T value);
+
+        /// <summary>
+        /// Computes the arccosine of the specified <paramref name="value"/> and returns the
+        /// corresponding angle in the current measurement system.
+        /// </summary>
+        /// <param name="value">The cosine ratio whose angle should be determined.</param>
+        /// <returns>An angle whose cosine is <paramref name="value"/>.</returns>
+        T Acos(T value);
+
+        /// <summary>
+        /// Computes the arctangent of the specified <paramref name="value"/> and returns the
+        /// corresponding angle in the current measurement system.
+        /// </summary>
+        /// <param name="value">The tangent ratio whose angle should be determined.</param>
+        /// <returns>An angle whose tangent is <paramref name="value"/>.</returns>
+        T Atan(T value);
+
+        /// <summary>
+        /// Computes the arccotangent of the specified <paramref name="value"/> and returns the
+        /// corresponding angle in the current measurement system.
+        /// </summary>
+        /// <param name="value">The cotangent ratio whose angle should be determined.</param>
+        /// <returns>An angle whose cotangent is <paramref name="value"/>.</returns>
+        T Acot(T value);
+
+        /// <summary>
+        /// Computes the arcsecant of the specified <paramref name="value"/> and returns the
+        /// corresponding angle in the current measurement system.
+        /// </summary>
+        /// <param name="value">The secant ratio whose angle should be determined.</param>
+        /// <returns>An angle whose secant is <paramref name="value"/>.</returns>
+        T Asec(T value);
+
+        /// <summary>
+        /// Computes the arccosecant of the specified <paramref name="value"/> and returns the
+        /// corresponding angle in the current measurement system.
+        /// </summary>
+        /// <param name="value">The cosecant ratio whose angle should be determined.</param>
+        /// <returns>An angle whose cosecant is <paramref name="value"/>.</returns>
+        T Acsc(T value);
+        #endregion
+
+        #region Hyperbolic
+        /// <summary>
+        /// Computes the hyperbolic sine of the supplied <paramref name="angle"/>.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The hyperbolic sine of <paramref name="angle"/>.</returns>
+        T Sinh(T angle);
+
+        /// <summary>
+        /// Computes the hyperbolic cosine of the supplied <paramref name="angle"/>.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The hyperbolic cosine of <paramref name="angle"/>.</returns>
+        T Cosh(T angle);
+
+        /// <summary>
+        /// Computes the hyperbolic tangent of the supplied <paramref name="angle"/>.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The hyperbolic tangent of <paramref name="angle"/>.</returns>
+        T Tanh(T angle);
+
+        /// <summary>
+        /// Computes the hyperbolic cosecant of the supplied <paramref name="angle"/>.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The hyperbolic cosecant of <paramref name="angle"/>.</returns>
+        T Csch(T angle);
+
+        /// <summary>
+        /// Computes the hyperbolic secant of the supplied <paramref name="angle"/>.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The hyperbolic secant of <paramref name="angle"/>.</returns>
+        T Sech(T angle);
+
+        /// <summary>
+        /// Computes the hyperbolic cotangent of the supplied <paramref name="angle"/>.
+        /// </summary>
+        /// <param name="angle">Angle expressed in this calculator's measurement system.</param>
+        /// <returns>The hyperbolic cotangent of <paramref name="angle"/>.</returns>
+        T Coth(T angle);
+        #endregion
+
+        #region Inverse Hyperbolic
+        /// <summary>
+        /// Computes the inverse hyperbolic sine of the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The hyperbolic sine ratio whose angle should be determined.</param>
+        /// <returns>An angle whose hyperbolic sine is <paramref name="value"/>.</returns>
+        T Asinh(T value);
+
+        /// <summary>
+        /// Computes the inverse hyperbolic cosine of the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The hyperbolic cosine ratio whose angle should be determined.</param>
+        /// <returns>An angle whose hyperbolic cosine is <paramref name="value"/>.</returns>
+        T Acosh(T value);
+
+        /// <summary>
+        /// Computes the inverse hyperbolic tangent of the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The hyperbolic tangent ratio whose angle should be determined.</param>
+        /// <returns>An angle whose hyperbolic tangent is <paramref name="value"/>.</returns>
+        T Atanh(T value);
+
+        /// <summary>
+        /// Computes the inverse hyperbolic cotangent of the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The hyperbolic cotangent ratio whose angle should be determined.</param>
+        /// <returns>An angle whose hyperbolic cotangent is <paramref name="value"/>.</returns>
+        T Acoth(T value);
+
+        /// <summary>
+        /// Computes the inverse hyperbolic secant of the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The hyperbolic secant ratio whose angle should be determined.</param>
+        /// <returns>An angle whose hyperbolic secant is <paramref name="value"/>.</returns>
+        T Asech(T value);
+
+        /// <summary>
+        /// Computes the inverse hyperbolic cosecant of the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The hyperbolic cosecant ratio whose angle should be determined.</param>
+        /// <returns>An angle whose hyperbolic cosecant is <paramref name="value"/>.</returns>
+        T Acsch(T value);
+        #endregion
 
 	#region Angle Arithmetic and Normalization
 	/// <summary>

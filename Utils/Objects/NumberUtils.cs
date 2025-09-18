@@ -4,6 +4,9 @@ using Utils.Reflection;
 
 namespace Utils.Objects;
 
+/// <summary>
+/// Provides helper methods for inspecting numeric types and comparing loosely typed values.
+/// </summary>
 public static class NumberUtils
 {
 	/// <summary>
