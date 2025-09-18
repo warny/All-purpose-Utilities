@@ -53,7 +53,7 @@ namespace UtilsTest.Objects
                 (typeof(string), "field1", () => result.Field1),
                 (typeof(int), "field2", () => result.Field2),
                 (typeof(DateTime), "field3", () => result.Field3),
-                (typeof(string), "field3", () => result.Field3_1),
+                (typeof(string), "field3_1", () => result.Field3_1),
                 (typeof(string), "field4", () => result.Field4),
             };
 
