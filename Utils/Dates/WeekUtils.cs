@@ -5,6 +5,9 @@ using Utils.Range;
 
 namespace Utils.Dates;
 
+/// <summary>
+/// Provides helper methods to calculate week numbers and their associated date ranges for a given year.
+/// </summary>
 public static class WeekUtils
 {
 	/// <summary>

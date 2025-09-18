@@ -228,28 +228,41 @@ public enum CompoundGlyfFlags : short
 	OverlapCompound = 0x0400
 }
 
-
+/// <summary>
+/// Enumerates the platform families that can appear in TrueType name records.
+/// </summary>
 public enum TtfPlatFormId : short
 {
-	Unicode = 0,
-	Macintosh = 1,
-	Microsoft = 3
+#pragma warning disable CS1591
+        Unicode = 0,
+        Macintosh = 1,
+        Microsoft = 3
+#pragma warning restore CS1591
 }
 
+/// <summary>
+/// Identifies the platform-specific encodings associated with a <see cref="TtfPlatFormId"/>.
+/// </summary>
 public enum TtfPlatformSpecificID : short
 {
-	MAC_ROMAN = 0,
-	UNICODE_DEFAULT = 0,
-	UNICODE_V11 = 1,
-	UNICODE_V2 = 3
+#pragma warning disable CS1591
+        MAC_ROMAN = 0,
+        UNICODE_DEFAULT = 0,
+        UNICODE_V11 = 1,
+        UNICODE_V2 = 3
+#pragma warning restore CS1591
 }
 
+/// <summary>
+/// Lists the language identifiers used by TrueType name records for localization.
+/// </summary>
 public enum TtfLanguageID : ushort
 {
-	MAC_English = 0,
-	MAC_French = 1,
-	MAC_German = 2,
-	MAC_Italian = 3,
+#pragma warning disable CS1591
+        MAC_English = 0,
+        MAC_French = 1,
+        MAC_German = 2,
+        MAC_Italian = 3,
 	MAC_Dutch = 4,
 	MAC_Swedish = 5,
 	MAC_Spanish = 6,
@@ -586,17 +599,21 @@ public enum TtfLanguageID : ushort
 	MS_Spanish_Nicaragua = 19466,
 	MS_Spanish_Puerto_Rico = 20490,
 	MS_Spanish_United_States = 21514,
-	MS_Spanish_Latin_America = 58378,
-	MS_French_North_Africa = 58380,
-
+        MS_Spanish_Latin_America = 58378,
+        MS_French_North_Africa = 58380,
+#pragma warning restore CS1591
 }
 
+/// <summary>
+/// Represents the name identifiers stored in a TrueType font name table.
+/// </summary>
 public enum TtfNameID : short
 {
-	COPYRIGHT = 0,
-	FAMILY = 1,
-	SUBFAMILY = 2,
-	SUBFAMILY_UNIQUE = 3,
+#pragma warning disable CS1591
+        COPYRIGHT = 0,
+        FAMILY = 1,
+        SUBFAMILY = 2,
+        SUBFAMILY_UNIQUE = 3,
 	FULL_NAME = 4,
 	VERSION = 5,
 	POSTSCRIPT_NAME = 6,
@@ -614,8 +631,9 @@ public enum TtfNameID : short
 	SAMPLETEXT = 19,
 	OPENTYPE1 = 20,
 	OPENTYPE2 = 21,
-	OPENTYPE3 = 22,
-	OPENTYPE4 = 23,
-	OPENTYPE5 = 24,
-	VARIATIONSPOSTSCRIPT_NAMEPREFIX = 25
+        OPENTYPE3 = 22,
+        OPENTYPE4 = 23,
+        OPENTYPE5 = 24,
+        VARIATIONSPOSTSCRIPT_NAMEPREFIX = 25
+#pragma warning restore CS1591
 }
