@@ -192,12 +192,15 @@ namespace Utils.Format
 
 			var parametersCases = new List<Expression[]>();
 
-			if (formatter != null)
-			{
-				parametersCases.Add(
-					[literalLengthConstant, formattedCountConstant, formatter]
-				);
-			}
+                        if (formatter != null)
+                        {
+                                var formatterArgument = formatter.Type == typeof(IFormatProvider)
+                                        ? (Expression)formatter
+                                        : Expression.Convert(formatter, typeof(IFormatProvider));
+                                parametersCases.Add(
+                                        [literalLengthConstant, formattedCountConstant, formatterArgument]
+                                );
+                        }
 
 			parametersCases.Add([literalLengthConstant, formattedCountConstant]);
 			parametersCases.Add([]);
