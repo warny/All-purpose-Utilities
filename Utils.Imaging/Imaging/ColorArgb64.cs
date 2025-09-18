@@ -12,8 +12,15 @@ namespace Utils.Imaging;
 [StructLayout(LayoutKind.Explicit)]
 public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEqualityOperators<ColorArgb64, ColorArgb64, bool>
 {
-	public static ushort MinValue { get; } = 0;
-	public static ushort MaxValue { get; } = ushort.MaxValue;
+        /// <summary>
+        /// Lowest component value available for the 16-bit representation.
+        /// </summary>
+        public static ushort MinValue { get; } = 0;
+
+        /// <summary>
+        /// Highest component value available for the 16-bit representation.
+        /// </summary>
+        public static ushort MaxValue { get; } = ushort.MaxValue;
 
 	[FieldOffset(0)]
 	ulong value;
@@ -27,35 +34,50 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
 	[FieldOffset(0)]
 	ushort blue;
 
-	public ulong Value
-	{
-		get { return value; }
-		set { this.value = value; }
-	}
+        /// <summary>
+        /// Gets or sets the packed ARGB value.
+        /// </summary>
+        public ulong Value
+        {
+                get { return value; }
+                set { this.value = value; }
+        }
 
-	public ushort Alpha
-	{
-		get { return alpha; }
-		set { this.alpha = value; }
-	}
+        /// <summary>
+        /// Gets or sets the alpha channel.
+        /// </summary>
+        public ushort Alpha
+        {
+                get { return alpha; }
+                set { this.alpha = value; }
+        }
 
-	public ushort Red
-	{
-		get { return red; }
-		set { this.red = value; }
-	}
+        /// <summary>
+        /// Gets or sets the red channel.
+        /// </summary>
+        public ushort Red
+        {
+                get { return red; }
+                set { this.red = value; }
+        }
 
-	public ushort Green
-	{
-		get { return green; }
-		set { this.green = value; }
-	}
+        /// <summary>
+        /// Gets or sets the green channel.
+        /// </summary>
+        public ushort Green
+        {
+                get { return green; }
+                set { this.green = value; }
+        }
 
-	public ushort Blue
-	{
-		get { return blue; }
-		set { this.blue = value; }
-	}
+        /// <summary>
+        /// Gets or sets the blue channel.
+        /// </summary>
+        public ushort Blue
+        {
+                get { return blue; }
+                set { this.blue = value; }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ColorArgb64"/> struct from a 64-bit packed ARGB value.
