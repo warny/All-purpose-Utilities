@@ -1,5 +1,7 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
+using Utils.Arrays;
 using Utils.Expressions.ExpressionBuilders;
 using static Utils.Expressions.ExpressionBuilders.NewBuilder;
 
@@ -359,23 +361,49 @@ public class CStyleBuilder : IBuilder
     private static bool TryReadString1(string content, int index, out int length)
     {
         length = 0;
-        char c = content[index];
-        if (c != '\"') return false;
-        if (content.Substring(index, 3) == "\"\"\"") return false;
-        for (length = 1; length + index < content.Length; length++)
+        ReadOnlySpan<char> span = content.AsSpan();
+        if ((uint)index >= (uint)span.Length)
         {
-            c = content[length + index];
-            switch (c)
-            {
-                case '\\':
-                    length++;
-                    break;
-                case '\"':
-                    length++;
-                    return true;
-            }
+            return false;
         }
-        throw new ParseNoEndException("\'", index);
+
+        if (span[index] != '\"')
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> remaining = span[index..];
+        if (remaining.StartWith("\"\"\"".AsSpan()))
+        {
+            return false;
+        }
+
+        int position = index + 1;
+        while (position < span.Length)
+        {
+            char current = span[position];
+            if (current == '\\')
+            {
+                position++;
+                if (position >= span.Length)
+                {
+                    throw new ParseNoEndException("\"", index);
+                }
+
+                position++;
+                continue;
+            }
+
+            if (current == '\"')
+            {
+                length = position - index + 1;
+                return true;
+            }
+
+            position++;
+        }
+
+        throw new ParseNoEndException("\"", index);
     }
 
     /// <summary>
@@ -388,23 +416,36 @@ public class CStyleBuilder : IBuilder
     private static bool TryReadString2(string content, int index, out int length)
     {
         length = 0;
-        if (content.Length < index + 2) return false;
-
-        var start = content.Substring(index, 2);
-        if (start != "@\"") return false;
-
-        for (length = 2; length + index < content.Length; length++)
+        ReadOnlySpan<char> span = content.AsSpan();
+        if (index < 0 || index + 1 >= span.Length)
         {
-            char c = content[length + index];
-            switch (c)
-            {
-                case '\"':
-                    length++;
-                    if (content[length + index] == '\"') break;
-                    return true;
-            }
+            return false;
         }
-        throw new ParseNoEndException("\'", index);
+
+        if (span[index] != '@' || span[index + 1] != '\"')
+        {
+            return false;
+        }
+
+        int position = index + 2;
+        while (position < span.Length)
+        {
+            if (span[position] == '\"')
+            {
+                if (position + 1 < span.Length && span[position + 1] == '\"')
+                {
+                    position += 2;
+                    continue;
+                }
+
+                length = position - index + 1;
+                return true;
+            }
+
+            position++;
+        }
+
+        throw new ParseNoEndException("\"", index);
     }
 
     /// <summary>
@@ -417,27 +458,53 @@ public class CStyleBuilder : IBuilder
     private static bool TryReadString3(string content, int index, out int length)
     {
         length = 0;
-        if (content.Length < index + 6) return false;
-
-        var start = content.Substring(index, 3);
-        if (start != "\"\"\"") return false;
-
-        for (int i = 0; content[i] == '\"'; i++)
+        ReadOnlySpan<char> span = content.AsSpan();
+        if ((uint)index >= (uint)span.Length)
         {
-            length++;
+            return false;
         }
-        string prefix = content.Substring(index, length);
 
-        for (length = prefix.Length; length + index < content.Length; length++)
+        if (span[index] != '\"')
         {
-            char c = content[length + index];
-            for (int i = 0; i < prefix.Length; i++)
+            return false;
+        }
+
+        ReadOnlySpan<char> remaining = span[index..];
+        if (!remaining.StartWith("\"\"\"".AsSpan()))
+        {
+            return false;
+        }
+
+        int delimiterLength = 0;
+        while (delimiterLength < remaining.Length && remaining[delimiterLength] == '\"')
+        {
+            delimiterLength++;
+        }
+
+        int position = index + delimiterLength;
+        while (position < span.Length)
+        {
+            if (span[position] != '\"')
             {
-                if (prefix[i] != content[length + index + 1]) break;
+                position++;
+                continue;
             }
-            length += prefix.Length;
-            return true;
+
+            int runLength = 0;
+            while (position + runLength < span.Length && span[position + runLength] == '\"')
+            {
+                runLength++;
+                if (runLength == delimiterLength)
+                {
+                    length = position + runLength - index;
+                    return true;
+                }
+            }
+
+            position += Math.Max(runLength, 1);
         }
+
+        string prefix = new string('\"', delimiterLength);
         throw new ParseNoEndException(prefix, index);
     }
 
