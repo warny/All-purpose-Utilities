@@ -12,8 +12,15 @@ namespace Utils.Imaging
                 IEquatable<ColorAhsv64>,
                 IEqualityOperators<ColorAhsv64, ColorAhsv64, bool>
 	{
-		public static ushort MinValue { get; } = 0;
-		public static ushort MaxValue { get; } = ushort.MaxValue;
+                /// <summary>
+                /// Lowest component value representable with 16-bit HSV colors.
+                /// </summary>
+                public static ushort MinValue { get; } = 0;
+
+                /// <summary>
+                /// Highest component value representable with 16-bit HSV colors.
+                /// </summary>
+                public static ushort MaxValue { get; } = ushort.MaxValue;
 
                 /// <summary>Alpha component.</summary>
                 public ushort Alpha { get; set; }
@@ -103,7 +110,17 @@ namespace Utils.Imaging
                         };
                 }
 
+                /// <summary>
+                /// Converts a double-precision HSV color to the 16-bit representation.
+                /// </summary>
+                /// <param name="color">The color to convert.</param>
+                /// <returns>The converted color.</returns>
                 public static implicit operator ColorAhsv64(ColorAhsv color) => new ColorAhsv64((ushort)(color.Alpha * 65535), (ushort)(color.Hue * 65535), (ushort)(color.Saturation * 65535), (ushort)(color.Value * 65535));
+
+                /// <summary>
+                /// Returns a textual representation of the HSV components.
+                /// </summary>
+                /// <returns>A string describing the alpha, hue, saturation, and value.</returns>
                 public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
                 /// <summary>
                 /// Converts from a <see cref="ColorArgb64"/> value.

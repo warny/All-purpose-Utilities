@@ -4,37 +4,61 @@ using System.Drawing.Imaging;
 
 namespace Utils.Imaging
 {
-	public unsafe class BitmapArgb64Accessor : IDisposable, IImageAccessor<ColorArgb64, ushort>, IImageAccessor <ulong>
-	{
-		private Bitmap bitmap;
-		private BitmapData bmpdata = null;
-		private ulong* ulongdata;
-		private readonly int totalBytes;
+        /// <summary>
+        /// Provides direct memory access to 64-bit ARGB bitmap data for high precision pixel
+        /// manipulation scenarios.
+        /// </summary>
+        public unsafe class BitmapArgb64Accessor : IDisposable, IImageAccessor<ColorArgb64, ushort>, IImageAccessor <ulong>
+        {
+                private Bitmap bitmap;
+                private BitmapData bmpdata = null;
+                private ulong* ulongdata;
+                private readonly int totalBytes;
 
-		public int Width => bmpdata.Width;
-		public int Height => bmpdata.Height;
+                /// <summary>
+                /// Gets the width of the accessed bitmap region.
+                /// </summary>
+                public int Width => bmpdata.Width;
 
-		ulong IImageAccessor<ulong>.this[int x, int y]
-		{
-			get { return ulongdata[y * bmpdata.Width + x]; }
-			set { ulongdata[y * bmpdata.Width + x] = value; }
-		}
+                /// <summary>
+                /// Gets the height of the accessed bitmap region.
+                /// </summary>
+                public int Height => bmpdata.Height;
 
-		public BitmapArgb64Accessor( Bitmap bitmap, Rectangle? region = null )
-		{
-			this.bitmap = bitmap;
-			region = region ?? new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                /// <inheritdoc/>
+                ulong IImageAccessor<ulong>.this[int x, int y]
+                {
+                        get { return ulongdata[y * bmpdata.Width + x]; }
+                        set { ulongdata[y * bmpdata.Width + x] = value; }
+                }
 
-			this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, PixelFormat.Format64bppArgb);
-			this.totalBytes = bmpdata.Stride * bmpdata.Height;
+                /// <summary>
+                /// Initializes a new instance of the <see cref="BitmapArgb64Accessor"/> class and
+                /// locks the specified bitmap region.
+                /// </summary>
+                /// <param name="bitmap">Bitmap providing the pixel data.</param>
+                /// <param name="region">Optional region to lock; when omitted the entire bitmap is used.</param>
+                public BitmapArgb64Accessor( Bitmap bitmap, Rectangle? region = null )
+                {
+                        this.bitmap = bitmap;
+                        region = region ?? new Rectangle(0, 0, bitmap.Width, bitmap.Height);
 
-			this.ulongdata = (ulong*)(void*)bmpdata.Scan0;
-		}
-		public ColorArgb64 this[int x, int y]
-		{
-			get { return new ColorArgb64(ulongdata[y * bmpdata.Width + x]); }
-			set { ulongdata[y * bmpdata.Width + x] = value.Value; }
-		}
+                        this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, PixelFormat.Format64bppArgb);
+                        this.totalBytes = bmpdata.Stride * bmpdata.Height;
+
+                        this.ulongdata = (ulong*)(void*)bmpdata.Scan0;
+                }
+
+                /// <summary>
+                /// Gets or sets the color at the specified pixel coordinates.
+                /// </summary>
+                /// <param name="x">Horizontal pixel coordinate.</param>
+                /// <param name="y">Vertical pixel coordinate.</param>
+                public ColorArgb64 this[int x, int y]
+                {
+                        get { return new ColorArgb64(ulongdata[y * bmpdata.Width + x]); }
+                        set { ulongdata[y * bmpdata.Width + x] = value.Value; }
+                }
 
 		/// <summary>
 		/// Draws a sprite bitmap onto this bitmap at the specified location using the
@@ -64,20 +88,30 @@ namespace Utils.Imaging
 		}
 
 
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
+                /// <summary>
+                /// Releases resources associated with the accessor and unlocks the bitmap.
+                /// </summary>
+                public void Dispose()
+                {
+                        Dispose(true);
+                        GC.SuppressFinalize(this);
+                }
 
-		~BitmapArgb64Accessor() => Dispose(false);
+                /// <summary>
+                /// Finalizes the accessor and ensures resources are released.
+                /// </summary>
+                ~BitmapArgb64Accessor() => Dispose(false);
 
-		protected virtual void Dispose(bool disposing)
-		{
-			if (bitmap is not null && bmpdata is not null) {
-				this.bitmap.UnlockBits(bmpdata);
-				this.bitmap = null;
-				this.ulongdata = null;
+                /// <summary>
+                /// Performs the actual resource cleanup.
+                /// </summary>
+                /// <param name="disposing">Indicates whether the method is called from <see cref="Dispose()"/>.</param>
+                protected virtual void Dispose(bool disposing)
+                {
+                        if (bitmap is not null && bmpdata is not null) {
+                                this.bitmap.UnlockBits(bmpdata);
+                                this.bitmap = null;
+                                this.ulongdata = null;
 				this.bmpdata = null;
 			}
 		}
