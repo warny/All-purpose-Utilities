@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using Utils.Files;
 
 namespace Utils.Reflection;
@@ -19,9 +15,8 @@ public static class ReflectionEx
 	/// <param name="member">The <see cref="MemberInfo"/> from which to retrieve the type.</param>
 	/// <returns>The type associated with the member.</returns>
 	/// <exception cref="NotSupportedException">Thrown if the <paramref name="member"/> type is unsupported.</exception>
-	public static Type GetTypeOf(this MemberInfo member)
-	{
-		return member switch
+	public static Type GetTypeOf(this MemberInfo member) 
+		=> member switch
 		{
 			PropertyInfo property => property.PropertyType,
 			FieldInfo field => field.FieldType,
@@ -31,7 +26,6 @@ public static class ReflectionEx
 			TypeInfo typeInfo => typeInfo.AsType(),
 			_ => throw new NotSupportedException($"Member type '{member.GetType().Name}' is not supported for retrieving type information.")
 		};
-	}
 
 	/// <summary>
 	/// Retrieves the interfaces that are directly implemented by the type, excluding those inherited from base types.

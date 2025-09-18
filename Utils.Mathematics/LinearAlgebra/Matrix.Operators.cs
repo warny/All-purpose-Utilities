@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using Utils.Objects;
+﻿using System.Numerics;
 
 namespace Utils.Mathematics.LinearAlgebra;
 
@@ -172,20 +170,20 @@ public partial class Matrix<T> :
 	/// <summary>
 	/// Checks if two matrices are equal.
 	/// </summary>
-	public static bool operator ==(Matrix<T> matrix1, Matrix<T> matrix2) => matrix1?.Equals(matrix2) ?? matrix2 is null;
+	public static bool operator ==(Matrix<T>? matrix1, Matrix<T>? matrix2) => matrix1?.Equals(matrix2) ?? matrix2 is null;
 
 	/// <summary>
 	/// Checks if two matrices are not equal.
 	/// </summary>
-	public static bool operator !=(Matrix<T> matrix1, Matrix<T> matrix2) => !matrix1?.Equals(matrix2) ?? matrix2 is not null;
+	public static bool operator !=(Matrix<T>? matrix1, Matrix<T>? matrix2) => !matrix1?.Equals(matrix2) ?? matrix2 is not null;
 
 	/// <summary>
 	/// Checks if the matrix is equal to an object.
 	/// </summary>
-	public static bool operator ==(Matrix<T> matrix, object obj) => matrix?.Equals(obj) ?? obj is null;
+	public static bool operator ==(Matrix<T>? matrix, object? obj) => matrix?.Equals(obj) ?? obj is null;
 
 	/// <summary>
 	/// Checks if the matrix is not equal to an object.
 	/// </summary>
-	public static bool operator !=(Matrix<T> matrix, object obj) => !matrix?.Equals(obj) ?? obj is not null;
+	public static bool operator !=(Matrix<T>? matrix, object? obj) => !matrix?.Equals(obj) ?? obj is not null;
 }
