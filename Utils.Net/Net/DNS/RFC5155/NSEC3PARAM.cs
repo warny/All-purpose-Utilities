@@ -7,6 +7,9 @@ namespace Utils.Net.DNS.RFC5155
 {
     [DNSRecord(DNSClassId.IN, 0x33)]
     [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt}")]
+    /// <summary>
+    /// Represents the NSEC3PARAM resource record describing NSEC3 hashing parameters for a DNS zone.
+    /// </summary>
     public class NSEC3PARAM : DNSResponseDetail
     {
         /*
@@ -35,15 +38,27 @@ namespace Utils.Net.DNS.RFC5155
             length of this field is determined by the preceding Salt Length
             field.
         */
+        /// <summary>
+        /// Gets or sets the hash algorithm identifier used when computing NSEC3 digests.
+        /// </summary>
         [DNSField]
         public byte HashAlgorithm { get; set; }
 
+        /// <summary>
+        /// Gets or sets additional processing flags such as opt-out behavior.
+        /// </summary>
         [DNSField]
         public byte Flag { get; set; }
 
+        /// <summary>
+        /// Gets or sets the number of additional hash iterations applied to the base digest.
+        /// </summary>
         [DNSField]
         public ushort Iterations { get; set; }
 
+        /// <summary>
+        /// Gets or sets the optional binary salt that is appended to owner names before hashing.
+        /// </summary>
         [DNSField(FieldsSizeOptions.PrefixedSize1B)]
         public byte[] Salt { get; set; }
     }

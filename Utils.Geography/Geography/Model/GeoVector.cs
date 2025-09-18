@@ -489,21 +489,32 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
 			degree.StraightAngle + geoVector.θ
 		);
 
-	public static bool operator ==(GeoVector<T> left, GeoVector<T> right)
-		=> left?.Equals(right) ?? right is null;
+        /// <summary>
+        /// Determines whether two geographic vectors are equal.
+        /// </summary>
+        public static bool operator ==(GeoVector<T> left, GeoVector<T> right)
+                => left?.Equals(right) ?? right is null;
 
-	public static bool operator !=(GeoVector<T> left, GeoVector<T> right)
-		=> !(left?.Equals(right) ?? right is null);
+        /// <summary>
+        /// Determines whether two geographic vectors are not equal.
+        /// </summary>
+        public static bool operator !=(GeoVector<T> left, GeoVector<T> right)
+                => !(left?.Equals(right) ?? right is null);
 
-	/// <inheritdoc />
-	public override string ToString(string format, IFormatProvider formatProvider)
-	{
-		formatProvider ??= CultureInfo.InvariantCulture;
-		var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
+        /// <summary>
+        /// Returns a string representation of the vector using the specified format and provider.
+        /// </summary>
+        /// <param name="format">Format string applied to latitude, longitude, and bearing.</param>
+        /// <param name="formatProvider">Culture-specific format provider.</param>
+        /// <returns>A formatted string representing the vector.</returns>
+        public override string ToString(string format, IFormatProvider formatProvider)
+        {
+                formatProvider ??= CultureInfo.InvariantCulture;
+                var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
 
-		// Example: "Latitude, Longitude, Bearing"
-		return $"{base.ToString(format, formatProvider)}{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
-	}
+                // Example: "Latitude, Longitude, Bearing"
+                return $"{base.ToString(format, formatProvider)}{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
+        }
 
 	#endregion
 }
