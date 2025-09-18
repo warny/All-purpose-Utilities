@@ -8,6 +8,8 @@ namespace Utils.Fonts;
 [Flags]
 public enum HeadFlags : short
 {
+#pragma warning disable S2346
+
 	/// <summary>
 	/// y=0 specifies the baseline.
 	/// </summary>
@@ -83,6 +85,7 @@ public enum HeadFlags : short
 	/// Font is a symbolic fallback (e.g., Last Resort).
 	/// </summary>
 	IsSymbolFallback = 0x1000
+#pragma warning restore S2346
 }
 
 /// <summary>

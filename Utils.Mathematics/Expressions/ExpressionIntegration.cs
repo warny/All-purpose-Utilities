@@ -31,7 +31,6 @@ public class ExpressionIntegration : ExpressionTransformer
     /// <returns>The integrated expression tree.</returns>
     public Expression Integrate(LambdaExpression e)
     {
-        parameter = e.Parameters.FirstOrDefault(p => p.Name == this.ParameterName);
         return Expression.Lambda(Transform(e.Body), e.Parameters);
     }
 
@@ -200,7 +199,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="right">The parameter in the denominator.</param>
         /// <returns>The integral of the quotient expression.</returns>
         [ExpressionSignature(ExpressionType.Divide)]
-        public Expression Divide(
+        public Expression? Divide(
                 BinaryExpression e,
                 [ConstantNumeric] ConstantExpression left,
                 ParameterExpression right
@@ -221,7 +220,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="right">The power expression in the denominator.</param>
         /// <returns>The integral of the quotient when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionSignature(ExpressionType.Divide)]
-    public Expression Divide(
+    public Expression? Divide(
         BinaryExpression e,
         [ConstantNumeric] ConstantExpression left,
         [ExpressionSignature(ExpressionType.Power)] BinaryExpression right
@@ -256,7 +255,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="right">The method call expected to represent <c>Math.Sqrt</c>.</param>
         /// <returns>The integral of the expression when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionSignature(ExpressionType.Divide)]
-    public Expression Divide(
+    public Expression? Divide(
         BinaryExpression e,
         [ConstantNumeric] ConstantExpression left,
         MethodCallExpression right
@@ -282,7 +281,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="p">The parameter passed to the logarithm.</param>
         /// <returns>The integral of the logarithm when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(Math), "Log")]
-        public Expression Log(
+        public Expression? Log(
                 MethodCallExpression e,
                 ParameterExpression p
         )
@@ -304,7 +303,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="p">The parameter passed to the logarithm.</param>
         /// <returns>The integral of the logarithm when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Log10))]
-        public Expression Log10(
+        public Expression? Log10(
                 MethodCallExpression e,
                 ParameterExpression p
         )
@@ -326,7 +325,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="expo">The constant exponent applied to the base.</param>
         /// <returns>The integral of the power expression when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionSignature(ExpressionType.Power)]
-    public Expression Power(
+    public Expression? Power(
         BinaryExpression e,
         ParameterExpression p,
         [ConstantNumeric] ConstantExpression expo
@@ -351,7 +350,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the exponential function.</param>
         /// <returns>The integral of the exponential call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Exp))]
-    public Expression Exp(
+    public Expression? Exp(
         MethodCallExpression e,
         ParameterExpression op
     )
@@ -367,7 +366,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the exponential argument.</param>
         /// <returns>The integral of the exponential call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Exp))]
-        public Expression Exp(
+        public Expression? Exp(
                 MethodCallExpression e,
                 BinaryExpression be
         )
@@ -391,7 +390,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the sine function.</param>
         /// <returns>The integral of the sine call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Sin))]
-    public Expression Sin(
+    public Expression? Sin(
         MethodCallExpression e,
         ParameterExpression op
     )
@@ -409,7 +408,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the sine argument.</param>
         /// <returns>The integral of the sine call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Sin))]
-        public Expression Sin(
+        public Expression? Sin(
                 MethodCallExpression e,
                 BinaryExpression be
         )
@@ -433,7 +432,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the cosine function.</param>
         /// <returns>The integral of the cosine call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Cos))]
-    public Expression Cos(
+    public Expression? Cos(
         MethodCallExpression e,
         ParameterExpression op
     )
@@ -449,7 +448,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the cosine argument.</param>
         /// <returns>The integral of the cosine call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Cos))]
-        public Expression Cos(
+        public Expression? Cos(
         MethodCallExpression e,
         BinaryExpression be
 )
@@ -474,7 +473,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the tangent function.</param>
         /// <returns>The integral of the tangent call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Tan))]
-    public Expression Tan(
+    public Expression? Tan(
         MethodCallExpression e,
         ParameterExpression op
     )
@@ -494,7 +493,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the tangent argument.</param>
         /// <returns>The integral of the tangent call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Tan))]
-    public Expression Tan(
+    public Expression? Tan(
         MethodCallExpression e,
                 BinaryExpression be
     )
@@ -519,7 +518,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the hyperbolic sine function.</param>
         /// <returns>The integral of the hyperbolic sine call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Sinh))]
-    public Expression Sinh(
+    public Expression? Sinh(
         MethodCallExpression e,
         ParameterExpression op
     )
@@ -538,7 +537,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the hyperbolic sine argument.</param>
         /// <returns>The integral of the hyperbolic sine call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Sinh))]
-    public Expression Sinh(
+    public Expression? Sinh(
         MethodCallExpression e,
                 BinaryExpression be
     )
@@ -562,7 +561,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the hyperbolic cosine function.</param>
         /// <returns>The integral of the hyperbolic cosine call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Cosh))]
-        public Expression Cosh(
+        public Expression? Cosh(
                 MethodCallExpression e,
                 ParameterExpression op
         )
@@ -579,7 +578,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the hyperbolic cosine argument.</param>
         /// <returns>The integral of the hyperbolic cosine call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Cosh))]
-        public Expression Cosh(
+        public Expression? Cosh(
                 MethodCallExpression e,
                 BinaryExpression be
         )
@@ -603,7 +602,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="op">The parameter passed to the hyperbolic tangent function.</param>
         /// <returns>The integral of the hyperbolic tangent call when the parameter matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Tanh))]
-        public Expression Tanh(
+        public Expression? Tanh(
                 MethodCallExpression e,
                 ParameterExpression op
         )
@@ -623,7 +622,7 @@ public class ExpressionIntegration : ExpressionTransformer
         /// <param name="be">The binary multiplication composing the hyperbolic tangent argument.</param>
         /// <returns>The integral of the hyperbolic tangent call when the pattern matches; otherwise, <see langword="null"/>.</returns>
         [ExpressionCallSignature(typeof(double), nameof(double.Tanh))]
-    public Expression Tanh(
+    public Expression? Tanh(
         MethodCallExpression e,
                 BinaryExpression be
     )
