@@ -94,14 +94,45 @@ public enum HeadFlags : short
 [Flags]
 public enum MacStyleFlags : short
 {
-	None = 0x00,
-	Bold = 0x01,
-	Italic = 0x02,
-	Underline = 0x04,
-	Outline = 0x08,
-	Shadow = 0x10,
-	Condensed = 0x20,
-	Extended = 0x40
+        /// <summary>
+        /// No additional macStyle modifiers are applied to the font.
+        /// </summary>
+        None = 0x00,
+
+        /// <summary>
+        /// Indicates that the font should be rendered using a bold weight.
+        /// </summary>
+        Bold = 0x01,
+
+        /// <summary>
+        /// Indicates that the font should be rendered with italic styling.
+        /// </summary>
+        Italic = 0x02,
+
+        /// <summary>
+        /// Marks the font as supporting underlining by default.
+        /// </summary>
+        Underline = 0x04,
+
+        /// <summary>
+        /// Specifies that the font outlines should be drawn instead of filled shapes.
+        /// </summary>
+        Outline = 0x08,
+
+        /// <summary>
+        /// Applies a drop-shadow effect to the glyphs.
+        /// </summary>
+        Shadow = 0x10,
+
+        /// <summary>
+        /// Indicates a condensed version of the font with tighter spacing.
+        /// </summary>
+        Condensed = 0x20,
+
+        /// <summary>
+        /// Indicates an extended version of the font with wider spacing.
+        /// </summary>
+        Extended = 0x40
 }
 
 /// <summary>
@@ -141,7 +172,10 @@ public enum FontDirectionHintEnum : short
 [Flags]
 public enum OutlineFlags : byte
 {
-	None = 0x00,
+        /// <summary>
+        /// No outline flags are set for the point.
+        /// </summary>
+        None = 0x00,
 
 	/// <summary>
 	/// The point is on the curve (versus a control point).
