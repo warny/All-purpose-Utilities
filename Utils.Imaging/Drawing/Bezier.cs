@@ -122,40 +122,47 @@ namespace Utils.Drawing
                 {
                         var n = points.Length - 1;
 
-                        /// <summary>
-                        /// Computes a single interpolated point for the provided progress value.
-                        /// </summary>
-                        /// <param name="t">Progress along the curve in the range [0, 1].</param>
-                        /// <returns>The interpolated point.</returns>
-                        PointF ComputeBezierPoint(float t)
+                        var divisions = points.SlideEnumerateBy(2).Sum(p => Math.Max(Math.Abs(p[0].X - p[1].X), Math.Abs(p[0].Y - p[1].Y)));
+                        float initialsteps = 1 / divisions;
+
+                        PointF lastPoint = ComputeBezierPoint(0, points, n);
+                        yield return lastPoint;
+                        for (float f = initialsteps; f < 1; f += initialsteps)
                         {
-                                PointF[] newPoints = (PointF[])points.Clone();
-                                var u = 1 - t;
-                                for (int i = 1; i <= n; i++)
-				{
-					for (int j = 0; j <= n - i; j++)
-					{
-						newPoints[j] = new PointF(u * newPoints[j].X + t * newPoints[j + 1].X, u * newPoints[j].Y + t * newPoints[j + 1].Y);
-					}
-				}
-				return newPoints[0];
-			}
+                                var newPoint = ComputeBezierPoint(f, points, n);
+                                float dx = lastPoint.X - newPoint.X;
+                                float dy = lastPoint.Y - newPoint.Y;
+                                if ((dx * dx + dy * dy) < 1f)
+                                {
+                                        continue;
+                                }
 
-			var divisions = points.SlideEnumerateBy(2).Sum(p => Math.Max(Math.Abs(p[0].X - p[1].X), Math.Abs(p[0].Y - p[1].Y)));
-			float initialsteps = 1 / divisions;
+                                yield return newPoint;
+                                lastPoint = newPoint;
+                        }
+                }
 
-			PointF lastPoint = ComputeBezierPoint(0);
-			yield return lastPoint;
-			for (float f = initialsteps; f < 1; f += initialsteps)
-			{
-				var newPoint = ComputeBezierPoint(f);
-				float dx = lastPoint.X - newPoint.X;
-				float dy = lastPoint.Y - newPoint.Y;
-				if ((dx * dx + dy * dy) < 1f) { continue; }
-				yield return newPoint;
-				lastPoint = newPoint;
-			}
-		}
+                /// <summary>
+                /// Computes a single interpolated point for the provided progress value.
+                /// </summary>
+                /// <param name="t">Progress along the curve in the range [0, 1].</param>
+                /// <param name="controlPoints">Control points defining the Bézier curve.</param>
+                /// <param name="degree">Degree of the curve.</param>
+                /// <returns>The interpolated point.</returns>
+                private static PointF ComputeBezierPoint(float t, PointF[] controlPoints, int degree)
+                {
+                        PointF[] newPoints = (PointF[])controlPoints.Clone();
+                        var u = 1 - t;
+                        for (int i = 1; i <= degree; i++)
+                        {
+                                for (int j = 0; j <= degree - i; j++)
+                                {
+                                        newPoints[j] = new PointF(u * newPoints[j].X + t * newPoints[j + 1].X, u * newPoints[j].Y + t * newPoints[j + 1].Y);
+                                }
+                        }
+
+                        return newPoints[0];
+                }
 
 	}
 }

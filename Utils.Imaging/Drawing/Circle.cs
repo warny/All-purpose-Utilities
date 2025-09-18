@@ -103,53 +103,57 @@ namespace Utils.Drawing
                 /// </summary>
                 private void ComputeLines()
                 {
-                        /// <summary>
-                        /// Lazily computes the points that describe the ellipse.
-                        /// </summary>
-                        /// <returns>Sequence of points describing the ellipse.</returns>
-                        IEnumerable<PointF> ComputePoints()
-                        {
-                                double angle = EndAngle - StartAngle;
-                                var angularResolution = angle / (Math.Max(Radius1, Radius2) * Math.PI * 2);
-
-				var cosR = Math.Cos(Orientation);
-				var sinR = Math.Sin(Orientation);
-
-				Func<double, bool> test;
-				if (StartAngle > EndAngle)
-				{
-					test = alpha => alpha >= EndAngle;
-				}
-				else
-				{
-					test = alpha => alpha <= EndAngle;
-				}
-
-				double delta1 = Math.Sin(StartAngle) * Radius1;
-				double delta2 = Math.Cos(StartAngle) * Radius2;
-
-				int deltaX = (int)(cosR * delta1 + sinR * delta2);
-				int deltaY = (int)(sinR * delta1 + cosR * delta2);
-
-				PointF lastPoint = new PointF(Center.X + deltaX, Center.Y + deltaY);
-				yield return lastPoint;
-
-				for (double a = StartAngle + angularResolution; test(a); a += angularResolution)
-				{
-					delta1 = Math.Sin(a) * Radius1;
-					delta2 = Math.Cos(a) * Radius2;
-
-					deltaX = (int)(cosR * delta1 + sinR * delta2);
-					deltaY = (int)(sinR * delta1 + cosR * delta2);
-
-					var newPoint = new PointF(Center.X + deltaX, Center.Y + deltaY);
-					if (newPoint.X == lastPoint.X && newPoint.Y == lastPoint.Y) continue;
-					lastPoint = newPoint;
-					yield return newPoint;
-				}
-			}
-
                         polylines ??= new Polylines(ComputePoints().ToArray());
+                }
+
+                /// <summary>
+                /// Lazily computes the points that describe the ellipse.
+                /// </summary>
+                /// <returns>Sequence of points describing the ellipse.</returns>
+                private IEnumerable<PointF> ComputePoints()
+                {
+                        double angle = EndAngle - StartAngle;
+                        var angularResolution = angle / (Math.Max(Radius1, Radius2) * Math.PI * 2);
+
+                        var cosR = Math.Cos(Orientation);
+                        var sinR = Math.Sin(Orientation);
+
+                        Func<double, bool> test;
+                        if (StartAngle > EndAngle)
+                        {
+                                test = alpha => alpha >= EndAngle;
+                        }
+                        else
+                        {
+                                test = alpha => alpha <= EndAngle;
+                        }
+
+                        double delta1 = Math.Sin(StartAngle) * Radius1;
+                        double delta2 = Math.Cos(StartAngle) * Radius2;
+
+                        int deltaX = (int)(cosR * delta1 + sinR * delta2);
+                        int deltaY = (int)(sinR * delta1 + cosR * delta2);
+
+                        PointF lastPoint = new PointF(Center.X + deltaX, Center.Y + deltaY);
+                        yield return lastPoint;
+
+                        for (double a = StartAngle + angularResolution; test(a); a += angularResolution)
+                        {
+                                delta1 = Math.Sin(a) * Radius1;
+                                delta2 = Math.Cos(a) * Radius2;
+
+                                deltaX = (int)(cosR * delta1 + sinR * delta2);
+                                deltaY = (int)(sinR * delta1 + cosR * delta2);
+
+                                var newPoint = new PointF(Center.X + deltaX, Center.Y + deltaY);
+                                if (newPoint.X == lastPoint.X && newPoint.Y == lastPoint.Y)
+                                {
+                                        continue;
+                                }
+
+                                lastPoint = newPoint;
+                                yield return newPoint;
+                        }
                 }
 
                 /// <summary>

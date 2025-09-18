@@ -5,10 +5,10 @@ using Utils.Mathematics;
 
 namespace Utils.Imaging;
 
-[StructLayout(LayoutKind.Explicit)]
 /// <summary>
 /// Represents a 32-bit ARGB color using byte components.
 /// </summary>
+[StructLayout(LayoutKind.Explicit)]
 public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEqualityOperators<ColorArgb32, ColorArgb32, bool>
 {
         /// <summary>
