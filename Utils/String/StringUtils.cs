@@ -10,28 +10,32 @@ namespace Utils.String;
 /// </summary>
 public static class StringUtils
 {
-	/// <summary>
-	/// Supprime les parenthèses autour d'une chaîne
-	/// </summary>
-	/// <param name="str"></param>
-	/// <returns></returns>
-	public static string TrimBrackets(this string str, char openingBracket, char closingBracket)
-		=> TrimBrackets(str, new Brackets(openingBracket, closingBracket));
+        /// <summary>
+        /// Removes the first pair of brackets from the provided string when it matches the supplied opening and closing characters.
+        /// </summary>
+        /// <param name="str">Source string to inspect.</param>
+        /// <param name="openingBracket">Expected opening bracket character.</param>
+        /// <param name="closingBracket">Expected closing bracket character.</param>
+        /// <returns>The input string without its outermost matching brackets.</returns>
+        public static string TrimBrackets(this string str, char openingBracket, char closingBracket)
+                => TrimBrackets(str, new Brackets(openingBracket, closingBracket));
 
-	/// <summary>
-	/// Supprime les parenthèses autour d'une chaîne
-	/// </summary>
-	/// <param name="str"></param>
-	/// <returns></returns>
-	public static string TrimBrackets(this string str, char bracket)
-		=> TrimBrackets(str, new Brackets(bracket, bracket));
+        /// <summary>
+        /// Removes the first pair of identical brackets from the provided string.
+        /// </summary>
+        /// <param name="str">Source string to inspect.</param>
+        /// <param name="bracket">Bracket character that is used as both opening and closing delimiter.</param>
+        /// <returns>The input string without its outermost matching brackets.</returns>
+        public static string TrimBrackets(this string str, char bracket)
+                => TrimBrackets(str, new Brackets(bracket, bracket));
 
-	/// <summary>
-	/// Supprime les parenthèses autour d'une chaîne
-	/// </summary>
-	/// <param name="str"></param>
-	/// <returns></returns>
-	public static string TrimBrackets(string str, params Brackets[] brackets)
+        /// <summary>
+        /// Removes the outermost brackets from the provided string using the supplied bracket definitions.
+        /// </summary>
+        /// <param name="str">Source string to inspect.</param>
+        /// <param name="brackets">Possible bracket definitions that can wrap the string.</param>
+        /// <returns>The input string without its outermost matching brackets.</returns>
+        public static string TrimBrackets(string str, params Brackets[] brackets)
 	{
 		if (brackets.IsNullOrEmptyCollection())
 			brackets = Brackets.All;
