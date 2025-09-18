@@ -779,6 +779,11 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 		// Move the position pointer back to the end of RData.
 		datas.Position = endRecordPosition;
 	}
+    /// <summary>
+    /// Converts the provided DNS response record into its canonical on-the-wire representation.
+    /// </summary>
+    /// <param name="record">The DNS response record to serialize.</param>
+    /// <returns>The trimmed byte buffer that contains the canonical DNS payload.</returns>
     public byte[] Write(DNSResponseRecord record)
     {
         Datas datas = new Datas { Datagram = new byte[512], Position = 0 };

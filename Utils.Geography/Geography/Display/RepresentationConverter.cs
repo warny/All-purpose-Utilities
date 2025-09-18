@@ -10,110 +10,112 @@ using Utils.Mathematics;
 
 namespace Utils.Geography.Display
 {
-	public class RepresentationConverter<T>
-            where T : struct, IFloatingPointIeee754<T>
+    /// <summary>
+    /// Converts between geographic coordinates, projected map points, and tile coordinates.
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used for projections.</typeparam>
+    public class RepresentationConverter<T>
+        where T : struct, IFloatingPointIeee754<T>
     {
         private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
         /// <summary>
-        /// Planète de référence
+        /// Gets the reference planet used for distance and circumference calculations.
         /// </summary>
-        Planet<T> Planet { get; }
+        private Planet<T> Planet { get; }
 
-		/// <summary>
-		/// Taille des tuiles cibles
-		/// </summary>
-		public int TileSize { get; private set; }
+        /// <summary>
+        /// Gets the target tile size, in pixels.
+        /// </summary>
+        public int TileSize { get; private set; }
 
-		/// <summary>
-		/// Projection de carte
-		/// </summary>
-		public IProjectionTransformation<T> Projection { get; private set; }
-		
-		/// <summary>
-		/// Créé une nouvelle projection pour la planète passée en paramètre
-		/// </summary>
-		/// <param name="planet">Planète</param>
-		/// <param name="projection">Projection</param>
-		/// <param name="tileSize">Taille de la tuile</param>
-		public RepresentationConverter (Planet<T> planet, IProjectionTransformation<T> projection, int tileSize = 256 )
-		{
-			this.Planet = planet;
-			Projection = projection;
-			TileSize = tileSize;
-		}
+        /// <summary>
+        /// Gets the projection transformation used to convert coordinates.
+        /// </summary>
+        public IProjectionTransformation<T> Projection { get; private set; }
 
-		/// <summary>
-		/// Créé une nouvelle projection pour la planète terre
-		/// </summary>
-		/// <param name="projection">Projection</param>
-		/// <param name="tileSize">Taille de la tuile</param>
-		public RepresentationConverter( IProjectionTransformation<T> projection, int tileSize = 256 )
-		{
-			this.Planet = Planets<T>.Earth;
-			Projection = projection;
-			TileSize = tileSize;
-		}
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RepresentationConverter{T}"/> class for a given planet.
+        /// </summary>
+        /// <param name="planet">Planet describing the ellipsoid characteristics.</param>
+        /// <param name="projection">Projection transformation implementation.</param>
+        /// <param name="tileSize">Desired tile size in pixels.</param>
+        public RepresentationConverter(Planet<T> planet, IProjectionTransformation<T> projection, int tileSize = 256)
+        {
+            Planet = planet;
+            Projection = projection;
+            TileSize = tileSize;
+        }
 
-		/// <summary>
-		/// Converti un point géographique en point projeté sur une carte
-		/// </summary>
-		/// <param name="GeoPoint">Point géographique</param>
-		/// <param name="zoomFactor">Facteur de grossissement</param>
-		/// <returns></returns>
-		public ProjectedPoint<T> GeoPointToMappoint ( GeoPoint<T> GeoPoint, byte zoomFactor )
-		{
-			return Projection.GeoPointToMapPoint(GeoPoint);
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RepresentationConverter{T}"/> class for Earth.
+        /// </summary>
+        /// <param name="projection">Projection transformation implementation.</param>
+        /// <param name="tileSize">Desired tile size in pixels.</param>
+        public RepresentationConverter(IProjectionTransformation<T> projection, int tileSize = 256)
+        {
+            Planet = Planets<T>.Earth;
+            Projection = projection;
+            TileSize = tileSize;
+        }
 
-		}
+        /// <summary>
+        /// Converts a geographic point to its projected representation.
+        /// </summary>
+        /// <param name="geoPoint">Geographic coordinates.</param>
+        /// <param name="zoomFactor">Zoom factor (ignored, maintained for backward compatibility).</param>
+        /// <returns>The projected map point.</returns>
+        public ProjectedPoint<T> GeoPointToMappoint(GeoPoint<T> geoPoint, byte zoomFactor)
+        {
+            return Projection.GeoPointToMapPoint(geoPoint);
+        }
 
-		/// <summary>
-		/// Converti un point sur une carte en point géographique
-		/// </summary>
-		/// <param name="projectedPoint">Point sur carte</param>
-		/// <returns>point géographique</returns>
-		public GeoPoint<T> MappointToGeoPoint ( ProjectedPoint<T> projectedPoint )
-		{
-			return Projection.MapPointToGeoPoint(projectedPoint);
-		}
+        /// <summary>
+        /// Converts a projected map point back to geographic coordinates.
+        /// </summary>
+        /// <param name="projectedPoint">Projected map point.</param>
+        /// <returns>Geographic coordinates.</returns>
+        public GeoPoint<T> MappointToGeoPoint(ProjectedPoint<T> projectedPoint)
+        {
+            return Projection.MapPointToGeoPoint(projectedPoint);
+        }
 
-		/// <summary>
-		/// Renvoie les coordonnées de la tuile correspondant au 
-		/// </summary>
-		/// <param name="projectedPoint">Point sur carte</param>
-		/// <param name="zoomLevel"></param>
-		/// <returns>tuile</returns>
-		public Tile<T> MappointToTile ( ProjectedPoint<T> projectedPoint, byte zoomLevel )
-		{
-			long zoom = 1 << zoomLevel;
-			return new Tile<T>(
-				MathEx.Clamp((long)Convert.ChangeType(projectedPoint.X, typeof(long)) / TileSize, 0, zoom - 1),
-				MathEx.Clamp((long)Convert.ChangeType(projectedPoint.Y, typeof(long)) / TileSize, 0, zoom - 1),
-				zoomLevel,
-				TileSize);
-		}
+        /// <summary>
+        /// Converts a projected map point to tile coordinates at the specified zoom level.
+        /// </summary>
+        /// <param name="projectedPoint">Projected map point.</param>
+        /// <param name="zoomLevel">Zoom level of the tile grid.</param>
+        /// <returns>The tile containing the projected point.</returns>
+        public Tile<T> MappointToTile(ProjectedPoint<T> projectedPoint, byte zoomLevel)
+        {
+            long zoom = 1 << zoomLevel;
+            return new Tile<T>(
+                MathEx.Clamp((long)Convert.ChangeType(projectedPoint.X, typeof(long)) / TileSize, 0, zoom - 1),
+                MathEx.Clamp((long)Convert.ChangeType(projectedPoint.Y, typeof(long)) / TileSize, 0, zoom - 1),
+                zoomLevel,
+                TileSize);
+        }
 
-		/// <summary>
-		/// Récupère la taille totale de la carte
-		/// </summary>
-		/// <param name="zoomLevel">Niveau de zoom</param>
-		/// <returns>Taille de la carte en pixels</returns>
-		public int GetMapSize ( byte zoomLevel )
-		{
-			return TileSize << zoomLevel;
-		}
+        /// <summary>
+        /// Gets the total map size (in pixels) for the specified zoom level.
+        /// </summary>
+        /// <param name="zoomLevel">Zoom level of the tile grid.</param>
+        /// <returns>Total map size in pixels.</returns>
+        public int GetMapSize(byte zoomLevel)
+        {
+            return TileSize << zoomLevel;
+        }
 
-		/// <summary>
-		/// Renvoie la résolution à la latitude donnée
-		/// </summary>
-		/// <param name="latitude">Latitude</param>
-		/// <param name="zoomLevel">Niveau de zoom</param>
-		/// <returns></returns>
-		public T ComputeGroundResolution ( T latitude, byte zoomLevel )
-		{
-			var mapSize = (T)Convert.ChangeType(GetMapSize(zoomLevel), typeof(T));
-			return degree.Cos(latitude) * Planet.EquatorialCircumference / mapSize;
-		}
-
-	}
+        /// <summary>
+        /// Computes the ground resolution at the specified latitude and zoom level.
+        /// </summary>
+        /// <param name="latitude">Latitude in degrees.</param>
+        /// <param name="zoomLevel">Zoom level of the tile grid.</param>
+        /// <returns>Ground resolution (meters per pixel) at the specified latitude.</returns>
+        public T ComputeGroundResolution(T latitude, byte zoomLevel)
+        {
+            var mapSize = (T)Convert.ChangeType(GetMapSize(zoomLevel), typeof(T));
+            return degree.Cos(latitude) * Planet.EquatorialCircumference / mapSize;
+        }
+    }
 }

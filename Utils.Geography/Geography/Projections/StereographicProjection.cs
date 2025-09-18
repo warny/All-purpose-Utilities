@@ -4,12 +4,24 @@ using Utils.Mathematics;
 
 namespace Utils.Geography.Projections;
 
+/// <summary>
+/// Implements the stereographic map projection for spherical coordinates.
+/// </summary>
+/// <typeparam name="T">Floating-point type used for calculations.</typeparam>
 public class StereographicProjection<T> : IProjectionTransformation<T>
-	where T : struct, IFloatingPointIeee754<T>
+        where T : struct, IFloatingPointIeee754<T>
 {
-	private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+        /// <summary>
+        /// Provides trigonometric helpers that operate on degree values.
+        /// </summary>
+        private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
-	public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
+        /// <summary>
+        /// Projects geographic coordinates onto the stereographic projection plane.
+        /// </summary>
+        /// <param name="geoPoint">Geographic coordinates in degrees.</param>
+        /// <returns>Projected map coordinates.</returns>
+        public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
 	{
 		T lat = geoPoint.Latitude;
 		T lon = geoPoint.Longitude;
@@ -32,7 +44,12 @@ public class StereographicProjection<T> : IProjectionTransformation<T>
 		return new ProjectedPoint<T>(x, y, this);
 	}
 
-	public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
+        /// <summary>
+        /// Converts stereographic projection coordinates back to geographic coordinates.
+        /// </summary>
+        /// <param name="mapPoint">Projected map coordinates.</param>
+        /// <returns>Geographic coordinates in degrees.</returns>
+        public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
 	{
 		T x = mapPoint.X;
 		T y = mapPoint.Y;

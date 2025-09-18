@@ -130,30 +130,108 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
 /// <typeparam name="T">A numeric type that supports IEEE 754 floating-point operations.</typeparam>
 public static class Planets<T> where T : struct, IFloatingPointIeee754<T>
 {
-	public static Planet<T> Mercury { get; } = new Planet<T>((T)Convert.ChangeType(2439700, typeof(T)), "Mercury");
-	public static Planet<T> Venus { get; } = new Planet<T>((T)Convert.ChangeType(6051800, typeof(T)), "Venus");
-	public static Planet<T> Earth { get; } = new Planet<T>((T)Convert.ChangeType(6378137, typeof(T)), "Earth");
-	public static Planet<T> EarthMoon { get; } = new Planet<T>((T)Convert.ChangeType(1737400, typeof(T)), "Moon");
-	public static Planet<T> Mars { get; } = new Planet<T>((T)Convert.ChangeType(3396200, typeof(T)), "Mars");
-	public static Planet<T> Jupiter { get; } = new Planet<T>((T)Convert.ChangeType(71492000, typeof(T)), "Jupiter");
-	public static Planet<T> JupiterEurope { get; } = new Planet<T>((T)Convert.ChangeType(1560800, typeof(T)), "Europe");
-	public static Planet<T> JupiterGanymede { get; } = new Planet<T>((T)Convert.ChangeType(2634100, typeof(T)), "Ganymede");
-	public static Planet<T> JupiterIo { get; } = new Planet<T>((T)Convert.ChangeType(1821600, typeof(T)), "Io");
-	public static Planet<T> JupiterCallisto { get; } = new Planet<T>((T)Convert.ChangeType(2410300, typeof(T)), "Callisto");
-	public static Planet<T> Saturn { get; } = new Planet<T>((T)Convert.ChangeType(60268000, typeof(T)), "Saturn");
-	public static Planet<T> SaturnTitan { get; } = new Planet<T>((T)Convert.ChangeType(2574700, typeof(T)), "Titan");
-	public static Planet<T> SaturnEnceladus { get; } = new Planet<T>((T)Convert.ChangeType(252100, typeof(T)), "Enceladus");
-	public static Planet<T> SaturnThetys { get; } = new Planet<T>((T)Convert.ChangeType(531000, typeof(T)), "Thetys");
-	public static Planet<T> SaturnMimas { get; } = new Planet<T>((T)Convert.ChangeType(198200, typeof(T)), "Mimas");
-	public static Planet<T> SaturnDione { get; } = new Planet<T>((T)Convert.ChangeType(561400, typeof(T)), "Dione");
-	public static Planet<T> SaturnIapetus { get; } = new Planet<T>((T)Convert.ChangeType(734500, typeof(T)), "Iapetus");
-	public static Planet<T> SaturnRhea { get; } = new Planet<T>((T)Convert.ChangeType(763800, typeof(T)), "Rhea");
-	public static Planet<T> Uranus { get; } = new Planet<T>((T)Convert.ChangeType(25559000, typeof(T)), "Uranus");
-	public static Planet<T> UranusUmbriel { get; } = new Planet<T>((T)Convert.ChangeType(584700, typeof(T)), "Umbriel");
-	public static Planet<T> UranusOberon { get; } = new Planet<T>((T)Convert.ChangeType(761400, typeof(T)), "Oberon");
-	public static Planet<T> UranusTitania { get; } = new Planet<T>((T)Convert.ChangeType(788400, typeof(T)), "Titania");
-	public static Planet<T> UranusMiranda { get; } = new Planet<T>((T)Convert.ChangeType(235800, typeof(T)), "Miranda");
-	public static Planet<T> UranusAriel { get; } = new Planet<T>((T)Convert.ChangeType(578900, typeof(T)), "Ariel");
-	public static Planet<T> Neptune { get; } = new Planet<T>((T)Convert.ChangeType(24764000, typeof(T)), "Neptune");
-	public static Planet<T> NeptuneTriton { get; } = new Planet<T>((T)Convert.ChangeType(1353400, typeof(T)), "Triton");
+        /// <summary>
+        /// Gets a predefined planet model for Mercury.
+        /// </summary>
+        public static Planet<T> Mercury { get; } = new Planet<T>((T)Convert.ChangeType(2439700, typeof(T)), "Mercury");
+        /// <summary>
+        /// Gets a predefined planet model for Venus.
+        /// </summary>
+        public static Planet<T> Venus { get; } = new Planet<T>((T)Convert.ChangeType(6051800, typeof(T)), "Venus");
+        /// <summary>
+        /// Gets a predefined planet model for Earth.
+        /// </summary>
+        public static Planet<T> Earth { get; } = new Planet<T>((T)Convert.ChangeType(6378137, typeof(T)), "Earth");
+        /// <summary>
+        /// Gets a predefined planet model for Earth's Moon.
+        /// </summary>
+        public static Planet<T> EarthMoon { get; } = new Planet<T>((T)Convert.ChangeType(1737400, typeof(T)), "Moon");
+        /// <summary>
+        /// Gets a predefined planet model for Mars.
+        /// </summary>
+        public static Planet<T> Mars { get; } = new Planet<T>((T)Convert.ChangeType(3396200, typeof(T)), "Mars");
+        /// <summary>
+        /// Gets a predefined planet model for Jupiter.
+        /// </summary>
+        public static Planet<T> Jupiter { get; } = new Planet<T>((T)Convert.ChangeType(71492000, typeof(T)), "Jupiter");
+        /// <summary>
+        /// Gets a predefined planet model for Jupiter's moon Europa.
+        /// </summary>
+        public static Planet<T> JupiterEurope { get; } = new Planet<T>((T)Convert.ChangeType(1560800, typeof(T)), "Europe");
+        /// <summary>
+        /// Gets a predefined planet model for Jupiter's moon Ganymede.
+        /// </summary>
+        public static Planet<T> JupiterGanymede { get; } = new Planet<T>((T)Convert.ChangeType(2634100, typeof(T)), "Ganymede");
+        /// <summary>
+        /// Gets a predefined planet model for Jupiter's moon Io.
+        /// </summary>
+        public static Planet<T> JupiterIo { get; } = new Planet<T>((T)Convert.ChangeType(1821600, typeof(T)), "Io");
+        /// <summary>
+        /// Gets a predefined planet model for Jupiter's moon Callisto.
+        /// </summary>
+        public static Planet<T> JupiterCallisto { get; } = new Planet<T>((T)Convert.ChangeType(2410300, typeof(T)), "Callisto");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn.
+        /// </summary>
+        public static Planet<T> Saturn { get; } = new Planet<T>((T)Convert.ChangeType(60268000, typeof(T)), "Saturn");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Titan.
+        /// </summary>
+        public static Planet<T> SaturnTitan { get; } = new Planet<T>((T)Convert.ChangeType(2574700, typeof(T)), "Titan");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Enceladus.
+        /// </summary>
+        public static Planet<T> SaturnEnceladus { get; } = new Planet<T>((T)Convert.ChangeType(252100, typeof(T)), "Enceladus");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Tethys.
+        /// </summary>
+        public static Planet<T> SaturnThetys { get; } = new Planet<T>((T)Convert.ChangeType(531000, typeof(T)), "Thetys");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Mimas.
+        /// </summary>
+        public static Planet<T> SaturnMimas { get; } = new Planet<T>((T)Convert.ChangeType(198200, typeof(T)), "Mimas");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Dione.
+        /// </summary>
+        public static Planet<T> SaturnDione { get; } = new Planet<T>((T)Convert.ChangeType(561400, typeof(T)), "Dione");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Iapetus.
+        /// </summary>
+        public static Planet<T> SaturnIapetus { get; } = new Planet<T>((T)Convert.ChangeType(734500, typeof(T)), "Iapetus");
+        /// <summary>
+        /// Gets a predefined planet model for Saturn's moon Rhea.
+        /// </summary>
+        public static Planet<T> SaturnRhea { get; } = new Planet<T>((T)Convert.ChangeType(763800, typeof(T)), "Rhea");
+        /// <summary>
+        /// Gets a predefined planet model for Uranus.
+        /// </summary>
+        public static Planet<T> Uranus { get; } = new Planet<T>((T)Convert.ChangeType(25559000, typeof(T)), "Uranus");
+        /// <summary>
+        /// Gets a predefined planet model for Uranus' moon Umbriel.
+        /// </summary>
+        public static Planet<T> UranusUmbriel { get; } = new Planet<T>((T)Convert.ChangeType(584700, typeof(T)), "Umbriel");
+        /// <summary>
+        /// Gets a predefined planet model for Uranus' moon Oberon.
+        /// </summary>
+        public static Planet<T> UranusOberon { get; } = new Planet<T>((T)Convert.ChangeType(761400, typeof(T)), "Oberon");
+        /// <summary>
+        /// Gets a predefined planet model for Uranus' moon Titania.
+        /// </summary>
+        public static Planet<T> UranusTitania { get; } = new Planet<T>((T)Convert.ChangeType(788400, typeof(T)), "Titania");
+        /// <summary>
+        /// Gets a predefined planet model for Uranus' moon Miranda.
+        /// </summary>
+        public static Planet<T> UranusMiranda { get; } = new Planet<T>((T)Convert.ChangeType(235800, typeof(T)), "Miranda");
+        /// <summary>
+        /// Gets a predefined planet model for Uranus' moon Ariel.
+        /// </summary>
+        public static Planet<T> UranusAriel { get; } = new Planet<T>((T)Convert.ChangeType(578900, typeof(T)), "Ariel");
+        /// <summary>
+        /// Gets a predefined planet model for Neptune.
+        /// </summary>
+        public static Planet<T> Neptune { get; } = new Planet<T>((T)Convert.ChangeType(24764000, typeof(T)), "Neptune");
+        /// <summary>
+        /// Gets a predefined planet model for Neptune's moon Triton.
+        /// </summary>
+        public static Planet<T> NeptuneTriton { get; } = new Planet<T>((T)Convert.ChangeType(1353400, typeof(T)), "Triton");
 }

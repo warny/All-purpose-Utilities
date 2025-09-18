@@ -167,61 +167,84 @@ namespace Utils.Geography.Model
 		/// </summary>
 		public T LongitudeSpan => MaxLongitude - MinLongitude;
 
-		public bool Equals(BoundingBox<T> other)
-		{
-			return this.MaxLatitude.Equals(other.MaxLatitude)
-				&& this.MaxLongitude.Equals(other.MaxLongitude)
-				&& this.MinLatitude.Equals(other.MinLatitude)
-				&& this.MinLongitude.Equals(other.MinLongitude);
+                /// <summary>
+                /// Determines whether the specified bounding box has the same boundaries as the current instance.
+                /// </summary>
+                /// <param name="other">Bounding box to compare.</param>
+                /// <returns><see langword="true"/> if both bounding boxes have identical coordinates; otherwise <see langword="false"/>.</returns>
+                public bool Equals(BoundingBox<T> other)
+                {
+                        return this.MaxLatitude.Equals(other.MaxLatitude)
+                                && this.MaxLongitude.Equals(other.MaxLongitude)
+                                && this.MinLatitude.Equals(other.MinLatitude)
+                                && this.MinLongitude.Equals(other.MinLongitude);
 		}
 
-		/// <inheritdoc/>
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj is BoundingBox<T> other) return Equals(other);
-			return false;
-			
-		}
+                /// <summary>
+                /// Determines whether the specified object is equal to the current bounding box.
+                /// </summary>
+                /// <param name="obj">Object to compare with the current bounding box.</param>
+                /// <returns><see langword="true"/> if the specified object is equal to the current bounding box; otherwise <see langword="false"/>.</returns>
+                public override bool Equals(object obj)
+                {
+                        if (ReferenceEquals(this, obj)) return true;
+                        return obj is BoundingBox<T> other && Equals(other);
+                }
 
-		/// <inheritdoc/>
-		public override int GetHashCode()
-		{
-			return Objects.ObjectUtils.ComputeHash(this.MaxLatitude, this.MaxLongitude, this.MinLatitude, this.MinLongitude);
-		}
+                /// <summary>
+                /// Returns a hash code for the current bounding box.
+                /// </summary>
+                /// <returns>A hash code for the current bounding box.</returns>
+                public override int GetHashCode()
+                {
+                        return Objects.ObjectUtils.ComputeHash(MaxLatitude, MaxLongitude, MinLatitude, MinLongitude);
+                }
 
-		/// <summary>
-		/// Returns a string that represents this bounding box using default formatting.
-		/// </summary>
-		public override string ToString() => $"minLatitude={this.MinLatitude}, minLongitude={this.MinLongitude}, maxLatitude={this.MaxLatitude}, maxLongitude={this.MaxLongitude}";
+                /// <summary>
+                /// Returns a string that represents this bounding box using default formatting.
+                /// </summary>
+                /// <returns>A string representation of the bounding box.</returns>
+                public override string ToString() => $"minLatitude={MinLatitude}, minLongitude={MinLongitude}, maxLatitude={MaxLatitude}, maxLongitude={MaxLongitude}";
 
-		/// <summary>
-		/// Returns a string that represents this bounding box in a given format.
-		/// </summary>
-		/// <param name="format">Format string for numeric values.</param>
-		/// <returns>A string representing this bounding box.</returns>
-		public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
+                /// <summary>
+                /// Returns a string that represents this bounding box in a given format.
+                /// </summary>
+                /// <param name="format">Format string for numeric values.</param>
+                /// <returns>A string representing this bounding box.</returns>
+                public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
 
-		/// <summary>
-		/// Returns a string that represents this bounding box in a given format and culture.
-		/// </summary>
-		/// <param name="format">Format string for numeric values.</param>
-		/// <param name="formatProvider">Culture-specific format provider.</param>
-		/// <returns>A string representing this bounding box.</returns>
-		public string ToString(string format, IFormatProvider formatProvider)
-		{
-			return string.Format(
-				formatProvider,
-				"minLatitude={0}, minLongitude={1}, maxLatitude={2}, maxLongitude={3}",
-				MinLatitude.ToString(format, formatProvider),
-				MinLongitude.ToString(format, formatProvider),
-				MaxLatitude.ToString(format, formatProvider),
-				MaxLongitude.ToString(format, formatProvider)
-			);
-		}
+                /// <summary>
+                /// Returns a string that represents this bounding box in a given format and culture.
+                /// </summary>
+                /// <param name="format">Format string for numeric values.</param>
+                /// <param name="formatProvider">Culture-specific format provider.</param>
+                /// <returns>A string representing this bounding box.</returns>
+                public string ToString(string format, IFormatProvider formatProvider)
+                {
+                        return string.Format(
+                                formatProvider,
+                                "minLatitude={0}, minLongitude={1}, maxLatitude={2}, maxLongitude={3}",
+                                MinLatitude.ToString(format, formatProvider),
+                                MinLongitude.ToString(format, formatProvider),
+                                MaxLatitude.ToString(format, formatProvider),
+                                MaxLongitude.ToString(format, formatProvider)
+                        );
+                }
 
-		public static bool operator ==(BoundingBox<T> left, BoundingBox<T> right) => left.Equals(right);
+                /// <summary>
+                /// Determines whether two bounding boxes are equal.
+                /// </summary>
+                /// <param name="left">First bounding box to compare.</param>
+                /// <param name="right">Second bounding box to compare.</param>
+                /// <returns><see langword="true"/> if both bounding boxes are equal; otherwise <see langword="false"/>.</returns>
+                public static bool operator ==(BoundingBox<T> left, BoundingBox<T> right) => left.Equals(right);
 
-		public static bool operator !=(BoundingBox<T> left, BoundingBox<T> right) => !left.Equals(right);
-	}
+                /// <summary>
+                /// Determines whether two bounding boxes are not equal.
+                /// </summary>
+                /// <param name="left">First bounding box to compare.</param>
+                /// <param name="right">Second bounding box to compare.</param>
+                /// <returns><see langword="true"/> if the bounding boxes differ; otherwise <see langword="false"/>.</returns>
+                public static bool operator !=(BoundingBox<T> left, BoundingBox<T> right) => !left.Equals(right);
+        }
 }

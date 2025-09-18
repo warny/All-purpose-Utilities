@@ -4,12 +4,24 @@ using Utils.Mathematics;
 
 namespace Utils.Geography.Projections;
 
+/// <summary>
+/// Implements the Miller cylindrical map projection.
+/// </summary>
+/// <typeparam name="T">Floating-point type used for calculations.</typeparam>
 public class MillerProjection<T> : IProjectionTransformation<T>
-	where T : struct, IFloatingPointIeee754<T>
+        where T : struct, IFloatingPointIeee754<T>
 {
-	private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+        /// <summary>
+        /// Provides trigonometric helpers that operate on degree values.
+        /// </summary>
+        private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
-	public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
+        /// <summary>
+        /// Projects geographic coordinates to Miller cylindrical coordinates.
+        /// </summary>
+        /// <param name="geoPoint">Geographic coordinates in degrees.</param>
+        /// <returns>Projected map coordinates.</returns>
+        public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
 	{
 		T lon = geoPoint.Longitude;
 		T lat = geoPoint.Latitude;
@@ -23,7 +35,12 @@ public class MillerProjection<T> : IProjectionTransformation<T>
 		return new ProjectedPoint<T>(lon, y, this);
 	}
 
-	public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
+        /// <summary>
+        /// Converts Miller cylindrical coordinates back to geographic coordinates.
+        /// </summary>
+        /// <param name="mapPoint">Projected map coordinates.</param>
+        /// <returns>Geographic coordinates in degrees.</returns>
+        public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
 	{
 		T x = mapPoint.X;
 		T y = mapPoint.Y;

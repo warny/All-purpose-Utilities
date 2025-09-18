@@ -4,13 +4,29 @@ using Utils.Mathematics;
 
 namespace Utils.Geography.Projections;
 
+/// <summary>
+/// Implements the Lambert azimuthal equal-area projection for spherical coordinates.
+/// </summary>
+/// <typeparam name="T">Floating-point type used for calculations.</typeparam>
 public class LambertAzimuthalEqualArea<T> : IProjectionTransformation<T>
-	where T : struct, IFloatingPointIeee754<T>
+        where T : struct, IFloatingPointIeee754<T>
 {
-	private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
-	private static T Sqrt2 { get; } = T.Sqrt(T.CreateChecked(2));
+        /// <summary>
+        /// Provides trigonometric helpers that operate on degree values.
+        /// </summary>
+        private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
-	public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
+        /// <summary>
+        /// Gets the precomputed square root of two used by the projection formula.
+        /// </summary>
+        private static T Sqrt2 { get; } = T.Sqrt(T.CreateChecked(2));
+
+        /// <summary>
+        /// Projects geographic coordinates onto the Lambert azimuthal equal-area plane.
+        /// </summary>
+        /// <param name="geoPoint">Geographic coordinates in degrees.</param>
+        /// <returns>Projected map coordinates.</returns>
+        public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
 	{
 		// lat, lon in degrees
 		T lat = geoPoint.Latitude;
@@ -33,7 +49,12 @@ public class LambertAzimuthalEqualArea<T> : IProjectionTransformation<T>
 		return new ProjectedPoint<T>(x, y, this);
 	}
 
-	public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
+        /// <summary>
+        /// Converts Lambert azimuthal equal-area coordinates back to geographic coordinates.
+        /// </summary>
+        /// <param name="mapPoint">Projected map coordinates.</param>
+        /// <returns>Geographic coordinates in degrees.</returns>
+        public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
 	{
 		T x = mapPoint.X;
 		T y = mapPoint.Y;
