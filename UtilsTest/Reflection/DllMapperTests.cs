@@ -16,8 +16,10 @@ public class User32 : LibraryMapper
 {
 	private delegate uint GetTempPathDelegate(uint nBufferLength, [Out] StringBuilder lpBuffer);
 
+#pragma warning disable CS0649, IDE0044
 	[External("GetTempPathA")]
 	private GetTempPathDelegate __GetTempPath;
+#pragma warning restore CS0649, IDE0044
 
 	public uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer) => __GetTempPath(nBufferLength, lpBuffer);
 }
