@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks.Dataflow;
 using Utils.Arrays;
-using Utils.Collections;
 
 namespace Utils.Objects;
 
@@ -17,8 +10,6 @@ namespace Utils.Objects;
 /// </summary>
 public readonly struct Bytes :
 	IReadOnlyList<byte>,
-	IReadOnlyCollection<byte>,
-	IEnumerable<byte>,
 	ICloneable,
 	IEquatable<Bytes>,
 	IEquatable<byte[]>,
@@ -27,8 +18,6 @@ public readonly struct Bytes :
 	IComparable,
 	IComparisonOperators<Bytes, Bytes, bool>,
 	IComparisonOperators<Bytes, byte[], bool>,
-	IEqualityOperators<Bytes, Bytes, bool>,
-	IEqualityOperators<Bytes, byte[], bool>,
 	IAdditionOperators<Bytes, Bytes, Bytes>,
 	IAdditionOperators<Bytes, byte[], Bytes>
 {
@@ -240,15 +229,12 @@ public readonly struct Bytes :
 	/// <param name="obj">An object to compare, which can be <see cref="Bytes"/> or <see cref="T:byte[]"/>.</param>
 	/// <returns>A value indicating the relative order of the objects.</returns>
 	/// <exception cref="InvalidOperationException">If <paramref name="obj"/> is not a valid type.</exception>
-	public int CompareTo(object obj)
+	public int CompareTo(object obj) => obj switch
 	{
-		return obj switch
-		{
-			Bytes b => CompareTo(b),
-			byte[] arr => CompareTo(arr),
-			_ => throw new InvalidOperationException($"Cannot compare {nameof(Bytes)} with this object.")
-		};
-	}
+		Bytes b => CompareTo(b),
+		byte[] arr => CompareTo(arr),
+		_ => throw new InvalidOperationException($"Cannot compare {nameof(Bytes)} with this object.")
+	};
 
 	/// <summary>
 	/// Compares the current <see cref="Bytes"/> with another <see cref="Bytes"/>.
@@ -259,10 +245,7 @@ public readonly struct Bytes :
 	/// 0 if they are equal, less than 0 if this is less than <paramref name="other"/>,
 	/// and greater than 0 if this is greater.
 	/// </returns>
-	public int CompareTo(Bytes other)
-	{
-		return _comparer.Compare(_innerBytes, other._innerBytes);
-	}
+	public int CompareTo(Bytes other) => _comparer.Compare(_innerBytes, other._innerBytes);
 
 	/// <summary>
 	/// Compares the current <see cref="Bytes"/> with a <see cref="byte"/> array.
@@ -327,7 +310,7 @@ public readonly struct Bytes :
 	/// <param name="length">Number of bytes to write. If null, writes as many as possible.</param>
 	public void CopyTo(Stream s, int index, int? length = null)
 	{
-		if (s is null) throw new ArgumentNullException(nameof(s));
+		ArgumentNullException.ThrowIfNull(s);
 
 		int actualLength = length ?? Count;
 		if (index < 0 || index > Count || index + actualLength > Count)
@@ -413,50 +396,35 @@ public static class BytesExtensions
 	/// </summary>
 	/// <param name="byteArray">The byte array to wrap in a <see cref="Bytes"/>.</param>
 	/// <returns>A <see cref="Bytes"/> referencing the exact array.</returns>
-	public static Bytes AsBytes(this byte[] byteArray)
-	{
-		return byteArray is not null ? new Bytes(byteArray) : Bytes.Empty;
-	}
+	public static Bytes AsBytes(this byte[] byteArray) => byteArray is not null ? new Bytes(byteArray) : Bytes.Empty;
 
 	/// <summary>
 	/// Concatenates all the byte arrays into a single <see cref="Bytes"/> instance.
 	/// </summary>
 	/// <param name="byteArrays">A collection of byte arrays to join.</param>
 	/// <returns>A <see cref="Bytes"/> that contains all data from <paramref name="byteArrays"/>.</returns>
-	public static Bytes Join(IEnumerable<byte[]> byteArrays)
-	{
-		return Join(byteArrays?.ToArray() ?? []);
-	}
+	public static Bytes Join(IEnumerable<byte[]> byteArrays) => Join(byteArrays?.ToArray() ?? []);
 
 	/// <summary>
 	/// Concatenates all the byte arrays into a single <see cref="Bytes"/> instance.
 	/// </summary>
 	/// <param name="byteArrays">A list of byte arrays to join.</param>
 	/// <returns>A <see cref="Bytes"/> that contains all data from <paramref name="byteArrays"/>.</returns>
-	public static Bytes Join(params byte[][] byteArrays)
-	{
-		return new Bytes(byteArrays);
-	}
+	public static Bytes Join(params byte[][] byteArrays) => new Bytes(byteArrays);
 
 	/// <summary>
 	/// Concatenates all the <see cref="Bytes"/> instances into a single <see cref="Bytes"/>.
 	/// </summary>
 	/// <param name="byteArrays">A collection of <see cref="Bytes"/> instances to join.</param>
 	/// <returns>A <see cref="Bytes"/> that contains all data.</returns>
-	public static Bytes Join(IEnumerable<Bytes> byteArrays)
-	{
-		return Join(byteArrays?.ToArray() ?? []);
-	}
+	public static Bytes Join(IEnumerable<Bytes> byteArrays) => Join(byteArrays?.ToArray() ?? []);
 
 	/// <summary>
 	/// Concatenates all the <see cref="Bytes"/> instances into a single <see cref="Bytes"/>.
 	/// </summary>
 	/// <param name="byteArrays">A list of <see cref="Bytes"/> objects to join.</param>
 	/// <returns>A <see cref="Bytes"/> that contains all data.</returns>
-	public static Bytes Join(params Bytes[] byteArrays)
-	{
-		return new Bytes(byteArrays);
-	}
+	public static Bytes Join(params Bytes[] byteArrays) => new Bytes(byteArrays);
 
 	/// <summary>
 	/// Concatenates multiple sequences of bytes into a single <see cref="Bytes"/> instance.
