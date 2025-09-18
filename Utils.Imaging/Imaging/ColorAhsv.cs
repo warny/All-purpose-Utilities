@@ -14,8 +14,15 @@ namespace Utils.Imaging
                 IEquatable<ColorAhsv>,
                 IEqualityOperators<ColorAhsv, ColorAhsv, bool>
 	{
-		public static double MinValue { get; } = 0.0;
-		public static double MaxValue { get; } = 1.0;
+                /// <summary>
+                /// Lower bound accepted for HSV components expressed as <see cref="double"/> values.
+                /// </summary>
+                public static double MinValue { get; } = 0.0;
+
+                /// <summary>
+                /// Upper bound accepted for HSV components expressed as <see cref="double"/> values.
+                /// </summary>
+                public static double MaxValue { get; } = 1.0;
 
 		private double alpha;
 		private double hue;
@@ -112,9 +119,9 @@ namespace Utils.Imaging
 		}
 
                 /// <summary>
-                /// Initializes a new instance from an ARGB color.
+                /// Initializes a new instance from the specified ARGB color.
                 /// </summary>
-                /// <param name="color">Source color.</param>
+                /// <param name="color">Source color converted into HSV space.</param>
                 public ColorAhsv(ColorArgb color)
                 {
                         ColorAhsv tmp = FromArgbColor(color);
@@ -124,11 +131,38 @@ namespace Utils.Imaging
                         value = tmp.value;
                 }
 
-		public static implicit operator ColorAhsv(ColorArgb color) => new ColorAhsv(color);
-		public static implicit operator ColorAhsv(ColorAhsv32 color) => FromColorAshv<ColorAhsv32, byte>(color);
-		public static implicit operator ColorAhsv(ColorAhsv64 color) => FromColorAshv<ColorAhsv64, ushort>(color);
+                /// <summary>
+                /// Converts an ARGB color into an HSV representation.
+                /// </summary>
+                /// <param name="color">Source color expressed with floating-point components.</param>
+                /// <returns>The corresponding HSV color.</returns>
+                public static implicit operator ColorAhsv(ColorArgb color) => new ColorAhsv(color);
 
-		public override string ToString() => $"a:{alpha} h:{hue} s:{saturation} v:{value}";
+                /// <summary>
+                /// Converts an 8-bit HSV color to the double-precision representation.
+                /// </summary>
+                /// <param name="color">Source HSV color.</param>
+                /// <returns>The converted color.</returns>
+                public static implicit operator ColorAhsv(ColorAhsv32 color) => FromColorAshv<ColorAhsv32, byte>(color);
+
+                /// <summary>
+                /// Converts a 16-bit HSV color to the double-precision representation.
+                /// </summary>
+                /// <param name="color">Source HSV color.</param>
+                /// <returns>The converted color.</returns>
+                public static implicit operator ColorAhsv(ColorAhsv64 color) => FromColorAshv<ColorAhsv64, ushort>(color);
+
+                /// <summary>
+                /// Returns a textual representation of the HSV components.
+                /// </summary>
+                /// <returns>A string describing the alpha, hue, saturation, and value.</returns>
+                public override string ToString() => $"a:{alpha} h:{hue} s:{saturation} v:{value}";
+
+                /// <summary>
+                /// Converts an ARGB color into the HSV representation.
+                /// </summary>
+                /// <param name="color">Source color expressed with floating-point components.</param>
+                /// <returns>A new HSV color containing the converted values.</returns>
                 public static ColorAhsv FromArgbColor(ColorArgb color)
                 {
                         double min = Math.Min(color.Red, Math.Min(color.Green, color.Blue));
