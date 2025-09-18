@@ -1,6 +1,9 @@
 ﻿
 namespace Utils.Objects;
 
+/// <summary>
+/// Provides helper methods for trimming and slicing <see cref="ReadOnlySpan{T}"/> instances.
+/// </summary>
 public static class SpanExtensions
 {
     /// <summary>

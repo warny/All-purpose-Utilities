@@ -7,10 +7,28 @@ namespace Utils.Range;
 /// </summary>
 public class DoubleRanges : Ranges<double>
 {
-	public DoubleRanges() : base() { }
-	public DoubleRanges(Ranges<double> ranges) : base(ranges) { }
-	public DoubleRanges(params Range<double>[] ranges) : base(ranges) { }
-	public DoubleRanges(IEnumerable<Range<double>> ranges) : base(ranges) { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DoubleRanges"/> class with no ranges.
+    /// </summary>
+    public DoubleRanges() : base() { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DoubleRanges"/> class by copying an existing set of ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to copy into this collection.</param>
+    public DoubleRanges(Ranges<double> ranges) : base(ranges) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DoubleRanges"/> class with the specified ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public DoubleRanges(params Range<double>[] ranges) : base(ranges) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DoubleRanges"/> class with ranges provided as an enumerable collection.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public DoubleRanges(IEnumerable<Range<double>> ranges) : base(ranges) { }
 
 	/// <summary>
 	/// Parses a string representation of ranges into a DoubleRanges object using the current culture.
@@ -77,10 +95,28 @@ public class DoubleRanges : Ranges<double>
 /// </summary>
 public class SingleRanges : Ranges<float>
 {
-	public SingleRanges() : base() { }
-	public SingleRanges(Ranges<float> ranges) : base(ranges) { }
-	public SingleRanges(params Range<float>[] ranges) : base(ranges) { }
-	public SingleRanges(IEnumerable<Range<float>> ranges) : base(ranges) { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SingleRanges"/> class with no ranges.
+    /// </summary>
+    public SingleRanges() : base() { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SingleRanges"/> class by copying existing ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to copy into this collection.</param>
+    public SingleRanges(Ranges<float> ranges) : base(ranges) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SingleRanges"/> class with the provided ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public SingleRanges(params Range<float>[] ranges) : base(ranges) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SingleRanges"/> class with ranges supplied as an enumerable collection.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public SingleRanges(IEnumerable<Range<float>> ranges) : base(ranges) { }
 
 	/// <summary>
 	/// Parses a string representation of ranges into a SingleRanges object using the current culture.
@@ -147,10 +183,28 @@ public class SingleRanges : Ranges<float>
 /// </summary>
 public class DateTimeRanges : Ranges<DateTime>
 {
-	public DateTimeRanges() : base() { }
-	public DateTimeRanges(Ranges<DateTime> ranges) : base(ranges) { }
-	public DateTimeRanges(params Range<DateTime>[] ranges) : base(ranges) { }
-	public DateTimeRanges(IEnumerable<Range<DateTime>> ranges) : base(ranges) { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DateTimeRanges"/> class with no ranges.
+    /// </summary>
+    public DateTimeRanges() : base() { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DateTimeRanges"/> class by copying an existing set of ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to copy into this collection.</param>
+    public DateTimeRanges(Ranges<DateTime> ranges) : base(ranges) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DateTimeRanges"/> class with the specified ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public DateTimeRanges(params Range<DateTime>[] ranges) : base(ranges) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DateTimeRanges"/> class with ranges provided as an enumerable collection.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public DateTimeRanges(IEnumerable<Range<DateTime>> ranges) : base(ranges) { }
 
 	/// <summary>
 	/// Parses a string representation of ranges into a DateTimeRanges object using the current culture.

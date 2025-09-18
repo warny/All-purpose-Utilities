@@ -123,21 +123,29 @@ public interface IReadOnlyDictionaryMap<K, V>
 /// <summary>
 /// Default implementation of <see cref="IReadOnlyDictionaryMap{K, V}"/> that relies on delegate accessors.
 /// </summary>
+/// <typeparam name="K">Type of the keys used by the dictionary.</typeparam>
+/// <typeparam name="V">Type of the values stored in the dictionary.</typeparam>
 public class ReadOnlyDictionaryMap<K, V> : IReadOnlyDictionaryMap<K, V>
 {
-	private readonly Func<K, V> getValue;
+    private readonly Func<K, V> getValue;
     private readonly Func<IEnumerable<KeyValuePair<K, V>>> getItems;
     private readonly Func<int> getCount;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReadOnlyDictionaryMap{K, V}"/> class using delegate-based accessors.
+    /// </summary>
+    /// <param name="getValue">Delegate that retrieves a value for a given key.</param>
+    /// <param name="getItems">Delegate that returns all key/value pairs.</param>
+    /// <param name="getCount">Delegate that provides the item count when available.</param>
     public ReadOnlyDictionaryMap(
         Func<K, V> getValue,
         Func<IEnumerable<KeyValuePair<K, V>>> getItems,
         Func<int> getCount
     )
     {
-		this.getValue = getValue.Arg().MustNotBeNull();
-		this.getItems = getItems.Arg().MustNotBeNull();
-		this.getCount = getCount;
+        this.getValue = getValue.Arg().MustNotBeNull();
+        this.getItems = getItems.Arg().MustNotBeNull();
+        this.getCount = getCount;
     }
 
     /// <inheritdoc />

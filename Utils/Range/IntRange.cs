@@ -736,11 +736,27 @@ namespace Utils.Range
 			}
 		}
 
-		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+                IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-		public override string ToString() => ToString(null, null);
-		public string ToString(string? format) => ToString(format, null);
-		public string ToString(IFormatProvider formatProvider) => ToString(null, formatProvider);
+                /// <summary>
+                /// Converts the current <see cref="IntRange{T}"/> to its string representation using default formatting.
+                /// </summary>
+                /// <returns>A string that represents the current range.</returns>
+                public override string ToString() => ToString(null, null);
+
+                /// <summary>
+                /// Converts the current <see cref="IntRange{T}"/> to its string representation using the provided format string.
+                /// </summary>
+                /// <param name="format">Custom format applied to the numeric boundaries.</param>
+                /// <returns>A string that represents the current range.</returns>
+                public string ToString(string? format) => ToString(format, null);
+
+                /// <summary>
+                /// Converts the current <see cref="IntRange{T}"/> to its string representation using the provided format provider.
+                /// </summary>
+                /// <param name="formatProvider">Culture used when formatting the numeric boundaries.</param>
+                /// <returns>A string that represents the current range.</returns>
+                public string ToString(IFormatProvider formatProvider) => ToString(null, formatProvider);
 
 		/// <summary>
 		/// Joins each range with the current culture's list separator (or the formatProvider's culture).
