@@ -5,8 +5,14 @@ using static Utils.Expressions.ExpressionBuilders.NewBuilder;
 
 namespace Utils.Expressions.Builders;
 
+/// <summary>
+/// Provides an <see cref="IBuilder"/> implementation capable of parsing C-style syntax.
+/// </summary>
 public class CStyleBuilder : IBuilder
 {
+    /// <summary>
+    /// Gets the collection of language symbols that can be recognised by this builder.
+    /// </summary>
     public IEnumerable<string> Symbols
         => new string[] { InstructionSeparator.ToString(), ListSeparator.ToString() }
             .Union(SpaceSymbols.Select(s => s.ToString()))
@@ -20,12 +26,29 @@ public class CStyleBuilder : IBuilder
 
 
 
+    /// <summary>
+    /// Gets the character separating instructions in the parsed text.
+    /// </summary>
     public char InstructionSeparator { get; } = ';';
+
+    /// <summary>
+    /// Gets the character separating list items in the parsed text.
+    /// </summary>
     public char ListSeparator { get; } = ',';
 
+    /// <summary>
+    /// Gets the characters treated as whitespace by the parser.
+    /// </summary>
     public char[] SpaceSymbols { get; } = [' ', '\t', '\r', '\n'];
+
+    /// <summary>
+    /// Gets additional multi-character symbols recognised by the builder.
+    /// </summary>
     public string[] AdditionalSymbols { get; } = ["=>"];
 
+    /// <summary>
+    /// Gets the ordered list of token readers used to scan the source text.
+    /// </summary>
     public IEnumerable<TryReadToken> TokenReaders { get; } =
     [
         TryReadInterpolatedString1,
@@ -40,6 +63,9 @@ public class CStyleBuilder : IBuilder
         TryReadString3,
     ];
 
+    /// <summary>
+    /// Gets the ordered list of transformers applied to normalise raw string tokens.
+    /// </summary>
     public IEnumerable<StringTransformer> StringTransformers { get; } =
     [
         StringTransformInterpolated1,
@@ -50,8 +76,14 @@ public class CStyleBuilder : IBuilder
         StringTransform3,
     ];
 
+    /// <summary>
+    /// Gets the builder responsible for constructing numeric constants.
+    /// </summary>
     public IStartExpressionBuilder NumberBuilder { get; } = new NumberConstantBuilder();
 
+    /// <summary>
+    /// Gets the mapping between numeric prefixes and their respective bases.
+    /// </summary>
     public IReadOnlyDictionary<string, int> IntegerPrefixes { get; } = new Dictionary<string, int>()
     {
         { "0x", 16 },
@@ -59,99 +91,114 @@ public class CStyleBuilder : IBuilder
         { "0o", 8 },
     };
 
-    public IReadOnlyDictionary<string, IStartExpressionBuilder> StartExpressionBuilders { get; } = new Dictionary<string, IStartExpressionBuilder>()
-    {
-        { "null", new NullBuilder() },
-        { "true", new TrueBuilder() },
-        { "false", new FalseBuilder() },
-        { "sizeof", new SizeOfBuilder() },
-        { "typeof", new TypeofBuilder() },
-        { "new", new NewBuilder() },
+    /// <summary>
+    /// Gets the builders used to interpret tokens that can begin an expression.
+    /// </summary>
+    public IReadOnlyDictionary<string, IStartExpressionBuilder> StartExpressionBuilders { get; } =
+        new Dictionary<string, IStartExpressionBuilder>()
+        {
+            { "null", new NullBuilder() },
+            { "true", new TrueBuilder() },
+            { "false", new FalseBuilder() },
+            { "sizeof", new SizeOfBuilder() },
+            { "typeof", new TypeofBuilder() },
+            { "new", new NewBuilder() },
 
-        { "if", new IfBuilder("else") },
-        { "while", new WhileBuilder() },
-        { "for", new ForBuilder() },
-        { "foreach", new ForEachBuilder() },
-        { "switch", new SwitchBuilder() },
-        { "break", new BreakBuilder() },
-        { "continue", new ContinueBuilder() },
-        { "return", new ReturnBuilder() },
+            { "if", new IfBuilder("else") },
+            { "while", new WhileBuilder() },
+            { "for", new ForBuilder() },
+            { "foreach", new ForEachBuilder() },
+            { "switch", new SwitchBuilder() },
+            { "break", new BreakBuilder() },
+            { "continue", new ContinueBuilder() },
+            { "return", new ReturnBuilder() },
 
-        { "+", new ReadNextExpressionBuilder() }, // ignore + sign and read the next expression
-        { "-", new UnaryMinusBuilder() },
-        { "!", new UnaryOperandBuilder(Expression.Not) },
-        { "~", new UnaryOperandBuilder(Expression.Not) },
+            { "+", new ReadNextExpressionBuilder() }, // ignore + sign and read the next expression
+            { "-", new UnaryMinusBuilder() },
+            { "!", new UnaryOperandBuilder(Expression.Not) },
+            { "~", new UnaryOperandBuilder(Expression.Not) },
 
-        { "++", new UnaryOperandBuilder(Expression.PreIncrementAssign) },
-        { "--", new UnaryOperandBuilder(Expression.PreDecrementAssign) },
+            { "++", new UnaryOperandBuilder(Expression.PreIncrementAssign) },
+            { "--", new UnaryOperandBuilder(Expression.PreDecrementAssign) },
 
-        { "{", new BlockBuilder("}", ";") },
-        { "(", new ParenthesisBuilder(")", ",") },
+            { "{", new BlockBuilder("}", ";") },
+            { "(", new ParenthesisBuilder(")", ",") },
 
-        { ".", new ThrowParseException() },
-        { ",", new ReadNextExpressionBuilder() },
+            { ".", new ThrowParseException() },
+            { ",", new ReadNextExpressionBuilder() },
 
-    };
+        };
+
+    /// <summary>
+    /// Gets the builder used when no specific unary builder matches the token.
+    /// </summary>
     public IStartExpressionBuilder FallbackUnaryBuilder { get; } = new DefaultUnaryBuilder();
 
-    public IReadOnlyDictionary<string, IFollowUpExpressionBuilder> FollowUpExpressionBuilder { get; } = new Dictionary<string, IFollowUpExpressionBuilder>()
-    {
-        { "[", new BracketBuilder() },
-        { "(", new RightParenthesisBuilder() },
+    /// <summary>
+    /// Gets the builders responsible for parsing tokens that follow an initial expression.
+    /// </summary>
+    public IReadOnlyDictionary<string, IFollowUpExpressionBuilder> FollowUpExpressionBuilder { get; } =
+        new Dictionary<string, IFollowUpExpressionBuilder>()
+        {
+            { "[", new BracketBuilder() },
+            { "(", new RightParenthesisBuilder() },
 
-        { "+", new PlusOperatorBuilder() },
-        { "-", new OperatorBuilder(Expression.Subtract, true) },
-        { "*", new OperatorBuilder(Expression.Multiply, true) },
-        { "/", new OperatorBuilder(Expression.Divide, true) },
-        { "%", new OperatorBuilder(Expression.Modulo, true) },
-        { "**", new OperatorBuilder(Expression.Power, true) },
+            { "+", new PlusOperatorBuilder() },
+            { "-", new OperatorBuilder(Expression.Subtract, true) },
+            { "*", new OperatorBuilder(Expression.Multiply, true) },
+            { "/", new OperatorBuilder(Expression.Divide, true) },
+            { "%", new OperatorBuilder(Expression.Modulo, true) },
+            { "**", new OperatorBuilder(Expression.Power, true) },
 
-        { "++", new PostOperationBuilder(Expression.PostIncrementAssign) },
-        { "--", new PostOperationBuilder(Expression.PostDecrementAssign) },
+            { "++", new PostOperationBuilder(Expression.PostIncrementAssign) },
+            { "--", new PostOperationBuilder(Expression.PostDecrementAssign) },
 
-        { "<<", new OperatorBuilder(Expression.LeftShift, false) },
-        { ">>", new OperatorBuilder(Expression.RightShift, false) },
+            { "<<", new OperatorBuilder(Expression.LeftShift, false) },
+            { ">>", new OperatorBuilder(Expression.RightShift, false) },
 
-        { "<", new OperatorBuilder(Expression.LessThan, false) },
-        { ">", new OperatorBuilder(Expression.GreaterThan, false) },
-        { "<=", new OperatorBuilder(Expression.LessThanOrEqual, false) },
-        { ">=", new OperatorBuilder(Expression.GreaterThanOrEqual, false) },
-        { "==", new OperatorBuilder(Expression.Equal, false) },
-        { "!=", new OperatorBuilder(Expression.Equal, false) },
+            { "<", new OperatorBuilder(Expression.LessThan, false) },
+            { ">", new OperatorBuilder(Expression.GreaterThan, false) },
+            { "<=", new OperatorBuilder(Expression.LessThanOrEqual, false) },
+            { ">=", new OperatorBuilder(Expression.GreaterThanOrEqual, false) },
+            { "==", new OperatorBuilder(Expression.Equal, false) },
+            { "!=", new OperatorBuilder(Expression.Equal, false) },
 
-        { "^", new OperatorBuilder(Expression.ExclusiveOr, false) },
-        { "&", new OperatorBuilder(Expression.And, false) },
-        { "|", new OperatorBuilder(Expression.Or, false) },
-        { "&&", new OperatorBuilder(Expression.AndAlso, false) },
-        { "||", new OperatorBuilder(Expression.OrElse, false) },
+            { "^", new OperatorBuilder(Expression.ExclusiveOr, false) },
+            { "&", new OperatorBuilder(Expression.And, false) },
+            { "|", new OperatorBuilder(Expression.Or, false) },
+            { "&&", new OperatorBuilder(Expression.AndAlso, false) },
+            { "||", new OperatorBuilder(Expression.OrElse, false) },
 
-        { "??", new OperatorBuilder(Expression.Coalesce, false) },
+            { "??", new OperatorBuilder(Expression.Coalesce, false) },
 
-        { ".", new MemberBuilder() },
-        { "?.", new NullOrMemberBuilder() },
+            { ".", new MemberBuilder() },
+            { "?.", new NullOrMemberBuilder() },
 
-        { "is", new TypeMatchBuilder() },
-        { "as", new TypeCastBuilder() },
+            { "is", new TypeMatchBuilder() },
+            { "as", new TypeCastBuilder() },
 
-        { "?", new ConditionalBuilder(":") },
+            { "?", new ConditionalBuilder(":") },
 
-        { "=", new AssignationBuilder(Expression.Assign) },
+            { "=", new AssignationBuilder(Expression.Assign) },
 
-        { "+=", new AddAssignationBuilder() },
-        { "-=", new AssignationBuilder(Expression.SubtractAssign) },
-        { "*=", new AssignationBuilder(Expression.MultiplyAssign) },
-        { "/=", new AssignationBuilder(Expression.DivideAssign) },
-        { "%=", new AssignationBuilder(Expression.ModuloAssign) },
-        { "**=", new AssignationBuilder(Expression.PowerAssign) },
+            { "+=", new AddAssignationBuilder() },
+            { "-=", new AssignationBuilder(Expression.SubtractAssign) },
+            { "*=", new AssignationBuilder(Expression.MultiplyAssign) },
+            { "/=", new AssignationBuilder(Expression.DivideAssign) },
+            { "%=", new AssignationBuilder(Expression.ModuloAssign) },
+            { "**=", new AssignationBuilder(Expression.PowerAssign) },
 
-        { "<<=", new OperatorBuilder(Expression.LeftShiftAssign, false) },
-        { ">>=", new OperatorBuilder(Expression.RightShiftAssign, false) },
+            { "<<=", new OperatorBuilder(Expression.LeftShiftAssign, false) },
+            { ">>=", new OperatorBuilder(Expression.RightShiftAssign, false) },
 
-        { "^=", new AssignationBuilder(Expression.ExclusiveOrAssign) },
-        { "|=", new AssignationBuilder(Expression.OrAssign) },
-        { "&=", new AssignationBuilder(Expression.AndAssign) },
-    };
+            { "^=", new AssignationBuilder(Expression.ExclusiveOrAssign) },
+            { "|=", new AssignationBuilder(Expression.OrAssign) },
+            { "&=", new AssignationBuilder(Expression.AndAssign) },
+        };
 
+    /// <summary>
+    /// Gets the builder invoked when no binary or ternary builder handles the token.
+    /// </summary>
     public IFollowUpExpressionBuilder FallbackBinaryOrTernaryBuilder { get; } = new ThrowParseException();
 
 
@@ -276,6 +323,13 @@ public class CStyleBuilder : IBuilder
 
     }
 
+    /// <summary>
+    /// Attempts to read a character literal starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when a character literal is recognised.</returns>
     private static bool TryReadChar(string content, int index, out int length)
     {
         length = 0;
@@ -295,6 +349,13 @@ public class CStyleBuilder : IBuilder
         return true;
     }
 
+    /// <summary>
+    /// Attempts to read a standard quoted string starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when a quoted string is recognised.</returns>
     private static bool TryReadString1(string content, int index, out int length)
     {
         length = 0;
@@ -317,6 +378,13 @@ public class CStyleBuilder : IBuilder
         throw new ParseNoEndException("\'", index);
     }
 
+    /// <summary>
+    /// Attempts to read a verbatim string starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when a verbatim string is recognised.</returns>
     private static bool TryReadString2(string content, int index, out int length)
     {
         length = 0;
@@ -339,6 +407,13 @@ public class CStyleBuilder : IBuilder
         throw new ParseNoEndException("\'", index);
     }
 
+    /// <summary>
+    /// Attempts to read a triple-quoted string starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when a triple-quoted string is recognised.</returns>
     private static bool TryReadString3(string content, int index, out int length)
     {
         length = 0;
@@ -366,6 +441,13 @@ public class CStyleBuilder : IBuilder
         throw new ParseNoEndException(prefix, index);
     }
 
+    /// <summary>
+    /// Attempts to read an interpolated string with escaped content starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when an interpolated string is recognised.</returns>
     private static bool TryReadInterpolatedString1(string content, int index, out int length)
     {
         length = 0;
@@ -373,6 +455,13 @@ public class CStyleBuilder : IBuilder
         return TryReadString1(content, index + 1, out length) && (length += 1) > 0;
     }
 
+    /// <summary>
+    /// Attempts to read a verbatim interpolated string starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when an interpolated verbatim string is recognised.</returns>
     private static bool TryReadInterpolatedString2(string content, int index, out int length)
     {
         length = 0;
@@ -388,6 +477,13 @@ public class CStyleBuilder : IBuilder
         return false;
     }
 
+    /// <summary>
+    /// Attempts to read a triple-quoted interpolated string starting from <paramref name="index"/>.
+    /// </summary>
+    /// <param name="content">The input code.</param>
+    /// <param name="index">The index of the first character to analyse.</param>
+    /// <param name="length">When successful, the length of the matched token.</param>
+    /// <returns><see langword="true"/> when a triple-quoted interpolated string is recognised.</returns>
     private static bool TryReadInterpolatedString3(string content, int index, out int length)
     {
         length = 0;
@@ -396,6 +492,12 @@ public class CStyleBuilder : IBuilder
     }
 
 
+    /// <summary>
+    /// Normalises escaped string literals by decoding escape sequences.
+    /// </summary>
+    /// <param name="token">The token to transform.</param>
+    /// <param name="result">The decoded string.</param>
+    /// <returns><see langword="true"/> when the token represents an escaped string.</returns>
     private static bool StringTransform1(string token, out string result)
     {
         result = null;
@@ -422,6 +524,12 @@ public class CStyleBuilder : IBuilder
         return true;
     }
 
+    /// <summary>
+    /// Normalises verbatim string literals by collapsing doubled quotes.
+    /// </summary>
+    /// <param name="token">The token to transform.</param>
+    /// <param name="result">The decoded string.</param>
+    /// <returns><see langword="true"/> when the token represents a verbatim string.</returns>
     private static bool StringTransform2(string token, out string result)
     {
         result = null;
@@ -431,6 +539,12 @@ public class CStyleBuilder : IBuilder
         return true;
     }
 
+    /// <summary>
+    /// Normalises triple-quoted strings by trimming the surrounding quotes.
+    /// </summary>
+    /// <param name="token">The token to transform.</param>
+    /// <param name="result">The decoded string.</param>
+    /// <returns><see langword="true"/> when the token represents a triple-quoted string.</returns>
     private static bool StringTransform3(string token, out string result)
     {
         result = null;
@@ -439,6 +553,12 @@ public class CStyleBuilder : IBuilder
         return true;
     }
 
+    /// <summary>
+    /// Normalises interpolated strings by delegating to the escaped string transformer.
+    /// </summary>
+    /// <param name="token">The token to transform.</param>
+    /// <param name="result">The decoded string.</param>
+    /// <returns><see langword="true"/> when the token represents an interpolated escaped string.</returns>
     private static bool StringTransformInterpolated1(string token, out string result)
     {
         result = null;
@@ -446,6 +566,12 @@ public class CStyleBuilder : IBuilder
         return StringTransform1(token[1..], out result);
     }
 
+    /// <summary>
+    /// Normalises verbatim interpolated strings while preserving their content ordering.
+    /// </summary>
+    /// <param name="token">The token to transform.</param>
+    /// <param name="result">The decoded string.</param>
+    /// <returns><see langword="true"/> when the token represents a verbatim interpolated string.</returns>
     private static bool StringTransformInterpolated2(string token, out string result)
     {
         result = null;
@@ -457,6 +583,12 @@ public class CStyleBuilder : IBuilder
         return false;
     }
 
+    /// <summary>
+    /// Normalises triple-quoted interpolated strings by removing the interpolation prefix.
+    /// </summary>
+    /// <param name="token">The token to transform.</param>
+    /// <param name="result">The decoded string.</param>
+    /// <returns><see langword="true"/> when the token represents a triple-quoted interpolated string.</returns>
     private static bool StringTransformInterpolated3(string token, out string result)
     {
         result = null;
