@@ -291,9 +291,12 @@ public static class ArrayUtils
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="start"/> or <paramref name="length"/> is invalid.</exception>
 	public static T[] Copy<T>(this T[] array, int start, int length)
 	{
-		ArgumentNullException.ThrowIfNull(array);
-		if (start < 0 || length < 0 || start + length > array.Length)
-			throw new ArgumentOutOfRangeException("The slice boundaries are outside the array.");
+                ArgumentNullException.ThrowIfNull(array);
+                if (start < 0 || start > array.Length)
+                        throw new ArgumentOutOfRangeException(nameof(start), start, "Start index must be within the array boundaries.");
+
+                if (length < 0 || length > array.Length - start)
+                        throw new ArgumentOutOfRangeException(nameof(length), length, "Length must be non-negative and cannot extend past the end of the array.");
 
 		T[] result = new T[length];
 		Array.Copy(array, start, result, 0, length);
