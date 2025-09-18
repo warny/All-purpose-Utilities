@@ -132,8 +132,11 @@ public class StringDifference : IReadOnlyList<StringChange>
 			changes.Add(new StringChange(currentStatus, change.ToString()));
 	}
 
-	// Indexer to access a specific change by its index.
-	public StringChange this[int index] => changes[index];
+        /// <summary>
+        /// Gets the change at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the change to retrieve.</param>
+        public StringChange this[int index] => changes[index];
 
 	/// <summary>
 	/// Enumerator for iterating through the list of changes.
@@ -151,9 +154,20 @@ public class StringDifference : IReadOnlyList<StringChange>
 /// </summary>
 public enum StringComparisonStatus
 {
-	Removed = -1,
-	Unchanged = 0,
-	Added = 1
+        /// <summary>
+        /// Indicates that characters were removed from the original string.
+        /// </summary>
+        Removed = -1,
+
+        /// <summary>
+        /// Indicates that characters were unchanged between the compared strings.
+        /// </summary>
+        Unchanged = 0,
+
+        /// <summary>
+        /// Indicates that characters were added to produce the new string.
+        /// </summary>
+        Added = 1
 }
 
 /// <summary>

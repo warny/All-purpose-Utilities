@@ -99,11 +99,17 @@ public static class ReflectionEx
 		}
 	}
 
-	public static IEnumerable<Assembly> LoadAssemblies(string path, bool raiseError = false)
-	{
-		foreach (var file in PathUtils.EnumerateFiles(path))
-		{
-			Assembly assembly;
+        /// <summary>
+        /// Loads all assemblies located in the specified directory.
+        /// </summary>
+        /// <param name="path">The path that contains the assemblies to load.</param>
+        /// <param name="raiseError">True to rethrow load exceptions; false to ignore invalid assemblies.</param>
+        /// <returns>A sequence of assemblies loaded from the directory.</returns>
+        public static IEnumerable<Assembly> LoadAssemblies(string path, bool raiseError = false)
+        {
+                foreach (var file in PathUtils.EnumerateFiles(path))
+                {
+                        Assembly assembly;
 			try
 			{
 				assembly = Assembly.Load(file);
