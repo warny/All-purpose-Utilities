@@ -5,7 +5,12 @@ using System.Linq;
 
 namespace Utils.Files
 {
-	public static class PathUtils
+        /// <summary>
+        /// Provides helpers for enumerating directories and files when the path contains
+        /// wildcard segments. Each public method expands intermediate directories before
+        /// delegating the final segment to the requested enumeration API.
+        /// </summary>
+        public static class PathUtils
 	{
 		/// <summary>
 		/// Splits a full path into an absolute root (drive or UNC) and an ordered list of sub-path segments.

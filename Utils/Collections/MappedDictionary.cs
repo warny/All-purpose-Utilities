@@ -65,7 +65,10 @@ namespace Utils.Collections
 		{
 		}
 
-		public bool IsReadOnly => false;
+                /// <summary>
+                /// Gets a value indicating whether the dictionary is read-only (always <see langword="false"/>).
+                /// </summary>
+                public bool IsReadOnly => false;
 
 		// Explicit interface implementation for IDictionary.Keys
 		ICollection<K> IDictionary<K, V>.Keys => map.GetValues().Select(kv=>kv.Key).ToList();
@@ -129,14 +132,41 @@ namespace Utils.Collections
 	/// <summary>
 	/// Interface representing a modifiable map that supports dictionary operations.
 	/// </summary>
-	public interface IDictionaryMap<K, V> : IReadOnlyDictionaryMap<K, V>
-	{
-		bool Contains(KeyValuePair<K, V> kv);
-		void Add(K key, V value);
-		void Set(K key, V value);
-		bool Remove(K key);
-		void Clear();
-	}
+        public interface IDictionaryMap<K, V> : IReadOnlyDictionaryMap<K, V>
+        {
+                /// <summary>
+                /// Determines whether the dictionary contains the specified key-value pair.
+                /// </summary>
+                /// <param name="kv">The key-value pair to locate.</param>
+                /// <returns><see langword="true"/> if the pair is present; otherwise, <see langword="false"/>.</returns>
+                bool Contains(KeyValuePair<K, V> kv);
+
+                /// <summary>
+                /// Adds a new key-value pair to the dictionary.
+                /// </summary>
+                /// <param name="key">The key to add.</param>
+                /// <param name="value">The value associated with the key.</param>
+                void Add(K key, V value);
+
+                /// <summary>
+                /// Sets the value associated with the specified key.
+                /// </summary>
+                /// <param name="key">The key to update.</param>
+                /// <param name="value">The value to assign.</param>
+                void Set(K key, V value);
+
+                /// <summary>
+                /// Removes the entry that matches the specified key.
+                /// </summary>
+                /// <param name="key">The key of the entry to remove.</param>
+                /// <returns><see langword="true"/> if the key was removed; otherwise, <see langword="false"/>.</returns>
+                bool Remove(K key);
+
+                /// <summary>
+                /// Removes all entries from the dictionary.
+                /// </summary>
+                void Clear();
+        }
 
 	/// <summary>
 	/// Implementation of <see cref="IDictionaryMap{K, V}"/> that wraps custom handlers for dictionary operations.

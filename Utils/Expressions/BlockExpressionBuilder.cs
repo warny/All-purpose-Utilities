@@ -11,17 +11,28 @@ public class BlockExpressionBuilder
 	private readonly List<ParameterExpression> _variables;
 	private readonly List<Expression> _expressions;
 
-	public BlockExpressionBuilder()
-	{
-		_variables = [];
-		_expressions = [];
-	}
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlockExpressionBuilder"/> class
+        /// with no pre-declared variables or expressions.
+        /// </summary>
+        public BlockExpressionBuilder()
+        {
+                _variables = [];
+                _expressions = [];
+        }
 
-	public BlockExpressionBuilder(IEnumerable<ParameterExpression> variables, IEnumerable<Expression> expressions)
-	{
-		this._variables = [..variables.Arg().MustNotBeNull().Value];
-		this._expressions = [..expressions.Arg().MustNotBeNull().Value];
-	}
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlockExpressionBuilder"/> class
+        /// using pre-existing variables and expressions.
+        /// </summary>
+        /// <param name="variables">Variables that should be added to the block builder.</param>
+        /// <param name="expressions">Expressions that should initially populate the block.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="variables"/> or <paramref name="expressions"/> is <see langword="null"/>.</exception>
+        public BlockExpressionBuilder(IEnumerable<ParameterExpression> variables, IEnumerable<Expression> expressions)
+        {
+                this._variables = [..variables.Arg().MustNotBeNull().Value];
+                this._expressions = [..expressions.Arg().MustNotBeNull().Value];
+        }
 
 
 

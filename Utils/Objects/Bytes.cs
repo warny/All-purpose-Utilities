@@ -148,33 +148,173 @@ public readonly struct Bytes :
 	/// </summary>
 	public static implicit operator byte[](Bytes bytes) => [.. bytes];
 
-	public static bool operator ==(Bytes left, Bytes right) => left.Equals(right);
-	public static bool operator ==(Bytes left, byte[] right) => left.Equals(right);
-	public static bool operator ==(byte[] left, Bytes right) => right.Equals(left);
+        /// <summary>
+        /// Determines whether two <see cref="Bytes"/> instances represent identical sequences.
+        /// </summary>
+        /// <param name="left">The first byte sequence to compare.</param>
+        /// <param name="right">The second byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when both operands contain the same bytes.</returns>
+        public static bool operator ==(Bytes left, Bytes right) => left.Equals(right);
 
-	public static bool operator !=(Bytes left, Bytes right) => !left.Equals(right);
-	public static bool operator !=(Bytes left, byte[] right) => !left.Equals(right);
-	public static bool operator !=(byte[] left, Bytes right) => !right.Equals(left);
+        /// <summary>
+        /// Determines whether a <see cref="Bytes"/> instance equals a raw <see cref="byte"/> array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence to compare.</param>
+        /// <param name="right">The raw array to compare.</param>
+        /// <returns><see langword="true"/> when both operands contain the same bytes.</returns>
+        public static bool operator ==(Bytes left, byte[] right) => left.Equals(right);
 
-	public static bool operator >(Bytes left, Bytes right) => left.CompareTo(right) > 0;
-	public static bool operator >(Bytes left, byte[] right) => left.CompareTo(right) > 0;
-	public static bool operator >(byte[] left, Bytes right) => right.CompareTo(left) < 0;
+        /// <summary>
+        /// Determines whether a raw <see cref="byte"/> array equals a <see cref="Bytes"/> instance.
+        /// </summary>
+        /// <param name="left">The raw array to compare.</param>
+        /// <param name="right">The wrapped byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when both operands contain the same bytes.</returns>
+        public static bool operator ==(byte[] left, Bytes right) => right.Equals(left);
 
-	public static bool operator <(Bytes left, Bytes right) => left.CompareTo(right) < 0;
-	public static bool operator <(Bytes left, byte[] right) => left.CompareTo(right) < 0;
-	public static bool operator <(byte[] left, Bytes right) => right.CompareTo(left) > 0;
+        /// <summary>
+        /// Determines whether two <see cref="Bytes"/> instances do not represent identical sequences.
+        /// </summary>
+        /// <param name="left">The first byte sequence to compare.</param>
+        /// <param name="right">The second byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when operands differ.</returns>
+        public static bool operator !=(Bytes left, Bytes right) => !left.Equals(right);
 
-	public static bool operator >=(Bytes left, Bytes right) => left.CompareTo(right) >= 0;
-	public static bool operator >=(Bytes left, byte[] right) => left.CompareTo(right) >= 0;
-	public static bool operator >=(byte[] left, Bytes right) => right.CompareTo(left) <= 0;
+        /// <summary>
+        /// Determines whether a <see cref="Bytes"/> instance differs from a raw <see cref="byte"/> array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence to compare.</param>
+        /// <param name="right">The raw array to compare.</param>
+        /// <returns><see langword="true"/> when operands differ.</returns>
+        public static bool operator !=(Bytes left, byte[] right) => !left.Equals(right);
 
-	public static bool operator <=(Bytes left, Bytes right) => left.CompareTo(right) <= 0;
-	public static bool operator <=(Bytes left, byte[] right) => left.CompareTo(right) <= 0;
-	public static bool operator <=(byte[] left, Bytes right) => right.CompareTo(left) >= 0;
+        /// <summary>
+        /// Determines whether a raw <see cref="byte"/> array differs from a <see cref="Bytes"/> instance.
+        /// </summary>
+        /// <param name="left">The raw array to compare.</param>
+        /// <param name="right">The wrapped byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when operands differ.</returns>
+        public static bool operator !=(byte[] left, Bytes right) => !right.Equals(left);
 
-	public static Bytes operator +(Bytes left, Bytes right) => new Bytes(left, right);
-	public static Bytes operator +(Bytes left, byte[] right) => new Bytes(left._innerBytes, right);
-	public static Bytes operator +(byte[] left, Bytes right) => new Bytes(left, right._innerBytes);
+        /// <summary>
+        /// Determines whether one <see cref="Bytes"/> instance is lexicographically greater than another.
+        /// </summary>
+        /// <param name="left">The first byte sequence to compare.</param>
+        /// <param name="right">The second byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts after <paramref name="right"/>.</returns>
+        public static bool operator >(Bytes left, Bytes right) => left.CompareTo(right) > 0;
+
+        /// <summary>
+        /// Determines whether a <see cref="Bytes"/> instance is lexicographically greater than a raw array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence to compare.</param>
+        /// <param name="right">The raw array to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts after <paramref name="right"/>.</returns>
+        public static bool operator >(Bytes left, byte[] right) => left.CompareTo(right) > 0;
+
+        /// <summary>
+        /// Determines whether a raw <see cref="byte"/> array is lexicographically greater than a wrapped sequence.
+        /// </summary>
+        /// <param name="left">The raw array to compare.</param>
+        /// <param name="right">The wrapped byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts after <paramref name="right"/>.</returns>
+        public static bool operator >(byte[] left, Bytes right) => right.CompareTo(left) < 0;
+
+        /// <summary>
+        /// Determines whether one <see cref="Bytes"/> instance is lexicographically less than another.
+        /// </summary>
+        /// <param name="left">The first byte sequence to compare.</param>
+        /// <param name="right">The second byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts before <paramref name="right"/>.</returns>
+        public static bool operator <(Bytes left, Bytes right) => left.CompareTo(right) < 0;
+
+        /// <summary>
+        /// Determines whether a <see cref="Bytes"/> instance is lexicographically less than a raw array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence to compare.</param>
+        /// <param name="right">The raw array to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts before <paramref name="right"/>.</returns>
+        public static bool operator <(Bytes left, byte[] right) => left.CompareTo(right) < 0;
+
+        /// <summary>
+        /// Determines whether a raw <see cref="byte"/> array is lexicographically less than a wrapped sequence.
+        /// </summary>
+        /// <param name="left">The raw array to compare.</param>
+        /// <param name="right">The wrapped byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts before <paramref name="right"/>.</returns>
+        public static bool operator <(byte[] left, Bytes right) => right.CompareTo(left) > 0;
+
+        /// <summary>
+        /// Determines whether one <see cref="Bytes"/> instance is lexicographically greater than or equal to another.
+        /// </summary>
+        /// <param name="left">The first byte sequence to compare.</param>
+        /// <param name="right">The second byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts after or equals <paramref name="right"/>.</returns>
+        public static bool operator >=(Bytes left, Bytes right) => left.CompareTo(right) >= 0;
+
+        /// <summary>
+        /// Determines whether a <see cref="Bytes"/> instance is lexicographically greater than or equal to a raw array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence to compare.</param>
+        /// <param name="right">The raw array to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts after or equals <paramref name="right"/>.</returns>
+        public static bool operator >=(Bytes left, byte[] right) => left.CompareTo(right) >= 0;
+
+        /// <summary>
+        /// Determines whether a raw <see cref="byte"/> array is lexicographically greater than or equal to a wrapped sequence.
+        /// </summary>
+        /// <param name="left">The raw array to compare.</param>
+        /// <param name="right">The wrapped byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts after or equals <paramref name="right"/>.</returns>
+        public static bool operator >=(byte[] left, Bytes right) => right.CompareTo(left) <= 0;
+
+        /// <summary>
+        /// Determines whether one <see cref="Bytes"/> instance is lexicographically less than or equal to another.
+        /// </summary>
+        /// <param name="left">The first byte sequence to compare.</param>
+        /// <param name="right">The second byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts before or equals <paramref name="right"/>.</returns>
+        public static bool operator <=(Bytes left, Bytes right) => left.CompareTo(right) <= 0;
+
+        /// <summary>
+        /// Determines whether a <see cref="Bytes"/> instance is lexicographically less than or equal to a raw array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence to compare.</param>
+        /// <param name="right">The raw array to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts before or equals <paramref name="right"/>.</returns>
+        public static bool operator <=(Bytes left, byte[] right) => left.CompareTo(right) <= 0;
+
+        /// <summary>
+        /// Determines whether a raw <see cref="byte"/> array is lexicographically less than or equal to a wrapped sequence.
+        /// </summary>
+        /// <param name="left">The raw array to compare.</param>
+        /// <param name="right">The wrapped byte sequence to compare.</param>
+        /// <returns><see langword="true"/> when <paramref name="left"/> sorts before or equals <paramref name="right"/>.</returns>
+        public static bool operator <=(byte[] left, Bytes right) => right.CompareTo(left) >= 0;
+
+        /// <summary>
+        /// Concatenates two <see cref="Bytes"/> instances into a new sequence.
+        /// </summary>
+        /// <param name="left">The first operand.</param>
+        /// <param name="right">The second operand.</param>
+        /// <returns>A new <see cref="Bytes"/> containing the bytes of both operands.</returns>
+        public static Bytes operator +(Bytes left, Bytes right) => new Bytes(left, right);
+
+        /// <summary>
+        /// Concatenates a <see cref="Bytes"/> instance with a raw <see cref="byte"/> array.
+        /// </summary>
+        /// <param name="left">The wrapped byte sequence.</param>
+        /// <param name="right">The raw array to append.</param>
+        /// <returns>A new <see cref="Bytes"/> containing the bytes of both operands.</returns>
+        public static Bytes operator +(Bytes left, byte[] right) => new Bytes(left._innerBytes, right);
+
+        /// <summary>
+        /// Concatenates a raw <see cref="byte"/> array with a <see cref="Bytes"/> instance.
+        /// </summary>
+        /// <param name="left">The raw array to prepend.</param>
+        /// <param name="right">The wrapped byte sequence.</param>
+        /// <returns>A new <see cref="Bytes"/> containing the bytes of both operands.</returns>
+        public static Bytes operator +(byte[] left, Bytes right) => new Bytes(left, right._innerBytes);
 
 	#endregion
 

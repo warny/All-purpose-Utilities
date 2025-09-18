@@ -372,17 +372,41 @@ public class QueryString
 			return new QueryValues(null, null, newValues);
 		}
 
-		public static bool operator ==(QueryValues left, string right)
-			=> left.Equals(right);
+                /// <summary>
+                /// Determines whether the query values match the provided string representation.
+                /// </summary>
+                /// <param name="left">The query value wrapper being compared.</param>
+                /// <param name="right">The string representation to compare with.</param>
+                /// <returns><see langword="true"/> when <paramref name="left"/> expands to <paramref name="right"/>.</returns>
+                public static bool operator ==(QueryValues left, string right)
+                        => left.Equals(right);
 
-		public static bool operator !=(QueryValues left, string right)
-			=> !left.Equals(right);
+                /// <summary>
+                /// Determines whether the query values differ from the provided string representation.
+                /// </summary>
+                /// <param name="left">The query value wrapper being compared.</param>
+                /// <param name="right">The string representation to compare with.</param>
+                /// <returns><see langword="true"/> when the values do not equal <paramref name="right"/>.</returns>
+                public static bool operator !=(QueryValues left, string right)
+                        => !left.Equals(right);
 
-		public static bool operator ==(QueryValues left, IEnumerable<string> right)
-			=> left.Equals(right);
+                /// <summary>
+                /// Determines whether the query values are sequence-equal to the provided collection.
+                /// </summary>
+                /// <param name="left">The query value wrapper being compared.</param>
+                /// <param name="right">The sequence of query values to compare with.</param>
+                /// <returns><see langword="true"/> when all values are equal in order.</returns>
+                public static bool operator ==(QueryValues left, IEnumerable<string> right)
+                        => left.Equals(right);
 
-		public static bool operator !=(QueryValues left, IEnumerable<string> right)
-			=> !left.Equals(right);
+                /// <summary>
+                /// Determines whether the query values differ from the provided collection.
+                /// </summary>
+                /// <param name="left">The query value wrapper being compared.</param>
+                /// <param name="right">The sequence of query values to compare with.</param>
+                /// <returns><see langword="true"/> when the sequences contain different values.</returns>
+                public static bool operator !=(QueryValues left, IEnumerable<string> right)
+                        => !left.Equals(right);
 
 		#region IList<string> Implementation
 
@@ -432,19 +456,24 @@ public class QueryString
 		/// <inheritdoc/>
 		public void RemoveAt(int index) => _values.RemoveAt(index);
 
-		public override bool Equals(object other)
-			=> other switch
-			{
-				string str => Equals(str),
-				IEnumerable<string> strs => Equals(strs),
-				_ => false
-			};
+                /// <inheritdoc/>
+                public override bool Equals(object other)
+                        => other switch
+                        {
+                                string str => Equals(str),
+                                IEnumerable<string> strs => Equals(strs),
+                                _ => false
+                        };
 
-		public bool Equals(string other) => (string)this == other;
-		public bool Equals(IEnumerable<string> other) 
-			=> EnumerableEqualityComparer<string>.Default.Equals(this, other);
+                /// <inheritdoc/>
+                public bool Equals(string other) => (string)this == other;
 
-		public override int GetHashCode() => ObjectUtils.ComputeHash(this._values);
+                /// <inheritdoc/>
+                public bool Equals(IEnumerable<string> other)
+                        => EnumerableEqualityComparer<string>.Default.Equals(this, other);
+
+                /// <inheritdoc/>
+                public override int GetHashCode() => ObjectUtils.ComputeHash(this._values);
 		#endregion
 	}
 

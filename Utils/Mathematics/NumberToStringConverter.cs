@@ -238,48 +238,80 @@ namespace Utils.Mathematics
 		}
 	}
 
-	/// <summary>
-	/// Represents the scale used for large number names (e.g., thousand, million).
-	/// </summary>
-	public partial class NumberScale
-	{
-		public NumberScale(
-			IReadOnlyList<string> staticValues,
-			IReadOnlyList<string> scaleSuffixes,
-			int startIndex = 0,
-			string voidGroup = "ni",
-			string groupSeparator = "lli",
-			IReadOnlyList<string> scale0Prefixes = null,
-			IReadOnlyList<string> unitsPrefixes = null,
-			IReadOnlyList<string> tensPrefixes = null,
-			IReadOnlyList<string> hundredsPrefixes = null,
-			bool firstLetterUppercase = false)
-		{
-			StaticValues = staticValues.Arg().MustNotBeNull().Value.ToImmutableArray();
-			ScaleSuffixes = scaleSuffixes.Arg().MustNotBeNull().Value.ToImmutableArray();
-			StartIndex = startIndex;
-			FirstLetterUppercase = firstLetterUppercase;
+        /// <summary>
+        /// Represents the scale used for large number names (e.g., thousand, million).
+        /// </summary>
+        public partial class NumberScale
+        {
+                /// <summary>
+                /// Initializes a new instance of the <see cref="NumberScale"/> class with the prefixes and metadata
+                /// required to generate scale names.
+                /// </summary>
+                /// <param name="staticValues">The predefined scale names starting at 10³.</param>
+                /// <param name="scaleSuffixes">The suffixes used to build higher-order names.</param>
+                /// <param name="startIndex">The starting index applied when calculating suffixes.</param>
+                /// <param name="voidGroup">The placeholder for empty groups.</param>
+                /// <param name="groupSeparator">The separator inserted between prefix segments.</param>
+                /// <param name="scale0Prefixes">Optional prefixes for base scale names.</param>
+                /// <param name="unitsPrefixes">Optional prefixes for unit multipliers.</param>
+                /// <param name="tensPrefixes">Optional prefixes for ten multipliers.</param>
+                /// <param name="hundredsPrefixes">Optional prefixes for hundred multipliers.</param>
+                /// <param name="firstLetterUppercase">Whether the generated name should start with a capital letter.</param>
+                public NumberScale(
+                        IReadOnlyList<string> staticValues,
+                        IReadOnlyList<string> scaleSuffixes,
+                        int startIndex = 0,
+                        string voidGroup = "ni",
+                        string groupSeparator = "lli",
+                        IReadOnlyList<string> scale0Prefixes = null,
+                        IReadOnlyList<string> unitsPrefixes = null,
+                        IReadOnlyList<string> tensPrefixes = null,
+                        IReadOnlyList<string> hundredsPrefixes = null,
+                        bool firstLetterUppercase = false)
+                {
+                        StaticValues = staticValues.Arg().MustNotBeNull().Value.ToImmutableArray();
+                        ScaleSuffixes = scaleSuffixes.Arg().MustNotBeNull().Value.ToImmutableArray();
+                        StartIndex = startIndex;
+                        FirstLetterUppercase = firstLetterUppercase;
 
-			VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
-			GroupSeparator = groupSeparator.ToDefaultIfNullOrEmpty("lli");
+                        VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
+                        GroupSeparator = groupSeparator.ToDefaultIfNullOrEmpty("lli");
 
-			Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
-			UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;
-			TensPrefixes = tensPrefixes?.ToImmutableArray() ?? TensPrefixes;
-			HundredsPrefixes = hundredsPrefixes?.ToImmutableArray() ?? HundredsPrefixes;
-		}
+                        Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
+                        UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;
+                        TensPrefixes = tensPrefixes?.ToImmutableArray() ?? TensPrefixes;
+                        HundredsPrefixes = hundredsPrefixes?.ToImmutableArray() ?? HundredsPrefixes;
+                }
 
-		public IReadOnlyList<string> StaticValues { get; }
-		public IReadOnlyList<string> ScaleSuffixes { get; }
-		public int StartIndex { get; }
-		public bool FirstLetterUppercase { get; }
+                /// <summary>
+                /// Gets the static names associated with the first scale levels.
+                /// </summary>
+                public IReadOnlyList<string> StaticValues { get; }
 
-		private readonly string VoidGroup;
-		private readonly string GroupSeparator;
+                /// <summary>
+                /// Gets the list of suffixes appended to generated scale names.
+                /// </summary>
+                public IReadOnlyList<string> ScaleSuffixes { get; }
 
-		private static readonly Regex PrefixParser = PrefixParserRegex();
+                /// <summary>
+                /// Gets the index offset applied when calculating dynamic scale names.
+                /// </summary>
+                public int StartIndex { get; }
 
-		public IReadOnlyList<string> Scale0Prefixes { get; } = [
+                /// <summary>
+                /// Gets a value indicating whether generated names should start with a capital letter.
+                /// </summary>
+                public bool FirstLetterUppercase { get; }
+
+                private readonly string VoidGroup;
+                private readonly string GroupSeparator;
+
+                private static readonly Regex PrefixParser = PrefixParserRegex();
+
+                /// <summary>
+                /// Gets the default prefixes used for the base scale (10⁰) names.
+                /// </summary>
+                public IReadOnlyList<string> Scale0Prefixes { get; } = [
 			"",
 			"mi",
 			"bi",
@@ -293,7 +325,10 @@ namespace Utils.Mathematics
 		];
 
 
-		public IReadOnlyList<string> UnitsPrefixes { get; } = [
+                /// <summary>
+                /// Gets the prefixes used when building unit multipliers.
+                /// </summary>
+                public IReadOnlyList<string> UnitsPrefixes { get; } = [
 			"",
 			"uni",
 			"duo",
@@ -306,7 +341,10 @@ namespace Utils.Mathematics
 			"nove(mn)"
 		];
 
-		public IReadOnlyList<string> TensPrefixes { get; } = [
+                /// <summary>
+                /// Gets the prefixes used when building tens multipliers.
+                /// </summary>
+                public IReadOnlyList<string> TensPrefixes { get; } = [
 			"",
 			"(n)deci",
 			"(ms)vingti",
@@ -319,7 +357,10 @@ namespace Utils.Mathematics
 			"nonaginta"
 		];
 
-		public IReadOnlyList<string> HundredsPrefixes { get; } = [
+                /// <summary>
+                /// Gets the prefixes used when building hundreds multipliers.
+                /// </summary>
+                public IReadOnlyList<string> HundredsPrefixes { get; } = [
 			"",
 			"(nx)centi",
 			"(ms)ducenti",

@@ -39,12 +39,14 @@ public class ReadOnlyMappedDictionary<K, V> : IReadOnlyDictionary<K, V>
         this.map = map ?? throw new ArgumentNullException(nameof(map));
     }
 
-	virtual public V this[K key]
+        /// <inheritdoc />
+        virtual public V this[K key]
     {
         get => map.GetValue(key);
         set => throw new NotSupportedException();
     }
 
+    /// <inheritdoc />
     public int Count
     {
         get
@@ -60,14 +62,19 @@ public class ReadOnlyMappedDictionary<K, V> : IReadOnlyDictionary<K, V>
         }
     }
 
+    /// <inheritdoc />
     public IEnumerable<K> Keys => map.GetValues().Select(v => v.Key);
 
+    /// <inheritdoc />
     public IEnumerable<V> Values => map.GetValues().Select(v => v.Value);
 
+    /// <inheritdoc />
     public bool ContainsKey(K key) => Keys.Any(k => k.Equals(key));
 
+    /// <inheritdoc />
     public IEnumerator<KeyValuePair<K, V>> GetEnumerator() => map.GetValues().GetEnumerator();
 
+    /// <inheritdoc />
     public bool TryGetValue(K key, out V value)
     {
         try
@@ -85,14 +92,37 @@ public class ReadOnlyMappedDictionary<K, V> : IReadOnlyDictionary<K, V>
     IEnumerator IEnumerable.GetEnumerator() => map.GetValues().GetEnumerator();
 }
 
+/// <summary>
+/// Defines accessor methods required to expose dictionary data without granting mutation capabilities.
+/// </summary>
 public interface IReadOnlyDictionaryMap<K, V>
 {
+    /// <summary>
+    /// Retrieves a value using the provided key.
+    /// </summary>
+    /// <param name="key">The key that identifies the value.</param>
+    /// <returns>The value associated with <paramref name="key"/>.</returns>
     V GetValue(K key);
+
+    /// <summary>
+    /// Returns the key/value pairs contained in the dictionary.
+    /// </summary>
     IEnumerable<KeyValuePair<K, V>> GetValues();
+
+    /// <summary>
+    /// Retrieves the count of the key/value pairs when available.
+    /// </summary>
     int GetCount();
+
+    /// <summary>
+    /// Gets a value indicating whether <see cref="GetCount"/> can be called without enumerating the dictionary.
+    /// </summary>
     bool CanCount { get; }
 }
 
+/// <summary>
+/// Default implementation of <see cref="IReadOnlyDictionaryMap{K, V}"/> that relies on delegate accessors.
+/// </summary>
 public class ReadOnlyDictionaryMap<K, V> : IReadOnlyDictionaryMap<K, V>
 {
 	private readonly Func<K, V> getValue;
@@ -110,8 +140,15 @@ public class ReadOnlyDictionaryMap<K, V> : IReadOnlyDictionaryMap<K, V>
 		this.getCount = getCount;
     }
 
+    /// <inheritdoc />
     public int GetCount() => getCount();
+
+    /// <inheritdoc />
     public V GetValue(K key) => getValue(key);
+
+    /// <inheritdoc />
     public IEnumerable<KeyValuePair<K, V>> GetValues() => getItems();
+
+    /// <inheritdoc />
     public bool CanCount => getCount is not null;
 }

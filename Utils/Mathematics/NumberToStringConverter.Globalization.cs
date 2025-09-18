@@ -41,12 +41,22 @@ namespace Utils.Mathematics
             );
         }
 
-                // Caches configurations for different cultures
-                private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
+        // Caches configurations for different cultures
+        private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
-                public static void InitializeConfigurations(params string[] configs)
+        /// <summary>
+        /// Loads number-to-string configurations embedded as XML strings.
+        /// </summary>
+        /// <param name="configs">The XML documents describing language configurations.</param>
+        public static void InitializeConfigurations(params string[] configs)
             => RegisterConfigurations((IEnumerable<string>)configs);
-        public static void RegisterConfigurations(IEnumerable<string> configs) {
+
+        /// <summary>
+        /// Registers the provided language configurations for later lookup.
+        /// </summary>
+        /// <param name="configs">The XML configuration documents to load.</param>
+        public static void RegisterConfigurations(IEnumerable<string> configs)
+        {
             foreach (var configuration in configs)
             {
                 var languages = ReadConfiguration(configuration);
@@ -57,6 +67,11 @@ namespace Utils.Mathematics
             }
         }
 
+        /// <summary>
+        /// Parses a configuration document into converter instances keyed by culture name.
+        /// </summary>
+        /// <param name="configuration">The XML configuration document.</param>
+        /// <returns>A dictionary mapping culture names to converters.</returns>
         public static Dictionary<string, NumberToStringConverter> ReadConfiguration(string configuration)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(Numbers), "Utils/NumberConvertionConfiguration.xsd");

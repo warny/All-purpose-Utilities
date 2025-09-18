@@ -1,6 +1,9 @@
 ﻿
 namespace Utils.Expressions;
 
+/// <summary>
+/// Describes configuration settings that influence how expressions are parsed and interpreted.
+/// </summary>
 public interface IParserOptions
 {
 	/// <summary>

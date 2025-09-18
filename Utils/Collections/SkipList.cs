@@ -211,7 +211,8 @@ public class SkipList<T> : ICollection<T>
 		return true;
 	}
 
-	public IEnumerator<T> GetEnumerator() => Enumerate().GetEnumerator();
+        /// <inheritdoc />
+        public IEnumerator<T> GetEnumerator() => Enumerate().GetEnumerator();
 
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

@@ -165,6 +165,7 @@ public class ParserContext
     /// Adds multiple labels to the current context frame.
     /// </summary>
     public bool[] AddLabels(params LabelTarget[] labels) => AddLabels((IEnumerable<LabelTarget>)labels);
+    /// <inheritdoc cref="AddLabels(LabelTarget[])"/>
     public bool[] AddLabels(IEnumerable<LabelTarget> labels) => labels.Select(AddLabel).ToArray();
 
     /// <summary>
@@ -176,6 +177,7 @@ public class ParserContext
     /// Adds multiple variables to the current context frame.
     /// </summary>
     public bool[] AddVariables(params ParameterExpression[] variables) => AddVariables((IEnumerable<ParameterExpression>)variables);
+    /// <inheritdoc cref="AddVariables(ParameterExpression[])"/>
     public bool[] AddVariables(IEnumerable<ParameterExpression> variables) => variables.Select(AddVariable).ToArray();
 
     /// <summary>
