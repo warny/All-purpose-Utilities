@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace Utils.Collections;
 
+/// <summary>
+/// Provides thread-safe helper methods for working with <see cref="Dictionary{TKey, TValue}"/> instances.
+/// </summary>
 public static class DictionaryExtensions
 {
     /// <summary>
