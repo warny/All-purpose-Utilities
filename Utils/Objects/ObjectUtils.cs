@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Utils.Objects;
 
+/// <summary>
+/// Exposes null-aware control flow helpers and hash code utilities for arbitrary objects.
+/// </summary>
 public static class ObjectUtils
 {
 	/// <summary>

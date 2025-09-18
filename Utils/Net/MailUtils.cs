@@ -9,7 +9,10 @@ using Utils.Objects;
 
 namespace Utils.Net
 {
-	public static partial class MailUtils
+        /// <summary>
+        /// Provides helper methods for parsing addresses and populating <see cref="MailMessage"/> recipients.
+        /// </summary>
+        public static partial class MailUtils
 	{
 		/// <summary>
 		/// A compiled <see cref="Regex"/> pattern for parsing a mail address of the form:

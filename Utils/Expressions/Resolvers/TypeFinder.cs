@@ -4,6 +4,9 @@ using Utils.Mathematics;
 
 namespace Utils.Expressions.Resolvers
 {
+    /// <summary>
+    /// Default implementation of <see cref="ITypeFinder"/> that scans assemblies for types and extension methods.
+    /// </summary>
     public class TypeFinder : ITypeFinder
     {
         private ParserOptions Options { get; }
@@ -13,6 +16,12 @@ namespace Utils.Expressions.Resolvers
         private IDictionary <string, Type> Types { get; } = new Dictionary <string, Type>();
         private IDictionary<Type, IList<MethodInfo>> ExtensionMethods  = new Dictionary <Type, IList<MethodInfo>>();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TypeFinder"/> class.
+        /// </summary>
+        /// <param name="options">Parser options providing default type mappings.</param>
+        /// <param name="namespaces">Namespaces whose public types should be indexed by simple name.</param>
+        /// <param name="assemblies">Assemblies to scan; if <see langword="null"/> or empty the current domain assemblies are used.</param>
         public TypeFinder(ParserOptions options, string[] namespaces, Assembly[] assemblies)
         {
             namespaces ??= [];
@@ -47,6 +56,7 @@ namespace Utils.Expressions.Resolvers
             }
         }
 
+        /// <inheritdoc />
         public Type FindType(string name, Type[] genericArguments)
         {
             if (Options.DefaultTypes.TryGetValue(name, out Type defaultType)) return defaultType;
@@ -102,6 +112,7 @@ namespace Utils.Expressions.Resolvers
             return result;
         }
 
+        /// <inheritdoc />
         public MethodInfo[] FindExtensionMethods(Type extendedType, string name)
         {
             List<MethodInfo> result = new List<MethodInfo>();

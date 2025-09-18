@@ -188,9 +188,24 @@ public class ForwardFusion<T1, T2> : IEnumerable<(T1 Left, T2 Right)>, IDisposab
 [Flags]
 public enum JoinType
 {
-	InnerJoin = 0,
-	LeftJoin = 1,
-	RightJoin = 2,
-	FullOuterJoin = LeftJoin | RightJoin
+        /// <summary>
+        /// Returns only elements that appear in both sequences.
+        /// </summary>
+        InnerJoin = 0,
+
+        /// <summary>
+        /// Includes all elements from the left sequence, pairing them with matching right elements when available.
+        /// </summary>
+        LeftJoin = 1,
+
+        /// <summary>
+        /// Includes all elements from the right sequence, pairing them with matching left elements when available.
+        /// </summary>
+        RightJoin = 2,
+
+        /// <summary>
+        /// Includes every element from both sequences, regardless of whether a counterpart exists.
+        /// </summary>
+        FullOuterJoin = LeftJoin | RightJoin
 }
 

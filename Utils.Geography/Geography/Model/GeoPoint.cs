@@ -12,11 +12,18 @@ namespace Utils.Geography.Model
 	/// <summary>
 	/// Enum to represent the type of geographic coordinate direction: Latitude or Longitude.
 	/// </summary>
-	public enum CoordinateDirection
-	{
-		Latitude,
-		Longitude
-	}
+        public enum CoordinateDirection
+        {
+                /// <summary>
+                /// Indicates that the coordinate value represents a latitude.
+                /// </summary>
+                Latitude,
+
+                /// <summary>
+                /// Indicates that the coordinate value represents a longitude.
+                /// </summary>
+                Longitude
+        }
 
 	/// <summary>
 	/// Represents an immutable geographic point with latitude and longitude.
@@ -29,22 +36,60 @@ namespace Utils.Geography.Model
 		where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 	{
 		// Constants for degrees, minutes, and seconds conversions
-		protected static readonly T MinutesInDegree = T.CreateChecked(60);
-		protected static readonly T SecondsInDegree = T.CreateChecked(3600);
-		protected static readonly T SecondsInMinute = T.CreateChecked(60);
+                /// <summary>
+                /// Number of minutes in a degree.
+                /// </summary>
+                protected static readonly T MinutesInDegree = T.CreateChecked(60);
 
-		protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
-		protected static readonly FloatingPointComparer<T> comparer = new(5);
+                /// <summary>
+                /// Number of seconds in a degree.
+                /// </summary>
+                protected static readonly T SecondsInDegree = T.CreateChecked(3600);
 
-		// Latitude bounds
-		public T MaxLatitude => degree.RightAngle;
-		public T MinLatitude => -degree.RightAngle;
+                /// <summary>
+                /// Number of seconds in a minute.
+                /// </summary>
+                protected static readonly T SecondsInMinute = T.CreateChecked(60);
 
-		// Regex modifier collections for positive/negative latitude/longitude
-		protected static readonly IReadOnlyList<string> PositiveLatitude = ["+", "N"];
-		protected static readonly IReadOnlyList<string> NegativeLatitude = ["-", "S"];
-		protected static readonly IReadOnlyList<string> PositiveLongitude = ["+", "E"];
-		protected static readonly IReadOnlyList<string> NegativeLongitude = ["-", "W"];
+                /// <summary>
+                /// Angle calculator configured to work in degrees.
+                /// </summary>
+                protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+
+                /// <summary>
+                /// Floating-point comparer used to compare latitude and longitude values with tolerance.
+                /// </summary>
+                protected static readonly FloatingPointComparer<T> comparer = new(5);
+
+                /// <summary>
+                /// Maximum valid latitude in degrees.
+                /// </summary>
+                public T MaxLatitude => degree.RightAngle;
+
+                /// <summary>
+                /// Minimum valid latitude in degrees.
+                /// </summary>
+                public T MinLatitude => -degree.RightAngle;
+
+                /// <summary>
+                /// Modifiers that indicate a positive latitude value.
+                /// </summary>
+                protected static readonly IReadOnlyList<string> PositiveLatitude = ["+", "N"];
+
+                /// <summary>
+                /// Modifiers that indicate a negative latitude value.
+                /// </summary>
+                protected static readonly IReadOnlyList<string> NegativeLatitude = ["-", "S"];
+
+                /// <summary>
+                /// Modifiers that indicate a positive longitude value.
+                /// </summary>
+                protected static readonly IReadOnlyList<string> PositiveLongitude = ["+", "E"];
+
+                /// <summary>
+                /// Modifiers that indicate a negative longitude value.
+                /// </summary>
+                protected static readonly IReadOnlyList<string> NegativeLongitude = ["-", "W"];
 
 		/// <summary>
 		/// Latitude in degrees (immutable).
@@ -315,12 +360,21 @@ namespace Utils.Geography.Model
 				   $"{FormatPosition(Longitude, "E", "W", format, formatProvider)}";
 		}
 
-		private static string FormatPosition(
-			T position,
-			string positiveMark,
-			string negativeMark,
-			string format,
-			IFormatProvider formatProvider
+                /// <summary>
+                /// Formats a single latitude or longitude value using the requested format options.
+                /// </summary>
+                /// <param name="position">Latitude or longitude value.</param>
+                /// <param name="positiveMark">Marker appended for positive values.</param>
+                /// <param name="negativeMark">Marker appended for negative values.</param>
+                /// <param name="format">Desired numeric or degree format.</param>
+                /// <param name="formatProvider">Culture-specific format provider.</param>
+                /// <returns>Formatted coordinate string.</returns>
+                private static string FormatPosition(
+                        T position,
+                        string positiveMark,
+                        string negativeMark,
+                        string format,
+                        IFormatProvider formatProvider
 		)
 		{
 			// Determine direction mark
@@ -358,8 +412,15 @@ namespace Utils.Geography.Model
 
 		#region Operators
 
-		public static bool operator ==(GeoPoint<T> left, GeoPoint<T> right) => left.Equals(right);
-		public static bool operator !=(GeoPoint<T> left, GeoPoint<T> right) => !left.Equals(right);
+                /// <summary>
+                /// Determines whether two geographic points are equal.
+                /// </summary>
+                public static bool operator ==(GeoPoint<T> left, GeoPoint<T> right) => left.Equals(right);
+
+                /// <summary>
+                /// Determines whether two geographic points are not equal.
+                /// </summary>
+                public static bool operator !=(GeoPoint<T> left, GeoPoint<T> right) => !left.Equals(right);
 
 		#endregion
 

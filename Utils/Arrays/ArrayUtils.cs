@@ -7,6 +7,9 @@ using Utils.Objects;
 
 namespace Utils.Arrays;
 
+/// <summary>
+/// Provides helper methods for manipulating arrays, including slicing and trimming utilities.
+/// </summary>
 public static class ArrayUtils
 {
 	/// <summary>
@@ -288,9 +291,12 @@ public static class ArrayUtils
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="start"/> or <paramref name="length"/> is invalid.</exception>
 	public static T[] Copy<T>(this T[] array, int start, int length)
 	{
-		ArgumentNullException.ThrowIfNull(array);
-		if (start < 0 || length < 0 || start + length > array.Length)
-			throw new ArgumentOutOfRangeException("The slice boundaries are outside the array.");
+                ArgumentNullException.ThrowIfNull(array);
+                if (start < 0 || start > array.Length)
+                        throw new ArgumentOutOfRangeException(nameof(start), start, "Start index must be within the array boundaries.");
+
+                if (length < 0 || length > array.Length - start)
+                        throw new ArgumentOutOfRangeException(nameof(length), length, "Length must be non-negative and cannot extend past the end of the array.");
 
 		T[] result = new T[length];
 		Array.Copy(array, start, result, 0, length);
@@ -496,14 +502,34 @@ public static class ArrayUtils
 	/// <exception cref="ArgumentNullException">
 	/// Thrown if <paramref name="array"/>, <paramref name="toReplace"/>, or <paramref name="replacement"/> is null.
 	/// </exception>
-	public static T[] Replace<T>(this T[] array, T[] toReplace, T[] replacement)
-		where T : IEquatable<T>
-	{
-		ArgumentNullException.ThrowIfNull(array);
-		ArgumentNullException.ThrowIfNull(toReplace);
-		ArgumentNullException.ThrowIfNull(replacement);
+        public static T[] Replace<T>(this T[] array, T[] toReplace, T[] replacement)
+                where T : IEquatable<T>
+        {
+                ArgumentNullException.ThrowIfNull(array);
+                ArgumentNullException.ThrowIfNull(toReplace);
+                ArgumentNullException.ThrowIfNull(replacement);
 
-		// Assumes there's an EnumerableEx.Replace() extension to handle the logic.
-		return EnumerableEx.Replace(array, toReplace, replacement).ToArray();
-	}
+                // Assumes there's an EnumerableEx.Replace() extension to handle the logic.
+                return EnumerableEx.Replace(array, toReplace, replacement).ToArray();
+        }
+
+        /// <summary>
+        /// Determines whether the provided span begins with the specified prefix.
+        /// </summary>
+        /// <param name="span">The span to inspect.</param>
+        /// <param name="prefix">The expected prefix.</param>
+        /// <returns><see langword="true"/> when the span starts with <paramref name="prefix"/>.</returns>
+        public static bool StartWith(this ReadOnlySpan<char> span, ReadOnlySpan<char> prefix)
+        {
+                if (prefix.Length > span.Length)
+                        return false;
+
+                for (int i = 0; i < prefix.Length; i++)
+                {
+                        if (span[i] != prefix[i])
+                                return false;
+                }
+
+                return true;
+        }
 }

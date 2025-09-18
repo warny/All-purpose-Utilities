@@ -12,8 +12,15 @@ public class ColorAhsv32 :
         IEquatable<ColorAhsv32>,
         IEqualityOperators<ColorAhsv32, ColorAhsv32, bool>
 {
-	public static byte MinValue { get; } = 0;
-	public static byte MaxValue { get; } = byte.MaxValue;
+        /// <summary>
+        /// Lowest component value that can be represented with this color depth.
+        /// </summary>
+        public static byte MinValue { get; } = 0;
+
+        /// <summary>
+        /// Highest component value that can be represented with this color depth.
+        /// </summary>
+        public static byte MaxValue { get; } = byte.MaxValue;
 
 /// <summary>Alpha channel.</summary>
 public byte Alpha { get; set; }
@@ -62,8 +69,10 @@ public ColorAhsv32(ColorAhsv color)
 public ColorAhsv32(System.Drawing.Color colorArgb) { FromArgbColor(colorArgb.A, colorArgb.R, colorArgb.G, colorArgb.B); }
 
 /// <summary>
-/// Converts from a 32-bit ARGB color.
+/// Creates an HSV color from an ARGB color stored with 8-bit components.
 /// </summary>
+/// <param name="colorArgb">The ARGB color to convert.</param>
+/// <returns>A new <see cref="ColorAhsv32"/> instance.</returns>
 public static ColorAhsv32 FromArgbColor(ColorArgb32 colorArgb) => FromArgbColor(colorArgb.Alpha, colorArgb.Red, colorArgb.Green, colorArgb.Blue);
 
 /// <summary>
@@ -135,11 +144,32 @@ public static ColorAhsv32 FromArgbColor(byte alpha, byte red, byte green, byte b
         }
 
 
-	public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
-	public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
-        public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
+/// <summary>
+/// Converts a double-precision HSV color to the 8-bit representation.
+/// </summary>
+/// <param name="color">The HSV color to convert.</param>
+/// <returns>The converted color.</returns>
+public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
 
-        public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
+/// <summary>
+/// Converts a 16-bit HSV color to the 8-bit representation.
+/// </summary>
+/// <param name="color">The HSV color to convert.</param>
+/// <returns>The converted color.</returns>
+public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
+
+/// <summary>
+/// Converts a <see cref="System.Drawing.Color"/> value to its HSV equivalent.
+/// </summary>
+/// <param name="color">The color to convert.</param>
+/// <returns>The converted HSV color.</returns>
+public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
+
+/// <summary>
+/// Returns a textual representation of the HSV components.
+/// </summary>
+/// <returns>A string describing the alpha, hue, saturation, and value.</returns>
+public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
 
         /// <inheritdoc/>
         public bool Equals(ColorAhsv32? other) =>

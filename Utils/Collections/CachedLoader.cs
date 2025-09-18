@@ -50,7 +50,13 @@ public class CachedLoader<TKey, TValue> : IDictionary<TKey, TValue>
 		Load = CreateGetValue();
 	}
 
-	public delegate bool TryLoadValueDelegate(TKey key, out TValue value);
+        /// <summary>
+        /// Represents a method that attempts to load a value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key identifying the value to load.</param>
+        /// <param name="value">When the method returns, contains the loaded value if the method succeeded; otherwise, the default value.</param>
+        /// <returns><see langword="true"/> if the value could be loaded; otherwise, <see langword="false"/>.</returns>
+        public delegate bool TryLoadValueDelegate(TKey key, out TValue value);
 
 	private TryLoadValueDelegate CreateGetValue()
 	{

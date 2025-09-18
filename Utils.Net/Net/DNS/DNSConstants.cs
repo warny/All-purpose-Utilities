@@ -25,21 +25,39 @@ namespace Utils.Net.DNS
 	/// <summary>
 	/// Is the packet is a response or a question (1 bit, aligned)
 	/// </summary>
-	public enum DNSQRBit : ushort
-	{
-		Question = 0x0000,
-		Response = 0x8000
-	}
+        /// <summary>
+        /// Identifies whether the DNS datagram carries a query or a response payload.
+        /// </summary>
+        public enum DNSQRBit : ushort
+        {
+                /// <summary>
+                /// The datagram contains a query and expects a response.
+                /// </summary>
+                Question = 0x0000,
+                /// <summary>
+                /// The datagram is a response to a previously issued query.
+                /// </summary>
+                Response = 0x8000
+        }
 
-	/// <summary>
-	/// Requested operation (4bits, aligned)
-	/// </summary>
-	public enum DNSOpCode : ushort
-	{
-		Standart = 0x0000,
-		Inverse = 0x1000,
-		Status = 0x2000
-	}
+        /// <summary>
+        /// Requested operation (4bits, aligned)
+        /// </summary>
+        public enum DNSOpCode : ushort
+        {
+                /// <summary>
+                /// Standard query operation.
+                /// </summary>
+                Standart = 0x0000,
+                /// <summary>
+                /// Inverse query operation.
+                /// </summary>
+                Inverse = 0x1000,
+                /// <summary>
+                /// Server status request.
+                /// </summary>
+                Status = 0x2000
+        }
 
 	/// <summary>
 	/// Four bits that indicates the returned error value (4 bits, aligned)
@@ -78,8 +96,8 @@ namespace Utils.Net.DNS
 	/// <summary>
 	/// Constants representing DNS datagram flags and fields masks.
 	/// </summary>
-	public static class DNSConstants
-	{
+        public static class DNSConstants
+        {
 		/// <summary>
 		/// QR (Query/Response) bit. Set to 1 for Response, 0 for Query.
 		/// <seealso cref="DNSQRBit"/>
@@ -136,12 +154,15 @@ namespace Utils.Net.DNS
 		/// </summary>
 		public const ushort Error = 0x000F;
 	}
-	public enum DNSClassId : ushort
-	{
-		/// <summary>
-		/// the Internet
-		/// </summary>
-		IN = 0x0001,
+        /// <summary>
+        /// DNS class identifiers that describe the scope of a resource record.
+        /// </summary>
+        public enum DNSClassId : ushort
+        {
+                /// <summary>
+                /// the Internet
+                /// </summary>
+                IN = 0x0001,
 		/// <summary>
 		/// the CSNET class (Obsolete - used only for examples in some obsolete RFCs) 
 		/// </summary>
@@ -161,15 +182,30 @@ namespace Utils.Net.DNS
 		ALL = 0x00FF
 	}
 
-	public static class DNSRequestType
-	{
-		public const ushort ALL = 0xFF;
-		public const ushort AXFR = 0xFC;
-		[Obsolete]
-		public const ushort MAILB = 0xFD;
-		[Obsolete]
-		public const ushort MAILA = 0xFE;
-	}
+        /// <summary>
+        /// Request type identifiers used in legacy AXFR-style zone transfers.
+        /// </summary>
+        public static class DNSRequestType
+        {
+                /// <summary>
+                /// Wildcard request matching every record type.
+                /// </summary>
+                public const ushort ALL = 0xFF;
+                /// <summary>
+                /// DNS zone transfer request type.
+                /// </summary>
+                public const ushort AXFR = 0xFC;
+                [Obsolete]
+                /// <summary>
+                /// Mailbox-related resource record type (obsolete).
+                /// </summary>
+                public const ushort MAILB = 0xFD;
+                [Obsolete]
+                /// <summary>
+                /// Mail agent resource record type (obsolete).
+                /// </summary>
+                public const ushort MAILA = 0xFE;
+        }
 
 	static class Types
 	{

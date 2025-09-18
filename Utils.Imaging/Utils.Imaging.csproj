@@ -18,6 +18,7 @@
 			- 8, 32 and 64 bit color handling in ARGB and AHSV
 		</Description>
 		<RootNamespace>Utils</RootNamespace>
+		<NoWarn>CA1416</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

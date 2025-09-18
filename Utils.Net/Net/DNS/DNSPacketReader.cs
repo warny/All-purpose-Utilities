@@ -12,6 +12,9 @@ using Utils.Reflection;
 
 namespace Utils.Net.DNS;
 
+/// <summary>
+/// Provides helpers to translate DNS datagrams into strongly typed response structures.
+/// </summary>
 public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 {
     private readonly Func<Datas, DNSHeader> ReadHeader;
@@ -20,10 +23,21 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private readonly Dictionary<(int Class, DNSClassId ClassId), Func<Datas, DNSResponseDetail>> readers = new();
     private readonly Dictionary<int, string> requestClassNames = new() { { 0xFF, "ALL" } };
 
+    /// <summary>
+    /// Gets a packet reader configured with the default DNS record factories.
+    /// </summary>
     public static DNSPacketReader Default { get; } = new DNSPacketReader(DNSFactory.Default);
 
+    /// <summary>
+    /// Initializes a new <see cref="DNSPacketReader"/> using the provided DNS factories.
+    /// </summary>
+    /// <param name="factories">Factories that describe how individual DNS records are materialized.</param>
     public DNSPacketReader(params DNSFactory[] factories) : this((IEnumerable<DNSFactory>)factories) {}
 
+    /// <summary>
+    /// Initializes a new <see cref="DNSPacketReader"/> using the provided DNS factories.
+    /// </summary>
+    /// <param name="factories">Factories that describe how individual DNS records are materialized.</param>
     public DNSPacketReader(IEnumerable<DNSFactory> factories) {
         ReadHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
         ReadRequestRecord = CreateReader<DNSRequestRecord>(typeof(DNSRequestRecord));
@@ -258,6 +272,11 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     }
 
 
+    /// <summary>
+    /// Reads a DNS datagram represented as a byte array and returns the parsed header.
+    /// </summary>
+    /// <param name="datas">The datagram content to parse.</param>
+    /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
     public DNSHeader Read(byte[] datas)
     {
         Datas datasStructure = new Datas() {
@@ -268,6 +287,11 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         return Read(datasStructure);
     }
 
+    /// <summary>
+    /// Reads a DNS datagram from the provided stream and returns the parsed header.
+    /// </summary>
+    /// <param name="datas">The stream that supplies the DNS payload.</param>
+    /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
     public DNSHeader Read(Stream datas)
     {
         var datagram = new byte[512];

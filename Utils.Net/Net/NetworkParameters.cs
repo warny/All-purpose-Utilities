@@ -7,10 +7,13 @@ using System.Text;
 namespace Utils.Net
 {
     /// <summary>
-    /// Description résumée de NetworkParams.
+    /// Provides access to host networking metadata such as interfaces and DNS servers.
     /// </summary>
     public class NetworkParameters
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NetworkParameters"/> class and snapshots network information.
+        /// </summary>
         public NetworkParameters()
         {
             NetworkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
@@ -34,8 +37,17 @@ namespace Utils.Net
             DnsServers = dnsServers.ToArray();
         }
 
+        /// <summary>
+        /// Gets the network interfaces detected on the host at construction time.
+        /// </summary>
         public NetworkInterface[] NetworkInterfaces { get; private set; }
+        /// <summary>
+        /// Gets the preferred DNS server resolved from the network interfaces.
+        /// </summary>
         public IPAddress PrimaryDns => DnsServers[0];
+        /// <summary>
+        /// Gets the collection of DNS servers discovered for the active network interfaces.
+        /// </summary>
         public IPAddress[] DnsServers { get; private set; }
 
     }

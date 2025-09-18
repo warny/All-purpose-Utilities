@@ -6,6 +6,9 @@ using System.Reflection;
 
 namespace Utils.Expressions;
 
+/// <summary>
+/// Provides helper methods for building and manipulating expression trees.
+/// </summary>
 public static class ExpressionEx
 {
     /// <summary>
@@ -62,24 +65,23 @@ public static class ExpressionEx
 
 
     /// <summary>
-    /// Try to get a conversion method from an expression or the target type
-    /// This function searches 
+    /// Attempts to locate an implicit or explicit conversion for the provided expression.
     /// </summary>
-    /// <param name="source">Source expression to get a convert from</param>
-    /// <param name="outType">Target Type to get a convert to</param>
-    /// <param name="builder">Resulting expression</param>
-    /// <returns></returns>
+    /// <param name="source">Expression that should be converted.</param>
+    /// <param name="outType">Target type of the conversion.</param>
+    /// <param name="builder">Receives the conversion expression when successful.</param>
+    /// <returns><see langword="true"/> when a conversion was located.</returns>
     public static bool TryGetConverterMethod(Expression source, Type outType, out Expression builder)
         => TryGetConverterMethod(source, outType, BindingFlags.Public, out builder);
 
     /// <summary>
-    /// Try to get a conversion method from an expression or the target type
-    /// This function searches 
+    /// Attempts to locate an implicit or explicit conversion for the provided expression using the specified binding flags.
     /// </summary>
-    /// <param name="source">Source expression to get a convert from</param>
-    /// <param name="outType">Target Type to get a convert to</param>
-    /// <param name="builder">Resulting expression</param>
-    /// <returns></returns>
+    /// <param name="source">Expression that should be converted.</param>
+    /// <param name="outType">Target type of the conversion.</param>
+    /// <param name="builder">Receives the conversion expression when successful.</param>
+    /// <param name="bindingFlags">Binding flags controlling which members are considered.</param>
+    /// <returns><see langword="true"/> when a conversion was located.</returns>
     public static bool TryGetConverterMethod(Expression source, Type outType, BindingFlags bindingFlags, out Expression builder)
     {
         bindingFlags &= BindingFlags.Public | BindingFlags.NonPublic;
@@ -139,6 +141,15 @@ public static class ExpressionEx
     }
 
 
+    /// <summary>
+    /// Builds a <c>foreach</c>-style loop over the provided enumerable expression.
+    /// </summary>
+    /// <param name="iterator">Variable that receives the current item on each iteration.</param>
+    /// <param name="enumerable">Expression that evaluates to the enumerable value.</param>
+    /// <param name="iteration">Body executed for each element.</param>
+    /// <param name="breakLoop">Optional label used to exit the loop early.</param>
+    /// <param name="continueLoop">Optional label used to jump to the next iteration.</param>
+    /// <returns>An <see cref="Expression"/> representing the loop.</returns>
     public static Expression ForEach(ParameterExpression iterator, ParameterExpression enumerable, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)
     {
         breakLoop ??= Expression.Label("__break__");
@@ -173,6 +184,17 @@ public static class ExpressionEx
         );
     }
 
+    /// <summary>
+    /// Builds a traditional <c>for</c> loop expression.
+    /// </summary>
+    /// <param name="iterator">Loop variable that is initialized, tested, and incremented.</param>
+    /// <param name="init">Initialization expression assigning the start value.</param>
+    /// <param name="test">Condition that must remain <see langword="true"/> for the loop to continue.</param>
+    /// <param name="next">Expressions executed after each iteration to advance the loop.</param>
+    /// <param name="iteration">Body executed for each iteration.</param>
+    /// <param name="breakLoop">Optional label used to exit the loop early.</param>
+    /// <param name="continueLoop">Optional label used to jump to the next iteration.</param>
+    /// <returns>An <see cref="Expression"/> representing the loop.</returns>
     public static Expression For(ParameterExpression iterator, Expression init, Expression test, Expression[] next, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)
     {
         breakLoop ??= Expression.Label("__break__");
@@ -196,6 +218,14 @@ public static class ExpressionEx
         );
     }
 
+    /// <summary>
+    /// Builds a <c>while</c> loop expression.
+    /// </summary>
+    /// <param name="test">Condition that must remain <see langword="true"/> for the loop to continue.</param>
+    /// <param name="iteration">Body executed for each iteration.</param>
+    /// <param name="breakLoop">Optional label used to exit the loop early.</param>
+    /// <param name="continueLoop">Optional label used to jump to the next iteration.</param>
+    /// <returns>An <see cref="Expression"/> representing the loop.</returns>
     public static Expression While(Expression test, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)
     {
         breakLoop ??= Expression.Label("__break__");
@@ -210,6 +240,14 @@ public static class ExpressionEx
         );
     }
 
+    /// <summary>
+    /// Builds a <c>do</c>/<c>while</c> loop expression.
+    /// </summary>
+    /// <param name="test">Condition evaluated after each iteration.</param>
+    /// <param name="iteration">Body executed for each iteration.</param>
+    /// <param name="breakLoop">Optional label used to exit the loop early.</param>
+    /// <param name="continueLoop">Optional label used to jump to the next iteration.</param>
+    /// <returns>An <see cref="Expression"/> representing the loop.</returns>
     public static Expression Do(Expression test, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)
     {
         breakLoop ??= Expression.Label("__break__");
@@ -224,9 +262,25 @@ public static class ExpressionEx
         );
     }
 
+    /// <summary>
+    /// Creates an expression accessing a member on an instance using the supplied arguments.
+    /// </summary>
+    /// <param name="expression">Expression producing the instance whose member is accessed.</param>
+    /// <param name="memberName">Name of the member to access.</param>
+    /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
+    /// <returns>An <see cref="Expression"/> representing the member access.</returns>
     public static Expression CreateMemberExpression(Expression expression, string memberName, params Expression[] arguments)
     => CreateMemberExpression(expression, memberName, BindingFlags.Public);
 
+    /// <summary>
+    /// Creates an expression accessing a member on an instance using explicit binding flags.
+    /// </summary>
+    /// <param name="expression">Expression producing the instance whose member is accessed.</param>
+    /// <param name="memberName">Name of the member to access.</param>
+    /// <param name="bindingFlags">Flags controlling visibility, case, and hierarchy.</param>
+    /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
+    /// <returns>An <see cref="Expression"/> representing the member access.</returns>
+    /// <exception cref="MissingMemberException">Thrown when the requested member cannot be located.</exception>
     public static Expression CreateMemberExpression(Expression expression, string memberName, BindingFlags bindingFlags, params Expression[] arguments)
     {
         bindingFlags &= BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.NonPublic;
@@ -270,6 +324,14 @@ public static class ExpressionEx
         throw new MissingMemberException(memberName);
     }
 
+    /// <summary>
+    /// Creates an expression accessing a specific member on an instance.
+    /// </summary>
+    /// <param name="expression">Expression producing the instance whose member is accessed.</param>
+    /// <param name="member">The member metadata describing the target.</param>
+    /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
+    /// <returns>An <see cref="Expression"/> representing the member access.</returns>
+    /// <exception cref="ArgumentException">Thrown when the supplied <paramref name="arguments"/> do not match the member signature.</exception>
     public static Expression CreateMemberExpression(Expression expression, MemberInfo member, params Expression[] arguments)
     {
         Type[] argumentTypes = arguments.Select(a => a.Type).ToArray();
@@ -304,9 +366,25 @@ public static class ExpressionEx
         throw new NotSupportedException("");
     }
 
+    /// <summary>
+    /// Creates an expression accessing a static member using the supplied arguments.
+    /// </summary>
+    /// <param name="type">Type declaring the member.</param>
+    /// <param name="memberName">Name of the member to access.</param>
+    /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
+    /// <returns>An <see cref="Expression"/> representing the member access.</returns>
     public static Expression CreateStaticExpression(Type type, string memberName, params Expression[] arguments)
         => CreateStaticExpression(type, memberName, BindingFlags.Public);
 
+    /// <summary>
+    /// Creates an expression accessing a static member using explicit binding flags.
+    /// </summary>
+    /// <param name="type">Type declaring the member.</param>
+    /// <param name="memberName">Name of the member to access.</param>
+    /// <param name="bindingFlags">Flags controlling visibility, case, and hierarchy.</param>
+    /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
+    /// <returns>An <see cref="Expression"/> representing the member access.</returns>
+    /// <exception cref="MissingMemberException">Thrown when the requested member cannot be located.</exception>
     public static Expression CreateStaticExpression(Type type, string memberName, BindingFlags bindingFlags, params Expression[] arguments)
     {
         bindingFlags &= BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.NonPublic;
@@ -360,11 +438,26 @@ public static class ExpressionEx
         return true;
     }
 
+    /// <summary>
+    /// Attempts to create a conversion expression between two operands using the specified binding flags.
+    /// </summary>
+    /// <param name="expressionLeft">Expression providing the target conversion type.</param>
+    /// <param name="expressionRight">Expression representing the value to convert.</param>
+    /// <param name="converter">Receives the resulting conversion expression when successful.</param>
+    /// <param name="bindingFlags">Binding flags controlling which members are considered.</param>
+    /// <returns><see langword="true"/> when a suitable conversion expression can be created.</returns>
     public static bool TryGetConverter(Expression expressionLeft, Expression expressionRight, out Expression converter, BindingFlags bindingFlags = BindingFlags.Public)
     {
         return TryGetConverter(expressionLeft.Type, expressionRight, out converter, bindingFlags);
     }
 
+    /// <summary>
+    /// Attempts to produce a conversion expression for any of the supplied target/value pairs.
+    /// </summary>
+    /// <param name="expressions">Pairs describing the desired target type and associated value expression.</param>
+    /// <param name="converter">Receives the resulting conversion expression when successful.</param>
+    /// <param name="bindingFlags">Binding flags controlling which members are considered.</param>
+    /// <returns><see langword="true"/> when a suitable conversion expression can be created.</returns>
     public static bool TryGetConverter((Type targetType, Expression expressionRight)[] expressions, out Expression converter, BindingFlags bindingFlags = BindingFlags.Public)
     {
         foreach (var expression in expressions)
@@ -375,6 +468,14 @@ public static class ExpressionEx
         return false;
     }
 
+    /// <summary>
+    /// Attempts to create a conversion expression for the supplied target type and value expression.
+    /// </summary>
+    /// <param name="targetType">Destination type for the conversion.</param>
+    /// <param name="expressionRight">Expression representing the value to convert.</param>
+    /// <param name="converter">Receives the resulting conversion expression when successful.</param>
+    /// <param name="bindingFlags">Binding flags controlling which members are considered.</param>
+    /// <returns><see langword="true"/> when a suitable conversion expression can be created.</returns>
     public static bool TryGetConverter(Type targetType, Expression expressionRight, out Expression converter, BindingFlags bindingFlags = BindingFlags.Public)
     {
         // si le type est le même, on renvoie l'expression telle quelle
@@ -446,6 +547,13 @@ public static class ExpressionEx
         return false;
     }
 
+    /// <summary>
+    /// Replaces the parameters of a lambda expression with supplied expressions and returns the resulting body.
+    /// </summary>
+    /// <param name="lambda">Lambda whose body will be copied.</param>
+    /// <param name="replacingExpressions">Expressions replacing each parameter in order.</param>
+    /// <returns>The lambda body with parameters replaced by the provided expressions.</returns>
+    /// <exception cref="ArgumentException">Thrown when replacement counts or types do not match the lambda parameters.</exception>
     public static Expression ExtractInnerExpression(LambdaExpression lambda, params Expression[] replacingExpressions)
     {
         if (lambda.Parameters.Count != replacingExpressions.Length) throw new ArgumentException($"{nameof(replacingExpressions)} must be as long as {nameof(lambda)} arguments count", nameof(replacingExpressions));

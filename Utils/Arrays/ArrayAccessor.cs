@@ -25,7 +25,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	/// </summary>
 	public int Dimensions => Sizes.Length;
 
-	protected D innerObject;
+        /// <summary>
+        /// The underlying data source used by the accessor and returned when enumerating elements.
+        /// </summary>
+        protected D innerObject;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ArrayAccessor{T, D}"/> class.
@@ -96,9 +99,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	protected abstract void SetElement(T value, int[] references);
 
-	public IEnumerator<T> GetEnumerator() => innerObject.GetEnumerator();
+        /// <inheritdoc />
+        public IEnumerator<T> GetEnumerator() => innerObject.GetEnumerator();
 
-	IEnumerator IEnumerable.GetEnumerator() => innerObject.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => innerObject.GetEnumerator();
 }
 
 /// <summary>

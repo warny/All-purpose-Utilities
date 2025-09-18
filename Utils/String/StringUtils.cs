@@ -5,30 +5,37 @@ using Utils.Objects;
 
 namespace Utils.String;
 
+/// <summary>
+/// Provides helper methods for working with strings, including trimming brackets and parsing delimited content.
+/// </summary>
 public static class StringUtils
 {
-	/// <summary>
-	/// Supprime les parenthèses autour d'une chaîne
-	/// </summary>
-	/// <param name="str"></param>
-	/// <returns></returns>
-	public static string TrimBrackets(this string str, char openingBracket, char closingBracket)
-		=> TrimBrackets(str, new Brackets(openingBracket, closingBracket));
+        /// <summary>
+        /// Removes the first pair of brackets from the provided string when it matches the supplied opening and closing characters.
+        /// </summary>
+        /// <param name="str">Source string to inspect.</param>
+        /// <param name="openingBracket">Expected opening bracket character.</param>
+        /// <param name="closingBracket">Expected closing bracket character.</param>
+        /// <returns>The input string without its outermost matching brackets.</returns>
+        public static string TrimBrackets(this string str, char openingBracket, char closingBracket)
+                => TrimBrackets(str, new Brackets(openingBracket, closingBracket));
 
-	/// <summary>
-	/// Supprime les parenthèses autour d'une chaîne
-	/// </summary>
-	/// <param name="str"></param>
-	/// <returns></returns>
-	public static string TrimBrackets(this string str, char bracket)
-		=> TrimBrackets(str, new Brackets(bracket, bracket));
+        /// <summary>
+        /// Removes the first pair of identical brackets from the provided string.
+        /// </summary>
+        /// <param name="str">Source string to inspect.</param>
+        /// <param name="bracket">Bracket character that is used as both opening and closing delimiter.</param>
+        /// <returns>The input string without its outermost matching brackets.</returns>
+        public static string TrimBrackets(this string str, char bracket)
+                => TrimBrackets(str, new Brackets(bracket, bracket));
 
-	/// <summary>
-	/// Supprime les parenthèses autour d'une chaîne
-	/// </summary>
-	/// <param name="str"></param>
-	/// <returns></returns>
-	public static string TrimBrackets(string str, params Brackets[] brackets)
+        /// <summary>
+        /// Removes the outermost brackets from the provided string using the supplied bracket definitions.
+        /// </summary>
+        /// <param name="str">Source string to inspect.</param>
+        /// <param name="brackets">Possible bracket definitions that can wrap the string.</param>
+        /// <returns>The input string without its outermost matching brackets.</returns>
+        public static string TrimBrackets(string str, params Brackets[] brackets)
 	{
 		if (brackets.IsNullOrEmptyCollection())
 			brackets = Brackets.All;
@@ -162,10 +169,25 @@ public static class StringUtils
 		return result.ToString();
 	}
 
-	public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, params Parenthesis[] depthMarkerChars)
-			=> commaSeparatedValues.SplitCommaSeparatedList(commaChar, false, depthMarkerChars);
+        /// <summary>
+        /// Splits a comma-separated string while respecting nested markers such as brackets or braces.
+        /// </summary>
+        /// <param name="commaSeparatedValues">The string containing comma-separated values.</param>
+        /// <param name="commaChar">The character that separates values.</param>
+        /// <param name="depthMarkerChars">The markers that define nesting boundaries.</param>
+        /// <returns>A sequence of values extracted from the string.</returns>
+        public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, params Parenthesis[] depthMarkerChars)
+                        => commaSeparatedValues.SplitCommaSeparatedList(commaChar, false, depthMarkerChars);
 
-	public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, bool removeEmptyEntries, params Parenthesis[] depthMarkerChars)
+        /// <summary>
+        /// Splits a comma-separated string while respecting nested markers such as brackets or braces, with control over empty entries.
+        /// </summary>
+        /// <param name="commaSeparatedValues">The string containing comma-separated values.</param>
+        /// <param name="commaChar">The character that separates values.</param>
+        /// <param name="removeEmptyEntries">True to omit empty results from the output; otherwise false.</param>
+        /// <param name="depthMarkerChars">The markers that define nesting boundaries.</param>
+        /// <returns>A sequence of values extracted from the string.</returns>
+        public static IEnumerable<string> SplitCommaSeparatedList(this string commaSeparatedValues, char commaChar, bool removeEmptyEntries, params Parenthesis[] depthMarkerChars)
 	{
 		var lastTypeIndex = 0;
 		var depth = new Stack<Parenthesis>();
@@ -206,26 +228,60 @@ public static class StringUtils
 }
 
 /// <summary>
-/// Définit une paire de parenthèses
+/// Represents a pair of characters that mark the beginning and end of a delimited block.
 /// </summary>
 public class Brackets
 {
-	public char Open { get; }
-	public char Close { get; }
+        /// <summary>
+        /// Gets the opening character of the bracket pair.
+        /// </summary>
+        public char Open { get; }
 
-	public Brackets(string brackets) : this(brackets[0], brackets[1]) { }
+        /// <summary>
+        /// Gets the closing character of the bracket pair.
+        /// </summary>
+        public char Close { get; }
 
-	public Brackets(char open, char close)
-	{
-		this.Open = open;
-		this.Close = close;
-	}
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Brackets"/> class using a two-character string.
+        /// </summary>
+        /// <param name="brackets">A string containing the opening and closing characters.</param>
+        public Brackets(string brackets) : this(brackets[0], brackets[1]) { }
 
-	public static Brackets RoundBrackets { get; } = new Brackets('(', ')');
-	public static Brackets SquareBrackets { get; } = new Brackets('[', ']');
-	public static Brackets Braces { get; } = new Brackets('{', '}');
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Brackets"/> class.
+        /// </summary>
+        /// <param name="open">The opening character.</param>
+        /// <param name="close">The closing character.</param>
+        public Brackets(char open, char close)
+        {
+                this.Open = open;
+                this.Close = close;
+        }
 
-	public static Brackets[] All { get; } = [RoundBrackets, SquareBrackets, Braces];
+        /// <summary>
+        /// Gets a <see cref="Brackets"/> instance representing round brackets (parentheses).
+        /// </summary>
+        public static Brackets RoundBrackets { get; } = new Brackets('(', ')');
 
-	public override string ToString() => $" {Open} ... {Close} ";
+        /// <summary>
+        /// Gets a <see cref="Brackets"/> instance representing square brackets.
+        /// </summary>
+        public static Brackets SquareBrackets { get; } = new Brackets('[', ']');
+
+        /// <summary>
+        /// Gets a <see cref="Brackets"/> instance representing braces.
+        /// </summary>
+        public static Brackets Braces { get; } = new Brackets('{', '}');
+
+        /// <summary>
+        /// Gets all bracket instances provided by the utility.
+        /// </summary>
+        public static Brackets[] All { get; } = [RoundBrackets, SquareBrackets, Braces];
+
+        /// <summary>
+        /// Returns a string that represents the bracket pair.
+        /// </summary>
+        /// <returns>A string describing the bracket pair.</returns>
+        public override string ToString() => $" {Open} ... {Close} ";
 }

@@ -424,9 +424,25 @@ namespace Utils.Range
 
 		#region Formatting (IFormattable)
 
-		public override string ToString() => ToString(string.Empty, null);
-		public string ToString(string? format) => ToString(format, null);
-		public string ToString(IFormatProvider? formatProvider) => ToString(string.Empty, formatProvider);
+                /// <summary>
+                /// Converts the current <see cref="Ranges{T}"/> to its string representation using default formatting.
+                /// </summary>
+                /// <returns>A string representation of the stored ranges.</returns>
+                public override string ToString() => ToString(string.Empty, null);
+
+                /// <summary>
+                /// Converts the current <see cref="Ranges{T}"/> to its string representation using the provided format string.
+                /// </summary>
+                /// <param name="format">Custom format applied to each interval boundary.</param>
+                /// <returns>A string representation of the stored ranges.</returns>
+                public string ToString(string? format) => ToString(format, null);
+
+                /// <summary>
+                /// Converts the current <see cref="Ranges{T}"/> to its string representation using the provided format provider.
+                /// </summary>
+                /// <param name="formatProvider">Culture used when formatting the numeric boundaries.</param>
+                /// <returns>A string representation of the stored ranges.</returns>
+                public string ToString(IFormatProvider? formatProvider) => ToString(string.Empty, formatProvider);
 
 		/// <summary>
 		/// Converts all stored intervals to string, joined by a union symbol " ∪ ".
@@ -445,29 +461,36 @@ namespace Utils.Range
 
 		#region Equality
 
-		public override bool Equals(object? obj)
-		{
-			return obj is Ranges<T> other && Equals(other);
-		}
+                /// <inheritdoc />
+                public override bool Equals(object? obj)
+                {
+                        return obj is Ranges<T> other && Equals(other);
+                }
 
-		public bool Equals(Ranges<T>? other)
-		{
-			if (other is null) return false;
-			return _ranges.SequenceEqual(other._ranges);
-		}
+                /// <summary>
+                /// Determines whether the specified <see cref="Ranges{T}"/> represents the same set of intervals.
+                /// </summary>
+                /// <param name="other">The other range collection to compare with.</param>
+                /// <returns><see langword="true"/> when both collections contain the same ranges; otherwise, <see langword="false"/>.</returns>
+                public bool Equals(Ranges<T>? other)
+                {
+                        if (other is null) return false;
+                        return _ranges.SequenceEqual(other._ranges);
+                }
 
-		public override int GetHashCode()
-		{
-			unchecked
-			{
-				int hash = 17;
-				foreach (var interval in _ranges)
-				{
-					hash = hash * 31 + interval.GetHashCode();
-				}
-				return hash;
-			}
-		}
+                /// <inheritdoc />
+                public override int GetHashCode()
+                {
+                        unchecked
+                        {
+                                int hash = 17;
+                                foreach (var interval in _ranges)
+                                {
+                                        hash = hash * 31 + interval.GetHashCode();
+                                }
+                                return hash;
+                        }
+                }
 
 		#endregion
 
@@ -534,19 +557,41 @@ namespace Utils.Range
 	/// Stored as a struct for efficient copying.
 	/// </summary>
 	/// <typeparam name="T">A comparable type that supports ordering.</typeparam>
-	public struct Range<T> : IFormattable, IEquatable<Range<T>?>
-		where T : IComparable<T>
-	{
-		public T Start { get; }
-		public T End { get; }
-		public bool ContainsStart { get; }
-		public bool ContainsEnd { get; }
+        public struct Range<T> : IFormattable, IEquatable<Range<T>?>
+                where T : IComparable<T>
+        {
+                /// <summary>
+                /// Gets the inclusive or exclusive starting boundary of the range.
+                /// </summary>
+                public T Start { get; }
 
-		public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
-		{
-			// Validate the ordering
-			int comparison = start.CompareTo(end);
-			if (comparison > 0)
+                /// <summary>
+                /// Gets the inclusive or exclusive ending boundary of the range.
+                /// </summary>
+                public T End { get; }
+
+                /// <summary>
+                /// Gets a value indicating whether <see cref="Start"/> is included in the range.
+                /// </summary>
+                public bool ContainsStart { get; }
+
+                /// <summary>
+                /// Gets a value indicating whether <see cref="End"/> is included in the range.
+                /// </summary>
+                public bool ContainsEnd { get; }
+
+                /// <summary>
+                /// Initializes a new <see cref="Range{T}"/> with the specified boundaries and inclusiveness flags.
+                /// </summary>
+                /// <param name="start">The lower boundary of the range.</param>
+                /// <param name="end">The upper boundary of the range.</param>
+                /// <param name="containsStart">Indicates whether <paramref name="start"/> belongs to the range.</param>
+                /// <param name="containsEnd">Indicates whether <paramref name="end"/> belongs to the range.</param>
+                public Range(T start, T end, bool containsStart = true, bool containsEnd = true)
+                {
+                        // Validate the ordering
+                        int comparison = start.CompareTo(end);
+                        if (comparison > 0)
 				throw new ArgumentException($"start ({start}) > end ({end})");
 			if (comparison == 0 && !(containsStart && containsEnd))
 				throw new ArgumentException("A single-element range must include that element.");
@@ -557,18 +602,26 @@ namespace Utils.Range
 			ContainsEnd = containsEnd;
 		}
 
-		/// <summary>
-		/// Constructs a degenerate range with a single value [value..value].
-		/// </summary>
-		public Range(T value) : this(value, value, true, true) { }
+                /// <summary>
+                /// Constructs a degenerate range that represents a single value [value..value].
+                /// </summary>
+                /// <param name="value">The value captured by the range.</param>
+                public Range(T value) : this(value, value, true, true)
+                {
+                }
 
-		#region Containment / Overlap
+                #region Containment / Overlap
 
-		public bool Contains(T value)
-		{
-			bool leftOk = ContainsStart
-				? value.CompareTo(Start) >= 0
-				: value.CompareTo(Start) > 0;
+                /// <summary>
+                /// Determines whether the supplied value lies within the range boundaries.
+                /// </summary>
+                /// <param name="value">The value to test.</param>
+                /// <returns><see langword="true"/> if <paramref name="value"/> is contained in the range; otherwise, <see langword="false"/>.</returns>
+                public bool Contains(T value)
+                {
+                        bool leftOk = ContainsStart
+                                ? value.CompareTo(Start) >= 0
+                                : value.CompareTo(Start) > 0;
 
 			bool rightOk = ContainsEnd
 				? value.CompareTo(End) <= 0
@@ -577,12 +630,17 @@ namespace Utils.Range
 			return leftOk && rightOk;
 		}
 
-		public bool Contains(Range<T> other)
-		{
-			// This range must start <= other.Start
-			// If Start == other.Start, then either both are inclusive or we containStart if other does
-			bool leftOk = Start.CompareTo(other.Start) < 0
-				|| (Start.CompareTo(other.Start) == 0 && (ContainsStart || !other.ContainsStart));
+                /// <summary>
+                /// Determines whether this range completely contains another range.
+                /// </summary>
+                /// <param name="other">The range to compare with.</param>
+                /// <returns><see langword="true"/> when <paramref name="other"/> is entirely inside this range; otherwise, <see langword="false"/>.</returns>
+                public bool Contains(Range<T> other)
+                {
+                        // This range must start <= other.Start
+                        // If Start == other.Start, then either both are inclusive or we containStart if other does
+                        bool leftOk = Start.CompareTo(other.Start) < 0
+                                || (Start.CompareTo(other.Start) == 0 && (ContainsStart || !other.ContainsStart));
 
 			// Similarly for the end
 			bool rightOk = End.CompareTo(other.End) > 0
@@ -591,13 +649,24 @@ namespace Utils.Range
 			return leftOk && rightOk;
 		}
 
-		public bool Overlap(Range<T> other) => Overlap(this, other);
+                /// <summary>
+                /// Determines whether this range overlaps with another range.
+                /// </summary>
+                /// <param name="other">The range to test against.</param>
+                /// <returns><see langword="true"/> when the two ranges share at least one value; otherwise, <see langword="false"/>.</returns>
+                public bool Overlap(Range<T> other) => Overlap(this, other);
 
-		public static bool Overlap(Range<T> a, Range<T> b)
-		{
-			// a starts <= b ends
-			bool leftCheck = a.Start.CompareTo(b.End) < 0
-				|| (a.Start.CompareTo(b.End) == 0 && a.ContainsStart && b.ContainsEnd);
+                /// <summary>
+                /// Determines whether two ranges overlap.
+                /// </summary>
+                /// <param name="a">The first range.</param>
+                /// <param name="b">The second range.</param>
+                /// <returns><see langword="true"/> when the two ranges share at least one value; otherwise, <see langword="false"/>.</returns>
+                public static bool Overlap(Range<T> a, Range<T> b)
+                {
+                        // a starts <= b ends
+                        bool leftCheck = a.Start.CompareTo(b.End) < 0
+                                || (a.Start.CompareTo(b.End) == 0 && a.ContainsStart && b.ContainsEnd);
 
 			// b starts <= a ends
 			bool rightCheck = b.Start.CompareTo(a.End) < 0
@@ -606,13 +675,15 @@ namespace Utils.Range
 			return leftCheck && rightCheck;
 		}
 
-		/// <summary>
-		/// Tries to compute the intersection of two ranges. Returns null if they don't overlap.
-		/// </summary>
-		public Range<T>? Intersect(Range<T> other)
-		{
-			T newStart = Max(Start, other.Start);
-			T newEnd = Min(End, other.End);
+                /// <summary>
+                /// Computes the intersection of this range with another one if possible.
+                /// </summary>
+                /// <param name="other">The range to intersect with.</param>
+                /// <returns>A new range representing the overlap, or <see langword="null"/> when the ranges are disjoint.</returns>
+                public Range<T>? Intersect(Range<T> other)
+                {
+                        T newStart = Max(Start, other.Start);
+                        T newEnd = Min(End, other.End);
 
 			if (newStart.CompareTo(newEnd) > 0)
 				return null;
@@ -644,15 +715,37 @@ namespace Utils.Range
 
 		#region Formatting
 
-		public override string ToString() => ToString(string.Empty, null);
-		public string ToString(string? format) => ToString(format, null);
-		public string ToString(IFormatProvider? formatProvider) => ToString(string.Empty, formatProvider);
+                /// <summary>
+                /// Converts this range to a string using default formatting.
+                /// </summary>
+                /// <returns>A string representation of the current range.</returns>
+                public override string ToString() => ToString(string.Empty, null);
 
-		public string ToString(string? format, IFormatProvider? formatProvider)
-		{
-			// Example: "[1..5]", "(2..3]", etc.
-			var leftBracket = ContainsStart ? "[" : "]";
-			var rightBracket = ContainsEnd ? "]" : "[";
+                /// <summary>
+                /// Converts this range to a string using the supplied format string.
+                /// </summary>
+                /// <param name="format">Custom format applied to the numeric boundaries.</param>
+                /// <returns>A string representation of the current range.</returns>
+                public string ToString(string? format) => ToString(format, null);
+
+                /// <summary>
+                /// Converts this range to a string using the supplied format provider.
+                /// </summary>
+                /// <param name="formatProvider">Culture used when formatting the numeric boundaries.</param>
+                /// <returns>A string representation of the current range.</returns>
+                public string ToString(IFormatProvider? formatProvider) => ToString(string.Empty, formatProvider);
+
+                /// <summary>
+                /// Converts this range to a string using the supplied format string and provider.
+                /// </summary>
+                /// <param name="format">Custom format applied to the numeric boundaries.</param>
+                /// <param name="formatProvider">Culture used when formatting the numeric boundaries.</param>
+                /// <returns>A string representation of the current range.</returns>
+                public string ToString(string? format, IFormatProvider? formatProvider)
+                {
+                        // Example: "[1..5]", "(2..3]", etc.
+                        var leftBracket = ContainsStart ? "[" : "]";
+                        var rightBracket = ContainsEnd ? "]" : "[";
 
 			// If T implements IFormattable, you can do Start.ToString(format, formatProvider)
 			// Otherwise, just do Start.ToString()
@@ -665,23 +758,30 @@ namespace Utils.Range
 
 		#region Equality
 
-		public override readonly bool Equals(object? obj)
-		{
-			return obj is Range<T> r && Equals(r);
-		}
+                /// <inheritdoc />
+                public override readonly bool Equals(object? obj)
+                {
+                        return obj is Range<T> r && Equals(r);
+                }
 
-		public readonly bool Equals(Range<T>? other)
-		{
-			if (other is null) return false;
-			return Start.CompareTo(other.Value.Start) == 0
-				&& End.CompareTo(other.Value.End) == 0
-				&& ContainsStart == other.Value.ContainsStart
-				&& ContainsEnd == other.Value.ContainsEnd;
-		}
+                /// <summary>
+                /// Determines whether another range has the same boundaries and inclusiveness flags.
+                /// </summary>
+                /// <param name="other">The range to compare with.</param>
+                /// <returns><see langword="true"/> when both ranges describe the same interval; otherwise, <see langword="false"/>.</returns>
+                public readonly bool Equals(Range<T>? other)
+                {
+                        if (other is null) return false;
+                        return Start.CompareTo(other.Value.Start) == 0
+                                && End.CompareTo(other.Value.End) == 0
+                                && ContainsStart == other.Value.ContainsStart
+                                && ContainsEnd == other.Value.ContainsEnd;
+                }
 
-		public override readonly int GetHashCode()
-			=> HashCode.Combine(Start, End, ContainsStart, ContainsEnd);
+                /// <inheritdoc />
+                public override readonly int GetHashCode()
+                        => HashCode.Combine(Start, End, ContainsStart, ContainsEnd);
 
-		#endregion
-	}
+                #endregion
+        }
 }
