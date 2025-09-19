@@ -143,31 +143,21 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
                 DimensionCache[] caches = new DimensionCache[dimensions.Length];
                 int elementCount = 1;
 
-                for (int i = dimensions.Length - 1; i >= 0; i--)
+                for (int dimensionIndex = dimensions.Length - 1; dimensionIndex >= 0; dimensionIndex--)
                 {
-                        int[] offsets = i < dimensions.Length - 1 ? CreateOffsetsForDimension(dimensions[i], elementCount) : Array.Empty<int>();
-                        caches[i] = new DimensionCache(offsets, elementCount, dimensions[i]);
-                        elementCount *= dimensions[i];
+                        int size = dimensions[dimensionIndex];
+                        int[] offsets = new int[size];
+
+                        for (int index = 0; index < size; index++)
+                        {
+                                offsets[index] = index * elementCount;
+                        }
+
+                        caches[dimensionIndex] = new DimensionCache(offsets, elementCount, size);
+                        elementCount *= size;
                 }
 
                 return [.. caches];
-        }
-
-        /// <summary>
-        /// Creates the offsets for a specific dimension.
-        /// </summary>
-        /// <param name="size">The size of the dimension.</param>
-        /// <param name="elementCount">The number of elements contained in a single entry of the dimension.</param>
-        /// <returns>The pre-computed offsets for the dimension.</returns>
-        private static int[] CreateOffsetsForDimension(int size, int elementCount)
-        {
-                int[] offsets = new int[size];
-                for (int index = 0; index < size; index++)
-                {
-                        offsets[index] = index * elementCount;
-                }
-
-                return offsets;
         }
 
 	/// <summary>
