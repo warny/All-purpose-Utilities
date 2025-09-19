@@ -8,8 +8,8 @@ namespace Utils.Net.DNS.RFC1035;
 /// Represents a fallback or "default" DNS record for scenarios where the record type is unrecognized,
 /// or when a custom processing path is desired for type code zero (which is reserved/unused).
 /// Despite the TXT-like comment, this class is annotated with <c>[DNSRecord(DNSClass.IN, 0x00)]</c>,
-/// indicating it is treated as a placeholder for type <c>0</c>. It can store textual data via the
-/// <see cref="Text"/> property.
+/// indicating it is treated as a placeholder for type <c>0</c>. The raw payload is stored in the
+/// <see cref="Datas"/> property.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,32 +22,33 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSTextRecord("{Datas}")]
 public class Default : DNSResponseDetail
 {
-	/*
-        Example of a bytes RDATA format:
+    /*
+    Example of a bytes RDATA format:
 
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                   DATAS                       /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /                   DATAS                       /
+        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-        where:
+    where:
 
-        bytes    One or more bytes
+    bytes    One or more bytes
 
-        Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
-        class uses type code 0 for demonstration or fallback.
-    */
+    Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
+    class uses type code 0 for demonstration or fallback.
+*/
 
-	/// <summary>
-	/// Gets or sets an arbitrary string of text for this fallback record.
-	/// </summary>
-	[DNSField]
-	public byte[] Datas { get; set; }
+    /// <summary>
+    /// Gets or sets the raw data payload associated with this fallback record.
+    /// </summary>
+    [DNSField]
+    public byte[] Datas { get; set; }
 
-	/// <summary>
-	/// Returns the text content of this fallback record.
-	/// </summary>
-	/// <returns>
-	/// The value of the <see cref="Text"/> property, or an empty string if it is <c>null</c>.
-	/// </returns>
-	public override string ToString() => "[ " + string.Join(" ", Datas.Select(x=>x.ToString("X2"))) + " ]" ?? string.Empty;
+    /// <summary>
+    /// Returns a textual representation of the bytes stored in <see cref="Datas"/>.
+    /// </summary>
+    /// <returns>
+    /// A string that lists each byte as a hexadecimal value enclosed in brackets. The caller must
+    /// ensure <see cref="Datas"/> is not <c>null</c> before calling this method.
+    /// </returns>
+    public override string ToString() => "[ " + string.Join(" ", Datas.Select(x => x.ToString("X2"))) + " ]" ?? string.Empty;
 }

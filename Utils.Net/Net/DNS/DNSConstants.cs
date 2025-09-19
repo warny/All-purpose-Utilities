@@ -23,10 +23,7 @@ namespace Utils.Net.DNS;
 */
 
 /// <summary>
-/// Is the packet is a response or a question (1 bit, aligned)
-/// </summary>
-/// <summary>
-/// Identifies whether the DNS datagram carries a query or a response payload.
+/// Identifies whether the DNS datagram carries a query or a response payload (1 bit, aligned).
 /// </summary>
 public enum DNSQRBit : ushort
 {
@@ -91,24 +88,21 @@ public enum DNSError : ushort
 }
 
 /// <summary>
-/// DNS Standart constants masks
-/// </summary>
-/// <summary>
 /// Constants representing DNS datagram flags and fields masks.
 /// </summary>
 public static class DNSConstants
 {
-	/// <summary>
-	/// QR (Query/Response) bit. Set to 1 for Response, 0 for Query.
-	/// <seealso cref="DNSQRBit"/>
-	/// </summary>
-	public const ushort QR = 0x8000;
+        /// <summary>
+        /// QR (Query/Response) bit. Set to 1 for Response, 0 for Query.
+        /// </summary>
+        /// <seealso cref="DNSQRBit"/>
+        public const ushort QR = 0x8000;
 
-	/// <summary>
-	/// OpCode (Operation Code) field. Indicates the type of DNS query.
-	/// <seealso cref="DNSOpCode"/>
-	/// </summary>
-	public const ushort OpCode = 0x7800;
+        /// <summary>
+        /// OpCode (Operation Code) field. Indicates the type of DNS query.
+        /// </summary>
+        /// <seealso cref="DNSOpCode"/>
+        public const ushort OpCode = 0x7800;
 
 	/// <summary>
 	/// Authoritative Answer bit. Set to 1 if the responding server is an authority for the queried domain.
@@ -148,11 +142,11 @@ public static class DNSConstants
 	/// </summary>
 	public const ushort CheckingDisabled = 0x10;
 
-	/// <summary>
-	/// Error field. Indicates the type of DNS error encountered in the response.
-	/// <seealso cref="DNSError"/>
-	/// </summary>
-	public const ushort Error = 0x000F;
+        /// <summary>
+        /// Error field. Indicates the type of DNS error encountered in the response.
+        /// </summary>
+        /// <seealso cref="DNSError"/>
+        public const ushort Error = 0x000F;
 }
 /// <summary>
 /// DNS class identifiers that describe the scope of a resource record.
@@ -207,10 +201,24 @@ public static class DNSRequestType
 	public const ushort MAILA = 0xFE;
 }
 
-static class Types
+/// <summary>
+/// Provides cached <see cref="Type"/> instances used by reflection-based DNS helpers.
+/// </summary>
+internal static class Types
 {
-	public static readonly Type dnsRequestRecordType = typeof(DNSRequestRecord);
-	public static readonly Type dnsResponseDetailType = typeof(DNSResponseDetail);
-	public static readonly Type dnsClassAttributeType = typeof(DNSRecordAttribute);
+        /// <summary>
+        /// Gets the <see cref="Type"/> representing <see cref="DNSRequestRecord"/>.
+        /// </summary>
+        public static readonly Type dnsRequestRecordType = typeof(DNSRequestRecord);
+
+        /// <summary>
+        /// Gets the <see cref="Type"/> representing <see cref="DNSResponseDetail"/>.
+        /// </summary>
+        public static readonly Type dnsResponseDetailType = typeof(DNSResponseDetail);
+
+        /// <summary>
+        /// Gets the <see cref="Type"/> representing <see cref="DNSRecordAttribute"/>.
+        /// </summary>
+        public static readonly Type dnsClassAttributeType = typeof(DNSRecordAttribute);
 }
 
