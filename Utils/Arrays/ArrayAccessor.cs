@@ -116,13 +116,10 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	/// </summary>
 	public int Offset { get; }
 
-	/// <summary>
-	/// Pre-computed offsets for each dimension except the last one.
-	/// Each inner array contains the offsets for a given dimension.
-	/// </summary>
-	private readonly ImmutableArray<ImmutableArray<int>> offsetTables;
-
-	private readonly ImmutableArray<int> dimmensionElementsCount;
+        /// <summary>
+        /// Cache describing each dimension to accelerate offset and length calculations.
+        /// </summary>
+        private readonly ImmutableArray<DimensionCache> dimensionCaches;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ArrayAccessor{T}"/> class.
@@ -133,51 +130,35 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	public ArrayAccessor(T[] array, int offset, params int[] dimensions) : base(array, dimensions)
 	{
 		this.Offset = offset.ArgMustBeGreaterOrEqualsThan(0);
-		offsetTables = CreateOffsets(dimensions);
-		dimmensionElementsCount = CreateDimmensionElementsCount(dimensions);
-	}
+                dimensionCaches = CreateDimensionCaches(dimensions);
+        }
 
-	/// <summary>
-	/// Compute the number of elements in each dimension.
-	/// </summary>
-	/// <param name="dimensions">dimensions definitions</param>
-	/// <returns>Dimensions sizes</returns>
-	public static ImmutableArray<int> CreateDimmensionElementsCount(int[] dimensions)
-	{
-		int[] results = new int[dimensions.Length];
-		int length = 1;
-		for (int i = dimensions.Length - 1; i >= 0; i--)
-		{
-			results[i] = length;
-			length *= dimensions[i];
-		}
+        /// <summary>
+        /// Creates the cache describing each dimension of the accessor.
+        /// </summary>
+        /// <param name="dimensions">The sizes of each dimension.</param>
+        /// <returns>The cache entries for every dimension.</returns>
+        private static ImmutableArray<DimensionCache> CreateDimensionCaches(int[] dimensions)
+        {
+                DimensionCache[] caches = new DimensionCache[dimensions.Length];
+                int elementCount = 1;
 
-		return [.. results];
-	}
+                for (int dimensionIndex = dimensions.Length - 1; dimensionIndex >= 0; dimensionIndex--)
+                {
+                        int size = dimensions[dimensionIndex];
+                        int[] offsets = new int[size];
 
-	/// <summary>
-	/// Compute offsets for each dimension to facilitate index calculations.
-	/// </summary>
-	/// <param name="dimensions">dimensions definitions</param>
-	/// <returns>Offsets</returns>
-	private static ImmutableArray<ImmutableArray<int>> CreateOffsets(int[] dimensions)
-	{
-		ImmutableArray<int>[] result = new ImmutableArray<int>[dimensions.Length - 1];
+                        for (int index = 0; index < size; index++)
+                        {
+                                offsets[index] = index * elementCount;
+                        }
 
-		int dimensionLength = dimensions[^1];
+                        caches[dimensionIndex] = new DimensionCache(offsets, elementCount, size);
+                        elementCount *= size;
+                }
 
-		for (int i = dimensions.Length - 2; i >= 0; i--)
-		{
-			int[] currentOffsets = new int[dimensions[i]];
-			for (int j = 0, k = 0; k < dimensions[i]; j += dimensionLength, k++)
-			{
-				currentOffsets[k] = j;
-			}
-			result[i] = [.. currentOffsets];
-			dimensionLength *= dimensions[i];
-		}
-		return [.. result];
-	}
+                return [.. caches];
+        }
 
 	/// <summary>
 	/// Validates that the underlying array has sufficient size for the specified dimensions.
@@ -198,14 +179,14 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private int Position(int[] references)
 	{
-		int position = Offset;
-		for (int i = 0; i < references.Length - 1; i++)
-		{
-			position += offsetTables[i][references[i]];
-		}
-		position += references[^1];
-		return position;
-	}
+                int position = Offset;
+                for (int i = 0; i < references.Length - 1; i++)
+                {
+                        position += dimensionCaches[i].Offsets[references[i]];
+                }
+                position += references[^1];
+                return position;
+        }
 
 	/// <summary>
 	/// Retrieves the element at the specified multi-dimensional index.
@@ -235,25 +216,63 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public Span<T> AsSpan(params int[] indexes)
 	{
-		if (indexes.Length == 0) return this.innerObject.AsSpan(Offset, dimmensionElementsCount[0] * Sizes[0]);
+                if (indexes.Length == 0)
+                {
+                        DimensionCache root = dimensionCaches[0];
+                        return this.innerObject.AsSpan(Offset, root.ElementCount * root.Size);
+                }
 
-		indexes.ArgMustBe(a => a.Length <= Dimensions, "Too many indexes provided.");
+                indexes.ArgMustBe(a => a.Length <= Dimensions, "Too many indexes provided.");
 
-		int position = Offset;
-		for (int i = 0; i < indexes.Length; i++)
-		{
-			var index = indexes[i];
+                int position = Offset;
+                for (int i = 0; i < indexes.Length; i++)
+                {
+                        var index = indexes[i];
 
-			if (index < 0 || index >= Sizes[i])
-				throw new IndexOutOfRangeException($"Index {index} is out of bounds for dimension {i}.");
-			
-			if (i < offsetTables.Length)
-				position += offsetTables[i][index];
-			else
-				position += index;
-		}
+                        if (index < 0 || index >= Sizes[i])
+                                throw new IndexOutOfRangeException($"Index {index} is out of bounds for dimension {i}.");
 
-		int length = dimmensionElementsCount[indexes.Length -1];
-		return this.innerObject.AsSpan(position, length);
-	}
+                        if (i < dimensionCaches.Length - 1)
+                                position += dimensionCaches[i].Offsets[index];
+                        else
+                                position += index;
+                }
+
+                int length = dimensionCaches[indexes.Length - 1].ElementCount;
+                return this.innerObject.AsSpan(position, length);
+        }
+
+        /// <summary>
+        /// Cache entry describing a single dimension.
+        /// </summary>
+        private readonly struct DimensionCache
+        {
+                /// <summary>
+                /// Initializes a new instance of the <see cref="DimensionCache"/> struct.
+                /// </summary>
+                /// <param name="offsets">Offsets allowing direct access to the underlying array.</param>
+                /// <param name="elementCount">Number of elements contained in a single entry of the dimension.</param>
+                /// <param name="size">Size of the dimension.</param>
+                public DimensionCache(int[] offsets, int elementCount, int size)
+                {
+                        Offsets = offsets;
+                        ElementCount = elementCount;
+                        Size = size;
+                }
+
+                /// <summary>
+                /// Gets the offsets for each element of the dimension.
+                /// </summary>
+                public int[] Offsets { get; }
+
+                /// <summary>
+                /// Gets the number of elements contained by a single entry of the dimension.
+                /// </summary>
+                public int ElementCount { get; }
+
+                /// <summary>
+                /// Gets the size of the dimension.
+                /// </summary>
+                public int Size { get; }
+        }
 }
