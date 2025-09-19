@@ -41,7 +41,7 @@ public class ArrayAccessorTests
 	public void AsSpanWithoutIndexReturnsAll()
 	{
 		var accessor = CreateAccessor();
-		var span = accessor.AsSpan(System.Array.Empty<int>());
+		var span = accessor.AsSpan();
 		CollectionAssert.AreEqual(Enumerable.Range(0, 24).ToArray(), span.ToArray());
 	}
 
