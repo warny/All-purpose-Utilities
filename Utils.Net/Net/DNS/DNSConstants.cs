@@ -189,16 +189,16 @@ public static class DNSRequestType
 	/// DNS zone transfer request type.
 	/// </summary>
 	public const ushort AXFR = 0xFC;
-	[Obsolete]
-	/// <summary>
-	/// Mailbox-related resource record type (obsolete).
-	/// </summary>
-	public const ushort MAILB = 0xFD;
-	[Obsolete]
-	/// <summary>
-	/// Mail agent resource record type (obsolete).
-	/// </summary>
-	public const ushort MAILA = 0xFE;
+        /// <summary>
+        /// Mailbox-related resource record type (obsolete).
+        /// </summary>
+        [Obsolete]
+        public const ushort MAILB = 0xFD;
+        /// <summary>
+        /// Mail agent resource record type (obsolete).
+        /// </summary>
+        [Obsolete]
+        public const ushort MAILA = 0xFE;
 }
 
 /// <summary>
