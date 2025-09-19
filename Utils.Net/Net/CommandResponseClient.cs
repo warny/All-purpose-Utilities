@@ -91,15 +91,22 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     public bool IsConnected => !_disconnected;
 
+
+    /// <summary>
+    /// Default port used by the protocol.
+    /// </summary>
+    public virtual int DefaultPort { get; } = 0;
+
     /// <summary>
     /// Connects to the specified host and port using a TCP connection.
     /// </summary>
     /// <param name="host">Server host name or IP address.</param>
     /// <param name="port">Server port.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task ConnectAsync(string host, int port, CancellationToken cancellationToken = default)
+    public virtual async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
     {
-        Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
+        port = port == -1 ? DefaultPort : port;
+		Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
         _client = new TcpClient();
         await _client.ConnectAsync(host, port, cancellationToken);
         await ConnectAsync(_client.GetStream(), false, cancellationToken);
@@ -111,7 +118,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="stream">Connected stream used to send commands and receive responses.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    public virtual Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         _stream = stream;
         _leaveOpen = leaveOpen;

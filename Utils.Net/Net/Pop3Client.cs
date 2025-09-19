@@ -21,13 +21,16 @@ public class Pop3Client : CommandResponseClient
     {
     }
 
-    /// <summary>
-    /// Connects to the specified POP3 server using a TCP connection.
-    /// </summary>
-    /// <param name="host">Server host name or IP address.</param>
-    /// <param name="port">Server port, default is 110.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task ConnectAsync(string host, int port = 110, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public override int DefaultPort { get; } = 110;
+
+	/// <summary>
+	/// Connects to the specified POP3 server using a TCP connection.
+	/// </summary>
+	/// <param name="host">Server host name or IP address.</param>
+	/// <param name="port">Server port, default is 110.</param>
+	/// <param name="cancellationToken">Cancellation token.</param>
+	public override async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
     {
         await base.ConnectAsync(host, port, cancellationToken);
         IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
@@ -35,13 +38,13 @@ public class Pop3Client : CommandResponseClient
         _timestamp = ExtractTimestamp(greeting);
     }
 
-    /// <summary>
-    /// Uses the provided bidirectional <see cref="Stream"/> for communication.
-    /// </summary>
-    /// <param name="stream">Connected stream used to send commands and receive responses.</param>
-    /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Uses the provided bidirectional <see cref="Stream"/> for communication.
+	/// </summary>
+	/// <param name="stream">Connected stream used to send commands and receive responses.</param>
+	/// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
+	/// <param name="cancellationToken">Cancellation token.</param>
+	public override async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         await base.ConnectAsync(stream, leaveOpen, cancellationToken);
         IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);

@@ -351,6 +351,8 @@ public class CommandResponseClientTests
     /// </summary>
     private class TestClient : CommandResponseClient
     {
+		public override int DefaultPort { get; } = 50;
+
         /// <summary>
         /// Exposes <see cref="CommandResponseClient.SplitCodeAndMessage(string)"/> for testing.
         /// </summary>
