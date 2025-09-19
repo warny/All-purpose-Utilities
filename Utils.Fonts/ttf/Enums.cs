@@ -94,6 +94,7 @@ public enum HeadFlags : short
 [Flags]
 public enum MacStyleFlags : short
 {
+
 	/// <summary>
 	/// No additional macStyle modifiers are applied to the font.
 	/// </summary>

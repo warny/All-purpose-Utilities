@@ -25,10 +25,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	/// </summary>
 	public int Dimensions => Sizes.Length;
 
-        /// <summary>
-        /// The underlying data source used by the accessor and returned when enumerating elements.
-        /// </summary>
-        protected D innerObject;
+	/// <summary>
+	/// The underlying data source used by the accessor and returned when enumerating elements.
+	/// </summary>
+	protected D innerObject;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ArrayAccessor{T, D}"/> class.
@@ -37,7 +37,7 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	/// <param name="sizes">The sizes of each dimension of the array.</param>
 	protected ArrayAccessor(D obj, params int[] sizes)
 	{
-		this.innerObject = obj  ?? throw new ArgumentNullException(nameof(obj));
+		this.innerObject = obj ?? throw new ArgumentNullException(nameof(obj));
 		this.Sizes = sizes.Arg().MustNotBeNull();
 		if (!CheckSize()) throw new ArgumentOutOfRangeException("The underlying object does not match the specified dimensions.");
 	}
@@ -99,10 +99,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	protected abstract void SetElement(T value, int[] references);
 
-        /// <inheritdoc />
-        public IEnumerator<T> GetEnumerator() => innerObject.GetEnumerator();
+	/// <inheritdoc />
+	public IEnumerator<T> GetEnumerator() => innerObject.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => innerObject.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => innerObject.GetEnumerator();
 }
 
 /// <summary>
@@ -114,18 +114,15 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	/// <summary>
 	/// Gets the offset used in the underlying array to access elements.
 	/// </summary>
-        public int Offset { get; }
+	public int Offset { get; }
 
-        /// <summary>
-        /// Pre-computed offsets for each dimension except the last one.
-        /// Each inner array contains the offsets for a given dimension.
-        /// </summary>
-        private readonly ImmutableArray<ImmutableArray<int>> offsetTables;
+	/// <summary>
+	/// Pre-computed offsets for each dimension except the last one.
+	/// Each inner array contains the offsets for a given dimension.
+	/// </summary>
+	private readonly ImmutableArray<ImmutableArray<int>> offsetTables;
 
-        /// <summary>
-        /// Multipliers used to compute offsets when creating spans.
-        /// </summary>
-        private readonly int[] multipliers;
+	private readonly ImmutableArray<int> dimmensionElementsCount;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ArrayAccessor{T}"/> class.
@@ -133,27 +130,54 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	/// <param name="array">The underlying one-dimensional array.</param>
 	/// <param name="offset">The offset in the array where elements start.</param>
 	/// <param name="dimensions">The sizes of each dimension of the array.</param>
-        public ArrayAccessor(T[] array, int offset, params int[] dimensions) : base(array, dimensions)
-        {
-                this.Offset = offset.ArgMustBeGreaterOrEqualsThan(0);
+	public ArrayAccessor(T[] array, int offset, params int[] dimensions) : base(array, dimensions)
+	{
+		this.Offset = offset.ArgMustBeGreaterOrEqualsThan(0);
+		offsetTables = CreateOffsets(dimensions);
+		dimmensionElementsCount = CreateDimmensionElementsCount(dimensions);
+	}
 
-                var builder = ImmutableArray.CreateBuilder<ImmutableArray<int>>(Dimensions - 1);
-                multipliers = new int[Dimensions];
+	/// <summary>
+	/// Compute the number of elements in each dimension.
+	/// </summary>
+	/// <param name="dimensions">dimensions definitions</param>
+	/// <returns>Dimensions sizes</returns>
+	public static ImmutableArray<int> CreateDimmensionElementsCount(int[] dimensions)
+	{
+		int[] results = new int[dimensions.Length];
+		int length = 1;
+		for (int i = dimensions.Length - 1; i >= 0; i--)
+		{
+			results[i] = length;
+			length *= dimensions[i];
+		}
 
-                int multiplier = 1;
-                for (int i = Dimensions - 1; i >= 0; i--)
-                {
-                        multipliers[i] = multiplier;
-                        if (i < Dimensions - 1)
-                        {
-                                int[] offsets = new int[Sizes[i]];
-                                for (int j = 0; j < Sizes[i]; j++) offsets[j] = j * multiplier;
-                                builder.Insert(0, ImmutableArray.Create(offsets));
-                        }
-                        multiplier *= Sizes[i];
-                }
-                offsetTables = builder.ToImmutable();
-        }
+		return [.. results];
+	}
+
+	/// <summary>
+	/// Compute offsets for each dimension to facilitate index calculations.
+	/// </summary>
+	/// <param name="dimensions">dimensions definitions</param>
+	/// <returns>Offsets</returns>
+	private static ImmutableArray<ImmutableArray<int>> CreateOffsets(int[] dimensions)
+	{
+		ImmutableArray<int>[] result = new ImmutableArray<int>[dimensions.Length - 1];
+
+		int dimensionLength = dimensions[^1];
+
+		for (int i = dimensions.Length - 2; i >= 0; i--)
+		{
+			int[] currentOffsets = new int[dimensions[i]];
+			for (int j = 0, k = 0; k < dimensions[i]; j += dimensionLength, k++)
+			{
+				currentOffsets[k] = j;
+			}
+			result[i] = [.. currentOffsets];
+			dimensionLength *= dimensions[i];
+		}
+		return [.. result];
+	}
 
 	/// <summary>
 	/// Validates that the underlying array has sufficient size for the specified dimensions.
@@ -172,16 +196,16 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	/// <param name="references">The indices in each dimension.</param>
 	/// <returns>The position in the one-dimensional array.</returns>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int Position(int[] references)
-        {
-                int position = Offset;
-                for (int i = 0; i < references.Length - 1; i++)
-                {
-                        position += offsetTables[i][references[i]];
-                }
-                position += references[^1];
-                return position;
-        }
+	private int Position(int[] references)
+	{
+		int position = Offset;
+		for (int i = 0; i < references.Length - 1; i++)
+		{
+			position += offsetTables[i][references[i]];
+		}
+		position += references[^1];
+		return position;
+	}
 
 	/// <summary>
 	/// Retrieves the element at the specified multi-dimensional index.
@@ -196,46 +220,40 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 	/// </summary>
 	/// <param name="value">The value to set.</param>
 	/// <param name="references">The indices in each dimension.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void SetElement(T value, int[] references) => this.innerObject[Position(references)] = value;
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	protected override void SetElement(T value, int[] references) => this.innerObject[Position(references)] = value;
 
-        /// <summary>
-        /// Retrieves a <see cref="Span{T}"/> covering the requested indexes.
-        /// </summary>
-        /// <param name="indexes">
-        /// Indexes for each dimension. If fewer indexes than dimensions are
-        /// provided, the returned span will include all elements of the
-        /// remaining sub-dimensions.
-        /// </param>
-        /// <returns>A span over the specified section of the underlying array.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Span<T> AsSpan(params IEnumerable<int>[] indexes)
-        {
-                List<int> list = new();
-                foreach (IEnumerable<int> e in indexes) list.AddRange(e);
-                int[] refs = list.ToArray();
-                if (refs.Length > Dimensions)
-                        throw new ArgumentException("Reference dimensions do not match array dimensions.");
+	/// <summary>
+	/// Retrieves a <see cref="Span{T}"/> covering the requested indexes.
+	/// </summary>
+	/// <param name="indexes">
+	/// Indexes for each dimension. If fewer indexes than dimensions are
+	/// provided, the returned span will include all elements of the
+	/// remaining sub-dimensions.
+	/// </param>
+	/// <returns>A span over the specified section of the underlying array.</returns>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public Span<T> AsSpan(params int[] indexes)
+	{
+		if (indexes.Length == 0) return this.innerObject.AsSpan(Offset, dimmensionElementsCount[0] * Sizes[0]);
 
-                for (int i = 0; i < refs.Length; i++)
-                {
-                        if (refs[i] < 0 || refs[i] >= Sizes[i])
-                                throw new IndexOutOfRangeException($"Index {refs[i]} is out of bounds for dimension {i}.");
-                }
+		indexes.ArgMustBe(a => a.Length <= Dimensions, "Too many indexes provided.");
 
-                int position = Offset;
-                for (int i = 0; i < refs.Length; i++)
-                {
-                        if (i < offsetTables.Length)
-                                position += offsetTables[i][refs[i]];
-                        else
-                                position += refs[i];
-                }
+		int position = Offset;
+		for (int i = 0; i < indexes.Length; i++)
+		{
+			var index = indexes[i];
 
-                int length = 1;
-                for (int i = refs.Length; i < Dimensions; i++)
-                        length *= Sizes[i];
+			if (index < 0 || index >= Sizes[i])
+				throw new IndexOutOfRangeException($"Index {index} is out of bounds for dimension {i}.");
+			
+			if (i < offsetTables.Length)
+				position += offsetTables[i][index];
+			else
+				position += index;
+		}
 
-                return this.innerObject.AsSpan(position, length);
-        }
+		int length = dimmensionElementsCount[indexes.Length -1];
+		return this.innerObject.AsSpan(position, length);
+	}
 }

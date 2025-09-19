@@ -148,7 +148,7 @@ public static class DateFormula
 					throw new ArgumentException("Incomplete day token.", nameof(formula));
 				var day = formula.Substring(pos, 2);
 				expr = Expression.Call(
-								typeof(DateFormula).GetMethod("AdjustToDayOfWeek", BindingFlags.NonPublic | BindingFlags.Static)!,
+								typeof(DateFormula).GetMethod(nameof(AdjustToDayOfWeek), BindingFlags.NonPublic | BindingFlags.Static)!,
 								expr,
 								Expression.Constant(lang.Days[day]),
 								Expression.Constant(sign == '+'));
@@ -172,7 +172,7 @@ public static class DateFormula
 			else
 			{
 				expr = Expression.Call(
-								typeof(DateFormula).GetMethod("MoveToSameWeekDay", BindingFlags.NonPublic | BindingFlags.Static)!,
+								typeof(DateFormula).GetMethod(nameof(MoveToSameWeekDay), BindingFlags.NonPublic | BindingFlags.Static)!,
 								expr,
 								Expression.Constant(lang.Days[token]),
 								Expression.Constant(culture.DateTimeFormat.FirstDayOfWeek));

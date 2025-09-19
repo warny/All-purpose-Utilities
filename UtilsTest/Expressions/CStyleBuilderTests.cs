@@ -1,7 +1,7 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using System.Reflection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions.Builders;
 
 namespace UtilsTest.Expressions;
@@ -128,4 +128,5 @@ public class CStyleBuilderTests
             throw ex.InnerException;
         }
     }
+
 }
