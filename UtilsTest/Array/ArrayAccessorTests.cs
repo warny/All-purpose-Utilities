@@ -53,10 +53,19 @@ public class ArrayAccessorTests
 	}
 
 	[TestMethod]
-	public void AsSpanThrowsOnIndexOutOfRange()
-	{
-		var accessor = CreateAccessor();
-		Assert.ThrowsExactly<IndexOutOfRangeException>(() => accessor.AsSpan([2]));
-	}
+        public void AsSpanThrowsOnIndexOutOfRange()
+        {
+                var accessor = CreateAccessor();
+                Assert.ThrowsExactly<IndexOutOfRangeException>(() => accessor.AsSpan([2]));
+        }
+
+        [TestMethod]
+        public void AsSpanAppliesOffset()
+        {
+                int[] data = [.. Enumerable.Range(0, 30)];
+                var accessor = new ArrayAccessor<int>(data, 3, 2, 3, 4);
+                var span = accessor.AsSpan([1]);
+                CollectionAssert.AreEqual(Enumerable.Range(15, 12).ToArray(), span.ToArray());
+        }
 }
 
