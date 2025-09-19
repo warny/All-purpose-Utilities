@@ -5,11 +5,11 @@ using Utils.Net.DNS;
 
 namespace Utils.Net.DNS.RFC5155
 {
-    [DNSRecord(DNSClassId.IN, 0x33)]
-    [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt}")]
     /// <summary>
     /// Represents the NSEC3PARAM resource record describing NSEC3 hashing parameters for a DNS zone.
     /// </summary>
+    [DNSRecord(DNSClassId.IN, 0x33)]
+    [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt}")]
     public class NSEC3PARAM : DNSResponseDetail
     {
         /*

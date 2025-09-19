@@ -169,7 +169,9 @@ public class CommandResponseClientTests
 
         using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
+        Assert.IsTrue(client.IsConnected, "Client should be connected before requesting disconnect.");
         await client.DisconnectAsync("QUIT", TimeSpan.FromMilliseconds(500));
+        Assert.IsFalse(client.IsConnected, "Client should disconnect after receiving a completion response.");
         await serverTask;
     }
 
@@ -194,7 +196,9 @@ public class CommandResponseClientTests
 
         using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
+        Assert.IsTrue(client.IsConnected, "Client should be connected before forcing disconnect.");
         await client.DisconnectAsync("QUIT", TimeSpan.FromMilliseconds(100));
+        Assert.IsFalse(client.IsConnected, "Client should forcefully disconnect when no response is returned.");
         await serverTask;
     }
 
