@@ -99,7 +99,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="host">Server host name or IP address.</param>
     /// <param name="port">Server port.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public virtual async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
     {
         port = port == -1 ? DefaultPort : port;
         Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
