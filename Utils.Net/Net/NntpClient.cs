@@ -23,26 +23,13 @@ public class NntpClient : CommandResponseClient
     /// <inheritdoc/>
 	public override int DefaultPort { get; } = 119;
 
-    /// <summary>
-    /// Connects to the specified NNTP server using a TCP connection.
-    /// </summary>
-    /// <param name="host">Server host name or IP address.</param>
-    /// <param name="port">Server port, default is 119.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public override async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
-    {
-        await base.ConnectAsync(host, port, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
-        await EnsureCompletionAsync(greeting);
-    }
-
-    /// <summary>
-    /// Uses the provided bidirectional <see cref="Stream"/> for communication.
-    /// </summary>
-    /// <param name="stream">Connected stream used to send commands and receive responses.</param>
-    /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public override async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Uses the provided bidirectional <see cref="Stream"/> for communication.
+	/// </summary>
+	/// <param name="stream">Connected stream used to send commands and receive responses.</param>
+	/// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
+	/// <param name="cancellationToken">Cancellation token.</param>
+	public override async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         await base.ConnectAsync(stream, leaveOpen, cancellationToken);
         IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
@@ -248,7 +235,7 @@ public class NntpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task PostAsync(string article, CancellationToken cancellationToken = default)
     {
-        await SendLinesAsync(new[] { "POST" }, cancellationToken);
+        await SendLinesAsync(["POST"], cancellationToken);
         IReadOnlyList<ServerResponse> intermediate = await ReadAsync(cancellationToken);
         if (intermediate.Count == 0 || intermediate[^1].Severity != ResponseSeverity.Intermediate)
         {
@@ -257,13 +244,16 @@ public class NntpClient : CommandResponseClient
         List<string> lines = new();
         using StringReader reader = new(article);
         string? line;
-        while ((line = reader.ReadLine()) is not null)
+        while ((line = await reader.ReadLineAsync()) is not null)
         {
             if (line.StartsWith(".", StringComparison.Ordinal))
             {
-                line = "." + line;
+                lines.Add("." + line);
             }
-            lines.Add(line);
+            else
+            {
+                lines.Add(line);
+            }
         }
         lines.Add(".");
         await SendLinesAsync(lines, cancellationToken);

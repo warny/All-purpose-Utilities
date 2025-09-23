@@ -25,20 +25,6 @@ public class Pop3Client : CommandResponseClient
     public override int DefaultPort { get; } = 110;
 
 	/// <summary>
-	/// Connects to the specified POP3 server using a TCP connection.
-	/// </summary>
-	/// <param name="host">Server host name or IP address.</param>
-	/// <param name="port">Server port, default is 110.</param>
-	/// <param name="cancellationToken">Cancellation token.</param>
-	public override async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
-    {
-        await base.ConnectAsync(host, port, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
-        await EnsureOkAsync(greeting);
-        _timestamp = ExtractTimestamp(greeting);
-    }
-
-	/// <summary>
 	/// Uses the provided bidirectional <see cref="Stream"/> for communication.
 	/// </summary>
 	/// <param name="stream">Connected stream used to send commands and receive responses.</param>

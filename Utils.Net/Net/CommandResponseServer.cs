@@ -218,25 +218,25 @@ public class CommandResponseServer : IDisposable
                 }
                 string[] parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string verb = parts.Length > 0 ? parts[0] : string.Empty;
-                string[] args = parts.Length > 1 ? parts[1..] : Array.Empty<string>();
+                string[] args = parts.Length > 1 ? parts[1..] : [];
                 IEnumerable<ServerResponse>? responses = null;
                 if (_handlers.TryGetValue(verb, out CommandRegistration? registration))
                 {
-                    if (registration.RequiredContexts.All(c => _contexts.Contains(c)))
+                    if (registration.RequiredContexts.All(_contexts.Contains))
                     {
                         CommandContext ctx = new(_contexts);
                         responses = await registration.Handler(ctx, args);
                     }
                     else
                     {
-                        responses = new[] { new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands") };
+                        responses = [new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands")];
                     }
                 }
                 else if (CommandReceived is not null)
                 {
                     responses = await CommandReceived.Invoke(command);
                 }
-                responses ??= new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented") };
+                responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
                 List<ServerResponse> responseList = responses.ToList();
                 foreach (ServerResponse response in responseList)
                 {
@@ -254,7 +254,7 @@ public class CommandResponseServer : IDisposable
                         if (_errorCount >= MaxConsecutiveErrors)
                         {
                             Logger?.LogWarning("Maximum consecutive errors reached");
-                            _listenTokenSource?.Cancel();
+                            await _listenTokenSource?.CancelAsync();
                             break;
                         }
                     }

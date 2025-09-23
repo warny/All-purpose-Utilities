@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Utils.Objects;
 
 namespace Utils.Net;
 
@@ -39,14 +40,12 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseClient"/> class.
     /// </summary>
-    public CommandResponseClient()
-    {
-    }
+    public CommandResponseClient() { }
 
-    /// <summary>
-    /// Occurs when a response is received from the server.
-    /// </summary>
-    public event Action<ServerResponse>? UnsolicitedResponseReceived;
+	/// <summary>
+	/// Occurs when a response is received from the server.
+	/// </summary>
+	public event Action<ServerResponse>? UnsolicitedResponseReceived;
 
     /// <summary>
     /// Gets or sets the command sent during inactivity to keep the connection alive.
@@ -63,8 +62,7 @@ public class CommandResponseClient : IDisposable
     public TimeSpan NoOpInterval
     {
         get => _noOpInterval;
-        set
-        {
+        set {
             _noOpInterval = value;
             _keepAliveTimer?.Change(value, Timeout.InfiniteTimeSpan);
         }
@@ -76,8 +74,7 @@ public class CommandResponseClient : IDisposable
     public TimeSpan ListenTimeout
     {
         get => _listenTimeout;
-        set
-        {
+        set {
             _listenTimeout = value;
             if (_stream is not null && _stream.CanTimeout)
             {
@@ -91,11 +88,10 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     public bool IsConnected => !_disconnected;
 
-
-    /// <summary>
-    /// Default port used by the protocol.
-    /// </summary>
-    public virtual int DefaultPort { get; } = 0;
+	/// <summary>
+	/// Default port used by the protocol.
+	/// </summary>
+	public virtual int DefaultPort { get; } = 0;
 
     /// <summary>
     /// Connects to the specified host and port using a TCP connection.
@@ -106,7 +102,7 @@ public class CommandResponseClient : IDisposable
     public virtual async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
     {
         port = port == -1 ? DefaultPort : port;
-		Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
+        Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
         _client = new TcpClient();
         await _client.ConnectAsync(host, port, cancellationToken);
         await ConnectAsync(_client.GetStream(), false, cancellationToken);
@@ -222,7 +218,7 @@ public class CommandResponseClient : IDisposable
                 throw new IOException("Connection closed.");
             }
         }
-        while (_responseSignal.Wait(0));
+        while (await _responseSignal.WaitAsync(0));
         ResetKeepAlive();
         return responses;
     }
@@ -352,7 +348,7 @@ public class CommandResponseClient : IDisposable
             (line.Length == 3 || line[3] == ' '))
         {
             string code = line[..3];
-            string? text = line.Length > 4 ? line[4..] : (line.Length == 4 ? string.Empty : null);
+            string? text = line.Length >= 4 ? line[4..] : null;
             ResponseSeverity severity = ResponseSeverity.Unknown;
             int digit = code[0] - '0';
             if (digit >= 0 && digit <= 5)
@@ -402,17 +398,17 @@ public class CommandResponseClient : IDisposable
                 if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Completion)
                 {
                     // Force disconnect on missing positive reply.
-                    _listenTokenSource?.Cancel();
+                    await _listenTokenSource?.CancelAsync();
                 }
             }
             catch
             {
-                _listenTokenSource?.Cancel();
+                await _listenTokenSource?.CancelAsync();
             }
         }
         else
         {
-            _listenTokenSource?.Cancel();
+            await _listenTokenSource?.CancelAsync();
         }
 
         Dispose();
@@ -432,10 +428,23 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases the client resources.
+    /// </summary>
+    private void Dispose(bool disposing)
+    {
+        if (!disposing && _writer is null) return;
+
         _listenTokenSource?.Cancel();
         _reader?.Dispose();
+        _reader = null;
         _writer?.Dispose();
-        if (!_leaveOpen)
+        _writer = null;
+		if (!_leaveOpen)
         {
             _stream?.Dispose();
         }
@@ -445,5 +454,14 @@ public class CommandResponseClient : IDisposable
         _responseSignal.Dispose();
         _sendLock.Dispose();
     }
+
+	/// <summary>
+	/// Deconstruct the client.
+	/// </summary>
+	~CommandResponseClient()
+    {
+        Dispose(false);
+    }
+
 }
 

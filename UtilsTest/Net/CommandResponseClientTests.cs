@@ -31,11 +31,11 @@ public class CommandResponseClientTests
             using CommandResponseServer server = new();
             server.CommandReceived += cmd =>
                 Task.FromResult<IEnumerable<ServerResponse>>(cmd == "MULTI"
-                    ? new[]
-                    {
-                        new ServerResponse("100", ResponseSeverity.Preliminary, "Continue"),
+                    ?
+					[
+						new ServerResponse("100", ResponseSeverity.Preliminary, "Continue"),
                         new ServerResponse("200", ResponseSeverity.Completion, "Done")
-                    }
+                    ]
                     : System.Array.Empty<ServerResponse>());
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -73,7 +73,7 @@ public class CommandResponseClientTests
             server.CommandReceived += cmd =>
             {
                 received = cmd;
-                return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "OK") });
+                return Task.FromResult<IEnumerable<ServerResponse>>([new ServerResponse("200", ResponseSeverity.Completion, "OK")]);
             };
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
@@ -338,10 +338,10 @@ public class CommandResponseClientTests
     public void SplitCodeAndMessage_SplitsCorrectly()
     {
         TestClient client = new();
-        (string code, string? message) = client.Split("123 Example message");
+        (string code, string? message) = TestClient.Split("123 Example message");
         Assert.AreEqual("123", code);
         Assert.AreEqual("Example message", message);
-        (code, message) = client.Split("LINE");
+        (code, message) = TestClient.Split("LINE");
         Assert.AreEqual("LINE", code);
         Assert.IsNull(message);
     }
@@ -358,7 +358,7 @@ public class CommandResponseClientTests
         /// </summary>
         /// <param name="line">Line to split.</param>
         /// <returns>Tuple containing code and optional message.</returns>
-        public (string code, string? message) Split(string line) => SplitCodeAndMessage(line);
+        public static (string code, string? message) Split(string line) => SplitCodeAndMessage(line);
     }
 }
 

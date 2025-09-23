@@ -67,19 +67,6 @@ public class SmtpClient : CommandResponseClient
         return AuthenticateAsync(user, password, SmtpAuthenticationMechanism.Plain, cancellationToken);
     }
 
-    /// <summary>
-    /// Connects to the specified SMTP server using a TCP connection.
-    /// </summary>
-    /// <param name="host">Server host name or IP address.</param>
-    /// <param name="port">Server port, default is 25.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public override async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
-    {
-        await base.ConnectAsync(host, port, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
-        await EnsureCompletionAsync(greeting);
-    }
-
 	/// <summary>
 	/// Uses the provided bidirectional <see cref="Stream"/> for communication.
 	/// </summary>
