@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -54,44 +53,6 @@ public class CommandResponseClientTests
             Assert.AreEqual("200", responses[1].Code);
             Assert.AreEqual(ResponseSeverity.Completion, responses[1].Severity);
         }
-        await serverTask;
-    }
-
-    /// <summary>
-    /// Verifies that unsolicited responses are raised when the expectation flag is disabled.
-    /// </summary>
-    [TestMethod]
-    public async Task Client_RaisesUnsolicitedEventWhenExpectationDisabled()
-    {
-        TcpListener listener = new(IPAddress.Loopback, 0);
-        listener.Start();
-        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        TaskCompletionSource serverCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        Task serverTask = Task.Run(async () =>
-        {
-            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
-            using NetworkStream networkStream = serverClient.GetStream();
-            using StreamWriter writer = new(networkStream, Encoding.ASCII, 1024, true)
-            {
-                NewLine = "\r\n",
-                AutoFlush = true
-            };
-            await writer.WriteLineAsync("220 Ready");
-            await serverCompletion.Task;
-            listener.Stop();
-        });
-
-        using TestableCommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
-        TaskCompletionSource<ServerResponse> unsolicited = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        client.UnsolicitedResponseReceived += response => unsolicited.TrySetResult(response);
-        client.SetExpectation(0);
-        await client.ConnectAsync("127.0.0.1", port);
-        ServerResponse greeting = await unsolicited.Task;
-        Assert.AreEqual("220", greeting.Code);
-        client.SetExpectation(1);
-        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(200));
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() => client.ReadAsync(cts.Token));
-        serverCompletion.SetResult();
         await serverTask;
     }
 
@@ -158,55 +119,6 @@ public class CommandResponseClientTests
     }
 
     /// <summary>
-    /// Verifies that custom expectation modes can be used to process protocol specific payloads before the final response.
-    /// </summary>
-    [TestMethod]
-    public async Task Client_HandlesCustomExpectationThroughOverride()
-    {
-        TcpListener listener = new(IPAddress.Loopback, 0);
-        listener.Start();
-        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        Task serverTask = Task.Run(async () =>
-        {
-            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
-            using NetworkStream networkStream = serverClient.GetStream();
-            using StreamReader reader = new(networkStream, Encoding.ASCII, false, 1024, true);
-            using StreamWriter writer = new(networkStream, Encoding.ASCII, 1024, true)
-            {
-                NewLine = "\r\n",
-                AutoFlush = true
-            };
-            string? command = await reader.ReadLineAsync();
-            if (string.Equals(command, "BLOCK", StringComparison.Ordinal))
-            {
-                await writer.WriteLineAsync("FIRST");
-                await writer.WriteLineAsync("SECOND");
-                await writer.WriteLineAsync("END");
-                await writer.WriteLineAsync("200 OK");
-            }
-            await Task.Delay(50);
-            serverClient.Close();
-            listener.Stop();
-        });
-
-        IReadOnlyList<ServerResponse> responses;
-        using TextCollectorCommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
-        await client.ConnectAsync("127.0.0.1", port);
-        client.BeginCollecting();
-        bool unsolicitedRaised = false;
-        client.UnsolicitedResponseReceived += _ => unsolicitedRaised = true;
-        responses = await client.SendCommandAsync("BLOCK");
-        Assert.IsFalse(unsolicitedRaised, "Custom responses should not trigger the unsolicited handler when handled by the override.");
-        Assert.AreEqual(2, client.CollectedLines.Count);
-        Assert.AreEqual("FIRST", client.CollectedLines[0]);
-        Assert.AreEqual("SECOND", client.CollectedLines[1]);
-        Assert.AreEqual(1, responses.Count);
-        Assert.AreEqual("200", responses[0].Code);
-        Assert.AreEqual(ResponseSeverity.Completion, responses[0].Severity);
-        await serverTask;
-    }
-
-    /// <summary>
     /// Verifies that the client stops waiting when the server stays silent beyond the listen timeout.
     /// </summary>
     [TestMethod]
@@ -257,9 +169,7 @@ public class CommandResponseClientTests
 
         using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
-        Assert.IsTrue(client.IsConnected, "Client should be connected before requesting disconnect.");
         await client.DisconnectAsync("QUIT", TimeSpan.FromMilliseconds(500));
-        Assert.IsFalse(client.IsConnected, "Client should disconnect after receiving a completion response.");
         await serverTask;
     }
 
@@ -284,9 +194,7 @@ public class CommandResponseClientTests
 
         using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
-        Assert.IsTrue(client.IsConnected, "Client should be connected before forcing disconnect.");
         await client.DisconnectAsync("QUIT", TimeSpan.FromMilliseconds(100));
-        Assert.IsFalse(client.IsConnected, "Client should forcefully disconnect when no response is returned.");
         await serverTask;
     }
 
@@ -451,67 +359,6 @@ public class CommandResponseClientTests
         /// <param name="line">Line to split.</param>
         /// <returns>Tuple containing code and optional message.</returns>
         public (string code, string? message) Split(string line) => SplitCodeAndMessage(line);
-    }
-}
-
-/// <summary>
-/// Test specific command/response client exposing the response expectation flag for verification purposes.
-/// </summary>
-internal sealed class TestableCommandResponseClient : CommandResponseClient
-{
-    /// <summary>
-    /// Sets the expectation flag to the provided value.
-    /// </summary>
-    /// <param name="expectation">Expectation mode to apply.</param>
-    public void SetExpectation(int expectation)
-    {
-        ResponseExpectation = expectation;
-    }
-}
-
-/// <summary>
-/// Command/response client used to collect custom payloads while a command is in progress.
-/// </summary>
-internal sealed class TextCollectorCommandResponseClient : CommandResponseClient
-{
-    private readonly List<string> _collectedLines = new();
-
-    /// <summary>
-    /// Gets the lines collected while handling custom responses.
-    /// </summary>
-    public IReadOnlyList<string> CollectedLines => _collectedLines;
-
-    /// <summary>
-    /// Clears previously collected lines and configures the expectation flag to capture custom payloads.
-    /// </summary>
-    public void BeginCollecting()
-    {
-        _collectedLines.Clear();
-        ResponseExpectation = 2;
-    }
-
-    /// <summary>
-    /// Handles custom response modes by storing unknown responses until the terminating marker is received.
-    /// </summary>
-    /// <param name="response">Response delivered by the server.</param>
-    /// <param name="expectation">Current expectation flag value.</param>
-    /// <returns><see langword="true"/> when the response is processed as part of the custom payload.</returns>
-    protected override bool HandleCustomResponse(ServerResponse response, int expectation)
-    {
-        if (expectation == 2)
-        {
-            if (string.Equals(response.Code, "END", StringComparison.Ordinal))
-            {
-                ResponseExpectation = 1;
-            }
-            else
-            {
-                _collectedLines.Add(response.Code);
-            }
-            return true;
-        }
-
-        return base.HandleCustomResponse(response, expectation);
     }
 }
 

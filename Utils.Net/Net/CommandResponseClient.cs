@@ -29,27 +29,12 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _disconnected;
-    private volatile int _responseExpectation = 1;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
     /// </summary>
     public ILogger? Logger { get; set; }
-
-    /// <summary>
-    /// Gets or sets the current response expectation mode.
-    /// A value of <c>0</c> indicates that incoming responses are unsolicited and should be raised through
-    /// <see cref="UnsolicitedResponseReceived"/>. A value of <c>1</c> enqueues responses so that consumer
-    /// methods such as <see cref="SendCommandAsync(string, CancellationToken)"/> or <see cref="ReadAsync(CancellationToken)"/>
-    /// can retrieve them. Values greater than <c>1</c> allow derived classes to handle protocol specific payloads
-    /// by overriding <see cref="HandleCustomResponse(ServerResponse, int)"/>.
-    /// </summary>
-    protected int ResponseExpectation
-    {
-        get => _responseExpectation;
-        set => _responseExpectation = value;
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseClient"/> class.
@@ -137,7 +122,6 @@ public class CommandResponseClient : IDisposable
     {
         _stream = stream;
         _leaveOpen = leaveOpen;
-        _disconnected = false;
         if (stream.CanTimeout)
         {
             stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
@@ -318,20 +302,9 @@ public class CommandResponseClient : IDisposable
 
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
-                int expectation = _responseExpectation;
-                if (expectation == 1)
-                {
-                    _responseQueue.Enqueue(response);
-                    _responseSignal.Release();
-                }
-                else if (expectation == 0)
-                {
-                    UnsolicitedResponseReceived?.Invoke(response);
-                }
-                else if (!HandleCustomResponse(response, expectation))
-                {
-                    UnsolicitedResponseReceived?.Invoke(response);
-                }
+                _responseQueue.Enqueue(response);
+                _responseSignal.Release();
+                UnsolicitedResponseReceived?.Invoke(response);
             }
         }
         catch (IOException)
@@ -348,20 +321,6 @@ public class CommandResponseClient : IDisposable
             _responseSignal.Release();
             Logger?.LogWarning("Listener thread terminated");
         }
-    }
-
-    /// <summary>
-    /// Handles responses when <see cref="ResponseExpectation"/> is greater than <c>1</c>.
-    /// Derived classes can override this method to implement protocol specific parsing for payloads such as
-    /// textual blocks or binary data. The default implementation returns <see langword="false"/> so that the
-    /// response is forwarded to <see cref="UnsolicitedResponseReceived"/>.
-    /// </summary>
-    /// <param name="response">Response received from the server.</param>
-    /// <param name="expectation">Current expectation flag value.</param>
-    /// <returns><see langword="true"/> if the response has been handled; otherwise, <see langword="false"/>.</returns>
-    protected virtual bool HandleCustomResponse(ServerResponse response, int expectation)
-    {
-        return false;
     }
 
     /// <summary>
