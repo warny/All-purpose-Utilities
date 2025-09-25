@@ -17,7 +17,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <summary>
     /// Vector components.
     /// </summary>
-    internal readonly T[] components;
+    private readonly T[] components;
 
     /// <summary>
     /// Length of the vector (computed lazily).
@@ -31,7 +31,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     private Vector(int dimensions)
     {
         components = new T[dimensions];
-        norm = T.Zero;
+        norm = null;
     }
 
     /// <summary>

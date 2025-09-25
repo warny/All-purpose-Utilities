@@ -1,182 +1,204 @@
-﻿namespace Utils.Mathematics.LinearAlgebra;
+using System;
 
+namespace Utils.Mathematics.LinearAlgebra;
+
+/// <summary>
+/// Provides advanced computations for the <see cref="Matrix{T}"/> type.
+/// </summary>
 public partial class Matrix<T>
 {
-	/// <summary>
-	/// Applies a linear transformation to the specified row of the matrix using the given transformation coefficients.
-	/// </summary>
-	private static void ApplyLinearTransformation(int targetRow, T[] transformations, params Matrix<T>[] matrices)
-	{
-		if (transformations[targetRow] == T.Zero)
-		{
-			throw new ArgumentOutOfRangeException(nameof(targetRow), $"The transformation of row {targetRow} cannot nullify its own value.");
-		}
+        /// <summary>
+        /// Applies a linear transformation to the specified row of an array-based matrix.
+        /// </summary>
+        /// <param name="matrix">Matrix to transform.</param>
+        /// <param name="targetRow">Row index to replace.</param>
+        /// <param name="transformations">Coefficients describing the transformation.</param>
+        private static void ApplyLinearTransformation(T[,] matrix, int targetRow, T[] transformations)
+        {
+                if (transformations[targetRow] == T.Zero)
+                {
+                        throw new ArgumentOutOfRangeException(nameof(targetRow), $"The transformation of row {targetRow} cannot nullify its own value.");
+                }
 
-		foreach (Matrix<T> matrix in matrices)
-		{
-			int rows = matrix.Rows;
-			int cols = matrix.Columns;
+                int rows = matrix.GetLength(0);
+                int cols = matrix.GetLength(1);
+                T[] newRow = new T[cols];
 
-			for (int col = 0; col < cols; col++)
-			{
-				T temp = T.Zero;
-				for (int row = 0; row < rows; row++)
-				{
-					temp += matrix[row, col] * transformations[row];
-				}
-				matrix.components[targetRow, col] = temp;
-			}
+                for (int col = 0; col < cols; col++)
+                {
+                        T temp = T.Zero;
+                        for (int row = 0; row < rows; row++)
+                        {
+                                temp += matrix[row, col] * transformations[row];
+                        }
+                        newRow[col] = temp;
+                }
 
-			matrix.ResetMatrixProperties();
-		}
-	}
+                for (int col = 0; col < cols; col++)
+                {
+                        matrix[targetRow, col] = newRow[col];
+                }
+        }
 
-	/// <summary>
-	/// Swaps two rows of the matrices in the given collection.
-	/// </summary>
-	private static void PermuteTransformation(int row1, int row2, params Matrix<T>[] matrices)
-	{
-		if (row1 == row2) return;
+        /// <summary>
+        /// Swaps two rows of an array-based matrix in place.
+        /// </summary>
+        /// <param name="matrix">Matrix whose rows should be permuted.</param>
+        /// <param name="row1">First row index.</param>
+        /// <param name="row2">Second row index.</param>
+        private static void PermuteRows(T[,] matrix, int row1, int row2, int limit = -1)
+        {
+                if (row1 == row2)
+                {
+                        return;
+                }
 
-		foreach (Matrix<T> matrix in matrices)
-		{
-			int cols = matrix.Columns;
+                int cols = limit >= 0 ? limit : matrix.GetLength(1);
+                for (int col = 0; col < cols; col++)
+                {
+                        (matrix[row1, col], matrix[row2, col]) = (matrix[row2, col], matrix[row1, col]);
+                }
+        }
 
-			for (int col = 0; col < cols; col++)
-			{
-				T temp = matrix[row1, col];
-				matrix.components[row1, col] = matrix[row2, col];
-				matrix.components[row2, col] = temp;
-			}
+        /// <summary>
+        /// Performs LU decomposition of the current square matrix, resulting in a lower triangular matrix L
+        /// and an upper triangular matrix U such that the original matrix equals L multiplied by U.
+        /// </summary>
+        /// <remarks>
+        /// The decomposition uses the same sequence of elementary row operations as the original mutable implementation
+        /// but operates entirely on local array copies to preserve immutability.
+        /// </remarks>
+        /// <returns>A tuple containing the lower and upper triangular matrices.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the matrix is not square or is singular.</exception>
+        public (Matrix<T> L, Matrix<T> U) DiagonalizeLU()
+        {
+                if (!IsSquare)
+                {
+                        throw new InvalidOperationException("The matrix must be square for LU decomposition.");
+                }
 
-			matrix.ResetMatrixProperties();
-		}
-	}
+                int n = Rows;
+                T[,] u = ToArray();
+                T[,] l = new T[n, n];
 
-	/// <summary>
-	/// Resets the properties related to the matrix's structure.
-	/// </summary>
-        internal void ResetMatrixProperties()
-	{
-		bool isSquare = IsSquare;
-		isDiagonalized = isSquare ? null : false;
-		isTriangularised = isSquare ? null : false;
-		isIdentity = isSquare ? null : false;
-	}
+                for (int i = 0; i < n; i++)
+                {
+                        l[i, i] = T.One;
+                }
 
-	/// <summary>
-	/// Performs LU decomposition of the current square matrix, resulting in a lower triangular matrix L
-	/// and an upper triangular matrix U such that the original matrix A = L * U.
-	/// </summary>
-	/// <remarks>
-	/// LU decomposition is used to decompose a given square matrix into two triangular matrices:
-	/// L (lower triangular) and U (upper triangular). This decomposition is useful for solving linear
-	/// systems, calculating determinants, and matrix inversion.
-	/// </remarks>
-	/// <returns>
-	/// A tuple containing:
-	/// <list type="bullet">
-	/// <item>
-	/// <description><see cref="Matrix{T}"/> L - The lower triangular matrix with ones on the diagonal.</description>
-	/// </item>
-	/// <item>
-	/// <description><see cref="Matrix{T}"/> U - The upper triangular matrix.</description>
-	/// </item>
-	/// </list>
-	/// </returns>
-	/// <exception cref="InvalidOperationException">
-	/// Thrown if the matrix is not square, as LU decomposition requires a square matrix.
-	/// Thrown if the matrix is singular, meaning that it cannot be decomposed due to the presence of a zero pivot.
-	/// </exception>
-	public (Matrix<T> L, Matrix<T> U) DiagonalizeLU()
-	{
-		// Verify that the matrix is square
-		if (!IsSquare)
-		{
-			throw new InvalidOperationException("The matrix must be square for LU decomposition.");
-		}
+                for (int k = 0; k < n; k++)
+                {
+                        int pivotRow = k;
+                        for (int i = k + 1; i < n; i++)
+                        {
+                                if (T.Abs(u[i, k]) > T.Abs(u[pivotRow, k]))
+                                {
+                                        pivotRow = i;
+                                }
+                        }
 
-		int n = Rows;
+                        if (u[pivotRow, k].Equals(T.Zero))
+                        {
+                                throw new InvalidOperationException("The matrix is singular and cannot be decomposed.");
+                        }
 
-                // Create L as an identity matrix and U as a clone of the current matrix
-                Matrix<T> L = MatrixTransformations.Identity<T>(n);
-		Matrix<T> U = new Matrix<T>(this); // Cloning the original matrix
+                        if (pivotRow != k)
+                        {
+                                PermuteRows(u, k, pivotRow);
+                                PermuteRows(l, k, pivotRow, k);
+                        }
 
-		T sign = T.One;
+                        T[] transformations = new T[n];
+                        for (int row = k + 1; row < n; row++)
+                        {
+                                transformations[row] = T.One;
+                                transformations[k] = -u[row, k] / u[k, k];
 
-		for (int k = 0; k < n; k++)
-		{
-			// Partial pivoting: find the row with the largest pivot element
-			int pivotRow = k;
-			for (int i = k + 1; i < n; i++)
-			{
-				if (T.Abs(U[i, k]) > T.Abs(U[pivotRow, k]))
-				{
-					pivotRow = i;
-				}
-			}
+                                ApplyLinearTransformation(u, row, transformations);
+                                ApplyLinearTransformation(l, row, transformations);
 
-			// If the pivot element is zero, the matrix is singular
-			if (U[pivotRow, k].Equals(T.Zero))
-			{
-				throw new InvalidOperationException("The matrix is singular and cannot be decomposed.");
-			}
+                                transformations[row] = T.Zero;
+                                transformations[k] = T.Zero;
+                        }
+                }
 
-			// Swap rows if needed (operating on matrices in the collection)
-			if (pivotRow != k)
-			{
-				PermuteTransformation(k, pivotRow, U, L);
-				sign = -sign; // Change the sign of the determinant due to row swapping
-			}
+                Matrix<T> L = new Matrix<T>(l, false, false, true, null);
+                Matrix<T> U = new Matrix<T>(u, false, false, true, null);
+                return (L, U);
+        }
 
-			// Apply linear transformations to eliminate elements below the pivot
-			T[] transformations = Enumerable.Repeat(T.Zero, Rows).ToArray();
-			for (int row = k + 1; row < n; row++)
-			{
-				// Set the transformation coefficient for the target row to eliminate elements below pivot
-				transformations[row] = T.One;
-				transformations[k] = -U[row, k] / U[k, k];
+        /// <summary>
+        /// Inverts the matrix if it is invertible.
+        /// </summary>
+        /// <returns>A new matrix representing the inverse of the current matrix.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the matrix is not square.</exception>
+        public Matrix<T> Invert()
+        {
+                if (!IsSquare)
+                {
+                        throw new InvalidOperationException("The matrix is not square.");
+                }
 
-				ApplyLinearTransformation(row, transformations, U, L);
+                if (IsIdentity)
+                {
+                        return new Matrix<T>(this);
+                }
 
-				// Reset the transformation coefficient for the next iteration
-				transformations[row] = T.Zero;
-			}
-		}
+                int n = Rows;
+                T[,] working = ToArray();
+                T[,] inverse = new T[n, n];
 
-		// Return the matrices L and U
-		return (L, U);
-	}
+                for (int i = 0; i < n; i++)
+                {
+                        inverse[i, i] = T.One;
+                }
 
-	/// <summary>
-	/// Inverts the matrix if it is invertible.
-	/// </summary>
-	public Matrix<T> Invert()
-	{
-		if (!IsSquare)
-		{
-			throw new InvalidOperationException("The matrix is not square.");
-		}
-		if (IsIdentity)
-		{
-			return new Matrix<T>(this);
-		}
+                for (int pivotIndex = 0; pivotIndex < n; pivotIndex++)
+                {
+                        int pivotRow = pivotIndex;
+                        T pivotMagnitude = T.Abs(working[pivotRow, pivotIndex]);
 
-		var (start, result) = DiagonalizeLU();
+                        for (int row = pivotIndex + 1; row < n; row++)
+                        {
+                                T candidate = T.Abs(working[row, pivotIndex]);
+                                if (candidate > pivotMagnitude)
+                                {
+                                        pivotMagnitude = candidate;
+                                        pivotRow = row;
+                                }
+                        }
 
-		T[] transformations = Enumerable.Repeat(T.Zero, Rows).ToArray();
-		for (int j = Rows - 1; j >= 0; j--)
-		{
-			transformations[j] = T.One / start[j, j];
-			ApplyLinearTransformation(j, transformations, start, result);
-			transformations[j] = T.One;
+                        if (working[pivotRow, pivotIndex].Equals(T.Zero))
+                        {
+                                throw new InvalidOperationException("The matrix is singular and cannot be inverted.");
+                        }
 
-			for (int i = j + 1; i < Rows; i++)
-			{
-				transformations[i] = -start[j, i] / start[i, i];
-			}
-			ApplyLinearTransformation(j, transformations, start, result);
-		}
-		return result;
-	}
+                        if (pivotRow != pivotIndex)
+                        {
+                                PermuteRows(working, pivotIndex, pivotRow);
+                                PermuteRows(inverse, pivotIndex, pivotRow);
+                        }
+
+                        T pivot = working[pivotIndex, pivotIndex];
+                        for (int col = 0; col < n; col++)
+                        {
+                                working[pivotIndex, col] /= pivot;
+                                inverse[pivotIndex, col] /= pivot;
+                        }
+
+                        for (int row = 0; row < n; row++)
+                        {
+                                if (row == pivotIndex) continue;
+
+                                T factor = working[row, pivotIndex];
+                                for (int col = 0; col < n; col++)
+                                {
+                                        working[row, col] -= factor * working[pivotIndex, col];
+                                        inverse[row, col] -= factor * inverse[pivotIndex, col];
+                                }
+                        }
+                }
+
+                return new Matrix<T>(inverse, false, false, false, null);
+        }
 }

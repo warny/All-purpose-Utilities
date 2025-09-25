@@ -71,13 +71,30 @@ public static class MatrixTransformations
     public static Matrix<T> Scaling<T>(params T[] coefficients)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
-        Matrix<T> matrix = Identity<T>(coefficients.Length + 1);
-        for (int i = 0; i < coefficients.Length; i++)
+        int dimension = coefficients.Length + 1;
+        var array = new T[dimension, dimension];
+        bool allOne = true;
+        T determinant = T.One;
+
+        for (int i = 0; i < dimension; i++)
         {
-            matrix.components[i, i] = coefficients[i];
+            for (int j = 0; j < dimension; j++)
+            {
+                bool isDiagonal = i == j;
+                if (!isDiagonal)
+                {
+                    array[i, j] = T.Zero;
+                    continue;
+                }
+
+                T value = i < coefficients.Length ? coefficients[i] : T.One;
+                array[i, j] = value;
+                determinant *= value;
+                allOne &= value == T.One;
+            }
         }
-        matrix.ResetMatrixProperties();
-        return matrix;
+
+        return new Matrix<T>(array, allOne, true, true, determinant);
     }
 
     /// <summary>
@@ -93,18 +110,30 @@ public static class MatrixTransformations
         if (dimension != Math.Floor(dimension))
             throw new ArgumentException("Invalid dimension for skew matrix", nameof(angles));
 
-        Matrix<T> matrix = Identity<T>((int)dimension + 1);
-        int i = 0;
-        for (int x = 0; x < dimension; x++)
+        int baseDimension = (int)dimension;
+        int matrixDimension = baseDimension + 1;
+        var array = new T[matrixDimension, matrixDimension];
+
+        for (int idx = 0; idx < matrixDimension; idx++)
         {
-            for (int y = 0; y < dimension; y++)
+            for (int j = 0; j < matrixDimension; j++)
             {
-                matrix.components[x, y >= x ? y : y + 1] = T.Tan(angles[i]);
-                i++;
+                array[idx, j] = idx == j ? T.One : T.Zero;
             }
         }
-        matrix.ResetMatrixProperties();
-        return matrix;
+
+        int coefficientIndex = 0;
+        for (int x = 0; x < baseDimension; x++)
+        {
+            for (int y = 0; y < baseDimension; y++)
+            {
+                int column = y >= x ? y : y + 1;
+                array[x, column] = T.Tan(angles[coefficientIndex]);
+                coefficientIndex++;
+            }
+        }
+
+        return new Matrix<T>(array, false, false, false, null);
     }
 
     /// <summary>
@@ -123,7 +152,6 @@ public static class MatrixTransformations
             throw new ArgumentException("Angles count does not match a dimension", nameof(angles));
         }
         Matrix<T> result = Identity<T>(dimension + 1);
-        Matrix<T> rotation = Identity<T>(dimension + 1);
         int angleIndex = 0;
         for (int dim1 = 0; dim1 < dimension; dim1++)
         {
@@ -132,17 +160,23 @@ public static class MatrixTransformations
                 T cos = T.Cos(angles[angleIndex]);
                 T sin = T.Sin(angles[angleIndex]);
 
-                rotation.components[dim1, dim1] = cos;
-                rotation.components[dim2, dim2] = cos;
-                rotation.components[dim1, dim2] = -sin;
-                rotation.components[dim2, dim1] = sin;
+                int matrixDimension = dimension + 1;
+                var rotationArray = new T[matrixDimension, matrixDimension];
+                for (int i = 0; i < matrixDimension; i++)
+                {
+                    for (int j = 0; j < matrixDimension; j++)
+                    {
+                        rotationArray[i, j] = i == j ? T.One : T.Zero;
+                    }
+                }
 
+                rotationArray[dim1, dim1] = cos;
+                rotationArray[dim2, dim2] = cos;
+                rotationArray[dim1, dim2] = -sin;
+                rotationArray[dim2, dim1] = sin;
+
+                Matrix<T> rotation = new Matrix<T>(rotationArray, false, false, false, null);
                 result *= rotation;
-
-                rotation.components[dim1, dim1] = T.One;
-                rotation.components[dim2, dim2] = T.One;
-                rotation.components[dim1, dim2] = T.Zero;
-                rotation.components[dim2, dim1] = T.Zero;
                 angleIndex++;
             }
         }
@@ -158,14 +192,24 @@ public static class MatrixTransformations
     public static Matrix<T> Translation<T>(params T[] values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
-        Matrix<T> matrix = Identity<T>(values.Length + 1);
-        int lastRow = matrix.Rows - 1;
+        int dimension = values.Length + 1;
+        var array = new T[dimension, dimension];
+
+        for (int i = 0; i < dimension; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                array[i, j] = i == j ? T.One : T.Zero;
+            }
+        }
+
+        int lastRow = dimension - 1;
         for (int i = 0; i < values.Length; i++)
         {
-            matrix.components[lastRow, i] = values[i];
+            array[lastRow, i] = values[i];
         }
-        matrix.ResetMatrixProperties();
-        return matrix;
+
+        return new Matrix<T>(array, false, false, false, null);
     }
 
     /// <summary>
@@ -180,17 +224,27 @@ public static class MatrixTransformations
         var dimension = (Math.Sqrt(4 * values.Length + 1) + 1) / 2;
         if (dimension != Math.Floor(dimension))
             throw new ArgumentException("Invalid dimension for transformation matrix", nameof(values));
-        Matrix<T> result = Identity<T>((int)dimension);
+        int matrixDimension = (int)dimension;
+        var array = new T[matrixDimension, matrixDimension];
 
-        int i = 0;
-        for (int x = 0; x < result.Rows; x++)
+        for (int row = 0; row < matrixDimension; row++)
         {
-            for (int y = 0; y < result.Columns - 1; y++)
+            for (int col = 0; col < matrixDimension; col++)
             {
-                result.components[x, y] = values[i];
-                i++;
+                array[row, col] = row == col ? T.One : T.Zero;
             }
         }
-        return result;
+
+        int index = 0;
+        for (int x = 0; x < matrixDimension; x++)
+        {
+            for (int y = 0; y < matrixDimension - 1; y++)
+            {
+                array[x, y] = values[index];
+                index++;
+            }
+        }
+
+        return new Matrix<T>(array, false, false, false, null);
     }
 }
