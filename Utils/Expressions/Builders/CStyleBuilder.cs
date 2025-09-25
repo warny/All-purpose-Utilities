@@ -305,7 +305,6 @@ public class CStyleBuilder : IBuilder
 
         for (int i = index + 2; i < content.Length; i++)
         {
-            c = content[i];
             foreach (var marker in endComment)
             {
                 int j;

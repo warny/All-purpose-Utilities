@@ -121,7 +121,7 @@ public static class WeekUtils
 		weekNumber.ArgMustBeBetween(1, 53);
 
 		// Get the first day of the year.
-		var firstDayOfYear = new DateTime(year, 1, 1);
+                var firstDayOfYear = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
 		// Calculate the offset to the pivot day
 		var pivotOffset = (int)pivotDay - (int)firstDayOfYear.DayOfWeek;
@@ -139,8 +139,8 @@ public static class WeekUtils
 		DateTime endDate = startDate.AddDays(6);
 
 		// If the calculated end date falls into the next year, adjust it.
-		if (endDate.Year > year)
-			endDate = new DateTime(year, 12, 31);
+                if (endDate.Year > year)
+                        endDate = new DateTime(year, 12, 31, 0, 0, 0, DateTimeKind.Unspecified);
 
 		return new(startDate, endDate);
 	}
@@ -192,7 +192,7 @@ public static class WeekUtils
 	public static Week GetWeekOfYear(this DateTime date, DayOfWeek firstDayOfWeek, DayOfWeek pivotDay = DayOfWeek.Thursday)
 	{
 		// Get the first day of the year
-		var firstDayOfYear = new DateTime(date.Year, 1, 1);
+                var firstDayOfYear = new DateTime(date.Year, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
 		// Calculate the offset from the first day of the year to the pivot day
 		var pivotOffset = (int)pivotDay - (int)firstDayOfYear.DayOfWeek;

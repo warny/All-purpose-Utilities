@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using Utils.Dates;
 
 namespace UtilsTest.Objects;
@@ -43,12 +44,40 @@ public class DateFormulaTests
 	}
 
 	[TestMethod]
-	public void WeekDayAdjustments()
-	{
-		var date = new DateTime(2023, 10, 15);
-		Assert.AreEqual(new DateTime(2023, 11, 6), date.Calculate("FM+1J+Lu", new CultureInfo("fr-FR")));
-		Assert.AreEqual(new DateTime(2023, 10, 30), date.Calculate("FM+1JLu", new CultureInfo("fr-FR")));
-	}
+        public void WeekDayAdjustments()
+        {
+                var date = new DateTime(2023, 10, 15);
+                Assert.AreEqual(new DateTime(2023, 11, 6), date.Calculate("FM+1J+Lu", new CultureInfo("fr-FR")));
+                Assert.AreEqual(new DateTime(2023, 10, 30), date.Calculate("FM+1JLu", new CultureInfo("fr-FR")));
+        }
+
+        /// <summary>
+        /// Verifies that adjusting to the same day of week moves forward by one week when <paramref name="after"/> is true.
+        /// </summary>
+        [TestMethod]
+        public void AdjustToDayOfWeekAdvancesWhenOnSameDay()
+        {
+                var method = typeof(DateFormula).GetMethod("AdjustToDayOfWeek", BindingFlags.NonPublic | BindingFlags.Static)
+                        ?? throw new InvalidOperationException("Missing AdjustToDayOfWeek method.");
+
+                var result = (DateTime)method.Invoke(null, [new DateTime(2024, 4, 8), DayOfWeek.Monday, true])!;
+
+                Assert.AreEqual(new DateTime(2024, 4, 15), result);
+        }
+
+        /// <summary>
+        /// Ensures that adjusting backwards from an already aligned day returns the previous week day.
+        /// </summary>
+        [TestMethod]
+        public void AdjustToDayOfWeekMovesBackwardWhenOnSameDay()
+        {
+                var method = typeof(DateFormula).GetMethod("AdjustToDayOfWeek", BindingFlags.NonPublic | BindingFlags.Static)
+                        ?? throw new InvalidOperationException("Missing AdjustToDayOfWeek method.");
+
+                var result = (DateTime)method.Invoke(null, [new DateTime(2024, 4, 8), DayOfWeek.Monday, false])!;
+
+                Assert.AreEqual(new DateTime(2024, 4, 1), result);
+        }
 
 	[TestMethod]
 	public void EnglishFormula()

@@ -912,23 +912,19 @@ namespace Utils.Expressions.ExpressionBuilders
 			var loop = forExpression[2..]; // increments
 			var loopExpression = parser.ReadExpression(context, 0, null, out _);
 
-			var result = Expression.Block(
-				context.StackVariables,
-				[
-					initializer,
-					Expression.Loop(
-						Expression.Block(
-							new Expression[]
-							{
-								Expression.IfThen(Expression.Not(test), Expression.Break(breakLabel)),
-								loopExpression
-							}.Union(loop)
-						),
-						breakLabel,
-						continueLabel
-					)
-				]
-			);
+                        var loopBody = loop
+                                .Prepend(loopExpression)
+                                .Prepend(Expression.IfThen(Expression.Not(test), Expression.Break(breakLabel)));
+
+                        var result = Expression.Block(
+                                context.StackVariables,
+                                initializer,
+                                Expression.Loop(
+                                        Expression.Block(loopBody),
+                                        breakLabel,
+                                        continueLabel
+                                )
+                        );
 
 			context.PopContext();
 			return result;
@@ -1001,29 +997,27 @@ namespace Utils.Expressions.ExpressionBuilders
 			var indexVariable = Expression.Variable(typeof(int), "index");
 			var upperBoundVariable = Expression.Variable(typeof(int), "upperBound");
 
-			var initializer1 = Expression.Assign(indexVariable, Expression.Call(enumerableExpression, getLowerBoundMethod, [Expression.Constant(0)]));
-			var initializer2 = Expression.Assign(upperBoundVariable, Expression.Call(enumerableExpression, getUpperBoundMethod, [Expression.Constant(0)]));
+                        var initializer1 = Expression.Assign(indexVariable, Expression.Call(enumerableExpression, getLowerBoundMethod, Expression.Constant(0)));
+                        var initializer2 = Expression.Assign(upperBoundVariable, Expression.Call(enumerableExpression, getUpperBoundMethod, Expression.Constant(0)));
 
 			var loop = Expression.PostIncrementAssign(indexVariable);
 			var test = Expression.GreaterThan(indexVariable, upperBoundVariable);
 
-			return Expression.Block(
-				context.StackVariables.Append(indexVariable).Append(upperBoundVariable),
-				[
-					initializer1,
-					initializer2,
-					Expression.Loop(
-						Expression.Block(
-							Expression.IfThen(test, Expression.Break(breakLabel)),
-							Expression.Assign(forExpression, Expression.ArrayIndex(enumerableExpression, indexVariable)),
-							loopExpression,
-							loop
-						),
-						breakLabel,
-						continueLabel
-					)
-				]
-			);
+                        return Expression.Block(
+                                context.StackVariables.Append(indexVariable).Append(upperBoundVariable),
+                                initializer1,
+                                initializer2,
+                                Expression.Loop(
+                                        Expression.Block(
+                                                Expression.IfThen(test, Expression.Break(breakLabel)),
+                                                Expression.Assign(forExpression, Expression.ArrayIndex(enumerableExpression, indexVariable)),
+                                                loopExpression,
+                                                loop
+                                        ),
+                                        breakLabel,
+                                        continueLabel
+                                )
+                        );
 		}
 
 		/// <summary>
@@ -1042,11 +1036,10 @@ namespace Utils.Expressions.ExpressionBuilders
 			var enumerableGenericType = typeof(IEnumerable<>);
 			var enumerableType = typeof(IEnumerable);
 
-			MethodInfo getEnumerator = null;
-			Type returnType = null;
-			PropertyInfo current = null;
-			Expression assignment = null;
-			ParameterExpression enumeratorVariable = null;
+                        MethodInfo getEnumerator = null;
+                        PropertyInfo current = null;
+                        Expression assignment = null;
+                        ParameterExpression enumeratorVariable = null;
 
 			// For typed enumerables (IEnumerable<T>)
 			var typedEnumerableGenericType = enumerableExpression.Type.GetInterfaces()
@@ -1057,23 +1050,23 @@ namespace Utils.Expressions.ExpressionBuilders
 					&& i.GetGenericTypeDefinition() == enumerableGenericType
 					&& forExpression.Type.IsAssignableFromEx(i.GetGenericArguments()[0]));
 
-			if (typedEnumerableGenericType != null)
-			{
-				getEnumerator = typedEnumerableGenericType.GetMethod("GetEnumerator");
-				returnType = typedEnumerableGenericType.GetGenericArguments()[0];
-				current = getEnumerator.ReturnType.GetProperty("Current");
-				enumeratorVariable = Expression.Variable(typeof(IEnumerator<>).MakeGenericType(returnType), "enumerator");
-				assignment = Expression.Assign(forExpression, Expression.Property(enumeratorVariable, current));
-			}
+                        if (typedEnumerableGenericType != null)
+                        {
+                                getEnumerator = typedEnumerableGenericType.GetMethod("GetEnumerator");
+                                current = getEnumerator.ReturnType.GetProperty("Current");
+                                enumeratorVariable = Expression.Variable(
+                                        typeof(IEnumerator<>).MakeGenericType(typedEnumerableGenericType.GetGenericArguments()[0]),
+                                        "enumerator");
+                                assignment = Expression.Assign(forExpression, Expression.Property(enumeratorVariable, current));
+                        }
 			// For non-generic IEnumerable
-			else if (enumerableExpression.Type.GetInterfaces()
-				.Prepend(enumerableExpression.Type)
-				.Any(i => i.IsInterface && i == enumerableType))
-			{
-				getEnumerator = enumerableType.GetMethod("GetEnumerator");
-				returnType = typeof(object);
-				current = getEnumerator.ReturnType.GetProperty("Current");
-				enumeratorVariable = Expression.Variable(typeof(IEnumerator), "enumerator");
+                        else if (enumerableExpression.Type.GetInterfaces()
+                                .Prepend(enumerableExpression.Type)
+                                .Any(i => i.IsInterface && i == enumerableType))
+                        {
+                                getEnumerator = enumerableType.GetMethod("GetEnumerator");
+                                current = getEnumerator.ReturnType.GetProperty("Current");
+                                enumeratorVariable = Expression.Variable(typeof(IEnumerator), "enumerator");
 				assignment = Expression.Assign(
 					forExpression,
 					Expression.ConvertChecked(
@@ -1089,24 +1082,22 @@ namespace Utils.Expressions.ExpressionBuilders
 			var moveNext = typeof(IEnumerator).GetMethod("MoveNext");
 			var initializer = Expression.Assign(enumeratorVariable, Expression.Call(enumerableExpression, getEnumerator));
 
-			return Expression.Block(
-				context.StackVariables.Append(enumeratorVariable),
-				[
-					initializer,
-					Expression.Loop(
-						Expression.Block(
-							Expression.IfThen(
-								Expression.Not(Expression.Call(enumeratorVariable, moveNext)),
-								Expression.Break(breakLabel)
-							),
-							assignment,
-							loopExpression
-						),
-						breakLabel,
-						continueLabel
-					)
-				]
-			);
+                        return Expression.Block(
+                                context.StackVariables.Append(enumeratorVariable),
+                                initializer,
+                                Expression.Loop(
+                                        Expression.Block(
+                                                Expression.IfThen(
+                                                        Expression.Not(Expression.Call(enumeratorVariable, moveNext)),
+                                                        Expression.Break(breakLabel)
+                                                ),
+                                                assignment,
+                                                loopExpression
+                                        ),
+                                        breakLabel,
+                                        continueLabel
+                                )
+                        );
 		}
 	}
 

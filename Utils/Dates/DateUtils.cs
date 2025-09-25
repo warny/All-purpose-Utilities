@@ -279,8 +279,8 @@ public static class DateUtils
 
 		var easterDate = epacte + sundayLetter - 7 * correction + 114;
 
-		//calcul de la date de pâque
-		return new DateTime(year, easterDate / 31, 1).AddDays(easterDate % 31);
+                //calcul de la date de pâque
+                return new DateTime(year, easterDate / 31, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(easterDate % 31);
 	}
 
 	/// <summary>
