@@ -114,7 +114,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="stream">Connected stream used to send commands and receive responses.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public virtual Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         _stream = stream;
         _leaveOpen = leaveOpen;
@@ -139,6 +139,18 @@ public class CommandResponseClient : IDisposable
         {
             _keepAliveTimer = new Timer(async _ => await SendNoOpAsync(), null, _noOpInterval, Timeout.InfiniteTimeSpan);
         }
+        return OnConnect(stream, leaveOpen, cancellationToken);
+    }
+
+    /// <summary>
+    /// Called after the client has attached to the provided <see cref="Stream"/>.
+    /// </summary>
+    /// <param name="stream">Connected stream used to send commands and receive responses.</param>
+    /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that completes when post-connection logic has executed.</returns>
+    protected virtual Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
+    {
         return Task.CompletedTask;
     }
 
