@@ -667,6 +667,8 @@ namespace Utils.Expressions.ExpressionBuilders
 
                 private static Expression BuildInterpolatedString(ExpressionParserCore parser, ParserContext context, string format)
                 {
+                        ArgumentNullException.ThrowIfNull(parser);
+
                         var parsed = new InterpolatedStringParser(format);
                         var pieces = new List<Expression>();
 

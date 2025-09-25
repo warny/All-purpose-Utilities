@@ -318,56 +318,65 @@ public class QueryString
 			return string.Join(",", values._values);
 		}
 
-		/// <summary>
-		/// Allows assignment from a string array, overwriting existing values with the provided list.
-		/// </summary>
-		/// <param name="newValues">The set of new values to assign to this key.</param>
-		public static implicit operator QueryValues?(string newValues)
-		{
-			// This operator is used indirectly by:
-			//     myQueryString["key"] = new[] {"val1", "val2"};
-			// The actual assignment logic is handled by the parent indexer set method, 
-			// which checks for null/empty and replaces or removes the key.
-			if (newValues == null || newValues.Length == 0)
-			{
-				return null;
-			}
+                /// <summary>
+                /// Allows assignment from a comma-separated string, overwriting existing values with the provided list.
+                /// </summary>
+                /// <param name="newValues">The set of new values to assign to this key.</param>
+                /// <remarks>
+                /// <para>
+                /// This operator is used indirectly when assigning a comma-separated value to the query string,
+                /// for example <c>myQueryString["key"] = "val1,val2";</c>. The actual insertion and validation logic
+                /// is handled by the parent indexer setter, which removes the key when the resulting value is empty.
+                /// </para>
+                /// </remarks>
+                public static implicit operator QueryValues?(string newValues)
+                {
+                        if (newValues == null || newValues.Length == 0)
+                        {
+                                return null;
+                        }
 
 			return new QueryValues(null, null, [newValues]);
 		}
 
-		/// <summary>
-		/// Allows assignment from a string array, overwriting existing values with the provided list.
-		/// </summary>
-		/// <param name="newValues">The set of new values to assign to this key.</param>
-		public static implicit operator QueryValues?(List<string> newValues)
-		{
-			// This operator is used indirectly by:
-			//     myQueryString["key"] = new[] {"val1", "val2"};
-			// The actual assignment logic is handled by the parent indexer set method, 
-			// which checks for null/empty and replaces or removes the key.
-			if (newValues == null || newValues.Count == 0)
-			{
-				return null;
-			}
+                /// <summary>
+                /// Allows assignment from a list of string values, overwriting existing values with the provided list.
+                /// </summary>
+                /// <param name="newValues">The set of new values to assign to this key.</param>
+                /// <remarks>
+                /// <para>
+                /// This operator is used indirectly when assigning a list to the query string, such as
+                /// <c>myQueryString["key"] = new List&lt;string&gt; { "val1", "val2" };</c>. The parent indexer is
+                /// responsible for sanitizing and storing the resulting values, or removing the key when appropriate.
+                /// </para>
+                /// </remarks>
+                public static implicit operator QueryValues?(List<string> newValues)
+                {
+                        if (newValues == null || newValues.Count == 0)
+                        {
+                                return null;
+                        }
 
 			return new QueryValues(null, null, newValues);
 		}
 
-		/// <summary>
-		/// Allows assignment from a string array, overwriting existing values with the provided list.
-		/// </summary>
-		/// <param name="newValues">The set of new values to assign to this key.</param>
-		public static implicit operator QueryValues?(string[] newValues)
-		{
-			// This operator is used indirectly by:
-			//     myQueryString["key"] = new[] {"val1", "val2"};
-			// The actual assignment logic is handled by the parent indexer set method, 
-			// which checks for null/empty and replaces or removes the key.
-			if (newValues == null || newValues.Length == 0)
-			{
-				return null;
-			}
+                /// <summary>
+                /// Allows assignment from a string array, overwriting existing values with the provided list.
+                /// </summary>
+                /// <param name="newValues">The set of new values to assign to this key.</param>
+                /// <remarks>
+                /// <para>
+                /// This operator enables array-based assignments like
+                /// <c>myQueryString["key"] = new[] { "val1", "val2" };</c>. The parent indexer setter applies
+                /// validation and ensures empty collections remove the key instead of storing empty values.
+                /// </para>
+                /// </remarks>
+                public static implicit operator QueryValues?(string[] newValues)
+                {
+                        if (newValues == null || newValues.Length == 0)
+                        {
+                                return null;
+                        }
 
 			return new QueryValues(null, null, newValues);
 		}

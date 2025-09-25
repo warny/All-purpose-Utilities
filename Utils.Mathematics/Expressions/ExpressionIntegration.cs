@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Linq;
+using System.Linq.Expressions;
 using Utils.Expressions;
 using Utils.Objects;
 
@@ -17,7 +18,7 @@ public class ExpressionIntegration : ExpressionTransformer
 	/// <summary>
 	/// Gets or sets the cached parameter expression that matches <see cref="ParameterName"/>.
 	/// </summary>
-	private ParameterExpression parameter { get; set; }
+        private ParameterExpression parameter { get; set; } = null!;
 
 	/// <summary>
 	/// Integrates a lambda expression with respect to the configured parameter.
@@ -26,6 +27,11 @@ public class ExpressionIntegration : ExpressionTransformer
 	/// <returns>The integrated expression tree.</returns>
 	public Expression Integrate(LambdaExpression e)
 	{
+		ArgumentNullException.ThrowIfNull(e);
+
+		parameter = e.Parameters.FirstOrDefault(p => p.Name == ParameterName)
+		        ?? throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+
 		return Expression.Lambda(Transform(e.Body), e.Parameters);
 	}
 

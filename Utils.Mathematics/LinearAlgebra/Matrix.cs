@@ -187,7 +187,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 
 	private T ComputeDeterminant()
 	{
-		var (L, U) = DiagonalizeLU();
+                var (_, U) = DiagonalizeLU();
 
 		T determinant = -T.One;
 

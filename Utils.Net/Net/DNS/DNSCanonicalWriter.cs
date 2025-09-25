@@ -331,17 +331,17 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 			{
 				typeof(string),
 				(datasParameter, assignationSource, dnsField)
-					=> dnsField.Length switch
-					{
-						int length => new[]
-						{
-							ExpressionEx.CreateExpressionCall(
-								datasParameter,
-								nameof(Datas.WriteString),
-								assignationSource,
-								Expression.Constant(dnsField.Length, typeof(int))
-							)
-						},
+                                          => dnsField.Length switch
+                                          {
+                                                  int length => new[]
+                                                  {
+                                                          ExpressionEx.CreateExpressionCall(
+                                                                  datasParameter,
+                                                                  nameof(Datas.WriteString),
+                                                                  assignationSource,
+                                                                  Expression.Constant(length, typeof(int))
+                                                          )
+                                                  },
 						FieldsSizeOptions options => options switch
 						{
 							FieldsSizeOptions.PrefixedSize1B => new[]
@@ -457,8 +457,8 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 	/// An internal class representing the DNS datagram buffer and the current write position.
 	/// Also includes a local string position map for DNS name compression.
 	/// </summary>
-	private class Datas
-	{
+        private sealed class Datas
+        {
 		/// <summary>
 		/// Gets or sets the datagram buffer where DNS data is written.
 		/// </summary>
@@ -469,9 +469,10 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 		/// </summary>
 		public int Position { get; set; } = 0;
 
-		/// <summary>
-		/// Tracks positions of DNS names for DNS name compression (reusing labels with pointers).
-		/// </summary> } = new();
+                /// <summary>
+                /// Tracks positions of DNS names for DNS name compression (reusing labels with pointers).
+                /// </summary>
+                public Dictionary<string, ushort> StringsPositions { get; } = new();
 
 		/// <summary>
 		/// Holds the current <see cref="Context"/> state if writing a resource record that tracks
@@ -673,7 +674,7 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 	/// <summary>
 	/// A small data class tracking the length of a DNS RData section while it is being written.
 	/// </summary>
-	private class Context
+        private sealed class Context
 	{
 		/// <summary>
 		/// Gets or sets the total length of the data being written for the current RData block.

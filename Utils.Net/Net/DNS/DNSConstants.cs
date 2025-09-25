@@ -192,12 +192,12 @@ public static class DNSRequestType
         /// <summary>
         /// Mailbox-related resource record type (obsolete).
         /// </summary>
-        [Obsolete]
+        [Obsolete("Replaced by MX records; prefer querying DNSRequestType.AXFR or modern mail exchange records.")]
         public const ushort MAILB = 0xFD;
         /// <summary>
         /// Mail agent resource record type (obsolete).
         /// </summary>
-        [Obsolete]
+        [Obsolete("Replaced by MX records; prefer querying DNSRequestType.AXFR or modern mail exchange records.")]
         public const ushort MAILA = 0xFE;
 }
 

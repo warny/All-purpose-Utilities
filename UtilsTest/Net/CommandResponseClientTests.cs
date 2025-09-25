@@ -361,7 +361,6 @@ public class CommandResponseClientTests
     [TestMethod]
     public void SplitCodeAndMessage_SplitsCorrectly()
     {
-        TestClient client = new();
         (string code, string? message) = TestClient.Split("123 Example message");
         Assert.AreEqual("123", code);
         Assert.AreEqual("Example message", message);
