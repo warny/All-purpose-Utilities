@@ -18,16 +18,9 @@ namespace Utils.Expressions
         /// <returns><see langword="true"/> when the expression is a constant that matches <paramref name="checkValue"/>.</returns>
         public static bool CheckConstant<T>(Expression expressionToCheck, T checkValue)
         {
-            if (expressionToCheck is not ConstantExpression expression)
-            {
-                return false;
-            }
+            if (expressionToCheck is not ConstantExpression expression) return false;
             var value = expression.Value;
-
-            if (value is T val)
-            {
-                return val.Equals(checkValue);
-            }
+            if (value is T val) return val.Equals(checkValue);
 
             if (NumberUtils.IsNumeric(value) && NumberUtils.IsNumeric(checkValue))
             {

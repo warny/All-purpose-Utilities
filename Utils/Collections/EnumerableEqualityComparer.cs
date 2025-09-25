@@ -10,7 +10,7 @@ namespace Utils.Collections;
 /// based on custom or default equality logic for each element.
 /// 
 /// If both sequences implement <see cref="IReadOnlyList{T}"/>, 
-/// the comparison first checks <see cref="IReadOnlyList{T}.Count"/> for an early exit.
+/// the comparison first checks <see cref="IReadOnlyCollection{T}.Count"/> for an early exit.
 /// Uses <see cref="Span{T}"/> when applicable for performance.
 /// </summary>
 /// <typeparam name="T">The type of elements in the enumerable.</typeparam>
@@ -132,9 +132,6 @@ public sealed class EnumerableEqualityComparer<T> : IEqualityComparer<IEnumerabl
 	{
 		switch (obj)
 		{
-			//case string str:
-			//	span = (ReadOnlySpan<T>)str.AsSpan();
-			//	return true;
 			case T[] array:
 				span = array;
 				return true;

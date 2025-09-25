@@ -63,9 +63,9 @@ public static class DateUtils
 		{
 			case PeriodTypeEnum.None:
 				return dateTime;
-                        case PeriodTypeEnum.Day:
-                        case PeriodTypeEnum.WorkingDay:
-                                return calendar.AddDays(dateTime, 0).Date;
+			case PeriodTypeEnum.Day:
+			case PeriodTypeEnum.WorkingDay:
+				return calendar.AddDays(dateTime, 0).Date;
 			case PeriodTypeEnum.Week:
 				var difference = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
 				DateTime weekDate = calendar.AddDays(dateTime.Date, -difference);
@@ -137,9 +137,9 @@ public static class DateUtils
 		{
 			case PeriodTypeEnum.None:
 				return dateTime;
-                        case PeriodTypeEnum.Day:
-                        case PeriodTypeEnum.WorkingDay:
-                                return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
+			case PeriodTypeEnum.Day:
+			case PeriodTypeEnum.WorkingDay:
+				return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
 			case PeriodTypeEnum.Week:
 				var difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
 				DateTime endWeek = calendar.AddDays(dateTime.Date, difference);
@@ -165,17 +165,12 @@ public static class DateUtils
 	}
 
 	/// <summary>
-	/// Represents the Unix Epoch date and time (January 1, 1970, UTC).
-	/// </summary>
-	public static DateTime UnixEpoch { get; } = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-	/// <summary>
 	/// Converts the specified DateTime to a Unix timestamp.
 	/// </summary>
 	/// <param name="dateTime">The DateTime to convert.</param>
 	/// <returns>The Unix timestamp representing the specified DateTime.</returns>
 	public static long ToUnixTimeStamp(this DateTime dateTime)
-		=> (long)(dateTime.ToUniversalTime() - UnixEpoch).TotalSeconds;
+		=> (long)(dateTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
 
 	/// <summary>
 	/// Converts a Unix timestamp to a DateTime.
@@ -183,7 +178,7 @@ public static class DateUtils
 	/// <param name="timestamp">The Unix timestamp to convert.</param>
 	/// <returns>A DateTime representing the specified Unix timestamp.</returns>
 	public static DateTime FromUnixTimeStamp(long timestamp)
-			=> UnixEpoch.AddSeconds(timestamp).ToLocalTime();
+			=> DateTime.UnixEpoch.AddSeconds(timestamp).ToLocalTime();
 
 	/// <summary>
 	/// Adds a number of working days to the specified <paramref name="date"/>.
@@ -192,10 +187,10 @@ public static class DateUtils
 	/// <param name="workingDays">Number of working days to add.</param>
 	/// <param name="calendarProvider">Calendar providing working day information.</param>
 	/// <returns>The resulting date including additional non working days.</returns>
-        public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)
-        {
-                workingDays.ArgMustBeGreaterOrEqualsThan(0);
-                calendarProvider.Arg().MustNotBeNull();
+	public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)
+	{
+		workingDays.ArgMustBeGreaterOrEqualsThan(0);
+		calendarProvider.Arg().MustNotBeNull();
 
 		var toAdd = workingDays;
 		var current = date;
@@ -207,44 +202,44 @@ public static class DateUtils
 			current = end;
 		}
 
-                return current;
-        }
+		return current;
+	}
 
-        /// <summary>
-        /// Gets the next working day starting at the provided <paramref name="date"/>.
-        /// </summary>
-        /// <param name="date">Base date.</param>
-        /// <param name="calendarProvider">Calendar providing working day information.</param>
-        /// <returns>The first working day on or after <paramref name="date"/>.</returns>
-        public static DateTime NextWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
-        {
-                calendarProvider.Arg().MustNotBeNull();
+	/// <summary>
+	/// Gets the next working day starting at the provided <paramref name="date"/>.
+	/// </summary>
+	/// <param name="date">Base date.</param>
+	/// <param name="calendarProvider">Calendar providing working day information.</param>
+	/// <returns>The first working day on or after <paramref name="date"/>.</returns>
+	public static DateTime NextWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
+	{
+		calendarProvider.Arg().MustNotBeNull();
 
-                if (calendarProvider.GetNonWorkingDaysCount(date, date) == 0)
-                        return date;
+		if (calendarProvider.GetNonWorkingDaysCount(date, date) == 0)
+			return date;
 
-                return date.AddWorkingDays(1, calendarProvider);
-        }
+		return date.AddWorkingDays(1, calendarProvider);
+	}
 
-        /// <summary>
-        /// Gets the previous working day ending at the provided <paramref name="date"/>.
-        /// </summary>
-        /// <param name="date">Base date.</param>
-        /// <param name="calendarProvider">Calendar providing working day information.</param>
-        /// <returns>The first working day on or before <paramref name="date"/>.</returns>
-        public static DateTime PreviousWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
-        {
-                calendarProvider.Arg().MustNotBeNull();
+	/// <summary>
+	/// Gets the previous working day ending at the provided <paramref name="date"/>.
+	/// </summary>
+	/// <param name="date">Base date.</param>
+	/// <param name="calendarProvider">Calendar providing working day information.</param>
+	/// <returns>The first working day on or before <paramref name="date"/>.</returns>
+	public static DateTime PreviousWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
+	{
+		calendarProvider.Arg().MustNotBeNull();
 
-                if (calendarProvider.GetNonWorkingDaysCount(date, date) == 0)
-                        return date;
+		if (calendarProvider.GetNonWorkingDaysCount(date, date) == 0)
+			return date;
 
-                var current = date.AddDays(-1);
-                while (calendarProvider.GetNonWorkingDaysCount(current, current) > 0)
-                        current = current.AddDays(-1);
+		var current = date.AddDays(-1);
+		while (calendarProvider.GetNonWorkingDaysCount(current, current) > 0)
+			current = current.AddDays(-1);
 
-                return current;
-        }
+		return current;
+	}
 
 	/// <summary>
 	/// Calculates the date of Easter Sunday for the specified year using the Anonymous Gregorian algorithm.
@@ -318,15 +313,15 @@ public enum PeriodTypeEnum
 	/// </summary>
 	None = 0,
 
-        /// <summary>
-        /// Represents a single day.
-        /// </summary>
-        Day,
+	/// <summary>
+	/// Represents a single day.
+	/// </summary>
+	Day,
 
-        /// <summary>
-        /// Represents a working day.
-        /// </summary>
-        WorkingDay,
+	/// <summary>
+	/// Represents a working day.
+	/// </summary>
+	WorkingDay,
 
 	/// <summary>
 	/// Represents a week.

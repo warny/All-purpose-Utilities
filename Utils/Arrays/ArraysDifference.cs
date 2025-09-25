@@ -53,6 +53,7 @@ public class ArraysDifference<T> : IReadOnlyList<ArraysChange<T>>
 	/// </summary>
 	/// <param name="old">String before modifications</param>
 	/// <param name="new">String after modifications</param>
+    /// <param name="comparer">Function that compares 2 array elements</param>
 	private ArraysDifference(ReadOnlySpan<T> old, ReadOnlySpan<T> @new, Func<T, T, bool> comparer)
     {
         changes = Compare(old, @new, 0, 0, comparer);

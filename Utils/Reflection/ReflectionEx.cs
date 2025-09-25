@@ -41,8 +41,7 @@ public static class ReflectionEx
 	/// Retrieves the type hierarchy starting from the given type, along with the directly implemented interfaces at each level.
 	/// </summary>
 	/// <param name="type">The starting type for the hierarchy traversal.</param>
-	/// <param name="returnObject">If true, includes the object type in the hierarchy.</param>
-	/// <returns>An enumerable of tuples containing the type and its directly implemented interfaces.</returns>
+	/// <returns>An enumerable of tuples containing the <c ref="Type" /> and its directly implemented interfaces.</returns>
 	public static IEnumerable<(Type Type, Type[] Interfaces)> GetTypeHierarchy(this Type type)
 	{
 		for (var t = type; t != null; t = t.BaseType)

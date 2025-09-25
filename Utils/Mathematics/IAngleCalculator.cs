@@ -499,7 +499,6 @@ public class Trigonometry<T> : IAngleCalculator<T>
 	/// <summary>
 	/// Represents an angle calculator operating natively in radians.
 	/// </summary>
-	/// <typeparam name="T">A floating-point numeric type (e.g., float, double) implementing <see cref="IFloatingPointIeee754{T}"/>.</typeparam>
 	private sealed class RadianCalculator : Trigonometry<T>
 	{
 		/// <summary>

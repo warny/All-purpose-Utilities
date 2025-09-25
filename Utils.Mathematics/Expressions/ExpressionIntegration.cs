@@ -623,7 +623,7 @@ public class ExpressionIntegration : ExpressionTransformer
 )
 	{
 		if (be.NodeType != ExpressionType.Multiply ||
-			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
+			be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c?.Value) ||
 			be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
 		{
 			return null;

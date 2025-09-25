@@ -21,8 +21,16 @@ public static class NumberUtils
 		Type t = value.GetType();
 
 		// Use IsDefinedBy to check if t implements INumber<> at runtime.
-		return t.IsDefinedBy(typeof(INumber<>));
+		return IsNumeric(t);
 	}
+
+	/// <summary>
+	/// Checks whether the given <c ref="Type"/> is recognized as a numeric type
+	/// by verifying it implements <see cref="INumber{TSelf}"/>.
+	/// </summary>
+	/// <param name="t">Type to test.</param>
+	/// <returns>True if <paramref name="t"/> is numeric, otherwise false.</returns>
+	private static bool IsNumeric(Type t) => t.IsDefinedBy(typeof(INumber<>));
 
 	/// <summary>
 	/// Checks whether the given <paramref name="value"/> is integral,

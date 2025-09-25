@@ -53,7 +53,7 @@ public static class WeekUtils
 	/// <summary>
 	/// Computes the date range (start and end date) for the specified week of the specified year, using a specified pivot day.
 	/// </summary>
-	/// <param name="Week">Week.</param>
+	/// <param name="week">Week.</param>
 	/// <param name="pivotDay">The pivot day that defines the week. Defaults to Thursday for ISO weeks.</param>
 	/// <param name="cultureInfo">Culture that defines the start of week day</param>
 	/// <returns>The date range of the specified week.</returns>

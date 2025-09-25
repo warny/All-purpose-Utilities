@@ -161,10 +161,8 @@ public static class ExpressionEx
         var enumerableTyped = Expression.Variable(enumerableType, "__enumerable__");
         var getEnumeratorExpression = CreateExpressionCall(enumerableTyped, "GetEnumerator");
         var enumerator = Expression.Variable(getEnumeratorExpression.Type, "__enumerator__");
-        var getEnumerator = Expression.ConvertChecked(enumerable, enumerableType);
 
         var iterateExpression = CreateExpressionCall(enumerator, "MoveNext");
-
 
         return Expression.Block(
             [enumerableTyped, iterator, enumerator],
@@ -305,12 +303,12 @@ public static class ExpressionEx
                         var indexTypes = indexParameters.Select(p => p.ParameterType).ToArray();
                         if (!CompareTypes(argumentTypes, indexTypes)) continue;
                         return Expression.Property(expression, p, arguments);
-                    };
+                    }
                 case FieldInfo f:
                     {
                         if (arguments.Length != 0) continue;
                         return Expression.Field(expression, f);
-                    };
+                    }
                 case MethodInfo m:
                     {
                         var methodParameters = m.GetParameters();
@@ -318,7 +316,7 @@ public static class ExpressionEx
                         var argumentsTypes = methodParameters.Select(p => p.ParameterType).ToArray();
                         if (!CompareTypes(argumentTypes, argumentsTypes)) continue;
                         return Expression.Call(expression, m, arguments);
-                    };
+                    }
             }
         }
         throw new MissingMemberException(memberName);
@@ -348,12 +346,12 @@ public static class ExpressionEx
                     var indexTypes = indexParameters.Select(p => p.ParameterType).ToArray();
                     if (!CompareTypes(argumentTypes, indexTypes)) throw new ArgumentException("bad argument count", nameof(arguments));
                     return Expression.Property(expression, p, arguments);
-                };
+                }
             case FieldInfo f:
                 {
                     if (arguments.Length != 0) throw new ArgumentException("bad argument count", nameof(arguments));
                     return Expression.Field(expression, f);
-                };
+                }
             case MethodInfo m:
                 {
                     var methodParameters = m.GetParameters();
@@ -361,7 +359,7 @@ public static class ExpressionEx
                     var argumentsTypes = methodParameters.Select(p => p.ParameterType).ToArray();
                     if (!CompareTypes(argumentTypes, argumentsTypes)) throw new ArgumentException("bad argument count", nameof(arguments));
                     return Expression.Call(expression, m, arguments);
-                };
+                }
         }
         throw new NotSupportedException("");
     }
@@ -409,12 +407,12 @@ public static class ExpressionEx
                         var indexTypes = indexParameters.Select(p => p.ParameterType).ToArray();
                         if (!CompareTypes(argumentTypes, indexTypes)) continue;
                         return Expression.Property(null, p, arguments);
-                    };
+                    }
                 case FieldInfo f:
                     {
                         if (arguments.Length != 0) continue;
                         return Expression.Field(null, f);
-                    };
+                    }
                 case MethodInfo m:
                     {
                         var methodParameters = m.GetParameters();
@@ -422,7 +420,7 @@ public static class ExpressionEx
                         var argumentsTypes = methodParameters.Select(p => p.ParameterType).ToArray();
                         if (!CompareTypes(argumentTypes, argumentsTypes)) continue;
                         return Expression.Call(null, m, arguments);
-                    };
+                    }
             }
         }
         throw new MissingMemberException(memberName);

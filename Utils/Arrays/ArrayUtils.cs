@@ -250,6 +250,28 @@ public static class ArrayUtils
 		return true;
 	}
 
+
+	/// <summary>
+	/// Determines whether the provided span begins with the specified prefix.
+	/// </summary>
+	/// <param name="span">The span to inspect.</param>
+	/// <param name="prefix">The expected prefix.</param>
+	/// <returns><see langword="true"/> when the span starts with <paramref name="prefix"/>.</returns>
+	public static bool StartWith(this ReadOnlySpan<char> span, ReadOnlySpan<char> prefix)
+	{
+		if (prefix.Length > span.Length)
+			return false;
+
+		for (int i = 0; i < prefix.Length; i++)
+		{
+			if (span[i] != prefix[i])
+				return false;
+		}
+
+		return true;
+	}
+
+
 	/// <summary>
 	/// Checks whether the array <paramref name="array"/> ends with the sequence <paramref name="suffix"/>.
 	/// </summary>
@@ -511,25 +533,5 @@ public static class ArrayUtils
 
                 // Assumes there's an EnumerableEx.Replace() extension to handle the logic.
                 return EnumerableEx.Replace(array, toReplace, replacement).ToArray();
-        }
-
-        /// <summary>
-        /// Determines whether the provided span begins with the specified prefix.
-        /// </summary>
-        /// <param name="span">The span to inspect.</param>
-        /// <param name="prefix">The expected prefix.</param>
-        /// <returns><see langword="true"/> when the span starts with <paramref name="prefix"/>.</returns>
-        public static bool StartWith(this ReadOnlySpan<char> span, ReadOnlySpan<char> prefix)
-        {
-                if (prefix.Length > span.Length)
-                        return false;
-
-                for (int i = 0; i < prefix.Length; i++)
-                {
-                        if (span[i] != prefix[i])
-                                return false;
-                }
-
-                return true;
         }
 }
