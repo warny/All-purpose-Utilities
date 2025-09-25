@@ -332,6 +332,30 @@ public class CommandResponseClientTests
     }
 
     /// <summary>
+    /// Ensures that overriding <see cref="CommandResponseClient.OnConnect(Stream, bool, CancellationToken)"/> is honored when connecting.
+    /// </summary>
+    [TestMethod]
+    public async Task ConnectAsync_InvokesOnConnectOverride()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using NetworkStream serverStream = serverClient.GetStream();
+            await Task.Delay(50);
+            listener.Stop();
+        });
+
+        using OnConnectClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        await client.ConnectAsync("127.0.0.1", port);
+        Assert.IsTrue(client.OnConnectInvoked, "OnConnect override was not invoked.");
+        await client.DisconnectAsync();
+        await serverTask;
+    }
+
+    /// <summary>
     /// Ensures that response lines are split into code and message segments.
     /// </summary>
     [TestMethod]
@@ -351,7 +375,7 @@ public class CommandResponseClientTests
     /// </summary>
     private class TestClient : CommandResponseClient
     {
-		public override int DefaultPort { get; } = 50;
+        public override int DefaultPort { get; } = 50;
 
         /// <summary>
         /// Exposes <see cref="CommandResponseClient.SplitCodeAndMessage(string)"/> for testing.
@@ -359,6 +383,24 @@ public class CommandResponseClientTests
         /// <param name="line">Line to split.</param>
         /// <returns>Tuple containing code and optional message.</returns>
         public static (string code, string? message) Split(string line) => SplitCodeAndMessage(line);
+    }
+
+    /// <summary>
+    /// Test client used to verify that <see cref="CommandResponseClient.OnConnect(Stream, bool, CancellationToken)"/> overrides are invoked.
+    /// </summary>
+    private sealed class OnConnectClient : CommandResponseClient
+    {
+        /// <summary>
+        /// Gets a value indicating whether <see cref="OnConnect(Stream, bool, CancellationToken)"/> has been invoked.
+        /// </summary>
+        public bool OnConnectInvoked { get; private set; }
+
+        /// <inheritdoc/>
+        protected override Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
+        {
+            OnConnectInvoked = true;
+            return Task.CompletedTask;
+        }
     }
 }
 

@@ -24,15 +24,16 @@ public class Pop3Client : CommandResponseClient
     /// <inheritdoc/>
     public override int DefaultPort { get; } = 110;
 
-	/// <summary>
-	/// Uses the provided bidirectional <see cref="Stream"/> for communication.
-	/// </summary>
-	/// <param name="stream">Connected stream used to send commands and receive responses.</param>
-	/// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
-	/// <param name="cancellationToken">Cancellation token.</param>
-	public override async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Executes POP3 specific initialization when a connection is established.
+    /// </summary>
+    /// <param name="stream">Connected stream used to send commands and receive responses.</param>
+    /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that completes when the server greeting has been processed.</returns>
+    protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
     {
-        await base.ConnectAsync(stream, leaveOpen, cancellationToken);
+        await base.OnConnect(stream, leaveOpen, cancellationToken);
         IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
         await EnsureOkAsync(greeting);
         _timestamp = ExtractTimestamp(greeting);
