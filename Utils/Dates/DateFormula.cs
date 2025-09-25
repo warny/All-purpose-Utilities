@@ -227,14 +227,17 @@ public static class DateFormula
 			_ => throw new ArgumentException($"Unknown period token '{token}'.")
 		};
 
-	private static DateTime AdjustToDayOfWeek(DateTime date, DayOfWeek day, bool after)
-	{
-		var delta = ((int)day - (int)date.DayOfWeek + 7) % 7;
-		if (after)
-			return date.AddDays(delta == 0 ? 7 : delta);
-		delta = ((int)date.DayOfWeek - (int)day + 7) % 7;
-		return date.AddDays(delta == 0 ? -7 : -delta);
-	}
+        private static DateTime AdjustToDayOfWeek(DateTime date, DayOfWeek day, bool after)
+        {
+                if (after)
+                {
+                        var delta = ((int)day - (int)date.DayOfWeek + 7) % 7;
+                        return date.AddDays(delta == 0 ? 7 : delta);
+                }
+
+                var previousDelta = ((int)date.DayOfWeek - (int)day + 7) % 7;
+                return date.AddDays(previousDelta == 0 ? -7 : -previousDelta);
+        }
 
 	private static DateTime MoveToSameWeekDay(DateTime date, DayOfWeek day, DayOfWeek firstDayOfWeek)
 	{

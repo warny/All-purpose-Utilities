@@ -22,11 +22,12 @@ public class DateUtilitiesTests
 			new (2024, 3, 31)
 		};
 
-		foreach (var knownEaster in knownEastern)
-		{
-			var easter = DateUtils.ComputeEaster(knownEaster.Year);
-			Assert.AreEqual(knownEaster, easter);
-		}
+                foreach (var knownEaster in knownEastern)
+                {
+                        var easter = DateUtils.ComputeEaster(knownEaster.Year);
+                        Assert.AreEqual(knownEaster, easter);
+                        Assert.AreEqual(DateTimeKind.Unspecified, easter.Kind);
+                }
 	}
 
 	[TestMethod]
@@ -41,9 +42,11 @@ public class DateUtilitiesTests
 			((2024, 16, DayOfWeek.Sunday, DayOfWeek.Sunday), new (new (2024, 4, 21), new (2024, 4, 27)))
 		};
 
-		foreach (var (parameters, expected) in tests) {
-			var result = WeekUtils.GetWeekDateRange(parameters.Year, parameters.Week, parameters.startOfWeek, parameters.pivot);
-			Assert.AreEqual(expected, result);
-		}
-	}
+                foreach (var (parameters, expected) in tests) {
+                        var result = WeekUtils.GetWeekDateRange(parameters.Year, parameters.Week, parameters.startOfWeek, parameters.pivot);
+                        Assert.AreEqual(expected, result);
+                        Assert.AreEqual(DateTimeKind.Unspecified, result.Start.Kind);
+                        Assert.AreEqual(DateTimeKind.Unspecified, result.End.Kind);
+                }
+        }
 }

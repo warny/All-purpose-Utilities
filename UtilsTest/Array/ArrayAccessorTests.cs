@@ -25,7 +25,7 @@ public class ArrayAccessorTests
 	public void AsSpanReturnsSubDimension()
 	{
 		var accessor = CreateAccessor();
-		var span = accessor.AsSpan([1, 2]);
+		var span = accessor.AsSpan(1, 2);
 		CollectionAssert.AreEqual(new[] { 20, 21, 22, 23 }, span.ToArray());
 	}
 
@@ -33,7 +33,7 @@ public class ArrayAccessorTests
 	public void AsSpanWithSingleIndex()
 	{
 		var accessor = CreateAccessor();
-		var span = accessor.AsSpan([1]);
+		var span = accessor.AsSpan(1);
 		CollectionAssert.AreEqual(Enumerable.Range(12, 12).ToArray(), span.ToArray());
 	}
 
@@ -49,14 +49,14 @@ public class ArrayAccessorTests
 	public void AsSpanThrowsOnTooManyIndexes()
 	{
 		var accessor = CreateAccessor();
-		Assert.ThrowsExactly<ArgumentException>(() => accessor.AsSpan([0, 1, 2, 3]));
+		Assert.ThrowsExactly<ArgumentException>(() => accessor.AsSpan(0, 1, 2, 3));
 	}
 
 	[TestMethod]
         public void AsSpanThrowsOnIndexOutOfRange()
         {
                 var accessor = CreateAccessor();
-                Assert.ThrowsExactly<IndexOutOfRangeException>(() => accessor.AsSpan([2]));
+                Assert.ThrowsExactly<IndexOutOfRangeException>(() => accessor.AsSpan(2));
         }
 
         [TestMethod]
@@ -64,7 +64,7 @@ public class ArrayAccessorTests
         {
                 int[] data = [.. Enumerable.Range(0, 30)];
                 var accessor = new ArrayAccessor<int>(data, 3, 2, 3, 4);
-                var span = accessor.AsSpan([1]);
+                var span = accessor.AsSpan(1);
                 CollectionAssert.AreEqual(Enumerable.Range(15, 12).ToArray(), span.ToArray());
         }
 }

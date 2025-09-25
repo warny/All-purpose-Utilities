@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq.Expressions;
@@ -166,19 +167,17 @@ public static class ExpressionEx
 
         return Expression.Block(
             [enumerableTyped, iterator, enumerator],
-            [
-                Expression.Assign(enumerableTyped, Expression.Convert(enumerable, enumerableTyped.Type)),
-                Expression.Assign(enumerator, getEnumeratorExpression),
-                Expression.Loop(
-                    Expression.Block(
-                        Expression.IfThen(Expression.Not(iterateExpression), Expression.Goto(breakLoop)),
-                        Expression.Assign(iterator, Expression.Convert(CreateExpressionCall(enumerator, "Current"), iterator.Type)),
-                        iteration
-                    ),
-                    breakLoop,
-                    continueLoop
-                )
-            ]
+            Expression.Assign(enumerableTyped, Expression.Convert(enumerable, enumerableTyped.Type)),
+            Expression.Assign(enumerator, getEnumeratorExpression),
+            Expression.Loop(
+                Expression.Block(
+                    Expression.IfThen(Expression.Not(iterateExpression), Expression.Goto(breakLoop)),
+                    Expression.Assign(iterator, Expression.Convert(CreateExpressionCall(enumerator, "Current"), iterator.Type)),
+                    iteration
+                ),
+                breakLoop,
+                continueLoop
+            )
         );
     }
 
@@ -198,21 +197,24 @@ public static class ExpressionEx
         breakLoop ??= Expression.Label("__break__");
         continueLoop ??= Expression.Label("__continue__");
 
+        var loopExpressions = new List<Expression>
+        {
+            Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop)),
+            iteration
+        };
+
+        if (next is { Length: > 0 })
+        {
+            loopExpressions.AddRange(next);
+        }
+
         return Expression.Block(
             [iterator],
-            [
-                Expression.Assign(iterator, init),
-                Expression.Loop(
-                    Expression.Block(
-                        [
-                        Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop)),
-                        iteration,
-                        .. next
-                        ]
-                    ),
-                    breakLoop, continueLoop
-                )
-            ]
+            Expression.Assign(iterator, init),
+            Expression.Loop(
+                Expression.Block(loopExpressions),
+                breakLoop, continueLoop
+            )
         );
     }
 

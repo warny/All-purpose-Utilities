@@ -61,7 +61,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void TryReadString1ReadsEscapedSegments()
     {
-        bool matched = InvokeStringReader("TryReadString1", "\"value\\\"\"", 0, out int length);
+        bool matched = InvokeTokenReader("TryReadString1", "\"value\\\"\"", 0, out int length);
 
         Assert.IsTrue(matched);
         Assert.AreEqual(9, length);
@@ -73,7 +73,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void TryReadString1RejectsRawStrings()
     {
-        bool matched = InvokeStringReader("TryReadString1", "\"\"\"raw\"\"\"", 0, out int length);
+        bool matched = InvokeTokenReader("TryReadString1", "\"\"\"raw\"\"\"", 0, out int length);
 
         Assert.IsFalse(matched);
         Assert.AreEqual(0, length);
@@ -85,7 +85,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void TryReadString2HandlesEmbeddedQuotes()
     {
-        bool matched = InvokeStringReader("TryReadString2", "@\"value\"\"more\"", 0, out int length);
+        bool matched = InvokeTokenReader("TryReadString2", "@\"value\"\"more\"", 0, out int length);
 
         Assert.IsTrue(matched);
         Assert.AreEqual(14, length);
@@ -97,21 +97,38 @@ public class CStyleBuilderTests
     [TestMethod]
     public void TryReadString3TracksVariableDelimiters()
     {
-        bool matched = InvokeStringReader("TryReadString3", "\"\"\"\"quoted\"\"\"\"\"", 0, out int length);
+        bool matched = InvokeTokenReader("TryReadString3", "\"\"\"\"quoted\"\"\"\"\"", 0, out int length);
 
         Assert.IsTrue(matched);
         Assert.AreEqual(14, length);
     }
 
     /// <summary>
-    /// Invokes the requested string reader and returns its boolean result while exposing the parsed length.
+    /// Ensures that <c>TryReadComment</c> recognises both block and single-line comments and reports their lengths.
+    /// </summary>
+    [TestMethod]
+    public void TryReadCommentRecognisesBlockAndLineSegments()
+    {
+        bool blockMatched = InvokeTokenReader("TryReadComment", "/*value*/ next", 0, out int blockLength);
+
+        Assert.IsTrue(blockMatched);
+        Assert.AreEqual(9, blockLength);
+
+        bool lineMatched = InvokeTokenReader("TryReadComment", "//value\nnext", 0, out int lineLength);
+
+        Assert.IsTrue(lineMatched);
+        Assert.AreEqual(8, lineLength);
+    }
+
+    /// <summary>
+    /// Invokes the requested token reader and returns its boolean result while exposing the parsed length.
     /// </summary>
     /// <param name="methodName">Name of the private reader to invoke.</param>
     /// <param name="content">Input source code.</param>
     /// <param name="index">Start index provided to the reader.</param>
     /// <param name="length">Receives the parsed token length.</param>
     /// <returns>The boolean result returned by the invoked reader.</returns>
-    private static bool InvokeStringReader(string methodName, string content, int index, out int length)
+    private static bool InvokeTokenReader(string methodName, string content, int index, out int length)
     {
         MethodInfo method = typeof(CStyleBuilder).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static)
             ?? throw new InvalidOperationException($"Missing method {methodName}.");
