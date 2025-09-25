@@ -10,11 +10,87 @@ namespace UtilsTest.Mathematics.LinearAlgebra
 {
 
 	[TestClass]
-	public class MatrixTests
-	{
-		/*
-		[TestMethod]
-		public void TransformMatrixTests()
+        public class MatrixTests
+        {
+                /// <summary>
+                /// Ensures that LU factorisation preserves the source matrix and yields triangular factors.
+                /// </summary>
+                [TestMethod]
+                public void DiagonalizeLUProducesTriangularFactorsWithoutMutatingSource()
+                {
+                        Matrix<double> matrix = new Matrix<double>(new double[,]
+                        {
+                                { 4d, 3d },
+                                { 6d, 3d },
+                        });
+
+                        double[,] original = matrix.ToArray();
+                        (Matrix<double> L, Matrix<double> U) = matrix.DiagonalizeLU();
+                        AssertMatricesAreEqual(new Matrix<double>(original), matrix, 1e-12);
+
+                        for (int i = 0; i < matrix.Rows; i++)
+                        {
+                                Assert.AreEqual(1d, L[i, i], 1e-12, $"Diagonal entry at {i} was not one.");
+                                for (int j = 0; j < i; j++)
+                                {
+                                        Assert.AreEqual(0d, U[i, j], 1e-12, $"Upper matrix contained non-zero value at [{i}, {j}].");
+                                }
+                        }
+                }
+
+                /// <summary>
+                /// Verifies that inverting a matrix leaves the original unchanged and produces an identity when multiplied.
+                /// </summary>
+                [TestMethod]
+                public void InvertDoesNotMutateOriginalMatrix()
+                {
+                        Matrix<double> matrix = new Matrix<double>(new double[,]
+                        {
+                                { 4d, 7d },
+                                { 2d, 6d },
+                        });
+
+                        double[,] originalComponents = matrix.ToArray();
+                        Matrix<double> inverse = matrix.Invert();
+
+                        AssertMatricesAreEqual(new Matrix<double>(originalComponents), matrix, 1e-12);
+
+                        Matrix<double> identity = matrix * inverse;
+
+                        double tolerance = 1e-9;
+                        for (int row = 0; row < identity.Rows; row++)
+                        {
+                                for (int col = 0; col < identity.Columns; col++)
+                                {
+                                        double expected = row == col ? 1d : 0d;
+                                        Assert.AreEqual(expected, identity[row, col], tolerance, $"Unexpected value at [{row}, {col}]");
+                                }
+                        }
+                }
+
+                /// <summary>
+                /// Asserts that two matrices contain the same components within the provided tolerance.
+                /// </summary>
+                /// <param name="expected">Expected matrix.</param>
+                /// <param name="actual">Matrix produced by the computation.</param>
+                /// <param name="tolerance">Accepted numerical tolerance.</param>
+                private static void AssertMatricesAreEqual(Matrix<double> expected, Matrix<double> actual, double tolerance)
+                {
+                        Assert.AreEqual(expected.Rows, actual.Rows, "Row count mismatch.");
+                        Assert.AreEqual(expected.Columns, actual.Columns, "Column count mismatch.");
+
+                        for (int row = 0; row < expected.Rows; row++)
+                        {
+                                for (int col = 0; col < expected.Columns; col++)
+                                {
+                                        Assert.AreEqual(expected[row, col], actual[row, col], tolerance, $"Mismatch at [{row}, {col}]");
+                                }
+                        }
+                }
+
+                /*
+                [TestMethod]
+                public void TransformMatrixTests()
 		{
 			System.Drawing.Drawing2D.Matrix Create2D(params Action<System.Drawing.Drawing2D.Matrix>[] actions)
 			{

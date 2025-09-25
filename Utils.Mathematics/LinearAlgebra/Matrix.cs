@@ -12,7 +12,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEquatable<T[,]>, IEquatable<T[][]>, IEquatable<Vector<T>[]>, ICloneable
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
 {
-	internal readonly T[,] components;
+        private readonly T[,] components;
 	private bool? isDiagonalized;
 	private bool? isTriangularised;
 	private bool? isIdentity;
