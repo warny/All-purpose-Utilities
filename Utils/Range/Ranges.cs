@@ -704,24 +704,10 @@ namespace Utils.Range
 			if (newStart.CompareTo(newEnd) > 0)
 				return null;
 
-			// We might refine inclusivity if the boundaries match exactly.
-			// For simplicity, here's a minimal approach:
-			bool cStart = ContainsStart && other.ContainsStart
-				? newStart.CompareTo(Start) == 0 && newStart.CompareTo(other.Start) == 0
-				: newStart.CompareTo(Start) > 0 && newStart.CompareTo(other.Start) > 0
-|| (Start.CompareTo(other.Start) == 0
-					   ? (ContainsStart && other.ContainsStart)
-					   : false);
+                        bool includesStart = Contains(newStart) && other.Contains(newStart);
+                        bool includesEnd = Contains(newEnd) && other.Contains(newEnd);
 
-			// For demonstration, you could do more precise logic. We'll keep it simple.
-
-			bool cEnd = ContainsEnd && other.ContainsEnd;
-			// etc. (In real code, carefully handle all boundary cases.)
-
-			// The simplest approach is to be inclusive if at least one side is inclusive, etc.
-			// But that depends on your domain rules.
-
-			return new Range<T>(newStart, newEnd, cStart, cEnd);
+                        return new Range<T>(newStart, newEnd, includesStart, includesEnd);
 		}
 
 		private static T Max(T a, T b) => a.CompareTo(b) >= 0 ? a : b;

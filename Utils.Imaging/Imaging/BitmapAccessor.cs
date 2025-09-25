@@ -14,7 +14,6 @@ namespace Utils.Imaging
 		private BitmapData bmpdata = null;
 		private readonly PixelFormat pixelformat;
 		private byte* bytedata;
-		private readonly int totalBytes;
 		/// <summary>
 		/// Cached offsets for the start of each line.
 		/// </summary>
@@ -54,8 +53,6 @@ namespace Utils.Imaging
 
 			this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, this.pixelformat);
 			this.ColorDepth = GetColorDepth(this.pixelformat);
-			this.totalBytes = bmpdata.Stride * bmpdata.Height;
-
 			this.bytedata = (byte*)(void*)bmpdata.Scan0;
 
 			var lineBuilder = ImmutableArray.CreateBuilder<int>(bmpdata.Height);

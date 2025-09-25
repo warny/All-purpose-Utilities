@@ -23,6 +23,22 @@ namespace Utils.Net.DNS.RFC4025;
 /// </list>
 /// </para>
 /// <para>
+/// The wire format layout mirrors the RFC diagram:
+/// <code language="text">
+/// 0                   1                   2                   3
+/// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |  precedence   | gateway type  |  algorithm  |     gateway     |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-------------+                 +
+/// ~                            gateway                            ~
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                                                               /
+/// /                          public key                           /
+/// /                                                               /
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// </code>
+/// </para>
+/// <para>
 /// Depending on the <see cref="GatewayType"/>, different fields will be serialized:
 /// <list type="bullet">
 /// <item><description>IPv4 gateway: a 4-byte address, subject to <c>Condition = "GatewayType==...IPV4GatewayAddress"</c>.</description></item>
@@ -40,27 +56,6 @@ namespace Utils.Net.DNS.RFC4025;
 [DNSTextRecord("{Precedence} {gatewayType} {SecAlgorithm} {gatewayAddressIPv4} {gatewayAddressIPv6} {gatewayDomainName} {PublicKey}")]
 public class IPSECKEY : DNSResponseDetail
 {
-	/*
-            The RDATA for an IPSECKEY RR consists of:
-              - precedence (1 byte)
-              - gateway type (1 byte)
-              - algorithm type (1 byte)
-              - an optional gateway address (IPv4, IPv6, or domain)
-              - a public key blob
-
-            0                   1                   2                   3
-            0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            |  precedence   | gateway type  |  algorithm  |     gateway     |
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-------------+                 +
-            ~                            gateway                            ~
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            |                                                               /
-            /                          public key                           /
-            /                                                               /
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        */
-
 	/// <summary>
 	/// Gets or sets the precedence value (1 byte). Lower values indicate higher priority.
 	/// </summary>

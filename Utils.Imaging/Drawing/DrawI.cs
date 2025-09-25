@@ -59,8 +59,7 @@ namespace Utils.Drawing
                 /// </summary>
                 /// <param name="draw">Brush generating the pixels to render.</param>
                 /// <param name="drawable">Shape definition.</param>
-                /// <param name="width">Brush width.</param>
-                private void DrawShape(IBrush<T> draw, IDrawable drawable, float width = 1)
+                private void DrawShape(IBrush<T> draw, IDrawable drawable)
                 {
                         draw.Reset();
                         var length = drawable.Length;

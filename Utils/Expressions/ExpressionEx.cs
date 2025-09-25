@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -92,13 +93,17 @@ public static class ExpressionEx
             .Where(m => m.ReturnType == outType && m.GetParameters().Length == 0)
             .ToArray();
 
-        foreach (var method in new MethodInfo[] {
-            methodsInstance.FirstOrDefault(m => m.Name.StartsWith("As")),
-            methodsInstance.FirstOrDefault(m => m.Name.StartsWith("To")),
-            methodsInstance.FirstOrDefault(),
-        }.Where(m => m is not null))
+        var instanceMethod = Array.Find(
+            [
+                methodsInstance.FirstOrDefault(m => m.Name.StartsWith("As")),
+                methodsInstance.FirstOrDefault(m => m.Name.StartsWith("To")),
+                methodsInstance.FirstOrDefault(),
+            ],
+            static m => m is not null);
+
+        if (instanceMethod is not null)
         {
-            builder = Expression.Call(source, method);
+            builder = Expression.Call(source, instanceMethod);
             return true;
         }
 
@@ -112,16 +117,20 @@ public static class ExpressionEx
             .Where(m => m.ReturnType == outType && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == source.Type)
             .ToArray();
 
-        foreach (var method in new MethodInfo[] {
-            methodsStatic.FirstOrDefault(m => m.Name.StartsWith("As")),
-            methodsStatic.FirstOrDefault(m => m.Name.StartsWith("To")),
-            methodsStatic.FirstOrDefault(),
-            methodsTarget.FirstOrDefault(m => m.Name.StartsWith("From")),
-            methodsTarget.FirstOrDefault(m => m.Name.StartsWith("Parse")),
-            methodsTarget.FirstOrDefault(),
-        }.Where(m => m is not null))
+        var staticMethod = Array.Find(
+            [
+                methodsStatic.FirstOrDefault(m => m.Name.StartsWith("As")),
+                methodsStatic.FirstOrDefault(m => m.Name.StartsWith("To")),
+                methodsStatic.FirstOrDefault(),
+                methodsTarget.FirstOrDefault(m => m.Name.StartsWith("From")),
+                methodsTarget.FirstOrDefault(m => m.Name.StartsWith("Parse")),
+                methodsTarget.FirstOrDefault(),
+            ],
+            static m => m is not null);
+
+        if (staticMethod is not null)
         {
-            builder = Expression.Call(method, source);
+            builder = Expression.Call(staticMethod, source);
             return true;
         }
 
@@ -131,7 +140,8 @@ public static class ExpressionEx
             .Where(c => c is not null)
             .ToArray();
 
-        foreach (var constructor in constructorTarget)
+        var constructor = constructorTarget.FirstOrDefault();
+        if (constructor is not null)
         {
             builder = Expression.New(constructor, source);
             return true;
@@ -633,8 +643,8 @@ public static class ExpressionEx
     {
         return Expression.Loop(
             Copy(expression.Body, replacements, labels),
-            Copy(expression.BreakLabel, replacements, labels),
-            Copy(expression.ContinueLabel, replacements, labels)
+            Copy(expression.BreakLabel, labels),
+            Copy(expression.ContinueLabel, labels)
         );
     }
 
@@ -645,13 +655,12 @@ public static class ExpressionEx
     )
     {
         LabelTarget target = expression.Target;
-        LabelTarget newTarget = Copy(target, replacements, labels);
+        LabelTarget newTarget = Copy(target, labels);
         return Expression.Label(newTarget);
     }
 
     private static LabelTarget Copy(
         LabelTarget target,
-        IReadOnlyDictionary<ParameterExpression, Expression> replacements,
         IDictionary<LabelTarget, LabelTarget> labels
     )
     {

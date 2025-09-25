@@ -47,11 +47,15 @@ public partial class ExpressionSimplifier
 	/// <returns>
 	/// A transformed <see cref="Expression.Call(MethodInfo, Expression)"/> targeting the specified method.
 	/// </returns>
-	private Expression TransformCall(Type type, string functionName, Expression e, Expression[] expressions)
-	{
-		var f = type.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, [typeof(double)]);
-		return Transform(Expression.Call(f, expressions));
-	}
+        private Expression TransformCall(Type type, string functionName, Expression e, Expression[] expressions)
+        {
+                ArgumentNullException.ThrowIfNull(e);
+
+                var method = type.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, [typeof(double)])
+                        ?? throw new InvalidOperationException($"The method {functionName} could not be located on {type}.");
+
+                return Transform(Expression.Call(method, expressions));
+        }
 
 	/// <summary>
 	/// Converts a call to <see cref="Math.Sign(double)"/> into a call to <see cref="INumber{T}.Sign"/>.
