@@ -183,7 +183,6 @@ public static class ObjectUtils
 	/// </summary>
 	/// <typeparam name="T">The type of objects to hash.</typeparam>
 	/// <param name="objects">The objects to include in the hash computation.</param>
-	/// <param name="getHashCode">The custom hash function.</param>
 	/// <returns>The computed hash code.</returns>
 	public static int ComputeHash<T>(this ReadOnlySpan<T> objects)
 	{

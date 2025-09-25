@@ -4,6 +4,7 @@ using Utils.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
+#pragma warning disable CS8604 // Existence possible d'un argument de référence null.
 
 /// <summary>
 /// Provides integration rules for mathematical expression trees.
@@ -18,7 +19,7 @@ public class ExpressionIntegration : ExpressionTransformer
 	/// <summary>
 	/// Gets or sets the cached parameter expression that matches <see cref="ParameterName"/>.
 	/// </summary>
-        private ParameterExpression parameter { get; set; } = null!;
+	private ParameterExpression parameter { get; set; } = null!;
 
 	/// <summary>
 	/// Integrates a lambda expression with respect to the configured parameter.
@@ -30,7 +31,7 @@ public class ExpressionIntegration : ExpressionTransformer
 		ArgumentNullException.ThrowIfNull(e);
 
 		parameter = e.Parameters.FirstOrDefault(p => p.Name == ParameterName)
-		        ?? throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+				?? throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
 
 		return Expression.Lambda(Transform(e.Body), e.Parameters);
 	}
@@ -644,3 +645,4 @@ public class ExpressionIntegration : ExpressionTransformer
 	}
 
 }
+#pragma warning restore CS8604 // Existence possible d'un argument de référence null.

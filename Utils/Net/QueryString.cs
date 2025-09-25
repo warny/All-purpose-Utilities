@@ -285,7 +285,7 @@ public class QueryString
 	/// A helper class for working with multiple query values under a single key. 
 	/// It can be used like a list or implicitly converted to a comma-separated string.
 	/// </summary>
-	public class QueryValues :
+	public sealed class QueryValues :
 		IList<string>,
 		IEquatable<string>,
 		IEquatable<IEnumerable<string>>,

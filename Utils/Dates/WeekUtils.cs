@@ -12,7 +12,7 @@ public static class WeekUtils
 	/// <summary>
 	/// Computes the date range (start and end date) for the specified week of the specified year, using a specified pivot day.
 	/// </summary>
-	/// <param name="Week">Week.</param>
+	/// <param name="week">Week.</param>
 	/// <returns>The date range of the specified week.</returns>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown if the week number is out of range.</exception>
 	public static Range<DateTime> GetISOWeekDateRange(Week week)
@@ -76,7 +76,7 @@ public static class WeekUtils
 	/// <summary>
 	/// Computes the date range (start and end date) for the specified week of the specified year, using a specified pivot day.
 	/// </summary>
-	/// <param name="Week">Week.</param>
+	/// <param name="week">Week.</param>
 	/// <param name="pivotDay">The pivot day that defines the week. Defaults to Thursday for ISO weeks.</param>
 	/// <param name="dateTimeFormatInfo">DateTimeInfo that defines the start of week day</param>
 	/// <returns>The date range of the specified week.</returns>

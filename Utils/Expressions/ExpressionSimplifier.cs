@@ -15,7 +15,7 @@ namespace Utils.Mathematics.Expressions
 	public partial class ExpressionSimplifier : ExpressionTransformer
 	{
 		/// <summary>
-		/// Simplifies the given <paramref name="e"/> by calling <see cref="Transform"/>.
+		/// Simplifies the given <paramref name="e"/> by calling <see cref="ExpressionTransformer.Transform"/>.
 		/// </summary>
 		/// <param name="e">The <see cref="Expression"/> to simplify.</param>
 		/// <returns>A simplified version of <paramref name="e"/>, if any transformation rules match.</returns>
@@ -25,8 +25,8 @@ namespace Utils.Mathematics.Expressions
 		}
 
 		/// <summary>
-		/// Prepares an expression for transformation by calling <see cref="Transform"/>.
-		/// Subclasses can override for custom logic, but here it simply re-applies <see cref="Transform"/>.
+		/// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.Transform"/>
+		/// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.Transform"/>
 		/// </summary>
 		/// <param name="e">The expression to prepare.</param>
 		/// <returns>The transformed expression.</returns>
@@ -684,7 +684,7 @@ namespace Utils.Mathematics.Expressions
 
 		/// <summary>
 		/// Called when no custom transformation method matches. In this partial class, it
-		/// copies the expression structure using <see cref="CopyExpression"/> as the default final step.
+		/// copies the expression structure using <see cref="ExpressionTransformer.CopyExpression"/> as the default final step.
 		/// </summary>
 		/// <param name="e">The expression to finalize.</param>
 		/// <param name="parameters">Sub-expressions or operands.</param>

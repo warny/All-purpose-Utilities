@@ -118,6 +118,7 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 		}
 	}
 
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 	/// <summary>
 	/// Dynamically generates an expression-based serializer (writer) for DNS elements.
 	/// </summary>
@@ -220,6 +221,7 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 
 		return expression.Compile();
 	}
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
 	/// <summary>
 	/// A dictionary mapping known .NET types (e.g., <see cref="ushort"/>, <see cref="T:byte[]"/>)

@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Utils.Expressions;
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
 /// <summary>
 /// Provides helper methods for building and manipulating expression trees.
@@ -282,16 +283,16 @@ public static class ExpressionEx
     public static Expression CreateMemberExpression(Expression expression, string memberName, params Expression[] arguments)
     => CreateMemberExpression(expression, memberName, BindingFlags.Public);
 
-	/// <summary>
-	/// Creates an expression accessing a member on an instance using explicit binding flags.
-	/// </summary>
-	/// <param name="expression">Expression producing the instance whose member is accessed.</param>
-	/// <param name="memberName">Name of the member to access.</param>
-	/// <param name="bindingFlags">Flags controlling visibility, case, and hierarchy.</param>
-	/// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
-	/// <returns>An <see cref="Expression"/> representing the member access.</returns>
-	/// <exception cref="MissingMemberException">Thrown when the requested member cannot be located.</exception>
-	public static Expression CreateMemberExpression(Expression expression, string memberName, BindingFlags bindingFlags, params Expression[] arguments)
+    /// <summary>
+    /// Creates an expression accessing a member on an instance using explicit binding flags.
+    /// </summary>
+    /// <param name="expression">Expression producing the instance whose member is accessed.</param>
+    /// <param name="memberName">Name of the member to access.</param>
+    /// <param name="bindingFlags">Flags controlling visibility, case, and hierarchy.</param>
+    /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
+    /// <returns>An <see cref="Expression"/> representing the member access.</returns>
+    /// <exception cref="MissingMemberException">Thrown when the requested member cannot be located.</exception>
+    public static Expression CreateMemberExpression(Expression expression, string memberName, BindingFlags bindingFlags, params Expression[] arguments)
     {
         bindingFlags &= BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.NonPublic;
         bindingFlags |= BindingFlags.Instance | BindingFlags.FlattenHierarchy;
@@ -748,3 +749,4 @@ public static class ExpressionEx
     }.ToImmutableDictionary();
 
 }
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields

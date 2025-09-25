@@ -673,7 +673,7 @@ namespace Utils.Range
 
 		/// <summary>
 		/// Computes the complement with respect to the full integer domain (-∞ to +∞).
-		/// That is, all values in [-∞..+∞] that are *not* in this <see cref="IntRange"/>.
+		/// That is, all values in [-∞..+∞] that are *not* in this <see cref="IntRange{T}"/>.
 		/// </summary>
 		public IntRange<T> Complement()
 		{

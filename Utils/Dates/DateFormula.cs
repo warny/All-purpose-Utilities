@@ -5,6 +5,7 @@ using System.Reflection;
 using Utils.Objects;
 
 namespace Utils.Dates;
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
 /// <summary>
 /// Evaluates date formulas using culture specific tokens.
@@ -227,17 +228,17 @@ public static class DateFormula
 			_ => throw new ArgumentException($"Unknown period token '{token}'.")
 		};
 
-        private static DateTime AdjustToDayOfWeek(DateTime date, DayOfWeek day, bool after)
-        {
-                if (after)
-                {
-                        var delta = ((int)day - (int)date.DayOfWeek + 7) % 7;
-                        return date.AddDays(delta == 0 ? 7 : delta);
-                }
+	private static DateTime AdjustToDayOfWeek(DateTime date, DayOfWeek day, bool after)
+	{
+		if (after)
+		{
+			var delta = ((int)day - (int)date.DayOfWeek + 7) % 7;
+			return date.AddDays(delta == 0 ? 7 : delta);
+		}
 
-                var previousDelta = ((int)date.DayOfWeek - (int)day + 7) % 7;
-                return date.AddDays(previousDelta == 0 ? -7 : -previousDelta);
-        }
+		var previousDelta = ((int)date.DayOfWeek - (int)day + 7) % 7;
+		return date.AddDays(previousDelta == 0 ? -7 : -previousDelta);
+	}
 
 	private static DateTime MoveToSameWeekDay(DateTime date, DayOfWeek day, DayOfWeek firstDayOfWeek)
 	{
@@ -246,3 +247,4 @@ public static class DateFormula
 		return weekStart.AddDays(delta);
 	}
 }
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields

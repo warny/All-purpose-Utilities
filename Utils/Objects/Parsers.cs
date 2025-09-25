@@ -231,7 +231,7 @@ public static class Parsers
 	/// <summary>
 	/// Checks if a type can be parsed.
 	/// </summary>
-	/// <param name="type">The type to check.</param>
+	/// <typeparam name="T">The type to check.</typeparam>
 	/// <returns><see langword="true"/> if the type can be parsed; otherwise, <see langword="false"/>.</returns>
 	public static bool CanParse<T>() => CanParse(typeof(T));
 

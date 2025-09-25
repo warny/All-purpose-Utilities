@@ -19,7 +19,7 @@ namespace Utils.IO;
 /// <remarks>
 /// By default, disposing this object does not dispose any of the contained streams. If the
 /// parameter <paramref name="closeAllTargetsOnDispose"/> is <see langword="true"/> when constructing
-/// this class, all target streams will be disposed when <see cref="StreamCopier.Dispose()"/>
+/// this class, all target streams will be disposed when <see cref="IDisposable.Dispose()"/>
 /// is called.
 /// </remarks>
 /// </summary>

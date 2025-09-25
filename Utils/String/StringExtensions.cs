@@ -29,7 +29,7 @@ namespace Utils.String
 		/// <param name="ignoreCase">If true, performs a case-insensitive comparison.</param>
 		/// <param name="textInfo">
 		/// Optional <see cref="TextInfo"/> used for case conversion when <paramref name="ignoreCase"/> is true. 
-		/// Defaults to <see cref="CultureInfo.CurrentCulture.TextInfo"/> if not provided.
+		/// Defaults to <see cref="CultureInfo.CurrentCulture"/> if not provided.
 		/// </param>
 		/// <returns>True if the string matches the pattern; otherwise, false.</returns>
 		public static bool Like(this string value, string pattern, bool ignoreCase = false, TextInfo textInfo = null)

@@ -8,7 +8,7 @@ using Utils.Objects;
 using Utils.Reflection;
 
 namespace Utils.IO.Serialization;
-
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 /// <summary>
 /// Provides methods to serialize objects to a <see cref="Stream"/>. Writers are
 /// resolved dynamically based on the runtime type of the value to write.
@@ -250,3 +250,5 @@ public class Writer : IWriter, IStreamMapping<Writer>
 		return compiledLambda;
 	}
 }
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+

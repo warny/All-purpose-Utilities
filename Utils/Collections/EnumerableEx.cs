@@ -316,7 +316,7 @@ public static partial class EnumerableEx
 	/// Flattens a sequence of sequences into a single, concatenated sequence.
 	/// </summary>
 	/// <typeparam name="T">The type of elements in the sub-sequences.</typeparam>
-	/// <param name="sources">An <see cref="IEnumerable{IEnumerable{T}}"/> containing sub-sequences to flatten.</param>
+	/// <param name="sources">An <see cref="T:IEnumerable{IEnumerable{T}}"/> containing sub-sequences to flatten.</param>
 	/// <returns>
 	/// A single <see cref="IEnumerable{T}"/> containing all elements from the sub-sequences in order.
 	/// </returns>

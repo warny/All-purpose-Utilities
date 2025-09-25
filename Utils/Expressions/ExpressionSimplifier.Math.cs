@@ -89,7 +89,7 @@ public partial class ExpressionSimplifier
 		=> TransformCall(typeof(INumber<double>), nameof(INumber<double>.Clamp), e, expressions);
 
 	/// <summary>
-	/// Converts a call to <see cref="Math.Abs(double)"/> into a call to <see cref="IFloatingPoint{T}.Abs"/>.
+	/// Converts a call to <see cref="Math.Abs(double)"/> into a call to <see cref="T:IFloatingPoint{T}.Abs(T)"/>.
 	/// </summary>
 	[ExpressionCallSignature(typeof(Math), nameof(Math.Abs))]
 	protected Expression AbsConversionMath(Expression e, Expression[] expressions)
