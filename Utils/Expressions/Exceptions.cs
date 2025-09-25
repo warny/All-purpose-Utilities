@@ -225,6 +225,7 @@ public class FindTypeException : Exception
 		TypeName = typeName;
 	}
 
+#pragma warning disable SYSLIB0051 // Le type ou le membre est obsolète
 	/// <summary>
 	/// Initializes a new instance of the <see cref="FindTypeException"/> class
 	/// with serialized data, typically used during deserialization.
@@ -235,4 +236,5 @@ public class FindTypeException : Exception
 		: base(info, context)
 	{
 	}
+#pragma warning restore SYSLIB0051 // Le type ou le membre est obsolète
 }

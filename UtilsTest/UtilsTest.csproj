@@ -1,99 +1,99 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-          <EnablePreviewFeatures>True</EnablePreviewFeatures>
-          <IsPackable>false</IsPackable>
-    <Authors>Olivier MARTY</Authors>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
-	  <NoWarn>1591</NoWarn>
-  </PropertyGroup>
-	
-  <ItemGroup>
-    <EmbeddedResource Remove="Resources\TestResource.fr.resx" />
-    <EmbeddedResource Remove="Resources\TestResource.resx" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<IsPackable>false</IsPackable>
+		<Authors>Olivier MARTY</Authors>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
+		<NoWarn>1591</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="Resources\TestResource.fr.resx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Generator></Generator>
-    </None>
-    <None Include="Resources\TestResource.resx">
-      <Generator></Generator>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Remove="Resources\TestResource.fr.resx" />
+		<EmbeddedResource Remove="Resources\TestResource.resx" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.9.3" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.9.3" />
-    <PackageReference Include="SpecFlow" Version="3.9.74" />
-    <PackageReference Include="SpecFlow.MsTest" Version="3.9.74" />
-    <PackageReference Include="SpecFlow.Tools.MsBuild.Generation" Version="3.9.74" />
-    <PackageReference Include="SolidToken.SpecFlow.DependencyInjection" Version="3.9.3" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.6" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="Resources\TestResource.fr.resx">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Generator></Generator>
+		</None>
+		<None Include="Resources\TestResource.resx">
+			<Generator></Generator>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Utils.Net\Utils.Net.csproj" />
-    <ProjectReference Include="..\Utils.Data\Utils.Data.csproj" />
-    <ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
-    <ProjectReference Include="..\Utils.Geography\Utils.Geography.csproj" />
-    <ProjectReference Include="..\Utils.IO\Utils.IO.csproj" />
-    <ProjectReference Include="..\Utils.Mathematics\Utils.Mathematics.csproj" />
-    <ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
-    <ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
-    <ProjectReference Include="..\Utils.Xml\Utils.Xml.csproj" />
-    <ProjectReference Include="..\Utils\Utils.csproj" />
-    <ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
-    <ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
-    <ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="6.0.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.9.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.9.3" />
+		<PackageReference Include="SpecFlow" Version="3.9.74" />
+		<PackageReference Include="SpecFlow.MsTest" Version="3.9.74" />
+		<PackageReference Include="SpecFlow.Tools.MsBuild.Generation" Version="3.9.74" />
+		<PackageReference Include="SolidToken.SpecFlow.DependencyInjection" Version="3.9.3" />
+		<PackageReference Include="System.Drawing.Common" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="Resources\TextFile1.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Utils.Net\Utils.Net.csproj" />
+		<ProjectReference Include="..\Utils.Data\Utils.Data.csproj" />
+		<ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
+		<ProjectReference Include="..\Utils.Geography\Utils.Geography.csproj" />
+		<ProjectReference Include="..\Utils.IO\Utils.IO.csproj" />
+		<ProjectReference Include="..\Utils.Mathematics\Utils.Mathematics.csproj" />
+		<ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
+		<ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
+		<ProjectReference Include="..\Utils.Xml\Utils.Xml.csproj" />
+		<ProjectReference Include="..\Utils\Utils.csproj" />
+		<ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
+		<ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
+		<ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Fonts\Fonts.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Fonts.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Resource Include="Resources\TextFile1.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Resource>
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="Fonts\Fonts.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Fonts.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Update="Fonts\Fonts.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Fonts.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="Fonts\arial.ttf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\Icon1.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\Image1.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\TextFile1.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Update="Fonts\Fonts.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Fonts.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Fonts\arial.ttf">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</None>
+		<None Update="Resources\Icon1.ico">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Resources\Image1.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Resources\TextFile1.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>

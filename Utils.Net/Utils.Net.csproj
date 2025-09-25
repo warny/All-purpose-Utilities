@@ -17,12 +17,13 @@
 			- DNS protocol implementation
 			- ICMP helpers and system network info
 		</Description>
+		<NoWarn>S101</NoWarn>
 	</PropertyGroup>
 
-        <ItemGroup>
-                <PackageReference Include="System.Management" Version="9.0.6" />
-                <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-        </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Management" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Utils\Utils.csproj" />

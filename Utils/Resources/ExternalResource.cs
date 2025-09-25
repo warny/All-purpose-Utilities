@@ -253,6 +253,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 		}
 	}
 
+#pragma warning disable SYSLIB0001 // Le type ou le membre est obsolète
 	private static readonly Dictionary<string, Encoding> _encodings = new(StringComparer.InvariantCultureIgnoreCase)
 	{
 		{"System.Text.ASCIIEncoding", Encoding.ASCII },
@@ -261,6 +262,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 		{"System.Text.UTF7Encoding", Encoding.UTF7},
 		{ "System.Text.UTF32Encoding", Encoding.UTF32},
 	};
+#pragma warning restore SYSLIB0001 // Le type ou le membre est obsolète
 
 	/// <summary>
 	/// Tries to instantiate an <see cref="Encoding"/> from a type name,

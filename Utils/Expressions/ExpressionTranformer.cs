@@ -288,7 +288,7 @@ public abstract class ExpressionTransformer
 	/// A new expression replicating the structure of <paramref name="e"/> with
 	/// possibly different sub-expressions.
 	/// </returns>
-	protected Expression CopyExpression(Expression e, params Expression[] parameters)
+	protected static Expression CopyExpression(Expression e, params Expression[] parameters)
 	{
 		return e.NodeType switch
 		{
@@ -388,7 +388,7 @@ public abstract class ExpressionTransformer
 	/// <param name="e">The expression to validate.</param>
 	/// <param name="parameter">The parameter that declared a signature requirement.</param>
 	/// <returns>True if <paramref name="e"/> is valid for the parameter; otherwise false.</returns>
-	private bool CheckParameter(Expression e, ParameterInfo parameter)
+	private static bool CheckParameter(Expression e, ParameterInfo parameter)
 	{
 		// Check if the expression type is compatible with the parameter
 		if (!parameter.ParameterType.IsAssignableFrom(e.GetType()))
