@@ -111,7 +111,7 @@ public class RightParenthesisBuilder : IFollowUpExpressionBuilder
 
 /// <summary>
 /// Implements <see cref="IFollowUpExpressionBuilder"/> that checks for matching wrap start
-/// and sets the <paramref name="isClosedWrap"/> flag, concluding the bracket/parenthesis context.
+/// and sets the <see name="T:isClosedWrap"/> flag, concluding the bracket/parenthesis context.
 /// </summary>
 public class CloseBuilder : IFollowUpExpressionBuilder
 {

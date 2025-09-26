@@ -52,7 +52,7 @@ public class DateFormulaTests
         }
 
         /// <summary>
-        /// Verifies that adjusting to the same day of week moves forward by one week when <paramref name="after"/> is true.
+        /// Verifies that adjusting to the same day of week moves forward by one week when <see cref="T:after"/> is true.
         /// </summary>
         [TestMethod]
         public void AdjustToDayOfWeekAdvancesWhenOnSameDay()

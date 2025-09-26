@@ -18,7 +18,7 @@ namespace Utils.IO;
 /// 
 /// <remarks>
 /// By default, disposing this object does not dispose any of the contained streams. If the
-/// parameter <paramref name="closeAllTargetsOnDispose"/> is <see langword="true"/> when constructing
+/// parameter <see cref="T:closeAllTargetsOnDispose"/> is <see langword="true"/> when constructing
 /// this class, all target streams will be disposed when <see cref="IDisposable.Dispose()"/>
 /// is called.
 /// </remarks>
@@ -100,7 +100,7 @@ public class StreamCopier : Stream, IList<Stream>
 
 	/// <summary>
 	/// Flushes all target streams. This does not close or dispose them
-	/// (unless <see cref="closeAllTargetsOnDispose"/> is true and <see cref="Dispose()"/> is called).
+	/// (unless <see cref="closeAllTargetsOnDispose"/> is true and <see cref="IDisposable.Dispose()"/> is called).
 	/// </summary>
 	public override void Flush()
 	{

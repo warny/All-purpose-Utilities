@@ -34,6 +34,7 @@ public static class DateFormula
 	/// <param name="formula">Formula to compile.</param>
 	/// <param name="provider">Language provider.</param>
 	/// <param name="culture">Culture used for token interpretation.</param>
+	/// <param name="calendarProvider">Calendar that defines the base for the formula to compute dates</param>
 	/// <returns>A delegate computing the date from a base value.</returns>
 	private static Func<DateTime, DateTime> GetCompiledFormula(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture, ICalendarProvider? calendarProvider)
 	{

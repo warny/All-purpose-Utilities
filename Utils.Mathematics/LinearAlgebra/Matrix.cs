@@ -103,7 +103,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	{
 		get {
 			DetermineTriangularisedAndDiagonalized();
-			return isTriangularised.Value;
+			return isTriangularised ?? false;
 		}
 	}
 
@@ -114,7 +114,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	{
 		get {
 			DetermineTriangularisedAndDiagonalized();
-			return isDiagonalized.Value;
+			return isDiagonalized ?? false;
 		}
 	}
 
@@ -125,7 +125,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 	{
 		get {
 			DetermineTriangularisedAndDiagonalized();
-			return isIdentity.Value;
+			return isIdentity ?? false;
 		}
 	}
 

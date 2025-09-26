@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq.Expressions;
 using Utils.Expressions;
 
 namespace Utils.Mathematics.Expressions;
-
+#pragma warning disable CS8604
 /// <summary>
 /// Provides single-variable symbolic differentiation for LINQ expression trees.
 /// </summary>
@@ -331,3 +325,5 @@ public class ExpressionDerivation : ExpressionTransformer
     }
 
 }
+
+#pragma warning restore CS8604

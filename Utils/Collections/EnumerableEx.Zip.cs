@@ -95,6 +95,7 @@ public static partial class EnumerableEx
 	/// </summary>
 	/// <param name="continueAfterShortestListEnds">Continue when the shortest list ends</param>
 	/// <param name="enumerations"><see cref="IEnumerable"/> to be read</param>
+	/// <param name="transform">transformation function of input object to output object</param>
 	/// <returns>Array of objects</returns>
 	public static IEnumerable<TResult> Zip<TResult>(bool continueAfterShortestListEnds, Func<object[], TResult> transform, params (IEnumerable enumeration, object defaultValue)[] enumerations)
 		=> Zip(continueAfterShortestListEnds, enumerations.Select(e => e.enumeration).ToArray(), enumerations.Select((e) => e.defaultValue)).Select(o => transform(o));
@@ -153,6 +154,7 @@ public static partial class EnumerableEx
 	/// </summary>
 	/// <typeparam name="T1">Type for <paramref name="enumeration1"/> elements</typeparam>
 	/// <typeparam name="T2">Type for <paramref name="enumeration2"/> elements</typeparam>
+	/// <typeparam name="TResult">Resulting type</typeparam>
 	/// <param name="enumeration1">Enumeration 1</param>
 	/// <param name="enumeration2">Enumeration 2</param>
 	/// <param name="func">transformation function</param>
@@ -162,14 +164,14 @@ public static partial class EnumerableEx
 		IEnumerable<T1> enumeration1, IEnumerable<T2> enumeration2,
 		Func<T1, T2, TResult> func, bool continueAfterShortestListEnds = true
 	)
-		=> Zip(enumeration1, enumeration2, default(T1), default(T2), continueAfterShortestListEnds).Select(e => func(e.Item1, e.Item2));
+		=> Zip(enumeration1, enumeration2, default, default, continueAfterShortestListEnds).Select(e => func(e.Item1, e.Item2));
 
 	/// <summary>
 	/// Returns an enumerator with each element is the combination of the combined enumeration of <paramref name="enumeration1"/> and <paramref name="enumeration2"/> enumerations
 	/// </summary>
 	/// <typeparam name="T1">Type for <paramref name="enumeration1"/> elements</typeparam>
 	/// <typeparam name="T2">Type for <paramref name="enumeration2"/> elements</typeparam>
-	/// <typeparam name="T2">Type for <paramref name="enumeration3"/> elements</typeparam>
+	/// <typeparam name="T3">Type for <paramref name="enumeration3"/> elements</typeparam>
 	/// <param name="enumeration1">Enumeration 1</param>
 	/// <param name="enumeration2">Enumeration 2</param>
 	/// <param name="enumeration3">Enumeration 2</param>

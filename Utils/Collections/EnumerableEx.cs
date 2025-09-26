@@ -18,7 +18,7 @@ public static partial class EnumerableEx
 	/// <param name="windowSize">The size of each sliding window.</param>
 	/// <param name="skipCount">The number of elements to skip from the start before beginning.</param>
 	/// <returns>
-	/// An <see cref="IEnumerable{T[]}"/> where each array represents a window
+	/// An <see cref="T:IEnumerable{Array{T}}"/> where each array represents a window
 	/// of size <paramref name="windowSize"/>, except possibly the last one if there
 	/// are not enough remaining elements.
 	/// </returns>

@@ -36,17 +36,9 @@ public static class ExpressionEx
     {
         bindingFlags &= BindingFlags.Public | BindingFlags.NonPublic;
 
-        Type[] argumentTypes = arguments.Select(a => a.Type).ToArray();
-        try
-        {
-            var method = expression.Type.GetMethod(name, bindingFlags | BindingFlags.Instance, null, argumentTypes, null) ?? throw new MissingMethodException(name);
-            return Expression.Call(expression, method, arguments);
-        }
-        catch (Exception ex)
-        {
-            Debugger.Break();
-            throw;
-        }
+        Type[] argumentTypes = [.. arguments.Select(a => a.Type)];
+        var method = expression.Type.GetMethod(name, bindingFlags | BindingFlags.Instance, null, argumentTypes, null) ?? throw new MissingMethodException(name);
+        return Expression.Call(expression, method, arguments);
     }
 
     /// <summary>
