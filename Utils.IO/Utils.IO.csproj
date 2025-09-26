@@ -12,7 +12,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>1.1.1.1</Version>
+		<Version>1.2</Version>
 		<Description>
 			Input/Output helpers
 			- Base16/32/64 stream encoding

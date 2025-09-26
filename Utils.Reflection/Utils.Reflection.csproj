@@ -9,7 +9,7 @@
 		<PackageId>omy.Utils.Reflection</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.1.1.1</Version>
+		<Version>1.2</Version>
 		<Description>
 			Reflection helpers
 			- Dynamic DLL mapping utilities
