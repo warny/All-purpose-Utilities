@@ -11,7 +11,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageId>omy.Utils.Geography</PackageId>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2</Version>
+		<Version>1.2.0</Version>
 		<Copyright>Olivier MARTY</Copyright>
 		<Description>
 			Coordinate utilities
