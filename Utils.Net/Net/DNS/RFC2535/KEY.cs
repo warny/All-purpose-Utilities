@@ -3,7 +3,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC2535;
 
 /// <summary>
-/// Represents a DNS KEY record (type = 25) as specified in RFC 2535 Section 3.
+/// Represents a DNS KEY record (type = 25) as specified in
+/// <see href="https://www.rfc-editor.org/rfc/rfc2535#section-3">RFC 2535 §3</see>.
 /// The KEY record stores a public key and associated metadata (flags, protocol, algorithm).
 /// </summary>
 /// <remarks>
@@ -18,37 +19,29 @@ namespace Utils.Net.DNS.RFC2535;
 /// is unsigned (insecure), or to prohibit usage for certain cryptographic functions.
 /// </para>
 /// <para>
-/// The <c>Protocol</c> and <c>Algorithm</c> fields follow RFC 2535 definitions, and the public key
+        /// The <c>Protocol</c> and <c>Algorithm</c> fields follow
+        /// <see href="https://www.rfc-editor.org/rfc/rfc2535#section-3">RFC 2535 §3</see> definitions, and the public key
 /// (<see cref="PublicKey"/>) is algorithm-specific data. For further details on usage, see:
 /// <list type="bullet">
-/// <item><description>RFC 2535 for DNS security extensions</description></item>
-/// <item><description>RFC 2536 (DSA keys)</description></item>
-/// <item><description>RFC 2537 (RSA/MD5)</description></item>
-/// <item><description>RFC 2539 (Diffie-Hellman)</description></item>
+/// <item><description><see href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</see> for DNS security extensions</description></item>
+/// <item><description><see href="https://www.rfc-editor.org/rfc/rfc2536">RFC 2536</see> (DSA keys)</description></item>
+/// <item><description><see href="https://www.rfc-editor.org/rfc/rfc2537">RFC 2537</see> (RSA/MD5)</description></item>
+/// <item><description><see href="https://www.rfc-editor.org/rfc/rfc2539">RFC 2539</see> (Diffie-Hellman)</description></item>
 /// </list>
 /// </para>
+/// <para>The RDATA is composed of:</para>
+/// <list type="bullet">
+/// <item><description><strong>Flags</strong> (16 bits) indicating key usage, key owner type, and extensions.</description></item>
+/// <item><description><strong>Protocol</strong> (8 bits) describing the intended use (DNSSEC, TLS, email, IPSEC, etc.).</description></item>
+/// <item><description><strong>Algorithm</strong> (8 bits) identifying the signing algorithm.</description></item>
+/// <item><description><strong>Public Key</strong> (variable length) containing the algorithm-specific key material.</description></item>
+/// </list>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x19)]
 [DNSTextRecord("{Flags} {Protocol} {Algorithm} {PublicKey}")]
 public class KEY : DNSResponseDetail
 {
-	/*
-        3.1 KEY RDATA Format
-
-        The KEY RR RDATA consists of:
-            - a 16-bit Flags field
-            - an 8-bit Protocol field
-            - an 8-bit Algorithm field
-            - a variable-length Public Key field (algorithm-specific)
-
-        Bits in the Flags field control whether the key is present (or "no key"),
-        whether it is used for authentication or confidentiality, and whether it is
-        a zone, user, or host key, among other options.
-
-        The Protocol octet defines how the key is intended to be used (e.g., DNSSEC = 3,
-        IPSEC = 4, TLS = 1, etc.). The Algorithm octet indicates the cryptographic algorithm
-        used (RSA, DSA, etc.). The Public Key portion is algorithm-dependent.
-    */
+	
 
 	/// <summary>
 	/// Gets the 16-bit flags field which indicates key usage, key owner type, extension flags,
@@ -133,8 +126,8 @@ public class KEY : DNSResponseDetail
 	}
 
 	/// <summary>
-	/// Gets or sets the 4-bit signatory field (bits 12-15),
-	/// indicating whether the key can validly sign updates (RFC 2137).
+        /// Gets or sets the 4-bit signatory field (bits 12-15),
+        /// indicating whether the key can validly sign updates (<see href="https://www.rfc-editor.org/rfc/rfc2137">RFC 2137</see>).
 	/// </summary>
 	public byte SignatoryField
 	{
@@ -212,7 +205,7 @@ static class KeyFlagsMasks
 	/// <summary>
 	/// Bits 12-15 : SignatoryField
 	/// <para>
-	/// If non-zero, indicates the key can sign dynamic updates (RFC 2137).
+        /// If non-zero, indicates the key can sign dynamic updates (<see href="https://www.rfc-editor.org/rfc/rfc2137">RFC 2137</see>).
 	/// Zone keys (<c>KeyOwner.ZoneKey</c>) always have authority to sign
 	/// RRs in the zone regardless of the signatory bits.
 	/// </para>

@@ -4,8 +4,10 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1035
 {
 	/// <summary>
-	/// Represents an MX (Mail Exchange) record in the DNS, as described in RFC 1035 Section 3.3.9
-	/// and further clarified by RFC 974. The MX record specifies a mail server responsible
+        /// Represents an MX (Mail Exchange) record in the DNS, as described in
+        /// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.9">RFC 1035 §3.3.9</see>
+        /// and further clarified by <see href="https://www.rfc-editor.org/rfc/rfc974">RFC 974</see>.
+        /// The MX record specifies a mail server responsible
 	/// for accepting email on behalf of a domain, along with a preference value.
 	/// </summary>
 	/// <remarks>
@@ -32,38 +34,31 @@ namespace Utils.Net.DNS.RFC1035
 	/// with preference 20, the sending mail server will first attempt the host with preference 10.
 	/// If that fails or is unavailable, it tries the host with preference 20.
 	/// </para>
-	/// <para>
-	/// The DNS library may perform additional processing (e.g., retrieving the A or AAAA address
-	/// of the <see cref="Exchange"/>) when resolving MX records.
-	/// </para>
-	/// </remarks>
+        /// <para>
+        /// The DNS library may perform additional processing (e.g., retrieving the A or AAAA address
+        /// of the <see cref="Exchange"/>) when resolving MX records.
+        /// </para>
+        /// <para>The RDATA layout defined in
+        /// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.9">RFC 1035 §3.3.9</see> is:</para>
+        /// <code>
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// |                  PREFERENCE                   |
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// /                   EXCHANGE                    /
+        /// /                                               /
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// </code>
+        /// <para>
+        /// <c>PREFERENCE</c> is the priority indicator (lower values preferred) and <c>EXCHANGE</c>
+        /// is a <c>&lt;domain-name&gt;</c> identifying the target mail server. Implementations often
+        /// follow up with address lookups for the exchange host.
+        /// </para>
+        /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x0F)]
 [DNSTextRecord("{Preference} {Exchange}")]
 public class MX : DNSResponseDetail
-	{
-		/*
-            MX RDATA format (RFC 1035, Section 3.3.9):
-
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                |                  PREFERENCE                   |
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                   EXCHANGE                    /
-                /                                               /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-            where:
-
-            PREFERENCE      A 16 bit integer that specifies the preference for
-                            this mail exchange (lower = higher priority).
-
-            EXCHANGE        A <domain-name> for the mail server receiving mail
-                            on behalf of the owner name.
-
-            MX records may trigger additional section processing for A/AAAA RRs
-            associated with EXCHANGE. For details, see RFC 974 and RFC 1035.
-        */
-
-		/// <summary>
+        {
+                /// <summary>
 		/// Gets or sets the 16-bit preference value for this MX record. A lower value indicates
 		/// a higher priority in mail routing.
 		/// </summary>

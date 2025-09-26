@@ -6,8 +6,10 @@ using System.Net.Sockets;
 namespace Utils.Net.DNS.RFC1035;
 
 /// <summary>
-/// Represents an IP address record (A, AAAA, or NSAP) in DNS, as described by RFC 1035 (A records),
-/// RFC 1886 (AAAA records), and the OSI NSAP address type. This class stores the IP address
+/// Represents an IP address record (A, AAAA, or NSAP) in DNS, as described by
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.4.1">RFC 1035 §3.4.1</see> (A records),
+/// <see href="https://www.rfc-editor.org/rfc/rfc1886">RFC 1886</see> (superseded but historically defining AAAA records),
+/// and the OSI NSAP address type. This class stores the IP address
 /// and reflects the correct numeric record ID based on the address family.
 /// </summary>
 /// <remarks>

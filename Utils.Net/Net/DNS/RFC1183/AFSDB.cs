@@ -3,7 +3,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
-/// Represents an AFSDB (Andrew File System Database) record, as defined in RFC 1183 Section 1.2.
+/// Represents an AFSDB (Andrew File System Database) record, as defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1183#section-1.2">RFC 1183 §1.2</see>.
 /// This record helps locate AFS or related database servers for a particular domain.
 /// </summary>
 /// <remarks>
@@ -26,27 +27,24 @@ namespace Utils.Net.DNS.RFC1183;
 /// </para>
 /// <para>
 /// The AFSDB record can also be used for other similar database services, depending on
-/// the subtype indicated by the <see cref="Preference"/> field. See RFC 1183 and related
+/// the subtype indicated by the <see cref="Preference"/> field. See
+/// <see href="https://www.rfc-editor.org/rfc/rfc1183">RFC 1183</see> and related
 /// documents for more details on AFS usage and potential multi-server configurations.
 /// </para>
+/// <para>The wire format contains the preference followed by the server name:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                  PREFERENCE                   |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                    SERVER                     /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x12)]
 [DNSTextRecord("{Preference} {AFSServer}")]
 public class AFSDB : DNSResponseDetail
 {
-	/*
-            AFSDB RDATA format (RFC 1183 Section 1.2):
-
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                |                  PREFERENCE                   |
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                    SERVER                     /
-                /                                               /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-            PREFERENCE: 16-bit integer priority. Lower means more preferred.
-            SERVER:      Domain name of the AFS server host.
-        */
+	
 
 	/// <summary>
 	/// Gets or sets the 16-bit preference value for this AFSDB record. A lower number indicates

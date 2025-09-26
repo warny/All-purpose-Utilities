@@ -4,7 +4,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1035;
 
 /// <summary>
-/// Represents a TXT record in DNS, as defined in RFC 1035 Section 3.3.14.
+/// Represents a TXT record in DNS, as defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.14">RFC 1035 §3.3.14</see>.
 /// TXT records store arbitrary human-readable text, often used for descriptive
 /// or application-specific data (e.g., SPF, DKIM, etc. in modern usage).
 /// </summary>
@@ -23,27 +24,25 @@ namespace Utils.Net.DNS.RFC1035;
 /// The <c>Text</c> property would hold the value <c>"Some descriptive text here"</c>.
 /// </para>
 /// <para>
-/// Although RFC 1035 states "one or more &lt;character-string&gt;s," many modern implementations
+/// Although <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.14">RFC 1035 §3.3.14</see> states "one or more
+/// &lt;character-string&gt;s," many modern implementations
 /// treat this as a single text block. To conform to multi-segment usage, your library might need
 /// additional logic for splitting or concatenating strings if required by a specific environment.
+/// </para>
+/// <para>The wire format is a sequence of character strings:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   TXT-DATA                    /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para>
+/// Each <c>TXT-DATA</c> chunk begins with a length octet followed by that many bytes of text.
 /// </para>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x10)]
 [DNSTextRecord("{Text}")]
 public class TXT : DNSResponseDetail
 {
-	/*
-        TXT RDATA format (RFC 1035, Section 3.3.14):
-
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                   TXT-DATA                    /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-        TXT-DATA may contain one or more <character-string> fields.
-        In modern usage, it often holds simple ASCII text,
-        but can be used for various key-value data as well.
-    */
-
 	/// <summary>
 	/// Gets or sets the text content of this TXT record.
 	/// In many DNS scenarios, this is either a single string or

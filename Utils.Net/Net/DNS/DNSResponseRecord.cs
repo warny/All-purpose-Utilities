@@ -2,33 +2,13 @@
 
 namespace Utils.Net.DNS;
 
-/*
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        | 0| 1| 2| 3| 4| 5| 6| 7| 8| 9|10|11|12|13|14|15|
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                                               |
-        /                                               /
-        /                      NAME                     /
-        |                                               |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                      TYPE                     |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                     CLASS                     |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                      TTL                      |
-        |                                               |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                   RDLENGTH                    |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--|
-        /                     RDATA                     /
-        /                                               /
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    */
+
 
 /// <summary>
 /// Represents a DNS response record, containing all necessary fields to describe
 /// a specific DNS answer in a response packet, including the domain name, the record type,
-/// TTL, and the <see cref="RData"/>.
+/// TTL, and the <see cref="RData"/>, as defined by
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.3">RFC 1035 §4.1.3</see>.
 /// </summary>
 /// <remarks>
 /// A DNS response record includes:
@@ -40,6 +20,22 @@ namespace Utils.Net.DNS;
 /// <item><description>An <see cref="RDLength"/> (2 bytes) indicating the size of the resource data.</description></item>
 /// <item><description>The <see cref="RData"/>, which is a <see cref="DNSResponseDetail"/> object representing the record-specific data (e.g., IP addresses, mail server, etc.).</description></item>
 /// </list>
+/// <para>The wire layout in <see href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.3">RFC 1035 §4.1.3</see> is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                      NAME                     /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                      TYPE                     |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                     CLASS                     |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                      TTL                      |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                   RDLENGTH                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--|
+/// /                     RDATA                     /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
 /// </remarks>
 public sealed class DNSResponseRecord : DNSElement, ICloneable
 {

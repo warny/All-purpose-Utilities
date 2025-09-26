@@ -6,7 +6,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC3123;
 
 /// <summary>
-/// Represents an APL (Address Prefix List) record as defined in RFC 3123.
+/// Represents an APL (Address Prefix List) record as defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc3123">RFC 3123</see>.
 /// An APL record is used to specify a list of address prefixes along with a negation flag,
 /// indicating which address ranges are included or excluded.
 /// </summary>
@@ -60,34 +61,7 @@ namespace Utils.Net.DNS.RFC3123;
 [DNSTextRecord("{AddressFamily} {Prefix} {flagAndAfdLength} {AfdPart}")]
 public class APL : DNSResponseDetail
 {
-	/*
-           The RDATA section of an APL record consists of zero or more items (<apitem>) of the
-           form
-
-              +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-              |                          ADDRESSFAMILY                        |
-              +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-              |             PREFIX            | N |         AFDLENGTH         |
-              +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-              /                            AFDPART                            /
-              |                                                               |
-              +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
-
-              ADDRESSFAMILY     16 bit unsigned value as assigned by IANA
-                                (see IANA Considerations)
-              PREFIX            8 bit unsigned binary coded prefix length.
-                                Upper and lower bounds and interpretation of
-                                this value are address family specific.
-              N                 negation flag, indicates the presence of the
-                                "!" character in the textual format.  It has
-                                the value "1" if the "!" was given, "0" else.
-              AFDLENGTH         length in octets of the following address
-                                family dependent part (7 bit unsigned).
-              AFDPART           address family dependent part.  See below.
-
-           This document defines the AFDPARTs for address families 1 (IPv4) and
-           2 (IPv6).  Future revisions may deal with additional address families.
-        */
+	
 
 	/// <summary>
 	/// Gets or sets the address family for this APL item.

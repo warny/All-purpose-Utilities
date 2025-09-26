@@ -3,7 +3,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
-/// Represents an RT (Route Through) record, as defined in RFC 1183 Section 2.3.
+/// Represents an RT (Route Through) record, as defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1183#section-2.3">RFC 1183 §2.3</see>.
 /// The RT record specifies an intermediate host that should be used when
 /// routing to the owner of the record, along with a preference value.
 /// </summary>
@@ -39,24 +40,20 @@ namespace Utils.Net.DNS.RFC1183;
 /// A/AAAA records included by default). In modern networking, explicit routing
 /// via DNS is rarely practiced, and the RT record is largely historical.
 /// </para>
+/// <para>The wire layout is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                  PREFERENCE                   |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   EXCHANGER                   /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x15)]
 [DNSTextRecord("{Preference} {DnsName}")]
 public class RT : DNSResponseDetail
 {
-	/*
-            RT RDATA format (RFC 1183 Section 2.3):
-
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                |                  PREFERENCE                   |
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                   EXCHANGER                   /
-                /                                               /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-            PREFERENCE: 16-bit integer (lower = more preferred).
-            EXCHANGER:  Domain name of an intermediate host for routing traffic.
-        */
+	
 
 	/// <summary>
 	/// Gets or sets the 16-bit preference value for this RT record.

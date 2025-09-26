@@ -6,7 +6,8 @@ namespace Utils.Net.DNS.RFC1035;
 /// <summary>
 /// Represents an SOA (Start of Authority) record, which defines zone-wide parameters
 /// including the primary name server, mailbox of the zone administrator, and various
-/// time intervals affecting caching and zone transfers.
+/// time intervals affecting caching and zone transfers, as described in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.13">RFC 1035 §3.3.13</see>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -51,49 +52,37 @@ namespace Utils.Net.DNS.RFC1035;
 ///       3600       ; Minimum (1 hour)
 /// )
 /// </code>
-/// See RFC 1035 Section 3.3.13 and related documentation for more details.
 /// </para>
+/// <para>The RDATA wire format is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                     MNAME                     /
+/// /                                               /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                     RNAME                     /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    SERIAL                     |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    REFRESH                    |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                     RETRY                     |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    EXPIRE                     |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    MINIMUM                    |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para>See <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.13">RFC 1035 §3.3.13</see> for authoritative details.</para>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x06)]
 [DNSTextRecord("{MName} {RName} {Serial} {Refresh} {Retry} {Expire} {Minimum}")]
 public class SOA : DNSResponseDetail
 {
-	/*
-        SOA RDATA format (RFC 1035 Section 3.3.13):
-
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                     MNAME                     /
-            /                                               /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                     RNAME                     /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                    SERIAL                     |
-            |                                               |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                    REFRESH                    |
-            |                                               |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                     RETRY                     |
-            |                                               |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                    EXPIRE                     |
-            |                                               |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                    MINIMUM                    |
-            |                                               |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-        Field Details:
-            MNAME:   Primary master name server for this zone.
-            RNAME:   Mailbox of the person responsible for the zone (as a domain name).
-            SERIAL:  32-bit version number of the zone file.
-            REFRESH: Interval (seconds) before a secondary checks for an update.
-            RETRY:   Interval (seconds) to wait before retrying a failed refresh.
-            EXPIRE:  Upper limit (seconds) for how long a secondary should use the
-                        zone data if unable to contact the primary.
-            MINIMUM: Minimum TTL (seconds) for records in this zone (used in queries).
-    */
-
 	/// <summary>
 	/// Gets or sets the domain name of the primary master name server for this zone.
 	/// </summary>

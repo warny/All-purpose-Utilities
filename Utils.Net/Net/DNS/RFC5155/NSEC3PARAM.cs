@@ -6,38 +6,28 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC5155
 {
     /// <summary>
-    /// Represents the NSEC3PARAM resource record describing NSEC3 hashing parameters for a DNS zone.
+    /// Represents the NSEC3PARAM resource record describing NSEC3 hashing parameters for a DNS zone,
+    /// as defined in <see href="https://www.rfc-editor.org/rfc/rfc5155#section-4">RFC 5155 §4</see>.
     /// </summary>
+    /// <remarks>
+    /// <para>The wire format defined in <see href="https://www.rfc-editor.org/rfc/rfc5155#section-4.2">RFC 5155 §4.2</see> is:</para>
+    /// <code>
+    /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    /// |   Hash Alg.   |     Flags     |          Iterations           |
+    /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    /// |  Salt Length  |                     Salt                      /
+    /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    /// </code>
+    /// <para>
+    /// <b>Hash Algorithm</b> and <b>Flags</b> are single-octet fields, <b>Iterations</b> is a 16-bit count, and the optional <b>Salt</b>
+    /// field is prefixed by a length octet. If the salt length is zero the salt bytes are omitted.
+    /// </para>
+    /// </remarks>
     [DNSRecord(DNSClassId.IN, 0x33)]
     [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt}")]
     public class NSEC3PARAM : DNSResponseDetail
     {
-        /*
-            The RDATA of the NSEC3PARAM RR is as shown below:
-
-                                1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3
-            0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            |   Hash Alg.   |     Flags     |          Iterations           |
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            |  Salt Length  |                     Salt                      /
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-            Hash Algorithm is a single octet.
-
-            Flags field is a single octet.
-
-            Iterations is represented as a 16-bit unsigned integer, with the most
-            significant bit first.
-
-            Salt Length is represented as an unsigned octet.  Salt Length
-            represents the length of the following Salt field in octets.  If the
-            value is zero, the Salt field is omitted.
-
-            Salt, if present, is encoded as a sequence of binary octets.  The
-            length of this field is determined by the preceding Salt Length
-            field.
-        */
+        
         /// <summary>
         /// Gets or sets the hash algorithm identifier used when computing NSEC3 digests.
         /// </summary>
