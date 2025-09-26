@@ -3,7 +3,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1183;
 
 /// <summary>
-/// Represents an RP (Responsible Person) record, as defined in RFC 1183 Section 2.2.
+/// Represents an RP (Responsible Person) record, as defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1183#section-2.2">RFC 1183 §2.2</see>.
 /// This record identifies the mailbox of the person responsible for a particular DNS zone
 /// and an optional TXT record with additional information.
 /// </summary>
@@ -35,27 +36,20 @@ namespace Utils.Net.DNS.RFC1183;
 /// This indicates that <c>john.doe@example.com</c> is responsible for <c>example.com</c>, and
 /// <c>info.example.com</c> might hold a TXT record with further contact or host data.
 /// </para>
+/// <para>The wire format contains the two domain names consecutively:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                 MBOXDNAME                    /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                 TXTSDNAME                    /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x11)]
 [DNSTextRecord("{MBoxDName} {TxtDName}")]
 public class RP : DNSResponseDetail
 {
-	/*
-            RP RDATA format (RFC 1183, Section 2.2):
-
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                 MBOXDNAME                    /
-                /                                               /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-                /                 TXTSDNAME                    /
-                /                                               /
-                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-            MBOXDNAME: A domain name that, with its first label replaced by '@',
-                       identifies the email address of the responsible person.
-            TXTSDNAME: A domain name pointing to a TXT record that may contain
-                       additional info. If '.' (root), then no TXT data is provided.
-        */
+	
 
 	/// <summary>
 	/// Gets or sets the domain name identifying the mailbox of the responsible person.

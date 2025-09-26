@@ -17,26 +17,21 @@ namespace Utils.Net.DNS.RFC1035;
 /// for unrecognized record types or experimental usage. If you intend to store actual TXT records,
 /// consider using the official TXT record type code (<c>0x10</c>, decimal 16) instead.
 /// </para>
+/// <para>The illustrative RDATA layout is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   DATAS                       /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para>
+/// The payload is interpreted as raw bytes. TXT records normally use type code 16 (0x10), but this
+/// fallback keeps the unparsed data accessible for experimentation.
+/// </para>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x00)]
 [DNSTextRecord("{Datas}")]
 public class Default : DNSResponseDetail
 {
-    /*
-    Example of a bytes RDATA format:
-
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        /                   DATAS                       /
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-    where:
-
-    bytes    One or more bytes
-
-    Typically, TXT RRs have the type code 0x10 (16 decimal). However, this
-    class uses type code 0 for demonstration or fallback.
-*/
-
     /// <summary>
     /// Gets or sets the raw data payload associated with this fallback record.
     /// </summary>

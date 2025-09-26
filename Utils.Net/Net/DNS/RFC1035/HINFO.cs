@@ -4,7 +4,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1035;
 
 /// <summary>
-/// Represents an HINFO (Host Information) record, as defined in RFC 1035.
+/// Represents an HINFO (Host Information) record, as defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.2">RFC 1035 §3.3.2</see>.
 /// </summary>
 /// <remarks>
 /// The HINFO record provides host-specific data about the CPU architecture and operating system.
@@ -19,29 +20,24 @@ namespace Utils.Net.DNS.RFC1035;
 /// [DNSField] public string OS  { get; set; }
 /// </code>
 /// </para>
-/// See RFC 1010 for standard values of CPU and OS.
+/// <para>The wire-format RDATA (<see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.2">RFC 1035 §3.3.2</see>) is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                      CPU                      /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                       OS                      /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para>
+/// Each field is a <c>&lt;character-string&gt;</c>. <c>CPU</c> describes the processor type,
+/// and <c>OS</c> identifies the operating system. See
+/// <see href="https://www.rfc-editor.org/rfc/rfc1010">RFC 1010</see> for common values.
+/// </para>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x0D)]
 [DNSTextRecord("{Info}")]
 public class HINFO : DNSResponseDetail
 {
-	/*
-            HINFO RDATA format
-
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                      CPU                      /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                       OS                      /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-            CPU: A <character-string> specifying the CPU type.
-            OS:  A <character-string> specifying the operating system type.
-
-            HINFO records are used to acquire general information about a host. The main use
-            is for protocols such as FTP that can use special procedures when interacting
-            between similar machines or operating systems.
-        */
-
 	/// <summary>
 	/// Gets or sets a string containing CPU and OS information. This example uses a single
 	/// field, but you may split it into two fields if desired (CPU and OS).

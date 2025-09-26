@@ -5,7 +5,8 @@ using System.Net;
 namespace Utils.Net.DNS.RFC1035;
 
 /// <summary>
-/// Represents a WKS (Well Known Services) record, as specified by RFC 1035 Section 3.4.
+/// Represents a WKS (Well Known Services) record, as specified by
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.4.2">RFC 1035 §3.4.2</see>.
 /// A WKS record details which well-known services are available for a given IPv4 address
 /// and IP protocol (e.g., TCP or UDP).
 /// </summary>
@@ -48,29 +49,27 @@ namespace Utils.Net.DNS.RFC1035;
 /// availability of TCP/UDP services on an IPv4 address, although they are considered
 /// effectively deprecated in modern DNS practice.
 /// </para>
+/// <para>The on-the-wire layout (<see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.4.2">RFC 1035 §3.4.2</see>) is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    ADDRESS                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |       PROTOCOL        |                       |
+/// +--+--+--+--+--+--+--+--+                       |
+/// |                                               |
+/// /                   &lt;BIT MAP&gt;                   /
+/// /                                               /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para>
+/// <c>ADDRESS</c> is the IPv4 address, <c>PROTOCOL</c> is the IP protocol number, and the bit map
+/// advertises active ports (<c>n</c>th byte covers ports <c>n*8</c> to <c>n*8+7</c>).
+/// </para>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x0B)]
 [DNSTextRecord("{IPAddress} {Protocol} {Bitmap}")]
 public class WKS : DNSResponseDetail
 {
-	/*
-        WKS RDATA format (RFC 1035, Section 3.4):
-
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                    ADDRESS                    |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |       PROTOCOL        |                       |
-            +--+--+--+--+--+--+--+--+                       |
-            |                                               |
-            /                   <BIT MAP>                   /
-            /                                               /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-        ADDRESS   = 32-bit IPv4 address
-        PROTOCOL  = 8-bit IP protocol number (e.g., 6 for TCP, 17 for UDP)
-        <BIT MAP> = bits for ports 0..(n*8 - 1). The nth byte corresponds to ports [n*8..n*8+7].
-    */
-
 	/// <summary>
 	/// Stores the IPv4 address in bytes for serialization. This field is private so that
 	/// library mechanisms handle reading/writing it directly. The corresponding property

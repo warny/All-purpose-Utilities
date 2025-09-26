@@ -4,7 +4,8 @@ using Utils.Net.DNS;
 namespace Utils.Net.DNS.RFC1035;
 
 /// <summary>
-/// Represents a PTR (Pointer) record in DNS, as specified by RFC 1035 Section 3.3.12.
+/// Represents a PTR (Pointer) record in DNS, as specified by
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.12">RFC 1035 §3.3.12</see>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,27 +21,18 @@ namespace Utils.Net.DNS.RFC1035;
 /// address (e.g., <c>1.2.168.192.in-addr.arpa</c>), and the <see cref="PTRName"/> is the
 /// corresponding hostname (e.g., <c>host.example.com</c>).
 /// </para>
+/// <para>The RDATA format is the target domain name:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   PTRDNAME                    /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para><c>PTRDNAME</c> is a <c>&lt;domain-name&gt;</c> indicating the pointer destination.</para>
 /// </remarks>
 [DNSRecord(DNSClassId.IN, 0x0C)]
 [DNSTextRecord("{PTRName}")]
 public class PTR : DNSResponseDetail
 {
-	/*
-        PTR RDATA format (RFC 1035, Section 3.3.12)
-
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            /                   PTRDNAME                    /
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-        where:
-
-        PTRDNAME  A <domain-name> that the record (owner name) should map to.
-
-        PTR records do not trigger additional section processing. They only
-        serve as a pointer within the DNS namespace. The most common use is
-        reverse lookups in IN-ADDR.ARPA (for IPv4) or IP6.ARPA (for IPv6).
-    */
-
 	/// <summary>
 	/// Gets or sets the domain name to which this PTR record points.
 	/// </summary>

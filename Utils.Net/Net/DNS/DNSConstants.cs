@@ -4,23 +4,7 @@ using System.Text;
 
 namespace Utils.Net.DNS;
 
-/*
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    | 0| 1| 2| 3| 4| 5| 6| 7| 8| 9|10|11|12|13|14|15|
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                      ID                       |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-	|QR|   Opcode  |AA|TC|RD|RA| Z|AD|CD|   RCODE   |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                    QDCOUNT                    |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                    ANCOUNT                    |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                    NSCOUNT                    |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                    ARCOUNT                    |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-*/
+
 
 /// <summary>
 /// Identifies whether the DNS datagram carries a query or a response payload (1 bit, aligned).
@@ -90,6 +74,26 @@ public enum DNSError : ushort
 /// <summary>
 /// Constants representing DNS datagram flags and fields masks.
 /// </summary>
+/// <remarks>
+/// <para>The bit layout within the DNS header defined in
+/// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.1">RFC 1035 §4.1.1</see> is:</para>
+/// <code>
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                      ID                       |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |QR|   Opcode  |AA|TC|RD|RA| Z|AD|CD|   RCODE   |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    QDCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    ANCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    NSCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    ARCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// </code>
+/// <para>Each mask below targets the corresponding field within this layout.</para>
+/// </remarks>
 public static class DNSConstants
 {
         /// <summary>

@@ -2,36 +2,35 @@
 
 namespace Utils.Net.DNS
 {
-	/*
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        | 0| 1| 2| 3| 4| 5| 6| 7| 8| 9|10|11|12|13|14|15|
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                                               |
-        /                                               /
-        /                      NAME                     /
-        |                                               |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                      TYPE                     |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-        |                     CLASS                     |
-        +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    */
+	
 
 	/// <summary>
-	/// Represents a DNS query (request) record within a DNS packet, indicating
-	/// which record type (e.g., A, AAAA, MX) is being queried for a particular domain name.
+        /// Represents a DNS query (request) record within a DNS packet, following the layout defined in
+        /// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.2">RFC 1035 §4.1.2</see> and indicating
+        /// which record type (e.g., A, AAAA, MX) is being queried for a particular domain name.
 	/// </summary>
-	/// <remarks>
-	/// This class stores fields such as:
-	/// <list type="bullet">
-	/// <item><description><see cref="Name"/>: The domain name being queried.</description></item>
-	/// <item><description><see cref="RequestType"/>: A 16-bit identifier for the query type (e.g., 0x01 for A records).</description></item>
-	/// <item><description><see cref="Class"/>: The DNS class, typically <see cref="DNSClassId.IN"/> or <see cref="DNSClassId.ALL"/>.</description></item>
-	/// </list>
-	/// It also provides an explicit <see cref="Type"/> property representing the record type in string format.
-	/// The <see cref="Clone"/> method returns a shallow copy of this record’s essential fields.
-	/// </remarks>
-	public class DNSRequestRecord : DNSElement, ICloneable
+        /// <remarks>
+        /// This class stores fields such as:
+        /// <list type="bullet">
+        /// <item><description><see cref="Name"/>: The domain name being queried.</description></item>
+        /// <item><description><see cref="RequestType"/>: A 16-bit identifier for the query type (e.g., 0x01 for A records).</description></item>
+        /// <item><description><see cref="Class"/>: The DNS class, typically <see cref="DNSClassId.IN"/> or <see cref="DNSClassId.ALL"/>.</description></item>
+        /// </list>
+        /// It also provides an explicit <see cref="Type"/> property representing the record type in string format.
+        /// The <see cref="Clone"/> method returns a shallow copy of this record’s essential fields.
+        /// <para>The query section wire layout from
+        /// <see href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.2">RFC 1035 §4.1.2</see> is:</para>
+        /// <code>
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// /                      NAME                     /
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// |                      TYPE                     |
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// |                     CLASS                     |
+        /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        /// </code>
+        /// </remarks>
+        public class DNSRequestRecord : DNSElement, ICloneable
 	{
 		/// <summary>
 		/// Initializes a new instance of the <see cref="DNSRequestRecord"/> class.
