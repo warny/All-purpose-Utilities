@@ -54,11 +54,12 @@
 		<ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
 		<ProjectReference Include="..\Utils.Xml\Utils.Xml.csproj" />
 		<ProjectReference Include="..\Utils\Utils.csproj" />
-		<ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
-		<ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
-		<ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-		<ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-	</ItemGroup>
+                <ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
+                <ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
+                <ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                <ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                <ProjectReference Include="..\Utils.OData\Utils.OData.csproj" />
+        </ItemGroup>
 
 	<ItemGroup>
 		<Resource Include="Resources\TextFile1.txt">
