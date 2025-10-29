@@ -1395,6 +1395,196 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
+    /// Stream implementation that forwards operations to the underlying HTTP content while disposing the response when closed.
+    /// </summary>
+    private sealed class HttpResponseContentStream : Stream, IAsyncDisposable
+    {
+        private readonly HttpResponseMessage _response;
+        private readonly Stream _innerStream;
+        private bool _disposed;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpResponseContentStream"/> class.
+        /// </summary>
+        /// <param name="response">HTTP response whose lifetime is bound to the stream.</param>
+        /// <param name="innerStream">Underlying stream exposing the response payload.</param>
+        public HttpResponseContentStream(HttpResponseMessage response, Stream innerStream)
+        {
+            _response = response ?? throw new ArgumentNullException(nameof(response));
+            _innerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
+        }
+
+        /// <inheritdoc />
+        public override bool CanRead => _innerStream.CanRead;
+
+        /// <inheritdoc />
+        public override bool CanSeek => _innerStream.CanSeek;
+
+        /// <inheritdoc />
+        public override bool CanWrite => _innerStream.CanWrite;
+
+        /// <inheritdoc />
+        public override long Length => _innerStream.Length;
+
+        /// <inheritdoc />
+        public override long Position
+        {
+            get => _innerStream.Position;
+            set => _innerStream.Position = value;
+        }
+
+        /// <inheritdoc />
+        public override void Flush()
+        {
+            EnsureNotDisposed();
+            _innerStream.Flush();
+        }
+
+        /// <inheritdoc />
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            EnsureNotDisposed();
+            return _innerStream.FlushAsync(cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            EnsureNotDisposed();
+            return _innerStream.Read(buffer, offset, count);
+        }
+
+        /// <inheritdoc />
+        public override int Read(Span<byte> buffer)
+        {
+            EnsureNotDisposed();
+            return _innerStream.Read(buffer);
+        }
+
+        /// <inheritdoc />
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            EnsureNotDisposed();
+            return _innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            EnsureNotDisposed();
+            return _innerStream.ReadAsync(buffer, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            EnsureNotDisposed();
+            return _innerStream.Seek(offset, origin);
+        }
+
+        /// <inheritdoc />
+        public override void SetLength(long value)
+        {
+            EnsureNotDisposed();
+            _innerStream.SetLength(value);
+        }
+
+        /// <inheritdoc />
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            EnsureNotDisposed();
+            _innerStream.Write(buffer, offset, count);
+        }
+
+        /// <inheritdoc />
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            EnsureNotDisposed();
+            _innerStream.Write(buffer);
+        }
+
+        /// <inheritdoc />
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            EnsureNotDisposed();
+            return _innerStream.WriteAsync(buffer, offset, count, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            EnsureNotDisposed();
+            return _innerStream.WriteAsync(buffer, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public override void Close()
+        {
+            Dispose(disposing: true);
+            base.Close();
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                base.Dispose(disposing);
+                return;
+            }
+
+            if (disposing)
+            {
+                _innerStream.Dispose();
+                _response.Dispose();
+            }
+
+            _disposed = true;
+            base.Dispose(disposing);
+        }
+
+        /// <inheritdoc />
+        public override async ValueTask DisposeAsync()
+        {
+            if (_disposed)
+            {
+                await base.DisposeAsync().ConfigureAwait(false);
+                return;
+            }
+
+            try
+            {
+                if (_innerStream is IAsyncDisposable asyncDisposable)
+                {
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    _innerStream.Dispose();
+                }
+            }
+            finally
+            {
+                _response.Dispose();
+                _disposed = true;
+            }
+
+            await base.DisposeAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Ensures the stream has not already been disposed before accessing the underlying content.
+        /// </summary>
+        private void EnsureNotDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(HttpResponseContentStream));
+            }
+        }
+    }
+
+    /// <summary>
     /// Determines the top value to apply to the next HTTP request while paginating results.
     /// </summary>
     /// <param name="remaining">Number of records remaining to satisfy the original <c>$top</c> value.</param>
@@ -1430,10 +1620,52 @@ public class QueryOData : IDisposable
     {
         var response = await SimpleQuery(parameter, skip: skip, cancellationToken: cancellationToken);
 
-        if (response is null) return new(-2, "no response returned");
-        if (!response.IsSuccessStatusCode) return new(-1, $"{(int)response.StatusCode} {response.ReasonPhrase}");
+        if (response is null)
+        {
+            return new(-2, "no response returned");
+        }
 
-        return await response.Content.ReadAsStreamAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            try
+            {
+                return new(-1, $"{(int)response.StatusCode} {response.ReasonPhrase}");
+            }
+            finally
+            {
+                response.Dispose();
+            }
+        }
+
+        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        if (contentStream is null)
+        {
+            response.Dispose();
+            return new(-3, "The HTTP response did not contain a readable stream.");
+        }
+
+        return CreateResponseStream(response, contentStream);
+    }
+
+    /// <summary>
+    /// Wraps the provided HTTP response and content stream in a stream that ensures disposal once consumption finishes.
+    /// </summary>
+    /// <param name="response">HTTP response associated with the content stream.</param>
+    /// <param name="contentStream">Stream exposing the response payload.</param>
+    /// <returns>A stream that disposes the response when the consumer disposes the stream.</returns>
+    private static Stream CreateResponseStream(HttpResponseMessage response, Stream contentStream)
+    {
+        if (response is null)
+        {
+            throw new ArgumentNullException(nameof(response));
+        }
+
+        if (contentStream is null)
+        {
+            throw new ArgumentNullException(nameof(contentStream));
+        }
+
+        return new HttpResponseContentStream(response, contentStream);
     }
 
     /// <summary>
