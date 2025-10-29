@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Runtime.ExceptionServices;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -331,6 +333,7 @@ public class QueryOData : IDisposable
         string? entityName = ExtractEntityName(firstChunk.Metadatas, parameter);
         EntityType? entityType = ResolveEntityType(metadata, entityName);
         IReadOnlyList<ColumnDefinition> columns = BuildColumnDefinitions(columnNames, entityType, metadata);
+        Func<JsonObject, object[]> rowConverter = CompileRowConverter(columns);
 
         int boundedCapacity = Math.Max(1, Math.Min(maxPerRequest ?? 128, 1024));
         var channelOptions = new BoundedChannelOptions(boundedCapacity)
@@ -347,6 +350,7 @@ public class QueryOData : IDisposable
                 originalTop,
                 firstBatch,
                 columns,
+                rowConverter,
                 channel.Writer,
                 linkedTokenSource.Token);
 
@@ -363,6 +367,7 @@ public class QueryOData : IDisposable
     /// <param name="originalTop">Original <c>$top</c> value requested by the consumer.</param>
     /// <param name="firstBatch">First batch of rows returned by the service.</param>
     /// <param name="columns">Column definitions describing the result schema.</param>
+    /// <param name="rowConverter">Compiled delegate used to materialize JSON objects into row buffers.</param>
     /// <param name="writer">Channel writer that receives the materialized rows.</param>
     /// <param name="cancellationToken">Token used to cancel the streaming operation.</param>
     private async Task StreamBatchesAsync(
@@ -372,6 +377,7 @@ public class QueryOData : IDisposable
             int? originalTop,
             JsonArray firstBatch,
             IReadOnlyList<ColumnDefinition> columns,
+            Func<JsonObject, object[]> rowConverter,
             ChannelWriter<object?[]> writer,
             CancellationToken cancellationToken)
     {
@@ -390,6 +396,11 @@ public class QueryOData : IDisposable
             throw new ArgumentNullException(nameof(columns));
         }
 
+        if (rowConverter is null)
+        {
+            throw new ArgumentNullException(nameof(rowConverter));
+        }
+
         if (writer is null)
         {
             throw new ArgumentNullException(nameof(writer));
@@ -398,7 +409,7 @@ public class QueryOData : IDisposable
         try
         {
             int totalRetrieved = 0;
-            await WriteBatchAsync(firstBatch, columns, writer, cancellationToken);
+            await WriteBatchAsync(firstBatch, columns, rowConverter, writer, cancellationToken);
             totalRetrieved += firstBatch.Count;
 
             while (true)
@@ -430,7 +441,7 @@ public class QueryOData : IDisposable
                     break;
                 }
 
-                await WriteBatchAsync(nonEmptyBatch, columns, writer, cancellationToken);
+                await WriteBatchAsync(nonEmptyBatch, columns, rowConverter, writer, cancellationToken);
                 totalRetrieved += nonEmptyBatch.Count;
             }
 
@@ -451,11 +462,13 @@ public class QueryOData : IDisposable
     /// </summary>
     /// <param name="batch">JSON array containing the rows to materialize.</param>
     /// <param name="columns">Column definitions describing the schema of the dataset.</param>
+    /// <param name="rowConverter">Compiled converter used to materialize JSON rows.</param>
     /// <param name="writer">Channel writer that receives the materialized rows.</param>
     /// <param name="cancellationToken">Token used to cancel the write operation.</param>
     private static async Task WriteBatchAsync(
             JsonArray batch,
             IReadOnlyList<ColumnDefinition> columns,
+            Func<JsonObject, object[]> rowConverter,
             ChannelWriter<object?[]> writer,
             CancellationToken cancellationToken)
     {
@@ -469,6 +482,11 @@ public class QueryOData : IDisposable
             throw new ArgumentNullException(nameof(columns));
         }
 
+        if (rowConverter is null)
+        {
+            throw new ArgumentNullException(nameof(rowConverter));
+        }
+
         if (writer is null)
         {
             throw new ArgumentNullException(nameof(writer));
@@ -477,116 +495,12 @@ public class QueryOData : IDisposable
         foreach (JsonNode? entry in batch)
         {
             object[] row = entry is JsonObject jsonObject
-                    ? ConvertJsonObjectToRow(jsonObject, columns)
+                    ? rowConverter(jsonObject)
                     : CreateEmptyRow(columns.Count);
             await writer.WriteAsync(row, cancellationToken);
         }
     }
 
-    /// <summary>
-    /// Converts a JSON object representing a row into a typed array aligned with the provided schema.
-    /// </summary>
-    /// <param name="jsonObject">JSON object containing the row data.</param>
-    /// <param name="columns">Column definitions describing the schema of the dataset.</param>
-    /// <returns>An array containing the typed values for the row.</returns>
-    private static object[] ConvertJsonObjectToRow(JsonObject jsonObject, IReadOnlyList<ColumnDefinition> columns)
-    {
-        if (jsonObject is null)
-        {
-            throw new ArgumentNullException(nameof(jsonObject));
-        }
-
-        if (columns is null)
-        {
-            throw new ArgumentNullException(nameof(columns));
-        }
-
-        object[] values = new object[columns.Count];
-        for (int index = 0; index < columns.Count; index++)
-        {
-            ColumnDefinition column = columns[index];
-            JsonNode? node = TryResolvePropertyValue(jsonObject, column.Name);
-            values[index] = ConvertJsonNode(node, column.FieldType);
-        }
-
-        return values;
-    }
-
-    /// <summary>
-    /// Converts the provided JSON node into a CLR value matching the requested type.
-    /// </summary>
-    /// <param name="node">JSON node containing the raw value.</param>
-    /// <param name="targetType">CLR type expected for the column.</param>
-    /// <returns>A typed value suitable for the <see cref="IDataReader"/>.</returns>
-    private static object ConvertJsonNode(JsonNode? node, Type targetType)
-    {
-        if (targetType is null)
-        {
-            throw new ArgumentNullException(nameof(targetType));
-        }
-
-        if (node is null)
-        {
-            return DBNull.Value;
-        }
-
-        try
-        {
-            object? value = node.Deserialize(targetType);
-            return value ?? DBNull.Value;
-        }
-        catch
-        {
-            string? raw = ReadNodeAsString(node);
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                return DBNull.Value;
-            }
-
-            if (targetType == typeof(byte[]))
-            {
-                try
-                {
-                    return Convert.FromBase64String(raw);
-                }
-                catch
-                {
-                    return System.Text.Encoding.UTF8.GetBytes(raw);
-                }
-            }
-
-            if (targetType == typeof(Guid) && Guid.TryParse(raw, out Guid guidValue))
-            {
-                return guidValue;
-            }
-
-            if (targetType == typeof(DateTimeOffset)
-                    && DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset dtoValue))
-            {
-                return dtoValue;
-            }
-
-            if (targetType == typeof(DateTime)
-                    && DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime dateValue))
-            {
-                return dateValue;
-            }
-
-            if (targetType == typeof(TimeSpan) && TimeSpan.TryParse(raw, CultureInfo.InvariantCulture, out TimeSpan timeValue))
-            {
-                return timeValue;
-            }
-
-            try
-            {
-                return Convert.ChangeType(raw, targetType, CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                return raw;
-            }
-        }
-    }
 
     /// <summary>
     /// Attempts to determine the entity name associated with the current dataset.
@@ -824,50 +738,58 @@ public class QueryOData : IDisposable
         {
             string name = columnNames[index];
             Property? property = ResolveProperty(metadata, entityType, name);
-            Type fieldType = ResolveClrType(property);
-            columns.Add(new ColumnDefinition(name, fieldType, index));
+            EdmFieldConverterRegistry.EdmFieldConverter converter = EdmFieldConverterRegistry.Resolve(property);
+            columns.Add(new ColumnDefinition(name, converter.ClrType, index, converter.Converter));
         }
 
         return columns;
     }
 
     /// <summary>
-    /// Maps an EDM property definition to its corresponding CLR type.
+    /// Compiles an optimized delegate able to materialize JSON objects into typed row arrays.
     /// </summary>
-    /// <param name="property">Property definition extracted from the metadata document.</param>
-    /// <returns>The CLR type that should be used for the corresponding column.</returns>
-    private static Type ResolveClrType(Property? property)
+    /// <param name="columns">Column definitions describing the dataset schema.</param>
+    /// <returns>A delegate converting <see cref="JsonObject"/> instances into typed row buffers.</returns>
+    private static Func<JsonObject, object[]> CompileRowConverter(IReadOnlyList<ColumnDefinition> columns)
     {
-        string? edmType = property?.Type;
-        if (string.IsNullOrWhiteSpace(edmType))
+        if (columns is null)
         {
-            return typeof(string);
+            throw new ArgumentNullException(nameof(columns));
         }
 
-        if (edmType.StartsWith("Collection(", StringComparison.OrdinalIgnoreCase))
+        ParameterExpression jsonObjectParameter = Expression.Parameter(typeof(JsonObject), "jsonObject");
+        ParameterExpression valuesVariable = Expression.Variable(typeof(object[]), "values");
+
+        MethodInfo? resolverMethod = typeof(QueryOData).GetMethod(
+                nameof(TryResolvePropertyValue),
+                BindingFlags.NonPublic | BindingFlags.Static);
+        if (resolverMethod is null)
         {
-            return typeof(string);
+            throw new InvalidOperationException("Unable to locate the JSON property resolution helper.");
         }
 
-        return edmType switch
+        List<Expression> expressions = new(columns.Count + 2)
         {
-            "Edm.Binary" => typeof(byte[]),
-            "Edm.Boolean" => typeof(bool),
-            "Edm.Byte" => typeof(byte),
-            "Edm.SByte" => typeof(sbyte),
-            "Edm.Int16" => typeof(short),
-            "Edm.Int32" => typeof(int),
-            "Edm.Int64" => typeof(long),
-            "Edm.Single" => typeof(float),
-            "Edm.Double" => typeof(double),
-            "Edm.Decimal" => typeof(decimal),
-            "Edm.Guid" => typeof(Guid),
-            "Edm.Date" => typeof(DateTime),
-            "Edm.DateTimeOffset" => typeof(DateTimeOffset),
-            "Edm.TimeOfDay" => typeof(TimeSpan),
-            "Edm.Duration" => typeof(TimeSpan),
-            _ => typeof(string)
+            Expression.Assign(
+                    valuesVariable,
+                    Expression.NewArrayBounds(typeof(object), Expression.Constant(columns.Count)))
         };
+
+        for (int index = 0; index < columns.Count; index++)
+        {
+            ColumnDefinition column = columns[index];
+            Expression nodeExpression = Expression.Call(
+                    resolverMethod,
+                    jsonObjectParameter,
+                    Expression.Constant(column.Name));
+            Expression convertExpression = Expression.Invoke(Expression.Constant(column.Converter), nodeExpression);
+            expressions.Add(Expression.Assign(Expression.ArrayAccess(valuesVariable, Expression.Constant(index)), convertExpression));
+        }
+
+        expressions.Add(valuesVariable);
+
+        Expression body = Expression.Block(new[] { valuesVariable }, expressions);
+        return Expression.Lambda<Func<JsonObject, object[]>>(body, jsonObjectParameter).Compile();
     }
 
     /// <summary>
@@ -916,62 +838,13 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
-    /// Reads the specified node as a culture-invariant string representation.
-    /// </summary>
-    /// <param name="node">Node to convert to a string.</param>
-    /// <returns>A culture-invariant string representation of the node.</returns>
-    private static string? ReadNodeAsString(JsonNode node)
-    {
-        if (node is JsonValue jsonValue)
-        {
-            if (jsonValue.TryGetValue<string>(out string? stringValue))
-            {
-                return stringValue;
-            }
-
-            if (jsonValue.TryGetValue<Guid>(out Guid guidValue))
-            {
-                return guidValue.ToString();
-            }
-
-            if (jsonValue.TryGetValue<DateTimeOffset>(out DateTimeOffset dtoValue))
-            {
-                return dtoValue.ToString("O", CultureInfo.InvariantCulture);
-            }
-
-            if (jsonValue.TryGetValue<DateTime>(out DateTime dateValue))
-            {
-                return dateValue.ToString("O", CultureInfo.InvariantCulture);
-            }
-
-            if (jsonValue.TryGetValue<decimal>(out decimal decimalValue))
-            {
-                return decimalValue.ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (jsonValue.TryGetValue<double>(out double doubleValue))
-            {
-                return doubleValue.ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (jsonValue.TryGetValue<long>(out long longValue))
-            {
-                return longValue.ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (jsonValue.TryGetValue<bool>(out bool boolValue))
-            {
-                return boolValue ? bool.TrueString : bool.FalseString;
-            }
-        }
-
-        return node.ToString();
-    }
-
-    /// <summary>
     /// Represents a column definition used by the streaming data reader.
     /// </summary>
-    private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal);
+    /// <param name="Name">Name of the column.</param>
+    /// <param name="FieldType">CLR type associated with the column.</param>
+    /// <param name="Ordinal">Zero-based ordinal assigned to the column.</param>
+    /// <param name="Converter">Converter used to materialize JSON nodes into column values.</param>
+    private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal, Func<JsonNode?, object> Converter);
 
     /// <summary>
     /// Represents an error raised while streaming paginated OData results.
