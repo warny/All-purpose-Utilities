@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http;
+using Utils.OData.Linq;
 using Utils.OData.Metadatas;
 
 namespace Utils.OData;
@@ -41,6 +42,24 @@ public abstract class ODataContext
     /// Gets the EDMX metadata loaded for the current context.
     /// </summary>
     public Edmx Metadata { get; }
+
+    /// <summary>
+    /// Creates a queryable sequence targeting the specified entity set.
+    /// </summary>
+    /// <typeparam name="TEntity">Type of the entity returned by the query.</typeparam>
+    /// <param name="entitySetName">Name of the entity set to query.</param>
+    /// <returns>An <see cref="ODataQueryable{TEntity}"/> representing the entity set.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="entitySetName"/> is null or whitespace.</exception>
+    protected ODataQueryable<TEntity> Query<TEntity>(string entitySetName)
+    {
+        if (string.IsNullOrWhiteSpace(entitySetName))
+        {
+            throw new ArgumentException("The entity set name must be provided.", nameof(entitySetName));
+        }
+
+        var provider = new ODataQueryProvider(entitySetName);
+        return new ODataQueryable<TEntity>(provider, entitySetName);
+    }
 
     /// <summary>
     /// Reads and deserializes the EDMX metadata from the provided stream.

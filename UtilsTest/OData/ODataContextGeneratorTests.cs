@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -98,6 +102,55 @@ public partial class SampleGeneratedContext : ODataContext
     }
 
     /// <summary>
+    /// Ensures the source generator can download compressed EDMX metadata from an HTTP endpoint.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorLoadsCompressedMetadataFromHttp()
+    {
+        string metadataPath = GetSampleMetadataPath();
+        string metadataUrl = StartCompressedMetadataServer(metadataPath, out var listener, out var serverTask);
+
+        try
+        {
+            string source = $@"
+using Utils.OData;
+
+public partial class SampleHttpContext : ODataContext
+{{
+    public SampleHttpContext()
+        : base(@""{metadataUrl}"")
+    {{
+    }}
+}}
+";
+
+            var syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
+            var references = CreateMetadataReferences();
+            var compilation = CSharpCompilation.Create(
+                assemblyName: "ODataGeneratorHttpTests",
+                syntaxTrees: new[] { syntaxTree },
+                references: references,
+                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var generator = new ODataEntityGenerator();
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+            driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
+
+            Assert.IsNotNull(outputCompilation);
+            Assert.AreEqual(0, diagnostics.Length, "Compilation produced diagnostics: {0}", string.Join(Environment.NewLine, diagnostics.Select(d => d.ToString())));
+
+            var runResult = driver.GetRunResult();
+            Assert.AreEqual(1, runResult.GeneratedTrees.Length);
+        }
+        finally
+        {
+            listener.Stop();
+            listener.Close();
+            serverTask.GetAwaiter().GetResult();
+        }
+    }
+
+    /// <summary>
     /// Resolves the absolute path to the sample EDMX metadata used by the tests.
     /// </summary>
     /// <returns>The full file path to <c>Sample.edmx</c>.</returns>
@@ -140,6 +193,74 @@ public partial class SampleGeneratedContext : ODataContext
             .ToArray();
 
         return references;
+    }
+
+    /// <summary>
+    /// Starts a lightweight HTTP server that returns the sample metadata using gzip compression.
+    /// </summary>
+    /// <param name="metadataPath">The path to the EDMX file to serve.</param>
+    /// <param name="listener">The listener that accepts HTTP connections.</param>
+    /// <param name="serverTask">Task responsible for processing a single request.</param>
+    /// <returns>The HTTP URL that exposes the metadata file.</returns>
+    private static string StartCompressedMetadataServer(string metadataPath, out HttpListener listener, out Task serverTask)
+    {
+        if (metadataPath is null)
+        {
+            throw new ArgumentNullException(nameof(metadataPath));
+        }
+
+        listener = new HttpListener();
+        int port = ReserveEphemeralPort();
+        string prefix = $"http://127.0.0.1:{port}/";
+        listener.Prefixes.Add(prefix);
+        listener.Start();
+
+        serverTask = ServeCompressedMetadataAsync(listener, metadataPath);
+        return $"{prefix}metadata";
+    }
+
+    /// <summary>
+    /// Reserves a free TCP port on the local machine for the temporary HTTP server.
+    /// </summary>
+    /// <returns>An available TCP port number.</returns>
+    private static int ReserveEphemeralPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
+    }
+
+    /// <summary>
+    /// Processes a single HTTP request and responds with the compressed metadata.
+    /// </summary>
+    /// <param name="listener">The listener accepting HTTP connections.</param>
+    /// <param name="metadataPath">The path to the EDMX file to serve.</param>
+    /// <returns>A task that completes once the request has been processed.</returns>
+    private static async Task ServeCompressedMetadataAsync(HttpListener listener, string metadataPath)
+    {
+        try
+        {
+            var context = await listener.GetContextAsync().ConfigureAwait(false);
+            context.Response.StatusCode = 200;
+            context.Response.AddHeader("Content-Encoding", "gzip");
+            context.Response.ContentType = "application/xml";
+
+            var responseStream = context.Response.OutputStream;
+            using (var gzip = new GZipStream(responseStream, CompressionLevel.Fastest, leaveOpen: true))
+            using (var fileStream = File.OpenRead(metadataPath))
+            {
+                await fileStream.CopyToAsync(gzip).ConfigureAwait(false);
+            }
+
+            responseStream.Flush();
+            context.Response.Close();
+        }
+        catch (HttpListenerException)
+        {
+            return;
+        }
     }
 
     /// <summary>

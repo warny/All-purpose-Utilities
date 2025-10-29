@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Linq;
@@ -172,7 +173,12 @@ public sealed class ODataEntityGenerator : ISourceGenerator
             if (Uri.TryCreate(metadataPath, UriKind.Absolute, out var uri) &&
                 (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
             {
-                using var httpClient = new HttpClient();
+                using var handler = new HttpClientHandler
+                {
+                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                };
+
+                using var httpClient = new HttpClient(handler);
                 using var response = httpClient.GetAsync(uri).GetAwaiter().GetResult();
                 if (!response.IsSuccessStatusCode)
                 {
