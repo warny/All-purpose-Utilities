@@ -121,67 +121,67 @@
   <data name="NumberConvertionConfiguration" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.xsd;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="NumberConvertionConfiguration_DE" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.DE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_EN" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.EN.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_FR_be_ch" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.FR-be-ch.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_FR_fr_ca" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.FR-fr-ca.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_ES" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.ES.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_IT" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.IT.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_FI" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.FI.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_AR" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="NumberConvertionConfiguration.AR" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.AR.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="NumberConvertionConfiguration_HE" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.HE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  <data name="NumberConvertionConfiguration.DE" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.DE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="NumberConvertionConfiguration_ZH" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.ZH.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_KO" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.KO.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_JA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.JA.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_PT" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.PT.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_NL" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.NL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_RU" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.RU.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_PL" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.PL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_HI" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.HI.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_EL" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.EL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_ZU" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>NumberConverterConfigurations\NumberConvertionConfiguration.ZU.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="NumberConvertionConfiguration_EE" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="NumberConvertionConfiguration.EE" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.EE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="NumberConvertionConfiguration_WO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="NumberConvertionConfiguration.EL" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.EL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.EN" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.EN.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.ES" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.ES.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.FI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.FI.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.FR-be-ch" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.FR-be-ch.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.FR-fr-ca" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.FR-fr-ca.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.HE" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.HE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.HI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.HI.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.IT" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.IT.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.JA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.JA.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.KO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.KO.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.NL" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.NL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.PL" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.PL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.PT" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.PT.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.RU" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.RU.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.WO" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.WO.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.ZH" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.ZH.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.ZU" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.ZU.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
 </root>

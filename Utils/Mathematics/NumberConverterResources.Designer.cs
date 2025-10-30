@@ -87,27 +87,50 @@ namespace Utils.Mathematics {
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
-        ///	&lt;Language
-        ///		groupSize=&quot;3&quot;
-        ///		separator=&quot; &quot;
-        ///		groupSeparator=&quot;&quot;
-        ///		zero=&quot;null&quot;
-        ///		minus=&quot;minus *&quot;
-        ///	&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;صفر&quot;
+        ///        minus=&quot;سالب *&quot;
+        ///        decimalSeparator=&quot;فاصل&quot;
+        ///        fractionSeparator=&quot;على&quot;
+        ///        maxNumber=&quot;999999999&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;AR&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;واحد&quot; /&gt; [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_AR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.AR", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///        &lt;Language
+        ///                groupSize=&quot;3&quot;
+        ///                separator=&quot; &quot;
+        ///                groupSeparator=&quot;&quot;
+        ///                zero=&quot;null&quot;
+        ///                minus=&quot;minus *&quot;
+        ///                decimalSeparator=&quot;komma&quot;
+        ///                fractionSeparator=&quot;durch&quot;
+        ///        &gt;
         ///		&lt;Culture&gt;DE&lt;/Culture&gt;
         ///		&lt;Groups&gt;
         ///			&lt;Group level=&quot;1&quot;&gt;
         ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
         ///				&lt;Digit digit=&quot;1&quot; string=&quot;ein&quot; /&gt;
-        ///				&lt;Digit digit=&quot;2&quot; string=&quot;zwei&quot; /&gt;
-        ///				&lt;Digit digit=&quot;3&quot; string=&quot;drei&quot; /&gt;
-        ///				&lt;Digit digit=&quot;4&quot; string=&quot;vier&quot; /&gt;
-        ///				&lt;Digit digit=&quot;5&quot; string=&quot;fünf&quot; /&gt;
-        ///				&lt;Digit digit=&quot;6 [le reste de la chaîne a été tronqué]&quot;;.
+        ///				&lt;D [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
         internal static string NumberConvertionConfiguration_DE {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_DE", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.DE", resourceCulture);
             }
         }
         
@@ -115,54 +138,245 @@ namespace Utils.Mathematics {
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
         ///	&lt;Language
-        ///		groupSize=&quot;3&quot;
-        ///		separator=&quot; &quot;
-        ///		groupSeparator=&quot;,&quot;
-        ///		zero=&quot;zero&quot;
-        ///		minus=&quot;minus *&quot;
-        ///	&gt;
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;zero&quot;
+        ///        minus=&quot;minus *&quot;
+        ///        decimalSeparator=&quot;kpɔ&quot;
+        ///        fractionSeparator=&quot;kple&quot;
+        ///    &gt;
+        ///		&lt;Culture&gt;EE&lt;/Culture&gt;
+        ///		&lt;Groups&gt;
+        ///			&lt;Group level=&quot;1&quot;&gt;
+        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///				&lt;Digit digit=&quot;1&quot; string=&quot;deka&quot; /&gt;
+        ///				&lt;Digit digit=&quot;2&quot; string=&quot;eve&quot; /&gt;
+        ///				&lt;Digit digit=&quot;3&quot; string=&quot;eto&quot; /&gt;        /// [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_EE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///	&lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;μηδέν&quot;
+        ///        minus=&quot;μείον *&quot;
+        ///        decimalSeparator=&quot;κόμμα&quot;
+        ///        fractionSeparator=&quot;διά&quot;
+        ///    &gt;
+        ///		&lt;Culture&gt;EL&lt;/Culture&gt;
+        ///		&lt;Groups&gt;
+        ///			&lt;Group level=&quot;1&quot;&gt;
+        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///				&lt;Digit digit=&quot;1&quot; string=&quot;ένα&quot; /&gt;
+        ///				&lt;Digit digit=&quot;2&quot; string=&quot;δύο&quot; /&gt;
+        ///				&lt;Digit digit=&quot;3&quot; string=&quot;τρία&quot; / [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_EL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///        &lt;Language
+        ///                        groupSize=&quot;3&quot;
+        ///                        separator=&quot; &quot;
+        ///                        groupSeparator=&quot;,&quot; 
+        ///                        zero=&quot;zero&quot;
+        ///                        minus=&quot;minus *&quot;
+        ///                        decimalSeparator=&quot;point&quot;
+        ///                        fractionSeparator=&quot;over&quot;
+        ///        &gt;
         ///		&lt;Culture&gt;EN&lt;/Culture&gt;
         ///		&lt;Culture&gt;EN-uk&lt;/Culture&gt;
         ///		&lt;Culture&gt;EN-us&lt;/Culture&gt;
-        ///		&lt;Groups&gt;
-        ///			&lt;Group level=&quot;1&quot;&gt;
-        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot;  /&gt;
-        ///				&lt;Digit digit=&quot;1&quot; string=&quot;one&quot; /&gt;
-        ///				&lt;Digit digit=&quot;2&quot; string=&quot;two&quot; /&gt;
-        ///				&lt;Digit digit=&quot;3&quot; string=&quot;three&quot; /&gt;
-        ///				&lt;Digit digit=&quot;4&quot; string=&quot;four&quot; /&gt;
         /// [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
         internal static string NumberConvertionConfiguration_EN {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_EN", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.EN", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
-        ///	&lt;Language
-        ///		groupSize=&quot;3&quot;
-        ///		separator=&quot; &quot;
-        ///		groupSeparator=&quot;&quot;
-        ///		zero=&quot;zéro&quot;
-        ///		minus=&quot;moins *&quot;
-        ///	&gt;
+        ///        &lt;Language
+        ///                groupSize=&quot;3&quot;
+        ///                separator=&quot; &quot;
+        ///                groupSeparator=&quot;&quot;
+        ///                zero=&quot;cero&quot;
+        ///                minus=&quot;menos *&quot;
+        ///                decimalSeparator=&quot;coma&quot;
+        ///                fractionSeparator=&quot;sobre&quot;
+        ///        &gt;
+        ///		&lt;Culture&gt;ES&lt;/Culture&gt;
+        ///		&lt;Groups&gt;
+        ///			&lt;Group level=&quot;1&quot;&gt;
+        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///				&lt;Digit digit=&quot;1&quot; string=&quot;uno&quot; /&gt;
+        ///				&lt;Di [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_ES {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ES", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;nolla&quot;
+        ///        minus=&quot;miinus *&quot;
+        ///        decimalSeparator=&quot;pilkku&quot;
+        ///        fractionSeparator=&quot;yli&quot;
+        ///        maxNumber=&quot;999999999&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;FI&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;yk [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_FI {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FI", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///        &lt;Language
+        ///                        groupSize=&quot;3&quot;
+        ///                        separator=&quot; &quot;
+        ///                        groupSeparator=&quot;&quot;
+        ///                        zero=&quot;zéro&quot;
+        ///                        minus=&quot;moins *&quot;
+        ///                        decimalSeparator=&quot;virgule&quot;
+        ///                        fractionSeparator=&quot;sur&quot;
+        ///        &gt;
         ///		&lt;Culture&gt;FR-be&lt;/Culture&gt;
         ///		&lt;Culture&gt;FR-ch&lt;/Culture&gt;
         ///		&lt;Groups&gt;
-        ///			&lt;Group level=&quot;1&quot;&gt;
-        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
-        ///				&lt;Digit digit=&quot;1&quot; string=&quot;et un&quot; /&gt;
-        ///				&lt;Digit digit=&quot;2&quot; string=&quot;deux&quot; /&gt;
-        ///				&lt;Digit digit=&quot;3&quot; string=&quot;trois&quot; /&gt;
-        ///				&lt;Digit digit=&quot;4&quot; string=&quot;quatre&quot; /&gt;
-        ///				&lt;Digit digit=&quot;5&quot; s [le reste de la chaîne a été tronqué]&quot;;.
+        ///			&lt;Group leve [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
         internal static string NumberConvertionConfiguration_FR_be_ch {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_FR_be_ch", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-be-ch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///        &lt;Language
+        ///                        groupSize=&quot;3&quot;
+        ///                        separator=&quot; &quot;
+        ///                        groupSeparator=&quot;&quot;
+        ///                        zero=&quot;zéro&quot;
+        ///                        minus=&quot;moins *&quot;
+        ///                        decimalSeparator=&quot;virgule&quot;
+        ///                        fractionSeparator=&quot;sur&quot;
+        ///        &gt;
+        ///		&lt;Culture&gt;FR&lt;/Culture&gt;
+        ///		&lt;Culture&gt;FR-fr&lt;/Culture&gt;
+        ///		&lt;Culture&gt;FR-ca&lt;/Culture&gt;
+        ///	 [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_FR_fr_ca {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-fr-ca", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;אפס&quot;
+        ///        minus=&quot;מינוס *&quot;
+        ///        decimalSeparator=&quot;נקודה&quot;
+        ///        fractionSeparator=&quot;על&quot;
+        ///        maxNumber=&quot;999999999&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;HE&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;אחד&quot; /&gt; [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_HE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;शून्य&quot;
+        ///        minus=&quot;माइनस *&quot;
+        ///        decimalSeparator=&quot;दशमलव&quot;
+        ///        fractionSeparator=&quot;बटे&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;HI&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;एक&quot; /&gt;
+        ///                &lt;Digit digi [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_HI {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HI", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///        &lt;Language
+        ///                groupSize=&quot;3&quot;
+        ///                separator=&quot; &quot;
+        ///                groupSeparator=&quot;&quot;
+        ///                zero=&quot;zero&quot;
+        ///                minus=&quot;meno *&quot;
+        ///                decimalSeparator=&quot;virgola&quot;
+        ///                fractionSeparator=&quot;su&quot;
+        ///        &gt;
+        ///		&lt;Culture&gt;IT&lt;/Culture&gt;
+        ///		&lt;Groups&gt;
+        ///			&lt;Group level=&quot;1&quot;&gt;
+        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///				&lt;Digit digit=&quot;1&quot; string=&quot;uno&quot; /&gt;
+        ///				&lt;Dig [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_IT {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.IT", resourceCulture);
             }
         }
         
@@ -170,127 +384,229 @@ namespace Utils.Mathematics {
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
         ///	&lt;Language
-        ///		groupSize=&quot;3&quot;
-        ///		separator=&quot; &quot;
-        ///		groupSeparator=&quot;&quot;
-        ///		zero=&quot;zéro&quot;
-        ///		minus=&quot;moins *&quot;
-        ///	&gt;
-        ///		&lt;Culture&gt;FR&lt;/Culture&gt;
-        ///		&lt;Culture&gt;FR-fr&lt;/Culture&gt;
-        ///		&lt;Culture&gt;FR-ca&lt;/Culture&gt;
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;零&quot;
+        ///        minus=&quot;マイナス *&quot;
+        ///        decimalSeparator=&quot;点&quot;
+        ///        fractionSeparator=&quot;割る&quot;
+        ///        maxNumber=&quot;999999999&quot;
+        ///    &gt;
+        ///		&lt;Culture&gt;JA&lt;/Culture&gt;
         ///		&lt;Groups&gt;
         ///			&lt;Group level=&quot;1&quot;&gt;
         ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
-        ///				&lt;Digit digit=&quot;1&quot; string=&quot;et un&quot; /&gt;
-        ///				&lt;Digit digit=&quot;2&quot; string=&quot;deux&quot; /&gt;
-        ///				&lt;Digit digit=&quot;3&quot; string=&quot;trois&quot; /&gt;
-        ///				&lt;Digit digit=&quot;4&quot; string=&quot;quatre&quot; / [le reste de la chaîne a été tronqué]&quot;;.
+        ///				&lt;Digit digit=&quot;1&quot; string=&quot;一&quot; /&gt;
+        ///				&lt;Digit digit=&quot;2&quot; string=&quot;二&quot; /&gt;
+        ///				&lt;Digit digit=&quot;3 [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
-        internal static string NumberConvertionConfiguration_FR_fr_ca {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_FR_fr_ca", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_ES {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_ES", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_IT {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_IT", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_FI {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_FI", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_AR {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_AR", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_HE {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_HE", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_ZH {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_ZH", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_KO {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_KO", resourceCulture);
-            }
-        }
-
         internal static string NumberConvertionConfiguration_JA {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_JA", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.JA", resourceCulture);
             }
         }
-
-        internal static string NumberConvertionConfiguration_PT {
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;영&quot;
+        ///        minus=&quot;마이너스 *&quot;
+        ///        decimalSeparator=&quot;점&quot;
+        ///        fractionSeparator=&quot;나누기&quot;
+        ///        maxNumber=&quot;999999999&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;KO&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;일&quot; /&gt;
+        ///       [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_KO {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_PT", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.KO", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;nul&quot;
+        ///        minus=&quot;min *&quot;
+        ///        decimalSeparator=&quot;komma&quot;
+        ///        fractionSeparator=&quot;op&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;NL&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;een&quot; /&gt;
+        ///                &lt;Digit digit=&quot;2 [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
         internal static string NumberConvertionConfiguration_NL {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_NL", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.NL", resourceCulture);
             }
         }
-
-        internal static string NumberConvertionConfiguration_RU {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_RU", resourceCulture);
-            }
-        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;zero&quot;
+        ///        minus=&quot;minus *&quot;
+        ///        decimalSeparator=&quot;przecinek&quot;
+        ///        fractionSeparator=&quot;przez&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;PL&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;jeden&quot; /&gt;
+        ///                &lt;Di [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
         internal static string NumberConvertionConfiguration_PL {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_PL", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.PL", resourceCulture);
             }
         }
-
-        internal static string NumberConvertionConfiguration_HI {
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///	&lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;zero&quot;
+        ///        minus=&quot;menos *&quot;
+        ///        decimalSeparator=&quot;vírgula&quot;
+        ///        fractionSeparator=&quot;sobre&quot;
+        ///    &gt;
+        ///		&lt;Culture&gt;PT&lt;/Culture&gt;
+        ///		&lt;Groups&gt;
+        ///			&lt;Group level=&quot;1&quot;&gt;
+        ///				&lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///				&lt;Digit digit=&quot;1&quot; string=&quot;um&quot; /&gt;
+        ///				&lt;Digit digit=&quot;2&quot; string=&quot;dois&quot; /&gt;
+        ///				&lt;Digit digit=&quot;3&quot; string=&quot;três [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_PT {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_HI", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.PT", resourceCulture);
             }
         }
-
-        internal static string NumberConvertionConfiguration_EL {
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;ноль&quot;
+        ///        minus=&quot;минус *&quot;
+        ///        decimalSeparator=&quot;запятая&quot;
+        ///        fractionSeparator=&quot;на&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;RU&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;один&quot; /&gt;
+        ///                &lt;Digit di [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_RU {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_EL", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.RU", resourceCulture);
             }
         }
-
-        internal static string NumberConvertionConfiguration_ZU {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_ZU", resourceCulture);
-            }
-        }
-
-        internal static string NumberConvertionConfiguration_EE {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_EE", resourceCulture);
-            }
-        }
-
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;sero&quot;
+        ///        minus=&quot;minus *&quot;
+        ///        decimalSeparator=&quot;pojint&quot;
+        ///        fractionSeparator=&quot;ci&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;WO&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;benn&quot; /&gt;
+        ///                &lt;Digit dig [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
         internal static string NumberConvertionConfiguration_WO {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration_WO", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.WO", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;零&quot;
+        ///        minus=&quot;负 *&quot;
+        ///        decimalSeparator=&quot;点&quot;
+        ///        fractionSeparator=&quot;除以&quot;
+        ///        maxNumber=&quot;999999999&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;ZH&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;一&quot; /&gt;
+        ///           [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_ZH {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ZH", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
+        ///    &lt;Language
+        ///        groupSize=&quot;3&quot;
+        ///        separator=&quot; &quot;
+        ///        groupSeparator=&quot;&quot;
+        ///        zero=&quot;iqanda&quot;
+        ///        minus=&quot;minus *&quot;
+        ///        decimalSeparator=&quot;phuzu&quot;
+        ///        fractionSeparator=&quot;ngaphezu&quot;
+        ///    &gt;
+        ///        &lt;Culture&gt;ZU&lt;/Culture&gt;
+        ///        &lt;Groups&gt;
+        ///            &lt;Group level=&quot;1&quot;&gt;
+        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
+        ///                &lt;Digit digit=&quot;1&quot; string=&quot;kunye&quot; /&gt;
+        ///                &lt;D [le reste de la chaîne a été tronqué]&quot;;.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_ZU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ZU", resourceCulture);
             }
         }
     }
