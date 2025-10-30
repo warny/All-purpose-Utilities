@@ -7,6 +7,7 @@
         zero="zero"
         minus="menos *"
         decimalSeparator="vírgula"
+        fractionSeparator="sobre"
     >
 		<Culture>PT</Culture>
 		<Groups>

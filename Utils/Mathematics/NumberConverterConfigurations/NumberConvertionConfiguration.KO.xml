@@ -7,6 +7,7 @@
         zero="영"
         minus="마이너스 *"
         decimalSeparator="점"
+        fractionSeparator="나누기"
         maxNumber="999999999"
     >
         <Culture>KO</Culture>

@@ -7,6 +7,7 @@
         zero="零"
         minus="负 *"
         decimalSeparator="点"
+        fractionSeparator="除以"
         maxNumber="999999999"
     >
         <Culture>ZH</Culture>

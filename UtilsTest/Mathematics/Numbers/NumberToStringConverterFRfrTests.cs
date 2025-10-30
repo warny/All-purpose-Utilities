@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Mathematics;
+using Utils.Numerics;
 
 namespace UtilsTest.Mathematics.Numbers
 {
@@ -177,6 +178,14 @@ namespace UtilsTest.Mathematics.Numbers
             {
                 Assert.AreEqual(test.Expected, converter.Convert(test.Number));
             }
+        }
+
+        [TestMethod]
+        public void FractionUsesConfiguredSeparator()
+        {
+            var converter = NumberToStringConverter.GetConverter("FR-fr");
+            var value = new Number(3, 2);
+            Assert.AreEqual("trois sur deux", converter.Convert(value));
         }
     }
 }

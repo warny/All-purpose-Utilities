@@ -21,7 +21,16 @@ public class NumberTests
     {
         Number c = Number.Parse("0.1");
         Number d = Number.Parse("0.2");
-        Assert.AreEqual("0.3", (c + d).ToString());
+        CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            Assert.AreEqual("0,3", (c + d).ToString());
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [TestMethod]
@@ -36,7 +45,16 @@ public class NumberTests
     public void UnaryNegationTest()
     {
         Number value = Number.Parse("1.5");
-        Assert.AreEqual("-1.5", (-value).ToString());
+        CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            Assert.AreEqual("-1,5", (-value).ToString());
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [TestMethod]
@@ -55,9 +73,35 @@ public class NumberTests
     {
         bool ok = Number.TryParse("10.5", null, out Number value);
         Assert.IsTrue(ok);
-        Assert.AreEqual("10.5", value.ToString());
+        CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            Assert.AreEqual("10,5", value.ToString());
+            Assert.AreEqual("21/2", value.ToString("Q", CultureInfo.InvariantCulture));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
 
         Assert.IsFalse(Number.TryParse("not_a_number", null, out _));
+    }
+
+    [TestMethod]
+    public void ToStringWithFormatOverloadUsesCurrentCulture()
+    {
+        CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            Number value = Number.Parse("2.75");
+            Assert.AreEqual("2,75", value.ToString("G"));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [TestMethod]
@@ -81,7 +125,7 @@ public class NumberTests
     {
         Number angle = Number.Parse("0.5");
         Number result = Number.Cos(angle);
-        string expected = Math.Cos(0.5).ToString("R", CultureInfo.InvariantCulture);
+        string expected = Number.Parse(Math.Cos(0.5).ToString("R", CultureInfo.InvariantCulture)).ToString();
         Assert.AreEqual(expected, result.ToString());
     }
 }

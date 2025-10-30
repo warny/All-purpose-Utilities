@@ -1,13 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-	<Language
-	groupSize="3"
-	separator=" "
-	groupSeparator=""
-	zero="cero"
-	minus="menos *"
-	decimalSeparator="coma"
-    >
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="cero"
+                minus="menos *"
+                decimalSeparator="coma"
+                fractionSeparator="sobre"
+        >
 		<Culture>ES</Culture>
 		<Groups>
 			<Group level="1">

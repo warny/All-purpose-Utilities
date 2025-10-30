@@ -7,6 +7,7 @@
         zero="शून्य"
         minus="माइनस *"
         decimalSeparator="दशमलव"
+        fractionSeparator="बटे"
     >
         <Culture>HI</Culture>
         <Groups>
