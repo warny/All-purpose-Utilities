@@ -3,9 +3,9 @@
 public class Query : IQuery
 {
 	/// <inheritdoc/>
-	public string Table { get; set; }
+	public required string Table { get; set; }
 	/// <inheritdoc/>
-	public string Filters { get; set; }
+	public string? Filters { get; set; } = null;
 	/// <inheritdoc/>
 	public bool Count { get; set; } = false;
 	/// <inheritdoc/>
@@ -15,7 +15,7 @@ public class Query : IQuery
 	/// <inheritdoc/>
 	public string? OrderBy { get; set; }
 	/// <inheritdoc/>
-	public string Select { get; set; }
+	public string? Select { get; set; } = null;
 	/// <inheritdoc/>
 	public string? Search { get; set; }
 }

@@ -10,7 +10,7 @@ public interface IQuery
 	/// <summary>
 	/// Gets or sets the filter criteria used to refine search results.
 	/// </summary>
-	public string Filters { get; set; }
+	public string? Filters { get; set; }
 
 	/// <summary>
 	/// Gets or sets a value indicating whether to count the total number of items matching the query.
@@ -35,7 +35,7 @@ public interface IQuery
 	/// <summary>
 	/// Gets or sets the fields to be selected.
 	/// </summary>
-	public string Select { get; set; }
+	public string? Select { get; set; }
 
 	/// <summary>
 	/// Gets or sets a full text search string query.

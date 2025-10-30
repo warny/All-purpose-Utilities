@@ -24,7 +24,22 @@ public class QueryODataDataReaderTests
     [TestMethod]
     public async Task QueryToDataReader_StreamsTypedRowsAcrossBatches()
     {
-        const string metadataPayload = "<edmx:Edmx xmlns:edmx=\"http://docs.oasis-open.org/odata/ns/edmx\"><edmx:DataServices><Schema xmlns=\"http://docs.oasis-open.org/odata/ns/edm\" Namespace=\"Sample\"><EntityType Name=\"Entity\"><Key><PropertyRef Name=\"Id\" /></Key><Property Name=\"Id\" Type=\"Edm.Int32\" /><Property Name=\"Name\" Type=\"Edm.String\" /></EntityType></Schema></edmx:DataServices></edmx:Edmx>";
+        const string metadataPayload =
+            """
+            <edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+                <edmx:DataServices>
+                    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Sample">
+                        <EntityType Name="Entity">
+                            <Key>
+                                <PropertyRef Name="Id" />
+                            </Key>
+                            <Property Name="Id" Type="Edm.Int32" />
+                            <Property Name="Name" Type="Edm.String" />
+                        </EntityType>
+                    </Schema>
+                </edmx:DataServices>
+            </edmx:Edmx>
+            """;
         using var handler = new DataReaderStubHttpMessageHandler(metadataPayload, totalItems: 5, serverBatchLimit: 5);
         using var client = new HttpClient(handler);
         using var query = new QueryOData("https://service.example.com", client);

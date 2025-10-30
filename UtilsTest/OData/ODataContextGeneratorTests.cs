@@ -63,19 +63,20 @@ public class ODataContextGeneratorTests
     {
         string metadataPath = GetSampleMetadataPath();
 
-        string source = $@"
-using Utils.OData;
+        string source = 
+            $$"""
+            using Utils.OData;
 
-namespace GeneratedSample;
+            namespace GeneratedSample;
 
-public partial class SampleGeneratedContext : ODataContext
-{{
-    public SampleGeneratedContext()
-        : base(@""{metadataPath}"")
-    {{
-    }}
-}}
-";
+            public partial class SampleGeneratedContext : ODataContext
+            {
+                public SampleGeneratedContext()
+                    : base(@"{{metadataPath}}")
+                {
+                }
+            }
+            """;
 
         var syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
         var references = CreateMetadataReferences();
@@ -112,23 +113,24 @@ public partial class SampleGeneratedContext : ODataContext
 
         try
         {
-            string source = $@"
-using Utils.OData;
+            string source = 
+                $$"""
+                using Utils.OData;
 
-public partial class SampleHttpContext : ODataContext
-{{
-    public SampleHttpContext()
-        : base(@""{metadataUrl}"")
-    {{
-    }}
-}}
-";
+                public partial class SampleHttpContext : ODataContext
+                {
+                    public SampleHttpContext()
+                        : base(@"{{metadataUrl}}")
+                    {
+                    }
+                }
+                """;
 
             var syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
             var references = CreateMetadataReferences();
             var compilation = CSharpCompilation.Create(
                 assemblyName: "ODataGeneratorHttpTests",
-                syntaxTrees: new[] { syntaxTree },
+                syntaxTrees: [syntaxTree],
                 references: references,
                 options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -158,13 +160,9 @@ public partial class SampleHttpContext : ODataContext
     /// <exception cref="FileNotFoundException">Thrown when the metadata file is missing.</exception>
     private static string GetSampleMetadataPath()
     {
-        string? baseDirectory = AppContext.BaseDirectory;
-        if (baseDirectory is null)
-        {
-            throw new InvalidOperationException("Unable to resolve the base directory of the test run.");
-        }
+        string? baseDirectory = AppContext.BaseDirectory ?? throw new InvalidOperationException("Unable to resolve the base directory of the test run.");
+		string path = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "OData", "TestData", "Sample.edmx"));
 
-        string path = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "OData", "TestData", "Sample.edmx"));
         if (!File.Exists(path))
         {
             throw new FileNotFoundException("Sample EDMX metadata file not found for tests.", path);
@@ -204,12 +202,9 @@ public partial class SampleHttpContext : ODataContext
     /// <returns>The HTTP URL that exposes the metadata file.</returns>
     private static string StartCompressedMetadataServer(string metadataPath, out HttpListener listener, out Task serverTask)
     {
-        if (metadataPath is null)
-        {
-            throw new ArgumentNullException(nameof(metadataPath));
-        }
+		ArgumentNullException.ThrowIfNull(metadataPath);
 
-        listener = new HttpListener();
+		listener = new HttpListener();
         int port = ReserveEphemeralPort();
         string prefix = $"http://127.0.0.1:{port}/";
         listener.Prefixes.Add(prefix);

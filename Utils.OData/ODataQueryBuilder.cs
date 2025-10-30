@@ -11,7 +11,7 @@ public class ODataQueryBuilder
 
 	public ODataQueryBuilder(string UrlPrefix, IQuery query, int skip=0)
 	{
-		var builder = new UriBuilderEx(Path.Combine(UrlPrefix, query.Table));
+		var builder = new UriBuilderEx(UrlPrefix + "/" + query.Table);
 
 		AddQueryString(builder.QueryString, "$select", query.Select);
 		AddQueryString(builder.QueryString, "$filter", query.Filters);
