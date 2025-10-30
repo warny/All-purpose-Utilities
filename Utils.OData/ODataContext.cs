@@ -62,6 +62,23 @@ public abstract class ODataContext
     }
 
     /// <summary>
+    /// Creates a queryable sequence for an entity set when no CLR type exists for the table.
+    /// </summary>
+    /// <param name="entitySetName">Name of the entity set to query.</param>
+    /// <returns>An untyped <see cref="ODataQueryable{TEntity}"/> that exposes <see cref="ODataUntypedRow"/> instances.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="entitySetName"/> is null or whitespace.</exception>
+    public ODataQueryable<ODataUntypedRow> Table(string entitySetName)
+    {
+        if (string.IsNullOrWhiteSpace(entitySetName))
+        {
+            throw new ArgumentException("The entity set name must be provided.", nameof(entitySetName));
+        }
+
+        var provider = new ODataQueryProvider(entitySetName);
+        return new ODataQueryable<ODataUntypedRow>(provider, entitySetName);
+    }
+
+    /// <summary>
     /// Reads and deserializes the EDMX metadata from the provided stream.
     /// </summary>
     /// <param name="edmxStream">Stream containing the EDMX content.</param>

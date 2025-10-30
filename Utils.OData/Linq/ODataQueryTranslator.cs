@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -163,17 +164,79 @@ internal static class ODataQueryTranslator
         /// <returns>The member name.</returns>
         private static string TranslateMember(Expression expression)
         {
-            if (expression is UnaryExpression unary && expression.NodeType == ExpressionType.Convert)
+            if (expression is null)
             {
-                return TranslateMember(unary.Operand);
+                throw new ArgumentNullException(nameof(expression));
             }
 
-            if (expression is MemberExpression memberExpression)
+            Expression current = expression;
+            while (current.NodeType == ExpressionType.Convert || current.NodeType == ExpressionType.ConvertChecked)
+            {
+                current = ((UnaryExpression)current).Operand;
+            }
+
+            if (current is MemberExpression memberExpression)
             {
                 return memberExpression.Member.Name;
             }
 
-            throw new NotSupportedException("Only direct member access expressions are currently supported.");
+            if (current is MethodCallExpression methodCall && IsColumnAccessor(methodCall))
+            {
+                return ExtractColumnName(methodCall.Arguments);
+            }
+
+            if (current is IndexExpression indexExpression)
+            {
+                return ExtractColumnName(indexExpression.Arguments);
+            }
+
+            throw new NotSupportedException("Only direct member access or untyped column access expressions are currently supported.");
+        }
+
+        /// <summary>
+        /// Determines whether the provided method call represents an untyped column access.
+        /// </summary>
+        /// <param name="methodCall">Method call expression to inspect.</param>
+        /// <returns><see langword="true"/> when the call accesses a column.</returns>
+        private static bool IsColumnAccessor(MethodCallExpression methodCall)
+        {
+            if (methodCall is null)
+            {
+                throw new ArgumentNullException(nameof(methodCall));
+            }
+
+            if (methodCall.Method.IsSpecialName && methodCall.Method.Name == "get_Item" && methodCall.Arguments.Count == 1)
+            {
+                return true;
+            }
+
+            if (methodCall.Method.Name == nameof(ODataUntypedRow.GetValue) && methodCall.Arguments.Count == 1)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Extracts the column name from the provided indexer or accessor call arguments.
+        /// </summary>
+        /// <param name="arguments">Arguments supplied to the accessor.</param>
+        /// <returns>The resolved column name.</returns>
+        private static string ExtractColumnName(IReadOnlyList<Expression> arguments)
+        {
+            if (arguments.Count != 1)
+            {
+                throw new NotSupportedException("Column accessors must receive exactly one argument representing the column name.");
+            }
+
+            object? argumentValue = EvaluateExpression(arguments[0]);
+            if (argumentValue is string columnName)
+            {
+                return columnName;
+            }
+
+            throw new NotSupportedException("Column accessors must be invoked with a constant column name.");
         }
 
         /// <summary>

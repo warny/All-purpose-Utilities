@@ -51,6 +51,26 @@ public class ODataLinqCompilationTests
     }
 
     /// <summary>
+    /// Ensures queries can be composed against entity sets without predefined CLR types.
+    /// </summary>
+    [TestMethod]
+    public void CompileWhereClauseFromUntypedTable()
+    {
+        string metadataPath = GetSampleMetadataPath();
+        var context = new QueryableContext(metadataPath);
+
+        string category = "Hardware";
+        var query = context.Table("Products")
+            .Where(row => row.GetValue<decimal>("Price") > 10 && row.GetValue<string>("Category") == category);
+        var compilation = query.CompileToODataQuery();
+
+        Assert.AreEqual("Products", compilation.EntitySetName);
+        Assert.AreEqual("Products?$filter=(Price gt 10) and (Category eq 'Hardware')", compilation.ToUriString());
+        Assert.AreEqual(1, compilation.Filters.Count);
+        Assert.AreEqual("(Price gt 10) and (Category eq 'Hardware')", compilation.Filters[0]);
+    }
+
+    /// <summary>
     /// Resolves the absolute path to the sample EDMX metadata used by the tests.
     /// </summary>
     /// <returns>The full file path to <c>Sample.edmx</c>.</returns>
