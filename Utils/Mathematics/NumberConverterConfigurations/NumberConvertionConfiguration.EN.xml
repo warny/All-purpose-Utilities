@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-	<Language
-			groupSize="3"
-			separator=" "
-			groupSeparator=","
-			zero="zero"
-			minus="minus *"
-			decimalSeparator="point"
+        <Language
+                        groupSize="3"
+                        separator=" "
+                        groupSeparator="," 
+                        zero="zero"
+                        minus="minus *"
+                        decimalSeparator="point"
+                        fractionSeparator="over"
         >
 		<Culture>EN</Culture>
 		<Culture>EN-uk</Culture>

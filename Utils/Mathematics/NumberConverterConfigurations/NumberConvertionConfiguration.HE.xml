@@ -7,6 +7,7 @@
         zero="אפס"
         minus="מינוס *"
         decimalSeparator="נקודה"
+        fractionSeparator="על"
         maxNumber="999999999"
     >
         <Culture>HE</Culture>

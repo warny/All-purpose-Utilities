@@ -7,6 +7,7 @@
         zero="nolla"
         minus="miinus *"
         decimalSeparator="pilkku"
+        fractionSeparator="yli"
         maxNumber="999999999"
     >
         <Culture>FI</Culture>

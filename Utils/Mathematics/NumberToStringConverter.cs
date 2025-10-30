@@ -6,6 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.Numerics;
 using Utils.Objects;
 using Utils.String;
 
@@ -54,7 +55,8 @@ namespace Utils.Mathematics
                         NumberScale scale,
                         Func<string, string> adjustFunction = null,
                         IReadOnlyDictionary<int, string> fractions = null,
-                        BigInteger? maxNumber = null)
+                        BigInteger? maxNumber = null,
+                        string fractionSeparator = null)
         {
             Group = group;
             Separator = separator ?? " ";
@@ -69,6 +71,7 @@ namespace Utils.Mathematics
             AdjustFunction = adjustFunction ?? (s => s);
             Fractions = fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             MaxNumber = maxNumber;
+            FractionSeparator = string.IsNullOrWhiteSpace(fractionSeparator) ? "/" : fractionSeparator;
         }
 
         /// <summary>
@@ -111,6 +114,10 @@ namespace Utils.Mathematics
         /// Names for decimal fractions by digit count
         /// </summary>
         public IReadOnlyDictionary<int, string> Fractions { get; }
+        /// <summary>
+        /// Gets the connector used when expressing non-decimal fractions.
+        /// </summary>
+        public string FractionSeparator { get; }
         /// <summary>
         /// Maximum number that can be converted or null when unlimited.
         /// </summary>
@@ -168,6 +175,31 @@ namespace Utils.Mathematics
             }
 
             var final = result.ToString().Trim();
+            return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
+        }
+
+        /// <summary>
+        /// Converts a rational <see cref="Number"/> to its string representation.
+        /// </summary>
+        /// <param name="number">The rational number to convert.</param>
+        /// <returns>The string representation of the specified number.</returns>
+        public string Convert(Number number)
+        {
+            if (number.Denominator.IsOne)
+            {
+                return Convert(number.Numerator);
+            }
+
+            bool isNegative = number.Numerator.Sign < 0;
+            Number absoluteValue = Number.Abs(number);
+
+            string final = BuildFractionText(
+                absoluteValue.Numerator,
+                absoluteValue.Denominator,
+                allowFractionNames: false);
+
+            final = final.Trim();
+
             return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
         }
 
@@ -235,6 +267,57 @@ namespace Utils.Mathematics
             var valueText = Groups[groupNumber][groupValue];
 
             return string.IsNullOrEmpty(leftText) ? valueText.StringValue : valueText.BuildString.Replace("*", leftText);
+        }
+
+        /// <summary>
+        /// Builds the textual representation of a fraction using existing conversion helpers.
+        /// </summary>
+        /// <param name="numerator">The numerator of the fraction.</param>
+        /// <param name="denominator">The denominator of the fraction.</param>
+        /// <returns>The textual representation of the fraction.</returns>
+        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true)
+        {
+            if (allowFractionNames &&
+                TryGetBase10FractionDigits(denominator, out int digits) &&
+                Fractions.TryGetValue(digits, out var suffix) &&
+                numerator >= 0 &&
+                numerator <= long.MaxValue)
+            {
+                string valueText = Convert(numerator).Replace("-", " ");
+                return string.Concat(valueText, Separator, suffix.ToPlural((long)numerator)).Trim();
+            }
+
+            string numeratorText = Convert(numerator).Replace("-", " ");
+            string denominatorText = Convert(denominator).Replace("-", " ");
+
+            string connector = FractionSeparator;
+            return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
+        }
+
+        /// <summary>
+        /// Determines whether the supplied denominator represents a power of ten that can map to a configured fraction suffix.
+        /// </summary>
+        /// <param name="value">The denominator to inspect.</param>
+        /// <param name="digits">When successful, receives the number of zero digits in the power of ten.</param>
+        /// <returns><see langword="true"/> when the denominator is a power of ten; otherwise <see langword="false"/>.</returns>
+        private static bool TryGetBase10FractionDigits(BigInteger value, out int digits)
+        {
+            digits = 0;
+
+            if (value <= BigInteger.Zero)
+            {
+                return false;
+            }
+
+            BigInteger current = value;
+
+            while (current % 10 == 0)
+            {
+                current /= 10;
+                digits++;
+            }
+
+            return current == BigInteger.One;
         }
     }
 

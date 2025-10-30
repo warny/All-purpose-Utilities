@@ -7,6 +7,7 @@
         zero="零"
         minus="マイナス *"
         decimalSeparator="点"
+        fractionSeparator="割る"
         maxNumber="999999999"
     >
 		<Culture>JA</Culture>

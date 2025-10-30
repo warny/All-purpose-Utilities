@@ -7,6 +7,7 @@
         zero="ноль"
         minus="минус *"
         decimalSeparator="запятая"
+        fractionSeparator="на"
     >
         <Culture>RU</Culture>
         <Groups>

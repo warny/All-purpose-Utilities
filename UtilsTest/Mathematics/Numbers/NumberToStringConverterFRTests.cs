@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Mathematics;
+using Utils.Numerics;
 
 namespace UtilsTest.Mathematics.Numbers
 {
@@ -163,6 +164,15 @@ namespace UtilsTest.Mathematics.Numbers
                 var value = converter.Convert(test.Number);
                 Assert.AreEqual(test.Expected, converter.Convert(test.Number));
             }
+        }
+
+        [TestMethod]
+        public void FractionConversionTest()
+        {
+            var converter = NumberToStringConverter.GetConverter("FR-ch");
+
+            Assert.AreEqual("trois sur deux", converter.Convert(new Number(3, 2)));
+            Assert.AreEqual("un sur dix", converter.Convert(new Number(1, 10)));
         }
     }
 }

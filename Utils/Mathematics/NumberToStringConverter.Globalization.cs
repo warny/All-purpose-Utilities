@@ -143,7 +143,8 @@ namespace Utils.Mathematics
                 scale,
                 adjustFunction,
                 fractions,
-                maxNumber
+                maxNumber,
+                language.FractionSeparator
             );
         }
     }

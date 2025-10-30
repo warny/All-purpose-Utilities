@@ -15,7 +15,8 @@ public readonly struct Number :
     ITrigonometricFunctions<Number>,
     IRootFunctions<Number>,
     IComparable<Number>,
-    IComparable
+    IComparable,
+    IFormattable
 {
     private readonly BigInteger _numerator;
     private readonly BigInteger _denominator;
@@ -180,23 +181,53 @@ public readonly struct Number :
     public decimal ToDecimal() => (decimal)_numerator / (decimal)_denominator;
 
     /// <inheritdoc/>
-    public override string ToString() => ToString(null, CultureInfo.InvariantCulture);
+    public override string ToString() => ToString(null, CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// Converts the value of this number to its string representation by using the specified format.
+    /// </summary>
+    /// <param name="format">The format to use.</param>
+    /// <remarks>
+    /// Passing <c>"Q"</c> or <c>"FRACTION"</c> produces the fractional form without the decimal representation.
+    /// </remarks>
+    /// <returns>The string representation of this number.</returns>
+    public string ToString(string? format) => ToString(format, CultureInfo.CurrentCulture);
 
     /// <inheritdoc/>
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
-        formatProvider ??= CultureInfo.InvariantCulture;
-        if (_denominator.IsOne)
-            return _numerator.ToString(formatProvider);
-        try
+        formatProvider ??= CultureInfo.CurrentCulture;
+
+        bool formatRequiresFraction = false;
+        string? numericFormat = format;
+
+        if (!string.IsNullOrEmpty(format))
         {
-            decimal value = ToDecimal();
-            return value.ToString(format, formatProvider);
+            if (string.Equals(format, "Q", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(format, "FRACTION", StringComparison.OrdinalIgnoreCase))
+            {
+                formatRequiresFraction = true;
+                numericFormat = null;
+            }
         }
-        catch (OverflowException)
+
+        string? decimalText = FormatAsDecimal(numericFormat, formatProvider, out bool decimalAvailable);
+        string? fractionText = null;
+
+        if (formatRequiresFraction || !decimalAvailable)
         {
-            return string.Format(CultureInfo.InvariantCulture, "{0}/{1}", _numerator, _denominator);
+            fractionText = string.Format(CultureInfo.InvariantCulture, "{0}/{1}", _numerator, _denominator);
         }
+
+        if (formatRequiresFraction)
+            return fractionText ?? string.Empty;
+
+        if (decimalText is not null)
+        {
+            return decimalText;
+        }
+
+        return fractionText ?? string.Empty;
     }
 
     /// <inheritdoc/>
@@ -334,8 +365,8 @@ public readonly struct Number :
         }
 
         // Fallback to double-based computation for fractional powers
-        double baseValue = double.Parse(x.ToString(), CultureInfo.InvariantCulture);
-        double expValue = double.Parse(y.ToString(), CultureInfo.InvariantCulture);
+        double baseValue = ToDouble(x);
+        double expValue = ToDouble(y);
         double result = Math.Pow(baseValue, expValue);
         return Parse(result.ToString("R", CultureInfo.InvariantCulture));
     }
@@ -344,10 +375,47 @@ public readonly struct Number :
     static Number IPowerFunctions<Number>.Pow(Number x, Number y) => Pow(x, y);
 
     private static double ToDouble(Number value)
-        => double.Parse(value.ToString(), CultureInfo.InvariantCulture);
+        => (double)value._numerator / (double)value._denominator;
 
     private static Number FromDouble(double value)
         => Parse(value.ToString("R", CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// Formats the current value using decimal or floating-point representations.
+    /// </summary>
+    /// <param name="format">The format string to use when formatting the numeric component.</param>
+    /// <param name="provider">The culture-specific formatting provider.</param>
+    /// <param name="success">Receives <see langword="true"/> when a decimal representation was produced.</param>
+    /// <returns>The formatted numeric string or <c>null</c> when no representation could be produced.</returns>
+    private string? FormatAsDecimal(string? format, IFormatProvider provider, out bool success)
+    {
+        if (_denominator.IsOne)
+        {
+            success = true;
+            return _numerator.ToString(format, provider);
+        }
+
+        try
+        {
+            decimal value = ToDecimal();
+            success = true;
+            return value.ToString(format, provider);
+        }
+        catch (OverflowException)
+        {
+            double doubleValue = ToDouble(this);
+
+            if (double.IsInfinity(doubleValue) || double.IsNaN(doubleValue))
+            {
+                success = false;
+                return null;
+            }
+
+            success = true;
+            string actualFormat = string.IsNullOrEmpty(format) ? "G17" : format;
+            return doubleValue.ToString(actualFormat, provider);
+        }
+    }
 
     /// <inheritdoc/>
     public static Number Sqrt(Number x) => FromDouble(Math.Sqrt(ToDouble(x)));

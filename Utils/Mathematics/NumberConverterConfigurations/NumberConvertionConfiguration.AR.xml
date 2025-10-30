@@ -7,6 +7,7 @@
         zero="صفر"
         minus="سالب *"
         decimalSeparator="فاصل"
+        fractionSeparator="على"
         maxNumber="999999999"
     >
         <Culture>AR</Culture>

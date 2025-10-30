@@ -185,12 +185,12 @@ using Utils.Numerics;
 
 Number a = Number.Parse("0.1");
 Number b = Number.Parse("0.2");
-Number sum = a + b; // 0.3
+Number sum = a + b; // 0.3 (3/10)
 Number big = Number.Parse("123456789012345678901234567890") + 1;
 Number.TryParse("42", null, out Number parsed);
 Number pow = Number.Pow(2, 3); // 8
 Number angle = Number.Parse("0.5");
-Number cosine = Number.Cos(angle); // 0.8775825618903728
+Number cosine = Number.Cos(angle); // 0.8775825618903728 (8775825618903728/10000000000000000)
 ```
 
 ### XML

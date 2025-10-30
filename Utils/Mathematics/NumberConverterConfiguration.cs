@@ -237,6 +237,12 @@ public class LanguageType
     public string DecimalSeparator { get; set; }
 
     /// <summary>
+    /// Gets or sets the connector used when pronouncing fractions (e.g., "sur").
+    /// </summary>
+    [XmlAttribute("fractionSeparator")]
+    public string FractionSeparator { get; set; }
+
+    /// <summary>
     /// Gets or sets the maximum supported number as a string representation.
     /// </summary>
     [XmlAttribute("maxNumber")]
