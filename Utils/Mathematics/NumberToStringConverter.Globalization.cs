@@ -23,9 +23,9 @@ namespace Utils.Mathematics
                 NumberConverterResources.NumberConvertionConfiguration_DE,
                 NumberConverterResources.NumberConvertionConfiguration_EN,
                 NumberConverterResources.NumberConvertionConfiguration_ES,
-                NumberConverterResources.NumberConvertionConfiguration_CA,
-                NumberConverterResources.NumberConvertionConfiguration_EU,
-                NumberConverterResources.NumberConvertionConfiguration_GL,
+                GetConfigurationResource("CA"),
+                GetConfigurationResource("EU"),
+                GetConfigurationResource("GL"),
                 NumberConverterResources.NumberConvertionConfiguration_IT,
                 NumberConverterResources.NumberConvertionConfiguration_FI,
                 NumberConverterResources.NumberConvertionConfiguration_AR,
@@ -152,6 +152,25 @@ namespace Utils.Mathematics
                 maxNumber,
                 language.FractionSeparator
             );
+        }
+
+        /// <summary>
+        /// Retrieves a configuration resource by suffix from the embedded resource manager.
+        /// </summary>
+        /// <param name="suffix">The culture suffix that identifies the resource.</param>
+        /// <returns>The XML configuration content for the requested culture.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the configuration resource cannot be found.</exception>
+        private static string GetConfigurationResource(string suffix)
+        {
+            string resourceName = $"NumberConvertionConfiguration.{suffix}";
+            string? configuration = NumberConverterResources.ResourceManager.GetString(resourceName, NumberConverterResources.Culture);
+
+            if (configuration == null)
+            {
+                throw new InvalidOperationException($"Number conversion configuration resource '{resourceName}' was not found.");
+            }
+
+            return configuration;
         }
     }
 }

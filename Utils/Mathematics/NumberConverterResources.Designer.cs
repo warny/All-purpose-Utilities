@@ -208,34 +208,7 @@ namespace Utils.Mathematics {
                 return ResourceManager.GetString("NumberConvertionConfiguration.ES", resourceCulture);
             }
         }
-
-        /// <summary>
-        ///   Recherche une chaîne localisée pour la configuration catalane.
-        /// </summary>
-        internal static string NumberConvertionConfiguration_CA {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration.CA", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Recherche une chaîne localisée pour la configuration basque.
-        /// </summary>
-        internal static string NumberConvertionConfiguration_EU {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration.EU", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Recherche une chaîne localisée pour la configuration galicienne.
-        /// </summary>
-        internal static string NumberConvertionConfiguration_GL {
-            get {
-                return ResourceManager.GetString("NumberConvertionConfiguration.GL", resourceCulture);
-            }
-        }
-
+        
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
