@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<EnablePreviewFeatures>True</EnablePreviewFeatures>
-		<IsPackable>false</IsPackable>
-		<Authors>Olivier MARTY</Authors>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
-		<NoWarn>1591</NoWarn>
-	</PropertyGroup>
+        <PropertyGroup>
+                <TargetFramework>net9.0</TargetFramework>
+                <EnablePreviewFeatures>True</EnablePreviewFeatures>
+                <IsPackable>false</IsPackable>
+                <IsTestProject>true</IsTestProject>
+                <Authors>Olivier MARTY</Authors>
+                <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+                <Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
+                <NoWarn>1591</NoWarn>
+        </PropertyGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Remove="Resources\TestResource.fr.resx" />
@@ -58,6 +59,7 @@
                 <ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
                 <ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
                 <ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                <ProjectReference Include="..\Utils.OData.Generators\Utils.OData.Generators.csproj" />
                 <ProjectReference Include="..\Utils.OData\Utils.OData.csproj" />
         </ItemGroup>
 
