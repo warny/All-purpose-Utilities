@@ -4,12 +4,13 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
 		<PackageId>omy.Utils.Reflection</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.0</Version>
+		<Version>1.2.1</Version>
 		<Description>
 			Reflection helpers
 			- Dynamic DLL mapping utilities

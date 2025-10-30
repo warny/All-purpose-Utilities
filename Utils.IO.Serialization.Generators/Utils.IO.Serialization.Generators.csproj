@@ -5,7 +5,12 @@
 		<Nullable>enable</Nullable>
 		<IsRoslynAnalyzer>true</IsRoslynAnalyzer>
 		<PackageId>omy.Utils.IO.Serialization.Generators</PackageId>
-		<Version>1.2.0</Version>
+		<Copyright>Olivier MARTY 2025</Copyright>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<Version>1.2.1</Version>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 	</PropertyGroup>
 	<ItemGroup>

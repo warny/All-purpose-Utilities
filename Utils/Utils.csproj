@@ -5,14 +5,14 @@
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<LangVersion>latest</LangVersion>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>omy.Utils</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.0</Version>
-		<Copyright>Olivier MARTY 2023</Copyright>
+		<Version>1.2.1</Version>
 		<Description>
 			General Functions
 

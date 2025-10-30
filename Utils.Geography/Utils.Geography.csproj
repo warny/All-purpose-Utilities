@@ -6,12 +6,13 @@
 		<LangVersion>Latest</LangVersion>
 		<RootNamespace>Utils</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-		<PackageId>omy.Utils.Geography</PackageId>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.0</Version>
+		<PackageId>omy.Utils.Geography</PackageId>
+		<Version>1.2.1</Version>
 		<Copyright>Olivier MARTY</Copyright>
 		<Description>
 			Coordinate utilities

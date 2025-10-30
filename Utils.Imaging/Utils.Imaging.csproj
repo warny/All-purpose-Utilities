@@ -5,12 +5,13 @@
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<LangVersion>Latest</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
-		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageId>omy.Utils.Imaging</PackageId>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.0</Version>
+		<Version>1.2.1</Version>
 		<Copyright>Olivier MARTY</Copyright>
 		<Description>
 			Image accessors and drawing primitives

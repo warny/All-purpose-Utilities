@@ -4,13 +4,14 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<LangVersion>Latest</LangVersion>
+		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
 		<PackageId>omy.Utils.Fonts</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>1.2.0</Version>
+		<Version>1.2.1</Version>
 		<Description>
 			Font management utilities
 			- TrueType font parsing and encoding
