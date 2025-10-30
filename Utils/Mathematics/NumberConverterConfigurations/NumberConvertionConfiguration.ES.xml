@@ -9,7 +9,7 @@
                 decimalSeparator="coma"
                 fractionSeparator="sobre"
         >
-		<Culture>ES</Culture>
+                <Culture>ES</Culture>
 		<Groups>
 			<Group level="1">
 				<Digit digit="0" string="" />

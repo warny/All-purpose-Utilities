@@ -232,7 +232,7 @@ namespace Utils.Mathematics
                 if (group != 0)
                 {
                     string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
-                    if (Replacements.TryGetValue(resValue, out var replacement)) resValue = replacement;
+                    resValue = ApplyReplacements(resValue);
                     groupsValues.Push(resValue.Trim());
                 }
                 number /= groupValue;
@@ -247,9 +247,37 @@ namespace Utils.Mathematics
             }
 
             var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
+            finalResult = ApplyReplacements(finalResult);
             finalResult = isNegative ? Minus.Replace("*", finalResult) : AdjustFunction(finalResult);
             return AdjustFunction(finalResult);
+        }
 
+        /// <summary>
+        /// Applies configured replacements to a generated textual representation.
+        /// </summary>
+        /// <param name="value">The value to adjust.</param>
+        /// <returns>The value after applying any matching replacements.</returns>
+        private string ApplyReplacements(string value)
+        {
+            if (string.IsNullOrEmpty(value) || Replacements.Count == 0)
+            {
+                return value;
+            }
+
+            if (Replacements.TryGetValue(value, out var exactMatch))
+            {
+                return exactMatch;
+            }
+
+            foreach (var replacement in Replacements)
+            {
+                if (value.Contains(replacement.Key))
+                {
+                    value = value.Replace(replacement.Key, replacement.Value);
+                }
+            }
+
+            return value;
         }
 
         /// <summary>

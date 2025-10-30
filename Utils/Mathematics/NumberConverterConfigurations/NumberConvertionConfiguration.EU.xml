@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="zero"
+                minus="ken *"
+                decimalSeparator="koma"
+                fractionSeparator="zati"
+        >
+                <Culture>EU</Culture>
+                <Culture>eu-ES</Culture>
+                <Groups>
+                        <Group level="1">
+                                <Digit digit="0" string="" />
+                                <Digit digit="1" string="bat" />
+                                <Digit digit="2" string="bi" />
+                                <Digit digit="3" string="hiru" />
+                                <Digit digit="4" string="lau" />
+                                <Digit digit="5" string="bost" />
+                                <Digit digit="6" string="sei" />
+                                <Digit digit="7" string="zazpi" />
+                                <Digit digit="8" string="zortzi" />
+                                <Digit digit="9" string="bederatzi" />
+                        </Group>
+                        <Group level="2">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="hamar" buildString="hamar eta *" />
+                                <Digit digit="2" string="hogei" buildString="hogei eta *" />
+                                <Digit digit="3" string="hogeita hamar" buildString="hogeita hamar eta *" />
+                                <Digit digit="4" string="berrogei" buildString="berrogeita *" />
+                                <Digit digit="5" string="berrogeita hamar" buildString="berrogeita hamar eta *" />
+                                <Digit digit="6" string="hirurogei" buildString="hirurogeita *" />
+                                <Digit digit="7" string="hirurogeita hamar" buildString="hirurogeita hamar eta *" />
+                                <Digit digit="8" string="laurogei" buildString="laurogeita *" />
+                                <Digit digit="9" string="laurogeita hamar" buildString="laurogeita hamar eta *" />
+                        </Group>
+                        <Group level="3">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="ehun" buildString="ehun eta *" />
+                                <Digit digit="2" string="berrehun" buildString="berrehun eta *" />
+                                <Digit digit="3" string="hirurehun" buildString="hirurehun eta *" />
+                                <Digit digit="4" string="laurehun" buildString="laurehun eta *" />
+                                <Digit digit="5" string="bostehun" buildString="bostehun eta *" />
+                                <Digit digit="6" string="seirehun" buildString="seirehun eta *" />
+                                <Digit digit="7" string="zazpiehun" buildString="zazpiehun eta *" />
+                                <Digit digit="8" string="zortziehun" buildString="zortziehun eta *" />
+                                <Digit digit="9" string="bederatziehun" buildString="bederatziehun eta *" />
+                        </Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false">
+                        <StaticNames>
+                                <Scale value="0" string="" />
+                                <Scale value="1" string="mila" />
+                                <Scale value="2" string="milioi" />
+                                <Scale value="3" string="mila milioi" />
+                        </StaticNames>
+                </NumberScale>
+                <Replacements>
+                        <Replacement oldValue="bat ehun" newValue="ehun" />
+                        <Replacement oldValue="bat mila" newValue="mila" />
+                        <Replacement oldValue="hogei eta" newValue="hogeita" />
+                        <Replacement oldValue="berrogei eta" newValue="berrogeita" />
+                        <Replacement oldValue="hirurogei eta" newValue="hirurogeita" />
+                        <Replacement oldValue="laurogei eta" newValue="laurogeita" />
+                        <Replacement oldValue="hogeita hamar eta bat" newValue="hogeita hamaika" />
+                        <Replacement oldValue="hogeita hamar eta bi" newValue="hogeita hamabi" />
+                        <Replacement oldValue="hogeita hamar eta hiru" newValue="hogeita hamahiru" />
+                        <Replacement oldValue="hogeita hamar eta lau" newValue="hogeita hamalau" />
+                        <Replacement oldValue="hogeita hamar eta bost" newValue="hogeita hamabost" />
+                        <Replacement oldValue="hogeita hamar eta sei" newValue="hogeita hamasei" />
+                        <Replacement oldValue="hogeita hamar eta zazpi" newValue="hogeita hamazazpi" />
+                        <Replacement oldValue="hogeita hamar eta zortzi" newValue="hogeita hemezortzi" />
+                        <Replacement oldValue="hogeita hamar eta bederatzi" newValue="hogeita hemeretzi" />
+                        <Replacement oldValue="berrogeita hamar eta bat" newValue="berrogeita hamaika" />
+                        <Replacement oldValue="berrogeita hamar eta bi" newValue="berrogeita hamabi" />
+                        <Replacement oldValue="berrogeita hamar eta hiru" newValue="berrogeita hamahiru" />
+                        <Replacement oldValue="berrogeita hamar eta lau" newValue="berrogeita hamalau" />
+                        <Replacement oldValue="berrogeita hamar eta bost" newValue="berrogeita hamabost" />
+                        <Replacement oldValue="berrogeita hamar eta sei" newValue="berrogeita hamasei" />
+                        <Replacement oldValue="berrogeita hamar eta zazpi" newValue="berrogeita hamazazpi" />
+                        <Replacement oldValue="berrogeita hamar eta zortzi" newValue="berrogeita hemezortzi" />
+                        <Replacement oldValue="berrogeita hamar eta bederatzi" newValue="berrogeita hemeretzi" />
+                        <Replacement oldValue="hirurogeita hamar eta bat" newValue="hirurogeita hamaika" />
+                        <Replacement oldValue="hirurogeita hamar eta bi" newValue="hirurogeita hamabi" />
+                        <Replacement oldValue="hirurogeita hamar eta hiru" newValue="hirurogeita hamahiru" />
+                        <Replacement oldValue="hirurogeita hamar eta lau" newValue="hirurogeita hamalau" />
+                        <Replacement oldValue="hirurogeita hamar eta bost" newValue="hirurogeita hamabost" />
+                        <Replacement oldValue="hirurogeita hamar eta sei" newValue="hirurogeita hamasei" />
+                        <Replacement oldValue="hirurogeita hamar eta zazpi" newValue="hirurogeita hamazazpi" />
+                        <Replacement oldValue="hirurogeita hamar eta zortzi" newValue="hirurogeita hemezortzi" />
+                        <Replacement oldValue="hirurogeita hamar eta bederatzi" newValue="hirurogeita hemeretzi" />
+                        <Replacement oldValue="laurogeita hamar eta bat" newValue="laurogeita hamaika" />
+                        <Replacement oldValue="laurogeita hamar eta bi" newValue="laurogeita hamabi" />
+                        <Replacement oldValue="laurogeita hamar eta hiru" newValue="laurogeita hamahiru" />
+                        <Replacement oldValue="laurogeita hamar eta lau" newValue="laurogeita hamalau" />
+                        <Replacement oldValue="laurogeita hamar eta bost" newValue="laurogeita hamabost" />
+                        <Replacement oldValue="laurogeita hamar eta sei" newValue="laurogeita hamasei" />
+                        <Replacement oldValue="laurogeita hamar eta zazpi" newValue="laurogeita hamazazpi" />
+                        <Replacement oldValue="laurogeita hamar eta zortzi" newValue="laurogeita hemezortzi" />
+                        <Replacement oldValue="laurogeita hamar eta bederatzi" newValue="laurogeita hemeretzi" />
+                </Replacements>
+                <Exceptions>
+                        <Number value="11" string="hamaika" />
+                        <Number value="12" string="hamabi" />
+                        <Number value="13" string="hamahiru" />
+                        <Number value="14" string="hamalau" />
+                        <Number value="15" string="hamabost" />
+                        <Number value="16" string="hamasei" />
+                        <Number value="17" string="hamazazpi" />
+                        <Number value="18" string="hemezortzi" />
+                        <Number value="19" string="hemeretzi" />
+                </Exceptions>
+        </Language>
+</Numbers>

@@ -203,16 +203,43 @@ namespace Utils.Mathematics {
         ///		&lt;Culture&gt;EN-us&lt;/Culture&gt;
         /// [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
-        internal static string NumberConvertionConfiguration_EN {
+        internal static string NumberConvertionConfiguration_ES {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration.EN", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.ES", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Recherche une chaîne localisée pour la configuration catalane.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_CA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.CA", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée pour la configuration basque.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_EU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EU", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Recherche une chaîne localisée pour la configuration galicienne.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_GL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.GL", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
-        ///        &lt;Language
+        ///    &lt;Language
         ///                groupSize=&quot;3&quot;
         ///                separator=&quot; &quot;
         ///                groupSeparator=&quot;&quot;

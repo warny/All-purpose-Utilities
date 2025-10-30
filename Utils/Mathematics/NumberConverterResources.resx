@@ -139,6 +139,15 @@
   <data name="NumberConvertionConfiguration.ES" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.ES.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="NumberConvertionConfiguration.CA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.CA.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.EU" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.EU.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.GL" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.GL.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="NumberConvertionConfiguration.FI" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.FI.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>

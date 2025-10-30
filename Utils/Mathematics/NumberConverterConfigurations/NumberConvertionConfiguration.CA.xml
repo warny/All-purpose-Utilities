@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="zero"
+                minus="menys *"
+                decimalSeparator="coma"
+                fractionSeparator="partit per"
+        >
+                <Culture>CA</Culture>
+                <Culture>ca-ES</Culture>
+                <Culture>ca-ES-valencia</Culture>
+                <Groups>
+                        <Group level="1">
+                                <Digit digit="0" string="" />
+                                <Digit digit="1" string="un" />
+                                <Digit digit="2" string="dos" />
+                                <Digit digit="3" string="tres" />
+                                <Digit digit="4" string="quatre" />
+                                <Digit digit="5" string="cinc" />
+                                <Digit digit="6" string="sis" />
+                                <Digit digit="7" string="set" />
+                                <Digit digit="8" string="vuit" />
+                                <Digit digit="9" string="nou" />
+                        </Group>
+                        <Group level="2">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="deu" buildString="deu i *" />
+                                <Digit digit="2" string="vint" buildString="vint-i-*" />
+                                <Digit digit="3" string="trenta" buildString="trenta-*" />
+                                <Digit digit="4" string="quaranta" buildString="quaranta-*" />
+                                <Digit digit="5" string="cinquanta" buildString="cinquanta-*" />
+                                <Digit digit="6" string="seixanta" buildString="seixanta-*" />
+                                <Digit digit="7" string="setanta" buildString="setanta-*" />
+                                <Digit digit="8" string="vuitanta" buildString="vuitanta-*" />
+                                <Digit digit="9" string="noranta" buildString="noranta-*" />
+                        </Group>
+                        <Group level="3">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="cent" buildString="cent *" />
+                                <Digit digit="2" string="dos-cents" buildString="dos-cents *" />
+                                <Digit digit="3" string="tres-cents" buildString="tres-cents *" />
+                                <Digit digit="4" string="quatre-cents" buildString="quatre-cents *" />
+                                <Digit digit="5" string="cinc-cents" buildString="cinc-cents *" />
+                                <Digit digit="6" string="sis-cents" buildString="sis-cents *" />
+                                <Digit digit="7" string="set-cents" buildString="set-cents *" />
+                                <Digit digit="8" string="vuit-cents" buildString="vuit-cents *" />
+                                <Digit digit="9" string="nou-cents" buildString="nou-cents *" />
+                        </Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false">
+                        <StaticNames>
+                                <Scale value="0" string="" />
+                                <Scale value="1" string="mil" />
+                                <Scale value="2" string="milió(ns)" />
+                                <Scale value="3" string="mil milió(ns)" />
+                        </StaticNames>
+                        <Suffixes>
+                                <Suffix>(ó|ons)</Suffix>
+                        </Suffixes>
+                </NumberScale>
+                <Replacements>
+                        <Replacement oldValue="un mil" newValue="mil" />
+                </Replacements>
+                <Exceptions>
+                        <Number value="11" string="onze" />
+                        <Number value="12" string="dotze" />
+                        <Number value="13" string="tretze" />
+                        <Number value="14" string="catorze" />
+                        <Number value="15" string="quinze" />
+                        <Number value="16" string="setze" />
+                        <Number value="17" string="disset" />
+                        <Number value="18" string="divuit" />
+                        <Number value="19" string="dinou" />
+                </Exceptions>
+        </Language>
+</Numbers>

@@ -23,6 +23,9 @@ namespace Utils.Mathematics
                 NumberConverterResources.NumberConvertionConfiguration_DE,
                 NumberConverterResources.NumberConvertionConfiguration_EN,
                 NumberConverterResources.NumberConvertionConfiguration_ES,
+                NumberConverterResources.NumberConvertionConfiguration_CA,
+                NumberConverterResources.NumberConvertionConfiguration_EU,
+                NumberConverterResources.NumberConvertionConfiguration_GL,
                 NumberConverterResources.NumberConvertionConfiguration_IT,
                 NumberConverterResources.NumberConvertionConfiguration_FI,
                 NumberConverterResources.NumberConvertionConfiguration_AR,
@@ -89,7 +92,10 @@ namespace Utils.Mathematics
                 var converter = ReadConverter(language);
                 foreach (var culture in language.Cultures)
                 {
-                    result.Add(culture, converter);
+                    if (!result.ContainsKey(culture))
+                    {
+                        result.Add(culture, converter);
+                    }
                 }
             }
             return result;
@@ -101,7 +107,7 @@ namespace Utils.Mathematics
 
             var scale = new NumberScale(
                 confScale.StaticNames.Scales.OrderBy(n => n.Value).Select(n => n.StringValue).ToArray(),
-                confScale.Suffixes.Values,
+                confScale.Suffixes?.Values?.ToArray() ?? Array.Empty<string>(),
                 confScale.StartIndex,
                 confScale.VoidGroup,
                 confScale.GroupSeparator,
