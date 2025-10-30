@@ -32,15 +32,15 @@ namespace Utils.Net.DNS.RFC1035;
 [Obsolete("MG (Mail Group) records are obsolete; use MX records instead.")]
 public class MG : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the mailbox domain name (MGMNAME) associated with this mail group record.
-	/// Because <see cref="DNSDomainName"/> is a struct, it cannot be null.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName MGName { get; set; }
+    /// <summary>
+    /// Gets or sets the mailbox domain name (MGMNAME) associated with this mail group record.
+    /// Because <see cref="DNSDomainName"/> is a struct, it cannot be null.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName MGName { get; set; }
 
-	/// <summary>
-	/// Returns the string representation of <see cref="MGName"/>.
-	/// </summary>
-	public override string ToString() => MGName.ToString();
+    /// <summary>
+    /// Returns the string representation of <see cref="MGName"/>.
+    /// </summary>
+    public override string ToString() => MGName.ToString();
 }

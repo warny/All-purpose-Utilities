@@ -20,12 +20,12 @@ public class StringTests
             "Test1",
             "Test2",
             "Test3",
-            "Test4", 
+            "Test4",
             "Test5",
             "Test6",
-            "Test7", 
-            "Test8", 
-            "Test9", 
+            "Test7",
+            "Test8",
+            "Test9",
             ];
 
         for (int i = 1; i < tests.Length; i++)

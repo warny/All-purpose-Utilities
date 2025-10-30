@@ -44,6 +44,6 @@ public record Parenthesis(string Start, string End, string Separator = null)
     /// <summary>
     /// Creates a <see cref="Parenthesis"/> from a tuple including a separator.
     /// </summary>
-    public static implicit operator Parenthesis((string Start, string End, string Separator) value) => new (value.Start, value.End, value.Separator);
+    public static implicit operator Parenthesis((string Start, string End, string Separator) value) => new(value.Start, value.End, value.Separator);
 }
 

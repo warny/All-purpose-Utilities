@@ -8,48 +8,48 @@ namespace UtilsTest.Reflection;
 
 public interface IKernel32 : IDisposable
 {
-	[External("GetTempPathA")]
-	uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
+    [External("GetTempPathA")]
+    uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
 }
 
 public class User32 : LibraryMapper
 {
-	private delegate uint GetTempPathDelegate(uint nBufferLength, [Out] StringBuilder lpBuffer);
+    private delegate uint GetTempPathDelegate(uint nBufferLength, [Out] StringBuilder lpBuffer);
 
 #pragma warning disable CS0649, IDE0044
-	[External("GetTempPathA")]
-	private GetTempPathDelegate __GetTempPath;
+    [External("GetTempPathA")]
+    private GetTempPathDelegate __GetTempPath;
 #pragma warning restore CS0649, IDE0044
 
-	public uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer) => __GetTempPath(nBufferLength, lpBuffer);
+    public uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer) => __GetTempPath(nBufferLength, lpBuffer);
 }
 
 [TestClass]
 [Ignore]
 public class DllMapperTests
 {
-	[DllImport("kernel32.dll")]
-	static extern uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
+    [DllImport("kernel32.dll")]
+    static extern uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
 
-	[TestMethod]
-	public void MapFromInterfaceTest()
-	{
-		using (var kernel32 = LibraryMapper.Emit<IKernel32>("kernel32.dll", CallingConvention.Winapi))
-		{
-			StringBuilder tempPath = new StringBuilder(' ', 1024);
-			var i = kernel32.GetTempPath(261, tempPath);
-			Assert.AreEqual((int)i, tempPath.ToString().Length);
-		}
-	}
+    [TestMethod]
+    public void MapFromInterfaceTest()
+    {
+        using (var kernel32 = LibraryMapper.Emit<IKernel32>("kernel32.dll", CallingConvention.Winapi))
+        {
+            StringBuilder tempPath = new StringBuilder(' ', 1024);
+            var i = kernel32.GetTempPath(261, tempPath);
+            Assert.AreEqual((int)i, tempPath.ToString().Length);
+        }
+    }
 
-	[TestMethod]
-	public void MapFromClassTest()
-	{
-		using (User32 kernel32 = LibraryMapper.Create<User32>("kernel32.dll"))
-		{
-			StringBuilder tempPath = new StringBuilder(' ', 1024);
-			var i = kernel32.GetTempPath(261, tempPath);
-			Assert.AreEqual((int)i, tempPath.ToString().Length);
-		}
-	}
+    [TestMethod]
+    public void MapFromClassTest()
+    {
+        using (User32 kernel32 = LibraryMapper.Create<User32>("kernel32.dll"))
+        {
+            StringBuilder tempPath = new StringBuilder(' ', 1024);
+            var i = kernel32.GetTempPath(261, tempPath);
+            Assert.AreEqual((int)i, tempPath.ToString().Length);
+        }
+    }
 }

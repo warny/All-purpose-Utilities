@@ -38,76 +38,77 @@ namespace Utils.Net.DNS.RFC1035;
 public sealed class Address : DNSResponseDetail
 {
 
-	/// <inheritdoc />
-	/// <summary>
-	/// Gets the DNS record class <see cref="DNSClassId.IN"/>.
-	/// </summary>
-	/// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
-	internal override DNSClassId Class => DNSClassId.IN;
+    /// <inheritdoc />
+    /// <summary>
+    /// Gets the DNS record class <see cref="DNSClassId.IN"/>.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
+    internal override DNSClassId Class => DNSClassId.IN;
 
-	/// <inheritdoc />
-	/// <summary>
-	/// Gets the DNS record ID based on the <see cref="System.Net.Sockets.AddressFamily"/> of <see cref="IPAddress"/>.
-	/// </summary>
-	/// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
-	internal override ushort ClassId => ipAddress.AddressFamily switch
-	{
-		AddressFamily.InterNetwork => 0x01,  // A
-		AddressFamily.InterNetworkV6 => 0x1C, // AAAA
-		AddressFamily.Osi => 0x17,           // NSAP
-		_ => throw new NotSupportedException("A and AAAA records only support IPv4, IPv6, or NSAP addresses.")
-	};
+    /// <inheritdoc />
+    /// <summary>
+    /// Gets the DNS record ID based on the <see cref="System.Net.Sockets.AddressFamily"/> of <see cref="IPAddress"/>.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
+    internal override ushort ClassId => ipAddress.AddressFamily switch
+    {
+        AddressFamily.InterNetwork => 0x01,  // A
+        AddressFamily.InterNetworkV6 => 0x1C, // AAAA
+        AddressFamily.Osi => 0x17,           // NSAP
+        _ => throw new NotSupportedException("A and AAAA records only support IPv4, IPv6, or NSAP addresses.")
+    };
 
-	/// <inheritdoc />
-	/// <summary>
-	/// Gets the record name ("A", "AAAA", or "NSAP") based on the <see cref="System.Net.Sockets.AddressFamily"/>.
-	/// </summary>
-	/// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
-	public override string Name => ipAddress.AddressFamily switch
-	{
-		AddressFamily.InterNetwork => "A",
-		AddressFamily.InterNetworkV6 => "AAAA",
-		AddressFamily.Osi => "NSAP",
-		_ => throw new NotSupportedException("A and AAAA records only support IPv4, IPv6, or NSAP addresses.")
-	};
+    /// <inheritdoc />
+    /// <summary>
+    /// Gets the record name ("A", "AAAA", or "NSAP") based on the <see cref="System.Net.Sockets.AddressFamily"/>.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Thrown if the IP address family is not InterNetwork, InterNetworkV6, or Osi.</exception>
+    public override string Name => ipAddress.AddressFamily switch
+    {
+        AddressFamily.InterNetwork => "A",
+        AddressFamily.InterNetworkV6 => "AAAA",
+        AddressFamily.Osi => "NSAP",
+        _ => throw new NotSupportedException("A and AAAA records only support IPv4, IPv6, or NSAP addresses.")
+    };
 
-	/// <summary>
-	/// The underlying IP address stored in this DNS record.
-	/// </summary>
-	[DNSField]
-	private IPAddress ipAddress = null;
+    /// <summary>
+    /// The underlying IP address stored in this DNS record.
+    /// </summary>
+    [DNSField]
+    private IPAddress ipAddress = null;
 
-	/// <summary>
-	/// Gets or sets the <see cref="System.Net.IPAddress"/> associated with this record. If the address family
-	/// is not IPv4, IPv6, or Osi, a <see cref="NotSupportedException"/> is thrown.
-	/// </summary>
-	/// <exception cref="NotSupportedException">
-	/// Thrown when an address family outside of InterNetwork, InterNetworkV6, or Osi is assigned.
-	/// </exception>
-	public IPAddress IPAddress
-	{
-		get => ipAddress;
-		set {
-			var validFamilies = new[]
-			{
-				AddressFamily.InterNetwork,
-				AddressFamily.InterNetworkV6,
-				AddressFamily.Osi
-			};
+    /// <summary>
+    /// Gets or sets the <see cref="System.Net.IPAddress"/> associated with this record. If the address family
+    /// is not IPv4, IPv6, or Osi, a <see cref="NotSupportedException"/> is thrown.
+    /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when an address family outside of InterNetwork, InterNetworkV6, or Osi is assigned.
+    /// </exception>
+    public IPAddress IPAddress
+    {
+        get => ipAddress;
+        set
+        {
+            var validFamilies = new[]
+            {
+                AddressFamily.InterNetwork,
+                AddressFamily.InterNetworkV6,
+                AddressFamily.Osi
+            };
 
-			if (!validFamilies.Contains(value.AddressFamily))
-			{
-				throw new NotSupportedException(
-					$"{value.AddressFamily} is not supported by A/AAAA/NSAP DNS records."
-				);
-			}
-			ipAddress = value;
-		}
-	}
+            if (!validFamilies.Contains(value.AddressFamily))
+            {
+                throw new NotSupportedException(
+                    $"{value.AddressFamily} is not supported by A/AAAA/NSAP DNS records."
+                );
+            }
+            ipAddress = value;
+        }
+    }
 
-	/// <summary>
-	/// Returns the string representation of the underlying <see cref="IPAddress"/>.
-	/// </summary>
-	/// <returns>The IP address in dotted-decimal or colon-hex notation.</returns>
-	public override string ToString() => IPAddress.ToString();
+    /// <summary>
+    /// Returns the string representation of the underlying <see cref="IPAddress"/>.
+    /// </summary>
+    /// <returns>The IP address in dotted-decimal or colon-hex notation.</returns>
+    public override string ToString() => IPAddress.ToString();
 }

@@ -83,59 +83,59 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSTextRecord("{MName} {RName} {Serial} {Refresh} {Retry} {Expire} {Minimum}")]
 public class SOA : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the domain name of the primary master name server for this zone.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName MName { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name of the primary master name server for this zone.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName MName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the mailbox domain name of the person responsible for this zone.
-	/// Commonly written as something like "hostmaster.example.com" with a '.' in place of '@'.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName RName { get; set; }
+    /// <summary>
+    /// Gets or sets the mailbox domain name of the person responsible for this zone.
+    /// Commonly written as something like "hostmaster.example.com" with a '.' in place of '@'.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName RName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the serial number of this zone. Incrementing this value
-	/// indicates to secondaries that new data is available.
-	/// </summary>
-	[DNSField]
-	public uint Serial { get; set; }
+    /// <summary>
+    /// Gets or sets the serial number of this zone. Incrementing this value
+    /// indicates to secondaries that new data is available.
+    /// </summary>
+    [DNSField]
+    public uint Serial { get; set; }
 
-	/// <summary>
-	/// Gets or sets the refresh interval, in seconds, that a secondary should
-	/// wait before checking for updates from the primary.
-	/// </summary>
-	[DNSField]
-	public uint Refresh { get; set; }
+    /// <summary>
+    /// Gets or sets the refresh interval, in seconds, that a secondary should
+    /// wait before checking for updates from the primary.
+    /// </summary>
+    [DNSField]
+    public uint Refresh { get; set; }
 
-	/// <summary>
-	/// Gets or sets the retry interval, in seconds, for a secondary to wait
-	/// if the refresh attempt fails.
-	/// </summary>
-	[DNSField]
-	public uint Retry { get; set; }
+    /// <summary>
+    /// Gets or sets the retry interval, in seconds, for a secondary to wait
+    /// if the refresh attempt fails.
+    /// </summary>
+    [DNSField]
+    public uint Retry { get; set; }
 
-	/// <summary>
-	/// Gets or sets the expire value, in seconds, indicating how long a secondary
-	/// may continue using the zone data if it cannot reach the primary.
-	/// </summary>
-	[DNSField]
-	public uint Expire { get; set; }
+    /// <summary>
+    /// Gets or sets the expire value, in seconds, indicating how long a secondary
+    /// may continue using the zone data if it cannot reach the primary.
+    /// </summary>
+    [DNSField]
+    public uint Expire { get; set; }
 
-	/// <summary>
-	/// Gets or sets the minimum TTL, in seconds, used as a lower bound for
-	/// all resource record TTLs in the zone.
-	/// </summary>
-	[DNSField]
-	public uint Minimum { get; set; }
+    /// <summary>
+    /// Gets or sets the minimum TTL, in seconds, used as a lower bound for
+    /// all resource record TTLs in the zone.
+    /// </summary>
+    [DNSField]
+    public uint Minimum { get; set; }
 
-	/// <summary>
-	/// Returns a multi-line string describing the main parameters of the SOA record.
-	/// </summary>
-	public override string ToString() => 
-		$"""
+    /// <summary>
+    /// Returns a multi-line string describing the main parameters of the SOA record.
+    /// </summary>
+    public override string ToString() =>
+        $"""
 		MName   :\t{MName}
 		RName   :\t{RName}
 		Serial  :\t{Serial}

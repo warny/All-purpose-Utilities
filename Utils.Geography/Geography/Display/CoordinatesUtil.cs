@@ -21,60 +21,60 @@ using System.Numerics;
 namespace Utils.Geography.Display
 {
 
-	/**
+    /**
 	 * A utility class to convert, parse and validate geographical coordinates.
 	 */
-	public static class CoordinatesUtil<T>
-		where T : struct, IFloatingPointIeee754<T>
+    public static class CoordinatesUtil<T>
+        where T : struct, IFloatingPointIeee754<T>
     {
         /// <summary>
         /// Maximum possible latitude coordinate
         /// </summary>
         public const double LATITUDE_MAX = 90;
 
-		/// <summary>
-		/// Minimum possible latitude coordinate
-		/// </summary>
-		public const double LATITUDE_MIN = -LATITUDE_MAX;
+        /// <summary>
+        /// Minimum possible latitude coordinate
+        /// </summary>
+        public const double LATITUDE_MIN = -LATITUDE_MAX;
 
-		/// <summary>
-		/// Maximum possible longitude coordinate
-		/// </summary>
-		public const double LONGITUDE_MAX = 180;
+        /// <summary>
+        /// Maximum possible longitude coordinate
+        /// </summary>
+        public const double LONGITUDE_MAX = 180;
 
-		/// <summary>
-		/// Minimum possible longitude coordinate
-		/// </summary>
-		public const double LONGITUDE_MIN = -LONGITUDE_MAX;
+        /// <summary>
+        /// Minimum possible longitude coordinate
+        /// </summary>
+        public const double LONGITUDE_MIN = -LONGITUDE_MAX;
 
-		/// <summary>
-		/// Conversion factor from degrees to microdegrees
-		/// </summary>
-		private const double CONVERSION_FACTOR = 1000000.0;
+        /// <summary>
+        /// Conversion factor from degrees to microdegrees
+        /// </summary>
+        private const double CONVERSION_FACTOR = 1000000.0;
 
-		private static readonly string[] DELIMITER = new [] { "," };
+        private static readonly string[] DELIMITER = new[] { "," };
 
-		/// <summary>
-		/// Converts a coordinate from degrees to microdegrees (degrees * 10^6). No validation is performed
-		/// </summary>
-		/// <param name="coordinate">the coordinate in degrees</param>
-		/// <returns>the coordinate in microdegrees (degrees * 10^6)</returns>
-		public static int DegreesToMicrodegrees ( double coordinate )
-		{
-			return (int)(coordinate * CONVERSION_FACTOR);
-		}
+        /// <summary>
+        /// Converts a coordinate from degrees to microdegrees (degrees * 10^6). No validation is performed
+        /// </summary>
+        /// <param name="coordinate">the coordinate in degrees</param>
+        /// <returns>the coordinate in microdegrees (degrees * 10^6)</returns>
+        public static int DegreesToMicrodegrees(double coordinate)
+        {
+            return (int)(coordinate * CONVERSION_FACTOR);
+        }
 
-		/// <summary>
-		/// Converts a coordinate from microdegrees (degrees * 10^6) to degrees. No validation is performed
-		/// </summary>
-		/// <param name="coordinate">the coordinate in microdegrees (degrees * 10^6)</param>
-		/// <returns>the coordinate in degrees</returns>
-		public static double MicrodegreesToDegrees ( int coordinate )
-		{
-			return coordinate / CONVERSION_FACTOR;
-		}
+        /// <summary>
+        /// Converts a coordinate from microdegrees (degrees * 10^6) to degrees. No validation is performed
+        /// </summary>
+        /// <param name="coordinate">the coordinate in microdegrees (degrees * 10^6)</param>
+        /// <returns>the coordinate in degrees</returns>
+        public static double MicrodegreesToDegrees(int coordinate)
+        {
+            return coordinate / CONVERSION_FACTOR;
+        }
 
-		/**
+        /**
 		 * Parses a given number of comma-separated coordinate values from the supplied string.
 		 * 
 		 * @param coordinatesstring
@@ -85,30 +85,32 @@ namespace Utils.Geography.Display
 		 * @throws IllegalArgumentException
 		 *             if the string is invalid or does not contain the given number of coordinate values.
 		 */
-		public static T[] ParseCoordinatestring ( string coordinatesstring, int numberOfCoordinates )
-		{
-			string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.RemoveEmptyEntries);
+        public static T[] ParseCoordinatestring(string coordinatesstring, int numberOfCoordinates)
+        {
+            string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.RemoveEmptyEntries);
 
-			if (tokens.Length != numberOfCoordinates) {
-				throw new ArgumentException("invalid number of coordinate values: " + coordinatesstring, nameof(numberOfCoordinates));
-			}
+            if (tokens.Length != numberOfCoordinates)
+            {
+                throw new ArgumentException("invalid number of coordinate values: " + coordinatesstring, nameof(numberOfCoordinates));
+            }
 
-			T[] coordinates = tokens.Select(t => T.Parse(t, CultureInfo.InvariantCulture)).ToArray();
+            T[] coordinates = tokens.Select(t => T.Parse(t, CultureInfo.InvariantCulture)).ToArray();
 
-			return coordinates;
-		}
+            return coordinates;
+        }
 
-		/**
+        /**
 		 * @param latitude
 		 *            the latitude coordinate in degrees which should be validated.
 		 * @throws IllegalArgumentException
 		 *             if the latitude coordinate is invalid or {@link Double#NaN}.
 		 */
-		public static void ValidateLatitude ( double latitude )
-		{
-			if (double.IsNaN(latitude) || latitude < LATITUDE_MIN || latitude > LATITUDE_MAX) {
-				throw new ArgumentException("invalid latitude: " + latitude, nameof(latitude));
-			}
-		}
-	}
+        public static void ValidateLatitude(double latitude)
+        {
+            if (double.IsNaN(latitude) || latitude < LATITUDE_MIN || latitude > LATITUDE_MAX)
+            {
+                throw new ArgumentException("invalid latitude: " + latitude, nameof(latitude));
+            }
+        }
+    }
 }

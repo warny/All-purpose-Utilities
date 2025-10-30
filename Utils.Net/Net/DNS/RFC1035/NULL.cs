@@ -34,17 +34,17 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSTextRecord("{Datas}")]
 public class NULL : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the raw binary data for this NULL record.
-	/// May be up to 65535 bytes in length.
-	/// </summary>
-	[DNSField]
-	public byte[] Datas { get; set; }
+    /// <summary>
+    /// Gets or sets the raw binary data for this NULL record.
+    /// May be up to 65535 bytes in length.
+    /// </summary>
+    [DNSField]
+    public byte[] Datas { get; set; }
 
-	/// <summary>
-	/// Returns a string consisting of the bytes in hexadecimal form,
-	/// for example: "{ 54 78 1E 3A ... }".
-	/// </summary>
-	public override string ToString() =>
-		"{ " + string.Join(" ", Datas.Select(d => d.ToString("X2"))) + " }";
+    /// <summary>
+    /// Returns a string consisting of the bytes in hexadecimal form,
+    /// for example: "{ 54 78 1E 3A ... }".
+    /// </summary>
+    public override string ToString() =>
+        "{ " + string.Join(" ", Datas.Select(d => d.ToString("X2"))) + " }";
 }

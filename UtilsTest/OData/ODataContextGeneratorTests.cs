@@ -63,7 +63,7 @@ public class ODataContextGeneratorTests
     {
         string metadataPath = GetSampleMetadataPath();
 
-        string source = 
+        string source =
             $$"""
             using Utils.OData;
 
@@ -113,7 +113,7 @@ public class ODataContextGeneratorTests
 
         try
         {
-            string source = 
+            string source =
                 $$"""
                 using Utils.OData;
 
@@ -161,7 +161,7 @@ public class ODataContextGeneratorTests
     private static string GetSampleMetadataPath()
     {
         string? baseDirectory = AppContext.BaseDirectory ?? throw new InvalidOperationException("Unable to resolve the base directory of the test run.");
-		string path = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "OData", "TestData", "Sample.edmx"));
+        string path = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "OData", "TestData", "Sample.edmx"));
 
         if (!File.Exists(path))
         {
@@ -202,9 +202,9 @@ public class ODataContextGeneratorTests
     /// <returns>The HTTP URL that exposes the metadata file.</returns>
     private static string StartCompressedMetadataServer(string metadataPath, out HttpListener listener, out Task serverTask)
     {
-		ArgumentNullException.ThrowIfNull(metadataPath);
+        ArgumentNullException.ThrowIfNull(metadataPath);
 
-		listener = new HttpListener();
+        listener = new HttpListener();
         int port = ReserveEphemeralPort();
         string prefix = $"http://127.0.0.1:{port}/";
         listener.Prefixes.Add(prefix);

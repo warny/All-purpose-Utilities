@@ -49,27 +49,27 @@ namespace Utils.Net.DNS.RFC1183;
 [DNSTextRecord("{MBoxDName} {TxtDName}")]
 public class RP : DNSResponseDetail
 {
-	
 
-	/// <summary>
-	/// Gets or sets the domain name identifying the mailbox of the responsible person.
-	/// By convention, the first label can be translated into an '@' character to form
-	/// an email address, e.g. <c>john.doe.example.com</c> ? <c>john.doe@example.com</c>.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName MBoxDName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name that points to a TXT record holding more
-	/// information about the responsible person or host. If this is set to the
-	/// root label ('.'), it indicates there is no additional information.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName TxtDName { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name identifying the mailbox of the responsible person.
+    /// By convention, the first label can be translated into an '@' character to form
+    /// an email address, e.g. <c>john.doe.example.com</c> ? <c>john.doe@example.com</c>.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName MBoxDName { get; set; }
 
-	/// <summary>
-	/// Returns a simple string containing the mailbox domain name and TXT domain name
-	/// separated by a tab. For example: "john.doe.example.com   info.example.com".
-	/// </summary>
-	public override string ToString() => $"{MBoxDName}\t{TxtDName}";
+    /// <summary>
+    /// Gets or sets the domain name that points to a TXT record holding more
+    /// information about the responsible person or host. If this is set to the
+    /// root label ('.'), it indicates there is no additional information.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName TxtDName { get; set; }
+
+    /// <summary>
+    /// Returns a simple string containing the mailbox domain name and TXT domain name
+    /// separated by a tab. For example: "john.doe.example.com   info.example.com".
+    /// </summary>
+    public override string ToString() => $"{MBoxDName}\t{TxtDName}";
 }

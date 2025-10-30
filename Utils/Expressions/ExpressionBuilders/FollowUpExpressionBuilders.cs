@@ -9,82 +9,82 @@ namespace Utils.Expressions.ExpressionBuilders;
 /// </summary>
 public class PlusOperatorBuilder() : IFollowUpExpressionBuilder
 {
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
 
-		// If either operand is of string type, do string concatenation
-		if (currentExpression.Type == typeof(string) || right.Type == typeof(string))
-		{
-			return BuildStringConcatenation(currentExpression, right);
-		}
-		else
-		{
-			// Otherwise, handle numeric addition
-			(currentExpression, right) = parser.Options.AdjustNumberType(currentExpression, right);
-			return Expression.Add(currentExpression, right);
-		}
-	}
+        // If either operand is of string type, do string concatenation
+        if (currentExpression.Type == typeof(string) || right.Type == typeof(string))
+        {
+            return BuildStringConcatenation(currentExpression, right);
+        }
+        else
+        {
+            // Otherwise, handle numeric addition
+            (currentExpression, right) = parser.Options.AdjustNumberType(currentExpression, right);
+            return Expression.Add(currentExpression, right);
+        }
+    }
 
-	/// <summary>
-	/// Builds a string concatenation <see cref="Expression"/> by merging
-	/// any existing Concat calls on the left or right, then calls <c>string.Concat</c>.
-	/// </summary>
-	/// <param name="currentExpression">The left expression (potentially a Concat call).</param>
-	/// <param name="right">The right expression (potentially a Concat call).</param>
-	/// <returns>An <see cref="Expression"/> representing the concatenation of the two operands.</returns>
-	private static Expression BuildStringConcatenation(Expression currentExpression, Expression right)
-	{
-		var concat = typeof(string).GetRuntimeMethod("Concat", [typeof(string[])]);
+    /// <summary>
+    /// Builds a string concatenation <see cref="Expression"/> by merging
+    /// any existing Concat calls on the left or right, then calls <c>string.Concat</c>.
+    /// </summary>
+    /// <param name="currentExpression">The left expression (potentially a Concat call).</param>
+    /// <param name="right">The right expression (potentially a Concat call).</param>
+    /// <returns>An <see cref="Expression"/> representing the concatenation of the two operands.</returns>
+    private static Expression BuildStringConcatenation(Expression currentExpression, Expression right)
+    {
+        var concat = typeof(string).GetRuntimeMethod("Concat", [typeof(string[])]);
 
-		Expression[] lefts;
-		Expression[] rights;
+        Expression[] lefts;
+        Expression[] rights;
 
-		// Unpack array init from left side if Concat call
-		if (currentExpression is MethodCallExpression methodCallLeft && methodCallLeft.Method == concat)
-		{
-			lefts = [.. ((NewArrayExpression)methodCallLeft.Arguments[0]).Expressions];
-		}
-		else
-		{
-			lefts = [currentExpression];
-		}
+        // Unpack array init from left side if Concat call
+        if (currentExpression is MethodCallExpression methodCallLeft && methodCallLeft.Method == concat)
+        {
+            lefts = [.. ((NewArrayExpression)methodCallLeft.Arguments[0]).Expressions];
+        }
+        else
+        {
+            lefts = [currentExpression];
+        }
 
-		// Unpack array init from right side if Concat call
-		if (right is MethodCallExpression methodCallRight && methodCallRight.Method == concat)
-		{
-			rights = [.. ((NewArrayExpression)methodCallRight.Arguments[0]).Expressions];
-		}
-		else
-		{
-			rights = [right];
-		}
+        // Unpack array init from right side if Concat call
+        if (right is MethodCallExpression methodCallRight && methodCallRight.Method == concat)
+        {
+            rights = [.. ((NewArrayExpression)methodCallRight.Arguments[0]).Expressions];
+        }
+        else
+        {
+            rights = [right];
+        }
 
-		// Merge adjacent string constants
-		if (lefts[^1] is ConstantExpression constLeft && rights[0] is ConstantExpression constRight)
-		{
-			lefts[^1] = Expression.Constant(
-				(string)constLeft.Value + (string)constRight.Value,
-				typeof(string)
-			);
-			rights = rights[1..];
-		}
+        // Merge adjacent string constants
+        if (lefts[^1] is ConstantExpression constLeft && rights[0] is ConstantExpression constRight)
+        {
+            lefts[^1] = Expression.Constant(
+                (string)constLeft.Value + (string)constRight.Value,
+                typeof(string)
+            );
+            rights = rights[1..];
+        }
 
-		var newArguments = lefts.Concat(rights).ToArray();
-		return newArguments.Length > 1
-			? Expression.Call(concat, Expression.NewArrayInit(typeof(string), newArguments))
-			: newArguments[0];
-	}
+        var newArguments = lefts.Concat(rights).ToArray();
+        return newArguments.Length > 1
+            ? Expression.Call(concat, Expression.NewArrayInit(typeof(string), newArguments))
+            : newArguments[0];
+    }
 }
 
 /// <summary>
@@ -93,42 +93,42 @@ public class PlusOperatorBuilder() : IFollowUpExpressionBuilder
 /// </summary>
 public class OperatorBuilder : IFollowUpExpressionBuilder
 {
-	/// <summary>
-	/// Initializes a new instance of <see cref="OperatorBuilder"/> with a specified operator function
-	/// and a flag indicating whether to adjust numeric types.
-	/// </summary>
-	/// <param name="buildOperator">A function that builds the resulting <see cref="Expression"/> from two operands.</param>
-	/// <param name="adjustNumberType">
-	/// If <see langword="true"/>, calls <c>parser.Options.AdjustNumberType</c> on the operands.
-	/// </param>
-	public OperatorBuilder(Func<Expression, Expression, Expression> buildOperator, bool adjustNumberType)
-	{
-		BuildOperator = buildOperator;
-		AdjustNumberType = adjustNumberType;
-	}
+    /// <summary>
+    /// Initializes a new instance of <see cref="OperatorBuilder"/> with a specified operator function
+    /// and a flag indicating whether to adjust numeric types.
+    /// </summary>
+    /// <param name="buildOperator">A function that builds the resulting <see cref="Expression"/> from two operands.</param>
+    /// <param name="adjustNumberType">
+    /// If <see langword="true"/>, calls <c>parser.Options.AdjustNumberType</c> on the operands.
+    /// </param>
+    public OperatorBuilder(Func<Expression, Expression, Expression> buildOperator, bool adjustNumberType)
+    {
+        BuildOperator = buildOperator;
+        AdjustNumberType = adjustNumberType;
+    }
 
-	private Func<Expression, Expression, Expression> BuildOperator { get; }
-	private bool AdjustNumberType { get; }
+    private Func<Expression, Expression, Expression> BuildOperator { get; }
+    private bool AdjustNumberType { get; }
 
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
-		if (AdjustNumberType)
-		{
-			(currentExpression, right) = parser.Options.AdjustNumberType(currentExpression, right);
-		}
-		return BuildOperator(currentExpression, right);
-	}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
+        if (AdjustNumberType)
+        {
+            (currentExpression, right) = parser.Options.AdjustNumberType(currentExpression, right);
+        }
+        return BuildOperator(currentExpression, right);
+    }
 }
 
 /// <summary>
@@ -137,21 +137,21 @@ public class OperatorBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class MemberBuilder : IFollowUpExpressionBuilder
 {
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		string strMember = context.Tokenizer.ReadToken();
-		return parser.GetExpression(context, currentExpression, strMember);
-	}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        string strMember = context.Tokenizer.ReadToken();
+        return parser.GetExpression(context, currentExpression, strMember);
+    }
 }
 
 /// <summary>
@@ -160,49 +160,49 @@ public class MemberBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class NullOrMemberBuilder : IFollowUpExpressionBuilder
 {
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		context.PushContext();
-		string strMember = context.Tokenizer.ReadToken();
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        context.PushContext();
+        string strMember = context.Tokenizer.ReadToken();
 
-		// Create a variable to store the current expression's value
-		var variable = Expression.Variable(currentExpression.Type, $"<value{context.Depth}>");
-		context.AddVariable(variable);
+        // Create a variable to store the current expression's value
+        var variable = Expression.Variable(currentExpression.Type, $"<value{context.Depth}>");
+        context.AddVariable(variable);
 
-		// Build the member access for e.g. object?.Member
-		var readExpression = parser.GetExpression(context, variable, strMember);
+        // Build the member access for e.g. object?.Member
+        var readExpression = parser.GetExpression(context, variable, strMember);
 
-		// Determine target type (class -> same type, struct -> nullable)
-		var targetType = readExpression.Type.IsClass
-			? readExpression.Type
-			: typeof(Nullable<>).MakeGenericType(readExpression.Type);
+        // Determine target type (class -> same type, struct -> nullable)
+        var targetType = readExpression.Type.IsClass
+            ? readExpression.Type
+            : typeof(Nullable<>).MakeGenericType(readExpression.Type);
 
-		// Return null if the object is null, otherwise the read expression
-		var expression = Expression.Block(
-			context.StackVariables,
-			Expression.Condition(
-				Expression.Equal(
-					Expression.Assign(variable, currentExpression),
-					Expression.Constant(null, typeof(object))
-				),
-				Expression.Convert(Expression.Constant(null), targetType),
-				Expression.Convert(readExpression, targetType),
-				targetType
-			)
-		);
-		context.PopContext();
-		return expression;
-	}
+        // Return null if the object is null, otherwise the read expression
+        var expression = Expression.Block(
+            context.StackVariables,
+            Expression.Condition(
+                Expression.Equal(
+                    Expression.Assign(variable, currentExpression),
+                    Expression.Constant(null, typeof(object))
+                ),
+                Expression.Convert(Expression.Constant(null), targetType),
+                Expression.Convert(readExpression, targetType),
+                targetType
+            )
+        );
+        context.PopContext();
+        return expression;
+    }
 }
 
 /// <summary>
@@ -210,21 +210,21 @@ public class NullOrMemberBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class TypeMatchBuilder : IFollowUpExpressionBuilder
 {
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		Type t = parser.ReadType(context, null);
-		return Expression.TypeIs(currentExpression, t);
-	}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        Type t = parser.ReadType(context, null);
+        return Expression.TypeIs(currentExpression, t);
+    }
 }
 
 /// <summary>
@@ -233,57 +233,57 @@ public class TypeMatchBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class AddAssignationBuilder : IFollowUpExpressionBuilder
 {
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
-		if (currentExpression.Type == typeof(string))
-		{
-			return BuildStringConcatenation(currentExpression, right);
-		}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
+        if (currentExpression.Type == typeof(string))
+        {
+            return BuildStringConcatenation(currentExpression, right);
+        }
 
-		right = parser.Options.AdjustNumberType(currentExpression.Type, right);
-		return Expression.AddAssign(currentExpression, right);
-	}
+        right = parser.Options.AdjustNumberType(currentExpression.Type, right);
+        return Expression.AddAssign(currentExpression, right);
+    }
 
-	/// <summary>
-	/// Creates an expression that appends the contents of <paramref name="right"/> to <paramref name="left"/>
-	/// by calling <c>string.Concat</c>, then assigns it back to <paramref name="left"/>.
-	/// </summary>
-	private static Expression BuildStringConcatenation(Expression left, Expression right)
-	{
-		var concat = typeof(string).GetRuntimeMethod("Concat", [typeof(string[])]);
+    /// <summary>
+    /// Creates an expression that appends the contents of <paramref name="right"/> to <paramref name="left"/>
+    /// by calling <c>string.Concat</c>, then assigns it back to <paramref name="left"/>.
+    /// </summary>
+    private static Expression BuildStringConcatenation(Expression left, Expression right)
+    {
+        var concat = typeof(string).GetRuntimeMethod("Concat", [typeof(string[])]);
 
-		IEnumerable<Expression> rights;
+        IEnumerable<Expression> rights;
 
-		// If the right side is already a Concat call, we can combine arrays
-		if (right is MethodCallExpression methodCallRight && methodCallRight.Method == concat)
-		{
-			rights = ((NewArrayExpression)methodCallRight.Arguments[0]).Expressions;
-		}
-		else
-		{
-			rights = [right];
-		}
+        // If the right side is already a Concat call, we can combine arrays
+        if (right is MethodCallExpression methodCallRight && methodCallRight.Method == concat)
+        {
+            rights = ((NewArrayExpression)methodCallRight.Arguments[0]).Expressions;
+        }
+        else
+        {
+            rights = [right];
+        }
 
-		// Use array init to combine left and the right's elements
-		return Expression.Assign(
-			left,
-			Expression.Call(
-				concat,
-				Expression.NewArrayInit(typeof(string), [left, ..rights])
-			)
-		);
-	}
+        // Use array init to combine left and the right's elements
+        return Expression.Assign(
+            left,
+            Expression.Call(
+                concat,
+                Expression.NewArrayInit(typeof(string), [left, .. rights])
+            )
+        );
+    }
 }
 
 /// <summary>
@@ -292,35 +292,35 @@ public class AddAssignationBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class AssignationBuilder : IFollowUpExpressionBuilder
 {
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AssignationBuilder"/> class with the specified operator function.
-	/// </summary>
-	/// <param name="buildOperator">
-	/// A function that produces a <see cref="BinaryExpression"/> representing the assignment (e.g. <c>Expression.Assign</c>).
-	/// </param>
-	public AssignationBuilder(Func<Expression, Expression, BinaryExpression> buildOperator)
-	{
-		BuildOperator = buildOperator;
-	}
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AssignationBuilder"/> class with the specified operator function.
+    /// </summary>
+    /// <param name="buildOperator">
+    /// A function that produces a <see cref="BinaryExpression"/> representing the assignment (e.g. <c>Expression.Assign</c>).
+    /// </param>
+    public AssignationBuilder(Func<Expression, Expression, BinaryExpression> buildOperator)
+    {
+        BuildOperator = buildOperator;
+    }
 
-	private Func<Expression, Expression, BinaryExpression> BuildOperator { get; }
+    private Func<Expression, Expression, BinaryExpression> BuildOperator { get; }
 
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
-		right = parser.Options.AdjustNumberType(currentExpression.Type, right);
-		return BuildOperator(currentExpression, right);
-	}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        Expression right = parser.ReadExpression(context, nextLevel, markers, out isClosedWrap);
+        right = parser.Options.AdjustNumberType(currentExpression.Type, right);
+        return BuildOperator(currentExpression, right);
+    }
 }
 
 /// <summary>
@@ -329,34 +329,34 @@ public class AssignationBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class PostOperationBuilder : IFollowUpExpressionBuilder
 {
-	/// <summary>
-	/// Initializes a new instance of <see cref="PostOperationBuilder"/> with the specified unary operator function.
-	/// </summary>
-	/// <param name="buildOperator">
-	/// A function that takes an <see cref="Expression"/> and returns a <see cref="UnaryExpression"/>
-	/// (e.g., <c>Expression.PostIncrementAssign</c>).
-	/// </param>
-	public PostOperationBuilder(Func<Expression, UnaryExpression> buildOperator)
-	{
-		BuildOperator = buildOperator;
-	}
+    /// <summary>
+    /// Initializes a new instance of <see cref="PostOperationBuilder"/> with the specified unary operator function.
+    /// </summary>
+    /// <param name="buildOperator">
+    /// A function that takes an <see cref="Expression"/> and returns a <see cref="UnaryExpression"/>
+    /// (e.g., <c>Expression.PostIncrementAssign</c>).
+    /// </param>
+    public PostOperationBuilder(Func<Expression, UnaryExpression> buildOperator)
+    {
+        BuildOperator = buildOperator;
+    }
 
-	private Func<Expression, UnaryExpression> BuildOperator { get; }
+    private Func<Expression, UnaryExpression> BuildOperator { get; }
 
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		return BuildOperator(currentExpression);
-	}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        return BuildOperator(currentExpression);
+    }
 }
 
 /// <summary>
@@ -365,19 +365,19 @@ public class PostOperationBuilder : IFollowUpExpressionBuilder
 /// </summary>
 public class TypeCastBuilder : IFollowUpExpressionBuilder
 {
-	/// <inheritdoc/>
-	public Expression Build(
-		ExpressionParserCore parser,
-		ParserContext context,
-		Expression currentExpression,
-		string val,
-		string nextVal,
-		int priorityLevel,
-		ref int nextLevel,
-		Parenthesis markers,
-		ref bool isClosedWrap)
-	{
-		Type t = parser.ReadType(context, null);
-		return Expression.TypeAs(currentExpression, t);
-	}
+    /// <inheritdoc/>
+    public Expression Build(
+        ExpressionParserCore parser,
+        ParserContext context,
+        Expression currentExpression,
+        string val,
+        string nextVal,
+        int priorityLevel,
+        ref int nextLevel,
+        Parenthesis markers,
+        ref bool isClosedWrap)
+    {
+        Type t = parser.ReadType(context, null);
+        return Expression.TypeAs(currentExpression, t);
+    }
 }

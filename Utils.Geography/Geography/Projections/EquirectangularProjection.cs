@@ -19,49 +19,49 @@ namespace Utils.Geography.Projections;
 /// A numeric type implementing IFloatingPointIeee754 (e.g., float, double, decimal).
 /// </typeparam>
 public class EquirectangularProjection<T> : IProjectionTransformation<T>
-	where T : struct, IFloatingPointIeee754<T>
+    where T : struct, IFloatingPointIeee754<T>
 {
-	// We'll use your degree-based trigonometry helper.
-	private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+    // We'll use your degree-based trigonometry helper.
+    private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
-	/// <summary>
-	/// Maximum absolute latitude, typically ±90° for Earth.
-	/// </summary>
-	private static readonly T MaxLatitude = degree.RightAngle;
+    /// <summary>
+    /// Maximum absolute latitude, typically ±90° for Earth.
+    /// </summary>
+    private static readonly T MaxLatitude = degree.RightAngle;
 
-	/// <summary>
-	/// Clamps latitude to [-90..+90] if desired; otherwise you can remove or adjust this.
-	/// </summary>
-	private static T ClampLatitude(T latitude) => MathEx.Clamp(latitude, -MaxLatitude, MaxLatitude);
+    /// <summary>
+    /// Clamps latitude to [-90..+90] if desired; otherwise you can remove or adjust this.
+    /// </summary>
+    private static T ClampLatitude(T latitude) => MathEx.Clamp(latitude, -MaxLatitude, MaxLatitude);
 
-	/// <summary>
-	/// Projects a geographic point (lat, lon in degrees) to a 2D plane:
-	///   X = longitude, Y = latitude.
-	/// </summary>
-	public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geopoint)
-	{
-		// Optionally clamp lat to [-90..+90]
-		T lat = ClampLatitude(geopoint.Latitude);
+    /// <summary>
+    /// Projects a geographic point (lat, lon in degrees) to a 2D plane:
+    ///   X = longitude, Y = latitude.
+    /// </summary>
+    public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geopoint)
+    {
+        // Optionally clamp lat to [-90..+90]
+        T lat = ClampLatitude(geopoint.Latitude);
 
-		// You may also want to normalize longitude to [-180..+180],
-		// or mod 360, etc. We'll keep it as-is:
-		T lon = geopoint.Longitude;
+        // You may also want to normalize longitude to [-180..+180],
+        // or mod 360, etc. We'll keep it as-is:
+        T lon = geopoint.Longitude;
 
-		// Equirectangular: (X, Y) = (longitude, latitude).
-		return new ProjectedPoint<T>(lon, lat, this);
-	}
+        // Equirectangular: (X, Y) = (longitude, latitude).
+        return new ProjectedPoint<T>(lon, lat, this);
+    }
 
-	/// <summary>
-	/// Inverse: Unprojects a point (X, Y) back to geographic coordinates (lat, lon in degrees):
-	///   longitude = X, latitude = Y.
-	/// </summary>
-	public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mappoint)
-	{
-		// Possibly clamp Y to ±90:
-		T lat = ClampLatitude(mappoint.Y) / degree.RightAngle;
-		// Keep X as is:
-		T lon = mappoint.X / degree.StraightAngle;
+    /// <summary>
+    /// Inverse: Unprojects a point (X, Y) back to geographic coordinates (lat, lon in degrees):
+    ///   longitude = X, latitude = Y.
+    /// </summary>
+    public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mappoint)
+    {
+        // Possibly clamp Y to ±90:
+        T lat = ClampLatitude(mappoint.Y) / degree.RightAngle;
+        // Keep X as is:
+        T lon = mappoint.X / degree.StraightAngle;
 
-		return new GeoPoint<T>(lat, lon);
-	}
+        return new GeoPoint<T>(lat, lon);
+    }
 }

@@ -72,53 +72,53 @@ namespace Utils.Net.DNS.RFC2915;
 [DNSTextRecord("{Order} {Preference} {Flags} {Service} {Regexp} {Replacement}")]
 public class NAPTR : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the 16-bit ORDER field. Lower values indicate higher processing precedence.
-	/// </summary>
-	[DNSField]
-	public ushort Order { get; set; }
+    /// <summary>
+    /// Gets or sets the 16-bit ORDER field. Lower values indicate higher processing precedence.
+    /// </summary>
+    [DNSField]
+    public ushort Order { get; set; }
 
-	/// <summary>
-	/// Gets or sets the 16-bit PREFERENCE field, used to select between multiple NAPTR records
-	/// with the same order value. Lower values are preferred.
-	/// </summary>
-	[DNSField]
-	public ushort Preference { get; set; }
+    /// <summary>
+    /// Gets or sets the 16-bit PREFERENCE field, used to select between multiple NAPTR records
+    /// with the same order value. Lower values are preferred.
+    /// </summary>
+    [DNSField]
+    public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Gets or sets the FLAGS string which provides instructions on how the record should be interpreted.
-	/// This field is stored with a one-byte length prefix.
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public string Flags { get; set; }
+    /// <summary>
+    /// Gets or sets the FLAGS string which provides instructions on how the record should be interpreted.
+    /// This field is stored with a one-byte length prefix.
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public string Flags { get; set; }
 
-	/// <summary>
-	/// Gets or sets the SERVICE string, which indicates the service and protocol used.
-	/// This field is stored with a one-byte length prefix.
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public string Service { get; set; }
+    /// <summary>
+    /// Gets or sets the SERVICE string, which indicates the service and protocol used.
+    /// This field is stored with a one-byte length prefix.
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public string Service { get; set; }
 
-	/// <summary>
-	/// Gets or sets the REGEXP string that contains a regular expression for rewriting the
-	/// domain name. This field is stored with a one-byte length prefix.
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public string Regexp { get; set; }
+    /// <summary>
+    /// Gets or sets the REGEXP string that contains a regular expression for rewriting the
+    /// domain name. This field is stored with a one-byte length prefix.
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public string Regexp { get; set; }
 
-	/// <summary>
-	/// Gets or sets the REPLACEMENT string which specifies the new domain name if the REGEXP does
-	/// not result in a usable URI. This field is stored with a one-byte length prefix.
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public string Replacement { get; set; }
+    /// <summary>
+    /// Gets or sets the REPLACEMENT string which specifies the new domain name if the REGEXP does
+    /// not result in a usable URI. This field is stored with a one-byte length prefix.
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public string Replacement { get; set; }
 
-	/// <summary>
-	/// Returns a string representation of the NAPTR record,
-	/// concatenating all its fields.
-	/// </summary>
-	public override string ToString()
-	{
-		return $"Order: {Order}, Preference: {Preference}, Flags: {Flags}, Service: {Service}, Regexp: {Regexp}, Replacement: {Replacement}";
-	}
+    /// <summary>
+    /// Returns a string representation of the NAPTR record,
+    /// concatenating all its fields.
+    /// </summary>
+    public override string ToString()
+    {
+        return $"Order: {Order}, Preference: {Preference}, Flags: {Flags}, Service: {Service}, Regexp: {Regexp}, Replacement: {Replacement}";
+    }
 }

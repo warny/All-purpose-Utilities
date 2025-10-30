@@ -12,13 +12,13 @@ namespace Utils.Net;
 /// </summary>
 public class SmtpClient : CommandResponseClient
 {
-	/// <inheritdoc/>
-	public override int DefaultPort { get; } = 25;
-	
+    /// <inheritdoc/>
+    public override int DefaultPort { get; } = 25;
+
     /// <summary>
-	/// Initializes a new instance of the <see cref="SmtpClient"/> class.
-	/// </summary>
-	public SmtpClient()
+    /// Initializes a new instance of the <see cref="SmtpClient"/> class.
+    /// </summary>
+    public SmtpClient()
     {
     }
 
@@ -194,9 +194,9 @@ public class SmtpClient : CommandResponseClient
             }
             else
             {
-				lines.Add(line);
-			}
-		}
+                lines.Add(line);
+            }
+        }
         lines.Add(".");
         await SendLinesAsync(lines, cancellationToken);
         IReadOnlyList<ServerResponse> result = await ReadAsync(cancellationToken);

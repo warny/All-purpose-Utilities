@@ -7,8 +7,8 @@ namespace Utils.Dates;
 /// </summary>
 public interface IDateFormulaLanguageProvider
 {
-        /// <summary>Retrieves the language configuration for a culture.</summary>
-        /// <param name="culture">Culture to obtain configuration for.</param>
-        /// <returns>The language configuration.</returns>
-        DateFormulaLanguage GetLanguage(CultureInfo culture);
+    /// <summary>Retrieves the language configuration for a culture.</summary>
+    /// <param name="culture">Culture to obtain configuration for.</param>
+    /// <returns>The language configuration.</returns>
+    DateFormulaLanguage GetLanguage(CultureInfo culture);
 }

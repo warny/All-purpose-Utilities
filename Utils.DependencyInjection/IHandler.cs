@@ -7,10 +7,10 @@ namespace Utils.DependencyInjection;
 [Injectable]
 public interface IHandler<in T> : IInjectable
 {
-        /// <summary>
-        /// Processes the provided message instance.
-        /// </summary>
-        /// <param name="message">Message instance to handle.</param>
-        void Handle(T message);
+    /// <summary>
+    /// Processes the provided message instance.
+    /// </summary>
+    /// <param name="message">Message instance to handle.</param>
+    void Handle(T message);
 }
 

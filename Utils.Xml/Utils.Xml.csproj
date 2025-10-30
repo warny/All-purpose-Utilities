@@ -1,31 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-        <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
-                <EnablePreviewFeatures>True</EnablePreviewFeatures>
-                <LangVersion>latest</LangVersion>
-                <RootNamespace>Utils.XML</RootNamespace>
-                <AssemblyName>Utils.XML</AssemblyName>
-                <Authors>Olivier MARTY</Authors>
-                <Company>Olivier MARTY</Company>
-                <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-                <PackageId>omy.Utils.XML</PackageId>
-                <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-                <PackageReadmeFile>README.md</PackageReadmeFile>
-                <Version>1.2.0</Version>
-                <Description>
-                        XML processing helpers
-                        - Attribute-driven XPath processor
-                        - XmlReader traversal helpers
-                </Description>
-        </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<LangVersion>latest</LangVersion>
+		<RootNamespace>Utils.XML</RootNamespace>
+		<AssemblyName>Utils.XML</AssemblyName>
+		<Authors>Olivier MARTY</Authors>
+		<Company>Olivier MARTY</Company>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>omy.Utils.XML</PackageId>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>1.2.0</Version>
+		<Description>
+			XML processing helpers
+			- Attribute-driven XPath processor
+			- XmlReader traversal helpers
+		</Description>
+	</PropertyGroup>
 
-        <ItemGroup>
-                <None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
-                        <Pack>True</Pack>
-                        <PackagePath></PackagePath>
-                </None>
-                <None Include="README.md" Pack="true" PackagePath="\" />
-        </ItemGroup>
-
+	<ItemGroup>
+		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
 </Project>

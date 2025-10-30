@@ -41,22 +41,22 @@ namespace Utils.Net.DNS.RFC2163;
 [DNSTextRecord("{Preference} {Map822} {MapX400}")]
 internal class PX : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the 16-bit preference value of the PX record.
-	/// A lower value indicates a higher priority for selecting this gateway.
-	/// </summary>
-	[DNSField]
-	public ushort Preference { get; set; }
+    /// <summary>
+    /// Gets or sets the 16-bit preference value of the PX record.
+    /// A lower value indicates a higher priority for selecting this gateway.
+    /// </summary>
+    [DNSField]
+    public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name for the gateway that handles RFC 822 (Internet) mail.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName Map822 { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name for the gateway that handles RFC 822 (Internet) mail.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName Map822 { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name for the gateway that handles X.400 mail.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName MapX400 { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name for the gateway that handles X.400 mail.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName MapX400 { get; set; }
 }

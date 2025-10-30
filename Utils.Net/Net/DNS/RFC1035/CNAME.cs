@@ -32,18 +32,18 @@
 [DNSTextRecord("{CName}")]
 public sealed class CNAME : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the canonical domain name to which the owner name is aliased.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName CName { get; set; }
+    /// <summary>
+    /// Gets or sets the canonical domain name to which the owner name is aliased.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName CName { get; set; }
 
-	/// <summary>
-	/// Returns the canonical (target) name of this CNAME record.
-	/// </summary>
-	/// <returns>
-	/// The string representation of <see cref="CName"/>, 
-	/// or an empty string if <see cref="CName"/> is <c>null</c>.
-	/// </returns>
-	public override string ToString() => CName.ToString();
+    /// <summary>
+    /// Returns the canonical (target) name of this CNAME record.
+    /// </summary>
+    /// <returns>
+    /// The string representation of <see cref="CName"/>, 
+    /// or an empty string if <see cref="CName"/> is <c>null</c>.
+    /// </returns>
+    public override string ToString() => CName.ToString();
 }

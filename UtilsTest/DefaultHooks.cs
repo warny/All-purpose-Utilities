@@ -8,31 +8,31 @@ using TechTalk.SpecFlow;
 
 namespace UtilsTest
 {
-	[Binding]
-	public sealed class DefaultHooks
-	{
-		readonly ScenarioContext context;
+    [Binding]
+    public sealed class DefaultHooks
+    {
+        readonly ScenarioContext context;
 
-		public DefaultHooks(ScenarioContext context)
-		{
-			this.context = context;
-		}
+        public DefaultHooks(ScenarioContext context)
+        {
+            this.context = context;
+        }
 
-		[Then("I expect an exception")]
-		public void ThenIExpectAnException()
-		{
-			var exception = context["Exception"];
-			Assert.IsNotNull(exception);
-		}
+        [Then("I expect an exception")]
+        public void ThenIExpectAnException()
+        {
+            var exception = context["Exception"];
+            Assert.IsNotNull(exception);
+        }
 
-		[Then(@"I expect an exception (\w+)")]
-		public void ThenIExpectAnException(string exceptionTypeName)
-		{
-			var exception = context["Exception"];
-			Assert.IsNotNull(exception);
-			Assert.AreEqual(exceptionTypeName, exception.GetType().Name);
-		}
+        [Then(@"I expect an exception (\w+)")]
+        public void ThenIExpectAnException(string exceptionTypeName)
+        {
+            var exception = context["Exception"];
+            Assert.IsNotNull(exception);
+            Assert.AreEqual(exceptionTypeName, exception.GetType().Name);
+        }
 
 
-	}
+    }
 }

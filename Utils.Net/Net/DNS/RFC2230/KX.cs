@@ -43,17 +43,17 @@ namespace Utils.Net.DNS.RFC2230;
 [DNSTextRecord("{Preference} {Exchanger}")]
 public class KX : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the 16-bit preference value for this KX record.
-	/// Lower values indicate a higher preference when multiple KX records are present.
-	/// </summary>
-	[DNSField]
-	public ushort Preference { get; set; }
+    /// <summary>
+    /// Gets or sets the 16-bit preference value for this KX record.
+    /// Lower values indicate a higher preference when multiple KX records are present.
+    /// </summary>
+    [DNSField]
+    public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name of the host that is willing to act as a mail exchange.
-	/// This field specifies the target host for additional A (and AAAA) record lookups.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName Exchanger { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name of the host that is willing to act as a mail exchange.
+    /// This field specifies the target host for additional A (and AAAA) record lookups.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName Exchanger { get; set; }
 }

@@ -167,67 +167,67 @@
 [DNSTextRecord("{TypeCovered} {Algorithm} {Labels} {OriginalTtl} {SignatureExpiration} {SignatureInception} {KeyTag} {SignerName} {Signature}")]
 public class SIG : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the type covered field. This is the RR type that the signature covers.
-	/// </summary>
-	[DNSField]
-	public ushort TypeCovered { get; set; }
+    /// <summary>
+    /// Gets or sets the type covered field. This is the RR type that the signature covers.
+    /// </summary>
+    [DNSField]
+    public ushort TypeCovered { get; set; }
 
-	/// <summary>
-	/// Gets or sets the algorithm number used for the signature.
-	/// This octet is defined in Section 3.2.
-	/// </summary>
-	[DNSField]
-	public byte Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the algorithm number used for the signature.
+    /// This octet is defined in Section 3.2.
+    /// </summary>
+    [DNSField]
+    public byte Algorithm { get; set; }
 
-	/// <summary>
-	/// Gets or sets the labels field, an unsigned count of the number of labels in the original
-	/// SIG RR owner name (excluding the null label for root and any leading "*" for wildcards).
-	/// </summary>
-	[DNSField]
-	public byte Labels { get; set; }
+    /// <summary>
+    /// Gets or sets the labels field, an unsigned count of the number of labels in the original
+    /// SIG RR owner name (excluding the null label for root and any leading "*" for wildcards).
+    /// </summary>
+    [DNSField]
+    public byte Labels { get; set; }
 
-	/// <summary>
-	/// Gets or sets the original TTL field, a 32-bit value representing the original TTL of the RRset
-	/// covered by this SIG. It must be restored into the RRset during signature verification.
-	/// </summary>
-	[DNSField]
-	public uint OriginalTtl { get; set; }
+    /// <summary>
+    /// Gets or sets the original TTL field, a 32-bit value representing the original TTL of the RRset
+    /// covered by this SIG. It must be restored into the RRset during signature verification.
+    /// </summary>
+    [DNSField]
+    public uint OriginalTtl { get; set; }
 
-	/// <summary>
-	/// Gets or sets the signature expiration time. This value is an unsigned number of seconds since
-	/// 1 January 1970, GMT, indicating when the signature becomes invalid.
-	/// </summary>
-	[DNSField]
-	public uint SignatureExpiration { get; set; }
+    /// <summary>
+    /// Gets or sets the signature expiration time. This value is an unsigned number of seconds since
+    /// 1 January 1970, GMT, indicating when the signature becomes invalid.
+    /// </summary>
+    [DNSField]
+    public uint SignatureExpiration { get; set; }
 
-	/// <summary>
-	/// Gets or sets the signature inception time. This value is an unsigned number of seconds since
-	/// 1 January 1970, GMT, indicating when the signature becomes valid.
-	/// </summary>
-	[DNSField]
-	public uint SignatureInception { get; set; }
+    /// <summary>
+    /// Gets or sets the signature inception time. This value is an unsigned number of seconds since
+    /// 1 January 1970, GMT, indicating when the signature becomes valid.
+    /// </summary>
+    [DNSField]
+    public uint SignatureInception { get; set; }
 
-	/// <summary>
-	/// Gets or sets the key tag, a 16-bit field used to efficiently select between multiple keys.
-	/// For algorithm 1 (MD5/RSA), it is derived from the public key modulus; for other algorithms,
-	/// it is calculated as a simple checksum of the KEY RR.
-	/// </summary>
-	[DNSField]
-	public ushort KeyTag { get; set; }
+    /// <summary>
+    /// Gets or sets the key tag, a 16-bit field used to efficiently select between multiple keys.
+    /// For algorithm 1 (MD5/RSA), it is derived from the public key modulus; for other algorithms,
+    /// it is calculated as a simple checksum of the KEY RR.
+    /// </summary>
+    [DNSField]
+    public ushort KeyTag { get; set; }
 
-	/// <summary>
-	/// Gets or sets the signer's name, which is the domain name of the signer generating this SIG RR.
-	/// This is typically the owner name of the KEY RR that can be used to verify the signature.
-	/// The signer's name may be compressed in transit.
-	/// </summary>
-	[DNSField]
-	public string SignerName { get; set; }
+    /// <summary>
+    /// Gets or sets the signer's name, which is the domain name of the signer generating this SIG RR.
+    /// This is typically the owner name of the KEY RR that can be used to verify the signature.
+    /// The signer's name may be compressed in transit.
+    /// </summary>
+    [DNSField]
+    public string SignerName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the signature data. This is the cryptographic signature that binds the
-	/// RDATA fields to the covered RRset.
-	/// </summary>
-	[DNSField]
-	public byte[] Signature { get; set; }
+    /// <summary>
+    /// Gets or sets the signature data. This is the cryptographic signature that binds the
+    /// RDATA fields to the covered RRset.
+    /// </summary>
+    [DNSField]
+    public byte[] Signature { get; set; }
 }

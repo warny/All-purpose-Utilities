@@ -9,10 +9,10 @@ namespace Utils.DependencyInjection;
 /// </summary>
 public interface IServiceConfigurator
 {
-	/// <summary>
-	/// Adds services to the provided collection.
-	/// </summary>
-	/// <param name="serviceCollection">The service collection to populate.</param>
-	void ConfigureServices(IServiceCollection serviceCollection);
+    /// <summary>
+    /// Adds services to the provided collection.
+    /// </summary>
+    /// <param name="serviceCollection">The service collection to populate.</param>
+    void ConfigureServices(IServiceCollection serviceCollection);
 }
 

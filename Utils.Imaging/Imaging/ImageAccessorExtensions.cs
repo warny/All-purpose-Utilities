@@ -57,7 +57,7 @@ namespace Utils.Imaging
                                                      Func<T, T, T, T, A> creator)
             where A : struct, IColorArgb<T>
             where T : struct, IConvertible, INumber<T>
-		{
+        {
             var transformer = new MatrixImageTransformer<A, T>(weights, offset, creator);
             transformer.Transform(image);
         }

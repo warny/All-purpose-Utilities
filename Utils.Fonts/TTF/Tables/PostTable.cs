@@ -17,52 +17,52 @@ namespace Utils.Fonts.TTF.Tables;
 [TTFTable(TableTypes.Tags.POST)]
 public class PostTable : TrueTypeTable
 {
-	#region Internal Mapping Classes
+    #region Internal Mapping Classes
 
-	/// <summary>
-	/// Base class for the glyph name mapping in the 'post' table.
-	/// </summary>
-	internal class PostMap
-	{
-		/// <summary>
-		/// Returns the glyph name index for the specified character name.
-		/// </summary>
-		/// <param name="charName">The character name.</param>
-		/// <returns>The glyph name index.</returns>
-		internal virtual short GetCharIndex(string charName) => 0;
+    /// <summary>
+    /// Base class for the glyph name mapping in the 'post' table.
+    /// </summary>
+    internal class PostMap
+    {
+        /// <summary>
+        /// Returns the glyph name index for the specified character name.
+        /// </summary>
+        /// <param name="charName">The character name.</param>
+        /// <returns>The glyph name index.</returns>
+        internal virtual short GetCharIndex(string charName) => 0;
 
-		/// <summary>
-		/// Returns the PostScript name corresponding to the given character index.
-		/// </summary>
-		/// <param name="charIndex">The character index.</param>
-		/// <returns>The PostScript name.</returns>
-		internal virtual string GetCharName(char charIndex) => null;
+        /// <summary>
+        /// Returns the PostScript name corresponding to the given character index.
+        /// </summary>
+        /// <param name="charIndex">The character index.</param>
+        /// <returns>The PostScript name.</returns>
+        internal virtual string GetCharName(char charIndex) => null;
 
-		/// <summary>
-		/// Gets the length (in bytes) of the mapping data.
-		/// </summary>
-		internal virtual int Length => 0;
+        /// <summary>
+        /// Gets the length (in bytes) of the mapping data.
+        /// </summary>
+        internal virtual int Length => 0;
 
-		/// <summary>
-		/// Writes the mapping data to the specified writer.
-		/// </summary>
-		/// <param name="data">The writer.</param>
-		internal virtual void WriteData(Writer data) { }
+        /// <summary>
+        /// Writes the mapping data to the specified writer.
+        /// </summary>
+        /// <param name="data">The writer.</param>
+        internal virtual void WriteData(Writer data) { }
 
-		/// <summary>
-		/// Reads the mapping data from the specified reader.
-		/// </summary>
-		/// <param name="data">The reader.</param>
-		internal virtual void ReadData(Reader data) { }
-	}
+        /// <summary>
+        /// Reads the mapping data from the specified reader.
+        /// </summary>
+        /// <param name="data">The reader.</param>
+        internal virtual void ReadData(Reader data) { }
+    }
 
-	/// <summary>
-	/// Implements PostScript glyph mapping for Format 0.
-	/// This format uses a standard set of glyph names.
-	/// </summary>
-	internal class PostMapFormat0 : PostMap
-	{
-		protected internal string[] stdNames = {
+    /// <summary>
+    /// Implements PostScript glyph mapping for Format 0.
+    /// This format uses a standard set of glyph names.
+    /// </summary>
+    internal class PostMapFormat0 : PostMap
+    {
+        protected internal string[] stdNames = {
             /* 0 */     ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl", "numbersign", "dollar",
             /* 8 */     "percent", "ampersand", "quotesingle", "parenleft", "parenright", "asterisk", "plus", "comma",
             /* 16 */    "hyphen", "period", "slash", "zero", "one", "two", "three", "four",
@@ -96,282 +96,284 @@ public class PostTable : TrueTypeTable
             /* 240 */   "multiply", "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter", "threequarters", "franc",
             /* 248 */   "Gbreve", "gbreve", "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute", "Ccaron",
             /* 256 */   "ccaron", "dcroat"
-		};
+        };
 
-		/// <summary>
-		/// Returns the standard glyph index for the specified character name.
-		/// </summary>
-		/// <param name="charName">The character name to search for.</param>
-		/// <returns>The glyph index if found; otherwise, 0.</returns>
-		internal override short GetCharIndex(string charName)
-		{
-			for (int i = 0; i < stdNames.Length; i++)
-			{
-				if (string.Equals(charName, stdNames[i]))
-				{
-					return (short)i;
-				}
-			}
-			return 0;
-		}
+        /// <summary>
+        /// Returns the standard glyph index for the specified character name.
+        /// </summary>
+        /// <param name="charName">The character name to search for.</param>
+        /// <returns>The glyph index if found; otherwise, 0.</returns>
+        internal override short GetCharIndex(string charName)
+        {
+            for (int i = 0; i < stdNames.Length; i++)
+            {
+                if (string.Equals(charName, stdNames[i]))
+                {
+                    return (short)i;
+                }
+            }
+            return 0;
+        }
 
-		/// <summary>
-		/// Returns the standard glyph name corresponding to the given character index.
-		/// </summary>
-		/// <param name="charIndex">The character index.</param>
-		/// <returns>The corresponding glyph name.</returns>
-		internal override string GetCharName(char charIndex)
-		{
-			return stdNames[(uint)charIndex];
-		}
-	}
+        /// <summary>
+        /// Returns the standard glyph name corresponding to the given character index.
+        /// </summary>
+        /// <param name="charIndex">The character index.</param>
+        /// <returns>The corresponding glyph name.</returns>
+        internal override string GetCharName(char charIndex)
+        {
+            return stdNames[(uint)charIndex];
+        }
+    }
 
-	/// <summary>
-	/// Implements an extended mapping format (Format 2) for glyph names.
-	/// This format supports additional glyph names beyond the standard set.
-	/// </summary>
-	internal class PostMapFormat2 : PostMapFormat0
-	{
-		internal short[] glyphNameIndex;
-		internal string[] glyphNames;
+    /// <summary>
+    /// Implements an extended mapping format (Format 2) for glyph names.
+    /// This format supports additional glyph names beyond the standard set.
+    /// </summary>
+    internal class PostMapFormat2 : PostMapFormat0
+    {
+        internal short[] glyphNameIndex;
+        internal string[] glyphNames;
 
-		/// <summary>
-		/// Gets the total length (in bytes) of the mapping data.
-		/// </summary>
-		internal override int Length
-		{
-			get {
-				int num = 2 + 2 * glyphNameIndex.Length;
-				for (int i = 0; i < glyphNames.Length; i++)
-				{
-					num += glyphNames[i].Length + 1;
-				}
-				return num;
-			}
-		}
+        /// <summary>
+        /// Gets the total length (in bytes) of the mapping data.
+        /// </summary>
+        internal override int Length
+        {
+            get
+            {
+                int num = 2 + 2 * glyphNameIndex.Length;
+                for (int i = 0; i < glyphNames.Length; i++)
+                {
+                    num += glyphNames[i].Length + 1;
+                }
+                return num;
+            }
+        }
 
-		/// <summary>
-		/// Returns the glyph index for the specified character name.
-		/// </summary>
-		/// <param name="charName">The character name to map.</param>
-		/// <returns>The corresponding glyph index.</returns>
-		internal override short GetCharIndex(string charName)
-		{
-			int num = -1;
-			for (int i = 0; i < glyphNames.Length; i++)
-			{
-				if (string.Equals(charName, glyphNames[i]))
-				{
-					num = (short)(stdNames.Length + i);
-					break;
-				}
-			}
-			if (num == -1)
-			{
-				num = base.GetCharIndex(charName);
-			}
-			for (int i = 0; i < glyphNameIndex.Length; i++)
-			{
-				if (glyphNameIndex[i] == num)
-				{
-					return (short)i;
-				}
-			}
-			return 0;
-		}
+        /// <summary>
+        /// Returns the glyph index for the specified character name.
+        /// </summary>
+        /// <param name="charName">The character name to map.</param>
+        /// <returns>The corresponding glyph index.</returns>
+        internal override short GetCharIndex(string charName)
+        {
+            int num = -1;
+            for (int i = 0; i < glyphNames.Length; i++)
+            {
+                if (string.Equals(charName, glyphNames[i]))
+                {
+                    num = (short)(stdNames.Length + i);
+                    break;
+                }
+            }
+            if (num == -1)
+            {
+                num = base.GetCharIndex(charName);
+            }
+            for (int i = 0; i < glyphNameIndex.Length; i++)
+            {
+                if (glyphNameIndex[i] == num)
+                {
+                    return (short)i;
+                }
+            }
+            return 0;
+        }
 
-		/// <summary>
-		/// Returns the glyph name corresponding to the specified character index.
-		/// </summary>
-		/// <param name="charIndex">The character index.</param>
-		/// <returns>The corresponding glyph name.</returns>
-		internal override string GetCharName(char charIndex)
-		{
-			if ((int)charIndex >= stdNames.Length)
-			{
-				return glyphNames[(int)charIndex - stdNames.Length];
-			}
-			string charName = base.GetCharName(charIndex);
-			return charName;
-		}
+        /// <summary>
+        /// Returns the glyph name corresponding to the specified character index.
+        /// </summary>
+        /// <param name="charIndex">The character index.</param>
+        /// <returns>The corresponding glyph name.</returns>
+        internal override string GetCharName(char charIndex)
+        {
+            if ((int)charIndex >= stdNames.Length)
+            {
+                return glyphNames[(int)charIndex - stdNames.Length];
+            }
+            string charName = base.GetCharName(charIndex);
+            return charName;
+        }
 
-		/// <summary>
-		/// Writes the mapping data for Format 2 to the specified writer.
-		/// </summary>
-		/// <param name="data">The writer to which data is written.</param>
-		internal override void WriteData(Writer data)
-		{
-			data.Write<Int16>((short)glyphNameIndex.Length);
-			for (int i = 0; i < glyphNameIndex.Length; i++)
-			{
-				data.Write<Int16>(glyphNameIndex[i]);
-			}
-			for (int i = 0; i < glyphNames.Length; i++)
-			{
-                                data.WriteVariableLengthString(glyphNames[i], Encoding.Default, bigEndian: true, sizeLength: 1);
-			}
-			data.Seek(0, SeekOrigin.Begin);
-		}
+        /// <summary>
+        /// Writes the mapping data for Format 2 to the specified writer.
+        /// </summary>
+        /// <param name="data">The writer to which data is written.</param>
+        internal override void WriteData(Writer data)
+        {
+            data.Write<Int16>((short)glyphNameIndex.Length);
+            for (int i = 0; i < glyphNameIndex.Length; i++)
+            {
+                data.Write<Int16>(glyphNameIndex[i]);
+            }
+            for (int i = 0; i < glyphNames.Length; i++)
+            {
+                data.WriteVariableLengthString(glyphNames[i], Encoding.Default, bigEndian: true, sizeLength: 1);
+            }
+            data.Seek(0, SeekOrigin.Begin);
+        }
 
-		/// <summary>
-		/// Reads the mapping data for Format 2 from the specified reader.
-		/// </summary>
-		/// <param name="data">The reader from which to read data.</param>
-		internal override void ReadData(Reader data)
-		{
-			int length = data.Read<Int16>();
-			glyphNameIndex = new short[length];
-			int maxGlyph = 257;
-			for (int i = 0; i < length; i++)
-			{
-				glyphNameIndex[i] = data.Read<Int16>();
-				if (glyphNameIndex[i] > maxGlyph)
-				{
-					maxGlyph = glyphNameIndex[i];
-				}
-			}
-			maxGlyph -= 257;
-			glyphNames = new string[maxGlyph];
-			Array.Fill(glyphNames, "");
-			for (int i = 0; i < maxGlyph; i++)
-			{
+        /// <summary>
+        /// Reads the mapping data for Format 2 from the specified reader.
+        /// </summary>
+        /// <param name="data">The reader from which to read data.</param>
+        internal override void ReadData(Reader data)
+        {
+            int length = data.Read<Int16>();
+            glyphNameIndex = new short[length];
+            int maxGlyph = 257;
+            for (int i = 0; i < length; i++)
+            {
+                glyphNameIndex[i] = data.Read<Int16>();
+                if (glyphNameIndex[i] > maxGlyph)
+                {
+                    maxGlyph = glyphNameIndex[i];
+                }
+            }
+            maxGlyph -= 257;
+            glyphNames = new string[maxGlyph];
+            Array.Fill(glyphNames, "");
+            for (int i = 0; i < maxGlyph; i++)
+            {
                 glyphNames[i] = data.ReadVariableLengthString(Encoding.Default, sizeLength: 1);
-			}
-		}
-	}
+            }
+        }
+    }
 
-	#endregion
+    #endregion
 
-	/// <summary>
-	/// Gets or sets the post table format.
-	/// </summary>
-	public int Format { get; set; }
+    /// <summary>
+    /// Gets or sets the post table format.
+    /// </summary>
+    public int Format { get; set; }
 
-	/// <summary>
-	/// Gets or sets the italic angle, in fixed-point format.
-	/// </summary>
-	public int ItalicAngle { get; set; }
+    /// <summary>
+    /// Gets or sets the italic angle, in fixed-point format.
+    /// </summary>
+    public int ItalicAngle { get; set; }
 
-	/// <summary>
-	/// Gets or sets the underline position.
-	/// </summary>
-	public short UnderlinePosition { get; set; }
+    /// <summary>
+    /// Gets or sets the underline position.
+    /// </summary>
+    public short UnderlinePosition { get; set; }
 
-	/// <summary>
-	/// Gets or sets the underline thickness.
-	/// </summary>
-	public short UnderlineThickness { get; set; }
+    /// <summary>
+    /// Gets or sets the underline thickness.
+    /// </summary>
+    public short UnderlineThickness { get; set; }
 
-	/// <summary>
-	/// Gets or sets a flag indicating whether the font is fixed pitch.
-	/// </summary>
-	public short IsFixedPitch { get; set; }
+    /// <summary>
+    /// Gets or sets a flag indicating whether the font is fixed pitch.
+    /// </summary>
+    public short IsFixedPitch { get; set; }
 
-	/// <summary>
-	/// Gets or sets the minimum memory usage for Type 42 fonts.
-	/// </summary>
-	public int MinMemType42 { get; set; }
+    /// <summary>
+    /// Gets or sets the minimum memory usage for Type 42 fonts.
+    /// </summary>
+    public int MinMemType42 { get; set; }
 
-	/// <summary>
-	/// Gets or sets the maximum memory usage for Type 42 fonts.
-	/// </summary>
-	public int MaxMemType42 { get; set; }
+    /// <summary>
+    /// Gets or sets the maximum memory usage for Type 42 fonts.
+    /// </summary>
+    public int MaxMemType42 { get; set; }
 
-	/// <summary>
-	/// Gets or sets the minimum memory usage for Type 1 fonts.
-	/// </summary>
-	public int MinMemType1 { get; set; }
+    /// <summary>
+    /// Gets or sets the minimum memory usage for Type 1 fonts.
+    /// </summary>
+    public int MinMemType1 { get; set; }
 
-	/// <summary>
-	/// Gets or sets the maximum memory usage for Type 1 fonts.
-	/// </summary>
-	public int MaxMemType1 { get; set; }
+    /// <summary>
+    /// Gets or sets the maximum memory usage for Type 1 fonts.
+    /// </summary>
+    public int MaxMemType1 { get; set; }
 
-	private PostMap nameMap;
+    private PostMap nameMap;
 
-	/// <summary>
-	/// Returns the glyph name index for the specified PostScript glyph name.
-	/// </summary>
-	/// <param name="str">The PostScript glyph name.</param>
-	/// <returns>The corresponding glyph name index.</returns>
-	public virtual short getGlyphNameIndex(string str)
-	{
-		short charIndex = nameMap.GetCharIndex(str);
-		return charIndex;
-	}
+    /// <summary>
+    /// Returns the glyph name index for the specified PostScript glyph name.
+    /// </summary>
+    /// <param name="str">The PostScript glyph name.</param>
+    /// <returns>The corresponding glyph name index.</returns>
+    public virtual short getGlyphNameIndex(string str)
+    {
+        short charIndex = nameMap.GetCharIndex(str);
+        return charIndex;
+    }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="PostTable"/> class.
-	/// </summary>
-	protected internal PostTable() : base(TableTypes.POST)
-	{
-		nameMap = new PostMap();
-	}
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostTable"/> class.
+    /// </summary>
+    protected internal PostTable() : base(TableTypes.POST)
+    {
+        nameMap = new PostMap();
+    }
 
-	/// <summary>
-	/// Gets the total length (in bytes) of the post table.
-	/// </summary>
-	public override int Length
-	{
-		get {
-			int num = 32;
-			if (nameMap is not null)
-			{
-				num += nameMap.Length;
-			}
-			return num;
-		}
-	}
+    /// <summary>
+    /// Gets the total length (in bytes) of the post table.
+    /// </summary>
+    public override int Length
+    {
+        get
+        {
+            int num = 32;
+            if (nameMap is not null)
+            {
+                num += nameMap.Length;
+            }
+            return num;
+        }
+    }
 
-	/// <summary>
-	/// Writes the post table data to the specified writer.
-	/// </summary>
-	/// <param name="data">The writer to which the data is written.</param>
-	public override void WriteData(Writer data)
-	{
-		data.Write<Int32>(Format);
-		data.Write<Int32>(ItalicAngle);
-		data.Write<Int16>(UnderlinePosition);
-		data.Write<Int16>(UnderlineThickness);
-		data.Write<Int16>(IsFixedPitch);
-		data.Write<Int16>(0);
-		data.Write<Int32>(MinMemType42);
-		data.Write<Int32>(MaxMemType42);
-		data.Write<Int32>(MinMemType1);
-		data.Write<Int32>(MaxMemType1);
-		this.nameMap?.WriteData(data);
-	}
+    /// <summary>
+    /// Writes the post table data to the specified writer.
+    /// </summary>
+    /// <param name="data">The writer to which the data is written.</param>
+    public override void WriteData(Writer data)
+    {
+        data.Write<Int32>(Format);
+        data.Write<Int32>(ItalicAngle);
+        data.Write<Int16>(UnderlinePosition);
+        data.Write<Int16>(UnderlineThickness);
+        data.Write<Int16>(IsFixedPitch);
+        data.Write<Int16>(0);
+        data.Write<Int32>(MinMemType42);
+        data.Write<Int32>(MaxMemType42);
+        data.Write<Int32>(MinMemType1);
+        data.Write<Int32>(MaxMemType1);
+        this.nameMap?.WriteData(data);
+    }
 
-	/// <summary>
-	/// Reads the post table data from the specified reader.
-	/// </summary>
-	/// <param name="data">The reader from which the data is read.</param>
-	public override void ReadData(Reader data)
-	{
-		Format = data.Read<Int32>();
-		ItalicAngle = data.Read<Int32>();
-		UnderlinePosition = data.Read<Int16>();
-		UnderlineThickness = data.Read<Int16>();
-		IsFixedPitch = data.Read<Int16>();
-		data.Read<Int16>();
-		MinMemType42 = data.Read<Int32>();
-		MaxMemType42 = data.Read<Int32>();
-		MinMemType1 = data.Read<Int32>();
-		MaxMemType1 = data.Read<Int32>();
+    /// <summary>
+    /// Reads the post table data from the specified reader.
+    /// </summary>
+    /// <param name="data">The reader from which the data is read.</param>
+    public override void ReadData(Reader data)
+    {
+        Format = data.Read<Int32>();
+        ItalicAngle = data.Read<Int32>();
+        UnderlinePosition = data.Read<Int16>();
+        UnderlineThickness = data.Read<Int16>();
+        IsFixedPitch = data.Read<Int16>();
+        data.Read<Int16>();
+        MinMemType42 = data.Read<Int32>();
+        MaxMemType42 = data.Read<Int32>();
+        MinMemType1 = data.Read<Int32>();
+        MaxMemType1 = data.Read<Int32>();
 
-		nameMap = Format switch
-		{
-			0x10000 => new PostMapFormat0(),
-			0x20000 => new PostMapFormat2(),
-			0x30000 => new PostMap(),
-			_ => null
-		};
+        nameMap = Format switch
+        {
+            0x10000 => new PostMapFormat0(),
+            0x20000 => new PostMapFormat2(),
+            0x30000 => new PostMap(),
+            _ => null
+        };
 
-		if (nameMap is null)
-		{
-			nameMap = new PostMap();
-			Console.WriteLine($"Unknown post map type: {Format:X2}");
-		}
-		nameMap.ReadData(data);
-	}
+        if (nameMap is null)
+        {
+            nameMap = new PostMap();
+            Console.WriteLine($"Unknown post map type: {Format:X2}");
+        }
+        nameMap.ReadData(data);
+    }
 }

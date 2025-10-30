@@ -74,43 +74,43 @@ namespace Utils.Net.DNS.RFC5205;
 [DNSTextRecord("{PKAlgorithm} {HIT} {PublicKey}")]
 public class HIP : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the HIT Length (Host Identity Tag Length), a one-octet field that indicates the length of the HIT.
-	/// </summary>
-	[DNSField]
-	private byte HitLength { get; set; }
+    /// <summary>
+    /// Gets or sets the HIT Length (Host Identity Tag Length), a one-octet field that indicates the length of the HIT.
+    /// </summary>
+    [DNSField]
+    private byte HitLength { get; set; }
 
-	/// <summary>
-	/// Gets or sets the public key algorithm used in this HIP record.
-	/// The algorithm is represented by an <see cref="IPSecAlgorithm"/> value.
-	/// </summary>
-	[DNSField]
-	public IPSecAlgorithm PKAlgorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the public key algorithm used in this HIP record.
+    /// The algorithm is represented by an <see cref="IPSecAlgorithm"/> value.
+    /// </summary>
+    [DNSField]
+    public IPSecAlgorithm PKAlgorithm { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Public Key Length, a two-octet field that indicates the length of the public key data.
-	/// </summary>
-	[DNSField]
-	private ushort PKLength { get; set; }
+    /// <summary>
+    /// Gets or sets the Public Key Length, a two-octet field that indicates the length of the public key data.
+    /// </summary>
+    [DNSField]
+    private ushort PKLength { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Host Identity Tag (HIT) as a byte array.
-	/// The length of this array is defined by <see cref="HitLength"/>.
-	/// </summary>
-	[DNSField(nameof(HitLength))]
-	public byte[] HIT { get; set; }
+    /// <summary>
+    /// Gets or sets the Host Identity Tag (HIT) as a byte array.
+    /// The length of this array is defined by <see cref="HitLength"/>.
+    /// </summary>
+    [DNSField(nameof(HitLength))]
+    public byte[] HIT { get; set; }
 
-	/// <summary>
-	/// Gets or sets the public key data as a byte array.
-	/// The length of this array is defined by <see cref="PKLength"/>.
-	/// </summary>
-	[DNSField(nameof(PKLength))]
-	public byte[] PublicKey { get; set; }
+    /// <summary>
+    /// Gets or sets the public key data as a byte array.
+    /// The length of this array is defined by <see cref="PKLength"/>.
+    /// </summary>
+    [DNSField(nameof(PKLength))]
+    public byte[] PublicKey { get; set; }
 
-	/// <summary>
-	/// Gets or sets the optional array of rendezvous servers.
-	/// These servers may be used to help locate the host in a HIP-enabled network.
-	/// This field is not annotated with <c>[DNSField]</c> in this implementation.
-	/// </summary>
-	public DNSDomainName[] RendezvousServers { get; set; }
+    /// <summary>
+    /// Gets or sets the optional array of rendezvous servers.
+    /// These servers may be used to help locate the host in a HIP-enabled network.
+    /// This field is not annotated with <c>[DNSField]</c> in this implementation.
+    /// </summary>
+    public DNSDomainName[] RendezvousServers { get; set; }
 }

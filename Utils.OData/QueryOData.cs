@@ -235,27 +235,27 @@ public class QueryOData : IDisposable
                 return convertResult;
             }
 
-        (JsonArray? Datas, Dictionary<string, string>? Metadatas) chunk = convertResult.Value;
-        if (chunk.Metadatas is not null && metadatas is null)
-        {
-            metadatas = new Dictionary<string, string>(chunk.Metadatas);
-        }
+            (JsonArray? Datas, Dictionary<string, string>? Metadatas) chunk = convertResult.Value;
+            if (chunk.Metadatas is not null && metadatas is null)
+            {
+                metadatas = new Dictionary<string, string>(chunk.Metadatas);
+            }
 
-        if (chunk.Datas is not JsonArray { Count: > 0 } chunkDataArray)
-        {
-            break;
-        }
+            if (chunk.Datas is not JsonArray { Count: > 0 } chunkDataArray)
+            {
+                break;
+            }
 
-        hasAnyData = true;
+            hasAnyData = true;
 
-        int chunkCount = chunkDataArray.Count;
+            int chunkCount = chunkDataArray.Count;
 
-        foreach (JsonNode? item in chunkDataArray)
-        {
-            aggregatedValues.Add(item?.DeepClone());
-        }
+            foreach (JsonNode? item in chunkDataArray)
+            {
+                aggregatedValues.Add(item?.DeepClone());
+            }
 
-        totalRetrieved += chunkCount;
+            totalRetrieved += chunkCount;
         }
 
         if (!hasAnyData)

@@ -43,16 +43,16 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSTextRecord("{Text}")]
 public class TXT : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the text content of this TXT record.
-	/// In many DNS scenarios, this is either a single string or
-	/// a concatenation of multiple character-string segments.
-	/// </summary>
-	[DNSField]
-	public string Text { get; set; }
+    /// <summary>
+    /// Gets or sets the text content of this TXT record.
+    /// In many DNS scenarios, this is either a single string or
+    /// a concatenation of multiple character-string segments.
+    /// </summary>
+    [DNSField]
+    public string Text { get; set; }
 
-	/// <summary>
-	/// Returns the string content of the TXT record.
-	/// </summary>
-	public override string ToString() => Text;
+    /// <summary>
+    /// Returns the string content of the TXT record.
+    /// </summary>
+    public override string ToString() => Text;
 }

@@ -11,19 +11,19 @@ namespace Utils.Transactions;
 /// </remarks>
 public interface ITransactionalAction
 {
-        /// <summary>
-        /// Performs the action.
-        /// </summary>
-        void Execute();
+    /// <summary>
+    /// Performs the action.
+    /// </summary>
+    void Execute();
 
-        /// <summary>
-        /// Finalizes the action after all actions in the batch succeed.
-        /// </summary>
-        void Commit();
+    /// <summary>
+    /// Finalizes the action after all actions in the batch succeed.
+    /// </summary>
+    void Commit();
 
-        /// <summary>
-        /// Reverts the effects of the action because another action failed.
-        /// </summary>
-        void Rollback();
+    /// <summary>
+    /// Reverts the effects of the action because another action failed.
+    /// </summary>
+    void Rollback();
 }
 

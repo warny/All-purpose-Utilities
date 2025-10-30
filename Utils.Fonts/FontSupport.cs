@@ -11,50 +11,50 @@ namespace Utils.Fonts;
 /// </summary>
 public static class FontSupport
 {
-        /// <summary>
-        /// Gets the table of standard glyph names defined by Adobe for Type 1 fonts.
-        /// </summary>
-        public static string[] StdNames { get; } = LoadStdNames();
-        /// <summary>
-        /// Gets the Unicode string values corresponding to <see cref="StdNames"/>.
-        /// </summary>
-        public static string[] StdValues { get; } = LoadStdValues();
-        /// <summary>
-        /// Gets the expert glyph charset indexes used by Type 1C fonts.
-        /// </summary>
-        public static int[] Type1CExpertCharset { get; } = LoadType1CExpertCharset();
-        /// <summary>
-        /// Gets the expert subset charset indexes used by Type 1C fonts.
-        /// </summary>
-        public static int[] Type1CExpertSubCharset { get; } = LoadType1CExpertSubCharset();
-        /// <summary>
-        /// Gets the additional glyph names specific to Mac OS encodings.
-        /// </summary>
-        public static string[] MacExtras { get; } = LoadMacExtras();
-        /// <summary>
-        /// Gets the MacRoman encoding table mapping character codes to glyph indexes.
-        /// </summary>
-        public static int[] MacRomanEncoding { get; } = LoadMacRomanEncoding();
-        /// <summary>
-        /// Gets the ISO Latin 1 encoding table mapping character codes to glyph indexes.
-        /// </summary>
-        public static int[] IsoLatin1Encoding { get; } = LoadIsoLatin1Encoding();
-        /// <summary>
-        /// Gets the Windows ANSI encoding table mapping character codes to glyph indexes.
-        /// </summary>
-        public static int[] WinAnsiEncoding { get; } = LoadWinAnsiEncoding();
-        /// <summary>
-        /// Gets the Adobe standard encoding table mapping character codes to glyph indexes.
-        /// </summary>
-        public static int[] StandardEncoding { get; } = LoadStandardEncoding();
+    /// <summary>
+    /// Gets the table of standard glyph names defined by Adobe for Type 1 fonts.
+    /// </summary>
+    public static string[] StdNames { get; } = LoadStdNames();
+    /// <summary>
+    /// Gets the Unicode string values corresponding to <see cref="StdNames"/>.
+    /// </summary>
+    public static string[] StdValues { get; } = LoadStdValues();
+    /// <summary>
+    /// Gets the expert glyph charset indexes used by Type 1C fonts.
+    /// </summary>
+    public static int[] Type1CExpertCharset { get; } = LoadType1CExpertCharset();
+    /// <summary>
+    /// Gets the expert subset charset indexes used by Type 1C fonts.
+    /// </summary>
+    public static int[] Type1CExpertSubCharset { get; } = LoadType1CExpertSubCharset();
+    /// <summary>
+    /// Gets the additional glyph names specific to Mac OS encodings.
+    /// </summary>
+    public static string[] MacExtras { get; } = LoadMacExtras();
+    /// <summary>
+    /// Gets the MacRoman encoding table mapping character codes to glyph indexes.
+    /// </summary>
+    public static int[] MacRomanEncoding { get; } = LoadMacRomanEncoding();
+    /// <summary>
+    /// Gets the ISO Latin 1 encoding table mapping character codes to glyph indexes.
+    /// </summary>
+    public static int[] IsoLatin1Encoding { get; } = LoadIsoLatin1Encoding();
+    /// <summary>
+    /// Gets the Windows ANSI encoding table mapping character codes to glyph indexes.
+    /// </summary>
+    public static int[] WinAnsiEncoding { get; } = LoadWinAnsiEncoding();
+    /// <summary>
+    /// Gets the Adobe standard encoding table mapping character codes to glyph indexes.
+    /// </summary>
+    public static int[] StandardEncoding { get; } = LoadStandardEncoding();
 
-        /// <summary>
-        /// Provides a lookup map from glyph name to its index in <see cref="StdNames"/>.
-        /// </summary>
-        private static IReadOnlyDictionary<string, int> StdNameIndexMap { get; } =
-                LoadStdNames()
-                        .Select((value, index) => (value, index))
-                        .ToImmutableDictionary(vi => vi.value, vi => vi.index);
+    /// <summary>
+    /// Provides a lookup map from glyph name to its index in <see cref="StdNames"/>.
+    /// </summary>
+    private static IReadOnlyDictionary<string, int> StdNameIndexMap { get; } =
+            LoadStdNames()
+                    .Select((value, index) => (value, index))
+                    .ToImmutableDictionary(vi => vi.value, vi => vi.index);
 
     /// <summary>
     /// Retrieves the glyph name corresponding to the provided index.
@@ -116,16 +116,16 @@ public static class FontSupport
     }
 
 
-        /// <summary>
-        /// Loads the Adobe standard glyph name table.
-        /// </summary>
-        /// <remarks>
-        /// In a production scenario the data should be sourced from embedded resources or precompiled lookup tables
-        /// to avoid embedding large literals directly in code.
-        /// </remarks>
-        private static string[] LoadStdNames() =>
-        [
-            ".notdef", "space", "exclam", "quotedbl", "numbersign", "dollar", "percent", "ampersand", "quoteright", "parenleft",
+    /// <summary>
+    /// Loads the Adobe standard glyph name table.
+    /// </summary>
+    /// <remarks>
+    /// In a production scenario the data should be sourced from embedded resources or precompiled lookup tables
+    /// to avoid embedding large literals directly in code.
+    /// </remarks>
+    private static string[] LoadStdNames() =>
+    [
+        ".notdef", "space", "exclam", "quotedbl", "numbersign", "dollar", "percent", "ampersand", "quoteright", "parenleft",
             "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash", "zero", "one", "two",
             "three", "four", "five", "six", "seven", "eight", "nine", "colon", "semicolon", "less",
             "equal", "greater", "question", "at", "A", "B", "C", "D", "E", "F",
@@ -165,16 +165,16 @@ public static class FontSupport
             "OEsmall", "Oslashsmall", "Ugravesmall", "Uacutesmall", "Ucircumflexsmall", "Udieresissmall", "Yacutesmall", "Thornsmall", "Ydieresissmall", "001.000",
             "001.001", "001.002", "001.003", "Black", "Bold", "Book", "Light", "Medium", "Regular", "Roman",
             "Semibold"
-        ];
-        /// <summary>
-        /// Loads the Unicode string values associated with the Adobe standard glyph names.
-        /// </summary>
-        /// <remarks>
-        /// These values mirror the Adobe Glyph List for New Fonts and allow mapping glyph names to Unicode strings.
-        /// </remarks>
-        private static string[] LoadStdValues() =>
-        [
-            "", " ", "!", "\"", "#", "$", "%", "&", "'", "(",
+    ];
+    /// <summary>
+    /// Loads the Unicode string values associated with the Adobe standard glyph names.
+    /// </summary>
+    /// <remarks>
+    /// These values mirror the Adobe Glyph List for New Fonts and allow mapping glyph names to Unicode strings.
+    /// </remarks>
+    private static string[] LoadStdValues() =>
+    [
+        "", " ", "!", "\"", "#", "$", "%", "&", "'", "(",
             ")", "*", "+", ",", "-", ".", "/", "0", "1", "2",
             "3", "4", "5", "6", "7", "8", "9", ":", ";", "<",
             "=", ">", "?", "@", "A", "B", "C", "D", "E", "F",
@@ -216,14 +216,14 @@ public static class FontSupport
             " Semibold", "?NUL", "?HT", " LF", " CR", "?DLE", "?DC1", "?DC2", "?DC3", "?DC4",
             "?RS", "?US", "!=", "?DEL", "?infinity", "<=", ">=", "?partialdiff", "?summation", "xproduct",
             "?pi", "?integral", "?Omega", "?radical", "~=", "?Delta", " nbspace", "?lozenge", "?apple"
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the Type 1C expert charset index table.
-        /// </summary>
-        private static int[] LoadType1CExpertCharset() =>
-        [
-            1, 229, 230, 231, 232, 233, 234, 235, 236, 237,
+    /// <summary>
+    /// Loads the Type 1C expert charset index table.
+    /// </summary>
+    private static int[] LoadType1CExpertCharset() =>
+    [
+        1, 229, 230, 231, 232, 233, 234, 235, 236, 237,
             238, 13, 14, 15, 99, 239, 240, 241, 242, 243,
             244, 245, 246, 247, 248, 27, 28, 249, 250, 251,
             252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
@@ -240,14 +240,14 @@ public static class FontSupport
             354, 355, 356, 357, 358, 359, 360, 361, 362, 363,
             364, 365, 366, 367, 368, 369, 370, 371, 372, 373,
             374, 375, 376, 377, 378
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the Type 1C expert subset charset index table.
-        /// </summary>
-        private static int[] LoadType1CExpertSubCharset() =>
-        [
-            1, 231, 232, 235, 236, 237, 238, 13, 14, 15,
+    /// <summary>
+    /// Loads the Type 1C expert subset charset index table.
+    /// </summary>
+    private static int[] LoadType1CExpertSubCharset() =>
+    [
+        1, 231, 232, 235, 236, 237, 238, 13, 14, 15,
             99, 239, 240, 241, 242, 243, 244, 245, 246, 247,
             248, 27, 28, 249, 250, 251, 253, 254, 255, 256,
             257, 258, 259, 260, 261, 262, 263, 264, 265, 266,
@@ -256,24 +256,24 @@ public static class FontSupport
             324, 325, 326, 150, 164, 169, 327, 328, 329, 330,
             331, 332, 333, 334, 335, 336, 337, 338, 339, 340,
             341, 342, 343, 344, 345, 346
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the Mac-specific glyph name extensions.
-        /// </summary>
-        private static string[] LoadMacExtras() =>
-        [
-            "NUL", "HT", "LF", "CR", "DLE", "DC1", "DC2", "DC3", "DC4", "RS",
+    /// <summary>
+    /// Loads the Mac-specific glyph name extensions.
+    /// </summary>
+    private static string[] LoadMacExtras() =>
+    [
+        "NUL", "HT", "LF", "CR", "DLE", "DC1", "DC2", "DC3", "DC4", "RS",
             "US", "notequal", "DEL", "infinity", "lessequal", "greaterequal", "partialdiff", "summation", "product", "pi",
             "integral", "Omega", "radical", "approxequal", "Delta", "nbspace", "lozenge", "apple"
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the MacRoman encoding table.
-        /// </summary>
-        private static int[] LoadMacRomanEncoding() =>
-        [
-            391, 154, 167, 140, 146, 192, 221, 197, 226, 392,
+    /// <summary>
+    /// Loads the MacRoman encoding table.
+    /// </summary>
+    private static int[] LoadMacRomanEncoding() =>
+    [
+        391, 154, 167, 140, 146, 192, 221, 197, 226, 392,
             393, 157, 162, 394, 199, 228, 395, 396, 397, 398,
             399, 155, 158, 150, 163, 169, 164, 160, 166, 168,
             400, 401, 1, 2, 3, 4, 5, 6, 7, 104,
@@ -299,14 +299,14 @@ public static class FontSupport
             179, 171, 180, 181, 182, 183, 184, 185, 187, 188,
             418, 190, 193, 194, 196, 145, 126, 127, 128, 129,
             130, 132, 133, 134, 135, 136
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the ISO Latin 1 encoding table.
-        /// </summary>
-        private static int[] LoadIsoLatin1Encoding() =>
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /// <summary>
+    /// Loads the ISO Latin 1 encoding table.
+    /// </summary>
+    private static int[] LoadIsoLatin1Encoding() =>
+    [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
@@ -332,14 +332,14 @@ public static class FontSupport
             144, 206, 210, 207, 208, 209, 214, 211, 212, 213,
             167, 215, 219, 216, 217, 220, 218, 159, 147, 225,
             222, 223, 224, 226, 162, 227
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the Windows ANSI encoding table.
-        /// </summary>
-        private static int[] LoadWinAnsiEncoding() =>
-        [
-            124, 125, 126, 127, 128, 129, 130, 131, 132, 133,
+    /// <summary>
+    /// Loads the Windows ANSI encoding table.
+    /// </summary>
+    private static int[] LoadWinAnsiEncoding() =>
+    [
+        124, 125, 126, 127, 128, 129, 130, 131, 132, 133,
             134, 135, 136, 145, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
@@ -365,14 +365,14 @@ public static class FontSupport
             144, 206, 210, 207, 208, 209, 214, 211, 212, 213,
             167, 215, 219, 216, 217, 220, 218, 159, 147, 225,
             222, 223, 224, 226, 162, 227
-        ];
+    ];
 
-        /// <summary>
-        /// Loads the Adobe standard encoding table.
-        /// </summary>
-        private static int[] LoadStandardEncoding() =>
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /// <summary>
+    /// Loads the Adobe standard encoding table.
+    /// </summary>
+    private static int[] LoadStandardEncoding() =>
+    [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
@@ -398,7 +398,7 @@ public static class FontSupport
             0, 0, 140, 141, 142, 143, 0, 0, 0, 0,
             0, 144, 0, 0, 0, 145, 0, 0, 146, 147,
             148, 149, 0, 0, 0, 0
-        ];
+    ];
 }
 
 

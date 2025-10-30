@@ -27,7 +27,7 @@ namespace Utils.Net.DNS.RFC5155
     [DNSTextRecord("{HashAlgorithm} {Flag} {Iterations} {Salt}")]
     public class NSEC3PARAM : DNSResponseDetail
     {
-        
+
         /// <summary>
         /// Gets or sets the hash algorithm identifier used when computing NSEC3 digests.
         /// </summary>

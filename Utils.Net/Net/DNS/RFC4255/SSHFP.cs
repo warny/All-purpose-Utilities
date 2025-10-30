@@ -39,24 +39,24 @@
 [DNSTextRecord("{Algorithm} {FingerPrintType} {FingerPrint}")]
 public class SSHFP : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the SSH algorithm identifier.
-	/// This indicates the type of SSH key used (e.g., RSA or DSS).
-	/// </summary>
-	[DNSField]
-	public SSHAlgorithm Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the SSH algorithm identifier.
+    /// This indicates the type of SSH key used (e.g., RSA or DSS).
+    /// </summary>
+    [DNSField]
+    public SSHAlgorithm Algorithm { get; set; }
 
-	/// <summary>
-	/// Gets or sets the fingerprint type.
-	/// This indicates the hash algorithm used to generate the fingerprint (e.g., SHA-1).
-	/// </summary>
-	[DNSField]
-	public SSHFingerprintType FingerPrintType { get; set; }
+    /// <summary>
+    /// Gets or sets the fingerprint type.
+    /// This indicates the hash algorithm used to generate the fingerprint (e.g., SHA-1).
+    /// </summary>
+    [DNSField]
+    public SSHFingerprintType FingerPrintType { get; set; }
 
-	/// <summary>
-	/// Gets or sets the fingerprint data as a byte array.
-	/// This is the result of hashing the SSH public key using the specified fingerprint type.
-	/// </summary>
-	[DNSField]
-	public byte[] FingerPrint { get; set; }
+    /// <summary>
+    /// Gets or sets the fingerprint data as a byte array.
+    /// This is the result of hashing the SSH public key using the specified fingerprint type.
+    /// </summary>
+    [DNSField]
+    public byte[] FingerPrint { get; set; }
 }

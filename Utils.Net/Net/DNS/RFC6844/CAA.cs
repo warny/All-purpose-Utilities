@@ -23,25 +23,25 @@ namespace Utils.Net.DNS.RFC6844;
 [DNSTextRecord("{Flags} {Tag} {Value}")]
 public class CAA : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the 1-octet flags field. Typically zero for standard usage;
-	/// certain bits may be used for future extensions (e.g., the critical bit).
-	/// </summary>
-	[DNSField]
-	public byte Flags { get; set; }
+    /// <summary>
+    /// Gets or sets the 1-octet flags field. Typically zero for standard usage;
+    /// certain bits may be used for future extensions (e.g., the critical bit).
+    /// </summary>
+    [DNSField]
+    public byte Flags { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Tag portion. The tag has a 1-byte length prefix in the DNS RDATA.
-	/// Common tags include "issue", "issuewild", or "iodef".
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public string Tag { get; set; }
+    /// <summary>
+    /// Gets or sets the Tag portion. The tag has a 1-byte length prefix in the DNS RDATA.
+    /// Common tags include "issue", "issuewild", or "iodef".
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public string Tag { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Value portion, containing the CA or policy data.
-	/// E.g., "letsencrypt.org" or "mailto:admin@example.com" for iodef reports.
-	/// How your reflection logic handles leftover RDATA might need customization here.
-	/// </summary>
-	[DNSField]
-	public string Value { get; set; }
+    /// <summary>
+    /// Gets or sets the Value portion, containing the CA or policy data.
+    /// E.g., "letsencrypt.org" or "mailto:admin@example.com" for iodef reports.
+    /// How your reflection logic handles leftover RDATA might need customization here.
+    /// </summary>
+    [DNSField]
+    public string Value { get; set; }
 }

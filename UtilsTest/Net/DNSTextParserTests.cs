@@ -42,7 +42,7 @@ public class DNSTextParserTests
     public void WriteZoneFile()
     {
         var header = new DNSHeader();
-		var record = new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello world" });
+        var record = new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello world" });
         header.Responses.Add(record);
         var text = DNSText.Default.Write(header).Trim();
         Assert.AreEqual("example.com. 3600 IN TXT \"hello world\"", text);
@@ -155,13 +155,13 @@ public class DNSTextParserTests
     [TestMethod]
     public void WriteRecordsToFile()
     {
-		var header = new DNSHeader();
-		header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" }));
-		header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") }));
+        var header = new DNSHeader();
+        header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new TXT { Text = "hello" }));
+        header.Responses.Add(new DNSResponseRecord("example.com.", 3600, new MX { Preference = 10, Exchange = new DNSDomainName("mail.example.com.") }));
         var writer = new DNSText();
-		
-		string content = writer.Write(header);
-		var lines = content.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        string content = writer.Write(header);
+        var lines = content.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         Assert.AreEqual(2, lines.Length);
         Assert.AreEqual("example.com. 3600 IN TXT hello", lines[0]);
         Assert.AreEqual("example.com. 3600 IN MX 10 mail.example.com.", lines[1]);

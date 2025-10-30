@@ -77,7 +77,7 @@ public class FastFourrierTransformTests
 
         double[] frequencies = samples.GetFrequencies(8);
 
-        double[] expected = [0,1,2,3];
+        double[] expected = [0, 1, 2, 3];
         CollectionAssert.AreEqual(expected, frequencies);
     }
 }

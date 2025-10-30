@@ -11,14 +11,14 @@ namespace Utils.Net.DNS;
 /// </summary>
 public enum DNSQRBit : ushort
 {
-	/// <summary>
-	/// The datagram contains a query and expects a response.
-	/// </summary>
-	Question = 0x0000,
-	/// <summary>
-	/// The datagram is a response to a previously issued query.
-	/// </summary>
-	Response = 0x8000
+    /// <summary>
+    /// The datagram contains a query and expects a response.
+    /// </summary>
+    Question = 0x0000,
+    /// <summary>
+    /// The datagram is a response to a previously issued query.
+    /// </summary>
+    Response = 0x8000
 }
 
 /// <summary>
@@ -26,18 +26,18 @@ public enum DNSQRBit : ushort
 /// </summary>
 public enum DNSOpCode : ushort
 {
-	/// <summary>
-	/// Standard query operation.
-	/// </summary>
-	Standart = 0x0000,
-	/// <summary>
-	/// Inverse query operation.
-	/// </summary>
-	Inverse = 0x1000,
-	/// <summary>
-	/// Server status request.
-	/// </summary>
-	Status = 0x2000
+    /// <summary>
+    /// Standard query operation.
+    /// </summary>
+    Standart = 0x0000,
+    /// <summary>
+    /// Inverse query operation.
+    /// </summary>
+    Inverse = 0x1000,
+    /// <summary>
+    /// Server status request.
+    /// </summary>
+    Status = 0x2000
 }
 
 /// <summary>
@@ -45,30 +45,30 @@ public enum DNSOpCode : ushort
 /// </summary>
 public enum DNSError : ushort
 {
-	/// <summary>
-	/// No error condition
-	/// </summary>
-	Ok = 0x0000,
-	/// <summary>
-	/// Format error - The name server was unable to interpret the query.
-	/// </summary>
-	FormatError = 0x0001,
-	/// <summary>
-	/// Server failure - The name server was unable to process this query due to a problem with the name server.
-	/// </summary>
-	ServerFailure = 0x0002,
-	/// <summary>
-	/// Name Error - Meaningful only for responses from an authoritative name server, this code signifies that the domain name referenced in the query does not exist.
-	/// </summary>
-	NameError = 0x0003,
-	/// <summary>
-	/// Not Implemented - The name server does not support the requested kind of query.
-	/// </summary>
-	NotImplemented = 0x0004,
-	/// <summary>
-	/// Refused - The name server refuses to perform the specified operation for policy reasons.  For example, a name server may not wish to provide the information to the particular requester, or a name server may not wish to perform a particular operation (e.g., zone transfer) for particular data.
-	/// </summary>
-	Refused = 0x0005
+    /// <summary>
+    /// No error condition
+    /// </summary>
+    Ok = 0x0000,
+    /// <summary>
+    /// Format error - The name server was unable to interpret the query.
+    /// </summary>
+    FormatError = 0x0001,
+    /// <summary>
+    /// Server failure - The name server was unable to process this query due to a problem with the name server.
+    /// </summary>
+    ServerFailure = 0x0002,
+    /// <summary>
+    /// Name Error - Meaningful only for responses from an authoritative name server, this code signifies that the domain name referenced in the query does not exist.
+    /// </summary>
+    NameError = 0x0003,
+    /// <summary>
+    /// Not Implemented - The name server does not support the requested kind of query.
+    /// </summary>
+    NotImplemented = 0x0004,
+    /// <summary>
+    /// Refused - The name server refuses to perform the specified operation for policy reasons.  For example, a name server may not wish to provide the information to the particular requester, or a name server may not wish to perform a particular operation (e.g., zone transfer) for particular data.
+    /// </summary>
+    Refused = 0x0005
 }
 
 /// <summary>
@@ -96,88 +96,88 @@ public enum DNSError : ushort
 /// </remarks>
 public static class DNSConstants
 {
-        /// <summary>
-        /// QR (Query/Response) bit. Set to 1 for Response, 0 for Query.
-        /// </summary>
-        /// <seealso cref="DNSQRBit"/>
-        public const ushort QR = 0x8000;
+    /// <summary>
+    /// QR (Query/Response) bit. Set to 1 for Response, 0 for Query.
+    /// </summary>
+    /// <seealso cref="DNSQRBit"/>
+    public const ushort QR = 0x8000;
 
-        /// <summary>
-        /// OpCode (Operation Code) field. Indicates the type of DNS query.
-        /// </summary>
-        /// <seealso cref="DNSOpCode"/>
-        public const ushort OpCode = 0x7800;
+    /// <summary>
+    /// OpCode (Operation Code) field. Indicates the type of DNS query.
+    /// </summary>
+    /// <seealso cref="DNSOpCode"/>
+    public const ushort OpCode = 0x7800;
 
-	/// <summary>
-	/// Authoritative Answer bit. Set to 1 if the responding server is an authority for the queried domain.
-	/// </summary>
-	public const ushort AuthoritativeAnswer = 0x0400;
+    /// <summary>
+    /// Authoritative Answer bit. Set to 1 if the responding server is an authority for the queried domain.
+    /// </summary>
+    public const ushort AuthoritativeAnswer = 0x0400;
 
-	/// <summary>
-	/// Message Truncated bit. Set to 1 if the DNS message was truncated during transmission.
-	/// </summary>
-	public const ushort MessageTruncated = 0x0200;
+    /// <summary>
+    /// Message Truncated bit. Set to 1 if the DNS message was truncated during transmission.
+    /// </summary>
+    public const ushort MessageTruncated = 0x0200;
 
-	/// <summary>
-	/// Recursion Desired bit. Set to 1 if the client requests a recursive DNS query.
-	/// </summary>
-	public const ushort RecursionDesired = 0x0100;
+    /// <summary>
+    /// Recursion Desired bit. Set to 1 if the client requests a recursive DNS query.
+    /// </summary>
+    public const ushort RecursionDesired = 0x0100;
 
-	/// <summary>
-	/// Recursion Possible bit. Set to 1 if the server supports recursive queries.
-	/// </summary>
-	public const ushort RecursionPossible = 0x0008;
+    /// <summary>
+    /// Recursion Possible bit. Set to 1 if the server supports recursive queries.
+    /// </summary>
+    public const ushort RecursionPossible = 0x0008;
 
-	/// <summary>
-	/// Reserved Zero (Z) bits. Reserved for future use. Should be set to 0.
-	/// </summary>
-	public const ushort ReservedZ = 0x0040;
+    /// <summary>
+    /// Reserved Zero (Z) bits. Reserved for future use. Should be set to 0.
+    /// </summary>
+    public const ushort ReservedZ = 0x0040;
 
-	/// <summary>
-	/// indicates in a response that all the data included in the answer and authority
-	/// portion of the response has been authenticated by the server
-	/// according to the policies of that server.
-	/// </summary>
-	public const ushort AuthenticDatas = 0x20;
+    /// <summary>
+    /// indicates in a response that all the data included in the answer and authority
+    /// portion of the response has been authenticated by the server
+    /// according to the policies of that server.
+    /// </summary>
+    public const ushort AuthenticDatas = 0x20;
 
-	/// <summary>
-	/// indicates in a query that Pending(non-authenticated) 
-	/// data is acceptable to the resolver sending the query.
-	/// </summary>
-	public const ushort CheckingDisabled = 0x10;
+    /// <summary>
+    /// indicates in a query that Pending(non-authenticated) 
+    /// data is acceptable to the resolver sending the query.
+    /// </summary>
+    public const ushort CheckingDisabled = 0x10;
 
-        /// <summary>
-        /// Error field. Indicates the type of DNS error encountered in the response.
-        /// </summary>
-        /// <seealso cref="DNSError"/>
-        public const ushort Error = 0x000F;
+    /// <summary>
+    /// Error field. Indicates the type of DNS error encountered in the response.
+    /// </summary>
+    /// <seealso cref="DNSError"/>
+    public const ushort Error = 0x000F;
 }
 /// <summary>
 /// DNS class identifiers that describe the scope of a resource record.
 /// </summary>
 public enum DNSClassId : ushort
 {
-	/// <summary>
-	/// the Internet
-	/// </summary>
-	IN = 0x0001,
-	/// <summary>
-	/// the CSNET class (Obsolete - used only for examples in some obsolete RFCs) 
-	/// </summary>
-	[Obsolete("used only for examples in some obsolete RFCs")]
-	CS = 0x0002,
-	/// <summary>
-	/// the CHAOS class
-	/// </summary>
-	CH = 0x0003,
-	/// <summary>
-	/// Hesiod [Dyer 87]
-	/// </summary>
-	HS = 0x04,
-	/// <summary>
-	/// any class
-	/// </summary>
-	ALL = 0x00FF
+    /// <summary>
+    /// the Internet
+    /// </summary>
+    IN = 0x0001,
+    /// <summary>
+    /// the CSNET class (Obsolete - used only for examples in some obsolete RFCs) 
+    /// </summary>
+    [Obsolete("used only for examples in some obsolete RFCs")]
+    CS = 0x0002,
+    /// <summary>
+    /// the CHAOS class
+    /// </summary>
+    CH = 0x0003,
+    /// <summary>
+    /// Hesiod [Dyer 87]
+    /// </summary>
+    HS = 0x04,
+    /// <summary>
+    /// any class
+    /// </summary>
+    ALL = 0x00FF
 }
 
 /// <summary>
@@ -185,24 +185,24 @@ public enum DNSClassId : ushort
 /// </summary>
 public static class DNSRequestType
 {
-	/// <summary>
-	/// Wildcard request matching every record type.
-	/// </summary>
-	public const ushort ALL = 0xFF;
-	/// <summary>
-	/// DNS zone transfer request type.
-	/// </summary>
-	public const ushort AXFR = 0xFC;
-        /// <summary>
-        /// Mailbox-related resource record type (obsolete).
-        /// </summary>
-        [Obsolete("Replaced by MX records; prefer querying DNSRequestType.AXFR or modern mail exchange records.")]
-        public const ushort MAILB = 0xFD;
-        /// <summary>
-        /// Mail agent resource record type (obsolete).
-        /// </summary>
-        [Obsolete("Replaced by MX records; prefer querying DNSRequestType.AXFR or modern mail exchange records.")]
-        public const ushort MAILA = 0xFE;
+    /// <summary>
+    /// Wildcard request matching every record type.
+    /// </summary>
+    public const ushort ALL = 0xFF;
+    /// <summary>
+    /// DNS zone transfer request type.
+    /// </summary>
+    public const ushort AXFR = 0xFC;
+    /// <summary>
+    /// Mailbox-related resource record type (obsolete).
+    /// </summary>
+    [Obsolete("Replaced by MX records; prefer querying DNSRequestType.AXFR or modern mail exchange records.")]
+    public const ushort MAILB = 0xFD;
+    /// <summary>
+    /// Mail agent resource record type (obsolete).
+    /// </summary>
+    [Obsolete("Replaced by MX records; prefer querying DNSRequestType.AXFR or modern mail exchange records.")]
+    public const ushort MAILA = 0xFE;
 }
 
 /// <summary>
@@ -210,19 +210,19 @@ public static class DNSRequestType
 /// </summary>
 internal static class Types
 {
-        /// <summary>
-        /// Gets the <see cref="Type"/> representing <see cref="DNSRequestRecord"/>.
-        /// </summary>
-        public static readonly Type dnsRequestRecordType = typeof(DNSRequestRecord);
+    /// <summary>
+    /// Gets the <see cref="Type"/> representing <see cref="DNSRequestRecord"/>.
+    /// </summary>
+    public static readonly Type dnsRequestRecordType = typeof(DNSRequestRecord);
 
-        /// <summary>
-        /// Gets the <see cref="Type"/> representing <see cref="DNSResponseDetail"/>.
-        /// </summary>
-        public static readonly Type dnsResponseDetailType = typeof(DNSResponseDetail);
+    /// <summary>
+    /// Gets the <see cref="Type"/> representing <see cref="DNSResponseDetail"/>.
+    /// </summary>
+    public static readonly Type dnsResponseDetailType = typeof(DNSResponseDetail);
 
-        /// <summary>
-        /// Gets the <see cref="Type"/> representing <see cref="DNSRecordAttribute"/>.
-        /// </summary>
-        public static readonly Type dnsClassAttributeType = typeof(DNSRecordAttribute);
+    /// <summary>
+    /// Gets the <see cref="Type"/> representing <see cref="DNSRecordAttribute"/>.
+    /// </summary>
+    public static readonly Type dnsClassAttributeType = typeof(DNSRecordAttribute);
 }
 

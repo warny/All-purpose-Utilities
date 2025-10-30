@@ -40,10 +40,11 @@ namespace UtilsTest.Objects
             formatter.AddFormatter("uc", (string s) => s.ToUpper());
             formatter.AddFormatter("lc", (string s) => s.ToLower());
 
-            var result = new {
+            var result = new
+            {
                 Field1 = r.RandomString(5, 10),
                 Field2 = r.Next(-100, 100),
-                Field3 = new DateTime(r.Next(2000, 2100), 1, 1).AddDays(r.Next(0,365)),
+                Field3 = new DateTime(r.Next(2000, 2100), 1, 1).AddDays(r.Next(0, 365)),
                 Field3_1 = r.RandomFrom(null, r.RandomString(5, 10)),
                 Field4 = r.RandomString(5, 10)
             };
@@ -60,7 +61,7 @@ namespace UtilsTest.Objects
             Mock<IDataRecord> dataRecord = new Mock<IDataRecord>();
             dataRecord.Setup(dr => dr.FieldCount).Returns(fields.Count);
 
-            foreach (var field in fields.Select ((Field, Index) => (Field, Index)))
+            foreach (var field in fields.Select((Field, Index) => (Field, Index)))
             {
                 dataRecord.Setup(dr => dr[field.Index]).Returns(field.Field.Value);
                 dataRecord.Setup(dr => dr.GetFieldType(field.Index)).Returns(field.Field.Type);

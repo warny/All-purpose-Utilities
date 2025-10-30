@@ -34,17 +34,17 @@ namespace Utils.Net.DNS.RFC1035;
 [Obsolete("MR (mail redirection) records are obsolete; use MX records instead.")]
 public class MR : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the new mailbox domain name. This is the name to which
-	/// mail was originally meant to be redirected.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName NewName { get; set; }
+    /// <summary>
+    /// Gets or sets the new mailbox domain name. This is the name to which
+    /// mail was originally meant to be redirected.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName NewName { get; set; }
 
-	/// <summary>
-	/// Returns the <see cref="NewName"/> string representation.
-	/// Since <see cref="DNSDomainName"/> is a struct, it can't be null
-	/// but can be empty if uninitialized.
-	/// </summary>
-	public override string ToString() => NewName.ToString();
+    /// <summary>
+    /// Returns the <see cref="NewName"/> string representation.
+    /// Since <see cref="DNSDomainName"/> is a struct, it can't be null
+    /// but can be empty if uninitialized.
+    /// </summary>
+    public override string ToString() => NewName.ToString();
 }

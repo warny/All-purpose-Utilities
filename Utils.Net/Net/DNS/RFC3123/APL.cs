@@ -61,56 +61,56 @@ namespace Utils.Net.DNS.RFC3123;
 [DNSTextRecord("{AddressFamily} {Prefix} {flagAndAfdLength} {AfdPart}")]
 public class APL : DNSResponseDetail
 {
-	
 
-	/// <summary>
-	/// Gets or sets the address family for this APL item.
-	/// This is a 16-bit unsigned value (as per <see cref="IANAddressFamily"/>)
-	/// assigned by IANA.
-	/// </summary>
-	[DNSField]
-	public IANAddressFamily AddressFamily { get; set; }
 
-	/// <summary>
-	/// Gets or sets the prefix length (in bits) for this APL item.
-	/// The prefix indicates how many of the high-order bits of the address are significant.
-	/// </summary>
-	[DNSField]
-	public byte Prefix { get; set; }
+    /// <summary>
+    /// Gets or sets the address family for this APL item.
+    /// This is a 16-bit unsigned value (as per <see cref="IANAddressFamily"/>)
+    /// assigned by IANA.
+    /// </summary>
+    [DNSField]
+    public IANAddressFamily AddressFamily { get; set; }
 
-	/// <summary>
-	/// Composite field that stores both the negation flag and the AFDLENGTH.
-	/// The most significant bit (bit 7) is used for the negation flag (N), and the
-	/// remaining 7 bits represent the AFDLENGTH (the length of the AFDPART).
-	/// </summary>
-	[DNSField]
-	private byte flagAndAfdLength;
+    /// <summary>
+    /// Gets or sets the prefix length (in bits) for this APL item.
+    /// The prefix indicates how many of the high-order bits of the address are significant.
+    /// </summary>
+    [DNSField]
+    public byte Prefix { get; set; }
 
-	/// <summary>
-	/// Gets or sets the AFDLENGTH, which is the length in octets of the address family dependent part (AFDPART).
-	/// This value is extracted from the lower 7 bits of <see cref="flagAndAfdLength"/>.
-	/// </summary>
-	private byte AfdLength
-	{
-		get => (byte)(flagAndAfdLength & 0b0111_1111);
-		set => flagAndAfdLength = (byte)((value & 0b0111_1111) | (flagAndAfdLength & 0b1000_0000));
-	}
+    /// <summary>
+    /// Composite field that stores both the negation flag and the AFDLENGTH.
+    /// The most significant bit (bit 7) is used for the negation flag (N), and the
+    /// remaining 7 bits represent the AFDLENGTH (the length of the AFDPART).
+    /// </summary>
+    [DNSField]
+    private byte flagAndAfdLength;
 
-	/// <summary>
-	/// Gets or sets a value indicating whether the negation flag is set.
-	/// The negation flag (N) is stored in the most significant bit of <see cref="flagAndAfdLength"/>.
-	/// If set to true, the prefix is negated (i.e., excluded).
-	/// </summary>
-	public bool Negate
-	{
-		get => (flagAndAfdLength & 0b1000_0000) != 0;
-		set => flagAndAfdLength = (byte)((value ? 0b1000_0000 : 0) | (flagAndAfdLength & 0b0111_1111));
-	}
+    /// <summary>
+    /// Gets or sets the AFDLENGTH, which is the length in octets of the address family dependent part (AFDPART).
+    /// This value is extracted from the lower 7 bits of <see cref="flagAndAfdLength"/>.
+    /// </summary>
+    private byte AfdLength
+    {
+        get => (byte)(flagAndAfdLength & 0b0111_1111);
+        set => flagAndAfdLength = (byte)((value & 0b0111_1111) | (flagAndAfdLength & 0b1000_0000));
+    }
 
-	/// <summary>
-	/// Gets or sets the address family dependent part (AFDPART) as a byte array.
-	/// Its length must match the value specified by <see cref="AfdLength"/>.
-	/// </summary>
-	[DNSField(nameof(AfdLength))]
-	public byte[] AfdPart { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the negation flag is set.
+    /// The negation flag (N) is stored in the most significant bit of <see cref="flagAndAfdLength"/>.
+    /// If set to true, the prefix is negated (i.e., excluded).
+    /// </summary>
+    public bool Negate
+    {
+        get => (flagAndAfdLength & 0b1000_0000) != 0;
+        set => flagAndAfdLength = (byte)((value ? 0b1000_0000 : 0) | (flagAndAfdLength & 0b0111_1111));
+    }
+
+    /// <summary>
+    /// Gets or sets the address family dependent part (AFDPART) as a byte array.
+    /// Its length must match the value specified by <see cref="AfdLength"/>.
+    /// </summary>
+    [DNSField(nameof(AfdLength))]
+    public byte[] AfdPart { get; set; }
 }

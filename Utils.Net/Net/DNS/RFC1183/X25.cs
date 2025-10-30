@@ -29,17 +29,17 @@ namespace Utils.Net.DNS.RFC1183;
 [DNSTextRecord("{PSDN}")]
 public class X25 : DNSResponseDetail
 {
-	
 
-	/// <summary>
-	/// Gets or sets the PSDN (Public Switched Data Network) address as a string.
-	/// Example: "311061700956".
-	/// </summary>
-	[DNSField]
-	public string PSDN { get; set; }
 
-	/// <summary>
-	/// Returns the PSDN address as a string, or an empty string if <see cref="PSDN"/> is null.
-	/// </summary>
-	public override string ToString() => PSDN ?? string.Empty;
+    /// <summary>
+    /// Gets or sets the PSDN (Public Switched Data Network) address as a string.
+    /// Example: "311061700956".
+    /// </summary>
+    [DNSField]
+    public string PSDN { get; set; }
+
+    /// <summary>
+    /// Returns the PSDN address as a string, or an empty string if <see cref="PSDN"/> is null.
+    /// </summary>
+    public override string ToString() => PSDN ?? string.Empty;
 }

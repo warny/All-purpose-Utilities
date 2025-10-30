@@ -44,24 +44,24 @@ namespace Utils.Net.DNS.RFC1183;
 [DNSTextRecord("{Preference} {AFSServer}")]
 public class AFSDB : DNSResponseDetail
 {
-	
 
-	/// <summary>
-	/// Gets or sets the 16-bit preference value for this AFSDB record. A lower number indicates
-	/// a higher priority among multiple AFSDB records at the same owner name.
-	/// </summary>
-	[DNSField]
-	public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name of the AFS (Andrew File System) server.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName AFSServer { get; set; }
+    /// <summary>
+    /// Gets or sets the 16-bit preference value for this AFSDB record. A lower number indicates
+    /// a higher priority among multiple AFSDB records at the same owner name.
+    /// </summary>
+    [DNSField]
+    public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Returns a string showing the server name followed by the preference in parentheses,
-	/// e.g. "afsserver.example.com (10)".
-	/// </summary>
-	public override string ToString() => $"{AFSServer} ({Preference})";
+    /// <summary>
+    /// Gets or sets the domain name of the AFS (Andrew File System) server.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName AFSServer { get; set; }
+
+    /// <summary>
+    /// Returns a string showing the server name followed by the preference in parentheses,
+    /// e.g. "afsserver.example.com (10)".
+    /// </summary>
+    public override string ToString() => $"{AFSServer} ({Preference})";
 }

@@ -28,11 +28,11 @@ namespace Utils.Net.DNS.RFC2672;
 [DNSTextRecord("{Target}")]
 public class DNAME : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the target domain name that replaces the original subtree.
-	/// All queries falling under the DNAME record's owner name are redirected based
-	/// on this target.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName Target { get; set; }
+    /// <summary>
+    /// Gets or sets the target domain name that replaces the original subtree.
+    /// All queries falling under the DNAME record's owner name are redirected based
+    /// on this target.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName Target { get; set; }
 }

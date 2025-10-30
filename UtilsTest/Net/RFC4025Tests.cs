@@ -36,8 +36,8 @@ namespace UtilsTest.Net
                 )
             );
 
-            var packet = DNSPacketWriter.Default.Write( header1 );
-            var header2 = DNSPacketReader.Default.Read( packet );
+            var packet = DNSPacketWriter.Default.Write(header1);
+            var header2 = DNSPacketReader.Default.Read(packet);
 
             Assert.AreEqual(header1, header2, DNSHeadersComparer.Default);
         }

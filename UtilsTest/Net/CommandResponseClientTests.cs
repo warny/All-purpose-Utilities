@@ -32,8 +32,8 @@ public class CommandResponseClientTests
             server.CommandReceived += cmd =>
                 Task.FromResult<IEnumerable<ServerResponse>>(cmd == "MULTI"
                     ?
-					[
-						new ServerResponse("100", ResponseSeverity.Preliminary, "Continue"),
+                    [
+                        new ServerResponse("100", ResponseSeverity.Preliminary, "Continue"),
                         new ServerResponse("200", ResponseSeverity.Completion, "Done")
                     ]
                     : System.Array.Empty<ServerResponse>());

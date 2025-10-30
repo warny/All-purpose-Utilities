@@ -40,31 +40,31 @@
 [DNSTextRecord("{Flags} {Protocol} {Algorithm} {Key}")]
 public class DNSKEY : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the Flags field of the DNSKEY record.
-	/// This 16-bit field specifies properties such as whether the key is a zone key or a key-signing key (KSK).
-	/// </summary>
-	[DNSField]
-	public ushort Flags { get; set; }
+    /// <summary>
+    /// Gets or sets the Flags field of the DNSKEY record.
+    /// This 16-bit field specifies properties such as whether the key is a zone key or a key-signing key (KSK).
+    /// </summary>
+    [DNSField]
+    public ushort Flags { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Protocol field of the DNSKEY record.
-	/// This 8-bit field must always be set to 3 for DNSSEC.
-	/// </summary>
-	[DNSField]
-	public byte Protocol { get; set; }
+    /// <summary>
+    /// Gets or sets the Protocol field of the DNSKEY record.
+    /// This 8-bit field must always be set to 3 for DNSSEC.
+    /// </summary>
+    [DNSField]
+    public byte Protocol { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Algorithm field of the DNSKEY record.
-	/// This 8-bit field specifies the cryptographic algorithm used by the key (e.g., RSA, DSA, ECDSA).
-	/// </summary>
-	[DNSField]
-	public byte Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the Algorithm field of the DNSKEY record.
+    /// This 8-bit field specifies the cryptographic algorithm used by the key (e.g., RSA, DSA, ECDSA).
+    /// </summary>
+    [DNSField]
+    public byte Algorithm { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Key field of the DNSKEY record.
-	/// This variable-length field contains the public key data used for DNSSEC signature verification.
-	/// </summary>
-	[DNSField]
-	public byte[] Key { get; set; }
+    /// <summary>
+    /// Gets or sets the Key field of the DNSKEY record.
+    /// This variable-length field contains the public key data used for DNSSEC signature verification.
+    /// </summary>
+    [DNSField]
+    public byte[] Key { get; set; }
 }

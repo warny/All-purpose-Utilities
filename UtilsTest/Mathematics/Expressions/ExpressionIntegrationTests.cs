@@ -8,10 +8,10 @@ namespace UtilsTest.Mathematics.Expressions
     [TestClass]
     public class ExpressionIntegrationTests
     {
-		readonly ExpressionIntegration integration = new ExpressionIntegration("x");
-		readonly ExpressionSimplifier simplifier = new ExpressionSimplifier();
+        readonly ExpressionIntegration integration = new ExpressionIntegration("x");
+        readonly ExpressionSimplifier simplifier = new ExpressionSimplifier();
 
-		[TestMethod]
+        [TestMethod]
         public void ExpressionsIntegration()
         {
             var parameters = new ParameterExpression[]

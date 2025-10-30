@@ -38,15 +38,15 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSTextRecord("{Info}")]
 public class HINFO : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets a string containing CPU and OS information. This example uses a single
-	/// field, but you may split it into two fields if desired (CPU and OS).
-	/// </summary>
-	[DNSField]
-	public string Info { get; set; }
+    /// <summary>
+    /// Gets or sets a string containing CPU and OS information. This example uses a single
+    /// field, but you may split it into two fields if desired (CPU and OS).
+    /// </summary>
+    [DNSField]
+    public string Info { get; set; }
 
-	/// <summary>
-	/// Returns the entire stored text in <see cref="Info"/>.
-	/// </summary>
-	public override string ToString() => Info;
+    /// <summary>
+    /// Returns the entire stored text in <see cref="Info"/>.
+    /// </summary>
+    public override string ToString() => Info;
 }

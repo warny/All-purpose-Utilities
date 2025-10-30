@@ -39,8 +39,8 @@ public class ReadOnlyMappedDictionary<K, V> : IReadOnlyDictionary<K, V>
         this.map = map ?? throw new ArgumentNullException(nameof(map));
     }
 
-        /// <inheritdoc />
-        virtual public V this[K key]
+    /// <inheritdoc />
+    virtual public V this[K key]
     {
         get => map.GetValue(key);
         set => throw new NotSupportedException();

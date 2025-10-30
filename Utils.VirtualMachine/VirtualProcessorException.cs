@@ -42,8 +42,8 @@ public class VirtualProcessorException : Exception
     /// <param name="context">The contextual information about the source or destination.</param>
 #pragma warning disable SYSLIB0051 // Le type ou le membre est obsolète
     protected VirtualProcessorException(SerializationInfo info, StreamingContext context)
-		: base(info, context)
-	{
+        : base(info, context)
+    {
     }
 #pragma warning restore SYSLIB0051 // Le type ou le membre est obsolète
 }

@@ -6,78 +6,78 @@
 /// </summary>
 public interface IBuilder
 {
-	/// <summary>
-	/// Gets the character used to separate instructions or statements.
-	/// </summary>
-	char InstructionSeparator { get; }
+    /// <summary>
+    /// Gets the character used to separate instructions or statements.
+    /// </summary>
+    char InstructionSeparator { get; }
 
-	/// <summary>
-	/// Gets the array of characters recognized as whitespace.
-	/// </summary>
-	char[] SpaceSymbols { get; }
+    /// <summary>
+    /// Gets the array of characters recognized as whitespace.
+    /// </summary>
+    char[] SpaceSymbols { get; }
 
-	/// <summary>
-	/// Gets the character used to separate items in lists (e.g., comma).
-	/// </summary>
-	char ListSeparator { get; }
+    /// <summary>
+    /// Gets the character used to separate items in lists (e.g., comma).
+    /// </summary>
+    char ListSeparator { get; }
 
-	/// <summary>
-	/// Gets a collection of functions that attempt to read tokens
-	/// from raw content at a given index.
-	/// </summary>
-	IEnumerable<TryReadToken> TokenReaders { get; }
+    /// <summary>
+    /// Gets a collection of functions that attempt to read tokens
+    /// from raw content at a given index.
+    /// </summary>
+    IEnumerable<TryReadToken> TokenReaders { get; }
 
-	/// <summary>
-	/// Gets a collection of transformers that can modify or rewrite tokens
-	/// before they are processed (e.g., for escaping or case transformation).
-	/// </summary>
-	IEnumerable<StringTransformer> StringTransformers { get; }
+    /// <summary>
+    /// Gets a collection of transformers that can modify or rewrite tokens
+    /// before they are processed (e.g., for escaping or case transformation).
+    /// </summary>
+    IEnumerable<StringTransformer> StringTransformers { get; }
 
-	/// <summary>
-	/// Gets an array of any additional symbols recognized by this parser.
-	/// </summary>
-	string[] AdditionalSymbols { get; }
+    /// <summary>
+    /// Gets an array of any additional symbols recognized by this parser.
+    /// </summary>
+    string[] AdditionalSymbols { get; }
 
-	/// <summary>
-	/// Gets the expression builder for numeric values.
-	/// </summary>
-	IStartExpressionBuilder NumberBuilder { get; }
+    /// <summary>
+    /// Gets the expression builder for numeric values.
+    /// </summary>
+    IStartExpressionBuilder NumberBuilder { get; }
 
-	/// <summary>
-	/// Gets a read-only dictionary mapping integer prefixes
-	/// (e.g., '0x' for hexadecimal) to base or priority level.
-	/// </summary>
-	IReadOnlyDictionary<string, int> IntegerPrefixes { get; }
+    /// <summary>
+    /// Gets a read-only dictionary mapping integer prefixes
+    /// (e.g., '0x' for hexadecimal) to base or priority level.
+    /// </summary>
+    IReadOnlyDictionary<string, int> IntegerPrefixes { get; }
 
-	/// <summary>
-	/// Gets a read-only dictionary of expression builders that handle
-	/// specific start tokens (e.g., '(' for subexpressions, '{' for blocks).
-	/// </summary>
-	IReadOnlyDictionary<string, IStartExpressionBuilder> StartExpressionBuilders { get; }
+    /// <summary>
+    /// Gets a read-only dictionary of expression builders that handle
+    /// specific start tokens (e.g., '(' for subexpressions, '{' for blocks).
+    /// </summary>
+    IReadOnlyDictionary<string, IStartExpressionBuilder> StartExpressionBuilders { get; }
 
-	/// <summary>
-	/// Gets the builder used when no other builder matches,
-	/// typically handling unary operators or fallback cases.
-	/// </summary>
-	IStartExpressionBuilder FallbackUnaryBuilder { get; }
+    /// <summary>
+    /// Gets the builder used when no other builder matches,
+    /// typically handling unary operators or fallback cases.
+    /// </summary>
+    IStartExpressionBuilder FallbackUnaryBuilder { get; }
 
-	/// <summary>
-	/// Gets a read-only dictionary of expression builders for follow-up operations,
-	/// e.g. handling binary or ternary operators after an initial expression is parsed.
-	/// </summary>
-	IReadOnlyDictionary<string, IFollowUpExpressionBuilder> FollowUpExpressionBuilder { get; }
+    /// <summary>
+    /// Gets a read-only dictionary of expression builders for follow-up operations,
+    /// e.g. handling binary or ternary operators after an initial expression is parsed.
+    /// </summary>
+    IReadOnlyDictionary<string, IFollowUpExpressionBuilder> FollowUpExpressionBuilder { get; }
 
-	/// <summary>
-	/// Gets the expression builder to use when no other follow-up builder matches,
-	/// typically handling unrecognized operators or fallback logic.
-	/// </summary>
-	IFollowUpExpressionBuilder FallbackBinaryOrTernaryBuilder { get; }
+    /// <summary>
+    /// Gets the expression builder to use when no other follow-up builder matches,
+    /// typically handling unrecognized operators or fallback logic.
+    /// </summary>
+    IFollowUpExpressionBuilder FallbackBinaryOrTernaryBuilder { get; }
 
-	/// <summary>
-	/// Gets a collection of token strings (e.g., operators or symbols)
-	/// recognized by this builder's parsing logic.
-	/// </summary>
-	IEnumerable<string> Symbols { get; }
+    /// <summary>
+    /// Gets a collection of token strings (e.g., operators or symbols)
+    /// recognized by this builder's parsing logic.
+    /// </summary>
+    IEnumerable<string> Symbols { get; }
 }
 
 /// <summary>

@@ -19,8 +19,8 @@ namespace Utils.Net.DNS.RFC2535;
 /// is unsigned (insecure), or to prohibit usage for certain cryptographic functions.
 /// </para>
 /// <para>
-        /// The <c>Protocol</c> and <c>Algorithm</c> fields follow
-        /// <see href="https://www.rfc-editor.org/rfc/rfc2535#section-3">RFC 2535 §3</see> definitions, and the public key
+/// The <c>Protocol</c> and <c>Algorithm</c> fields follow
+/// <see href="https://www.rfc-editor.org/rfc/rfc2535#section-3">RFC 2535 §3</see> definitions, and the public key
 /// (<see cref="PublicKey"/>) is algorithm-specific data. For further details on usage, see:
 /// <list type="bullet">
 /// <item><description><see href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</see> for DNS security extensions</description></item>
@@ -41,100 +41,100 @@ namespace Utils.Net.DNS.RFC2535;
 [DNSTextRecord("{Flags} {Protocol} {Algorithm} {PublicKey}")]
 public class KEY : DNSResponseDetail
 {
-	
 
-	/// <summary>
-	/// Gets the 16-bit flags field which indicates key usage, key owner type, extension flags,
-	/// and signatory bits. This is manipulated through properties such as
-	/// <see cref="ProhibitedForAuthentication"/>, <see cref="ProhibitedForConfidentiality"/>,
-	/// <see cref="Extended"/>, <see cref="KeyOwner"/>, and <see cref="SignatoryField"/>.
-	/// </summary>
-	[DNSField]
-	public ushort Flags { get; private set; }
 
-	/// <summary>
-	/// Gets or sets the 8-bit protocol value. Typically <c>3</c> (DNSSEC),
-	/// but can be TLS (1), email (2), IPSEC (4), or others as assigned by IANA.
-	/// </summary>
-	[DNSField]
-	public Protocol Protocol { get; set; }
+    /// <summary>
+    /// Gets the 16-bit flags field which indicates key usage, key owner type, extension flags,
+    /// and signatory bits. This is manipulated through properties such as
+    /// <see cref="ProhibitedForAuthentication"/>, <see cref="ProhibitedForConfidentiality"/>,
+    /// <see cref="Extended"/>, <see cref="KeyOwner"/>, and <see cref="SignatoryField"/>.
+    /// </summary>
+    [DNSField]
+    public ushort Flags { get; private set; }
 
-	/// <summary>
-	/// Gets or sets the cryptographic algorithm. Common values include
-	/// <c>3</c> (DSA), <c>1</c> (RSA/MD5), etc. for DNSSEC usage.
-	/// </summary>
-	[DNSField]
-	public Algorithm Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the 8-bit protocol value. Typically <c>3</c> (DNSSEC),
+    /// but can be TLS (1), email (2), IPSEC (4), or others as assigned by IANA.
+    /// </summary>
+    [DNSField]
+    public Protocol Protocol { get; set; }
 
-	/// <summary>
-	/// An optional 16-bit extension field present only if <see cref="Extended"/> is set in the <see cref="Flags"/>.
-	/// </summary>
-	[DNSField(Condition = "Extended")]
-	public ushort Extension { get; set; }
+    /// <summary>
+    /// Gets or sets the cryptographic algorithm. Common values include
+    /// <c>3</c> (DSA), <c>1</c> (RSA/MD5), etc. for DNSSEC usage.
+    /// </summary>
+    [DNSField]
+    public Algorithm Algorithm { get; set; }
 
-	/// <summary>
-	/// Gets or sets the raw public key bytes. This is algorithm-specific data
-	/// whose format depends on the <see cref="Algorithm"/>.
-	/// </summary>
-	/// <remarks>
-	/// If the <c>No-Key</c> bits are set in <see cref="Flags"/>,
-	/// the <see cref="PublicKey"/> should be omitted or ignored.
-	/// </remarks>
-	[DNSField]
-	public byte[] PublicKey { get; set; }
+    /// <summary>
+    /// An optional 16-bit extension field present only if <see cref="Extended"/> is set in the <see cref="Flags"/>.
+    /// </summary>
+    [DNSField(Condition = "Extended")]
+    public ushort Extension { get; set; }
 
-	/// <summary>
-	/// Gets or sets a value indicating whether the key is prohibited for authentication use
-	/// (flag bits 0-1 set to <c>10</c> in the specification).
-	/// </summary>
-	public bool ProhibitedForAuthentication
-	{
-		get => (Flags & KeyFlags.ProhibitedForAuthentication) != 0;
-		set => Flags = (ushort)((Flags & ~KeyFlags.ProhibitedForAuthentication)
-								| (value ? KeyFlags.ProhibitedForAuthentication : 0));
-	}
+    /// <summary>
+    /// Gets or sets the raw public key bytes. This is algorithm-specific data
+    /// whose format depends on the <see cref="Algorithm"/>.
+    /// </summary>
+    /// <remarks>
+    /// If the <c>No-Key</c> bits are set in <see cref="Flags"/>,
+    /// the <see cref="PublicKey"/> should be omitted or ignored.
+    /// </remarks>
+    [DNSField]
+    public byte[] PublicKey { get; set; }
 
-	/// <summary>
-	/// Gets or sets a value indicating whether the key is prohibited for confidentiality use
-	/// (flag bits 0-1 set to <c>01</c> in the specification).
-	/// </summary>
-	public bool ProhibitedForConfidentiality
-	{
-		get => (Flags & KeyFlags.ProhibitedForConfidentiality) != 0;
-		set => Flags = (ushort)((Flags & ~KeyFlags.ProhibitedForConfidentiality)
-								| (value ? KeyFlags.ProhibitedForConfidentiality : 0));
-	}
+    /// <summary>
+    /// Gets or sets a value indicating whether the key is prohibited for authentication use
+    /// (flag bits 0-1 set to <c>10</c> in the specification).
+    /// </summary>
+    public bool ProhibitedForAuthentication
+    {
+        get => (Flags & KeyFlags.ProhibitedForAuthentication) != 0;
+        set => Flags = (ushort)((Flags & ~KeyFlags.ProhibitedForAuthentication)
+                                | (value ? KeyFlags.ProhibitedForAuthentication : 0));
+    }
 
-	/// <summary>
-	/// Gets or sets a value indicating whether the "extension" bit (bit 3) is set,
-	/// indicating additional 16 bits of flags are present in <see cref="Extension"/>.
-	/// </summary>
-	public bool Extended
-	{
-		get => (Flags & KeyFlags.Extension) != 0;
-		set => Flags = (ushort)((Flags & ~KeyFlags.Extension) | (value ? KeyFlags.Extension : 0));
-	}
+    /// <summary>
+    /// Gets or sets a value indicating whether the key is prohibited for confidentiality use
+    /// (flag bits 0-1 set to <c>01</c> in the specification).
+    /// </summary>
+    public bool ProhibitedForConfidentiality
+    {
+        get => (Flags & KeyFlags.ProhibitedForConfidentiality) != 0;
+        set => Flags = (ushort)((Flags & ~KeyFlags.ProhibitedForConfidentiality)
+                                | (value ? KeyFlags.ProhibitedForConfidentiality : 0));
+    }
 
-	/// <summary>
-	/// Gets or sets the key owner (user/account, zone key, host/entity, or reserved).
-	/// This corresponds to bits 6-7 in the flags.
-	/// </summary>
-	public KeyOwner KeyOwner
-	{
-		get => (KeyOwner)(Flags & KeyFlagsMasks.KeyOwner);
-		set => Flags = (ushort)((Flags & ~KeyFlagsMasks.KeyOwner) | (ushort)value);
-	}
+    /// <summary>
+    /// Gets or sets a value indicating whether the "extension" bit (bit 3) is set,
+    /// indicating additional 16 bits of flags are present in <see cref="Extension"/>.
+    /// </summary>
+    public bool Extended
+    {
+        get => (Flags & KeyFlags.Extension) != 0;
+        set => Flags = (ushort)((Flags & ~KeyFlags.Extension) | (value ? KeyFlags.Extension : 0));
+    }
 
-	/// <summary>
-        /// Gets or sets the 4-bit signatory field (bits 12-15),
-        /// indicating whether the key can validly sign updates (<see href="https://www.rfc-editor.org/rfc/rfc2137">RFC 2137</see>).
-	/// </summary>
-	public byte SignatoryField
-	{
-		get => (byte)(Flags & KeyFlagsMasks.SignatoryField);
-		set => Flags = (ushort)((Flags & ~KeyFlagsMasks.SignatoryField)
-								| ((ushort)value & KeyFlagsMasks.SignatoryField));
-	}
+    /// <summary>
+    /// Gets or sets the key owner (user/account, zone key, host/entity, or reserved).
+    /// This corresponds to bits 6-7 in the flags.
+    /// </summary>
+    public KeyOwner KeyOwner
+    {
+        get => (KeyOwner)(Flags & KeyFlagsMasks.KeyOwner);
+        set => Flags = (ushort)((Flags & ~KeyFlagsMasks.KeyOwner) | (ushort)value);
+    }
+
+    /// <summary>
+    /// Gets or sets the 4-bit signatory field (bits 12-15),
+    /// indicating whether the key can validly sign updates (<see href="https://www.rfc-editor.org/rfc/rfc2137">RFC 2137</see>).
+    /// </summary>
+    public byte SignatoryField
+    {
+        get => (byte)(Flags & KeyFlagsMasks.SignatoryField);
+        set => Flags = (ushort)((Flags & ~KeyFlagsMasks.SignatoryField)
+                                | ((ushort)value & KeyFlagsMasks.SignatoryField));
+    }
 }
 
 /// <summary>
@@ -142,18 +142,18 @@ public class KEY : DNSResponseDetail
 /// </summary>
 static class KeyFlags
 {
-	// Bits 0 and 1 : Key usage
-	public const ushort ProhibitedForAuthentication = 0b_1000_0000_0000_0000;  // bit 0 set
-	public const ushort ProhibitedForConfidentiality = 0b_0100_0000_0000_0000; // bit 1 set
+    // Bits 0 and 1 : Key usage
+    public const ushort ProhibitedForAuthentication = 0b_1000_0000_0000_0000;  // bit 0 set
+    public const ushort ProhibitedForConfidentiality = 0b_0100_0000_0000_0000; // bit 1 set
 
-	// Bit 3 : Extension flag
-	public const ushort Extension = 0b_0001_0000_0000_0000;
+    // Bit 3 : Extension flag
+    public const ushort Extension = 0b_0001_0000_0000_0000;
 
-	// Bits 6 and 7 : Key owner
-	public const ushort UserOrAccountKey = 0b_0000_0000_0000_0000; // 00
-	public const ushort ZoneKey = 0b_0000_0010_0000_0000; // 01
-	public const ushort NonZoneKey = 0b_0000_0100_0000_0000; // 10
-	public const ushort ReservedUseKey = 0b_0000_0110_0000_0000; // 11
+    // Bits 6 and 7 : Key owner
+    public const ushort UserOrAccountKey = 0b_0000_0000_0000_0000; // 00
+    public const ushort ZoneKey = 0b_0000_0010_0000_0000; // 01
+    public const ushort NonZoneKey = 0b_0000_0100_0000_0000; // 10
+    public const ushort ReservedUseKey = 0b_0000_0110_0000_0000; // 11
 }
 
 /// <summary>
@@ -161,25 +161,25 @@ static class KeyFlags
 /// </summary>
 public enum KeyOwner : ushort
 {
-	/// <summary>
-	/// A user or account key, typically used at an end-entity level.
-	/// </summary>
-	UserOrAccountKey = KeyFlags.UserOrAccountKey,
+    /// <summary>
+    /// A user or account key, typically used at an end-entity level.
+    /// </summary>
+    UserOrAccountKey = KeyFlags.UserOrAccountKey,
 
-	/// <summary>
-	/// A zone key, typically used for DNSSEC at zone apexes.
-	/// </summary>
-	ZoneKey = KeyFlags.ZoneKey,
+    /// <summary>
+    /// A zone key, typically used for DNSSEC at zone apexes.
+    /// </summary>
+    ZoneKey = KeyFlags.ZoneKey,
 
-	/// <summary>
-	/// A non-zone host or entity key.
-	/// </summary>
-	NonZoneKey = KeyFlags.NonZoneKey,
+    /// <summary>
+    /// A non-zone host or entity key.
+    /// </summary>
+    NonZoneKey = KeyFlags.NonZoneKey,
 
-	/// <summary>
-	/// Reserved usage bits.
-	/// </summary>
-	ReservedUseKey = KeyFlags.ReservedUseKey
+    /// <summary>
+    /// Reserved usage bits.
+    /// </summary>
+    ReservedUseKey = KeyFlags.ReservedUseKey
 }
 
 /// <summary>
@@ -187,28 +187,28 @@ public enum KeyOwner : ushort
 /// </summary>
 static class KeyFlagsMasks
 {
-	/// <summary>
-	/// Bits 0 and 1 : Key usage
-	/// </summary>
-	public const ushort KeyUsage = 0b_1100_0000_0000_0000;
+    /// <summary>
+    /// Bits 0 and 1 : Key usage
+    /// </summary>
+    public const ushort KeyUsage = 0b_1100_0000_0000_0000;
 
-	/// <summary>
-	/// Bit 3 : Extension flag
-	/// </summary>
-	public const ushort Extension = 0b_0001_0000_0000_0000;
+    /// <summary>
+    /// Bit 3 : Extension flag
+    /// </summary>
+    public const ushort Extension = 0b_0001_0000_0000_0000;
 
-	/// <summary>
-	/// Bits 6 and 7 : Key owner
-	/// </summary>
-	public const ushort KeyOwner = 0b_0000_0110_0000_0000;
+    /// <summary>
+    /// Bits 6 and 7 : Key owner
+    /// </summary>
+    public const ushort KeyOwner = 0b_0000_0110_0000_0000;
 
-	/// <summary>
-	/// Bits 12-15 : SignatoryField
-	/// <para>
-        /// If non-zero, indicates the key can sign dynamic updates (<see href="https://www.rfc-editor.org/rfc/rfc2137">RFC 2137</see>).
-	/// Zone keys (<c>KeyOwner.ZoneKey</c>) always have authority to sign
-	/// RRs in the zone regardless of the signatory bits.
-	/// </para>
-	/// </summary>
-	public const ushort SignatoryField = 0b_0000_0000_0000_1111;
+    /// <summary>
+    /// Bits 12-15 : SignatoryField
+    /// <para>
+    /// If non-zero, indicates the key can sign dynamic updates (<see href="https://www.rfc-editor.org/rfc/rfc2137">RFC 2137</see>).
+    /// Zone keys (<c>KeyOwner.ZoneKey</c>) always have authority to sign
+    /// RRs in the zone regardless of the signatory bits.
+    /// </para>
+    /// </summary>
+    public const ushort SignatoryField = 0b_0000_0000_0000_1111;
 }

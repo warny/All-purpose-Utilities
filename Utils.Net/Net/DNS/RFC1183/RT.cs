@@ -53,25 +53,25 @@ namespace Utils.Net.DNS.RFC1183;
 [DNSTextRecord("{Preference} {DnsName}")]
 public class RT : DNSResponseDetail
 {
-	
 
-	/// <summary>
-	/// Gets or sets the 16-bit preference value for this RT record.
-	/// Lower numbers indicate a more preferred route.
-	/// </summary>
-	[DNSField]
-	public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name of the intermediate host for routing
-	/// traffic to the owner of this RT record.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName DnsName { get; set; }
+    /// <summary>
+    /// Gets or sets the 16-bit preference value for this RT record.
+    /// Lower numbers indicate a more preferred route.
+    /// </summary>
+    [DNSField]
+    public ushort Preference { get; set; }
 
-	/// <summary>
-	/// Returns a string showing the preference and domain name, separated by a tab or space.
-	/// For example: "10   gateway.example.net".
-	/// </summary>
-	public override string ToString() => $"{Preference}\t{DnsName}";
+    /// <summary>
+    /// Gets or sets the domain name of the intermediate host for routing
+    /// traffic to the owner of this RT record.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName DnsName { get; set; }
+
+    /// <summary>
+    /// Returns a string showing the preference and domain name, separated by a tab or space.
+    /// For example: "10   gateway.example.net".
+    /// </summary>
+    public override string ToString() => $"{Preference}\t{DnsName}";
 }

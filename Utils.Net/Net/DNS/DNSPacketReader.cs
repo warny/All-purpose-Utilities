@@ -32,18 +32,19 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     /// Initializes a new <see cref="DNSPacketReader"/> using the provided DNS factories.
     /// </summary>
     /// <param name="factories">Factories that describe how individual DNS records are materialized.</param>
-    public DNSPacketReader(params DNSFactory[] factories) : this((IEnumerable<DNSFactory>)factories) {}
+    public DNSPacketReader(params DNSFactory[] factories) : this((IEnumerable<DNSFactory>)factories) { }
 
     /// <summary>
     /// Initializes a new <see cref="DNSPacketReader"/> using the provided DNS factories.
     /// </summary>
     /// <param name="factories">Factories that describe how individual DNS records are materialized.</param>
-    public DNSPacketReader(IEnumerable<DNSFactory> factories) {
+    public DNSPacketReader(IEnumerable<DNSFactory> factories)
+    {
         ReadHeader = CreateReader<DNSHeader>(typeof(DNSHeader));
         ReadRequestRecord = CreateReader<DNSRequestRecord>(typeof(DNSRequestRecord));
         ReadResponseRecord = CreateReader<DNSResponseRecord>(typeof(DNSResponseRecord));
 
-        foreach (var dnsElementType in factories.SelectMany(f=>f.DNSTypes))
+        foreach (var dnsElementType in factories.SelectMany(f => f.DNSTypes))
         {
             CreateReader(dnsElementType);
         }
@@ -70,7 +71,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var fieldsReaders = new List<Expression>();
         fieldsReaders.Add(Expression.Assign(resultVariable, Expression.New(dnsElementType)));
 
-        foreach (var field in DNSPacketHelpers.GetDNSFields(dnsElementType)) {
+        foreach (var field in DNSPacketHelpers.GetDNSFields(dnsElementType))
+        {
             Expression assignExpression = CreateExpression(datasParameter, resultVariable, field.Member, field.Attribute);
             fieldsReaders.Add(assignExpression);
         }
@@ -80,17 +82,17 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var expression = Expression.Lambda<Func<Datas, T>>(
             Expression.Block(
                 typeof(T),
-                [ resultVariable ],
+                [resultVariable],
                 [.. fieldsReaders]
             ),
             "Read" + dnsElementType.Name,
-            [ datasParameter ]
+            [datasParameter]
         );
 
         return expression.Compile();
     }
 
-    private IReadOnlyDictionary<Type, Func<ParameterExpression, ParameterExpression, DNSFieldAttribute, Expression>> ReaderExpressions { get; } = 
+    private IReadOnlyDictionary<Type, Func<ParameterExpression, ParameterExpression, DNSFieldAttribute, Expression>> ReaderExpressions { get; } =
         new Dictionary<Type, Func<ParameterExpression, ParameterExpression, DNSFieldAttribute, Expression>>()
         {
             { typeof(byte), (datasParameter, resultVariable, dnsField) => ExpressionEx.CreateExpressionCall(datasParameter, nameof(Datas.ReadByte), BindingFlags.Public | BindingFlags.NonPublic) },
@@ -174,7 +176,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     {
         public byte[] Datagram { get; init; }
         public int Length { get; init; }
-		public int Position { get; set; } = 0;
+        public int Position { get; set; } = 0;
         public Dictionary<ushort, string> PositionsStrings { get; } = new();
         public Context Context { get; set; } = null;
 
@@ -279,7 +281,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
     public DNSHeader Read(byte[] datas)
     {
-        Datas datasStructure = new Datas() {
+        Datas datasStructure = new Datas()
+        {
             Datagram = datas,
             Length = datas.Length
         };
@@ -298,9 +301,10 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var length = datas.Read(datagram, 0, 512);
 
 
-        Datas datasStructure = new Datas() { 
-            Datagram = datagram, 
-            Length = length 
+        Datas datasStructure = new Datas()
+        {
+            Datagram = datagram,
+            Length = length
         };
 
         return Read(datasStructure);
@@ -340,8 +344,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var responseRecord = ReadResponseRecord(datas);
         datas.Context = new Context
         {
-             BytesLeft = responseRecord.RDLength,
-             Length = responseRecord.RDLength
+            BytesLeft = responseRecord.RDLength,
+            Length = responseRecord.RDLength
         };
         Debug.WriteLine($"Read record {requestClassNames[responseRecord.Class]}. Length = {responseRecord.RDLength}");
         var responseDetail = readers[(responseRecord.Class, responseRecord.ClassId)](datas);

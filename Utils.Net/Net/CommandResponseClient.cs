@@ -42,10 +42,10 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     public CommandResponseClient() { }
 
-	/// <summary>
-	/// Occurs when a response is received from the server.
-	/// </summary>
-	public event Action<ServerResponse>? UnsolicitedResponseReceived;
+    /// <summary>
+    /// Occurs when a response is received from the server.
+    /// </summary>
+    public event Action<ServerResponse>? UnsolicitedResponseReceived;
 
     /// <summary>
     /// Gets or sets the command sent during inactivity to keep the connection alive.
@@ -62,7 +62,8 @@ public class CommandResponseClient : IDisposable
     public TimeSpan NoOpInterval
     {
         get => _noOpInterval;
-        set {
+        set
+        {
             _noOpInterval = value;
             _keepAliveTimer?.Change(value, Timeout.InfiniteTimeSpan);
         }
@@ -74,7 +75,8 @@ public class CommandResponseClient : IDisposable
     public TimeSpan ListenTimeout
     {
         get => _listenTimeout;
-        set {
+        set
+        {
             _listenTimeout = value;
             if (_stream is not null && _stream.CanTimeout)
             {
@@ -88,10 +90,10 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     public bool IsConnected => !_disconnected;
 
-	/// <summary>
-	/// Default port used by the protocol.
-	/// </summary>
-	public virtual int DefaultPort { get; } = 0;
+    /// <summary>
+    /// Default port used by the protocol.
+    /// </summary>
+    public virtual int DefaultPort { get; } = 0;
 
     /// <summary>
     /// Connects to the specified host and port using a TCP connection.
@@ -456,7 +458,7 @@ public class CommandResponseClient : IDisposable
         _reader = null;
         _writer?.Dispose();
         _writer = null;
-		if (!_leaveOpen)
+        if (!_leaveOpen)
         {
             _stream?.Dispose();
         }
@@ -467,10 +469,10 @@ public class CommandResponseClient : IDisposable
         _sendLock.Dispose();
     }
 
-	/// <summary>
-	/// Deconstruct the client.
-	/// </summary>
-	~CommandResponseClient()
+    /// <summary>
+    /// Deconstruct the client.
+    /// </summary>
+    ~CommandResponseClient()
     {
         Dispose(false);
     }

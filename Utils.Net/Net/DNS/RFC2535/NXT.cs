@@ -49,20 +49,20 @@
 [DNSTextRecord("{NextDomainName} {TypeBitMap}")]
 public class NXT : DNSResponseDetail
 {
-	
-	/// <summary>
-	/// Gets or sets the next domain name in the zone's canonical order.
-	/// This field is used to define the interval in which no RR exists.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName NextDomainName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the type bitmap which indicates the RR types present for the owner name.
-	/// Each bit corresponds to an RR type; a set bit means that at least one RR of that type exists.
-	/// Trailing zero octets are prohibited, and the bitmap must be interpreted in accordance
-/// with <see href="https://www.rfc-editor.org/rfc/rfc2535#section-5.2">RFC 2535 §5.2</see>.
-	/// </summary>
-	[DNSField]
-	public byte[] TypeBitMap { get; set; }
+    /// <summary>
+    /// Gets or sets the next domain name in the zone's canonical order.
+    /// This field is used to define the interval in which no RR exists.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName NextDomainName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the type bitmap which indicates the RR types present for the owner name.
+    /// Each bit corresponds to an RR type; a set bit means that at least one RR of that type exists.
+    /// Trailing zero octets are prohibited, and the bitmap must be interpreted in accordance
+    /// with <see href="https://www.rfc-editor.org/rfc/rfc2535#section-5.2">RFC 2535 §5.2</see>.
+    /// </summary>
+    [DNSField]
+    public byte[] TypeBitMap { get; set; }
 }

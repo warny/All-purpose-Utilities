@@ -13,101 +13,101 @@ namespace Utils.String;
 /// </summary>
 public sealed class CharsEqualityComparer : IEqualityComparer<IEnumerable<char>>
 {
-	private readonly StringComparer stringComparer;
+    private readonly StringComparer stringComparer;
 
-	/// <summary>
-	/// A thread-safe, cached instance using <see cref="StringComparer.Ordinal"/>.
-	/// </summary>
-	public static CharsEqualityComparer Ordinal { get; } = new CharsEqualityComparer(StringComparer.Ordinal);
+    /// <summary>
+    /// A thread-safe, cached instance using <see cref="StringComparer.Ordinal"/>.
+    /// </summary>
+    public static CharsEqualityComparer Ordinal { get; } = new CharsEqualityComparer(StringComparer.Ordinal);
 
-	/// <summary>
-	/// A thread-safe, cached instance using <see cref="StringComparer.CurrentCulture"/> for culture-aware comparisons.
-	/// </summary>
-	public static CharsEqualityComparer CurrentCulture { get; } = new CharsEqualityComparer(StringComparer.CurrentCulture);
+    /// <summary>
+    /// A thread-safe, cached instance using <see cref="StringComparer.CurrentCulture"/> for culture-aware comparisons.
+    /// </summary>
+    public static CharsEqualityComparer CurrentCulture { get; } = new CharsEqualityComparer(StringComparer.CurrentCulture);
 
-	/// <summary>
-	/// A thread-safe, cached instance using <see cref="StringComparer.OrdinalIgnoreCase"/> for case-insensitive comparisons.
-	/// </summary>
-	public static CharsEqualityComparer OrdinalIgnoreCase { get; } = new CharsEqualityComparer(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// A thread-safe, cached instance using <see cref="StringComparer.OrdinalIgnoreCase"/> for case-insensitive comparisons.
+    /// </summary>
+    public static CharsEqualityComparer OrdinalIgnoreCase { get; } = new CharsEqualityComparer(StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="CharsEqualityComparer"/> class using a custom string comparer.
-	/// </summary>
-	/// <param name="stringComparer">The comparer to use for string-based comparisons.</param>
-	public CharsEqualityComparer(StringComparer stringComparer)
-	{
-		this.stringComparer = stringComparer ?? throw new ArgumentNullException(nameof(stringComparer));
-	}
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CharsEqualityComparer"/> class using a custom string comparer.
+    /// </summary>
+    /// <param name="stringComparer">The comparer to use for string-based comparisons.</param>
+    public CharsEqualityComparer(StringComparer stringComparer)
+    {
+        this.stringComparer = stringComparer ?? throw new ArgumentNullException(nameof(stringComparer));
+    }
 
-	/// <inheritdoc/>
-	public bool Equals(IEnumerable<char> x, IEnumerable<char> y)
-	{
-		if (ReferenceEquals(x, y)) return true;
-		if (x is null && y is null) return true;
-		if (x is null || y is null) return false;
+    /// <inheritdoc/>
+    public bool Equals(IEnumerable<char> x, IEnumerable<char> y)
+    {
+        if (ReferenceEquals(x, y)) return true;
+        if (x is null && y is null) return true;
+        if (x is null || y is null) return false;
 
-		// Try to get spans for both
-		if (GetSpan(x, out var spanX) && GetSpan(y, out var spanY))
-			return spanX.SequenceEqual(spanY);
+        // Try to get spans for both
+        if (GetSpan(x, out var spanX) && GetSpan(y, out var spanY))
+            return spanX.SequenceEqual(spanY);
 
-		// Special handling for strings to respect localization
-		if (x is string strX && y is string strY)
-			return stringComparer.Equals(strX, strY);
+        // Special handling for strings to respect localization
+        if (x is string strX && y is string strY)
+            return stringComparer.Equals(strX, strY);
 
-		return CompareEnumerables(x, y);
-	}
+        return CompareEnumerables(x, y);
+    }
 
-	/// <inheritdoc/>
-	public int GetHashCode(IEnumerable<char> obj)
-	{
-		ArgumentNullException.ThrowIfNull(obj);
+    /// <inheritdoc/>
+    public int GetHashCode(IEnumerable<char> obj)
+    {
+        ArgumentNullException.ThrowIfNull(obj);
 
-		if (obj is string str)
-			return stringComparer.GetHashCode(str);
+        if (obj is string str)
+            return stringComparer.GetHashCode(str);
 
-		return obj.ComputeHash(c => c.GetHashCode());
-	}
+        return obj.ComputeHash(c => c.GetHashCode());
+    }
 
-	/// <summary>
-	/// Compares two character enumerables by iterating through them.
-	/// </summary>
-	private static bool CompareEnumerables(IEnumerable<char> x, IEnumerable<char> y)
-	{
-		using var enumX = x.GetEnumerator();
-		using var enumY = y.GetEnumerator();
+    /// <summary>
+    /// Compares two character enumerables by iterating through them.
+    /// </summary>
+    private static bool CompareEnumerables(IEnumerable<char> x, IEnumerable<char> y)
+    {
+        using var enumX = x.GetEnumerator();
+        using var enumY = y.GetEnumerator();
 
-		while (true)
-		{
-			var hasNextX = enumX.MoveNext();
-			var hasNextY = enumY.MoveNext();
+        while (true)
+        {
+            var hasNextX = enumX.MoveNext();
+            var hasNextY = enumY.MoveNext();
 
-			if (!hasNextX && !hasNextY) return true; // Both sequences finished
-			if (!hasNextX || !hasNextY || enumX.Current != enumY.Current)
-				return false; // One sequence ended, or characters don't match
-		}
-	}
+            if (!hasNextX && !hasNextY) return true; // Both sequences finished
+            if (!hasNextX || !hasNextY || enumX.Current != enumY.Current)
+                return false; // One sequence ended, or characters don't match
+        }
+    }
 
-	/// <summary>
-	/// Tries to retrieve a <see cref="ReadOnlySpan{T}"/> from an enumerable of characters.
-	/// Returns <see langword="true"/> if successful, along with the extracted span.
-	/// Otherwise, returns <see langword="false"/>.
-	/// </summary>
-	private static bool GetSpan(IEnumerable<char> obj, out ReadOnlySpan<char> span)
-	{
-		switch (obj)
-		{
-			case string s:
-				span = s.AsSpan();
-				return true;
-			case char[] array:
-				span = array;
-				return true;
-			case List<char> list:
-				span = CollectionsMarshal.AsSpan(list);
-				return true;
-			default:
-				span = default;
-				return false;
-		}
-	}
+    /// <summary>
+    /// Tries to retrieve a <see cref="ReadOnlySpan{T}"/> from an enumerable of characters.
+    /// Returns <see langword="true"/> if successful, along with the extracted span.
+    /// Otherwise, returns <see langword="false"/>.
+    /// </summary>
+    private static bool GetSpan(IEnumerable<char> obj, out ReadOnlySpan<char> span)
+    {
+        switch (obj)
+        {
+            case string s:
+                span = s.AsSpan();
+                return true;
+            case char[] array:
+                span = array;
+                return true;
+            case List<char> list:
+                span = CollectionsMarshal.AsSpan(list);
+                return true;
+            default:
+                span = default;
+                return false;
+        }
+    }
 }

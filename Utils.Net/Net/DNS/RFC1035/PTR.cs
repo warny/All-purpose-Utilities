@@ -33,20 +33,20 @@ namespace Utils.Net.DNS.RFC1035;
 [DNSTextRecord("{PTRName}")]
 public class PTR : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the domain name to which this PTR record points.
-	/// </summary>
-	/// <remarks>
-	/// For example, in a reverse DNS entry, <c>PTRName</c> would hold
-	/// the canonical hostname associated with the IP's reverse-lookup domain.
-	/// </remarks>
-	[DNSField]
-	public DNSDomainName PTRName { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name to which this PTR record points.
+    /// </summary>
+    /// <remarks>
+    /// For example, in a reverse DNS entry, <c>PTRName</c> would hold
+    /// the canonical hostname associated with the IP's reverse-lookup domain.
+    /// </remarks>
+    [DNSField]
+    public DNSDomainName PTRName { get; set; }
 
-	/// <summary>
-	/// Returns the string representation of <see cref="PTRName"/>.
-	/// Because <see cref="DNSDomainName"/> is a struct, it will never be <c>null</c>,
-	/// but may be an empty or default value if unset.
-	/// </summary>
-	public override string ToString() => PTRName.ToString();
+    /// <summary>
+    /// Returns the string representation of <see cref="PTRName"/>.
+    /// Because <see cref="DNSDomainName"/> is a struct, it will never be <c>null</c>,
+    /// but may be an empty or default value if unset.
+    /// </summary>
+    public override string ToString() => PTRName.ToString();
 }

@@ -9,28 +9,28 @@ namespace Utils.Fonts.TTF.Tables.Acnt;
 /// </summary>
 internal class AcntFormat1 : AcntFormatBase
 {
-	/// <summary>
-	/// Reads additional format-specific data from the specified reader.
-	/// For Format 1, no additional data is expected.
-	/// </summary>
-	/// <param name="data">The reader from which to read the data.</param>
-	public override void ReadData(Reader data)
-	{
-		// No additional data is stored in Format 1.
-		// If the specification is extended later, implement reading of extra fields here.
-		PrimaryGlyphIndex = data.Read<Int16>();
-	}
+    /// <summary>
+    /// Reads additional format-specific data from the specified reader.
+    /// For Format 1, no additional data is expected.
+    /// </summary>
+    /// <param name="data">The reader from which to read the data.</param>
+    public override void ReadData(Reader data)
+    {
+        // No additional data is stored in Format 1.
+        // If the specification is extended later, implement reading of extra fields here.
+        PrimaryGlyphIndex = data.Read<Int16>();
+    }
 
-	/// <summary>
-	/// Writes the format-specific data to the specified writer.
-	/// For Format 1, writes the primary glyph index with the high bit set.
-	/// </summary>
-	/// <param name="data">The writer to which to write the data.</param>
-	public override void WriteData(Writer data)
-	{
-		// Write the primary glyph index with the high bit set to indicate Format 1.
-		data.Write<Int16>((short)(PrimaryGlyphIndex | 0x8000));
-		// No additional data is stored in Format 1.
-		// If the specification is extended later, implement writing of extra fields here.
-	}
+    /// <summary>
+    /// Writes the format-specific data to the specified writer.
+    /// For Format 1, writes the primary glyph index with the high bit set.
+    /// </summary>
+    /// <param name="data">The writer to which to write the data.</param>
+    public override void WriteData(Writer data)
+    {
+        // Write the primary glyph index with the high bit set to indicate Format 1.
+        data.Write<Int16>((short)(PrimaryGlyphIndex | 0x8000));
+        // No additional data is stored in Format 1.
+        // If the specification is extended later, implement writing of extra fields here.
+    }
 }

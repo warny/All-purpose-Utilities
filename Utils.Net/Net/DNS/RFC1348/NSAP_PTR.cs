@@ -26,9 +26,9 @@ namespace Utils.Net.DNS.RFC1348;
 [DNSTextRecord("{DomainName}")]
 public class NSAP_PTR : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the domain name that maps to an NSAP address.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName DomainName { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name that maps to an NSAP address.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName DomainName { get; set; }
 }

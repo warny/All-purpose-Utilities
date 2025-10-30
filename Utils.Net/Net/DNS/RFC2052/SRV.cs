@@ -38,34 +38,34 @@ namespace Utils.Net.DNS.RFC2052;
 [DNSTextRecord("{Priority} {Weight} {Port} {Server}")]
 public class SRV : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the priority for this target host.
-	/// Lower values indicate higher priority.
-	/// </summary>
-	[DNSField]
-	public ushort Priority { get; set; }
+    /// <summary>
+    /// Gets or sets the priority for this target host.
+    /// Lower values indicate higher priority.
+    /// </summary>
+    [DNSField]
+    public ushort Priority { get; set; }
 
-	/// <summary>
-	/// Gets or sets the weight for load balancing among multiple targets
-	/// that share the same <see cref="Priority"/>.
-	/// </summary>
-	[DNSField]
-	public ushort Weight { get; set; }
+    /// <summary>
+    /// Gets or sets the weight for load balancing among multiple targets
+    /// that share the same <see cref="Priority"/>.
+    /// </summary>
+    [DNSField]
+    public ushort Weight { get; set; }
 
-	/// <summary>
-	/// Gets or sets the TCP or UDP port on which the service is provided.
-	/// </summary>
-	[DNSField]
-	public ushort Port { get; set; }
+    /// <summary>
+    /// Gets or sets the TCP or UDP port on which the service is provided.
+    /// </summary>
+    [DNSField]
+    public ushort Port { get; set; }
 
-	/// <summary>
-	/// Gets or sets the domain name of the target host providing the service.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName Server { get; set; }
+    /// <summary>
+    /// Gets or sets the domain name of the target host providing the service.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName Server { get; set; }
 
-	/// <summary>
-	/// Returns a string summarizing the SRV record, e.g. "Priority Weight Port ServerName".
-	/// </summary>
-	public override string ToString() => $"{Priority} {Weight} {Port} {Server}";
+    /// <summary>
+    /// Returns a string summarizing the SRV record, e.g. "Priority Weight Port ServerName".
+    /// </summary>
+    public override string ToString() => $"{Priority} {Weight} {Port} {Server}";
 }

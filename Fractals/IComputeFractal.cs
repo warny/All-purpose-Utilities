@@ -2,10 +2,10 @@
 
 namespace Fractals
 {
-	public interface IComputeFractal
-	{
-		Bitmap Image { get; }
+    public interface IComputeFractal
+    {
+        Bitmap Image { get; }
 
-		void Compute();
-	}
+        void Compute();
+    }
 }

@@ -96,66 +96,66 @@ namespace Utils.Net.DNS.RFC4034;
 [DNSTextRecord("{TypeCovered} {Algorithm} {Labels} {OriginalTTL} {SignatureExpiration} {SignatureInception} {KeyTag} {SignerName} {Signature}")]
 public class RRSIG : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the Type Covered field, a 16-bit integer that indicates the type of RRset
-	/// that is being authenticated by this SIG record.
-	/// </summary>
-	[DNSField]
-	public ushort TypeCovered { get; set; }
+    /// <summary>
+    /// Gets or sets the Type Covered field, a 16-bit integer that indicates the type of RRset
+    /// that is being authenticated by this SIG record.
+    /// </summary>
+    [DNSField]
+    public ushort TypeCovered { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Algorithm field, an 8-bit integer representing the cryptographic algorithm
-	/// used for the signature (e.g., RSA, DSA, etc.).
-	/// </summary>
-	[DNSField]
-	public byte Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the Algorithm field, an 8-bit integer representing the cryptographic algorithm
+    /// used for the signature (e.g., RSA, DSA, etc.).
+    /// </summary>
+    [DNSField]
+    public byte Algorithm { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Labels field, an 8-bit unsigned integer indicating the number of labels
-	/// in the original SIG RR owner name (excluding the root label and any wildcard "*").
-	/// </summary>
-	[DNSField]
-	public byte Labels { get; set; }
+    /// <summary>
+    /// Gets or sets the Labels field, an 8-bit unsigned integer indicating the number of labels
+    /// in the original SIG RR owner name (excluding the root label and any wildcard "*").
+    /// </summary>
+    [DNSField]
+    public byte Labels { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Original TTL field, a 32-bit unsigned integer representing the original TTL
-	/// of the RRset covered by this SIG record.
-	/// </summary>
-	[DNSField]
-	public uint OriginalTTL { get; set; }
+    /// <summary>
+    /// Gets or sets the Original TTL field, a 32-bit unsigned integer representing the original TTL
+    /// of the RRset covered by this SIG record.
+    /// </summary>
+    [DNSField]
+    public uint OriginalTTL { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Signature Expiration field, a 32-bit unsigned integer representing the time
-	/// (in seconds since January 1, 1970, GMT) after which this SIG record is no longer valid.
-	/// </summary>
-	[DNSField]
-	public uint SignatureExpiration { get; set; }
+    /// <summary>
+    /// Gets or sets the Signature Expiration field, a 32-bit unsigned integer representing the time
+    /// (in seconds since January 1, 1970, GMT) after which this SIG record is no longer valid.
+    /// </summary>
+    [DNSField]
+    public uint SignatureExpiration { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Signature Inception field, a 32-bit unsigned integer representing the time
-	/// (in seconds since January 1, 1970, GMT) at which this SIG record becomes valid.
-	/// </summary>
-	[DNSField]
-	public uint SignatureInception { get; set; }
+    /// <summary>
+    /// Gets or sets the Signature Inception field, a 32-bit unsigned integer representing the time
+    /// (in seconds since January 1, 1970, GMT) at which this SIG record becomes valid.
+    /// </summary>
+    [DNSField]
+    public uint SignatureInception { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Key Tag field, a 16-bit integer used to help identify the DNSKEY record
-	/// associated with this signature.
-	/// </summary>
-	[DNSField]
-	public ushort KeyTag { get; set; }
+    /// <summary>
+    /// Gets or sets the Key Tag field, a 16-bit integer used to help identify the DNSKEY record
+    /// associated with this signature.
+    /// </summary>
+    [DNSField]
+    public ushort KeyTag { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Signer's Name field, which is the domain name of the signer that generated
-	/// this SIG record. It identifies the DNSKEY record used to verify the signature.
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public string SignerName { get; set; }
+    /// <summary>
+    /// Gets or sets the Signer's Name field, which is the domain name of the signer that generated
+    /// this SIG record. It identifies the DNSKEY record used to verify the signature.
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public string SignerName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the Signature field, a variable-length byte array containing the digital signature
-	/// that authenticates the RRset.
-	/// </summary>
-	[DNSField]
-	public byte[] Signature { get; set; }
+    /// <summary>
+    /// Gets or sets the Signature field, a variable-length byte array containing the digital signature
+    /// that authenticates the RRset.
+    /// </summary>
+    [DNSField]
+    public byte[] Signature { get; set; }
 }

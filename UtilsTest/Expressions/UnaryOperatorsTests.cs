@@ -98,7 +98,8 @@ public class UnaryOperatorsTests
             this.GetType()
         ];
 
-        foreach (var type in types) {
+        foreach (var type in types)
+        {
             var TypeOf = (Func<Type>)ExpressionParser.Compile($"typeof({type.FullName})");
 
             Assert.AreEqual(type, TypeOf());

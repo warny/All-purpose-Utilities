@@ -81,153 +81,153 @@ namespace Utils.Net.DNS.RFC1876;
 [DNSTextRecord("{Latitude} {Longitude} {Altitude}")]
 public class LOC : DNSResponseDetail
 {
-	// The fields below are annotated with [DNSField] so that they are automatically
-	// serialized/deserialized as per the DNS LOC RDATA format.
+    // The fields below are annotated with [DNSField] so that they are automatically
+    // serialized/deserialized as per the DNS LOC RDATA format.
 
-	/// <summary>
-	/// Gets or sets the version number of the LOC record format. This must be 0.
-	/// </summary>
-	[DNSField]
-	public byte Version { get; set; }
+    /// <summary>
+    /// Gets or sets the version number of the LOC record format. This must be 0.
+    /// </summary>
+    [DNSField]
+    public byte Version { get; set; }
 
-	/// <summary>
-	/// Private field storing the SIZE value in its exponential representation (one byte).
-	/// </summary>
-	[DNSField]
-	private byte size { get; set; }
+    /// <summary>
+    /// Private field storing the SIZE value in its exponential representation (one byte).
+    /// </summary>
+    [DNSField]
+    private byte size { get; set; }
 
-	/// <summary>
-	/// Private field storing the horizontal precision (HORIZ PRE) in exponential representation (one byte).
-	/// </summary>
-	[DNSField]
-	private byte horizontalPrecision { get; set; }
+    /// <summary>
+    /// Private field storing the horizontal precision (HORIZ PRE) in exponential representation (one byte).
+    /// </summary>
+    [DNSField]
+    private byte horizontalPrecision { get; set; }
 
-	/// <summary>
-	/// Private field storing the vertical precision (VERT PRE) in exponential representation (one byte).
-	/// </summary>
-	[DNSField]
-	private byte verticalPrecision { get; set; }
+    /// <summary>
+    /// Private field storing the vertical precision (VERT PRE) in exponential representation (one byte).
+    /// </summary>
+    [DNSField]
+    private byte verticalPrecision { get; set; }
 
-	/// <summary>
-	/// Private field storing the latitude as a 32-bit unsigned integer (network byte order).
-	/// The value is in thousandths of a second of arc.
-	/// </summary>
-	[DNSField]
-	private uint latitude { get; set; }
+    /// <summary>
+    /// Private field storing the latitude as a 32-bit unsigned integer (network byte order).
+    /// The value is in thousandths of a second of arc.
+    /// </summary>
+    [DNSField]
+    private uint latitude { get; set; }
 
-	/// <summary>
-	/// Private field storing the longitude as a 32-bit unsigned integer (network byte order).
-	/// The value is in thousandths of a second of arc.
-	/// </summary>
-	[DNSField]
-	private uint longitude { get; set; }
+    /// <summary>
+    /// Private field storing the longitude as a 32-bit unsigned integer (network byte order).
+    /// The value is in thousandths of a second of arc.
+    /// </summary>
+    [DNSField]
+    private uint longitude { get; set; }
 
-	/// <summary>
-	/// Private field storing the altitude as a 32-bit unsigned integer (network byte order).
-	/// The altitude is stored in centimeters.
-	/// </summary>
-	[DNSField]
-	private uint altitude { get; set; }
+    /// <summary>
+    /// Private field storing the altitude as a 32-bit unsigned integer (network byte order).
+    /// The altitude is stored in centimeters.
+    /// </summary>
+    [DNSField]
+    private uint altitude { get; set; }
 
-	// Constants used for conversion:
-	private const double equatorLatitude = 2_147_483_648; // 2^31, represents 0° latitude.
-	private const double primeMeridian = 2_147_483_648;     // 2^31, represents 0° longitude.
-	private const double altitudeZeroCorrection = 100_000_00; // Represents 0 m altitude relative to a base 100,000 m below WGS 84.
-	private const double arcSec = 1_296_000;                // Thousandths of seconds of arc per degree? (Typically 3600 sec/degree * 360 degrees = 1,296,000)
-	private const double meter2Centimeter = 100;
+    // Constants used for conversion:
+    private const double equatorLatitude = 2_147_483_648; // 2^31, represents 0° latitude.
+    private const double primeMeridian = 2_147_483_648;     // 2^31, represents 0° longitude.
+    private const double altitudeZeroCorrection = 100_000_00; // Represents 0 m altitude relative to a base 100,000 m below WGS 84.
+    private const double arcSec = 1_296_000;                // Thousandths of seconds of arc per degree? (Typically 3600 sec/degree * 360 degrees = 1,296,000)
+    private const double meter2Centimeter = 100;
 
-	/// <summary>
-	/// Converts an exponential value (stored in one byte) to a double.
-	/// The high 4 bits represent the base and the low 4 bits represent the exponent.
-	/// </summary>
-	/// <param name="value">The byte to convert.</param>
-	/// <returns>The computed value.</returns>
-	private double ExponentialValueConvert(byte value) => (value >> 4) * Math.Pow(10, value & 0xF);
+    /// <summary>
+    /// Converts an exponential value (stored in one byte) to a double.
+    /// The high 4 bits represent the base and the low 4 bits represent the exponent.
+    /// </summary>
+    /// <param name="value">The byte to convert.</param>
+    /// <returns>The computed value.</returns>
+    private double ExponentialValueConvert(byte value) => (value >> 4) * Math.Pow(10, value & 0xF);
 
-	/// <summary>
-	/// Converts a double into its exponential representation in one byte.
-	/// The high 4 bits will store the mantissa and the low 4 bits the exponent.
-	/// </summary>
-	/// <param name="value">The double value to convert.</param>
-	/// <returns>A byte representing the exponential encoding.</returns>
-	private byte InverseExponentialValueConvert(double value)
-	{
-		int exponent = (int)Math.Floor(Math.Log10(value));
-		int mantissa = (int)Math.Round(value / Math.Pow(10, exponent));
-		return (byte)((mantissa << 4) + exponent);
-	}
+    /// <summary>
+    /// Converts a double into its exponential representation in one byte.
+    /// The high 4 bits will store the mantissa and the low 4 bits the exponent.
+    /// </summary>
+    /// <param name="value">The double value to convert.</param>
+    /// <returns>A byte representing the exponential encoding.</returns>
+    private byte InverseExponentialValueConvert(double value)
+    {
+        int exponent = (int)Math.Floor(Math.Log10(value));
+        int mantissa = (int)Math.Round(value / Math.Pow(10, exponent));
+        return (byte)((mantissa << 4) + exponent);
+    }
 
-	/// <summary>
-	/// Gets or sets the size (the diameter of the sphere enclosing the entity) in centimeters.
-	/// The value is stored internally in an exponential representation.
-	/// </summary>
-	public double Size
-	{
-		get => ExponentialValueConvert(size);
-		set => size = InverseExponentialValueConvert(value);
-	}
+    /// <summary>
+    /// Gets or sets the size (the diameter of the sphere enclosing the entity) in centimeters.
+    /// The value is stored internally in an exponential representation.
+    /// </summary>
+    public double Size
+    {
+        get => ExponentialValueConvert(size);
+        set => size = InverseExponentialValueConvert(value);
+    }
 
-	/// <summary>
-	/// Gets or sets the horizontal precision (diameter of the circle of error) in meters.
-	/// Internally stored as centimeters in an exponential representation.
-	/// </summary>
-	public double HorizontalPrecision
-	{
-		get => ExponentialValueConvert(horizontalPrecision) / meter2Centimeter;
-		set => horizontalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
-	}
+    /// <summary>
+    /// Gets or sets the horizontal precision (diameter of the circle of error) in meters.
+    /// Internally stored as centimeters in an exponential representation.
+    /// </summary>
+    public double HorizontalPrecision
+    {
+        get => ExponentialValueConvert(horizontalPrecision) / meter2Centimeter;
+        set => horizontalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+    }
 
-	/// <summary>
-	/// Gets or sets the vertical precision (total potential vertical error) in meters.
-	/// Internally stored as centimeters in an exponential representation.
-	/// </summary>
-	public double VerticalPrecision
-	{
-		get => ExponentialValueConvert(verticalPrecision) / meter2Centimeter;
-		set => verticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
-	}
+    /// <summary>
+    /// Gets or sets the vertical precision (total potential vertical error) in meters.
+    /// Internally stored as centimeters in an exponential representation.
+    /// </summary>
+    public double VerticalPrecision
+    {
+        get => ExponentialValueConvert(verticalPrecision) / meter2Centimeter;
+        set => verticalPrecision = InverseExponentialValueConvert(value * meter2Centimeter);
+    }
 
-	/// <summary>
-	/// Gets or sets the latitude of the location, in seconds of arc.
-	/// The latitude is stored as a 32-bit integer (network byte order) where a value of 2^31
-	/// represents the equator. Values above 2^31 are interpreted as north.
-	/// </summary>
-	public double Latitude
-	{
-		get => (latitude - equatorLatitude) / arcSec;
-		set => latitude = (uint)((value * arcSec) + equatorLatitude);
-	}
+    /// <summary>
+    /// Gets or sets the latitude of the location, in seconds of arc.
+    /// The latitude is stored as a 32-bit integer (network byte order) where a value of 2^31
+    /// represents the equator. Values above 2^31 are interpreted as north.
+    /// </summary>
+    public double Latitude
+    {
+        get => (latitude - equatorLatitude) / arcSec;
+        set => latitude = (uint)((value * arcSec) + equatorLatitude);
+    }
 
-	/// <summary>
-	/// Gets or sets the longitude of the location, in seconds of arc.
-	/// The longitude is stored as a 32-bit integer (network byte order) where a value of 2^31
-	/// represents the prime meridian. Values above 2^31 are interpreted as east.
-	/// </summary>
-	public double Longitude
-	{
-		get => (longitude - primeMeridian) / arcSec;
-		set => longitude = (uint)((value * arcSec) + primeMeridian);
-	}
+    /// <summary>
+    /// Gets or sets the longitude of the location, in seconds of arc.
+    /// The longitude is stored as a 32-bit integer (network byte order) where a value of 2^31
+    /// represents the prime meridian. Values above 2^31 are interpreted as east.
+    /// </summary>
+    public double Longitude
+    {
+        get => (longitude - primeMeridian) / arcSec;
+        set => longitude = (uint)((value * arcSec) + primeMeridian);
+    }
 
-	/// <summary>
-	/// Gets or sets the altitude of the location, in meters.
-	/// The altitude is stored as a 32-bit integer (network byte order) in centimeters,
-	/// with a base offset so that a specific value corresponds to 0 meters relative to the WGS 84 spheroid.
-	/// </summary>
-	public double Altitude
-	{
-		get => (altitude - altitudeZeroCorrection) / meter2Centimeter;
-		set => altitude = (uint)((value * meter2Centimeter) + altitudeZeroCorrection);
-	}
+    /// <summary>
+    /// Gets or sets the altitude of the location, in meters.
+    /// The altitude is stored as a 32-bit integer (network byte order) in centimeters,
+    /// with a base offset so that a specific value corresponds to 0 meters relative to the WGS 84 spheroid.
+    /// </summary>
+    public double Altitude
+    {
+        get => (altitude - altitudeZeroCorrection) / meter2Centimeter;
+        set => altitude = (uint)((value * meter2Centimeter) + altitudeZeroCorrection);
+    }
 
-	/// <summary>
-	/// Returns a string representation of the LOC record, including the geographic coordinates,
-	/// altitude, and the size and precision of the location.
-	/// </summary>
-	/// <returns>A formatted string representing the LOC record.</returns>
-	public override string ToString()
-	{
-		return $"L: {Latitude}°  l: {Longitude}°  A: {Altitude}m \n" +
-			   $"\tSize: {Size}cm  Precision (H: {HorizontalPrecision}m, V: {VerticalPrecision}m)";
-	}
+    /// <summary>
+    /// Returns a string representation of the LOC record, including the geographic coordinates,
+    /// altitude, and the size and precision of the location.
+    /// </summary>
+    /// <returns>A formatted string representing the LOC record.</returns>
+    public override string ToString()
+    {
+        return $"L: {Latitude}°  l: {Longitude}°  A: {Altitude}m \n" +
+               $"\tSize: {Size}cm  Precision (H: {HorizontalPrecision}m, V: {VerticalPrecision}m)";
+    }
 }

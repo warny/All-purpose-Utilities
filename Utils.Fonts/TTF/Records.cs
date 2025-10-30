@@ -10,15 +10,15 @@ namespace Utils.Fonts.TTF;
 /// <param name="OnCurve">Indicates whether the point is on the curve.</param>
 public record TTFPoint(float X, float Y, bool OnCurve)
 {
-	/// <summary>
-	/// Calculates the midpoint between two TrueType points.
-	/// The resulting point is marked as OnCurve.
-	/// </summary>
-	/// <param name="p1">The first point.</param>
-	/// <param name="p2">The second point.</param>
-	/// <returns>A new <see cref="TTFPoint"/> representing the midpoint.</returns>
-	public static TTFPoint MidPoint(TTFPoint p1, TTFPoint p2)
-		=> new TTFPoint((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, true);
+    /// <summary>
+    /// Calculates the midpoint between two TrueType points.
+    /// The resulting point is marked as OnCurve.
+    /// </summary>
+    /// <param name="p1">The first point.</param>
+    /// <param name="p2">The second point.</param>
+    /// <returns>A new <see cref="TTFPoint"/> representing the midpoint.</returns>
+    public static TTFPoint MidPoint(TTFPoint p1, TTFPoint p2)
+        => new TTFPoint((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, true);
 }
 
 /// <summary>

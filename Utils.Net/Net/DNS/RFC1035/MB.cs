@@ -34,15 +34,15 @@ namespace Utils.Net.DNS.RFC1035;
 [Obsolete("MB (Mailbox) records are obsolete; use MX records instead.")]
 public class MB : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the mailbox domain name (MADNAME), the host that contains the
-	/// specified mailbox.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName MadName { get; set; }
+    /// <summary>
+    /// Gets or sets the mailbox domain name (MADNAME), the host that contains the
+    /// specified mailbox.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName MadName { get; set; }
 
-	/// <summary>
-	/// Returns the mailbox domain name stored in <see cref="MadName"/>.
-	/// </summary>
-	public override string ToString() => MadName.ToString();
+    /// <summary>
+    /// Returns the mailbox domain name stored in <see cref="MadName"/>.
+    /// </summary>
+    public override string ToString() => MadName.ToString();
 }

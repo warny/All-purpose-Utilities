@@ -25,36 +25,36 @@ namespace Utils.Net.DNS.RFC1712;
 [DNSTextRecord("{Longitude} {Latitude} {Altitude}")]
 public class GPOS : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the longitude component of the geographical position.
-	/// The value is stored as a <see cref="StringEncodedDouble"/>, representing
-	/// the longitude in degrees.
-	/// </summary>
-	/// <remarks>
-	/// The field is serialized with a one-byte length prefix.
-	/// </remarks>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public StringEncodedDouble Longitude { get; set; }
+    /// <summary>
+    /// Gets or sets the longitude component of the geographical position.
+    /// The value is stored as a <see cref="StringEncodedDouble"/>, representing
+    /// the longitude in degrees.
+    /// </summary>
+    /// <remarks>
+    /// The field is serialized with a one-byte length prefix.
+    /// </remarks>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public StringEncodedDouble Longitude { get; set; }
 
-	/// <summary>
-	/// Gets or sets the latitude component of the geographical position.
-	/// The value is stored as a <see cref="StringEncodedDouble"/>, representing
-	/// the latitude in degrees.
-	/// </summary>
-	/// <remarks>
-	/// The field is serialized with a one-byte length prefix.
-	/// </remarks>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public StringEncodedDouble Latitude { get; set; }
+    /// <summary>
+    /// Gets or sets the latitude component of the geographical position.
+    /// The value is stored as a <see cref="StringEncodedDouble"/>, representing
+    /// the latitude in degrees.
+    /// </summary>
+    /// <remarks>
+    /// The field is serialized with a one-byte length prefix.
+    /// </remarks>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public StringEncodedDouble Latitude { get; set; }
 
-	/// <summary>
-	/// Gets or sets the altitude component of the geographical position.
-	/// The value is stored as a <see cref="StringEncodedDouble"/>, representing
-	/// the altitude in meters.
-	/// </summary>
-	/// <remarks>
-	/// The field is serialized with a one-byte length prefix.
-	/// </remarks>
-	[DNSField(FieldsSizeOptions.PrefixedSize1B)]
-	public StringEncodedDouble Altitude { get; set; }
+    /// <summary>
+    /// Gets or sets the altitude component of the geographical position.
+    /// The value is stored as a <see cref="StringEncodedDouble"/>, representing
+    /// the altitude in meters.
+    /// </summary>
+    /// <remarks>
+    /// The field is serialized with a one-byte length prefix.
+    /// </remarks>
+    [DNSField(FieldsSizeOptions.PrefixedSize1B)]
+    public StringEncodedDouble Altitude { get; set; }
 }

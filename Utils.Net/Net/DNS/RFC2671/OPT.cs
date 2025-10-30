@@ -52,18 +52,18 @@ namespace Utils.Net.DNS.RFC2671;
 [DNSTextRecord("{OptionCode} {OptionsData}")]
 public class OPT : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the option code. This 16-bit field is assigned by IANA and identifies
-	/// the specific option contained in the OPT record.
-	/// </summary>
-	[DNSField]
-	public ushort OptionCode { get; set; }
+    /// <summary>
+    /// Gets or sets the option code. This 16-bit field is assigned by IANA and identifies
+    /// the specific option contained in the OPT record.
+    /// </summary>
+    [DNSField]
+    public ushort OptionCode { get; set; }
 
-	/// <summary>
-	/// Gets or sets the option data. This field contains the data for the option,
-	/// with its length specified by a 2-byte prefix during serialization.
-	/// The format of this data depends on the OPTION-CODE.
-	/// </summary>
-	[DNSField(FieldsSizeOptions.PrefixedSize2B)]
-	public byte[] OptionsData { get; set; }
+    /// <summary>
+    /// Gets or sets the option data. This field contains the data for the option,
+    /// with its length specified by a 2-byte prefix during serialization.
+    /// The format of this data depends on the OPTION-CODE.
+    /// </summary>
+    [DNSField(FieldsSizeOptions.PrefixedSize2B)]
+    public byte[] OptionsData { get; set; }
 }

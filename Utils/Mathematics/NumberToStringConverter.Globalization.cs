@@ -15,7 +15,8 @@ namespace Utils.Mathematics
 {
     public partial class NumberToStringConverter
     {
-        static NumberToStringConverter() {
+        static NumberToStringConverter()
+        {
             InitializeConfigurations(
                 NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
                 NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
@@ -112,9 +113,12 @@ namespace Utils.Mathematics
             );
 
             Func<string, string> adjustFunction;
-            if (language.AdjustFunction.IsNullOrWhiteSpace()) {
+            if (language.AdjustFunction.IsNullOrWhiteSpace())
+            {
                 adjustFunction = s => s;
-            } else {
+            }
+            else
+            {
                 var e = ExpressionParser.Parse<Func<string, string>>(language.AdjustFunction, ["System.Text", "System.Text.RegularExpressions"]);
                 adjustFunction = e.Compile();
             }
@@ -133,9 +137,9 @@ namespace Utils.Mathematics
                 language.Zero,
                 language.Minus,
                 language.DecimalSeparator,
-                language.Groups.Groups.ToDictionary(g=>g.Level, g=>(DigitListType)g),
-                language.Exceptions?.Numbers?.ToDictionary(e=>(long)e.Value, e=>e.StringValue) ?? new Dictionary<long, string>(),
-                language.Replacements?.Replacements.ToDictionary(r=>r.OldValue, r=>r.NewValue),
+                language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
+                language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
+                language.Replacements?.Replacements.ToDictionary(r => r.OldValue, r => r.NewValue),
                 scale,
                 adjustFunction,
                 fractions,

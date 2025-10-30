@@ -48,18 +48,18 @@
 [DNSTextRecord("{NextDomainName} {TypeBitmaps}")]
 public class NSEC : DNSResponseDetail
 {
-	/// <summary>
-	/// Gets or sets the next domain name in the zone's canonical ordering.
-	/// This field indicates the beginning of the next interval in which no owner name exists.
-	/// </summary>
-	[DNSField]
-	public DNSDomainName NextDomainName { get; set; }
+    /// <summary>
+    /// Gets or sets the next domain name in the zone's canonical ordering.
+    /// This field indicates the beginning of the next interval in which no owner name exists.
+    /// </summary>
+    [DNSField]
+    public DNSDomainName NextDomainName { get; set; }
 
-	/// <summary>
-	/// Gets or sets the type bit maps field.
-	/// This variable-length field is a bitmap where each bit represents the presence of a particular RR type
-	/// for the owner name. For example, if bit 15 is set, it indicates that RRs of type 15 exist.
-	/// </summary>
-	[DNSField]
-	public byte[] TypeBitmaps { get; set; }
+    /// <summary>
+    /// Gets or sets the type bit maps field.
+    /// This variable-length field is a bitmap where each bit represents the presence of a particular RR type
+    /// for the owner name. For example, if bit 15 is set, it indicates that RRs of type 15 exist.
+    /// </summary>
+    [DNSField]
+    public byte[] TypeBitmaps { get; set; }
 }

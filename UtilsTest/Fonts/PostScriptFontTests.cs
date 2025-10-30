@@ -15,8 +15,8 @@ namespace UtilsTest.Fonts
         [TestMethod]
         public void LoadSimplePostScriptFont()
         {
-            string txt = 
-				"""
+            string txt =
+                """
 				Glyph: A
 				Width: 10
 				Height: 10
@@ -39,8 +39,8 @@ namespace UtilsTest.Fonts
         [TestMethod]
         public void GlyphToGraphicInvokesCommands()
         {
-            string txt = 
-				"""
+            string txt =
+                """
 				Glyph: B
 				Width: 5
 				Height: 5
@@ -65,8 +65,8 @@ namespace UtilsTest.Fonts
         [TestMethod]
         public void LoadType3Font()
         {
-            string ps = 
-				"""
+            string ps =
+                """
 				/CharProcs 1 dict dup begin
 				/A { 5 0 0 0 5 5 setcachedevice
 				0 0 moveto

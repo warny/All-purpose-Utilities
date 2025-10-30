@@ -13,8 +13,8 @@ namespace Utils.Expressions.Resolvers
         private Assembly[] Assemblies { get; }
         private IDictionary<(string name, Type[] genericArguments), Type> Cache { get; } = new Dictionary<(string name, Type[] genericArguments), Type> { };
 
-        private IDictionary <string, Type> Types { get; } = new Dictionary <string, Type>();
-        private IDictionary<Type, IList<MethodInfo>> ExtensionMethods  = new Dictionary <Type, IList<MethodInfo>>();
+        private IDictionary<string, Type> Types { get; } = new Dictionary<string, Type>();
+        private IDictionary<Type, IList<MethodInfo>> ExtensionMethods = new Dictionary<Type, IList<MethodInfo>>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TypeFinder"/> class.
@@ -31,7 +31,7 @@ namespace Utils.Expressions.Resolvers
                 ? ((AppDomain)typeof(string).GetTypeInfo().Assembly.GetType("System.AppDomain").GetRuntimeProperty("CurrentDomain").GetMethod.Invoke(null, [])).GetAssemblies()
                 : assemblies;
 
-            foreach (Type type in Assemblies.SelectMany(a => a.GetTypes().Where(t=>t.IsPublic)))
+            foreach (Type type in Assemblies.SelectMany(a => a.GetTypes().Where(t => t.IsPublic)))
             {
                 if (type.Namespace is null) continue;
                 Types[type.FullName] = type;
@@ -71,15 +71,16 @@ namespace Utils.Expressions.Resolvers
 
             var result = InnerFindType(typeName, genericArguments);
             if (result is null) return null;
-            if ((genericArguments?.Length ?? 0 )> 0) result = result.MakeGenericType(genericArguments); 
+            if ((genericArguments?.Length ?? 0) > 0) result = result.MakeGenericType(genericArguments);
             Cache[(name, genericArguments)] = result;
             return result;
         }
 
         private Type InnerFindType(string name, Type[] genericArguments)
         {
-            if (Types.TryGetValue(name, out var type)) {
-                if (CheckGenericArguments(type, genericArguments) >= 0) return type; 
+            if (Types.TryGetValue(name, out var type))
+            {
+                if (CheckGenericArguments(type, genericArguments) >= 0) return type;
             }
 
             return null;
@@ -118,7 +119,7 @@ namespace Utils.Expressions.Resolvers
             List<MethodInfo> result = new List<MethodInfo>();
 
             // récupère toutes les extensions qui peuvent s'appliquer sur le type ou les types de base
-            for(Type type = extendedType; type != null; type = type.BaseType)
+            for (Type type = extendedType; type != null; type = type.BaseType)
             {
                 if (ExtensionMethods.TryGetValue(type, out var extensionMethods))
                 {
@@ -134,7 +135,7 @@ namespace Utils.Expressions.Resolvers
                 }
             }
 
-            return [..result];
+            return [.. result];
         }
     }
 }

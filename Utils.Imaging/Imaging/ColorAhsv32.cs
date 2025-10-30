@@ -12,187 +12,187 @@ public class ColorAhsv32 :
         IEquatable<ColorAhsv32>,
         IEqualityOperators<ColorAhsv32, ColorAhsv32, bool>
 {
-        /// <summary>
-        /// Lowest component value that can be represented with this color depth.
-        /// </summary>
-        public static byte MinValue { get; } = 0;
+    /// <summary>
+    /// Lowest component value that can be represented with this color depth.
+    /// </summary>
+    public static byte MinValue { get; } = 0;
 
-        /// <summary>
-        /// Highest component value that can be represented with this color depth.
-        /// </summary>
-        public static byte MaxValue { get; } = byte.MaxValue;
+    /// <summary>
+    /// Highest component value that can be represented with this color depth.
+    /// </summary>
+    public static byte MaxValue { get; } = byte.MaxValue;
 
-/// <summary>Alpha channel.</summary>
-public byte Alpha { get; set; }
-/// <summary>Hue component.</summary>
-public byte Hue { get; set; }
-/// <summary>Saturation component.</summary>
-public byte Saturation { get; set; }
-/// <summary>Value component.</summary>
-public byte Value { get; set; }
+    /// <summary>Alpha channel.</summary>
+    public byte Alpha { get; set; }
+    /// <summary>Hue component.</summary>
+    public byte Hue { get; set; }
+    /// <summary>Saturation component.</summary>
+    public byte Saturation { get; set; }
+    /// <summary>Value component.</summary>
+    public byte Value { get; set; }
 
-/// <summary>
-/// Initializes a new instance with explicit component values.
-/// </summary>
-public ColorAhsv32(byte alpha, byte hue, byte saturation, byte value)
-	{
-		this.Alpha = alpha;
-		this.Hue = hue;
-		this.Saturation = saturation;
-		this.Value = value;
-	}
-/// <summary>
-/// Converts from a 64-bit HSV color.
-/// </summary>
-public ColorAhsv32(ColorAhsv64 color)
-	{
-		this.Alpha = (byte)(color.Alpha >> 8);
-		this.Hue = (byte)(color.Hue >> 8);
-		this.Saturation = (byte)(color.Saturation >> 8);
-		this.Value = (byte)(color.Value >> 8);
-	}
+    /// <summary>
+    /// Initializes a new instance with explicit component values.
+    /// </summary>
+    public ColorAhsv32(byte alpha, byte hue, byte saturation, byte value)
+    {
+        this.Alpha = alpha;
+        this.Hue = hue;
+        this.Saturation = saturation;
+        this.Value = value;
+    }
+    /// <summary>
+    /// Converts from a 64-bit HSV color.
+    /// </summary>
+    public ColorAhsv32(ColorAhsv64 color)
+    {
+        this.Alpha = (byte)(color.Alpha >> 8);
+        this.Hue = (byte)(color.Hue >> 8);
+        this.Saturation = (byte)(color.Saturation >> 8);
+        this.Value = (byte)(color.Value >> 8);
+    }
 
-/// <summary>
-/// Converts from a double precision HSV color.
-/// </summary>
-public ColorAhsv32(ColorAhsv color)
-	{
-		this.Alpha = (byte)(color.Alpha * 255);
-		this.Hue = (byte)(color.Hue / 360 * 255);
-		this.Saturation = (byte)(color.Saturation * 255);
-		this.Value = (byte)(color.Value * 255);
-	}
+    /// <summary>
+    /// Converts from a double precision HSV color.
+    /// </summary>
+    public ColorAhsv32(ColorAhsv color)
+    {
+        this.Alpha = (byte)(color.Alpha * 255);
+        this.Hue = (byte)(color.Hue / 360 * 255);
+        this.Saturation = (byte)(color.Saturation * 255);
+        this.Value = (byte)(color.Value * 255);
+    }
 
-/// <summary>
-/// Creates a new instance from a <see cref="System.Drawing.Color"/>.
-/// </summary>
-public ColorAhsv32(System.Drawing.Color colorArgb) { FromArgbColor(colorArgb.A, colorArgb.R, colorArgb.G, colorArgb.B); }
+    /// <summary>
+    /// Creates a new instance from a <see cref="System.Drawing.Color"/>.
+    /// </summary>
+    public ColorAhsv32(System.Drawing.Color colorArgb) { FromArgbColor(colorArgb.A, colorArgb.R, colorArgb.G, colorArgb.B); }
 
-/// <summary>
-/// Creates an HSV color from an ARGB color stored with 8-bit components.
-/// </summary>
-/// <param name="colorArgb">The ARGB color to convert.</param>
-/// <returns>A new <see cref="ColorAhsv32"/> instance.</returns>
-public static ColorAhsv32 FromArgbColor(ColorArgb32 colorArgb) => FromArgbColor(colorArgb.Alpha, colorArgb.Red, colorArgb.Green, colorArgb.Blue);
+    /// <summary>
+    /// Creates an HSV color from an ARGB color stored with 8-bit components.
+    /// </summary>
+    /// <param name="colorArgb">The ARGB color to convert.</param>
+    /// <returns>A new <see cref="ColorAhsv32"/> instance.</returns>
+    public static ColorAhsv32 FromArgbColor(ColorArgb32 colorArgb) => FromArgbColor(colorArgb.Alpha, colorArgb.Red, colorArgb.Green, colorArgb.Blue);
 
-/// <summary>
-/// Creates a HSV color from 8-bit ARGB components.
-/// </summary>
-public static ColorAhsv32 FromArgbColor(byte alpha, byte red, byte green, byte blue)
-	{
-		byte hue;
-		byte saturation;
-		byte value;
+    /// <summary>
+    /// Creates a HSV color from 8-bit ARGB components.
+    /// </summary>
+    public static ColorAhsv32 FromArgbColor(byte alpha, byte red, byte green, byte blue)
+    {
+        byte hue;
+        byte saturation;
+        byte value;
 
 
-		byte rgbMin, rgbMax;
+        byte rgbMin, rgbMax;
 
-		rgbMin = Mathematics.MathEx.Min(red, green, blue);
-		rgbMax = Mathematics.MathEx.Max(red, green, blue);
+        rgbMin = Mathematics.MathEx.Min(red, green, blue);
+        rgbMax = Mathematics.MathEx.Max(red, green, blue);
 
-                // gray case
-                if (rgbMin == rgbMax)
-                {
-                        return new(alpha, 0, 0, rgbMax);
-                }
-                value = rgbMax;
-
-		int delta = rgbMax - rgbMin;
-
-                saturation = (byte)(255 * delta / value);
-                if (saturation == 0)
-                {
-                        return new(alpha, 0, saturation, value);
-                }
-
-		if (rgbMax == red)
-			hue = (byte)(0 + 43 * (green - blue) / delta);
-		else if (rgbMax == green)
-			hue = (byte)(85 + 43 * (blue - red) / delta);
-		else
-			hue = (byte)(171 + 43 * (red - green) / delta);
-
-		return new (alpha, hue, saturation, value);
-	}
-
-        /// <summary>
-        /// Converts this HSV color to <see cref="ColorArgb32"/>.
-        /// </summary>
-        public ColorArgb32 ToArgbColor()
+        // gray case
+        if (rgbMin == rgbMax)
         {
-                if (Saturation == 0)
-                {
-                        return new ColorArgb32(Alpha, Value, Value, Value);
-                }
+            return new(alpha, 0, 0, rgbMax);
+        }
+        value = rgbMax;
 
-                byte region = (byte)(Hue / 43);
-                byte remainder = (byte)((Hue - (region * 43)) * 6);
+        int delta = rgbMax - rgbMin;
 
-                byte p = (byte)((Value * (255 - Saturation)) >> 8);
-                byte q = (byte)((Value * (255 - ((Saturation * remainder) >> 8))) >> 8);
-                byte t = (byte)((Value * (255 - ((Saturation * (255 - remainder)) >> 8))) >> 8);
-
-                return region switch
-                {
-                        0 => new ColorArgb32(Alpha, Value, t, p),
-                        1 => new ColorArgb32(Alpha, q, Value, p),
-                        2 => new ColorArgb32(Alpha, p, Value, t),
-                        3 => new ColorArgb32(Alpha, p, q, Value),
-                        4 => new ColorArgb32(Alpha, t, p, Value),
-                        _ => new ColorArgb32(Alpha, Value, p, q),
-                };
+        saturation = (byte)(255 * delta / value);
+        if (saturation == 0)
+        {
+            return new(alpha, 0, saturation, value);
         }
 
+        if (rgbMax == red)
+            hue = (byte)(0 + 43 * (green - blue) / delta);
+        else if (rgbMax == green)
+            hue = (byte)(85 + 43 * (blue - red) / delta);
+        else
+            hue = (byte)(171 + 43 * (red - green) / delta);
 
-/// <summary>
-/// Converts a double-precision HSV color to the 8-bit representation.
-/// </summary>
-/// <param name="color">The HSV color to convert.</param>
-/// <returns>The converted color.</returns>
-public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
+        return new(alpha, hue, saturation, value);
+    }
 
-/// <summary>
-/// Converts a 16-bit HSV color to the 8-bit representation.
-/// </summary>
-/// <param name="color">The HSV color to convert.</param>
-/// <returns>The converted color.</returns>
-public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
+    /// <summary>
+    /// Converts this HSV color to <see cref="ColorArgb32"/>.
+    /// </summary>
+    public ColorArgb32 ToArgbColor()
+    {
+        if (Saturation == 0)
+        {
+            return new ColorArgb32(Alpha, Value, Value, Value);
+        }
 
-/// <summary>
-/// Converts a <see cref="System.Drawing.Color"/> value to its HSV equivalent.
-/// </summary>
-/// <param name="color">The color to convert.</param>
-/// <returns>The converted HSV color.</returns>
-public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
+        byte region = (byte)(Hue / 43);
+        byte remainder = (byte)((Hue - (region * 43)) * 6);
 
-/// <summary>
-/// Returns a textual representation of the HSV components.
-/// </summary>
-/// <returns>A string describing the alpha, hue, saturation, and value.</returns>
-public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
+        byte p = (byte)((Value * (255 - Saturation)) >> 8);
+        byte q = (byte)((Value * (255 - ((Saturation * remainder) >> 8))) >> 8);
+        byte t = (byte)((Value * (255 - ((Saturation * (255 - remainder)) >> 8))) >> 8);
 
-        /// <inheritdoc/>
-        public bool Equals(ColorAhsv32? other) =>
-                other is not null &&
-                Alpha == other.Alpha &&
-                Hue == other.Hue &&
-                Saturation == other.Saturation &&
-                Value == other.Value;
+        return region switch
+        {
+            0 => new ColorArgb32(Alpha, Value, t, p),
+            1 => new ColorArgb32(Alpha, q, Value, p),
+            2 => new ColorArgb32(Alpha, p, Value, t),
+            3 => new ColorArgb32(Alpha, p, q, Value),
+            4 => new ColorArgb32(Alpha, t, p, Value),
+            _ => new ColorArgb32(Alpha, Value, p, q),
+        };
+    }
 
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) => obj is ColorAhsv32 other && Equals(other);
 
-        /// <inheritdoc/>
-        public override int GetHashCode() => HashCode.Combine(Alpha, Hue, Saturation, Value);
+    /// <summary>
+    /// Converts a double-precision HSV color to the 8-bit representation.
+    /// </summary>
+    /// <param name="color">The HSV color to convert.</param>
+    /// <returns>The converted color.</returns>
+    public static implicit operator ColorAhsv32(ColorAhsv color) => new ColorAhsv32(color);
 
-        /// <summary>
-        /// Equality operator.
-        /// </summary>
-        public static bool operator ==(ColorAhsv32? left, ColorAhsv32? right) =>
-                left is null ? right is null : left.Equals(right);
+    /// <summary>
+    /// Converts a 16-bit HSV color to the 8-bit representation.
+    /// </summary>
+    /// <param name="color">The HSV color to convert.</param>
+    /// <returns>The converted color.</returns>
+    public static implicit operator ColorAhsv32(ColorAhsv64 color) => new ColorAhsv32(color);
 
-        /// <summary>
-        /// Inequality operator.
-        /// </summary>
-        public static bool operator !=(ColorAhsv32? left, ColorAhsv32? right) => !(left == right);
+    /// <summary>
+    /// Converts a <see cref="System.Drawing.Color"/> value to its HSV equivalent.
+    /// </summary>
+    /// <param name="color">The color to convert.</param>
+    /// <returns>The converted HSV color.</returns>
+    public static implicit operator ColorAhsv32(System.Drawing.Color color) => new ColorAhsv32(color);
+
+    /// <summary>
+    /// Returns a textual representation of the HSV components.
+    /// </summary>
+    /// <returns>A string describing the alpha, hue, saturation, and value.</returns>
+    public override string ToString() => $"a:{Alpha} h:{Hue} s:{Saturation} v:{Value}";
+
+    /// <inheritdoc/>
+    public bool Equals(ColorAhsv32? other) =>
+            other is not null &&
+            Alpha == other.Alpha &&
+            Hue == other.Hue &&
+            Saturation == other.Saturation &&
+            Value == other.Value;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is ColorAhsv32 other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(Alpha, Hue, Saturation, Value);
+
+    /// <summary>
+    /// Equality operator.
+    /// </summary>
+    public static bool operator ==(ColorAhsv32? left, ColorAhsv32? right) =>
+            left is null ? right is null : left.Equals(right);
+
+    /// <summary>
+    /// Inequality operator.
+    /// </summary>
+    public static bool operator !=(ColorAhsv32? left, ColorAhsv32? right) => !(left == right);
 }

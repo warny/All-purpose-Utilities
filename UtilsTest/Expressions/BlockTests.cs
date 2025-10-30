@@ -32,7 +32,7 @@ public class BlockTests
     public void SimpleBlockTest2()
     {
         string[] tests = ["1", "2", "3"];
-        var expression = 
+        var expression =
             """
             (string s) => { 
                 "2";  
@@ -102,7 +102,7 @@ public class BlockTests
     public void ForTest()
     {
         Random random = new Random();
-        var expression = 
+        var expression =
             """
             (char c, int length) => { 
                 string result=""; 
