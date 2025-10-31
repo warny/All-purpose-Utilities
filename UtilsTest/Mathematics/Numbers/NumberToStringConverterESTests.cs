@@ -39,5 +39,21 @@ namespace UtilsTest.Mathematics.Numbers
                 Assert.AreEqual(test.Expected, converter.Convert(test.Value));
             }
         }
+
+        [TestMethod]
+        public void SpanishThousandsDoNotCollapseWithinCompositeNumbers()
+        {
+            var converter = NumberToStringConverter.GetConverter("ES");
+
+            var oneThousand = converter.Convert(1000);
+            var twentyOneThousand = converter.Convert(21000);
+            var thirtyOneThousand = converter.Convert(31000);
+
+            Assert.AreEqual("mil", oneThousand);
+            StringAssert.Contains(twentyOneThousand, "uno mil", "Composite thousands should retain the phrase 'uno mil'.");
+            Assert.IsFalse(twentyOneThousand.Contains("veintimil"), "The substring replacement must not collapse 'veintiuno mil'.");
+            StringAssert.Contains(thirtyOneThousand, "uno mil", "Composite thousands should retain the phrase 'uno mil'.");
+            Assert.IsFalse(thirtyOneThousand.Contains("treintamil"), "The substring replacement must not collapse 'treintauno mil'.");
+        }
     }
 }

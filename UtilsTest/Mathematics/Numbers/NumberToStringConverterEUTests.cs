@@ -40,5 +40,15 @@ namespace UtilsTest.Mathematics.Numbers
             var converter = NumberToStringConverter.GetConverter("EU-es");
             Assert.AreEqual("bat koma bost", converter.Convert(1.5m));
         }
+
+        [TestMethod]
+        public void BasqueThousandsStillApplyTargetedReplacements()
+        {
+            var converter = NumberToStringConverter.GetConverter("EU");
+
+            Assert.AreEqual("mila", converter.Convert(1000));
+            Assert.AreEqual("hogei mila", converter.Convert(20000));
+            Assert.AreEqual("hogeita hamar mila", converter.Convert(30000));
+        }
     }
 }
