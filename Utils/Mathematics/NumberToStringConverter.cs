@@ -278,7 +278,7 @@ namespace Utils.Mathematics
 
             foreach (var replacement in _substringReplacements)
             {
-                value = ReplaceWholePhrase(value, replacement.OldValue, replacement.NewValue);
+                value = value.Replace(replacement.OldValue, replacement.NewValue);
             }
 
             return value;
@@ -327,47 +327,6 @@ namespace Utils.Mathematics
             /// Gets the scope that controls how the replacement is applied.
             /// </summary>
             public ReplacementScope Scope { get; }
-        }
-
-        /// <summary>
-        /// Performs a replacement only when the match is not part of a larger word.
-        /// </summary>
-        /// <param name="value">The original value.</param>
-        /// <param name="oldValue">The phrase to replace.</param>
-        /// <param name="newValue">The replacement phrase.</param>
-        /// <returns>The adjusted string.</returns>
-        private static string ReplaceWholePhrase(string value, string oldValue, string newValue)
-        {
-            if (string.IsNullOrEmpty(oldValue))
-            {
-                return value;
-            }
-
-            int startIndex = 0;
-            while (startIndex <= value.Length - oldValue.Length)
-            {
-                int index = value.IndexOf(oldValue, startIndex, StringComparison.Ordinal);
-                if (index == -1)
-                {
-                    break;
-                }
-
-                bool isAtStart = index == 0 || !char.IsLetterOrDigit(value[index - 1]);
-                int afterIndex = index + oldValue.Length;
-                bool isAtEnd = afterIndex >= value.Length || !char.IsLetterOrDigit(value[afterIndex]);
-
-                if (isAtStart && isAtEnd)
-                {
-                    value = string.Concat(value.AsSpan(0, index), newValue, value.AsSpan(afterIndex));
-                    startIndex = index + newValue.Length;
-                }
-                else
-                {
-                    startIndex = index + oldValue.Length;
-                }
-            }
-
-            return value;
         }
 
         /// <summary>
