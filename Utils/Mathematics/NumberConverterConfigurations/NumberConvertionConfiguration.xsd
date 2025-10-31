@@ -104,13 +104,21 @@
 									<xs:sequence>
 										<xs:element name="Replacement" maxOccurs="unbounded">
 											<xs:complexType>
-												<xs:attribute name="oldValue" type="xs:string" use="required"/>
-												<xs:attribute name="newValue" type="xs:string" use="required"/>
-											</xs:complexType>
-										</xs:element>
-									</xs:sequence>
-								</xs:complexType>
-							</xs:element>
+                                                                                                <xs:attribute name="oldValue" type="xs:string" use="required"/>
+                                                                                                <xs:attribute name="newValue" type="xs:string" use="required"/>
+                                                                                                <xs:attribute name="scope" use="optional">
+                                                                                                        <xs:simpleType>
+                                                                                                                <xs:restriction base="xs:string">
+                                                                                                                        <xs:enumeration value="Standalone" />
+                                                                                                                        <xs:enumeration value="Anywhere" />
+                                                                                                                </xs:restriction>
+                                                                                                        </xs:simpleType>
+                                                                                                </xs:attribute>
+                                                                                        </xs:complexType>
+                                                                                </xs:element>
+                                                                        </xs:sequence>
+                                                                </xs:complexType>
+                                                        </xs:element>
 							<xs:element name="Exceptions" type="NumberListType" />
                                                         <xs:element name="AdjustFunction" minOccurs="0" maxOccurs="1">
                                                                 <xs:complexType>

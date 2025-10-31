@@ -145,7 +145,8 @@ namespace Utils.Mathematics
                 language.DecimalSeparator,
                 language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
                 language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
-                language.Replacements?.Replacements.ToDictionary(r => r.OldValue, r => r.NewValue),
+                language.Replacements?.Replacements
+                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope)),
                 scale,
                 adjustFunction,
                 fractions,

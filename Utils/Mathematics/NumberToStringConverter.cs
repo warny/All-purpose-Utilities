@@ -51,7 +51,7 @@ namespace Utils.Mathematics
                         string decimalSeparator,
                         IReadOnlyDictionary<int, DigitListType> groups,
                         IReadOnlyDictionary<long, string> exceptions,
-                        IReadOnlyDictionary<string, string> replacements,
+                        IEnumerable<ReplacementRule> replacements,
                         NumberScale scale,
                         Func<string, string> adjustFunction = null,
                         IReadOnlyDictionary<int, string> fractions = null,
@@ -66,7 +66,11 @@ namespace Utils.Mathematics
             DecimalSeparator = decimalSeparator ?? ",";
             Groups = groups.Arg().MustNotBeNull().Value.ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
             Exceptions = exceptions.Arg().MustNotBeNull().Value.ToImmutableDictionary();
-            Replacements = replacements?.ToImmutableDictionary() ?? ImmutableDictionary<string, string>.Empty;
+            Replacements = (replacements ?? Array.Empty<ReplacementRule>())
+                .Select(r => r ?? throw new ArgumentNullException(nameof(replacements), "Replacement entries must not be null."))
+                .ToImmutableArray();
+            _replacementLookup = Replacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
+            _substringReplacements = Replacements.Where(r => r.Scope == ReplacementScope.Anywhere).ToImmutableArray();
             Scale = scale;
             AdjustFunction = adjustFunction ?? (s => s);
             Fractions = fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
@@ -109,7 +113,7 @@ namespace Utils.Mathematics
         /// <summary>
         /// Replacements for specific text segments
         /// </summary>
-        public IReadOnlyDictionary<string, string> Replacements { get; }
+        public IReadOnlyList<ReplacementRule> Replacements { get; }
         /// <summary>
         /// Names for decimal fractions by digit count
         /// </summary>
@@ -130,6 +134,9 @@ namespace Utils.Mathematics
         /// Scale definition for large numbers
         /// </summary>
         public NumberScale Scale { get; }
+
+        private readonly ImmutableDictionary<string, string> _replacementLookup;
+        private readonly ImmutableArray<ReplacementRule> _substringReplacements;
 
         /// <summary>
         /// Converts an integer to its string representation.
@@ -264,17 +271,62 @@ namespace Utils.Mathematics
                 return value;
             }
 
-            if (Replacements.TryGetValue(value, out var exactMatch))
+            if (_replacementLookup.TryGetValue(value, out var exactMatch))
             {
                 return exactMatch;
             }
 
-            foreach (var replacement in Replacements)
+            foreach (var replacement in _substringReplacements)
             {
-                value = ReplaceWholePhrase(value, replacement.Key, replacement.Value);
+                value = ReplaceWholePhrase(value, replacement.OldValue, replacement.NewValue);
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Represents a configured replacement rule.
+        /// </summary>
+        public sealed class ReplacementRule
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ReplacementRule"/> class.
+            /// </summary>
+            /// <param name="oldValue">The text that should be replaced.</param>
+            /// <param name="newValue">The replacement text.</param>
+            /// <param name="scope">The scope that controls how the replacement is applied.</param>
+            /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope)
+            {
+                if (string.IsNullOrEmpty(oldValue))
+                {
+                    throw new ArgumentException("Replacement old value must be provided.", nameof(oldValue));
+                }
+
+                if (string.IsNullOrEmpty(newValue))
+                {
+                    throw new ArgumentException("Replacement new value must be provided.", nameof(newValue));
+                }
+
+                OldValue = oldValue;
+                NewValue = newValue;
+                Scope = scope;
+            }
+
+            /// <summary>
+            /// Gets the text that should be replaced.
+            /// </summary>
+            public string OldValue { get; }
+
+            /// <summary>
+            /// Gets the replacement text.
+            /// </summary>
+            public string NewValue { get; }
+
+            /// <summary>
+            /// Gets the scope that controls how the replacement is applied.
+            /// </summary>
+            public ReplacementScope Scope { get; }
         }
 
         /// <summary>

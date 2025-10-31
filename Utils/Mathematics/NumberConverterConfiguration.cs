@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace Utils.Mathematics;
@@ -151,6 +152,46 @@ public class ReplacementType
     /// </summary>
     [XmlAttribute("newValue")]
     public string NewValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the textual scope representation supplied by the configuration.
+    /// </summary>
+    [XmlAttribute("scope")]
+    public string ScopeValue { get; set; }
+
+    /// <summary>
+    /// Gets the parsed scope that determines how the replacement is applied.
+    /// </summary>
+    [XmlIgnore]
+    public ReplacementScope Scope => ParseScope(ScopeValue);
+
+    private static ReplacementScope ParseScope(string scope)
+    {
+        if (string.IsNullOrWhiteSpace(scope))
+        {
+            return ReplacementScope.Standalone;
+        }
+
+        return Enum.TryParse(scope.Trim(), ignoreCase: true, out ReplacementScope parsed)
+            ? parsed
+            : ReplacementScope.Standalone;
+    }
+}
+
+/// <summary>
+/// Defines how a replacement should be applied to the converted value.
+/// </summary>
+public enum ReplacementScope
+{
+    /// <summary>
+    /// Indicates that the replacement only applies when the entire value matches the configured phrase.
+    /// </summary>
+    Standalone,
+
+    /// <summary>
+    /// Indicates that the replacement may occur within a larger phrase when the words match.
+    /// </summary>
+    Anywhere,
 }
 
 /// <summary>

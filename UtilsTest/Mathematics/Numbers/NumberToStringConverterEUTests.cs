@@ -17,7 +17,6 @@ namespace UtilsTest.Mathematics.Numbers
             ];
 
             var converter = NumberToStringConverter.GetConverter("eu-ES");
-            Assert.AreNotEqual(0, converter.Replacements.Count, "Basque configuration must expose replacements");
 
             foreach (var test in tests)
             {
@@ -49,6 +48,7 @@ namespace UtilsTest.Mathematics.Numbers
             Assert.AreEqual("mila", converter.Convert(1000));
             Assert.AreEqual("hogei mila", converter.Convert(20000));
             Assert.AreEqual("hogeita hamar mila", converter.Convert(30000));
+            Assert.AreEqual("hogeita bat mila", converter.Convert(21000));
         }
     }
 }

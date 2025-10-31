@@ -58,48 +58,48 @@
                         </StaticNames>
                 </NumberScale>
                 <Replacements>
-                        <Replacement oldValue="bat ehun" newValue="ehun" />
+                        <Replacement oldValue="bat ehun" newValue="ehun" scope="Anywhere" />
                         <Replacement oldValue="bat mila" newValue="mila" />
-                        <Replacement oldValue="hogei eta" newValue="hogeita" />
-                        <Replacement oldValue="berrogei eta" newValue="berrogeita" />
-                        <Replacement oldValue="hirurogei eta" newValue="hirurogeita" />
-                        <Replacement oldValue="laurogei eta" newValue="laurogeita" />
-                        <Replacement oldValue="hogeita hamar eta bat" newValue="hogeita hamaika" />
-                        <Replacement oldValue="hogeita hamar eta bi" newValue="hogeita hamabi" />
-                        <Replacement oldValue="hogeita hamar eta hiru" newValue="hogeita hamahiru" />
-                        <Replacement oldValue="hogeita hamar eta lau" newValue="hogeita hamalau" />
-                        <Replacement oldValue="hogeita hamar eta bost" newValue="hogeita hamabost" />
-                        <Replacement oldValue="hogeita hamar eta sei" newValue="hogeita hamasei" />
-                        <Replacement oldValue="hogeita hamar eta zazpi" newValue="hogeita hamazazpi" />
-                        <Replacement oldValue="hogeita hamar eta zortzi" newValue="hogeita hemezortzi" />
-                        <Replacement oldValue="hogeita hamar eta bederatzi" newValue="hogeita hemeretzi" />
-                        <Replacement oldValue="berrogeita hamar eta bat" newValue="berrogeita hamaika" />
-                        <Replacement oldValue="berrogeita hamar eta bi" newValue="berrogeita hamabi" />
-                        <Replacement oldValue="berrogeita hamar eta hiru" newValue="berrogeita hamahiru" />
-                        <Replacement oldValue="berrogeita hamar eta lau" newValue="berrogeita hamalau" />
-                        <Replacement oldValue="berrogeita hamar eta bost" newValue="berrogeita hamabost" />
-                        <Replacement oldValue="berrogeita hamar eta sei" newValue="berrogeita hamasei" />
-                        <Replacement oldValue="berrogeita hamar eta zazpi" newValue="berrogeita hamazazpi" />
-                        <Replacement oldValue="berrogeita hamar eta zortzi" newValue="berrogeita hemezortzi" />
-                        <Replacement oldValue="berrogeita hamar eta bederatzi" newValue="berrogeita hemeretzi" />
-                        <Replacement oldValue="hirurogeita hamar eta bat" newValue="hirurogeita hamaika" />
-                        <Replacement oldValue="hirurogeita hamar eta bi" newValue="hirurogeita hamabi" />
-                        <Replacement oldValue="hirurogeita hamar eta hiru" newValue="hirurogeita hamahiru" />
-                        <Replacement oldValue="hirurogeita hamar eta lau" newValue="hirurogeita hamalau" />
-                        <Replacement oldValue="hirurogeita hamar eta bost" newValue="hirurogeita hamabost" />
-                        <Replacement oldValue="hirurogeita hamar eta sei" newValue="hirurogeita hamasei" />
-                        <Replacement oldValue="hirurogeita hamar eta zazpi" newValue="hirurogeita hamazazpi" />
-                        <Replacement oldValue="hirurogeita hamar eta zortzi" newValue="hirurogeita hemezortzi" />
-                        <Replacement oldValue="hirurogeita hamar eta bederatzi" newValue="hirurogeita hemeretzi" />
-                        <Replacement oldValue="laurogeita hamar eta bat" newValue="laurogeita hamaika" />
-                        <Replacement oldValue="laurogeita hamar eta bi" newValue="laurogeita hamabi" />
-                        <Replacement oldValue="laurogeita hamar eta hiru" newValue="laurogeita hamahiru" />
-                        <Replacement oldValue="laurogeita hamar eta lau" newValue="laurogeita hamalau" />
-                        <Replacement oldValue="laurogeita hamar eta bost" newValue="laurogeita hamabost" />
-                        <Replacement oldValue="laurogeita hamar eta sei" newValue="laurogeita hamasei" />
-                        <Replacement oldValue="laurogeita hamar eta zazpi" newValue="laurogeita hamazazpi" />
-                        <Replacement oldValue="laurogeita hamar eta zortzi" newValue="laurogeita hemezortzi" />
-                        <Replacement oldValue="laurogeita hamar eta bederatzi" newValue="laurogeita hemeretzi" />
+                        <Replacement oldValue="hogei eta" newValue="hogeita" scope="Anywhere" />
+                        <Replacement oldValue="berrogei eta" newValue="berrogeita" scope="Anywhere" />
+                        <Replacement oldValue="hirurogei eta" newValue="hirurogeita" scope="Anywhere" />
+                        <Replacement oldValue="laurogei eta" newValue="laurogeita" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta bat" newValue="hogeita hamaika" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta bi" newValue="hogeita hamabi" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta hiru" newValue="hogeita hamahiru" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta lau" newValue="hogeita hamalau" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta bost" newValue="hogeita hamabost" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta sei" newValue="hogeita hamasei" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta zazpi" newValue="hogeita hamazazpi" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta zortzi" newValue="hogeita hemezortzi" scope="Anywhere" />
+                        <Replacement oldValue="hogeita hamar eta bederatzi" newValue="hogeita hemeretzi" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta bat" newValue="berrogeita hamaika" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta bi" newValue="berrogeita hamabi" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta hiru" newValue="berrogeita hamahiru" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta lau" newValue="berrogeita hamalau" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta bost" newValue="berrogeita hamabost" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta sei" newValue="berrogeita hamasei" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta zazpi" newValue="berrogeita hamazazpi" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta zortzi" newValue="berrogeita hemezortzi" scope="Anywhere" />
+                        <Replacement oldValue="berrogeita hamar eta bederatzi" newValue="berrogeita hemeretzi" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta bat" newValue="hirurogeita hamaika" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta bi" newValue="hirurogeita hamabi" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta hiru" newValue="hirurogeita hamahiru" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta lau" newValue="hirurogeita hamalau" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta bost" newValue="hirurogeita hamabost" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta sei" newValue="hirurogeita hamasei" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta zazpi" newValue="hirurogeita hamazazpi" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta zortzi" newValue="hirurogeita hemezortzi" scope="Anywhere" />
+                        <Replacement oldValue="hirurogeita hamar eta bederatzi" newValue="hirurogeita hemeretzi" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta bat" newValue="laurogeita hamaika" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta bi" newValue="laurogeita hamabi" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta hiru" newValue="laurogeita hamahiru" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta lau" newValue="laurogeita hamalau" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta bost" newValue="laurogeita hamabost" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta sei" newValue="laurogeita hamasei" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta zazpi" newValue="laurogeita hamazazpi" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta zortzi" newValue="laurogeita hemezortzi" scope="Anywhere" />
+                        <Replacement oldValue="laurogeita hamar eta bederatzi" newValue="laurogeita hemeretzi" scope="Anywhere" />
                 </Replacements>
                 <Exceptions>
                         <Number value="11" string="hamaika" />

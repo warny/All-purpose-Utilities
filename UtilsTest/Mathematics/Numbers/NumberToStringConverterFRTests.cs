@@ -148,6 +148,15 @@ namespace UtilsTest.Mathematics.Numbers
         }
 
         [TestMethod]
+        public void FrenchRegionalCompositeThousandsKeepUnit()
+        {
+            var converter = NumberToStringConverter.GetConverter("FR-ch");
+
+            Assert.AreEqual("vingt et un mille", converter.Convert(21000));
+            Assert.AreEqual("quatre cent un mille", converter.Convert(401000));
+        }
+
+        [TestMethod]
         public void BigIntTest()
         {
             (BigInteger Number, string Expected)[] tests = new (BigInteger Number, string Expected)[] {
