@@ -27,18 +27,22 @@ jobs:
               shell: pwsh
               run: |
                   $projects = @(
-                      "Utils/Utils.csproj",
-                      "Utils.IO/Utils.IO.csproj",
-                      "Utils.Data/Utils.Data.csproj",
-                      "Utils.Fonts/Utils.Fonts.csproj",
-                      "Utils.Geography/Utils.Geography.csproj",
-                      "Utils.DependencyInjection/Utils.DependencyInjection.csproj",
-                      "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
-                      "Utils.Imaging/Utils.Imaging.csproj",
-                      "Utils.Mathematics/Utils.Mathematics.csproj",
-                      "Utils.Reflection/Utils.Reflection.csproj",
-                      "Utils.VirtualMachine/Utils.VirtualMachine.csproj",
-                      "Utils.Net/Utils.Net.csproj"
+                    "Utils\Utils.csproj",
+                    "Utils.Data\Utils.Data.csproj",
+                    "Utils.DependencyInjection\Utils.DependencyInjection.csproj",
+                    "Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj",
+                    "Utils.Fonts\Utils.Fonts.csproj",
+                    "Utils.Geography\Utils.Geography.csproj",
+                    "Utils.Imaging\Utils.Imaging.csproj",
+                    "Utils.IO\Utils.IO.csproj",
+                    "Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj",
+                    "Utils.Mathematics\Utils.Mathematics.csproj",
+                    "Utils.Net\Utils.Net.csproj",
+                    "Utils.OData\Utils.OData.csproj",
+                    "Utils.OData.Generators\Utils.OData.Generators.csproj",
+                    "Utils.Reflection\Utils.Reflection.csproj",
+                    "Utils.VirtualMachine\Utils.VirtualMachine.csproj",
+                    "Utils.Xml\Utils.Xml.csproj"
                   )
                   New-Item -ItemType Directory -Path packages -Force | Out-Null
                   $errors = @()
