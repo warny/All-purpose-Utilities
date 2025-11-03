@@ -1,205 +1,227 @@
-# Utils Library
+# Utils.DependencyInjection.Generators
 
-The **Utils** library is a large collection of helper namespaces covering many common programming needs.
-It targets **.NET 9** and is the base dependency for the other utility packages contained in this repository.
+`Utils.DependencyInjection.Generators` provides a Roslyn source generator that implements `IServiceConfigurator` classes marked
+with the `[StaticAuto]` attribute. It targets **.NET 9** and complements the `Utils.DependencyInjection` runtime library by wiring
+attribute-based registrations at build time.
 
 ## Features
 
-- **Async** – asynchronous execution helpers
-- **Arrays** – helpers for comparing arrays, working with multi-dimensional data and specialized comparers
-- **Collections** – indexed lists, skip lists, LRU caches and dictionary extensions
-- **Expressions** – creation and transformation of expression trees and lambda utilities
-- **Files** – filesystem helpers to manipulate paths and temporary files
-- **Mathematics** – base classes for expression transformation and math functions
-- **Net** – advanced URI builder and network helpers
-- **Objects** – data conversion routines and an advanced string formatter
-- **Reflection** – additional reflection primitives such as `PropertyOrFieldInfo` and delegate invocation helpers
-- **Resources** – utilities for working with embedded resources
-- **Security** – Google Authenticator helpers
-- **Streams** – base16/base32/base64 converters and binary serialization
-- **Transactions** – execute a batch of reversible actions and commit or rollback as a group
+- Scans the compilation for `IServiceConfigurator` implementations decorated with `[StaticAuto]`.
+- Detects types annotated with `[Singleton]`, `[Scoped]`, or `[Transient]` and generates the matching registration calls.
+- Supports keyed registrations when a domain is supplied to the lifetime attributes.
+- Registers interfaces marked with `[Injectable]` against their attributed implementations.
+- Emits partial class implementations that remain editable alongside generated code.
 
-The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
+## Getting started
 
-> **Note:** XML helpers are now packaged separately inside the `Utils.XML` library.
-> Add a reference to the `Utils.XML` package to access `XmlDataProcessor` and
-> the related helper extensions.
+1. Add a project reference to **Utils.DependencyInjection.Generators** (as an analyzer) and to **Utils.DependencyInjection** (as a library).
+2. Decorate your services with lifetime attributes and mark exposed interfaces with `[Injectable]`.
+3. Create an `IServiceConfigurator` implementation and mark it with `[StaticAuto]`.
 
-## Usage examples
+## Examples
 
-Short snippets demonstrating typical API usage:
+The following scenarios highlight the generator's capabilities. They can be mixed and
+matched inside the same project because the generated partial classes never overwrite
+hand-written logic.
 
-### Transactions
+### Basic registration example
+
 ```csharp
-using Utils.Transactions;
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Utils.DependencyInjection;
 
-class SampleAction : ITransactionalAction
+[Injectable]
+public interface IMessageFormatter
 {
-    public void Execute() { /* work */ }
-    public void Commit() { /* finalize */ }
-    public void Rollback() { /* undo */ }
+    string Format(string message);
 }
 
-TransactionExecutor executor = new TransactionExecutor();
-executor.Execute([
-    new SampleAction(),
-    new SampleAction(),
-]);
-```
-
-### Async
-```csharp
-using Utils.Async;
-IAsyncExecutor executor = new AsyncExecutor();
-Func<Task>[] actions =
-[
-    async () => await Task.Delay(100),
-    async () => await Task.Delay(100),
-    async () => await Task.Delay(100),
-];
-await executor.ExecuteAsync(actions, 3); // chooses parallel execution
-```
-
-### Arrays
-```csharp
-using Utils.Arrays;
-int[] values = [0, 1, 2, 0];
-int[] trimmed = values.Trim(0); // [1, 2]
-```
-
-### Collections
-```csharp
-var cache = new Utils.Collections.LRUCache<int, string>(2);
-cache.Add(1, "one");
-cache.Add(2, "two");
-cache[1];
-cache.Add(3, "three"); // evicts key 2
-var dict = new Dictionary<string, int>();
-// Thread-safe dictionary insertion
-int one = dict.GetOrAdd("one", () => 1);
-```
-
-### Files
-```csharp
-// Search executables four levels deep under "Program Files"
-foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\\*\\*\\*\\*.exe"))
+[Singleton]
+public class UppercaseFormatter : IMessageFormatter
 {
-    Console.WriteLine(exe);
+    public string Format(string message) => message.ToUpperInvariant();
 }
+
+[StaticAuto]
+public partial class FormatterConfigurator : IServiceConfigurator { }
+
+var services = new ServiceCollection();
+new FormatterConfigurator().ConfigureServices(services);
+var provider = services.BuildServiceProvider();
+var formatter = provider.GetRequiredService<IMessageFormatter>();
+string result = formatter.Format("hello");
 ```
 
-### Reflection
-```csharp
-var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
-int id = (int)info.GetValue(myObj);
-info.SetValue(myObj, 42);
-```
-```csharp
-var invoker = new Utils.Reflection.MultiDelegateInvoker<int, int>(2);
-invoker.Add(i => i + 1);
-invoker.Add(i => i + 2);
-int[] values = await invoker.InvokeSmartAsync(3); // [4, 5]
-```
+The generated `ConfigureServices` method automatically registers `UppercaseFormatter` as the
+implementation for `IMessageFormatter`.
 
-### Resources
-```csharp
-var res = new Utils.Resources.ExternalResource("Strings");
-string text = (string)res["Welcome"];
-```
+### Multi-tenant keyed registrations
 
-### Strings
-```csharp
-using Utils.Objects;
-bool match = "File123.log".Like("File???.log");
-string normalized = "---hello---".Trim(c => c == '-');
-string path = "report".AddPrefix("out_").AddSuffix(".txt");
-string title = "hello world".FirstLetterUpperCase();
-```
+You can scope services to tenants or domains by supplying a key when decorating the service with lifetime attributes.
 
-### Security
 ```csharp
-byte[] key = Convert.FromBase64String("MFRGGZDFMZTWQ2LK");
-var authenticator = Utils.Security.Authenticator.GoogleAuthenticator(key);
-string code = authenticator.ComputeAuthenticator();
-bool ok = authenticator.VerifyAuthenticator(1, code);
-```
+using Microsoft.Extensions.DependencyInjection;
+using Utils.DependencyInjection;
 
-### Dates
-```csharp
-DateTime result = new DateTime(2023, 3, 15)
-    .Calculate("FM+1J", new CultureInfo("fr-FR")); // 2023-04-01
-```
-```csharp
-// Adding three working days while skipping weekends
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime dueDate = new DateTime(2024, 4, 5).AddWorkingDays(3, calendar); // 2024-04-10
-```
-```csharp
-// Using working days inside a formula
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime value = new DateTime(2024, 4, 5)
-    .Calculate("FS+3O", new CultureInfo("fr-FR"), calendar); // 2024-04-10
-```
-```csharp
-// Finding the next or previous working day
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime next = new DateTime(2024, 4, 6).NextWorkingDay(calendar);     // 2024-04-08
-DateTime prev = new DateTime(2024, 4, 6).PreviousWorkingDay(calendar); // 2024-04-05
-```
-```csharp
-// Adjusting the result of a formula to the next working day
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime adjusted = new DateTime(2024, 4, 6)
-    .Calculate("FS+O", new CultureInfo("fr-FR"), calendar); // 2024-04-08
-```
-
-### Expressions
-```csharp
-var expression = "(items) => items[0] + items[1]";
-var lambda = Utils.Expressions.ExpressionParser.Parse<Func<string[], string>>(expression);
-Func<string[], string> concat = lambda.Compile();
-string result = concat(new[] { "Hello", "World" });
-```
-```csharp
-var switchExpr = "(i) => switch(i) { case 1: 10; case 2: 20; default: 0; }";
-var switchLambda = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchExpr);
-int value = switchLambda.Compile()(2); // 20
-```
-```csharp
-var switchStmt = "(int i) => { int v = 0; switch(i) { case 1: v = 10; break; case 2: v = 20; break; default: v = 0; break; } return v; }";
-var switchFunc = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchStmt).Compile();
-int result = switchFunc(1); // 10
-```
-```csharp
-var formatter = Utils.Format.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
-string formatted = formatter("John");
-```
-```csharp
-var interp = Utils.Expressions.ExpressionParser.Parse<Func<string, string, string>>("(a,b)=>$\"{a} {b}!\"").Compile();
-string hello = interp("hello", "world"); // hello world!
-```
-
-### Numerics
-```csharp
-using Utils.Numerics;
-
-Number a = Number.Parse("0.1");
-Number b = Number.Parse("0.2");
-Number sum = a + b; // 0.3 (3/10)
-Number big = Number.Parse("123456789012345678901234567890") + 1;
-Number.TryParse("42", null, out Number parsed);
-Number pow = Number.Pow(2, 3); // 8
-Number angle = Number.Parse("0.5");
-Number cosine = Number.Cos(angle); // 0.8775825618903728 (8775825618903728/10000000000000000)
-```
-
-### XML
-```csharp
-using var reader = XmlReader.Create("items.xml");
-reader.ReadToDescendant("item");
-foreach (var child in reader.ReadChildElements())
+[Injectable]
+public interface ICalculator
 {
-    Console.WriteLine(child.ReadOuterXml());
+    int Add(int left, int right);
+}
+
+[Singleton("europe")]
+public class VatCalculator : ICalculator
+{
+    public int Add(int left, int right) => (int)Math.Round((left + right) * 1.2, MidpointRounding.AwayFromZero);
+}
+
+[Singleton("us")]
+public class SalesTaxCalculator : ICalculator
+{
+    public int Add(int left, int right) => (int)Math.Round((left + right) * 1.07, MidpointRounding.AwayFromZero);
+}
+
+[StaticAuto]
+public partial class CalculatorConfigurator : IServiceConfigurator { }
+
+var services = new ServiceCollection();
+new CalculatorConfigurator().ConfigureServices(services);
+var provider = services.BuildServiceProvider();
+var europeanCalculator = provider.GetRequiredKeyedService<ICalculator>("europe");
+var usCalculator = provider.GetRequiredKeyedService<ICalculator>("us");
+```
+
+The generator emits `AddKeyedSingleton` calls so that each calculator is registered with its
+domain. Consumers resolve the correct implementation by providing the key.
+
+### Partial methods for fine-grained control
+
+Because the generator emits partial classes, you can extend the configurator with custom logic without losing the automatic registrations.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+
+[StaticAuto]
+public partial class AdvancedConfigurator : IServiceConfigurator
+{
+    partial void OnAfterConfigureServices(IServiceCollection services)
+    {
+        services.AddLogging();
+    }
 }
 ```
 
+When the generator is executed it creates a matching partial class and invokes
+`OnAfterConfigureServices` after wiring the detected services, allowing manual tweaks.
+
+### Module-based composition
+
+Large solutions commonly split registrations into domain-specific modules. The generator can
+aggregate all of them without manual wiring.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Utils.DependencyInjection;
+
+[StaticAuto]
+public partial class AccountingModule : IServiceConfigurator { }
+
+[StaticAuto]
+public partial class NotificationsModule : IServiceConfigurator { }
+
+[StaticAuto]
+public partial class ApplicationConfigurator : IServiceConfigurator
+{
+    partial void OnAfterConfigureServices(IServiceCollection services)
+    {
+        services.AddLogging();
+    }
+}
+
+var services = new ServiceCollection();
+new ApplicationConfigurator().ConfigureServices(services);
+```
+
+Each generated partial class invokes the others through `IServiceConfigurator` so the final
+`ApplicationConfigurator` can remain focused on cross-cutting concerns such as logging or
+metrics.
+
+### Open generics and interfaces
+
+The generator handles open-generic registrations when the implementation type declares a
+generic constraint.
+
+```csharp
+using Utils.DependencyInjection;
+
+[Injectable]
+public interface IRepository<T>
+    where T : class
+{
+    ValueTask<T?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+}
+
+[Scoped]
+public class SqlRepository<T> : IRepository<T>
+    where T : class
+{
+    public ValueTask<T?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // database lookup
+        return ValueTask.FromResult<T?>(default);
+    }
+}
+
+[StaticAuto]
+public partial class DataConfigurator : IServiceConfigurator { }
+```
+
+At build time the generator emits `services.AddScoped(typeof(IRepository<>), typeof(SqlRepository<>));`
+while preserving the generic constraints.
+
+### Conditional environments
+
+Partial methods are also ideal for environment-based tweaks. The generator still outputs the
+default registrations while giving developers an override point.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+
+[StaticAuto]
+public partial class EnvironmentConfigurator : IServiceConfigurator
+{
+    partial void OnBeforeConfigureServices(IServiceCollection services)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            services.AddSingleton<IPathService, WindowsPathService>();
+        }
+    }
+}
+```
+
+`OnBeforeConfigureServices` is emitted alongside `ConfigureServices`. It executes before the
+automatic registrations which allows conditional replacements without disabling generation.
+
+### Mixing manual and generated registrations
+
+Source generation remains opt-in for each configurator. Manual entries can remain untouched
+while the generator handles the repetitive parts.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+
+[StaticAuto]
+public partial class MessagingConfigurator : IServiceConfigurator
+{
+    partial void OnAfterConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<IMessageBus>(_ => new RabbitMqBus("amqp://localhost"));
+    }
+}
+```
+
+Because the generator never rewrites the partial file, developers can evolve their manual
+registrations at their own pace while still benefiting from automated discovery for routine
+services.

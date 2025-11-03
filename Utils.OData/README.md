@@ -1,205 +1,196 @@
-# Utils Library
+# Utils.OData
 
-The **Utils** library is a large collection of helper namespaces covering many common programming needs.
-It targets **.NET 9** and is the base dependency for the other utility packages contained in this repository.
+`Utils.OData` delivers an HTTP client, LINQ provider, and metadata helpers that simplify consuming OData services from **.NET 9** applications. The library can be used on its own or together with the `Utils.OData.Generators` package to produce strongly typed contexts from EDMX metadata.
 
 ## Features
 
-- **Async** – asynchronous execution helpers
-- **Arrays** – helpers for comparing arrays, working with multi-dimensional data and specialized comparers
-- **Collections** – indexed lists, skip lists, LRU caches and dictionary extensions
-- **Expressions** – creation and transformation of expression trees and lambda utilities
-- **Files** – filesystem helpers to manipulate paths and temporary files
-- **Mathematics** – base classes for expression transformation and math functions
-- **Net** – advanced URI builder and network helpers
-- **Objects** – data conversion routines and an advanced string formatter
-- **Reflection** – additional reflection primitives such as `PropertyOrFieldInfo` and delegate invocation helpers
-- **Resources** – utilities for working with embedded resources
-- **Security** – Google Authenticator helpers
-- **Streams** – base16/base32/base64 converters and binary serialization
-- **Transactions** – execute a batch of reversible actions and commit or rollback as a group
+- `QueryOData` HTTP client with cookie forwarding, credential support, and automatic paging.
+- `ODataQueryBuilder` for constructing compliant query strings from an `IQuery` description.
+- `ODataContext` base class that loads EDMX metadata from files or URLs and exposes typed/untyped queryables.
+- Metadata converters such as `EdmFieldConverterRegistry` that transform raw responses into CLR values.
+- Lightweight LINQ provider enabling `Where`, `Select`, `OrderBy`, and `Take` over OData entity sets.
 
-The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
+## Examples
 
-> **Note:** XML helpers are now packaged separately inside the `Utils.XML` library.
-> Add a reference to the `Utils.XML` package to access `XmlDataProcessor` and
-> the related helper extensions.
+### Building a request
 
-## Usage examples
-
-Short snippets demonstrating typical API usage:
-
-### Transactions
 ```csharp
-using Utils.Transactions;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Utils.OData;
 
-class SampleAction : ITransactionalAction
+var query = new Query
 {
-    public void Execute() { /* work */ }
-    public void Commit() { /* finalize */ }
-    public void Rollback() { /* undo */ }
-}
+    Table = "Products",
+    Select = "Id,Name,Price",
+    Filters = "Price gt 10",
+    OrderBy = "Name",
+    Top = 50,
+};
 
-TransactionExecutor executor = new TransactionExecutor();
-executor.Execute([
-    new SampleAction(),
-    new SampleAction(),
-]);
-```
-
-### Async
-```csharp
-using Utils.Async;
-IAsyncExecutor executor = new AsyncExecutor();
-Func<Task>[] actions =
-[
-    async () => await Task.Delay(100),
-    async () => await Task.Delay(100),
-    async () => await Task.Delay(100),
-];
-await executor.ExecuteAsync(actions, 3); // chooses parallel execution
-```
-
-### Arrays
-```csharp
-using Utils.Arrays;
-int[] values = [0, 1, 2, 0];
-int[] trimmed = values.Trim(0); // [1, 2]
-```
-
-### Collections
-```csharp
-var cache = new Utils.Collections.LRUCache<int, string>(2);
-cache.Add(1, "one");
-cache.Add(2, "two");
-cache[1];
-cache.Add(3, "three"); // evicts key 2
-var dict = new Dictionary<string, int>();
-// Thread-safe dictionary insertion
-int one = dict.GetOrAdd("one", () => 1);
-```
-
-### Files
-```csharp
-// Search executables four levels deep under "Program Files"
-foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\\*\\*\\*\\*.exe"))
+var client = new QueryOData("https://example.com/odata");
+using HttpResponseMessage? response = await client.SimpleQuery(query, cancellationToken: CancellationToken.None);
+if (response is not null && response.IsSuccessStatusCode)
 {
-    Console.WriteLine(exe);
+    string json = await response.Content.ReadAsStringAsync();
+    // deserialize or process the payload
 }
 ```
 
-### Reflection
-```csharp
-var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
-int id = (int)info.GetValue(myObj);
-info.SetValue(myObj, 42);
-```
-```csharp
-var invoker = new Utils.Reflection.MultiDelegateInvoker<int, int>(2);
-invoker.Add(i => i + 1);
-invoker.Add(i => i + 2);
-int[] values = await invoker.InvokeSmartAsync(3); // [4, 5]
-```
+The `QueryOData` helper automatically merges `skip` values and forwards headers and cookies from an incoming `HttpRequestMessage` when required. Responses can be streamed, buffered, or converted to JSON through `QueryToJSon`.
 
-### Resources
-```csharp
-var res = new Utils.Resources.ExternalResource("Strings");
-string text = (string)res["Welcome"];
-```
+### Typed contexts with LINQ
 
-### Strings
 ```csharp
-using Utils.Objects;
-bool match = "File123.log".Like("File???.log");
-string normalized = "---hello---".Trim(c => c == '-');
-string path = "report".AddPrefix("out_").AddSuffix(".txt");
-string title = "hello world".FirstLetterUpperCase();
-```
-
-### Security
-```csharp
-byte[] key = Convert.FromBase64String("MFRGGZDFMZTWQ2LK");
-var authenticator = Utils.Security.Authenticator.GoogleAuthenticator(key);
-string code = authenticator.ComputeAuthenticator();
-bool ok = authenticator.VerifyAuthenticator(1, code);
-```
-
-### Dates
-```csharp
-DateTime result = new DateTime(2023, 3, 15)
-    .Calculate("FM+1J", new CultureInfo("fr-FR")); // 2023-04-01
-```
-```csharp
-// Adding three working days while skipping weekends
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime dueDate = new DateTime(2024, 4, 5).AddWorkingDays(3, calendar); // 2024-04-10
-```
-```csharp
-// Using working days inside a formula
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime value = new DateTime(2024, 4, 5)
-    .Calculate("FS+3O", new CultureInfo("fr-FR"), calendar); // 2024-04-10
-```
-```csharp
-// Finding the next or previous working day
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime next = new DateTime(2024, 4, 6).NextWorkingDay(calendar);     // 2024-04-08
-DateTime prev = new DateTime(2024, 4, 6).PreviousWorkingDay(calendar); // 2024-04-05
-```
-```csharp
-// Adjusting the result of a formula to the next working day
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime adjusted = new DateTime(2024, 4, 6)
-    .Calculate("FS+O", new CultureInfo("fr-FR"), calendar); // 2024-04-08
-```
-
-### Expressions
-```csharp
-var expression = "(items) => items[0] + items[1]";
-var lambda = Utils.Expressions.ExpressionParser.Parse<Func<string[], string>>(expression);
-Func<string[], string> concat = lambda.Compile();
-string result = concat(new[] { "Hello", "World" });
-```
-```csharp
-var switchExpr = "(i) => switch(i) { case 1: 10; case 2: 20; default: 0; }";
-var switchLambda = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchExpr);
-int value = switchLambda.Compile()(2); // 20
-```
-```csharp
-var switchStmt = "(int i) => { int v = 0; switch(i) { case 1: v = 10; break; case 2: v = 20; break; default: v = 0; break; } return v; }";
-var switchFunc = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchStmt).Compile();
-int result = switchFunc(1); // 10
-```
-```csharp
-var formatter = Utils.Format.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
-string formatted = formatter("John");
-```
-```csharp
-var interp = Utils.Expressions.ExpressionParser.Parse<Func<string, string, string>>("(a,b)=>$\"{a} {b}!\"").Compile();
-string hello = interp("hello", "world"); // hello world!
-```
-
-### Numerics
-```csharp
-using Utils.Numerics;
-
-Number a = Number.Parse("0.1");
-Number b = Number.Parse("0.2");
-Number sum = a + b; // 0.3 (3/10)
-Number big = Number.Parse("123456789012345678901234567890") + 1;
-Number.TryParse("42", null, out Number parsed);
-Number pow = Number.Pow(2, 3); // 8
-Number angle = Number.Parse("0.5");
-Number cosine = Number.Cos(angle); // 0.8775825618903728 (8775825618903728/10000000000000000)
-```
-
-### XML
-```csharp
-using var reader = XmlReader.Create("items.xml");
-reader.ReadToDescendant("item");
-foreach (var child in reader.ReadChildElements())
+public partial class ProductContext : ODataContext
 {
-    Console.WriteLine(child.ReadOuterXml());
+    public ProductContext() : base("metadata/Products.edmx") { }
+
+    public ODataQueryable<Product> Products => Query<Product>("Products");
+}
+
+var context = new ProductContext();
+var cheapProducts = await context.Products
+    .Where(p => p.Price < 20)
+    .OrderBy(p => p.Name)
+    .Take(10)
+    .ToListAsync();
+```
+
+For fully typed models, combine this runtime library with the `Utils.OData.Generators` package. The generator inspects the EDMX referenced by `ODataContext` and creates entity classes with properly typed properties and key annotations.
+
+### Server-driven paging and continuation
+
+`QueryOData` exposes helpers for iterating paginated feeds without manually tracking `$skip` or `$top` values.
+
+```csharp
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+
+var client = new QueryOData("https://example.com/odata");
+await foreach (HttpResponseMessage page in client.QueryPagedAsync(query, CancellationToken.None))
+{
+    string json = await page.Content.ReadAsStringAsync();
+    // handle each page as it arrives
 }
 ```
 
+The iterator inspects the OData `@odata.nextLink` annotations and issues follow-up requests transparently, making it easy to hydrate large datasets.
+
+### Combining metadata converters
+
+When working with dynamic feeds you can register custom converters with the `EdmFieldConverterRegistry` to map EDM primitive names to CLR types.
+
+```csharp
+using Utils.OData;
+
+var registry = new EdmFieldConverterRegistry();
+registry.Register("Edm.GeographyPoint", token => GeoJsonConverter.ToPoint(token));
+registry.Register("Edm.Guid", token => Guid.Parse(token.ToString()));
+
+var converter = new EdmFieldConverter(registry);
+object value = converter.Convert("Edm.GeographyPoint", jsonToken);
+```
+
+By extending the registry, applications can deserialize spatial or custom EDM types without duplicating conversion logic across query handlers.
+
+### Constructing queries with the builder
+
+`ODataQueryBuilder` helps compose URLs with complex filters while maintaining readability.
+
+```csharp
+var builder = new ODataQueryBuilder()
+    .For("Products")
+    .Select("Id", "Name", "Price")
+    .Filter(f => f
+        .GreaterThan("Price", 25)
+        .And(f.StartsWith("Name", "S")))
+    .OrderBy("Name")
+    .Top(25)
+    .SkipToken("YWJjMTIz");
+
+string uri = builder.ToString();
+// /Products?$select=Id,Name,Price&$filter=(Price gt 25 and startswith(Name,'S'))&$orderby=Name&$top=25&$skiptoken=YWJjMTIz
+```
+
+The fluent API mirrors OData keywords which keeps composed URIs consistent with service
+expectations.
+
+### Streaming JSON directly
+
+`QueryOData` can stream raw JSON payloads without buffering entire responses in memory.
+
+```csharp
+using System.IO;
+using System.Threading;
+
+var client = new QueryOData("https://example.com/odata");
+
+await foreach (Stream payload in client.QueryToJSon(query, CancellationToken.None))
+{
+    using var reader = new StreamReader(payload, leaveOpen: true);
+    string page = await reader.ReadToEndAsync();
+    ProcessJson(page);
+}
+```
+
+Each yielded `Stream` represents a page of results which can be parsed incrementally for
+low-latency dashboards or ETL jobs.
+
+### Integrating with `HttpClientFactory`
+
+The HTTP client accepts an existing `HttpClient` instance so it can reuse message handlers and
+policies configured by `IHttpClientFactory`.
+
+```csharp
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddODataClient(this IServiceCollection services)
+    {
+        services.AddHttpClient<QueryOData>(client =>
+        {
+            client.BaseAddress = new Uri("https://example.com/odata/");
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
+
+        return services;
+    }
+}
+
+var provider = services.BuildServiceProvider();
+var client = provider.GetRequiredService<QueryOData>();
+```
+
+This pattern reuses retry, caching, or resilience handlers registered through the factory.
+
+### Customizing requests with hooks
+
+For ad-hoc customization override `BuildRequestMessage` in a derived class.
+
+```csharp
+using System.Net.Http;
+using System.Net.Http.Headers;
+
+public class AuthorizedODataClient : QueryOData
+{
+    private readonly ITokenProvider _tokens;
+
+    public AuthorizedODataClient(string serviceBaseUrl, ITokenProvider tokens)
+        : base(serviceBaseUrl)
+    {
+        _tokens = tokens;
+    }
+
+    protected override HttpRequestMessage BuildRequestMessage(Query query)
+    {
+        HttpRequestMessage request = base.BuildRequestMessage(query);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokens.Current); 
+        return request;
+    }
+}
+```
+
+Customizing the request ensures headers, cookies, or diagnostics are consistently applied before
+the HTTP call is sent.

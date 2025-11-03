@@ -1,205 +1,148 @@
-# Utils Library
+# Utils.OData.Generators
 
-The **Utils** library is a large collection of helper namespaces covering many common programming needs.
-It targets **.NET 9** and is the base dependency for the other utility packages contained in this repository.
+`Utils.OData.Generators` offers a Roslyn source generator that materializes entity classes and helpers for contexts derived from `Utils.OData.ODataContext`. It targets **.NET 9** and consumes EDMX metadata so OData payloads can be accessed through strongly typed models.
 
 ## Features
 
-- **Async** – asynchronous execution helpers
-- **Arrays** – helpers for comparing arrays, working with multi-dimensional data and specialized comparers
-- **Collections** – indexed lists, skip lists, LRU caches and dictionary extensions
-- **Expressions** – creation and transformation of expression trees and lambda utilities
-- **Files** – filesystem helpers to manipulate paths and temporary files
-- **Mathematics** – base classes for expression transformation and math functions
-- **Net** – advanced URI builder and network helpers
-- **Objects** – data conversion routines and an advanced string formatter
-- **Reflection** – additional reflection primitives such as `PropertyOrFieldInfo` and delegate invocation helpers
-- **Resources** – utilities for working with embedded resources
-- **Security** – Google Authenticator helpers
-- **Streams** – base16/base32/base64 converters and binary serialization
-- **Transactions** – execute a batch of reversible actions and commit or rollback as a group
+- Locates partial classes inheriting from `ODataContext` and inspects their base constructor calls.
+- Loads EDMX definitions from relative paths or HTTP/HTTPS endpoints at build time.
+- Generates nested entity classes with nullable support, XML documentation, and `[Key]` attributes for primary keys.
+- Reports diagnostics when metadata cannot be found, downloaded, or deserialized (`ODATA001`–`ODATA003`).
+- Produces deterministic source files that play nicely with incremental builds and IDE navigation.
 
-The design separates data structures from processing logic wherever possible and exposes extensibility points through interfaces.
+## Prerequisites
 
-> **Note:** XML helpers are now packaged separately inside the `Utils.XML` library.
-> Add a reference to the `Utils.XML` package to access `XmlDataProcessor` and
-> the related helper extensions.
+1. Reference `Utils.OData` in your project.
+2. Add `Utils.OData.Generators` as an analyzer reference so MSBuild executes the generator.
+3. Create a partial context that calls an `ODataContext` base constructor with the EDMX location.
 
-## Usage examples
+## Usage example
 
-Short snippets demonstrating typical API usage:
-
-### Transactions
 ```csharp
-using Utils.Transactions;
+using Utils.OData;
 
-class SampleAction : ITransactionalAction
+public partial class ProductContext : ODataContext
 {
-    public void Execute() { /* work */ }
-    public void Commit() { /* finalize */ }
-    public void Rollback() { /* undo */ }
-}
-
-TransactionExecutor executor = new TransactionExecutor();
-executor.Execute([
-    new SampleAction(),
-    new SampleAction(),
-]);
-```
-
-### Async
-```csharp
-using Utils.Async;
-IAsyncExecutor executor = new AsyncExecutor();
-Func<Task>[] actions =
-[
-    async () => await Task.Delay(100),
-    async () => await Task.Delay(100),
-    async () => await Task.Delay(100),
-];
-await executor.ExecuteAsync(actions, 3); // chooses parallel execution
-```
-
-### Arrays
-```csharp
-using Utils.Arrays;
-int[] values = [0, 1, 2, 0];
-int[] trimmed = values.Trim(0); // [1, 2]
-```
-
-### Collections
-```csharp
-var cache = new Utils.Collections.LRUCache<int, string>(2);
-cache.Add(1, "one");
-cache.Add(2, "two");
-cache[1];
-cache.Add(3, "three"); // evicts key 2
-var dict = new Dictionary<string, int>();
-// Thread-safe dictionary insertion
-int one = dict.GetOrAdd("one", () => 1);
-```
-
-### Files
-```csharp
-// Search executables four levels deep under "Program Files"
-foreach (string exe in Utils.Files.PathUtils.EnumerateFiles(@"C:\\Program Files\\*\\*\\*\\*.exe"))
-{
-    Console.WriteLine(exe);
+    public ProductContext() : base("metadata/Products.edmx") { }
 }
 ```
 
-### Reflection
+When the project is built, the generator reads `metadata/Products.edmx`, produces partial classes such as `ProductContext.Product`, and populates each property with the correct .NET type. The generated members can then be consumed through the LINQ provider:
+
 ```csharp
-var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
-int id = (int)info.GetValue(myObj);
-info.SetValue(myObj, 42);
-```
-```csharp
-var invoker = new Utils.Reflection.MultiDelegateInvoker<int, int>(2);
-invoker.Add(i => i + 1);
-invoker.Add(i => i + 2);
-int[] values = await invoker.InvokeSmartAsync(3); // [4, 5]
+var context = new ProductContext();
+var query = context.Products.Where(p => p.Price > 5).OrderBy(p => p.Name);
 ```
 
-### Resources
-```csharp
-var res = new Utils.Resources.ExternalResource("Strings");
-string text = (string)res["Welcome"];
-```
+If the EDMX path is wrong or the file cannot be parsed, the generator raises diagnostics so the issue is caught during compilation instead of at runtime.
 
-### Strings
-```csharp
-using Utils.Objects;
-bool match = "File123.log".Like("File???.log");
-string normalized = "---hello---".Trim(c => c == '-');
-string path = "report".AddPrefix("out_").AddSuffix(".txt");
-string title = "hello world".FirstLetterUpperCase();
-```
+## Examples
 
-### Security
-```csharp
-byte[] key = Convert.FromBase64String("MFRGGZDFMZTWQ2LK");
-var authenticator = Utils.Security.Authenticator.GoogleAuthenticator(key);
-string code = authenticator.ComputeAuthenticator();
-bool ok = authenticator.VerifyAuthenticator(1, code);
-```
+### Extending generated entities
 
-### Dates
-```csharp
-DateTime result = new DateTime(2023, 3, 15)
-    .Calculate("FM+1J", new CultureInfo("fr-FR")); // 2023-04-01
-```
-```csharp
-// Adding three working days while skipping weekends
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime dueDate = new DateTime(2024, 4, 5).AddWorkingDays(3, calendar); // 2024-04-10
-```
-```csharp
-// Using working days inside a formula
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime value = new DateTime(2024, 4, 5)
-    .Calculate("FS+3O", new CultureInfo("fr-FR"), calendar); // 2024-04-10
-```
-```csharp
-// Finding the next or previous working day
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime next = new DateTime(2024, 4, 6).NextWorkingDay(calendar);     // 2024-04-08
-DateTime prev = new DateTime(2024, 4, 6).PreviousWorkingDay(calendar); // 2024-04-05
-```
-```csharp
-// Adjusting the result of a formula to the next working day
-ICalendarProvider calendar = new WeekEndCalendarProvider();
-DateTime adjusted = new DateTime(2024, 4, 6)
-    .Calculate("FS+O", new CultureInfo("fr-FR"), calendar); // 2024-04-08
-```
+Entities are emitted as partial classes, allowing domain-specific behavior to be added alongside the generated members.
 
-### Expressions
 ```csharp
-var expression = "(items) => items[0] + items[1]";
-var lambda = Utils.Expressions.ExpressionParser.Parse<Func<string[], string>>(expression);
-Func<string[], string> concat = lambda.Compile();
-string result = concat(new[] { "Hello", "World" });
-```
-```csharp
-var switchExpr = "(i) => switch(i) { case 1: 10; case 2: 20; default: 0; }";
-var switchLambda = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchExpr);
-int value = switchLambda.Compile()(2); // 20
-```
-```csharp
-var switchStmt = "(int i) => { int v = 0; switch(i) { case 1: v = 10; break; case 2: v = 20; break; default: v = 0; break; } return v; }";
-var switchFunc = Utils.Expressions.ExpressionParser.Parse<Func<int, int>>(switchStmt).Compile();
-int result = switchFunc(1); // 10
-```
-```csharp
-var formatter = Utils.Format.StringFormat.Create<Func<string, string>, DefaultInterpolatedStringHandler>("Name: {name}", "name");
-string formatted = formatter("John");
-```
-```csharp
-var interp = Utils.Expressions.ExpressionParser.Parse<Func<string, string, string>>("(a,b)=>$\"{a} {b}!\"").Compile();
-string hello = interp("hello", "world"); // hello world!
-```
-
-### Numerics
-```csharp
-using Utils.Numerics;
-
-Number a = Number.Parse("0.1");
-Number b = Number.Parse("0.2");
-Number sum = a + b; // 0.3 (3/10)
-Number big = Number.Parse("123456789012345678901234567890") + 1;
-Number.TryParse("42", null, out Number parsed);
-Number pow = Number.Pow(2, 3); // 8
-Number angle = Number.Parse("0.5");
-Number cosine = Number.Cos(angle); // 0.8775825618903728 (8775825618903728/10000000000000000)
-```
-
-### XML
-```csharp
-using var reader = XmlReader.Create("items.xml");
-reader.ReadToDescendant("item");
-foreach (var child in reader.ReadChildElements())
+public partial class ProductContext
 {
-    Console.WriteLine(child.ReadOuterXml());
+    public partial class Product
+    {
+        public bool IsLowStock => UnitsInStock < 5;
+    }
 }
 ```
 
+Because `Product` is a partial class, additional properties and helper methods seamlessly coexist with generated properties while keeping custom logic separate from tooling output.
+
+### Consuming remote metadata
+
+You can point the base constructor to a remote EDMX URL; the generator downloads and caches the metadata during build.
+
+```csharp
+public partial class RemoteContext : ODataContext
+{
+    public RemoteContext() : base("https://example.com/$metadata") { }
+}
+```
+
+When network retrieval fails, diagnostic `ODATA002` highlights the HTTP issue, while malformed payloads trigger `ODATA003`, making problems explicit to developers before deployment.
+
+### Handling multiple models
+
+Large solutions often require multiple contexts. Simply declare additional partial classes, each referencing a different EDMX location, and the generator will emit isolated entity hierarchies per context.
+
+```csharp
+public partial class SalesContext : ODataContext
+{
+    public SalesContext() : base("metadata/Sales.edmx") { }
+}
+
+public partial class SupportContext : ODataContext
+{
+    public SupportContext() : base("metadata/Support.edmx") { }
+}
+```
+
+Each context receives its own `ODataQueryable<T>` properties and entity types, ensuring models stay isolated even when they share the same assembly.
+
+### Navigation properties and expansions
+
+Generated entities include navigation properties mapped from the EDMX metadata.
+
+```csharp
+using System.Linq;
+using Utils.OData;
+
+public partial class ProductContext : ODataContext
+{
+    public ProductContext() : base("metadata/Products.edmx") { }
+}
+
+var context = new ProductContext();
+var query = context.Products
+    .Where(p => p.Supplier.City == "Paris")
+    .Expand(p => p.Supplier)
+    .Select(p => new { p.Name, Supplier = p.Supplier.Name });
+```
+
+The LINQ provider recognizes the generated navigation properties and emits `$expand` segments
+automatically when needed.
+
+### Partial classes for validation
+
+Because entities are partial classes, domain validation rules can live alongside generated
+members without being lost during rebuilds.
+
+```csharp
+using System;
+
+public partial class ProductContext
+{
+    public partial class Product
+    {
+        partial void OnNameChanging(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("A product requires a non-empty name.");
+            }
+        }
+    }
+}
+```
+
+The generator respects existing partial methods and only emits missing declarations, so custom
+validation hooks run whenever the entity property changes.
+
+### Diagnostics reference
+
+Diagnostics surfaced by the generator can be acted upon quickly during development:
+
+| Id        | Message                                                            | Resolution hint                                         |
+|-----------|--------------------------------------------------------------------|---------------------------------------------------------|
+| ODATA001  | `ODataContext` constructor did not specify a metadata source.      | Ensure the base call references a local file or URL.    |
+| ODATA002  | Metadata file or endpoint could not be reached.                    | Verify network connectivity and credentials.            |
+| ODATA003  | Metadata content could not be parsed into EDMX structures.         | Validate that the EDMX document is well-formed XML.     |
+| ODATA004  | Duplicate entity names detected across merged EDMX documents.      | Rename the entities or split them into distinct models. |
+
+Keeping this table handy speeds up troubleshooting when metadata moves or services change.
