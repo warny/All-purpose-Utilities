@@ -11,7 +11,7 @@
         <Copyright>Olivier MARTY 2025</Copyright>
         <Authors>Olivier MARTY</Authors>
         <Company>Olivier MARTY</Company>
-        <Version>1.2.1</Version>
+        <Version>0.0.1</Version>
         <Description>
             OData client helpers
             - Build strongly typed queries
