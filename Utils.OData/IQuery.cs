@@ -3,7 +3,7 @@
 public interface IQuery
 {
     /// <summary>
-    /// Table name
+    /// Gets or sets the entity set targeted by the query.
     /// </summary>
     public string Table { get; set; }
 
