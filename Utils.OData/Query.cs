@@ -1,5 +1,8 @@
 ﻿namespace Utils.OData;
 
+/// <summary>
+/// Represents a mutable OData query definition used to build request URIs.
+/// </summary>
 public class Query : IQuery
 {
     /// <inheritdoc/>

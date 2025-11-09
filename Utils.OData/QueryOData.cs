@@ -13,6 +13,9 @@ using Utils.String;
 
 namespace Utils.OData;
 
+/// <summary>
+/// Provides an HTTP-based client for executing OData queries and converting the responses to usable shapes.
+/// </summary>
 public class QueryOData : IDisposable
 {
     /// <summary>
@@ -83,8 +86,8 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
-    /// Récupère le CookieContainer si la classe utilise son propre handler ; sinon null.
-    /// Utile pour transférer des cookies provenant d'une requête entrante.
+    /// Gets the <see cref="CookieContainer"/> used by the internal handler when the instance manages its own client.
+    /// This allows callers to propagate cookies from an incoming HTTP request.
     /// </summary>
     public CookieContainer? CookieContainer => _handler?.CookieContainer;
 
@@ -99,8 +102,7 @@ public class QueryOData : IDisposable
             => SimpleQuery(parameter, sourceRequest: null, skip, cancellationToken);
 
     /// <summary>
-    /// Variante permettant de fournir un HttpRequestMessage source (ex : provenant d'une requête entrante)
-    /// dont les headers (et le cookie header) seront copiés dans la requête sortante pour "conserver le contexte HTTP".
+    /// Executes a query while copying headers and cookies from an existing HTTP request to preserve the context.
     /// </summary>
     /// <param name="parameter">Parameters used to build the query URL.</param>
     /// <param name="sourceRequest">Optional request providing HTTP headers to forward.</param>
@@ -109,11 +111,7 @@ public class QueryOData : IDisposable
     /// <returns>The HTTP response message when the request succeeds.</returns>
     public async Task<HttpResponseMessage?> SimpleQuery(IQuery parameter, HttpRequestMessage? sourceRequest = null, int skip = 0, CancellationToken cancellationToken = default)
     {
-        ODataQueryBuilder query = new ODataQueryBuilder(
-                BaseUrl,
-                parameter,
-                skip: skip
-        );
+        var query = new ODataQueryBuilder(BaseUrl, parameter, skip: skip);
 
         HttpResponseMessage response = await HttpGet(query.Url, sourceRequest, cancellationToken);
         return response;
@@ -133,9 +131,9 @@ public class QueryOData : IDisposable
         if (_httpClient is null)
             throw new InvalidOperationException("HttpClient is not initialized.");
 
-		using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-        // Copier les headers (hors headers sensibles traités séparément)
+        // Copy standard headers (excluding sensitive ones handled elsewhere).
         if (sourceRequest is not null)
         {
             foreach (var header in sourceRequest.Headers)
@@ -152,21 +150,21 @@ public class QueryOData : IDisposable
                 }
             }
 
-			// Copier les cookies dans le CookieContainer si nous en avons un
-			if (_handler?.CookieContainer is not null && sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
-			{
-				var cookieHeader = string.Join("; ", cookieHeaders);
-				try
-				{
-					var uri = new Uri(BaseUrl);
-					_handler.CookieContainer.SetCookies(uri, cookieHeader);
-				}
-				catch
-				{
-					// Ne doit pas planter l'appel ; si BaseUrl n'est pas une URI valide ou autre, on ignore.
-				}
-			}
-		}
+            // Copy cookies to the handler container when available.
+            if (_handler?.CookieContainer is not null && sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
+            {
+                var cookieHeader = string.Join("; ", cookieHeaders);
+                try
+                {
+                    var uri = new Uri(BaseUrl);
+                    _handler.CookieContainer.SetCookies(uri, cookieHeader);
+                }
+                catch
+                {
+                    // Ignore failures (for instance when BaseUrl is not a valid URI) and continue the request.
+                }
+            }
+        }
 
         Console.WriteLine($"Requesting : {url}");
         var response = await _httpClient.SendAsync(
@@ -256,7 +254,7 @@ public class QueryOData : IDisposable
 
         if (!hasAnyData)
         {
-            return new(1, "Aucune donnée retournée");
+            return new(1, "No data returned.");
         }
 
         return new((aggregatedValues, metadatas));
@@ -308,7 +306,7 @@ public class QueryOData : IDisposable
         (JsonArray? Datas, Dictionary<string, string>? Metadatas) firstChunk = convertResult.Value;
         if (firstChunk.Datas is not JsonArray { Count: > 0 } firstBatch)
         {
-            return new(1, "Aucune donnée retournée");
+            return new(1, "No data returned.");
         }
 
         var metadataResult = await GetMetadataFromBaseAsync(cancellationToken);
@@ -1190,7 +1188,7 @@ public class QueryOData : IDisposable
 
         if (array.Count == 0 && !allowEmpty)
         {
-            return new(1, "Aucune donnée retournée");
+            return new(1, "No data returned.");
         }
 
         return new((array, metadatas));
