@@ -1,5 +1,7 @@
 using System;
 using System.Data;
+using System.Data.Common;
+using System.Runtime.CompilerServices;
 
 namespace Utils.Data;
 
@@ -49,4 +51,31 @@ public static class DbCommandExtensions
     /// <returns>The parameter that was added to the command.</returns>
     public static IDbDataParameter AddNewParameter(this IDbCommand dbCommand, string name, object value)
         => dbCommand.AddNewParameter(name, DataUtils.GetDbType(value), value);
+
+
+	/// <summary>
+	/// Sets the CommandText using an interpolated SQL builder.
+	/// </summary>
+	/// <param name="dbCommand">The command on which to set the CommandText.</param>
+	/// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
+	/// <returns>A command initialized with text and parameters provided by <paramref name="interpolator"/>.</returns>
+	public static IDbCommand SetCommandText(this IDbCommand dbCommand, [InterpolatedStringHandlerArgument(nameof(dbCommand))] SqlBuilderInterpolator interpolator)
+    {
+		interpolator.DbCommand.CommandText = interpolator.ToString();
+        return dbCommand;
+	}
+
+
+
+	/// <summary>
+	/// Sets the CommandText using an interpolated SQL builder.
+	/// </summary>
+	/// <param name="dbCommand">The command on which to set the CommandText.</param>
+	/// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
+	/// <returns>A command initialized with text and parameters provided by <paramref name="interpolator"/>.</returns>
+	public static DbCommand SetCommandText(this DbCommand dbCommand, [InterpolatedStringHandlerArgument(nameof(dbCommand))] SqlBuilderInterpolator interpolator)
+	{
+		interpolator.DbCommand.CommandText = interpolator.ToString();
+		return dbCommand;
+	}
 }

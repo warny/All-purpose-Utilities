@@ -19,12 +19,9 @@ public abstract class ODataContext
     /// <exception cref="InvalidOperationException">Thrown when the EDMX metadata cannot be parsed.</exception>
     protected ODataContext(Stream edmxStream)
     {
-        if (edmxStream is null)
-        {
-            throw new ArgumentNullException(nameof(edmxStream));
-        }
+		ArgumentNullException.ThrowIfNull(edmxStream);
 
-        Metadata = LoadMetadataFromStream(edmxStream);
+		Metadata = LoadMetadataFromStream(edmxStream);
     }
 
     /// <summary>
@@ -144,12 +141,9 @@ public abstract class ODataContext
     /// <exception cref="InvalidOperationException">Thrown when the download fails.</exception>
     private static MemoryStream DownloadMetadata(Uri uri)
     {
-        if (uri is null)
-        {
-            throw new ArgumentNullException(nameof(uri));
-        }
+		ArgumentNullException.ThrowIfNull(uri);
 
-        using var client = new HttpClient(new HttpClientHandler
+		using var client = new HttpClient(new HttpClientHandler
         {
             AutomaticDecompression = DecompressionMethods.All
         });
@@ -172,12 +166,9 @@ public abstract class ODataContext
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is <see langword="null"/>.</exception>
     private static MemoryStream CopyToMemory(Stream source)
     {
-        if (source is null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+		ArgumentNullException.ThrowIfNull(source);
 
-        var memoryStream = new MemoryStream();
+		var memoryStream = new MemoryStream();
         source.CopyTo(memoryStream);
         memoryStream.Position = 0;
         return memoryStream;

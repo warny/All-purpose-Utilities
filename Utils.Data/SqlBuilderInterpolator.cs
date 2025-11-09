@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Utils.Collections;
@@ -27,22 +28,50 @@ public class SqlBuilderInterpolator
     /// </summary>
     public IDbCommand DbCommand { get; }
 
+    private int _parameterIndex = 0;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlBuilderInterpolator"/> class.
     /// </summary>
     /// <param name="literalLength">Provided by the compiler to optimize the size of the string builder.</param>
     /// <param name="formattedCount">Number of formatted placeholders in the interpolation.</param>
     /// <param name="dbConnection">Connection used to create the underlying command.</param>
-    public SqlBuilderInterpolator(int literalLength, int formattedCount, IDbConnection dbConnection)
+    public SqlBuilderInterpolator(int literalLength, int formattedCount, DbConnection dbConnection)
     {
-        DbCommand = dbConnection.CreateCommand();
+        _parameterIndex = 0;
+		DbCommand = dbConnection.CreateCommand();
     }
 
-    /// <summary>
-    /// Appends a literal piece of SQL to the internal buffer.
-    /// </summary>
-    /// <param name="s">The literal string to append.</param>
-    public void AppendLiteral(string s)
+	/// <summary>
+	/// Initializes a new instance of the <see cref="SqlBuilderInterpolator"/> class.
+	/// </summary>
+	/// <param name="literalLength">Provided by the compiler to optimize the size of the string builder.</param>
+	/// <param name="formattedCount">Number of formatted placeholders in the interpolation.</param>
+	/// <param name="dbConnection">Connection used to create the underlying command.</param>
+	public SqlBuilderInterpolator(int literalLength, int formattedCount, IDbConnection dbConnection)
+	{
+        _parameterIndex = 0;
+		DbCommand = dbConnection.CreateCommand();
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="SqlBuilderInterpolator"/> class.
+	/// </summary>
+	/// <param name="literalLength">Provided by the compiler to optimize the size of the string builder.</param>
+	/// <param name="formattedCount">Number of formatted placeholders in the interpolation.</param>
+	/// <param name="dbCommand">Command to modify.</param>
+	public SqlBuilderInterpolator(int literalLength, int formattedCount, IDbCommand dbCommand)
+	{
+		_parameterIndex = 0;
+		DbCommand = dbCommand;
+        dbCommand.Parameters.Clear();
+	}
+
+	/// <summary>
+	/// Appends a literal piece of SQL to the internal buffer.
+	/// </summary>
+	/// <param name="s">The literal string to append.</param>
+	public void AppendLiteral(string s)
     {
         _sqlQuery.Append(s);
     }
@@ -61,7 +90,14 @@ public class SqlBuilderInterpolator
     /// <param name="value">The value being interpolated.</param>
     /// <param name="name">Name of the argument being interpolated.</param>
     public void AppendFormatted<T>(T value, [CallerArgumentExpression(nameof(value))] string? name = null)
-            => AddParameter(_parameters.GetOrAdd(name, () => DbCommand.AddNewParameter($"@p{DbCommand.Parameters.Count}", DataUtils.GetDbType(typeof(T)), value)));
+    {
+        string parameterName;
+        do
+        {
+            parameterName = $"@p{_parameterIndex++}";
+		} while (DbCommand.Parameters.Contains(parameterName));
+		AddParameter(_parameters.GetOrAdd(name, () => DbCommand.AddNewParameter(parameterName, DataUtils.GetDbType(typeof(T)), value)));
+    }
 
     /// <summary>
     /// Returns the built SQL query.

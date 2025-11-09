@@ -2,11 +2,14 @@ using System.Data;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Net;
-using System.Runtime.ExceptionServices;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Runtime.ExceptionServices;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
+using Utils.Objects;
 using Utils.OData.Metadatas;
+using Utils.String;
 
 namespace Utils.OData;
 
@@ -130,7 +133,7 @@ public class QueryOData : IDisposable
         if (_httpClient is null)
             throw new InvalidOperationException("HttpClient is not initialized.");
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+		using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         // Copier les headers (hors headers sensibles traités séparément)
         if (sourceRequest is not null)
@@ -149,24 +152,21 @@ public class QueryOData : IDisposable
                 }
             }
 
-            // Copier les cookies dans le CookieContainer si nous en avons un
-            if (_handler?.CookieContainer is not null)
-            {
-                if (sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
-                {
-                    var cookieHeader = string.Join("; ", cookieHeaders);
-                    try
-                    {
-                        var uri = new Uri(BaseUrl);
-                        _handler.CookieContainer.SetCookies(uri, cookieHeader);
-                    }
-                    catch
-                    {
-                        // Ne doit pas planter l'appel ; si BaseUrl n'est pas une URI valide ou autre, on ignore.
-                    }
-                }
-            }
-        }
+			// Copier les cookies dans le CookieContainer si nous en avons un
+			if (_handler?.CookieContainer is not null && sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
+			{
+				var cookieHeader = string.Join("; ", cookieHeaders);
+				try
+				{
+					var uri = new Uri(BaseUrl);
+					_handler.CookieContainer.SetCookies(uri, cookieHeader);
+				}
+				catch
+				{
+					// Ne doit pas planter l'appel ; si BaseUrl n'est pas une URI valide ou autre, on ignore.
+				}
+			}
+		}
 
         Console.WriteLine($"Requesting : {url}");
         var response = await _httpClient.SendAsync(
@@ -195,14 +195,10 @@ public class QueryOData : IDisposable
             int? maxPerRequest = null,
             CancellationToken cancellationToken = default)
     {
-        if (parameter is null)
+		ArgumentNullException.ThrowIfNull(parameter);
+		if (maxPerRequest.HasValue)
         {
-            throw new ArgumentNullException(nameof(parameter));
-        }
-
-        if (maxPerRequest.HasValue && maxPerRequest.Value <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(maxPerRequest));
+            maxPerRequest?.ArgMustBeGreaterThan(0);
         }
 
         JsonArray aggregatedValues = new();
@@ -374,32 +370,13 @@ public class QueryOData : IDisposable
             ChannelWriter<object?[]> writer,
             CancellationToken cancellationToken)
     {
-        if (parameter is null)
-        {
-            throw new ArgumentNullException(nameof(parameter));
-        }
+		ArgumentNullException.ThrowIfNull(parameter);
+		ArgumentNullException.ThrowIfNull(firstBatch);
+		ArgumentNullException.ThrowIfNull(columns);
+		ArgumentNullException.ThrowIfNull(rowConverter);
+		ArgumentNullException.ThrowIfNull(writer);
 
-        if (firstBatch is null)
-        {
-            throw new ArgumentNullException(nameof(firstBatch));
-        }
-
-        if (columns is null)
-        {
-            throw new ArgumentNullException(nameof(columns));
-        }
-
-        if (rowConverter is null)
-        {
-            throw new ArgumentNullException(nameof(rowConverter));
-        }
-
-        if (writer is null)
-        {
-            throw new ArgumentNullException(nameof(writer));
-        }
-
-        try
+		try
         {
             int totalRetrieved = 0;
             await WriteBatchAsync(firstBatch, columns, rowConverter, writer, cancellationToken);
@@ -465,26 +442,11 @@ public class QueryOData : IDisposable
             ChannelWriter<object?[]> writer,
             CancellationToken cancellationToken)
     {
-        if (batch is null)
-        {
-            throw new ArgumentNullException(nameof(batch));
-        }
-
-        if (columns is null)
-        {
-            throw new ArgumentNullException(nameof(columns));
-        }
-
-        if (rowConverter is null)
-        {
-            throw new ArgumentNullException(nameof(rowConverter));
-        }
-
-        if (writer is null)
-        {
-            throw new ArgumentNullException(nameof(writer));
-        }
-
+		ArgumentNullException.ThrowIfNull(batch);
+		ArgumentNullException.ThrowIfNull(columns);
+		ArgumentNullException.ThrowIfNull(rowConverter);
+		ArgumentNullException.ThrowIfNull(writer);
+		
         foreach (JsonNode? entry in batch)
         {
             object[] row = entry is JsonObject jsonObject
@@ -1521,15 +1483,8 @@ public class QueryOData : IDisposable
     /// <returns>A stream that disposes the response when the consumer disposes the stream.</returns>
     private static Stream CreateResponseStream(HttpResponseMessage response, Stream contentStream)
     {
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
-
-        if (contentStream is null)
-        {
-            throw new ArgumentNullException(nameof(contentStream));
-        }
+		ArgumentNullException.ThrowIfNull(response);
+		ArgumentNullException.ThrowIfNull(contentStream);
 
         return new HttpResponseContentStream(response, contentStream);
     }
@@ -1555,9 +1510,7 @@ public class QueryOData : IDisposable
             string metadataUrl,
             CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(metadataUrl))
-            throw new ArgumentException("Metadata URL cannot be null or whitespace.", nameof(metadataUrl));
-
+		metadataUrl.ArgMustNotBe(a=>a.IsNullOrWhiteSpace(), "Metadata URL cannot be null or whitespace.");
         return GetMetadataAsyncInternal(_ => Task.FromResult<string?>(metadataUrl), cancellationToken);
     }
 
@@ -1572,8 +1525,7 @@ public class QueryOData : IDisposable
             JsonNode jsonResult,
             CancellationToken cancellationToken = default)
     {
-        if (jsonResult is null)
-            throw new ArgumentNullException(nameof(jsonResult));
+        ArgumentNullException.ThrowIfNull(jsonResult);
 
         return GetMetadataAsyncInternal(
                 _ => Task.FromResult<string?>(ExtractMetadataUrl(jsonResult)),
