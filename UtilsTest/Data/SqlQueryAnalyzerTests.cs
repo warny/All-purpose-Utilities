@@ -111,6 +111,29 @@ RETURNING s.id;";
     }
 
     [TestMethod]
+    public void ParsePreservesParameterAndTempPrefixes()
+    {
+        const string sql = "SELECT * FROM #temp WHERE Id = @id";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
+
+        Assert.IsInstanceOfType(query.RootStatement, typeof(SqlSelectStatement));
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
+    public void ParseSupportsCustomParameterPrefixes()
+    {
+        const string sql = "SELECT * FROM accounts WHERE id = :account_id";
+        var syntaxOptions = new SqlSyntaxOptions(new[] { ':', '@' }, ':');
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql, syntaxOptions);
+
+        Assert.AreSame(syntaxOptions, query.SyntaxOptions);
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
     public void ToSqlSupportsFormattingModes()
     {
         const string sql = "SELECT table1.champ1, table2.champ2, table2.champ3 FROM table1 INNER JOIN table2 ON table1.champ1 = table2.champ1";

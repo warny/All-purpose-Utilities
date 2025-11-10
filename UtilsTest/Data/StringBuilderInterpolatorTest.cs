@@ -3,6 +3,7 @@ using System;
 using System.Data;
 using System.Linq;
 using Utils.Data;
+using Utils.Data.Sql;
 
 namespace UtilsTests.Data;
 
@@ -94,5 +95,22 @@ public class SqlInterpolatorTest
         Assert.AreEqual("@p1", p1.ParameterName);
         Assert.AreEqual(arg2, p1.Value);
         Assert.AreEqual(DbType.Int32, p1.DbType);
+    }
+
+    [TestMethod]
+    public void CreateCommandUsesCustomPrefix()
+    {
+        IDbConnection connection = new FakeConnection();
+        var options = new SqlSyntaxOptions(new[] { ':', '@' }, ':');
+        string value = "sample";
+
+        IDbCommand command = connection.CreateCommand(options, $"SELECT * FROM data WHERE col = {value}");
+
+        Assert.AreEqual("SELECT * FROM data WHERE col =  :p0 ", command.CommandText);
+        Assert.AreEqual(1, command.Parameters.Count);
+
+        var parameter = (IDbDataParameter)command.Parameters[0];
+        Assert.AreEqual(":p0", parameter.ParameterName);
+        Assert.AreEqual(value, parameter.Value);
     }
 }

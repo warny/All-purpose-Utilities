@@ -17,21 +17,23 @@ public static class SqlQueryAnalyzer
     /// Parses the provided SQL text into an abstract representation.
     /// </summary>
     /// <param name="sql">The SQL statement to parse.</param>
+    /// <param name="syntaxOptions">Tokenizer and parameter options applied to the parsing process.</param>
     /// <returns>A <see cref="SqlQuery"/> representing the parsed statement.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="sql"/> is null or whitespace.</exception>
     /// <exception cref="SqlParseException">Thrown when the SQL text cannot be parsed.</exception>
-    public static SqlQuery Parse(string sql)
+    public static SqlQuery Parse(string sql, SqlSyntaxOptions? syntaxOptions = null)
     {
         if (string.IsNullOrWhiteSpace(sql))
         {
             throw new ArgumentException("SQL text cannot be null or whitespace.", nameof(sql));
         }
 
-        var parser = SqlParser.Create(sql);
+        syntaxOptions ??= SqlSyntaxOptions.Default;
+        var parser = SqlParser.Create(sql, syntaxOptions);
         SqlStatement statement = parser.ParseStatementWithOptionalCte();
         parser.ConsumeOptionalTerminator();
         parser.EnsureEndOfInput();
-        return new SqlQuery(statement);
+        return new SqlQuery(statement, syntaxOptions);
     }
 }
 
@@ -44,16 +46,23 @@ public sealed class SqlQuery
     /// Initializes a new instance of the <see cref="SqlQuery"/> class.
     /// </summary>
     /// <param name="rootStatement">The root statement of the SQL query.</param>
+    /// <param name="syntaxOptions">Syntax options describing identifier handling for the query.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="rootStatement"/> is null.</exception>
-    public SqlQuery(SqlStatement rootStatement)
+    public SqlQuery(SqlStatement rootStatement, SqlSyntaxOptions? syntaxOptions = null)
     {
         RootStatement = rootStatement ?? throw new ArgumentNullException(nameof(rootStatement));
+        SyntaxOptions = syntaxOptions ?? RootStatement.SyntaxOptions;
     }
 
     /// <summary>
     /// Gets the root statement of the query.
     /// </summary>
     public SqlStatement RootStatement { get; }
+
+    /// <summary>
+    /// Gets the syntax options associated with the query.
+    /// </summary>
+    public SqlSyntaxOptions SyntaxOptions { get; }
 
     /// <summary>
     /// Gets all statements contained in the query, including the root and nested statements such as CTEs or subqueries.
@@ -128,6 +137,60 @@ public sealed class SqlFormattingOptions
 }
 
 /// <summary>
+/// Provides configuration options controlling how SQL identifiers and parameters are interpreted.
+/// </summary>
+public sealed class SqlSyntaxOptions
+{
+    private static readonly char[] DefaultIdentifierPrefixes = { '@', '#', '$' };
+
+    private readonly HashSet<char> identifierPrefixes;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SqlSyntaxOptions"/> class.
+    /// </summary>
+    /// <param name="identifierPrefixes">Characters that can prefix identifiers such as parameters or temporary tables.</param>
+    /// <param name="autoParameterPrefix">The prefix used when automatically generating parameter names.</param>
+    public SqlSyntaxOptions(IEnumerable<char>? identifierPrefixes = null, char autoParameterPrefix = '@')
+    {
+        var resolvedPrefixes = identifierPrefixes == null
+            ? new HashSet<char>(DefaultIdentifierPrefixes)
+            : new HashSet<char>(identifierPrefixes);
+
+        if (resolvedPrefixes.Count == 0)
+        {
+            throw new ArgumentException("At least one identifier prefix must be specified.", nameof(identifierPrefixes));
+        }
+
+        resolvedPrefixes.Add(autoParameterPrefix);
+
+        this.identifierPrefixes = resolvedPrefixes;
+        AutoParameterPrefix = autoParameterPrefix;
+    }
+
+    /// <summary>
+    /// Gets the default syntax options supporting common SQL Server style prefixes.
+    /// </summary>
+    public static SqlSyntaxOptions Default { get; } = new SqlSyntaxOptions(DefaultIdentifierPrefixes, '@');
+
+    /// <summary>
+    /// Gets the characters that can prefix identifiers.
+    /// </summary>
+    public IReadOnlyCollection<char> IdentifierPrefixes => identifierPrefixes;
+
+    /// <summary>
+    /// Gets the prefix appended to automatically generated parameter names.
+    /// </summary>
+    public char AutoParameterPrefix { get; }
+
+    /// <summary>
+    /// Determines whether the provided character is configured as an identifier prefix.
+    /// </summary>
+    /// <param name="value">The character to check.</param>
+    /// <returns><c>true</c> when the character is a known prefix; otherwise, <c>false</c>.</returns>
+    public bool IsIdentifierPrefix(char value) => identifierPrefixes.Contains(value);
+}
+
+/// <summary>
 /// Represents a parsed SQL statement.
 /// </summary>
 public abstract class SqlStatement
@@ -140,17 +203,21 @@ public abstract class SqlStatement
     /// </summary>
     /// <param name="segments">The segments that compose the statement.</param>
     /// <param name="withClause">The optional CTE definitions attached to the statement.</param>
-    protected SqlStatement(IEnumerable<SqlSegment> segments, WithClause? withClause)
+    /// <param name="syntaxOptions">Syntax options governing identifier parsing for the statement.</param>
+    protected SqlStatement(IEnumerable<SqlSegment> segments, WithClause? withClause, SqlSyntaxOptions? syntaxOptions = null)
     {
         if (segments == null)
         {
             throw new ArgumentNullException(nameof(segments));
         }
 
+        var segmentList = segments.ToList();
+        SyntaxOptions = syntaxOptions ?? segmentList.FirstOrDefault(s => s != null)?.SyntaxOptions ?? SqlSyntaxOptions.Default;
+
         this.segments = new List<SqlSegment>();
         readOnlySegments = new ReadOnlyCollection<SqlSegment>(this.segments);
 
-        foreach (var segment in segments)
+        foreach (var segment in segmentList)
         {
             if (segment != null)
             {
@@ -165,6 +232,11 @@ public abstract class SqlStatement
     /// Gets the segments that compose the statement.
     /// </summary>
     public IReadOnlyList<SqlSegment> Segments => readOnlySegments;
+
+    /// <summary>
+    /// Gets the syntax options associated with the statement.
+    /// </summary>
+    public SqlSyntaxOptions SyntaxOptions { get; }
 
     /// <summary>
     /// Gets the optional WITH clause containing CTE definitions.
@@ -196,7 +268,7 @@ public abstract class SqlStatement
     {
         options ??= SqlFormattingOptions.Default;
         string inline = BuildSql();
-        return SqlPrettyPrinter.Format(inline, options);
+        return SqlPrettyPrinter.Format(inline, options, SyntaxOptions);
     }
 
     /// <summary>
@@ -545,7 +617,7 @@ public sealed class SqlSelectStatement : SqlStatement
     {
         if (segment == null)
         {
-            segment = SqlSegment.CreateEmpty(name);
+            segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
         }
 
@@ -612,7 +684,7 @@ public sealed class SqlInsertStatement : SqlStatement
 
         if (values == null)
         {
-            values = SqlSegment.CreateEmpty("Values");
+            values = SqlSegment.CreateEmpty("Values", SyntaxOptions);
             AttachSegment(values);
         }
 
@@ -706,7 +778,7 @@ public sealed class SqlInsertStatement : SqlStatement
     {
         if (segment == null)
         {
-            segment = SqlSegment.CreateEmpty(name);
+            segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
         }
 
@@ -840,7 +912,7 @@ public sealed class SqlUpdateStatement : SqlStatement
     {
         if (segment == null)
         {
-            segment = SqlSegment.CreateEmpty(name);
+            segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
         }
 
@@ -989,7 +1061,7 @@ public sealed class SqlDeleteStatement : SqlStatement
     {
         if (segment == null)
         {
-            segment = SqlSegment.CreateEmpty(name);
+            segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
         }
 
@@ -1004,15 +1076,17 @@ public sealed class SqlSegment
 {
     private readonly List<ISqlSegmentPart> parts;
     private readonly ReadOnlyCollection<ISqlSegmentPart> readOnlyParts;
+    private readonly SqlSyntaxOptions syntaxOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlSegment"/> class.
     /// </summary>
     /// <param name="name">Name of the segment.</param>
     /// <param name="parts">Parts composing the segment.</param>
+    /// <param name="syntaxOptions">Syntax options controlling tokenization for future edits.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="parts"/> is null.</exception>
-    internal SqlSegment(string name, IEnumerable<ISqlSegmentPart> parts)
-        : this(name, (parts ?? throw new ArgumentNullException(nameof(parts))).ToList())
+    internal SqlSegment(string name, IEnumerable<ISqlSegmentPart> parts, SqlSyntaxOptions syntaxOptions)
+        : this(name, (parts ?? throw new ArgumentNullException(nameof(parts))).ToList(), syntaxOptions)
     {
     }
 
@@ -1021,10 +1095,12 @@ public sealed class SqlSegment
     /// </summary>
     /// <param name="name">Name of the segment.</param>
     /// <param name="parts">Parts composing the segment.</param>
-    private SqlSegment(string name, List<ISqlSegmentPart> parts)
+    /// <param name="syntaxOptions">Syntax options controlling tokenization for future edits.</param>
+    private SqlSegment(string name, List<ISqlSegmentPart> parts, SqlSyntaxOptions syntaxOptions)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         this.parts = parts ?? throw new ArgumentNullException(nameof(parts));
+        this.syntaxOptions = syntaxOptions ?? throw new ArgumentNullException(nameof(syntaxOptions));
         readOnlyParts = new ReadOnlyCollection<ISqlSegmentPart>(this.parts);
     }
 
@@ -1032,9 +1108,11 @@ public sealed class SqlSegment
     /// Initializes a new empty instance of the <see cref="SqlSegment"/> class.
     /// </summary>
     /// <param name="name">Name of the segment.</param>
-    private SqlSegment(string name)
+    /// <param name="syntaxOptions">Syntax options controlling tokenization for future edits.</param>
+    private SqlSegment(string name, SqlSyntaxOptions syntaxOptions)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
+        this.syntaxOptions = syntaxOptions ?? throw new ArgumentNullException(nameof(syntaxOptions));
         parts = new List<ISqlSegmentPart>();
         readOnlyParts = new ReadOnlyCollection<ISqlSegmentPart>(parts);
     }
@@ -1043,8 +1121,9 @@ public sealed class SqlSegment
     /// Creates an empty segment with the specified name.
     /// </summary>
     /// <param name="name">Name of the segment.</param>
+    /// <param name="syntaxOptions">Syntax options controlling tokenization for future edits.</param>
     /// <returns>The newly created segment.</returns>
-    internal static SqlSegment CreateEmpty(string name) => new SqlSegment(name);
+    internal static SqlSegment CreateEmpty(string name, SqlSyntaxOptions syntaxOptions) => new SqlSegment(name, syntaxOptions);
 
     /// <summary>
     /// Gets the name of the segment.
@@ -1057,10 +1136,14 @@ public sealed class SqlSegment
     public bool IsEmpty => parts.Count == 0;
 
     /// <summary>
-    /// <summary>
     /// Gets the parts composing the segment.
     /// </summary>
     internal IReadOnlyList<ISqlSegmentPart> Parts => readOnlyParts;
+
+    /// <summary>
+    /// Gets the syntax options associated with the segment.
+    /// </summary>
+    internal SqlSyntaxOptions SyntaxOptions => syntaxOptions;
 
     /// <summary>
     /// Gets the subqueries found in the segment.
@@ -1157,11 +1240,11 @@ public sealed class SqlSegment
     /// </summary>
     /// <param name="sql">The SQL snippet to parse.</param>
     /// <returns>The parsed parts.</returns>
-    private static IReadOnlyList<ISqlSegmentPart> ParseParts(string sql)
+    private IReadOnlyList<ISqlSegmentPart> ParseParts(string sql)
     {
-        var tokenizer = new SqlTokenizer(sql);
+        var tokenizer = new SqlTokenizer(sql, syntaxOptions);
         var tokens = tokenizer.Tokenize();
-        return SqlParser.BuildSegmentParts(tokens);
+        return SqlParser.BuildSegmentParts(tokens, syntaxOptions);
     }
 }
 
@@ -1552,15 +1635,17 @@ internal static class SqlPrettyPrinter
     /// </summary>
     /// <param name="sql">The inline SQL string.</param>
     /// <param name="options">Formatting options controlling the output.</param>
+    /// <param name="syntaxOptions">Syntax options influencing tokenization.</param>
     /// <returns>The formatted SQL text.</returns>
-    public static string Format(string sql, SqlFormattingOptions options)
+    public static string Format(string sql, SqlFormattingOptions options, SqlSyntaxOptions? syntaxOptions = null)
     {
         if (options.Mode == SqlFormattingMode.Inline)
         {
             return sql;
         }
 
-        var tokenizer = new SqlTokenizer(sql);
+        syntaxOptions ??= SqlSyntaxOptions.Default;
+        var tokenizer = new SqlTokenizer(sql, syntaxOptions);
         IReadOnlyList<SqlToken> tokens = tokenizer.Tokenize();
         return options.Mode switch
         {

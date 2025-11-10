@@ -13,15 +13,19 @@ internal sealed class SqlParser
     private readonly List<SqlToken> tokens;
     private int position;
 
-    private SqlParser(IEnumerable<SqlToken> tokens)
+    private readonly SqlSyntaxOptions syntaxOptions;
+
+    private SqlParser(IEnumerable<SqlToken> tokens, SqlSyntaxOptions syntaxOptions)
     {
+        this.syntaxOptions = syntaxOptions ?? throw new ArgumentNullException(nameof(syntaxOptions));
         this.tokens = tokens.ToList();
     }
 
-    public static SqlParser Create(string sql)
+    public static SqlParser Create(string sql, SqlSyntaxOptions? syntaxOptions = null)
     {
-        var tokenizer = new SqlTokenizer(sql);
-        return new SqlParser(tokenizer.Tokenize());
+        syntaxOptions ??= SqlSyntaxOptions.Default;
+        var tokenizer = new SqlTokenizer(sql, syntaxOptions);
+        return new SqlParser(tokenizer.Tokenize(), syntaxOptions);
     }
 
     public SqlStatement ParseStatementWithOptionalCte()
@@ -87,7 +91,7 @@ internal sealed class SqlParser
             ExpectKeyword("AS");
             ExpectSymbol("(");
             var subTokens = ReadTokensUntilMatchingParenthesis();
-            var subParser = new SqlParser(subTokens);
+            var subParser = new SqlParser(subTokens, syntaxOptions);
             var statement = subParser.ParseStatementWithOptionalCte();
             subParser.ConsumeOptionalTerminator();
             subParser.EnsureEndOfInput();
@@ -227,7 +231,7 @@ internal sealed class SqlParser
         {
             int end = returningIndex >= 0 ? returningIndex : tokens.Count;
             var sourceTokens = tokens.GetRange(position, end - position);
-            var subParser = new SqlParser(sourceTokens);
+            var subParser = new SqlParser(sourceTokens, syntaxOptions);
             sourceQuery = subParser.ParseStatementWithOptionalCte();
             subParser.ConsumeOptionalTerminator();
             subParser.EnsureEndOfInput();
@@ -328,7 +332,7 @@ internal sealed class SqlParser
 
     private SqlSegment BuildSegment(string name, List<SqlToken> tokens)
     {
-        return new SqlSegment(name, BuildSegmentParts(tokens));
+        return new SqlSegment(name, BuildSegmentParts(tokens, syntaxOptions), syntaxOptions);
     }
 
     /// <summary>
@@ -336,7 +340,7 @@ internal sealed class SqlParser
     /// </summary>
     /// <param name="tokens">Tokens that compose the segment.</param>
     /// <returns>The collection of parts representing the segment.</returns>
-    internal static IReadOnlyList<ISqlSegmentPart> BuildSegmentParts(List<SqlToken> tokens)
+    internal static IReadOnlyList<ISqlSegmentPart> BuildSegmentParts(List<SqlToken> tokens, SqlSyntaxOptions syntaxOptions)
     {
         var parts = new List<ISqlSegmentPart>();
         for (int i = 0; i < tokens.Count; i++)
@@ -350,7 +354,7 @@ internal sealed class SqlParser
                     var innerTokens = tokens.GetRange(i + 1, closing - i - 1);
                     if (LooksLikeStatement(innerTokens))
                     {
-                        var subParser = new SqlParser(innerTokens);
+                        var subParser = new SqlParser(innerTokens, syntaxOptions);
                         var subStatement = subParser.ParseStatementWithOptionalCte();
                         subParser.ConsumeOptionalTerminator();
                         subParser.EnsureEndOfInput();
@@ -725,11 +729,13 @@ internal sealed class SqlTokenizer
     };
 
     private readonly string sql;
+    private readonly SqlSyntaxOptions syntaxOptions;
     private int index;
 
-    public SqlTokenizer(string sql)
+    public SqlTokenizer(string sql, SqlSyntaxOptions syntaxOptions)
     {
         this.sql = sql ?? throw new ArgumentNullException(nameof(sql));
+        this.syntaxOptions = syntaxOptions ?? throw new ArgumentNullException(nameof(syntaxOptions));
     }
 
     public List<SqlToken> Tokenize()
@@ -768,7 +774,7 @@ internal sealed class SqlTokenizer
                 continue;
             }
 
-            if (char.IsLetter(c) || c == '_' || c == '$')
+            if (IsIdentifierStart(c))
             {
                 tokens.Add(ReadIdentifierOrKeyword());
                 continue;
@@ -796,7 +802,7 @@ internal sealed class SqlTokenizer
     {
         int start = index;
         index++;
-        while (!IsAtEnd && (char.IsLetterOrDigit(Peek()) || Peek() == '_' || Peek() == '$'))
+        while (!IsAtEnd && IsIdentifierPart(Peek()))
         {
             index++;
         }
@@ -921,6 +927,16 @@ internal sealed class SqlTokenizer
         '>' or '<' or '=' or '!' => true,
         _ => false,
     };
+
+    private bool IsIdentifierStart(char c)
+    {
+        return char.IsLetter(c) || c == '_' || c == '$' || syntaxOptions.IsIdentifierPrefix(c);
+    }
+
+    private bool IsIdentifierPart(char c)
+    {
+        return char.IsLetterOrDigit(c) || c == '_' || c == '$' || syntaxOptions.IsIdentifierPrefix(c);
+    }
 
     private char Peek() => sql[index];
 
