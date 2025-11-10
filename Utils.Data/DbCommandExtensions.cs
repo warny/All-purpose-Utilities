@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
+using Utils.Data.Sql;
 
 namespace Utils.Data;
 
@@ -52,30 +53,55 @@ public static class DbCommandExtensions
     public static IDbDataParameter AddNewParameter(this IDbCommand dbCommand, string name, object value)
         => dbCommand.AddNewParameter(name, DataUtils.GetDbType(value), value);
 
-
-	/// <summary>
-	/// Sets the CommandText using an interpolated SQL builder.
-	/// </summary>
-	/// <param name="dbCommand">The command on which to set the CommandText.</param>
-	/// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
-	/// <returns>A command initialized with text and parameters provided by <paramref name="interpolator"/>.</returns>
-	public static IDbCommand SetCommandText(this IDbCommand dbCommand, [InterpolatedStringHandlerArgument(nameof(dbCommand))] SqlBuilderInterpolator interpolator)
+    /// <summary>
+    /// Sets the CommandText using an interpolated SQL builder.
+    /// </summary>
+    /// <param name="dbCommand">The command on which to set the CommandText.</param>
+    /// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
+    /// <returns>The same command instance for chaining.</returns>
+    public static IDbCommand SetCommandText(this IDbCommand dbCommand, [InterpolatedStringHandlerArgument(nameof(dbCommand))] SqlBuilderInterpolator interpolator)
     {
-		interpolator.DbCommand.CommandText = interpolator.ToString();
+        dbCommand.CommandText = interpolator.ToString();
         return dbCommand;
-	}
+    }
 
+    /// <summary>
+    /// Sets the CommandText using an interpolated SQL builder and custom syntax options.
+    /// </summary>
+    /// <param name="dbCommand">The command on which to set the CommandText.</param>
+    /// <param name="syntaxOptions">Syntax options controlling parameter prefixes.</param>
+    /// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
+    /// <returns>The same command instance for chaining.</returns>
+    public static IDbCommand SetCommandText(this IDbCommand dbCommand, SqlSyntaxOptions syntaxOptions, [InterpolatedStringHandlerArgument(nameof(dbCommand), nameof(syntaxOptions))] SqlBuilderInterpolator interpolator)
+    {
+        _ = syntaxOptions;
+        dbCommand.CommandText = interpolator.ToString();
+        return dbCommand;
+    }
 
+    /// <summary>
+    /// Sets the CommandText using an interpolated SQL builder.
+    /// </summary>
+    /// <param name="dbCommand">The command on which to set the CommandText.</param>
+    /// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
+    /// <returns>The same command instance for chaining.</returns>
+    public static DbCommand SetCommandText(this DbCommand dbCommand, [InterpolatedStringHandlerArgument(nameof(dbCommand))] SqlBuilderInterpolator interpolator)
+    {
+        dbCommand.CommandText = interpolator.ToString();
+        return dbCommand;
+    }
 
-	/// <summary>
-	/// Sets the CommandText using an interpolated SQL builder.
-	/// </summary>
-	/// <param name="dbCommand">The command on which to set the CommandText.</param>
-	/// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
-	/// <returns>A command initialized with text and parameters provided by <paramref name="interpolator"/>.</returns>
-	public static DbCommand SetCommandText(this DbCommand dbCommand, [InterpolatedStringHandlerArgument(nameof(dbCommand))] SqlBuilderInterpolator interpolator)
-	{
-		interpolator.DbCommand.CommandText = interpolator.ToString();
-		return dbCommand;
-	}
+    /// <summary>
+    /// Sets the CommandText using an interpolated SQL builder and custom syntax options.
+    /// </summary>
+    /// <param name="dbCommand">The command on which to set the CommandText.</param>
+    /// <param name="syntaxOptions">Syntax options controlling parameter prefixes.</param>
+    /// <param name="interpolator">Interpolator that builds the SQL and parameters.</param>
+    /// <returns>The same command instance for chaining.</returns>
+    public static DbCommand SetCommandText(this DbCommand dbCommand, SqlSyntaxOptions syntaxOptions, [InterpolatedStringHandlerArgument(nameof(dbCommand), nameof(syntaxOptions))] SqlBuilderInterpolator interpolator)
+    {
+        _ = syntaxOptions;
+        dbCommand.CommandText = interpolator.ToString();
+        return dbCommand;
+    }
 }
