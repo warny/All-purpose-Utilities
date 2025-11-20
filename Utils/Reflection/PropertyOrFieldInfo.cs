@@ -12,7 +12,7 @@ namespace Utils.Reflection
     /// providing unified access to both for getting and setting values, as well as attribute retrieval.
     /// </summary>
     public class PropertyOrFieldInfo : MemberInfo
-    {
+	{
         private readonly Func<object, object> _getter;
         private readonly Action<object, object> _setter;
 

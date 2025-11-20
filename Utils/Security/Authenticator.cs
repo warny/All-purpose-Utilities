@@ -48,9 +48,11 @@ public class Authenticator
     /// <param name="intervalLength">The duration, in seconds, for which each code is valid.</param>
     public Authenticator(HMAC algorithm, byte[] key, int digits, int intervalLength)
     {
-        Digits = digits;
-        Algorithm = algorithm ?? throw new ArgumentNullException(nameof(algorithm));
-        Key = key ?? throw new ArgumentNullException(nameof(key));
+		ArgumentNullException.ThrowIfNull(algorithm);
+		ArgumentNullException.ThrowIfNull(key);
+		Digits = digits;
+		Algorithm = algorithm;
+        Key = key;
         IntervalLength = intervalLength;
     }
 

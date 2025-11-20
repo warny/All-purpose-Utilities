@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
-		<LangVersion>latest</LangVersion>
+		<LangVersion>preview</LangVersion>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
