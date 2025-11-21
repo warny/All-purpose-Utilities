@@ -124,7 +124,8 @@ public class RawWriter
     /// <param name="bytes">Bytes to write.</param>
     private void WriteNumberBytes(IWriter writer, byte[] bytes)
     {
-        Span<byte> data = (BitConverter.IsLittleEndian ^ BigEndian) ? bytes.Reverse().ToArray() : bytes;
+        if (BitConverter.IsLittleEndian ^ BigEndian) bytes.Reverse();
+		Span<byte> data = bytes;
         writer.WriteBytes(data);
     }
 
