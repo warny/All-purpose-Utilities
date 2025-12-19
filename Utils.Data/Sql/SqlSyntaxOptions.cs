@@ -8,7 +8,11 @@ namespace Utils.Data.Sql;
 /// </summary>
 public sealed class SqlSyntaxOptions
 {
-    private static readonly char[] DefaultIdentifierPrefixes = { '@', '#', '$' };
+    private static readonly char[] SqlServerIdentifierPrefixes = { '@', '#', '$' };
+    private static readonly char[] OracleIdentifierPrefixes = { ':' };
+    private static readonly char[] MySqlIdentifierPrefixes = { '@' };
+    private static readonly char[] SqliteIdentifierPrefixes = { '@', ':', '$', '?' };
+    private static readonly char[] PostgreSqlIdentifierPrefixes = { '$' };
 
     private readonly HashSet<char> identifierPrefixes;
 
@@ -20,7 +24,7 @@ public sealed class SqlSyntaxOptions
     public SqlSyntaxOptions(IEnumerable<char>? identifierPrefixes = null, char autoParameterPrefix = '@')
     {
         var resolvedPrefixes = identifierPrefixes == null
-            ? new HashSet<char>(DefaultIdentifierPrefixes)
+            ? new HashSet<char>(SqlServerIdentifierPrefixes)
             : new HashSet<char>(identifierPrefixes);
 
         if (resolvedPrefixes.Count == 0)
@@ -35,9 +39,34 @@ public sealed class SqlSyntaxOptions
     }
 
     /// <summary>
+    /// Gets syntax options configured for Microsoft SQL Server.
+    /// </summary>
+    public static SqlSyntaxOptions SqlServer { get; } = new SqlSyntaxOptions(SqlServerIdentifierPrefixes, '@');
+
+    /// <summary>
+    /// Gets syntax options configured for Oracle databases.
+    /// </summary>
+    public static SqlSyntaxOptions Oracle { get; } = new SqlSyntaxOptions(OracleIdentifierPrefixes, ':');
+
+    /// <summary>
+    /// Gets syntax options configured for MySQL databases.
+    /// </summary>
+    public static SqlSyntaxOptions MySql { get; } = new SqlSyntaxOptions(MySqlIdentifierPrefixes, '@');
+
+    /// <summary>
+    /// Gets syntax options configured for SQLite databases.
+    /// </summary>
+    public static SqlSyntaxOptions Sqlite { get; } = new SqlSyntaxOptions(SqliteIdentifierPrefixes, '@');
+
+    /// <summary>
+    /// Gets syntax options configured for PostgreSQL databases.
+    /// </summary>
+    public static SqlSyntaxOptions PostgreSql { get; } = new SqlSyntaxOptions(PostgreSqlIdentifierPrefixes, '$');
+
+    /// <summary>
     /// Gets the default syntax options supporting common SQL Server style prefixes.
     /// </summary>
-    public static SqlSyntaxOptions Default { get; } = new SqlSyntaxOptions(DefaultIdentifierPrefixes, '@');
+    public static SqlSyntaxOptions Default { get; } = SqlServer;
 
     /// <summary>
     /// Gets the characters that can prefix identifiers.

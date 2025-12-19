@@ -135,6 +135,61 @@ RETURNING s.id;";
     }
 
     [TestMethod]
+    public void ParseSqlServerPrefixesWithDedicatedOptions()
+    {
+        const string sql = "SELECT * FROM #temp WHERE Id = @id";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql, SqlSyntaxOptions.SqlServer);
+
+        Assert.AreSame(SqlSyntaxOptions.SqlServer, query.SyntaxOptions);
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
+    public void ParseOraclePrefixesWithDedicatedOptions()
+    {
+        const string sql = "SELECT * FROM accounts WHERE id = :account_id";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql, SqlSyntaxOptions.Oracle);
+
+        Assert.AreSame(SqlSyntaxOptions.Oracle, query.SyntaxOptions);
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
+    public void ParseMySqlPrefixesWithDedicatedOptions()
+    {
+        const string sql = "SELECT * FROM users WHERE id = @user_id";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql, SqlSyntaxOptions.MySql);
+
+        Assert.AreSame(SqlSyntaxOptions.MySql, query.SyntaxOptions);
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
+    public void ParseSqlitePrefixesWithDedicatedOptions()
+    {
+        const string sql = "SELECT * FROM accounts WHERE id = ?1";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql, SqlSyntaxOptions.Sqlite);
+
+        Assert.AreSame(SqlSyntaxOptions.Sqlite, query.SyntaxOptions);
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
+    public void ParsePostgreSqlPrefixesWithDedicatedOptions()
+    {
+        const string sql = "SELECT * FROM users WHERE id = $1";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql, SqlSyntaxOptions.PostgreSql);
+
+        Assert.AreSame(SqlSyntaxOptions.PostgreSql, query.SyntaxOptions);
+        Assert.AreEqual(sql, query.ToSql());
+    }
+
+    [TestMethod]
     public void ToSqlSupportsFormattingModes()
     {
         const string sql = "SELECT table1.champ1, table2.champ2, table2.champ3 FROM table1 INNER JOIN table2 ON table1.champ1 = table2.champ1";

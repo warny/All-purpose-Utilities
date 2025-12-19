@@ -928,14 +928,34 @@ internal sealed class SqlTokenizer
         _ => false,
     };
 
+    /// <summary>
+    /// Determines whether the provided character can start an identifier or parameter token.
+    /// </summary>
+    /// <param name="c">The character to evaluate.</param>
+    /// <returns><c>true</c> when the character can begin an identifier; otherwise, <c>false</c>.</returns>
     private bool IsIdentifierStart(char c)
     {
-        return char.IsLetter(c) || c == '_' || c == '$' || syntaxOptions.IsIdentifierPrefix(c);
+        return char.IsLetter(c) || c == '_' || IsIdentifierPrefix(c);
     }
 
+    /// <summary>
+    /// Determines whether the provided character can appear within an identifier or parameter token.
+    /// </summary>
+    /// <param name="c">The character to evaluate.</param>
+    /// <returns><c>true</c> when the character can appear in an identifier; otherwise, <c>false</c>.</returns>
     private bool IsIdentifierPart(char c)
     {
-        return char.IsLetterOrDigit(c) || c == '_' || c == '$' || syntaxOptions.IsIdentifierPrefix(c);
+        return char.IsLetterOrDigit(c) || c == '_' || IsIdentifierPrefix(c);
+    }
+
+    /// <summary>
+    /// Checks whether a character is configured as an identifier prefix or matches a common parameter prefix.
+    /// </summary>
+    /// <param name="c">The character to evaluate.</param>
+    /// <returns><c>true</c> when the character is treated as an identifier prefix; otherwise, <c>false</c>.</returns>
+    private bool IsIdentifierPrefix(char c)
+    {
+        return syntaxOptions.IsIdentifierPrefix(c);
     }
 
     private char Peek() => sql[index];
