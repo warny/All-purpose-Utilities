@@ -87,3 +87,11 @@ jobs:
                       $errors | ForEach-Object { Write-Host $_ }
                       exit 1
                   }
+            - name: Upload package artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: nuget-packages-${{ github.run_number }}
+                  path: |
+                      packages/**/*.nupkg
+                      packages/**/*.snupkg
+                  if-no-files-found: error

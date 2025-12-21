@@ -1,17 +1,21 @@
-# Utils.VirtualMachine Library
+# omy.Utils.VirtualMachine (byte-code interpreter)
 
-The **Utils.VirtualMachine** package implements a small and extensible byte-code interpreter.
-It targets **.NET 9** and uses attributes to define instructions, making it easy to build custom instruction sets.
+`omy.Utils.VirtualMachine` implements a small, attribute-driven byte-code interpreter for custom instruction sets.
+
+## Install
+```bash
+dotnet add package omy.Utils.VirtualMachine
+```
+
+## Supported frameworks
+- net8.0
 
 ## Features
+- Byte-code processor supporting little- and big-endian formats.
+- Attribute-based opcode declarations for concise instruction definitions.
+- Facilities to plug in stacks, registers, and memory models.
 
-- Byte-code processor supporting little and big endian formats
-- Attribute based declaration of opcodes and instruction handlers
-- Facilities to implement stacks, registers and memory models as separate components
-- Used by the other libraries for parsing binary data and implementing simple VMs
-
-## Usage example
-
+## Quick usage
 ```csharp
 using Utils.VirtualMachine;
 
@@ -28,14 +32,8 @@ class SampleMachine : VirtualProcessor<DefaultContext>
         ctx.Stack.Push((byte)(a + b));
     }
 }
-
-byte[] program =
-[
-    0x01, 0x01, 0x10, // PUSH 0x10
-    0x01, 0x01, 0x01, // PUSH 0x01
-    0x10, 0x01        // ADD
-];
-
-var context = new DefaultContext(program);
-new SampleMachine().Execute(context);
 ```
+
+## Related packages
+- `omy.Utils.IO` – for binary parsing helpers.
+- `omy.Utils.Fonts` – uses the VM framework for font table parsing.

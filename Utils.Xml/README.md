@@ -1,39 +1,32 @@
-# Utils.XML Library
+# omy.Utils.Xml (XML helpers)
 
-The **Utils.XML** package groups the XML helpers extracted from the base Utils assembly.
-It targets **.NET 8** and provides infrastructure to process XML documents using
-attribute-driven dispatch as well as helper methods for navigating `XmlReader` instances.
+`omy.Utils.Xml` offers attribute-driven XML processing helpers to bind XML documents to strongly typed objects.
+
+## Install
+```bash
+dotnet add package omy.Utils.Xml
+```
+
+## Supported frameworks
+- net8.0
 
 ## Features
+- Attribute-based mapping between XML elements/attributes and CLR properties.
+- `XmlDataProcessor` helpers to read and write documents.
+- Validation support while converting XML content into objects.
 
-- Attribute-based XML processing pipeline via `XmlDataProcessor`
-- Class-level namespace registration through `XmlNamespaceAttribute`
-- Declarative XPath triggers with the `MatchAttribute`
-- `XmlReader` extensions to iterate over child elements and compute XPaths
-
-## Usage example
-
+## Quick usage
 ```csharp
-using System.IO;
-using System.Xml;
-using Utils.XML;
+using Utils.Xml;
 
-class ItemProcessor : XmlDataProcessor
+public class Sample
 {
-    [Match("/items/item")]
-    private void HandleItem()
-    {
-        string id = ValueOf("@id");
-        Console.WriteLine($"Encountered item {id}");
-    }
-
-    protected override void Root()
-    {
-        Apply("/items/item");
-    }
+    [XmlElement("name")] public string? Name { get; set; }
 }
 
-using XmlReader reader = XmlReader.Create(new StringReader("<items><item id=\"A\" /></items>"));
-var processor = new ItemProcessor();
-processor.Read(reader);
+var processor = new XmlDataProcessor();
+Sample value = processor.Deserialize<Sample>("<root><name>demo</name></root>");
 ```
+
+## Related packages
+- `omy.Utils` – shared helpers used by the XML utilities.

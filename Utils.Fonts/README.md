@@ -1,19 +1,31 @@
-# Utils.Fonts Library
+# omy.Utils.Fonts (font utilities)
 
-**Utils.Fonts** handles font parsing and metrics extraction for TrueType and PostScript fonts.
-It targets **.NET 9** and is used by the imaging library to render glyphs accurately.
+`omy.Utils.Fonts` parses TrueType/PostScript fonts and exposes encoding tables, glyph metrics, and helper structures for rendering scenarios.
+
+## Install
+```bash
+dotnet add package omy.Utils.Fonts
+```
+
+## Supported frameworks
+- net8.0
 
 ## Features
+- Parse TrueType fonts and inspect glyph flags, metrics, and tables.
+- Convert between encodings and character maps.
+- Helpers for ligatures, kerning, and embedded font data extraction.
 
-- Parsing of TrueType font tables including glyph, cmap and kerning information
-- Tools to inspect font flags, encoding records and glyph metrics
-- Utilities to convert between different font encodings
-- Designed with a data/processing split so rendering engines can implement their own logic
-
-## Usage example
+## Quick usage
 ```csharp
-byte[] bytes = File.ReadAllBytes("arial.ttf");
-var font = Utils.Fonts.TTF.TrueTypeFont.ParseFont(bytes);
-float width = font.GetGlyph('A').Width;
-string name = Utils.Fonts.FontSupport.GetName(65); // "A"
+using Utils.Fonts;
+using Utils.Fonts.Tables.Sfnt;
+
+using var reader = new SfntReader(File.OpenRead("MyFont.ttf"));
+var font = reader.ReadFont();
+short ascent = font.Hhea.Ascender;
+ushort glyphCount = font.Maxp.NumGlyphs;
 ```
+
+## Related packages
+- `omy.Utils.Imaging` – drawing utilities that consume font metrics.
+- `omy.Utils.IO` – stream helpers used for font parsing.

@@ -2,7 +2,8 @@ name: Utils
 
 on:
     push:
-        branches-ignore:
+        branches:
+            - master
             - release
 
 jobs:
@@ -25,3 +26,10 @@ jobs:
               run: dotnet build --configuration GitHub # --no-restore
             - name: Test
               run: dotnet test --no-restore --verbosity normal
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-outputs-${{ github.ref_name }}
+                  path: |
+                      **/bin/GitHub/**
+                  if-no-files-found: warn

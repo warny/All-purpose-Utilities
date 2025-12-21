@@ -12,11 +12,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>1.2.1</Version>
-        <Description>
-            Source generators for stream and serialization helpers
-            - Emit serializers for attributed types
-            - Provide compile time validation of IO contracts
-        </Description>
+        <Description>Roslyn source generator that emits stream serializers and validates attributed IO contracts.</Description>
+        <PackageTags>omy;utilities;io;serialization;generator;roslyn</PackageTags>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
 

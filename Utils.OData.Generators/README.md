@@ -2,6 +2,14 @@
 
 `Utils.OData.Generators` offers a Roslyn source generator that materializes entity classes and helpers for contexts derived from `Utils.OData.ODataContext`. It targets **.NET 9** and consumes EDMX metadata so OData payloads can be accessed through strongly typed models.
 
+## Install
+```bash
+dotnet add package omy.Utils.OData.Generators
+```
+
+## Supported frameworks
+- netstandard2.0 (analyzer)
+
 ## Features
 
 - Locates partial classes inheriting from `ODataContext` and inspects their base constructor calls.

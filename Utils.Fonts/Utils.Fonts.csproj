@@ -12,12 +12,9 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>1.2.1</Version>
-		<Description>
-			Font management utilities
-			- TrueType font parsing and encoding
-			- Font flags and metrics helpers
-		</Description>
-	</PropertyGroup>
+                <Description>TrueType/PostScript font parsing with encoding tables, glyph metrics, and rendering helpers.</Description>
+                <PackageTags>omy;utilities;font;truetype;encoding;glyph</PackageTags>
+        </PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Utils.IO\Utils.IO.csproj" />

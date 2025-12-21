@@ -14,13 +14,9 @@
 		<PackageId>omy.Utils.Geography</PackageId>
 		<Version>1.2.1</Version>
 		<Copyright>Olivier MARTY</Copyright>
-		<Description>
-			Coordinate utilities
-			- Map to polar conversions
-			- Distance computations
-			- Map projections and tile helpers
-		</Description>
-	</PropertyGroup>
+                <Description>Geography helpers including coordinates, bounding boxes, map projections, and tile utilities.</Description>
+                <PackageTags>omy;utilities;geography;maps;projection;tile</PackageTags>
+        </PropertyGroup>
 
 	<ItemGroup>
 		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">

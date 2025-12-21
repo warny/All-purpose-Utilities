@@ -1,28 +1,26 @@
-# Utils.Reflection Library
+# omy.Utils.Reflection (reflection helpers)
 
-**Utils.Reflection** extends the .NET reflection APIs with helpers for dynamic loading and runtime code generation.
-It targets **.NET 9** and provides abstractions that help split platform-specific logic from high level processing.
+`omy.Utils.Reflection` adds convenience APIs over `System.Reflection` for accessing fields/properties and emitting delegates.
+
+## Install
+```bash
+dotnet add package omy.Utils.Reflection
+```
+
+## Supported frameworks
+- net8.0
 
 ## Features
+- `PropertyOrFieldInfo` wrapper to read/write members without duplicating reflection logic.
+- Dynamic delegate invocation helpers.
+- Extensions to inspect member metadata consistently.
 
-- Dynamic DLL mapping and loading utilities
-- Support for compiling and emitting C# code at runtime
-- Platform detection helpers and `PropertyOrFieldInfo` wrapper
-- Designed to work together with `Utils.VirtualMachine` for dynamic instruction handling
-
-## Usage example
-
+## Quick usage
 ```csharp
-// Detect the current OS
-if (Utils.Reflection.Platform.IsWindows)
-    Console.WriteLine("Windows detected");
-
-// Map a native method from a DLL
-class KernelApi : Utils.Reflection.LibraryMapper
-{
-    [Utils.Reflection.LibraryMapper.External("GetTickCount")]
-    public Func<uint> GetTickCount = null!;
-}
-using var kernel = Utils.Reflection.LibraryMapper.Create<KernelApi>("kernel32.dll");
-uint ticks = kernel.GetTickCount();
+var info = new Utils.Reflection.PropertyOrFieldInfo(typeof(MyType).GetField("Id"));
+int id = (int)info.GetValue(myObj);
+info.SetValue(myObj, 42);
 ```
+
+## Related packages
+- `omy.Utils` – base utilities used by reflection helpers.

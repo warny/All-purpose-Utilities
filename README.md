@@ -1,84 +1,38 @@
 # All-purpose Utilities
 
-This repository contains a collection of utility libraries and sample applications targeting **.NET 9**. The solution aggregates several projects under the `Utils` family, ranging from low level helpers to Windows Forms samples.
+A collection of production-ready .NET utility libraries published as the **omy.Utils** package family. Each package focuses on a specific area (networking, I/O, data, imaging, etc.) and is built to be consumed directly from NuGet without preview SDKs.
 
-## Requirements
+## Packages at a glance
 
-The solution uses the .NET SDK version 9 (preview). Build all projects with:
+- **omy.Utils** – foundational helpers used across the other packages (arrays, collections, expressions, strings, streams, security).
+- **omy.Utils.Net** – DNS, ICMP, network discovery, Wake-on-LAN, and URI builder helpers.
+- **omy.Utils.IO** – stream utilities, base16/base32/base64 converters, and binary serialization helpers.
+- **omy.Utils.Data** – attributes and mappers for `IDataRecord`/`IDataReader` to typed objects.
+- **omy.Utils.Imaging** – bitmap accessors, vector drawing primitives, and color helpers.
+- **omy.Utils.Fonts** – TrueType/PostScript parsing, encoding tables, and glyph metrics utilities.
+- **omy.Utils.Geography** – coordinate models, map projections, and tile helpers.
+- **omy.Utils.Mathematics** – advanced math helpers (FFT, derivation/integration, SI conversions, linear algebra).
+- **omy.Utils.Reflection** – reflection extensions such as `PropertyOrFieldInfo` and dynamic delegate invocation.
+- **omy.Utils.Xml** – attribute-driven XML processing and `XmlDataProcessor` helpers.
+- **omy.Utils.VirtualMachine** – minimal VM framework with attribute-defined instructions and configurable endianness.
+- **omy.Utils.OData** – OData client helpers and related generators.
+- **omy.Utils.DependencyInjection** – dependency injection helpers plus source generators.
+
+> Additional project-level READMEs provide deeper details for specialized packages like serialization or generators.
+
+## Install from NuGet
+
+Use the package that matches your scenario. Examples:
 
 ```bash
- dotnet build
+dotnet add package omy.Utils
+# or
+dotnet add package omy.Utils.Net
 ```
 
-## Projects and Namespaces
+> All packages target stable TFMs (primarily `net8.0` and `net9.0`). Only building the repository may require the latest SDK.
 
-### `Utils`
-A general purpose library exposing many helper namespaces:
-- **`Utils.Arrays`** – array comparison utilities, multi dimensional helpers and key/value comparers.
-- **`Utils.Collections`** – custom collections such as indexed lists, skip lists, LRU caches and dictionary extensions.
-- **`Utils.Expressions`** – expression parser, builders and simplifiers for lambda expressions.
-- **`Utils.Files`** – file and path utilities.
-- **`Utils.Mathematics`** (base) – mathematical extensions and expression transformers.
-- **`Utils.Net`** – helpers for URIs, query strings, mail addresses and IP ranges.
-- **`Utils.Objects`** – data conversion, advanced string formatting and miscellaneous object utilities.
-- **`Utils.Reflection`** – extra reflection helpers like `PropertyOrFieldInfo`.
-- **`Utils.Resources`** – utilities for working with embedded resources.
-- **`Utils.Security`** – Google authenticator helpers.
-
-### `Utils.IO`
-I/O related helpers including:
-- base16/base32/base64 stream encoders and decoders
-- binary serialization framework
-- stream copying and validation utilities
-
-### `Utils.Net`
-Network focused utilities:
-- full DNS protocol implementation and packet helpers
-- ICMP utilities and basic traceroute support
-- gathering system network parameters
-- Wake-on-LAN magic packet generation
-- ARP packet helpers
-
-### `Utils.Data`
-Attributes and helpers to map `IDataRecord`/`IDataReader` data to typed objects.
-
-### `Utils.Imaging`
-Bitmap accessors and drawing primitives. Provides ARGB/AHSV color structures and basic vector drawing support.
-
-### `Utils.Fonts`
-Font management library able to read and interpret TrueType and PostScript fonts. Also contains utilities for encoding tables and glyph metrics.
-
-### `Utils.Geography`
-Models and tools for geographic coordinates, tile representations and various map projections.
-
-### `Utils.Mathematics`
-Advanced mathematics library featuring:
-- expression derivation and integration
-- fast Fourier transform support
-- conversion helpers for SI units
-- generic linear algebra types
-
-### `Utils.Reflection`
-Runtime reflection helpers, notably a dynamic DLL mapping system and platform detection utilities.
-
-### `Utils.XML`
-XML processing helpers providing an attribute-driven `XmlDataProcessor` and utilities to traverse
-`XmlReader` instances and compute XPath expressions.
-
-### `Utils.VirtualMachine`
-Minimal virtual machine framework. Instructions are defined using attributes and executed through a byte‑code processor with configurable endianness.
-
-### `Fractals`
-Windows Forms sample application that renders fractals using the imaging library.
-
-### `DrawTest`
-Another Windows Forms sample demonstrating the drawing primitives available in `Utils.Imaging`.
-
-
-### `UtilsTest`
-Unit test suite using MSTest and SpecFlow covering the utilities and components from the other projects.
-
-## Usage example
+## Quick usage
 
 ```csharp
 using Utils.Net;
@@ -88,20 +42,24 @@ builder.QueryString["key"].Add("value");
 Console.WriteLine(builder.ToString());
 ```
 
-For more examples, each project contains a dedicated README with additional snippets.
+More examples are available inside each package README (see `Utils/README.md` for the base library).
 
-## NuGet packages
+## Documentation
 
-All libraries are configured to generate NuGet packages. Pushing changes to the
-`release` branch triggers the **Publish NuGet** workflow. The workflow builds
-the solution and publishes the library projects only when their version number
-has changed. The script queries NuGet to verify that the package version is not
-already available before packaging and uploading the corresponding `.nupkg`
-file using the `NUGET_API_KEY` secret.
+- [Getting started](docs/getting-started.md)
+- [GitHub about summary](docs/github-about.md)
+- [Releasing guide](docs/releasing.md)
+- [Changelog](CHANGELOG.md)
 
-The NuGet package metadata links back to this GitHub repository:
-<https://github.com/warny/All-purpose-Utilities>. French translations of the
-XML documentation are available under `docs/fr`.
+## Build from source
+
+The solution targets **.NET 9** for development. To build locally:
+
+```bash
+dotnet build
+```
+
+Unit tests live in the `UtilsTest` project and can be run with `dotnet test`.
 
 ## License
 

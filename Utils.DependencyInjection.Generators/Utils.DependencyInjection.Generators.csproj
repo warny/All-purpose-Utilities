@@ -12,11 +12,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>1.2.1</Version>
-        <Description>
-            Source generators for dependency injection helpers
-            - Discover services at compile time
-            - Emit optimized registration code
-        </Description>
+        <Description>Roslyn source generator that discovers attributed services and emits DI registrations.</Description>
+        <PackageTags>omy;utilities;dependency-injection;generator;roslyn</PackageTags>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
 

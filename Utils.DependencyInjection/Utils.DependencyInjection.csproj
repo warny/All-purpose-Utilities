@@ -12,11 +12,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>1.2.1</Version>
-        <Description>
-            Dependency injection utilities
-            - Attribute driven registrations
-            - Lifetime helpers for Microsoft.Extensions.DependencyInjection
-        </Description>
+        <Description>Attribute-based service registration helpers for Microsoft.Extensions.DependencyInjection.</Description>
+        <PackageTags>omy;utilities;dependency-injection;attributes</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

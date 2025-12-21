@@ -4,6 +4,14 @@
 with the `[StaticAuto]` attribute. It targets **.NET 9** and complements the `Utils.DependencyInjection` runtime library by wiring
 attribute-based registrations at build time.
 
+## Install
+```bash
+dotnet add package omy.Utils.DependencyInjection.Generators
+```
+
+## Supported frameworks
+- netstandard2.0 (analyzer)
+
 ## Features
 
 - Scans the compilation for `IServiceConfigurator` implementations decorated with `[StaticAuto]`.

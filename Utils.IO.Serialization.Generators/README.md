@@ -2,6 +2,14 @@
 
 `Utils.IO.Serialization.Generators` ships a Roslyn source generator that produces strongly typed reader and writer extension methods for DTOs annotated with `GenerateReaderWriterAttribute`. It targets **.NET 9** and extends the `Utils.IO.Serialization` primitives by removing repetitive serialization boilerplate.
 
+## Install
+```bash
+dotnet add package omy.Utils.IO.Serialization.Generators
+```
+
+## Supported frameworks
+- netstandard2.0 (analyzer)
+
 ## Features
 
 - Discovers classes, structs, and records decorated with `[GenerateReaderWriter]`.
