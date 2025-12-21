@@ -1,25 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<EnablePreviewFeatures>True</EnablePreviewFeatures>
-		<AssemblyName>Utils.Net</AssemblyName>
-		<RootNamespace>Utils</RootNamespace>
-		<Copyright>Olivier MARTY 2025</Copyright>
-		<Authors>Olivier MARTY</Authors>
-		<Company>Olivier MARTY</Company>
-		<PackageId>omy.Utils.Net</PackageId>
-		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>1.2.1</Version>
-		<Description>
-			Network utilities
-			- DNS protocol implementation
-			- ICMP helpers and system network info
-		</Description>
-		<NoWarn>S101</NoWarn>
-	</PropertyGroup>
+        <PropertyGroup>
+                <TargetFramework>net9.0</TargetFramework>
+                <EnablePreviewFeatures>True</EnablePreviewFeatures>
+                <AssemblyName>Utils.Net</AssemblyName>
+                <RootNamespace>Utils</RootNamespace>
+                <Copyright>Olivier MARTY 2025</Copyright>
+                <Authors>Olivier MARTY</Authors>
+                <Company>Olivier MARTY</Company>
+                <PackageId>omy.Utils.Net</PackageId>
+                <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+                <PackageReadmeFile>README.md</PackageReadmeFile>
+                <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+                <Version>1.2.1</Version>
+                <Description>DNS, ICMP, Wake-on-LAN, ARP, and command/response helpers for .NET networking scenarios.</Description>
+                <PackageTags>omy;utilities;network;dns;icmp;wol;arp;uri;smtp;pop3;nntp</PackageTags>
+                <NoWarn>S101</NoWarn>
+        </PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="System.Management" Version="9.0.6" />

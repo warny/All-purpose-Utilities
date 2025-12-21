@@ -13,12 +13,9 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Version>1.2.1</Version>
-		<Description>
-			XML processing helpers
-			- Attribute-driven XPath processor
-			- XmlReader traversal helpers
-		</Description>
-	</PropertyGroup>
+                <Description>Attribute-based XML processing helpers, including XmlDataProcessor for mapping documents to objects.</Description>
+                <PackageTags>omy;utilities;xml;serialization</PackageTags>
+        </PropertyGroup>
 
 	<ItemGroup>
 		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">

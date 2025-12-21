@@ -12,11 +12,8 @@
         <Authors>Olivier MARTY</Authors>
         <Company>Olivier MARTY</Company>
         <Version>0.0.1</Version>
-        <Description>
-            OData client helpers
-            - Build strongly typed queries
-            - Parse OData metadata into CLR models
-        </Description>
+        <Description>HTTP client helpers, LINQ provider, and metadata utilities for consuming OData services.</Description>
+        <PackageTags>omy;utilities;odata;http;linq;edmx</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

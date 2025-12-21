@@ -13,13 +13,8 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>1.2.1</Version>
-		<Description>
-			Mathematics
-			- Expression Derivation
-			- Fast Fourier Transform
-			- Conversion to International System (beta)
-			- Linear Algebra (matrices in any dimension)
-		</Description>
+                <Description>Symbolic math helpers, FFT implementations, SI conversions, and generic linear algebra structures.</Description>
+                <PackageTags>omy;utilities;math;fft;algebra;symbolic</PackageTags>
 		<Copyright>Olivier MARTY 2025</Copyright>
 	</PropertyGroup>
 

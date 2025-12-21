@@ -11,15 +11,11 @@
 		<Company>Olivier MARTY</Company>
 		<PackageId>omy.Utils.IO</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>1.2.1</Version>
-		<Description>
-			Input/Output helpers
-			- Base16/32/64 stream encoding
-			- Stream copying and validation
-			- Binary serialization framework
-		</Description>
+                <PackageReadmeFile>README.md</PackageReadmeFile>
+                <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+                <Version>1.2.1</Version>
+                <Description>Stream utilities, binary serialization helpers, and base16/base32/base64 converters for .NET.</Description>
+                <PackageTags>omy;utilities;io;streams;serialization;base64;base32;base16</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>

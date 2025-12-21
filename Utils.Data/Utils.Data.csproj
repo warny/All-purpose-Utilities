@@ -12,11 +12,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>1.2.1</Version>
-        <Description>
-            Data mapping utilities
-            - Attributes to describe data fields
-            - Fill objects from IDataRecord/IDataReader
-        </Description>
+        <Description>Attributes and helpers to map IDataRecord/IDataReader data into typed objects with minimal ceremony.</Description>
+        <PackageTags>omy;utilities;data;mapper;idatarecord;sql</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

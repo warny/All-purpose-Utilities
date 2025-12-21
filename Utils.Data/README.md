@@ -1,27 +1,34 @@
-# Utils.Data Library
+# omy.Utils.Data (data mappers)
 
-**Utils.Data** offers simple data mapping facilities targeting **.NET 9**.
-It lets you populate objects from `IDataRecord` or `IDataReader` instances using attributes to describe the relationship between fields and properties.
+`omy.Utils.Data` offers attributes and helpers to map `IDataRecord`/`IDataReader` rows into typed objects without heavy ORMs.
+
+## Install
+```bash
+dotnet add package omy.Utils.Data
+```
+
+## Supported frameworks
+- net8.0
 
 ## Features
+- Field attributes to describe mappings and conversions.
+- Builders to interpolate SQL queries safely.
+- Helpers to populate objects from `IDataRecord`/`IDataReader` instances.
 
-- Attributes to map database columns to object properties
-- Extension methods to fill objects directly from data readers
-- Support for custom converters through interfaces
-- Focus on separating mapping metadata from actual processing
-
-## Usage example
-
+## Quick usage
 ```csharp
 using Utils.Data;
-using System.Data;
 
-class Person
+public class User
 {
-    [Field("name")]
-    public string Name { get; set; } = "";
+    [Field("id")] public int Id { get; set; }
+    [Field("display_name")] public string? Name { get; set; }
 }
 
-IDataRecord record = /* retrieved from a data reader */;
-Person person = record.ToObject<Person>();
+IDataRecord record = /* read from a data reader */;
+User user = record.Fill<User>();
 ```
+
+## Related packages
+- `omy.Utils` – shared helpers the data utilities rely on.
+- `omy.Utils.IO` – for binary/stream serialization scenarios.

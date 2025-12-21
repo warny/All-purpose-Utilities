@@ -11,12 +11,9 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Version>1.2.1</Version>
-		<Description>
-			Reflection helpers
-			- Dynamic DLL mapping utilities
-			- Runtime code generation support
-		</Description>
-	</PropertyGroup>
+                <Description>Reflection helpers that wrap fields/properties and simplify delegate invocation.</Description>
+                <PackageTags>omy;utilities;reflection;delegate</PackageTags>
+        </PropertyGroup>
 
 	<ItemGroup>
 		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
