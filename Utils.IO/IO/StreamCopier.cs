@@ -61,10 +61,13 @@ public class StreamCopier : Stream, IList<Stream>
     /// all streams in <see cref="_targets"/>.
     /// </param>
     /// <param name="streams">An array of streams to which data should be written.</param>
-    public StreamCopier(bool closeAllTargetsOnDispose, params IEnumerable<Stream> streams)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="streams"/> is <see langword="null"/>.</exception>
+    public StreamCopier(bool closeAllTargetsOnDispose, params Stream[] streams)
     {
         this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
-        _targets = [.. streams];
+        _targets = streams is null
+            ? throw new ArgumentNullException(nameof(streams))
+            : [.. streams];
     }
 
     /// <summary>
@@ -72,7 +75,8 @@ public class StreamCopier : Stream, IList<Stream>
     /// adds the specified array of streams to its targets (with <c>closeAllTargetsOnDispose</c> = false).
     /// </summary>
     /// <param name="streams">An array of streams to which data should be written.</param>
-    public StreamCopier(params IEnumerable<Stream> streams)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="streams"/> is <see langword="null"/>.</exception>
+    public StreamCopier(params Stream[] streams)
             : this(false, streams) { }
 
     #endregion
