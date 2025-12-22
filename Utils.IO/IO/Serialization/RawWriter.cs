@@ -124,8 +124,8 @@ public class RawWriter
     /// <param name="bytes">Bytes to write.</param>
     private void WriteNumberBytes(IWriter writer, byte[] bytes)
     {
-        Span<byte> data = (BitConverter.IsLittleEndian ^ BigEndian) ? bytes.Reverse().ToArray() : bytes;
-        writer.WriteBytes(data);
+        if (BitConverter.IsLittleEndian ^ BigEndian) bytes.Reverse();
+        writer.WriteBytes(bytes);
     }
 
     /// <summary>Writes a 16-bit signed integer.</summary>
