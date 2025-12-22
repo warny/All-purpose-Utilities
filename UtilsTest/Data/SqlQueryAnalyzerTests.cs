@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Linq;
 using Utils.Data.Sql;
 
@@ -141,15 +142,15 @@ RETURNING s.id;";
 
         string prefixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed));
         const string expectedPrefixed = "SELECT\n    table1.champ1\n   ,table2.champ2\n   ,table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
-        Assert.AreEqual(expectedPrefixed, prefixed);
+        Assert.AreEqual(expectedPrefixed.Replace("\n", Environment.NewLine), prefixed);
 
         string suffixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed));
         const string expectedSuffixed = "SELECT\n    table1.champ1,\n    table2.champ2,\n    table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
-        Assert.AreEqual(expectedSuffixed, suffixed);
+        Assert.AreEqual(expectedSuffixed.Replace("\n", Environment.NewLine), suffixed);
 
         string prefixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed, 2));
         const string expectedPrefixedIndent = "SELECT\n  table1.champ1\n ,table2.champ2\n ,table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
-        Assert.AreEqual(expectedPrefixedIndent, prefixedWithIndent);
+        Assert.AreEqual(expectedPrefixedIndent.Replace("\n", Environment.NewLine), prefixedWithIndent);
     }
 
     [TestMethod]
