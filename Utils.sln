@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.OData", "Utils.OData\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.OData.Generators", "Utils.OData.Generators\Utils.OData.Generators.csproj", "{65E10137-FF61-41AF-AE48-32B0C4C5D84B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Collections", "Utils.Collections\Utils.Collections.csproj", "{7ADEB595-9667-4533-8BAF-C7C637941D58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -394,6 +396,24 @@ Global
 		{65E10137-FF61-41AF-AE48-32B0C4C5D84B}.Release|x64.Build.0 = Release|Any CPU
 		{65E10137-FF61-41AF-AE48-32B0C4C5D84B}.Release|x86.ActiveCfg = Release|Any CPU
 		{65E10137-FF61-41AF-AE48-32B0C4C5D84B}.Release|x86.Build.0 = Release|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Debug|x64.Build.0 = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Debug|x86.Build.0 = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.GitHub|x64.Build.0 = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.GitHub|x86.Build.0 = Debug|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Release|x64.ActiveCfg = Release|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Release|x64.Build.0 = Release|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Release|x86.ActiveCfg = Release|Any CPU
+		{7ADEB595-9667-4533-8BAF-C7C637941D58}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
