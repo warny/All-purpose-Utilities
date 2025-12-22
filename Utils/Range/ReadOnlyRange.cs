@@ -181,5 +181,5 @@ public static class RangeUtils
     /// <typeparam name="T">The type of elements in the list.</typeparam>
     /// <param name="a">The list to reverse.</param>
     /// <returns>A read-only range representing the reversed list.</returns>
-    public static ReadOnlyRange<T> Reverse<T>(this IReadOnlyList<T> a) => new ReadOnlyRange<T>(a, 0, a.Count - 1, -1);
+    public static ReadOnlyRange<T> Backward<T>(this IReadOnlyList<T> a) => new ReadOnlyRange<T>(a, 0, a.Count - 1, -1);
 }
