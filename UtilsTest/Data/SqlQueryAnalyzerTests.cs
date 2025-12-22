@@ -145,12 +145,16 @@ RETURNING s.id;";
         Assert.AreEqual(expectedPrefixed.Replace("\n", Environment.NewLine), prefixed);
 
         string suffixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed));
-        const string expectedSuffixed = "SELECT\n    table1.champ1,\n    table2.champ2,\n    table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
+        const string expectedSuffixed = "SELECT\n    table1.champ1,\n    table2.champ2,\n    table2.champ3\nFROM\n    table1 INNER JOIN\n    table2 ON table1.champ1 = table2.champ1";
         Assert.AreEqual(expectedSuffixed.Replace("\n", Environment.NewLine), suffixed);
 
         string prefixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed, 2));
         const string expectedPrefixedIndent = "SELECT\n  table1.champ1\n ,table2.champ2\n ,table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
         Assert.AreEqual(expectedPrefixedIndent.Replace("\n", Environment.NewLine), prefixedWithIndent);
+
+        string suffixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed, 2));
+        const string expectedSuffixedIndent = "SELECT\n  table1.champ1,\n  table2.champ2,\n  table2.champ3\nFROM\n  table1 INNER JOIN\n  table2 ON table1.champ1 = table2.champ1";
+        Assert.AreEqual(expectedSuffixedIndent.Replace("\n", Environment.NewLine), suffixedWithIndent);
     }
 
     [TestMethod]

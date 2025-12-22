@@ -153,6 +153,8 @@ internal static class SqlPrettyPrinter
         bool firstItem = false;
         bool pendingComma = false;
         int clauseIndent = 0;
+        bool expectIndentedRelation = false;
+        int relationIndent = 0;
 
         for (int i = 0; i < tokens.Count; i++)
         {
@@ -160,7 +162,7 @@ internal static class SqlPrettyPrinter
             string text = token.Text;
             string upper = token.Normalized;
 
-            if (TryHandleClauseStart(tokens, options, commaAtLineStart, ref i, ref currentLine, lines, ref indentLevel, ref clause, ref firstItem, ref pendingComma, ref clauseIndent, upper, text))
+            if (TryHandleClauseStart(tokens, options, commaAtLineStart, ref i, ref currentLine, lines, ref indentLevel, ref clause, ref firstItem, ref pendingComma, ref clauseIndent, ref expectIndentedRelation, ref relationIndent, upper, text))
             {
                 continue;
             }
@@ -168,6 +170,12 @@ internal static class SqlPrettyPrinter
             if (clause != ClauseContext.None && text != ",")
             {
                 PrepareClauseLine(options, commaAtLineStart, ref currentLine, lines, ref clause, ref firstItem, ref pendingComma, clauseIndent);
+            }
+
+            if (expectIndentedRelation && text != ",")
+            {
+                StartNewLine(ref currentLine, lines, relationIndent);
+                expectIndentedRelation = false;
             }
 
             if (text == "," && clause != ClauseContext.None)
@@ -194,7 +202,7 @@ internal static class SqlPrettyPrinter
             }
             else
             {
-                effectiveIndent = baseIndent;
+                effectiveIndent = currentLine?.IndentSpaces ?? baseIndent;
             }
 
             if (text == "(")
@@ -259,6 +267,8 @@ internal static class SqlPrettyPrinter
     /// <param name="firstItem">Indicates whether the next clause item is the first one.</param>
     /// <param name="pendingComma">Indicates whether a comma should be emitted at the beginning of the next line.</param>
     /// <param name="clauseIndent">Stores the base indentation of the active clause.</param>
+    /// <param name="expectIndentedRelation">Indicates whether the next relation token should start on a new indented line.</param>
+    /// <param name="relationIndent">Indentation applied to relation lines when <paramref name="expectIndentedRelation"/> is set.</param>
     /// <param name="upper">Uppercase representation of the current token.</param>
     /// <param name="text">Original token text.</param>
     /// <returns><c>true</c> when the token has been fully handled; otherwise <c>false</c>.</returns>
@@ -274,6 +284,8 @@ internal static class SqlPrettyPrinter
         ref bool firstItem,
         ref bool pendingComma,
         ref int clauseIndent,
+        ref bool expectIndentedRelation,
+        ref int relationIndent,
         string upper,
         string text)
     {
@@ -382,6 +394,12 @@ internal static class SqlPrettyPrinter
                 clauseIndent = baseIndent;
                 StartNewLine(ref currentLine, lines, clauseIndent);
                 AppendToken(ref currentLine, lines, clauseIndent, text);
+                if (upper.Equals("FROM", StringComparison.OrdinalIgnoreCase) && options.Mode == SqlFormattingMode.Suffixed)
+                {
+                    expectIndentedRelation = true;
+                    relationIndent = clauseIndent + options.IndentSize;
+                }
+
                 return true;
         }
 
@@ -391,8 +409,17 @@ internal static class SqlPrettyPrinter
             firstItem = false;
             pendingComma = false;
             clauseIndent = baseIndent;
-            StartNewLine(ref currentLine, lines, clauseIndent);
-            AppendToken(ref currentLine, lines, clauseIndent, text);
+            int modifierIndent = options.Mode == SqlFormattingMode.Suffixed ? relationIndent : clauseIndent;
+            if (options.Mode == SqlFormattingMode.Suffixed)
+            {
+                EnsureLine(ref currentLine, lines, modifierIndent);
+            }
+            else
+            {
+                StartNewLine(ref currentLine, lines, modifierIndent);
+            }
+
+            AppendToken(ref currentLine, lines, modifierIndent, text);
             return true;
         }
 
@@ -413,20 +440,31 @@ internal static class SqlPrettyPrinter
             firstItem = false;
             pendingComma = false;
             clauseIndent = baseIndent;
-            if (currentLine == null || currentLine.Tokens.Count == 0)
+            int joinIndent = options.Mode == SqlFormattingMode.Suffixed ? relationIndent : clauseIndent;
+            if (options.Mode == SqlFormattingMode.Suffixed)
             {
-                StartNewLine(ref currentLine, lines, clauseIndent);
+                EnsureLine(ref currentLine, lines, joinIndent);
+                expectIndentedRelation = true;
+                relationIndent = clauseIndent + options.IndentSize;
             }
             else
             {
-                string lastToken = currentLine.Tokens[^1].ToUpperInvariant();
-                if (!JoinLeadingModifiers.Contains(lastToken) && lastToken != "OUTER")
+                if (currentLine == null || currentLine.Tokens.Count == 0)
                 {
-                    StartNewLine(ref currentLine, lines, clauseIndent);
+                    StartNewLine(ref currentLine, lines, joinIndent);
+                }
+                else
+                {
+                    string lastToken = currentLine.Tokens[^1].ToUpperInvariant();
+                    if (!JoinLeadingModifiers.Contains(lastToken) && lastToken != "OUTER")
+                    {
+                        StartNewLine(ref currentLine, lines, joinIndent);
+                    }
                 }
             }
 
-            AppendToken(ref currentLine, lines, clauseIndent, text);
+            AppendToken(ref currentLine, lines, joinIndent, text);
+            
             return true;
         }
 
