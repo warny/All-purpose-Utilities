@@ -17,14 +17,14 @@ public class MultiDelegateInvoker<TBaseArg, TResult> : IEnumerable<Delegate>
     private readonly Dictionary<Type, List<Delegate>> _delegates = new();
     private readonly int _parallelThreshold;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MultiDelegateInvoker{TBaseArg, TResult}"/> class.
-	/// </summary>
-	/// <param name="parallelThreshold">Minimum number of delegates required to run in parallel when using <see cref="InvokeSmartAsync"/>.</param>
-	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="parallelThreshold"/> is less than one.</exception>
-	public MultiDelegateInvoker(int parallelThreshold = 4)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiDelegateInvoker{TBaseArg, TResult}"/> class.
+    /// </summary>
+    /// <param name="parallelThreshold">Minimum number of delegates required to run in parallel when using <see cref="InvokeSmartAsync"/>.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="parallelThreshold"/> is less than one.</exception>
+    public MultiDelegateInvoker(int parallelThreshold = 4)
     {
-		ArgumentOutOfRangeException.ThrowIfLessThan(parallelThreshold, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(parallelThreshold, 1);
         _parallelThreshold = parallelThreshold;
     }
 
@@ -46,7 +46,7 @@ public class MultiDelegateInvoker<TBaseArg, TResult> : IEnumerable<Delegate>
 
     private List<Delegate> GetDelegates(TBaseArg arg)
     {
-		ArgumentNullException.ThrowIfNull(arg);
+        ArgumentNullException.ThrowIfNull(arg);
 
         List<Delegate> list = null;
         Type type = arg.GetType();
@@ -140,8 +140,8 @@ public class MultiDelegateInvoker<TBaseArg, TResult> : IEnumerable<Delegate>
             throw new MissingMethodException($"No delegate is registered for type {arg.GetType()} or its base types.");
 
         return list.Count >= _parallelThreshold
-        ? InvokeParallelAsync(arg, cancellationToken)
-        : InvokeAsync(arg, cancellationToken);
+            ? InvokeParallelAsync(arg, cancellationToken)
+            : InvokeAsync(arg, cancellationToken);
     }
 
     /// <inheritdoc />
