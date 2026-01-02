@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
 using System.Reflection;
@@ -14,6 +15,30 @@ public static class DataUtils
 {
     // Cache of Type to FieldMap[] to optimize object filling.
     private static readonly Dictionary<Type, FieldMap[]> maps = new Dictionary<Type, FieldMap[]>();
+
+    private static readonly ImmutableDictionary<Type, DbType> typeToDbTypeMap = new Dictionary<Type, DbType>
+    {
+        { typeof(string), DbType.String },
+        { typeof(bool), DbType.Boolean },
+        { typeof(byte), DbType.Byte },
+        { typeof(sbyte), DbType.SByte },
+        { typeof(short), DbType.Int16 },
+        { typeof(ushort), DbType.UInt16 },
+        { typeof(int), DbType.Int32 },
+        { typeof(uint), DbType.UInt32 },
+        { typeof(long), DbType.Int64 },
+        { typeof(ulong), DbType.UInt64 },
+        { typeof(float), DbType.Single },
+        { typeof(double), DbType.Double },
+        { typeof(decimal), DbType.Decimal },
+        { typeof(Guid), DbType.Guid },
+        { typeof(DateTime), DbType.DateTime },
+        { typeof(DateOnly), DbType.Date },
+        { typeof(TimeOnly), DbType.Time },
+        { typeof(DateTimeOffset), DbType.DateTimeOffset },
+        { typeof(TimeSpan), DbType.Time },
+        { typeof(byte[]), DbType.Binary }
+    }.ToImmutableDictionary();
 
     /// <summary>
     /// Converts an IDataRecord to an instance of type T.
@@ -132,31 +157,12 @@ public static class DataUtils
     /// </summary>
     /// <param name="type"><see cref="Type"/> for which to determine the <see cref="DbType"/>.</param>
     /// <returns>The inferred <see cref="DbType"/> for the given value.</returns>
-    public static DbType GetDbType(Type type) => type switch
-    {
-        var t when t == typeof(string) => DbType.String,
-        var t when t == typeof(bool) => DbType.Boolean,
-        var t when t == typeof(byte) => DbType.Byte,
-        var t when t == typeof(sbyte) => DbType.SByte,
-        var t when t == typeof(short) => DbType.Int16,
-        var t when t == typeof(ushort) => DbType.UInt16,
-        var t when t == typeof(int) => DbType.Int32,
-        var t when t == typeof(uint) => DbType.UInt32,
-        var t when t == typeof(long) => DbType.Int64,
-        var t when t == typeof(ulong) => DbType.UInt64,
-        var t when t == typeof(float) => DbType.Single,
-        var t when t == typeof(double) => DbType.Double,
-        var t when t == typeof(decimal) => DbType.Decimal,
-        var t when t == typeof(Guid) => DbType.Guid,
-        var t when t == typeof(DateTime) => DbType.DateTime,
-        var t when t == typeof(DateOnly) => DbType.Date,
-        var t when t == typeof(TimeOnly) => DbType.Time,
-        var t when t == typeof(DateTimeOffset) => DbType.DateTimeOffset,
-        var t when t == typeof(TimeSpan) => DbType.Time,
-        var t when t == typeof(byte[]) => DbType.Binary,
-        var t when t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>) => GetDbType(Nullable.GetUnderlyingType(t)),
-        _ => DbType.Object,
-    };
+    public static DbType GetDbType(Type type)
+        => typeToDbTypeMap.TryGetValue(type, out var dbType)
+            ? dbType
+            : type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)
+                ? GetDbType(Nullable.GetUnderlyingType(type)!)
+                : DbType.Object;
 
     /// <summary>
     /// Converts a nullable value to an object suitable for database commands.
