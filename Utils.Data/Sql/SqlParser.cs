@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,32 @@ namespace Utils.Data.Sql;
 
 internal sealed class SqlParser
 {
+    private static readonly IReadOnlyDictionary<string, Func<SqlParser, WithClause?, SqlStatement>> StatementParsers =
+        new Dictionary<string, Func<SqlParser, WithClause?, SqlStatement>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "SELECT", (parser, withClause) => parser.ParseSelect(withClause) },
+            { "INSERT", (parser, withClause) => parser.ParseInsert(withClause) },
+            { "UPDATE", (parser, withClause) => parser.ParseUpdate(withClause) },
+            { "DELETE", (parser, withClause) => parser.ParseDelete(withClause) },
+        }.ToImmutableDictionary();
+
+    private static readonly IReadOnlyList<(string Keyword, ClauseStart Clause, bool IncludeKeyword)> Segments =
+        new List<(string, ClauseStart, bool)>
+        {
+            ("FROM", ClauseStart.From, false),
+            ("WHERE", ClauseStart.Where, false),
+            ("GROUP BY", ClauseStart.GroupBy, false),
+            ("HAVING", ClauseStart.Having, false),
+            ("ORDER BY", ClauseStart.OrderBy, false),
+            ("LIMIT", ClauseStart.Limit, false),
+            ("OFFSET", ClauseStart.Offset, false),
+            ("RETURNING", ClauseStart.Returning, false),
+            ("USING", ClauseStart.Using, false),
+            ("UNION", ClauseStart.SetOperator, true),
+            ("EXCEPT", ClauseStart.SetOperator, true),
+            ("INTERSECT", ClauseStart.SetOperator, true),
+        }.ToImmutableList();
+
     private readonly List<SqlToken> tokens;
     private int position;
 
@@ -56,6 +83,12 @@ internal sealed class SqlParser
         }
     }
 
+    /// <summary>
+    /// Parses the next SQL statement using the available statement parsers.
+    /// </summary>
+    /// <param name="withClause">The optional WITH clause already parsed for the statement.</param>
+    /// <returns>The parsed <see cref="SqlStatement"/> instance.</returns>
+    /// <exception cref="SqlParseException">Thrown when the input is incomplete or unsupported.</exception>
     private SqlStatement ParseStatementCore(WithClause? withClause)
     {
         if (IsAtEnd)
@@ -64,14 +97,12 @@ internal sealed class SqlParser
         }
 
         var next = Peek();
-        return next.Normalized switch
+        if (StatementParsers.TryGetValue(next.Normalized, out var parserFunc))
         {
-            "SELECT" => ParseSelect(withClause),
-            "INSERT" => ParseInsert(withClause),
-            "UPDATE" => ParseUpdate(withClause),
-            "DELETE" => ParseDelete(withClause),
-            _ => throw new SqlParseException($"Unsupported statement starting with '{next.Text}'."),
-        };
+            return parserFunc(this, withClause);
+        }
+
+        throw new SqlParseException($"Unsupported statement starting with '{next.Text}'.");
     }
 
     private WithClause ParseWithClause()
@@ -114,71 +145,66 @@ internal sealed class SqlParser
         return columns;
     }
 
+    /// <summary>
+    /// Parses a SELECT statement, reading each clause segment in order.
+    /// </summary>
+    /// <param name="withClause">The WITH clause associated with the SELECT, if any.</param>
+    /// <returns>The parsed <see cref="SqlSelectStatement"/> instance.</returns>
     private SqlSelectStatement ParseSelect(WithClause? withClause)
     {
         ExpectKeyword("SELECT");
         bool isDistinct = TryConsumeKeyword("DISTINCT");
-        var selectTokens = ReadSectionTokens(ClauseStart.From, ClauseStart.Where, ClauseStart.GroupBy, ClauseStart.Having, ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.StatementEnd);
+        var selectTokens = ReadSectionTokens(ClauseStart.From, ClauseStart.Where, ClauseStart.GroupBy, ClauseStart.Having, ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
         var selectSegment = BuildSegment("Select", selectTokens);
 
-        SqlSegment? fromSegment = null;
-        SqlSegment? whereSegment = null;
-        SqlSegment? groupBySegment = null;
-        SqlSegment? havingSegment = null;
-        SqlSegment? orderBySegment = null;
-        SqlSegment? limitSegment = null;
-        SqlSegment? offsetSegment = null;
-        SqlSegment? tailSegment = null;
+        ClauseStart[] clauses =
+        [
+            ClauseStart.From,
+            ClauseStart.Where,
+            ClauseStart.GroupBy,
+            ClauseStart.Having,
+            ClauseStart.OrderBy,
+            ClauseStart.Limit,
+            ClauseStart.Offset,
+            ClauseStart.Returning,
+            ClauseStart.Using,
+            ClauseStart.SetOperator,
+            ClauseStart.StatementEnd,
+        ];
 
-        if (TryConsumeKeyword("FROM"))
+        Dictionary<ClauseStart, SqlSegment?> segments = new Dictionary<ClauseStart, SqlSegment?>();
+
+        foreach (var segment in Segments)
         {
-            var fromTokens = ReadSectionTokens(ClauseStart.Where, ClauseStart.GroupBy, ClauseStart.Having, ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            fromSegment = BuildSegment("From", fromTokens);
+            var tokensAfter = clauses.SkipWhile(c => c != segment.Clause).Skip(1).ToArray();
+            if (TryConsumeSegmentKeyword(segment.Keyword, out var consumedTokens))
+            {
+                var segmentTokens = ReadSectionTokens(tokensAfter);
+                if (segment.IncludeKeyword)
+                {
+                    segmentTokens.InsertRange(0, consumedTokens);
+                }
+
+                segments[segment.Clause] = BuildSegment(segment.Clause.ToString(), segmentTokens);
+            }
+            else if (!segments.ContainsKey(segment.Clause))
+            {
+                segments[segment.Clause] = null;
+            }
         }
 
-        if (TryConsumeKeyword("WHERE"))
-        {
-            var whereTokens = ReadSectionTokens(ClauseStart.GroupBy, ClauseStart.Having, ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            whereSegment = BuildSegment("Where", whereTokens);
-        }
-
-        if (TryConsumeKeyword("GROUP") && TryConsumeKeyword("BY"))
-        {
-            var groupTokens = ReadSectionTokens(ClauseStart.Having, ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            groupBySegment = BuildSegment("GroupBy", groupTokens);
-        }
-
-        if (TryConsumeKeyword("HAVING"))
-        {
-            var havingTokens = ReadSectionTokens(ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            havingSegment = BuildSegment("Having", havingTokens);
-        }
-
-        if (TryConsumeKeyword("ORDER") && TryConsumeKeyword("BY"))
-        {
-            var orderTokens = ReadSectionTokens(ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            orderBySegment = BuildSegment("OrderBy", orderTokens);
-        }
-
-        if (TryConsumeKeyword("LIMIT"))
-        {
-            var limitTokens = ReadSectionTokens(ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            limitSegment = BuildSegment("Limit", limitTokens);
-        }
-
-        if (TryConsumeKeyword("OFFSET"))
-        {
-            var offsetTokens = ReadSectionTokens(ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-            offsetSegment = BuildSegment("Offset", offsetTokens);
-        }
-
-        if (CheckClauseStart(ClauseStart.SetOperator))
-        {
-            var tailTokens = ReadSectionTokens();
-            tailSegment = BuildSegment("Tail", tailTokens);
-        }
-
-        return new SqlSelectStatement(selectSegment, fromSegment, whereSegment, groupBySegment, havingSegment, orderBySegment, limitSegment, offsetSegment, tailSegment, withClause, isDistinct);
+        return new SqlSelectStatement(
+            selectSegment,
+            segments[ClauseStart.From],
+            segments[ClauseStart.Where],
+            segments[ClauseStart.GroupBy],
+            segments[ClauseStart.Having],
+            segments[ClauseStart.OrderBy],
+            segments[ClauseStart.Limit],
+            segments[ClauseStart.Offset],
+            segments[ClauseStart.SetOperator],
+            withClause,
+            isDistinct);
     }
 
     private SqlInsertStatement ParseInsert(WithClause? withClause)
@@ -595,6 +621,48 @@ internal sealed class SqlParser
         }
 
         return Read();
+    }
+
+    /// <summary>
+    /// Attempts to consume a clause keyword, including composite keywords such as "GROUP BY".
+    /// </summary>
+    /// <param name="keyword">The keyword text to match.</param>
+    /// <param name="consumedTokens">The tokens consumed when the keyword is matched.</param>
+    /// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
+    private bool TryConsumeSegmentKeyword(string keyword, out List<SqlToken> consumedTokens)
+    {
+        consumedTokens = new List<SqlToken>();
+        if (keyword == ";")
+        {
+            if (!IsAtEnd && Peek().Text == ";")
+            {
+                consumedTokens.Add(Read());
+                return true;
+            }
+
+            return false;
+        }
+
+        var parts = keyword.Split(' ');
+        if (parts.Length == 1)
+        {
+            if (CheckKeyword(parts[0]))
+            {
+                consumedTokens.Add(Read());
+                return true;
+            }
+
+            return false;
+        }
+
+        if (parts.Length == 2 && CheckKeywordSequence(parts[0], parts[1]))
+        {
+            consumedTokens.Add(Read());
+            consumedTokens.Add(Read());
+            return true;
+        }
+
+        return false;
     }
 
     private bool TryConsumeKeyword(string keyword)
