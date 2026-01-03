@@ -67,6 +67,22 @@ ORDER BY c.id;";
     }
 
     [TestMethod]
+    public void ParseInsertWithOutputClause()
+    {
+        const string sql = "INSERT INTO audit_log(user_id) OUTPUT inserted.id VALUES (@userId);";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
+
+        var insert = (SqlInsertStatement)query.RootStatement;
+        Assert.AreEqual("audit_log(user_id)", insert.Target.ToSql());
+        Assert.IsNotNull(insert.Output);
+        Assert.AreEqual("inserted.id", insert.Output!.ToSql());
+        Assert.IsNotNull(insert.Values);
+        Assert.AreEqual("(@userId)", insert.Values!.ToSql());
+        Assert.AreEqual("INSERT INTO audit_log(user_id) OUTPUT inserted.id VALUES (@userId)", query.ToSql());
+    }
+
+    [TestMethod]
     public void ParseUpdateWithSubquery()
     {
         const string sql = @"UPDATE accounts a
@@ -90,6 +106,25 @@ RETURNING a.id;";
     }
 
     [TestMethod]
+    public void ParseUpdateWithOutputClause()
+    {
+        const string sql = "UPDATE accounts SET balance = balance + 10 OUTPUT inserted.balance, deleted.balance FROM accounts WHERE id = @id;";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
+
+        var update = (SqlUpdateStatement)query.RootStatement;
+        Assert.AreEqual("accounts", update.Target.ToSql());
+        Assert.AreEqual("balance = balance + 10", update.Set.ToSql());
+        Assert.IsNotNull(update.Output);
+        Assert.AreEqual("inserted.balance, deleted.balance", update.Output!.ToSql());
+        Assert.IsNotNull(update.From);
+        Assert.AreEqual("accounts", update.From!.ToSql());
+        Assert.IsNotNull(update.Where);
+        Assert.AreEqual("id = @id", update.Where!.ToSql());
+        Assert.AreEqual("UPDATE accounts SET balance = balance + 10 OUTPUT inserted.balance, deleted.balance FROM accounts WHERE id = @id", query.ToSql());
+    }
+
+    [TestMethod]
     public void ParseDeleteWithUsing()
     {
         const string sql = @"DELETE FROM sessions s
@@ -109,6 +144,23 @@ RETURNING s.id;";
         Assert.IsNotNull(delete.Returning);
         Assert.AreEqual("s.id", delete.Returning!.ToSql());
         Assert.AreEqual("DELETE FROM sessions s USING users u WHERE u.id = s.user_id RETURNING s.id", query.ToSql());
+    }
+
+    [TestMethod]
+    public void ParseDeleteWithOutputClause()
+    {
+        const string sql = "DELETE FROM sessions OUTPUT deleted.id WHERE expires_at < GETDATE();";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
+
+        var delete = (SqlDeleteStatement)query.RootStatement;
+        Assert.IsNull(delete.Target);
+        Assert.AreEqual("sessions", delete.From.ToSql());
+        Assert.IsNotNull(delete.Output);
+        Assert.AreEqual("deleted.id", delete.Output!.ToSql());
+        Assert.IsNotNull(delete.Where);
+        Assert.AreEqual("expires_at < GETDATE()", delete.Where!.ToSql());
+        Assert.AreEqual("DELETE FROM sessions OUTPUT deleted.id WHERE expires_at < GETDATE()", query.ToSql());
     }
 
     [TestMethod]
