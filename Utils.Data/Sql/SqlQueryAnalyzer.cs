@@ -519,6 +519,7 @@ public sealed class SqlSelectStatement : SqlStatement
 public sealed class SqlInsertStatement : SqlStatement
 {
     private SqlSegment? values;
+    private SqlSegment? output;
     private SqlSegment? returning;
 
     /// <summary>
@@ -527,14 +528,16 @@ public sealed class SqlInsertStatement : SqlStatement
     /// <param name="target">The target segment identifying the destination of the insert.</param>
     /// <param name="values">The VALUES segment when the insert uses literal values.</param>
     /// <param name="sourceQuery">The statement used as data source when the insert uses a query.</param>
+    /// <param name="output">The OUTPUT segment if present.</param>
     /// <param name="returning">The RETURNING segment if present.</param>
     /// <param name="withClause">Optional CTE definitions.</param>
-    public SqlInsertStatement(SqlSegment target, SqlSegment? values, SqlStatement? sourceQuery, SqlSegment? returning, WithClause? withClause)
-        : base(BuildSegments(target, values, returning), withClause)
+    public SqlInsertStatement(SqlSegment target, SqlSegment? values, SqlStatement? sourceQuery, SqlSegment? output, SqlSegment? returning, WithClause? withClause)
+        : base(BuildSegments(target, values, output, returning), withClause)
     {
         Target = target ?? throw new ArgumentNullException(nameof(target));
         this.values = values;
         SourceQuery = sourceQuery;
+        this.output = output;
         this.returning = returning;
     }
 
@@ -552,6 +555,11 @@ public sealed class SqlInsertStatement : SqlStatement
     /// Gets the source statement when the insert pulls data from a query.
     /// </summary>
     public SqlStatement? SourceQuery { get; }
+
+    /// <summary>
+    /// Gets the OUTPUT segment when present.
+    /// </summary>
+    public SqlSegment? Output => output;
 
     /// <summary>
     /// Gets the RETURNING segment when present.
@@ -588,6 +596,15 @@ public sealed class SqlInsertStatement : SqlStatement
         return EnsureOptionalSegment(ref returning, "Returning");
     }
 
+    /// <summary>
+    /// Ensures an OUTPUT segment exists and returns it.
+    /// </summary>
+    /// <returns>The existing or newly created OUTPUT segment.</returns>
+    public SqlSegment EnsureOutputSegment()
+    {
+        return EnsureOptionalSegment(ref output, "Output");
+    }
+
     /// <inheritdoc />
     protected override IEnumerable<SqlStatement> GetChildStatements()
     {
@@ -615,6 +632,12 @@ public sealed class SqlInsertStatement : SqlStatement
         builder.Append("INSERT INTO ");
         builder.Append(Target.ToSql());
 
+        if (Output != null)
+        {
+            builder.Append(" OUTPUT ");
+            builder.Append(Output.ToSql());
+        }
+
         if (Values != null)
         {
             builder.Append(" VALUES ");
@@ -635,12 +658,17 @@ public sealed class SqlInsertStatement : SqlStatement
         return builder.ToString();
     }
 
-    private static IEnumerable<SqlSegment> BuildSegments(SqlSegment target, SqlSegment? values, SqlSegment? returning)
+    private static IEnumerable<SqlSegment> BuildSegments(SqlSegment target, SqlSegment? values, SqlSegment? output, SqlSegment? returning)
     {
         var segments = new List<SqlSegment>();
         if (target != null)
         {
             segments.Add(target);
+        }
+
+        if (output != null)
+        {
+            segments.Add(output);
         }
 
         if (values != null)
@@ -681,6 +709,7 @@ public sealed class SqlUpdateStatement : SqlStatement
 {
     private SqlSegment? from;
     private SqlSegment? where;
+    private SqlSegment? output;
     private SqlSegment? returning;
 
     /// <summary>
@@ -690,15 +719,17 @@ public sealed class SqlUpdateStatement : SqlStatement
     /// <param name="set">The SET segment.</param>
     /// <param name="from">The FROM segment when joins are used.</param>
     /// <param name="where">The WHERE segment.</param>
+    /// <param name="output">The OUTPUT segment.</param>
     /// <param name="returning">The RETURNING segment.</param>
     /// <param name="withClause">Optional CTE definitions.</param>
-    public SqlUpdateStatement(SqlSegment target, SqlSegment set, SqlSegment? from, SqlSegment? where, SqlSegment? returning, WithClause? withClause)
-        : base(new[] { target, set, from, where, returning }.Where(s => s != null)!.Cast<SqlSegment>(), withClause)
+    public SqlUpdateStatement(SqlSegment target, SqlSegment set, SqlSegment? from, SqlSegment? where, SqlSegment? output, SqlSegment? returning, WithClause? withClause)
+        : base(new[] { target, set, from, where, output, returning }.Where(s => s != null)!.Cast<SqlSegment>(), withClause)
     {
         Target = target ?? throw new ArgumentNullException(nameof(target));
         Set = set ?? throw new ArgumentNullException(nameof(set));
         this.from = from;
         this.where = where;
+        this.output = output;
         this.returning = returning;
     }
 
@@ -721,6 +752,11 @@ public sealed class SqlUpdateStatement : SqlStatement
     /// Gets the WHERE segment when present.
     /// </summary>
     public SqlSegment? Where => where;
+
+    /// <summary>
+    /// Gets the OUTPUT segment when present.
+    /// </summary>
+    public SqlSegment? Output => output;
 
     /// <summary>
     /// Gets the RETURNING segment when present.
@@ -746,6 +782,15 @@ public sealed class SqlUpdateStatement : SqlStatement
     }
 
     /// <summary>
+    /// Ensures the OUTPUT segment exists and returns it.
+    /// </summary>
+    /// <returns>The existing or newly created OUTPUT segment.</returns>
+    public SqlSegment EnsureOutputSegment()
+    {
+        return EnsureOptionalSegment(ref output, "Output");
+    }
+
+    /// <summary>
     /// Ensures the RETURNING segment exists and returns it.
     /// </summary>
     /// <returns>The existing or newly created RETURNING segment.</returns>
@@ -768,6 +813,12 @@ public sealed class SqlUpdateStatement : SqlStatement
         builder.Append(Target.ToSql());
         builder.Append(" SET ");
         builder.Append(Set.ToSql());
+
+        if (Output != null)
+        {
+            builder.Append(" OUTPUT ");
+            builder.Append(Output.ToSql());
+        }
 
         if (From != null)
         {
@@ -816,6 +867,7 @@ public sealed class SqlDeleteStatement : SqlStatement
     private SqlSegment? target;
     private SqlSegment? usingSegment;
     private SqlSegment? where;
+    private SqlSegment? output;
     private SqlSegment? returning;
 
     /// <summary>
@@ -825,15 +877,17 @@ public sealed class SqlDeleteStatement : SqlStatement
     /// <param name="from">The FROM segment.</param>
     /// <param name="using">The USING segment when supported by the dialect.</param>
     /// <param name="where">The WHERE segment.</param>
+    /// <param name="output">The OUTPUT segment.</param>
     /// <param name="returning">The RETURNING segment.</param>
     /// <param name="withClause">Optional CTE definitions.</param>
-    public SqlDeleteStatement(SqlSegment? target, SqlSegment from, SqlSegment? @using, SqlSegment? where, SqlSegment? returning, WithClause? withClause)
-        : base(new[] { target, from, @using, where, returning }.Where(s => s != null)!.Cast<SqlSegment>(), withClause)
+    public SqlDeleteStatement(SqlSegment? target, SqlSegment from, SqlSegment? @using, SqlSegment? where, SqlSegment? output, SqlSegment? returning, WithClause? withClause)
+        : base(new[] { target, from, @using, where, output, returning }.Where(s => s != null)!.Cast<SqlSegment>(), withClause)
     {
         this.target = target;
         From = from ?? throw new ArgumentNullException(nameof(from));
         usingSegment = @using;
         this.where = where;
+        this.output = output;
         this.returning = returning;
     }
 
@@ -856,6 +910,11 @@ public sealed class SqlDeleteStatement : SqlStatement
     /// Gets the WHERE segment when present.
     /// </summary>
     public SqlSegment? Where => where;
+
+    /// <summary>
+    /// Gets the OUTPUT segment when present.
+    /// </summary>
+    public SqlSegment? Output => output;
 
     /// <summary>
     /// Gets the RETURNING segment when present.
@@ -887,6 +946,15 @@ public sealed class SqlDeleteStatement : SqlStatement
     public SqlSegment EnsureWhereSegment()
     {
         return EnsureOptionalSegment(ref where, "Where");
+    }
+
+    /// <summary>
+    /// Ensures the OUTPUT segment exists and returns it.
+    /// </summary>
+    /// <returns>The existing or newly created OUTPUT segment.</returns>
+    public SqlSegment EnsureOutputSegment()
+    {
+        return EnsureOptionalSegment(ref output, "Output");
     }
 
     /// <summary>
@@ -922,6 +990,12 @@ public sealed class SqlDeleteStatement : SqlStatement
         {
             builder.Append(" USING ");
             builder.Append(Using.ToSql());
+        }
+
+        if (Output != null)
+        {
+            builder.Append(" OUTPUT ");
+            builder.Append(Output.ToSql());
         }
 
         if (Where != null)
@@ -1328,6 +1402,7 @@ internal static class SqlStringFormatter
         "OUTER",
         "ON",
         "USING",
+        "OUTPUT",
         "RETURNING",
         "UPDATE",
         "INSERT",

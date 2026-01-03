@@ -219,7 +219,7 @@ internal sealed class SqlParser
         int returningIndex = FindClauseIndex("RETURNING");
         while (!IsAtEnd)
         {
-            if (CheckKeyword("VALUES") || CheckKeyword("SELECT") || CheckKeyword("WITH") || CheckKeyword("RETURNING"))
+            if (CheckKeyword("VALUES") || CheckKeyword("SELECT") || CheckKeyword("WITH") || CheckKeyword("RETURNING") || CheckKeyword("OUTPUT"))
             {
                 break;
             }
@@ -235,7 +235,14 @@ internal sealed class SqlParser
         var targetSegment = BuildSegment("Target", targetTokens);
         SqlSegment? valuesSegment = null;
         SqlStatement? sourceQuery = null;
+        SqlSegment? outputSegment = null;
         SqlSegment? returningSegment = null;
+
+        if (TryConsumeKeyword("OUTPUT"))
+        {
+            var outputTokens = ReadSectionTokens(ClauseStart.Values, ClauseStart.Select, ClauseStart.Returning, ClauseStart.StatementEnd);
+            outputSegment = BuildSegment("Output", outputTokens);
+        }
 
         if (CheckKeyword("VALUES"))
         {
@@ -270,7 +277,7 @@ internal sealed class SqlParser
             returningSegment = BuildSegment("Returning", returningTokens);
         }
 
-        return new SqlInsertStatement(targetSegment, valuesSegment, sourceQuery, returningSegment, withClause);
+        return new SqlInsertStatement(targetSegment, valuesSegment, sourceQuery, outputSegment, returningSegment, withClause);
     }
 
     private SqlUpdateStatement ParseUpdate(WithClause? withClause)
@@ -284,12 +291,19 @@ internal sealed class SqlParser
 
         var targetSegment = BuildSegment("Target", targetTokens);
         ExpectKeyword("SET");
-        var setTokens = ReadSectionTokens(ClauseStart.From, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
+        var setTokens = ReadSectionTokens(ClauseStart.Output, ClauseStart.From, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
         var setSegment = BuildSegment("Set", setTokens);
 
         SqlSegment? fromSegment = null;
         SqlSegment? whereSegment = null;
+        SqlSegment? outputSegment = null;
         SqlSegment? returningSegment = null;
+
+        if (TryConsumeKeyword("OUTPUT"))
+        {
+            var outputTokens = ReadSectionTokens(ClauseStart.From, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
+            outputSegment = BuildSegment("Output", outputTokens);
+        }
 
         if (TryConsumeKeyword("FROM"))
         {
@@ -309,7 +323,7 @@ internal sealed class SqlParser
             returningSegment = BuildSegment("Returning", returningTokens);
         }
 
-        return new SqlUpdateStatement(targetSegment, setSegment, fromSegment, whereSegment, returningSegment, withClause);
+        return new SqlUpdateStatement(targetSegment, setSegment, fromSegment, whereSegment, outputSegment, returningSegment, withClause);
     }
 
     private SqlDeleteStatement ParseDelete(WithClause? withClause)
@@ -328,12 +342,19 @@ internal sealed class SqlParser
         }
 
         ExpectKeyword("FROM");
-        var fromTokens = ReadSectionTokens(ClauseStart.Using, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
+        var fromTokens = ReadSectionTokens(ClauseStart.Output, ClauseStart.Using, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
         var fromSegment = BuildSegment("From", fromTokens);
 
         SqlSegment? usingSegment = null;
         SqlSegment? whereSegment = null;
+        SqlSegment? outputSegment = null;
         SqlSegment? returningSegment = null;
+
+        if (TryConsumeKeyword("OUTPUT"))
+        {
+            var outputTokens = ReadSectionTokens(ClauseStart.Using, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
+            outputSegment = BuildSegment("Output", outputTokens);
+        }
 
         if (TryConsumeKeyword("USING"))
         {
@@ -353,7 +374,7 @@ internal sealed class SqlParser
             returningSegment = BuildSegment("Returning", returningTokens);
         }
 
-        return new SqlDeleteStatement(targetSegment, fromSegment, usingSegment, whereSegment, returningSegment, withClause);
+        return new SqlDeleteStatement(targetSegment, fromSegment, usingSegment, whereSegment, outputSegment, returningSegment, withClause);
     }
 
     private SqlSegment BuildSegment(string name, List<SqlToken> tokens)
@@ -542,7 +563,19 @@ internal sealed class SqlParser
             {
                 return true;
             }
+            else if (terminator == ClauseStart.Output && CheckKeyword("OUTPUT"))
+            {
+                return true;
+            }
             else if (terminator == ClauseStart.Returning && CheckKeyword("RETURNING"))
+            {
+                return true;
+            }
+            else if (terminator == ClauseStart.Values && CheckKeyword("VALUES"))
+            {
+                return true;
+            }
+            else if (terminator == ClauseStart.Select && (CheckKeyword("SELECT") || CheckKeyword("WITH")))
             {
                 return true;
             }
@@ -730,6 +763,9 @@ internal enum ClauseStart
     OrderBy,
     Limit,
     Offset,
+    Output,
+    Values,
+    Select,
     Returning,
     Using,
     SetOperator,
@@ -775,6 +811,7 @@ internal sealed class SqlTokenizer
         "INTO",
         "VALUES",
         "RETURNING",
+        "OUTPUT",
         "UPDATE",
         "SET",
         "DELETE",
