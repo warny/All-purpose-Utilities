@@ -239,6 +239,57 @@ public abstract class SqlStatement
 }
 
 /// <summary>
+/// Provides a contract for binding a parsed segment name to a typed SQL statement part.
+/// </summary>
+internal interface IPartReferenceBinding
+{
+    /// <summary>
+    /// Attempts to bind the provided segment to a typed part when the binding name matches.
+    /// </summary>
+    /// <param name="name">The name of the segment that was created.</param>
+    /// <param name="segment">The segment instance associated with the name.</param>
+    /// <returns><c>true</c> when the binding matched the name; otherwise, <c>false</c>.</returns>
+    bool TryBind(string name, SqlSegment segment);
+}
+
+/// <summary>
+/// Associates a part reader-provided name and factory with a callback that stores the typed part.
+/// </summary>
+/// <typeparam name="TPart">The part type produced by the binding.</typeparam>
+internal sealed class PartReferenceBinding<TPart> : IPartReferenceBinding
+    where TPart : SqlStatementPart
+{
+    private readonly string partName;
+    private readonly Func<SqlSegment, TPart> partFactory;
+    private readonly Action<TPart> onBind;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
+    /// </summary>
+    /// <param name="partName">The name of the segment produced by the associated part reader.</param>
+    /// <param name="partFactory">Factory used to create the typed part.</param>
+    /// <param name="onBind">Callback invoked when the binding is matched.</param>
+    public PartReferenceBinding(string partName, Func<SqlSegment, TPart> partFactory, Action<TPart> onBind)
+    {
+        this.partName = partName ?? throw new ArgumentNullException(nameof(partName));
+        this.partFactory = partFactory ?? throw new ArgumentNullException(nameof(partFactory));
+        this.onBind = onBind ?? throw new ArgumentNullException(nameof(onBind));
+    }
+
+    /// <inheritdoc />
+    public bool TryBind(string name, SqlSegment segment)
+    {
+        if (!string.Equals(name, partName, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        onBind(partFactory(segment ?? throw new ArgumentNullException(nameof(segment))));
+        return true;
+    }
+}
+
+/// <summary>
 /// Represents a parsed SELECT statement.
 /// </summary>
 public sealed class SqlSelectStatement : SqlStatement
@@ -251,6 +302,16 @@ public sealed class SqlSelectStatement : SqlStatement
     private SqlSegment? limit;
     private SqlSegment? offset;
     private SqlSegment? tail;
+    private readonly SelectPart selectPart;
+    private readonly IReadOnlyList<IPartReferenceBinding> partReferenceBindings;
+    private FromPart? fromPart;
+    private WherePart? wherePart;
+    private GroupByPart? groupByPart;
+    private HavingPart? havingPart;
+    private OrderByPart? orderByPart;
+    private LimitPart? limitPart;
+    private OffsetPart? offsetPart;
+    private TailPart? tailPart;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlSelectStatement"/> class.
@@ -301,6 +362,26 @@ public sealed class SqlSelectStatement : SqlStatement
         this.offset = offset;
         this.tail = tail;
         IsDistinct = isDistinct;
+        selectPart = new SelectPart(Select);
+        fromPart = from == null ? null : new FromPart(from);
+        wherePart = where == null ? null : new WherePart(where);
+        groupByPart = groupBy == null ? null : new GroupByPart(groupBy);
+        havingPart = having == null ? null : new HavingPart(having);
+        orderByPart = orderBy == null ? null : new OrderByPart(orderBy);
+        limitPart = limit == null ? null : new LimitPart(limit);
+        offsetPart = offset == null ? null : new OffsetPart(offset);
+        tailPart = tail == null ? null : new TailPart(tail);
+        partReferenceBindings = new IPartReferenceBinding[]
+        {
+            new PartReferenceBinding<FromPart>(FromPartReader.PartName, FromPartReader.PartFactory, part => fromPart ??= part),
+            new PartReferenceBinding<WherePart>(WherePartReader.PartName, WherePartReader.PartFactory, part => wherePart ??= part),
+            new PartReferenceBinding<GroupByPart>(GroupByPartReader.PartName, GroupByPartReader.PartFactory, part => groupByPart ??= part),
+            new PartReferenceBinding<HavingPart>(HavingPartReader.PartName, HavingPartReader.PartFactory, part => havingPart ??= part),
+            new PartReferenceBinding<OrderByPart>(OrderByPartReader.PartName, OrderByPartReader.PartFactory, part => orderByPart ??= part),
+            new PartReferenceBinding<LimitPart>(LimitPartReader.PartName, LimitPartReader.PartFactory, part => limitPart ??= part),
+            new PartReferenceBinding<OffsetPart>(OffsetPartReader.PartName, OffsetPartReader.PartFactory, part => offsetPart ??= part),
+            new PartReferenceBinding<TailPart>(SetOperatorPartReader.PartName, SetOperatorPartReader.PartFactory, part => tailPart ??= part),
+        };
     }
 
     /// <summary>
@@ -309,9 +390,19 @@ public sealed class SqlSelectStatement : SqlStatement
     public SqlSegment Select { get; }
 
     /// <summary>
+    /// Gets the SELECT clause represented as a typed part.
+    /// </summary>
+    public SelectPart SelectPart => selectPart;
+
+    /// <summary>
     /// Gets the FROM segment describing the data sources.
     /// </summary>
     public SqlSegment? From => from;
+
+    /// <summary>
+    /// Gets the FROM clause represented as a typed part.
+    /// </summary>
+    public FromPart? FromPart => fromPart;
 
     /// <summary>
     /// Gets the WHERE segment containing the filtering conditions.
@@ -319,9 +410,19 @@ public sealed class SqlSelectStatement : SqlStatement
     public SqlSegment? Where => where;
 
     /// <summary>
+    /// Gets the WHERE clause represented as a typed part.
+    /// </summary>
+    public WherePart? WherePart => wherePart;
+
+    /// <summary>
     /// Gets the GROUP BY segment.
     /// </summary>
     public SqlSegment? GroupBy => groupBy;
+
+    /// <summary>
+    /// Gets the GROUP BY clause represented as a typed part.
+    /// </summary>
+    public GroupByPart? GroupByPart => groupByPart;
 
     /// <summary>
     /// Gets the HAVING segment.
@@ -329,9 +430,19 @@ public sealed class SqlSelectStatement : SqlStatement
     public SqlSegment? Having => having;
 
     /// <summary>
+    /// Gets the HAVING clause represented as a typed part.
+    /// </summary>
+    public HavingPart? HavingPart => havingPart;
+
+    /// <summary>
     /// Gets the ORDER BY segment.
     /// </summary>
     public SqlSegment? OrderBy => orderBy;
+
+    /// <summary>
+    /// Gets the ORDER BY clause represented as a typed part.
+    /// </summary>
+    public OrderByPart? OrderByPart => orderByPart;
 
     /// <summary>
     /// Gets the LIMIT segment.
@@ -339,14 +450,29 @@ public sealed class SqlSelectStatement : SqlStatement
     public SqlSegment? Limit => limit;
 
     /// <summary>
+    /// Gets the LIMIT clause represented as a typed part.
+    /// </summary>
+    public LimitPart? LimitPart => limitPart;
+
+    /// <summary>
     /// Gets the OFFSET segment.
     /// </summary>
     public SqlSegment? Offset => offset;
 
     /// <summary>
+    /// Gets the OFFSET clause represented as a typed part.
+    /// </summary>
+    public OffsetPart? OffsetPart => offsetPart;
+
+    /// <summary>
     /// Gets any trailing segments such as UNION clauses.
     /// </summary>
     public SqlSegment? Tail => tail;
+
+    /// <summary>
+    /// Gets the trailing set operator clause represented as a typed part.
+    /// </summary>
+    public TailPart? TailPart => tailPart;
 
     /// <summary>
     /// Gets a value indicating whether the SELECT statement includes DISTINCT.
@@ -507,9 +633,26 @@ public sealed class SqlSelectStatement : SqlStatement
         {
             segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
+            UpdatePartReference(name, segment);
         }
 
         return segment;
+    }
+
+    /// <summary>
+    /// Ensures that part references remain aligned with their segments.
+    /// </summary>
+    /// <param name="name">Name of the segment being created.</param>
+    /// <param name="segment">The segment instance that was created.</param>
+    private void UpdatePartReference(string name, SqlSegment segment)
+    {
+        foreach (var binding in partReferenceBindings)
+        {
+            if (binding.TryBind(name, segment))
+            {
+                break;
+            }
+        }
     }
 }
 
@@ -521,6 +664,9 @@ public sealed class SqlInsertStatement : SqlStatement
     private SqlSegment? values;
     private SqlSegment? output;
     private SqlSegment? returning;
+    private readonly InsertPart insertPart;
+    private readonly IntoPart intoPart;
+    private ValuesPart? valuesPart;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlInsertStatement"/> class.
@@ -539,6 +685,9 @@ public sealed class SqlInsertStatement : SqlStatement
         SourceQuery = sourceQuery;
         this.output = output;
         this.returning = returning;
+        insertPart = new InsertPart(Target);
+        intoPart = new IntoPart(Target);
+        valuesPart = values == null ? null : new ValuesPart(values);
     }
 
     /// <summary>
@@ -547,9 +696,24 @@ public sealed class SqlInsertStatement : SqlStatement
     public SqlSegment Target { get; }
 
     /// <summary>
+    /// Gets the INSERT clause represented as a typed part.
+    /// </summary>
+    public InsertPart InsertPart => insertPart;
+
+    /// <summary>
+    /// Gets the INTO clause represented as a typed part.
+    /// </summary>
+    public IntoPart IntoPart => intoPart;
+
+    /// <summary>
     /// Gets the VALUES segment when the statement inserts literal values.
     /// </summary>
     public SqlSegment? Values => values;
+
+    /// <summary>
+    /// Gets the VALUES clause represented as a typed part when present.
+    /// </summary>
+    public ValuesPart? ValuesPart => valuesPart;
 
     /// <summary>
     /// Gets the source statement when the insert pulls data from a query.
@@ -582,6 +746,7 @@ public sealed class SqlInsertStatement : SqlStatement
         {
             values = SqlSegment.CreateEmpty("Values", SyntaxOptions);
             AttachSegment(values);
+            valuesPart = new ValuesPart(values);
         }
 
         return values;
@@ -711,6 +876,10 @@ public sealed class SqlUpdateStatement : SqlStatement
     private SqlSegment? where;
     private SqlSegment? output;
     private SqlSegment? returning;
+    private readonly UpdatePart updatePart;
+    private readonly IReadOnlyList<IPartReferenceBinding> partReferenceBindings;
+    private FromPart? fromPart;
+    private WherePart? wherePart;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlUpdateStatement"/> class.
@@ -731,12 +900,25 @@ public sealed class SqlUpdateStatement : SqlStatement
         this.where = where;
         this.output = output;
         this.returning = returning;
+        updatePart = new UpdatePart(Target);
+        fromPart = from == null ? null : new FromPart(from);
+        wherePart = where == null ? null : new WherePart(where);
+        partReferenceBindings = new IPartReferenceBinding[]
+        {
+            new PartReferenceBinding<FromPart>(FromPartReader.PartName, FromPartReader.PartFactory, part => fromPart ??= part),
+            new PartReferenceBinding<WherePart>(WherePartReader.PartName, WherePartReader.PartFactory, part => wherePart ??= part),
+        };
     }
 
     /// <summary>
     /// Gets the target segment describing what is being updated.
     /// </summary>
     public SqlSegment Target { get; }
+
+    /// <summary>
+    /// Gets the UPDATE clause represented as a typed part.
+    /// </summary>
+    public UpdatePart UpdatePart => updatePart;
 
     /// <summary>
     /// Gets the SET segment describing the assignments.
@@ -749,9 +931,19 @@ public sealed class SqlUpdateStatement : SqlStatement
     public SqlSegment? From => from;
 
     /// <summary>
+    /// Gets the FROM clause represented as a typed part when present.
+    /// </summary>
+    public FromPart? FromPart => fromPart;
+
+    /// <summary>
     /// Gets the WHERE segment when present.
     /// </summary>
     public SqlSegment? Where => where;
+
+    /// <summary>
+    /// Gets the WHERE clause represented as a typed part when present.
+    /// </summary>
+    public WherePart? WherePart => wherePart;
 
     /// <summary>
     /// Gets the OUTPUT segment when present.
@@ -853,9 +1045,26 @@ public sealed class SqlUpdateStatement : SqlStatement
         {
             segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
+            UpdatePartReference(name, segment);
         }
 
         return segment;
+    }
+
+    /// <summary>
+    /// Updates part references to align with newly created segments.
+    /// </summary>
+    /// <param name="name">The name of the created segment.</param>
+    /// <param name="segment">The created segment.</param>
+    private void UpdatePartReference(string name, SqlSegment segment)
+    {
+        foreach (var binding in partReferenceBindings)
+        {
+            if (binding.TryBind(name, segment))
+            {
+                break;
+            }
+        }
     }
 }
 
@@ -869,6 +1078,10 @@ public sealed class SqlDeleteStatement : SqlStatement
     private SqlSegment? where;
     private SqlSegment? output;
     private SqlSegment? returning;
+    private DeletePart? deletePart;
+    private readonly FromPart fromPart;
+    private readonly IReadOnlyList<IPartReferenceBinding> partReferenceBindings;
+    private WherePart? wherePart;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlDeleteStatement"/> class.
@@ -889,6 +1102,14 @@ public sealed class SqlDeleteStatement : SqlStatement
         this.where = where;
         this.output = output;
         this.returning = returning;
+        deletePart = target == null ? null : new DeletePart(target);
+        fromPart = new FromPart(From);
+        wherePart = where == null ? null : new WherePart(where);
+        partReferenceBindings = new IPartReferenceBinding[]
+        {
+            new PartReferenceBinding<DeletePart>(DeletePartReader.PartName, DeletePartReader.PartFactory, part => deletePart ??= part),
+            new PartReferenceBinding<WherePart>(WherePartReader.PartName, WherePartReader.PartFactory, part => wherePart ??= part),
+        };
     }
 
     /// <summary>
@@ -897,9 +1118,19 @@ public sealed class SqlDeleteStatement : SqlStatement
     public SqlSegment? Target => target;
 
     /// <summary>
+    /// Gets the DELETE clause represented as a typed part when present.
+    /// </summary>
+    public DeletePart? DeletePart => deletePart;
+
+    /// <summary>
     /// Gets the FROM segment.
     /// </summary>
     public SqlSegment From { get; }
+
+    /// <summary>
+    /// Gets the FROM clause represented as a typed part.
+    /// </summary>
+    public FromPart FromPart => fromPart;
 
     /// <summary>
     /// Gets the USING segment when present.
@@ -910,6 +1141,11 @@ public sealed class SqlDeleteStatement : SqlStatement
     /// Gets the WHERE segment when present.
     /// </summary>
     public SqlSegment? Where => where;
+
+    /// <summary>
+    /// Gets the WHERE clause represented as a typed part when present.
+    /// </summary>
+    public WherePart? WherePart => wherePart;
 
     /// <summary>
     /// Gets the OUTPUT segment when present.
@@ -1025,9 +1261,26 @@ public sealed class SqlDeleteStatement : SqlStatement
         {
             segment = SqlSegment.CreateEmpty(name, SyntaxOptions);
             AttachSegment(segment);
+            UpdatePartReference(name, segment);
         }
 
         return segment;
+    }
+
+    /// <summary>
+    /// Updates typed part references when new optional segments are created.
+    /// </summary>
+    /// <param name="name">The name of the created segment.</param>
+    /// <param name="segment">The created segment.</param>
+    private void UpdatePartReference(string name, SqlSegment segment)
+    {
+        foreach (var binding in partReferenceBindings)
+        {
+            if (binding.TryBind(name, segment))
+            {
+                break;
+            }
+        }
     }
 }
 

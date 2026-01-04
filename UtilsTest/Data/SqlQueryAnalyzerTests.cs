@@ -83,6 +83,24 @@ ORDER BY c.id;";
     }
 
     [TestMethod]
+    public void ParseInsertWithCteAsSource()
+    {
+        const string sql = @"WITH source_data AS (SELECT 1 AS id)
+INSERT INTO destination(id)
+SELECT id FROM source_data;";
+
+        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
+
+        var insert = (SqlInsertStatement)query.RootStatement;
+        Assert.IsNotNull(insert.WithClause);
+        Assert.AreEqual(1, insert.WithClause!.Definitions.Count);
+        Assert.AreEqual("source_data", insert.WithClause.Definitions[0].Name);
+        Assert.IsNull(insert.Values);
+        Assert.IsNotNull(insert.SourceQuery);
+        Assert.AreEqual("WITH source_data AS (SELECT 1 AS id) INSERT INTO destination(id) SELECT id FROM source_data", query.ToSql());
+    }
+
+    [TestMethod]
     public void ParseUpdateWithSubquery()
     {
         const string sql = @"UPDATE accounts a
