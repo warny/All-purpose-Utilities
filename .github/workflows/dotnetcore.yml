@@ -3,8 +3,10 @@ name: Utils
 on:
     push:
         branches:
-            - master
-            - release
+            - '**'
+    pull_request:
+        branches:
+            - '**'
 
 jobs:
     build:
