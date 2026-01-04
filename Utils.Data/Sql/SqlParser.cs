@@ -14,35 +14,47 @@ internal sealed class SqlParser
     private static readonly IReadOnlyDictionary<string, Func<SqlParser, WithClause?, SqlStatement>> StatementParsers =
         new Dictionary<string, Func<SqlParser, WithClause?, SqlStatement>>(StringComparer.OrdinalIgnoreCase)
         {
-            { "SELECT", (parser, withClause) => parser.ParseSelect(withClause) },
-            { "INSERT", (parser, withClause) => parser.ParseInsert(withClause) },
-            { "UPDATE", (parser, withClause) => parser.ParseUpdate(withClause) },
-            { "DELETE", (parser, withClause) => parser.ParseDelete(withClause) },
+            { "SELECT", (parser, withClause) => new SelectStatementParser(parser).Parse(withClause) },
+            { "INSERT", (parser, withClause) => new InsertStatementParser(parser).Parse(withClause) },
+            { "UPDATE", (parser, withClause) => new UpdateStatementParser(parser).Parse(withClause) },
+            { "DELETE", (parser, withClause) => new DeleteStatementParser(parser).Parse(withClause) },
         }.ToImmutableDictionary();
-
-    private static readonly IReadOnlyList<(string Keyword, ClauseStart Clause, bool IncludeKeyword)> Segments =
-        new List<(string, ClauseStart, bool)>
-        {
-            ("FROM", ClauseStart.From, false),
-            ("WHERE", ClauseStart.Where, false),
-            ("GROUP BY", ClauseStart.GroupBy, false),
-            ("HAVING", ClauseStart.Having, false),
-            ("ORDER BY", ClauseStart.OrderBy, false),
-            ("LIMIT", ClauseStart.Limit, false),
-            ("OFFSET", ClauseStart.Offset, false),
-            ("RETURNING", ClauseStart.Returning, false),
-            ("USING", ClauseStart.Using, false),
-            ("UNION", ClauseStart.SetOperator, true),
-            ("EXCEPT", ClauseStart.SetOperator, true),
-            ("INTERSECT", ClauseStart.SetOperator, true),
-        }.ToImmutableList();
 
     private readonly List<SqlToken> tokens;
     private int position;
 
     private readonly SqlSyntaxOptions syntaxOptions;
 
-    private SqlParser(IEnumerable<SqlToken> tokens, SqlSyntaxOptions syntaxOptions)
+    /// <summary>
+    /// Gets the tokens being parsed.
+    /// </summary>
+    internal List<SqlToken> Tokens => tokens;
+
+    /// <summary>
+    /// Gets or sets the current parsing position within <see cref="Tokens"/>.
+    /// </summary>
+    internal int Position
+    {
+        get => position;
+        set => position = value;
+    }
+
+    /// <summary>
+    /// Gets the syntax options currently applied to parsing.
+    /// </summary>
+    internal SqlSyntaxOptions SyntaxOptions => syntaxOptions;
+
+    /// <summary>
+    /// Gets a value indicating whether the parser has consumed all tokens.
+    /// </summary>
+    internal bool IsAtEnd => position >= tokens.Count;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SqlParser"/> class with pre-tokenized input.
+    /// </summary>
+    /// <param name="tokens">The tokens representing the SQL statement.</param>
+    /// <param name="syntaxOptions">The syntax options guiding token interpretation.</param>
+    internal SqlParser(IEnumerable<SqlToken> tokens, SqlSyntaxOptions syntaxOptions)
     {
         this.syntaxOptions = syntaxOptions ?? throw new ArgumentNullException(nameof(syntaxOptions));
         this.tokens = tokens.ToList();
@@ -150,234 +162,13 @@ internal sealed class SqlParser
     /// </summary>
     /// <param name="withClause">The WITH clause associated with the SELECT, if any.</param>
     /// <returns>The parsed <see cref="SqlSelectStatement"/> instance.</returns>
-    private SqlSelectStatement ParseSelect(WithClause? withClause)
-    {
-        ExpectKeyword("SELECT");
-        bool isDistinct = TryConsumeKeyword("DISTINCT");
-        var selectTokens = ReadSectionTokens(ClauseStart.From, ClauseStart.Where, ClauseStart.GroupBy, ClauseStart.Having, ClauseStart.OrderBy, ClauseStart.Limit, ClauseStart.Offset, ClauseStart.Returning, ClauseStart.SetOperator, ClauseStart.StatementEnd);
-        var selectSegment = BuildSegment("Select", selectTokens);
-
-        ClauseStart[] clauses =
-        [
-            ClauseStart.From,
-            ClauseStart.Where,
-            ClauseStart.GroupBy,
-            ClauseStart.Having,
-            ClauseStart.OrderBy,
-            ClauseStart.Limit,
-            ClauseStart.Offset,
-            ClauseStart.Returning,
-            ClauseStart.Using,
-            ClauseStart.SetOperator,
-            ClauseStart.StatementEnd,
-        ];
-
-        Dictionary<ClauseStart, SqlSegment?> segments = new Dictionary<ClauseStart, SqlSegment?>();
-
-        foreach (var segment in Segments)
-        {
-            var tokensAfter = clauses.SkipWhile(c => c != segment.Clause).Skip(1).ToArray();
-            if (TryConsumeSegmentKeyword(segment.Keyword, out var consumedTokens))
-            {
-                var segmentTokens = ReadSectionTokens(tokensAfter);
-                if (segment.IncludeKeyword)
-                {
-                    segmentTokens.InsertRange(0, consumedTokens);
-                }
-
-                segments[segment.Clause] = BuildSegment(segment.Clause.ToString(), segmentTokens);
-            }
-            else if (!segments.ContainsKey(segment.Clause))
-            {
-                segments[segment.Clause] = null;
-            }
-        }
-
-        return new SqlSelectStatement(
-            selectSegment,
-            segments[ClauseStart.From],
-            segments[ClauseStart.Where],
-            segments[ClauseStart.GroupBy],
-            segments[ClauseStart.Having],
-            segments[ClauseStart.OrderBy],
-            segments[ClauseStart.Limit],
-            segments[ClauseStart.Offset],
-            segments[ClauseStart.SetOperator],
-            withClause,
-            isDistinct);
-    }
-
-    private SqlInsertStatement ParseInsert(WithClause? withClause)
-    {
-        ExpectKeyword("INSERT");
-        if (TryConsumeKeyword("INTO") == false)
-        {
-            ExpectKeyword("INTO");
-        }
-
-        var targetTokens = new List<SqlToken>();
-        int returningIndex = FindClauseIndex("RETURNING");
-        while (!IsAtEnd)
-        {
-            if (CheckKeyword("VALUES") || CheckKeyword("SELECT") || CheckKeyword("WITH") || CheckKeyword("RETURNING") || CheckKeyword("OUTPUT"))
-            {
-                break;
-            }
-
-            if (Peek().Text == ";")
-            {
-                break;
-            }
-
-            targetTokens.Add(Read());
-        }
-
-        var targetSegment = BuildSegment("Target", targetTokens);
-        SqlSegment? valuesSegment = null;
-        SqlStatement? sourceQuery = null;
-        SqlSegment? outputSegment = null;
-        SqlSegment? returningSegment = null;
-
-        if (TryConsumeKeyword("OUTPUT"))
-        {
-            var outputTokens = ReadSectionTokens(ClauseStart.Values, ClauseStart.Select, ClauseStart.Returning, ClauseStart.StatementEnd);
-            outputSegment = BuildSegment("Output", outputTokens);
-        }
-
-        if (CheckKeyword("VALUES"))
-        {
-            ExpectKeyword("VALUES");
-            var valuesTokens = new List<SqlToken>();
-            while (!IsAtEnd && (returningIndex < 0 || position < returningIndex))
-            {
-                if (Peek().Text == ";")
-                {
-                    break;
-                }
-
-                valuesTokens.Add(Read());
-            }
-
-            valuesSegment = BuildSegment("Values", valuesTokens);
-        }
-        else if (CheckKeyword("SELECT") || CheckKeyword("WITH"))
-        {
-            int end = returningIndex >= 0 ? returningIndex : tokens.Count;
-            var sourceTokens = tokens.GetRange(position, end - position);
-            var subParser = new SqlParser(sourceTokens, syntaxOptions);
-            sourceQuery = subParser.ParseStatementWithOptionalCte();
-            subParser.ConsumeOptionalTerminator();
-            subParser.EnsureEndOfInput();
-            position = end;
-        }
-
-        if (TryConsumeKeyword("RETURNING"))
-        {
-            var returningTokens = ReadSectionTokens(ClauseStart.StatementEnd);
-            returningSegment = BuildSegment("Returning", returningTokens);
-        }
-
-        return new SqlInsertStatement(targetSegment, valuesSegment, sourceQuery, outputSegment, returningSegment, withClause);
-    }
-
-    private SqlUpdateStatement ParseUpdate(WithClause? withClause)
-    {
-        ExpectKeyword("UPDATE");
-        var targetTokens = new List<SqlToken>();
-        while (!IsAtEnd && !CheckKeyword("SET") && Peek().Text != ";")
-        {
-            targetTokens.Add(Read());
-        }
-
-        var targetSegment = BuildSegment("Target", targetTokens);
-        ExpectKeyword("SET");
-        var setTokens = ReadSectionTokens(ClauseStart.Output, ClauseStart.From, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
-        var setSegment = BuildSegment("Set", setTokens);
-
-        SqlSegment? fromSegment = null;
-        SqlSegment? whereSegment = null;
-        SqlSegment? outputSegment = null;
-        SqlSegment? returningSegment = null;
-
-        if (TryConsumeKeyword("OUTPUT"))
-        {
-            var outputTokens = ReadSectionTokens(ClauseStart.From, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
-            outputSegment = BuildSegment("Output", outputTokens);
-        }
-
-        if (TryConsumeKeyword("FROM"))
-        {
-            var fromTokens = ReadSectionTokens(ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
-            fromSegment = BuildSegment("From", fromTokens);
-        }
-
-        if (TryConsumeKeyword("WHERE"))
-        {
-            var whereTokens = ReadSectionTokens(ClauseStart.Returning, ClauseStart.StatementEnd);
-            whereSegment = BuildSegment("Where", whereTokens);
-        }
-
-        if (TryConsumeKeyword("RETURNING"))
-        {
-            var returningTokens = ReadSectionTokens(ClauseStart.StatementEnd);
-            returningSegment = BuildSegment("Returning", returningTokens);
-        }
-
-        return new SqlUpdateStatement(targetSegment, setSegment, fromSegment, whereSegment, outputSegment, returningSegment, withClause);
-    }
-
-    private SqlDeleteStatement ParseDelete(WithClause? withClause)
-    {
-        ExpectKeyword("DELETE");
-        SqlSegment? targetSegment = null;
-        if (!CheckKeyword("FROM"))
-        {
-            var targetTokens = new List<SqlToken>();
-            while (!IsAtEnd && !CheckKeyword("FROM") && Peek().Text != ";")
-            {
-                targetTokens.Add(Read());
-            }
-
-            targetSegment = BuildSegment("Target", targetTokens);
-        }
-
-        ExpectKeyword("FROM");
-        var fromTokens = ReadSectionTokens(ClauseStart.Output, ClauseStart.Using, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
-        var fromSegment = BuildSegment("From", fromTokens);
-
-        SqlSegment? usingSegment = null;
-        SqlSegment? whereSegment = null;
-        SqlSegment? outputSegment = null;
-        SqlSegment? returningSegment = null;
-
-        if (TryConsumeKeyword("OUTPUT"))
-        {
-            var outputTokens = ReadSectionTokens(ClauseStart.Using, ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
-            outputSegment = BuildSegment("Output", outputTokens);
-        }
-
-        if (TryConsumeKeyword("USING"))
-        {
-            var usingTokens = ReadSectionTokens(ClauseStart.Where, ClauseStart.Returning, ClauseStart.StatementEnd);
-            usingSegment = BuildSegment("Using", usingTokens);
-        }
-
-        if (TryConsumeKeyword("WHERE"))
-        {
-            var whereTokens = ReadSectionTokens(ClauseStart.Returning, ClauseStart.StatementEnd);
-            whereSegment = BuildSegment("Where", whereTokens);
-        }
-
-        if (TryConsumeKeyword("RETURNING"))
-        {
-            var returningTokens = ReadSectionTokens(ClauseStart.StatementEnd);
-            returningSegment = BuildSegment("Returning", returningTokens);
-        }
-
-        return new SqlDeleteStatement(targetSegment, fromSegment, usingSegment, whereSegment, outputSegment, returningSegment, withClause);
-    }
-
-    private SqlSegment BuildSegment(string name, List<SqlToken> tokens)
+    /// <summary>
+    /// Builds a <see cref="SqlSegment"/> from the provided tokens.
+    /// </summary>
+    /// <param name="name">The logical name of the segment.</param>
+    /// <param name="tokens">The tokens that compose the segment.</param>
+    /// <returns>A <see cref="SqlSegment"/> representing the parsed section.</returns>
+    internal SqlSegment BuildSegment(string name, List<SqlToken> tokens)
     {
         return new SqlSegment(name, BuildSegmentParts(tokens, syntaxOptions), syntaxOptions);
     }
@@ -488,7 +279,12 @@ internal sealed class SqlParser
         throw new SqlParseException("Unterminated parenthesis in WITH clause definition.");
     }
 
-    private List<SqlToken> ReadSectionTokens(params ClauseStart[] terminators)
+    /// <summary>
+    /// Reads tokens until one of the specified clause starts is encountered at depth zero.
+    /// </summary>
+    /// <param name="terminators">Clause boundaries that end the current section.</param>
+    /// <returns>The tokens collected for the current section.</returns>
+    internal List<SqlToken> ReadSectionTokens(params ClauseStart[] terminators)
     {
         var tokens = new List<SqlToken>();
         int depth = 0;
@@ -524,6 +320,16 @@ internal sealed class SqlParser
         return tokens;
     }
 
+    /// <summary>
+    /// Determines whether the current token marks the start of one of the specified clauses.
+    /// </summary>
+    /// <param name="terminators">Clause starts that should stop parsing.</param>
+    /// <returns><c>true</c> when the current position matches a clause start.</returns>
+    internal bool IsClauseStart(params ClauseStart[] terminators)
+    {
+        return CheckClauseStart(terminators);
+    }
+
     private bool CheckClauseStart(params ClauseStart[] terminators)
     {
         foreach (var terminator in terminators)
@@ -534,65 +340,33 @@ internal sealed class SqlParser
                 {
                     return true;
                 }
+
+                continue;
             }
-            else if (terminator == ClauseStart.Where && CheckKeyword("WHERE"))
+
+            if (!ClauseStartKeywordRegistry.TryGetClauseKeywords(terminator, out var keywordSequences))
             {
-                return true;
+                continue;
             }
-            else if (terminator == ClauseStart.From && CheckKeyword("FROM"))
+
+            foreach (var keywordSequence in keywordSequences)
             {
-                return true;
-            }
-            else if (terminator == ClauseStart.GroupBy && CheckKeywordSequence("GROUP", "BY"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Having && CheckKeyword("HAVING"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.OrderBy && CheckKeywordSequence("ORDER", "BY"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Limit && CheckKeyword("LIMIT"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Offset && CheckKeyword("OFFSET"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Output && CheckKeyword("OUTPUT"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Returning && CheckKeyword("RETURNING"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Values && CheckKeyword("VALUES"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Select && (CheckKeyword("SELECT") || CheckKeyword("WITH")))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.Using && CheckKeyword("USING"))
-            {
-                return true;
-            }
-            else if (terminator == ClauseStart.SetOperator && (CheckKeyword("UNION") || CheckKeyword("EXCEPT") || CheckKeyword("INTERSECT")))
-            {
-                return true;
+                if (CheckKeywordSequence(keywordSequence))
+                {
+                    return true;
+                }
             }
         }
 
         return false;
     }
 
-    private int FindClauseIndex(string keyword)
+    /// <summary>
+    /// Finds the index of the next keyword, ignoring nested parentheses.
+    /// </summary>
+    /// <param name="keyword">The keyword to look for.</param>
+    /// <returns>The token index if found; otherwise, -1.</returns>
+    internal int FindClauseIndex(string keyword)
     {
         int depth = 0;
         for (int i = position; i < tokens.Count; i++)
@@ -619,7 +393,13 @@ internal sealed class SqlParser
         return -1;
     }
 
-    private SqlToken ExpectKeyword(string keyword)
+    /// <summary>
+    /// Consumes the specified keyword or throws an exception when the stream does not match.
+    /// </summary>
+    /// <param name="keyword">The keyword to consume.</param>
+    /// <returns>The consumed <see cref="SqlToken"/>.</returns>
+    /// <exception cref="SqlParseException">Thrown when the expected keyword is missing.</exception>
+    internal SqlToken ExpectKeyword(string keyword)
     {
         if (IsAtEnd || !CheckKeyword(keyword))
         {
@@ -629,6 +409,11 @@ internal sealed class SqlParser
         return Read();
     }
 
+    /// <summary>
+    /// Consumes an identifier at the current position or throws when the token is not an identifier.
+    /// </summary>
+    /// <returns>The identifier text.</returns>
+    /// <exception cref="SqlParseException">Thrown when the token is not an identifier.</exception>
     private string ExpectIdentifier()
     {
         if (IsAtEnd)
@@ -646,6 +431,12 @@ internal sealed class SqlParser
         return token.Text;
     }
 
+    /// <summary>
+    /// Consumes the expected symbol or throws when a different token is found.
+    /// </summary>
+    /// <param name="symbol">The symbol to consume.</param>
+    /// <returns>The consumed token.</returns>
+    /// <exception cref="SqlParseException">Thrown when the symbol does not match.</exception>
     private SqlToken ExpectSymbol(string symbol)
     {
         if (IsAtEnd || Peek().Text != symbol)
@@ -662,7 +453,7 @@ internal sealed class SqlParser
     /// <param name="keyword">The keyword text to match.</param>
     /// <param name="consumedTokens">The tokens consumed when the keyword is matched.</param>
     /// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
-    private bool TryConsumeSegmentKeyword(string keyword, out List<SqlToken> consumedTokens)
+    internal bool TryConsumeSegmentKeyword(string keyword, out List<SqlToken> consumedTokens)
     {
         consumedTokens = new List<SqlToken>();
         if (keyword == ";")
@@ -698,7 +489,7 @@ internal sealed class SqlParser
         return false;
     }
 
-    private bool TryConsumeKeyword(string keyword)
+    internal bool TryConsumeKeyword(string keyword)
     {
         if (CheckKeyword(keyword))
         {
@@ -709,6 +500,11 @@ internal sealed class SqlParser
         return false;
     }
 
+    /// <summary>
+    /// Attempts to consume the specified symbol at the current position.
+    /// </summary>
+    /// <param name="symbol">The symbol expected.</param>
+    /// <returns><c>true</c> when the symbol was consumed; otherwise, <c>false</c>.</returns>
     private bool TryConsumeSymbol(string symbol)
     {
         if (!IsAtEnd && Peek().Text == symbol)
@@ -720,17 +516,41 @@ internal sealed class SqlParser
         return false;
     }
 
-    private bool CheckKeyword(string keyword)
+    internal bool CheckKeyword(string keyword)
     {
         return !IsAtEnd && Peek().Normalized == keyword;
     }
 
-    private bool CheckKeywordSequence(string first, string second)
+    internal bool CheckKeywordSequence(string first, string second)
     {
-        return !IsAtEnd && Peek().Normalized == first && PeekOptional(1)?.Normalized == second;
+        return CheckKeywordSequence(new[] { first, second });
     }
 
-    private SqlToken Peek(int offset = 0)
+    /// <summary>
+    /// Checks whether the upcoming tokens match the provided keyword sequence.
+    /// </summary>
+    /// <param name="keywordSequence">The ordered keywords to verify.</param>
+    /// <returns><c>true</c> when the upcoming tokens match the full sequence; otherwise, <c>false</c>.</returns>
+    internal bool CheckKeywordSequence(IReadOnlyList<string> keywordSequence)
+    {
+        if (keywordSequence.Count == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < keywordSequence.Count; i++)
+        {
+            var token = PeekOptional(i);
+            if (token is null || token.Normalized != keywordSequence[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    internal SqlToken Peek(int offset = 0)
     {
         return tokens[position + offset];
     }
@@ -746,16 +566,15 @@ internal sealed class SqlParser
         return tokens[index];
     }
 
-    private SqlToken Read()
+    internal SqlToken Read()
     {
         return tokens[position++];
     }
-
-    private bool IsAtEnd => position >= tokens.Count;
 }
 
 internal enum ClauseStart
 {
+    Into,
     From,
     Where,
     GroupBy,
@@ -807,10 +626,15 @@ internal sealed class SqlTokenizer
         "UNION",
         "ALL",
         "DISTINCT",
+        "CASE",
         "INSERT",
         "INTO",
         "VALUES",
         "RETURNING",
+        "WHEN",
+        "THEN",
+        "ELSE",
+        "END",
         "OUTPUT",
         "UPDATE",
         "SET",
@@ -818,6 +642,7 @@ internal sealed class SqlTokenizer
         "WITH",
         "RECURSIVE",
         "AS",
+        "IF",
         "ON",
         "JOIN",
         "INNER",
