@@ -158,7 +158,7 @@ public class SqlCommandFactoryTests
     [TestMethod]
     public void CompileQueryUsesFactorySyntaxOptions()
     {
-        var syntaxOptions = new SqlSyntaxOptions(new[] { ':' }, ':');
+        var syntaxOptions = new SqlSyntaxOptions([':'], ':');
         var factory = new SqlCommandFactory(syntaxOptions);
 
         SqlQuery query = factory.CompileQuery("SELECT * FROM items WHERE id = :id");

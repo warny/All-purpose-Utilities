@@ -1,4 +1,5 @@
 using System;
+using Utils.Collections;
 
 namespace Utils.Data.Sql;
 
@@ -7,18 +8,13 @@ namespace Utils.Data.Sql;
 /// <summary>
 /// Parses INSERT statements using a shared <see cref="SqlParser"/> helper context.
 /// </summary>
-internal sealed class InsertStatementParser
+internal sealed class InsertStatementParser : StatementParserBase
 {
-    private readonly SqlParser parser;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="InsertStatementParser"/> class.
     /// </summary>
     /// <param name="parser">The underlying parser providing token utilities.</param>
-    public InsertStatementParser(SqlParser parser)
-    {
-        this.parser = parser ?? throw new ArgumentNullException(nameof(parser));
-    }
+    public InsertStatementParser(SqlParser parser) : base(parser) { }
 
     /// <summary>
     /// Parses an INSERT statement.
@@ -28,22 +24,54 @@ internal sealed class InsertStatementParser
     public SqlInsertStatement Parse(WithClause? withClause)
     {
         parser.ExpectKeyword("INSERT");
-        if (parser.TryConsumeKeyword("INTO") == false)
+        if (!parser.TryConsumeKeyword("INTO"))
         {
             parser.ExpectKeyword("INTO");
         }
 
-        var intoReader = new IntoPartReader(parser);
-        var valuesReader = new ValuesPartReader(parser);
-        var outputReader = new OutputPartReader(parser);
-        var returningReader = new ReturningPartReader(parser);
+        var segments = base.ReadSegments(
+            IntoReader,
+            OutputReader);
 
-        var targetSegment = intoReader.ReadIntoTarget(
-            outputReader.ClauseKeyword,
-            valuesReader.ClauseKeyword,
+        if (parser.CheckKeyword("VALUES"))
+        {
+            ReadSegments(
+                segments,
+                ValuesReader,
+                ReturningReader);
+            return new SqlInsertStatement(
+               segments.GetValueOrDefault(IntoReader.Clause),
+               segments.GetValueOrDefault(ValuesReader.Clause),
+               null,
+               segments.GetValueOrDefault(OutputReader.Clause),
+               segments.GetValueOrDefault(ReturningReader.Clause),
+			   withClause
+			);
+		}
+        else if (parser.CheckKeyword("SELECT"))
+        {
+			var sourceQuery = parser.ParseStatement();
+            ReadSegments(
+                segments,
+                ReturningReader);
+
+			return new SqlInsertStatement(
+			   segments.GetValueOrDefault(IntoReader.Clause),
+               null,
+			   sourceQuery,
+			   segments.GetValueOrDefault(OutputReader.Clause),
+			   segments.GetValueOrDefault(ReturningReader.Clause),
+			   withClause
+			);
+		}
+        throw new SqlParseException("Expected VALUES or SELECT clause in INSERT statement.");
+		/*
+		var targetSegment = IntoReader.TryRead([
+            OutputReader.Clause,
+            ValuesReader.Clause,
             ClauseStart.Select,
-            returningReader.ClauseKeyword,
-            ClauseStart.StatementEnd);
+            ReturningReader.Clause,
+            ClauseStart.StatementEnd]);
         SqlSegment? valuesSegment = null;
         SqlStatement? sourceQuery = null;
         SqlSegment? outputSegment = null;
@@ -53,25 +81,24 @@ internal sealed class InsertStatementParser
 
         if (parser.TryConsumeKeyword("OUTPUT"))
         {
-            outputSegment = outputReader.ReadOutputPart(
-                "Output",
-                valuesReader.ClauseKeyword,
+            outputSegment = OutputReader.TryRead([
+                ValuesReader.Clause,
                 ClauseStart.Select,
-                returningReader.ClauseKeyword,
-                ClauseStart.StatementEnd);
+                ReturningReader.Clause,
+                ClauseStart.StatementEnd]);
         }
 
         if (parser.CheckKeyword("VALUES"))
         {
             parser.ExpectKeyword("VALUES");
-            valuesSegment = valuesReader.ReadValuesPart(returningReader.ClauseKeyword, ClauseStart.StatementEnd);
+            valuesSegment = ValuesReader.TryRead(ReturningReader.Clause, ClauseStart.StatementEnd);
         }
         else if (parser.CheckKeyword("SELECT") || parser.CheckKeyword("WITH"))
         {
             int end = returningIndex >= 0 ? returningIndex : parser.Tokens.Count;
             var sourceTokens = parser.Tokens.GetRange(parser.Position, end - parser.Position);
             var subParser = new SqlParser(sourceTokens, parser.SyntaxOptions);
-            sourceQuery = subParser.ParseStatementWithOptionalCte();
+            sourceQuery = subParser.ParseStatement();
             subParser.ConsumeOptionalTerminator();
             subParser.EnsureEndOfInput();
             parser.Position = end;
@@ -79,9 +106,10 @@ internal sealed class InsertStatementParser
 
         if (parser.TryConsumeKeyword("RETURNING"))
         {
-            returningSegment = returningReader.ReadReturningPart(ClauseStart.StatementEnd);
+            returningSegment = ReturningReader.TryRead(ClauseStart.StatementEnd);
         }
 
         return new SqlInsertStatement(targetSegment, valuesSegment, sourceQuery, outputSegment, returningSegment, withClause);
-    }
+        */
+	}
 }

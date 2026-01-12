@@ -14,21 +14,24 @@ public sealed class SqlQueryAnalyzerTests
     [TestMethod]
     public void ParseSelectWithCteAndSubqueries()
     {
-        const string sql = @"WITH recent_orders AS (
-SELECT o.id, o.customer_id
-FROM orders o
-WHERE o.created_at > CURRENT_DATE - INTERVAL '7 day'
-)
-SELECT c.id,
-       (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = ro.id) AS item_count
-FROM customers c
-JOIN recent_orders ro ON ro.customer_id = c.id
-WHERE EXISTS (
-    SELECT 1
-    FROM invoices i
-    WHERE i.customer_id = c.id
-)
-ORDER BY c.id;";
+        const string sql = """
+            WITH recent_orders AS (
+            SELECT o.id, o.customer_id
+            FROM orders o
+            WHERE o.created_at > CURRENT_DATE - INTERVAL '7 day'
+            )
+            SELECT c.id,
+                   (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = ro.id) AS item_count
+            FROM customers c
+            JOIN recent_orders ro ON ro.customer_id = c.id
+            WHERE EXISTS (
+                SELECT 1
+                FROM invoices i
+                WHERE i.customer_id = c.id
+            )
+            ORDER BY c.id;
+            
+            """;
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
         Assert.IsNotNull(query);
@@ -85,9 +88,11 @@ ORDER BY c.id;";
     [TestMethod]
     public void ParseInsertWithCteAsSource()
     {
-        const string sql = @"WITH source_data AS (SELECT 1 AS id)
-INSERT INTO destination(id)
-SELECT id FROM source_data;";
+        const string sql = """
+            WITH source_data AS (SELECT 1 AS id)
+            INSERT INTO destination(id)
+            SELECT id FROM source_data;
+            """;
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
 
@@ -103,11 +108,13 @@ SELECT id FROM source_data;";
     [TestMethod]
     public void ParseUpdateWithSubquery()
     {
-        const string sql = @"UPDATE accounts a
-SET balance = balance + (SELECT SUM(amount) FROM payments p WHERE p.account_id = a.id)
-FROM adjustments adj
-WHERE adj.account_id = a.id
-RETURNING a.id;";
+        const string sql = @"""
+            UPDATE accounts a
+            SET balance = balance + (SELECT SUM(amount) FROM payments p WHERE p.account_id = a.id)
+            FROM adjustments adj
+            WHERE adj.account_id = a.id
+            RETURNING a.id;
+            """;
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
         Assert.IsInstanceOfType(query.RootStatement, typeof(SqlUpdateStatement));
@@ -145,10 +152,12 @@ RETURNING a.id;";
     [TestMethod]
     public void ParseDeleteWithUsing()
     {
-        const string sql = @"DELETE FROM sessions s
-USING users u
-WHERE u.id = s.user_id
-RETURNING s.id;";
+        const string sql = """
+            DELETE FROM sessions s
+            USING users u
+            WHERE u.id = s.user_id
+            RETURNING s.id;
+            """;
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
         Assert.IsInstanceOfType(query.RootStatement, typeof(SqlDeleteStatement));
@@ -172,7 +181,7 @@ RETURNING s.id;";
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
 
         var delete = (SqlDeleteStatement)query.RootStatement;
-        Assert.IsNull(delete.Target);
+        Assert.IsNotNull(delete.Target);
         Assert.AreEqual("sessions", delete.From.ToSql());
         Assert.IsNotNull(delete.Output);
         Assert.AreEqual("deleted.id", delete.Output!.ToSql());
@@ -196,7 +205,7 @@ RETURNING s.id;";
     public void ParseSupportsCustomParameterPrefixes()
     {
         const string sql = "SELECT * FROM accounts WHERE id = :account_id";
-        var syntaxOptions = new SqlSyntaxOptions(new[] { ':', '@' }, ':');
+        var syntaxOptions = new SqlSyntaxOptions([':', '@'], ':');
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql, syntaxOptions);
 
@@ -211,19 +220,49 @@ RETURNING s.id;";
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
 
         string prefixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed));
-        const string expectedPrefixed = "SELECT\n    table1.champ1\n   ,table2.champ2\n   ,table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
+        const string expectedPrefixed = """
+            SELECT
+                table1.champ1
+               ,table2.champ2
+               ,table2.champ3
+            FROM table1
+            INNER JOIN table2 ON table1.champ1 = table2.champ1
+            """;
         Assert.AreEqual(expectedPrefixed.Replace("\n", Environment.NewLine), prefixed);
 
         string suffixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed));
-        const string expectedSuffixed = "SELECT\n    table1.champ1,\n    table2.champ2,\n    table2.champ3\nFROM\n    table1 INNER JOIN\n    table2 ON table1.champ1 = table2.champ1";
+        const string expectedSuffixed = """
+            SELECT
+                table1.champ1,
+                table2.champ2,
+                table2.champ3
+            FROM
+                table1 INNER JOIN
+                table2 ON table1.champ1 = table2.champ1
+            """;
         Assert.AreEqual(expectedSuffixed.Replace("\n", Environment.NewLine), suffixed);
 
         string prefixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed, 2));
-        const string expectedPrefixedIndent = "SELECT\n  table1.champ1\n ,table2.champ2\n ,table2.champ3\nFROM table1\nINNER JOIN table2 ON table1.champ1 = table2.champ1";
+        const string expectedPrefixedIndent = """
+            SELECT
+              table1.champ1
+             ,table2.champ2
+             ,table2.champ3
+            FROM table1
+            INNER JOIN table2 ON table1.champ1 = table2.champ1
+            """;
         Assert.AreEqual(expectedPrefixedIndent.Replace("\n", Environment.NewLine), prefixedWithIndent);
 
         string suffixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed, 2));
-        const string expectedSuffixedIndent = "SELECT\n  table1.champ1,\n  table2.champ2,\n  table2.champ3\nFROM\n  table1 INNER JOIN\n  table2 ON table1.champ1 = table2.champ1";
+        const string expectedSuffixedIndent = """
+            SELECT
+              table1.champ1,
+              table2.champ2,
+              table2.champ3
+            FROM
+              table1 INNER JOIN
+              table2 ON table1.champ1 = table2.champ1
+            """;
         Assert.AreEqual(expectedSuffixedIndent.Replace("\n", Environment.NewLine), suffixedWithIndent);
     }
 

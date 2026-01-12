@@ -23,14 +23,10 @@ public static class SqlQueryAnalyzer
     /// <exception cref="SqlParseException">Thrown when the SQL text cannot be parsed.</exception>
     public static SqlQuery Parse(string sql, SqlSyntaxOptions? syntaxOptions = null)
     {
-        if (string.IsNullOrWhiteSpace(sql))
-        {
-            throw new ArgumentException("SQL text cannot be null or whitespace.", nameof(sql));
-        }
-
+        ArgumentException.ThrowIfNullOrWhiteSpace(sql);
         syntaxOptions ??= SqlSyntaxOptions.Default;
         var parser = SqlParser.Create(sql, syntaxOptions);
-        SqlStatement statement = parser.ParseStatementWithOptionalCte();
+        SqlStatement statement = parser.ParseStatement();
         parser.ConsumeOptionalTerminator();
         parser.EnsureEndOfInput();
         return new SqlQuery(statement, syntaxOptions);
@@ -50,7 +46,8 @@ public sealed class SqlQuery
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="rootStatement"/> is null.</exception>
     public SqlQuery(SqlStatement rootStatement, SqlSyntaxOptions? syntaxOptions = null)
     {
-        RootStatement = rootStatement ?? throw new ArgumentNullException(nameof(rootStatement));
+        ArgumentNullException.ThrowIfNull(rootStatement);
+		RootStatement = rootStatement;
         SyntaxOptions = syntaxOptions ?? RootStatement.SyntaxOptions;
     }
 
@@ -94,10 +91,7 @@ public abstract class SqlStatement
     /// <param name="syntaxOptions">Syntax options governing identifier parsing for the statement.</param>
     protected SqlStatement(IEnumerable<SqlSegment> segments, WithClause? withClause, SqlSyntaxOptions? syntaxOptions = null)
     {
-        if (segments == null)
-        {
-            throw new ArgumentNullException(nameof(segments));
-        }
+        ArgumentNullException.ThrowIfNull(segments);
 
         var segmentList = segments.ToList();
         SyntaxOptions = syntaxOptions ?? segmentList.FirstOrDefault(s => s != null)?.SyntaxOptions ?? SqlSyntaxOptions.Default;
@@ -194,10 +188,7 @@ public abstract class SqlStatement
     /// <param name="segment">The segment to register.</param>
     protected void AttachSegment(SqlSegment segment)
     {
-        if (segment == null)
-        {
-            throw new ArgumentNullException(nameof(segment));
-        }
+        ArgumentNullException.ThrowIfNull(segment);
 
         segments.Add(segment);
     }
@@ -208,10 +199,7 @@ public abstract class SqlStatement
     /// <param name="segment">The segment to remove.</param>
     protected void DetachSegment(SqlSegment segment)
     {
-        if (segment == null)
-        {
-            throw new ArgumentNullException(nameof(segment));
-        }
+        ArgumentNullException.ThrowIfNull(segment);
 
         segments.Remove(segment);
     }
@@ -263,13 +251,22 @@ internal sealed class PartReferenceBinding<TPart> : IPartReferenceBinding
     private readonly Func<SqlSegment, TPart> partFactory;
     private readonly Action<TPart> onBind;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
-    /// </summary>
-    /// <param name="partName">The name of the segment produced by the associated part reader.</param>
-    /// <param name="partFactory">Factory used to create the typed part.</param>
-    /// <param name="onBind">Callback invoked when the binding is matched.</param>
-    public PartReferenceBinding(string partName, Func<SqlSegment, TPart> partFactory, Action<TPart> onBind)
+	/// <summary>
+	/// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
+	/// </summary>
+	/// <param name="partName">The name of the segment produced by the associated part reader.</param>
+	/// <param name="partFactory">Factory used to create the typed part.</param>
+	/// <param name="onBind">Callback invoked when the binding is matched.</param>
+	public PartReferenceBinding(IPartReader<TPart> partReader, Action<TPart> onBind) 
+        : this(partReader.PartName, partReader.PartFactory, onBind)	{	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
+	/// </summary>
+	/// <param name="partName">The name of the segment produced by the associated part reader.</param>
+	/// <param name="partFactory">Factory used to create the typed part.</param>
+	/// <param name="onBind">Callback invoked when the binding is matched.</param>
+	public PartReferenceBinding(string partName, Func<SqlSegment, TPart> partFactory, Action<TPart> onBind)
     {
         this.partName = partName ?? throw new ArgumentNullException(nameof(partName));
         this.partFactory = partFactory ?? throw new ArgumentNullException(nameof(partFactory));
@@ -371,17 +368,17 @@ public sealed class SqlSelectStatement : SqlStatement
         limitPart = limit == null ? null : new LimitPart(limit);
         offsetPart = offset == null ? null : new OffsetPart(offset);
         tailPart = tail == null ? null : new TailPart(tail);
-        partReferenceBindings = new IPartReferenceBinding[]
-        {
-            new PartReferenceBinding<FromPart>(FromPartReader.PartName, FromPartReader.PartFactory, part => fromPart ??= part),
-            new PartReferenceBinding<WherePart>(WherePartReader.PartName, WherePartReader.PartFactory, part => wherePart ??= part),
-            new PartReferenceBinding<GroupByPart>(GroupByPartReader.PartName, GroupByPartReader.PartFactory, part => groupByPart ??= part),
-            new PartReferenceBinding<HavingPart>(HavingPartReader.PartName, HavingPartReader.PartFactory, part => havingPart ??= part),
-            new PartReferenceBinding<OrderByPart>(OrderByPartReader.PartName, OrderByPartReader.PartFactory, part => orderByPart ??= part),
-            new PartReferenceBinding<LimitPart>(LimitPartReader.PartName, LimitPartReader.PartFactory, part => limitPart ??= part),
-            new PartReferenceBinding<OffsetPart>(OffsetPartReader.PartName, OffsetPartReader.PartFactory, part => offsetPart ??= part),
-            new PartReferenceBinding<TailPart>(SetOperatorPartReader.PartName, SetOperatorPartReader.PartFactory, part => tailPart ??= part),
-        };
+        partReferenceBindings =
+        [
+            new PartReferenceBinding<FromPart>(FromPartReader.Singleton, part => fromPart ??= part),
+            new PartReferenceBinding<WherePart>(WherePartReader.Singleton, part => wherePart ??= part),
+            new PartReferenceBinding<GroupByPart>(GroupByPartReader.Singleton, part => groupByPart ??= part),
+            new PartReferenceBinding<HavingPart>(HavingPartReader.Singleton, part => havingPart ??= part),
+            new PartReferenceBinding<OrderByPart>(OrderByPartReader.Singleton, part => orderByPart ??= part),
+            new PartReferenceBinding<LimitPart>(LimitPartReader.Singleton, part => limitPart ??= part),
+            new PartReferenceBinding<OffsetPart>(OffsetPartReader.Singleton, part => offsetPart ??= part),
+            new PartReferenceBinding<TailPart>(SetOperatorPartReader.Singleton, part => tailPart ??= part),
+        ];
     }
 
     /// <summary>
@@ -677,7 +674,13 @@ public sealed class SqlInsertStatement : SqlStatement
     /// <param name="output">The OUTPUT segment if present.</param>
     /// <param name="returning">The RETURNING segment if present.</param>
     /// <param name="withClause">Optional CTE definitions.</param>
-    public SqlInsertStatement(SqlSegment target, SqlSegment? values, SqlStatement? sourceQuery, SqlSegment? output, SqlSegment? returning, WithClause? withClause)
+    public SqlInsertStatement(
+        SqlSegment target, 
+        SqlSegment? values, 
+        SqlStatement? sourceQuery, 
+        SqlSegment? output, 
+        SqlSegment? returning, 
+        WithClause? withClause)
         : base(BuildSegments(target, values, output, returning), withClause)
     {
         Target = target ?? throw new ArgumentNullException(nameof(target));
@@ -903,11 +906,11 @@ public sealed class SqlUpdateStatement : SqlStatement
         updatePart = new UpdatePart(Target);
         fromPart = from == null ? null : new FromPart(from);
         wherePart = where == null ? null : new WherePart(where);
-        partReferenceBindings = new IPartReferenceBinding[]
-        {
-            new PartReferenceBinding<FromPart>(FromPartReader.PartName, FromPartReader.PartFactory, part => fromPart ??= part),
-            new PartReferenceBinding<WherePart>(WherePartReader.PartName, WherePartReader.PartFactory, part => wherePart ??= part),
-        };
+        partReferenceBindings =
+        [
+            new PartReferenceBinding<FromPart>(FromPartReader.Singleton.PartName, FromPartReader.Singleton.PartFactory, part => fromPart ??= part),
+            new PartReferenceBinding<WherePart>(WherePartReader.Singleton.PartName, WherePartReader.Singleton.PartFactory, part => wherePart ??= part),
+        ];
     }
 
     /// <summary>
@@ -1105,11 +1108,11 @@ public sealed class SqlDeleteStatement : SqlStatement
         deletePart = target == null ? null : new DeletePart(target);
         fromPart = new FromPart(From);
         wherePart = where == null ? null : new WherePart(where);
-        partReferenceBindings = new IPartReferenceBinding[]
-        {
-            new PartReferenceBinding<DeletePart>(DeletePartReader.PartName, DeletePartReader.PartFactory, part => deletePart ??= part),
-            new PartReferenceBinding<WherePart>(WherePartReader.PartName, WherePartReader.PartFactory, part => wherePart ??= part),
-        };
+        partReferenceBindings =
+        [
+            new PartReferenceBinding<DeletePart>(DeletePartReader.Singleton, part => deletePart ??= part),
+            new PartReferenceBinding<WherePart>(WherePartReader.Singleton, part => wherePart ??= part),
+        ];
     }
 
     /// <summary>
@@ -1161,46 +1164,31 @@ public sealed class SqlDeleteStatement : SqlStatement
     /// Ensures the DELETE target segment exists and returns it.
     /// </summary>
     /// <returns>The existing or newly created target segment.</returns>
-    public SqlSegment EnsureTargetSegment()
-    {
-        return EnsureOptionalSegment(ref target, "Target");
-    }
+    public SqlSegment EnsureTargetSegment() => EnsureOptionalSegment(ref target, "Target");
 
     /// <summary>
     /// Ensures the USING segment exists and returns it.
     /// </summary>
     /// <returns>The existing or newly created USING segment.</returns>
-    public SqlSegment EnsureUsingSegment()
-    {
-        return EnsureOptionalSegment(ref usingSegment, "Using");
-    }
+    public SqlSegment EnsureUsingSegment() => EnsureOptionalSegment(ref usingSegment, "Using");
 
     /// <summary>
     /// Ensures the WHERE segment exists and returns it.
     /// </summary>
     /// <returns>The existing or newly created WHERE segment.</returns>
-    public SqlSegment EnsureWhereSegment()
-    {
-        return EnsureOptionalSegment(ref where, "Where");
-    }
+    public SqlSegment EnsureWhereSegment() => EnsureOptionalSegment(ref where, "Where");
 
     /// <summary>
     /// Ensures the OUTPUT segment exists and returns it.
     /// </summary>
     /// <returns>The existing or newly created OUTPUT segment.</returns>
-    public SqlSegment EnsureOutputSegment()
-    {
-        return EnsureOptionalSegment(ref output, "Output");
-    }
+    public SqlSegment EnsureOutputSegment() => EnsureOptionalSegment(ref output, "Output");
 
     /// <summary>
     /// Ensures the RETURNING segment exists and returns it.
     /// </summary>
     /// <returns>The existing or newly created RETURNING segment.</returns>
-    public SqlSegment EnsureReturningSegment()
-    {
-        return EnsureOptionalSegment(ref returning, "Returning");
-    }
+    public SqlSegment EnsureReturningSegment() => EnsureOptionalSegment(ref returning, "Returning");
 
     /// <inheritdoc />
     protected override string BuildSql()
@@ -1560,38 +1548,6 @@ public sealed class CteDefinition
         builder.Append(Statement.ToSql());
         builder.Append(')');
         return builder.ToString();
-    }
-}
-
-/// <summary>
-/// Represents errors that occur during SQL parsing.
-/// </summary>
-public sealed class SqlParseException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlParseException"/> class.
-    /// </summary>
-    public SqlParseException()
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlParseException"/> class.
-    /// </summary>
-    /// <param name="message">The error message.</param>
-    public SqlParseException(string message)
-        : base(message)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlParseException"/> class.
-    /// </summary>
-    /// <param name="message">The error message.</param>
-    /// <param name="innerException">The inner exception.</param>
-    public SqlParseException(string message, Exception innerException)
-        : base(message, innerException)
-    {
     }
 }
 

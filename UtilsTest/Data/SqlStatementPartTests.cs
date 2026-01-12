@@ -17,7 +17,7 @@ public sealed class SqlStatementPartTests
     {
         var parser = SqlParser.Create("SELECT id, name FROM accounts WHERE active = 1");
 
-        var statement = (SqlSelectStatement)parser.ParseStatementWithOptionalCte();
+        var statement = (SqlSelectStatement)parser.ParseStatement();
         parser.ConsumeOptionalTerminator();
         parser.EnsureEndOfInput();
 
@@ -36,7 +36,7 @@ public sealed class SqlStatementPartTests
     {
         var parser = SqlParser.Create("INSERT INTO accounts(id) VALUES (1)");
 
-        var statement = (SqlInsertStatement)parser.ParseStatementWithOptionalCte();
+        var statement = (SqlInsertStatement)parser.ParseStatement();
         parser.ConsumeOptionalTerminator();
         parser.EnsureEndOfInput();
 
@@ -54,7 +54,7 @@ public sealed class SqlStatementPartTests
     {
         var parser = SqlParser.Create("UPDATE accounts SET name = 'x'");
 
-        var statement = (SqlUpdateStatement)parser.ParseStatementWithOptionalCte();
+        var statement = (SqlUpdateStatement)parser.ParseStatement();
         parser.ConsumeOptionalTerminator();
         parser.EnsureEndOfInput();
 
@@ -75,7 +75,7 @@ public sealed class SqlStatementPartTests
     {
         var parser = SqlParser.Create("DELETE FROM accounts");
 
-        var statement = (SqlDeleteStatement)parser.ParseStatementWithOptionalCte();
+        var statement = (SqlDeleteStatement)parser.ParseStatement();
         parser.ConsumeOptionalTerminator();
         parser.EnsureEndOfInput();
 

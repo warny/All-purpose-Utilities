@@ -31,26 +31,26 @@ internal static class ClauseStartKeywordRegistry
     {
         var definitions = new List<ClauseKeywordDefinition>
         {
-            SelectPartReader.KeywordDefinition,
-            FromPartReader.KeywordDefinition,
-            IntoPartReader.KeywordDefinition,
-            WherePartReader.KeywordDefinition,
-            GroupByPartReader.KeywordDefinition,
-            HavingPartReader.KeywordDefinition,
-            OrderByPartReader.KeywordDefinition,
-            LimitPartReader.KeywordDefinition,
-            OffsetPartReader.KeywordDefinition,
-            ValuesPartReader.KeywordDefinition,
-            OutputPartReader.KeywordDefinition,
-            ReturningPartReader.KeywordDefinition,
-            SetOperatorPartReader.KeywordDefinition,
-            ClauseKeywordDefinition.FromKeywords(ClauseStart.Using, new[] { "USING" }),
+            SelectPartReader.Singleton.KeywordDefinition,
+            FromPartReader.Singleton.KeywordDefinition,
+            IntoPartReader.Singleton.KeywordDefinition,
+            WherePartReader.Singleton.KeywordDefinition,
+            GroupByPartReader.Singleton.KeywordDefinition,
+            HavingPartReader.Singleton.KeywordDefinition,
+            OrderByPartReader.Singleton.KeywordDefinition,
+            LimitPartReader.Singleton.KeywordDefinition,
+            OffsetPartReader.Singleton.KeywordDefinition,
+            ValuesPartReader.Singleton.KeywordDefinition,
+            OutputPartReader.Singleton.KeywordDefinition,
+            ReturningPartReader.Singleton.KeywordDefinition,
+            SetOperatorPartReader.Singleton.KeywordDefinition,
+            UsingPartReader.Singleton.KeywordDefinition,
         };
 
         var map = new Dictionary<ClauseStart, IReadOnlyList<IReadOnlyList<string>>>();
         foreach (var definition in definitions)
         {
-            map[definition.ClauseKeyword] = definition.KeywordSequences;
+            map[definition.Clause] = definition.KeywordSequences;
         }
 
         return map;
@@ -71,14 +71,14 @@ internal sealed class ClauseKeywordDefinition
         ClauseStart clauseKeyword,
         IReadOnlyList<IReadOnlyList<string>> keywordSequences)
     {
-        ClauseKeyword = clauseKeyword;
+        Clause = clauseKeyword;
         KeywordSequences = keywordSequences;
     }
 
     /// <summary>
     /// Gets the clause identifier associated with the keywords.
     /// </summary>
-    public ClauseStart ClauseKeyword { get; }
+    public ClauseStart Clause { get; }
 
     /// <summary>
     /// Gets the keyword sequences that mark the start of the clause.

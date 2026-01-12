@@ -17,10 +17,10 @@ public sealed class SqlStatementPartReaderTests
     public void SelectPartReaderStopsBeforeFromClause()
     {
         var parser = SqlParser.Create("amount AS total, tax t FROM sales");
-        var reader = new SelectPartReader(parser);
-        var fromReader = new FromPartReader(parser);
+        var reader = SelectPartReader.Singleton;
+        var fromReader = FromPartReader.Singleton;
 
-        var selectSegment = reader.ReadSelectPart(fromReader.ClauseKeyword);
+        var selectSegment = reader.TryRead(parser, fromReader.Clause);
 
         Assert.AreEqual("amount AS total, tax t", selectSegment.ToSql());
         Assert.AreEqual("FROM", parser.Peek().Normalized);
@@ -33,10 +33,10 @@ public sealed class SqlStatementPartReaderTests
     public void FromPartReaderReadsTables()
     {
         var parser = SqlParser.Create("FROM accounts a, orders o WHERE o.account_id = a.id");
-        var reader = new FromPartReader(parser);
+        var reader = FromPartReader.Singleton;
 
-        var whereReader = new WherePartReader(parser);
-        var fromSegment = reader.TryReadFromPart(whereReader.ClauseKeyword);
+        var whereReader = WherePartReader.Singleton;
+        var fromSegment = reader.TryRead(parser, whereReader.Clause);
 
         Assert.IsNotNull(fromSegment);
         Assert.AreEqual("accounts a, orders o", fromSegment!.ToSql());
@@ -50,9 +50,9 @@ public sealed class SqlStatementPartReaderTests
     public void WherePartReaderStopsAtClause()
     {
         var parser = SqlParser.Create("WHERE price > 100 UNION SELECT 1");
-        var reader = new WherePartReader(parser);
+        var reader = WherePartReader.Singleton;
 
-        var whereSegment = reader.TryReadWherePart();
+        var whereSegment = reader.TryRead(parser, ClauseStart.SetOperator);
 
         Assert.IsNotNull(whereSegment);
         Assert.AreEqual("price > 100", whereSegment!.ToSql());
@@ -66,11 +66,11 @@ public sealed class SqlStatementPartReaderTests
     public void ClauseKeywordsAreExposed()
     {
         var parser = SqlParser.Create("LIMIT 5");
-        var limitReader = new LimitPartReader(parser);
-        var offsetReader = new OffsetPartReader(parser);
+        var limitReader = LimitPartReader.Singleton;
+        var offsetReader = OffsetPartReader.Singleton;
 
-        Assert.AreEqual(ClauseStart.Limit, limitReader.ClauseKeyword);
-        Assert.AreEqual(ClauseStart.Offset, offsetReader.ClauseKeyword);
+        Assert.AreEqual(ClauseStart.Limit, limitReader.Clause);
+        Assert.AreEqual(ClauseStart.Offset, offsetReader.Clause);
     }
 
     /// <summary>
@@ -109,6 +109,6 @@ public sealed class SqlStatementPartReaderTests
         Assert.IsNotNull(whereSegment);
         Assert.IsNotNull(select.WherePart);
         Assert.AreSame(whereSegment, select.WherePart!.Segment);
-        Assert.AreEqual(WherePartReader.PartName, select.WherePart.Name);
+        Assert.AreEqual(WherePartReader.Singleton.PartName, select.WherePart.Name);
     }
 }

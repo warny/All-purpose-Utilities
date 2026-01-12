@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace Utils.Data.Sql;
 
 #nullable enable
 
-internal sealed class SqlParser
+public sealed class SqlParser
 {
     private static readonly IReadOnlyDictionary<string, Func<SqlParser, WithClause?, SqlStatement>> StatementParsers =
         new Dictionary<string, Func<SqlParser, WithClause?, SqlStatement>>(StringComparer.OrdinalIgnoreCase)
@@ -67,10 +68,10 @@ internal sealed class SqlParser
         return new SqlParser(tokenizer.Tokenize(), syntaxOptions);
     }
 
-    public SqlStatement ParseStatementWithOptionalCte()
+    public SqlStatement ParseStatement(bool WithOptionalCte = true)
     {
         WithClause? withClause = null;
-        if (TryConsumeKeyword("WITH"))
+        if (WithOptionalCte && TryConsumeKeyword("WITH"))
         {
             withClause = ParseWithClause();
         }
@@ -135,7 +136,7 @@ internal sealed class SqlParser
             ExpectSymbol("(");
             var subTokens = ReadTokensUntilMatchingParenthesis();
             var subParser = new SqlParser(subTokens, syntaxOptions);
-            var statement = subParser.ParseStatementWithOptionalCte();
+            var statement = subParser.ParseStatement();
             subParser.ConsumeOptionalTerminator();
             subParser.EnsureEndOfInput();
             definitions.Add(new CteDefinition(name, columns, statement));
@@ -193,7 +194,7 @@ internal sealed class SqlParser
                     if (LooksLikeStatement(innerTokens))
                     {
                         var subParser = new SqlParser(innerTokens, syntaxOptions);
-                        var subStatement = subParser.ParseStatementWithOptionalCte();
+                        var subStatement = subParser.ParseStatement();
                         subParser.ConsumeOptionalTerminator();
                         subParser.EnsureEndOfInput();
                         parts.Add(new SqlSubqueryPart(subStatement));
@@ -455,9 +456,9 @@ internal sealed class SqlParser
     /// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
     internal bool TryConsumeSegmentKeyword(string keyword, out List<SqlToken> consumedTokens)
     {
-        consumedTokens = new List<SqlToken>();
         if (keyword == ";")
         {
+            consumedTokens = [];
             if (!IsAtEnd && Peek().Text == ";")
             {
                 consumedTokens.Add(Read());
@@ -467,26 +468,25 @@ internal sealed class SqlParser
             return false;
         }
 
-        var parts = keyword.Split(' ');
-        if (parts.Length == 1)
+        var parts = keyword.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return this.TryConsumeSegmentKeyword(parts, out consumedTokens);
+    }
+
+	/// <summary>
+	/// Attempts to consume a clause keyword, including composite keywords such as "GROUP BY".
+	/// </summary>
+	/// <param name="keyword">The keyword text to match.</param>
+	/// <param name="consumedTokens">The tokens consumed when the keyword is matched.</param>
+	/// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
+	private bool TryConsumeSegmentKeyword(string[] parts, out List<SqlToken> consumedTokens)
+    {
+		consumedTokens = [];
+        foreach (var part in parts)
         {
-            if (CheckKeyword(parts[0]))
-            {
-                consumedTokens.Add(Read());
-                return true;
-            }
-
-            return false;
-        }
-
-        if (parts.Length == 2 && CheckKeywordSequence(parts[0], parts[1]))
-        {
-            consumedTokens.Add(Read());
-            consumedTokens.Add(Read());
-            return true;
-        }
-
-        return false;
+            if (IsAtEnd || !CheckKeyword(part)) return false;
+			consumedTokens.Add(Read());
+		}
+        return true;
     }
 
     internal bool TryConsumeKeyword(string keyword)
@@ -521,17 +521,12 @@ internal sealed class SqlParser
         return !IsAtEnd && Peek().Normalized == keyword;
     }
 
-    internal bool CheckKeywordSequence(string first, string second)
-    {
-        return CheckKeywordSequence(new[] { first, second });
-    }
-
     /// <summary>
     /// Checks whether the upcoming tokens match the provided keyword sequence.
     /// </summary>
     /// <param name="keywordSequence">The ordered keywords to verify.</param>
     /// <returns><c>true</c> when the upcoming tokens match the full sequence; otherwise, <c>false</c>.</returns>
-    internal bool CheckKeywordSequence(IReadOnlyList<string> keywordSequence)
+    internal bool CheckKeywordSequence(params IReadOnlyList<string> keywordSequence)
     {
         if (keywordSequence.Count == 0)
         {
@@ -574,7 +569,12 @@ internal sealed class SqlParser
 
 internal enum ClauseStart
 {
-    Into,
+    Select,
+    Update,
+    Delete,
+    Insert,
+    Set,
+	Into,
     From,
     Where,
     GroupBy,
@@ -584,13 +584,13 @@ internal enum ClauseStart
     Offset,
     Output,
     Values,
-    Select,
     Returning,
     Using,
     SetOperator,
     StatementEnd,
 }
 
+[DebuggerDisplay("{Normalized}")]
 internal sealed class SqlToken
 {
     public SqlToken(string text, string normalized, bool isIdentifier, bool isKeyword)
