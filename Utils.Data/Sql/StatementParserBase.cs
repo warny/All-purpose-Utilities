@@ -54,7 +54,8 @@ abstract internal class StatementParserBase
                 foreach (var keyWordSequence in reader.KeywordSequences)
                 {
                     if (!parser.CheckKeywordSequence(keyWordSequence)) continue;
-                    segment = reader.TryRead(parser, readersQueue.Select(r => r.Clause));
+                    var clauseTerminators = readersQueue.Select(r => r.Clause).Append(ClauseStart.StatementEnd);
+                    segment = reader.TryRead(parser, clauseTerminators);
                 }
             }
             segments[reader.Clause] = segment;

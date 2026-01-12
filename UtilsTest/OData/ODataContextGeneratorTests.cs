@@ -252,7 +252,7 @@ public class ODataContextGeneratorTests
             responseStream.Flush();
             context.Response.Close();
         }
-        catch (HttpListenerException)
+        catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
         {
             return;
         }

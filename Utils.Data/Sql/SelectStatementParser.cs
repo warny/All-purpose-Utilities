@@ -28,9 +28,25 @@ internal sealed class SelectStatementParser : StatementParserBase
         parser.ExpectKeyword("SELECT");
         bool isDistinct = parser.TryConsumeKeyword("DISTINCT");
 
-		var segments = this.ReadSegments(
-			SelectReader,
-			FromReader,
+        var segments = new Dictionary<ClauseStart, SqlSegment>
+        {
+            [SelectReader.Clause] = SelectReader.TryRead(
+                parser,
+                FromReader.Clause,
+                WhereReader.Clause,
+                GroupByReader.Clause,
+                HavingReader.Clause,
+                OrderByReader.Clause,
+                LimitReader.Clause,
+                OffsetReader.Clause,
+                ReturningReader.Clause,
+                SetOperatorReader.Clause,
+                ClauseStart.StatementEnd),
+        };
+
+        ReadSegments(
+            segments,
+            FromReader,
             WhereReader,
             GroupByReader,
             HavingReader,
@@ -42,14 +58,14 @@ internal sealed class SelectStatementParser : StatementParserBase
 
         return new SqlSelectStatement(
             segments.GetValueOrDefault(SelectReader.Clause),
-			segments.GetValueOrDefault(FromReader.Clause),
-			segments.GetValueOrDefault(WhereReader.Clause),
-			segments.GetValueOrDefault(GroupByReader.Clause),
-			segments.GetValueOrDefault(HavingReader.Clause),
-			segments.GetValueOrDefault(OrderByReader.Clause),
-			segments.GetValueOrDefault(LimitReader.Clause),
-			segments.GetValueOrDefault(OffsetReader.Clause),
-			segments.GetValueOrDefault(SetOperatorReader.Clause),
+            segments.GetValueOrDefault(FromReader.Clause),
+            segments.GetValueOrDefault(WhereReader.Clause),
+            segments.GetValueOrDefault(GroupByReader.Clause),
+            segments.GetValueOrDefault(HavingReader.Clause),
+            segments.GetValueOrDefault(OrderByReader.Clause),
+            segments.GetValueOrDefault(LimitReader.Clause),
+            segments.GetValueOrDefault(OffsetReader.Clause),
+            segments.GetValueOrDefault(SetOperatorReader.Clause),
             withClause,
             isDistinct);
     }
