@@ -27,13 +27,32 @@ internal sealed class DeleteStatementParser : StatementParserBase
     {
         parser.ExpectKeyword("DELETE");
 
-        var segments = this.ReadSegments(
-			DeleteReader,
-			FromReader,
-			OutputReader,
-			WhereReader,
-			ReturningReader
-			);
+        var segments = new Dictionary<ClauseStart, SqlSegment>
+        {
+            [DeleteReader.Clause] = DeleteReader.TryRead(
+                parser,
+                FromReader.Clause,
+                UsingReader.Clause,
+                OutputReader.Clause,
+                WhereReader.Clause,
+                ReturningReader.Clause,
+                ClauseStart.StatementEnd),
+        };
+
+        ReadSegments(
+            segments,
+            FromReader,
+            UsingReader,
+            OutputReader,
+            WhereReader,
+            ReturningReader);
+
+        if (segments.GetValueOrDefault(DeleteReader.Clause) == null
+            && segments.GetValueOrDefault(OutputReader.Clause) != null
+            && segments.GetValueOrDefault(FromReader.Clause) is SqlSegment fromSegment)
+        {
+            segments[DeleteReader.Clause] = new SqlSegment("Target", fromSegment.Parts, parser.SyntaxOptions);
+        }
 
         return new SqlDeleteStatement(
             segments.GetValueOrDefault(DeleteReader.Clause),

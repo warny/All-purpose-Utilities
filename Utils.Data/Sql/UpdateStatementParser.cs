@@ -25,22 +25,33 @@ internal sealed class UpdateStatementParser : StatementParserBase
     {
         parser.ExpectKeyword("UPDATE");
 
-        var segments = base.ReadSegments(
-            SpdateTargetReader,
+        var segments = new Dictionary<ClauseStart, SqlSegment>
+        {
+            [UpdateTargetReader.Clause] = UpdateTargetReader.TryRead(
+                parser,
+                SetReader.Clause,
+                OutputReader.Clause,
+                FromReader.Clause,
+                WhereReader.Clause,
+                ReturningReader.Clause,
+                ClauseStart.StatementEnd),
+        };
+
+        ReadSegments(
+            segments,
             SetReader,
             OutputReader,
             FromReader,
             WhereReader,
-            ReturningReader
-			);
+            ReturningReader);
 
         return new SqlUpdateStatement(
-            segments.GetValueOrDefault(SpdateTargetReader.Clause),
+            segments.GetValueOrDefault(UpdateTargetReader.Clause),
 			segments.GetValueOrDefault(SetReader.Clause),
 			segments.GetValueOrDefault(FromReader.Clause),
 			segments.GetValueOrDefault(WhereReader.Clause),
-			segments.GetValueOrDefault(OutputReader.Clause),
-			segments.GetValueOrDefault(ReturningReader.Clause), 
+            segments.GetValueOrDefault(OutputReader.Clause),
+            segments.GetValueOrDefault(ReturningReader.Clause), 
             withClause);
     }
 }

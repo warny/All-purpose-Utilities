@@ -24,6 +24,14 @@ public static class SqlQueryAnalyzer
     public static SqlQuery Parse(string sql, SqlSyntaxOptions? syntaxOptions = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
+        string trimmedSql = sql.Trim();
+        if (trimmedSql.Length > 1
+            && trimmedSql[0] == '"'
+            && trimmedSql[^1] == '"'
+            && trimmedSql.Count(c => c == '"') == 2)
+        {
+            sql = trimmedSql[1..^1];
+        }
         syntaxOptions ??= SqlSyntaxOptions.Default;
         var parser = SqlParser.Create(sql, syntaxOptions);
         SqlStatement statement = parser.ParseStatement();
@@ -1110,7 +1118,7 @@ public sealed class SqlDeleteStatement : SqlStatement
         wherePart = where == null ? null : new WherePart(where);
         partReferenceBindings =
         [
-            new PartReferenceBinding<DeletePart>(DeletePartReader.Singleton, part => deletePart ??= part),
+            new PartReferenceBinding<DeletePart>("Target", DeletePartReader.Singleton.PartFactory, part => deletePart ??= part),
             new PartReferenceBinding<WherePart>(WherePartReader.Singleton, part => wherePart ??= part),
         ];
     }
@@ -1201,7 +1209,7 @@ public sealed class SqlDeleteStatement : SqlStatement
         }
 
         builder.Append("DELETE");
-        if (Target != null)
+        if (Target != null && !string.Equals(Target.ToSql(), From.ToSql(), StringComparison.Ordinal))
         {
             builder.Append(' ');
             builder.Append(Target.ToSql());

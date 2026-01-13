@@ -313,6 +313,7 @@ internal sealed class WherePartReader : IPartReader<WherePart>
     /// <returns>The parsed WHERE predicate when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("WHERE", out _);
         var predicateReader = new PredicateReader(parser);
         return predicateReader.ReadPredicate("Where",  [..clauseTerminators]);
     }
@@ -354,6 +355,7 @@ internal sealed class GroupByPartReader : IPartReader<GroupByPart>
     /// <returns>The parsed GROUP BY segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("GROUP BY", out _);
         var expressionListReader = new ExpressionListReader(parser);
         var expressions = expressionListReader.ReadExpressions("GroupByExpr", false, [.. clauseTerminators]);
 
@@ -414,6 +416,7 @@ internal sealed class HavingPartReader : IPartReader<HavingPart>
     /// <returns>The parsed HAVING segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("HAVING", out _);
         var predicateReader = new PredicateReader(parser);
         return predicateReader.ReadPredicate("Having", [.. clauseTerminators]);
     }
@@ -456,6 +459,7 @@ internal sealed class OrderByPartReader : IPartReader<OrderByPart>
     /// <returns>The parsed ORDER BY segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("ORDER BY", out _);
         var expressionListReader = new ExpressionListReader(parser);
         var expressions = expressionListReader.ReadExpressions(
             "OrderByExpr",
@@ -519,6 +523,7 @@ internal sealed class LimitPartReader : IPartReader<LimitPart>
     /// <returns>The parsed LIMIT segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("LIMIT", out _);
         var tokens = parser.ReadSectionTokens([..clauseTerminators]);
         return parser.BuildSegment("Limit", tokens);
     }
@@ -561,6 +566,7 @@ internal sealed class OffsetPartReader : IPartReader<OffsetPart>
     /// <returns>The parsed OFFSET segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("OFFSET", out _);
         var tokens = parser.ReadSectionTokens(
             [..clauseTerminators]);
         return parser.BuildSegment("Offset", tokens);
@@ -601,6 +607,7 @@ internal sealed class ValuesPartReader : IPartReader<ValuesPart>
     /// <returns>The parsed VALUES segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("VALUES", out _);
         var tokens = parser.ReadSectionTokens([..clauseTerminators]);
         return parser.BuildSegment("Values", tokens);
     }
@@ -639,6 +646,7 @@ internal sealed class OutputPartReader : IPartReader
     /// <returns>The parsed OUTPUT segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("OUTPUT", out _);
         var expressionListReader = new ExpressionListReader(parser);
 		var expressions = expressionListReader.ReadExpressions("OutputExpr", true, [..clauseTerminators]);
         return BuildExpressionListSegment(parser, "Output", expressions);
@@ -695,6 +703,7 @@ internal sealed class ReturningPartReader : IPartReader
     /// <returns>The parsed RETURNING segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
+        parser.TryConsumeSegmentKeyword("RETURNING", out _);
 		var tokens = parser.ReadSectionTokens([..clauseTerminators]);
         return parser.BuildSegment("Returning", tokens);
     }
@@ -801,6 +810,11 @@ internal sealed class DeletePartReader : IPartReader<DeletePart>
             tokens.Add(parser.Read());
         }
 
+        if (tokens.Count == 0)
+        {
+            return null;
+        }
+
         return parser.BuildSegment("Target", tokens);
     }
 }
@@ -876,6 +890,7 @@ internal sealed class SetPartReader : IPartReader
 	/// <returns>The parsed SET segment.</returns>
 	public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
 	{
+        parser.TryConsumeSegmentKeyword("SET", out _);
         var tokens = parser.ReadSectionTokens([..clauseTerminators]);
         return parser.BuildSegment("Set", tokens);
     }

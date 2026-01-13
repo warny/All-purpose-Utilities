@@ -15,8 +15,11 @@ A collection of production-ready .NET utility libraries published as the **omy.U
 - **omy.Utils.Reflection** – reflection extensions such as `PropertyOrFieldInfo` and dynamic delegate invocation.
 - **omy.Utils.Xml** – attribute-driven XML processing and `XmlDataProcessor` helpers.
 - **omy.Utils.VirtualMachine** – minimal VM framework with attribute-defined instructions and configurable endianness.
-- **omy.Utils.OData** – OData client helpers and related generators.
-- **omy.Utils.DependencyInjection** – dependency injection helpers plus source generators.
+- **omy.Utils.OData** – OData client helpers and metadata utilities.
+- **omy.Utils.OData.Generators** – Roslyn source generator for OData models from EDMX metadata.
+- **omy.Utils.DependencyInjection** – attribute-based dependency injection helpers.
+- **omy.Utils.DependencyInjection.Generators** – Roslyn source generator that emits DI registrations.
+- **omy.Utils.IO.Serialization.Generators** – Roslyn source generator for stream serializers.
 
 > Additional project-level READMEs provide deeper details for specialized packages like serialization or generators.
 
