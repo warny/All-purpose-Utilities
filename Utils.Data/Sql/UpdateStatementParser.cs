@@ -27,7 +27,7 @@ internal sealed class UpdateStatementParser : StatementParserBase
 
         var segments = new Dictionary<ClauseStart, SqlSegment>
         {
-            [SpdateTargetReader.Clause] = SpdateTargetReader.TryRead(
+            [UpdateTargetReader.Clause] = UpdateTargetReader.TryRead(
                 parser,
                 SetReader.Clause,
                 OutputReader.Clause,
@@ -46,7 +46,7 @@ internal sealed class UpdateStatementParser : StatementParserBase
             ReturningReader);
 
         return new SqlUpdateStatement(
-            segments.GetValueOrDefault(SpdateTargetReader.Clause),
+            segments.GetValueOrDefault(UpdateTargetReader.Clause),
 			segments.GetValueOrDefault(SetReader.Clause),
 			segments.GetValueOrDefault(FromReader.Clause),
 			segments.GetValueOrDefault(WhereReader.Clause),

@@ -113,6 +113,22 @@ public class ODataContextGeneratorTests
 
         try
         {
+            using (var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }))
+            {
+                try
+                {
+                    using var response = client.GetAsync(metadataUrl).GetAwaiter().GetResult();
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Assert.Inconclusive($"Unable to fetch metadata from '{metadataUrl}'. Status code: {response.StatusCode}.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Assert.Inconclusive($"Unable to reach metadata server at '{metadataUrl}'. {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+
             string source =
                 $$"""
                 using Utils.OData;
@@ -235,26 +251,29 @@ public class ODataContextGeneratorTests
     /// <returns>A task that completes once the request has been processed.</returns>
     private static async Task ServeCompressedMetadataAsync(HttpListener listener, string metadataPath)
     {
-        try
+        while (listener.IsListening)
         {
-            var context = await listener.GetContextAsync().ConfigureAwait(false);
-            context.Response.StatusCode = 200;
-            context.Response.AddHeader("Content-Encoding", "gzip");
-            context.Response.ContentType = "application/xml";
-
-            var responseStream = context.Response.OutputStream;
-            using (var gzip = new GZipStream(responseStream, CompressionLevel.Fastest, leaveOpen: true))
-            using (var fileStream = File.OpenRead(metadataPath))
+            try
             {
-                await fileStream.CopyToAsync(gzip).ConfigureAwait(false);
-            }
+                var context = await listener.GetContextAsync().ConfigureAwait(false);
+                context.Response.StatusCode = 200;
+                context.Response.AddHeader("Content-Encoding", "gzip");
+                context.Response.ContentType = "application/xml";
 
-            responseStream.Flush();
-            context.Response.Close();
-        }
-        catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
-        {
-            return;
+                var responseStream = context.Response.OutputStream;
+                using (var gzip = new GZipStream(responseStream, CompressionLevel.Fastest, leaveOpen: true))
+                using (var fileStream = File.OpenRead(metadataPath))
+                {
+                    await fileStream.CopyToAsync(gzip).ConfigureAwait(false);
+                }
+
+                responseStream.Flush();
+                context.Response.Close();
+            }
+            catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
+            {
+                return;
+            }
         }
     }
 

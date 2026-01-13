@@ -12,7 +12,7 @@ abstract internal class StatementParserBase
 	protected readonly SqlParser parser;
 
 	public static IPartReader SelectReader = SelectPartReader.Singleton;
-	public static IPartReader SpdateTargetReader => UpdatePartReader.Singleton;
+	public static IPartReader UpdateTargetReader => UpdatePartReader.Singleton;
 	public static IPartReader DeleteReader => DeletePartReader.Singleton;
 	public static IPartReader FromReader => FromPartReader.Singleton;
 	public static IPartReader UsingReader => UsingPartReader.Singleton;

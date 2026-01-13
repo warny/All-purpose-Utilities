@@ -38,6 +38,22 @@ public class NntpClient : CommandResponseClient
     }
 
     /// <summary>
+    /// Parses NNTP response lines, treating non-numeric data lines as preliminary responses.
+    /// </summary>
+    /// <param name="line">Response line from the server.</param>
+    /// <returns>The parsed response.</returns>
+    protected override ServerResponse ParseResponseLine(string line)
+    {
+        ServerResponse response = base.ParseResponseLine(line);
+        if (response.Severity == ResponseSeverity.Unknown && response.Code == line)
+        {
+            return new ServerResponse(response.Code, ResponseSeverity.Preliminary, response.Message);
+        }
+
+        return response;
+    }
+
+    /// <summary>
     /// Selects the specified newsgroup.
     /// </summary>
     /// <param name="group">Name of the newsgroup.</param>
@@ -307,4 +323,3 @@ public class NntpClient : CommandResponseClient
         }
     }
 }
-
