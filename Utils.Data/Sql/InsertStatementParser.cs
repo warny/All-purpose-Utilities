@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Utils.Collections;
 
 namespace Utils.Data.Sql;
@@ -29,9 +30,26 @@ internal sealed class InsertStatementParser : StatementParserBase
             parser.ExpectKeyword("INTO");
         }
 
-        var segments = base.ReadSegments(
-            IntoReader,
-            OutputReader);
+        var segments = new Dictionary<ClauseStart, SqlSegment>
+        {
+            [IntoReader.Clause] = IntoReader.TryRead(
+                parser,
+                OutputReader.Clause,
+                ValuesReader.Clause,
+                ClauseStart.Select,
+                ReturningReader.Clause,
+                ClauseStart.StatementEnd),
+        };
+
+        if (parser.CheckKeyword("OUTPUT"))
+        {
+            segments[OutputReader.Clause] = OutputReader.TryRead(
+                parser,
+                ValuesReader.Clause,
+                ClauseStart.Select,
+                ReturningReader.Clause,
+                ClauseStart.StatementEnd);
+        }
 
         if (parser.CheckKeyword("VALUES"))
         {
@@ -48,7 +66,7 @@ internal sealed class InsertStatementParser : StatementParserBase
 			   withClause
 			);
 		}
-        else if (parser.CheckKeyword("SELECT"))
+        else if (parser.CheckKeyword("SELECT") || parser.CheckKeyword("WITH"))
         {
 			var sourceQuery = parser.ParseStatement();
             ReadSegments(

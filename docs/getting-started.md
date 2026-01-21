@@ -36,6 +36,7 @@ The libraries target stable target frameworks for consumers:
 
 - **net8.0** for most foundational packages
 - **net9.0** for networking and selected libraries
+- **netstandard2.0** for Roslyn source generators
 
 Building the repository may require the latest .NET SDK, but consuming the NuGet packages only requires the listed TFMs.
 

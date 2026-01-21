@@ -12,7 +12,7 @@ abstract internal class StatementParserBase
 	protected readonly SqlParser parser;
 
 	public static IPartReader SelectReader = SelectPartReader.Singleton;
-	public static IPartReader SpdateTargetReader => UpdatePartReader.Singleton;
+	public static IPartReader UpdateTargetReader => UpdatePartReader.Singleton;
 	public static IPartReader DeleteReader => DeletePartReader.Singleton;
 	public static IPartReader FromReader => FromPartReader.Singleton;
 	public static IPartReader UsingReader => UsingPartReader.Singleton;
@@ -54,7 +54,8 @@ abstract internal class StatementParserBase
                 foreach (var keyWordSequence in reader.KeywordSequences)
                 {
                     if (!parser.CheckKeywordSequence(keyWordSequence)) continue;
-                    segment = reader.TryRead(parser, readersQueue.Select(r => r.Clause));
+                    var clauseTerminators = readersQueue.Select(r => r.Clause).Append(ClauseStart.StatementEnd);
+                    segment = reader.TryRead(parser, clauseTerminators);
                 }
             }
             segments[reader.Clause] = segment;
