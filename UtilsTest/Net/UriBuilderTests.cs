@@ -43,6 +43,45 @@ namespace UtilsTest.Net
             Assert.AreEqual("ftp://olivier:marty@example.com/", builder.ToString());
         }
 
+
+        [TestMethod]
+        public void ReadSchemelessServerUri()
+        {
+            var builder = new Utils.Net.UriBuilderEx("//example.com/path?key=value");
+
+            Assert.AreEqual("", builder.Scheme);
+            Assert.AreEqual("example.com", builder.Host);
+            Assert.AreEqual("/path", builder.AbsolutePath);
+            Assert.AreEqual("value", builder.QueryString["key"]);
+            Assert.AreEqual("//example.com/path?key=value", builder.ToString());
+        }
+
+
+        [TestMethod]
+        public void ReadSchemelessServerUriWithAuthentication()
+        {
+            var builder = new Utils.Net.UriBuilderEx("//olivier:marty@example.fr/path");
+
+            Assert.AreEqual("", builder.Scheme);
+            Assert.AreEqual("example.fr", builder.Host);
+            Assert.AreEqual("olivier", builder.Username);
+            Assert.AreEqual("marty", builder.Password);
+            Assert.AreEqual("/path", builder.AbsolutePath);
+            Assert.AreEqual("//olivier:marty@example.fr/path", builder.ToString());
+        }
+
+        [TestMethod]
+        public void ReadPathOnlyUri()
+        {
+            var builder = new Utils.Net.UriBuilderEx("/path?key=value");
+
+            Assert.AreEqual("", builder.Scheme);
+            Assert.AreEqual("", builder.Host);
+            Assert.AreEqual("/path", builder.AbsolutePath);
+            Assert.AreEqual("value", builder.QueryString["key"]);
+            Assert.AreEqual("/path?key=value", builder.ToString());
+        }
+
         [TestMethod]
         public void ReadQueryString()
         {

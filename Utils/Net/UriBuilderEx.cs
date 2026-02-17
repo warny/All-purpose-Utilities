@@ -22,6 +22,9 @@ namespace Utils.Net;
 /// </remarks>
 public class UriBuilderEx
 {
+    private bool _hasExplicitScheme;
+    private bool _hasExplicitPort;
+
     /// <summary>
     /// Maps URI schemes to their well-known default ports.
     /// Ports listed here are omitted from the final URI if they match the scheme's default value.
@@ -57,13 +60,71 @@ public class UriBuilderEx
     public UriBuilderEx(Uri uri)
     {
         uri.Arg().MustNotBeNull();
+        InitializeFromUri(uri, uri.IsAbsoluteUri);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UriBuilderEx"/> class using a URI string.
+    /// </summary>
+    /// <param name="uriString">The string representation of a URI.</param>
+    /// <exception cref="UriFormatException">Thrown if <paramref name="uriString"/> is not a valid URI.</exception>
+    public UriBuilderEx(string uriString)
+    {
+        uriString.Arg().MustNotBeNull();
+
+        if (uriString.StartsWith("//", StringComparison.Ordinal)
+            && Uri.TryCreate($"http:{uriString}", UriKind.Absolute, out Uri schemelessHostUri))
+        {
+            InitializeFromUri(schemelessHostUri, hasExplicitScheme: false);
+            _hasExplicitPort = HasExplicitPortInSchemelessUri(uriString);
+            Scheme = string.Empty;
+            return;
+        }
+
+        if (uriString.StartsWith("/", StringComparison.Ordinal)
+            && Uri.TryCreate(uriString, UriKind.Relative, out Uri slashPrefixedRelativeUri))
+        {
+            InitializeFromRelativeUriString(slashPrefixedRelativeUri.OriginalString);
+            return;
+        }
+
+        if (Uri.TryCreate(uriString, UriKind.Absolute, out Uri absoluteUri)
+            && !string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+        {
+            InitializeFromUri(absoluteUri, hasExplicitScheme: true);
+            return;
+        }
+
+        if (Uri.TryCreate(uriString, UriKind.Relative, out Uri relativeUri))
+        {
+            InitializeFromRelativeUriString(relativeUri.OriginalString);
+            return;
+        }
+
+        throw new UriFormatException($"Invalid URI: {uriString}");
+    }
+
+    /// <summary>
+    /// Initializes all URI components from a parsed <see cref="Uri"/>.
+    /// </summary>
+    /// <param name="uri">The parsed URI instance.</param>
+    /// <param name="hasExplicitScheme">Indicates whether the input URI explicitly contained a scheme.</param>
+    private void InitializeFromUri(Uri uri, bool hasExplicitScheme)
+    {
+        _hasExplicitScheme = hasExplicitScheme;
+
+        if (!uri.IsAbsoluteUri)
+        {
+            InitializeFromRelativeUriString(uri.OriginalString);
+            return;
+        }
 
         Scheme = uri.Scheme;
         Host = uri.Host;
         Port = uri.Port;
+        _hasExplicitPort = !uri.IsDefaultPort;
         AbsolutePath = uri.AbsolutePath;
 
-        // Parse username and password from user info (if present).
         string[] userInfos = uri.UserInfo.Split([':'], 2);
         if (userInfos.Length >= 1)
         {
@@ -74,19 +135,11 @@ public class UriBuilderEx
             Password = System.Web.HttpUtility.UrlDecode(userInfos[1]);
         }
 
-        // Parse query string and fragment.
         QueryString = new QueryString(uri.Query);
         Fragment = uri.Fragment?.StartsWith("#") ?? false
             ? uri.Fragment[1..]
             : uri.Fragment;
     }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UriBuilderEx"/> class using a URI string.
-    /// </summary>
-    /// <param name="uriString">The string representation of a URI.</param>
-    /// <exception cref="UriFormatException">Thrown if <paramref name="uriString"/> is not a valid URI.</exception>
-    public UriBuilderEx(string uriString) : this(new Uri(uriString)) { }
 
     /// <summary>
     /// Gets or sets the URI scheme (e.g., http, https, ftp).
@@ -196,6 +249,11 @@ public class UriBuilderEx
     /// <returns>A string representation of the full URL, including credentials if set.</returns>
     public string GetFullUrl()
     {
+        if (!_hasExplicitScheme)
+        {
+            return BuildUrlWithoutScheme(includeAuthorization: true);
+        }
+
         var builder = InnerBuildUrl();
 
         builder.UserName = Username;
@@ -212,9 +270,115 @@ public class UriBuilderEx
     /// <returns>A string representation of the URL, without credentials.</returns>
     public string GetUrlWithoutAuthorization()
     {
+        if (!_hasExplicitScheme)
+        {
+            return BuildUrlWithoutScheme(includeAuthorization: false);
+        }
+
         var builder = InnerBuildUrl();
         return builder.ToString();
     }
+
+    /// <summary>
+    /// Builds URLs for inputs without explicit URI scheme (e.g. <c>//host/path</c> or <c>/path</c>).
+    /// </summary>
+    /// <param name="includeAuthorization">Indicates whether credentials should be included.</param>
+    /// <returns>The reconstructed URL preserving the input style without forcing a scheme.</returns>
+    private string BuildUrlWithoutScheme(bool includeAuthorization)
+    {
+        var builder = new StringBuilder();
+
+        if (!string.IsNullOrWhiteSpace(Host))
+        {
+            builder.Append("//");
+            if (includeAuthorization && !string.IsNullOrWhiteSpace(Username))
+            {
+                builder.Append(Username);
+                if (!string.IsNullOrWhiteSpace(Password))
+                {
+                    builder.Append(':').Append(Password);
+                }
+
+                builder.Append('@');
+            }
+
+            builder.Append(Host);
+
+            if (Port >= 0 && (_hasExplicitPort || !IsDefaultPortForScheme(Uri.UriSchemeHttp, Port)))
+            {
+                builder.Append(':').Append(Port);
+            }
+        }
+
+        builder.Append(string.IsNullOrWhiteSpace(AbsolutePath) ? "/" : AbsolutePath);
+
+        string query = string.Join("&", QueryString.ToString());
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            builder.Append('?').Append(query);
+        }
+
+        if (!string.IsNullOrWhiteSpace(Fragment))
+        {
+            builder.Append('#').Append(Fragment);
+        }
+
+        return builder.ToString();
+    }
+
+
+    /// <summary>
+    /// Initializes URI components from a relative URI string.
+    /// </summary>
+    /// <param name="relativeUriString">The relative URI string to parse.</param>
+    private void InitializeFromRelativeUriString(string relativeUriString)
+    {
+        _hasExplicitScheme = false;
+        _hasExplicitPort = false;
+        Scheme = string.Empty;
+        Host = string.Empty;
+        Port = -1;
+
+        string[] fragmentParts = relativeUriString.Split(['#'], 2);
+        string pathAndQuery = fragmentParts[0];
+        Fragment = fragmentParts.Length == 2 ? fragmentParts[1] : string.Empty;
+
+        string[] pathAndQueryParts = pathAndQuery.Split(['?'], 2);
+        AbsolutePath = pathAndQueryParts[0];
+        QueryString = pathAndQueryParts.Length == 2
+            ? new QueryString(pathAndQueryParts[1])
+            : new QueryString(string.Empty);
+    }
+
+    /// <summary>
+    /// Determines whether a schemeless URI explicitly defines a port in its authority section.
+    /// </summary>
+    /// <param name="uriString">The schemeless URI string.</param>
+    /// <returns><see langword="true"/> when a port is explicitly present; otherwise <see langword="false"/>.</returns>
+    private static bool HasExplicitPortInSchemelessUri(string uriString)
+    {
+        int authorityStart = 2;
+        int authorityEnd = uriString.IndexOfAny(['/', '?', '#'], authorityStart);
+        string authority = authorityEnd >= 0
+            ? uriString[authorityStart..authorityEnd]
+            : uriString[authorityStart..];
+
+        int atIndex = authority.LastIndexOf('@');
+        string hostPort = atIndex >= 0 ? authority[(atIndex + 1)..] : authority;
+
+        int closingBracketIndex = hostPort.LastIndexOf(']');
+        int separatorIndex = hostPort.LastIndexOf(':');
+        return separatorIndex > closingBracketIndex;
+    }
+
+    /// <summary>
+    /// Determines whether the given port is the default one for the provided scheme.
+    /// </summary>
+    /// <param name="scheme">The URI scheme to evaluate.</param>
+    /// <param name="port">The port to evaluate.</param>
+    /// <returns><see langword="true"/> if the port matches the scheme default; otherwise <see langword="false"/>.</returns>
+    private static bool IsDefaultPortForScheme(string scheme, int port)
+        => DefaultPorts.TryGetValue(scheme, out int defaultPort) && defaultPort == port;
 
     /// <inheritdoc />
     /// <summary>
@@ -255,5 +419,5 @@ public class UriBuilderEx
     /// </summary>
     /// <param name="builder">The <see cref="UriBuilderEx"/> instance to convert.</param>
     /// <returns>A new <see cref="Uri"/> instance, excluding credentials.</returns>
-    public static implicit operator Uri(UriBuilderEx builder) => new(builder.GetUrlWithoutAuthorization());
+    public static implicit operator Uri(UriBuilderEx builder) => new(builder.GetUrlWithoutAuthorization(), UriKind.RelativeOrAbsolute);
 }
