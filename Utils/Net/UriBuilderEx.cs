@@ -88,8 +88,7 @@ public class UriBuilderEx
             return;
         }
 
-        if (Uri.TryCreate(uriString, UriKind.Absolute, out Uri absoluteUri)
-            && !string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+        if (Uri.TryCreate(uriString, UriKind.Absolute, out Uri absoluteUri))
         {
             InitializeFromUri(absoluteUri, hasExplicitScheme: true);
             return;
@@ -293,10 +292,10 @@ public class UriBuilderEx
             builder.Append("//");
             if (includeAuthorization && !string.IsNullOrWhiteSpace(Username))
             {
-                builder.Append(Username);
+                builder.Append(EscapeUserInfoComponent(Username));
                 if (!string.IsNullOrWhiteSpace(Password))
                 {
-                    builder.Append(':').Append(Password);
+                    builder.Append(':').Append(EscapeUserInfoComponent(Password));
                 }
 
                 builder.Append('@');
@@ -379,6 +378,14 @@ public class UriBuilderEx
     /// <returns><see langword="true"/> if the port matches the scheme default; otherwise <see langword="false"/>.</returns>
     private static bool IsDefaultPortForScheme(string scheme, int port)
         => DefaultPorts.TryGetValue(scheme, out int defaultPort) && defaultPort == port;
+
+    /// <summary>
+    /// Escapes a user info component so it can be safely embedded inside a URI authority string.
+    /// </summary>
+    /// <param name="value">The user info component to escape.</param>
+    /// <returns>An escaped value suitable for URI user info output.</returns>
+    private static string EscapeUserInfoComponent(string value)
+        => Uri.EscapeDataString(value);
 
     /// <inheritdoc />
     /// <summary>

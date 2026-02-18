@@ -210,5 +210,26 @@ namespace UtilsTest.Net
             builder.Fragment = "";
             Assert.AreEqual("http://example.com/", builder.ToString());
         }
+
+        [TestMethod]
+        public void ReadFileUri()
+        {
+            var builder = new Utils.Net.UriBuilderEx("file:///tmp/readme.txt");
+
+            Assert.AreEqual(Uri.UriSchemeFile, builder.Scheme);
+            Assert.AreEqual(string.Empty, builder.Host);
+            Assert.AreEqual("/tmp/readme.txt", builder.AbsolutePath);
+            Assert.AreEqual("file:///tmp/readme.txt", builder.ToString());
+        }
+
+        [TestMethod]
+        public void EscapeAuthenticationForSchemelessUri()
+        {
+            var builder = new Utils.Net.UriBuilderEx("//example.com/path");
+            builder.Username = "user name";
+            builder.Password = "p@ss:word";
+
+            Assert.AreEqual("//user%20name:p%40ss%3Aword@example.com/path", builder.ToString());
+        }
     }
 }
