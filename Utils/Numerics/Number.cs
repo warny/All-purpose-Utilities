@@ -13,10 +13,7 @@ public readonly struct Number :
     IFloatingPoint<Number>,
     IPowerFunctions<Number>,
     ITrigonometricFunctions<Number>,
-    IRootFunctions<Number>,
-    IComparable<Number>,
-    IComparable,
-    IFormattable
+    IRootFunctions<Number>
 {
     private readonly BigInteger _numerator;
     private readonly BigInteger _denominator;
@@ -93,22 +90,29 @@ public readonly struct Number :
     /// <summary>
     /// Parses a textual representation of a number.
     /// </summary>
-    /// <param name="text">The text to parse.</param>
-    /// <param name="provider">Number format provider or <c>null</c> for invariant culture.</param>
+    /// <param name="s">The text to parse.</param>
     /// <returns>A new <see cref="Number"/> instance.</returns>
-    public static Number Parse(string text, IFormatProvider? provider = null)
+    public static Number Parse(string s) => Parse(s, null);
+
+	/// <summary>
+	/// Parses a textual representation of a number.
+	/// </summary>
+	/// <param name="s">The text to parse.</param>
+	/// <param name="provider">Number format provider or <c>null</c> for invariant culture.</param>
+	/// <returns>A new <see cref="Number"/> instance.</returns>
+	public static Number Parse(string s, IFormatProvider? provider)
     {
         provider ??= CultureInfo.InvariantCulture;
         NumberFormatInfo info = NumberFormatInfo.GetInstance(provider);
-        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
         {
-            BigInteger value = BigInteger.Parse(text[2..], NumberStyles.HexNumber, provider);
+            BigInteger value = BigInteger.Parse(s[2..], NumberStyles.HexNumber, provider);
             return new Number(value);
         }
 
-        if (text.Contains(info.NumberDecimalSeparator))
+        if (s.Contains(info.NumberDecimalSeparator))
         {
-            string[] parts = text.Split(info.NumberDecimalSeparator);
+            string[] parts = s.Split(info.NumberDecimalSeparator);
             BigInteger integerPart = BigInteger.Parse(parts[0], provider);
             string fractionText = parts[1];
             BigInteger fractionPart = BigInteger.Parse(fractionText, provider);
@@ -117,22 +121,22 @@ public readonly struct Number :
             return new Number(numerator, denominator);
         }
 
-        BigInteger intValue = BigInteger.Parse(text, provider);
+        BigInteger intValue = BigInteger.Parse(s, provider);
         return new Number(intValue);
     }
 
     /// <summary>
     /// Attempts to parse a textual representation of a number.
     /// </summary>
-    /// <param name="text">The text to parse.</param>
+    /// <param name="s">The text to parse.</param>
     /// <param name="provider">Format provider or <c>null</c> for invariant culture.</param>
     /// <param name="result">Receives the parsed value when successful.</param>
     /// <returns><see langword="true"/> if parsing succeeded; otherwise <see langword="false"/>.</returns>
-    public static bool TryParse(string text, IFormatProvider? provider, out Number result)
+    public static bool TryParse(string s, IFormatProvider? provider, out Number result)
     {
         try
         {
-            result = Parse(text, provider);
+            result = Parse(s, provider);
             return true;
         }
         catch
