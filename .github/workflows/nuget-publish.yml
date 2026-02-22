@@ -26,63 +26,76 @@ jobs:
                   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
               shell: pwsh
               run: |
-                  $projects = @(
-                    "Utils\Utils.csproj",
-                    "Utils.Data\Utils.Data.csproj",
-                    "Utils.DependencyInjection\Utils.DependencyInjection.csproj",
-                    "Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj",
-                    "Utils.Fonts\Utils.Fonts.csproj",
-                    "Utils.Geography\Utils.Geography.csproj",
-                    "Utils.Imaging\Utils.Imaging.csproj",
-                    "Utils.IO\Utils.IO.csproj",
-                    "Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj",
-                    "Utils.Mathematics\Utils.Mathematics.csproj",
-                    "Utils.Net\Utils.Net.csproj",
-                    "Utils.OData\Utils.OData.csproj",
-                    "Utils.OData.Generators\Utils.OData.Generators.csproj",
-                    "Utils.Reflection\Utils.Reflection.csproj",
-                    "Utils.VirtualMachine\Utils.VirtualMachine.csproj",
-                    "Utils.Xml\Utils.Xml.csproj"
-                  )
+                  function Get-ProjectPropertyValue([xml]$projectXml, [string]$name) {
+                      $propertyNodes = $projectXml.Project.PropertyGroup.$name
+                      if ($null -eq $propertyNodes) {
+                          return $null
+                      }
+
+                      foreach ($propertyNode in @($propertyNodes)) {
+                          if ($null -ne $propertyNode -and -not [string]::IsNullOrWhiteSpace($propertyNode.InnerText)) {
+                              return $propertyNode.InnerText.Trim()
+                          }
+                      }
+
+                      return $null
+                  }
+
+                  $projects = Get-ChildItem -Path . -Recurse -Filter *.csproj -File |
+                      Where-Object { $_.FullName -notmatch "[\\/](bin|obj)[\\/]" }
+
                   New-Item -ItemType Directory -Path packages -Force | Out-Null
                   $errors = @()
-                  foreach ($csproj in $projects) {
-                      $pkgIdMatches = (Select-String -Path $csproj -Pattern '<PackageId>([^<]+)' | Select-Object -First 1)
-                      $versionMatches = (Select-String -Path $csproj -Pattern '<Version>([^<]+)' | Select-Object -First 1)
-                      
-                      if ($pkgIdMatches.Count -eq 0) { continue; }
-                      if ($versionMatches.Count -eq 0) { continue; }
-                      
-                      $pkgId = $pkgIdMatches.Matches[0].Groups[1].Value
-                      $version = $versionMatches.Matches[0].Groups[1].Value
-                      
-                      $url = "https://api.nuget.org/v3-flatcontainer/$($pkgId.ToLower())/index.json"
-                      Write-Host "Checking package $pkgId version $version"
+
+                  foreach ($project in $projects) {
+                      $csproj = $project.FullName
+                      $projectXml = [xml](Get-Content -Path $csproj -Raw)
+
+                      $isPackable = Get-ProjectPropertyValue -projectXml $projectXml -name "IsPackable"
+                      if ($isPackable -and $isPackable.ToLowerInvariant() -eq "false") {
+                          continue
+                      }
+
+                      $pkgId = Get-ProjectPropertyValue -projectXml $projectXml -name "PackageId"
+                      $version = Get-ProjectPropertyValue -projectXml $projectXml -name "Version"
+
+                      if ([string]::IsNullOrWhiteSpace($pkgId) -or [string]::IsNullOrWhiteSpace($version)) {
+                          continue
+                      }
+
+                      $url = "https://api.nuget.org/v3-flatcontainer/$($pkgId.ToLowerInvariant())/index.json"
+                      Write-Host "Checking package $pkgId version $version ($csproj)"
+
                       $versions = @()
                       try {
                           $versions = (Invoke-RestMethod -Uri $url -ErrorAction Stop).versions
                       } catch {
                           $versions = @()
                       }
+
                       if ($versions -contains $version) {
                           Write-Host "Skipping $pkgId version $version"
                           continue
                       }
+
                       try {
                           dotnet pack $csproj --configuration Release --no-build --no-restore -o packages -p:ContinuousIntegrationBuild=true
                       } catch {
                           $errors += "Error packing $pkgId version $($version): $($_.Exception.Message)"
                           continue
                       }
+
                       $pushOutput = dotnet nuget push "packages/$pkgId.$version.nupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" 2>&1
                       if ($LASTEXITCODE -ne 0) {
                           $errors += "Error publishing $pkgId version $($version): $pushOutput"
                           continue
                       }
+
                       if (Test-Path "packages/$pkgId.$version.snupkg") {
                           dotnet nuget push "packages/$pkgId.$version.snupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" | Out-Null
                       }
                   }
+
                   if ($errors.Count -gt 0) {
                       $errors | ForEach-Object { Write-Host $_ }
                       exit 1

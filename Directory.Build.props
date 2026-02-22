@@ -1,0 +1,9 @@
+<Project>
+    <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+        <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
+        <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+        <PackageLicenseExpression Condition="'$(PackageLicenseExpression)' == ''">Apache-2.0</PackageLicenseExpression>
+        <PackageTags Condition="'$(PackageTags)' == ''">omy;utilities;dotnet</PackageTags>
+    </PropertyGroup>
+</Project>

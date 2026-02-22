@@ -9,6 +9,7 @@
 		<LangVersion>Latest</LangVersion>
 		<Description>Windows Forms sample rendering fractal images using Utils.Imaging. Main types are FractalsForm and ComputeFractal for generating visuals.</Description>
 		<NoWarn>1591</NoWarn>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
