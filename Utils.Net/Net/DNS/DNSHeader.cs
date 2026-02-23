@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using Utils.Net;
 
@@ -56,7 +57,7 @@ public class DNSHeader : DNSElement
     /// </summary>
     public DNSHeader()
     {
-        ID = (ushort)new Random().Next();
+        ID = (ushort)RandomNumberGenerator.GetInt32(0, ushort.MaxValue + 1);
         QrBit = DNSQRBit.Question;
     }
 

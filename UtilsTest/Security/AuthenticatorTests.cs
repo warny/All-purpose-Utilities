@@ -53,5 +53,19 @@ namespace Utils.Tests.Security
             // Assert
             Assert.IsFalse(result);
         }
+
+        [TestMethod]
+        public void VerifyAuthenticator_ShouldReturnFalseForCodeWithInvalidLength()
+        {
+            // Arrange
+            byte[] key = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
+            Authenticator authenticator = new Authenticator("HMACSHA256", key, 6, 30);
+
+            // Act
+            bool result = authenticator.VerifyAuthenticator(1, "12345");
+
+            // Assert
+            Assert.IsFalse(result);
+        }
     }
 }

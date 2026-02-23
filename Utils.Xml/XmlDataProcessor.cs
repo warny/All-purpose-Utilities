@@ -220,8 +220,30 @@ public abstract class XmlDataProcessor
     /// Reads and processes an XML document from the specified URI path.
     /// </summary>
     /// <param name="uri">The URI to the XML document.</param>
+    /// <remarks>
+    /// This legacy entry point keeps the historical behavior for backward compatibility.
+    /// For untrusted sources, prefer <see cref="ReadSecure(string)"/> which enforces secure reader settings.
+    /// </remarks>
+    [Obsolete("Read(string) keeps legacy XML reader behavior. Use ReadSecure(string) for untrusted XML sources.", false)]
     public void Read(string uri)
         => Read(new XPathDocument(uri).CreateNavigator());
+
+    /// <summary>
+    /// Reads and processes an XML document from the specified URI path using hardened parser settings.
+    /// </summary>
+    /// <param name="uri">The URI to the XML document.</param>
+    /// <remarks>
+    /// This method disables DTD processing, clears the XML resolver, and limits entity expansion
+    /// to reduce XML external entity and expansion attacks when processing untrusted inputs.
+    /// </remarks>
+    public void ReadSecure(string uri)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(uri);
+
+        var settings = CreateSecureReaderSettings();
+        using var reader = XmlReader.Create(uri, settings);
+        Read(reader);
+    }
 
     /// <summary>
     /// Reads and processes an XML document from the specified <see cref="Stream"/>.
@@ -236,6 +258,21 @@ public abstract class XmlDataProcessor
     /// <param name="reader">The <see cref="XmlReader"/> positioned at the start of the XML document.</param>
     public void Read(XmlReader reader)
         => Read(new XPathDocument(reader).CreateNavigator());
+
+    /// <summary>
+    /// Creates hardened XML reader settings for processing untrusted XML sources.
+    /// </summary>
+    /// <returns>A configured <see cref="XmlReaderSettings"/> instance with secure defaults.</returns>
+    private static XmlReaderSettings CreateSecureReaderSettings()
+    {
+        return new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null,
+            MaxCharactersFromEntities = 1024,
+            MaxCharactersInDocument = 10 * 1024 * 1024
+        };
+    }
 
     /// <summary>
     /// Abstract method that gets invoked for the XML root ("/").

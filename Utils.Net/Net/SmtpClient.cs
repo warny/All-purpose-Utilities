@@ -29,6 +29,13 @@ public class SmtpClient : CommandResponseClient
     /// <param name="password">User password.</param>
     /// <param name="mechanism">Authentication mechanism to use.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// SMTP authentication mechanisms such as <c>AUTH PLAIN</c> and <c>AUTH LOGIN</c> should be
+    /// used only when the underlying transport is already protected by TLS.
+    /// This method is marked as obsolete to produce a compile-time warning and reduce
+    /// accidental credential usage on unencrypted channels.
+    /// </remarks>
+    [Obsolete("SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream before calling AuthenticateAsync.", false)]
     public async Task AuthenticateAsync(string user, string password, SmtpAuthenticationMechanism mechanism = SmtpAuthenticationMechanism.Plain, CancellationToken cancellationToken = default)
     {
         switch (mechanism)
@@ -62,6 +69,10 @@ public class SmtpClient : CommandResponseClient
     /// <param name="user">User name.</param>
     /// <param name="password">User password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// This overload maps to <c>AUTH PLAIN</c> and should only be used over TLS-protected transports.
+    /// </remarks>
+    [Obsolete("SMTP AUTH PLAIN may expose credentials on unencrypted connections. Use a TLS-protected stream before calling AuthenticateAsync.", false)]
     public Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken)
     {
         return AuthenticateAsync(user, password, SmtpAuthenticationMechanism.Plain, cancellationToken);

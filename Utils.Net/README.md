@@ -34,3 +34,14 @@ var address = ((Utils.Net.DNS.RFC1035.Address)response.Responses[0].RData).IPAdd
 ## Related packages
 - `omy.Utils` – foundational helpers used by networking utilities.
 - `omy.Utils.IO` – stream helpers used by protocol implementations.
+
+## Security recommendations
+- Always use encrypted transports (for example `SslStream`) before sending credentials over POP3/SMTP protocols.
+- Treat `Obsolete` warnings on insecure authentication helpers as security warnings, not cosmetic warnings.
+- Validate and constrain all external inputs (domain names, headers, protocol lines, and payload lengths).
+- Apply explicit timeouts and maximum payload sizes for network calls that can read untrusted remote data.
+- Run dependency vulnerability checks regularly in CI:
+
+```bash
+dotnet list package --vulnerable --include-transitive
+```

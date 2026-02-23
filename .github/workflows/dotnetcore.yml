@@ -28,6 +28,8 @@ jobs:
               run: dotnet build --configuration GitHub # --no-restore
             - name: Test
               run: dotnet test --no-restore --verbosity normal
+            - name: Scan vulnerable packages
+              run: dotnet list Utils.sln package --vulnerable --include-transitive
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
