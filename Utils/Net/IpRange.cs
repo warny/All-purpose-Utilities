@@ -29,6 +29,9 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     /// </summary>
     public int? Mask { get; }
 
+    /// <summary>
+    /// Caches the computed hash code to avoid recomputing it on subsequent calls.
+    /// </summary>
     private int? _hashCode;
 
     /// <summary>
@@ -224,8 +227,11 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     }
 
     /// <summary>
-    /// Calculates the start and end addresses for an address/prefix pair.
+    /// Calculates the inclusive address bounds represented by a CIDR prefix.
     /// </summary>
+    /// <param name="address">An address inside the target network.</param>
+    /// <param name="maskLength">The number of leading network bits.</param>
+    /// <returns>A tuple containing the computed start and end addresses.</returns>
     private static (IPAddress start, IPAddress end) CalculateRange(IPAddress address, int maskLength)
     {
         var bytes = address.GetAddressBytes();
@@ -329,8 +335,18 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
         }
     }
 
+    /// <summary>
+    /// Returns a non-generic enumerator over the addresses contained in this range.
+    /// </summary>
+    /// <returns>A non-generic enumerator wrapping <see cref="GetEnumerator()"/>.</returns>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+    /// <summary>
+    /// Converts a non-negative numeric IP representation into a fixed-length big-endian byte array.
+    /// </summary>
+    /// <param name="value">The numeric value to convert.</param>
+    /// <param name="byteCount">Expected number of bytes in the resulting IP address.</param>
+    /// <returns>A big-endian byte array padded or trimmed to <paramref name="byteCount"/>.</returns>
     private static byte[] ToBytes(BigInteger value, int byteCount)
     {
         var bytes = value.ToByteArray(isUnsigned: true, isBigEndian: true);
