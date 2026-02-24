@@ -45,6 +45,13 @@ public class Pop3Client : CommandResponseClient
     /// <param name="user">User name.</param>
     /// <param name="password">Password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// This authentication flow sends credentials with the <c>USER</c>/<c>PASS</c> commands.
+    /// Use it only over a transport already protected by TLS (for example, an <c>SslStream</c>).
+    /// The method is marked as obsolete to trigger a compile-time warning and help prevent
+    /// accidental usage on unencrypted channels.
+    /// </remarks>
+    [Obsolete("POP3 USER/PASS authentication can expose credentials on unencrypted connections. Use a TLS-protected stream or a stronger mechanism.", false)]
     public async Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken = default)
     {
         await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken));

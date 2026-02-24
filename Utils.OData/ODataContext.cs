@@ -12,6 +12,16 @@ namespace Utils.OData;
 public abstract class ODataContext
 {
     /// <summary>
+    /// Defines the timeout applied to remote EDMX metadata downloads.
+    /// </summary>
+    private static readonly TimeSpan MetadataDownloadTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Defines the maximum accepted size, in bytes, for EDMX metadata loaded from remote locations.
+    /// </summary>
+    private const int MaxMetadataBytes = 10 * 1024 * 1024;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ODataContext"/> class from the specified EDMX stream.
     /// </summary>
     /// <param name="edmxStream">Stream containing the EDMX metadata to load.</param>
@@ -148,28 +158,62 @@ public abstract class ODataContext
             AutomaticDecompression = DecompressionMethods.All
         });
 
+        client.Timeout = MetadataDownloadTimeout;
+
         using var response = client.GetAsync(uri).GetAwaiter().GetResult();
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException($"Failed to download EDMX metadata from '{uri}'. Status code: {response.StatusCode}.");
         }
 
+        long? contentLength = response.Content.Headers.ContentLength;
+        if (contentLength.HasValue && contentLength.Value > MaxMetadataBytes)
+        {
+            throw new InvalidOperationException($"EDMX metadata from '{uri}' exceeds the maximum allowed size of {MaxMetadataBytes} bytes.");
+        }
+
         using var responseStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-        return CopyToMemory(responseStream);
+        return CopyToMemory(responseStream, MaxMetadataBytes);
     }
 
     /// <summary>
     /// Copies a stream to memory to ensure it can be consumed multiple times.
     /// </summary>
     /// <param name="source">The source stream to copy.</param>
+    /// <param name="maximumBytes">Maximum number of bytes accepted when copying from the source stream.</param>
     /// <returns>A <see cref="MemoryStream"/> containing a copy of the source data.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is <see langword="null"/>.</exception>
-    private static MemoryStream CopyToMemory(Stream source)
+    /// <exception cref="InvalidOperationException">Thrown when the source stream exceeds <paramref name="maximumBytes"/> bytes.</exception>
+    private static MemoryStream CopyToMemory(Stream source, int maximumBytes = int.MaxValue)
     {
         ArgumentNullException.ThrowIfNull(source);
 
+        if (maximumBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumBytes), "The maximum number of bytes must be greater than zero.");
+        }
+
+        var buffer = new byte[81920];
+        int totalRead = 0;
         var memoryStream = new MemoryStream();
-        source.CopyTo(memoryStream);
+
+        while (true)
+        {
+            int bytesRead = source.Read(buffer, 0, buffer.Length);
+            if (bytesRead == 0)
+            {
+                break;
+            }
+
+            totalRead += bytesRead;
+            if (totalRead > maximumBytes)
+            {
+                throw new InvalidOperationException($"EDMX metadata exceeds the maximum allowed size of {maximumBytes} bytes.");
+            }
+
+            memoryStream.Write(buffer, 0, bytesRead);
+        }
+
         memoryStream.Position = 0;
         return memoryStream;
     }

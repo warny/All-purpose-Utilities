@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
+using System.Text;
 using Utils.Dates;
 
 namespace Utils.Security;
@@ -48,10 +49,10 @@ public class Authenticator
     /// <param name="intervalLength">The duration, in seconds, for which each code is valid.</param>
     public Authenticator(HMAC algorithm, byte[] key, int digits, int intervalLength)
     {
-		ArgumentNullException.ThrowIfNull(algorithm);
-		ArgumentNullException.ThrowIfNull(key);
-		Digits = digits;
-		Algorithm = algorithm;
+        ArgumentNullException.ThrowIfNull(algorithm);
+        ArgumentNullException.ThrowIfNull(key);
+        Digits = digits;
+        Algorithm = algorithm;
         Key = key;
         IntervalLength = intervalLength;
     }
@@ -124,16 +125,40 @@ public class Authenticator
     /// <returns><see langword="true"/> if the code is valid; otherwise, <see langword="false"/>.</returns>
     public bool VerifyAuthenticator(int range, string code)
     {
+        if (string.IsNullOrEmpty(code) || code.Length != Digits)
+        {
+            return false;
+        }
+
         long baseMessage = CurrentMessage;
 
         for (long i = 0; i <= range; i++)
         {
-            if (code == ComputeAuthenticator(baseMessage + i) || code == ComputeAuthenticator(baseMessage - i - 1))
+            if (SecureEquals(code, ComputeAuthenticator(baseMessage + i)) || SecureEquals(code, ComputeAuthenticator(baseMessage - i - 1)))
             {
                 return true;
             }
         }
+
         return false;
+    }
+
+    /// <summary>
+    /// Compares two authentication codes using a fixed-time operation to reduce timing side channels.
+    /// </summary>
+    /// <param name="left">First code to compare.</param>
+    /// <param name="right">Second code to compare.</param>
+    /// <returns><see langword="true"/> when both codes are identical; otherwise, <see langword="false"/>.</returns>
+    private static bool SecureEquals(string left, string right)
+    {
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+
+        byte[] leftBytes = Encoding.UTF8.GetBytes(left);
+        byte[] rightBytes = Encoding.UTF8.GetBytes(right);
+        return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
     }
 
     /// <summary>

@@ -169,6 +169,51 @@ public class ODataContextGeneratorTests
     }
 
     /// <summary>
+    /// Ensures loading metadata from HTTP rejects responses larger than the configured security limit.
+    /// </summary>
+    [TestMethod]
+    public void ConstructorRejectsOversizedMetadataFromHttp()
+    {
+        string metadataUrl = StartOversizedMetadataServer(out HttpListener listener, out Task serverTask);
+
+        try
+        {
+            InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => _ = new FileContext(metadataUrl));
+            StringAssert.Contains(exception.Message, "maximum allowed size");
+        }
+        finally
+        {
+            listener.Stop();
+            listener.Close();
+            serverTask.GetAwaiter().GetResult();
+        }
+    }
+
+    /// <summary>
+    /// Ensures the <see cref="ODataContext"/> constructor can load metadata from an HTTP endpoint.
+    /// </summary>
+    [TestMethod]
+    public void ConstructorLoadsMetadataFromHttp()
+    {
+        string metadataPath = GetSampleMetadataPath();
+        string metadataUrl = StartCompressedMetadataServer(metadataPath, out HttpListener listener, out Task serverTask);
+
+        try
+        {
+            var context = new FileContext(metadataUrl);
+            Assert.IsNotNull(context.Metadata);
+            Assert.IsNotNull(context.Metadata.DataServices);
+            Assert.IsTrue(context.Metadata.DataServices!.Any());
+        }
+        finally
+        {
+            listener.Stop();
+            listener.Close();
+            serverTask.GetAwaiter().GetResult();
+        }
+    }
+
+    /// <summary>
     /// Resolves the absolute path to the sample EDMX metadata used by the tests.
     /// </summary>
     /// <returns>The full file path to <c>Sample.edmx</c>.</returns>
@@ -275,6 +320,41 @@ public class ODataContextGeneratorTests
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// Starts an HTTP server that advertises metadata content larger than the accepted limit.
+    /// </summary>
+    /// <param name="listener">The listener that accepts the temporary HTTP connection.</param>
+    /// <param name="serverTask">Task responsible for serving one request.</param>
+    /// <returns>The endpoint URL exposing the oversized metadata response.</returns>
+    private static string StartOversizedMetadataServer(out HttpListener listener, out Task serverTask)
+    {
+        listener = new HttpListener();
+        HttpListener localListener = listener;
+        int port = ReserveEphemeralPort();
+        string prefix = $"http://127.0.0.1:{port}/";
+        localListener.Prefixes.Add(prefix);
+        localListener.Start();
+
+        serverTask = Task.Run(async () =>
+        {
+            try
+            {
+                var context = await localListener.GetContextAsync().ConfigureAwait(false);
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "application/xml";
+                byte[] oversizedPayload = new byte[11 * 1024 * 1024];
+                context.Response.ContentLength64 = oversizedPayload.Length;
+                await context.Response.OutputStream.WriteAsync(oversizedPayload, 0, oversizedPayload.Length).ConfigureAwait(false);
+                context.Response.Close();
+            }
+            catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
+            {
+            }
+        });
+
+        return $"{prefix}metadata";
     }
 
     /// <summary>
