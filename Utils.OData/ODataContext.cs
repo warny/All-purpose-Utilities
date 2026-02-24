@@ -160,7 +160,7 @@ public abstract class ODataContext
 
         client.Timeout = MetadataDownloadTimeout;
 
-        using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+        using var response = client.GetAsync(uri).GetAwaiter().GetResult();
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException($"Failed to download EDMX metadata from '{uri}'. Status code: {response.StatusCode}.");
