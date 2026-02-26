@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Utils.Objects;
@@ -10,7 +8,7 @@ namespace Utils.Mathematics;
 /// <summary>
 /// Provides floating-point comparisons that allow for small deviations using a configurable interval.
 /// </summary>
-[DebuggerDisplay("{FloatingPointComparer}(±{Interval})")]
+[DebuggerDisplay("FloatingPointComparer (±{Interval})")]
 public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
     where
         T : struct, IFloatingPointIeee754<T>
