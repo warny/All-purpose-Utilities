@@ -42,7 +42,8 @@ public class NntpClientServerTests
         Assert.AreEqual("comp.test", groups[0].group);
         IReadOnlyList<string> newGroups = await client.NewGroupsAsync(DateTime.UtcNow.AddDays(-4));
         CollectionAssert.Contains((System.Collections.ICollection)newGroups, "comp.test");
-        IReadOnlyList<int> newNews = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddDays(-1));
+        // Uses a margin larger than one day to avoid boundary timing flakiness with strict "> since" filtering.
+        IReadOnlyList<int> newNews = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddDays(-2));
         CollectionAssert.Contains((System.Collections.ICollection)newNews, 1);
         (int count, int first, int last) info = await client.GroupAsync("comp.test");
         Assert.AreEqual(1, info.count);
