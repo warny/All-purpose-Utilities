@@ -15,12 +15,6 @@
                 <PackageTags>omy;utilities;reflection;delegate</PackageTags>
         </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="../LICENSE-apache-2.0.txt" Link="LICENSE-apache-2.0.txt">
-			<PackagePath></PackagePath>
-			<Pack>True</Pack>
-		</None>
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.Compilers" Version="4.14.0" />
