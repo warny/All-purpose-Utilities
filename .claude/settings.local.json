@@ -1,23 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd:*)",
-      "Bash(done)",
-      "WebSearch",
-      "Bash(cd \"E:/projets/All-purpose-Utilities\" && dotnet build Utils.sln 2>&1)",
-      "Bash(tail:*)",
-      "Bash(git checkout:*)",
-      "Bash(where python 2>/dev/null || where python3 2>/dev/null || where py 2>/dev/null)",
-      "Bash(C:\\\\Python314\\\\python.exe:*)",
-      "Bash(cmd.exe:*)",
-      "Bash(grep:*)",
-      "Bash(grep Échec\\\\|Failed\\\\|FAILED\\\\|échoué:*)",
-      "Bash(findstr:*)",
-      "Bash(head:*)",
-      "Bash(cd \"E:\\\\projets\\\\All-purpose-Utilities\" && dotnet test --no-build -v n 2>&1)",
-      "Bash(cd \"E:\\\\projets\\\\All-purpose-Utilities\" && dotnet test --no-build 2>&1 | findstr \"choue\" 2>&1)",
-      "Bash(grep chou\\\\|Reuss:*)",
-      "Bash(cd E:\\\\projets\\\\All-purpose-Utilities:*)"
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "NotebookEdit(*)"
     ]
   }
 }
