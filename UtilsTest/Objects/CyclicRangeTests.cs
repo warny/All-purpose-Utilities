@@ -14,7 +14,7 @@ public class CyclicRangeTests
 
         Assert.IsTrue(range.Contains(1));
         Assert.IsTrue(range.Contains(2));
-        Assert.IsTrue(range.Contains(10));
+        Assert.IsFalse(range.Contains(10));
         Assert.IsTrue(range.Contains(22));
         Assert.IsTrue(range.Contains(23));
     }
@@ -118,6 +118,24 @@ public class CyclicRangeTests
 
         Assert.AreEqual(1, union.Count);
         Assert.AreEqual(new TimeRange(TimeOnly.MinValue, TimeOnly.MaxValue), union.Intervals[0]);
+    }
+
+    [TestMethod]
+    public void AddThrowsWhenIntervalIsNull()
+    {
+        var ranges = new Ranges<int>();
+
+        Assert.ThrowsException<ArgumentNullException>(() => ranges.Add((IRange<int>)null!));
+    }
+
+    [TestMethod]
+    public void ToStringSupportsNonFormattableRanges()
+    {
+        var ranges = new Ranges<TimeOnly>(new TimeRange(new TimeOnly(22, 0), new TimeOnly(2, 0)));
+
+        var text = ranges.ToString("HH:mm", null);
+
+        Assert.AreEqual("Utils.Range.TimeRange", text);
     }
 
 }

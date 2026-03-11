@@ -197,6 +197,8 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// </summary>
     public void Add(IRange<T> interval)
     {
+        ArgumentNullException.ThrowIfNull(interval);
+
         if (_ranges.Count > 0 && (!_ranges[0].IsCompatibleWith(interval) || !interval.IsCompatibleWith(_ranges[0])))
         {
             throw new InvalidOperationException("Cannot mix incompatible ranges in the same collection.");
@@ -554,10 +556,24 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
         if (_ranges.Count == 0)
             return "Ø"; // or "" for empty set
 
-        return string.Join(" ∪ ", _ranges.Select(r => ((IFormattable)r).ToString(format, formatProvider)));
+        return string.Join(" ∪ ", _ranges.Select(r => FormatRange(r, format, formatProvider)));
     }
 
     #endregion
+
+    /// <summary>
+    /// Formats a range instance using <see cref="IFormattable"/> when available, otherwise falls back to <see cref="object.ToString()"/>.
+    /// </summary>
+    /// <param name="range">The range to format.</param>
+    /// <param name="format">The format string.</param>
+    /// <param name="formatProvider">The format provider.</param>
+    /// <returns>A formatted string representation of <paramref name="range"/>.</returns>
+    private static string FormatRange(IRange<T> range, string? format, IFormatProvider? formatProvider)
+    {
+        return range is IFormattable formattable
+            ? formattable.ToString(format, formatProvider)
+            : range.ToString() ?? string.Empty;
+    }
 
     #region Equality
 
@@ -847,6 +863,20 @@ public readonly struct Range<T> : IRange<T>, IFormattable, IEquatable<Range<T>?>
     }
 
     #endregion
+
+    /// <summary>
+    /// Formats a range instance using <see cref="IFormattable"/> when available, otherwise falls back to <see cref="object.ToString()"/>.
+    /// </summary>
+    /// <param name="range">The range to format.</param>
+    /// <param name="format">The format string.</param>
+    /// <param name="formatProvider">The format provider.</param>
+    /// <returns>A formatted string representation of <paramref name="range"/>.</returns>
+    private static string FormatRange(IRange<T> range, string? format, IFormatProvider? formatProvider)
+    {
+        return range is IFormattable formattable
+            ? formattable.ToString(format, formatProvider)
+            : range.ToString() ?? string.Empty;
+    }
 
     #region Equality
 
