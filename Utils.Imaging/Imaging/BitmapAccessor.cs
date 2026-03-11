@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -38,6 +39,26 @@ namespace Utils.Imaging
         /// Gets the number of bytes per pixel.
         /// </summary>
         public int ColorDepth { get; }
+
+        private static readonly IReadOnlyDictionary<PixelFormat, int> ColorDepths =
+            new Dictionary<PixelFormat, int>
+            {
+                { PixelFormat.Alpha,                   1 },
+                { PixelFormat.PAlpha,                  1 },
+                { PixelFormat.Format8bppIndexed,       1 },
+                { PixelFormat.Format16bppGrayScale,    2 },
+                { PixelFormat.Format16bppRgb555,       2 },
+                { PixelFormat.Format16bppRgb565,       2 },
+                { PixelFormat.Format16bppArgb1555,     2 },
+                { PixelFormat.Format24bppRgb,          3 },
+                { PixelFormat.Canonical,               4 },
+                { PixelFormat.Format32bppRgb,          4 },
+                { PixelFormat.Format32bppArgb,         4 },
+                { PixelFormat.Format32bppPArgb,        4 },
+                { PixelFormat.Format48bppRgb,          6 },
+                { PixelFormat.Format64bppArgb,         8 },
+                { PixelFormat.Format64bppPArgb,        8 },
+            }.ToImmutableDictionary();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BitmapAccessor"/> class.
@@ -135,46 +156,10 @@ namespace Utils.Imaging
         /// </summary>
         /// <param name="pixelFormat">The pixel format.</param>
         /// <returns>The number of bytes per pixel.</returns>
-        private static int GetColorDepth(PixelFormat pixelFormat)
-        {
-            switch (pixelFormat)
-            {
-                case PixelFormat.Undefined:
-                case PixelFormat.Indexed:
-                case PixelFormat.Extended:
-                case PixelFormat.Gdi:
-                case PixelFormat.Format1bppIndexed:
-                case PixelFormat.Format4bppIndexed:
-                case PixelFormat.Max:
-                    break;
-                case PixelFormat.Alpha:
-                case PixelFormat.PAlpha:
-                    return 1;
-                case PixelFormat.Format8bppIndexed:
-                    return 1;
-                case PixelFormat.Format16bppGrayScale:
-                case PixelFormat.Format16bppRgb555:
-                case PixelFormat.Format16bppRgb565:
-                case PixelFormat.Format16bppArgb1555:
-                    return 2;
-                case PixelFormat.Format24bppRgb:
-                    return 3;
-                case PixelFormat.Canonical:
-                case PixelFormat.Format32bppRgb:
-                case PixelFormat.Format32bppArgb:
-                case PixelFormat.Format32bppPArgb:
-                    return 4;
-                case PixelFormat.Format48bppRgb:
-                    return 6;
-                case PixelFormat.Format64bppArgb:
-                    return 8;
-                case PixelFormat.Format64bppPArgb:
-                    return 8;
-                default:
-                    break;
-            }
-            throw new NotSupportedException($"La valeur {pixelFormat} n'est pas supportée");
-        }
+        private static int GetColorDepth(PixelFormat pixelFormat) =>
+            ColorDepths.TryGetValue(pixelFormat, out var depth)
+                ? depth
+                : throw new NotSupportedException($"La valeur {pixelFormat} n'est pas supportée");
 
         /// <summary>
         /// Releases resources associated with the bitmap.

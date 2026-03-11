@@ -193,8 +193,8 @@ public class QueryOData : IDisposable
             int? maxPerRequest = null,
             CancellationToken cancellationToken = default)
     {
-		ArgumentNullException.ThrowIfNull(parameter);
-		if (maxPerRequest.HasValue)
+        ArgumentNullException.ThrowIfNull(parameter);
+        if (maxPerRequest.HasValue)
         {
             maxPerRequest?.ArgMustBeGreaterThan(0);
         }
@@ -368,13 +368,13 @@ public class QueryOData : IDisposable
             ChannelWriter<object?[]> writer,
             CancellationToken cancellationToken)
     {
-		ArgumentNullException.ThrowIfNull(parameter);
-		ArgumentNullException.ThrowIfNull(firstBatch);
-		ArgumentNullException.ThrowIfNull(columns);
-		ArgumentNullException.ThrowIfNull(rowConverter);
-		ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(parameter);
+        ArgumentNullException.ThrowIfNull(firstBatch);
+        ArgumentNullException.ThrowIfNull(columns);
+        ArgumentNullException.ThrowIfNull(rowConverter);
+        ArgumentNullException.ThrowIfNull(writer);
 
-		try
+        try
         {
             int totalRetrieved = 0;
             await WriteBatchAsync(firstBatch, columns, rowConverter, writer, cancellationToken);
@@ -440,11 +440,11 @@ public class QueryOData : IDisposable
             ChannelWriter<object?[]> writer,
             CancellationToken cancellationToken)
     {
-		ArgumentNullException.ThrowIfNull(batch);
-		ArgumentNullException.ThrowIfNull(columns);
-		ArgumentNullException.ThrowIfNull(rowConverter);
-		ArgumentNullException.ThrowIfNull(writer);
-		
+        ArgumentNullException.ThrowIfNull(batch);
+        ArgumentNullException.ThrowIfNull(columns);
+        ArgumentNullException.ThrowIfNull(rowConverter);
+        ArgumentNullException.ThrowIfNull(writer);
+        
         foreach (JsonNode? entry in batch)
         {
             object[] row = entry is JsonObject jsonObject
@@ -1481,8 +1481,8 @@ public class QueryOData : IDisposable
     /// <returns>A stream that disposes the response when the consumer disposes the stream.</returns>
     private static Stream CreateResponseStream(HttpResponseMessage response, Stream contentStream)
     {
-		ArgumentNullException.ThrowIfNull(response);
-		ArgumentNullException.ThrowIfNull(contentStream);
+        ArgumentNullException.ThrowIfNull(response);
+        ArgumentNullException.ThrowIfNull(contentStream);
 
         return new HttpResponseContentStream(response, contentStream);
     }
@@ -1508,7 +1508,7 @@ public class QueryOData : IDisposable
             string metadataUrl,
             CancellationToken cancellationToken = default)
     {
-		metadataUrl.ArgMustNotBe(a=>a.IsNullOrWhiteSpace(), "Metadata URL cannot be null or whitespace.");
+        metadataUrl.ArgMustNotBe(a=>a.IsNullOrWhiteSpace(), "Metadata URL cannot be null or whitespace.");
         return GetMetadataAsyncInternal(_ => Task.FromResult<string?>(metadataUrl), cancellationToken);
     }
 

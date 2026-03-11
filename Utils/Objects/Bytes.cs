@@ -50,7 +50,7 @@ public readonly struct Bytes :
     /// by concatenating multiple <paramref name="byteArrays"/>.
     /// </summary>
     /// <param name="byteArrays">An array of byte arrays to concatenate.</param>
-    internal Bytes(params byte[][] byteArrays)
+    internal Bytes(params IEnumerable<byte[]> byteArrays)
     {
         if (byteArrays is null)
         {
@@ -58,8 +58,9 @@ public readonly struct Bytes :
             return;
         }
 
+        var arrays = byteArrays is byte[][] arr0 ? arr0 : [.. byteArrays];
         int totalLength = 0;
-        foreach (var arr in byteArrays)
+        foreach (var arr in arrays)
         {
             if (arr is not null)
                 totalLength += arr.Length;
@@ -68,7 +69,7 @@ public readonly struct Bytes :
         _innerBytes = new byte[totalLength];
         int position = 0;
 
-        foreach (var arr in byteArrays)
+        foreach (var arr in arrays)
         {
             if (arr.IsNullOrEmptyCollection()) continue;
             Array.Copy(arr, 0, _innerBytes, position, arr.Length);
@@ -81,7 +82,7 @@ public readonly struct Bytes :
     /// by concatenating multiple <see cref="Bytes"/> instances.
     /// </summary>
     /// <param name="bytess">An array of <see cref="Bytes"/> objects to concatenate.</param>
-    internal Bytes(params Bytes[] bytess)
+    internal Bytes(params IEnumerable<Bytes> bytess)
     {
         if (bytess is null)
         {
@@ -89,8 +90,9 @@ public readonly struct Bytes :
             return;
         }
 
+        var items = bytess is Bytes[] arr0 ? arr0 : [.. bytess];
         int totalLength = 0;
-        foreach (var b in bytess)
+        foreach (var b in items)
         {
             totalLength += b._innerBytes?.Length ?? 0;
         }
@@ -98,7 +100,7 @@ public readonly struct Bytes :
         _innerBytes = new byte[totalLength];
         int position = 0;
 
-        foreach (var b in bytess)
+        foreach (var b in items)
         {
             if (b.Count == 0) continue;
             Array.Copy(b._innerBytes, 0, _innerBytes, position, b.Count);
@@ -541,30 +543,16 @@ public static class BytesExtensions
     /// <summary>
     /// Concatenates all the byte arrays into a single <see cref="Bytes"/> instance.
     /// </summary>
-    /// <param name="byteArrays">A collection of byte arrays to join.</param>
+    /// <param name="byteArrays">A collection or list of byte arrays to join.</param>
     /// <returns>A <see cref="Bytes"/> that contains all data from <paramref name="byteArrays"/>.</returns>
-    public static Bytes Join(IEnumerable<byte[]> byteArrays) => Join(byteArrays?.ToArray() ?? []);
-
-    /// <summary>
-    /// Concatenates all the byte arrays into a single <see cref="Bytes"/> instance.
-    /// </summary>
-    /// <param name="byteArrays">A list of byte arrays to join.</param>
-    /// <returns>A <see cref="Bytes"/> that contains all data from <paramref name="byteArrays"/>.</returns>
-    public static Bytes Join(params byte[][] byteArrays) => new Bytes(byteArrays);
+    public static Bytes Join(params IEnumerable<byte[]> byteArrays) => new Bytes(byteArrays);
 
     /// <summary>
     /// Concatenates all the <see cref="Bytes"/> instances into a single <see cref="Bytes"/>.
     /// </summary>
-    /// <param name="byteArrays">A collection of <see cref="Bytes"/> instances to join.</param>
+    /// <param name="byteArrays">A collection or list of <see cref="Bytes"/> objects to join.</param>
     /// <returns>A <see cref="Bytes"/> that contains all data.</returns>
-    public static Bytes Join(IEnumerable<Bytes> byteArrays) => Join(byteArrays?.ToArray() ?? []);
-
-    /// <summary>
-    /// Concatenates all the <see cref="Bytes"/> instances into a single <see cref="Bytes"/>.
-    /// </summary>
-    /// <param name="byteArrays">A list of <see cref="Bytes"/> objects to join.</param>
-    /// <returns>A <see cref="Bytes"/> that contains all data.</returns>
-    public static Bytes Join(params Bytes[] byteArrays) => new Bytes(byteArrays);
+    public static Bytes Join(params IEnumerable<Bytes> byteArrays) => new Bytes(byteArrays);
 
     /// <summary>
     /// Concatenates multiple sequences of bytes into a single <see cref="Bytes"/> instance.

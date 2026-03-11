@@ -47,9 +47,9 @@ internal sealed class UpdateStatementParser : StatementParserBase
 
         return new SqlUpdateStatement(
             segments.GetValueOrDefault(UpdateTargetReader.Clause),
-			segments.GetValueOrDefault(SetReader.Clause),
-			segments.GetValueOrDefault(FromReader.Clause),
-			segments.GetValueOrDefault(WhereReader.Clause),
+            segments.GetValueOrDefault(SetReader.Clause),
+            segments.GetValueOrDefault(FromReader.Clause),
+            segments.GetValueOrDefault(WhereReader.Clause),
             segments.GetValueOrDefault(OutputReader.Clause),
             segments.GetValueOrDefault(ReturningReader.Clause), 
             withClause);

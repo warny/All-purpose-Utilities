@@ -136,12 +136,12 @@ public class SOA : DNSResponseDetail
     /// </summary>
     public override string ToString() =>
         $"""
-		MName   :\t{MName}
-		RName   :\t{RName}
-		Serial  :\t{Serial}
-		Refresh :\t{Refresh}
-		Retry   :\t{Retry}
-		Expire  :\t{Expire}
-		Minimum :\t{Minimum}
-		""";
+        MName   :\t{MName}
+        RName   :\t{RName}
+        Serial  :\t{Serial}
+        Refresh :\t{Refresh}
+        Retry   :\t{Retry}
+        Expire  :\t{Expire}
+        Minimum :\t{Minimum}
+        """;
 }

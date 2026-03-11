@@ -71,24 +71,24 @@ namespace UtilsTest.Objects
             // An empty string "" indicates that the intersection is empty (no intervals).
             var tests = new (string test1, string test2, string result)[]
             {
-				// Disjoint single values => no intersection
-				("1",        "3",         ""),
-				// Same single value => intersection is that value
-				("1",        "1",         "1"),
-				// Simple overlapping intervals => "1-3" and "2-4" => intersection is "2-3"
-				("1-3",      "2-4",       "2-3"),
-				// One overlaps the end of the other => "1-4" and "4-8" => intersection is "4"
-				("1-4",      "4-8",       "4"),
-				// Multiple intervals vs single interval => "1-2;5-7" & "2-5" => intersection is "2;5"
-				("1-2;5-7",  "2-5",       "2;5"),
-				// Slightly more complex intervals => "1-4;6-8" & "4-6" => intersection is "4;6"
-				("1-4;6-8",  "4-6",       "4;6"),
-				// Contained intervals => "1-9" & "2-3;5-7" => intersection is exactly "2-3;5-7"
-				("1-9",      "2-3;5-7",   "2-3;5-7"),
-				// Edge overlap => "1-9" & "9-10" => intersection is "9"
-				("1-9",      "9-10",      "9"),
-				// Single points vs intervals => "2;4;6" & "3-5;6-7" => intersection is "4;6"
-				("2;4;6",    "3-5;6-7",   "4;6"),
+                // Disjoint single values => no intersection
+                ("1",        "3",         ""),
+                // Same single value => intersection is that value
+                ("1",        "1",         "1"),
+                // Simple overlapping intervals => "1-3" and "2-4" => intersection is "2-3"
+                ("1-3",      "2-4",       "2-3"),
+                // One overlaps the end of the other => "1-4" and "4-8" => intersection is "4"
+                ("1-4",      "4-8",       "4"),
+                // Multiple intervals vs single interval => "1-2;5-7" & "2-5" => intersection is "2;5"
+                ("1-2;5-7",  "2-5",       "2;5"),
+                // Slightly more complex intervals => "1-4;6-8" & "4-6" => intersection is "4;6"
+                ("1-4;6-8",  "4-6",       "4;6"),
+                // Contained intervals => "1-9" & "2-3;5-7" => intersection is exactly "2-3;5-7"
+                ("1-9",      "2-3;5-7",   "2-3;5-7"),
+                // Edge overlap => "1-9" & "9-10" => intersection is "9"
+                ("1-9",      "9-10",      "9"),
+                // Single points vs intervals => "2;4;6" & "3-5;6-7" => intersection is "4;6"
+                ("2;4;6",    "3-5;6-7",   "4;6"),
             };
 
             void doTest(string test1, string test2, string expected)

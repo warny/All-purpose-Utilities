@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,6 +19,54 @@ namespace Utils.Fonts.PostScript;
 /// </summary>
 public class Type3Font : IFont
 {
+    private static readonly IReadOnlyDictionary<string, Action<List<float>, List<PostScriptGlyph.PathCommand>>> PostScriptCommands =
+        new Dictionary<string, Action<List<float>, List<PostScriptGlyph.PathCommand>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            {
+                "moveto", (stack, commands) =>
+                {
+                    if (stack.Count >= 2)
+                    {
+                        float y = stack[^1];
+                        float x = stack[^2];
+                        stack.RemoveRange(stack.Count - 2, 2);
+                        commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, x, y, 0, 0, 0, 0));
+                    }
+                }
+            },
+            {
+                "lineto", (stack, commands) =>
+                {
+                    if (stack.Count >= 2)
+                    {
+                        float y = stack[^1];
+                        float x = stack[^2];
+                        stack.RemoveRange(stack.Count - 2, 2);
+                        commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
+                    }
+                }
+            },
+            {
+                "curveto", (stack, commands) =>
+                {
+                    if (stack.Count >= 6)
+                    {
+                        float y3 = stack[^1];
+                        float x3 = stack[^2];
+                        float y2 = stack[^3];
+                        float x2 = stack[^4];
+                        float y1 = stack[^5];
+                        float x1 = stack[^6];
+                        stack.RemoveRange(stack.Count - 6, 6);
+                        commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.BezierTo, x1, y1, x2, y2, x3, y3));
+                    }
+                }
+            },
+            {
+                "closepath", (stack, commands) =>
+                    commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.Close, 0, 0, 0, 0, 0, 0))
+            },
+        }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
     /// <summary>Table of parsed glyphs indexed by character.</summary>
     private readonly Dictionary<char, PostScriptGlyph> _glyphs;
 
@@ -100,46 +149,10 @@ public class Type3Font : IFont
                 stack.Add(num);
                 continue;
             }
-            switch (t.ToLowerInvariant())
-            {
-                case "moveto":
-                    if (stack.Count >= 2)
-                    {
-                        float y = stack[^1];
-                        float x = stack[^2];
-                        stack.RemoveRange(stack.Count - 2, 2);
-                        commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, x, y, 0, 0, 0, 0));
-                    }
-                    break;
-                case "lineto":
-                    if (stack.Count >= 2)
-                    {
-                        float y = stack[^1];
-                        float x = stack[^2];
-                        stack.RemoveRange(stack.Count - 2, 2);
-                        commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
-                    }
-                    break;
-                case "curveto":
-                    if (stack.Count >= 6)
-                    {
-                        float y3 = stack[^1];
-                        float x3 = stack[^2];
-                        float y2 = stack[^3];
-                        float x2 = stack[^4];
-                        float y1 = stack[^5];
-                        float x1 = stack[^6];
-                        stack.RemoveRange(stack.Count - 6, 6);
-                        commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.BezierTo, x1, y1, x2, y2, x3, y3));
-                    }
-                    break;
-                case "closepath":
-                    commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.Close, 0, 0, 0, 0, 0, 0));
-                    break;
-                default:
-                    stack.Clear();
-                    break;
-            }
+            if (PostScriptCommands.TryGetValue(t, out var command))
+                command(stack, commands);
+            else
+                stack.Clear();
         }
         return commands;
     }

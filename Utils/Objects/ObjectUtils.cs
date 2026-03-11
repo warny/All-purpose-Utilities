@@ -224,7 +224,7 @@ public static class ObjectUtils
     /// <param name="getHashCode">The custom hash function.</param>
     /// <param name="objects">The objects to include in the hash computation.</param>
     /// <returns>The computed hash code.</returns>
-    public static int ComputeHash<T>(Func<T, int> getHashCode, params T[] objects) => ComputeHash((IEnumerable<T>)objects, getHashCode);
+    public static int ComputeHash<T>(Func<T, int> getHashCode, params IEnumerable<T> objects) => ComputeHash((IEnumerable<T>)objects, getHashCode);
 
     /// <summary>
     /// Swaps the values of two objects.

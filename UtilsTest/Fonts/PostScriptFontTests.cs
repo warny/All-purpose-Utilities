@@ -17,18 +17,18 @@ namespace UtilsTest.Fonts
         {
             string txt =
                 """
-				Glyph: A
-				Width: 10
-				Height: 10
-				Baseline: 0
-				Path:
-				M 0 0
-				L 10 0
-				L 10 10
-				L 0 10
-				Z
-				EndGlyph
-				""";
+                Glyph: A
+                Width: 10
+                Height: 10
+                Baseline: 0
+                Path:
+                M 0 0
+                L 10 0
+                L 10 10
+                L 0 10
+                Z
+                EndGlyph
+                """;
             using var ms = new MemoryStream(Encoding.ASCII.GetBytes(txt));
             var font = PostScriptFont.Load(ms);
             var glyph = font.GetGlyph('A');
@@ -41,16 +41,16 @@ namespace UtilsTest.Fonts
         {
             string txt =
                 """
-				Glyph: B
-				Width: 5
-				Height: 5
-				Baseline: 0
-				Path:
-				M 0 0
-				L 5 0
-				Z
-				EndGlyph
-				""";
+                Glyph: B
+                Width: 5
+                Height: 5
+                Baseline: 0
+                Path:
+                M 0 0
+                L 5 0
+                Z
+                EndGlyph
+                """;
             using var ms = new MemoryStream(Encoding.ASCII.GetBytes(txt));
             var font = PostScriptFont.Load(ms);
             var glyph = font.GetGlyph('B');
@@ -67,14 +67,14 @@ namespace UtilsTest.Fonts
         {
             string ps =
                 """
-				/CharProcs 1 dict dup begin
-				/A { 5 0 0 0 5 5 setcachedevice
-				0 0 moveto
-				5 0 lineto
-				closepath
-				} bind def
-				end
-				""";
+                /CharProcs 1 dict dup begin
+                /A { 5 0 0 0 5 5 setcachedevice
+                0 0 moveto
+                5 0 lineto
+                closepath
+                } bind def
+                end
+                """;
             using var ms = new MemoryStream(Encoding.ASCII.GetBytes(ps));
             var font = Type3Font.Load(ms);
             Assert.IsNotNull(font.GetGlyph('A'));

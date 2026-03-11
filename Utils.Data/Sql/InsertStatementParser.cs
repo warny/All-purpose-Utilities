@@ -63,28 +63,28 @@ internal sealed class InsertStatementParser : StatementParserBase
                null,
                segments.GetValueOrDefault(OutputReader.Clause),
                segments.GetValueOrDefault(ReturningReader.Clause),
-			   withClause
-			);
-		}
+               withClause
+            );
+        }
         else if (parser.CheckKeyword("SELECT") || parser.CheckKeyword("WITH"))
         {
-			var sourceQuery = parser.ParseStatement();
+            var sourceQuery = parser.ParseStatement();
             ReadSegments(
                 segments,
                 ReturningReader);
 
-			return new SqlInsertStatement(
-			   segments.GetValueOrDefault(IntoReader.Clause),
+            return new SqlInsertStatement(
+               segments.GetValueOrDefault(IntoReader.Clause),
                null,
-			   sourceQuery,
-			   segments.GetValueOrDefault(OutputReader.Clause),
-			   segments.GetValueOrDefault(ReturningReader.Clause),
-			   withClause
-			);
-		}
+               sourceQuery,
+               segments.GetValueOrDefault(OutputReader.Clause),
+               segments.GetValueOrDefault(ReturningReader.Clause),
+               withClause
+            );
+        }
         throw new SqlParseException("Expected VALUES or SELECT clause in INSERT statement.");
-		/*
-		var targetSegment = IntoReader.TryRead([
+        /*
+        var targetSegment = IntoReader.TryRead([
             OutputReader.Clause,
             ValuesReader.Clause,
             ClauseStart.Select,
@@ -129,5 +129,5 @@ internal sealed class InsertStatementParser : StatementParserBase
 
         return new SqlInsertStatement(targetSegment, valuesSegment, sourceQuery, outputSegment, returningSegment, withClause);
         */
-	}
+    }
 }

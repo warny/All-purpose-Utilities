@@ -101,22 +101,22 @@ namespace UtilsTest.Net
             [
                 //Header section
                 0x00, 0x01, // Transaction ID: 1
-				0x01, 0x00, // Standard query, Recursion desired
-				0x00, 0x01, // Number of questions: 1
-				0x00, 0x00, // Number of answer resource records: 0
-				0x00, 0x00, // Number of authority resource records: 0
-				0x00, 0x00, // Number of additional resource records: 0
+                0x01, 0x00, // Standard query, Recursion desired
+                0x00, 0x01, // Number of questions: 1
+                0x00, 0x00, // Number of answer resource records: 0
+                0x00, 0x00, // Number of authority resource records: 0
+                0x00, 0x00, // Number of additional resource records: 0
 
-				
-				// Question QNAME (variable length)
-				0x05, 0x67, 0x6d, 0x61, 0x69, 0x6c, // "gmail" in ASCII
-				0x03, 0x63, 0x6f, 0x6d, // "com" in ASCII
-				0x00, // Null-terminated
-				// Question QTYPE (2 bytes)
-				0x00, 0xff, // Type: ALL (255)
-				// Question QCLASS (2 bytes)
-				0x00, 0xFF // Class: ALL
-			];
+                
+                // Question QNAME (variable length)
+                0x05, 0x67, 0x6d, 0x61, 0x69, 0x6c, // "gmail" in ASCII
+                0x03, 0x63, 0x6f, 0x6d, // "com" in ASCII
+                0x00, // Null-terminated
+                // Question QTYPE (2 bytes)
+                0x00, 0xff, // Type: ALL (255)
+                // Question QCLASS (2 bytes)
+                0x00, 0xFF // Class: ALL
+            ];
 
             DNSHeader request = new DNSHeader();
             request.RecursionDesired = true;

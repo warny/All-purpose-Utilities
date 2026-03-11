@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace Utils.Range;
 
@@ -183,6 +184,15 @@ public class SingleRanges : Ranges<float>
 /// </summary>
 public class DateTimeRanges : Ranges<DateTime>
 {
+    private static readonly IReadOnlyDictionary<char, string> DateFormatPatterns = new Dictionary<char, string>
+    {
+        { 'y', @"\d+" }, { 'M', @"\d+" }, { 'd', @"\d+" },
+        { 'H', @"\d+" }, { 'h', @"\d+" }, { 'm', @"\d+" },
+        { 's', @"\d+" }, { 'f', @"\d+" },
+        { 't', @"(AM|PM)" },
+        { ' ', @"\s+" },
+        { '\\', @"\\" },
+    };
     /// <summary>
     /// Initializes a new instance of the <see cref="DateTimeRanges"/> class with no ranges.
     /// </summary>
@@ -272,47 +282,18 @@ public class DateTimeRanges : Ranges<DateTime>
                 continue;
             }
 
-            switch (c)
+            if (c == '\'')
             {
-                case '\'':
-                    inLiteral = true;  // Start of literal.
-                    break;
-
-                case 'y':
-                case 'M':
-                case 'd':
-                case 'H':
-                case 'h':
-                case 'm':
-                case 's':
-                case 'f':
-                    if (c != last)
-                    {
-                        result.Append(@"\d+");
-                    }
-                    break;
-
-                case 't':
-                    if (c != last)
-                    {
-                        result.Append(@"(AM|PM)");
-                    }
-                    break;
-
-                case ' ':
-                    if (c != last)
-                    {
-                        result.Append(@"\s+");
-                    }
-                    break;
-
-                case '\\':
-                    result.Append(@"\\");
-                    break;
-
-                default:
-                    result.Append(c);
-                    break;
+                inLiteral = true;  // Start of literal.
+            }
+            else if (DateFormatPatterns.TryGetValue(c, out var regexFragment))
+            {
+                if (c == '\\' || c != last)
+                    result.Append(regexFragment);
+            }
+            else
+            {
+                result.Append(c);
             }
 
             last = c;

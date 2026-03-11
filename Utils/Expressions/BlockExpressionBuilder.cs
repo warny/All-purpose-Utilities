@@ -167,11 +167,20 @@ public class BlockExpressionBuilder
 
     /// <summary>
     /// Recursively extracts variable references used by a single <see cref="Expression"/>.
-    /// Uses pattern matching for more concise cases. The custom syntax [.. ] 
+    /// Uses pattern matching for more concise cases. The custom syntax [.. ]
     /// is retained for your domain-specific needs.
     /// </summary>
     /// <param name="expression">The expression to analyze.</param>
     /// <returns>An enumerable of <see cref="ParameterExpression"/> objects.</returns>
+    /// <remarks>
+    /// This method intentionally uses a <see langword="switch"/> on the expression rather than a
+    /// <c>Dictionary&lt;Type, Func&gt;</c> dispatch table. A dictionary keyed by <see cref="Type"/>
+    /// uses exact-type matching via <see cref="object.GetType"/>, which breaks for abstract base
+    /// classes: for example, <see cref="LambdaExpression"/> is abstract and its concrete runtime
+    /// type is <c>Expression&lt;TDelegate&gt;</c>, so <c>typeof(LambdaExpression)</c> would never
+    /// match. Pattern-matching <see langword="switch"/> correctly handles the full inheritance
+    /// hierarchy and is therefore the only safe approach here.
+    /// </remarks>
     private static IEnumerable<ParameterExpression> GetVariablesInExpression(Expression expression)
     {
         if (expression is null) return [];

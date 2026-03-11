@@ -21,7 +21,7 @@ public class NntpClient : CommandResponseClient
     }
 
     /// <inheritdoc/>
-	public override int DefaultPort { get; } = 119;
+    public override int DefaultPort { get; } = 119;
 
     /// <summary>
     /// Executes NNTP specific initialization when a connection is established.

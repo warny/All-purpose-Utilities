@@ -289,16 +289,16 @@ public class DNSHeader : DNSElement
     /// <returns>A human-readable <see cref="string"/> representation of this DNS header.</returns>
     public override string ToString() =>
         $""""
-		{QrBit} ID = {ID}, Operation Code = {OpCode} 
-			Recursition possible = {RecursionPossible}, Recursion desired = {RecursionDesired}
-			Authentic Datas = {AuthenticDatas}, Checking Disables {CheckingDisabled}
-		Requests :
-			{string.Join(Environment.NewLine + "\t", Requests.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
-		Responses : 
-			{string.Join(Environment.NewLine + "\t", Responses.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
-		Authorities : 
-			{string.Join(Environment.NewLine + "\t", Authorities.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
-		Additionals : 
-			{string.Join(Environment.NewLine + "\t", Additionals.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
-		"""";
+        {QrBit} ID = {ID}, Operation Code = {OpCode} 
+            Recursition possible = {RecursionPossible}, Recursion desired = {RecursionDesired}
+            Authentic Datas = {AuthenticDatas}, Checking Disables {CheckingDisabled}
+        Requests :
+            {string.Join(Environment.NewLine + "\t", Requests.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+        Responses : 
+            {string.Join(Environment.NewLine + "\t", Responses.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+        Authorities : 
+            {string.Join(Environment.NewLine + "\t", Authorities.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+        Additionals : 
+            {string.Join(Environment.NewLine + "\t", Additionals.Select(r => r.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t")))}
+        """";
 }
