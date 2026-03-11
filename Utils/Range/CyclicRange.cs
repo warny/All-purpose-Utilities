@@ -59,7 +59,7 @@ public class CyclicRange<T> : IRange<T>
 
         if (Start.CompareTo(End) > 0)
         {
-            return value.CompareTo(End) >= 0 || value.CompareTo(Start) <= 0;
+            return value.CompareTo(Start) >= 0 || value.CompareTo(End) <= 0;
         }
 
         return value.CompareTo(Start) == 0;
