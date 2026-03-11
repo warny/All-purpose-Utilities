@@ -1,0 +1,219 @@
+Série de tests pour E:\projets\All-purpose-Utilities\UtilsTest\bin\Debug\net9.0\UtilsTest.dll (.NETCoreApp,Version=v9.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+  Ignoré MapFromInterfaceTest
+  Ignoré MapFromClassTest
+  Échoué StringFormatTest [197 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Objects.StringFormatTests.StringFormatTest a levé une exception : 
+System.InvalidOperationException: variable '@@cultureInfo' of type 'System.Globalization.CultureInfo' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitBlock(BlockExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitMethodCall(MethodCallExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at System.Linq.Expressions.Expression`1.Compile()
+   at Utils.Format.StringFormat.Create[T](String formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, ParameterExpression[] parameterExpressions) in /_/Utils/Format/StringFormat.cs:line 360
+   at Utils.Format.StringFormat.Create[T](String formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, String[] names) in /_/Utils/Format/StringFormat.cs:line 308
+   at Utils.Format.StringFormat.Create[T](String formatString, String[] names) in /_/Utils/Format/StringFormat.cs:line 272
+   at UtilsTest.Objects.StringFormatTests.StringFormatTest() in /_/UtilsTest/Objects/FormatExTests.cs:line 22
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué StringFormatFromIDataRecordTest [65 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Objects.StringFormatTests.StringFormatFromIDataRecordTest a levé une exception : 
+System.InvalidOperationException: variable 'handler' of type 'System.Runtime.CompilerServices.DefaultInterpolatedStringHandler' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitBlock(BlockExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitMethodCall(MethodCallExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at System.Linq.Expressions.Expression`1.Compile()
+   at Utils.Format.StringFormat.Create(String formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, IDataRecord dataRecord) in /_/Utils/Format/StringFormat.cs:line 470
+   at UtilsTest.Objects.StringFormatTests.StringFormatFromIDataRecordTest() in /_/UtilsTest/Objects/FormatExTests.cs:line 74
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué CustomHandlerTest [4 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Objects.StringFormatTests.CustomHandlerTest a levé une exception : 
+System.InvalidOperationException: variable '@@cultureInfo' of type 'System.Globalization.CultureInfo' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitBlock(BlockExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at System.Linq.Expressions.Expression`1.Compile()
+   at Utils.Format.StringFormat.Create[T,THandler](String formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, ParameterExpression[] parameterExpressions) in /_/Utils/Format/StringFormat.cs:line 405
+   at Utils.Format.StringFormat.Create[T,THandler](String formatString, ICustomFormatter customFormatter, CultureInfo cultureInfo, String[] names) in /_/Utils/Format/StringFormat.cs:line 329
+   at Utils.Format.StringFormat.Create[T,THandler](String formatString, String[] names) in /_/Utils/Format/StringFormat.cs:line 281
+   at UtilsTest.Objects.StringFormatTests.CustomHandlerTest() in /_/UtilsTest/Objects/FormatExTests.cs:line 95
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Ignoré SendDNSRequest
+  Ignoré EnumerateFiles
+  Échoué AssignTest [3 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.AssignTest a levé une exception : 
+System.InvalidOperationException: variable 'inner' of type 'System.String' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.AssignTest() in /_/UtilsTest/Expressions/BlockTests.cs:line 58
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué WhileTest [3 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.WhileTest a levé une exception : 
+System.InvalidOperationException: variable 'result' of type 'System.String' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.WhileTest() in /_/UtilsTest/Expressions/BlockTests.cs:line 74
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué WhileIfBreakTest [3 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.WhileIfBreakTest a levé une exception : 
+System.InvalidOperationException: variable 'result' of type 'System.String' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.WhileIfBreakTest() in /_/UtilsTest/Expressions/BlockTests.cs:line 91
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué ForTest [2 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.ForTest a levé une exception : 
+System.InvalidOperationException: variable 'result' of type 'System.String' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.ForTest() in /_/UtilsTest/Expressions/BlockTests.cs:line 117
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué ForEachTest1 [7 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.ForEachTest1 a levé une exception : 
+System.InvalidOperationException: variable 'result' of type 'System.Int32' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.ForEachTest1() in /_/UtilsTest/Expressions/BlockTests.cs:line 143
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué ForEachTest2 [4 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.ForEachTest2 a levé une exception : 
+System.InvalidOperationException: variable 'result' of type 'System.Int32' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.ForEachTest2() in /_/UtilsTest/Expressions/BlockTests.cs:line 174
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué ForEachTest3 [2 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.BlockTests.ForEachTest3 a levé une exception : 
+System.InvalidOperationException: variable 'result' of type 'System.Int32' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.BlockTests.ForEachTest3() in /_/UtilsTest/Expressions/BlockTests.cs:line 205
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué LambdaCallTest2 [2 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.FunctionCallTests.LambdaCallTest2 a levé une exception : 
+System.InvalidOperationException: variable 'f' of type 'System.Func`2[System.String,System.String]' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at UtilsTest.Expressions.FunctionCallTests.LambdaCallTest2() in /_/UtilsTest/Expressions/FunctionCallTests.cs:line 106
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+  Échoué SwitchStatement [4 ms]
+  Message d'erreur :
+   La méthode de test UtilsTest.Expressions.SwitchTests.SwitchStatement a levé une exception : 
+System.InvalidOperationException: variable 'v' of type 'System.Int32' referenced from scope '', but it is not defined
+  Arborescence des appels de procédure :
+     at System.Linq.Expressions.Compiler.VariableBinder.Reference(ParameterExpression node, VariableStorageKind storage)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitParameter(ParameterExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.VisitBinary(BinaryExpression node)
+   at System.Linq.Expressions.ExpressionVisitor.Visit(ReadOnlyCollection`1 nodes)
+   at System.Linq.Expressions.Compiler.VariableBinder.VisitLambda[T](Expression`1 node)
+   at System.Linq.Expressions.Compiler.VariableBinder.Bind(LambdaExpression lambda)
+   at System.Linq.Expressions.Compiler.LambdaCompiler.Compile(LambdaExpression lambda)
+   at System.Linq.Expressions.Expression`1.Compile()
+   at UtilsTest.Expressions.SwitchTests.SwitchStatement() in /_/UtilsTest/Expressions/SwitchTests.cs:line 27
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+
+Échoué!  - échec :    12, réussite :   649, ignorée(s) :     4, total :   665, durée : 8 s - UtilsTest.dll (net9.0)

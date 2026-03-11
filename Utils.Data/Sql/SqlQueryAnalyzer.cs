@@ -55,7 +55,7 @@ public sealed class SqlQuery
     public SqlQuery(SqlStatement rootStatement, SqlSyntaxOptions? syntaxOptions = null)
     {
         ArgumentNullException.ThrowIfNull(rootStatement);
-		RootStatement = rootStatement;
+        RootStatement = rootStatement;
         SyntaxOptions = syntaxOptions ?? RootStatement.SyntaxOptions;
     }
 
@@ -259,22 +259,22 @@ internal sealed class PartReferenceBinding<TPart> : IPartReferenceBinding
     private readonly Func<SqlSegment, TPart> partFactory;
     private readonly Action<TPart> onBind;
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
-	/// </summary>
-	/// <param name="partName">The name of the segment produced by the associated part reader.</param>
-	/// <param name="partFactory">Factory used to create the typed part.</param>
-	/// <param name="onBind">Callback invoked when the binding is matched.</param>
-	public PartReferenceBinding(IPartReader<TPart> partReader, Action<TPart> onBind) 
-        : this(partReader.PartName, partReader.PartFactory, onBind)	{	}
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
+    /// </summary>
+    /// <param name="partName">The name of the segment produced by the associated part reader.</param>
+    /// <param name="partFactory">Factory used to create the typed part.</param>
+    /// <param name="onBind">Callback invoked when the binding is matched.</param>
+    public PartReferenceBinding(IPartReader<TPart> partReader, Action<TPart> onBind) 
+        : this(partReader.PartName, partReader.PartFactory, onBind)    {    }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
-	/// </summary>
-	/// <param name="partName">The name of the segment produced by the associated part reader.</param>
-	/// <param name="partFactory">Factory used to create the typed part.</param>
-	/// <param name="onBind">Callback invoked when the binding is matched.</param>
-	public PartReferenceBinding(string partName, Func<SqlSegment, TPart> partFactory, Action<TPart> onBind)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
+    /// </summary>
+    /// <param name="partName">The name of the segment produced by the associated part reader.</param>
+    /// <param name="partFactory">Factory used to create the typed part.</param>
+    /// <param name="onBind">Callback invoked when the binding is matched.</param>
+    public PartReferenceBinding(string partName, Func<SqlSegment, TPart> partFactory, Action<TPart> onBind)
     {
         this.partName = partName ?? throw new ArgumentNullException(nameof(partName));
         this.partFactory = partFactory ?? throw new ArgumentNullException(nameof(partFactory));

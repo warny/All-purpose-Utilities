@@ -147,6 +147,12 @@ public static class MathEx
 
     #region MinMax
 
+    // NOTE: These overloads intentionally use params T[] rather than params IEnumerable<T>.
+    // Linq.Enumerable already provides Min/Max for IEnumerable<T>; the purpose of these
+    // methods is to offer a fast, allocation-free alternative for small fixed sets of values
+    // passed inline (e.g. MathEx.Min(a, b, c)). The array-backed loop avoids the overhead
+    // of enumerator allocation and virtual dispatch introduced by IEnumerable<T>.
+
     /// <summary>
     /// Returns the minimum value from the specified <paramref name="values"/>.
     /// </summary>

@@ -9,33 +9,33 @@ namespace Utils.Data.Sql;
 
 abstract internal class StatementParserBase
 {
-	protected readonly SqlParser parser;
+    protected readonly SqlParser parser;
 
-	public static IPartReader SelectReader = SelectPartReader.Singleton;
-	public static IPartReader UpdateTargetReader => UpdatePartReader.Singleton;
-	public static IPartReader DeleteReader => DeletePartReader.Singleton;
-	public static IPartReader FromReader => FromPartReader.Singleton;
-	public static IPartReader UsingReader => UsingPartReader.Singleton;
-	public static IPartReader WhereReader => WherePartReader.Singleton;
-	public static IPartReader OutputReader => OutputPartReader.Singleton;
-	public static IPartReader ReturningReader => ReturningPartReader.Singleton;
-	public static IPartReader LimitReader => LimitPartReader.Singleton;
-	public static IPartReader OffsetReader => OffsetPartReader.Singleton;
-	public static IPartReader IntoReader => IntoPartReader.Singleton;
-	public static IPartReader ValuesReader => ValuesPartReader.Singleton;
-	public static IPartReader SetReader => SetPartReader.Singleton;
-	public static IPartReader GroupByReader => GroupByPartReader.Singleton;
-	public static IPartReader HavingReader => HavingPartReader.Singleton;
-	public static IPartReader OrderByReader => OrderByPartReader.Singleton;
-	public static IPartReader SetOperatorReader => SetOperatorPartReader.Singleton;
+    public static IPartReader SelectReader = SelectPartReader.Singleton;
+    public static IPartReader UpdateTargetReader => UpdatePartReader.Singleton;
+    public static IPartReader DeleteReader => DeletePartReader.Singleton;
+    public static IPartReader FromReader => FromPartReader.Singleton;
+    public static IPartReader UsingReader => UsingPartReader.Singleton;
+    public static IPartReader WhereReader => WherePartReader.Singleton;
+    public static IPartReader OutputReader => OutputPartReader.Singleton;
+    public static IPartReader ReturningReader => ReturningPartReader.Singleton;
+    public static IPartReader LimitReader => LimitPartReader.Singleton;
+    public static IPartReader OffsetReader => OffsetPartReader.Singleton;
+    public static IPartReader IntoReader => IntoPartReader.Singleton;
+    public static IPartReader ValuesReader => ValuesPartReader.Singleton;
+    public static IPartReader SetReader => SetPartReader.Singleton;
+    public static IPartReader GroupByReader => GroupByPartReader.Singleton;
+    public static IPartReader HavingReader => HavingPartReader.Singleton;
+    public static IPartReader OrderByReader => OrderByPartReader.Singleton;
+    public static IPartReader SetOperatorReader => SetOperatorPartReader.Singleton;
 
 
-	protected StatementParserBase(SqlParser parser)
-	{
-		this.parser = parser ?? throw new ArgumentNullException(nameof(parser));
-	}
+    protected StatementParserBase(SqlParser parser)
+    {
+        this.parser = parser ?? throw new ArgumentNullException(nameof(parser));
+    }
 
-	protected Dictionary<ClauseStart, SqlSegment> ReadSegments(params IEnumerable<IPartReader> readers)
+    protected Dictionary<ClauseStart, SqlSegment> ReadSegments(params IEnumerable<IPartReader> readers)
     {
         Dictionary<ClauseStart, SqlSegment> segments = new();
         return this.ReadSegments(segments, readers);

@@ -22,8 +22,8 @@ namespace Utils.Geography.Display
 {
 
     /**
-	 * A utility class to convert, parse and validate geographical coordinates.
-	 */
+     * A utility class to convert, parse and validate geographical coordinates.
+     */
     public static class CoordinatesUtil<T>
         where T : struct, IFloatingPointIeee754<T>
     {
@@ -75,16 +75,16 @@ namespace Utils.Geography.Display
         }
 
         /**
-		 * Parses a given number of comma-separated coordinate values from the supplied string.
-		 * 
-		 * @param coordinatesstring
-		 *            a comma-separated string of coordinate values.
-		 * @param numberOfCoordinates
-		 *            the expected number of coordinate values in the string.
-		 * @return the coordinate values in the order they have been parsed from the string.
-		 * @throws IllegalArgumentException
-		 *             if the string is invalid or does not contain the given number of coordinate values.
-		 */
+         * Parses a given number of comma-separated coordinate values from the supplied string.
+         * 
+         * @param coordinatesstring
+         *            a comma-separated string of coordinate values.
+         * @param numberOfCoordinates
+         *            the expected number of coordinate values in the string.
+         * @return the coordinate values in the order they have been parsed from the string.
+         * @throws IllegalArgumentException
+         *             if the string is invalid or does not contain the given number of coordinate values.
+         */
         public static T[] ParseCoordinatestring(string coordinatesstring, int numberOfCoordinates)
         {
             string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.RemoveEmptyEntries);
@@ -100,11 +100,11 @@ namespace Utils.Geography.Display
         }
 
         /**
-		 * @param latitude
-		 *            the latitude coordinate in degrees which should be validated.
-		 * @throws IllegalArgumentException
-		 *             if the latitude coordinate is invalid or {@link Double#NaN}.
-		 */
+         * @param latitude
+         *            the latitude coordinate in degrees which should be validated.
+         * @throws IllegalArgumentException
+         *             if the latitude coordinate is invalid or {@link Double#NaN}.
+         */
         public static void ValidateLatitude(double latitude)
         {
             if (double.IsNaN(latitude) || latitude < LATITUDE_MIN || latitude > LATITUDE_MAX)

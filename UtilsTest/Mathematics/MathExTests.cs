@@ -172,9 +172,9 @@ public class MathExTests
     {
         var tests = new (int line, int[] values)[] {
             ( 3, new[] { 1,3,3,1 } ), // utilise le cache d'initialisation
-			( 8, new[] { 1, 8, 28, 56, 70, 56, 28, 8, 1, } ), // calcule la 8° ligne, met en cache la 7 et la 8
-			( 7, new[] { 1, 7, 21, 35, 35, 21, 7, 1, } ) // récupère le cache de la 7 calculé par la ligne précédente
-		};
+            ( 8, new[] { 1, 8, 28, 56, 70, 56, 28, 8, 1, } ), // calcule la 8° ligne, met en cache la 7 et la 8
+            ( 7, new[] { 1, 7, 21, 35, 35, 21, 7, 1, } ) // récupère le cache de la 7 calculé par la ligne précédente
+        };
 
         var comparer = EnumerableEqualityComparer<int>.Default;
 

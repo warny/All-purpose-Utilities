@@ -112,20 +112,25 @@ public class MimePartFactory
     }
 }
 
+/// <summary>Serializes plain text (<see cref="string"/> or <see cref="TextReader"/>) as a MIME text/plain part.</summary>
 internal sealed class TextPartSerializer :
     IMimePartSerializer<string>,
     IMimePartSerializer<TextReader>
 {
+    /// <summary>Gets the MIME type produced by this serializer.</summary>
     public string MimeType => "text/plain";
 
+    /// <summary>Gets the CLR types this serializer supports.</summary>
     public Type[] SupportedTypes { get; } = [typeof(string), typeof(TextReader)];
 
+    /// <summary>Serializes a <see cref="string"/> value into a MIME part.</summary>
     bool IMimePartSerializer<string>.TrySerialize(string value, out MimePart? part)
     {
         part = new MimePart { Body = value };
         return true;
     }
 
+    /// <summary>Serializes a <see cref="TextReader"/> value into a MIME part by reading all its content.</summary>
     bool IMimePartSerializer<TextReader>.TrySerialize(TextReader value, out MimePart? part)
     {
         part = new MimePart { Body = value.ReadToEnd() };
@@ -133,20 +138,25 @@ internal sealed class TextPartSerializer :
     }
 }
 
+/// <summary>Serializes XML documents (<see cref="XDocument"/> or <see cref="XmlDocument"/>) as a MIME text/xml part.</summary>
 internal sealed class XmlPartSerializer :
     IMimePartSerializer<XDocument>,
     IMimePartSerializer<XmlDocument>
 {
+    /// <summary>Gets the MIME type produced by this serializer.</summary>
     public string MimeType => "text/xml";
 
+    /// <summary>Gets the CLR types this serializer supports.</summary>
     public Type[] SupportedTypes { get; } = [typeof(XDocument), typeof(XmlDocument)];
 
+    /// <summary>Serializes an <see cref="XDocument"/> value into a MIME part.</summary>
     bool IMimePartSerializer<XDocument>.TrySerialize(XDocument value, out MimePart? part)
     {
         part = new MimePart { Body = value.ToString() };
         return true;
     }
 
+    /// <summary>Serializes an <see cref="XmlDocument"/> value into a MIME part.</summary>
     bool IMimePartSerializer<XmlDocument>.TrySerialize(XmlDocument value, out MimePart? part)
     {
         part = new MimePart { Body = value.OuterXml };
@@ -154,12 +164,16 @@ internal sealed class XmlPartSerializer :
     }
 }
 
+/// <summary>Serializes a <see cref="JsonDocument"/> as a MIME application/json part.</summary>
 internal sealed class JsonPartSerializer : IMimePartSerializer<JsonDocument>
 {
+    /// <summary>Gets the MIME type produced by this serializer.</summary>
     public string MimeType => "application/json";
 
+    /// <summary>Gets the CLR types this serializer supports.</summary>
     public Type[] SupportedTypes { get; } = [typeof(JsonDocument)];
 
+    /// <summary>Serializes a <see cref="JsonDocument"/> value into a MIME part.</summary>
     bool IMimePartSerializer<JsonDocument>.TrySerialize(JsonDocument value, out MimePart? part)
     {
         using var stream = new MemoryStream();
@@ -171,12 +185,16 @@ internal sealed class JsonPartSerializer : IMimePartSerializer<JsonDocument>
     }
 }
 
+/// <summary>Serializes a <see cref="MimeDocument"/> as a MIME multipart/mixed part.</summary>
 internal sealed class MultipartPartSerializer : IMimePartSerializer<MimeDocument>
 {
+    /// <summary>Gets the MIME type produced by this serializer.</summary>
     public string MimeType => "multipart/mixed";
 
+    /// <summary>Gets the CLR types this serializer supports.</summary>
     public Type[] SupportedTypes { get; } = [typeof(MimeDocument)];
 
+    /// <summary>Serializes a <see cref="MimeDocument"/> value into a MIME part, preserving its Content-Type header.</summary>
     bool IMimePartSerializer<MimeDocument>.TrySerialize(MimeDocument value, out MimePart? part)
     {
         var text = MimeWriter.Write(value);
@@ -187,20 +205,25 @@ internal sealed class MultipartPartSerializer : IMimePartSerializer<MimeDocument
     }
 }
 
+/// <summary>Serializes binary data (<see cref="byte"/> array or <see cref="Stream"/>) as a Base64-encoded MIME application/octet-stream part.</summary>
 internal sealed class BinaryPartSerializer :
     IMimePartSerializer<byte[]>,
     IMimePartSerializer<Stream>
 {
+    /// <summary>Gets the MIME type produced by this serializer.</summary>
     public string MimeType => "application/octet-stream";
 
+    /// <summary>Gets the CLR types this serializer supports.</summary>
     public Type[] SupportedTypes { get; } = [typeof(byte[]), typeof(Stream)];
 
+    /// <summary>Serializes a byte array into a Base64-encoded MIME part.</summary>
     bool IMimePartSerializer<byte[]>.TrySerialize(byte[] value, out MimePart? part)
     {
         part = new MimePart { Body = Convert.ToBase64String(value) };
         return true;
     }
 
+    /// <summary>Serializes a <see cref="Stream"/> into a Base64-encoded MIME part by reading all its bytes.</summary>
     bool IMimePartSerializer<Stream>.TrySerialize(Stream value, out MimePart? part)
     {
         using var ms = new MemoryStream();

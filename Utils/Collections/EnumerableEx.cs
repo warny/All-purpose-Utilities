@@ -135,7 +135,7 @@ public static partial class EnumerableEx
     /// </returns>
     public static IEnumerable<T> FollowedBy<T>(
         this IEnumerable<T> enumerable,
-        params T[] elements)
+        params IEnumerable<T> elements)
     {
         ArgumentNullException.ThrowIfNull(enumerable);
 
@@ -162,7 +162,7 @@ public static partial class EnumerableEx
     /// </returns>
     public static IEnumerable<T> PrecededBy<T>(
         this IEnumerable<T> enumerable,
-        params T[] elements)
+        params IEnumerable<T> elements)
     {
         ArgumentNullException.ThrowIfNull(enumerable);
 
@@ -258,7 +258,7 @@ public static partial class EnumerableEx
     /// </remarks>
     public static IEnumerable<IEnumerable<T>> Slice<T>(
         this IEnumerable<T> source,
-        params int[] cutIndexes)
+        params IEnumerable<int> cutIndexes)
     {
         ArgumentNullException.ThrowIfNull(source);
 

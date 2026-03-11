@@ -63,10 +63,10 @@ namespace UtilsTest.VirtualMachine
         public void Test1()
         {
             byte[] instructions = [ 
-				//Push 0x10
-				0x01, 0x01, 0x10, 
-				//Push 0x01
-				0x01, 0x01, 0x01
+                //Push 0x10
+                0x01, 0x01, 0x10, 
+                //Push 0x01
+                0x01, 0x01, 0x01
             ];
 
             var context = new DefaultContext(instructions);
@@ -81,12 +81,12 @@ namespace UtilsTest.VirtualMachine
         public void Test2()
         {
             byte[] instructions = [ 
-				//Push 0x10
-				0x01, 0x01, 0x10, 
-				//Push 0x01
-				0x01, 0x01, 0x01, 
-				//Add 
-				0x10, 0x01
+                //Push 0x10
+                0x01, 0x01, 0x10, 
+                //Push 0x01
+                0x01, 0x01, 0x01, 
+                //Add 
+                0x10, 0x01
             ];
 
             var context = new DefaultContext(instructions);
@@ -101,12 +101,12 @@ namespace UtilsTest.VirtualMachine
         public void Test3()
         {
             byte[] instructions = [ 
-				//Push 0x10
-				0x01, 0x01, 0x10, 
-				//Push 0x01
-				0x01, 0x01, 0x01, 
-				//Substract 
-				0x10, 0x02
+                //Push 0x10
+                0x01, 0x01, 0x10, 
+                //Push 0x01
+                0x01, 0x01, 0x01, 
+                //Substract 
+                0x10, 0x02
             ];
 
             var context = new DefaultContext(instructions);
@@ -121,12 +121,12 @@ namespace UtilsTest.VirtualMachine
         public void Test4()
         {
             byte[] instructions = [ 
-				//Push 0x10
-				0x01, 0x02, 0x10, 0x00,
-				//Push 0x01
-				0x01, 0x02, 0x01, 0x00,
-				//Add 
-				0x10, 0x01
+                //Push 0x10
+                0x01, 0x02, 0x10, 0x00,
+                //Push 0x01
+                0x01, 0x02, 0x01, 0x00,
+                //Add 
+                0x10, 0x01
             ];
 
             var context = new DefaultContext(instructions);

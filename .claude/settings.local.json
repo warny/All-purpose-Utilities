@@ -1,11 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd:*)",
-      "Bash(done)",
-      "WebSearch",
-      "Bash(cd \"E:/projets/All-purpose-Utilities\" && dotnet build Utils.sln 2>&1)",
-      "Bash(tail:*)"
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "NotebookEdit(*)"
     ]
   }
 }

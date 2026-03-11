@@ -14,19 +14,19 @@ public class MimeDocumentTests
     {
         const string input =
             """
-					Content-Type: multipart/mixed; boundary="b"
+                    Content-Type: multipart/mixed; boundary="b"
 
-					--b
-					Content-Type: text/plain
+                    --b
+                    Content-Type: text/plain
 
-					Hello
-					--b
-					Content-Type: text/plain
+                    Hello
+                    --b
+                    Content-Type: text/plain
 
-					World
-					--b--
+                    World
+                    --b--
 
-					""";
+                    """;
         var doc = MimeReader.Read(input.ReplaceLineEndings());
         Assert.AreEqual(2, doc.Parts.Count);
         Assert.AreEqual("Hello" + Environment.NewLine, doc.Parts[0].Body);

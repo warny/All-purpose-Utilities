@@ -472,20 +472,20 @@ public sealed class SqlParser
         return this.TryConsumeSegmentKeyword(parts, out consumedTokens);
     }
 
-	/// <summary>
-	/// Attempts to consume a clause keyword, including composite keywords such as "GROUP BY".
-	/// </summary>
-	/// <param name="keyword">The keyword text to match.</param>
-	/// <param name="consumedTokens">The tokens consumed when the keyword is matched.</param>
-	/// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
-	private bool TryConsumeSegmentKeyword(string[] parts, out List<SqlToken> consumedTokens)
+    /// <summary>
+    /// Attempts to consume a clause keyword, including composite keywords such as "GROUP BY".
+    /// </summary>
+    /// <param name="keyword">The keyword text to match.</param>
+    /// <param name="consumedTokens">The tokens consumed when the keyword is matched.</param>
+    /// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
+    private bool TryConsumeSegmentKeyword(string[] parts, out List<SqlToken> consumedTokens)
     {
-		consumedTokens = [];
+        consumedTokens = [];
         foreach (var part in parts)
         {
             if (IsAtEnd || !CheckKeyword(part)) return false;
-			consumedTokens.Add(Read());
-		}
+            consumedTokens.Add(Read());
+        }
         return true;
     }
 
@@ -574,7 +574,7 @@ internal enum ClauseStart
     Delete,
     Insert,
     Set,
-	Into,
+    Into,
     From,
     Where,
     GroupBy,

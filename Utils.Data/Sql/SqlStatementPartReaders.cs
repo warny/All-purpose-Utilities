@@ -12,10 +12,10 @@ namespace Utils.Data.Sql;
 /// </summary>
 internal interface IPartReader
 {
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the GROUP BY clause.
-	/// </summary>
-	ClauseKeywordDefinition KeywordDefinition { get; }
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the GROUP BY clause.
+    /// </summary>
+    ClauseKeywordDefinition KeywordDefinition { get; }
 
     /// <summary>
     /// Get the keyword sequences that identify the start of the clause.
@@ -37,7 +37,7 @@ internal interface IPartReader
     /// <summary>
     /// Gets the name of the part represented by this instance.
     /// </summary>
-	string PartName => Clause.ToString();
+    string PartName => Clause.ToString();
 
 
 }
@@ -48,10 +48,10 @@ internal interface IPartReader
 internal interface IPartReader<T> : IPartReader
     where T : SqlStatementPart
 {
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed FROM segment.
-	/// </summary>
-	Func<SqlSegment, T> PartFactory { get; }
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed FROM segment.
+    /// </summary>
+    Func<SqlSegment, T> PartFactory { get; }
 }
 
 
@@ -62,8 +62,8 @@ internal interface IPartReader<T> : IPartReader
 [DebuggerDisplay("SELECT")]
 internal sealed class SelectPartReader : IPartReader<SelectPart>
 {
-	public static IPartReader<SelectPart> Singleton { get; } = new SelectPartReader();
-	
+    public static IPartReader<SelectPart> Singleton { get; } = new SelectPartReader();
+    
     public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Select, 
             [
@@ -71,26 +71,26 @@ internal sealed class SelectPartReader : IPartReader<SelectPart>
                 ["WITH"]
             ]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
     public Func<SqlSegment, SelectPart> PartFactory { get; } = segment => new SelectPart(segment);
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SelectPartReader"/> class.
-	/// </summary>
-	/// <param name="parser">The parser supplying token access.</param>
-	private SelectPartReader() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SelectPartReader"/> class.
+    /// </summary>
+    /// <param name="parser">The parser supplying token access.</param>
+    private SelectPartReader() { }
 
     /// <summary>
     /// Reads the SELECT clause up to the next statement section.
     /// </summary>
     /// <returns>The parsed SELECT segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
-	{
+    {
         var expressionListReader = new ExpressionListReader(parser);
         var expressions = expressionListReader.ReadExpressions(
             "SelectExpr",
@@ -123,21 +123,21 @@ internal sealed class SelectPartReader : IPartReader<SelectPart>
 [DebuggerDisplay("FROM")]
 internal sealed class FromPartReader : IPartReader<FromPart>
 {
-	public static IPartReader<FromPart> Singleton { get; } = new FromPartReader();
+    public static IPartReader<FromPart> Singleton { get; } = new FromPartReader();
 
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.From, ["FROM"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed FROM segment.
-	/// </summary>
-	public Func<SqlSegment, FromPart> PartFactory { get; } = segment => new FromPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed FROM segment.
+    /// </summary>
+    public Func<SqlSegment, FromPart> PartFactory { get; } = segment => new FromPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FromPartReader"/> class.
@@ -150,9 +150,9 @@ internal sealed class FromPartReader : IPartReader<FromPart>
     /// <returns>The parsed FROM segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
-		var tableListReader = new TableListReader(parser);
+        var tableListReader = new TableListReader(parser);
 
-		if (!parser.TryConsumeKeyword("FROM")) return null;
+        if (!parser.TryConsumeKeyword("FROM")) return null;
 
         var tables = tableListReader.ReadTables(
             "FromTable",
@@ -187,21 +187,21 @@ internal sealed class FromPartReader : IPartReader<FromPart>
 [DebuggerDisplay("USING")]
 internal sealed class UsingPartReader : IPartReader<FromPart>
 {
-	public static IPartReader<FromPart> Singleton { get; } = new UsingPartReader();
+    public static IPartReader<FromPart> Singleton { get; } = new UsingPartReader();
 
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Using, ["USING"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed FROM segment.
-	/// </summary>
-	public Func<SqlSegment, FromPart> PartFactory { get; } = segment => new FromPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed FROM segment.
+    /// </summary>
+    public Func<SqlSegment, FromPart> PartFactory { get; } = segment => new FromPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FromPartReader"/> class.
@@ -209,40 +209,40 @@ internal sealed class UsingPartReader : IPartReader<FromPart>
     /// <param name="parser">The parser supplying token access.</param>
     private UsingPartReader() { }
 
-	/// <summary>
-	/// Attempts to read a FROM clause when present.
-	/// </summary>
-	/// <returns>The parsed FROM segment when found; otherwise, <c>null</c>.</returns>
-	public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
-	{
-		var tableListReader = new TableListReader(parser);
-		if (!parser.TryConsumeKeyword("USING")) return null;
+    /// <summary>
+    /// Attempts to read a FROM clause when present.
+    /// </summary>
+    /// <returns>The parsed FROM segment when found; otherwise, <c>null</c>.</returns>
+    public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
+    {
+        var tableListReader = new TableListReader(parser);
+        if (!parser.TryConsumeKeyword("USING")) return null;
 
-		var tables = tableListReader.ReadTables(
-			"UsingTable",
-			[.. clauseTerminators]);
+        var tables = tableListReader.ReadTables(
+            "UsingTable",
+            [.. clauseTerminators]);
 
-		return BuildDelimitedSegment(parser, "From", tables);
-	}
+        return BuildDelimitedSegment(parser, "From", tables);
+    }
 
-	private SqlSegment BuildDelimitedSegment(SqlParser parser, string name, IReadOnlyList<SqlSegment> segments)
-	{
-		var parts = new List<ISqlSegmentPart>();
-		for (int i = 0; i < segments.Count; i++)
-		{
-			if (i > 0)
-			{
-				parts.Add(new SqlTokenPart(","));
-			}
+    private SqlSegment BuildDelimitedSegment(SqlParser parser, string name, IReadOnlyList<SqlSegment> segments)
+    {
+        var parts = new List<ISqlSegmentPart>();
+        for (int i = 0; i < segments.Count; i++)
+        {
+            if (i > 0)
+            {
+                parts.Add(new SqlTokenPart(","));
+            }
 
-			foreach (var part in segments[i].Parts)
-			{
-				parts.Add(part);
-			}
-		}
+            foreach (var part in segments[i].Parts)
+            {
+                parts.Add(part);
+            }
+        }
 
-		return new SqlSegment(name, parts, parser.SyntaxOptions);
-	}
+        return new SqlSegment(name, parts, parser.SyntaxOptions);
+    }
 }
 
 /// <summary>
@@ -251,24 +251,24 @@ internal sealed class UsingPartReader : IPartReader<FromPart>
 [DebuggerDisplay("INTO")]
 internal sealed class IntoPartReader : IPartReader<IntoPart>
 {
-	public static IPartReader<IntoPart> Singleton { get; } = new IntoPartReader();
+    public static IPartReader<IntoPart> Singleton { get; } = new IntoPartReader();
 
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Into, ["INTO"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
     public Func<SqlSegment, IntoPart> PartFactory { get; } = segment => new IntoPart(segment);
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="IntoPartReader"/> class.
-	/// </summary>
-	/// <param name="parser">The parser supplying token access.</param>
-	private IntoPartReader() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IntoPartReader"/> class.
+    /// </summary>
+    /// <param name="parser">The parser supplying token access.</param>
+    private IntoPartReader() { }
 
     /// <summary>
     /// Reads an INTO target when the current token matches the INTO keyword.
@@ -288,16 +288,16 @@ internal sealed class IntoPartReader : IPartReader<IntoPart>
 [DebuggerDisplay("WHERE")]
 internal sealed class WherePartReader : IPartReader<WherePart>
 {
-	public static IPartReader<WherePart> Singleton { get; } = new WherePartReader();
+    public static IPartReader<WherePart> Singleton { get; } = new WherePartReader();
 
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Where, ["WHERE"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
     public Func<SqlSegment, WherePart> PartFactory { get; } = clause => new WherePart(clause);
 
@@ -325,24 +325,24 @@ internal sealed class WherePartReader : IPartReader<WherePart>
 [DebuggerDisplay("GROUP BY")]
 internal sealed class GroupByPartReader : IPartReader<GroupByPart>
 {
-	public static IPartReader<GroupByPart> Singleton { get; } = new GroupByPartReader();
+    public static IPartReader<GroupByPart> Singleton { get; } = new GroupByPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the GROUP BY clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the GROUP BY clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.GroupBy, [["GROUP", "BY"]]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed GROUP BY segment.
-	/// </summary>
-	public Func<SqlSegment, GroupByPart> PartFactory { get; } = segment => new GroupByPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed GROUP BY segment.
+    /// </summary>
+    public Func<SqlSegment, GroupByPart> PartFactory { get; } = segment => new GroupByPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GroupByPartReader"/> class.
@@ -385,24 +385,24 @@ internal sealed class GroupByPartReader : IPartReader<GroupByPart>
 [DebuggerDisplay("HAVING")]
 internal sealed class HavingPartReader : IPartReader<HavingPart>
 {
-	public static IPartReader<HavingPart> Singleton { get; } = new HavingPartReader();
+    public static IPartReader<HavingPart> Singleton { get; } = new HavingPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the HAVING clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the HAVING clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Having, ["HAVING"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed HAVING segment.
-	/// </summary>
-	public Func<SqlSegment, HavingPart> PartFactory { get; } = segment => new HavingPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed HAVING segment.
+    /// </summary>
+    public Func<SqlSegment, HavingPart> PartFactory { get; } = segment => new HavingPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HavingPartReader"/> class.
@@ -428,24 +428,24 @@ internal sealed class HavingPartReader : IPartReader<HavingPart>
 [DebuggerDisplay("ORDER BY")]
 internal sealed class OrderByPartReader : IPartReader<OrderByPart>
 {
-	public static IPartReader<OrderByPart> Singleton { get; } = new OrderByPartReader();
+    public static IPartReader<OrderByPart> Singleton { get; } = new OrderByPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the ORDER BY clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the ORDER BY clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.OrderBy, ["ORDER", "BY"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed ORDER BY segment.
-	/// </summary>
-	public Func<SqlSegment, OrderByPart> PartFactory { get; } = segment => new OrderByPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed ORDER BY segment.
+    /// </summary>
+    public Func<SqlSegment, OrderByPart> PartFactory { get; } = segment => new OrderByPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OrderByPartReader"/> class.
@@ -492,24 +492,24 @@ internal sealed class OrderByPartReader : IPartReader<OrderByPart>
 [DebuggerDisplay("LIMIT")]
 internal sealed class LimitPartReader : IPartReader<LimitPart>
 {
-	public static IPartReader<LimitPart> Singleton { get; } = new LimitPartReader();
+    public static IPartReader<LimitPart> Singleton { get; } = new LimitPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the LIMIT clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the LIMIT clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Limit, ["LIMIT"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed LIMIT segment.
-	/// </summary>
-	public Func<SqlSegment, LimitPart> PartFactory { get; } = segment => new LimitPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed LIMIT segment.
+    /// </summary>
+    public Func<SqlSegment, LimitPart> PartFactory { get; } = segment => new LimitPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LimitPartReader"/> class.
@@ -535,24 +535,24 @@ internal sealed class LimitPartReader : IPartReader<LimitPart>
 [DebuggerDisplay("OFFSET")]
 internal sealed class OffsetPartReader : IPartReader<OffsetPart>
 {
-	public static IPartReader<OffsetPart> Singleton { get; } = new OffsetPartReader();
+    public static IPartReader<OffsetPart> Singleton { get; } = new OffsetPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the OFFSET clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the OFFSET clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Offset, ["OFFSET"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed OFFSET segment.
-	/// </summary>
-	public Func<SqlSegment, OffsetPart> PartFactory { get; } = segment => new OffsetPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed OFFSET segment.
+    /// </summary>
+    public Func<SqlSegment, OffsetPart> PartFactory { get; } = segment => new OffsetPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OffsetPartReader"/> class.
@@ -579,19 +579,19 @@ internal sealed class OffsetPartReader : IPartReader<OffsetPart>
 [DebuggerDisplay("VALUES")]
 internal sealed class ValuesPartReader : IPartReader<ValuesPart>
 {
-	public static IPartReader<ValuesPart> Singleton { get; } = new ValuesPartReader();
+    public static IPartReader<ValuesPart> Singleton { get; } = new ValuesPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the VALUES clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the VALUES clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Values, ["VALUES"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
     public Func<SqlSegment, ValuesPart> PartFactory { get; } = part => new ValuesPart(part);
 
@@ -619,24 +619,24 @@ internal sealed class ValuesPartReader : IPartReader<ValuesPart>
 [DebuggerDisplay("OUTPUT")]
 internal sealed class OutputPartReader : IPartReader
 {
-	public static IPartReader Singleton { get; } = new OutputPartReader();
+    public static IPartReader Singleton { get; } = new OutputPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the OUTPUT clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the OUTPUT clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Output, ["OUTPUT"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="OutputPartReader"/> class.
-	/// </summary>
-	private OutputPartReader() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OutputPartReader"/> class.
+    /// </summary>
+    private OutputPartReader() { }
 
     /// <summary>
     /// Reads an OUTPUT clause after the OUTPUT keyword has been consumed.
@@ -648,7 +648,7 @@ internal sealed class OutputPartReader : IPartReader
     {
         parser.TryConsumeSegmentKeyword("OUTPUT", out _);
         var expressionListReader = new ExpressionListReader(parser);
-		var expressions = expressionListReader.ReadExpressions("OutputExpr", true, [..clauseTerminators]);
+        var expressions = expressionListReader.ReadExpressions("OutputExpr", true, [..clauseTerminators]);
         return BuildExpressionListSegment(parser, "Output", expressions);
     }
 
@@ -656,7 +656,7 @@ internal sealed class OutputPartReader : IPartReader
     {
         if (!mandatory && expressions.Count == 0) return null;
 
-		var tokens = new List<SqlToken>();
+        var tokens = new List<SqlToken>();
         for (int i = 0; i < expressions.Count; i++)
         {
             if (i > 0)
@@ -677,25 +677,25 @@ internal sealed class OutputPartReader : IPartReader
 [DebuggerDisplay("RETURNING")]
 internal sealed class ReturningPartReader : IPartReader
 {
-	public static IPartReader Singleton { get; } = new ReturningPartReader();
+    public static IPartReader Singleton { get; } = new ReturningPartReader();
 
-	/// <summary>
-	/// Gets the keyword metadata describing how to detect the start of the RETURNING clause.
-	/// </summary>
-	public ClauseKeywordDefinition KeywordDefinition { get; } =
+    /// <summary>
+    /// Gets the keyword metadata describing how to detect the start of the RETURNING clause.
+    /// </summary>
+    public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Returning, ["RETURNING"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ReturningPartReader"/> class.
-	/// </summary>
-	/// <param name="parser">The parser supplying token access.</param>
-	private ReturningPartReader() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReturningPartReader"/> class.
+    /// </summary>
+    /// <param name="parser">The parser supplying token access.</param>
+    private ReturningPartReader() { }
 
     /// <summary>
     /// Reads a RETURNING clause after the keyword has been consumed.
@@ -704,7 +704,7 @@ internal sealed class ReturningPartReader : IPartReader
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
         parser.TryConsumeSegmentKeyword("RETURNING", out _);
-		var tokens = parser.ReadSectionTokens([..clauseTerminators]);
+        var tokens = parser.ReadSectionTokens([..clauseTerminators]);
         return parser.BuildSegment("Returning", tokens);
     }
 }
@@ -715,9 +715,9 @@ internal sealed class ReturningPartReader : IPartReader
 [DebuggerDisplay("UNION|EXCEPT|INTERSECT")]
 internal sealed class SetOperatorPartReader : IPartReader<TailPart>
 {
-	public static IPartReader<TailPart> Singleton { get; } = new SetOperatorPartReader();
+    public static IPartReader<TailPart> Singleton { get; } = new SetOperatorPartReader();
 
-	private static readonly string[] SetOperators =
+    private static readonly string[] SetOperators =
     {
         "UNION",
         "EXCEPT",
@@ -733,16 +733,16 @@ internal sealed class SetOperatorPartReader : IPartReader<TailPart>
         ["EXCEPT"],
         ["INTERSECT"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed tail segment.
-	/// </summary>
-	public Func<SqlSegment, TailPart> PartFactory { get; } = segment => new TailPart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed tail segment.
+    /// </summary>
+    public Func<SqlSegment, TailPart> PartFactory { get; } = segment => new TailPart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetOperatorPartReader"/> class.
@@ -755,7 +755,7 @@ internal sealed class SetOperatorPartReader : IPartReader<TailPart>
     /// <param name="parser">The parser supplying token access.</param>
     /// <returns>The parsed set operator segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
-	{
+    {
         foreach (string keyword in SetOperators)
         {
             if (parser.TryConsumeSegmentKeyword(keyword, out var consumedTokens))
@@ -780,16 +780,16 @@ internal sealed class DeletePartReader : IPartReader<DeletePart>
     public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Delete, ["DELETE"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed DELETE target segment.
-	/// </summary>
-	public Func<SqlSegment, DeletePart> PartFactory { get; } = segment => new DeletePart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed DELETE target segment.
+    /// </summary>
+    public Func<SqlSegment, DeletePart> PartFactory { get; } = segment => new DeletePart(segment);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeletePartReader"/> class.
@@ -797,13 +797,13 @@ internal sealed class DeletePartReader : IPartReader<DeletePart>
     private DeletePartReader() { }
 
 
-	/// <summary>
-	/// Attempts to read a DELETE target when the FROM keyword has not yet been encountered.
-	/// </summary>
+    /// <summary>
+    /// Attempts to read a DELETE target when the FROM keyword has not yet been encountered.
+    /// </summary>
     /// <param name="parser">The parser supplying token access.</param>
-	/// <returns>The parsed DELETE target when present; otherwise, <c>null</c>.</returns>
-	public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
-	{
+    /// <returns>The parsed DELETE target when present; otherwise, <c>null</c>.</returns>
+    public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
+    {
         var tokens = new List<SqlToken>();
         while (!parser.IsAtEnd && !parser.CheckKeyword("FROM") && parser.Peek().Text != ";")
         {
@@ -824,26 +824,26 @@ internal sealed class DeletePartReader : IPartReader<DeletePart>
 /// </summary>
 internal sealed class UpdatePartReader : IPartReader
 {
-	public static IPartReader Singleton { get; } = new UpdatePartReader();
+    public static IPartReader Singleton { get; } = new UpdatePartReader();
 
-	/// <summary>
-	/// Gets the factory that creates a typed part from the parsed UPDATE target segment.
-	/// </summary>
-	public Func<SqlSegment, UpdatePart> PartFactory { get; } = segment => new UpdatePart(segment);
+    /// <summary>
+    /// Gets the factory that creates a typed part from the parsed UPDATE target segment.
+    /// </summary>
+    public Func<SqlSegment, UpdatePart> PartFactory { get; } = segment => new UpdatePart(segment);
 
     public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Update, ["UPDATE"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="UpdatePartReader"/> class.
-	/// </summary>
-	private UpdatePartReader() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UpdatePartReader"/> class.
+    /// </summary>
+    private UpdatePartReader() { }
 
     /// <summary>
     /// Reads the UPDATE target until the SET keyword is encountered.
@@ -851,7 +851,7 @@ internal sealed class UpdatePartReader : IPartReader
     /// <param name="parser">The parser supplying token access.</param>
     /// <returns>The parsed UPDATE target segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
-	{
+    {
         var tokens = new List<SqlToken>();
         while (!parser.IsAtEnd && !parser.CheckKeyword("SET") && parser.Peek().Text != ";")
         {
@@ -867,29 +867,29 @@ internal sealed class UpdatePartReader : IPartReader
 /// </summary>
 internal sealed class SetPartReader : IPartReader
 {
-	public static IPartReader Singleton { get; } = new SetPartReader();
+    public static IPartReader Singleton { get; } = new SetPartReader();
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SetPartReader"/> class.
-	/// </summary>
-	private SetPartReader() { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SetPartReader"/> class.
+    /// </summary>
+    private SetPartReader() { }
 
     public ClauseKeywordDefinition KeywordDefinition { get; } =
         ClauseKeywordDefinition.FromKeywords(ClauseStart.Set, ["SET"]);
 
-	/// <inheritdoc />
-	public ClauseStart Clause => KeywordDefinition.Clause;
+    /// <inheritdoc />
+    public ClauseStart Clause => KeywordDefinition.Clause;
 
-	/// <inheritdoc />
-	public string PartName => Clause.ToString();
+    /// <inheritdoc />
+    public string PartName => Clause.ToString();
 
-	/// <summary>
-	/// Reads the SET clause after the SET keyword has been consumed.
-	/// </summary>
-	/// <param name="parser">The parser supplying token access.</param>
-	/// <returns>The parsed SET segment.</returns>
-	public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
-	{
+    /// <summary>
+    /// Reads the SET clause after the SET keyword has been consumed.
+    /// </summary>
+    /// <param name="parser">The parser supplying token access.</param>
+    /// <returns>The parsed SET segment.</returns>
+    public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
+    {
         parser.TryConsumeSegmentKeyword("SET", out _);
         var tokens = parser.ReadSectionTokens([..clauseTerminators]);
         return parser.BuildSegment("Set", tokens);

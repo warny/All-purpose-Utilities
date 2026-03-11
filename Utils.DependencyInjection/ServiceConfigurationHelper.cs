@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 using System.Reflection;
 using Utils.Reflection;
 
@@ -9,6 +10,34 @@ namespace Utils.DependencyInjection;
 /// </summary>
 public static class ServiceConfigurationHelper
 {
+    private static readonly IReadOnlyDictionary<Type, Action<IServiceCollection, Type, Type, InjectableClassAttribute>> InjectionHandlers =
+        new Dictionary<Type, Action<IServiceCollection, Type, Type, InjectableClassAttribute>>
+        {
+            {
+                typeof(SingletonAttribute), (sc, @interface, type, attr) =>
+                {
+                    var a = (SingletonAttribute)attr;
+                    if (a.Domain is null) sc.AddSingleton(@interface, type);
+                    else sc.AddKeyedSingleton(@interface, a.Domain, type);
+                }
+            },
+            {
+                typeof(ScopedAttribute), (sc, @interface, type, attr) =>
+                {
+                    var a = (ScopedAttribute)attr;
+                    if (a.Domain is null) sc.AddScoped(@interface, type);
+                    else sc.AddKeyedScoped(@interface, a.Domain, type);
+                }
+            },
+            {
+                typeof(TransientAttribute), (sc, @interface, type, attr) =>
+                {
+                    var a = (TransientAttribute)attr;
+                    if (a.Domain is null) sc.AddTransient(@interface, type);
+                    else sc.AddKeyedTransient(@interface, a.Domain, type);
+                }
+            },
+        };
     /// <summary>
     /// Configures services for all provided assemblies.
     /// </summary>
@@ -89,39 +118,9 @@ public static class ServiceConfigurationHelper
     /// <param name="type">Implementation type.</param>
     public static void AddInjection(this IServiceCollection serviceCollection, Type @interface, Type type)
     {
-        switch (type.GetCustomAttribute<InjectableClassAttribute>())
-        {
-            case SingletonAttribute singleton:
-                if (singleton.Domain is null)
-                {
-                    serviceCollection.AddSingleton(@interface, type);
-                }
-                else
-                {
-                    serviceCollection.AddKeyedSingleton(@interface, singleton.Domain, type);
-                }
-                break;
-            case ScopedAttribute scoped:
-                if (scoped.Domain is null)
-                {
-                    serviceCollection.AddScoped(@interface, type);
-                }
-                else
-                {
-                    serviceCollection.AddKeyedScoped(@interface, scoped.Domain, type);
-                }
-                break;
-            case TransientAttribute transient:
-                if (transient.Domain is null)
-                {
-                    serviceCollection.AddTransient(@interface, type);
-                }
-                else
-                {
-                    serviceCollection.AddKeyedTransient(@interface, transient.Domain, type);
-                }
-                break;
-        }
+        var attr = type.GetCustomAttribute<InjectableClassAttribute>();
+        if (attr is not null && InjectionHandlers.TryGetValue(attr.GetType(), out var handler))
+            handler(serviceCollection, @interface, type, attr);
     }
 }
 
