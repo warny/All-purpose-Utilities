@@ -25,6 +25,12 @@ public class DoubleRanges : Ranges<double>
     public DoubleRanges(params Range<double>[] ranges) : base(ranges) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="DoubleRanges"/> class with interface-based ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public DoubleRanges(IEnumerable<IRange<double>> ranges) : base(ranges) { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="DoubleRanges"/> class with ranges provided as an enumerable collection.
     /// </summary>
     /// <param name="ranges">The ranges to include in the collection.</param>
@@ -59,7 +65,7 @@ public class DoubleRanges : Ranges<double>
     /// <param name="range">The string representation of the ranges.</param>
     /// <param name="formatInfo">The number format information to use for parsing.</param>
     /// <returns>An enumerable collection of Range&lt;double&gt; objects parsed from the string.</returns>
-    protected static IEnumerable<Range<double>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
+    protected static IEnumerable<IRange<double>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
     {
         // Construct a regex pattern to match double values based on the provided number format.
         string digits = string.Join("", formatInfo.NativeDigits);
@@ -113,6 +119,12 @@ public class SingleRanges : Ranges<float>
     public SingleRanges(params Range<float>[] ranges) : base(ranges) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="SingleRanges"/> class with interface-based ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public SingleRanges(IEnumerable<IRange<float>> ranges) : base(ranges) { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SingleRanges"/> class with ranges supplied as an enumerable collection.
     /// </summary>
     /// <param name="ranges">The ranges to include in the collection.</param>
@@ -147,7 +159,7 @@ public class SingleRanges : Ranges<float>
     /// <param name="range">The string representation of the ranges.</param>
     /// <param name="formatInfo">The number format information to use for parsing.</param>
     /// <returns>An enumerable collection of Range&lt;float&gt; objects parsed from the string.</returns>
-    protected static IEnumerable<Range<float>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
+    protected static IEnumerable<IRange<float>> InnerParse(string range, System.Globalization.NumberFormatInfo formatInfo)
     {
         // Construct a regex pattern to match float values based on the provided number format.
         string digits = string.Join("", formatInfo.NativeDigits);
@@ -201,6 +213,12 @@ public class DateTimeRanges : Ranges<DateTime>
     public DateTimeRanges(params Range<DateTime>[] ranges) : base(ranges) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="DateTimeRanges"/> class with interface-based ranges.
+    /// </summary>
+    /// <param name="ranges">The ranges to include in the collection.</param>
+    public DateTimeRanges(IEnumerable<IRange<DateTime>> ranges) : base(ranges) { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="DateTimeRanges"/> class with ranges provided as an enumerable collection.
     /// </summary>
     /// <param name="ranges">The ranges to include in the collection.</param>
@@ -227,7 +245,7 @@ public class DateTimeRanges : Ranges<DateTime>
     /// <param name="range">The string representation of the ranges.</param>
     /// <param name="formatInfo">The DateTime format information to use for parsing.</param>
     /// <returns>An enumerable collection of Range&lt;DateTime&gt; objects parsed from the string.</returns>
-    protected static IEnumerable<Range<DateTime>> InnerParse(string range, System.Globalization.DateTimeFormatInfo formatInfo)
+    protected static IEnumerable<IRange<DateTime>> InnerParse(string range, System.Globalization.DateTimeFormatInfo formatInfo)
     {
         // Construct a regex pattern to match DateTime values based on the provided format.
         string dateSearch
