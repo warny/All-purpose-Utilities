@@ -2,8 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
         <PackageId>omy.Utils.DependencyInjection</PackageId>
         <Copyright>Olivier MARTY 2025</Copyright>
         <Authors>Olivier MARTY</Authors>

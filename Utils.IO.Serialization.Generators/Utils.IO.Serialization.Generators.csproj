@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <Nullable>enable</Nullable>
         <IsRoslynAnalyzer>true</IsRoslynAnalyzer>
         <PackageId>omy.Utils.IO.Serialization.Generators</PackageId>
         <Copyright>Olivier MARTY 2025</Copyright>

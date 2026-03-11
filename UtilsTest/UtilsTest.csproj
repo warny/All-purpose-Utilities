@@ -6,7 +6,6 @@
                 <IsPackable>false</IsPackable>
                 <IsTestProject>true</IsTestProject>
                 <Authors>Olivier MARTY</Authors>
-                <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
                 <Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
                 <NoWarn>$(NoWarn);1591;CS0612;CS0618</NoWarn>
                 <RollForward>Major</RollForward>

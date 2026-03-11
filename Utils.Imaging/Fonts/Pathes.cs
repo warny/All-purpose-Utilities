@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Linq;
 using Utils.Drawing;
+using Path = Utils.Drawing.Path;
 using Utils.Mathematics.LinearAlgebra;
 
 namespace Utils.Fonts;

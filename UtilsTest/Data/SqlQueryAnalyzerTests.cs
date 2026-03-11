@@ -228,7 +228,7 @@ public sealed class SqlQueryAnalyzerTests
             FROM table1
             INNER JOIN table2 ON table1.champ1 = table2.champ1
             """;
-        Assert.AreEqual(expectedPrefixed.Replace("\n", Environment.NewLine), prefixed);
+        Assert.AreEqual(expectedPrefixed.ReplaceLineEndings(), prefixed);
 
         string suffixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed));
         const string expectedSuffixed = """
@@ -240,7 +240,7 @@ public sealed class SqlQueryAnalyzerTests
                 table1 INNER JOIN
                 table2 ON table1.champ1 = table2.champ1
             """;
-        Assert.AreEqual(expectedSuffixed.Replace("\n", Environment.NewLine), suffixed);
+        Assert.AreEqual(expectedSuffixed.ReplaceLineEndings(), suffixed);
 
         string prefixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed, 2));
         const string expectedPrefixedIndent = """
@@ -251,7 +251,7 @@ public sealed class SqlQueryAnalyzerTests
             FROM table1
             INNER JOIN table2 ON table1.champ1 = table2.champ1
             """;
-        Assert.AreEqual(expectedPrefixedIndent.Replace("\n", Environment.NewLine), prefixedWithIndent);
+        Assert.AreEqual(expectedPrefixedIndent.ReplaceLineEndings(), prefixedWithIndent);
 
         string suffixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed, 2));
         const string expectedSuffixedIndent = """
@@ -263,7 +263,7 @@ public sealed class SqlQueryAnalyzerTests
               table1 INNER JOIN
               table2 ON table1.champ1 = table2.champ1
             """;
-        Assert.AreEqual(expectedSuffixedIndent.Replace("\n", Environment.NewLine), suffixedWithIndent);
+        Assert.AreEqual(expectedSuffixedIndent.ReplaceLineEndings(), suffixedWithIndent);
     }
 
     [TestMethod]
