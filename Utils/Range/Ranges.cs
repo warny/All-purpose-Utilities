@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 
@@ -25,7 +26,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
 {
     #region Private Fields
 
-    private readonly List<Range<T>> _ranges = new();
+    private readonly List<IRange<T>> _ranges = new();
 
     #endregion
 
@@ -49,10 +50,28 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// Creates a set of intervals from the provided collection of <see cref="Range{T}"/>.
     /// Overlapping intervals are merged into disjoint intervals.
     /// </summary>
-    public Ranges(IEnumerable<Range<T>> intervals)
+    public Ranges(IEnumerable<IRange<T>> intervals)
     {
         if (intervals is null) throw new ArgumentNullException(nameof(intervals));
         AddAll(intervals);
+    }
+
+    /// <summary>
+    /// Creates a set of intervals from the provided collection of <see cref="Range{T}"/>.
+    /// Overlapping intervals are merged into disjoint intervals.
+    /// </summary>
+    public Ranges(IEnumerable<Range<T>> intervals)
+        : this(intervals.Select(static interval => (IRange<T>)interval))
+    {
+    }
+
+    /// <summary>
+    /// Creates a set of intervals from one or more <see cref="Range{T}"/>.
+    /// Overlapping intervals are merged into disjoint intervals.
+    /// </summary>
+    public Ranges(params IRange<T>[] intervals)
+        : this((IEnumerable<IRange<T>>)intervals)
+    {
     }
 
     /// <summary>
@@ -76,7 +95,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <summary>
     /// Returns a read-only snapshot of the underlying intervals (disjoint, sorted).
     /// </summary>
-    public IReadOnlyList<Range<T>> Intervals => _ranges.AsReadOnly();
+    public IReadOnlyList<IRange<T>> Intervals => _ranges.AsReadOnly();
 
     #endregion
 
@@ -85,7 +104,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <param name="itemSearchPattern">The regex pattern to match the elements in the range.</param>
     /// <param name="valueParser">A function to parse the string into type T1.</param>
     /// <returns>An enumerable collection of parsed Range objects.</returns>
-    protected static IEnumerable<Range<T1>> InnerParse<T1>(string range, string itemSearchPattern, IEnumerable<string> separators, Func<string, T1> valueParser)
+    protected static IEnumerable<IRange<T1>> InnerParse<T1>(string range, string itemSearchPattern, IEnumerable<string> separators, Func<string, T1> valueParser)
         where T1 : IComparable<T1>
     {
         var parse = new Regex(@"(?<includesStart>(\[|\]))\s*(?<start>" + itemSearchPattern + @")\s*(" + string.Join('|', separators) + @")\s*(?<end>" + itemSearchPattern + @")\s*(?<includesEnd>(\[|\]))");
@@ -118,9 +137,11 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     {
         // We can short-circuit with a linear or binary search. 
         // For clarity, we'll do a linear approach:
+        bool hasCyclicModel = _ranges.Count > 0 && _ranges[0] is CyclicRange<T>;
+
         foreach (var r in _ranges)
         {
-            if (value.CompareTo(r.Start) < 0)
+            if (!hasCyclicModel && value.CompareTo(r.Start) < 0)
                 // we've passed all intervals that could contain value
                 break;
 
@@ -133,7 +154,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <summary>
     /// Checks if the entire <paramref name="range"/> is contained in this set.
     /// </summary>
-    public bool Contains(Range<T> range)
+    public bool Contains(IRange<T> range)
     {
         // We'll see if one of the intervals fully covers 'range'.
         foreach (var r in _ranges)
@@ -150,7 +171,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <summary>
     /// Adds multiple intervals, merging overlaps.
     /// </summary>
-    public void AddAll(IEnumerable<Range<T>> intervals)
+    public void AddAll(IEnumerable<IRange<T>> intervals)
     {
         if (intervals is null) throw new ArgumentNullException(nameof(intervals));
         foreach (var r in intervals)
@@ -174,15 +195,80 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <summary>
     /// Adds a single interval, merging with existing intervals if they overlap or touch.
     /// </summary>
-    public void Add(Range<T> interval)
+    public void Add(IRange<T> interval)
     {
+        if (_ranges.Count > 0 && (!_ranges[0].IsCompatibleWith(interval) || !interval.IsCompatibleWith(_ranges[0])))
+        {
+            throw new InvalidOperationException("Cannot mix incompatible ranges in the same collection.");
+        }
+
         if (_ranges.Count == 0)
         {
             _ranges.Add(interval);
             return;
         }
 
-        var toRemove = new List<Range<T>>();
+        if (interval is CyclicRange<T> cyclicInterval)
+        {
+            bool alreadyPresent = _ranges
+                .OfType<CyclicRange<T>>()
+                .Any(existing => EqualityComparer<T>.Default.Equals(existing.Start, cyclicInterval.Start)
+                    && EqualityComparer<T>.Default.Equals(existing.End, cyclicInterval.End));
+            if (alreadyPresent)
+            {
+                return;
+            }
+
+            _ranges.Add(cyclicInterval);
+
+            var first = (CyclicRange<T>)_ranges[0];
+            List<Range<T>> linearRanges = [];
+            foreach (var range in _ranges)
+            {
+                if (range is not CyclicRange<T> cyclicRange)
+                {
+                    return;
+                }
+
+                linearRanges.AddRange(cyclicRange.SplitToLinearRanges());
+            }
+
+            List<Range<T>> ordered = linearRanges.OrderBy(static r => r.Start).ThenBy(static r => r.End).ToList();
+            if (ordered.Count == 0)
+            {
+                return;
+            }
+
+            List<Range<T>> mergedRanges = [ordered[0]];
+            for (int i = 1; i < ordered.Count; i++)
+            {
+                Range<T> current = ordered[i];
+                Range<T> last = mergedRanges[^1];
+
+                if (Range<T>.Overlap(last, current)
+                    || EqualityComparer<T>.Default.Equals(last.End, current.Start))
+                {
+                    var mergedEnd = last.End.CompareTo(current.End) >= 0 ? last.End : current.End;
+                    mergedRanges[^1] = new Range<T>(last.Start, mergedEnd);
+                }
+                else
+                {
+                    mergedRanges.Add(current);
+                }
+            }
+
+            if (mergedRanges.Count == 1
+                && EqualityComparer<T>.Default.Equals(mergedRanges[0].Start, first.MinValue)
+                && EqualityComparer<T>.Default.Equals(mergedRanges[0].End, first.MaxValue))
+            {
+                _ranges.Clear();
+                _ranges.Add(new CyclicRange<T>(first.MinValue, first.MaxValue, first.MinValue, first.MaxValue));
+            }
+
+            return;
+        }
+
+        var toRemove = new List<IRange<T>>();
         var newStart = interval.Start;
         var newEnd = interval.End;
         var newContainsStart = interval.ContainsStart;
@@ -236,14 +322,14 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
         }
 
         // Insert the merged result
-        var merged = new Range<T>(newStart, newEnd, newContainsStart, newContainsEnd);
+        IRange<T> merged = new Range<T>(newStart, newEnd, newContainsStart, newContainsEnd);
         _ranges.Insert(insertPos, merged);
     }
 
     /// <summary>
     /// Removes multiple intervals from this set.
     /// </summary>
-    public void RemoveAll(IEnumerable<Range<T>> intervals)
+    public void RemoveAll(IEnumerable<IRange<T>> intervals)
     {
         if (intervals is null) throw new ArgumentNullException(nameof(intervals));
         foreach (var r in intervals)
@@ -266,9 +352,9 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <summary>
     /// Removes a single interval from this set, splitting or trimming intervals.
     /// </summary>
-    public void Remove(Range<T> toRemove)
+    public void Remove(IRange<T> toRemove)
     {
-        var newList = new List<Range<T>>();
+        var newList = new List<IRange<T>>();
 
         foreach (var current in _ranges)
         {
@@ -342,9 +428,11 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
         {
             foreach (var r2 in right._ranges)
             {
-                var inter = r1.Intersect(r2);
-                if (inter.HasValue)
-                    output.Add(inter.Value);
+                var intersections = r1.Intersect(r2);
+                foreach (var intersection in intersections)
+                {
+                    output.Add(intersection);
+                }
             }
         }
         return output;
@@ -466,7 +554,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
         if (_ranges.Count == 0)
             return "Ø"; // or "" for empty set
 
-        return string.Join(" ∪ ", _ranges.Select(r => r.ToString(format, formatProvider)));
+        return string.Join(" ∪ ", _ranges.Select(r => ((IFormattable)r).ToString(format, formatProvider)));
     }
 
     #endregion
@@ -517,7 +605,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// 
     /// If it returns false, we skip merging in one direction.
     /// </summary>
-    private static bool OverlapOrTouch(Range<T> current, T p, bool pIsInclusive, bool after)
+    private static bool OverlapOrTouch(IRange<T> current, T p, bool pIsInclusive, bool after)
     {
         // If after==true => we want to see if p < current.Start 
         // or p == current.Start with no adjacency => 
@@ -561,6 +649,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     }
 
     #endregion
+
 }
 
 
@@ -569,7 +658,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
 /// Stored as a struct for efficient copying.
 /// </summary>
 /// <typeparam name="T">A comparable type that supports ordering.</typeparam>
-public readonly struct Range<T> : IFormattable, IEquatable<Range<T>?>
+public readonly struct Range<T> : IRange<T>, IFormattable, IEquatable<Range<T>?>
         where T : IComparable<T>
 {
     /// <summary>
@@ -647,7 +736,7 @@ public readonly struct Range<T> : IFormattable, IEquatable<Range<T>?>
     /// </summary>
     /// <param name="other">The range to compare with.</param>
     /// <returns><see langword="true"/> when <paramref name="other"/> is entirely inside this range; otherwise, <see langword="false"/>.</returns>
-    public bool Contains(Range<T> other)
+    public bool Contains(IRange<T> other)
     {
         // This range must start <= other.Start
         // If Start == other.Start, then either both are inclusive or we containStart if other does
@@ -666,7 +755,7 @@ public readonly struct Range<T> : IFormattable, IEquatable<Range<T>?>
     /// </summary>
     /// <param name="other">The range to test against.</param>
     /// <returns><see langword="true"/> when the two ranges share at least one value; otherwise, <see langword="false"/>.</returns>
-    public bool Overlap(Range<T> other) => Overlap(this, other);
+    public bool Overlap(IRange<T> other) => Overlap(this, other);
 
     /// <summary>
     /// Determines whether two ranges overlap.
@@ -674,7 +763,7 @@ public readonly struct Range<T> : IFormattable, IEquatable<Range<T>?>
     /// <param name="a">The first range.</param>
     /// <param name="b">The second range.</param>
     /// <returns><see langword="true"/> when the two ranges share at least one value; otherwise, <see langword="false"/>.</returns>
-    public static bool Overlap(Range<T> a, Range<T> b)
+    public static bool Overlap(IRange<T> a, IRange<T> b)
     {
         // a starts <= b ends
         bool leftCheck = a.Start.CompareTo(b.End) < 0
@@ -692,22 +781,27 @@ public readonly struct Range<T> : IFormattable, IEquatable<Range<T>?>
     /// </summary>
     /// <param name="other">The range to intersect with.</param>
     /// <returns>A new range representing the overlap, or <see langword="null"/> when the ranges are disjoint.</returns>
-    public Range<T>? Intersect(Range<T> other)
+    public IRange<T>[] Intersect(IRange<T> other)
     {
         T newStart = Max(Start, other.Start);
         T newEnd = Min(End, other.End);
 
         if (newStart.CompareTo(newEnd) > 0)
-            return null;
+        {
+            return [];
+        }
 
         bool includesStart = Contains(newStart) && other.Contains(newStart);
         bool includesEnd = Contains(newEnd) && other.Contains(newEnd);
 
-        return new Range<T>(newStart, newEnd, includesStart, includesEnd);
+        return [new Range<T>(newStart, newEnd, includesStart, includesEnd)];
     }
 
     private static T Max(T a, T b) => a.CompareTo(b) >= 0 ? a : b;
     private static T Min(T a, T b) => a.CompareTo(b) <= 0 ? a : b;
+
+    /// <inheritdoc />
+    public bool IsCompatibleWith(IRange<T> other) => other is Range<T>;
 
     #endregion
 
