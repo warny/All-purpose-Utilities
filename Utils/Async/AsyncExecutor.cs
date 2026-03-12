@@ -22,7 +22,7 @@ public class AsyncExecutor : IAsyncExecutor
             tasks.Add(func());
         }
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -33,7 +33,7 @@ public class AsyncExecutor : IAsyncExecutor
         foreach (var func in functions)
         {
             ArgumentNullException.ThrowIfNull(func);
-            await func();
+            await func().ConfigureAwait(false);
         }
     }
 
@@ -47,11 +47,11 @@ public class AsyncExecutor : IAsyncExecutor
 
         if (list.Count >= parallelThreshold)
         {
-            await ExecuteParallelAsync(list);
+            await ExecuteParallelAsync(list).ConfigureAwait(false);
         }
         else
         {
-            await ExecuteSequentialAsync(list);
+            await ExecuteSequentialAsync(list).ConfigureAwait(false);
         }
     }
 }

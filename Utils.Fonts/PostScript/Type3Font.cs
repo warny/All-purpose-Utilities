@@ -19,17 +19,20 @@ namespace Utils.Fonts.PostScript;
 /// </summary>
 public class Type3Font : IFont
 {
+    private const int XYArgCount = 2;    // moveto, lineto: x and y
+    private const int CurveArgCount = 6; // curveto: x1,y1, x2,y2, x3,y3
+
     private static readonly IReadOnlyDictionary<string, Action<List<float>, List<PostScriptGlyph.PathCommand>>> PostScriptCommands =
         new Dictionary<string, Action<List<float>, List<PostScriptGlyph.PathCommand>>>(StringComparer.OrdinalIgnoreCase)
         {
             {
                 "moveto", (stack, commands) =>
                 {
-                    if (stack.Count >= 2)
+                    if (stack.Count >= XYArgCount)
                     {
                         float y = stack[^1];
                         float x = stack[^2];
-                        stack.RemoveRange(stack.Count - 2, 2);
+                        stack.RemoveRange(stack.Count - XYArgCount, XYArgCount);
                         commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.MoveTo, x, y, 0, 0, 0, 0));
                     }
                 }
@@ -37,11 +40,11 @@ public class Type3Font : IFont
             {
                 "lineto", (stack, commands) =>
                 {
-                    if (stack.Count >= 2)
+                    if (stack.Count >= XYArgCount)
                     {
                         float y = stack[^1];
                         float x = stack[^2];
-                        stack.RemoveRange(stack.Count - 2, 2);
+                        stack.RemoveRange(stack.Count - XYArgCount, XYArgCount);
                         commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.LineTo, x, y, 0, 0, 0, 0));
                     }
                 }
@@ -49,7 +52,7 @@ public class Type3Font : IFont
             {
                 "curveto", (stack, commands) =>
                 {
-                    if (stack.Count >= 6)
+                    if (stack.Count >= CurveArgCount)
                     {
                         float y3 = stack[^1];
                         float x3 = stack[^2];
@@ -57,7 +60,7 @@ public class Type3Font : IFont
                         float x2 = stack[^4];
                         float y1 = stack[^5];
                         float x1 = stack[^6];
-                        stack.RemoveRange(stack.Count - 6, 6);
+                        stack.RemoveRange(stack.Count - CurveArgCount, CurveArgCount);
                         commands.Add(new PostScriptGlyph.PathCommand(PostScriptGlyph.PathCommandType.BezierTo, x1, y1, x2, y2, x3, y3));
                     }
                 }

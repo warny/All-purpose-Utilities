@@ -68,10 +68,10 @@ public sealed class SqlParser
         return new SqlParser(tokenizer.Tokenize(), syntaxOptions);
     }
 
-    public SqlStatement ParseStatement(bool WithOptionalCte = true)
+    public SqlStatement ParseStatement(bool withOptionalCte = true)
     {
         WithClause? withClause = null;
-        if (WithOptionalCte && TryConsumeKeyword("WITH"))
+        if (withOptionalCte && TryConsumeKeyword("WITH"))
         {
             withClause = ParseWithClause();
         }
