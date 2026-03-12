@@ -316,12 +316,13 @@ namespace Utils.Geography.Model
         #region Equality & Formatting
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             obj is GeoPoint<T> other && Equals(other);
 
         /// <inheritdoc/>
-        public bool Equals(GeoPoint<T> other)
+        public bool Equals(GeoPoint<T>? other)
         {
+            if (other is null) return false;
             if (comparer.Equals(Latitude, MaxLatitude) && comparer.Equals(other.Latitude, MaxLatitude)) return true;
             if (comparer.Equals(Latitude, MinLatitude) && comparer.Equals(other.Latitude, MinLatitude)) return true;
 
@@ -350,7 +351,7 @@ namespace Utils.Geography.Model
         /// Returns this geographic point as a string in the specified format and culture.
         /// Supported formats: "0.#####", "d" and "D" (for degree-minute-second).
         /// </summary>
-        public virtual string ToString(string format, IFormatProvider formatProvider)
+        public virtual string ToString(string? format, IFormatProvider? formatProvider)
         {
             formatProvider ??= CultureInfo.InvariantCulture;
             var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
@@ -415,12 +416,12 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Determines whether two geographic points are equal.
         /// </summary>
-        public static bool operator ==(GeoPoint<T> left, GeoPoint<T> right) => left.Equals(right);
+        public static bool operator ==(GeoPoint<T>? left, GeoPoint<T>? right) => left?.Equals(right) ?? right is null;
 
         /// <summary>
         /// Determines whether two geographic points are not equal.
         /// </summary>
-        public static bool operator !=(GeoPoint<T> left, GeoPoint<T> right) => !left.Equals(right);
+        public static bool operator !=(GeoPoint<T>? left, GeoPoint<T>? right) => !(left == right);
 
         #endregion
 

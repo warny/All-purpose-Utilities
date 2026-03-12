@@ -36,7 +36,7 @@ public sealed class CharsComparer : IComparer<IEnumerable<char>>
     }
 
     /// <inheritdoc/>
-    public int Compare(IEnumerable<char> x, IEnumerable<char> y)
+    public int Compare(IEnumerable<char>? x, IEnumerable<char>? y)
     {
         if (ReferenceEquals(x, y)) return 0;
         if (x is null && y is null) return 0;

@@ -13,6 +13,7 @@
         <Authors>Olivier MARTY</Authors>
         <Company>Olivier MARTY</Company>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

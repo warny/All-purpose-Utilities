@@ -45,17 +45,17 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is CmapSubtable other && Equals(other);
+        public override bool Equals(object? obj) => obj is CmapSubtable other && Equals(other);
 
         /// <inheritdoc/>
-        public bool Equals(CmapSubtable other) =>
+        public bool Equals(CmapSubtable? other) =>
             other != null && PlatformID == other.PlatformID && PlatformSpecificID == other.PlatformSpecificID;
 
         /// <inheritdoc/>
         public override int GetHashCode() => ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID);
 
         /// <inheritdoc/>
-        public int CompareTo([System.Diagnostics.CodeAnalysis.AllowNull] CmapSubtable other)
+        public int CompareTo(CmapSubtable? other)
         {
             if (other is null)
             {

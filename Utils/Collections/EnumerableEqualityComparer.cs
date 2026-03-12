@@ -62,7 +62,7 @@ public sealed class EnumerableEqualityComparer<T> : IEqualityComparer<IEnumerabl
     }
 
     /// <inheritdoc/>
-    public bool Equals(IEnumerable<T> x, IEnumerable<T> y)
+    public bool Equals(IEnumerable<T>? x, IEnumerable<T>? y)
     {
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;

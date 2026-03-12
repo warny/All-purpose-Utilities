@@ -71,7 +71,7 @@ public class CustomFormatter : NullFormatter
     /// <param name="arg">Object to be formatted</param>
     /// <param name="formatProvider">format provider</param>
     /// <returns>The formatted string, or the base formatting when no formatter matches.</returns>
-    public override string Format(string format, object arg, IFormatProvider formatProvider)
+    public override string? Format(string? format, object? arg, IFormatProvider? formatProvider)
     {
         formatProvider ??= CultureInfo;
         if (arg is null) return "";
@@ -127,7 +127,7 @@ public class NullFormatter : IFormatProvider, ICustomFormatter
     /// </summary>
     /// <param name="formatType">The requested format type.</param>
     /// <returns>This instance when <paramref name="formatType"/> is <see cref="ICustomFormatter"/>; otherwise <see langword="null"/>.</returns>
-    public object GetFormat(Type formatType)
+    public object? GetFormat(Type? formatType)
     {
         if (formatType == typeof(ICustomFormatter))
         {
@@ -144,7 +144,7 @@ public class NullFormatter : IFormatProvider, ICustomFormatter
     /// <param name="arg">The value to format.</param>
     /// <param name="formatProvider">An optional format provider.</param>
     /// <returns>The formatted representation of <paramref name="arg"/>.</returns>
-    public virtual string Format(string format, object arg, IFormatProvider formatProvider) => arg switch
+    public virtual string? Format(string? format, object? arg, IFormatProvider? formatProvider) => arg switch
     {
         IFormattable formattable => formattable.ToString(format, formatProvider ?? CultureInfo),
         _ => arg?.ToString() ?? string.Empty,

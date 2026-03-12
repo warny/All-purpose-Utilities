@@ -126,7 +126,7 @@ public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Til
     /// <param name="format">Format string to apply to the X and Y coordinates.</param>
     /// <param name="formatProvider">Format provider for culture-specific formatting.</param>
     /// <returns>A formatted string representation of the tile.</returns>
-    public string ToString(string format, IFormatProvider formatProvider) =>
+    public string ToString(string? format, IFormatProvider? formatProvider) =>
         $"tileX={TileX.ToString(format, formatProvider)}, tileY={TileY.ToString(format, formatProvider)}, zoomLevel={ZoomFactor}";
 
     /// <summary>
@@ -134,7 +134,7 @@ public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Til
     /// </summary>
     /// <param name="obj">Object to compare with the current tile.</param>
     /// <returns><see langword="true"/> if the specified object is equal to the current tile; otherwise <see langword="false"/>.</returns>
-    public override bool Equals(object obj) =>
+    public override bool Equals(object? obj) =>
         obj is Tile<T> tile && Equals(tile);
 
     /// <summary>
@@ -142,8 +142,9 @@ public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Til
     /// </summary>
     /// <param name="other">Tile to compare with the current instance.</param>
     /// <returns><see langword="true"/> if both tiles are equal; otherwise <see langword="false"/>.</returns>
-    public bool Equals(Tile<T> other)
-        => TileX == other.TileX
+    public bool Equals(Tile<T>? other)
+        => other is not null
+           && TileX == other.TileX
            && TileY == other.TileY
            && ZoomFactor == other.ZoomFactor
            && TileSize == other.TileSize;
@@ -154,7 +155,7 @@ public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Til
     /// <param name="tile1">First tile to compare.</param>
     /// <param name="tile2">Second tile to compare.</param>
     /// <returns><see langword="true"/> if both tiles are equal; otherwise <see langword="false"/>.</returns>
-    public static bool operator ==(Tile<T> tile1, Tile<T> tile2) => tile1.Equals(tile2);
+    public static bool operator ==(Tile<T>? tile1, Tile<T>? tile2) => tile1?.Equals(tile2) ?? tile2 is null;
 
     /// <summary>
     /// Determines whether two tiles are not equal.
@@ -162,5 +163,5 @@ public class Tile<T> : IEquatable<Tile<T>>, IFormattable, IEqualityOperators<Til
     /// <param name="tile1">First tile to compare.</param>
     /// <param name="tile2">Second tile to compare.</param>
     /// <returns><see langword="true"/> if the tiles differ; otherwise <see langword="false"/>.</returns>
-    public static bool operator !=(Tile<T> tile1, Tile<T> tile2) => !tile1.Equals(tile2);
+    public static bool operator !=(Tile<T>? tile1, Tile<T>? tile2) => !(tile1 == tile2);
 }

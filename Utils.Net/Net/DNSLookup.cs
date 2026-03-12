@@ -37,6 +37,7 @@ namespace Utils.Net
         /// <summary>
         /// Initializes a new instance of the <see cref="DNSLookup"/> class with custom name servers.
         /// </summary>
+        /// <param name="factory">The DNS factory used to create packet writer and reader instances.</param>
         /// <param name="nameServers">Array of IP addresses representing DNS name servers.</param>
         public DNSLookup(DNSFactory factory, params IPAddress[] nameServers)
         {

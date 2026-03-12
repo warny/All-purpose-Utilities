@@ -128,7 +128,7 @@ public readonly struct Number :
     /// <param name="provider">Format provider or <c>null</c> for invariant culture.</param>
     /// <param name="result">Receives the parsed value when successful.</param>
     /// <returns><see langword="true"/> if parsing succeeded; otherwise <see langword="false"/>.</returns>
-    public static bool TryParse(string text, IFormatProvider? provider, out Number result)
+    public static bool TryParse(string? text, IFormatProvider? provider, out Number result)
     {
         try
         {

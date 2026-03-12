@@ -7,7 +7,7 @@
                 <IsTestProject>true</IsTestProject>
                 <Authors>Olivier MARTY</Authors>
                 <Description>Unit tests exercising all utilities using MSTest and SpecFlow. Covers collections, IO, network and imaging components.</Description>
-                <NoWarn>$(NoWarn);1591;CS0612;CS0618</NoWarn>
+                <NoWarn>$(NoWarn);1591;CS0612;CS0618;CS8618;CS8625;CS8602;CS8603;CS8604;CS8600;CS8767;CS8601;CS8765;CS8620;CS8619;CS8629;CS8714;CS8622;CS8621</NoWarn>
                 <RollForward>Major</RollForward>
         </PropertyGroup>
 

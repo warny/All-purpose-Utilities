@@ -89,7 +89,7 @@ public class ReturnValue<T, E>
     public override string ToString() => this.Error?.ToString() ?? this.Value?.ToString() ?? string.Empty;
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
             => this.Error is null ? Equals(Value, obj) : ReferenceEquals(Error, obj);
 
     /// <inheritdoc />

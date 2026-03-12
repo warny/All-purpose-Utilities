@@ -86,7 +86,7 @@ namespace Utils.Arrays
         /// <param name="x">The first array to compare.</param>
         /// <param name="y">The second array to compare.</param>
         /// <returns>True if the arrays are equal; otherwise, false.</returns>
-        public bool Equals(Array x, Array y)
+        public bool Equals(Array? x, Array? y)
         {
             // Ensure the elements in the arrays are of the correct type
             if (!typeOfT.IsAssignableFrom(x.GetType().GetElementType()))

@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
+        <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageId>omy.Utils.OData</PackageId>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>

@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Utils.IO.Serialization.Generators;
 
 /// <summary>
-/// Generates reader and writer extension methods for types annotated with <see cref="Serialization.GenerateReaderWriterAttribute"/>.
+/// Generates reader and writer extension methods for types annotated with <c>GenerateReaderWriterAttribute</c>.
 /// </summary>
 [Generator]
 public class ReaderWriterGenerator : ISourceGenerator

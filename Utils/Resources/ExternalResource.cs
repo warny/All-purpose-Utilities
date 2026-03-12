@@ -145,10 +145,11 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     }
 
     /// <summary>
-    /// Processes a single &lt;data&gt; element from the .resx, 
+    /// Processes a single &lt;data&gt; element from the .resx,
     /// reading "name", "type" attributes, and nested &lt;value&gt;.
     /// </summary>
     /// <param name="xmlReader">The XmlReader positioned on &lt;data&gt; start.</param>
+    /// <param name="basePath">The base path used to resolve relative file references in the resource.</param>
     private void ProcessDataElement(XmlReader xmlReader, string basePath)
     {
         // We want to read the attributes of <data> before we move on:

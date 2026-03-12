@@ -37,7 +37,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <see langword="true"/> if both expressions are considered equivalent after simplification;
     /// otherwise <see langword="false"/>.
     /// </returns>
-    public bool Equals(Expression x, Expression y)
+    public bool Equals(Expression? x, Expression? y)
     {
         var xParameters = x is LambdaExpression xLambda ? xLambda.Parameters.ToArray() : null;
         var yParameters = y is LambdaExpression yLambda ? yLambda.Parameters.ToArray() : null;

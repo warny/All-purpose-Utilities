@@ -40,7 +40,7 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
     #region Equality Members
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
         => obj switch
         {
             MapPosition<T> other => Equals(other),
@@ -48,7 +48,7 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
         };
 
     /// <inheritdoc />
-    public bool Equals(MapPosition<T> other)
+    public bool Equals(MapPosition<T>? other)
     {
         if (other is null) return false;
         if (this.GeoPoint is null) return other.GeoPoint is null;
@@ -65,7 +65,7 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
     /// <param name="left">The left-hand <see cref="MapPosition{T}"/> operand.</param>
     /// <param name="right">The right-hand <see cref="MapPosition{T}"/> operand.</param>
     /// <returns>True if the two instances are equal, otherwise false.</returns>
-    public static bool operator ==(MapPosition<T> left, MapPosition<T> right) => left?.Equals(right) ?? right is null;
+    public static bool operator ==(MapPosition<T>? left, MapPosition<T>? right) => left?.Equals(right) ?? right is null;
 
     /// <summary>
     /// Inequality operator for comparing two <see cref="MapPosition{T}"/> instances.
@@ -73,7 +73,7 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
     /// <param name="left">The left-hand <see cref="MapPosition{T}"/> operand.</param>
     /// <param name="right">The right-hand <see cref="MapPosition{T}"/> operand.</param>
     /// <returns>True if the two instances are not equal, otherwise false.</returns>
-    public static bool operator !=(MapPosition<T> left, MapPosition<T> right) => !(left == right);
+    public static bool operator !=(MapPosition<T>? left, MapPosition<T>? right) => !(left == right);
 
     #endregion
 

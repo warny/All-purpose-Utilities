@@ -35,7 +35,7 @@ public sealed class QuickEqualityComparer<TElement> : IEqualityComparer<TElement
     /// <param name="x">The first value to compare.</param>
     /// <param name="y">The second value to compare.</param>
     /// <returns><see langword="true"/> when the values are considered equal; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(TElement x, TElement y) => Comparer(x, y);
+    public bool Equals(TElement? x, TElement? y) => Comparer(x, y);
 
     /// <summary>
     /// Computes the hash code for the specified value.

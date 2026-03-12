@@ -158,10 +158,10 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     }
 
     /// <inheritdoc/>
-    public static IpRange Parse(string s, IFormatProvider provider) => Parse(s);
+    public static IpRange Parse(string s, IFormatProvider? provider) => Parse(s);
 
     /// <inheritdoc/>
-    public static bool TryParse(string s, IFormatProvider provider, out IpRange result)
+    public static bool TryParse(string? s, IFormatProvider? provider, out IpRange result)
     {
         if (string.IsNullOrWhiteSpace(s))
         {
@@ -265,11 +265,11 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     #region Equality
 
     /// <inheritdoc/>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
         => obj is IpRange other && Equals(other);
 
     /// <inheritdoc/>
-    public bool Equals(IpRange other)
+    public bool Equals(IpRange? other)
     {
         if (other is null) return false;
         return Start.Equals(other.Start) && End.Equals(other.End);
@@ -281,13 +281,13 @@ public class IpRange : IParsable<IpRange>, IEnumerable<IPAddress>,
     /// <summary>
     /// Equality operator comparing two <see cref="IpRange"/> instances.
     /// </summary>
-    public static bool operator ==(IpRange left, IpRange right)
+    public static bool operator ==(IpRange? left, IpRange? right)
         => left?.Equals(right) ?? right is null;
 
     /// <summary>
     /// Inequality operator comparing two <see cref="IpRange"/> instances.
     /// </summary>
-    public static bool operator !=(IpRange left, IpRange right)
+    public static bool operator !=(IpRange? left, IpRange? right)
         => !(left == right);
 
     #endregion

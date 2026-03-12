@@ -476,9 +476,9 @@ public class TrueTypeFont : IFont
         public override string ToString() => $"{Tag} - CheckSum={CheckSum:X4} - Offset={Offset} - DataLength={DataLength}";
 
         /// <inheritdoc/>
-        public int CompareTo(TableDeclaration other) => Offset.CompareTo(other.Offset);
+        public int CompareTo(TableDeclaration? other) => Offset.CompareTo(other?.Offset);
 
         /// <inheritdoc/>
-        public int CompareTo(object obj) => obj is TableDeclaration td ? CompareTo(td) : -1;
+        public int CompareTo(object? obj) => obj is TableDeclaration td ? CompareTo(td) : -1;
     }
 }

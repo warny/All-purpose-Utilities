@@ -231,10 +231,10 @@ public sealed class DNSFactory : IAdditionOperators<DNSFactory, DNSFactory, DNSF
         public DNSClassId Class { get; } = @class;
         public ushort RecordId { get; } = recordId;
 
-        public bool Equals(UshortRecordKey other)
-            => Class == other.Class && RecordId == other.RecordId;
+        public bool Equals(UshortRecordKey? other)
+            => other is not null && Class == other.Class && RecordId == other.RecordId;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is UshortRecordKey other && Equals(other);
 
         public override int GetHashCode() => HashCode.Combine(Class, RecordId);
@@ -248,10 +248,10 @@ public sealed class DNSFactory : IAdditionOperators<DNSFactory, DNSFactory, DNSF
         public DNSClassId Class { get; } = @class;
         public string RecordName { get; } = recordName;
 
-        public bool Equals(StringRecordKey other)
-            => Class == other.Class && RecordName == other.RecordName;
+        public bool Equals(StringRecordKey? other)
+            => other is not null && Class == other.Class && RecordName == other.RecordName;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is StringRecordKey other && Equals(other);
 
         public override int GetHashCode() => HashCode.Combine(Class, RecordName);

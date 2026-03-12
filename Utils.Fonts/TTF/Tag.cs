@@ -105,7 +105,7 @@ public readonly struct Tag :
     public bool Equals(Tag other) => Value == other.Value;
 
     /// <inheritdoc/>
-    public bool Equals(string other) => Name == other;
+    public bool Equals(string? other) => Name == other;
 
     /// <inheritdoc/>
     public bool Equals(int other) => Value == other;
@@ -114,7 +114,7 @@ public readonly struct Tag :
     public bool Equals(TableTypes.Tags other) => Value == (int)other;
 
     /// <inheritdoc/>
-    public bool Equals(byte[] other) =>
+    public bool Equals(byte[]? other) =>
         other is { Length: 4 } &&
         Name[0] == (char)other[0] &&
         Name[1] == (char)other[1] &&
@@ -122,7 +122,7 @@ public readonly struct Tag :
         Name[3] == (char)other[3];
 
     /// <inheritdoc/>
-    public override bool Equals(object obj) =>
+    public override bool Equals(object? obj) =>
         obj is Tag tag && Equals(tag) ||
         obj is string str && Equals(str) ||
         obj is int i && Equals(i) ||
@@ -205,14 +205,14 @@ public readonly struct Tag :
     /// </summary>
     /// <param name="tag1">The tag to evaluate.</param>
     /// <param name="tag2">The string identifier to compare.</param>
-    public static bool operator ==(Tag tag1, string tag2) => tag1.Equals(tag2);
+    public static bool operator ==(Tag tag1, string? tag2) => tag1.Equals(tag2);
 
     /// <summary>
     /// Determines whether the <see cref="Tag"/> does not equal the supplied string identifier.
     /// </summary>
     /// <param name="tag1">The tag to evaluate.</param>
     /// <param name="tag2">The string identifier to compare.</param>
-    public static bool operator !=(Tag tag1, string tag2) => !tag1.Equals(tag2);
+    public static bool operator !=(Tag tag1, string? tag2) => !tag1.Equals(tag2);
 
     /// <summary>
     /// Determines whether the <see cref="Tag"/> equals the supplied integer identifier.
@@ -247,28 +247,28 @@ public readonly struct Tag :
     /// </summary>
     /// <param name="tag1">The tag to evaluate.</param>
     /// <param name="tag2">The byte buffer to compare.</param>
-    public static bool operator ==(Tag tag1, byte[] tag2) => tag1.Equals(tag2);
+    public static bool operator ==(Tag tag1, byte[]? tag2) => tag1.Equals(tag2);
 
     /// <summary>
     /// Determines whether the <see cref="Tag"/> does not equal the supplied byte-buffer identifier.
     /// </summary>
     /// <param name="tag1">The tag to evaluate.</param>
     /// <param name="tag2">The byte buffer to compare.</param>
-    public static bool operator !=(Tag tag1, byte[] tag2) => !tag1.Equals(tag2);
+    public static bool operator !=(Tag tag1, byte[]? tag2) => !tag1.Equals(tag2);
 
     /// <summary>
     /// Determines whether the supplied string identifier equals the <see cref="Tag"/>.
     /// </summary>
     /// <param name="tag1">The string identifier to evaluate.</param>
     /// <param name="tag2">The tag to compare.</param>
-    public static bool operator ==(string tag1, Tag tag2) => tag2.Equals(tag1);
+    public static bool operator ==(string? tag1, Tag tag2) => tag2.Equals(tag1);
 
     /// <summary>
     /// Determines whether the supplied string identifier differs from the <see cref="Tag"/>.
     /// </summary>
     /// <param name="tag1">The string identifier to evaluate.</param>
     /// <param name="tag2">The tag to compare.</param>
-    public static bool operator !=(string tag1, Tag tag2) => !tag2.Equals(tag1);
+    public static bool operator !=(string? tag1, Tag tag2) => !tag2.Equals(tag1);
 
     /// <summary>
     /// Determines whether the supplied integer identifier equals the <see cref="Tag"/>.
@@ -303,12 +303,12 @@ public readonly struct Tag :
     /// </summary>
     /// <param name="tag1">The byte buffer to evaluate.</param>
     /// <param name="tag2">The tag to compare.</param>
-    public static bool operator ==(byte[] tag1, Tag tag2) => tag2.Equals(tag1);
+    public static bool operator ==(byte[]? tag1, Tag tag2) => tag2.Equals(tag1);
 
     /// <summary>
     /// Determines whether the supplied byte-buffer identifier differs from the <see cref="Tag"/>.
     /// </summary>
     /// <param name="tag1">The byte buffer to evaluate.</param>
     /// <param name="tag2">The tag to compare.</param>
-    public static bool operator !=(byte[] tag1, Tag tag2) => !tag2.Equals(tag1);
+    public static bool operator !=(byte[]? tag1, Tag tag2) => !tag2.Equals(tag1);
 }

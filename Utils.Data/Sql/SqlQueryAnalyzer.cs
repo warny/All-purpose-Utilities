@@ -262,10 +262,9 @@ internal sealed class PartReferenceBinding<TPart> : IPartReferenceBinding
     /// <summary>
     /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
     /// </summary>
-    /// <param name="partName">The name of the segment produced by the associated part reader.</param>
-    /// <param name="partFactory">Factory used to create the typed part.</param>
+    /// <param name="partReader">The part reader supplying the name and factory for the binding.</param>
     /// <param name="onBind">Callback invoked when the binding is matched.</param>
-    public PartReferenceBinding(IPartReader<TPart> partReader, Action<TPart> onBind) 
+    public PartReferenceBinding(IPartReader<TPart> partReader, Action<TPart> onBind)
         : this(partReader.PartName, partReader.PartFactory, onBind)    {    }
 
     /// <summary>

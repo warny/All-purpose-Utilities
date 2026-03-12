@@ -82,7 +82,6 @@ internal sealed class SelectPartReader : IPartReader<SelectPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="SelectPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private SelectPartReader() { }
 
     /// <summary>
@@ -204,9 +203,8 @@ internal sealed class UsingPartReader : IPartReader<FromPart>
     public Func<SqlSegment, FromPart> PartFactory { get; } = segment => new FromPart(segment);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FromPartReader"/> class.
+    /// Initializes a new instance of the <see cref="UsingPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private UsingPartReader() { }
 
     /// <summary>
@@ -267,7 +265,6 @@ internal sealed class IntoPartReader : IPartReader<IntoPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="IntoPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private IntoPartReader() { }
 
     /// <summary>
@@ -304,7 +301,6 @@ internal sealed class WherePartReader : IPartReader<WherePart>
     /// <summary>
     /// Initializes a new instance of the <see cref="WherePartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private WherePartReader() { }
 
     /// <summary>
@@ -407,7 +403,6 @@ internal sealed class HavingPartReader : IPartReader<HavingPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="HavingPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private HavingPartReader() { }
 
     /// <summary>
@@ -450,7 +445,6 @@ internal sealed class OrderByPartReader : IPartReader<OrderByPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="OrderByPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private OrderByPartReader() { }
 
     /// <summary>
@@ -514,7 +508,6 @@ internal sealed class LimitPartReader : IPartReader<LimitPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="LimitPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private LimitPartReader() { }
 
     /// <summary>
@@ -557,7 +550,6 @@ internal sealed class OffsetPartReader : IPartReader<OffsetPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="OffsetPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private OffsetPartReader() { }
 
     /// <summary>
@@ -598,7 +590,6 @@ internal sealed class ValuesPartReader : IPartReader<ValuesPart>
     /// <summary>
     /// Initializes a new instance of the <see cref="ValuesPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     public ValuesPartReader() { }
 
     /// <summary>
@@ -694,7 +685,6 @@ internal sealed class ReturningPartReader : IPartReader
     /// <summary>
     /// Initializes a new instance of the <see cref="ReturningPartReader"/> class.
     /// </summary>
-    /// <param name="parser">The parser supplying token access.</param>
     private ReturningPartReader() { }
 
     /// <summary>
@@ -753,6 +743,7 @@ internal sealed class SetOperatorPartReader : IPartReader<TailPart>
     /// Attempts to read a trailing set operator clause when present.
     /// </summary>
     /// <param name="parser">The parser supplying token access.</param>
+    /// <param name="clauseTerminators">Clause boundaries that end the current section.</param>
     /// <returns>The parsed set operator segment when found; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
@@ -801,6 +792,7 @@ internal sealed class DeletePartReader : IPartReader<DeletePart>
     /// Attempts to read a DELETE target when the FROM keyword has not yet been encountered.
     /// </summary>
     /// <param name="parser">The parser supplying token access.</param>
+    /// <param name="clauseTerminators">Clause boundaries that end the current section.</param>
     /// <returns>The parsed DELETE target when present; otherwise, <c>null</c>.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
@@ -849,6 +841,7 @@ internal sealed class UpdatePartReader : IPartReader
     /// Reads the UPDATE target until the SET keyword is encountered.
     /// </summary>
     /// <param name="parser">The parser supplying token access.</param>
+    /// <param name="clauseTerminators">Clause boundaries that end the current section.</param>
     /// <returns>The parsed UPDATE target segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {
@@ -887,6 +880,7 @@ internal sealed class SetPartReader : IPartReader
     /// Reads the SET clause after the SET keyword has been consumed.
     /// </summary>
     /// <param name="parser">The parser supplying token access.</param>
+    /// <param name="clauseTerminators">Clause boundaries that end the SET clause.</param>
     /// <returns>The parsed SET segment.</returns>
     public SqlSegment? TryRead(SqlParser parser, params IEnumerable<ClauseStart> clauseTerminators)
     {

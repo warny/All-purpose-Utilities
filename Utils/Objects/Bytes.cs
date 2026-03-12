@@ -164,7 +164,7 @@ public readonly struct Bytes :
     /// <param name="left">The wrapped byte sequence to compare.</param>
     /// <param name="right">The raw array to compare.</param>
     /// <returns><see langword="true"/> when both operands contain the same bytes.</returns>
-    public static bool operator ==(Bytes left, byte[] right) => left.Equals(right);
+    public static bool operator ==(Bytes left, byte[]? right) => left.Equals(right);
 
     /// <summary>
     /// Determines whether a raw <see cref="byte"/> array equals a <see cref="Bytes"/> instance.
@@ -188,7 +188,7 @@ public readonly struct Bytes :
     /// <param name="left">The wrapped byte sequence to compare.</param>
     /// <param name="right">The raw array to compare.</param>
     /// <returns><see langword="true"/> when operands differ.</returns>
-    public static bool operator !=(Bytes left, byte[] right) => !left.Equals(right);
+    public static bool operator !=(Bytes left, byte[]? right) => !left.Equals(right);
 
     /// <summary>
     /// Determines whether a raw <see cref="byte"/> array differs from a <see cref="Bytes"/> instance.
@@ -326,7 +326,7 @@ public readonly struct Bytes :
     public override int GetHashCode() => ObjectUtils.ComputeHash(_innerBytes);
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj switch
         {
@@ -355,7 +355,7 @@ public readonly struct Bytes :
     /// </summary>
     /// <param name="other">A <see cref="byte"/> array to compare.</param>
     /// <returns><see langword="true"/> if both contain identical byte sequences; otherwise <see langword="false"/>.</returns>
-    public bool Equals(byte[] other)
+    public bool Equals(byte[]? other)
     {
         if (other is null) return false;
         return _comparer.Compare(_innerBytes, other) == 0;
@@ -371,7 +371,7 @@ public readonly struct Bytes :
     /// <param name="obj">An object to compare, which can be <see cref="Bytes"/> or <see cref="T:byte[]"/>.</param>
     /// <returns>A value indicating the relative order of the objects.</returns>
     /// <exception cref="InvalidOperationException">If <paramref name="obj"/> is not a valid type.</exception>
-    public int CompareTo(object obj) => obj switch
+    public int CompareTo(object? obj) => obj switch
     {
         Bytes b => CompareTo(b),
         byte[] arr => CompareTo(arr),
@@ -398,7 +398,7 @@ public readonly struct Bytes :
     /// 0 if they are equal, less than 0 if this is less than <paramref name="other"/>,
     /// and greater than 0 if this is greater.
     /// </returns>
-    public int CompareTo(byte[] other)
+    public int CompareTo(byte[]? other)
     {
         if (other is null) return 1; // Consider null to be "less" than any Bytes
         return _comparer.Compare(_innerBytes, other);

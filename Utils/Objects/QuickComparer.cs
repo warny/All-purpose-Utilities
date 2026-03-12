@@ -22,7 +22,7 @@ public sealed class QuickComparer<TElement> : IComparer<TElement>
     /// <param name="x">The first value to compare.</param>
     /// <param name="y">The second value to compare.</param>
     /// <returns>The comparison result produced by the injected delegate.</returns>
-    public int Compare(TElement x, TElement y) => Comparer(x, y);
+    public int Compare(TElement? x, TElement? y) => Comparer(x, y);
 
     private readonly Func<TElement, TElement, int> Comparer;
 }

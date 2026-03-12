@@ -458,7 +458,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     #region Equality & Overrides
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(this, obj)) return true;
         if (obj is GeoVector<T> vector) return Equals(vector);
@@ -466,8 +466,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     }
 
     /// <inheritdoc />
-    public bool Equals(GeoVector<T> other)
-        => comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
+    public bool Equals(GeoVector<T>? other)
+        => other is not null && comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
 
     /// <inheritdoc />
     public override int GetHashCode()
@@ -492,13 +492,13 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <summary>
     /// Determines whether two geographic vectors are equal.
     /// </summary>
-    public static bool operator ==(GeoVector<T> left, GeoVector<T> right)
+    public static bool operator ==(GeoVector<T>? left, GeoVector<T>? right)
             => left?.Equals(right) ?? right is null;
 
     /// <summary>
     /// Determines whether two geographic vectors are not equal.
     /// </summary>
-    public static bool operator !=(GeoVector<T> left, GeoVector<T> right)
+    public static bool operator !=(GeoVector<T>? left, GeoVector<T>? right)
             => !(left?.Equals(right) ?? right is null);
 
     /// <summary>
@@ -507,7 +507,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="format">Format string applied to latitude, longitude, and bearing.</param>
     /// <param name="formatProvider">Culture-specific format provider.</param>
     /// <returns>A formatted string representing the vector.</returns>
-    public override string ToString(string format, IFormatProvider formatProvider)
+    public override string ToString(string? format, IFormatProvider? formatProvider)
     {
         formatProvider ??= CultureInfo.InvariantCulture;
         var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));

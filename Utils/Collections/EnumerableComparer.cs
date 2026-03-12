@@ -42,7 +42,7 @@ namespace Utils.Collections
         }
 
         /// <inheritdoc/>
-        public int Compare(IEnumerable<T> x, IEnumerable<T> y)
+        public int Compare(IEnumerable<T>? x, IEnumerable<T>? y)
         {
             if (ReferenceEquals(x, y)) return 0;
             if (x is null) return -1;

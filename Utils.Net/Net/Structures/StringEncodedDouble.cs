@@ -58,7 +58,7 @@ public struct StringEncodedDouble :
     /// <inheritdoc />
     public readonly int CompareTo(double other) => Value.CompareTo(other);
     /// <inheritdoc />
-    public readonly int CompareTo(object obj) =>
+    public readonly int CompareTo(object? obj) =>
             obj switch
             {
                 StringEncodedDouble sed => CompareTo(sed),
@@ -71,7 +71,7 @@ public struct StringEncodedDouble :
     /// <inheritdoc />
     public readonly bool Equals(double other) => this.Value.Equals(other);
     /// <inheritdoc />
-    public override readonly bool Equals(object obj) =>
+    public override readonly bool Equals(object? obj) =>
             obj switch
             {
                 StringEncodedDouble sed => Equals(sed),

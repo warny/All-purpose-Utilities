@@ -121,7 +121,8 @@ internal sealed class ExpressionReader
     /// Updates the current parenthesis depth based on the provided token.
     /// </summary>
     /// <param name="token">The token being processed.</param>
-    /// <param name="depth">The tracked depth value.</param>
+    /// <param name="parenthesisDepth">The tracked parenthesis depth value.</param>
+    /// <param name="caseDepth">The tracked CASE expression depth value.</param>
     private static void UpdateDepths(SqlToken token, ref int parenthesisDepth, ref int caseDepth)
     {
         if (token.Text == "(")
@@ -175,6 +176,7 @@ internal sealed class ExpressionReadResult
     /// </summary>
     /// <param name="expression">The parsed expression segment.</param>
     /// <param name="alias">The optional alias associated with the expression.</param>
+    /// <param name="tokens">The full token list that composes the expression including any alias tokens.</param>
     public ExpressionReadResult(SqlSegment expression, string? alias, IReadOnlyList<SqlToken> tokens)
     {
         Expression = expression ?? throw new ArgumentNullException(nameof(expression));

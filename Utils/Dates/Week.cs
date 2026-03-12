@@ -69,7 +69,7 @@ public struct Week :
     /// <returns>
     /// <see langword="true"/> if the specified object is equal to the current <see cref="Week"/>; otherwise, <see langword="false"/>.
     /// </returns>
-    public override bool Equals([NotNullWhen(true)] object obj)
+    public override bool Equals([NotNullWhen(true)] object? obj)
         => obj is Week w && Equals(w);
 
     /// <summary>

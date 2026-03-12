@@ -51,6 +51,7 @@ public static class DateFormula
     /// <param name="date">Base date.</param>
     /// <param name="formula">Formula to evaluate.</param>
     /// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
+    /// <param name="calendarProvider">Optional calendar provider defining the base for date computations.</param>
     /// <returns>The computed date.</returns>
     public static DateTime Calculate(this DateTime date, string formula, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
                     => date.Calculate(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture, calendarProvider);
@@ -62,6 +63,7 @@ public static class DateFormula
     /// <param name="formula">Formula to evaluate.</param>
     /// <param name="provider">Language provider.</param>
     /// <param name="culture">Culture to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
+    /// <param name="calendarProvider">Optional calendar provider defining the base for date computations.</param>
     /// <returns>The computed date.</returns>
     public static DateTime Calculate(this DateTime date, string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
     {
@@ -75,6 +77,7 @@ public static class DateFormula
     /// </summary>
     /// <param name="formula">Formula to compile.</param>
     /// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
+    /// <param name="calendarProvider">Optional calendar provider defining the base for date computations.</param>
     /// <returns>A delegate computing the resulting date.</returns>
     public static Func<DateTime, DateTime> Compile(string formula, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
                     => Compile(formula, _defaultProvider.Value, culture ?? CultureInfo.CurrentCulture, calendarProvider);
@@ -85,6 +88,7 @@ public static class DateFormula
     /// <param name="formula">Formula to compile.</param>
     /// <param name="provider">Language provider.</param>
     /// <param name="culture">Culture used to interpret tokens. If null, <see cref="CultureInfo.CurrentCulture"/> is used.</param>
+    /// <param name="calendarProvider">Optional calendar provider defining the base for date computations.</param>
     /// <returns>A delegate computing the resulting date.</returns>
     public static Func<DateTime, DateTime> Compile(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)
     {
