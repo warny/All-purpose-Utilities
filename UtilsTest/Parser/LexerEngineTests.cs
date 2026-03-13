@@ -1,3 +1,4 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
