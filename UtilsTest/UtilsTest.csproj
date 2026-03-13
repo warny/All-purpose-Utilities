@@ -62,6 +62,7 @@
                 <ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
                 <ProjectReference Include="..\Utils.OData.Generators\Utils.OData.Generators.csproj" />
                 <ProjectReference Include="..\Utils.OData\Utils.OData.csproj" />
+                <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
         </ItemGroup>
 
 	<ItemGroup>
