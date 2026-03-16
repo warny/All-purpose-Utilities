@@ -1,26 +1,29 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
-		<RootNamespace>Utils.XML</RootNamespace>
-		<AssemblyName>Utils.XML</AssemblyName>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>omy.Utils.XML</PackageId>
+		<PackageId>omy.Utils.Parser</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<Version>0.1.0</Version>
+		<Description>
+			Universal Parser - A self-describing parser framework.
+			Reads ANTLR4 grammar files and builds parse trees for any source file.
+			The ANTLR4 grammar reader is itself built using the same metamodel objects.
+		</Description>
+		<PackageTags>omy;utilities;parser;antlr4;grammar;lexer;tokenizer;parse-tree</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.1</Version>
-                <Description>Attribute-based XML processing helpers, including XmlDataProcessor for mapping documents to objects.</Description>
-                <PackageTags>omy;utilities;xml;serialization</PackageTags>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
-        </PropertyGroup>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
+
 </Project>

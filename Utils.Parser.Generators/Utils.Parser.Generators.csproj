@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <IsRoslynAnalyzer>true</IsRoslynAnalyzer>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <PackageId>omy.Utils.Parser.Generators</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Olivier MARTY</Authors>
+        <Description>
+            Roslyn source generator that reads ANTLR4 .g4 grammar files at build time
+            and emits C# code that constructs the Utils.Parser model directly,
+            eliminating runtime .g4 parsing.
+        </Description>
+        <PackageTags>omy;utilities;parser;antlr4;grammar;generator;roslyn</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UtilsTest</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+</Project>

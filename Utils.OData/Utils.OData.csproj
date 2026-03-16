@@ -12,6 +12,9 @@
         <Version>0.0.1</Version>
         <Description>HTTP client helpers, LINQ provider, and metadata utilities for consuming OData services.</Description>
         <PackageTags>omy;utilities;odata;http;linq;edmx</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>

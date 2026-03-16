@@ -14,6 +14,9 @@
                 <Description>Symbolic math helpers, FFT implementations, SI conversions, and generic linear algebra structures.</Description>
                 <PackageTags>omy;utilities;math;fft;algebra;symbolic</PackageTags>
 		<Copyright>Olivier MARTY 2025</Copyright>
+		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
 	</PropertyGroup>
 
 	<ItemGroup>

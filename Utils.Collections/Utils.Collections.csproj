@@ -14,6 +14,9 @@
         <Version>1.2.1</Version>
         <Description>Skip list implementation providing fast search, insertion, and deletion for sorted data sets.</Description>
         <PackageTags>omy;utilities;collections;skiplist;data-structures</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>

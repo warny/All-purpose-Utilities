@@ -16,6 +16,9 @@
 		<Copyright>Olivier MARTY</Copyright>
                 <Description>Geography helpers including coordinates, bounding boxes, map projections, and tile utilities.</Description>
                 <PackageTags>omy;utilities;geography;maps;projection;tile</PackageTags>
+		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
         </PropertyGroup>
 
 	<ItemGroup>

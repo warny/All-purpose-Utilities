@@ -16,6 +16,9 @@
                 <Description>DNS, ICMP, Wake-on-LAN, ARP, and command/response helpers for .NET networking scenarios.</Description>
                 <PackageTags>omy;utilities;network;dns;icmp;wol;arp;uri;smtp;pop3;nntp</PackageTags>
                 <NoWarn>S101</NoWarn>
+                <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+                <RepositoryType>git</RepositoryType>
+                <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
         </PropertyGroup>
 
 	<ItemGroup>
