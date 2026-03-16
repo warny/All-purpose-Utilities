@@ -108,6 +108,11 @@ foreach (var child in nav.Children())
 1. **Descent** (top-down) — enrich the context before children are visited (push a scope, resolve a type, …)
 2. **Ascent** (bottom-up) — fold child results into a value for the current node
 
+Handlers are registered either **by rule name** (exact match, O(1)) or **by predicate**
+(`Func<ParseTreeNavigator, bool>`, checked in registration order). Rule-name handlers
+are resolved first; predicate handlers are tried only when no name-based handler matches.
+`Default*` fallbacks are consulted last.
+
 ```csharp
 var compiler = new ParseTreeCompiler<object?, double>()
     .OnAscend("Number",      (nav, _)       => double.Parse(nav.Token!.Text))
@@ -139,6 +144,51 @@ var compiler = new ParseTreeCompiler<object?, double>()
 double value = compiler.Compile(tree, null) ?? 0;
 Console.WriteLine(value); // 7
 ```
+
+#### Predicate-based handlers
+
+Use a predicate when the same logic applies to several rules that share a structural
+property rather than a common name:
+
+```csharp
+// Collect the text of every leaf token, regardless of its rule name.
+var tokens = new List<string>();
+
+var compiler = new ParseTreeCompiler<int, string>()
+    // Fires for any LexerNode (leaf).
+    .OnAscend(nav => nav.IsLexer,  (nav, _) =>
+    {
+        tokens.Add(nav.Token!.Text);
+        return nav.Token.Text;
+    })
+    // Fires for any ParserNode (inner node) — sum child texts.
+    .OnAscend(nav => nav.IsParser, (nav, _, kids) =>
+        string.Join(" ", kids.Where(k => k is not null)));
+
+compiler.Compile(tree, 0);
+```
+
+The descent counterpart adjusts the context for all matching nodes:
+
+```csharp
+var compiler = new ParseTreeCompiler<int, int>()
+    // Increment depth for every parser (inner) node.
+    .OnDescend(nav => nav.IsParser, (nav, depth) => depth + 1)
+    .OnAscend("Number", (nav, depth) =>
+    {
+        Console.WriteLine($"Number at depth {depth}");
+        return depth;
+    })
+    .DefaultAscend((_, _, __) => 0);
+```
+
+#### Handler resolution order
+
+| Priority | Registration method | Match condition |
+|---|---|---|
+| 1 (highest) | `OnDescend(string, …)` / `OnAscend(string, …)` | Rule name equals the registered name |
+| 2 | `OnDescend(Func<…,bool>, …)` / `OnAscend(Func<…,bool>, …)` | First predicate in registration order that returns `true` |
+| 3 (lowest) | `DefaultDescend` / `DefaultAscend` | Always (fallback) |
 
 ---
 
