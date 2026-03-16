@@ -20,6 +20,7 @@ A collection of production-ready .NET utility libraries published as the **omy.U
 - **omy.Utils.DependencyInjection** – attribute-based dependency injection helpers.
 - **omy.Utils.DependencyInjection.Generators** – Roslyn source generator that emits DI registrations.
 - **omy.Utils.IO.Serialization.Generators** – Roslyn source generator for stream serializers.
+- **omy.Utils.Parser** – self-describing universal parser: load any ANTLR4 `.g4` grammar at runtime and tokenize/parse source text without code generation.
 
 > Additional project-level READMEs provide deeper details for specialized packages like serialization or generators.
 

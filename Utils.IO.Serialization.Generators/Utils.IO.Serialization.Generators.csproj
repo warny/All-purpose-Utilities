@@ -13,6 +13,9 @@
         <Description>Roslyn source generator that emits stream serializers and validates attributed IO contracts.</Description>
         <PackageTags>omy;utilities;io;serialization;generator;roslyn</PackageTags>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>

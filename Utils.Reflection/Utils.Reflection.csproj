@@ -13,6 +13,9 @@
 		<Version>1.2.1</Version>
                 <Description>Reflection helpers that wrap fields/properties and simplify delegate invocation.</Description>
                 <PackageTags>omy;utilities;reflection;delegate</PackageTags>
+		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
         </PropertyGroup>
 
 

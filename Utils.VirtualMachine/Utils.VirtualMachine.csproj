@@ -13,6 +13,9 @@
         <Version>0.0.1</Version>
         <Description>Attribute-driven byte-code interpreter supporting custom instruction sets and endianness.</Description>
         <PackageTags>omy;utilities;virtual-machine;bytecode;interpreter</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>
