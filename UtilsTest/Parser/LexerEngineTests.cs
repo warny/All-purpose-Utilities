@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -338,5 +339,83 @@ public class LexerEngineTests
         var tokens = Tokenize("@#!");
         Assert.AreEqual(3, tokens.Count);
         Assert.IsTrue(tokens.All(t => t.RuleName == "ERROR"));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Lexer command scoping — only matched branch (P1 review fix)
+    // ═══════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public void LexerCommand_Skip_AppliesOnlyToMatchedAlternative()
+    {
+        // Grammar: TOK : 'a' -> skip | 'b' ;
+        // Tokenizing 'b' must NOT trigger the skip from the 'a' alternative.
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            TOK : 'a' -> skip | 'b' ;
+            """);
+        var lexer  = new LexerEngine(grammar);
+        var stream = new StringCharStream("b");
+        var tokens = lexer.Tokenize(stream).ToList();
+
+        Assert.AreEqual(1, tokens.Count,
+            "Token 'b' must be emitted; skip from the 'a'-branch must not fire.");
+        Assert.AreEqual("b", tokens[0].Text);
+    }
+
+    [TestMethod]
+    public void LexerCommand_Skip_AppliesWhenAlternativeMatches()
+    {
+        // When 'a' is input, the skip alternative IS matched → no token emitted.
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            TOK : 'a' -> skip | 'b' ;
+            """);
+        var lexer  = new LexerEngine(grammar);
+        var stream = new StringCharStream("a");
+        var tokens = lexer.Tokenize(stream).ToList();
+
+        Assert.AreEqual(0, tokens.Count, "Token 'a' must be skipped.");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // "more" command buffering (P2 review fix)
+    // ═══════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public void LexerCommand_More_ConcatenatesWithNextToken()
+    {
+        // Grammar: PREFIX : 'pre' -> more ;  WORD : [a-z]+ ;
+        // Tokenizing "prefix" → one token "prefix" (not two).
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            PREFIX : 'pre' -> more ;
+            WORD   : [a-z]+ ;
+            """);
+        var lexer  = new LexerEngine(grammar);
+        var stream = new StringCharStream("prefix");
+        var tokens = lexer.Tokenize(stream).ToList();
+
+        Assert.AreEqual(1, tokens.Count,
+            "The 'more' command must concatenate 'pre' with the next token.");
+        Assert.AreEqual("prefix", tokens[0].Text);
+        Assert.AreEqual("WORD",   tokens[0].RuleName);
+    }
+
+    [TestMethod]
+    public void LexerCommand_More_SpanCoversFullConcatenatedText()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            PREFIX : 'pre' -> more ;
+            WORD   : [a-z]+ ;
+            """);
+        var lexer  = new LexerEngine(grammar);
+        var stream = new StringCharStream("prefix");
+        var tokens = lexer.Tokenize(stream).ToList();
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual(0, tokens[0].Span.Position, "Span must start at position 0 (before 'pre').");
+        Assert.AreEqual(6, tokens[0].Span.Length,   "Span must cover all 6 characters of 'prefix'.");
     }
 }

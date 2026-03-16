@@ -48,9 +48,21 @@ public sealed class ParserEngine(ParserDefinition definition)
             ?? throw new InvalidOperationException("No root rule defined");
 
         var context = new ParseContext(tokenList);
-        return ParseRule(context, root, precedence: 0)
-            ?? new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE",
+        var result = ParseRule(context, root, precedence: 0);
+
+        if (result is null)
+            return new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE",
                 "Failed to parse from root rule", root);
+
+        // Reject parses that leave trailing tokens unconsumed.
+        if (!context.IsEnd)
+        {
+            var trailing = context.Peek()!;
+            return new ErrorNode(result.Span, result.ModeName,
+                $"Unexpected token '{trailing.Text}' at position {trailing.Span.Position}", root);
+        }
+
+        return result;
     }
 
     /// <summary>
