@@ -22,8 +22,8 @@ public static class NtpClient
         byte[] request = new byte[48];
         request[0] = 0x1B; // LI = 0, VN = 3, Mode = 3 (client)
         using UdpClient client = new();
-        await client.SendAsync(request, request.Length, host, port);
-        UdpReceiveResult result = await client.ReceiveAsync();
+        await client.SendAsync(request, request.Length, host, port).ConfigureAwait(false);
+        UdpReceiveResult result = await client.ReceiveAsync().ConfigureAwait(false);
         byte[] response = result.Buffer;
         ulong intPart = (ulong)response[40] << 24 | (ulong)response[41] << 16 | (ulong)response[42] << 8 | response[43];
         ulong fracPart = (ulong)response[44] << 24 | (ulong)response[45] << 16 | (ulong)response[46] << 8 | response[47];

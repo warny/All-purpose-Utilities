@@ -47,9 +47,9 @@ public sealed class Pop3Server : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        await _server.StartAsync(stream, leaveOpen, cancellationToken);
+        await _server.StartAsync(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
         _timestamp = $"<{DateTime.UtcNow:yyyyMMddHHmmss}.{Guid.NewGuid():N}@localhost>";
-        await _server.SendResponseAsync(new ServerResponse("+OK", ResponseSeverity.Completion, _timestamp));
+        await _server.SendResponseAsync(new ServerResponse("+OK", ResponseSeverity.Completion, _timestamp)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public sealed class Pop3Server : IDisposable
     private async Task<IEnumerable<ServerResponse>> HandlePass(CommandContext ctx, string[] args)
     {
         string password = args.Length > 0 ? args[0] : string.Empty;
-        bool ok = await _mailbox.AuthenticateAsync(_user ?? string.Empty, password);
+        bool ok = await _mailbox.AuthenticateAsync(_user ?? string.Empty, password).ConfigureAwait(false);
         if (ok)
         {
             ctx.Remove("USER");
@@ -119,7 +119,7 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleStat(CommandContext ctx, string[] args)
     {
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
         int total = 0;
         int count = 0;
         foreach (KeyValuePair<int, int> pair in list)
@@ -142,7 +142,7 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleList(CommandContext ctx, string[] args)
     {
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
         if (args.Length > 0 && int.TryParse(args[0], out int id))
         {
             if (!
@@ -178,16 +178,16 @@ public sealed class Pop3Server : IDisposable
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid id") };
         }
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
         if (_deleted.Contains(id) || !list.ContainsKey(id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
         }
-        string message = await _mailbox.RetrieveAsync(id);
+        string message = await _mailbox.RetrieveAsync(id).ConfigureAwait(false);
         List<ServerResponse> responses = new() { new ServerResponse("+OK", ResponseSeverity.Preliminary, "message follows") };
         using StringReader reader = new(message);
         string? line;
-        while ((line = await reader.ReadLineAsync()) is not null)
+        while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
         {
             if (line.StartsWith(".", StringComparison.Ordinal))
             {
@@ -211,7 +211,7 @@ public sealed class Pop3Server : IDisposable
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid id") };
         }
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync();
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
         if (_deleted.Contains(id) || !list.ContainsKey(id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
@@ -270,7 +270,7 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleUidl(CommandContext ctx, string[] args)
     {
-        IReadOnlyDictionary<int, string> list = await _mailbox.ListUidsAsync();
+        IReadOnlyDictionary<int, string> list = await _mailbox.ListUidsAsync().ConfigureAwait(false);
         if (args.Length > 0 && int.TryParse(args[0], out int id))
         {
             if (!_deleted.Contains(id) && list.TryGetValue(id, out string uid))
@@ -306,7 +306,7 @@ public sealed class Pop3Server : IDisposable
         }
         string user = args[0];
         string digest = args[1];
-        bool ok = await _mailbox.AuthenticateApopAsync(user, _timestamp, digest);
+        bool ok = await _mailbox.AuthenticateApopAsync(user, _timestamp, digest).ConfigureAwait(false);
         if (ok)
         {
             ctx.Add("AUTH");
@@ -325,7 +325,7 @@ public sealed class Pop3Server : IDisposable
     {
         foreach (int id in _deleted)
         {
-            await _mailbox.DeleteAsync(id);
+            await _mailbox.DeleteAsync(id).ConfigureAwait(false);
         }
         _deleted.Clear();
         return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "bye") };

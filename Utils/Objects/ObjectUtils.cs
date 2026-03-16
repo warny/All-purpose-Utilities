@@ -58,7 +58,7 @@ public static class ObjectUtils
     /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Result> ifNotNull, Func<Result> ifNull)
     {
-        return await Task.Run(() => value != null ? ifNotNull(value) : ifNull());
+        return await Task.Run(() => value != null ? ifNotNull(value) : ifNull()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public static class ObjectUtils
     /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Result> ifNotNull, Result ifNull)
     {
-        return await Task.Run(() => value != null ? ifNotNull(value) : ifNull);
+        return await Task.Run(() => value != null ? ifNotNull(value) : ifNull).ConfigureAwait(false);
     }
 
     /// <summary>

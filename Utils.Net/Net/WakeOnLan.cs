@@ -39,7 +39,7 @@ public static class WakeOnLan
         byte[] packet = CreateMagicPacket(macAddress);
         using UdpClient client = new();
         client.EnableBroadcast = true;
-        await client.SendAsync(packet, packet.Length, new IPEndPoint(broadcastAddress, port));
+        await client.SendAsync(packet, packet.Length, new IPEndPoint(broadcastAddress, port)).ConfigureAwait(false);
     }
 }
 

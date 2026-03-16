@@ -236,7 +236,7 @@ public sealed class ODataEntityGenerator : ISourceGenerator
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = ex.ToString();
             return false;
         }
     }

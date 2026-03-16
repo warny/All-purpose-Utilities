@@ -20,15 +20,15 @@ public static class EchoClient
     public static async Task<string> EchoAsync(string host, int port, string message)
     {
         using TcpClient client = new();
-        await client.ConnectAsync(host, port);
+        await client.ConnectAsync(host, port).ConfigureAwait(false);
         NetworkStream stream = client.GetStream();
         byte[] data = Encoding.ASCII.GetBytes(message);
-        await stream.WriteAsync(data);
+        await stream.WriteAsync(data).ConfigureAwait(false);
         byte[] buffer = new byte[data.Length];
         int bytesRead = 0;
         while (bytesRead < data.Length)
         {
-            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead));
+            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead)).ConfigureAwait(false);
             if (read == 0)
             {
                 break;

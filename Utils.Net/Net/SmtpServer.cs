@@ -58,8 +58,8 @@ public sealed class SmtpServer : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        await _server.StartAsync(stream, leaveOpen, cancellationToken);
-        await _server.SendResponseAsync(new ServerResponse("220", ResponseSeverity.Completion, "ready"));
+        await _server.StartAsync(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
+        await _server.SendResponseAsync(new ServerResponse("220", ResponseSeverity.Completion, "ready")).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -159,7 +159,7 @@ public sealed class SmtpServer : IDisposable
             int secondNull = credentials.IndexOf('\0', 1);
             string user = secondNull > 0 ? credentials[1..secondNull] : string.Empty;
             string password = secondNull > 0 && secondNull < credentials.Length - 1 ? credentials[(secondNull + 1)..] : string.Empty;
-            SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password);
+            SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password).ConfigureAwait(false);
             if (result.IsAuthenticated)
             {
                 _isAuthenticated = true;
@@ -295,12 +295,12 @@ public sealed class SmtpServer : IDisposable
     /// <returns>Responses to send, or <see langword="null"/> if the line was not handled.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleSpecialLinesAsync(string line)
     {
-        IEnumerable<ServerResponse>? responses = await HandleAuthLoginAsync(line);
+        IEnumerable<ServerResponse>? responses = await HandleAuthLoginAsync(line).ConfigureAwait(false);
         if (responses is not null)
         {
             return responses;
         }
-        responses = await HandleDataLinesAsync(line);
+        responses = await HandleDataLinesAsync(line).ConfigureAwait(false);
         return responses;
     }
 
@@ -344,7 +344,7 @@ public sealed class SmtpServer : IDisposable
             _server.RemoveContext("AUTH-LOGIN-PASS");
             if (_authenticator is not null && _loginUser is not null)
             {
-                SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password);
+                SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password).ConfigureAwait(false);
                 if (result.IsAuthenticated)
                 {
                     _isAuthenticated = true;
@@ -372,7 +372,7 @@ public sealed class SmtpServer : IDisposable
                 _server.RemoveContext("DATA");
                 string data = string.Join("\r\n", _dataLines);
                 SmtpMessage message = new(_from ?? string.Empty, new List<string>(_recipients), data);
-                await _store.StoreAsync(message);
+                await _store.StoreAsync(message).ConfigureAwait(false);
                 _from = null;
                 _recipients.Clear();
                 _dataLines.Clear();

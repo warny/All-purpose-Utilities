@@ -106,8 +106,8 @@ public class CommandResponseClient : IDisposable
         port = port == -1 ? DefaultPort : port;
         Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
         _client = new TcpClient();
-        await _client.ConnectAsync(host, port, cancellationToken);
-        await ConnectAsync(_client.GetStream(), false, cancellationToken);
+        await _client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
+        await ConnectAsync(_client.GetStream(), false, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public class CommandResponseClient : IDisposable
         Logger?.LogInformation("Client connected to stream");
         if (_noOpInterval != Timeout.InfiniteTimeSpan)
         {
-            _keepAliveTimer = new Timer(async _ => await SendNoOpAsync(), null, _noOpInterval, Timeout.InfiniteTimeSpan);
+            _keepAliveTimer = new Timer(async _ => await SendNoOpAsync().ConfigureAwait(false), null, _noOpInterval, Timeout.InfiniteTimeSpan);
         }
         return OnConnect(stream, leaveOpen, cancellationToken);
     }
@@ -170,7 +170,7 @@ public class CommandResponseClient : IDisposable
             throw new InvalidOperationException("Client is not connected.");
         }
 
-        await _sendLock.WaitAsync(cancellationToken);
+        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_disconnected)
@@ -179,11 +179,11 @@ public class CommandResponseClient : IDisposable
             }
             DrainPendingResponses();
             Logger?.LogInformation("Sending: {Command}", command);
-            await _writer.WriteLineAsync(command);
+            await _writer.WriteLineAsync(command).ConfigureAwait(false);
             List<ServerResponse> responses = new();
             while (true)
             {
-                await _responseSignal.WaitAsync(cancellationToken);
+                await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
                 if (!_responseQueue.TryDequeue(out ServerResponse response))
                 {
                     if (_disconnected)
@@ -220,7 +220,7 @@ public class CommandResponseClient : IDisposable
             throw new IOException("Connection closed.");
         }
         List<ServerResponse> responses = new();
-        await _responseSignal.WaitAsync(cancellationToken);
+        await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
         do
         {
             if (_responseQueue.TryDequeue(out ServerResponse response))
@@ -232,7 +232,7 @@ public class CommandResponseClient : IDisposable
                 throw new IOException("Connection closed.");
             }
         }
-        while (await _responseSignal.WaitAsync(0));
+        while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
         ResetKeepAlive();
         return responses;
     }
@@ -250,12 +250,12 @@ public class CommandResponseClient : IDisposable
             throw new InvalidOperationException("Client is not connected.");
         }
 
-        await _sendLock.WaitAsync(cancellationToken);
+        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             foreach (string line in lines)
             {
-                await _writer.WriteLineAsync(line);
+                await _writer.WriteLineAsync(line).ConfigureAwait(false);
             }
             ResetKeepAlive();
         }
@@ -382,7 +382,7 @@ public class CommandResponseClient : IDisposable
         try
         {
             Logger?.LogDebug("Sending keep-alive: {Command}", _noOpCommand);
-            await SendCommandAsync(_noOpCommand);
+            await SendCommandAsync(_noOpCommand).ConfigureAwait(false);
         }
         catch
         {
@@ -408,21 +408,21 @@ public class CommandResponseClient : IDisposable
                 {
                     cts.CancelAfter(timeout.Value);
                 }
-                IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cts.Token);
+                IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cts.Token).ConfigureAwait(false);
                 if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Completion)
                 {
                     // Force disconnect on missing positive reply.
-                    await _listenTokenSource?.CancelAsync();
+                    await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
                 }
             }
             catch
             {
-                await _listenTokenSource?.CancelAsync();
+                await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
             }
         }
         else
         {
-            await _listenTokenSource?.CancelAsync();
+            await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
         }
 
         Dispose();

@@ -49,8 +49,8 @@ public sealed class NntpServer : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        await _server.StartAsync(stream, leaveOpen, cancellationToken);
-        await _server.SendResponseAsync(new ServerResponse("200", ResponseSeverity.Completion, "server ready"));
+        await _server.StartAsync(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
+        await _server.SendResponseAsync(new ServerResponse("200", ResponseSeverity.Completion, "server ready")).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class NntpServer : IDisposable
     private async Task<IEnumerable<ServerResponse>> HandleGroup(CommandContext ctx, string[] args)
     {
         string group = args.Length > 0 ? args[0] : string.Empty;
-        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group);
+        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group).ConfigureAwait(false);
         if (articles.Count == 0)
         {
             ctx.Remove("GROUP");
@@ -119,7 +119,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id);
+        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -148,14 +148,14 @@ public sealed class NntpServer : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleList(CommandContext ctx, string[] args)
     {
-        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync();
+        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync().ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("215", ResponseSeverity.Completion, "list of newsgroups follows")
         };
         foreach (string group in groups)
         {
-            IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group);
+            IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group).ConfigureAwait(false);
             int first = int.MaxValue;
             int last = int.MinValue;
             foreach (int id in articles.Keys)
@@ -192,14 +192,14 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "syntax error") };
         }
-        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync();
+        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync().ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("231", ResponseSeverity.Completion, "list follows")
         };
         foreach (string group in groups)
         {
-            DateTime? created = await _store.GetGroupCreationDateAsync(group);
+            DateTime? created = await _store.GetGroupCreationDateAsync(group).ConfigureAwait(false);
             if (created is not null && created.Value.ToUniversalTime() >= since)
             {
                 responses.Add(new ServerResponse(group, ResponseSeverity.Preliminary, null));
@@ -222,7 +222,7 @@ public sealed class NntpServer : IDisposable
             return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "syntax error") };
         }
         string group = args[0];
-        IReadOnlyCollection<int> ids = await _store.ListNewsSinceAsync(group, since);
+        IReadOnlyCollection<int> ids = await _store.ListNewsSinceAsync(group, since).ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("230", ResponseSeverity.Completion, "list of new articles follows")
@@ -260,7 +260,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id);
+        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -310,7 +310,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id);
+        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -358,7 +358,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id);
+        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -379,7 +379,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("412", ResponseSeverity.PermanentNegative, "no newsgroup selected") };
         }
-        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(_currentGroup);
+        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(_currentGroup).ConfigureAwait(false);
         List<int> ids = new(articles.Keys);
         ids.Sort();
         int? next = null;
@@ -429,7 +429,7 @@ public sealed class NntpServer : IDisposable
             {
                 _posting = false;
                 string article = string.Join("\r\n", _postLines) + "\r\n";
-                int id = await _store.AddAsync(_currentGroup!, article);
+                int id = await _store.AddAsync(_currentGroup!, article).ConfigureAwait(false);
                 _currentArticle = id;
                 return new[] { new ServerResponse("240", ResponseSeverity.Completion, "article received") };
             }

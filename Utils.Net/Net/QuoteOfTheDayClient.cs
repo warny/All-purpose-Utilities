@@ -19,10 +19,10 @@ public static class QuoteOfTheDayClient
     public static async Task<string> GetQuoteAsync(string host, int port)
     {
         using TcpClient client = new();
-        await client.ConnectAsync(host, port);
+        await client.ConnectAsync(host, port).ConfigureAwait(false);
         using NetworkStream stream = client.GetStream();
         using StreamReader reader = new(stream, Encoding.ASCII);
-        string quote = await reader.ReadToEndAsync();
+        string quote = await reader.ReadToEndAsync().ConfigureAwait(false);
         return quote.TrimEnd('\r', '\n');
     }
 

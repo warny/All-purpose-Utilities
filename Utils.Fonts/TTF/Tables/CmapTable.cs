@@ -196,7 +196,7 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
             catch (Exception ex)
             {
                 Console.WriteLine($"Error reading cmap subtable. PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}");
-                Console.WriteLine($"Reason: {ex.Message}");
+                Console.WriteLine($"Reason: {ex}");
             }
         }
 

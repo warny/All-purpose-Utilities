@@ -43,19 +43,19 @@ public class SmtpClient : CommandResponseClient
             case SmtpAuthenticationMechanism.Plain:
                 string payload = "\0" + user + "\0" + password;
                 string encoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(payload));
-                IReadOnlyList<ServerResponse> plainResult = await SendCommandAsync($"AUTH PLAIN {encoded}", cancellationToken);
-                await EnsureCompletionAsync(plainResult);
+                IReadOnlyList<ServerResponse> plainResult = await SendCommandAsync($"AUTH PLAIN {encoded}", cancellationToken).ConfigureAwait(false);
+                await EnsureCompletionAsync(plainResult).ConfigureAwait(false);
                 break;
 
             case SmtpAuthenticationMechanism.Login:
-                IReadOnlyList<ServerResponse> loginResult = await SendCommandAsync("AUTH LOGIN", cancellationToken);
-                await EnsureIntermediateAsync(loginResult);
+                IReadOnlyList<ServerResponse> loginResult = await SendCommandAsync("AUTH LOGIN", cancellationToken).ConfigureAwait(false);
+                await EnsureIntermediateAsync(loginResult).ConfigureAwait(false);
                 string userEncoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(user));
-                IReadOnlyList<ServerResponse> userResponse = await SendCommandAsync(userEncoded, cancellationToken);
-                await EnsureIntermediateAsync(userResponse);
+                IReadOnlyList<ServerResponse> userResponse = await SendCommandAsync(userEncoded, cancellationToken).ConfigureAwait(false);
+                await EnsureIntermediateAsync(userResponse).ConfigureAwait(false);
                 string passEncoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(password));
-                IReadOnlyList<ServerResponse> passResponse = await SendCommandAsync(passEncoded, cancellationToken);
-                await EnsureCompletionAsync(passResponse);
+                IReadOnlyList<ServerResponse> passResponse = await SendCommandAsync(passEncoded, cancellationToken).ConfigureAwait(false);
+                await EnsureCompletionAsync(passResponse).ConfigureAwait(false);
                 break;
 
             default:
@@ -87,9 +87,9 @@ public class SmtpClient : CommandResponseClient
     /// <returns>A task that completes when the server greeting has been processed.</returns>
     protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
     {
-        await base.OnConnect(stream, leaveOpen, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
-        await EnsureCompletionAsync(greeting);
+        await base.OnConnect(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(greeting).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ public class SmtpClient : CommandResponseClient
     /// <returns>List of server extensions.</returns>
     public async Task<IReadOnlyList<string>> EhloAsync(string domain, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EHLO {domain}", cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EHLO {domain}", cancellationToken).ConfigureAwait(false);
         List<string> extensions = new();
         for (int i = 1; i < responses.Count - 1; i++)
         {
@@ -109,7 +109,7 @@ public class SmtpClient : CommandResponseClient
                 extensions.Add(responses[i].Message);
             }
         }
-        await EnsureCompletionAsync(responses);
+        await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return extensions;
     }
 
@@ -120,7 +120,7 @@ public class SmtpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task HeloAsync(string domain, CancellationToken cancellationToken = default)
     {
-        await EnsureCompletionAsync(await SendCommandAsync($"HELO {domain}", cancellationToken));
+        await EnsureCompletionAsync(await SendCommandAsync($"HELO {domain}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -131,8 +131,8 @@ public class SmtpClient : CommandResponseClient
     /// <returns>Server response message.</returns>
     public async Task<string?> VrfyAsync(string address, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"VRFY {address}", cancellationToken);
-        await EnsureCompletionAsync(responses);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"VRFY {address}", cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return responses[^1].Message;
     }
 
@@ -144,7 +144,7 @@ public class SmtpClient : CommandResponseClient
     /// <returns>Expanded entries returned by the server.</returns>
     public async Task<IReadOnlyList<string>> ExpnAsync(string list, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EXPN {list}", cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EXPN {list}", cancellationToken).ConfigureAwait(false);
         List<string> entries = new();
         for (int i = 0; i < responses.Count - 1; i++)
         {
@@ -153,7 +153,7 @@ public class SmtpClient : CommandResponseClient
                 entries.Add(responses[i].Message);
             }
         }
-        await EnsureCompletionAsync(responses);
+        await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return entries;
     }
 
@@ -166,7 +166,7 @@ public class SmtpClient : CommandResponseClient
     public async Task<IReadOnlyList<string>> HelpAsync(string? subject = null, CancellationToken cancellationToken = default)
     {
         string command = subject is null ? "HELP" : $"HELP {subject}";
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
         List<string> lines = new();
         foreach (ServerResponse response in responses)
         {
@@ -175,7 +175,7 @@ public class SmtpClient : CommandResponseClient
                 lines.Add(response.Message);
             }
         }
-        await EnsureCompletionAsync(responses);
+        await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return lines;
     }
 
@@ -188,16 +188,16 @@ public class SmtpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task SendMailAsync(string from, IEnumerable<string> recipients, string data, CancellationToken cancellationToken = default)
     {
-        await EnsureCompletionAsync(await SendCommandAsync($"MAIL FROM:<{from}>", cancellationToken));
+        await EnsureCompletionAsync(await SendCommandAsync($"MAIL FROM:<{from}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         foreach (string rcpt in recipients)
         {
-            await EnsureCompletionAsync(await SendCommandAsync($"RCPT TO:<{rcpt}>", cancellationToken));
+            await EnsureCompletionAsync(await SendCommandAsync($"RCPT TO:<{rcpt}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         }
-        await EnsureIntermediateAsync(await SendCommandAsync("DATA", cancellationToken));
+        await EnsureIntermediateAsync(await SendCommandAsync("DATA", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         List<string> lines = new();
         using StringReader reader = new(data);
         string? line;
-        while ((line = await reader.ReadLineAsync()) is not null)
+        while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
         {
             if (line.StartsWith('.'))
             {
@@ -209,9 +209,9 @@ public class SmtpClient : CommandResponseClient
             }
         }
         lines.Add(".");
-        await SendLinesAsync(lines, cancellationToken);
-        IReadOnlyList<ServerResponse> result = await ReadAsync(cancellationToken);
-        await EnsureCompletionAsync(result);
+        await SendLinesAsync(lines, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> result = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(result).ConfigureAwait(false);
     }
 
     /// <summary>
