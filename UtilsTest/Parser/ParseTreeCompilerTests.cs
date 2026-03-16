@@ -269,6 +269,118 @@ public class ParseTreeCompilerTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // Predicate-based handlers
+    // ═══════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public void Compiler_PredicateAscend_MatchesExpectedNodes()
+    {
+        // Collect rule names of all lexer nodes via a predicate handler.
+        var lexerRules = new List<string>();
+
+        var compiler = new ParseTreeCompiler<int, string>()
+            .OnAscend(nav => nav.IsLexer, (nav, _) =>
+            {
+                lexerRules.Add(nav.RuleName);
+                return nav.Token?.Text;
+            })
+            .DefaultAscend((_, _, kids) => kids.FirstOrDefault(c => c is not null));
+
+        compiler.Compile(Parse("1+2"), 0);
+
+        // "Number" leaves are matched by TryParseRuleRef, so their RuleName == "Number".
+        // Operator literals are matched by TryParseLiteral, which tags them with the parent
+        // parser rule name — so the list will also contain parser rule names like "additionExp".
+        Assert.IsTrue(lexerRules.Count > 0, "Expected at least one lexer node");
+        CollectionAssert.Contains(lexerRules, "Number");
+        // Three LexerNode leaves for "1", "+", "2".
+        Assert.AreEqual(3, lexerRules.Count, "Expected exactly 3 leaf nodes for '1+2'");
+    }
+
+    [TestMethod]
+    public void Compiler_PredicateAscend_WithChildResults_ReceivesKids()
+    {
+        // Use a predicate handler to sum children results at every parser node.
+        var compiler = new ParseTreeCompiler<int, double>()
+            .OnAscend(nav => nav.IsLexer,  (nav, _) =>
+                double.TryParse(nav.Token?.Text, out var v) ? v : 0)
+            .OnAscend(nav => nav.IsParser, (nav, _, kids) =>
+                kids.Sum(k => k));
+
+        var result = compiler.Compile(Parse("3+4"), 0);
+
+        Assert.AreEqual(7.0, result);
+    }
+
+    [TestMethod]
+    public void Compiler_PredicateDescend_AdjustsContext()
+    {
+        // A predicate-based descent handler adds 100 to the depth for every parser node.
+        int depthAtNumber = -1;
+
+        var compiler = new ParseTreeCompiler<int, int>()
+            .OnDescend(nav => nav.IsParser, (nav, depth) => depth + 100)
+            .OnAscend("Number", (nav, depth) => { depthAtNumber = depth; return depth; })
+            .DefaultAscend((_, _, __) => 0);
+
+        compiler.Compile(Parse("1"), 0);
+
+        // eval(100) → additionExp(200) → multiplyExp(300) → atomExp(400) → Number(400)
+        Assert.IsTrue(depthAtNumber >= 400,
+            $"Expected depth ≥ 400 via predicate descent, got {depthAtNumber}");
+    }
+
+    [TestMethod]
+    public void Compiler_RuleNameHandler_TakesPriorityOverPredicate()
+    {
+        // A rule-name handler for "Number" must win over a predicate that also matches it.
+        string? winner = null;
+
+        var compiler = new ParseTreeCompiler<int, string>()
+            .OnAscend("Number",           (nav, _) => { winner = "by-name";      return "by-name"; })
+            .OnAscend(nav => nav.IsLexer, (nav, _) => { winner = "by-predicate"; return "by-predicate"; })
+            .DefaultAscend((_, _, kids) => kids.FirstOrDefault(c => c is not null));
+
+        compiler.Compile(Parse("5"), 0);
+
+        Assert.AreEqual("by-name", winner,
+            "Rule-name handler must take priority over a matching predicate");
+    }
+
+    [TestMethod]
+    public void Compiler_FirstMatchingPredicate_Wins()
+    {
+        // Two predicate handlers both match lexer nodes; only the first must fire.
+        int firstCount  = 0;
+        int secondCount = 0;
+
+        var compiler = new ParseTreeCompiler<int, string>()
+            .OnAscend(nav => nav.IsLexer, (nav, _) => { firstCount++;  return "first"; })
+            .OnAscend(nav => nav.IsLexer, (nav, _) => { secondCount++; return "second"; })
+            .DefaultAscend((_, _, kids) => kids.FirstOrDefault(c => c is not null));
+
+        compiler.Compile(Parse("1+2"), 0);
+
+        Assert.IsTrue(firstCount  > 0, "First predicate handler must have fired");
+        Assert.AreEqual(0, secondCount, "Second predicate handler must not fire when first matches");
+    }
+
+    [TestMethod]
+    public void Compiler_Predicate_DoesNotFireWhenReturnsFalse()
+    {
+        // A predicate that always returns false must never invoke its handler.
+        bool fired = false;
+
+        var compiler = new ParseTreeCompiler<int, string>()
+            .OnAscend(_ => false, (nav, _) => { fired = true; return "x"; })
+            .DefaultAscend((_, _, kids) => kids.FirstOrDefault(c => c is not null));
+
+        compiler.Compile(Parse("1"), 0);
+
+        Assert.IsFalse(fired, "Handler must not be invoked when predicate returns false");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // Guard: duplicate registration
     // ═══════════════════════════════════════════════════════════════
 

@@ -22,8 +22,10 @@ namespace Utils.Parser.Runtime;
 ///   </item>
 /// </list>
 /// <para>
-/// Handlers are registered per grammar-rule name via the fluent <c>OnDescend</c> /
-/// <c>OnAscend</c> methods, with optional fall-backs for unregistered rules.
+/// Handlers can be registered by grammar-rule name (exact match, O(1) lookup) or by an
+/// arbitrary predicate over the <see cref="ParseTreeNavigator"/> (checked in registration
+/// order). Rule-name handlers are always checked first; predicate handlers are tried only
+/// when no name-based handler matches. Fall-back <c>Default*</c> handlers are consulted last.
 /// </para>
 /// <para>
 /// The context is treated as <em>immutable per descent step</em>: each descent handler
@@ -54,6 +56,22 @@ public sealed class ParseTreeCompiler<TContext, TResult>
     /// </summary>
     private readonly Dictionary<string, Func<ParseTreeNavigator, TContext, IReadOnlyList<TResult?>, TResult?>>
         _ascentHandlers = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Predicate-based descent handlers, evaluated in registration order when no
+    /// rule-name handler matches.
+    /// </summary>
+    private readonly List<(Func<ParseTreeNavigator, bool> Predicate,
+                            Func<ParseTreeNavigator, TContext, TContext> Handler)>
+        _descentPredicates = [];
+
+    /// <summary>
+    /// Predicate-based ascent handlers, evaluated in registration order when no
+    /// rule-name handler matches.
+    /// </summary>
+    private readonly List<(Func<ParseTreeNavigator, bool> Predicate,
+                            Func<ParseTreeNavigator, TContext, IReadOnlyList<TResult?>, TResult?> Handler)>
+        _ascentPredicates = [];
 
     private Func<ParseTreeNavigator, TContext, TContext>?
         _defaultDescent;
@@ -133,6 +151,66 @@ public sealed class ParseTreeCompiler<TContext, TResult>
         string ruleName,
         Func<ParseTreeNavigator, TContext, TResult?> handler)
         => OnAscend(ruleName, (nav, ctx, _) => handler(nav, ctx));
+
+    /// <summary>
+    /// Registers a context-enrichment handler called when <em>descending into</em>
+    /// nodes for which <paramref name="predicate"/> returns <c>true</c>.
+    /// <para>
+    /// Predicate-based handlers are checked in registration order, only after no
+    /// rule-name handler has matched the current node. The first matching predicate wins.
+    /// </para>
+    /// </summary>
+    /// <param name="predicate">
+    /// Function that receives the current node's navigator and returns <c>true</c>
+    /// when this handler should be applied.
+    /// </param>
+    /// <param name="handler">
+    /// Function <c>(navigator, parentContext) → contextForChildren</c>.
+    /// </param>
+    public ParseTreeCompiler<TContext, TResult> OnDescend(
+        Func<ParseTreeNavigator, bool> predicate,
+        Func<ParseTreeNavigator, TContext, TContext> handler)
+    {
+        _descentPredicates.Add((predicate, handler));
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a compilation handler called when <em>ascending from</em>
+    /// nodes for which <paramref name="predicate"/> returns <c>true</c>.
+    /// <para>
+    /// Predicate-based handlers are checked in registration order, only after no
+    /// rule-name handler has matched the current node. The first matching predicate wins.
+    /// </para>
+    /// </summary>
+    /// <param name="predicate">
+    /// Function that receives the current node's navigator and returns <c>true</c>
+    /// when this handler should be applied.
+    /// </param>
+    /// <param name="handler">
+    /// Function <c>(navigator, contextAtEntry, childResults) → result</c>.
+    /// </param>
+    public ParseTreeCompiler<TContext, TResult> OnAscend(
+        Func<ParseTreeNavigator, bool> predicate,
+        Func<ParseTreeNavigator, TContext, IReadOnlyList<TResult?>, TResult?> handler)
+    {
+        _ascentPredicates.Add((predicate, handler));
+        return this;
+    }
+
+    /// <summary>
+    /// Convenience overload of
+    /// <see cref="OnAscend(Func{ParseTreeNavigator, bool}, Func{ParseTreeNavigator, TContext, IReadOnlyList{TResult?}, TResult?})"/>
+    /// for nodes that do not need to inspect child results.
+    /// </summary>
+    /// <param name="predicate">Selector function.</param>
+    /// <param name="handler">
+    /// Function <c>(navigator, contextAtEntry) → result</c>.
+    /// </param>
+    public ParseTreeCompiler<TContext, TResult> OnAscend(
+        Func<ParseTreeNavigator, bool> predicate,
+        Func<ParseTreeNavigator, TContext, TResult?> handler)
+        => OnAscend(predicate, (nav, ctx, _) => handler(nav, ctx));
 
     /// <summary>
     /// Sets the fallback descent handler used when no rule-specific handler is registered.
@@ -225,6 +303,9 @@ public sealed class ParseTreeCompiler<TContext, TResult>
     {
         if (_descentHandlers.TryGetValue(nav.RuleName, out var handler))
             return handler(nav, context);
+        foreach (var (predicate, predicateHandler) in _descentPredicates)
+            if (predicate(nav))
+                return predicateHandler(nav, context);
         return _defaultDescent is not null ? _defaultDescent(nav, context) : context;
     }
 
@@ -235,6 +316,9 @@ public sealed class ParseTreeCompiler<TContext, TResult>
     {
         if (_ascentHandlers.TryGetValue(nav.RuleName, out var handler))
             return handler(nav, context, childResults);
+        foreach (var (predicate, predicateHandler) in _ascentPredicates)
+            if (predicate(nav))
+                return predicateHandler(nav, context, childResults);
         return _defaultAscent is not null
             ? _defaultAscent(nav, context, childResults)
             : default;
