@@ -39,10 +39,20 @@ public class TrueTypeFont : IFont
     /// </summary>
     public int Type { get; }
 
+    // TrueType offset table and directory entry sizes — see TrueType spec §Font Directory.
+    private const int OffsetTableSize = 12;           // sfVersion(4) + numTables(2) + searchRange(2) + entrySelector(2) + rangeShift(2)
+    private const int TableDirectoryEntrySize = 16;   // tag(4) + checkSum(4) + offset(4) + length(4)
+    private const int TtfAlignment = 4;               // all table data must be 4-byte aligned
+    private const int TagLength = 4;                  // TrueType table tags are always 4 ASCII characters
+    // Offset of checksumAdjustment within the 'head' table data — see TrueType spec §head.
+    private const int HeadChecksumAdjOffset = 8;
+    // Required magic value: sum of all UInt32 words in the font file must equal 0xB1B0AFBA — see TrueType spec §head.
+    private const long ChecksumMagicNumber = 0xB1B0AFBAL;
+
     // Dictionary of tables present in the font.
     private readonly Dictionary<Tag, TrueTypeTable> tables;
 
-    private int Length => 12 + tables.Count * 16 + tables.Values.Sum(t => MathEx.Ceiling(t.Length, 4));
+    private int Length => OffsetTableSize + tables.Count * TableDirectoryEntrySize + tables.Values.Sum(t => MathEx.Ceiling(t.Length, TtfAlignment));
 
 
     /// <summary>
@@ -118,7 +128,7 @@ public class TrueTypeFont : IFont
         data.Write<Int16>(SearchRange);
         data.Write<Int16>(EntrySelector);
         data.Write<Int16>(RangeShift);
-        int currentoffset = 12 + TablesCount * 16;
+        int currentoffset = OffsetTableSize + TablesCount * TableDirectoryEntrySize;
         foreach (var tagTable in tables)
         {
             var tag = tagTable.Key;
@@ -129,7 +139,7 @@ public class TrueTypeFont : IFont
             obj.WriteData(w);
             var datas = datasStream.ToArray();
             int dataLength = datas.Length;
-            data.WriteFixedLengthString(tag, 4, Encoding.ASCII);
+            data.WriteFixedLengthString(tag, TagLength, Encoding.ASCII);
             data.Write<Int32>(ComputeChecksum(tag, new ReaderWriter(new MemoryStream(datas))));
             data.Write<Int32>(currentoffset);
             data.Write<Int32>(dataLength);
@@ -138,7 +148,7 @@ public class TrueTypeFont : IFont
             data.Write<byte[]>(datas);
             data.Pop();
             currentoffset += dataLength;
-            while (currentoffset % 4 > 0)
+            while (currentoffset % TtfAlignment > 0)
             {
                 currentoffset++;
                 data.WriteByte(0);
@@ -241,7 +251,7 @@ public class TrueTypeFont : IFont
         {
             double num = Math.Floor(Math.Log(TablesCount, 2));
             double num2 = Math.Pow(2.0, num);
-            return (short)(16.0 * num2);
+            return (short)(TableDirectoryEntrySize * num2);
         }
     }
 
@@ -267,7 +277,7 @@ public class TrueTypeFont : IFont
         {
             double num = Math.Floor(Math.Log(TablesCount, 2));
             short num2 = (short)Math.Pow(2.0, num);
-            return (short)(num2 * 16 - SearchRange);
+            return (short)(num2 * TableDirectoryEntrySize - SearchRange);
         }
     }
 
@@ -285,10 +295,10 @@ public class TrueTypeFont : IFont
             data.Push();
             if (tagString == "head")
             {
-                data.Position = 8;
+                data.Position = HeadChecksumAdjOffset;
                 data.Writer.Write<Int32>(0);
             }
-            int nLongs = ((int)data.BytesLeft + 3) / 4;
+            int nLongs = ((int)data.BytesLeft + TtfAlignment - 1) / TtfAlignment;
             while (nLongs-- > 0)
             {
                 if (data.BytesLeft > 3)
@@ -315,14 +325,14 @@ public class TrueTypeFont : IFont
         unchecked
         {
             long checksum = ComputeChecksum("", data);
-            long checksumAdj = 0xb1b0afbaL - checksum;
-            int offset = 12 + TablesCount * 16;
+            long checksumAdj = ChecksumMagicNumber - checksum;
+            int offset = OffsetTableSize + TablesCount * TableDirectoryEntrySize;
             foreach (var table in tables)
             {
                 var tag = table.Key;
                 if (tag == TableTypes.HEAD)
                 {
-                    data.Seek(offset + 8);
+                    data.Seek(offset + HeadChecksumAdjOffset);
                     data.Writer.Write<UInt32>((uint)checksumAdj);
                     break;
                 }

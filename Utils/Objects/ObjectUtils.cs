@@ -8,6 +8,9 @@ namespace Utils.Objects;
 /// </summary>
 public static class ObjectUtils
 {
+    // Classic polynomial hash constants (Bernstein-style).
+    private const int HashSeed = 23;
+    private const int HashMultiplier = 31;
     /// <summary>
     /// Returns true if the given nullable object is either null or equal to the default value of its type.
     /// </summary>
@@ -85,7 +88,7 @@ public static class ObjectUtils
         array.Arg().MustNotBeNull();
         unchecked
         {
-            int hash = 23;
+            int hash = HashSeed;
             ComputeHashRecursive(0, new int[array.Rank], ref hash);
             return hash;
         }
@@ -94,7 +97,7 @@ public static class ObjectUtils
         {
             if (rank == array.Rank)
             {
-                hash = hash * 31 + array.GetValue(indices).GetHashCode();
+                hash = hash * HashMultiplier +array.GetValue(indices).GetHashCode();
             }
             else
             {
@@ -121,7 +124,7 @@ public static class ObjectUtils
 
         unchecked
         {
-            int hash = 23;
+            int hash = HashSeed;
             ComputeHashRecursive(0, new int[array.Rank], ref hash);
             return hash;
         }
@@ -130,7 +133,7 @@ public static class ObjectUtils
         {
             if (rank == array.Rank)
             {
-                hash = hash * 31 + getHashCode((T)array.GetValue(indices));
+                hash = hash * HashMultiplier +getHashCode((T)array.GetValue(indices));
             }
             else
             {
@@ -159,7 +162,7 @@ public static class ObjectUtils
     {
         unchecked
         {
-            return objects.Aggregate(23, (acc, value) => acc * 31 + (value?.GetHashCode() ?? 0));
+            return objects.Aggregate(23, (acc, value) => acc * HashMultiplier +(value?.GetHashCode() ?? 0));
         }
     }
 
@@ -174,7 +177,7 @@ public static class ObjectUtils
     {
         unchecked
         {
-            return objects.Aggregate(23, (acc, value) => acc * 31 + getHashCode(value));
+            return objects.Aggregate(23, (acc, value) => acc * HashMultiplier +getHashCode(value));
         }
     }
 
@@ -188,10 +191,10 @@ public static class ObjectUtils
     {
         unchecked
         {
-            var result = 23;
+            var result = HashSeed;
             for (int i = 0; i < objects.Length; i++)
             {
-                result = result * 31 + objects[i].GetHashCode();
+                result = result * HashMultiplier +objects[i].GetHashCode();
             }
             return result;
         }
@@ -208,10 +211,10 @@ public static class ObjectUtils
     {
         unchecked
         {
-            var result = 23;
+            var result = HashSeed;
             for (int i = 0; i < objects.Length; i++)
             {
-                result = result * 31 + getHashCode(objects[i]);
+                result = result * HashMultiplier +getHashCode(objects[i]);
             }
             return result;
         }

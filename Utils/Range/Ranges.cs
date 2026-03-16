@@ -26,6 +26,10 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
 {
     #region Private Fields
 
+    // Classic polynomial hash constants (Bernstein-style).
+    private const int HashSeed = 17;
+    private const int HashMultiplier = 31;
+
     private readonly List<IRange<T>> _ranges = new();
 
     #endregion
@@ -600,10 +604,10 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     {
         unchecked
         {
-            int hash = 17;
+            int hash = HashSeed;
             foreach (var interval in _ranges)
             {
-                hash = hash * 31 + interval.GetHashCode();
+                hash = hash * HashMultiplier + interval.GetHashCode();
             }
             return hash;
         }

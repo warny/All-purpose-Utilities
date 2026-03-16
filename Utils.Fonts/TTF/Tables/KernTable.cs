@@ -11,6 +11,11 @@ namespace Utils.Fonts.TTF.Tables
     [TTFTable(TableTypes.Tags.KERN)]
     public class KernTable : TrueTypeTable
     {
+        // Kern table layout sizes — see TrueType spec §kern.
+        private const int TableHeaderSize = 4;       // version(2) + nTables(2)
+        private const int SubtableHeaderSize = 14;   // version(2) + length(2) + coverage(2) + nPairs(2) + searchRange(2) + entrySelector(2) + rangeShift(2)
+        private const int KernPairSize = 6;          // leftGlyph(2) + rightGlyph(2) + value(2)
+
         // Dictionary mapping (leftGlyph, rightGlyph) pairs to a kerning adjustment value.
         private Dictionary<(ushort left, ushort right), short> kerningPairs;
 
@@ -78,9 +83,9 @@ namespace Utils.Fonts.TTF.Tables
             data.Write<UInt16>(0);
             data.Write<UInt16>(1);
 
-            // Calculate subtable length: header (14 bytes) + 6 bytes per pair.
+            // Calculate subtable length: header + 6 bytes per pair.
             ushort nPairs = (ushort)kerningPairs.Count;
-            ushort subtableLength = (ushort)(14 + nPairs * 6);
+            ushort subtableLength = (ushort)(SubtableHeaderSize + nPairs * KernPairSize);
 
             // Write subtable header.
             data.Write<UInt16>(0);              // subVersion = 0
@@ -89,9 +94,9 @@ namespace Utils.Fonts.TTF.Tables
 
             data.Write<UInt16>(nPairs);         // number of pairs
                                                 // For simplicity, compute searchRange, entrySelector, and rangeShift as follows:
-            ushort searchRange = (ushort)(Math.Pow(2, Math.Floor(Math.Log(nPairs, 2))) * 6);
+            ushort searchRange = (ushort)(Math.Pow(2, Math.Floor(Math.Log(nPairs, 2))) * KernPairSize);
             ushort entrySelector = (ushort)Math.Log(Math.Pow(2, Math.Floor(Math.Log(nPairs, 2))), 2);
-            ushort rangeShift = (ushort)(nPairs * 6 - searchRange);
+            ushort rangeShift = (ushort)(nPairs * KernPairSize - searchRange);
             data.Write<UInt16>(searchRange);
             data.Write<UInt16>(entrySelector);
             data.Write<UInt16>(rangeShift);
@@ -107,7 +112,7 @@ namespace Utils.Fonts.TTF.Tables
 
         /// <inheritdoc/>
         public override int Length =>
-                // Total length: 4 bytes (table header) + 14 bytes (subtable header) + 6 bytes per kerning pair.
-                4 + 14 + kerningPairs.Count * 6;
+                // Total length: table header + subtable header + 6 bytes per kerning pair.
+                TableHeaderSize + SubtableHeaderSize + kerningPairs.Count * KernPairSize;
     }
 }

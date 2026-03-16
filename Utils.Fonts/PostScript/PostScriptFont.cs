@@ -31,6 +31,21 @@ namespace Utils.Fonts.PostScript;
 /// </summary>
 public class PostScriptFont : IFont
 {
+    // Type 1 decryption constants — see Adobe Technical Note 5040 §7 "Charstring Encryption".
+    private const int Type1EncryptC1 = 52845;
+    private const int Type1EncryptC2 = 22719;
+    private const int Type1EncryptMask = 0xFFFF;
+
+    // Charstring integer encoding ranges and biases — see Adobe Technical Note 5040 §6.
+    // Single-byte integers (32–246): value = b - CharStringIntBias.
+    private const int CharStringIntBias = 139;
+    // Two-byte positive integers (247–250, byte2): value = (b - CharStringPosByte1Start) * 256 + byte2 + CharStringTwoByteOffset.
+    private const int CharStringPosByte1Start = 247;
+    // Two-byte negative integers (251–254, byte2): value = -(b - CharStringNegByte1Start) * 256 - byte2 - CharStringTwoByteOffset.
+    private const int CharStringNegByte1Start = 251;
+    private const int CharStringTwoByteScale = 256;
+    private const int CharStringTwoByteOffset = 108;
+
     /// <summary>
     /// Storage of glyphs indexed by character code.
     /// </summary>
@@ -346,7 +361,7 @@ public class PostScriptFont : IFont
         {
             byte cipher = data[i];
             byte plain = (byte)(cipher ^ (r >> 8));
-            r = ((cipher + r) * 52845 + 22719) & 0xFFFF;
+            r = ((cipher + r) * Type1EncryptC1 + Type1EncryptC2) & Type1EncryptMask;
             result[i] = plain;
         }
         if (discard > 0 && discard < result.Length)
@@ -362,17 +377,17 @@ public class PostScriptFont : IFont
             int b = data[state.Index++];
             if (b >= 32 && b <= 246)
             {
-                state.Stack.Push(b - 139);
+                state.Stack.Push(b - CharStringIntBias);
             }
-            else if (b >= 247 && b <= 250)
+            else if (b >= CharStringPosByte1Start && b <= 250)
             {
                 int b2 = data[state.Index++];
-                state.Stack.Push((b - 247) * 256 + b2 + 108);
+                state.Stack.Push((b - CharStringPosByte1Start) * CharStringTwoByteScale + b2 + CharStringTwoByteOffset);
             }
-            else if (b >= 251 && b <= 254)
+            else if (b >= CharStringNegByte1Start && b <= 254)
             {
                 int b2 = data[state.Index++];
-                state.Stack.Push(-(b - 251) * 256 - b2 - 108);
+                state.Stack.Push(-(b - CharStringNegByte1Start) * CharStringTwoByteScale - b2 - CharStringTwoByteOffset);
             }
             else if (b == 255)
             {
