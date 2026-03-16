@@ -45,6 +45,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Collections", "Utils.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser", "Utils.Parser\Utils.Parser.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.Generators", "Utils.Parser.Generators\Utils.Parser.Generators.csproj", "{3B60CE61-D05C-44FA-8774-C93CB22DE518}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -434,6 +436,24 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.Build.0 = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x86.Build.0 = Release|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Debug|x64.Build.0 = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Debug|x86.Build.0 = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.GitHub|x64.Build.0 = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.GitHub|x86.Build.0 = Debug|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Release|x64.ActiveCfg = Release|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Release|x64.Build.0 = Release|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Release|x86.ActiveCfg = Release|Any CPU
+		{3B60CE61-D05C-44FA-8774-C93CB22DE518}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

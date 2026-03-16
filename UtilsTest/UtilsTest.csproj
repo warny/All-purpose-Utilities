@@ -14,7 +14,12 @@
 	<ItemGroup>
 		<EmbeddedResource Remove="Resources\TestResource.fr.resx" />
 		<EmbeddedResource Remove="Resources\TestResource.resx" />
-		<EmbeddedResource Include="Parser\Exp.g4" />
+		<AdditionalFiles Include="Parser\Exp.g4">
+			<Namespace>UtilsTest.Parser</Namespace>
+			<ClassName>ExpGrammar</ClassName>
+		</AdditionalFiles>
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -61,6 +66,7 @@
                 <ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
                 <ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
                 <ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                <ProjectReference Include="..\Utils.Parser.Generators\Utils.Parser.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
                 <ProjectReference Include="..\Utils.OData.Generators\Utils.OData.Generators.csproj" />
                 <ProjectReference Include="..\Utils.OData\Utils.OData.csproj" />
                 <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />

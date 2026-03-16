@@ -334,74 +334,189 @@ public class ParserEngineTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // Tree structure — node navigation
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// For "2+5" the grammar produces:
+    ///   eval
+    ///   └─[0] additionExp
+    ///         ├─[0] multiplyExp  (wraps "2")
+    ///         └─[1] additionExp  (quantifier outer)
+    ///               └─[0] additionExp  (sequence '+' multiplyExp)
+    ///                     ├─[0] LexerNode("+"  rule=additionExp)
+    ///                     └─[1] multiplyExp  (wraps "5")
+    /// </summary>
+    [TestMethod]
+    public void Parser_TreeStructure_EvalHasOneChild_AdditionExp()
+    {
+        var nav = new ParseTreeNavigator(Parse("2+5"));
+        Assert.AreEqual("eval", nav.RuleName);
+        Assert.AreEqual(1, nav.RawChildren!.Count);
+        Assert.AreEqual("additionExp", nav[0].RuleName);
+    }
+
+    [TestMethod]
+    public void Parser_TreeStructure_AdditionExpHasTwoChildren()
+    {
+        var nav = new ParseTreeNavigator(Parse("2+5"));
+        // Child[0] = multiplyExp for the left operand
+        // Child[1] = additionExp quantifier wrapper for ('+' multiplyExp)*
+        var additionExp = nav[0];
+        Assert.AreEqual(2, additionExp.RawChildren!.Count);
+    }
+
+    [TestMethod]
+    public void Parser_TreeStructure_LeftOperand_LeadsToNumber2()
+    {
+        var nav = new ParseTreeNavigator(Parse("2+5"));
+        // eval[0] → additionExp[0] → multiplyExp[0] → atomExp[0] → LexerNode("2")
+        Assert.AreEqual("2", nav[0][0][0][0].Token!.Text);
+    }
+
+    [TestMethod]
+    public void Parser_TreeStructure_PlusOperator_AtExpectedPosition()
+    {
+        var nav = new ParseTreeNavigator(Parse("2+5"));
+        // eval[0] → additionExp[1] → quantifier[0] → seq[0] → LexerNode("+")
+        Assert.AreEqual("+", nav[0][1][0][0].Token!.Text);
+    }
+
+    [TestMethod]
+    public void Parser_TreeStructure_RightOperand_LeadsToNumber5()
+    {
+        var nav = new ParseTreeNavigator(Parse("2+5"));
+        // eval[0] → additionExp[1] → seq[0] → multiplyExp[1][0] → atomExp[0] → LexerNode("5")
+        Assert.AreEqual("5", nav[0][1][0][1][0][0].Token!.Text);
+    }
+
+    [TestMethod]
+    public void Parser_TreeStructure_PrecedenceMul_DeepInTree()
+    {
+        // In "1+2*3", multiplication must be inside multiplyExp, deeper than addition.
+        // eval[0]     = additionExp
+        // [0][1][0]   = sequence for '+' multiplyExp(2*3)
+        // [0][1][0][1]= multiplyExp for "2*3"
+        var nav = new ParseTreeNavigator(Parse("1+2*3"));
+        var multiplyExp = nav[0][1][0][1];
+        Assert.AreEqual("multiplyExp", multiplyExp.RuleName);
+
+        // multiplyExp[0] → atomExp[0] → "2"
+        Assert.AreEqual("2", multiplyExp[0][0].Token!.Text);
+
+        // multiplyExp[1][0] → seq('*' atomExp)
+        //   [0] → "*", [1][0] → "3"
+        Assert.AreEqual("*", multiplyExp[1][0][0].Token!.Text);
+        Assert.AreEqual("3", multiplyExp[1][0][1][0].Token!.Text);
+    }
+
+    [TestMethod]
+    public void Parser_TreeStructure_ChainedAdditions_ThreeOperands()
+    {
+        // "1+2+3": additionExp[0]=multiplyExp("1"), additionExp[1]=quantifier(2 iterations)
+        var nav = new ParseTreeNavigator(Parse("1+2+3"));
+        var additionExp = nav[0];
+        Assert.AreEqual(2, additionExp.RawChildren!.Count);
+
+        // Left operand "1"
+        Assert.AreEqual("1", additionExp[0][0][0].Token!.Text);
+
+        // Quantifier has 2 children: seq('+' 2) and seq('+' 3)
+        var quantOuter = additionExp[1];
+        Assert.AreEqual(2, quantOuter.RawChildren!.Count);
+
+        Assert.AreEqual("+", quantOuter[0][0].Token!.Text);   // first '+'
+        Assert.AreEqual("2", quantOuter[0][1][0][0].Token!.Text); // "2"
+
+        Assert.AreEqual("+", quantOuter[1][0].Token!.Text);   // second '+'
+        Assert.AreEqual("3", quantOuter[1][1][0][0].Token!.Text); // "3"
+    }
+
+    [TestMethod]
+    public void Navigator_TryChild_ReturnsNullOnMissingIndex()
+    {
+        var nav = new ParseTreeNavigator(Parse("42"));
+        Assert.IsNull(nav[0].TryChild(99));
+    }
+
+    [TestMethod]
+    public void Navigator_TryDescendant_ReturnsNullWhenNotFound()
+    {
+        var nav = new ParseTreeNavigator(Parse("42"));
+        Assert.IsNull(nav.TryDescendant("nonExistentRule"));
+    }
+
+    [TestMethod]
+    public void Navigator_Descendant_FindsAdditionExpByName()
+    {
+        var nav = new ParseTreeNavigator(Parse("1+2"));
+        var additionNode = nav.Descendant("additionExp");
+        Assert.AreEqual("additionExp", additionNode.RuleName);
+    }
+
+    [TestMethod]
+    public void Navigator_Descendants_FindsAllNumbers()
+    {
+        var nav = new ParseTreeNavigator(Parse("1+2*3"));
+        var numbers = nav.Descendants()
+            .Where(n => n.IsLexer && n.Token!.RuleName == "Number")
+            .Select(n => n.Token!.Text)
+            .ToList();
+        CollectionAssert.AreEqual(new[] { "1", "2", "3" }, numbers);
+    }
+
+    [TestMethod]
+    public void Navigator_Children_EnumeratesDirectChildren()
+    {
+        var nav = new ParseTreeNavigator(Parse("2+5"));
+        var additionExp = nav[0];
+        var children = additionExp.Children().ToList();
+        Assert.AreEqual(2, children.Count);
+        Assert.AreEqual("multiplyExp", children[0].RuleName);
+    }
+
+    [TestMethod]
+    public void Navigator_ToString_DescribesNode()
+    {
+        var nav = new ParseTreeNavigator(Parse("42"));
+        // Root is a ParserNode
+        StringAssert.Contains(nav.ToString(), "ParserNode");
+        // A leaf LexerNode
+        var leaf = nav.Descendants().First(n => n.IsLexer);
+        StringAssert.Contains(leaf.ToString(), "LexerNode");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════════
 
     private static LexerNode? FindFirstLexerNode(ParseNode node, string ruleName)
-    {
-        if (node is LexerNode ln && ln.Rule.Name == ruleName)
-            return ln;
-
-        if (node is ParserNode pn)
-        {
-            foreach (var child in pn.Children)
-            {
-                var found = FindFirstLexerNode(child, ruleName);
-                if (found is not null)
-                    return found;
-            }
-        }
-
-        return null;
-    }
+        => new ParseTreeNavigator(node)
+            .Descendants()
+            .Prepend(new ParseTreeNavigator(node))
+            .FirstOrDefault(n => n.IsLexer && n.RuleName == ruleName)
+            ?.Node as LexerNode;
 
     private static List<LexerNode> FindAllLexerNodes(ParseNode node, string ruleName)
-    {
-        var result = new List<LexerNode>();
-        CollectLexerNodes(node, ruleName, result);
-        return result;
-    }
-
-    private static void CollectLexerNodes(ParseNode node, string ruleName, List<LexerNode> result)
-    {
-        if (node is LexerNode ln && ln.Rule.Name == ruleName)
-            result.Add(ln);
-
-        if (node is ParserNode pn)
-            foreach (var child in pn.Children)
-                CollectLexerNodes(child, ruleName, result);
-    }
+        => new ParseTreeNavigator(node)
+            .Descendants()
+            .Prepend(new ParseTreeNavigator(node))
+            .Where(n => n.IsLexer && n.RuleName == ruleName)
+            .Select(n => (LexerNode)n.Node)
+            .ToList();
 
     private static List<LexerNode> FindAllLexerNodesAny(ParseNode node)
-    {
-        var result = new List<LexerNode>();
-        CollectAllLexerNodes(node, result);
-        return result;
-    }
-
-    private static void CollectAllLexerNodes(ParseNode node, List<LexerNode> result)
-    {
-        if (node is LexerNode ln)
-            result.Add(ln);
-
-        if (node is ParserNode pn)
-            foreach (var child in pn.Children)
-                CollectAllLexerNodes(child, result);
-    }
+        => new ParseTreeNavigator(node)
+            .Descendants()
+            .Prepend(new ParseTreeNavigator(node))
+            .Where(n => n.IsLexer)
+            .Select(n => (LexerNode)n.Node)
+            .ToList();
 
     private static ParserNode? FindFirstParserNode(ParseNode node, string ruleName)
-    {
-        if (node is ParserNode pn)
-        {
-            if (pn.Rule.Name == ruleName)
-                return pn;
-            foreach (var child in pn.Children)
-            {
-                var found = FindFirstParserNode(child, ruleName);
-                if (found is not null)
-                    return found;
-            }
-        }
-        return null;
-    }
+        => new ParseTreeNavigator(node)
+            .Descendants()
+            .Prepend(new ParseTreeNavigator(node))
+            .FirstOrDefault(n => n.IsParser && n.RuleName == ruleName)
+            ?.Node as ParserNode;
 }
