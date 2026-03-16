@@ -17,6 +17,9 @@
                 <PackageTags>omy;utilities;imaging;bitmap;color;drawing</PackageTags>
 		<RootNamespace>Utils</RootNamespace>
 		<NoWarn>CA1416</NoWarn>
+		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

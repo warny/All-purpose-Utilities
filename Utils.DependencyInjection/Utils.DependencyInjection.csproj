@@ -12,6 +12,9 @@
         <Version>1.2.1</Version>
         <Description>Attribute-based service registration helpers for Microsoft.Extensions.DependencyInjection.</Description>
         <PackageTags>omy;utilities;dependency-injection;attributes</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>

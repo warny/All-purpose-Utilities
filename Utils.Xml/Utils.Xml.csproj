@@ -15,6 +15,9 @@
 		<Version>1.2.1</Version>
                 <Description>Attribute-based XML processing helpers, including XmlDataProcessor for mapping documents to objects.</Description>
                 <PackageTags>omy;utilities;xml;serialization</PackageTags>
+		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
         </PropertyGroup>
 
 	<ItemGroup>

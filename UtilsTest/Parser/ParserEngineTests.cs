@@ -7,22 +7,11 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class ParserEngineTests
 {
-    private static ParseNode Parse(string input)
-    {
-        var definition = ExpGrammar.Build();
-        var lexer = new LexerEngine(definition);
-        var stream = new StringCharStream(input);
-        var tokens = lexer.Tokenize(stream).ToList();
-        var parser = new ParserEngine(definition);
-        return parser.Parse(tokens);
-    }
+    private static readonly CompiledGrammar Grammar = new CompiledGrammar(ExpGrammar.Build());
 
-    private static List<Token> Lex(string input)
-    {
-        var definition = ExpGrammar.Build();
-        var lexer = new LexerEngine(definition);
-        return lexer.Tokenize(new StringCharStream(input)).ToList();
-    }
+    private static ParseNode Parse(string input) => Grammar.Parse(input);
+
+    private static List<Token> Lex(string input) => Grammar.Tokenize(input).ToList();
 
     // ═══════════════════════════════════════════════════════════════
     // Basic parsing

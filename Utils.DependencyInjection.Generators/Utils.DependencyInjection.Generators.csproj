@@ -13,6 +13,9 @@
         <Description>Roslyn source generator that discovers attributed services and emits DI registrations.</Description>
         <PackageTags>omy;utilities;dependency-injection;generator;roslyn</PackageTags>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>

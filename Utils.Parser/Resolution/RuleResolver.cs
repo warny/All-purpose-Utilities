@@ -2,11 +2,35 @@ using Utils.Parser.Model;
 
 namespace Utils.Parser.Resolution;
 
+/// <summary>
+/// Validates a <see cref="ParserDefinition"/> and enriches it with derived information.
+/// <para>
+/// Resolution is a two-step process:
+/// <list type="number">
+///   <item>Build the flat <see cref="ParserDefinition.AllRules"/> lookup from all modes
+///         and parser-rule lists, assigning <see cref="RuleKind"/> values.</item>
+///   <item>Validate all <see cref="RuleRef"/> targets, perform consistency checks
+///         (mixed lexer/parser content), verify fragment constraints, and
+///         validate labels.</item>
+/// </list>
+/// </para>
+/// </summary>
 public static class RuleResolver
 {
+    /// <summary>
+    /// Resolves and validates <paramref name="definition"/>, returning an updated
+    /// <see cref="ParserDefinition"/> with a fully populated
+    /// <see cref="ParserDefinition.AllRules"/> dictionary.
+    /// </summary>
+    /// <param name="definition">The grammar definition to resolve.</param>
+    /// <returns>The same definition with <see cref="ParserDefinition.AllRules"/> populated.</returns>
+    /// <exception cref="GrammarValidationException">
+    /// Thrown when duplicate rule names are detected, a rule references an unknown rule,
+    /// rule kinds cannot be consistently resolved, or structural constraints are violated.
+    /// </exception>
     public static ParserDefinition Resolve(ParserDefinition definition)
     {
-        // 1. Construire AllRules
+        // 1. Build AllRules, assigning known kinds at registration time.
         var allRules = new Dictionary<string, Rule>();
 
         foreach (var mode in definition.Modes)
@@ -15,6 +39,7 @@ public static class RuleResolver
             {
                 if (!allRules.TryAdd(rule.Name, rule))
                     throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
+                rule.Kind = RuleKind.Lexer;
             }
         }
 
@@ -22,19 +47,20 @@ public static class RuleResolver
         {
             if (!allRules.TryAdd(rule.Name, rule))
                 throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
+            rule.Kind = RuleKind.Parser;
         }
 
-        // Mettre à jour AllRules sur la définition
+        // Update AllRules on the definition.
         definition = definition with { AllRules = allRules };
 
-        // 2. Vérifier que toutes les RuleRef pointent vers une règle existante
+        // 2. Verify that all RuleRefs point to existing rules.
         foreach (var rule in allRules.Values)
         {
             ValidateRuleRefs(rule.Content, allRules, rule.Name);
         }
 
-        // 3. Inférer RuleKind pour chaque règle
-        // Résolution itérative pour gérer les dépendances circulaires
+        // 3. Infer RuleKind for any rules still marked Unresolved.
+        //    Iterative resolution handles circular dependencies.
         bool changed = true;
         int maxIterations = allRules.Count + 1;
         while (changed && maxIterations-- > 0)
@@ -54,8 +80,8 @@ public static class RuleResolver
             }
         }
 
-        // Les règles encore Unresolved : convention ANTLR4
-        // minuscule = parser, majuscule = lexer
+        // Apply the ANTLR4 naming convention to any remaining Unresolved rules:
+        // upper-case start → lexer; lower-case start → parser.
         foreach (var rule in allRules.Values)
         {
             if (rule.Kind == RuleKind.Unresolved)
@@ -64,13 +90,13 @@ public static class RuleResolver
             }
         }
 
-        // 4. Valider la cohérence (pas de mélange Lexer/Parser dans une règle)
+        // 4. Validate that lexer rules do not reference parser content.
         foreach (var rule in allRules.Values)
         {
             ValidateKindConsistency(rule, allRules);
         }
 
-        // 5. Valider les fragments (référencés uniquement depuis des règles Lexer)
+        // 5. Validate that fragment rules are lexer rules.
         foreach (var rule in allRules.Values)
         {
             if (rule.IsFragment && rule.Kind != RuleKind.Lexer)
@@ -80,9 +106,7 @@ public static class RuleResolver
             }
         }
 
-        ValidateFragmentReferences(allRules);
-
-        // 6. Résoudre les RuleLabel : vérifier que le RuleName référencé existe
+        // 6. Validate labels: ensure every label's target rule exists.
         foreach (var rule in allRules.Values)
         {
             ValidateLabels(rule.Content, allRules, rule.Name);
@@ -91,6 +115,13 @@ public static class RuleResolver
         return definition;
     }
 
+    /// <summary>
+    /// Recursively validates that every <see cref="RuleRef"/> in <paramref name="content"/>
+    /// names a rule that exists in <paramref name="rules"/>.
+    /// </summary>
+    /// <param name="content">Grammar element to inspect.</param>
+    /// <param name="rules">All known rules, keyed by name.</param>
+    /// <param name="contextRuleName">Owning rule name, used in exception messages.</param>
     private static void ValidateRuleRefs(
         RuleContent content,
         IDictionary<string, Rule> rules,
@@ -123,6 +154,13 @@ public static class RuleResolver
         }
     }
 
+    /// <summary>
+    /// Recursively validates that every labeled <see cref="RuleRef"/> has a label
+    /// whose target rule name exists in <paramref name="rules"/>.
+    /// </summary>
+    /// <param name="content">Grammar element to inspect.</param>
+    /// <param name="rules">All known rules, keyed by name.</param>
+    /// <param name="contextRuleName">Owning rule name, used in exception messages.</param>
     private static void ValidateLabels(
         RuleContent content,
         IDictionary<string, Rule> rules,
@@ -156,54 +194,41 @@ public static class RuleResolver
         }
     }
 
+    /// <summary>
+    /// Ensures that a lexer rule does not reference parser content.
+    /// Parser rules in combined grammars may legitimately reference both lexer tokens
+    /// and inline literals, so only lexer rules are checked.
+    /// </summary>
+    /// <param name="rule">Rule to validate.</param>
+    /// <param name="rules">All known rules, used to resolve references.</param>
     private static void ValidateKindConsistency(Rule rule, IDictionary<string, Rule> rules)
     {
+        // Only lexer rules are checked; parser rules may legitimately mix references.
+        if (rule.Kind != RuleKind.Lexer)
+            return;
+
         try
         {
             var inferred = InferKind(rule.Content, rules);
-            if (inferred != RuleKind.Unresolved && inferred != rule.Kind)
+            if (inferred == RuleKind.Parser)
             {
-                // Allow mixed content in combined grammars where naming conventions apply
-                // Only throw if content analysis is conclusive and contradicts the rule kind
+                throw new GrammarValidationException(
+                    $"Lexer rule '{rule.Name}' references parser content");
             }
         }
         catch (GrammarValidationException)
         {
             throw new GrammarValidationException(
-                $"Rule '{rule.Name}' mixes lexer and parser content");
+                $"Lexer rule '{rule.Name}' mixes lexer and parser content");
         }
     }
 
-    private static void ValidateFragmentReferences(IDictionary<string, Rule> rules)
-    {
-        var fragmentNames = rules.Values
-            .Where(r => r.IsFragment)
-            .Select(r => r.Name)
-            .ToHashSet();
-
-        if (fragmentNames.Count == 0)
-            return;
-
-        foreach (var rule in rules.Values)
-        {
-            if (rule.Kind == RuleKind.Parser)
-            {
-                var referencedFragments = new HashSet<string>();
-                CollectRuleRefs(rule.Content, referencedFragments);
-
-                foreach (var refName in referencedFragments)
-                {
-                    if (fragmentNames.Contains(refName))
-                    {
-                        throw new GrammarValidationException(
-                            $"Parser rule '{rule.Name}' references fragment '{refName}'. " +
-                            "Fragments can only be referenced from lexer rules.");
-                    }
-                }
-            }
-        }
-    }
-
+    /// <summary>
+    /// Collects all <see cref="RuleRef"/> names referenced (directly or indirectly)
+    /// within <paramref name="content"/> into <paramref name="refs"/>.
+    /// </summary>
+    /// <param name="content">Grammar element to traverse.</param>
+    /// <param name="refs">Set that receives the referenced rule names.</param>
     private static void CollectRuleRefs(RuleContent content, ISet<string> refs)
     {
         switch (content)
@@ -231,6 +256,18 @@ public static class RuleResolver
         }
     }
 
+    /// <summary>
+    /// Infers the <see cref="RuleKind"/> of a grammar element based on the kinds of
+    /// its constituent parts.
+    /// Returns <see cref="RuleKind.Unresolved"/> when not enough information is
+    /// available yet (e.g. a referenced rule is still unresolved).
+    /// </summary>
+    /// <param name="content">Grammar element to analyse.</param>
+    /// <param name="rules">All known rules, used to look up reference kinds.</param>
+    /// <returns>The inferred kind, or <see cref="RuleKind.Unresolved"/>.</returns>
+    /// <exception cref="GrammarValidationException">
+    /// Thrown when a rule element mixes lexer and parser content.
+    /// </exception>
     internal static RuleKind InferKind(RuleContent content, IDictionary<string, Rule> rules)
         => content switch
         {
@@ -247,10 +284,16 @@ public static class RuleResolver
             ValidatingPredicate       => RuleKind.Parser,
             PrecedencePredicate       => RuleKind.Parser,
             GatingPredicate           => RuleKind.Parser,
-            EmbeddedAction            => RuleKind.Unresolved, // neutre, hérité du contexte
+            EmbeddedAction            => RuleKind.Unresolved, // Neutral; inherits from context.
             _ => throw new GrammarValidationException($"Unknown RuleContent: {content.GetType()}")
         };
 
+    /// <summary>
+    /// Returns the single non-<see cref="RuleKind.Unresolved"/> kind present in
+    /// <paramref name="kinds"/>, or <see cref="RuleKind.Unresolved"/> when all are unresolved.
+    /// Throws when both <see cref="RuleKind.Lexer"/> and <see cref="RuleKind.Parser"/> appear.
+    /// </summary>
+    /// <param name="kinds">Collection of inferred kinds to reconcile.</param>
     private static RuleKind ResolveUniform(IEnumerable<RuleKind> kinds)
     {
         var set = kinds.Where(k => k != RuleKind.Unresolved).ToHashSet();

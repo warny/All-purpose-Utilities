@@ -15,6 +15,15 @@
 			Reads ANTLR4 grammar files and builds parse trees for any source file.
 			The ANTLR4 grammar reader is itself built using the same metamodel objects.
 		</Description>
+		<PackageTags>omy;utilities;parser;antlr4;grammar;lexer;tokenizer;parse-tree</PackageTags>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 </Project>

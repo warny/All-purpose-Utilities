@@ -4,12 +4,29 @@ using Utils.Parser.Model;
 namespace Utils.Parser.Bootstrap;
 
 /// <summary>
-/// Construit par code la ParserDefinition capable de lire un fichier .g4.
-/// Utilise exactement les mêmes objets que n'importe quelle autre grammaire.
-/// C'est la seule ParserDefinition construite manuellement dans le projet.
+/// Builds the meta-grammar: a hand-coded <see cref="Utils.Parser.Model.ParserDefinition"/>
+/// capable of tokenizing and parsing ANTLR4 <c>.g4</c> files.
+/// <para>
+/// This is the only <see cref="Utils.Parser.Model.ParserDefinition"/> in the project that is
+/// constructed programmatically rather than loaded from a <c>.g4</c> file.
+/// It uses exactly the same model objects as any other grammar, demonstrating that the
+/// framework is self-describing.
+/// </para>
+/// <para>
+/// The resulting definition must be passed through
+/// <c>RuleResolver.Resolve</c> before use.
+/// </para>
 /// </summary>
 public static class Antlr4Grammar
 {
+    /// <summary>
+    /// Creates and returns the ANTLR4 meta-grammar definition.
+    /// The definition is <em>not</em> pre-resolved; callers must invoke
+    /// <c>RuleResolver.Resolve</c> before passing it to
+    /// <see cref="Utils.Parser.Runtime.LexerEngine"/> or
+    /// <see cref="Utils.Parser.Runtime.ParserEngine"/>.
+    /// </summary>
+    /// <returns>An unresolved <see cref="Utils.Parser.Model.ParserDefinition"/> for ANTLR4 grammars.</returns>
     public static ParserDefinition Build()
     {
         int order = 0;
@@ -287,13 +304,9 @@ public static class Antlr4Grammar
         var not = new Rule("NOT", order++, false,
             Alts(Alt(0, Lit("~"))));
 
-        // Identifiers
-        var id = new Rule("ID", order++, false,
-            Alts(Alt(0, Seq(
-                Ref("NameStartChar"),
-                Star(Ref("NameChar"))))));
-
-        // We split ID into RULE_REF (lowercase start) and TOKEN_REF (uppercase start)
+        // We split ID into RULE_REF (lowercase start) and TOKEN_REF (uppercase start).
+        // RULE_REF and TOKEN_REF must have lower DeclarationOrder than ID so they win
+        // tie-breaking in MatchLongest (first-wins-on-equal-length).
         var ruleRef = new Rule("RULE_REF", order++, false,
             Alts(Alt(0, Seq(
                 Range('a', 'z'),
@@ -302,6 +315,12 @@ public static class Antlr4Grammar
         var tokenRef = new Rule("TOKEN_REF", order++, false,
             Alts(Alt(0, Seq(
                 Range('A', 'Z'),
+                Star(Ref("NameChar"))))));
+
+        // ID is a fallback for any NameStartChar identifier not matched above.
+        var id = new Rule("ID", order++, false,
+            Alts(Alt(0, Seq(
+                Ref("NameStartChar"),
                 Star(Ref("NameChar"))))));
 
         // Whitespace
@@ -966,48 +985,63 @@ public static class Antlr4Grammar
         );
     }
 
-    // ─── Helpers pour rendre la construction lisible ───────────────────────────
+    // ─── Builder helpers ───────────────────────────────────────────────────────
 
+    /// <summary>Creates an <see cref="Alternation"/> from the supplied alternatives.</summary>
     private static Alternation Alts(params Alternative[] alts) => new(alts);
 
+    /// <summary>Creates an <see cref="Alternative"/> with the given priority, content, associativity, and optional label.</summary>
     private static Alternative Alt(int priority, RuleContent content,
         Associativity assoc = Associativity.Left, string? label = null)
         => new(priority, assoc, content, label);
 
+    /// <summary>Creates a <see cref="Sequence"/> from the supplied items.</summary>
     private static Sequence Seq(params RuleContent[] items) => new(items);
 
+    /// <summary>Creates a <see cref="LiteralMatch"/> for the given string value.</summary>
     private static LiteralMatch Lit(string value) => new(value);
 
+    /// <summary>Creates a <see cref="RangeMatch"/> spanning the inclusive character range [<paramref name="from"/>, <paramref name="to"/>].</summary>
     private static RangeMatch Range(char from, char to) => new(from, to);
 
+    /// <summary>Creates a <see cref="RuleRef"/> to the named rule, optionally with a label.</summary>
     private static RuleRef Ref(string name, RuleLabel? label = null) => new(name, label);
 
+    /// <summary>Creates an unbounded, greedy (or optionally non-greedy) zero-or-more quantifier (<c>*</c>).</summary>
     private static Quantifier Star(RuleContent inner, bool greedy = true) => new(inner, 0, null, greedy);
+    /// <summary>Creates an unbounded, greedy (or optionally non-greedy) one-or-more quantifier (<c>+</c>).</summary>
     private static Quantifier Plus(RuleContent inner, bool greedy = true) => new(inner, 1, null, greedy);
+    /// <summary>Creates a zero-or-one quantifier (<c>?</c>).</summary>
     private static Quantifier Opt(RuleContent inner, bool greedy = true) => new(inner, 0, 1, greedy);
 
+    /// <summary>Creates a <see cref="Negation"/> that matches any single character/token not matched by <paramref name="inner"/>.</summary>
     private static Negation Not(RuleContent inner) => new(inner);
 
+    /// <summary>Creates an <see cref="AnyChar"/> wildcard that matches any single character.</summary>
     private static AnyChar Any() => new();
 
+    /// <summary>Creates a non-negated <see cref="CharSetMatch"/> from the characters in <paramref name="chars"/>.</summary>
     private static CharSetMatch CharSet(string chars)
     {
         var set = new HashSet<char>(chars);
         return new CharSetMatch(set, Negated: false);
     }
 
+    /// <summary>Creates a negated <see cref="CharSetMatch"/> that matches any character <em>not</em> in <paramref name="chars"/>.</summary>
     private static CharSetMatch NegCharSet(string chars)
     {
         var set = new HashSet<char>(chars);
         return new CharSetMatch(set, Negated: true);
     }
 
+    /// <summary>Creates an <see cref="EmbeddedAction"/> from raw code, extracting <c>$label</c> references automatically.</summary>
     private static EmbeddedAction Action(string code, ActionContext ctx, ActionPosition pos)
     {
         var labels = ExtractLabels(code);
         return new EmbeddedAction(code, ctx, pos, labels);
     }
 
+    /// <summary>Scans <paramref name="code"/> for <c>$label</c> and <c>$label.property</c> patterns and returns the resulting <see cref="LabelRef"/> list.</summary>
     private static IReadOnlyList<LabelRef> ExtractLabels(string code)
     {
         var labels = new List<LabelRef>();
