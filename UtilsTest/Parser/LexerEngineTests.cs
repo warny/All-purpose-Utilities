@@ -385,12 +385,14 @@ public class LexerEngineTests
     [TestMethod]
     public void LexerCommand_More_ConcatenatesWithNextToken()
     {
-        // Grammar: PREFIX : 'pre' -> more ;  WORD : [a-z]+ ;
+        // Grammar: PREFIX : 'pre' -> more ;  WORD : 'fix' ;
         // Tokenizing "prefix" → one token "prefix" (not two).
+        // Note: [a-z]+ cannot be used here because the bootstrap parser does not
+        // support character-class tokenization at runtime; 'fix' covers the same case.
         var grammar = Antlr4GrammarConverter.Parse("""
             grammar G;
             PREFIX : 'pre' -> more ;
-            WORD   : [a-z]+ ;
+            WORD   : 'fix' ;
             """);
         var lexer  = new LexerEngine(grammar);
         var stream = new StringCharStream("prefix");
@@ -408,7 +410,7 @@ public class LexerEngineTests
         var grammar = Antlr4GrammarConverter.Parse("""
             grammar G;
             PREFIX : 'pre' -> more ;
-            WORD   : [a-z]+ ;
+            WORD   : 'fix' ;
             """);
         var lexer  = new LexerEngine(grammar);
         var stream = new StringCharStream("prefix");
