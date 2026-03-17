@@ -142,13 +142,16 @@ namespace DrawTest
                     x += font.GetSpacingCorrection(prev, c) * scale;
 
                 var glyph = font.GetGlyph(c);
-                converter.BeginDrawGlyph(x, baselineY, glyphTransform);
-                glyph.ToGraphic(converter);
-                converter.EndDrawGlyph();
+                if (glyph != null)
+                {
+                    converter.BeginDrawGlyph(x, baselineY, glyphTransform);
+                    glyph.ToGraphic(converter);
+                    converter.EndDrawGlyph();
+                }
 
-                // Advance the pen. Glyph.Width is the bounding-box width; use a minimum
-                // advance for whitespace glyphs that have no visible contours.
-                float advance = glyph.Width * scale;
+                // Advance the pen. Glyph.Width is the bounding-box width; use a fallback
+                // advance for whitespace glyphs that have no outline data (GetGlyph returns null).
+                float advance = glyph != null ? glyph.Width * scale : 0f;
                 x += advance > 0f ? advance : 0.4f * 20f;
                 prev = c;
             }

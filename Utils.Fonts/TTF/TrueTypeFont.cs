@@ -431,7 +431,9 @@ public class TrueTypeFont : IFont
             int index = map.Map(c);
             if (index > 0)
             {
-                return new TrueTypeGlyph(glyf.GetGlyph(index));
+                var glyphBase = glyf.GetGlyph(index);
+                if (glyphBase != null)
+                    return new TrueTypeGlyph(glyphBase);
             }
         }
         return null;
