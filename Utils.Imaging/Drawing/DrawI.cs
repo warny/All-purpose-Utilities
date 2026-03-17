@@ -95,6 +95,7 @@ namespace Utils.Drawing
                 int direction = 0;
                 foreach (var pair in orderedPoints.SlideEnumerateBy(2))
                 {
+                    if (pair.Length < 2) break; // partial window — odd intersection count, skip
                     int y = linePoints.Key;
                     direction += pair[0].VerticalDirection;
                     DrawPoint(pair[0].X, y, color(pair[0].X, y));
@@ -131,6 +132,7 @@ namespace Utils.Drawing
                 int direction = 0;
                 foreach (var pair in orderedPoints.SlideEnumerateBy(2))
                 {
+                    if (pair.Length < 2) break; // partial window — odd intersection count, skip
                     int y = linePoints.Key;
                     direction += pair[0].VerticalDirection;
                     DrawPoint(pair[0].X, y, color(pair[0].X, y));
