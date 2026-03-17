@@ -135,7 +135,7 @@ public class Arg<T> : CheckBase<T>
 }
 
 /// <summary>
-/// Provides validation helpers for mutable values that throw <see cref="NullReferenceException"/> when null.
+/// Provides validation helpers for mutable values that throw <see cref="InvalidOperationException"/> when null.
 /// </summary>
 /// <typeparam name="T">Type of the value to validate.</typeparam>
 public class Variable<T> : CheckBase<T>
@@ -149,7 +149,7 @@ public class Variable<T> : CheckBase<T>
             : base(value, name) { }
 
     /// <inheritdoc />
-    protected override void OnNull() => throw new NullReferenceException(Name);
+    protected override void OnNull() => throw new InvalidOperationException($"{Name} must not be null");
 }
 
 /// <summary>
@@ -183,7 +183,7 @@ public static class Validations
     /// <returns>An exception describing the rank constraint when it is met; otherwise <see langword="null"/>.</returns>
     public static Exception MustBeOfRank(this Array value, int rank)
     {
-        if (value.Rank != rank) return null;
+        if (value.Rank == rank) return null;
         throw new Exception($"must be of rank {rank}");
     }
 
@@ -213,15 +213,13 @@ public static class Validations
     /// <param name="value">Value to validate.</param>
     /// <param name="valueName">Name of the value for diagnostic messages.</param>
     /// <returns>The original value when it is not <see langword="null"/>.</returns>
-    /// <exception cref="NullReferenceException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
     public static T ValueMustNotBeNull<T>(this T value, [CallerArgumentExpression(nameof(value))] string valueName = "")
     where T : class
     {
         if (value is null)
         {
-#pragma warning disable S112 // General exceptions should never be thrown
-            throw new NullReferenceException($"{valueName} must not be null");
-#pragma warning restore S112 // General exceptions should never be thrown
+            throw new InvalidOperationException($"{valueName} must not be null");
         }
         return value;
     }

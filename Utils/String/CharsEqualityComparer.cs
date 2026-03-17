@@ -40,7 +40,7 @@ public sealed class CharsEqualityComparer : IEqualityComparer<IEnumerable<char>>
     }
 
     /// <inheritdoc/>
-    public bool Equals(IEnumerable<char> x, IEnumerable<char> y)
+    public bool Equals(IEnumerable<char>? x, IEnumerable<char>? y)
     {
         if (ReferenceEquals(x, y)) return true;
         if (x is null && y is null) return true;

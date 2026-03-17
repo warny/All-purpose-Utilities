@@ -64,17 +64,17 @@ public class CMapFormat4 : CMapFormatBase
         public abstract short this[char c] { get; }
 
         /// <inheritdoc/>
-        public bool Equals(Segment other) =>
+        public bool Equals(Segment? other) =>
             other != null && this.StartCode == other.StartCode && this.EndCode == other.EndCode;
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is Segment other && Equals(other);
+        public override bool Equals(object? obj) => obj is Segment other && Equals(other);
 
         /// <inheritdoc/>
         public override int GetHashCode() => ObjectUtils.ComputeHash(StartCode, EndCode);
 
         /// <inheritdoc/>
-        public int CompareTo(Segment other) => this.StartCode.CompareTo(other?.StartCode);
+        public int CompareTo(Segment? other) => this.StartCode.CompareTo(other?.StartCode);
     }
 
     /// <summary>

@@ -33,9 +33,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>A task that completes when the server greeting has been processed.</returns>
     protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
     {
-        await base.OnConnect(stream, leaveOpen, cancellationToken);
-        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken);
-        await EnsureOkAsync(greeting);
+        await base.OnConnect(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(greeting).ConfigureAwait(false);
         _timestamp = ExtractTimestamp(greeting);
     }
 
@@ -54,8 +54,8 @@ public class Pop3Client : CommandResponseClient
     [Obsolete("POP3 USER/PASS authentication can expose credentials on unencrypted connections. Use a TLS-protected stream or a stronger mechanism.", false)]
     public async Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken = default)
     {
-        await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken));
-        await EnsureOkAsync(await SendCommandAsync($"PASS {password}", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+        await EnsureOkAsync(await SendCommandAsync($"PASS {password}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public class Pop3Client : CommandResponseClient
         using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
         byte[] hash = md5.ComputeHash(Encoding.ASCII.GetBytes(_timestamp + password));
         string digest = Convert.ToHexString(hash).ToLowerInvariant();
-        await EnsureOkAsync(await SendCommandAsync($"APOP {user} {digest}", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync($"APOP {user} {digest}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -83,8 +83,8 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Tuple containing number of messages and total mailbox size.</returns>
     public async Task<(int messageCount, int mailboxSize)> GetStatAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("STAT", cancellationToken);
-        await EnsureOkAsync(responses);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("STAT", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
         string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
         int count = parts.Length > 0 ? int.Parse(parts[0]) : 0;
         int size = parts.Length > 1 ? int.Parse(parts[1]) : 0;
@@ -98,9 +98,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Dictionary mapping message number to its size.</returns>
     public async Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("LIST", cancellationToken);
-        await EnsureOkAsync(responses);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("LIST", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         Dictionary<int, int> result = new();
         foreach (string line in lines)
         {
@@ -121,10 +121,10 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Text of the message with dot-stuffing removed.</returns>
     public async Task<string> RetrieveAsync(int id, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"RETR {id}", cancellationToken);
-        await EnsureOkAsync(responses);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"RETR {id}", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
         StringBuilder builder = new();
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         foreach (string line in lines)
         {
             string content = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
@@ -140,7 +140,7 @@ public class Pop3Client : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        await EnsureOkAsync(await SendCommandAsync($"DELE {id}", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync($"DELE {id}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -149,7 +149,7 @@ public class Pop3Client : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        await EnsureOkAsync(await SendCommandAsync("RSET", cancellationToken));
+        await EnsureOkAsync(await SendCommandAsync("RSET", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -177,9 +177,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Collection of capability names.</returns>
     public async Task<IReadOnlyList<string>> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("CAPA", cancellationToken);
-        await EnsureOkAsync(responses);
-        return await ReadMultilineAsync(cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("CAPA", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
+        return await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -189,9 +189,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Dictionary mapping message numbers to unique identifiers.</returns>
     public async Task<IReadOnlyDictionary<int, string>> ListUniqueIdsAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("UIDL", cancellationToken);
-        await EnsureOkAsync(responses);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("UIDL", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         Dictionary<int, string> result = new();
         foreach (string line in lines)
         {
@@ -212,8 +212,8 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Unique identifier or <see langword="null"/> if not found.</returns>
     public async Task<string?> GetUniqueIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"UIDL {id}", cancellationToken);
-        await EnsureOkAsync(responses);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"UIDL {id}", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
         string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
         return parts.Length > 1 ? parts[1] : null;
     }
@@ -260,7 +260,7 @@ public class Pop3Client : CommandResponseClient
         List<string> lines = new();
         while (true)
         {
-            IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken);
+            IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken).ConfigureAwait(false);
             foreach (ServerResponse response in batch)
             {
                 string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";

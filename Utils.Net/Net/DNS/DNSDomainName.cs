@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Utils.Net.DNS;
 
@@ -92,19 +91,19 @@ public readonly struct DNSDomainName :
     public override string ToString() => Value;
 
     /// <inheritdoc />
-    public int CompareTo([AllowNull] DNSDomainName other) => Value.CompareTo(other.Value);
+    public int CompareTo(DNSDomainName other) => Value.CompareTo(other.Value);
 
     /// <inheritdoc />
-    public int CompareTo([AllowNull] string other) => Value.CompareTo(other);
+    public int CompareTo(string? other) => Value.CompareTo(other);
 
     /// <inheritdoc />
-    public bool Equals([AllowNull] string other) => Value.Equals(other);
+    public bool Equals(string? other) => Value.Equals(other);
 
     /// <inheritdoc />
-    public bool Equals([AllowNull] DNSDomainName other) => Value.Equals(other.Value);
+    public bool Equals(DNSDomainName other) => Value.Equals(other.Value);
 
     /// <inheritdoc />
-    public override bool Equals(object obj) => obj switch
+    public override bool Equals(object? obj) => obj switch
     {
         DNSDomainName dn => Equals(dn),
         string str => Equals(str),
@@ -112,7 +111,7 @@ public readonly struct DNSDomainName :
     };
 
     /// <inheritdoc />
-    public int CompareTo(object obj) => obj switch
+    public int CompareTo(object? obj) => obj switch
     {
         DNSDomainName dn => CompareTo(dn),
         string str => CompareTo(str),

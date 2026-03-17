@@ -50,7 +50,7 @@ public class NameTable : TrueTypeTable
         }
 
         /// <inheritdoc/>
-        public virtual bool Equals(NameRecord other)
+        public virtual bool Equals(NameRecord? other)
         {
             return other != null
                 && PlatformID == other.PlatformID
@@ -60,7 +60,7 @@ public class NameTable : TrueTypeTable
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is NameRecord nr && Equals(nr);
+        public override bool Equals(object? obj) => obj is NameRecord nr && Equals(nr);
 
         /// <inheritdoc/>
         public override int GetHashCode() => ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID, LanguageID, NameID);

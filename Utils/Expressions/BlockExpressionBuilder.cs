@@ -127,14 +127,15 @@ public class BlockExpressionBuilder
     /// <returns>An array of <see cref="ParameterExpression"/> objects.</returns>
     private static ParameterExpression[] GetAssignedVariableInBlock(IEnumerable<Expression> expressions)
     {
-        List<ParameterExpression> usedVariables = new List<ParameterExpression>();
+        var usedVariables = new HashSet<ParameterExpression>();
 
         foreach (var expression in expressions)
         {
-            usedVariables.AddRange(GetVariablesInExpression(expression).Distinct());
+            foreach (var variable in GetVariablesInExpression(expression))
+                usedVariables.Add(variable);
         }
 
-        return usedVariables.Distinct().ToArray();
+        return [.. usedVariables];
     }
 
     /// <summary>
@@ -291,7 +292,7 @@ public class BlockExpressionBuilder
     {
         if (bindings is null) return [];
 
-        List<ParameterExpression> result = new List<ParameterExpression>();
+        List<ParameterExpression> result = [];
 
         foreach (var binding in bindings)
         {
@@ -326,7 +327,7 @@ public class BlockExpressionBuilder
     {
         if (initializers is null) return [];
 
-        List<ParameterExpression> result = new List<ParameterExpression>();
+        List<ParameterExpression> result = [];
         foreach (var init in initializers)
         {
             result.AddRange(GetVariablesInExpressions(init.Arguments));

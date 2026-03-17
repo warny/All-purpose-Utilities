@@ -10,6 +10,7 @@ namespace Utils.Collections;
 /// <typeparam name="K">Key structure</typeparam>
 /// <typeparam name="V">Value structure</typeparam>
 public class IndexedList<K, V> : ICollection<V>, IReadOnlyDictionary<K, V>
+    where K : notnull
 {
     private readonly Dictionary<K, V> dictionary = new Dictionary<K, V>();
     private readonly Func<V, K> getKey;

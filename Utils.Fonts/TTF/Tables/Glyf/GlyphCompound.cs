@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Utils.IO.Serialization;
@@ -20,7 +21,7 @@ public class GlyphCompound : GlyphBase
         /// <summary>
         /// The compound glyph flags that specify component properties.
         /// </summary>
-        public CompoundGlyfFlags flags;
+        public CompoundGlyfFlags Flags { get; internal set; }
 
         /// <summary>
         /// The glyph index of this component.
@@ -38,44 +39,44 @@ public class GlyphCompound : GlyphBase
         public int ComponentPoint { get; internal set; }
 
         /// <summary>
-        /// Transformation coefficient a (default is 1).
+        /// Matrix element [1,1]: horizontal scale (default is 1).
         /// </summary>
-        public float a { get; internal set; } = 1f;
+        public float M11 { get; internal set; } = 1f;
 
         /// <summary>
-        /// Transformation coefficient b (default is 0).
+        /// Matrix element [2,1]: vertical shear (default is 0).
         /// </summary>
-        public float b { get; internal set; } = 0f;
+        public float M21 { get; internal set; } = 0f;
 
         /// <summary>
-        /// Transformation coefficient c (default is 0).
+        /// Matrix element [1,2]: horizontal shear (default is 0).
         /// </summary>
-        public float c { get; internal set; } = 0f;
+        public float M12 { get; internal set; } = 0f;
 
         /// <summary>
-        /// Transformation coefficient d (default is 1).
+        /// Matrix element [2,2]: vertical scale (default is 1).
         /// </summary>
-        public float d { get; internal set; } = 1f;
+        public float M22 { get; internal set; } = 1f;
 
         /// <summary>
-        /// Horizontal translation (default is 0).
+        /// Horizontal translation offset (default is 0).
         /// </summary>
-        public float e { get; internal set; } = 0f;
+        public float TranslateX { get; internal set; } = 0f;
 
         /// <summary>
-        /// Vertical translation (default is 0).
+        /// Vertical translation offset (default is 0).
         /// </summary>
-        public float f { get; internal set; } = 0f;
+        public float TranslateY { get; internal set; } = 0f;
 
         /// <summary>
-        /// Computed horizontal adjustment factor.
+        /// Computed horizontal scale adjustment factor (derived from M11 and M21).
         /// </summary>
-        public float m { get; private set; } = 0f;
+        public float AdjustX { get; private set; } = 0f;
 
         /// <summary>
-        /// Computed vertical adjustment factor.
+        /// Computed vertical scale adjustment factor (derived from M12 and M22).
         /// </summary>
-        public float n { get; private set; } = 0f;
+        public float AdjustY { get; private set; } = 0f;
 
         /// <summary>
         /// Computes the transformation adjustment factors based on the current matrix values.
@@ -83,15 +84,15 @@ public class GlyphCompound : GlyphBase
         public virtual void ComputeTransform()
         {
             const float limit = (33f / 65535f);
-            m = Math.Max(Math.Abs(a), Math.Abs(b));
-            if (Math.Abs(Math.Abs(a) - Math.Abs(c)) < limit)
+            AdjustX = Math.Max(Math.Abs(M11), Math.Abs(M21));
+            if (Math.Abs(Math.Abs(M11) - Math.Abs(M12)) < limit)
             {
-                m *= 2f;
+                AdjustX *= 2f;
             }
-            n = Math.Max(Math.Abs(c), Math.Abs(d));
-            if (Math.Abs(Math.Abs(c) - Math.Abs(d)) < limit)
+            AdjustY = Math.Max(Math.Abs(M12), Math.Abs(M22));
+            if (Math.Abs(Math.Abs(M12) - Math.Abs(M22)) < limit)
             {
-                n *= 2f;
+                AdjustY *= 2f;
             }
         }
 
@@ -111,8 +112,8 @@ public class GlyphCompound : GlyphBase
         /// <returns>A new <see cref="TTFPoint"/> representing the transformed point.</returns>
         public TTFPoint Transform(float x, float y, bool onCurve)
             => new TTFPoint(
-                a * x + c * y + m * e,
-                b * x + d * y + n * f,
+                M11 * x + M12 * y + AdjustX * TranslateX,
+                M21 * x + M22 * y + AdjustY * TranslateY,
                 onCurve
             );
     }
@@ -150,18 +151,21 @@ public class GlyphCompound : GlyphBase
     /// <inheritdoc/>
     public override void ReadData(Reader data)
     {
-        List<GlyfComponent> comps = new List<GlyfComponent>();
+        const int MaxComponents = 1000;
+        List<GlyfComponent> comps = [];
         bool hasInstructions = false;
         GlyfComponent current;
         do
         {
+            if (comps.Count >= MaxComponents)
+                throw new InvalidDataException($"Compound glyph exceeds the maximum allowed component count ({MaxComponents}). The font data may be malformed.");
             current = new GlyfComponent();
-            current.flags = (CompoundGlyfFlags)data.Read<Int16>();
+            current.Flags = (CompoundGlyfFlags)data.Read<Int16>();
             current.GlyphIndex = data.Read<Int16>();
-            if (current.flags.HasFlag(CompoundGlyfFlags.ArgsAreXY))
+            if (current.Flags.HasFlag(CompoundGlyfFlags.ArgsAreXY))
             {
-                current.e = data.Read<Int16>();
-                current.f = data.Read<Int16>();
+                current.TranslateX = data.Read<Int16>();
+                current.TranslateY = data.Read<Int16>();
             }
             else
             {
@@ -169,30 +173,30 @@ public class GlyphCompound : GlyphBase
                 current.ComponentPoint = data.Read<Int16>();
             }
 
-            if (current.flags.HasFlag(CompoundGlyfFlags.HasScale))
+            if (current.Flags.HasFlag(CompoundGlyfFlags.HasScale))
             {
-                current.a = data.Read<Int16>() / 16384f;
-                current.d = current.a;
+                current.M11 = data.Read<Int16>() / 16384f;
+                current.M22 = current.M11;
             }
-            else if (current.flags.HasFlag(CompoundGlyfFlags.HasXYScale))
+            else if (current.Flags.HasFlag(CompoundGlyfFlags.HasXYScale))
             {
-                current.a = data.Read<Int16>() / 16384f;
-                current.d = data.Read<Int16>() / 16384f;
+                current.M11 = data.Read<Int16>() / 16384f;
+                current.M22 = data.Read<Int16>() / 16384f;
             }
-            else if (current.flags.HasFlag(CompoundGlyfFlags.HasTwoByTwo))
+            else if (current.Flags.HasFlag(CompoundGlyfFlags.HasTwoByTwo))
             {
-                current.a = data.Read<Int16>() / 16384f;
-                current.b = data.Read<Int16>() / 16384f;
-                current.c = data.Read<Int16>() / 16384f;
-                current.d = data.Read<Int16>() / 16384f;
+                current.M11 = data.Read<Int16>() / 16384f;
+                current.M21 = data.Read<Int16>() / 16384f;
+                current.M12 = data.Read<Int16>() / 16384f;
+                current.M22 = data.Read<Int16>() / 16384f;
             }
-            if (current.flags.HasFlag(CompoundGlyfFlags.HasInstructions))
+            if (current.Flags.HasFlag(CompoundGlyfFlags.HasInstructions))
             {
                 hasInstructions = true;
             }
             comps.Add(current);
         }
-        while ((current.flags & CompoundGlyfFlags.MoreComponents) != 0);
+        while ((current.Flags & CompoundGlyfFlags.MoreComponents) != 0);
         Components = comps.ToArray();
         byte[] instructions;
         if (hasInstructions)

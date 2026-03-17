@@ -57,7 +57,7 @@ public class ArrayComparer<T> : IComparer<IReadOnlyCollection<T>>
     /// <returns>
     /// A signed integer that indicates the relative values of <paramref name="x"/> and <paramref name="y"/>.
     /// </returns>
-    public int Compare(IReadOnlyCollection<T> x, IReadOnlyCollection<T> y)
+    public int Compare(IReadOnlyCollection<T>? x, IReadOnlyCollection<T>? y)
     {
         if (x is null && y is null) return 0;
         if (x is null) return -1;

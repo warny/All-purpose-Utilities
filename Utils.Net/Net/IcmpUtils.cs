@@ -23,7 +23,7 @@ public class IcmpUtils
         };
         packet.CreateRandomPayload(size);
 
-        return await SendEchoRequestAsync(destination, packet, timeout);
+        return await SendEchoRequestAsync(destination, packet, timeout).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -37,17 +37,17 @@ public class IcmpUtils
             destination.AddressFamily == AddressFamily.InterNetwork ? ProtocolType.Icmp : ProtocolType.IcmpV6);
 
         socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout);
-        await socket.ConnectAsync(destination, 0);
+        await socket.ConnectAsync(destination, 0).ConfigureAwait(false);
 
         byte[] requestBytes = packet.ToBytes();
-        await socket.SendAsync(requestBytes);
+        await socket.SendAsync(requestBytes).ConfigureAwait(false);
 
         DateTime startTime = DateTime.UtcNow;
         byte[] responseBuffer = new byte[requestBytes.Length]; // Expect same length
 
         try
         {
-            await socket.ReceiveAsync(responseBuffer);
+            await socket.ReceiveAsync(responseBuffer).ConfigureAwait(false);
             IcmpPacket responsePacket = IcmpPacket.ReadPacket(responseBuffer);
 
             // Verify response type
@@ -80,7 +80,7 @@ public class IcmpUtils
 
         for (int ttl = 1; ttl <= maxHops; ttl++)
         {
-            TracerouteHop hop = await GetTracerouteHopAsync(destination, isIPv4, socket, ttl);
+            TracerouteHop hop = await GetTracerouteHopAsync(destination, isIPv4, socket, ttl).ConfigureAwait(false);
             hops.Add(hop);
             if (hop.IsFinalDestination) break;
         }
@@ -96,7 +96,7 @@ public class IcmpUtils
         socket.SetSocketOption(isIPv4 ? SocketOptionLevel.IP : SocketOptionLevel.IPv6,
             SocketOptionName.IpTimeToLive, ttl);
 
-        await socket.ConnectAsync(destination, 0);
+        await socket.ConnectAsync(destination, 0).ConfigureAwait(false);
 
         IcmpPacket packet = new()
         {
@@ -105,14 +105,14 @@ public class IcmpUtils
         packet.CreateRandomPayload(4);
 
         byte[] icmpPacket = packet.ToBytes();
-        await socket.SendAsync(icmpPacket);
+        await socket.SendAsync(icmpPacket).ConfigureAwait(false);
 
         DateTime startTime = DateTime.UtcNow;
         byte[] responseBuffer = new byte[64];
 
         try
         {
-            await socket.ReceiveAsync(responseBuffer);
+            await socket.ReceiveAsync(responseBuffer).ConfigureAwait(false);
             TimeSpan rtt = DateTime.UtcNow - startTime;
             IcmpPacket response = IcmpPacket.ReadPacket(responseBuffer);
 

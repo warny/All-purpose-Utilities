@@ -207,7 +207,7 @@ public class CommandResponseServer : IDisposable
         {
             while (true)
             {
-                await _commandSignal.WaitAsync(cancellationToken);
+                await _commandSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
                 if (cancellationToken.IsCancellationRequested)
                 {
                     break;
@@ -225,7 +225,7 @@ public class CommandResponseServer : IDisposable
                     if (registration.RequiredContexts.All(_contexts.Contains))
                     {
                         CommandContext ctx = new(_contexts);
-                        responses = await registration.Handler(ctx, args);
+                        responses = await registration.Handler(ctx, args).ConfigureAwait(false);
                     }
                     else
                     {
@@ -234,7 +234,7 @@ public class CommandResponseServer : IDisposable
                 }
                 else if (CommandReceived is not null)
                 {
-                    responses = await CommandReceived.Invoke(command);
+                    responses = await CommandReceived.Invoke(command).ConfigureAwait(false);
                 }
                 responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
                 List<ServerResponse> responseList = responses.ToList();
@@ -242,7 +242,7 @@ public class CommandResponseServer : IDisposable
                 {
                     string line = _formatter(response);
                     Logger?.LogInformation("Sending: {Line}", line);
-                    await _writer.WriteLineAsync(line);
+                    await _writer.WriteLineAsync(line).ConfigureAwait(false);
                 }
 
                 if (responseList.Count > 0 && MaxConsecutiveErrors > 0)
@@ -254,7 +254,7 @@ public class CommandResponseServer : IDisposable
                         if (_errorCount >= MaxConsecutiveErrors)
                         {
                             Logger?.LogWarning("Maximum consecutive errors reached");
-                            await _listenTokenSource?.CancelAsync();
+                            await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
                             break;
                         }
                     }
@@ -286,9 +286,9 @@ public class CommandResponseServer : IDisposable
         _listenThread?.Join(TimeSpan.FromSeconds(1));
         try
         {
-            _processTask?.Wait();
+            _processTask?.GetAwaiter().GetResult();
         }
-        catch
+        catch (Exception)
         {
             // Ignore exceptions during shutdown.
         }

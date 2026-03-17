@@ -31,6 +31,21 @@ namespace Utils.Fonts.PostScript;
 /// </summary>
 public class PostScriptFont : IFont
 {
+    // Type 1 decryption constants — see Adobe Technical Note 5040 §7 "Charstring Encryption".
+    private const int Type1EncryptC1 = 52845;
+    private const int Type1EncryptC2 = 22719;
+    private const int Type1EncryptMask = 0xFFFF;
+
+    // Charstring integer encoding ranges and biases — see Adobe Technical Note 5040 §6.
+    // Single-byte integers (32–246): value = b - CharStringIntBias.
+    private const int CharStringIntBias = 139;
+    // Two-byte positive integers (247–250, byte2): value = (b - CharStringPosByte1Start) * 256 + byte2 + CharStringTwoByteOffset.
+    private const int CharStringPosByte1Start = 247;
+    // Two-byte negative integers (251–254, byte2): value = -(b - CharStringNegByte1Start) * 256 - byte2 - CharStringTwoByteOffset.
+    private const int CharStringNegByte1Start = 251;
+    private const int CharStringTwoByteScale = 256;
+    private const int CharStringTwoByteOffset = 108;
+
     /// <summary>
     /// Storage of glyphs indexed by character code.
     /// </summary>
@@ -55,7 +70,7 @@ public class PostScriptFont : IFont
     public static PostScriptFont Load(Stream stream)
     {
         using var reader = new StreamReader(stream);
-        var glyphs = new Dictionary<char, PostScriptGlyph>();
+        Dictionary<char, PostScriptGlyph> glyphs = new();
         string? line;
         char currentChar = '\0';
         float width = 0, height = 0, baseline = 0;
@@ -67,7 +82,10 @@ public class PostScriptFont : IFont
                 continue;
             if (line.StartsWith("Glyph:", StringComparison.OrdinalIgnoreCase))
             {
-                currentChar = line.Split(':', 2)[1].Trim()[0];
+                var glyphValue = line.Split(':', 2)[1].Trim();
+                if (glyphValue.Length == 0)
+                    throw new FormatException($"Glyph line has no character value: '{line}'");
+                currentChar = glyphValue[0];
                 commands = new();
             }
             else if (line.StartsWith("Width:", StringComparison.OrdinalIgnoreCase))
@@ -163,7 +181,7 @@ public class PostScriptFont : IFont
         {
             char c = pfaText[i];
             if (char.IsWhiteSpace(c)) continue;
-            if (pfaText.Substring(i).StartsWith("cleartomark", StringComparison.OrdinalIgnoreCase))
+            if (pfaText.AsSpan(i).StartsWith("cleartomark", StringComparison.OrdinalIgnoreCase))
                 break;
             if (Uri.IsHexDigit(c)) hexBuilder.Append(c);
         }
@@ -265,7 +283,7 @@ public class PostScriptFont : IFont
     /// <returns>Newly created <see cref="PostScriptFont"/>.</returns>
     private static PostScriptFont ParseType1(string text)
     {
-        var glyphs = new Dictionary<char, PostScriptGlyph>();
+        Dictionary<char, PostScriptGlyph> glyphs = new();
         int lenIV = 4;
         var mLenIv = Regex.Match(text, @"/lenIV\s+(\d+)");
         if (mLenIv.Success) lenIV = int.Parse(mLenIv.Groups[1].Value, CultureInfo.InvariantCulture);
@@ -316,10 +334,12 @@ public class PostScriptFont : IFont
     /// <returns>Decoded binary data.</returns>
     internal static byte[] ConvertHex(string hex)
     {
+        if (hex.Length % 2 != 0)
+            throw new ArgumentException($"Hex string must have an even length, got {hex.Length}.", nameof(hex));
         var bytes = new byte[hex.Length / 2];
         for (int i = 0; i < bytes.Length; i++)
         {
-            bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            bytes[i] = byte.Parse(hex.AsSpan(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
         }
         return bytes;
     }
@@ -346,7 +366,7 @@ public class PostScriptFont : IFont
         {
             byte cipher = data[i];
             byte plain = (byte)(cipher ^ (r >> 8));
-            r = ((cipher + r) * 52845 + 22719) & 0xFFFF;
+            r = ((cipher + r) * Type1EncryptC1 + Type1EncryptC2) & Type1EncryptMask;
             result[i] = plain;
         }
         if (discard > 0 && discard < result.Length)
@@ -362,20 +382,26 @@ public class PostScriptFont : IFont
             int b = data[state.Index++];
             if (b >= 32 && b <= 246)
             {
-                state.Stack.Push(b - 139);
+                state.Stack.Push(b - CharStringIntBias);
             }
-            else if (b >= 247 && b <= 250)
+            else if (b >= CharStringPosByte1Start && b <= 250)
             {
+                if (state.Index >= data.Length)
+                    throw new InvalidDataException("Truncated charstring: expected a second byte for a two-byte positive integer.");
                 int b2 = data[state.Index++];
-                state.Stack.Push((b - 247) * 256 + b2 + 108);
+                state.Stack.Push((b - CharStringPosByte1Start) * CharStringTwoByteScale + b2 + CharStringTwoByteOffset);
             }
-            else if (b >= 251 && b <= 254)
+            else if (b >= CharStringNegByte1Start && b <= 254)
             {
+                if (state.Index >= data.Length)
+                    throw new InvalidDataException("Truncated charstring: expected a second byte for a two-byte negative integer.");
                 int b2 = data[state.Index++];
-                state.Stack.Push(-(b - 251) * 256 - b2 - 108);
+                state.Stack.Push(-(b - CharStringNegByte1Start) * CharStringTwoByteScale - b2 - CharStringTwoByteOffset);
             }
             else if (b == 255)
             {
+                if (state.Index + 3 >= data.Length)
+                    throw new InvalidDataException("Truncated charstring: expected 4 bytes for a 32-bit integer.");
                 int num = (data[state.Index] << 24) | (data[state.Index + 1] << 16) | (data[state.Index + 2] << 8) | data[state.Index + 3];
                 state.Index += 4;
                 state.Stack.Push(num);

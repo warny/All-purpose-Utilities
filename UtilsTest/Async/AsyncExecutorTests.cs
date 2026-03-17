@@ -97,5 +97,94 @@ namespace UtilsTest.Async
 
             CollectionAssert.AreEqual(new[] { 0, 1 }, order);
         }
+
+        // ── Null argument validation ────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task ExecuteParallelAsync_NullFunctions_ThrowsArgumentNullException()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+                () => executor.ExecuteParallelAsync(null!));
+        }
+
+        [TestMethod]
+        public async Task ExecuteSequentialAsync_NullFunctions_ThrowsArgumentNullException()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+                () => executor.ExecuteSequentialAsync(null!));
+        }
+
+        [TestMethod]
+        public async Task ExecuteAsync_NullFunctions_ThrowsArgumentNullException()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+                () => executor.ExecuteAsync(null!, 3));
+        }
+
+        [TestMethod]
+        public async Task ExecuteAsync_NegativeThreshold_ThrowsArgumentOutOfRangeException()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            Func<Task>[] tasks = [async () => await Task.Delay(1)];
+            await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(
+                () => executor.ExecuteAsync(tasks, -1));
+        }
+
+        [TestMethod]
+        public async Task ExecuteParallelAsync_NullItemInCollection_ThrowsArgumentNullException()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            Func<Task>[] tasks = [null!];
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+                () => executor.ExecuteParallelAsync(tasks));
+        }
+
+        [TestMethod]
+        public async Task ExecuteSequentialAsync_NullItemInCollection_ThrowsArgumentNullException()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            Func<Task>[] tasks = [null!];
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+                () => executor.ExecuteSequentialAsync(tasks));
+        }
+
+        // ── Exception propagation ───────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task ExecuteParallelAsync_TaskThrows_ExceptionPropagates()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            Func<Task>[] tasks =
+            [
+                async () => await Task.Delay(1),
+                async () => { await Task.Delay(1); throw new InvalidOperationException("boom"); },
+            ];
+
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+                () => executor.ExecuteParallelAsync(tasks));
+        }
+
+        [TestMethod]
+        public async Task ExecuteSequentialAsync_TaskThrows_ExceptionPropagatesAndStopsExecution()
+        {
+            IAsyncExecutor executor = new AsyncExecutor();
+            int executedCount = 0;
+
+            Func<Task>[] tasks =
+            [
+                async () => { await Task.Delay(1); executedCount++; },
+                async () => { await Task.Delay(1); throw new InvalidOperationException("stop here"); },
+                async () => { await Task.Delay(1); executedCount++; },
+            ];
+
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+                () => executor.ExecuteSequentialAsync(tasks));
+
+            // Third task must not have run
+            Assert.AreEqual(1, executedCount);
+        }
     }
 }

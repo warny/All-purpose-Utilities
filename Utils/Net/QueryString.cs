@@ -389,8 +389,8 @@ public class QueryString
         /// <param name="left">The query value wrapper being compared.</param>
         /// <param name="right">The string representation to compare with.</param>
         /// <returns><see langword="true"/> when <paramref name="left"/> expands to <paramref name="right"/>.</returns>
-        public static bool operator ==(QueryValues left, string right)
-                => left.Equals(right);
+        public static bool operator ==(QueryValues? left, string? right)
+                => left?.Equals(right) ?? right is null;
 
         /// <summary>
         /// Determines whether the query values differ from the provided string representation.
@@ -398,8 +398,8 @@ public class QueryString
         /// <param name="left">The query value wrapper being compared.</param>
         /// <param name="right">The string representation to compare with.</param>
         /// <returns><see langword="true"/> when the values do not equal <paramref name="right"/>.</returns>
-        public static bool operator !=(QueryValues left, string right)
-                => !left.Equals(right);
+        public static bool operator !=(QueryValues? left, string? right)
+                => !(left == right);
 
         /// <summary>
         /// Determines whether the query values are sequence-equal to the provided collection.
@@ -407,8 +407,8 @@ public class QueryString
         /// <param name="left">The query value wrapper being compared.</param>
         /// <param name="right">The sequence of query values to compare with.</param>
         /// <returns><see langword="true"/> when all values are equal in order.</returns>
-        public static bool operator ==(QueryValues left, IEnumerable<string> right)
-                => left.Equals(right);
+        public static bool operator ==(QueryValues? left, IEnumerable<string>? right)
+                => left?.Equals(right) ?? right is null;
 
         /// <summary>
         /// Determines whether the query values differ from the provided collection.
@@ -416,8 +416,8 @@ public class QueryString
         /// <param name="left">The query value wrapper being compared.</param>
         /// <param name="right">The sequence of query values to compare with.</param>
         /// <returns><see langword="true"/> when the sequences contain different values.</returns>
-        public static bool operator !=(QueryValues left, IEnumerable<string> right)
-                => !left.Equals(right);
+        public static bool operator !=(QueryValues? left, IEnumerable<string>? right)
+                => !(left == right);
 
         #region IList<string> Implementation
 
@@ -468,7 +468,7 @@ public class QueryString
         public void RemoveAt(int index) => _values.RemoveAt(index);
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
                 => obj switch
                 {
                     string str => Equals(str),
@@ -477,10 +477,10 @@ public class QueryString
                 };
 
         /// <inheritdoc/>
-        public bool Equals(string other) => (string)this == other;
+        public bool Equals(string? other) => (string)this == other;
 
         /// <inheritdoc/>
-        public bool Equals(IEnumerable<string> other)
+        public bool Equals(IEnumerable<string>? other)
                 => EnumerableEqualityComparer<string>.Default.Equals(this, other);
 
         /// <inheritdoc/>

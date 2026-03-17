@@ -116,7 +116,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// </summary>
     /// <param name="other">Component array to compare with.</param>
     /// <returns><see langword="true"/> if arrays are equal; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(T[] other)
+    public bool Equals(T[]? other)
     {
         if (other is null) return false;
         return ComponentComparer.Equals(this.components, other);

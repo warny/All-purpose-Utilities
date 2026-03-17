@@ -36,7 +36,11 @@ public static class TtfEncoderFactory
                     return Encoding.BigEndianUnicode;
             }
         }
-        catch
+        catch (ArgumentException)
+        {
+            return Encoding.ASCII;
+        }
+        catch (NotSupportedException)
         {
             return Encoding.ASCII;
         }

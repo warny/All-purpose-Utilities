@@ -112,7 +112,7 @@ public class SqlBuilderInterpolator
         }
         while (DbCommand.Parameters.Contains(parameterName));
 
-        AddParameter(_parameters.GetOrAdd(name, () => DbCommand.AddNewParameter(parameterName, DataUtils.GetDbType(typeof(T)), value)));
+        AddParameter(_parameters.GetOrAdd(name ?? parameterName, () => DbCommand.AddNewParameter(parameterName, DataUtils.GetDbType(typeof(T)), value)));
     }
 
     /// <summary>

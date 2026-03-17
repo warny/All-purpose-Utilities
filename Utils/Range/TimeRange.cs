@@ -33,7 +33,7 @@ public sealed class TimeRange : CyclicRange<TimeOnly>
     /// <summary>
     /// Returns a hash code for the current time range.
     /// </summary>
-    /// <returns>A hash code based on <see cref="Start"/> and <see cref="End"/>.</returns>
+    /// <returns>A hash code based on <see cref="IRange{TimeOnly}.Start"/> and <see cref="IRange{TimeOnly}.End"/>.</returns>
     public override int GetHashCode() => HashCode.Combine(Start, End);
 }
 

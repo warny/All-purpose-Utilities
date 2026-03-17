@@ -37,7 +37,7 @@ internal sealed class ExpressionListReader
             throw new ArgumentException("Segment name prefix cannot be null or whitespace.", nameof(segmentNamePrefix));
         }
 
-        var results = new List<ExpressionReadResult>();
+        List<ExpressionReadResult> results = [];
         int index = 1;
         while (true)
         {

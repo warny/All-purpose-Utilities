@@ -69,14 +69,14 @@ namespace Utils.Geography.Model
         /// </summary>
         /// <param name="other">The other <see cref="ProjectedPoint{T}"/> to compare to.</param>
         /// <returns>True if the points are equal, false otherwise.</returns>
-        public bool Equals(ProjectedPoint<T> other)
+        public bool Equals(ProjectedPoint<T>? other)
         {
             if (other is null) return false;
             return X.Equals(other.X) && Y.Equals(other.Y) && Projection.Equals(other.Projection);
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is ProjectedPoint<T> other && Equals(other);
         }
@@ -99,7 +99,7 @@ namespace Utils.Geography.Model
         /// <param name="format">A format string for the numeric values.</param>
         /// <param name="formatProvider">An object that provides culture-specific formatting information.</param>
         /// <returns>A formatted string representing the point.</returns>
-        public string ToString(string format, IFormatProvider formatProvider)
+        public string ToString(string? format, IFormatProvider? formatProvider)
         {
             return $"x={X.ToString(format, formatProvider)}, y={Y.ToString(format, formatProvider)}, projection={Projection}";
         }

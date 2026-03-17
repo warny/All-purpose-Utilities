@@ -12,6 +12,8 @@ namespace Utils.Collections
     /// <typeparam name="T1">The type of the first key.</typeparam>
     /// <typeparam name="T2">The type of the second key.</typeparam>
     public class DoubleIndexedDictionary<T1, T2> : IReadOnlyCollection<KeyValuePair<T1, T2>>
+        where T1 : notnull
+        where T2 : notnull
     {
         private readonly Dictionary<T1, T2> left = new();
         private readonly Dictionary<T2, T1> right = new();

@@ -14,7 +14,7 @@ using Utils.OData.Metadatas;
 namespace Utils.OData.Generators;
 
 /// <summary>
-/// Generates strongly typed OData entity classes for contexts derived from <see cref="Utils.OData.ODataContext"/>.
+/// Generates strongly typed OData entity classes for contexts derived from <c>ODataContext</c>.
 /// </summary>
 [Generator]
 public sealed class ODataEntityGenerator : ISourceGenerator
@@ -236,7 +236,7 @@ public sealed class ODataEntityGenerator : ISourceGenerator
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = ex.ToString();
             return false;
         }
     }
@@ -387,7 +387,7 @@ public sealed class ODataEntityGenerator : ISourceGenerator
     private sealed class SyntaxReceiver : ISyntaxReceiver
     {
         /// <summary>
-        /// Gets the class declarations that derive from <see cref="Utils.OData.ODataContext"/>.
+        /// Gets the class declarations that derive from <c>ODataContext</c>.
         /// </summary>
         public List<ClassDeclarationSyntax> Candidates { get; } = new();
 

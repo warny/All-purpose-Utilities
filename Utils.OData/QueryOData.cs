@@ -917,10 +917,9 @@ public class QueryOData : IDisposable
                 }
                 catch (AggregateException aggregate) when (aggregate.InnerExceptions.Count == 1)
                 {
-                    if (aggregate.InnerException is not OperationCanceledException)
-                    {
-                        _ = aggregate.InnerException;
-                    }
+                    // Swallow exceptions during disposal to avoid masking the original exception.
+                    // AggregateException with a single OperationCanceledException is the expected case.
+                    _ = aggregate;
                 }
                 catch (OperationCanceledException)
                 {

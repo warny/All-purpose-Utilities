@@ -54,9 +54,14 @@ public static class PathUtils
             {
                 matches = Directory.EnumerateDirectories(dir, segmentPattern);
             }
-            catch
+            catch (UnauthorizedAccessException)
             {
                 // skip inaccessible directories
+                continue;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // directory disappeared between the Exists check and enumeration
                 continue;
             }
 

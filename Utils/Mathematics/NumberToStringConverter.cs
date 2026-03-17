@@ -351,6 +351,7 @@ namespace Utils.Mathematics
         /// </summary>
         /// <param name="numerator">The numerator of the fraction.</param>
         /// <param name="denominator">The denominator of the fraction.</param>
+        /// <param name="allowFractionNames">When <see langword="true"/>, uses named fraction suffixes when available.</param>
         /// <returns>The textual representation of the fraction.</returns>
         private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true)
         {

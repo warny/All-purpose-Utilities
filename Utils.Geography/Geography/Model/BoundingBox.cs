@@ -172,8 +172,9 @@ namespace Utils.Geography.Model
         /// </summary>
         /// <param name="other">Bounding box to compare.</param>
         /// <returns><see langword="true"/> if both bounding boxes have identical coordinates; otherwise <see langword="false"/>.</returns>
-        public bool Equals(BoundingBox<T> other)
+        public bool Equals(BoundingBox<T>? other)
         {
+            if (other is null) return false;
             return this.MaxLatitude.Equals(other.MaxLatitude)
                     && this.MaxLongitude.Equals(other.MaxLongitude)
                     && this.MinLatitude.Equals(other.MinLatitude)
@@ -185,7 +186,7 @@ namespace Utils.Geography.Model
         /// </summary>
         /// <param name="obj">Object to compare with the current bounding box.</param>
         /// <returns><see langword="true"/> if the specified object is equal to the current bounding box; otherwise <see langword="false"/>.</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(this, obj)) return true;
             return obj is BoundingBox<T> other && Equals(other);
@@ -219,7 +220,7 @@ namespace Utils.Geography.Model
         /// <param name="format">Format string for numeric values.</param>
         /// <param name="formatProvider">Culture-specific format provider.</param>
         /// <returns>A string representing this bounding box.</returns>
-        public string ToString(string format, IFormatProvider formatProvider)
+        public string ToString(string? format, IFormatProvider? formatProvider)
         {
             return string.Format(
                     formatProvider,
@@ -237,7 +238,7 @@ namespace Utils.Geography.Model
         /// <param name="left">First bounding box to compare.</param>
         /// <param name="right">Second bounding box to compare.</param>
         /// <returns><see langword="true"/> if both bounding boxes are equal; otherwise <see langword="false"/>.</returns>
-        public static bool operator ==(BoundingBox<T> left, BoundingBox<T> right) => left.Equals(right);
+        public static bool operator ==(BoundingBox<T>? left, BoundingBox<T>? right) => left?.Equals(right) ?? right is null;
 
         /// <summary>
         /// Determines whether two bounding boxes are not equal.
@@ -245,6 +246,6 @@ namespace Utils.Geography.Model
         /// <param name="left">First bounding box to compare.</param>
         /// <param name="right">Second bounding box to compare.</param>
         /// <returns><see langword="true"/> if the bounding boxes differ; otherwise <see langword="false"/>.</returns>
-        public static bool operator !=(BoundingBox<T> left, BoundingBox<T> right) => !left.Equals(right);
+        public static bool operator !=(BoundingBox<T>? left, BoundingBox<T>? right) => !(left == right);
     }
 }

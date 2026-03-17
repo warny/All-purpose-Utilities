@@ -26,6 +26,10 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
 {
     #region Private Fields
 
+    // Classic polynomial hash constants (Bernstein-style).
+    private const int HashSeed = 17;
+    private const int HashMultiplier = 31;
+
     private readonly List<IRange<T>> _ranges = new();
 
     #endregion
@@ -102,6 +106,7 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <typeparam name="T1">The type of the elements in the range.</typeparam>
     /// <param name="range">The string containing the ranges.</param>
     /// <param name="itemSearchPattern">The regex pattern to match the elements in the range.</param>
+    /// <param name="separators">The separator strings used to delimit the start and end values.</param>
     /// <param name="valueParser">A function to parse the string into type T1.</param>
     /// <returns>An enumerable collection of parsed Range objects.</returns>
     protected static IEnumerable<IRange<T1>> InnerParse<T1>(string range, string itemSearchPattern, IEnumerable<string> separators, Func<string, T1> valueParser)
@@ -599,10 +604,10 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     {
         unchecked
         {
-            int hash = 17;
+            int hash = HashSeed;
             foreach (var interval in _ranges)
             {
-                hash = hash * 31 + interval.GetHashCode();
+                hash = hash * HashMultiplier + interval.GetHashCode();
             }
             return hash;
         }

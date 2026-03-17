@@ -45,17 +45,17 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is CmapSubtable other && Equals(other);
+        public override bool Equals(object? obj) => obj is CmapSubtable other && Equals(other);
 
         /// <inheritdoc/>
-        public bool Equals(CmapSubtable other) =>
+        public bool Equals(CmapSubtable? other) =>
             other != null && PlatformID == other.PlatformID && PlatformSpecificID == other.PlatformSpecificID;
 
         /// <inheritdoc/>
         public override int GetHashCode() => ObjectUtils.ComputeHash(PlatformID, PlatformSpecificID);
 
         /// <inheritdoc/>
-        public int CompareTo([System.Diagnostics.CodeAnalysis.AllowNull] CmapSubtable other)
+        public int CompareTo(CmapSubtable? other)
         {
             if (other is null)
             {
@@ -193,10 +193,14 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
                     AddCMap(subTable.platformID, subTable.platformSpecificID, cMap);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is InvalidDataException or FormatException
+                                           or NotSupportedException or ArgumentException
+                                           or OverflowException or IndexOutOfRangeException)
             {
-                Console.WriteLine($"Error reading cmap subtable. PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}");
-                Console.WriteLine($"Reason: {ex.Message}");
+                // Skip unsupported or malformed cmap subtables rather than failing the entire font load.
+                // PlatformID and PlatformSpecificID are logged at debug level for diagnostics.
+                System.Diagnostics.Debug.WriteLine(
+                    $"Skipping cmap subtable PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}: {ex.Message}");
             }
         }
 

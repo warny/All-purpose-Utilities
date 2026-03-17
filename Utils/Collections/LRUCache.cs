@@ -11,6 +11,7 @@ namespace Utils.Collections;
 /// <typeparam name="K">The type of keys in the cache.</typeparam>
 /// <typeparam name="V">The type of values in the cache.</typeparam>
 public class LRUCache<K, V> : IDictionary<K, V>
+    where K : notnull
 {
     private readonly int capacity;
     private readonly Dictionary<K, LinkedListNode<KeyValuePair<K, V>>> cacheMap;

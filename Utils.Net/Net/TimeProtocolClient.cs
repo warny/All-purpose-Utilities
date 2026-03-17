@@ -21,13 +21,13 @@ public static class TimeProtocolClient
     public static async Task<DateTime> GetTimeAsync(string host, int port)
     {
         using TcpClient client = new();
-        await client.ConnectAsync(host, port);
+        await client.ConnectAsync(host, port).ConfigureAwait(false);
         byte[] buffer = new byte[4];
         int bytesRead = 0;
         NetworkStream stream = client.GetStream();
         while (bytesRead < 4)
         {
-            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead));
+            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead)).ConfigureAwait(false);
             if (read == 0)
             {
                 throw new IOException("Connection closed before 4 bytes were received.");

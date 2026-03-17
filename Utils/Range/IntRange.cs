@@ -96,7 +96,7 @@ namespace Utils.Range
                 return maxCompare;
             }
 
-            public int CompareTo(object obj)
+            public int CompareTo(object? obj)
                 => obj switch
                 {
                     SimpleRange r => CompareTo(r),
@@ -763,7 +763,7 @@ namespace Utils.Range
         /// Joins each range with the current culture's list separator (or the formatProvider's culture).
         /// Each range is printed as "∞-∞", "∞-5", "5-∞", etc.
         /// </summary>
-        public string ToString(string format, IFormatProvider formatProvider)
+        public string? ToString(string? format, IFormatProvider? formatProvider)
         {
             var culture = formatProvider as CultureInfo ?? CultureInfo.CurrentCulture;
             var sep = culture.TextInfo.ListSeparator;

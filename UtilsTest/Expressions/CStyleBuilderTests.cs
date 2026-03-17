@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Utils.Expressions.Builders;
 
 namespace UtilsTest.Expressions;
@@ -142,7 +143,8 @@ public class CStyleBuilderTests
         }
         catch (TargetInvocationException ex) when (ex.InnerException is not null)
         {
-            throw ex.InnerException;
+            ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();
+            throw; // unreachable — satisfies compiler flow analysis
         }
     }
 

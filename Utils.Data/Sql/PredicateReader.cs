@@ -6,7 +6,7 @@ namespace Utils.Data.Sql;
 #nullable enable
 
 /// <summary>
-    /// Reads predicates appearing in clauses such as WHERE, HAVING, or JOIN conditions.
+/// Reads predicates appearing in clauses such as WHERE, HAVING, or JOIN conditions.
 /// </summary>
 internal sealed class PredicateReader
 {
@@ -36,7 +36,7 @@ internal sealed class PredicateReader
             throw new ArgumentException("Segment name cannot be null or whitespace.", nameof(segmentName));
         }
 
-        var tokens = new List<SqlToken>();
+        List<SqlToken> tokens = [];
         int depth = 0;
         while (!parser.IsAtEnd)
         {

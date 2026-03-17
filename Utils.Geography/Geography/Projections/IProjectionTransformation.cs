@@ -50,7 +50,7 @@ public abstract class ProjectionTransformation<T> :
     public abstract GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint);
 
     /// <inheritdoc/>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
         => obj switch
         {
             ProjectionTransformation<T> other => Equals(other),
@@ -66,7 +66,7 @@ public abstract class ProjectionTransformation<T> :
     /// <returns>
     /// <see langword="true"/> if both instances are of the same runtime type; otherwise <see langword="false"/>.
     /// </returns>
-    public virtual bool Equals(ProjectionTransformation<T> other)
+    public virtual bool Equals(ProjectionTransformation<T>? other)
         => other is not null && this.GetType() == other.GetType();
 
     /// <inheritdoc/>
@@ -80,7 +80,7 @@ public abstract class ProjectionTransformation<T> :
     /// <param name="p1">The first transformation.</param>
     /// <param name="p2">The second transformation.</param>
     /// <returns><see langword="true"/> if both transformations are equal; otherwise <see langword="false"/>.</returns>
-    public static bool operator ==(ProjectionTransformation<T> p1, ProjectionTransformation<T> p2)
+    public static bool operator ==(ProjectionTransformation<T>? p1, ProjectionTransformation<T>? p2)
         => p1?.Equals(p2) ?? p2 is null;
 
     /// <summary>
@@ -89,6 +89,6 @@ public abstract class ProjectionTransformation<T> :
     /// <param name="p1">The first transformation.</param>
     /// <param name="p2">The second transformation.</param>
     /// <returns><see langword="true"/> if the transformations differ; otherwise <see langword="false"/>.</returns>
-    public static bool operator !=(ProjectionTransformation<T> p1, ProjectionTransformation<T> p2)
+    public static bool operator !=(ProjectionTransformation<T>? p1, ProjectionTransformation<T>? p2)
         => !(p1 == p2);
 }

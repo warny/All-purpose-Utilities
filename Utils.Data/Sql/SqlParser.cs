@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -10,6 +11,9 @@ namespace Utils.Data.Sql;
 
 #nullable enable
 
+/// <summary>
+/// Parses SQL text into a structured <see cref="SqlStatement"/> representation.
+/// </summary>
 public sealed class SqlParser
 {
     private static readonly IReadOnlyDictionary<string, Func<SqlParser, WithClause?, SqlStatement>> StatementParsers =
@@ -61,6 +65,12 @@ public sealed class SqlParser
         this.tokens = tokens.ToList();
     }
 
+    /// <summary>
+    /// Creates a <see cref="SqlParser"/> from the provided SQL text.
+    /// </summary>
+    /// <param name="sql">The SQL text to parse.</param>
+    /// <param name="syntaxOptions">Optional syntax options; defaults to <see cref="SqlSyntaxOptions.Default"/> if <see langword="null"/>.</param>
+    /// <returns>A new <see cref="SqlParser"/> ready to parse the tokenized input.</returns>
     public static SqlParser Create(string sql, SqlSyntaxOptions? syntaxOptions = null)
     {
         syntaxOptions ??= SqlSyntaxOptions.Default;
@@ -68,10 +78,17 @@ public sealed class SqlParser
         return new SqlParser(tokenizer.Tokenize(), syntaxOptions);
     }
 
-    public SqlStatement ParseStatement(bool WithOptionalCte = true)
+    /// <summary>
+    /// Parses the next SQL statement from the token stream.
+    /// </summary>
+    /// <param name="withOptionalCte">
+    /// When <see langword="true"/> (default), a leading <c>WITH</c> clause is parsed if present.
+    /// </param>
+    /// <returns>The parsed <see cref="SqlStatement"/>.</returns>
+    public SqlStatement ParseStatement(bool withOptionalCte = true)
     {
         WithClause? withClause = null;
-        if (WithOptionalCte && TryConsumeKeyword("WITH"))
+        if (withOptionalCte && TryConsumeKeyword("WITH"))
         {
             withClause = ParseWithClause();
         }
@@ -80,6 +97,9 @@ public sealed class SqlParser
         return statement;
     }
 
+    /// <summary>
+    /// Advances past any trailing semicolon terminators.
+    /// </summary>
     public void ConsumeOptionalTerminator()
     {
         while (!IsAtEnd && Peek().Text == ";")
@@ -88,6 +108,10 @@ public sealed class SqlParser
         }
     }
 
+    /// <summary>
+    /// Verifies that all tokens have been consumed.
+    /// </summary>
+    /// <exception cref="SqlParseException">Thrown when unexpected tokens remain in the input.</exception>
     public void EnsureEndOfInput()
     {
         if (!IsAtEnd)
@@ -159,11 +183,6 @@ public sealed class SqlParser
     }
 
     /// <summary>
-    /// Parses a SELECT statement, reading each clause segment in order.
-    /// </summary>
-    /// <param name="withClause">The WITH clause associated with the SELECT, if any.</param>
-    /// <returns>The parsed <see cref="SqlSelectStatement"/> instance.</returns>
-    /// <summary>
     /// Builds a <see cref="SqlSegment"/> from the provided tokens.
     /// </summary>
     /// <param name="name">The logical name of the segment.</param>
@@ -178,6 +197,7 @@ public sealed class SqlParser
     /// Builds the segment parts from the provided token list.
     /// </summary>
     /// <param name="tokens">Tokens that compose the segment.</param>
+    /// <param name="syntaxOptions">Syntax options used when identifying subqueries within the segment.</param>
     /// <returns>The collection of parts representing the segment.</returns>
     internal static IReadOnlyList<ISqlSegmentPart> BuildSegmentParts(List<SqlToken> tokens, SqlSyntaxOptions syntaxOptions)
     {
@@ -475,7 +495,7 @@ public sealed class SqlParser
     /// <summary>
     /// Attempts to consume a clause keyword, including composite keywords such as "GROUP BY".
     /// </summary>
-    /// <param name="keyword">The keyword text to match.</param>
+    /// <param name="parts">The individual keyword parts to match in sequence.</param>
     /// <param name="consumedTokens">The tokens consumed when the keyword is matched.</param>
     /// <returns><c>true</c> when the keyword is consumed; otherwise, <c>false</c>.</returns>
     private bool TryConsumeSegmentKeyword(string[] parts, out List<SqlToken> consumedTokens)
@@ -547,7 +567,12 @@ public sealed class SqlParser
 
     internal SqlToken Peek(int offset = 0)
     {
-        return tokens[position + offset];
+        int index = position + offset;
+        if (index < 0 || index >= tokens.Count)
+        {
+            throw new InvalidOperationException($"Unexpected end of token stream at position {position} (offset {offset}).");
+        }
+        return tokens[index];
     }
 
     private SqlToken? PeekOptional(int offset)
@@ -563,6 +588,10 @@ public sealed class SqlParser
 
     internal SqlToken Read()
     {
+        if (position >= tokens.Count)
+        {
+            throw new InvalidOperationException($"Unexpected end of token stream at position {position}.");
+        }
         return tokens[position++];
     }
 }
@@ -612,7 +641,7 @@ internal sealed class SqlToken
 
 internal sealed class SqlTokenizer
 {
-    private static readonly HashSet<string> Keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> Keywords = new HashSet<string>
     {
         "SELECT",
         "FROM",
@@ -656,7 +685,7 @@ internal sealed class SqlTokenizer
         "AND",
         "OR",
         "NOT",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     private readonly string sql;
     private readonly SqlSyntaxOptions syntaxOptions;

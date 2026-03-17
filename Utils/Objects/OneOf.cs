@@ -111,7 +111,7 @@ public readonly struct OneOf<T1, T2> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         return _h switch
         {
@@ -288,7 +288,7 @@ public readonly struct OneOf<T1, T2, T3> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         return _h switch
         {
@@ -496,7 +496,7 @@ public readonly struct OneOf<T1, T2, T3, T4> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         return _h switch
         {
@@ -735,7 +735,7 @@ public readonly struct OneOf<T1, T2, T3, T4, T5> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         return _h switch
         {
@@ -998,7 +998,7 @@ public readonly struct OneOf<T1, T2, T3, T4, T5, T6> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         if (_h == 1) return _o1.Equals(obj);
         else if (_h == 2) return _o2.Equals(obj);
@@ -1295,7 +1295,7 @@ public readonly struct OneOf<T1, T2, T3, T4, T5, T6, T7> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         return _h switch
         {
@@ -1628,7 +1628,7 @@ public readonly struct OneOf<T1, T2, T3, T4, T5, T6, T7, T8> :
     /// </summary>
     /// <param name="obj">The object to compare with the stored value.</param>
     /// <returns><see langword="true"/> when the stored value equals <paramref name="obj"/>; otherwise, <see langword="false"/>.</returns>
-    public readonly override bool Equals(object obj)
+    public readonly override bool Equals(object? obj)
     {
         return _h switch
         {
