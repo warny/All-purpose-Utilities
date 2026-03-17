@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utils.Drawing;
+using Utils.Fonts;
+using Utils.Fonts.TTF;
+using Utils.Fonts.TTF.Tables;
 using Utils.Imaging;
 
 namespace DrawTest
@@ -102,8 +107,51 @@ namespace DrawTest
 
                 d.FillShape2((x, y) => new ColorArgb32(128, 0, 128), s2);
 
+                DrawHelloWorld(d);
             }
             pictureBox1.Image = image;
+        }
+
+        private void DrawHelloWorld(DrawI<ColorArgb32> draw)
+        {
+            const string fontPath = @"C:\Windows\Fonts\arial.ttf";
+            if (!File.Exists(fontPath)) return;
+
+            using var stream = File.OpenRead(fontPath);
+            var font = TrueTypeFont.ParseFont(stream);
+
+            var head = font.GetTable<HeadTable>(TableTypes.HEAD);
+            var hhea = font.GetTable<HheaTable>(TableTypes.HHEA);
+
+            // Scale factor: map font units to 20 px cap height.
+            float scale = 20f / head.UnitsPerEm;
+
+            // TrueType Y axis points upward; screen Y points downward — flip Y.
+            var glyphTransform = Matrix3x2.CreateScale(scale, -scale);
+
+            // Baseline sits below the requested top y=70 by the ascender distance.
+            float baselineY = 70f + hhea.Ascent * scale;
+
+            var converter = new BitmapGraphicConverter(draw, new ColorArgb32(255, 255, 255));
+
+            float x = 80f;
+            char prev = '\0';
+            foreach (char c in "Hello world")
+            {
+                if (prev != '\0')
+                    x += font.GetSpacingCorrection(prev, c) * scale;
+
+                var glyph = font.GetGlyph(c);
+                converter.BeginDrawGlyph(x, baselineY, glyphTransform);
+                glyph.ToGraphic(converter);
+                converter.EndDrawGlyph();
+
+                // Advance the pen. Glyph.Width is the bounding-box width; use a minimum
+                // advance for whitespace glyphs that have no visible contours.
+                float advance = glyph.Width * scale;
+                x += advance > 0f ? advance : 0.4f * 20f;
+                prev = c;
+            }
         }
 
     }
