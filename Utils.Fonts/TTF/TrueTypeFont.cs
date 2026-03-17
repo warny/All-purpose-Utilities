@@ -426,6 +426,7 @@ public class TrueTypeFont : IFont
     {
         var cmap = GetTable<CmapTable>(TableTypes.CMAP);
         var glyf = GetTable<GlyfTable>(TableTypes.GLYF);
+        var hmtx = GetTable<HmtxTable>(TableTypes.HMTX);
         foreach (var map in cmap.CMaps)
         {
             int index = map.Map(c);
@@ -433,7 +434,7 @@ public class TrueTypeFont : IFont
             {
                 var glyphBase = glyf.GetGlyph(index);
                 if (glyphBase != null)
-                    return new TrueTypeGlyph(glyphBase);
+                    return new TrueTypeGlyph(glyphBase, hmtx.GetAdvance(index));
             }
         }
         return null;

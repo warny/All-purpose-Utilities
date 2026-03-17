@@ -132,7 +132,7 @@ namespace DrawTest
             // Baseline sits below the requested top y=70 by the ascender distance.
             float baselineY = 70f + hhea.Ascent * scale;
 
-            var converter = new BitmapGraphicConverter(draw, new ColorArgb32(255, 255, 255));
+            var fillColor = new ColorArgb32(255, 255, 255);
 
             float x = 80f;
             char prev = '\0';
@@ -144,13 +144,19 @@ namespace DrawTest
                 var glyph = font.GetGlyph(c);
                 if (glyph != null)
                 {
-                    converter.BeginDrawGlyph(x, baselineY, glyphTransform);
-                    glyph.ToGraphic(converter);
-                    converter.EndDrawGlyph();
+                    // Collect glyph outlines into paths, then fill with non-zero winding rule
+                    // (TrueType convention: outer contours CCW, inner contours CW in font space;
+                    // after Y-flip they reverse, but FillShape2 still handles holes correctly).
+                    var glyphPaths = new Paths<object>();
+                    glyphPaths.BeginDrawGlyph(x, baselineY, glyphTransform);
+                    glyph.ToGraphic(glyphPaths);
+                    glyphPaths.EndDrawGlyph();
+
+                    draw.FillShape2((px, py) => fillColor, glyphPaths.Cast<IDrawable>());
                 }
 
-                // Advance the pen. Glyph.Width is the bounding-box width; use a fallback
-                // advance for whitespace glyphs that have no outline data (GetGlyph returns null).
+                // Advance the pen by the hmtx advance width (correct typographic advance).
+                // Fall back to a fixed width for whitespace glyphs that have no outline.
                 float advance = glyph != null ? glyph.Width * scale : 0f;
                 x += advance > 0f ? advance : 0.4f * 20f;
                 prev = c;
