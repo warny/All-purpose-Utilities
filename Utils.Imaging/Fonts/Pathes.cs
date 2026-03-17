@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Utils.Drawing;
@@ -16,6 +16,7 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     private readonly List<Path> paths;
     private Path path = null;
     private readonly Matrix<double> transformation;
+    private Matrix<double> currentTransformation;
 
     /// <summary>
     /// Initializes a new <see cref="Paths{T}"/> with an identity transformation.
@@ -23,6 +24,7 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     public Paths()
     {
         this.transformation = MatrixTransformations.Identity<double>(3);
+        this.currentTransformation = this.transformation;
         this.paths = new List<Path>();
     }
 
@@ -33,6 +35,7 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     public Paths(Matrix<double> transformation)
     {
         this.transformation = transformation;
+        this.currentTransformation = transformation;
         this.paths = [];
     }
 
@@ -51,7 +54,7 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     public void StartAt(float x, float y)
     {
         var p = new Vector<double>(x, y, 1);
-        p = transformation * p;
+        p = currentTransformation * p;
 
         path = new Path(new PointF((short)p[0], (short)p[1]));
         paths.Add(path);
@@ -61,7 +64,7 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     public void LineTo(float x, float y)
     {
         var p = new Vector<double>(x, y, 1);
-        p = transformation * p;
+        p = currentTransformation * p;
         path.LineTo(new PointF((short)p[0], (short)p[1]));
     }
 
@@ -69,7 +72,7 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     public void BezierTo(params (float x, float y)[] points)
     {
         var tPoints = points
-                .Select(p => transformation * new Vector<double>(p.x, p.y, 1))
+                .Select(p => currentTransformation * new Vector<double>(p.x, p.y, 1))
                 .Select(p => new PointF((short)p[0], (short)p[1]));
 
         path.BezierTo(tPoints.ToArray());
@@ -77,6 +80,20 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
 
     /// <inheritdoc/>
     public void ClosePath() => path?.Close();
+
+    /// <inheritdoc/>
+    public void BeginDrawGlyph(float x, float y, System.Numerics.Matrix3x2 transform)
+    {
+        var glyphMatrix = new Matrix<double>(new double[,] {
+            { transform.M11, transform.M21, transform.M31 + x },
+            { transform.M12, transform.M22, transform.M32 + y },
+            {             0,             0,                 1  }
+        });
+        currentTransformation = transformation * glyphMatrix;
+    }
+
+    /// <inheritdoc/>
+    public void EndDrawGlyph() => currentTransformation = transformation;
 
     /// <inheritdoc/>
     public IEnumerator<Path> GetEnumerator() => paths.GetEnumerator();

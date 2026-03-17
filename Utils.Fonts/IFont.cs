@@ -1,4 +1,6 @@
-﻿namespace Utils.Fonts;
+﻿using System.Numerics;
+
+namespace Utils.Fonts;
 
 /// <summary>
 /// Represents a generic font abstraction capable of retrieving glyphs and applying spacing corrections.
@@ -81,4 +83,24 @@ public interface IGraphicConverter
     /// PDF <c>h</c>).
     /// </summary>
     void ClosePath();
+
+    /// <summary>
+    /// Signals the beginning of a glyph rendering pass. All subsequent drawing commands
+    /// (<see cref="StartAt"/>, <see cref="LineTo"/>, <see cref="BezierTo"/>,
+    /// <see cref="ClosePath"/>) use coordinates relative to <paramref name="x"/> and
+    /// <paramref name="y"/>, transformed by <paramref name="transform"/>.
+    /// </summary>
+    /// <param name="x">Absolute X position of the glyph origin in the target coordinate space.</param>
+    /// <param name="y">Absolute Y position of the glyph origin in the target coordinate space.</param>
+    /// <param name="transform">
+    /// Affine transformation applied to glyph-local coordinates (scale, rotation, shear).
+    /// Use <see cref="Matrix3x2.Identity"/> when no transformation is needed.
+    /// </param>
+    void BeginDrawGlyph(float x, float y, Matrix3x2 transform);
+
+    /// <summary>
+    /// Signals the end of the current glyph rendering pass.
+    /// Any per-glyph state set by the preceding <see cref="BeginDrawGlyph"/> call is discarded.
+    /// </summary>
+    void EndDrawGlyph();
 }
