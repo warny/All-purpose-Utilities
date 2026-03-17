@@ -76,6 +76,9 @@ public class Paths<T> : IReadOnlyList<Path>, IGraphicConverter
     }
 
     /// <inheritdoc/>
+    public void ClosePath() => path?.Close();
+
+    /// <inheritdoc/>
     public IEnumerator<Path> GetEnumerator() => paths.GetEnumerator();
 
     /// <inheritdoc/>

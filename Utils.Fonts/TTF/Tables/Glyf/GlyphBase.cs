@@ -183,16 +183,13 @@ public class GlyphBase
                 }
             }
 
-            // Close the contour: if the last point is on-curve, draw a line;
-            // otherwise, draw a Bezier curve from the off-curve last point to the first point.
-            if (lastPoint.OnCurve)
-            {
-                graphic.LineTo(firstPoint.X, firstPoint.Y);
-            }
-            else
+            // Close the contour. If the last point is off-curve, draw the final Bézier segment
+            // to bring the pen to the first point before marking the contour as closed.
+            if (!lastPoint.OnCurve)
             {
                 graphic.BezierTo((lastPoint.X, lastPoint.Y), (firstPoint.X, firstPoint.Y));
             }
+            graphic.ClosePath();
         }
     }
 }

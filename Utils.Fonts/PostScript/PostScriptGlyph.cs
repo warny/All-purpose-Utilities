@@ -40,19 +40,17 @@ public class PostScriptGlyph : IGlyph
     /// <remarks>
     /// The drawing callbacks correspond to <c>moveto</c>, <c>lineto</c> and
     /// <c>curveto</c> operations in PostScript.  The <c>closepath</c> operator is
-    /// implemented by drawing a line back to the starting point.
+    /// forwarded directly as <see cref="IGraphicConverter.ClosePath"/>, preserving
+    /// the semantic distinction between an open path and a geometrically closed contour.
     /// </remarks>
     public void ToGraphic(IGraphicConverter graphicConverter)
     {
         if (graphicConverter == null) throw new ArgumentNullException(nameof(graphicConverter));
-        (float startX, float startY) = (0, 0);
         foreach (var cmd in _commands)
         {
             switch (cmd.Type)
             {
                 case PathCommandType.MoveTo:
-                    startX = cmd.X1;
-                    startY = cmd.Y1;
                     graphicConverter.StartAt(cmd.X1, cmd.Y1);
                     break;
                 case PathCommandType.LineTo:
@@ -62,7 +60,7 @@ public class PostScriptGlyph : IGlyph
                     graphicConverter.BezierTo((cmd.X1, cmd.Y1), (cmd.X2, cmd.Y2), (cmd.X3, cmd.Y3));
                     break;
                 case PathCommandType.Close:
-                    graphicConverter.LineTo(startX, startY);
+                    graphicConverter.ClosePath();
                     break;
             }
         }

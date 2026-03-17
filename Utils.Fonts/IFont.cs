@@ -73,4 +73,12 @@ public interface IGraphicConverter
     /// </summary>
     /// <param name="points">An array of control and end points for the curve.</param>
     void BezierTo(params (float x, float y)[] points);
+
+    /// <summary>
+    /// Closes the current subpath. An implicit straight line is drawn from the current
+    /// point back to the starting point of the subpath, and the contour is marked as
+    /// geometrically closed (equivalent to PostScript <c>closepath</c>, SVG <c>Z</c>,
+    /// PDF <c>h</c>).
+    /// </summary>
+    void ClosePath();
 }

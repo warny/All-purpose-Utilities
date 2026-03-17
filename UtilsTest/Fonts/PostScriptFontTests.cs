@@ -57,7 +57,7 @@ namespace UtilsTest.Fonts
             var mock = new Mock<IGraphicConverter>(MockBehavior.Strict);
             mock.Setup(g => g.StartAt(0f, 0f));
             mock.Setup(g => g.LineTo(5f, 0f));
-            mock.Setup(g => g.LineTo(0f, 0f));
+            mock.Setup(g => g.ClosePath());
             glyph.ToGraphic(mock.Object);
             mock.VerifyAll();
         }
