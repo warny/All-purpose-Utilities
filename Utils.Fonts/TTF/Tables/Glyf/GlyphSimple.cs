@@ -11,7 +11,7 @@ namespace Utils.Fonts.TTF.Tables.Glyf;
 /// <summary>
 /// Represents a simple (non‑compound) glyph in a TrueType font.
 /// </summary>
-public abstract class GlyphSimple : GlyphBase
+public class GlyphSimple : GlyphBase
 {
     // Each contour is an array of points (with X, Y coordinates and a flag indicating whether the point is on the curve).
     private (short X, short Y, bool onCurve)[][] contours;
@@ -24,7 +24,7 @@ public abstract class GlyphSimple : GlyphBase
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphSimple"/> class.
     /// </summary>
-    private protected GlyphSimple() { }
+    internal GlyphSimple() { }
 
     /// <inheritdoc/>
     public override bool IsCompound => false;
@@ -117,6 +117,12 @@ public abstract class GlyphSimple : GlyphBase
     /// <inheritdoc/>
     public override void ReadData(Reader data)
     {
+        if (NumContours == 0)
+        {
+            contours = [];
+            return;
+        }
+
         // Read contour end points and adjust them (TTF spec: end point index + 1).
         var contourEndPoints = data.ReadArray<short>(NumContours, true)
                                    .Select(nc => nc + 1)

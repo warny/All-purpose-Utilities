@@ -81,7 +81,7 @@ public class GlyphBase
         var numContours = data.Read<Int16>();
         GlyphBase glyf;
         if (numContours >= 0)
-            glyf = new GlyphBase();
+            glyf = new GlyphSimple();
         else if (numContours == -1)
         {
             glyf = new GlyphCompound();
@@ -131,6 +131,9 @@ public class GlyphBase
     /// <param name="graphic">The graphic converter used to render the glyph.</param>
     public void Render(IGraphicConverter graphic)
     {
+        // Contours is null for glyphs with no outline data (e.g. space).
+        if (Contours == null) return;
+
         // Process each contour separately.
         foreach (var contour in Contours)
         {
