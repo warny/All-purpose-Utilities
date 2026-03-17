@@ -34,7 +34,7 @@ internal sealed class TableListReader
             throw new ArgumentException("Segment name prefix cannot be null or whitespace.", nameof(segmentNamePrefix));
         }
 
-        var results = new List<SqlSegment>();
+        List<SqlSegment> results = [];
         int index = 1;
         while (true)
         {

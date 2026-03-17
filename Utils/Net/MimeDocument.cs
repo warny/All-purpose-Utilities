@@ -250,6 +250,13 @@ internal class SimpleMimeFormatter : IMimeFormatter
         return document;
     }
 
+    /// <summary>
+    /// Reads MIME header fields from a text stream and populates the provided dictionary.
+    /// Parsing stops at the first empty line, which per RFC 2822 separates headers from the body.
+    /// Each header line is expected in "Name: Value" format; lines without a colon are silently skipped.
+    /// </summary>
+    /// <param name="reader">Text reader positioned at the start of the header block.</param>
+    /// <param name="headers">Dictionary to populate with the parsed header name-value pairs.</param>
     private static void ReadHeaders(TextReader reader, IDictionary<string, string> headers)
     {
         string? line;
@@ -265,6 +272,16 @@ internal class SimpleMimeFormatter : IMimeFormatter
         }
     }
 
+    /// <summary>
+    /// Reads a multipart MIME body from a text stream and appends each part to <paramref name="document"/>.
+    /// Follows RFC 2046 §5.1: parts are delimited by <c>--{boundary}</c> lines and the final boundary
+    /// is <c>--{boundary}--</c>. Each part's headers are parsed via <see cref="ReadHeaders"/>; the body
+    /// is the text between the header block and the next boundary marker.
+    /// Preamble and epilogue text (outside any boundary) are ignored.
+    /// </summary>
+    /// <param name="reader">Text reader positioned at the start of the multipart body.</param>
+    /// <param name="boundary">The boundary string from the Content-Type header (without leading dashes).</param>
+    /// <param name="document">Document to which parsed <see cref="MimePart"/> instances are appended.</param>
     private static void ReadMultipart(TextReader reader, string boundary, MimeDocument document)
     {
         string boundaryStart = "--" + boundary;

@@ -63,8 +63,8 @@ public class BaseEncoderStream : Stream
     /// <param name="indent">Indentation applied after each separator.</param>
     public BaseEncoderStream(TextWriter targetWriter, IBaseDescriptor baseDescriptor, int maxDataWidth = -1, int indent = 0)
     {
-        TargetWriter = targetWriter ?? throw new NullReferenceException(nameof(targetWriter));
-        BaseDescriptor = baseDescriptor ?? throw new NullReferenceException(nameof(baseDescriptor));
+        TargetWriter = targetWriter ?? throw new ArgumentNullException(nameof(targetWriter));
+        BaseDescriptor = baseDescriptor ?? throw new ArgumentNullException(nameof(baseDescriptor));
         MaxDataWidth = maxDataWidth;
         Indent = indent;
 

@@ -36,7 +36,7 @@ internal sealed class ExpressionReader
             throw new ArgumentException("Segment name cannot be null or whitespace.", nameof(segmentName));
         }
 
-        var tokens = new List<SqlToken>();
+        List<SqlToken> tokens = [];
         int parenthesisDepth = 0;
         int caseDepth = 0;
         while (!parser.IsAtEnd)

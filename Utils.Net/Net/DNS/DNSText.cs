@@ -259,7 +259,11 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
     /// </summary>
     /// <param name="path">Path to the zone file.</param>
     /// <returns>A list of <see cref="DNSResponseRecord"/> objects.</returns>
-    public static List<DNSResponseRecord> ParseFile(string path) => ParseTextReader(File.OpenText(path));
+    public static List<DNSResponseRecord> ParseFile(string path)
+    {
+        using var reader = File.OpenText(path);
+        return ParseTextReader(reader);
+    }
 
     /// <summary>
     /// Parses all records contained in a string.

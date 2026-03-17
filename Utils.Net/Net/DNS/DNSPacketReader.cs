@@ -188,13 +188,15 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         public byte[] ReadBytes()
         {
-            if (Context == null) throw new NullReferenceException("Context must not be null");
+            if (Context == null) throw new InvalidOperationException("ReadBytes requires an active RData context. Call BeginRData first.");
             var length = Context.BytesLeft;
             return ReadBytes(length);
         }
 
         public byte[] ReadBytes(int length)
         {
+            if (Position + length > Datagram.Length)
+                throw new InvalidDataException($"Attempted to read {length} bytes at position {Position}, but the datagram is only {Datagram.Length} bytes.");
             byte[] result = new byte[length];
             Array.Copy(Datagram, Position, result, 0, length);
             Position += length;
@@ -218,10 +220,14 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
                 | (ReadByte()));
         }
 
-        public DNSDomainName ReadDomainName() => ReadDomainName(Position).Value;
+        private const int MaxDomainNameDepth = 128;
 
-        private DNSDomainName? ReadDomainName(int position)
+        public DNSDomainName ReadDomainName() => ReadDomainName(Position, 0).Value;
+
+        private DNSDomainName? ReadDomainName(int position, int depth)
         {
+            if (depth > MaxDomainNameDepth)
+                throw new InvalidDataException("DNS domain name exceeds maximum depth — possible compression pointer loop.");
             bool restorePosition = position != this.Position;
             int temp = this.Position;
             this.Position = position;
@@ -240,7 +246,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
                 }
                 else
                 {
-                    var rs = ReadDomainName(p);
+                    var rs = ReadDomainName(p, depth + 1);
                     Context = context;
                     return rs;
                 }
@@ -248,7 +254,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
             else
             {
                 DNSDomainName s = Encoding.UTF8.GetString(ReadBytes(length));
-                var next = ReadDomainName(this.Position);
+                var next = ReadDomainName(this.Position, depth + 1);
                 s = s.Append(next);
                 if (restorePosition) this.Position = temp;
                 PositionsStrings[(ushort)position] = s;
@@ -260,7 +266,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         public string ReadString()
         {
-            if (Context == null) throw new NullReferenceException("Context must not be null");
+            if (Context == null) throw new InvalidOperationException("ReadString requires an active RData context. Call BeginRData first.");
             return ReadString(Context.BytesLeft);
         }
 

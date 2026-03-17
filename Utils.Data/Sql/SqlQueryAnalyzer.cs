@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -1597,7 +1598,7 @@ internal sealed class SqlSubqueryPart : ISqlSegmentPart
 
 internal static class SqlStringFormatter
 {
-    private static readonly HashSet<string> SpaceBeforeParenthesisKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> SpaceBeforeParenthesisKeywords = new HashSet<string>
     {
         "SELECT",
         "FROM",
@@ -1634,7 +1635,7 @@ internal static class SqlStringFormatter
         "WHEN",
         "THEN",
         "ELSE",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     public static string JoinTokens(IReadOnlyList<string> tokens)
     {

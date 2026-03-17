@@ -144,7 +144,7 @@ public class CidKeyedFont : IFont
     /// <returns>Constructed <see cref="CidKeyedFont"/>.</returns>
     private static CidKeyedFont ParseCidType1(string text)
     {
-        var glyphs = new Dictionary<int, PostScriptGlyph>();
+        Dictionary<int, PostScriptGlyph> glyphs = new();
         int lenIV = 4;
         var mLenIv = Regex.Match(text, @"/lenIV\s+(\d+)");
         if (mLenIv.Success)

@@ -136,8 +136,8 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         // If T != dnsElementType, we need a local variable cast to dnsElementType.
         var elementVariable = Expression.Variable(dnsElementType, "element");
         Expression element;
-        var variables = new List<ParameterExpression>();
-        var fieldsReaders = new List<Expression>();
+        List<ParameterExpression> variables = [];
+        List<Expression> fieldsReaders = [];
         int insertIndex = 0;
 
         if (typeof(T) == dnsElementType)
@@ -333,17 +333,17 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
             {
                 typeof(string),
                 (datasParameter, assignationSource, dnsField)
-                                          => dnsField.Length switch
-                                          {
-                                                  int length => new[]
-                                                  {
-                                                          ExpressionEx.CreateExpressionCall(
-                                                                  datasParameter,
-                                                                  nameof(Datas.WriteString),
-                                                                  assignationSource,
-                                                                  Expression.Constant(length, typeof(int))
-                                                          )
-                                                  },
+                    => dnsField.Length switch
+                    {
+                        int length => new[]
+                        {
+                                ExpressionEx.CreateExpressionCall(
+                                        datasParameter,
+                                        nameof(Datas.WriteString),
+                                        assignationSource,
+                                        Expression.Constant(length, typeof(int))
+                                )
+                        },
                         FieldsSizeOptions options => options switch
                         {
                             FieldsSizeOptions.PrefixedSize1B => new[]
@@ -515,6 +515,8 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
 
             if (Context != null)
             {
+                if (Context.Length + length > ushort.MaxValue)
+                    throw new InvalidOperationException($"DNS RData size exceeds the 65535-byte maximum (current: {Context.Length}, writing: {length}).");
                 Context.Length += (ushort)length;
             }
         }
@@ -613,11 +615,11 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         /// Writes a string as UTF-8 in its entirety.
         /// </summary>
         /// <param name="s">The string to write.</param>
-        /// <exception cref="NullReferenceException">Thrown if <see cref="Context"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if <see cref="Context"/> is null.</exception>
         public void WriteString(string s)
         {
             if (Context == null)
-                throw new NullReferenceException("Context must not be null");
+                throw new InvalidOperationException("WriteString requires an active RData context. Call BeginRData first.");
 
             var bytes = Encoding.UTF8.GetBytes(s);
             WriteBytes(bytes);
@@ -665,6 +667,8 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
             foreach (var label in labels)
             {
                 var bytes = Encoding.ASCII.GetBytes(label);
+                if (bytes.Length > 63)
+                    throw new ArgumentException($"DNS label '{label}' exceeds the 63-byte limit imposed by RFC 1035.", nameof(s));
                 WriteByte((byte)bytes.Length);
                 WriteBytes(bytes, bytes.Length);
             }
@@ -726,7 +730,9 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         // Write each request record (substituting the textual record type name with a numeric code).
         foreach (var requestRecord in header.Requests)
         {
-            requestRecord.RequestType = requestClassTypes[requestRecord.Type];
+            if (!requestClassTypes.TryGetValue(requestRecord.Type, out var typeCode))
+                throw new InvalidOperationException($"Unknown DNS record type '{requestRecord.Type}'. The type has not been registered.");
+            requestRecord.RequestType = typeCode;
             WriteRequestRecord(datas, requestRecord);
         }
 
@@ -767,7 +773,10 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         };
 
         // Use the stored writer for the specific RData type.
-        writers[responseRecord.RData.GetType()](datas, responseRecord.RData);
+        var rdataType = responseRecord.RData.GetType();
+        if (!writers.TryGetValue(rdataType, out var rdataWriter))
+            throw new InvalidOperationException($"No writer registered for DNS RData type '{rdataType.Name}'.");
+        rdataWriter(datas, responseRecord.RData);
 
         var endRecordPosition = datas.Position;
 
@@ -776,6 +785,8 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         datas.Context = null;
 
         // Go back to where we left space for RDLength and patch it in.
+        if (middlePosition < 2)
+            throw new InvalidOperationException("Invalid DNS response record layout: RDLength field position is out of range.");
         datas.Position = middlePosition - 2;
         datas.WriteUShort(responseRecord.RDLength);
 

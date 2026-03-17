@@ -91,7 +91,7 @@ public class Type3Font : IFont
     {
         using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
         string ps = reader.ReadToEnd();
-        var glyphs = new Dictionary<char, PostScriptGlyph>();
+        Dictionary<char, PostScriptGlyph> glyphs = new();
 
         var cpMatch = Regex.Match(ps, @"/CharProcs\s+\d+\s+dict\s+dup\s+begin(?<cp>.*)end", RegexOptions.Singleline);
         if (!cpMatch.Success)
@@ -130,7 +130,7 @@ public class Type3Font : IFont
     /// <returns>List of drawing commands describing the glyph.</returns>
     private static List<PostScriptGlyph.PathCommand> ParseCharProc(string proc, ref float width, ref float height, ref float baseLine)
     {
-        var commands = new List<PostScriptGlyph.PathCommand>();
+        List<PostScriptGlyph.PathCommand> commands = [];
         var cache = Regex.Match(proc, @"(?<wx>-?\d+(?:\.\d+)?)\s+-?\d+(?:\.\d+)?\s+(?<llx>-?\d+(?:\.\d+)?)\s+(?<lly>-?\d+(?:\.\d+)?)\s+(?<urx>-?\d+(?:\.\d+)?)\s+(?<ury>-?\d+(?:\.\d+)?)\s+setcachedevice");
         if (cache.Success)
         {
@@ -143,7 +143,7 @@ public class Type3Font : IFont
         }
 
         var tokens = Regex.Matches(proc, @"-?\d+(?:\.\d+)?|[a-zA-Z]+").Select(m => m.Value).ToList();
-        var stack = new List<float>();
+        List<float> stack = [];
         for (int i = 0; i < tokens.Count; i++)
         {
             string t = tokens[i];

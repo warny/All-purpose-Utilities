@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -566,7 +567,12 @@ public sealed class SqlParser
 
     internal SqlToken Peek(int offset = 0)
     {
-        return tokens[position + offset];
+        int index = position + offset;
+        if (index < 0 || index >= tokens.Count)
+        {
+            throw new InvalidOperationException($"Unexpected end of token stream at position {position} (offset {offset}).");
+        }
+        return tokens[index];
     }
 
     private SqlToken? PeekOptional(int offset)
@@ -582,6 +588,10 @@ public sealed class SqlParser
 
     internal SqlToken Read()
     {
+        if (position >= tokens.Count)
+        {
+            throw new InvalidOperationException($"Unexpected end of token stream at position {position}.");
+        }
         return tokens[position++];
     }
 }
@@ -631,7 +641,7 @@ internal sealed class SqlToken
 
 internal sealed class SqlTokenizer
 {
-    private static readonly HashSet<string> Keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> Keywords = new HashSet<string>
     {
         "SELECT",
         "FROM",
@@ -675,7 +685,7 @@ internal sealed class SqlTokenizer
         "AND",
         "OR",
         "NOT",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     private readonly string sql;
     private readonly SqlSyntaxOptions syntaxOptions;

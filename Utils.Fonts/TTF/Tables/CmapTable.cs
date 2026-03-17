@@ -193,10 +193,14 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
                     AddCMap(subTable.platformID, subTable.platformSpecificID, cMap);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is InvalidDataException or FormatException
+                                           or NotSupportedException or ArgumentException
+                                           or OverflowException or IndexOutOfRangeException)
             {
-                Console.WriteLine($"Error reading cmap subtable. PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}");
-                Console.WriteLine($"Reason: {ex}");
+                // Skip unsupported or malformed cmap subtables rather than failing the entire font load.
+                // PlatformID and PlatformSpecificID are logged at debug level for diagnostics.
+                System.Diagnostics.Debug.WriteLine(
+                    $"Skipping cmap subtable PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}: {ex.Message}");
             }
         }
 

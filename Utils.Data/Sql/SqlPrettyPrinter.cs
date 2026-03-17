@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Text;
 
@@ -62,7 +63,7 @@ internal static class SqlPrettyPrinter
         public FormattedLine(int indentSpaces)
         {
             IndentSpaces = indentSpaces;
-            Tokens = new List<string>();
+            Tokens = [];
         }
 
         /// <summary>
@@ -81,7 +82,7 @@ internal static class SqlPrettyPrinter
         public bool SuppressSpaceAfterLeadingComma { get; set; }
     }
 
-    private static readonly HashSet<string> ClauseKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> ClauseKeywords = new HashSet<string>
     {
         "SELECT",
         "FROM",
@@ -100,16 +101,16 @@ internal static class SqlPrettyPrinter
         "UNION",
         "INTERSECT",
         "EXCEPT",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly HashSet<string> JoinLeadingModifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> JoinLeadingModifiers = new HashSet<string>
     {
         "INNER",
         "LEFT",
         "RIGHT",
         "FULL",
         "CROSS",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Formats the provided SQL text according to the specified options.
@@ -145,7 +146,7 @@ internal static class SqlPrettyPrinter
     /// <returns>The formatted SQL text.</returns>
     private static string FormatList(IReadOnlyList<SqlToken> tokens, SqlFormattingOptions options, bool commaAtLineStart)
     {
-        var lines = new List<FormattedLine>();
+        List<FormattedLine> lines = [];
         FormattedLine? currentLine = null;
         var parenthesisStack = new Stack<bool>();
         int indentLevel = 0;

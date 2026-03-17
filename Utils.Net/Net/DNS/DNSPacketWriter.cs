@@ -513,6 +513,8 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
 
             if (Context != null)
             {
+                if (Context.Length + length > ushort.MaxValue)
+                    throw new InvalidOperationException($"DNS RData size exceeds the 65535-byte maximum (current: {Context.Length}, writing: {length}).");
                 Context.Length += (ushort)length;
             }
         }
@@ -611,11 +613,11 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
         /// Writes a string as UTF-8 in its entirety.
         /// </summary>
         /// <param name="s">The string to write.</param>
-        /// <exception cref="NullReferenceException">Thrown if <see cref="Context"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if <see cref="Context"/> is null.</exception>
         public void WriteString(string s)
         {
             if (Context == null)
-                throw new NullReferenceException("Context must not be null");
+                throw new InvalidOperationException("WriteString requires an active RData context. Call BeginRData first.");
 
             var bytes = Encoding.UTF8.GetBytes(s);
             WriteBytes(bytes);
@@ -670,8 +672,11 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
             StringsPositions.Add(s.Value, (ushort)Position);
 
             // Write subdomain length and bytes.
-            WriteByte((byte)s.SubDomain.Length);
-            WriteBytes(ASCIIEncoding.UTF8.GetBytes(s.SubDomain));
+            var labelBytes = ASCIIEncoding.UTF8.GetBytes(s.SubDomain);
+            if (labelBytes.Length > 63)
+                throw new ArgumentException($"DNS label '{s.SubDomain}' exceeds the 63-byte limit imposed by RFC 1035.", nameof(s));
+            WriteByte((byte)labelBytes.Length);
+            WriteBytes(labelBytes);
 
             // Recursively handle the parent domain or terminate if there's none.
             if (s.ParentDomain != null)
@@ -738,7 +743,9 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
         // Write each request record (substituting the textual record type name with a numeric code).
         foreach (var requestRecord in header.Requests)
         {
-            requestRecord.RequestType = requestClassTypes[requestRecord.Type];
+            if (!requestClassTypes.TryGetValue(requestRecord.Type, out var typeCode))
+                throw new InvalidOperationException($"Unknown DNS record type '{requestRecord.Type}'. The type has not been registered.");
+            requestRecord.RequestType = typeCode;
             WriteRequestRecord(datas, requestRecord);
         }
 
@@ -779,7 +786,10 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
         };
 
         // Use the stored writer for the specific RData type.
-        writers[responseRecord.RData.GetType()](datas, responseRecord.RData);
+        var rdataType = responseRecord.RData.GetType();
+        if (!writers.TryGetValue(rdataType, out var rdataWriter))
+            throw new InvalidOperationException($"No writer registered for DNS RData type '{rdataType.Name}'.");
+        rdataWriter(datas, responseRecord.RData);
 
         var endRecordPosition = datas.Position;
 
@@ -788,6 +798,8 @@ public class DNSPacketWriter : IDNSWriter<byte[]>
         datas.Context = null;
 
         // Go back to where we left space for RDLength and patch it in.
+        if (middlePosition < 2)
+            throw new InvalidOperationException("Invalid DNS response record layout: RDLength field position is out of range.");
         datas.Position = middlePosition - 2;
         datas.WriteUShort(responseRecord.RDLength);
 

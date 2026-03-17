@@ -145,8 +145,8 @@ public static partial class EnumerableEx
         bool continueAfterShortestListEnds = true
     )
         => Zip(continueAfterShortestListEnds,
-            new IEnumerable[] { enumeration1, enumeration2 },
-            new object[] { default1, default2 })
+            (IEnumerable[])[enumeration1, enumeration2],
+            (object[])[default1, default2])
         .Select(o => ((T1)o[0], (T2)o[1]));
 
     /// <summary>
@@ -186,8 +186,8 @@ public static partial class EnumerableEx
         bool continueAfterShortestListEnds = true
     )
         => Zip(true,
-            new IEnumerable[] { enumeration1, enumeration2, enumeration3 },
-            new object[] { default1, default2, default3 })
+            (IEnumerable[])[enumeration1, enumeration2, enumeration3],
+            (object[])[default1, default2, default3])
         .Select(o => ((T1)o[0], (T2)o[1], (T3)o[2]));
 
     /// <summary>

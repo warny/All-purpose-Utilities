@@ -35,7 +35,7 @@ internal sealed class FieldListReader
             throw new ArgumentException("Segment name prefix cannot be null or whitespace.", nameof(segmentNamePrefix));
         }
 
-        var results = new List<SqlSegment>();
+        List<SqlSegment> results = [];
         int index = 1;
         while (true)
         {
@@ -74,7 +74,7 @@ internal sealed class FieldListReader
     /// <exception cref="SqlParseException">Thrown when no field tokens are found.</exception>
     private SqlSegment ReadField(string segmentName, params ClauseStart[] clauseTerminators)
     {
-        var tokens = new List<SqlToken>();
+        List<SqlToken> tokens = [];
         int depth = 0;
         while (!parser.IsAtEnd)
         {
