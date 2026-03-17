@@ -68,6 +68,7 @@ namespace Utils.Drawing
 
                     foreach (var points in computedPoints.SlideEnumerateBy(2))
                     {
+                        if (points.Length < 2) break; // partial last window — degenerate curve
                         var start = Point.Round(points[0]);
                         var end = Point.Round(points[1]);
                         if (start.X == end.X && start.Y == end.Y) continue;
