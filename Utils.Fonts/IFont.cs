@@ -1,4 +1,6 @@
-﻿namespace Utils.Fonts;
+﻿using System.Numerics;
+
+namespace Utils.Fonts;
 
 /// <summary>
 /// Represents a generic font abstraction capable of retrieving glyphs and applying spacing corrections.
@@ -20,6 +22,19 @@ public interface IFont
     /// <param name="after">The following character.</param>
     /// <returns>A float value representing the spacing correction in font units.</returns>
     float GetSpacingCorrection(char before, char after);
+
+    /// <summary>
+    /// Gets the scale factor mapping font units to pixels at a nominal 100-pixel cap height.
+    /// Typically <c>100 / unitsPerEm</c>.
+    /// </summary>
+    float Scale { get; }
+
+    /// <summary>
+    /// Gets the screen-space Y coordinate of the text baseline for a default 100-pixel
+    /// rendering, assuming the top of the text box is at y = 70.
+    /// Typically <c>70 + ascent * Scale</c>.
+    /// </summary>
+    float BaseLineY { get; }
 }
 
 /// <summary>
@@ -73,4 +88,32 @@ public interface IGraphicConverter
     /// </summary>
     /// <param name="points">An array of control and end points for the curve.</param>
     void BezierTo(params (float x, float y)[] points);
+
+    /// <summary>
+    /// Closes the current subpath. An implicit straight line is drawn from the current
+    /// point back to the starting point of the subpath, and the contour is marked as
+    /// geometrically closed (equivalent to PostScript <c>closepath</c>, SVG <c>Z</c>,
+    /// PDF <c>h</c>).
+    /// </summary>
+    void ClosePath();
+
+    /// <summary>
+    /// Signals the beginning of a glyph rendering pass. All subsequent drawing commands
+    /// (<see cref="StartAt"/>, <see cref="LineTo"/>, <see cref="BezierTo"/>,
+    /// <see cref="ClosePath"/>) use coordinates relative to <paramref name="x"/> and
+    /// <paramref name="y"/>, transformed by <paramref name="transform"/>.
+    /// </summary>
+    /// <param name="x">Absolute X position of the glyph origin in the target coordinate space.</param>
+    /// <param name="y">Absolute Y position of the glyph origin in the target coordinate space.</param>
+    /// <param name="transform">
+    /// Affine transformation applied to glyph-local coordinates (scale, rotation, shear).
+    /// Use <see cref="Matrix3x2.Identity"/> when no transformation is needed.
+    /// </param>
+    void BeginDrawGlyph(float x, float y, Matrix3x2 transform);
+
+    /// <summary>
+    /// Signals the end of the current glyph rendering pass.
+    /// Any per-glyph state set by the preceding <see cref="BeginDrawGlyph"/> call is discarded.
+    /// </summary>
+    void EndDrawGlyph();
 }

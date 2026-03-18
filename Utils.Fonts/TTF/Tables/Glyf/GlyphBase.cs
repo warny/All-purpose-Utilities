@@ -81,7 +81,7 @@ public class GlyphBase
         var numContours = data.Read<Int16>();
         GlyphBase glyf;
         if (numContours >= 0)
-            glyf = new GlyphBase();
+            glyf = new GlyphSimple();
         else if (numContours == -1)
         {
             glyf = new GlyphCompound();
@@ -131,6 +131,9 @@ public class GlyphBase
     /// <param name="graphic">The graphic converter used to render the glyph.</param>
     public void Render(IGraphicConverter graphic)
     {
+        // Contours is null for glyphs with no outline data (e.g. space).
+        if (Contours == null) return;
+
         // Process each contour separately.
         foreach (var contour in Contours)
         {
@@ -183,16 +186,13 @@ public class GlyphBase
                 }
             }
 
-            // Close the contour: if the last point is on-curve, draw a line;
-            // otherwise, draw a Bezier curve from the off-curve last point to the first point.
-            if (lastPoint.OnCurve)
-            {
-                graphic.LineTo(firstPoint.X, firstPoint.Y);
-            }
-            else
+            // Close the contour. If the last point is off-curve, draw the final Bézier segment
+            // to bring the pen to the first point before marking the contour as closed.
+            if (!lastPoint.OnCurve)
             {
                 graphic.BezierTo((lastPoint.X, lastPoint.Y), (firstPoint.X, firstPoint.Y));
             }
+            graphic.ClosePath();
         }
     }
 }

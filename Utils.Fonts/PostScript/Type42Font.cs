@@ -59,4 +59,10 @@ public class Type42Font : IFont
 
     /// <inheritdoc />
     public float GetSpacingCorrection(char before, char after) => _ttf.GetSpacingCorrection(before, after);
+
+    /// <inheritdoc />
+    public float Scale => _ttf.Scale;
+
+    /// <inheritdoc />
+    public float BaseLineY => _ttf.BaseLineY;
 }

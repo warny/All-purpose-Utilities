@@ -73,14 +73,30 @@ public class Type3Font : IFont
     /// <summary>Table of parsed glyphs indexed by character.</summary>
     private readonly Dictionary<char, PostScriptGlyph> _glyphs;
 
+    /// <summary>Number of font units per em, derived from <c>/FontMatrix</c>.</summary>
+    private readonly float _unitsPerEm;
+
+    /// <summary>Upper Y of the font bounding box (ascent), in font units. Zero when not declared.</summary>
+    private readonly float _fontBBoxUry;
+
     /// <summary>
-    /// Initializes the font with the specified glyph table.
+    /// Initializes the font with the specified glyph table and font metrics.
     /// </summary>
     /// <param name="glyphs">Glyph definitions parsed from the source.</param>
-    private Type3Font(Dictionary<char, PostScriptGlyph> glyphs)
+    /// <param name="unitsPerEm">Font units per em from <c>/FontMatrix</c>.</param>
+    /// <param name="fontBBoxUry">Ascent value from <c>/FontBBox</c>, in font units.</param>
+    private Type3Font(Dictionary<char, PostScriptGlyph> glyphs, float unitsPerEm, float fontBBoxUry)
     {
         _glyphs = glyphs;
+        _unitsPerEm = unitsPerEm;
+        _fontBBoxUry = fontBBoxUry;
     }
+
+    /// <inheritdoc />
+    public float Scale => 100f / _unitsPerEm;
+
+    /// <inheritdoc />
+    public float BaseLineY => 70f + _fontBBoxUry * Scale;
 
     /// <summary>
     /// Loads a Type&#160;3 font from the provided PostScript stream.
@@ -93,9 +109,12 @@ public class Type3Font : IFont
         string ps = reader.ReadToEnd();
         Dictionary<char, PostScriptGlyph> glyphs = new();
 
+        float unitsPerEm = ParseUnitsPerEm(ps);
+        float fontBBoxUry = ParseFontBBoxUry(ps);
+
         var cpMatch = Regex.Match(ps, @"/CharProcs\s+\d+\s+dict\s+dup\s+begin(?<cp>.*)end", RegexOptions.Singleline);
         if (!cpMatch.Success)
-            return new Type3Font(glyphs);
+            return new Type3Font(glyphs, unitsPerEm, fontBBoxUry);
 
         var procs = cpMatch.Groups["cp"].Value;
         var glyphRegex = new Regex(@"/(?<name>\S+)\s+\{(?<proc>[^}]*)\}\s+bind\s+def", RegexOptions.Singleline);
@@ -109,7 +128,34 @@ public class Type3Font : IFont
             glyphs[ch] = new PostScriptGlyph(width, height, baseLine, commands);
         }
 
-        return new Type3Font(glyphs);
+        return new Type3Font(glyphs, unitsPerEm, fontBBoxUry);
+    }
+
+    /// <summary>
+    /// Extracts the number of font units per em from the <c>/FontMatrix</c> declaration.
+    /// The first element of FontMatrix is the reciprocal of units-per-em.
+    /// Returns 1000 when no declaration is found (Type 1 convention).
+    /// </summary>
+    /// <param name="ps">PostScript source text.</param>
+    private static float ParseUnitsPerEm(string ps)
+    {
+        var m = Regex.Match(ps, @"/FontMatrix\s*\[\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)");
+        if (!m.Success) return 1000f;
+        float a = float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+        return a != 0f ? MathF.Abs(1f / a) : 1000f;
+    }
+
+    /// <summary>
+    /// Extracts the <c>ury</c> (ascent) value from a <c>/FontBBox [llx lly urx ury]</c>
+    /// declaration.  Returns zero when no declaration is found.
+    /// </summary>
+    /// <param name="ps">PostScript source text.</param>
+    private static float ParseFontBBoxUry(string ps)
+    {
+        var m = Regex.Match(
+            ps,
+            @"/FontBBox\s*\[\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+(-?\d+(?:\.\d+)?)\s*\]");
+        return m.Success ? float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : 0f;
     }
 
     /// <inheritdoc />

@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utils.Drawing;
+using Utils.Fonts;
+using Utils.Fonts.TTF;
+using Utils.Fonts.TTF.Tables;
 using Utils.Imaging;
 
 namespace DrawTest
@@ -85,7 +90,7 @@ namespace DrawTest
                 d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(255, 255, 0));
                 d.DrawEllipse(new Point(1000, 300), 250, 100, new ColorArgb32(0, 255, 255), 0);
                 d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(0, 0, 0), Math.PI / 2, Math.PI);
-                MapBrush<ColorArgb32> c1 = new MapBrush<ColorArgb32>((p, s) => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), p));
+                MapBrush<ColorArgb32> c1 = new MapBrush<ColorArgb32>((p, s) => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), p), 5);
                 d.DrawCircle(new Point(1000, 300), 250, c1, Math.PI / 2, Math.PI);
 
                 var s1 = new Pathes(
@@ -102,9 +107,62 @@ namespace DrawTest
 
                 d.FillShape2((x, y) => new ColorArgb32(128, 0, 128), s2);
 
+                // DrawShapeThick: thick stroke AFTER the fill so it is visible on top.
+                // Bevel join on the first circle, Round join on the second.
+                d.DrawShapeThick(new ColorArgb32(255, 255, 0), 12f, JoinStyle.Bevel,
+                    new Circle(new PointF(300, 300), 100));
+                d.DrawShapeThick(new ColorArgb32(0, 255, 255), 8f, JoinStyle.Round,
+                    new Circle(new PointF(500, 500), 100));
+
+                DrawHelloWorld(d);
             }
             pictureBox1.Image = image;
         }
 
+        private void DrawHelloWorld(DrawI<ColorArgb32> draw)
+        {
+            const string fontPath = @"C:\Windows\Fonts\arial.ttf";
+            if (!File.Exists(fontPath)) return;
+
+            string text = "Hello world !";
+
+            using var stream = File.OpenRead(fontPath);
+            var font = TrueTypeFont.ParseFont(stream);
+
+            DrawText(draw, text, font);
+        }
+
+        private static void DrawText(DrawI<ColorArgb32> draw, string text, TrueTypeFont font)
+        {
+            var head = font.GetTable<HeadTable>(TableTypes.HEAD);
+            var hhea = font.GetTable<HheaTable>(TableTypes.HHEA);
+
+            float scale = 100f / head.UnitsPerEm;
+            float baselineY = 70f + font.GetTable<HheaTable>(TableTypes.HHEA).Ascent * scale;
+
+            var textDrawable = new Text(text, font, 80f, baselineY, scale);
+
+            // UV coordinates are normalized [0,1] over the bounding box of the whole string.
+            // Solid fill:  (u, v) => fillColor
+            // Texture:     (u, v) => texture[(int)(u * tex.Width), (int)(v * tex.Height)]
+            // Gradient:    (u, v) => ColorArgb32.LinearGrandient(colorA, colorB, u)
+            draw.FillShape2((u, v) => new ColorArgb32(255, 255, 255), textDrawable);
+
+            // Thick stroke on the text outline.
+            // IMPORTANT: precompute Length before the lambda — it is O(n) and
+            // would otherwise be re-evaluated for every painted pixel.
+            float textLen = textDrawable.Length;
+            draw.DrawShapeThick(
+                (arc, dist) => ColorArgb32.LinearGrandient(
+                    new ColorArgb32(255, 0, 0),
+                    new ColorArgb32(0, 0, 255),
+                    textLen > 0f ? arc / textLen : 0f),
+                2f, JoinStyle.Round, textDrawable);
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

@@ -68,6 +68,7 @@ namespace Utils.Drawing
 
                     foreach (var points in computedPoints.SlideEnumerateBy(2))
                     {
+                        if (points.Length < 2) break; // partial last window — degenerate curve
                         var start = Point.Round(points[0]);
                         var end = Point.Round(points[1]);
                         if (start.X == end.X && start.Y == end.Y) continue;
@@ -142,6 +143,12 @@ namespace Utils.Drawing
                 yield return newPoint;
                 lastPoint = newPoint;
             }
+
+            // Always yield the exact endpoint (t=1) to guarantee continuity with the next
+            // segment: the loop stops at f < 1 and may leave a sub-pixel gap to the true
+            // endpoint.  Bezier.Segments filters duplicate rounded pixels, so adding this
+            // point is safe even when it is very close to the last sampled point.
+            yield return ComputeBezierPoint(1, points, n);
         }
 
         /// <summary>

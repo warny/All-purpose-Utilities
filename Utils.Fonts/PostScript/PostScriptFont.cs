@@ -46,19 +46,33 @@ public class PostScriptFont : IFont
     private const int CharStringTwoByteScale = 256;
     private const int CharStringTwoByteOffset = 108;
 
+    /// <summary>Standard number of font units per em for Type 1 fonts.</summary>
+    private const float Type1UnitsPerEm = 1000f;
+
     /// <summary>
     /// Storage of glyphs indexed by character code.
     /// </summary>
     private readonly Dictionary<char, PostScriptGlyph> _glyphs;
 
+    /// <summary>Upper Y of the font bounding box (ascent), in font units. Zero when not declared.</summary>
+    private float _fontBBoxUry;
+
     /// <summary>
     /// Initializes the font with a set of parsed glyphs.
     /// </summary>
     /// <param name="glyphs">Glyph table built by one of the loader methods.</param>
-    private PostScriptFont(Dictionary<char, PostScriptGlyph> glyphs)
+    /// <param name="fontBBoxUry">Ascent value from <c>/FontBBox</c>, in font units.</param>
+    private PostScriptFont(Dictionary<char, PostScriptGlyph> glyphs, float fontBBoxUry = 0f)
     {
         _glyphs = glyphs;
+        _fontBBoxUry = fontBBoxUry;
     }
+
+    /// <inheritdoc />
+    public float Scale => 100f / Type1UnitsPerEm;
+
+    /// <inheritdoc />
+    public float BaseLineY => 70f + _fontBBoxUry * Scale;
 
     /// <summary>
     /// Loads a font in the simplified text form used by this demo.  This is
@@ -73,7 +87,7 @@ public class PostScriptFont : IFont
         Dictionary<char, PostScriptGlyph> glyphs = new();
         string? line;
         char currentChar = '\0';
-        float width = 0, height = 0, baseline = 0;
+        float width = 0, height = 0, baseline = 0, fontBBoxUry = 0f;
         List<PostScriptGlyph.PathCommand>? commands = null;
         while ((line = reader.ReadLine()) != null)
         {
@@ -100,6 +114,12 @@ public class PostScriptFont : IFont
             {
                 baseline = float.Parse(line.Split(':', 2)[1].Trim(), CultureInfo.InvariantCulture);
             }
+            else if (line.StartsWith("FontBBox:", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = line.Split(':', 2)[1].Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 4)
+                    fontBBoxUry = float.Parse(parts[3], CultureInfo.InvariantCulture);
+            }
             else if (line.Equals("EndGlyph", StringComparison.OrdinalIgnoreCase))
             {
                 if (currentChar != '\0' && commands != null)
@@ -114,7 +134,7 @@ public class PostScriptFont : IFont
                 ParsePathLine(line, commands);
             }
         }
-        return new PostScriptFont(glyphs);
+        return new PostScriptFont(glyphs, fontBBoxUry);
     }
 
     /// <summary>
@@ -175,6 +195,7 @@ public class PostScriptFont : IFont
         int eexecIndex = pfaText.IndexOf("eexec", StringComparison.OrdinalIgnoreCase);
         if (eexecIndex < 0)
             throw new InvalidDataException("Invalid PFA file: missing eexec section");
+        float fontBBoxUry = ParseFontBBoxUry(pfaText[..eexecIndex]);
         eexecIndex += 5;
         var hexBuilder = new StringBuilder();
         for (int i = eexecIndex; i < pfaText.Length; i++)
@@ -188,7 +209,22 @@ public class PostScriptFont : IFont
         byte[] encrypted = ConvertHex(hexBuilder.ToString());
         byte[] decrypted = DecryptType1(encrypted, 55665, 4);
         string decryptedText = Encoding.ASCII.GetString(decrypted);
-        return ParseType1(decryptedText);
+        var font = ParseType1(decryptedText);
+        font._fontBBoxUry = fontBBoxUry;
+        return font;
+    }
+
+    /// <summary>
+    /// Extracts the <c>ury</c> (ascent) value from a <c>/FontBBox [llx lly urx ury]</c>
+    /// declaration in PostScript source text.  Returns zero when no declaration is found.
+    /// </summary>
+    /// <param name="text">PostScript source text to search.</param>
+    private static float ParseFontBBoxUry(string text)
+    {
+        var m = Regex.Match(
+            text,
+            @"/FontBBox\s*\[\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+(-?\d+(?:\.\d+)?)\s*\]");
+        return m.Success ? float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : 0f;
     }
 
     /// <summary>

@@ -16,6 +16,10 @@ namespace Utils.Drawing
 
         private PointF startPoint;
         private PointF lastPoint;
+        private bool isClosed;
+
+        /// <summary>Gets whether this path has been explicitly closed.</summary>
+        public bool IsClosed => isClosed;
 
         /// <summary>
         /// Gets the total length of the path.
@@ -30,6 +34,14 @@ namespace Utils.Drawing
         {
             this.startPoint = startPoint;
             this.lastPoint = startPoint;
+        }
+
+        /// <summary>Marks this path as closed (contour returns to its starting point).</summary>
+        /// <returns>The current <see cref="Path"/> instance.</returns>
+        public Path Close()
+        {
+            isClosed = true;
+            return this;
         }
 
         /// <summary>
@@ -83,7 +95,7 @@ namespace Utils.Drawing
         /// <returns>The sequence of path segments.</returns>
         public IEnumerable<Segment> GetSegments(bool closed)
         {
-            if (closed)
+            if (closed || isClosed)
             {
                 return this.segments.FollowedBy(new Segment(this.lastPoint, this.startPoint));
             }

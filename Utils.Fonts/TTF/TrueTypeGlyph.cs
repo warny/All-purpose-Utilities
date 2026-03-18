@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Utils.Fonts.TTF.Tables.Glyf;
 
 namespace Utils.Fonts.TTF;
@@ -11,21 +11,27 @@ namespace Utils.Fonts.TTF;
 public class TrueTypeGlyph : IGlyph
 {
     private readonly GlyphBase glyph;
+    private readonly float advanceWidth;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TrueTypeGlyph"/> class using the specified base glyph.
+    /// Initializes a new instance of the <see cref="TrueTypeGlyph"/> class.
     /// </summary>
     /// <param name="glyph">The base glyph data. Cannot be null.</param>
+    /// <param name="advanceWidth">
+    /// Horizontal advance width in font units, taken from the <c>hmtx</c> table.
+    /// This is the distance the pen advances after drawing this glyph.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="glyph"/> is null.</exception>
-    public TrueTypeGlyph(GlyphBase glyph)
+    public TrueTypeGlyph(GlyphBase glyph, float advanceWidth)
     {
         this.glyph = glyph ?? throw new ArgumentNullException(nameof(glyph));
+        this.advanceWidth = advanceWidth;
     }
 
     /// <summary>
-    /// Gets the width of the glyph, computed as the difference between the maximum and minimum X coordinates.
+    /// Gets the horizontal advance width of the glyph in font units (from the <c>hmtx</c> table).
     /// </summary>
-    public float Width => glyph.MaxX - glyph.MinX;
+    public float Width => advanceWidth;
 
     /// <summary>
     /// Gets the height of the glyph, computed as the difference between the maximum and minimum Y coordinates.
