@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
 using Utils.Imaging;
 using Utils.Mathematics;
 using System.Linq;
-using Utils.Collections;
-using System.Diagnostics;
 using Utils.Objects;
 
 namespace Utils.Drawing
@@ -74,75 +71,218 @@ namespace Utils.Drawing
         }
 
         /// <summary>
-        /// Fills shapes using the even-odd rule with a UV color mapping.
+        /// Draws the outline of one or more shapes using a solid color.
         /// </summary>
-        /// <param name="color">Delegate providing colors for each pixel.</param>
-        /// <param name="drawables">Shapes to fill.</param>
-        public void FillShape1(UVMap<T> color, params IDrawable[] drawables)
-                => FillShape1(color, (IEnumerable<IDrawable>)drawables);
+        /// <param name="color">Color applied to the outlines.</param>
+        /// <param name="drawables">Shapes to draw.</param>
+        public void DrawShape(T color, params IDrawable[] drawables)
+            => DrawShape(new MapBrush<T>(color), (IEnumerable<IDrawable>)drawables);
 
         /// <summary>
-        /// Fills shapes using the even-odd rule with a UV color mapping.
+        /// Draws the outline of shapes using a solid color.
         /// </summary>
-        /// <param name="color">Delegate providing colors for each pixel.</param>
-        /// <param name="drawables">Shapes to fill.</param>
-        public void FillShape1(UVMap<T> color, IEnumerable<IDrawable> drawables)
+        /// <param name="color">Color applied to the outlines.</param>
+        /// <param name="drawables">Shapes to draw.</param>
+        public void DrawShape(T color, IEnumerable<IDrawable> drawables)
+            => DrawShape(new MapBrush<T>(color), drawables);
+
+        /// <summary>
+        /// Draws the outline of one or more shapes using a brush.
+        /// The brush position is normalised independently per shape over [0, 1].
+        /// </summary>
+        /// <param name="color">Brush providing the colors along each outline.</param>
+        /// <param name="drawables">Shapes to draw.</param>
+        public void DrawShape(IBrush<T> color, params IDrawable[] drawables)
+            => DrawShape(color, (IEnumerable<IDrawable>)drawables);
+
+        /// <summary>
+        /// Draws the outline of shapes using a brush.
+        /// The brush position is normalised independently per shape over [0, 1].
+        /// </summary>
+        /// <param name="color">Brush providing the colors along each outline.</param>
+        /// <param name="drawables">Shapes to draw.</param>
+        public void DrawShape(IBrush<T> color, IEnumerable<IDrawable> drawables)
         {
-            var points = drawables.SelectMany(d => d.GetPoints(true));
-            foreach (var linePoints in points.GroupBy(p => p.Y))
-            {
-                var orderedPoints = linePoints.OrderBy(p => p.X);
-                int direction = 0;
-                foreach (var pair in orderedPoints.SlideEnumerateBy(2))
-                {
-                    if (pair.Length < 2) break; // partial window — odd intersection count, skip
-                    int y = linePoints.Key;
-                    direction += pair[0].VerticalDirection;
-                    DrawPoint(pair[0].X, y, color(pair[0].X, y));
-                    if (direction != 0)
-                    {
-                        for (int x = pair[0].X; x <= pair[1].X; x++)
-                        {
-                            DrawPoint(x, y, color(x, y));
-                        }
-                    }
-                }
-            }
+            foreach (var drawable in drawables)
+                DrawShape(color, drawable);
         }
 
         /// <summary>
         /// Fills shapes using the non-zero winding rule with a UV color mapping.
         /// </summary>
-        /// <param name="color">Delegate providing colors for each pixel.</param>
+        /// <param name="color">
+        /// Delegate that receives normalized UV coordinates in [0,1] (relative to the bounding box of
+        /// all shapes) and returns the color for each pixel.  Pass a constant lambda such as
+        /// <c>(u, v) => myColor</c> for a solid fill, or sample a texture via <c>(u, v) => texture[(int)(u * w), (int)(v * h)]</c>.
+        /// </param>
+        /// <param name="drawables">Shapes to fill.</param>
+        public void FillShape1(UVMap<T> color, params IDrawable[] drawables)
+                => FillShape1(color, (IEnumerable<IDrawable>)drawables);
+
+        /// <summary>
+        /// Fills shapes using the non-zero winding rule with a UV color mapping.
+        /// </summary>
+        /// <param name="color">
+        /// Delegate that receives normalized UV coordinates in [0,1] (relative to the bounding box of
+        /// all shapes) and returns the color for each pixel.
+        /// </param>
+        /// <param name="drawables">Shapes to fill.</param>
+        public void FillShape1(UVMap<T> color, IEnumerable<IDrawable> drawables)
+            => FillShapeCore(color, drawables, w => w != 0);
+
+        /// <summary>
+        /// Fills shapes using the even-odd winding rule with a UV color mapping.
+        /// </summary>
+        /// <param name="color">
+        /// Delegate that receives normalized UV coordinates in [0,1] (relative to the bounding box of
+        /// all shapes) and returns the color for each pixel.  Pass a constant lambda such as
+        /// <c>(u, v) => myColor</c> for a solid fill, or sample a texture via <c>(u, v) => texture[(int)(u * w), (int)(v * h)]</c>.
+        /// </param>
         /// <param name="drawables">Shapes to fill.</param>
         public void FillShape2(UVMap<T> color, params IDrawable[] drawables)
                 => FillShape2(color, (IEnumerable<IDrawable>)drawables);
 
         /// <summary>
-        /// Fills shapes using the non-zero winding rule with a UV color mapping.
+        /// Fills shapes using the even-odd winding rule with a UV color mapping.
         /// </summary>
-        /// <param name="color">Delegate providing colors for each pixel.</param>
+        /// <param name="color">
+        /// Delegate that receives normalized UV coordinates in [0,1] (relative to the bounding box of
+        /// all shapes) and returns the color for each pixel.
+        /// </param>
         /// <param name="drawables">Shapes to fill.</param>
         public void FillShape2(UVMap<T> color, IEnumerable<IDrawable> drawables)
+            => FillShapeCore(color, drawables, w => MathEx.Mod(w, 2) != 0);
+
+        /// <summary>
+        /// Shared scan-line fill implementation using exact segment–scanline intersections.
+        /// </summary>
+        /// <param name="color">
+        /// Delegate receiving normalized UV coordinates in [0,1] for each filled pixel, where
+        /// (0,0) is the top-left corner and (1,1) is the bottom-right corner of the bounding box.
+        /// </param>
+        /// <param name="drawables">Shapes whose outlines define the fill region.</param>
+        /// <param name="fillTest">
+        /// Predicate on the accumulated winding number; returns <see langword="true"/> when a span
+        /// between two consecutive intersections should be filled.
+        /// </param>
+        /// <remarks>
+        /// Horizontal segments are skipped because they do not contribute intersections.
+        /// Each segment uses the convention "include lower endpoint, exclude upper endpoint" so that
+        /// shared vertices between consecutive segments are counted exactly once, preventing the
+        /// winding-number corruption that the previous rasterized-point approach suffered from.
+        /// After sorting, adjacent intersections closer than 0.5 px are merged: if their winding
+        /// contributions cancel (spike / aller-retour along the same path) both are removed; otherwise
+        /// they collapse into a single entry so that the winding count stays correct.
+        /// </remarks>
+        private void FillShapeCore(UVMap<T> color, IEnumerable<IDrawable> drawables, Func<int, bool> fillTest)
         {
-            var points = drawables.SelectMany(d => d.GetPoints(true));
-            foreach (var linePoints in points.GroupBy(p => p.Y))
+            // Collect all non-horizontal segments from every drawable (closing each open path)
+            var allSegments = drawables
+                .SelectMany(d => d.GetSegments(true))
+                .Where(s => s.Y1 != s.Y2)
+                .ToList();
+
+            if (allSegments.Count == 0) return;
+
+            // Compute bounding box for UV normalization
+            float minX = float.MaxValue, maxX = float.MinValue;
+            float minY = float.MaxValue, maxY = float.MinValue;
+            foreach (var seg in allSegments)
             {
-                var orderedPoints = linePoints.OrderBy(p => p.X);
-                int direction = 0;
-                foreach (var pair in orderedPoints.SlideEnumerateBy(2))
+                if (seg.X1 < minX) minX = seg.X1;
+                if (seg.X1 > maxX) maxX = seg.X1;
+                if (seg.X2 < minX) minX = seg.X2;
+                if (seg.X2 > maxX) maxX = seg.X2;
+                if (seg.Y1 < minY) minY = seg.Y1;
+                if (seg.Y1 > maxY) maxY = seg.Y1;
+                if (seg.Y2 < minY) minY = seg.Y2;
+                if (seg.Y2 > maxY) maxY = seg.Y2;
+            }
+
+            float rangeX = maxX - minX;
+            float rangeY = maxY - minY;
+            int yStart = (int)Math.Ceiling(minY);
+            int yEnd = (int)Math.Floor(maxY);
+
+            var intersections = new List<(float x, int winding)>();
+
+            for (int y = yStart; y <= yEnd; y++)
+            {
+                float fy = y;
+                intersections.Clear();
+
+                foreach (var seg in allSegments)
                 {
-                    if (pair.Length < 2) break; // partial window — odd intersection count, skip
-                    int y = linePoints.Key;
-                    direction += pair[0].VerticalDirection;
-                    DrawPoint(pair[0].X, y, color(pair[0].X, y));
-                    if (MathEx.Mod(direction, 2) != 0)
+                    float y1 = seg.Y1, y2 = seg.Y2;
+                    float yMin = y1 < y2 ? y1 : y2;
+                    float yMax = y1 < y2 ? y2 : y1;
+
+                    // Include lower endpoint, exclude upper endpoint:
+                    // ensures shared vertices between consecutive segments are counted once.
+                    if (fy < yMin || fy >= yMax) continue;
+
+                    float t = (fy - y1) / (y2 - y1);
+                    float xi = seg.X1 + t * (seg.X2 - seg.X1);
+                    int winding = y2 > y1 ? 1 : -1;
+                    intersections.Add((xi, winding));
+                }
+
+                if (intersections.Count == 0) continue;
+
+                intersections.Sort((a, b) => a.x.CompareTo(b.x));
+
+                // Merge coincident intersections (< 0.5 px apart) to handle spikes
+                // (aller + retour along the same path) and floating-point near-duplicates.
+                // Adjacent entries whose windings sum to zero are both removed (they cancel);
+                // those with a non-zero sum are collapsed into a single entry at the left X.
+                // A forward while-loop is used so that i stays in place after a removal,
+                // naturally pointing to the next unprocessed element without going out of range.
+                {
+                    int i = 0;
+                    while (i < intersections.Count - 1)
                     {
-                        for (int x = pair[0].X; x <= pair[1].X; x++)
+                        if (intersections[i + 1].x - intersections[i].x < 0.5f)
                         {
-                            DrawPoint(x, y, color(x, y));
+                            int merged = intersections[i].winding + intersections[i + 1].winding;
+                            intersections.RemoveAt(i + 1);
+                            if (merged == 0)
+                                intersections.RemoveAt(i);
+                            else
+                                intersections[i] = (intersections[i].x, merged);
+                            // Do not advance i: re-check the new neighbour in case it is also close.
+                        }
+                        else
+                        {
+                            i++;
                         }
                     }
+                }
+
+                if (intersections.Count == 0) continue;
+
+                // Walk intersections left-to-right, maintaining running winding sum.
+                // The span between intersection[i] and intersection[i+1] is filled when
+                // fillTest(windingSum after crossing intersection[i]) is true.
+                int windingSum = 0;
+                bool first = true;
+                float prevX = 0f;
+                float v = rangeY > 0f ? (fy - minY) / rangeY : 0f;
+
+                foreach (var (xi, winding) in intersections)
+                {
+                    if (!first && fillTest(windingSum))
+                    {
+                        int xFrom = (int)Math.Ceiling(prevX);
+                        int xTo = (int)Math.Floor(xi);
+                        for (int x = xFrom; x <= xTo; x++)
+                        {
+                            float u = rangeX > 0f ? (x - minX) / rangeX : 0f;
+                            DrawPoint(x, y, color(u, v));
+                        }
+                    }
+                    windingSum += winding;
+                    prevX = xi;
+                    first = false;
                 }
             }
         }

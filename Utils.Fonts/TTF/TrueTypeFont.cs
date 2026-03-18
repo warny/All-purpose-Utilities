@@ -7,6 +7,7 @@ using System.Text;
 using Utils.Fonts.TTF.Tables;
 using Utils.IO.Serialization;
 using Utils.Mathematics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Utils.Fonts.TTF;
 
@@ -38,6 +39,33 @@ public class TrueTypeFont : IFont
     /// Gets the type value read from the font file.
     /// </summary>
     public int Type { get; }
+
+    /// <summary>
+    /// lazy stores the font scale
+    /// </summary>
+    private float? scale = null;
+
+    /// <summary>
+    /// Get the font scale from the font header
+    /// </summary>
+    public float Scale 
+        => scale 
+        ?? (scale = (100f / GetTable<HeadTable>(TableTypes.HEAD).UnitsPerEm))
+        ?? 1f;
+
+    /// <summary>
+    /// lazy stores the font vertical baseline
+    /// </summary>
+    public float? baseLineY = null;
+
+    /// <summary>
+    /// Get the font vertical baseline from the font horizontal metric headers
+    /// </summary>
+    public float BaseLineY 
+        => baseLineY 
+        ?? (baseLineY = (70f + GetTable<HheaTable>(TableTypes.HHEA).Ascent * Scale))
+        ?? 70f;
+
 
     // TrueType offset table and directory entry sizes — see TrueType spec §Font Directory.
     private const int OffsetTableSize = 12;           // sfVersion(4) + numTables(2) + searchRange(2) + entrySelector(2) + rangeShift(2)

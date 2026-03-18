@@ -143,6 +143,12 @@ namespace Utils.Drawing
                 yield return newPoint;
                 lastPoint = newPoint;
             }
+
+            // Always yield the exact endpoint (t=1) to guarantee continuity with the next
+            // segment: the loop stops at f < 1 and may leave a sub-pixel gap to the true
+            // endpoint.  Bezier.Segments filters duplicate rounded pixels, so adding this
+            // point is safe even when it is very close to the last sampled point.
+            yield return ComputeBezierPoint(1, points, n);
         }
 
         /// <summary>

@@ -151,5 +151,84 @@ namespace UtilsTest.Fonts
             var font = CidKeyedFont.LoadPfb(reader);
             Assert.IsNotNull(font);
         }
+
+        [TestMethod]
+        public void PostScriptFontLoadParsesScale()
+        {
+            var font = PostScriptFont.Load(new MemoryStream(Encoding.ASCII.GetBytes("")));
+            Assert.AreEqual(0.1f, font.Scale, 1e-6f);
+        }
+
+        [TestMethod]
+        public void PostScriptFontLoadParsesFontBBox()
+        {
+            string txt =
+                """
+                FontBBox: -100 -200 1000 800
+                Glyph: A
+                Width: 10
+                Height: 10
+                Baseline: 0
+                Path:
+                M 0 0
+                EndGlyph
+                """;
+            using var ms = new MemoryStream(Encoding.ASCII.GetBytes(txt));
+            var font = PostScriptFont.Load(ms);
+            Assert.AreEqual(70f + 800f * 0.1f, font.BaseLineY, 1e-4f);
+        }
+
+        [TestMethod]
+        public void PostScriptFontLoadPfaParsesFontBBox()
+        {
+            string pfa = "%!PS-AdobeFont-1.0\n/FontBBox [-100 -200 1000 750] def\neexec\ncleartomark\n";
+            using var ms = new MemoryStream(Encoding.ASCII.GetBytes(pfa));
+            var font = PostScriptFont.LoadPfa(ms);
+            Assert.AreEqual(70f + 750f * 0.1f, font.BaseLineY, 1e-4f);
+        }
+
+        [TestMethod]
+        public void Type3FontParsesFontMatrixAndFontBBox()
+        {
+            string ps =
+                """
+                /FontMatrix [0.001 0 0 0.001 0 0] def
+                /FontBBox [-50 -100 600 700] def
+                /CharProcs 1 dict dup begin
+                /A { 5 0 0 0 5 5 setcachedevice
+                0 0 moveto
+                5 0 lineto
+                closepath
+                } bind def
+                end
+                """;
+            using var ms = new MemoryStream(Encoding.ASCII.GetBytes(ps));
+            var font = Type3Font.Load(ms);
+            Assert.AreEqual(0.1f, font.Scale, 1e-6f);
+            Assert.AreEqual(70f + 700f * 0.1f, font.BaseLineY, 1e-4f);
+        }
+
+        [TestMethod]
+        public void Type42FontDelegatesScaleAndBaseLineY()
+        {
+            byte[] ttf = (byte[])Fonts.ResourceManager.GetObject("Arial");
+            var hex = new StringBuilder(ttf.Length * 2);
+            foreach (byte b in ttf)
+                hex.AppendFormat("{0:X2}", b);
+            string ps = $"/sfnts [ <{hex}> ]";
+            using var ms = new MemoryStream(Encoding.ASCII.GetBytes(ps));
+            var font = Type42Font.Load(ms);
+            Assert.IsTrue(font.Scale > 0f);
+            Assert.IsTrue(font.BaseLineY > 0f);
+        }
+
+        [TestMethod]
+        public void CidKeyedFontLoadPfaParsesFontBBox()
+        {
+            string pfa = "%!PS-AdobeFont-1.0\n/FontBBox [-100 -200 1000 820] def\neexec\ncleartomark\n";
+            using var ms = new MemoryStream(Encoding.ASCII.GetBytes(pfa));
+            var font = CidKeyedFont.LoadPfa(ms);
+            Assert.AreEqual(70f + 820f * 0.1f, font.BaseLineY, 1e-4f);
+        }
     }
 }

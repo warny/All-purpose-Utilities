@@ -117,51 +117,36 @@ namespace DrawTest
             const string fontPath = @"C:\Windows\Fonts\arial.ttf";
             if (!File.Exists(fontPath)) return;
 
+            string text = "Hello world ! 😊";
+
             using var stream = File.OpenRead(fontPath);
             var font = TrueTypeFont.ParseFont(stream);
 
+            DrawText(draw, text, font);
+        }
+
+        private static void DrawText(DrawI<ColorArgb32> draw, string text, TrueTypeFont font)
+        {
             var head = font.GetTable<HeadTable>(TableTypes.HEAD);
             var hhea = font.GetTable<HheaTable>(TableTypes.HHEA);
 
-            // Scale factor: map font units to 20 px cap height.
-            float scale = 20f / head.UnitsPerEm;
+            float scale = 100f / head.UnitsPerEm;
+            float baselineY = 70f + font.GetTable<HheaTable>(TableTypes.HHEA).Ascent * scale;
 
-            // TrueType Y axis points upward; screen Y points downward — flip Y.
-            var glyphTransform = Matrix3x2.CreateScale(scale, -scale);
+            var textDrawable = new Text(text, font, 80f, baselineY, scale);
 
-            // Baseline sits below the requested top y=70 by the ascender distance.
-            float baselineY = 70f + hhea.Ascent * scale;
+            // UV coordinates are normalized [0,1] over the bounding box of the whole string.
+            // Solid fill:  (u, v) => fillColor
+            // Texture:     (u, v) => texture[(int)(u * tex.Width), (int)(v * tex.Height)]
+            // Gradient:    (u, v) => ColorArgb32.LinearGrandient(colorA, colorB, u)
+            draw.FillShape2((u, v) => new ColorArgb32(255, 255, 255), textDrawable);
+            draw.DrawShape(new ColorArgb32(0, 0, 0), textDrawable);
 
-            var fillColor = new ColorArgb32(255, 255, 255);
-
-            float x = 80f;
-            char prev = '\0';
-            foreach (char c in "Hello world")
-            {
-                if (prev != '\0')
-                    x += font.GetSpacingCorrection(prev, c) * scale;
-
-                var glyph = font.GetGlyph(c);
-                if (glyph != null)
-                {
-                    // Collect glyph outlines into paths, then fill with non-zero winding rule
-                    // (TrueType convention: outer contours CCW, inner contours CW in font space;
-                    // after Y-flip they reverse, but FillShape2 still handles holes correctly).
-                    var glyphPaths = new Paths<object>();
-                    glyphPaths.BeginDrawGlyph(x, baselineY, glyphTransform);
-                    glyph.ToGraphic(glyphPaths);
-                    glyphPaths.EndDrawGlyph();
-
-                    draw.FillShape2((px, py) => fillColor, glyphPaths.Cast<IDrawable>());
-                }
-
-                // Advance the pen by the hmtx advance width (correct typographic advance).
-                // Fall back to a fixed width for whitespace glyphs that have no outline.
-                float advance = glyph != null ? glyph.Width * scale : 0f;
-                x += advance > 0f ? advance : 0.4f * 20f;
-                prev = c;
-            }
         }
 
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

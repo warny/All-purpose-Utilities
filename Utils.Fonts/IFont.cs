@@ -22,6 +22,19 @@ public interface IFont
     /// <param name="after">The following character.</param>
     /// <returns>A float value representing the spacing correction in font units.</returns>
     float GetSpacingCorrection(char before, char after);
+
+    /// <summary>
+    /// Gets the scale factor mapping font units to pixels at a nominal 100-pixel cap height.
+    /// Typically <c>100 / unitsPerEm</c>.
+    /// </summary>
+    float Scale { get; }
+
+    /// <summary>
+    /// Gets the screen-space Y coordinate of the text baseline for a default 100-pixel
+    /// rendering, assuming the top of the text box is at y = 70.
+    /// Typically <c>70 + ascent * Scale</c>.
+    /// </summary>
+    float BaseLineY { get; }
 }
 
 /// <summary>

@@ -175,6 +175,7 @@ namespace Utils.Drawing
         /// <returns>Enumeration of segments representing the ellipse.</returns>
         public IEnumerable<Segment> GetSegments(bool closed)
         {
+            ComputeLines();
             return polylines.GetSegments(closed);
         }
     }

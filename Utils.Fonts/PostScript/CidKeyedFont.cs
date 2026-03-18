@@ -17,8 +17,14 @@ namespace Utils.Fonts.PostScript;
 /// </summary>
 public class CidKeyedFont : IFont
 {
+    /// <summary>Standard number of font units per em for CID-keyed Type 1 fonts.</summary>
+    private const float CidUnitsPerEm = 1000f;
+
     /// <summary>Glyph table indexed by CID.</summary>
     private readonly Dictionary<int, PostScriptGlyph> _glyphs;
+
+    /// <summary>Upper Y of the font bounding box (ascent), in font units. Zero when not declared.</summary>
+    private float _fontBBoxUry;
 
     /// <summary>
     /// Initializes a new instance with the specified glyph collection.
@@ -37,6 +43,12 @@ public class CidKeyedFont : IFont
     /// <remarks>No kerning data is parsed from the font.</remarks>
     public float GetSpacingCorrection(char before, char after) => 0f;
 
+    /// <inheritdoc />
+    public float Scale => 100f / CidUnitsPerEm;
+
+    /// <inheritdoc />
+    public float BaseLineY => 70f + _fontBBoxUry * Scale;
+
     /// <summary>
     /// Loads a CID-Keyed PostScript Type&#160;1 <em>PFA</em> font stream.
     /// </summary>
@@ -49,6 +61,7 @@ public class CidKeyedFont : IFont
         int eexecIndex = pfaText.IndexOf("eexec", StringComparison.OrdinalIgnoreCase);
         if (eexecIndex < 0)
             throw new InvalidDataException("Invalid PFA file: missing eexec section");
+        float fontBBoxUry = ParseFontBBoxUry(pfaText[..eexecIndex]);
         eexecIndex += 5;
         var hexBuilder = new StringBuilder();
         for (int i = eexecIndex; i < pfaText.Length; i++)
@@ -64,7 +77,22 @@ public class CidKeyedFont : IFont
         byte[] encrypted = PostScriptFont.ConvertHex(hexBuilder.ToString());
         byte[] decrypted = PostScriptFont.DecryptType1(encrypted, 55665, 4);
         string decryptedText = Encoding.ASCII.GetString(decrypted);
-        return ParseCidType1(decryptedText);
+        var font = ParseCidType1(decryptedText);
+        font._fontBBoxUry = fontBBoxUry;
+        return font;
+    }
+
+    /// <summary>
+    /// Extracts the <c>ury</c> (ascent) value from a <c>/FontBBox [llx lly urx ury]</c>
+    /// declaration.  Returns zero when no declaration is found.
+    /// </summary>
+    /// <param name="text">PostScript source text to search.</param>
+    private static float ParseFontBBoxUry(string text)
+    {
+        var m = Regex.Match(
+            text,
+            @"/FontBBox\s*\[\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+(-?\d+(?:\.\d+)?)\s*\]");
+        return m.Success ? float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : 0f;
     }
 
     /// <summary>
