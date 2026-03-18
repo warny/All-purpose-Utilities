@@ -99,7 +99,7 @@ internal static class GrammarEmitter
             _                    => "GrammarType.Combined"
         };
         sb.AppendLine($"            Type: {grammarType},");
-        sb.AppendLine("            Options: null,");
+        EmitGrammarOptions(sb, grammar, indent: 3);
         sb.AppendLine("            Actions: new GrammarAction[0],");
         sb.AppendLine("            Imports: new GrammarImport[0],");
 
@@ -150,6 +150,30 @@ internal static class GrammarEmitter
         sb.AppendLine("}");
 
         return sb.ToString();
+    }
+
+    private static void EmitGrammarOptions(StringBuilder sb, G4Grammar grammar, int indent)
+    {
+        string pad = new string(' ', indent * 4);
+
+        if (grammar.Options.Count == 0)
+        {
+            sb.AppendLine($"{pad}Options: null,");
+            return;
+        }
+
+        sb.AppendLine($"{pad}Options: new GrammarOptions(new Dictionary<string, string>");
+        sb.AppendLine($"{pad}{{");
+
+        int optionIndex = 0;
+        foreach (var option in grammar.Options.OrderBy(item => item.Key, StringComparer.Ordinal))
+        {
+            string suffix = optionIndex < grammar.Options.Count - 1 ? "," : "";
+            sb.AppendLine($"{pad}    [\"{Escape(option.Key)}\"] = \"{Escape(option.Value)}\"{suffix}");
+            optionIndex++;
+        }
+
+        sb.AppendLine($"{pad}}}),");
     }
 
     // ── Rule emission ────────────────────────────────────────────────

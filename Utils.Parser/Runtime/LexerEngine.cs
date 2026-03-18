@@ -19,6 +19,7 @@ namespace Utils.Parser.Runtime;
 public sealed class LexerEngine(ParserDefinition definition)
 {
     private readonly Stack<LexerMode> _modeStack = new();
+    private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
 
     // ── "more" buffering state ────────────────────────────────────────────────
     // When a token fires "-> more", its text is accumulated here and prepended to
@@ -169,12 +170,12 @@ public sealed class LexerEngine(ParserDefinition definition)
         switch (content)
         {
             case LiteralMatch lit:
-                return TryMatchLiteral(stream, lit.Value);
+                return TryMatchLiteral(stream, lit.Value, _caseInsensitive);
 
             case RangeMatch range:
                 if (stream.IsEnd) return false;
                 var ch = stream.Peek();
-                if (ch >= range.From && ch <= range.To)
+                if (IsCharInRange(ch, range.From, range.To, _caseInsensitive))
                 {
                     stream.Consume();
                     return true;
@@ -184,7 +185,7 @@ public sealed class LexerEngine(ParserDefinition definition)
             case CharSetMatch charSet:
                 if (stream.IsEnd) return false;
                 var c = stream.Peek();
-                var inSet = charSet.Chars.Contains(c);
+                var inSet = IsCharInSet(charSet.Chars, c, _caseInsensitive);
                 if (charSet.Negated ? !inSet : inSet)
                 {
                     stream.Consume();
@@ -257,20 +258,58 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// </summary>
     /// <param name="stream">Character stream.</param>
     /// <param name="value">Literal string to match.</param>
+    /// <param name="caseInsensitive"><c>true</c> to compare characters without regard to letter case.</param>
     /// <returns><c>true</c> if the full literal was matched.</returns>
-    private static bool TryMatchLiteral(ICharStream stream, string value)
+    private static bool TryMatchLiteral(ICharStream stream, string value, bool caseInsensitive)
     {
         if (value.Length == 0)
             return true;
 
         for (int i = 0; i < value.Length; i++)
         {
-            if (stream.Peek(i) != value[i])
+            if (!CharsEqual(stream.Peek(i), value[i], caseInsensitive))
                 return false;
         }
 
         stream.Consume(value.Length);
         return true;
+    }
+
+    /// <summary>Returns <c>true</c> when the grammar declares <c>caseInsensitive = true</c>.</summary>
+    private static bool IsCaseInsensitive(ParserDefinition definition) =>
+        definition.Options?.Values.TryGetValue("caseInsensitive", out var value) == true
+        && bool.TryParse(value, out var parsedValue)
+        && parsedValue;
+
+    /// <summary>Compares two characters using ordinal or case-insensitive semantics.</summary>
+    private static bool CharsEqual(char left, char right, bool caseInsensitive) =>
+        caseInsensitive
+            ? char.ToUpperInvariant(left) == char.ToUpperInvariant(right)
+            : left == right;
+
+    /// <summary>Checks whether <paramref name="value"/> belongs to the inclusive range.</summary>
+    private static bool IsCharInRange(char value, char start, char end, bool caseInsensitive)
+    {
+        if (!caseInsensitive)
+            return value >= start && value <= end;
+
+        char normalizedValue = char.ToUpperInvariant(value);
+        char normalizedStart = char.ToUpperInvariant(start);
+        char normalizedEnd = char.ToUpperInvariant(end);
+        return normalizedValue >= normalizedStart && normalizedValue <= normalizedEnd;
+    }
+
+    /// <summary>Checks membership in a character set, optionally ignoring case.</summary>
+    private static bool IsCharInSet(IReadOnlySet<char> chars, char value, bool caseInsensitive)
+    {
+        if (chars.Contains(value))
+            return true;
+
+        if (!caseInsensitive)
+            return false;
+
+        return chars.Contains(char.ToUpperInvariant(value))
+            || chars.Contains(char.ToLowerInvariant(value));
     }
 
     /// <summary>

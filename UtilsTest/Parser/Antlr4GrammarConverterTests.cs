@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Model;
+using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
 
@@ -270,6 +271,23 @@ public class Antlr4GrammarConverterTests
         Assert.IsNotNull(def.Options);
         Assert.IsTrue(def.Options!.Values.ContainsKey("tokenVocab"));
         Assert.AreEqual("MyLexer", def.Options.Values["tokenVocab"]);
+    }
+
+    [TestMethod]
+    public void ParseCaseInsensitiveOption_AllowsUppercaseLexerInput()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            lexer grammar A;
+            options { caseInsensitive=true; }
+            WORD : 'abc' ;
+            """);
+
+        var lexer = new LexerEngine(def);
+        var tokens = lexer.Tokenize(new StringCharStream("ABC")).ToList();
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("WORD", tokens[0].RuleName);
+        Assert.AreEqual("ABC", tokens[0].Text);
     }
 
     // ─── 12. mode spec ────────────────────────────────────────────────────────

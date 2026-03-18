@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
@@ -220,6 +221,19 @@ public class Antlr4GrammarGeneratorTests
         Assert.AreEqual(8, g.LexerRules.Count); // Number PLUS MINUS MULT DIV LPAREN RPAREN WS
     }
 
+    [TestMethod]
+    public void Parser_GrammarOptions_AreCaptured()
+    {
+        var grammar = Parse("""
+            grammar G;
+            options { caseInsensitive = true; tokenVocab = CommonLexer; }
+            rule : 'a' ;
+            """);
+
+        Assert.AreEqual("true", grammar.Options["caseInsensitive"]);
+        Assert.AreEqual("CommonLexer", grammar.Options["tokenVocab"]);
+    }
+
     // ── GrammarEmitter ────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -295,6 +309,19 @@ public class Antlr4GrammarGeneratorTests
         StringAssert.Contains(src, "[global::System.CodeDom.Compiler.GeneratedCode");
     }
 
+    [TestMethod]
+    public void Emitter_GrammarOptions_AreIncludedInOutput()
+    {
+        var src = Emit("""
+            grammar G;
+            options { caseInsensitive = true; }
+            rule : 'a' ;
+            """, "", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "Options: new GrammarOptions");
+        StringAssert.Contains(src, "[\"caseInsensitive\"] = \"true\"");
+    }
+
     // ── Generated ExpGrammar (integration) ───────────────────────────────────
 
     [TestMethod]
@@ -355,6 +382,18 @@ public class Antlr4GrammarGeneratorTests
         Assert.AreEqual(a.RootRule?.Name,         b.RootRule?.Name);
     }
 
+    [TestMethod]
+    public void GeneratedExpGrammar_FileIsEmittedUnderObjFolder()
+    {
+        var projectDirectory = GetProjectDirectory();
+        var generatedFiles = Directory.GetFiles(projectDirectory, "ExpGrammar.Grammar.g.cs", SearchOption.AllDirectories)
+            .Where(path => path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
+            .ToArray();
+
+        Assert.AreEqual(1, generatedFiles.Length);
+        StringAssert.Contains(File.ReadAllText(generatedFiles[0]), "// Source: Exp.g4");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static G4Token[] Tokenize(string text) =>
@@ -370,6 +409,21 @@ public class Antlr4GrammarGeneratorTests
     {
         var grammar = Parse(g4Text);
         return GrammarEmitter.Emit(grammar, ns, cls, file);
+    }
+
+    private static string GetProjectDirectory()
+    {
+        var currentDirectory = AppContext.BaseDirectory;
+
+        while (!string.IsNullOrEmpty(currentDirectory))
+        {
+            if (File.Exists(Path.Combine(currentDirectory, "UtilsTest.csproj")))
+                return currentDirectory;
+
+            currentDirectory = Path.GetDirectoryName(currentDirectory);
+        }
+
+        throw new DirectoryNotFoundException("Unable to locate the UtilsTest project directory.");
     }
 
     // Exp.g4 content embedded so the test is self-contained

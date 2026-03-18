@@ -1,0 +1,27 @@
+<Project>
+    <PropertyGroup>
+        <UtilsParserAttachGeneratedFiles Condition="'$(UtilsParserAttachGeneratedFiles)' == ''">true</UtilsParserAttachGeneratedFiles>
+        <EmitCompilerGeneratedFiles Condition="'$(UtilsParserAttachGeneratedFiles)' == 'true' and '$(EmitCompilerGeneratedFiles)' == ''">true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(UtilsParserAttachGeneratedFiles)' == 'true'">
+        <_UtilsParserAntlrGrammar Include="@(AdditionalFiles)" Condition="$([System.String]::Copy('%(Extension)').ToLowerInvariant()) == '.g4'">
+            <GeneratedClassName Condition="'%(ClassName)' == ''">%(Filename)</GeneratedClassName>
+            <GeneratedClassName Condition="'%(ClassName)' != ''">%(ClassName)</GeneratedClassName>
+            <GeneratedFileName>%(GeneratedClassName).Grammar.g.cs</GeneratedFileName>
+        </_UtilsParserAntlrGrammar>
+
+        <_UtilsParserAttachedGeneratedFiles Include="@(_UtilsParserAntlrGrammar->'$(CompilerGeneratedFilesOutputPath)\**\%(GeneratedFileName)')">
+            <DependentUpon>%(_UtilsParserAntlrGrammar.Filename)%(_UtilsParserAntlrGrammar.Extension)</DependentUpon>
+            <Visible>false</Visible>
+            <AutoGen>true</AutoGen>
+        </_UtilsParserAttachedGeneratedFiles>
+
+        <None Include="@(_UtilsParserAttachedGeneratedFiles)">
+            <DependentUpon>%(_UtilsParserAttachedGeneratedFiles.DependentUpon)</DependentUpon>
+            <Visible>%(_UtilsParserAttachedGeneratedFiles.Visible)</Visible>
+            <AutoGen>%(_UtilsParserAttachedGeneratedFiles.AutoGen)</AutoGen>
+        </None>
+    </ItemGroup>
+</Project>

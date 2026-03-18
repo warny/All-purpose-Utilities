@@ -26,6 +26,7 @@ internal record ParserFrame(Rule Rule, int InputPosition);
 public sealed class ParserEngine(ParserDefinition definition)
 {
     private readonly Stack<ParserFrame> _ruleStack = new();
+    private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
 
     /// <summary>
     /// Parses <paramref name="tokens"/> starting from <paramref name="startRule"/>
@@ -351,7 +352,10 @@ public sealed class ParserEngine(ParserDefinition definition)
         var token = context.Peek();
         if (token is null) return null;
 
-        if (token.Text == lit.Value)
+        if (string.Equals(
+            token.Text,
+            lit.Value,
+            _caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
         {
             context.Consume();
             return new LexerNode(token.Span, token.ModeName, rule, token);
@@ -359,6 +363,12 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         return null;
     }
+
+    /// <summary>Returns <c>true</c> when the grammar declares <c>caseInsensitive = true</c>.</summary>
+    private static bool IsCaseInsensitive(ParserDefinition definition) =>
+        definition.Options?.Values.TryGetValue("caseInsensitive", out var value) == true
+        && bool.TryParse(value, out var parsedValue)
+        && parsedValue;
 
     /// <summary>
     /// Implements the <c>~</c> negation operator at the token level: consumes the

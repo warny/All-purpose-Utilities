@@ -10,6 +10,8 @@ internal sealed class G4Grammar
 {
     public string                  Name        { get; set; } = "";
     public G4GrammarKind           Kind        { get; set; }
+    /// <summary>Grammar-level options declared in <c>options { ... }</c>.</summary>
+    public Dictionary<string, string> Options  { get; } = new Dictionary<string, string>();
     /// <summary>Rules in DEFAULT_MODE.</summary>
     public List<G4Rule>            LexerRules  { get; } = new List<G4Rule>();
     public List<G4Rule>            ParserRules { get; } = new List<G4Rule>();
