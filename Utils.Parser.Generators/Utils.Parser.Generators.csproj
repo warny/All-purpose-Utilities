@@ -17,6 +17,7 @@
         <PackageTags>omy;utilities;parser;antlr4;grammar;generator;roslyn</PackageTags>
         <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,6 +28,11 @@
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>UtilsTest</_Parameter1>
         </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="buildTransitive\Utils.Parser.Generators.targets" Pack="true" PackagePath="buildTransitive\Utils.Parser.Generators.targets" />
     </ItemGroup>
 
 </Project>

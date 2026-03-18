@@ -1,5 +1,7 @@
 grammar SqlQueryGrammar;
 
+options { caseInsensitive = true; }
+
 sqlQuery
     : statement statementTerminator*
     ;
@@ -237,32 +239,32 @@ statementTerminator
     : SEMI
     ;
 
-WITH: [Ww] [Ii] [Tt] [Hh];
-RECURSIVE: [Rr] [Ee] [Cc] [Uu] [Rr] [Ss] [Ii] [Vv] [Ee];
-SELECT: [Ss] [Ee] [Ll] [Ee] [Cc] [Tt];
-INSERT: [Ii] [Nn] [Ss] [Ee] [Rr] [Tt];
-UPDATE: [Uu] [Pp] [Dd] [Aa] [Tt] [Ee];
-DELETE: [Dd] [Ee] [Ll] [Ee] [Tt] [Ee];
-INTO: [Ii] [Nn] [Tt] [Oo];
-VALUES: [Vv] [Aa] [Ll] [Uu] [Ee] [Ss];
-SET: [Ss] [Ee] [Tt];
-FROM: [Ff] [Rr] [Oo] [Mm];
-USING: [Uu] [Ss] [Ii] [Nn] [Gg];
-WHERE: [Ww] [Hh] [Ee] [Rr] [Ee];
-GROUP: [Gg] [Rr] [Oo] [Uu] [Pp];
-BY: [Bb] [Yy];
-HAVING: [Hh] [Aa] [Vv] [Ii] [Nn] [Gg];
-ORDER: [Oo] [Rr] [Dd] [Ee] [Rr];
-LIMIT: [Ll] [Ii] [Mm] [Ii] [Tt];
-OFFSET: [Oo] [Ff] [Ff] [Ss] [Ee] [Tt];
-OUTPUT: [Oo] [Uu] [Tt] [Pp] [Uu] [Tt];
-RETURNING: [Rr] [Ee] [Tt] [Uu] [Rr] [Nn] [Ii] [Nn] [Gg];
-UNION: [Uu] [Nn] [Ii] [Oo] [Nn];
-ALL: [Aa] [Ll] [Ll];
-INTERSECT: [Ii] [Nn] [Tt] [Ee] [Rr] [Ss] [Ee] [Cc] [Tt];
-EXCEPT: [Ee] [Xx] [Cc] [Ee] [Pp] [Tt];
-DISTINCT: [Dd] [Ii] [Ss] [Tt] [Ii] [Nn] [Cc] [Tt];
-AS: [Aa] [Ss];
+WITH: 'WITH';
+RECURSIVE: 'RECURSIVE';
+SELECT: 'SELECT';
+INSERT: 'INSERT';
+UPDATE: 'UPDATE';
+DELETE: 'DELETE';
+INTO: 'INTO';
+VALUES: 'VALUES';
+SET: 'SET';
+FROM: 'FROM';
+USING: 'USING';
+WHERE: 'WHERE';
+GROUP: 'GROUP';
+BY: 'BY';
+HAVING: 'HAVING';
+ORDER: 'ORDER';
+LIMIT: 'LIMIT';
+OFFSET: 'OFFSET';
+OUTPUT: 'OUTPUT';
+RETURNING: 'RETURNING';
+UNION: 'UNION';
+ALL: 'ALL';
+INTERSECT: 'INTERSECT';
+EXCEPT: 'EXCEPT';
+DISTINCT: 'DISTINCT';
+AS: 'AS';
 
 LPAREN: '(';
 RPAREN: ')';
@@ -291,4 +293,3 @@ IDENTIFIER: [A-Za-z_#] [A-Za-z0-9_$#]*;
 LINE_COMMENT: '--' ~[\r\n]* -> skip;
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 WS: [ \t\r\n]+ -> skip;
-

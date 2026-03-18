@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Utils.Parser.Generators.Internal;
 
@@ -46,8 +47,8 @@ internal sealed class G4Parser
 
         while (!AtEof())
         {
-            // options { ... } — skip
-            if (PeekValue("options")) { SkipBlock(); continue; }
+            // options { ... }
+            if (PeekValue("options")) { ParseOptionsBlock(grammar.Options); continue; }
 
             // tokens { ... } — skip
             if (PeekValue("tokens")) { SkipBlock(); continue; }
@@ -376,6 +377,41 @@ internal sealed class G4Parser
                 else if (k == G4TokenKind.RBrace) { depth--; Consume(); if (depth == 0) break; }
                 Consume();
             }
+        }
+    }
+
+    /// <summary>Parses <c>options { key=value; }</c> into the provided dictionary.</summary>
+    private void ParseOptionsBlock(IDictionary<string, string> options)
+    {
+        Consume(); // options
+
+        if (Peek().Kind != G4TokenKind.BraceBlock)
+        {
+            SkipBlock();
+            return;
+        }
+
+        var rawBlock = Consume().Value;
+        foreach (var optionDeclaration in rawBlock.Split(';'))
+        {
+            var trimmedDeclaration = optionDeclaration.Trim();
+            if (trimmedDeclaration.Length == 0)
+                continue;
+
+            int separatorIndex = trimmedDeclaration.IndexOf('=');
+            if (separatorIndex < 0)
+                continue;
+
+            var key = trimmedDeclaration.Substring(0, separatorIndex).Trim();
+            var value = trimmedDeclaration.Substring(separatorIndex + 1).Trim();
+
+            if (key.Length == 0)
+                continue;
+
+            if (value.Length >= 2 && value.First() == '\'' && value.Last() == '\'')
+                value = value.Substring(1, value.Length - 2);
+
+            options[key] = value;
         }
     }
 

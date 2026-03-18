@@ -22,6 +22,9 @@
 		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
 	</ItemGroup>
 
+    <Import Project="..\Utils.Parser.Generators\buildTransitive\Utils.Parser.Generators.targets"
+            Condition="Exists('..\Utils.Parser.Generators\buildTransitive\Utils.Parser.Generators.targets')" />
+
 	<ItemGroup>
 		<None Include="Resources\TestResource.fr.resx">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
