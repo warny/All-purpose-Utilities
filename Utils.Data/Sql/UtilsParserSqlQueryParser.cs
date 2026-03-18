@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Utils.Parser.Runtime;
 
@@ -12,8 +13,6 @@ namespace Utils.Data.Sql;
 /// </summary>
 internal sealed class UtilsParserSqlQueryParser
 {
-    private static readonly CompiledGrammar Grammar = new(SqlQueryGrammar.Build());
-
     private readonly SqlSyntaxOptions syntaxOptions;
 
     /// <summary>
@@ -30,12 +29,12 @@ internal sealed class UtilsParserSqlQueryParser
     /// </summary>
     /// <param name="sql">SQL text to parse.</param>
     /// <returns>The parsed statement tree.</returns>
-    public SqlStatement Parse(string sql)
+    public SqlStatement Parse([StringSyntax(SqlQueryGrammar.StringSyntaxName)] string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
 
-        var tokens = Grammar.Tokenize(sql).ToList();
-        var root = Grammar.Parse(sql);
+        var tokens = SqlQueryGrammar.Tokenize(sql).ToList();
+        var root = SqlQueryGrammar.Parse(sql);
         if (root is ErrorNode error)
         {
             throw new SqlParseException(error.Message);

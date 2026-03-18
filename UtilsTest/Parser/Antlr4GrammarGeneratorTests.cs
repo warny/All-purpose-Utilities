@@ -234,6 +234,76 @@ public class Antlr4GrammarGeneratorTests
         Assert.AreEqual("CommonLexer", grammar.Options["tokenVocab"]);
     }
 
+    [TestMethod]
+    public void Emitter_StringSyntaxName_RemovesTrailingGrammarSuffix()
+    {
+        var src = Emit("grammar SqlQueryGrammar; query : SELECT ; SELECT : 'SELECT' ;", "", "Cls", "g.g4");
+        StringAssert.Contains(src, "public const string StringSyntaxName = \"SqlQuery\";");
+    }
+
+    [TestMethod]
+    public void Emitter_StringSyntaxKeywords_IncludeCaseInsensitiveLiteralRules()
+    {
+        var src = Emit("""
+            grammar SqlQueryGrammar;
+            query : SELECT fromClause identifier ;
+            fromClause : FROM identifier ;
+            identifier : IDENTIFIER ;
+            SELECT : [Ss] [Ee] [Ll] [Ee] [Cc] [Tt] ;
+            FROM : 'from' ;
+            IDENTIFIER : [a-z]+ ;
+            """, "", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "public static IReadOnlyList<string> StringSyntaxKeywords");
+        StringAssert.Contains(src, "\"SELECT\"");
+        StringAssert.Contains(src, "\"FROM\"");
+        Assert.IsFalse(src.Contains("StringSyntaxKeywords { get; } = new string[] { \"FROM\", \"IDENTIFIER\""));
+        Assert.IsFalse(src.Contains("StringSyntaxKeywords { get; } = new string[] { \"IDENTIFIER\""));
+    }
+
+    [TestMethod]
+    public void Emitter_StringSyntaxNonAlphanumericTokens_IncludeOperatorsAndPunctuation()
+    {
+        var src = Emit("""
+            grammar SqlQueryGrammar;
+            query : SELECT PLUS LPAREN LTE identifier ;
+            identifier : IDENTIFIER ;
+            SELECT : 'select' ;
+            PLUS : '+' ;
+            LPAREN : '(' ;
+            LTE : '<=' ;
+            IDENTIFIER : [a-z]+ ;
+            """, "", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "public static IReadOnlyList<string> StringSyntaxNonAlphanumericTokens");
+        StringAssert.Contains(src, "\"+\"");
+        StringAssert.Contains(src, "\"(\"");
+        StringAssert.Contains(src, "\"<=\"");
+        Assert.IsFalse(src.Contains("StringSyntaxNonAlphanumericTokens { get; } = new string[] { \"(\", \"+\", \"<=\", \"select\" }"));
+    }
+
+    [TestMethod]
+    public void Emitter_StringSyntaxNumberAndStringRules_IncludeMatchingRuleNames()
+    {
+        var src = Emit("""
+            grammar SqlQueryGrammar;
+            query : INTEGER_NUMBER QUOTED_STRING RAW_STRING identifier ;
+            identifier : IDENTIFIER ;
+            INTEGER_NUMBER : [0-9]+ ;
+            QUOTED_STRING : '"' ~["\r\n]* '"' ;
+            RAW_STRING : '\'' ~['\r\n]* '\'' ;
+            IDENTIFIER : [a-z]+ ;
+            """, "", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "public static IReadOnlyList<string> StringSyntaxNumberRules");
+        StringAssert.Contains(src, "\"INTEGER_NUMBER\"");
+        StringAssert.Contains(src, "public static IReadOnlyList<string> StringSyntaxStringRules");
+        StringAssert.Contains(src, "\"QUOTED_STRING\"");
+        StringAssert.Contains(src, "\"RAW_STRING\"");
+        Assert.IsFalse(src.Contains("StringSyntaxNumberRules { get; } = new string[] { \"IDENTIFIER\""));
+        Assert.IsFalse(src.Contains("StringSyntaxStringRules { get; } = new string[] { \"IDENTIFIER\""));
+    }
+
     // ── GrammarEmitter ────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -285,6 +355,15 @@ public class Antlr4GrammarGeneratorTests
     {
         var src = Emit("grammar G; rule : 'a' ;", "", "Cls", "g.g4");
         StringAssert.Contains(src, "public static CompiledGrammar Grammar");
+    }
+
+    [TestMethod]
+    public void Emitter_ContainsStringSyntaxAnnotatedParseHelpers()
+    {
+        var src = Emit("grammar SqlQueryGrammar; rule : 'a' ;", "", "Cls", "g.g4");
+        StringAssert.Contains(src, "[global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName)] string input");
+        StringAssert.Contains(src, "public static IReadOnlyList<Token> Tokenize");
+        StringAssert.Contains(src, "public static ParseNode Parse");
     }
 
     [TestMethod]
