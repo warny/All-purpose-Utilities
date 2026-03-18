@@ -20,7 +20,18 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <AdditionalFiles Include="Sql\SqlQueryGrammar.g4">
+            <Namespace>Utils.Data.Sql</Namespace>
+            <ClassName>SqlQueryGrammar</ClassName>
+        </AdditionalFiles>
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Utils\Utils.csproj" />
+        <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
+        <ProjectReference Include="..\Utils.Parser.Generators\Utils.Parser.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>
