@@ -34,12 +34,12 @@ public static class SqlQueryAnalyzer
             sql = trimmedSql[1..^1];
         }
         syntaxOptions ??= SqlSyntaxOptions.Default;
-        var parser = SqlParser.Create(sql, syntaxOptions);
-        SqlStatement statement = parser.ParseStatement();
-        parser.ConsumeOptionalTerminator();
-        parser.EnsureEndOfInput();
-        return new SqlQuery(statement, syntaxOptions);
+
+        var grammarParser = new UtilsParserSqlQueryParser(syntaxOptions);
+        SqlStatement grammarStatement = grammarParser.Parse(sql);
+        return new SqlQuery(grammarStatement, syntaxOptions);
     }
+
 }
 
 /// <summary>
@@ -263,14 +263,6 @@ internal sealed class PartReferenceBinding<TPart> : IPartReferenceBinding
     /// <summary>
     /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
     /// </summary>
-    /// <param name="partReader">The part reader supplying the name and factory for the binding.</param>
-    /// <param name="onBind">Callback invoked when the binding is matched.</param>
-    public PartReferenceBinding(IPartReader<TPart> partReader, Action<TPart> onBind)
-        : this(partReader.PartName, partReader.PartFactory, onBind)    {    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PartReferenceBinding{TPart}"/> class.
-    /// </summary>
     /// <param name="partName">The name of the segment produced by the associated part reader.</param>
     /// <param name="partFactory">Factory used to create the typed part.</param>
     /// <param name="onBind">Callback invoked when the binding is matched.</param>
@@ -378,14 +370,14 @@ public sealed class SqlSelectStatement : SqlStatement
         tailPart = tail == null ? null : new TailPart(tail);
         partReferenceBindings =
         [
-            new PartReferenceBinding<FromPart>(FromPartReader.Singleton, part => fromPart ??= part),
-            new PartReferenceBinding<WherePart>(WherePartReader.Singleton, part => wherePart ??= part),
-            new PartReferenceBinding<GroupByPart>(GroupByPartReader.Singleton, part => groupByPart ??= part),
-            new PartReferenceBinding<HavingPart>(HavingPartReader.Singleton, part => havingPart ??= part),
-            new PartReferenceBinding<OrderByPart>(OrderByPartReader.Singleton, part => orderByPart ??= part),
-            new PartReferenceBinding<LimitPart>(LimitPartReader.Singleton, part => limitPart ??= part),
-            new PartReferenceBinding<OffsetPart>(OffsetPartReader.Singleton, part => offsetPart ??= part),
-            new PartReferenceBinding<TailPart>(SetOperatorPartReader.Singleton, part => tailPart ??= part),
+            new PartReferenceBinding<FromPart>("From", static segment => new FromPart(segment), part => fromPart ??= part),
+            new PartReferenceBinding<WherePart>("Where", static segment => new WherePart(segment), part => wherePart ??= part),
+            new PartReferenceBinding<GroupByPart>("GroupBy", static segment => new GroupByPart(segment), part => groupByPart ??= part),
+            new PartReferenceBinding<HavingPart>("Having", static segment => new HavingPart(segment), part => havingPart ??= part),
+            new PartReferenceBinding<OrderByPart>("OrderBy", static segment => new OrderByPart(segment), part => orderByPart ??= part),
+            new PartReferenceBinding<LimitPart>("Limit", static segment => new LimitPart(segment), part => limitPart ??= part),
+            new PartReferenceBinding<OffsetPart>("Offset", static segment => new OffsetPart(segment), part => offsetPart ??= part),
+            new PartReferenceBinding<TailPart>("Tail", static segment => new TailPart(segment), part => tailPart ??= part),
         ];
     }
 
@@ -916,8 +908,8 @@ public sealed class SqlUpdateStatement : SqlStatement
         wherePart = where == null ? null : new WherePart(where);
         partReferenceBindings =
         [
-            new PartReferenceBinding<FromPart>(FromPartReader.Singleton.PartName, FromPartReader.Singleton.PartFactory, part => fromPart ??= part),
-            new PartReferenceBinding<WherePart>(WherePartReader.Singleton.PartName, WherePartReader.Singleton.PartFactory, part => wherePart ??= part),
+            new PartReferenceBinding<FromPart>("From", static segment => new FromPart(segment), part => fromPart ??= part),
+            new PartReferenceBinding<WherePart>("Where", static segment => new WherePart(segment), part => wherePart ??= part),
         ];
     }
 
@@ -1118,8 +1110,8 @@ public sealed class SqlDeleteStatement : SqlStatement
         wherePart = where == null ? null : new WherePart(where);
         partReferenceBindings =
         [
-            new PartReferenceBinding<DeletePart>("Target", DeletePartReader.Singleton.PartFactory, part => deletePart ??= part),
-            new PartReferenceBinding<WherePart>(WherePartReader.Singleton, part => wherePart ??= part),
+            new PartReferenceBinding<DeletePart>("Target", static segment => new DeletePart(segment), part => deletePart ??= part),
+            new PartReferenceBinding<WherePart>("Where", static segment => new WherePart(segment), part => wherePart ??= part),
         ];
     }
 
@@ -1455,7 +1447,7 @@ public sealed class SqlSegment
     {
         var tokenizer = new SqlTokenizer(sql, syntaxOptions);
         var tokens = tokenizer.Tokenize();
-        return SqlParser.BuildSegmentParts(tokens, syntaxOptions);
+        return SqlParsingInfrastructure.BuildSegmentParts(tokens, syntaxOptions);
     }
 }
 

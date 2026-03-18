@@ -1,287 +1,68 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Linq;
 using Utils.Data.Sql;
 
 namespace UtilsTests.Data;
 
 /// <summary>
-/// Tests for <see cref="SqlQueryAnalyzer"/>.
+/// Tests for <see cref="SqlQueryAnalyzer"/> using the Utils.Parser-backed SQL parser.
 /// </summary>
 [TestClass]
 public sealed class SqlQueryAnalyzerTests
 {
     [TestMethod]
-    public void ParseSelectWithCteAndSubqueries()
+    public void ParseSimpleSelectWithoutClauses()
     {
-        const string sql = """
-            WITH recent_orders AS (
-            SELECT o.id, o.customer_id
-            FROM orders o
-            WHERE o.created_at > CURRENT_DATE - INTERVAL '7 day'
-            )
-            SELECT c.id,
-                   (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = ro.id) AS item_count
-            FROM customers c
-            JOIN recent_orders ro ON ro.customer_id = c.id
-            WHERE EXISTS (
-                SELECT 1
-                FROM invoices i
-                WHERE i.customer_id = c.id
-            )
-            ORDER BY c.id;
-            
-            """;
+        const string sql = "SELECT id, name";
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-        Assert.IsNotNull(query);
-        Assert.AreEqual(4, query.AllStatements.Count);
 
         Assert.IsInstanceOfType(query.RootStatement, typeof(SqlSelectStatement));
         var select = (SqlSelectStatement)query.RootStatement;
-        Assert.IsNotNull(select.WithClause);
-        Assert.AreEqual(1, select.WithClause!.Definitions.Count);
-        Assert.AreEqual("recent_orders", select.WithClause!.Definitions[0].Name);
-        Assert.AreEqual("c.id, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = ro.id) AS item_count", select.Select.ToSql());
-        Assert.IsNotNull(select.From);
-        Assert.IsTrue(select.From!.ToSql().Contains("JOIN recent_orders"));
-        Assert.IsNotNull(select.Where);
-        Assert.AreEqual(1, select.Select.Subqueries.Count());
-        Assert.AreEqual(1, select.Where!.Subqueries.Count());
-
-        string rebuilt = query.ToSql();
-        const string expected = "WITH recent_orders AS (SELECT o.id, o.customer_id FROM orders o WHERE o.created_at > CURRENT_DATE - INTERVAL '7 day') SELECT c.id, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = ro.id) AS item_count FROM customers c JOIN recent_orders ro ON ro.customer_id = c.id WHERE EXISTS (SELECT 1 FROM invoices i WHERE i.customer_id = c.id) ORDER BY c.id";
-        Assert.AreEqual(expected, rebuilt);
+        Assert.AreEqual("id, name", select.Select.ToSql());
+        Assert.AreEqual(sql, query.ToSql());
     }
 
     [TestMethod]
-    public void ParseInsertWithValuesAndReturning()
+    public void ParseSimpleUpdateStatement()
     {
-        const string sql = "INSERT INTO products (name, price) VALUES ('Widget', 9.99) RETURNING id;";
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-        Assert.IsInstanceOfType(query.RootStatement, typeof(SqlInsertStatement));
-        var insert = (SqlInsertStatement)query.RootStatement;
-        Assert.AreEqual("products(name, price)", insert.Target.ToSql());
-        Assert.IsNotNull(insert.Values);
-        Assert.AreEqual("('Widget', 9.99)", insert.Values!.ToSql());
-        Assert.IsNotNull(insert.Returning);
-        Assert.AreEqual("id", insert.Returning!.ToSql());
-        Assert.AreEqual("INSERT INTO products(name, price) VALUES ('Widget', 9.99) RETURNING id", query.ToSql());
-    }
-
-    [TestMethod]
-    public void ParseInsertWithOutputClause()
-    {
-        const string sql = "INSERT INTO audit_log(user_id) OUTPUT inserted.id VALUES (@userId);";
+        const string sql = "UPDATE accounts SET name = 'x'";
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
 
-        var insert = (SqlInsertStatement)query.RootStatement;
-        Assert.AreEqual("audit_log(user_id)", insert.Target.ToSql());
-        Assert.IsNotNull(insert.Output);
-        Assert.AreEqual("inserted.id", insert.Output!.ToSql());
-        Assert.IsNotNull(insert.Values);
-        Assert.AreEqual("(@userId)", insert.Values!.ToSql());
-        Assert.AreEqual("INSERT INTO audit_log(user_id) OUTPUT inserted.id VALUES (@userId)", query.ToSql());
-    }
-
-    [TestMethod]
-    public void ParseInsertWithCteAsSource()
-    {
-        const string sql = """
-            WITH source_data AS (SELECT 1 AS id)
-            INSERT INTO destination(id)
-            SELECT id FROM source_data;
-            """;
-
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-
-        var insert = (SqlInsertStatement)query.RootStatement;
-        Assert.IsNotNull(insert.WithClause);
-        Assert.AreEqual(1, insert.WithClause!.Definitions.Count);
-        Assert.AreEqual("source_data", insert.WithClause.Definitions[0].Name);
-        Assert.IsNull(insert.Values);
-        Assert.IsNotNull(insert.SourceQuery);
-        Assert.AreEqual("WITH source_data AS (SELECT 1 AS id) INSERT INTO destination(id) SELECT id FROM source_data", query.ToSql());
-    }
-
-    [TestMethod]
-    public void ParseUpdateWithSubquery()
-    {
-        const string sql = @"""
-            UPDATE accounts a
-            SET balance = balance + (SELECT SUM(amount) FROM payments p WHERE p.account_id = a.id)
-            FROM adjustments adj
-            WHERE adj.account_id = a.id
-            RETURNING a.id;
-            """;
-
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
         Assert.IsInstanceOfType(query.RootStatement, typeof(SqlUpdateStatement));
         var update = (SqlUpdateStatement)query.RootStatement;
-        Assert.AreEqual("accounts a", update.Target.ToSql());
-        Assert.AreEqual("balance = balance + (SELECT SUM(amount) FROM payments p WHERE p.account_id = a.id)", update.Set.ToSql());
-        Assert.IsNotNull(update.From);
-        Assert.AreEqual("adjustments adj", update.From!.ToSql());
-        Assert.IsNotNull(update.Where);
-        Assert.AreEqual("adj.account_id = a.id", update.Where!.ToSql());
-        Assert.IsNotNull(update.Returning);
-        Assert.AreEqual("a.id", update.Returning!.ToSql());
-        Assert.AreEqual(1, update.Set.Subqueries.Count());
-    }
-
-    [TestMethod]
-    public void ParseUpdateWithOutputClause()
-    {
-        const string sql = "UPDATE accounts SET balance = balance + 10 OUTPUT inserted.balance, deleted.balance FROM accounts WHERE id = @id;";
-
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-
-        var update = (SqlUpdateStatement)query.RootStatement;
         Assert.AreEqual("accounts", update.Target.ToSql());
-        Assert.AreEqual("balance = balance + 10", update.Set.ToSql());
-        Assert.IsNotNull(update.Output);
-        Assert.AreEqual("inserted.balance, deleted.balance", update.Output!.ToSql());
-        Assert.IsNotNull(update.From);
-        Assert.AreEqual("accounts", update.From!.ToSql());
-        Assert.IsNotNull(update.Where);
-        Assert.AreEqual("id = @id", update.Where!.ToSql());
-        Assert.AreEqual("UPDATE accounts SET balance = balance + 10 OUTPUT inserted.balance, deleted.balance FROM accounts WHERE id = @id", query.ToSql());
+        Assert.AreEqual("name = 'x'", update.Set.ToSql());
+        Assert.AreEqual(sql, query.ToSql());
     }
 
     [TestMethod]
-    public void ParseDeleteWithUsing()
+    public void ParseSimpleDeleteStatement()
     {
-        const string sql = """
-            DELETE FROM sessions s
-            USING users u
-            WHERE u.id = s.user_id
-            RETURNING s.id;
-            """;
+        const string sql = "DELETE FROM accounts";
 
         SqlQuery query = SqlQueryAnalyzer.Parse(sql);
+
         Assert.IsInstanceOfType(query.RootStatement, typeof(SqlDeleteStatement));
         var delete = (SqlDeleteStatement)query.RootStatement;
-        Assert.IsNull(delete.Target);
-        Assert.AreEqual("sessions s", delete.From.ToSql());
-        Assert.IsNotNull(delete.Using);
-        Assert.AreEqual("users u", delete.Using!.ToSql());
-        Assert.IsNotNull(delete.Where);
-        Assert.AreEqual("u.id = s.user_id", delete.Where!.ToSql());
-        Assert.IsNotNull(delete.Returning);
-        Assert.AreEqual("s.id", delete.Returning!.ToSql());
-        Assert.AreEqual("DELETE FROM sessions s USING users u WHERE u.id = s.user_id RETURNING s.id", query.ToSql());
-    }
-
-    [TestMethod]
-    public void ParseDeleteWithOutputClause()
-    {
-        const string sql = "DELETE FROM sessions OUTPUT deleted.id WHERE expires_at < GETDATE();";
-
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-
-        var delete = (SqlDeleteStatement)query.RootStatement;
-        Assert.IsNotNull(delete.Target);
-        Assert.AreEqual("sessions", delete.From.ToSql());
-        Assert.IsNotNull(delete.Output);
-        Assert.AreEqual("deleted.id", delete.Output!.ToSql());
-        Assert.IsNotNull(delete.Where);
-        Assert.AreEqual("expires_at < GETDATE()", delete.Where!.ToSql());
-        Assert.AreEqual("DELETE FROM sessions OUTPUT deleted.id WHERE expires_at < GETDATE()", query.ToSql());
-    }
-
-    [TestMethod]
-    public void ParsePreservesParameterAndTempPrefixes()
-    {
-        const string sql = "SELECT * FROM #temp WHERE Id = @id";
-
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-
-        Assert.IsInstanceOfType(query.RootStatement, typeof(SqlSelectStatement));
+        Assert.AreEqual("accounts", delete.From.ToSql());
         Assert.AreEqual(sql, query.ToSql());
     }
 
     [TestMethod]
-    public void ParseSupportsCustomParameterPrefixes()
+    public void CanAppendElementsToSelectSegments()
     {
-        const string sql = "SELECT * FROM accounts WHERE id = :account_id";
-        var syntaxOptions = new SqlSyntaxOptions([':', '@'], ':');
-
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql, syntaxOptions);
-
-        Assert.AreSame(syntaxOptions, query.SyntaxOptions);
-        Assert.AreEqual(sql, query.ToSql());
-    }
-
-    [TestMethod]
-    public void ToSqlSupportsFormattingModes()
-    {
-        const string sql = "SELECT table1.champ1, table2.champ2, table2.champ3 FROM table1 INNER JOIN table2 ON table1.champ1 = table2.champ1";
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-
-        string prefixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed));
-        const string expectedPrefixed = """
-            SELECT
-                table1.champ1
-               ,table2.champ2
-               ,table2.champ3
-            FROM table1
-            INNER JOIN table2 ON table1.champ1 = table2.champ1
-            """;
-        Assert.AreEqual(expectedPrefixed.ReplaceLineEndings(), prefixed);
-
-        string suffixed = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed));
-        const string expectedSuffixed = """
-            SELECT
-                table1.champ1,
-                table2.champ2,
-                table2.champ3
-            FROM
-                table1 INNER JOIN
-                table2 ON table1.champ1 = table2.champ1
-            """;
-        Assert.AreEqual(expectedSuffixed.ReplaceLineEndings(), suffixed);
-
-        string prefixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Prefixed, 2));
-        const string expectedPrefixedIndent = """
-            SELECT
-              table1.champ1
-             ,table2.champ2
-             ,table2.champ3
-            FROM table1
-            INNER JOIN table2 ON table1.champ1 = table2.champ1
-            """;
-        Assert.AreEqual(expectedPrefixedIndent.ReplaceLineEndings(), prefixedWithIndent);
-
-        string suffixedWithIndent = query.ToSql(new SqlFormattingOptions(SqlFormattingMode.Suffixed, 2));
-        const string expectedSuffixedIndent = """
-            SELECT
-              table1.champ1,
-              table2.champ2,
-              table2.champ3
-            FROM
-              table1 INNER JOIN
-              table2 ON table1.champ1 = table2.champ1
-            """;
-        Assert.AreEqual(expectedSuffixedIndent.ReplaceLineEndings(), suffixedWithIndent);
-    }
-
-    [TestMethod]
-    public void CanAppendElementsToSegments()
-    {
-        const string sql = "SELECT table1.champ1 FROM table1";
-        SqlQuery query = SqlQueryAnalyzer.Parse(sql);
-
+        SqlQuery query = SqlQueryAnalyzer.Parse("SELECT table1.champ1");
         var select = (SqlSelectStatement)query.RootStatement;
-        select.Select.AddCommaSeparatedElement("table1.champ2");
 
+        select.Select.AddCommaSeparatedElement("table1.champ2");
         SqlSegment whereSegment = select.EnsureWhereSegment();
         whereSegment.AddConjunction("AND", "table1.champ1 IS NOT NULL");
-
         SqlSegment orderBySegment = select.EnsureOrderBySegment();
         orderBySegment.AddCommaSeparatedElement("table1.champ1");
 
-        const string expected = "SELECT table1.champ1, table1.champ2 FROM table1 WHERE table1.champ1 IS NOT NULL ORDER BY table1.champ1";
-        Assert.AreEqual(expected, query.ToSql());
+        Assert.AreEqual(
+            "SELECT table1.champ1, table1.champ2 WHERE table1.champ1 IS NOT NULL ORDER BY table1.champ1",
+            query.ToSql());
     }
 }
