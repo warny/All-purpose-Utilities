@@ -12,36 +12,42 @@ namespace Utils.IO.Serialization.Generators;
 /// Generates reader and writer extension methods for types annotated with <c>GenerateReaderWriterAttribute</c>.
 /// </summary>
 [Generator]
-public class ReaderWriterGenerator : ISourceGenerator
+public class ReaderWriterGenerator : IIncrementalGenerator
 {
     /// <inheritdoc />
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+        var candidateTypes = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                static (node, _) => node is TypeDeclarationSyntax typeDeclaration && typeDeclaration.AttributeLists.Count > 0,
+                static (generatorContext, _) => (TypeDeclarationSyntax)generatorContext.Node)
+            .Collect();
+
+        var compilationAndCandidates = context.CompilationProvider.Combine(candidateTypes);
+        context.RegisterSourceOutput(compilationAndCandidates, static (productionContext, source) =>
+        {
+            EmitSources(productionContext, source.Left, source.Right);
+        });
     }
 
-    /// <inheritdoc />
-    public void Execute(GeneratorExecutionContext context)
+    /// <summary>
+    /// Emits serialization helpers for each type annotated for generation.
+    /// </summary>
+    /// <param name="context">Context used to publish generated source files.</param>
+    /// <param name="compilation">Compilation currently being analyzed.</param>
+    /// <param name="candidates">Candidate type declarations discovered by syntax filtering.</param>
+    private static void EmitSources(SourceProductionContext context, Compilation compilation, IEnumerable<TypeDeclarationSyntax> candidates)
     {
-        if (context.SyntaxReceiver is not SyntaxReceiver receiver)
-        {
-            return;
-        }
-
-        var generateAttr = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.GenerateReaderWriterAttribute");
-        var fieldAttr = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.FieldAttribute");
-        var iReader = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.IReader");
-        var iWriter = context.Compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWriter");
+        var generateAttr = compilation.GetTypeByMetadataName("Utils.IO.Serialization.GenerateReaderWriterAttribute");
+        var fieldAttr = compilation.GetTypeByMetadataName("Utils.IO.Serialization.FieldAttribute");
+        var iReader = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IReader");
+        var iWriter = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWriter");
         if (generateAttr is null || fieldAttr is null || iReader is null || iWriter is null)
         {
             return;
         }
 
-        /// <summary>
-        /// Determines whether a type has a dedicated reader method or is marked for generation.
-        /// </summary>
-        /// <param name="type">Type to inspect.</param>
-        /// <returns><see langword="true"/> if a custom reader should be invoked.</returns>
+        // Determines whether a type has a dedicated reader method or is marked for generation.
         bool HasCustomReader(ITypeSymbol type)
         {
             if (type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, generateAttr)))
@@ -50,7 +56,7 @@ public class ReaderWriterGenerator : ISourceGenerator
             }
 
             string methodName = "Read" + type.Name;
-            foreach (var symbol in context.Compilation.GetSymbolsWithName(methodName, SymbolFilter.Member, context.CancellationToken))
+            foreach (var symbol in compilation.GetSymbolsWithName(methodName, SymbolFilter.Member, context.CancellationToken))
             {
                 if (symbol is IMethodSymbol method &&
                     method.IsExtensionMethod &&
@@ -64,11 +70,7 @@ public class ReaderWriterGenerator : ISourceGenerator
             return false;
         }
 
-        /// <summary>
-        /// Determines whether a type has a dedicated writer method or is marked for generation.
-        /// </summary>
-        /// <param name="type">Type to inspect.</param>
-        /// <returns><see langword="true"/> if a custom writer should be invoked.</returns>
+        // Determines whether a type has a dedicated writer method or is marked for generation.
         bool HasCustomWriter(ITypeSymbol type)
         {
             if (type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, generateAttr)))
@@ -77,7 +79,7 @@ public class ReaderWriterGenerator : ISourceGenerator
             }
 
             string methodName = "Write" + type.Name;
-            foreach (var symbol in context.Compilation.GetSymbolsWithName(methodName, SymbolFilter.Member, context.CancellationToken))
+            foreach (var symbol in compilation.GetSymbolsWithName(methodName, SymbolFilter.Member, context.CancellationToken))
             {
                 if (symbol is IMethodSymbol method &&
                     method.IsExtensionMethod &&
@@ -91,9 +93,9 @@ public class ReaderWriterGenerator : ISourceGenerator
             return false;
         }
 
-        foreach (var candidate in receiver.Candidates)
+        foreach (var candidate in candidates)
         {
-            var model = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
+            var model = compilation.GetSemanticModel(candidate.SyntaxTree);
             if (model.GetDeclaredSymbol(candidate) is not INamedTypeSymbol typeSymbol)
             {
                 continue;
@@ -168,29 +170,6 @@ public class ReaderWriterGenerator : ISourceGenerator
             sb.AppendLine("}");
 
             context.AddSource($"{typeSymbol.Name}.Serialization.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
-        }
-    }
-
-    /// <summary>
-    /// Collects types that are potential candidates for generation.
-    /// </summary>
-    private sealed class SyntaxReceiver : ISyntaxReceiver
-    {
-        /// <summary>
-        /// Gets the list of candidate type declarations.
-        /// </summary>
-        public List<TypeDeclarationSyntax> Candidates { get; } = new();
-
-        /// <summary>
-        /// Invoked for each syntax node during analysis.
-        /// </summary>
-        /// <param name="syntaxNode">The current syntax node.</param>
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-        {
-            if (syntaxNode is TypeDeclarationSyntax tds && tds.AttributeLists.Count > 0)
-            {
-                Candidates.Add(tds);
-            }
         }
     }
 }

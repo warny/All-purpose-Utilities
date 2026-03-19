@@ -166,10 +166,10 @@ internal static class GrammarEmitter
         sb.AppendLine("    public static CompiledGrammar Grammar { get; } = new CompiledGrammar(BuildDefinition());");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>Tokenizes input using the generated grammar and annotates literals with the custom grammar string syntax.</summary>");
-        sb.AppendLine("    public static IReadOnlyList<Token> Tokenize([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName)] string input) => Grammar.Tokenize(input);");
+        sb.AppendLine($"    public static IReadOnlyList<Token> Tokenize([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input) => Grammar.Tokenize(input);");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>Parses input using the generated grammar and annotates literals with the custom grammar string syntax.</summary>");
-        sb.AppendLine("    public static ParseNode Parse([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName)] string input) => Grammar.Parse(input);");
+        sb.AppendLine($"    public static ParseNode Parse([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input) => Grammar.Parse(input);");
         sb.AppendLine();
 
         // ── Build() convenience method ───────────────────────────────

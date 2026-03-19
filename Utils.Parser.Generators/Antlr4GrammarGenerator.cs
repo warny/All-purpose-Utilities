@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Utils.Parser.Generators.Internal;
 
@@ -31,7 +32,7 @@ namespace Utils.Parser.Generators;
 /// </list>
 /// </remarks>
 [Generator]
-public sealed class Antlr4GrammarGenerator : ISourceGenerator
+public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
 {
     private static readonly DiagnosticDescriptor s_errorDescriptor = new DiagnosticDescriptor(
         id:                 "APU0100",
@@ -43,27 +44,33 @@ public sealed class Antlr4GrammarGenerator : ISourceGenerator
         description:        "An error occurred while parsing or emitting the ANTLR4 .g4 grammar file.");
 
     /// <inheritdoc />
-    public void Initialize(GeneratorInitializationContext context) { }
-
-    /// <inheritdoc />
-    public void Execute(GeneratorExecutionContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        foreach (var file in context.AdditionalFiles)
-        {
-            if (!file.Path.EndsWith(".g4", StringComparison.OrdinalIgnoreCase))
-                continue;
+        var grammarFiles = context.AdditionalTextsProvider
+            .Where(static file => file.Path.EndsWith(".g4", StringComparison.OrdinalIgnoreCase));
 
-            ProcessFile(context, file);
-        }
+        var grammarFileAndOptions = grammarFiles
+            .Combine(context.AnalyzerConfigOptionsProvider);
+
+        context.RegisterSourceOutput(grammarFileAndOptions, static (productionContext, source) =>
+        {
+            ProcessFile(productionContext, source.Left, source.Right);
+        });
     }
 
-    private static void ProcessFile(GeneratorExecutionContext context, AdditionalText file)
+    /// <summary>
+    /// Processes a grammar additional file and emits the generated parser definition source.
+    /// </summary>
+    /// <param name="context">Context used to report diagnostics and add generated files.</param>
+    /// <param name="file">Grammar additional file being processed.</param>
+    /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
+    private static void ProcessFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider)
     {
         var text = file.GetText(context.CancellationToken);
         if (text == null) return;
 
         // ── Read MSBuild metadata ────────────────────────────────────────
-        var options = context.AnalyzerConfigOptions.GetOptions(file);
+        var options = optionsProvider.GetOptions(file);
 
         options.TryGetValue("build_metadata.AdditionalFiles.Namespace", out var namespaceName);
         options.TryGetValue("build_metadata.AdditionalFiles.ClassName",  out var className);

@@ -14,45 +14,55 @@ namespace Utils.DependencyInjection.Generators;
 /// marked with <c>[StaticAuto]</c>.
 /// </summary>
 [Generator]
-public class StaticAutoGenerator : ISourceGenerator
+public class StaticAutoGenerator : IIncrementalGenerator
 {
     /// <inheritdoc />
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+        var candidateClasses = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                static (node, _) => node is ClassDeclarationSyntax classDeclaration && classDeclaration.AttributeLists.Count > 0,
+                static (generatorContext, _) => (ClassDeclarationSyntax)generatorContext.Node)
+            .Collect();
+
+        var compilationAndCandidates = context.CompilationProvider.Combine(candidateClasses);
+        context.RegisterSourceOutput(compilationAndCandidates, static (productionContext, source) =>
+        {
+            EmitSources(productionContext, source.Left, source.Right);
+        });
     }
 
-    /// <inheritdoc />
-    public void Execute(GeneratorExecutionContext context)
+    /// <summary>
+    /// Emits the generated configurator source for each valid candidate class.
+    /// </summary>
+    /// <param name="context">Source production context used to add generated files.</param>
+    /// <param name="compilation">Compilation currently being analyzed.</param>
+    /// <param name="candidates">Syntax candidates collected by the incremental pipeline.</param>
+    private static void EmitSources(SourceProductionContext context, Compilation compilation, IEnumerable<ClassDeclarationSyntax> candidates)
     {
-        if (context.SyntaxReceiver is not SyntaxReceiver receiver)
-        {
-            return;
-        }
-
-        var serviceConfiguratorSymbol = context.Compilation.GetTypeByMetadataName("Utils.DependencyInjection.IServiceConfigurator");
-        var staticAutoAttributeSymbol = context.Compilation.GetTypeByMetadataName("Utils.DependencyInjection.StaticAutoAttribute");
-        var injectableAttributeSymbol = context.Compilation.GetTypeByMetadataName("Utils.DependencyInjection.InjectableAttribute");
-        var singletonAttributeSymbol = context.Compilation.GetTypeByMetadataName("Utils.DependencyInjection.SingletonAttribute");
-        var scopedAttributeSymbol = context.Compilation.GetTypeByMetadataName("Utils.DependencyInjection.ScopedAttribute");
-        var transientAttributeSymbol = context.Compilation.GetTypeByMetadataName("Utils.DependencyInjection.TransientAttribute");
+        var serviceConfiguratorSymbol = compilation.GetTypeByMetadataName("Utils.DependencyInjection.IServiceConfigurator");
+        var staticAutoAttributeSymbol = compilation.GetTypeByMetadataName("Utils.DependencyInjection.StaticAutoAttribute");
+        var injectableAttributeSymbol = compilation.GetTypeByMetadataName("Utils.DependencyInjection.InjectableAttribute");
+        var singletonAttributeSymbol = compilation.GetTypeByMetadataName("Utils.DependencyInjection.SingletonAttribute");
+        var scopedAttributeSymbol = compilation.GetTypeByMetadataName("Utils.DependencyInjection.ScopedAttribute");
+        var transientAttributeSymbol = compilation.GetTypeByMetadataName("Utils.DependencyInjection.TransientAttribute");
 
         if (serviceConfiguratorSymbol == null || staticAutoAttributeSymbol == null)
         {
             return;
         }
 
-        var allTypes = GetAllTypes(context.Compilation.Assembly.GlobalNamespace)
-                .Where(IsAccessible)
-                .ToList();
+        var allTypes = GetAllTypes(compilation.Assembly.GlobalNamespace)
+            .Where(IsAccessible)
+            .ToList();
         var injectableTypes = allTypes.Where(t => t.GetAttributes().Any(a =>
-                SymbolEqualityComparer.Default.Equals(a.AttributeClass, singletonAttributeSymbol) ||
-                SymbolEqualityComparer.Default.Equals(a.AttributeClass, scopedAttributeSymbol) ||
-                SymbolEqualityComparer.Default.Equals(a.AttributeClass, transientAttributeSymbol))).ToList();
+            SymbolEqualityComparer.Default.Equals(a.AttributeClass, singletonAttributeSymbol) ||
+            SymbolEqualityComparer.Default.Equals(a.AttributeClass, scopedAttributeSymbol) ||
+            SymbolEqualityComparer.Default.Equals(a.AttributeClass, transientAttributeSymbol))).ToList();
 
-        foreach (var candidate in receiver.Candidates)
+        foreach (var candidate in candidates)
         {
-            var model = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
+            var model = compilation.GetSemanticModel(candidate.SyntaxTree);
             if (model.GetDeclaredSymbol(candidate) is not INamedTypeSymbol classSymbol)
             {
                 continue;
@@ -188,16 +198,4 @@ public class StaticAutoGenerator : ISourceGenerator
         return domain is null ? $"Add{lifetime}" : $"AddKeyed{lifetime}";
     }
 
-    private class SyntaxReceiver : ISyntaxReceiver
-    {
-        public List<ClassDeclarationSyntax> Candidates { get; } = new();
-
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-        {
-            if (syntaxNode is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0)
-            {
-                Candidates.Add(cds);
-            }
-        }
-    }
 }

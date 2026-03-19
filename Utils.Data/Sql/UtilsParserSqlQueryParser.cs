@@ -29,7 +29,7 @@ internal sealed class UtilsParserSqlQueryParser
     /// </summary>
     /// <param name="sql">SQL text to parse.</param>
     /// <returns>The parsed statement tree.</returns>
-    public SqlStatement Parse([StringSyntax(SqlQueryGrammar.StringSyntaxName)] string sql)
+    public SqlStatement Parse([StringSyntax(SqlQueryGrammar.StringSyntaxName, typeof(SqlQueryGrammar))] string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
 

@@ -361,7 +361,7 @@ public class Antlr4GrammarGeneratorTests
     public void Emitter_ContainsStringSyntaxAnnotatedParseHelpers()
     {
         var src = Emit("grammar SqlQueryGrammar; rule : 'a' ;", "", "Cls", "g.g4");
-        StringAssert.Contains(src, "[global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName)] string input");
+        StringAssert.Contains(src, "[global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof(Cls))] string input");
         StringAssert.Contains(src, "public static IReadOnlyList<Token> Tokenize");
         StringAssert.Contains(src, "public static ParseNode Parse");
     }
