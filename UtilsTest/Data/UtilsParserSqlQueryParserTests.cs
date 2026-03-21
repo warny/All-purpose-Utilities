@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Data.Sql;
 using Utils.Parser.Runtime;
@@ -52,5 +54,17 @@ public sealed class UtilsParserSqlQueryParserTests
         CollectionAssert.AreEqual(
             new[] { "WITH", "RECURSIVE", "IDENTIFIER", "AS", "LPAREN", "SELECT", "IDENTIFIER", "FROM", "IDENTIFIER", "RPAREN" },
             tokens.Select(token => token.RuleName).ToList());
+    }
+
+    [TestMethod]
+    public void SqlParserParse_DeclaresGrammarProviderForStringSyntaxHighlighting()
+    {
+        MethodInfo parseMethod = typeof(UtilsParserSqlQueryParser).GetMethod(nameof(UtilsParserSqlQueryParser.Parse), BindingFlags.Instance | BindingFlags.Public)!;
+        ParameterInfo sqlParameter = parseMethod.GetParameters().Single();
+        var attribute = sqlParameter.GetCustomAttribute<StringSyntaxAttribute>();
+
+        Assert.IsNotNull(attribute);
+        Assert.AreEqual(SqlQueryGrammar.StringSyntaxName, attribute.Syntax);
+        CollectionAssert.AreEqual(new object[] { typeof(SqlQueryGrammar) }, attribute.Arguments.ToArray());
     }
 }

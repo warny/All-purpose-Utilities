@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Utils.OData.Metadatas;
 
@@ -17,31 +18,45 @@ namespace Utils.OData.Generators;
 /// Generates strongly typed OData entity classes for contexts derived from <c>ODataContext</c>.
 /// </summary>
 [Generator]
-public sealed class ODataEntityGenerator : ISourceGenerator
+public sealed class ODataEntityGenerator : IIncrementalGenerator
 {
     /// <inheritdoc />
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterForSyntaxNotifications(static () => new SyntaxReceiver());
+        var candidateClasses = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                static (node, _) => node is ClassDeclarationSyntax classDeclaration && classDeclaration.BaseList is not null,
+                static (generatorContext, _) => (ClassDeclarationSyntax)generatorContext.Node)
+            .Collect();
+
+        var generationInputs = context.CompilationProvider
+            .Combine(candidateClasses)
+            .Combine(context.AnalyzerConfigOptionsProvider);
+
+        context.RegisterSourceOutput(generationInputs, static (productionContext, source) =>
+        {
+            EmitSources(productionContext, source.Left.Left, source.Left.Right, source.Right);
+        });
     }
 
-    /// <inheritdoc />
-    public void Execute(GeneratorExecutionContext context)
+    /// <summary>
+    /// Emits generated OData entity types for each context derived from <c>ODataContext</c>.
+    /// </summary>
+    /// <param name="context">Context used to report diagnostics and add generated source.</param>
+    /// <param name="compilation">Compilation currently being analyzed.</param>
+    /// <param name="candidates">Candidate class declarations collected by syntax filtering.</param>
+    /// <param name="optionsProvider">Analyzer config options provider for the current compilation.</param>
+    private static void EmitSources(SourceProductionContext context, Compilation compilation, IEnumerable<ClassDeclarationSyntax> candidates, AnalyzerConfigOptionsProvider optionsProvider)
     {
-        if (context.SyntaxReceiver is not SyntaxReceiver receiver)
-        {
-            return;
-        }
-
-        var odataContextSymbol = context.Compilation.GetTypeByMetadataName("Utils.OData.ODataContext");
+        var odataContextSymbol = compilation.GetTypeByMetadataName("Utils.OData.ODataContext");
         if (odataContextSymbol is null)
         {
             return;
         }
 
-        foreach (var candidate in receiver.Candidates)
+        foreach (var candidate in candidates)
         {
-            var semanticModel = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
+            var semanticModel = compilation.GetSemanticModel(candidate.SyntaxTree);
             if (semanticModel.GetDeclaredSymbol(candidate) is not INamedTypeSymbol classSymbol)
             {
                 continue;
@@ -58,13 +73,13 @@ public sealed class ODataEntityGenerator : ISourceGenerator
                 continue;
             }
 
-            if (!TryExtractMetadataPath(classSymbol, context.Compilation, out var metadataPath))
+            if (!TryExtractMetadataPath(classSymbol, compilation, out var metadataPath))
             {
                 ReportDiagnostic(context, candidate.Identifier.GetLocation(), "ODATA002", "Unable to locate a base constructor call that provides the EDMX path.");
                 continue;
             }
 
-            if (!TryLoadMetadata(metadataPath, context, out var metadata, out var error))
+            if (!TryLoadMetadata(metadataPath, context, optionsProvider, out var metadata, out var error))
             {
                 ReportDiagnostic(context, candidate.Identifier.GetLocation(), "ODATA003", error ?? "Unable to load EDMX metadata.");
                 continue;
@@ -82,7 +97,7 @@ public sealed class ODataEntityGenerator : ISourceGenerator
     /// <param name="location">The location associated with the diagnostic.</param>
     /// <param name="id">Identifier of the diagnostic.</param>
     /// <param name="message">Text describing the diagnostic.</param>
-    private static void ReportDiagnostic(GeneratorExecutionContext context, Location location, string id, string message)
+    private static void ReportDiagnostic(SourceProductionContext context, Location location, string id, string message)
     {
         var descriptor = new DiagnosticDescriptor(id, message, message, "Usage", DiagnosticSeverity.Warning, true);
         context.ReportDiagnostic(Diagnostic.Create(descriptor, location));
@@ -160,10 +175,11 @@ public sealed class ODataEntityGenerator : ISourceGenerator
     /// </summary>
     /// <param name="metadataPath">The path or URL provided in the derived context.</param>
     /// <param name="context">Current generator execution context.</param>
+    /// <param name="optionsProvider">Analyzer config options provider used to resolve project paths.</param>
     /// <param name="metadata">The resulting metadata instance when successful.</param>
     /// <param name="error">Optional error message describing any failure.</param>
     /// <returns><see langword="true"/> when the metadata could be loaded.</returns>
-    private static bool TryLoadMetadata(string metadataPath, GeneratorExecutionContext context, out Edmx? metadata, out string? error)
+    private static bool TryLoadMetadata(string metadataPath, SourceProductionContext context, AnalyzerConfigOptionsProvider optionsProvider, out Edmx? metadata, out string? error)
     {
         metadata = null;
         error = null;
@@ -198,11 +214,11 @@ public sealed class ODataEntityGenerator : ISourceGenerator
             }
 
             string? projectDir = null;
-            if (context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.ProjectDir", out var configuredDir))
+            if (optionsProvider.GlobalOptions.TryGetValue("build_property.ProjectDir", out var configuredDir))
             {
                 projectDir = configuredDir;
             }
-            else if (context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var msbuildDir))
+            else if (optionsProvider.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var msbuildDir))
             {
                 projectDir = msbuildDir;
             }
@@ -381,23 +397,4 @@ public sealed class ODataEntityGenerator : ISourceGenerator
         };
     }
 
-    /// <summary>
-    /// Captures class declarations that specify base types.
-    /// </summary>
-    private sealed class SyntaxReceiver : ISyntaxReceiver
-    {
-        /// <summary>
-        /// Gets the class declarations that derive from <c>ODataContext</c>.
-        /// </summary>
-        public List<ClassDeclarationSyntax> Candidates { get; } = new();
-
-        /// <inheritdoc />
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-        {
-            if (syntaxNode is ClassDeclarationSyntax classDeclaration && classDeclaration.BaseList is not null)
-            {
-                Candidates.Add(classDeclaration);
-            }
-        }
-    }
 }
