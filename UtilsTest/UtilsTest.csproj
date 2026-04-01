@@ -73,6 +73,7 @@
                 <ProjectReference Include="..\Utils.OData.Generators\Utils.OData.Generators.csproj" />
                 <ProjectReference Include="..\Utils.OData\Utils.OData.csproj" />
                 <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
+                <ProjectReference Include="..\Utils.Parser.VisualStudio\Utils.Parser.VisualStudio.csproj" />
         </ItemGroup>
 
 	<ItemGroup>

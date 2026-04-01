@@ -108,3 +108,55 @@ jobs:
                       packages/**/*.nupkg
                       packages/**/*.snupkg
                   if-no-files-found: error
+
+    build-visual-studio-extensions:
+        runs-on: windows-latest
+        strategy:
+            matrix:
+                dotnet-version: ['9.0.x']
+        steps:
+            - uses: actions/checkout@v2
+            - name: Setup .NET ${{ matrix.dotnet-version }}
+              uses: actions/setup-dotnet@v3
+              with:
+                  dotnet-version: ${{ matrix.dotnet-version }}
+            - name: Build VSIX projects
+              shell: pwsh
+              run: |
+                  $vsixProjects = Get-ChildItem -Path . -Recurse -Filter *.csproj -File |
+                      Where-Object { $_.FullName -notmatch "[\\/](bin|obj)[\\/]" } |
+                      Where-Object {
+                          $content = Get-Content -Path $_.FullName -Raw
+                          $content -match "PackageType>.*VSIX" -or
+                          $content -match "Microsoft.VSSDK.BuildTools"
+                      }
+
+                  if ($vsixProjects.Count -eq 0) {
+                      Write-Host "No VSIX project found."
+                      New-Item -ItemType Directory -Path vsix -Force | Out-Null
+                      exit 0
+                  }
+
+                  foreach ($project in $vsixProjects) {
+                      Write-Host "Building VSIX project: $($project.FullName)"
+                      dotnet restore $project.FullName
+                      if ($LASTEXITCODE -ne 0) {
+                          throw "dotnet restore failed for VSIX project: $($project.FullName)"
+                      }
+
+                      dotnet build $project.FullName --configuration Release
+                      if ($LASTEXITCODE -ne 0) {
+                          throw "dotnet build failed for VSIX project: $($project.FullName)"
+                      }
+                  }
+
+                  New-Item -ItemType Directory -Path vsix -Force | Out-Null
+                  Get-ChildItem -Path . -Recurse -Include *.vsix -File |
+                      Copy-Item -Destination vsix -Force
+            - name: Upload VSIX artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: visual-studio-extensions-${{ github.run_number }}
+                  path: |
+                      vsix/**/*.vsix
+                  if-no-files-found: warn

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>omy.Utils.Parser.VisualStudio</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Olivier MARTY</Authors>
+        <Description>
+            Visual Studio integration helpers for omy.Utils.Parser syntax colorization descriptors and runtime profile discovery.
+        </Description>
+        <PackageTags>omy;utilities;parser;visual-studio;syntax-highlighting;stringsyntax</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Utils.Parser/Utils.Parser.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+</Project>

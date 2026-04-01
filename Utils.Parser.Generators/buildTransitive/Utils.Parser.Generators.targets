@@ -12,8 +12,20 @@
             <GeneratedFileName>%(GeneratedClassName).Grammar.g.cs</GeneratedFileName>
         </_UtilsParserAntlrGrammar>
 
+        <_UtilsParserSyntaxColorization Include="@(AdditionalFiles)" Condition="$([System.String]::Copy('%(Extension)').ToLowerInvariant()) == '.syntaxcolor'">
+            <GeneratedClassName Condition="'%(ClassName)' == ''">%(Filename)</GeneratedClassName>
+            <GeneratedClassName Condition="'%(ClassName)' != ''">%(ClassName)</GeneratedClassName>
+            <GeneratedFileName>%(GeneratedClassName).SyntaxColorization.g.cs</GeneratedFileName>
+        </_UtilsParserSyntaxColorization>
+
         <_UtilsParserAttachedGeneratedFiles Include="@(_UtilsParserAntlrGrammar->'$(CompilerGeneratedFilesOutputPath)\**\%(GeneratedFileName)')">
             <DependentUpon>%(_UtilsParserAntlrGrammar.Filename)%(_UtilsParserAntlrGrammar.Extension)</DependentUpon>
+            <Visible>false</Visible>
+            <AutoGen>true</AutoGen>
+        </_UtilsParserAttachedGeneratedFiles>
+
+        <_UtilsParserAttachedGeneratedFiles Include="@(_UtilsParserSyntaxColorization->'$(CompilerGeneratedFilesOutputPath)\**\%(GeneratedFileName)')">
+            <DependentUpon>%(_UtilsParserSyntaxColorization.Filename)%(_UtilsParserSyntaxColorization.Extension)</DependentUpon>
             <Visible>false</Visible>
             <AutoGen>true</AutoGen>
         </_UtilsParserAttachedGeneratedFiles>
