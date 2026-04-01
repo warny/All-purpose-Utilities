@@ -12,8 +12,8 @@ namespace Utils.Parser.VisualStudio;
 /// </summary>
 public sealed class G4ColorizationDescriptorScaffolder
 {
-    private static readonly Regex LexerRuleRegex = new Regex(
-        "(?ms)^\\s*(fragment\\s+)?(?<name>[A-Z][A-Z0-9_]*)\\s*:\\s*(?<body>.*?);",
+    private static readonly Regex LexerRuleHeaderRegex = new Regex(
+        "(?m)^\\s*(fragment\\s+)?(?<name>[A-Z][A-Z0-9_]*)\\s*:\\s*",
         RegexOptions.Compiled);
 
     private static readonly Regex GrammarNameRegex = new Regex(
@@ -115,16 +115,115 @@ public sealed class G4ColorizationDescriptorScaffolder
     {
         var rules = new List<LexerRuleModel>();
 
-        MatchCollection matches = LexerRuleRegex.Matches(grammarText);
+        MatchCollection matches = LexerRuleHeaderRegex.Matches(grammarText);
         foreach (Match match in matches)
         {
+            int bodyStartIndex = match.Index + match.Length;
+            if (!TryFindRuleTerminator(grammarText, bodyStartIndex, out int terminatorIndex))
+            {
+                continue;
+            }
+
             bool isFragment = !string.IsNullOrWhiteSpace(match.Groups[1].Value);
             string name = match.Groups["name"].Value.Trim();
-            string body = match.Groups["body"].Value.Trim();
+            string body = grammarText.Substring(bodyStartIndex, terminatorIndex - bodyStartIndex).Trim();
             rules.Add(new LexerRuleModel(name, body, isFragment));
         }
 
         return rules;
+    }
+
+    /// <summary>
+    /// Finds the terminating semicolon of one lexer rule body while ignoring semicolons inside literals and classes.
+    /// </summary>
+    /// <param name="grammarText">Full grammar text.</param>
+    /// <param name="bodyStartIndex">Start index of rule body.</param>
+    /// <param name="terminatorIndex">Index of the terminating semicolon when found.</param>
+    /// <returns><see langword="true"/> when a terminator is found; otherwise <see langword="false"/>.</returns>
+    private static bool TryFindRuleTerminator(string grammarText, int bodyStartIndex, out int terminatorIndex)
+    {
+        bool inSingleQuote = false;
+        bool inDoubleQuote = false;
+        bool inCharacterClass = false;
+        bool inLineComment = false;
+        bool inBlockComment = false;
+
+        for (int index = bodyStartIndex; index < grammarText.Length; index++)
+        {
+            char current = grammarText[index];
+            char next = index + 1 < grammarText.Length ? grammarText[index + 1] : '\0';
+            char previous = index > 0 ? grammarText[index - 1] : '\0';
+
+            if (inLineComment)
+            {
+                if (current == '\n')
+                {
+                    inLineComment = false;
+                }
+
+                continue;
+            }
+
+            if (inBlockComment)
+            {
+                if (previous == '*' && current == '/')
+                {
+                    inBlockComment = false;
+                }
+
+                continue;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote && !inCharacterClass)
+            {
+                if (current == '/' && next == '/')
+                {
+                    inLineComment = true;
+                    index++;
+                    continue;
+                }
+
+                if (current == '/' && next == '*')
+                {
+                    inBlockComment = true;
+                    index++;
+                    continue;
+                }
+            }
+
+            if (!inDoubleQuote && !inCharacterClass && current == '\'' && previous != '\\')
+            {
+                inSingleQuote = !inSingleQuote;
+                continue;
+            }
+
+            if (!inSingleQuote && !inCharacterClass && current == '"' && previous != '\\')
+            {
+                inDoubleQuote = !inDoubleQuote;
+                continue;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote && current == '[' && previous != '\\')
+            {
+                inCharacterClass = true;
+                continue;
+            }
+
+            if (inCharacterClass && current == ']' && previous != '\\')
+            {
+                inCharacterClass = false;
+                continue;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote && !inCharacterClass && current == ';')
+            {
+                terminatorIndex = index;
+                return true;
+            }
+        }
+
+        terminatorIndex = -1;
+        return false;
     }
 
     /// <summary>

@@ -140,7 +140,14 @@ jobs:
                   foreach ($project in $vsixProjects) {
                       Write-Host "Building VSIX project: $($project.FullName)"
                       dotnet restore $project.FullName
+                      if ($LASTEXITCODE -ne 0) {
+                          throw "dotnet restore failed for VSIX project: $($project.FullName)"
+                      }
+
                       dotnet build $project.FullName --configuration Release
+                      if ($LASTEXITCODE -ne 0) {
+                          throw "dotnet build failed for VSIX project: $($project.FullName)"
+                      }
                   }
 
                   New-Item -ItemType Directory -Path vsix -Force | Out-Null

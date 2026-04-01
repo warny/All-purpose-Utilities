@@ -86,6 +86,7 @@ public class VisualStudioSyntaxColorisationTests
                 "QUOTED_STRING : '\"' (~[\"\\r\\n])* '\"' ;\n" +
                 "TEXT : [a-zA-Z_]+ ;\n" +
                 "PLUS : '+' ;\n" +
+                "SEMI : ';' ;\n" +
                 "LPAREN : '(' ;\n" +
                 "RPAREN : ')' ;\n" +
                 "LBRACE : '{' ;\n" +
@@ -105,6 +106,7 @@ public class VisualStudioSyntaxColorisationTests
             StringAssert.Contains(descriptor, "FOR");
             StringAssert.Contains(descriptor, "Operator :");
             StringAssert.Contains(descriptor, "PLUS");
+            StringAssert.Contains(descriptor, "SEMI");
             StringAssert.Contains(descriptor, "LPAREN");
             StringAssert.Contains(descriptor, "RBRACE");
             StringAssert.Contains(descriptor, "# Tag rule example:");
