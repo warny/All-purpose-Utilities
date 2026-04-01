@@ -43,6 +43,24 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         isEnabledByDefault: true,
         description:        "An error occurred while parsing or emitting the ANTLR4 .g4 grammar file.");
 
+    private static readonly DiagnosticDescriptor s_invalidMetadataDescriptor = new DiagnosticDescriptor(
+        id:                 "APU0101",
+        title:              "Invalid source generator metadata",
+        messageFormat:      "Invalid source generator metadata for '{0}': {1}",
+        category:           "Utils.Parser.Generators",
+        defaultSeverity:    DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description:        "AdditionalFiles metadata contains invalid namespace or class name values.");
+
+    private static readonly DiagnosticDescriptor s_invalidDescriptorDescriptor = new DiagnosticDescriptor(
+        id:                 "APU0102",
+        title:              "Invalid syntax colorization descriptor",
+        messageFormat:      "Invalid syntax colorization descriptor '{0}': {1}",
+        category:           "Utils.Parser.Generators",
+        defaultSeverity:    DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description:        "The syntax colorization descriptor does not contain required sections or directives.");
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -54,7 +72,18 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(grammarFileAndOptions, static (productionContext, source) =>
         {
-            ProcessFile(productionContext, source.Left, source.Right);
+            ProcessGrammarFile(productionContext, source.Left, source.Right);
+        });
+
+        var colorizationFiles = context.AdditionalTextsProvider
+            .Where(static file => file.Path.EndsWith(".syntaxcolor", StringComparison.OrdinalIgnoreCase));
+
+        var colorizationFileAndOptions = colorizationFiles
+            .Combine(context.AnalyzerConfigOptionsProvider);
+
+        context.RegisterSourceOutput(colorizationFileAndOptions, static (productionContext, source) =>
+        {
+            ProcessColorizationFile(productionContext, source.Left, source.Right);
         });
     }
 
@@ -64,7 +93,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="context">Context used to report diagnostics and add generated files.</param>
     /// <param name="file">Grammar additional file being processed.</param>
     /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
-    private static void ProcessFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider)
+    private static void ProcessGrammarFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider)
     {
         var text = file.GetText(context.CancellationToken);
         if (text == null) return;
@@ -83,6 +112,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         if (string.IsNullOrWhiteSpace(namespaceName))
             namespaceName = string.Empty;
 
+        if (!SyntaxColorizationValidation.TryValidateTypeMetadata(namespaceName!, className!, out string metadataError))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(s_invalidMetadataDescriptor, Location.None, fileName, metadataError));
+            return;
+        }
+
         // ── Parse & emit ─────────────────────────────────────────────────
         try
         {
@@ -99,4 +134,60 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 Diagnostic.Create(s_errorDescriptor, Location.None, fileName, ex.Message));
         }
     }
+
+    /// <summary>
+    /// Processes a syntax colorization descriptor and emits an <c>ISyntaxColorisation</c> implementation.
+    /// </summary>
+    /// <param name="context">Context used to report diagnostics and add generated files.</param>
+    /// <param name="file">Descriptor additional file being processed.</param>
+    /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
+    private static void ProcessColorizationFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider)
+    {
+        var text = file.GetText(context.CancellationToken);
+        if (text == null)
+        {
+            return;
+        }
+
+        var options = optionsProvider.GetOptions(file);
+        options.TryGetValue("build_metadata.AdditionalFiles.Namespace", out var namespaceName);
+        options.TryGetValue("build_metadata.AdditionalFiles.ClassName", out var className);
+
+        string fileName = Path.GetFileName(file.Path);
+
+        if (string.IsNullOrWhiteSpace(className))
+        {
+            className = Path.GetFileNameWithoutExtension(file.Path);
+        }
+
+        if (string.IsNullOrWhiteSpace(namespaceName))
+        {
+            namespaceName = string.Empty;
+        }
+
+        if (!SyntaxColorizationValidation.TryValidateTypeMetadata(namespaceName!, className!, out string metadataError))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(s_invalidMetadataDescriptor, Location.None, fileName, metadataError));
+            return;
+        }
+
+        try
+        {
+            var descriptor = SyntaxColorizationDescriptorParser.Parse(text.ToString());
+            if (!SyntaxColorizationValidation.TryValidateDescriptor(descriptor, out string descriptorError))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(s_invalidDescriptorDescriptor, Location.None, fileName, descriptorError));
+                return;
+            }
+
+            var generated = SyntaxColorizationEmitter.Emit(descriptor, namespaceName!, className!, fileName);
+            context.AddSource($"{className}.SyntaxColorization.g.cs", SourceText.From(generated, Encoding.UTF8));
+        }
+        catch (Exception ex)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(s_errorDescriptor, Location.None, fileName, ex.Message));
+        }
+    }
+
 }
