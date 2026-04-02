@@ -45,6 +45,7 @@ jobs:
                       Where-Object { $_.FullName -notmatch "[\\/](bin|obj)[\\/]" }
 
                   New-Item -ItemType Directory -Path packages -Force | Out-Null
+                  New-Item -ItemType Directory -Path release -Force | Out-Null
                   $errors = @()
 
                   foreach ($project in $projects) {
@@ -85,6 +86,17 @@ jobs:
                           continue
                       }
 
+                      $versionReleaseDirectory = Join-Path "release" $version
+                      New-Item -ItemType Directory -Path $versionReleaseDirectory -Force | Out-Null
+
+                      if (Test-Path "packages/$pkgId.$version.nupkg") {
+                          Copy-Item "packages/$pkgId.$version.nupkg" -Destination $versionReleaseDirectory -Force
+                      }
+
+                      if (Test-Path "packages/$pkgId.$version.snupkg") {
+                          Copy-Item "packages/$pkgId.$version.snupkg" -Destination $versionReleaseDirectory -Force
+                      }
+
                       $pushOutput = dotnet nuget push "packages/$pkgId.$version.nupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" 2>&1
                       if ($LASTEXITCODE -ne 0) {
                           $errors += "Error publishing $pkgId version $($version): $pushOutput"
@@ -105,8 +117,8 @@ jobs:
               with:
                   name: nuget-packages-${{ github.run_number }}
                   path: |
-                      packages/**/*.nupkg
-                      packages/**/*.snupkg
+                      release/**/*.nupkg
+                      release/**/*.snupkg
                   if-no-files-found: error
 
     build-visual-studio-extensions:
@@ -152,8 +164,13 @@ jobs:
                   }
 
                   New-Item -ItemType Directory -Path vsix -Force | Out-Null
-                  Get-ChildItem -Path . -Recurse -Include *.vsix -File |
-                      Copy-Item -Destination vsix -Force
+                  Get-ChildItem -Path . -Recurse -Include *.vsix -File | ForEach-Object {
+                      $versionMatch = [regex]::Match($_.BaseName, "\d+\.\d+\.\d+(?:\.\d+)?")
+                      $resolvedVersion = if ($versionMatch.Success) { $versionMatch.Value } else { "unversioned" }
+                      $versionDirectory = Join-Path "vsix" $resolvedVersion
+                      New-Item -ItemType Directory -Path $versionDirectory -Force | Out-Null
+                      Copy-Item $_.FullName -Destination $versionDirectory -Force
+                  }
             - name: Upload VSIX artifacts
               uses: actions/upload-artifact@v4
               with:
