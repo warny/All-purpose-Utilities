@@ -30,11 +30,13 @@ public sealed class SyntaxColorizationDescriptorFileParser
     {
         var descriptor = new SyntaxColorizationDescriptor();
         SyntaxColorizationDescriptorEntry? currentEntry = null;
-
-        string[] lines = content.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
-        for (int index = 0; index < lines.Length; index++)
+        using var reader = new StringReader(content);
+        int lineNumber = 0;
+        string? rawLine;
+        while ((rawLine = reader.ReadLine()) != null)
         {
-            string line = RemoveComments(lines[index]).Trim();
+            lineNumber++;
+            string line = RemoveComments(rawLine).Trim();
             if (string.IsNullOrWhiteSpace(line))
             {
                 continue;
@@ -42,7 +44,7 @@ public sealed class SyntaxColorizationDescriptorFileParser
 
             if (line.StartsWith("@", StringComparison.Ordinal))
             {
-                ParseDirective(descriptor, line, index + 1);
+                ParseDirective(descriptor, line, lineNumber);
                 currentEntry = null;
                 continue;
             }
@@ -57,7 +59,7 @@ public sealed class SyntaxColorizationDescriptorFileParser
 
             if (currentEntry == null)
             {
-                throw new InvalidOperationException($"Line {index + 1}: expected a section before declaring rules.");
+                throw new InvalidOperationException($"Line {lineNumber}: expected a section before declaring rules.");
             }
 
             foreach (string rule in SplitRules(line))
