@@ -1,27 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>omy.Utils.Parser.VisualStudio</PackageId>
-        <Version>0.1.0</Version>
-        <Authors>Olivier MARTY</Authors>
-        <Description>
-            Visual Studio integration helpers for omy.Utils.Parser syntax colorization descriptors and runtime profile discovery.
-        </Description>
-        <PackageTags>omy;utilities;parser;visual-studio;syntax-highlighting;stringsyntax</PackageTags>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <IsPackable>false</IsPackable>
+        <NoWarn>$(NoWarn);1591;VSEXTPREVIEW_TAGGERS</NoWarn>
+        <CreateVsixContainer>true</CreateVsixContainer>
+        <DeployExtension>false</DeployExtension>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../Utils.Parser/Utils.Parser.csproj" />
+        <PackageReference Include="Microsoft.VisualStudio.Extensibility" Version="17.14.2098" />
+        <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608" PrivateAssets="all" />
+        <PackageReference Include="Nerdbank.Streams" Version="2.11.90" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
+        <ProjectReference Include="../Utils.Parser/Utils.Parser.csproj" />
+        <Compile Remove="SyntaxColorizationClassifier.cs" />
+        <Compile Remove="SyntaxColorizationClassifierProvider.cs" />
+        <Compile Remove="UtilsParserVisualStudioPackage.cs" />
+        <Compile Remove="IsExternalInit.cs" />
+        <Compile Remove="ISyntaxColorisation.cs" />
+        <Compile Remove="VisualStudioClassificationNames.cs" />
+        <None Remove="source.extension.vsixmanifest" />
     </ItemGroup>
 
 </Project>
