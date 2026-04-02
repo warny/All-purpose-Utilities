@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Vsix Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+  <Identifier Id="Utils.Parser.VisualStudio.ef18346f-f79e-4e44-86f4-bf8094951570">
+    <Name>Utils Parser Visual Studio</Name>
+    <Author>Olivier MARTY</Author>
+    <Version>1.0.0</Version>
+    <Description xml:space="preserve">Out-of-process syntax colorization extension based on .syntaxcolor descriptors.</Description>
+    <Locale>1033</Locale>
+    <Tags>syntax;colorization;parser;utils</Tags>
+  </Identifier>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName=".NET" d:Source="Manual" Version="[8.0,)" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.Extensibility" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011" />
+  </Assets>
+</Vsix>

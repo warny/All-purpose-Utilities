@@ -1,40 +1,30 @@
-# omy.Utils.Parser.VisualStudio
+# Utils.Parser.VisualStudio
 
-`omy.Utils.Parser.VisualStudio` provides integration services for loading syntax colorization descriptors (`*.syntaxcolor`) and discovering `ISyntaxColorisation` implementations from project and referenced assemblies.
+`Utils.Parser.VisualStudio` is now based on **VisualStudio.Extensibility (out-of-process)**.
 
-```csharp
-var registry = new VisualStudioSyntaxColorisationRegistry();
-IReadOnlyList<ISyntaxColorisation> profiles = registry.LoadProfiles(projectAssemblies, descriptorFiles);
-```
+## What it does
 
-## Visual Studio classification names (verified)
+- Loads `*.syntaxcolor` descriptor files from the edited file folder and parent folders.
+- Resolves matching profiles for the current file extension.
+- Produces editor `ClassificationTag` tags through an out-of-process `TextViewTagger`.
 
-The default mappings in this package target standard Visual Studio classification names:
-
-- `Keyword`
-- `Number`
-- `String`
-- `Operator`
-- `Plain Text`
-
-References:
-- https://learn.microsoft.com/visualstudio/extensibility/language-service-and-editor-extension-points
-- https://learn.microsoft.com/dotnet/api/microsoft.visualstudio.language.standardclassification.predefinedclassificationtypenames
-
-## Descriptor comments support
-
-`*.syntaxcolor` files support comments:
-
-- full-line comments with `#` or `//`
-- trailing comments with `#` or `//`
-
-Example:
+## Descriptor example
 
 ```text
-@FileExtension : ".demo" // extension
-# global comment
+@FileExtension : ".demo"
+
 Keyword :
-    FOR | WHILE # loop keywords
+    SELECT | FROM | WHERE
+
+Number :
+    NUMBER
+
+String :
+    STRING_LITERAL
 ```
 
-Use this package as the runtime layer behind a Visual Studio VSIX classifier/tagger extension.
+## Build and debug
+
+1. Build the project.
+2. Start debugging the extension from Visual Studio.
+3. Open a file matching one of your descriptor extensions.
