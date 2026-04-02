@@ -28,5 +28,3 @@ String :
 1. Build the project.
 2. Start debugging the extension from Visual Studio.
 3. Open a file matching one of your descriptor extensions.
-
-This project is distributed as a VSIX extension and is no longer using the legacy in-process MEF classifier model.
