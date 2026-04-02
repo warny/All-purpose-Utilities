@@ -128,7 +128,8 @@ jobs:
                       Where-Object {
                           $content = Get-Content -Path $_.FullName -Raw
                           $content -match "PackageType>.*VSIX" -or
-                          $content -match "Microsoft.VSSDK.BuildTools"
+                          $content -match "Microsoft.VSSDK.BuildTools" -or
+                          $content -match "Microsoft.VisualStudio.Extensibility.Build"
                       }
 
                   if ($vsixProjects.Count -eq 0) {
@@ -160,3 +161,57 @@ jobs:
                   path: |
                       vsix/**/*.vsix
                   if-no-files-found: warn
+
+    publish-visual-studio-extension:
+        runs-on: windows-latest
+        needs: build-visual-studio-extensions
+        if: github.ref == 'refs/heads/release'
+        steps:
+            - name: Download VSIX artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: visual-studio-extensions-${{ github.run_number }}
+                  path: vsix
+
+            - name: Install tfx-cli
+              shell: pwsh
+              run: npm install -g tfx-cli
+
+            - name: Publish Utils.Parser.VisualStudio extension
+              shell: pwsh
+              env:
+                  VS_MARKETPLACE_PUBLISHER: ${{ secrets.VS_MARKETPLACE_PUBLISHER }}
+                  VS_MARKETPLACE_EXTENSION_ID: ${{ secrets.VS_MARKETPLACE_EXTENSION_ID }}
+                  VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
+              run: |
+                  if ([string]::IsNullOrWhiteSpace($env:VS_MARKETPLACE_PUBLISHER)) {
+                      throw "Missing secret VS_MARKETPLACE_PUBLISHER."
+                  }
+                  if ([string]::IsNullOrWhiteSpace($env:VS_MARKETPLACE_EXTENSION_ID)) {
+                      throw "Missing secret VS_MARKETPLACE_EXTENSION_ID."
+                  }
+                  if ([string]::IsNullOrWhiteSpace($env:VS_MARKETPLACE_PAT)) {
+                      throw "Missing secret VS_MARKETPLACE_PAT."
+                  }
+
+                  $candidateVsixFiles = Get-ChildItem -Path vsix -Recurse -Filter *.vsix -File
+                  if ($candidateVsixFiles.Count -eq 0) {
+                      throw "No VSIX artifact found to publish."
+                  }
+
+                  $targetVsix = $candidateVsixFiles |
+                      Where-Object { $_.Name -match "Utils\\.Parser\\.VisualStudio" } |
+                      Select-Object -First 1
+
+                  if ($null -eq $targetVsix) {
+                      throw "Unable to find VSIX for Utils.Parser.VisualStudio in downloaded artifacts."
+                  }
+
+                  Write-Host "Publishing VSIX: $($targetVsix.FullName)"
+
+                  tfx extension publish `
+                      --vsix $targetVsix.FullName `
+                      --publisher $env:VS_MARKETPLACE_PUBLISHER `
+                      --extension-id $env:VS_MARKETPLACE_EXTENSION_ID `
+                      --token $env:VS_MARKETPLACE_PAT `
+                      --no-prompt
