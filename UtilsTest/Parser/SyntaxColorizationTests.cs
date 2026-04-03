@@ -1,4 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Runtime;
 
@@ -106,5 +108,22 @@ public class SyntaxColorizationTests
         Assert.AreEqual("Tag Name", VisualStudioClassificationNames.TagName);
         Assert.AreEqual("Tag Delimiter", VisualStudioClassificationNames.TagDelimiter);
         Assert.AreEqual("String Escape Character", VisualStudioClassificationNames.CharacterEscape);
+    }
+
+    [TestMethod]
+    public void SyntaxColorisationGrammar_ParseLargeDescriptorWithoutRecursiveTraversal()
+    {
+        var sourceBuilder = new StringBuilder();
+        sourceBuilder.AppendLine("@FileExtension : \".demo\"");
+
+        for (int i = 0; i < 4000; i++)
+        {
+            sourceBuilder.Append("Rule").Append(i).AppendLine(" : TOKEN");
+        }
+
+        SyntaxColorisationDocument document = SyntaxColorisationGrammar.Parse(sourceBuilder.ToString());
+
+        Assert.AreEqual(1, document.FileExtensions.Count);
+        Assert.AreEqual(4000, document.Sections.Count);
     }
 }

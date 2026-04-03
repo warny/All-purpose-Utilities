@@ -264,21 +264,30 @@ public static class SyntaxColorisationGrammar
     /// <returns>Matching descendants.</returns>
     private static IEnumerable<ParserNode> Descendants(ParseNode node, string ruleName)
     {
-        if (node is not ParserNode parserNode)
+        if (node is not ParserNode rootNode)
         {
             yield break;
         }
 
-        if (parserNode.Rule.Name == ruleName)
-        {
-            yield return parserNode;
-        }
+        var stack = new Stack<ParseNode>();
+        stack.Push(rootNode);
 
-        foreach (ParseNode child in parserNode.Children)
+        while (stack.Count > 0)
         {
-            foreach (ParserNode descendant in Descendants(child, ruleName))
+            ParseNode current = stack.Pop();
+            if (current is not ParserNode currentParserNode)
             {
-                yield return descendant;
+                continue;
+            }
+
+            if (currentParserNode.Rule.Name == ruleName)
+            {
+                yield return currentParserNode;
+            }
+
+            for (int i = currentParserNode.Children.Count - 1; i >= 0; i--)
+            {
+                stack.Push(currentParserNode.Children[i]);
             }
         }
     }
