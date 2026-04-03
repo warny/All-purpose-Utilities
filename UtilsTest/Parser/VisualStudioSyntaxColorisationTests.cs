@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 using Utils.Parser.Runtime;
 using Utils.Parser.VisualStudio;
 
@@ -136,6 +137,20 @@ public class VisualStudioSyntaxColorisationTests
     }
 
     [TestMethod]
+    public void SyntaxColorisationDescriptorProfile_ClassifiesDirectivesMethodsAndOperators()
+    {
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        IReadOnlyList<ISyntaxColorisation> profiles = registry.DiscoverFromAssemblies(new[] { typeof(G4SyntaxColorisation).Assembly });
+
+        ISyntaxColorisation descriptorProfile = profiles.First(profile => profile.FileExtensions.Contains(".syntaxcolor"));
+
+        Assert.AreEqual(VisualStudioClassificationNames.Keyword, descriptorProfile.GetClassification("@FileExtension"));
+        Assert.AreEqual(VisualStudioClassificationNames.Keyword, descriptorProfile.GetClassification("Keyword"));
+        Assert.AreEqual(VisualStudioClassificationNames.Operator, descriptorProfile.GetClassification(":"));
+        Assert.AreEqual(VisualStudioClassificationNames.Operator, descriptorProfile.GetClassification("|"));
+    }
+
+    [TestMethod]
     public void Extension_GetClassificationOrDefault_ReturnsContextDefaultsWhenProfileFails()
     {
         var extension = new VisualStudioSyntaxColorisationExtension();
@@ -189,7 +204,7 @@ public class VisualStudioSyntaxColorisationTests
     }
 
     [TestMethod]
-    public void Registry_LoadFromDescriptorFiles_ThrowsWhenDescriptorIsMalformed()
+    public void Registry_LoadFromDescriptorFiles_SkipsMalformedDescriptor()
     {
         string filePath = Path.Combine(Path.GetTempPath(), $"syntax-{Guid.NewGuid():N}.syntaxcolor");
 
@@ -201,11 +216,8 @@ public class VisualStudioSyntaxColorisationTests
 
             var registry = new VisualStudioSyntaxColorisationRegistry();
 
-            InvalidOperationException ex = Assert.ThrowsException<InvalidOperationException>(
-                () => registry.LoadFromDescriptorFiles(new[] { filePath }));
-
-            StringAssert.Contains(ex.Message, "Descriptor");
-            StringAssert.Contains(ex.Message, "invalid");
+            IReadOnlyList<ISyntaxColorisation> profiles = registry.LoadFromDescriptorFiles(new[] { filePath });
+            Assert.AreEqual(0, profiles.Count);
         }
         finally
         {
@@ -217,15 +229,241 @@ public class VisualStudioSyntaxColorisationTests
     }
 
     [TestMethod]
-    public void Registry_DiscoverFromAssemblies_ThrowsWhenProfileInstantiationFails()
+    public void Registry_DiscoverFromAssemblies_SkipsProfilesThatFailInstantiation()
     {
         var registry = new VisualStudioSyntaxColorisationRegistry();
+        IReadOnlyList<ISyntaxColorisation> profiles = registry.DiscoverFromAssemblies(new[] { typeof(FaultySyntaxColorisation).Assembly });
+        Assert.IsNotNull(profiles);
+    }
 
-        InvalidOperationException ex = Assert.ThrowsException<InvalidOperationException>(
-            () => registry.DiscoverFromAssemblies(new[] { typeof(FaultySyntaxColorisation).Assembly }));
+    [TestMethod]
+    public void Registry_LoadProfiles_LoadsProfilesFromAssemblyFilePaths()
+    {
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        MethodInfo? loadProfilesWithFiles = typeof(VisualStudioSyntaxColorisationRegistry)
+            .GetMethod("LoadProfiles", BindingFlags.Instance | BindingFlags.NonPublic, null, new[]
+            {
+                typeof(IEnumerable<Assembly>),
+                typeof(IEnumerable<string>),
+                typeof(IEnumerable<string>)
+            }, null);
 
-        StringAssert.Contains(ex.Message, nameof(FaultySyntaxColorisation));
-        StringAssert.Contains(ex.Message, "Failed to create syntax colorization profile");
+        Assert.IsNotNull(loadProfilesWithFiles);
+
+        object? rawResult = loadProfilesWithFiles!.Invoke(
+            registry,
+            new object[]
+            {
+                System.Array.Empty<Assembly>(),
+                System.Array.Empty<string>(),
+                new[] { typeof(G4SyntaxColorisation).Assembly.Location }
+            });
+
+        Assert.IsNotNull(rawResult);
+        var profiles = (IReadOnlyList<ISyntaxColorisation>)rawResult;
+        Assert.IsTrue(profiles.Any(profile => profile.FileExtensions.Contains(".g4")));
+    }
+
+    [TestMethod]
+    public void Tagger_EnumerateProjectAssemblyFiles_IncludesSolutionProjectsBinAndObjAssemblies()
+    {
+        string rootDirectory = Path.Combine(Path.GetTempPath(), $"solution-{Guid.NewGuid():N}");
+        string solutionFile = Path.Combine(rootDirectory, "Demo.sln");
+        string projectADirectory = Path.Combine(rootDirectory, "ProjectA");
+        string projectBDirectory = Path.Combine(rootDirectory, "ProjectB");
+        string projectAFile = Path.Combine(projectADirectory, "ProjectA.csproj");
+        string projectBFile = Path.Combine(projectBDirectory, "ProjectB.csproj");
+        string editedFilePath = Path.Combine(projectADirectory, "Script.demo");
+        string projectABinAssembly = Path.Combine(projectADirectory, "bin", "Debug", "net9.0", "ProjectA.dll");
+        string projectBObjAssembly = Path.Combine(projectBDirectory, "obj", "Debug", "net9.0", "ProjectB.dll");
+
+        try
+        {
+            Directory.CreateDirectory(rootDirectory);
+            Directory.CreateDirectory(projectADirectory);
+            Directory.CreateDirectory(projectBDirectory);
+            Directory.CreateDirectory(Path.GetDirectoryName(projectABinAssembly)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(projectBObjAssembly)!);
+
+            File.WriteAllText(solutionFile, "");
+            File.WriteAllText(projectAFile, "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+            File.WriteAllText(projectBFile, "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+            File.WriteAllText(editedFilePath, "content");
+            File.WriteAllText(projectABinAssembly, "binary");
+            File.WriteAllText(projectBObjAssembly, "binary");
+
+            MethodInfo? method = typeof(OutOfProcSyntaxColorizationTagger)
+                .GetMethod("EnumerateProjectAssemblyFiles", BindingFlags.Static | BindingFlags.NonPublic);
+
+            Assert.IsNotNull(method);
+
+            object? rawResult = method!.Invoke(null, new object[] { editedFilePath });
+            Assert.IsNotNull(rawResult);
+
+            var assemblies = ((IEnumerable<string>)rawResult)
+                .ToArray();
+
+            CollectionAssert.Contains(assemblies, projectABinAssembly);
+            CollectionAssert.Contains(assemblies, projectBObjAssembly);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Registry_LoadProfiles_DisablesProblematicExternalAssemblyWithoutThrowing()
+    {
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        MethodInfo? loadProfilesWithFiles = typeof(VisualStudioSyntaxColorisationRegistry)
+            .GetMethod("LoadProfiles", BindingFlags.Instance | BindingFlags.NonPublic, null, new[]
+            {
+                typeof(IEnumerable<Assembly>),
+                typeof(IEnumerable<string>),
+                typeof(IEnumerable<string>)
+            }, null);
+
+        Assert.IsNotNull(loadProfilesWithFiles);
+
+        string directory = Path.Combine(Path.GetTempPath(), $"problematic-{Guid.NewGuid():N}");
+        string problematicAssemblyPath = Path.Combine(directory, "BrokenColorisation.dll");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(problematicAssemblyPath, "invalid assembly");
+
+            object[] parameters =
+            {
+                System.Array.Empty<Assembly>(),
+                System.Array.Empty<string>(),
+                new[] { problematicAssemblyPath }
+            };
+
+            object? firstResult = loadProfilesWithFiles!.Invoke(registry, parameters);
+            object? secondResult = loadProfilesWithFiles.Invoke(registry, parameters);
+
+            Assert.IsNotNull(firstResult);
+            Assert.IsNotNull(secondResult);
+
+            var firstProfiles = (IReadOnlyList<ISyntaxColorisation>)firstResult;
+            var secondProfiles = (IReadOnlyList<ISyntaxColorisation>)secondResult;
+
+            Assert.AreEqual(0, firstProfiles.Count);
+            Assert.AreEqual(0, secondProfiles.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    // ── AssemblySecurityInspector tests ────────────────────────────────
+
+    [TestMethod]
+    public void SecurityInspector_SafeAssembly_PassesInspection()
+    {
+        // Utils.Parser.Runtime.dll has no dangerous references (no File, Net, Process, P/Invoke).
+        string assemblyPath = typeof(G4SyntaxColorisation).Assembly.Location;
+        Assert.IsTrue(File.Exists(assemblyPath), "Assembly must exist on disk");
+
+        object?[] args = [assemblyPath, null];
+        bool isSafe = InvokeInspector(args);
+        var violations = (IReadOnlyList<string>)args[1]!;
+
+        Assert.IsTrue(isSafe, $"Expected safe; violations: {string.Join(", ", violations)}");
+        Assert.AreEqual(0, violations.Count);
+    }
+
+    [TestMethod]
+    public void SecurityInspector_NonExistentFile_FailsGracefully()
+    {
+        string missingPath = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.dll");
+
+        object?[] args = [missingPath, null];
+        bool isSafe = InvokeInspector(args);
+        var violations = (IReadOnlyList<string>)args[1]!;
+
+        Assert.IsFalse(isSafe);
+        Assert.IsTrue(violations.Count > 0);
+    }
+
+    [TestMethod]
+    public void SecurityInspector_InvalidPeContent_FailsGracefully()
+    {
+        string filePath = Path.Combine(Path.GetTempPath(), $"invalid-{Guid.NewGuid():N}.dll");
+        try
+        {
+            File.WriteAllText(filePath, "this is not a PE file");
+
+            object?[] args = [filePath, null];
+            bool isSafe = InvokeInspector(args);
+            var violations = (IReadOnlyList<string>)args[1]!;
+
+            Assert.IsFalse(isSafe);
+            Assert.IsTrue(violations.Count > 0);
+        }
+        finally
+        {
+            if (File.Exists(filePath)) File.Delete(filePath);
+        }
+    }
+
+    [TestMethod]
+    public void SecurityInspector_RejectedAssembly_IsNotLoadedByRegistry()
+    {
+        // The "invalid assembly" bytes file fails inspection (not a valid PE).
+        // The registry must mark it as problematic and return 0 profiles on both calls.
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        MethodInfo? loadProfilesWithFiles = typeof(VisualStudioSyntaxColorisationRegistry)
+            .GetMethod("LoadProfiles", BindingFlags.Instance | BindingFlags.NonPublic, null,
+            [
+                typeof(IEnumerable<Assembly>),
+                typeof(IEnumerable<string>),
+                typeof(IEnumerable<string>)
+            ], null);
+
+        Assert.IsNotNull(loadProfilesWithFiles);
+
+        string directory = Path.Combine(Path.GetTempPath(), $"rejected-{Guid.NewGuid():N}");
+        string assemblyPath = Path.Combine(directory, "Dangerous.dll");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(assemblyPath, "not a PE");
+
+            object[] parameters = [System.Array.Empty<Assembly>(), System.Array.Empty<string>(), new[] { assemblyPath }];
+
+            var first = (IReadOnlyList<ISyntaxColorisation>)loadProfilesWithFiles!.Invoke(registry, parameters)!;
+            var second = (IReadOnlyList<ISyntaxColorisation>)loadProfilesWithFiles.Invoke(registry, parameters)!;
+
+            Assert.AreEqual(0, first.Count);
+            Assert.AreEqual(0, second.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Invokes <c>AssemblySecurityInspector.IsSafe</c> via reflection (class is internal).
+    /// </summary>
+    private static bool InvokeInspector(object?[] args)
+    {
+        Type inspectorType = typeof(VisualStudioSyntaxColorisationRegistry).Assembly
+            .GetType("Utils.Parser.VisualStudio.AssemblySecurityInspector")!;
+        MethodInfo isSafe = inspectorType.GetMethod("IsSafe", BindingFlags.Public | BindingFlags.Static)!;
+        bool result = (bool)isSafe.Invoke(null, args)!;
+        // args[1] is now populated with the out IReadOnlyList<string> violations
+        return result;
     }
 
     /// <summary>
@@ -295,4 +533,5 @@ public class VisualStudioSyntaxColorisationTests
             return null;
         }
     }
+
 }
