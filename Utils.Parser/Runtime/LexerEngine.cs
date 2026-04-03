@@ -1,3 +1,4 @@
+using System.Text;
 using Utils.Parser.Model;
 
 namespace Utils.Parser.Runtime;
@@ -24,7 +25,7 @@ public sealed class LexerEngine(ParserDefinition definition)
     // ── "more" buffering state ────────────────────────────────────────────────
     // When a token fires "-> more", its text is accumulated here and prepended to
     // the next emitted token, with _moreStartPos recording the original start.
-    private string _moreText = "";
+    private readonly StringBuilder _moreTextBuilder = new();
     private int    _moreStartPos = -1;
 
     /// <summary>
@@ -42,7 +43,7 @@ public sealed class LexerEngine(ParserDefinition definition)
     {
         _modeStack.Clear();
         _modeStack.Push(GetDefaultMode());
-        _moreText     = "";
+        _moreTextBuilder.Clear();
         _moreStartPos = -1;
 
         while (!stream.IsEnd)
@@ -68,14 +69,14 @@ public sealed class LexerEngine(ParserDefinition definition)
                 continue;
 
             // Apply any accumulated "more" text, then emit.
-            if (_moreText.Length > 0)
+            if (_moreTextBuilder.Length > 0)
             {
                 var combinedSpan = new SourceSpan(
                     _moreStartPos,
                     token.Span.Position + token.Span.Length - _moreStartPos);
                 token = new Token(combinedSpan, token.RuleName, token.ModeName,
-                    _moreText + token.Text);
-                _moreText     = "";
+                    _moreTextBuilder.ToString() + token.Text);
+                _moreTextBuilder.Clear();
                 _moreStartPos = -1;
             }
 
@@ -376,7 +377,7 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// <em>only from the matched path</em> during <see cref="TryMatchContent"/>.
     /// Updates the mode stack and returns whether the token should be skipped.
     /// When a <c>more</c> command is found, the token text is accumulated in
-    /// <see cref="_moreText"/> and the method returns <c>true</c> (suppress emit).
+    /// <see cref="_moreTextBuilder"/> and the method returns <c>true</c> (suppress emit).
     /// </summary>
     /// <param name="commands">Commands from the matched path (may be empty).</param>
     /// <param name="token">The matched token; may be passed for context but is not mutated here.</param>
@@ -437,7 +438,7 @@ public sealed class LexerEngine(ParserDefinition definition)
             // Accumulate text for the next token.
             if (_moreStartPos < 0)
                 _moreStartPos = token.Span.Position;
-            _moreText += token.Text;
+            _moreTextBuilder.Append(token.Text);
             return true; // suppress this token
         }
 

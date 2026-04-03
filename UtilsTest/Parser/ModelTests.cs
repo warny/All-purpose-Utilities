@@ -305,4 +305,28 @@ public class ModelTests
 
         Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition));
     }
+
+    [TestMethod]
+    public void RuleResolver_LexerCycleThrows()
+    {
+        var ruleA = new Rule("A", 0, false,
+            new Alternation(new[]
+            {
+                new Alternative(0, Associativity.Left, new RuleRef("B"))
+            }));
+
+        var ruleB = new Rule("B", 1, false,
+            new Alternation(new[]
+            {
+                new Alternative(0, Associativity.Left, new RuleRef("A"))
+            }));
+
+        var definition = new ParserDefinition(
+            "Test", GrammarType.Lexer, null, [], [],
+            [new LexerMode("DEFAULT_MODE", [ruleA, ruleB])],
+            [], null);
+
+        GrammarValidationException ex = Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition));
+        StringAssert.Contains(ex.Message, "Lexer recursion cycle detected");
+    }
 }

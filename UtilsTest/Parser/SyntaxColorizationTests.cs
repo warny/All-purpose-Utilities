@@ -1,4 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Runtime;
 
@@ -84,5 +86,59 @@ public class SyntaxColorizationTests
         string? classification = colorisation.GetClassification("IDENTIFIER");
 
         Assert.IsNull(classification);
+    }
+
+    [TestMethod]
+    public void VisualStudioClassificationNames_ContainsExtendedStandardNames()
+    {
+        Assert.AreEqual("Comment", VisualStudioClassificationNames.Comment);
+        Assert.AreEqual("Identifier", VisualStudioClassificationNames.Identifier);
+        Assert.AreEqual("Type", VisualStudioClassificationNames.Type);
+        Assert.AreEqual("Class Name", VisualStudioClassificationNames.ClassName);
+        Assert.AreEqual("Struct Name", VisualStudioClassificationNames.StructName);
+        Assert.AreEqual("Interface Name", VisualStudioClassificationNames.InterfaceName);
+        Assert.AreEqual("Enum Name", VisualStudioClassificationNames.EnumName);
+        Assert.AreEqual("Namespace Name", VisualStudioClassificationNames.NamespaceName);
+        Assert.AreEqual("Method Name", VisualStudioClassificationNames.MethodName);
+        Assert.AreEqual("Extension Method Name", VisualStudioClassificationNames.ExtensionMethodName);
+        Assert.AreEqual("Property Name", VisualStudioClassificationNames.PropertyName);
+        Assert.AreEqual("Field Name", VisualStudioClassificationNames.FieldName);
+        Assert.AreEqual("Parameter Name", VisualStudioClassificationNames.ParameterName);
+        Assert.AreEqual("Punctuation", VisualStudioClassificationNames.Punctuation);
+        Assert.AreEqual("Tag Name", VisualStudioClassificationNames.TagName);
+        Assert.AreEqual("Tag Delimiter", VisualStudioClassificationNames.TagDelimiter);
+        Assert.AreEqual("String Escape Character", VisualStudioClassificationNames.CharacterEscape);
+    }
+
+    [TestMethod]
+    public void SyntaxColorisationGrammar_ParseLargeDescriptorWithoutRecursiveTraversal()
+    {
+        var sourceBuilder = new StringBuilder();
+        sourceBuilder.AppendLine("@FileExtension : \".demo\"");
+
+        for (int i = 0; i < 4000; i++)
+        {
+            sourceBuilder.Append("Rule").Append(i).AppendLine(" : TOKEN");
+        }
+
+        SyntaxColorisationDocument document = SyntaxColorisationGrammar.Parse(sourceBuilder.ToString());
+
+        Assert.AreEqual(1, document.FileExtensions.Count);
+        Assert.AreEqual(4000, document.Sections.Count);
+    }
+
+    [TestMethod]
+    public void DescriptorParser_SupportsSectionRulesSplitAcrossMultipleLines()
+    {
+        var descriptor = SyntaxColorizationDescriptorParser.Parse("""
+            @FileExtension : ".split"
+            Number :
+                ONE | TWO
+                THREE
+                FOUR | FIVE
+            """);
+
+        Assert.AreEqual(1, descriptor.Entries.Count);
+        CollectionAssert.AreEqual(new[] { "ONE", "TWO", "THREE", "FOUR", "FIVE" }, descriptor.Entries[0].Rules);
     }
 }

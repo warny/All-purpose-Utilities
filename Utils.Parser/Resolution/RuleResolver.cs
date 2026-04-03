@@ -59,6 +59,9 @@ public static class RuleResolver
             ValidateRuleRefs(rule.Content, allRules, rule.Name);
         }
 
+        // 2b. Detect lexer recursion cycles (ANTLR-style lexer recursion is invalid).
+        ValidateNoLexerCycles(allRules);
+
         // 3. Infer RuleKind for any rules still marked Unresolved.
         //    Iterative resolution handles circular dependencies.
         bool changed = true;
@@ -254,6 +257,71 @@ public static class RuleResolver
                 CollectRuleRefs(n.Inner, refs);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Validates that lexer rules do not form reference cycles.
+    /// </summary>
+    /// <param name="rules">All known rules keyed by name.</param>
+    /// <exception cref="GrammarValidationException">
+    /// Thrown when a lexer-reference cycle is detected.
+    /// </exception>
+    private static void ValidateNoLexerCycles(IDictionary<string, Rule> rules)
+    {
+        var colors = new Dictionary<string, int>(StringComparer.Ordinal);
+        var path = new Stack<string>();
+
+        foreach (Rule rule in rules.Values.Where(candidate => candidate.Kind == RuleKind.Lexer))
+        {
+            if (!colors.ContainsKey(rule.Name))
+            {
+                VisitLexerRule(rule.Name, rules, colors, path);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Performs a DFS visit for lexer-cycle detection using white/gray/black colors.
+    /// </summary>
+    /// <param name="ruleName">Lexer rule currently visited.</param>
+    /// <param name="rules">All known rules keyed by name.</param>
+    /// <param name="colors">DFS color map (0=white, 1=gray, 2=black).</param>
+    /// <param name="path">Current DFS path.</param>
+    private static void VisitLexerRule(
+        string ruleName,
+        IDictionary<string, Rule> rules,
+        IDictionary<string, int> colors,
+        Stack<string> path)
+    {
+        colors[ruleName] = 1;
+        path.Push(ruleName);
+
+        var refs = new HashSet<string>(StringComparer.Ordinal);
+        CollectRuleRefs(rules[ruleName].Content, refs);
+
+        foreach (string referencedRuleName in refs)
+        {
+            if (!rules.TryGetValue(referencedRuleName, out Rule? referencedRule) || referencedRule.Kind != RuleKind.Lexer)
+            {
+                continue;
+            }
+
+            if (!colors.TryGetValue(referencedRuleName, out int color))
+            {
+                VisitLexerRule(referencedRuleName, rules, colors, path);
+                continue;
+            }
+
+            if (color == 1)
+            {
+                string[] cyclePath = path.Reverse().TakeWhile(name => name != referencedRuleName).Reverse().Concat(new[] { referencedRuleName }).ToArray();
+                string cycle = string.Join(" -> ", cyclePath);
+                throw new GrammarValidationException($"Lexer recursion cycle detected: {cycle}");
+            }
+        }
+
+        path.Pop();
+        colors[ruleName] = 2;
     }
 
     /// <summary>
