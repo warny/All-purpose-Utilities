@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,11 +16,12 @@ namespace Utils.Parser.VisualStudio;
 /// </summary>
 public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<ClassificationTag>
 {
-    private static readonly Regex TokenRegex = new("[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
+    private static readonly Regex TokenRegex = new("@[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*|[:|]", RegexOptions.Compiled);
 
     private readonly ITextViewSnapshot textView;
     private readonly VisualStudioSyntaxColorisationRegistry registry;
     private readonly VisualStudioSyntaxColorisationExtension extension;
+    private IReadOnlyList<ISyntaxColorisation>? cachedProfiles;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OutOfProcSyntaxColorizationTagger"/> class.
@@ -168,17 +170,26 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
     /// <returns>Profiles applicable to this file extension.</returns>
     private IReadOnlyList<ISyntaxColorisation> LoadProfiles(string filePath, string fileExtension)
     {
+        if (cachedProfiles != null)
+        {
+            return cachedProfiles;
+        }
+
         IReadOnlyList<ISyntaxColorisation> allProfiles;
         try
         {
-            allProfiles = registry.LoadProfiles(AppDomain.CurrentDomain.GetAssemblies(), EnumerateDescriptorFiles(filePath));
+            allProfiles = registry.LoadProfiles(
+                AppDomain.CurrentDomain.GetAssemblies(),
+                EnumerateDescriptorFiles(filePath),
+                EnumerateProjectAssemblyFiles(filePath));
         }
         catch
         {
             return Array.Empty<ISyntaxColorisation>();
         }
 
-        return extension.GetSecondaryProfilesForFileExtension(allProfiles, fileExtension, Array.Empty<string>());
+        cachedProfiles = extension.GetSecondaryProfilesForFileExtension(allProfiles, fileExtension, Array.Empty<string>());
+        return cachedProfiles;
     }
 
     /// <summary>
@@ -218,5 +229,147 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
         }
 
         return descriptors;
+    }
+
+    /// <summary>
+    /// Enumerates assembly files produced by projects participating in the current solution context.
+    /// </summary>
+    /// <param name="filePath">Edited file path.</param>
+    /// <returns>Assembly file paths under project output directories.</returns>
+    private static IEnumerable<string> EnumerateProjectAssemblyFiles(string filePath)
+    {
+        string? projectDirectory = FindOwningProjectDirectory(filePath);
+        if (string.IsNullOrWhiteSpace(projectDirectory))
+        {
+            return Array.Empty<string>();
+        }
+
+        string searchRoot = FindSolutionDirectory(projectDirectory) ?? projectDirectory;
+        IReadOnlyList<string> projectDirectories = EnumerateProjectDirectories(searchRoot);
+
+        if (projectDirectories.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var assemblyFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string directory in projectDirectories)
+        {
+            AddAssembliesFromOutputFolder(assemblyFiles, Path.Combine(directory, "bin"));
+            AddAssembliesFromOutputFolder(assemblyFiles, Path.Combine(directory, "obj"));
+        }
+
+        return assemblyFiles;
+    }
+
+    /// <summary>
+    /// Enumerates project directories containing a <c>.csproj</c> file.
+    /// </summary>
+    /// <param name="searchRoot">Root directory to inspect.</param>
+    /// <returns>Project directories.</returns>
+    private static IReadOnlyList<string> EnumerateProjectDirectories(string searchRoot)
+    {
+        try
+        {
+            return Directory
+                .EnumerateFiles(searchRoot, "*.csproj", SearchOption.AllDirectories)
+                .Select(Path.GetDirectoryName)
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(path => path!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    /// <summary>
+    /// Adds assembly files from an output folder when it exists.
+    /// </summary>
+    /// <param name="assemblyFiles">Destination assembly set.</param>
+    /// <param name="outputDirectory">Output folder path.</param>
+    private static void AddAssembliesFromOutputFolder(HashSet<string> assemblyFiles, string outputDirectory)
+    {
+        if (!Directory.Exists(outputDirectory))
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (string assemblyFile in Directory.EnumerateFiles(outputDirectory, "*.dll", SearchOption.AllDirectories))
+            {
+                assemblyFiles.Add(assemblyFile);
+            }
+        }
+        catch
+        {
+            // Ignore inaccessible project output folders.
+        }
+    }
+
+    /// <summary>
+    /// Finds the nearest directory containing a project file for the edited file.
+    /// </summary>
+    /// <param name="filePath">Edited file path.</param>
+    /// <returns>Project directory path, or <see langword="null"/> when none is found.</returns>
+    private static string? FindOwningProjectDirectory(string filePath)
+    {
+        string? directory = Path.GetDirectoryName(filePath);
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return null;
+        }
+
+        DirectoryInfo? current = new(directory);
+        while (current != null)
+        {
+            try
+            {
+                if (current.EnumerateFiles("*.csproj", SearchOption.TopDirectoryOnly).Any())
+                {
+                    return current.FullName;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Finds the nearest solution directory containing a <c>.sln</c> file.
+    /// </summary>
+    /// <param name="projectDirectory">Current project directory.</param>
+    /// <returns>Solution directory path, or <see langword="null"/> when none is found.</returns>
+    private static string? FindSolutionDirectory(string projectDirectory)
+    {
+        DirectoryInfo? current = new(projectDirectory);
+        while (current != null)
+        {
+            try
+            {
+                if (current.EnumerateFiles("*.sln", SearchOption.TopDirectoryOnly).Any())
+                {
+                    return current.FullName;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
     }
 }
