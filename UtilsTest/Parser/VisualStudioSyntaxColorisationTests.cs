@@ -365,6 +365,107 @@ public class VisualStudioSyntaxColorisationTests
         }
     }
 
+    // ── AssemblySecurityInspector tests ────────────────────────────────
+
+    [TestMethod]
+    public void SecurityInspector_SafeAssembly_PassesInspection()
+    {
+        // Utils.Parser.Runtime.dll has no dangerous references (no File, Net, Process, P/Invoke).
+        string assemblyPath = typeof(G4SyntaxColorisation).Assembly.Location;
+        Assert.IsTrue(File.Exists(assemblyPath), "Assembly must exist on disk");
+
+        object?[] args = [assemblyPath, null];
+        bool isSafe = InvokeInspector(args);
+        var violations = (IReadOnlyList<string>)args[1]!;
+
+        Assert.IsTrue(isSafe, $"Expected safe; violations: {string.Join(", ", violations)}");
+        Assert.AreEqual(0, violations.Count);
+    }
+
+    [TestMethod]
+    public void SecurityInspector_NonExistentFile_FailsGracefully()
+    {
+        string missingPath = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.dll");
+
+        object?[] args = [missingPath, null];
+        bool isSafe = InvokeInspector(args);
+        var violations = (IReadOnlyList<string>)args[1]!;
+
+        Assert.IsFalse(isSafe);
+        Assert.IsTrue(violations.Count > 0);
+    }
+
+    [TestMethod]
+    public void SecurityInspector_InvalidPeContent_FailsGracefully()
+    {
+        string filePath = Path.Combine(Path.GetTempPath(), $"invalid-{Guid.NewGuid():N}.dll");
+        try
+        {
+            File.WriteAllText(filePath, "this is not a PE file");
+
+            object?[] args = [filePath, null];
+            bool isSafe = InvokeInspector(args);
+            var violations = (IReadOnlyList<string>)args[1]!;
+
+            Assert.IsFalse(isSafe);
+            Assert.IsTrue(violations.Count > 0);
+        }
+        finally
+        {
+            if (File.Exists(filePath)) File.Delete(filePath);
+        }
+    }
+
+    [TestMethod]
+    public void SecurityInspector_RejectedAssembly_IsNotLoadedByRegistry()
+    {
+        // The "invalid assembly" bytes file fails inspection (not a valid PE).
+        // The registry must mark it as problematic and return 0 profiles on both calls.
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        MethodInfo? loadProfilesWithFiles = typeof(VisualStudioSyntaxColorisationRegistry)
+            .GetMethod("LoadProfiles", BindingFlags.Instance | BindingFlags.NonPublic, null,
+            [
+                typeof(IEnumerable<Assembly>),
+                typeof(IEnumerable<string>),
+                typeof(IEnumerable<string>)
+            ], null);
+
+        Assert.IsNotNull(loadProfilesWithFiles);
+
+        string directory = Path.Combine(Path.GetTempPath(), $"rejected-{Guid.NewGuid():N}");
+        string assemblyPath = Path.Combine(directory, "Dangerous.dll");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(assemblyPath, "not a PE");
+
+            object[] parameters = [System.Array.Empty<Assembly>(), System.Array.Empty<string>(), new[] { assemblyPath }];
+
+            var first = (IReadOnlyList<ISyntaxColorisation>)loadProfilesWithFiles!.Invoke(registry, parameters)!;
+            var second = (IReadOnlyList<ISyntaxColorisation>)loadProfilesWithFiles.Invoke(registry, parameters)!;
+
+            Assert.AreEqual(0, first.Count);
+            Assert.AreEqual(0, second.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Invokes <c>AssemblySecurityInspector.IsSafe</c> via reflection (class is internal).
+    /// </summary>
+    private static bool InvokeInspector(object?[] args)
+    {
+        Type inspectorType = typeof(VisualStudioSyntaxColorisationRegistry).Assembly
+            .GetType("Utils.Parser.VisualStudio.AssemblySecurityInspector")!;
+        MethodInfo isSafe = inspectorType.GetMethod("IsSafe", BindingFlags.Public | BindingFlags.Static)!;
+        bool result = (bool)isSafe.Invoke(null, args)!;
+        // args[1] is now populated with the out IReadOnlyList<string> violations
+        return result;
+    }
+
     /// <summary>
     /// Represents a profile that always throws to validate fallback behavior.
     /// </summary>

@@ -71,6 +71,14 @@ public sealed class VisualStudioSyntaxColorisationRegistry
                 continue;
             }
 
+            // Security gate: inspect IL metadata before loading unknown assembly code.
+            if (!AssemblySecurityInspector.IsSafe(filePath, out IReadOnlyList<string> violations))
+            {
+                MarkAssemblyAsProblematic(filePath,
+                    $"Assembly '{Path.GetFileName(filePath)}' was rejected by security inspection: {string.Join("; ", violations)}");
+                continue;
+            }
+
             CollectibleProfileLoadContext? loadContext = null;
             try
             {
