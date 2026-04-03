@@ -68,12 +68,11 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
 
             string text = range.CopyToString();
             MatchCollection matches = TokenRegex.Matches(text);
+            updatedRanges.Add(range);
             if (matches.Count == 0)
             {
                 continue;
             }
-
-            updatedRanges.Add(range);
             foreach (Match match in matches)
             {
                 string token = match.Value;
