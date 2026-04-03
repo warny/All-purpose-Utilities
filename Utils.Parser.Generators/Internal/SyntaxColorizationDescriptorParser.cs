@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Utils.Parser.Generators.Internal;
 
@@ -17,6 +18,11 @@ internal static class SyntaxColorizationDescriptorParser
     /// <returns>The parsed descriptor model.</returns>
     public static SyntaxColorizationDescriptor Parse(string source)
     {
+        if (TryParseWithBootstrap(source, out SyntaxColorizationDescriptor? bootstrapDescriptor))
+        {
+            return bootstrapDescriptor;
+        }
+
         var descriptor = new SyntaxColorizationDescriptor();
         SyntaxColorizationEntry currentEntry = null;
 
@@ -52,6 +58,85 @@ internal static class SyntaxColorizationDescriptorParser
             {
                 currentEntry.Rules.Add(rule);
             }
+        }
+
+        return descriptor;
+    }
+
+    /// <summary>
+    /// Tries to parse descriptor content using <c>Utils.Parser.Bootstrap.SyntaxColorisationGrammar</c>.
+    /// </summary>
+    /// <param name="source">Descriptor source text.</param>
+    /// <param name="descriptor">Parsed descriptor when successful.</param>
+    /// <returns><see langword="true"/> when the bootstrap parser is available and successful.</returns>
+    private static bool TryParseWithBootstrap(string source, out SyntaxColorizationDescriptor? descriptor)
+    {
+        descriptor = null;
+
+        try
+        {
+            Type? grammarType = AppDomain.CurrentDomain
+                .GetAssemblies()
+                .Select(assembly => assembly.GetType("Utils.Parser.Bootstrap.SyntaxColorisationGrammar", throwOnError: false))
+                .FirstOrDefault(type => type != null);
+
+            MethodInfo? parseMethod = grammarType?.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string) }, null);
+            if (parseMethod == null)
+            {
+                return false;
+            }
+
+            object? document = parseMethod.Invoke(null, new object[] { source });
+            if (document == null)
+            {
+                return false;
+            }
+
+            descriptor = MapBootstrapDocument(document);
+            return true;
+        }
+        catch
+        {
+            descriptor = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Maps a bootstrap syntax colorisation document to generator descriptor model.
+    /// </summary>
+    /// <param name="document">Bootstrap parser document instance.</param>
+    /// <returns>Mapped descriptor.</returns>
+    private static SyntaxColorizationDescriptor MapBootstrapDocument(object document)
+    {
+        var descriptor = new SyntaxColorizationDescriptor();
+
+        PropertyInfo fileExtensionsProperty = document.GetType().GetProperty("FileExtensions")!;
+        PropertyInfo stringSyntaxExtensionsProperty = document.GetType().GetProperty("StringSyntaxExtensions")!;
+        PropertyInfo sectionsProperty = document.GetType().GetProperty("Sections")!;
+
+        foreach (string extension in (IEnumerable<string>)fileExtensionsProperty.GetValue(document)!)
+        {
+            descriptor.FileExtensions.Add(extension);
+        }
+
+        foreach (string extension in (IEnumerable<string>)stringSyntaxExtensionsProperty.GetValue(document)!)
+        {
+            descriptor.StringSyntaxExtensions.Add(extension);
+        }
+
+        foreach (object section in (IEnumerable<object>)sectionsProperty.GetValue(document)!)
+        {
+            PropertyInfo classificationProperty = section.GetType().GetProperty("Classification")!;
+            PropertyInfo rulesProperty = section.GetType().GetProperty("Rules")!;
+
+            var entry = new SyntaxColorizationEntry((string)classificationProperty.GetValue(section)!);
+            foreach (string rule in (IEnumerable<string>)rulesProperty.GetValue(section)!)
+            {
+                entry.Rules.Add(rule);
+            }
+
+            descriptor.Entries.Add(entry);
         }
 
         return descriptor;

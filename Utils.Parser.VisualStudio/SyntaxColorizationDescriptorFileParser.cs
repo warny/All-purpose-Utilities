@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using Utils.Parser.Bootstrap;
 
 namespace Utils.Parser.VisualStudio;
 
@@ -28,142 +27,19 @@ public sealed class SyntaxColorizationDescriptorFileParser
     /// <returns>The parsed descriptor.</returns>
     public SyntaxColorizationDescriptor ParseContent(string content)
     {
+        SyntaxColorisationDocument parsedDocument = SyntaxColorisationGrammar.Parse(content);
         var descriptor = new SyntaxColorizationDescriptor();
-        SyntaxColorizationDescriptorEntry? currentEntry = null;
-        using var reader = new StringReader(content);
-        int lineNumber = 0;
-        string? rawLine;
-        while ((rawLine = reader.ReadLine()) != null)
+
+        descriptor.FileExtensions.AddRange(parsedDocument.FileExtensions);
+        descriptor.StringSyntaxExtensions.AddRange(parsedDocument.StringSyntaxExtensions);
+
+        foreach (SyntaxColorisationSection section in parsedDocument.Sections)
         {
-            lineNumber++;
-            string line = RemoveComments(rawLine).Trim();
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            if (line.StartsWith("@", StringComparison.Ordinal))
-            {
-                ParseDirective(descriptor, line, lineNumber);
-                currentEntry = null;
-                continue;
-            }
-
-            if (line.EndsWith(":", StringComparison.Ordinal))
-            {
-                string classification = TrimQuoted(line.Substring(0, line.Length - 1).Trim());
-                currentEntry = new SyntaxColorizationDescriptorEntry(classification);
-                descriptor.Entries.Add(currentEntry);
-                continue;
-            }
-
-            if (currentEntry == null)
-            {
-                throw new InvalidOperationException($"Line {lineNumber}: expected a section before declaring rules.");
-            }
-
-            foreach (string rule in SplitRules(line))
-            {
-                currentEntry.Rules.Add(rule);
-            }
+            var entry = new SyntaxColorizationDescriptorEntry(section.Classification);
+            entry.Rules.AddRange(section.Rules);
+            descriptor.Entries.Add(entry);
         }
 
         return descriptor;
-    }
-
-    /// <summary>
-    /// Parses one directive and updates the target descriptor.
-    /// </summary>
-    /// <param name="descriptor">Descriptor to update.</param>
-    /// <param name="line">Directive line.</param>
-    /// <param name="lineNumber">Current line number.</param>
-    private static void ParseDirective(SyntaxColorizationDescriptor descriptor, string line, int lineNumber)
-    {
-        int separatorIndex = line.IndexOf(':');
-        if (separatorIndex < 0)
-        {
-            throw new InvalidOperationException($"Line {lineNumber}: malformed directive '{line}'.");
-        }
-
-        string directive = line.Substring(0, separatorIndex).Trim();
-        string value = TrimQuoted(line.Substring(separatorIndex + 1).Trim());
-
-        if (directive.Equals("@FileExtension", StringComparison.OrdinalIgnoreCase))
-        {
-            descriptor.FileExtensions.Add(value);
-            return;
-        }
-
-        if (directive.Equals("@StringSyntaxExtension", StringComparison.OrdinalIgnoreCase))
-        {
-            descriptor.StringSyntaxExtensions.Add(value);
-            return;
-        }
-
-        throw new InvalidOperationException($"Line {lineNumber}: unsupported directive '{directive}'.");
-    }
-
-
-    /// <summary>
-    /// Removes line comments (<c>#</c> and <c>//</c>) while preserving quoted text.
-    /// </summary>
-    /// <param name="line">Input line.</param>
-    /// <returns>Line content without trailing comment.</returns>
-    private static string RemoveComments(string line)
-    {
-        bool inQuotes = false;
-
-        for (int index = 0; index < line.Length; index++)
-        {
-            char current = line[index];
-            if (current == '"')
-            {
-                inQuotes = !inQuotes;
-                continue;
-            }
-
-            if (!inQuotes)
-            {
-                if (current == '#')
-                {
-                    return line.Substring(0, index);
-                }
-
-                if (current == '/' && index + 1 < line.Length && line[index + 1] == '/')
-                {
-                    return line.Substring(0, index);
-                }
-            }
-        }
-
-        return line;
-    }
-
-    /// <summary>
-    /// Splits a rule line by the <c>|</c> separator.
-    /// </summary>
-    /// <param name="line">Rule line content.</param>
-    /// <returns>Normalized rule names.</returns>
-    private static IEnumerable<string> SplitRules(string line)
-    {
-        return line
-            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(part => part.Trim())
-            .Where(part => !string.IsNullOrWhiteSpace(part));
-    }
-
-    /// <summary>
-    /// Removes leading and trailing quotes when present.
-    /// </summary>
-    /// <param name="value">Input value.</param>
-    /// <returns>Unquoted value.</returns>
-    private static string TrimQuoted(string value)
-    {
-        if (value.Length >= 2 && value[0] == '"' && value[value.Length - 1] == '"')
-        {
-            return value.Substring(1, value.Length - 2);
-        }
-
-        return value;
     }
 }

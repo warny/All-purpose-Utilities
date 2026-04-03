@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
@@ -44,7 +45,7 @@ public sealed class Antlr4GrammarConverter
     /// <exception cref="GrammarParseException">
     /// Thrown when the input cannot be parsed as a valid ANTLR4 grammar.
     /// </exception>
-    public static Runtime.CompiledGrammar Compile(string grammarText)
+    public static Runtime.CompiledGrammar Compile([StringSyntax("ANTLR4")] string grammarText)
         => new Runtime.CompiledGrammar(Parse(grammarText));
 
     /// <summary>
@@ -61,7 +62,7 @@ public sealed class Antlr4GrammarConverter
     /// <exception cref="GrammarParseException">
     /// Thrown when the input cannot be parsed as a valid ANTLR4 grammar.
     /// </exception>
-    public static ParserDefinition Parse(string grammarText)
+    public static ParserDefinition Parse([StringSyntax("ANTLR4")] string grammarText)
     {
         var metaDefinition = RuleResolver.Resolve(Antlr4Grammar.Build());
         var lexer = new LexerEngine(metaDefinition);
