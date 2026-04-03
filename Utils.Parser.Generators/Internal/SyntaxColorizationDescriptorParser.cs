@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -38,9 +39,7 @@ internal static class SyntaxColorizationDescriptorParser
 
         try
         {
-            Assembly? parserAssembly = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(assembly => string.Equals(assembly.GetName().Name, "Utils.Parser", StringComparison.OrdinalIgnoreCase));
+            Assembly? parserAssembly = ResolveParserAssembly();
 
             if (parserAssembly == null)
             {
@@ -68,6 +67,60 @@ internal static class SyntaxColorizationDescriptorParser
             descriptor = null;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Resolves the <c>Utils.Parser</c> assembly from the current load context or from known probing paths.
+    /// </summary>
+    /// <returns>The resolved parser assembly, or <see langword="null"/> when unavailable.</returns>
+    private static Assembly? ResolveParserAssembly()
+    {
+        Assembly? loadedAssembly = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .FirstOrDefault(assembly => string.Equals(assembly.GetName().Name, "Utils.Parser", StringComparison.OrdinalIgnoreCase));
+
+        if (loadedAssembly != null)
+        {
+            return loadedAssembly;
+        }
+
+        try
+        {
+            return Assembly.Load(new AssemblyName("Utils.Parser"));
+        }
+        catch
+        {
+            // Continue with file probing fallback.
+        }
+
+        IEnumerable<string> candidateDirectories = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(assembly => assembly.Location)
+            .Where(location => !string.IsNullOrWhiteSpace(location))
+            .Select(Path.GetDirectoryName)
+            .Where(directory => !string.IsNullOrWhiteSpace(directory))
+            .Select(directory => directory!)
+            .Append(AppContext.BaseDirectory)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string directory in candidateDirectories)
+        {
+            string candidatePath = Path.Combine(directory, "Utils.Parser.dll");
+            if (!File.Exists(candidatePath))
+            {
+                continue;
+            }
+
+            try
+            {
+                return Assembly.LoadFrom(candidatePath);
+            }
+            catch
+            {
+                // Try next candidate.
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

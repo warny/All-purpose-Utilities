@@ -126,4 +126,19 @@ public class SyntaxColorizationTests
         Assert.AreEqual(1, document.FileExtensions.Count);
         Assert.AreEqual(4000, document.Sections.Count);
     }
+
+    [TestMethod]
+    public void DescriptorParser_SupportsSectionRulesSplitAcrossMultipleLines()
+    {
+        var descriptor = SyntaxColorizationDescriptorParser.Parse("""
+            @FileExtension : ".split"
+            Number :
+                ONE | TWO
+                THREE
+                FOUR | FIVE
+            """);
+
+        Assert.AreEqual(1, descriptor.Entries.Count);
+        CollectionAssert.AreEqual(new[] { "ONE", "TWO", "THREE", "FOUR", "FIVE" }, descriptor.Entries[0].Rules);
+    }
 }

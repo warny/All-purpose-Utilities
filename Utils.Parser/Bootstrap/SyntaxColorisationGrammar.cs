@@ -81,9 +81,22 @@ public static class SyntaxColorisationGrammar
     public static SyntaxColorisationDocument Parse([StringSyntax("SyntaxColorisation")] string source)
     {
         var lexer = new LexerEngine(Definition);
-        List<Token> tokens = lexer.Tokenize(new StringCharStream(source))
-            .Where(token => token.RuleName is not ("WS" or "LINE_COMMENT" or "HASH_COMMENT"))
-            .ToList();
+        int maxTokenCount = ComputeTokenLimit(source);
+        var tokens = new List<Token>();
+        foreach (Token token in lexer.Tokenize(new StringCharStream(source)))
+        {
+            if (token.RuleName is "WS" or "LINE_COMMENT" or "HASH_COMMENT")
+            {
+                continue;
+            }
+
+            tokens.Add(token);
+            if (tokens.Count > maxTokenCount)
+            {
+                throw new InvalidOperationException(
+                    $"Descriptor tokenization exceeded the safety limit ({maxTokenCount}) for a source length of {source.Length}.");
+            }
+        }
 
         var parser = new ParserEngine(Definition);
         ParseNode root = parser.Parse(tokens);
@@ -116,7 +129,7 @@ public static class SyntaxColorisationGrammar
             P("entry", Alt(Ref("directive"), Ref("section"))),
             P("directive", Seq(Ref("AT"), Ref("IDENT"), Ref("COLON"), Ref("value"))),
             P("section", Seq(Ref("value"), Ref("COLON"), Ref("ruleList"))),
-            P("ruleList", Seq(Ref("value"), Q(Seq(Ref("PIPE"), Ref("value")), 0, null))),
+            P("ruleList", Seq(Ref("value"), Q(Seq(Q(Ref("PIPE"), 0, 1), Ref("value")), 0, null))),
             P("value", Alt(Ref("QUOTED"), Ref("IDENT")))
         };
 
@@ -354,4 +367,15 @@ public static class SyntaxColorisationGrammar
     /// Creates a quantifier node.
     /// </summary>
     private static RuleContent Q(RuleContent inner, int min, int? max) => new Quantifier(inner, min, max);
+
+    /// <summary>
+    /// Computes the maximum allowed number of significant tokens for one descriptor source.
+    /// </summary>
+    /// <param name="source">Descriptor source text.</param>
+    /// <returns>Maximum token count accepted during lexing.</returns>
+    internal static int ComputeTokenLimit(string source)
+    {
+        int sourceLength = source?.Length ?? 0;
+        return Math.Max(256, (sourceLength + 1) * 4);
+    }
 }
