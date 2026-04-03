@@ -28,6 +28,14 @@ public sealed class LexerEngine(ParserDefinition definition)
     private readonly StringBuilder _moreTextBuilder = new();
     private int    _moreStartPos = -1;
 
+    // ── Lexer cycle detection ─────────────────────────────────────────────────
+    // Tracks (ruleName, streamPosition) pairs that are currently being expanded.
+    // A same pair appearing twice means the rule cannot consume any input at that
+    // position, which would cause infinite recursion (e.g. A: A; or deep mutual
+    // recursion between fragments). The set is maintained with push/pop semantics
+    // inside TryMatchContent so it is always empty between top-level token matches.
+    private readonly HashSet<(string RuleName, int Position)> _activeRuleRefs = new();
+
     /// <summary>
     /// Tokenizes the entire <paramref name="stream"/>, yielding one <see cref="Token"/>
     /// per recognized lexical unit.
@@ -45,6 +53,7 @@ public sealed class LexerEngine(ParserDefinition definition)
         _modeStack.Push(GetDefaultMode());
         _moreTextBuilder.Clear();
         _moreStartPos = -1;
+        _activeRuleRefs.Clear();
 
         while (!stream.IsEnd)
         {
@@ -201,7 +210,21 @@ public sealed class LexerEngine(ParserDefinition definition)
 
             case RuleRef ruleRef:
                 if (definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
-                    return TryMatchContent(stream, referencedRule.Content, commands);
+                {
+                    // Guard against infinite recursion: if this rule is already being
+                    // expanded at the same stream position, it cannot make progress.
+                    var cycleKey = (ruleRef.RuleName, stream.Position);
+                    if (!_activeRuleRefs.Add(cycleKey))
+                        return false;
+                    try
+                    {
+                        return TryMatchContent(stream, referencedRule.Content, commands);
+                    }
+                    finally
+                    {
+                        _activeRuleRefs.Remove(cycleKey);
+                    }
+                }
                 return false;
 
             case Sequence seq:

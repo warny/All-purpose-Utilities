@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading.Tasks;
 
 using Utils.Parser.Runtime;
 
@@ -262,41 +263,74 @@ public sealed class VisualStudioSyntaxColorisationRegistry
     }
 
     /// <summary>
+    /// Maximum time allowed to instantiate a single colorization profile.
+    /// A constructor or property accessor that blocks longer than this is considered faulty.
+    /// </summary>
+    private static readonly TimeSpan ProfileCreationTimeout = TimeSpan.FromSeconds(5);
+
+    /// <summary>
     /// Tries to instantiate one colorization profile from a runtime type.
+    /// Instantiation is performed on a background thread and abandoned after
+    /// <see cref="ProfileCreationTimeout"/> to prevent blocking the extension thread
+    /// indefinitely when a constructor or static property accessor hangs.
     /// </summary>
     /// <param name="profileType">Type to instantiate.</param>
     /// <param name="profile">Created profile instance.</param>
+    /// <param name="error">Error message when instantiation fails.</param>
     /// <returns><see langword="true"/> when an instance is created; otherwise <see langword="false"/>.</returns>
     private static bool TryCreateProfile(Type profileType, out ISyntaxColorisation? profile, out string? error)
     {
-        try
-        {
-            PropertyInfo? instanceProperty = profileType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-            if (instanceProperty?.PropertyType != null && typeof(ISyntaxColorisation).IsAssignableFrom(instanceProperty.PropertyType))
-            {
-                profile = instanceProperty.GetValue(null) as ISyntaxColorisation;
-                error = null;
-                return profile != null;
-            }
+        PropertyInfo? instanceProperty = profileType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
+        bool useInstanceProperty = instanceProperty?.PropertyType != null
+            && typeof(ISyntaxColorisation).IsAssignableFrom(instanceProperty.PropertyType);
 
-            ConstructorInfo? constructor = profileType.GetConstructor(Type.EmptyTypes);
-            if (constructor != null)
-            {
-                profile = constructor.Invoke(null) as ISyntaxColorisation;
-                error = null;
-                return profile != null;
-            }
-        }
-        catch (Exception ex)
+        ConstructorInfo? constructor = useInstanceProperty
+            ? null
+            : profileType.GetConstructor(Type.EmptyTypes);
+
+        if (!useInstanceProperty && constructor == null)
         {
             profile = null;
-            error = $"Failed to create syntax colorization profile '{profileType.FullName}': {ex.Message}";
+            error = null;
             return false;
         }
 
-        profile = null;
+        ISyntaxColorisation? created = null;
+        Exception? createException = null;
+
+        Task creationTask = Task.Run(() =>
+        {
+            try
+            {
+                created = useInstanceProperty
+                    ? instanceProperty!.GetValue(null) as ISyntaxColorisation
+                    : constructor!.Invoke(null) as ISyntaxColorisation;
+            }
+            catch (Exception ex)
+            {
+                createException = ex.InnerException ?? ex;
+            }
+        });
+
+        bool completed = creationTask.Wait(ProfileCreationTimeout);
+
+        if (!completed)
+        {
+            profile = null;
+            error = $"Timeout ({ProfileCreationTimeout.TotalSeconds}s) creating colorization profile '{profileType.FullName}'. The type will be ignored.";
+            return false;
+        }
+
+        if (createException != null)
+        {
+            profile = null;
+            error = $"Failed to create syntax colorization profile '{profileType.FullName}': {createException.Message}";
+            return false;
+        }
+
+        profile = created;
         error = null;
-        return false;
+        return profile != null;
     }
 
     /// <summary>

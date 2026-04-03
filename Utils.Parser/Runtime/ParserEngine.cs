@@ -3,10 +3,9 @@ using Utils.Parser.Model;
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Internal record used to detect left-recursive cycles.
-/// Stores the rule being attempted and the token-list position at which it was entered.
+/// Key used for O(1) detection of left-recursive cycles in the parser engine.
+/// A cycle is detected when the same rule is re-entered at the same token-list position.
 /// </summary>
-internal record ParserFrame(Rule Rule, int InputPosition);
 internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
 
 /// <summary>
@@ -26,7 +25,6 @@ internal readonly record struct ParserFrameKey(string RuleName, int InputPositio
 /// </summary>
 public sealed class ParserEngine(ParserDefinition definition)
 {
-    private readonly Stack<ParserFrame> _ruleStack = new();
     private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
     private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
 
@@ -50,6 +48,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         var root = startRule ?? definition.RootRule
             ?? throw new InvalidOperationException("No root rule defined");
 
+        _activeRuleFrames.Clear();
         var context = new ParseContext(tokenList);
         var result = ParseRule(context, root, precedence: 0);
 
@@ -80,13 +79,11 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="precedence">Minimum precedence level accepted for this parse attempt.</param>
     private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence)
     {
-        // Detect left-recursive infinite cycles.
+        // Detect left-recursive infinite cycles in O(1).
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
-        if (_activeRuleFrames.Contains(frameKey))
+        if (!_activeRuleFrames.Add(frameKey))
             return null;
 
-        _activeRuleFrames.Add(frameKey);
-        _ruleStack.Push(new ParserFrame(rule, context.Position));
         try
         {
             foreach (var alternative in rule.Content.Alternatives.OrderBy(a => a.Priority))
@@ -112,7 +109,6 @@ public sealed class ParserEngine(ParserDefinition definition)
         }
         finally
         {
-            _ruleStack.Pop();
             _activeRuleFrames.Remove(frameKey);
         }
     }

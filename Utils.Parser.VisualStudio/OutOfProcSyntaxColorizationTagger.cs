@@ -21,10 +21,14 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
     private const int MaxProjectDirectories = 256;
     private const int MaxAssemblyFiles = 4096;
 
+    /// <summary>How long a loaded profile set is reused before being refreshed from disk.</summary>
+    private static readonly TimeSpan ProfileCacheTtl = TimeSpan.FromMinutes(2);
+
     private readonly ITextViewSnapshot textView;
     private readonly VisualStudioSyntaxColorisationRegistry registry;
     private readonly VisualStudioSyntaxColorisationExtension extension;
     private IReadOnlyList<ISyntaxColorisation>? cachedProfiles;
+    private DateTime cachedProfilesTimestamp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OutOfProcSyntaxColorizationTagger"/> class.
@@ -173,7 +177,7 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
     /// <returns>Profiles applicable to this file extension.</returns>
     private IReadOnlyList<ISyntaxColorisation> LoadProfiles(string filePath, string fileExtension)
     {
-        if (cachedProfiles != null)
+        if (cachedProfiles != null && DateTime.UtcNow - cachedProfilesTimestamp < ProfileCacheTtl)
         {
             return cachedProfiles;
         }
@@ -189,10 +193,12 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
         catch
         {
             cachedProfiles = Array.Empty<ISyntaxColorisation>();
+            cachedProfilesTimestamp = DateTime.UtcNow;
             return cachedProfiles;
         }
 
         cachedProfiles = extension.GetSecondaryProfilesForFileExtension(allProfiles, fileExtension, Array.Empty<string>());
+        cachedProfilesTimestamp = DateTime.UtcNow;
         return cachedProfiles;
     }
 
