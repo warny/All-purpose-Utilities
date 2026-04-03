@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using Utils.Parser.Model;
+using Utils.Parser.Resolution;
+using Utils.Parser.Runtime;
 
 namespace Utils.Parser.Bootstrap;
 
@@ -53,10 +56,12 @@ public sealed class SyntaxColorisationDocument
 }
 
 /// <summary>
-/// Parses <c>.syntaxcolor</c> descriptor content used by source generators and Visual Studio integration.
+/// Parses <c>.syntaxcolor</c> descriptor content using a grammar executed by <see cref="ParserEngine"/>.
 /// </summary>
 public static class SyntaxColorisationGrammar
 {
+    private static readonly ParserDefinition Definition = RuleResolver.Resolve(Build());
+
     /// <summary>
     /// Parses descriptor text from a file.
     /// </summary>
@@ -75,139 +80,269 @@ public static class SyntaxColorisationGrammar
     /// <returns>Parsed descriptor document.</returns>
     public static SyntaxColorisationDocument Parse([StringSyntax("SyntaxColorisation")] string source)
     {
-        var descriptor = new SyntaxColorisationDocument();
-        SyntaxColorisationSection? currentSection = null;
+        var lexer = new LexerEngine(Definition);
+        List<Token> tokens = lexer.Tokenize(new StringCharStream(source))
+            .Where(token => token.RuleName is not ("WS" or "LINE_COMMENT" or "HASH_COMMENT"))
+            .ToList();
 
-        string[] lines = source.Replace("\r\n", "\n").Split('\n');
-        for (int index = 0; index < lines.Length; index++)
-        {
-            string line = RemoveComments(lines[index]).Trim();
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
+        var parser = new ParserEngine(Definition);
+        ParseNode root = parser.Parse(tokens);
 
-            if (line.StartsWith("@", StringComparison.Ordinal))
-            {
-                ParseDirective(descriptor, line, index + 1);
-                currentSection = null;
-                continue;
-            }
-
-            if (line.EndsWith(":", StringComparison.Ordinal))
-            {
-                string classification = TrimQuoted(line[..^1].Trim());
-                currentSection = new SyntaxColorisationSection(classification);
-                descriptor.Sections.Add(currentSection);
-                continue;
-            }
-
-            if (currentSection == null)
-            {
-                throw new InvalidOperationException($"Line {index + 1}: rule list found before a section header.");
-            }
-
-            foreach (string rule in ParseRules(line))
-            {
-                currentSection.Rules.Add(rule);
-            }
-        }
-
-        return descriptor;
+        return Convert(root);
     }
 
     /// <summary>
-    /// Parses one descriptor directive line.
+    /// Builds the descriptor grammar definition.
     /// </summary>
-    /// <param name="document">Descriptor document to update.</param>
-    /// <param name="line">Directive line text.</param>
-    /// <param name="lineNumber">Current source line number.</param>
-    private static void ParseDirective(SyntaxColorisationDocument document, string line, int lineNumber)
+    /// <returns>Descriptor parser definition.</returns>
+    public static ParserDefinition Build()
     {
-        int separatorIndex = line.IndexOf(':');
-        if (separatorIndex < 0)
+        var lexerRules = new List<Rule>
         {
-            throw new InvalidOperationException($"Line {lineNumber}: malformed directive '{line}'.");
+            L("WS", Q(CS(" \t\r\n"), 1, null)),
+            L("LINE_COMMENT", Seq(Lit("/"), Lit("/"), Q(Neg(Ref("NEWLINE")), 0, null))),
+            L("HASH_COMMENT", Seq(Lit("#"), Q(Neg(Ref("NEWLINE")), 0, null))),
+            L("NEWLINE", Alt(Lit("\r\n"), Lit("\n"))),
+            L("AT", Lit("@")),
+            L("COLON", Lit(":")),
+            L("PIPE", Lit("|")),
+            L("IDENT", Q(CS("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"), 1, null)),
+            L("QUOTED", Seq(Lit("\""), Q(Neg(Alt(Lit("\""), Ref("NEWLINE"))), 0, null), Lit("\"")))
+        };
+
+        var parserRules = new List<Rule>
+        {
+            P("document", Q(Ref("entry"), 0, null)),
+            P("entry", Alt(Ref("directive"), Ref("section"))),
+            P("directive", Seq(Ref("AT"), Ref("IDENT"), Ref("COLON"), Ref("value"))),
+            P("section", Seq(Ref("value"), Ref("COLON"), Ref("ruleList"))),
+            P("ruleList", Seq(Ref("value"), Q(Seq(Ref("PIPE"), Ref("value")), 0, null))),
+            P("value", Alt(Ref("QUOTED"), Ref("IDENT")))
+        };
+
+        return new ParserDefinition(
+            "SyntaxColorisation",
+            GrammarType.Combined,
+            null,
+            Array.Empty<GrammarAction>(),
+            Array.Empty<GrammarImport>(),
+            new[] { new LexerMode("DEFAULT_MODE", lexerRules) },
+            parserRules,
+            parserRules[0]);
+    }
+
+    /// <summary>
+    /// Converts a parsed descriptor tree to a strongly typed document.
+    /// </summary>
+    /// <param name="root">Parse root node.</param>
+    /// <returns>Parsed descriptor document.</returns>
+    private static SyntaxColorisationDocument Convert(ParseNode root)
+    {
+        if (root is not ParserNode documentNode || documentNode.Rule.Name != "document")
+        {
+            throw new InvalidOperationException("Syntax colorisation descriptor root must be 'document'.");
         }
 
-        string directive = line[..separatorIndex].Trim();
-        string value = TrimQuoted(line[(separatorIndex + 1)..].Trim());
+        var document = new SyntaxColorisationDocument();
 
-        if (directive.Equals("@FileExtension", StringComparison.OrdinalIgnoreCase))
+        foreach (ParserNode entry in Descendants(documentNode, "entry"))
+        {
+            ParserNode? directive = First(entry, "directive");
+            if (directive != null)
+            {
+                ApplyDirective(document, directive);
+                continue;
+            }
+
+            ParserNode? sectionNode = First(entry, "section");
+            if (sectionNode != null)
+            {
+                document.Sections.Add(ReadSection(sectionNode));
+            }
+        }
+
+        return document;
+    }
+
+    /// <summary>
+    /// Applies one descriptor directive to the target document.
+    /// </summary>
+    /// <param name="document">Target descriptor document.</param>
+    /// <param name="directiveNode">Directive parse node.</param>
+    private static void ApplyDirective(SyntaxColorisationDocument document, ParserNode directiveNode)
+    {
+        string directiveName = ReadLexerValue(directiveNode, "IDENT");
+        string value = ReadParserValue(directiveNode, "value");
+
+        if (directiveName.Equals("FileExtension", StringComparison.OrdinalIgnoreCase))
         {
             document.FileExtensions.Add(value);
             return;
         }
 
-        if (directive.Equals("@StringSyntaxExtension", StringComparison.OrdinalIgnoreCase))
+        if (directiveName.Equals("StringSyntaxExtension", StringComparison.OrdinalIgnoreCase))
         {
             document.StringSyntaxExtensions.Add(value);
             return;
         }
 
-        throw new InvalidOperationException($"Line {lineNumber}: unsupported directive '{directive}'.");
+        throw new InvalidOperationException($"Unsupported directive '{directiveName}'.");
     }
 
     /// <summary>
-    /// Removes line comments while preserving quoted text.
+    /// Reads one section from the parse tree.
     /// </summary>
-    /// <param name="line">Input line.</param>
-    /// <returns>Line content without trailing comment.</returns>
-    private static string RemoveComments(string line)
+    /// <param name="sectionNode">Section parse node.</param>
+    /// <returns>Parsed section.</returns>
+    private static SyntaxColorisationSection ReadSection(ParserNode sectionNode)
     {
-        bool inQuotes = false;
+        string classification = ReadParserValue(sectionNode, "value");
+        ParserNode ruleList = First(sectionNode, "ruleList")
+            ?? throw new InvalidOperationException("Section must include a rule list.");
 
-        for (int index = 0; index < line.Length; index++)
+        var section = new SyntaxColorisationSection(classification);
+        foreach (ParserNode valueNode in Descendants(ruleList, "value"))
         {
-            char current = line[index];
-            if (current == '"')
-            {
-                inQuotes = !inQuotes;
-                continue;
-            }
-
-            if (!inQuotes)
-            {
-                if (current == '#')
-                {
-                    return line[..index];
-                }
-
-                if (current == '/' && index + 1 < line.Length && line[index + 1] == '/')
-                {
-                    return line[..index];
-                }
-            }
+            section.Rules.Add(ReadValue(valueNode));
         }
 
-        return line;
+        return section;
     }
 
     /// <summary>
-    /// Parses a pipe-separated list of rules.
+    /// Reads a parser child value by parser rule name.
     /// </summary>
-    /// <param name="line">Source line.</param>
-    /// <returns>Normalized rule names.</returns>
-    private static IEnumerable<string> ParseRules(string line)
+    /// <param name="parent">Parent parser node.</param>
+    /// <param name="ruleName">Expected parser rule name.</param>
+    /// <returns>Value text.</returns>
+    private static string ReadParserValue(ParserNode parent, string ruleName)
     {
-        return line
-            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(rule => rule.Trim())
-            .Where(rule => !string.IsNullOrWhiteSpace(rule));
+        ParserNode node = First(parent, ruleName)
+            ?? throw new InvalidOperationException($"Missing parser rule '{ruleName}'.");
+
+        return ReadValue(node);
     }
 
     /// <summary>
-    /// Trims optional quotes around a value.
+    /// Reads a lexer token value by token rule name.
     /// </summary>
-    /// <param name="value">Raw value.</param>
-    /// <returns>Unquoted value.</returns>
-    private static string TrimQuoted(string value)
+    /// <param name="parent">Parent parser node.</param>
+    /// <param name="ruleName">Expected token rule name.</param>
+    /// <returns>Token text.</returns>
+    private static string ReadLexerValue(ParserNode parent, string ruleName)
     {
-        if (value.Length >= 2 && value[0] == '"' && value[^1] == '"')
+        LexerNode node = parent.Children
+            .OfType<LexerNode>()
+            .FirstOrDefault(lexer => lexer.Rule.Name == ruleName)
+            ?? throw new InvalidOperationException($"Missing token '{ruleName}'.");
+
+        return node.Token.Text;
+    }
+
+    /// <summary>
+    /// Reads one <c>value</c> rule as a string.
+    /// </summary>
+    /// <param name="valueNode">Value parse node.</param>
+    /// <returns>Unescaped value text.</returns>
+    private static string ReadValue(ParserNode valueNode)
+    {
+        LexerNode token = valueNode.Children
+            .OfType<LexerNode>()
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException("Value node must contain one lexer token.");
+
+        return token.Rule.Name == "QUOTED"
+            ? token.Token.Text[1..^1]
+            : token.Token.Text;
+    }
+
+    /// <summary>
+    /// Enumerates parser descendants matching a rule name.
+    /// </summary>
+    /// <param name="node">Node to inspect.</param>
+    /// <param name="ruleName">Rule name to match.</param>
+    /// <returns>Matching descendants.</returns>
+    private static IEnumerable<ParserNode> Descendants(ParseNode node, string ruleName)
+    {
+        if (node is not ParserNode parserNode)
         {
-            return value[1..^1];
+            yield break;
         }
 
-        return value;
+        if (parserNode.Rule.Name == ruleName)
+        {
+            yield return parserNode;
+        }
+
+        foreach (ParseNode child in parserNode.Children)
+        {
+            foreach (ParserNode descendant in Descendants(child, ruleName))
+            {
+                yield return descendant;
+            }
+        }
     }
+
+    /// <summary>
+    /// Finds the first parser child matching a rule name.
+    /// </summary>
+    /// <param name="node">Parent parser node.</param>
+    /// <param name="ruleName">Rule name to match.</param>
+    /// <returns>Matching child parser node, or <see langword="null"/>.</returns>
+    private static ParserNode? First(ParserNode node, string ruleName)
+    {
+        return node.Children
+            .OfType<ParserNode>()
+            .FirstOrDefault(child => child.Rule.Name == ruleName);
+    }
+
+    /// <summary>
+    /// Creates a lexer rule.
+    /// </summary>
+    private static Rule L(string name, RuleContent content)
+        => new(name, 0, false, new Alternation(new[] { new Alternative(0, Associativity.Left, content) }))
+        { Kind = RuleKind.Lexer };
+
+    /// <summary>
+    /// Creates a parser rule.
+    /// </summary>
+    private static Rule P(string name, RuleContent content)
+        => new(name, 0, false, new Alternation(new[] { new Alternative(0, Associativity.Left, content) }))
+        { Kind = RuleKind.Parser };
+
+    /// <summary>
+    /// Creates one literal tokenizer node.
+    /// </summary>
+    private static RuleContent Lit(string value) => new LiteralMatch(value);
+
+    /// <summary>
+    /// Creates one rule reference node.
+    /// </summary>
+    private static RuleContent Ref(string ruleName) => new RuleRef(ruleName);
+
+    /// <summary>
+    /// Creates one character-set tokenizer node.
+    /// </summary>
+    private static RuleContent CS(string chars) => new CharSetMatch(new HashSet<char>(chars), false);
+
+    /// <summary>
+    /// Creates one negation node.
+    /// </summary>
+    private static RuleContent Neg(RuleContent inner) => new Negation(inner);
+
+    /// <summary>
+    /// Creates a sequence node.
+    /// </summary>
+    private static RuleContent Seq(params RuleContent[] items) => new Sequence(items);
+
+    /// <summary>
+    /// Creates an alternation node.
+    /// </summary>
+    private static RuleContent Alt(params RuleContent[] items)
+        => new Alternation(items.Select((item, index) => new Alternative(index, Associativity.Left, item)).ToArray());
+
+    /// <summary>
+    /// Creates a quantifier node.
+    /// </summary>
+    private static RuleContent Q(RuleContent inner, int min, int? max) => new Quantifier(inner, min, max);
 }
