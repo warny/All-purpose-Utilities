@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 using Utils.Parser.Runtime;
 using Utils.Parser.VisualStudio;
 
@@ -228,6 +229,135 @@ public class VisualStudioSyntaxColorisationTests
         StringAssert.Contains(ex.Message, "Failed to create syntax colorization profile");
     }
 
+    [TestMethod]
+    public void Registry_LoadProfiles_LoadsProfilesFromAssemblyFilePaths()
+    {
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        MethodInfo? loadProfilesWithFiles = typeof(VisualStudioSyntaxColorisationRegistry)
+            .GetMethod("LoadProfiles", BindingFlags.Instance | BindingFlags.NonPublic, null, new[]
+            {
+                typeof(IEnumerable<Assembly>),
+                typeof(IEnumerable<string>),
+                typeof(IEnumerable<string>)
+            }, null);
+
+        Assert.IsNotNull(loadProfilesWithFiles);
+
+        object? rawResult = loadProfilesWithFiles!.Invoke(
+            registry,
+            new object[]
+            {
+                System.Array.Empty<Assembly>(),
+                System.Array.Empty<string>(),
+                new[] { typeof(G4SyntaxColorisation).Assembly.Location }
+            });
+
+        Assert.IsNotNull(rawResult);
+        var profiles = (IReadOnlyList<ISyntaxColorisation>)rawResult;
+        Assert.IsTrue(profiles.Any(profile => profile.FileExtensions.Contains(".g4")));
+    }
+
+    [TestMethod]
+    public void Tagger_EnumerateProjectAssemblyFiles_IncludesSolutionProjectsBinAndObjAssemblies()
+    {
+        string rootDirectory = Path.Combine(Path.GetTempPath(), $"solution-{Guid.NewGuid():N}");
+        string solutionFile = Path.Combine(rootDirectory, "Demo.sln");
+        string projectADirectory = Path.Combine(rootDirectory, "ProjectA");
+        string projectBDirectory = Path.Combine(rootDirectory, "ProjectB");
+        string projectAFile = Path.Combine(projectADirectory, "ProjectA.csproj");
+        string projectBFile = Path.Combine(projectBDirectory, "ProjectB.csproj");
+        string editedFilePath = Path.Combine(projectADirectory, "Script.demo");
+        string projectABinAssembly = Path.Combine(projectADirectory, "bin", "Debug", "net9.0", "ProjectA.dll");
+        string projectBObjAssembly = Path.Combine(projectBDirectory, "obj", "Debug", "net9.0", "ProjectB.dll");
+
+        try
+        {
+            Directory.CreateDirectory(rootDirectory);
+            Directory.CreateDirectory(projectADirectory);
+            Directory.CreateDirectory(projectBDirectory);
+            Directory.CreateDirectory(Path.GetDirectoryName(projectABinAssembly)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(projectBObjAssembly)!);
+
+            File.WriteAllText(solutionFile, "");
+            File.WriteAllText(projectAFile, "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+            File.WriteAllText(projectBFile, "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+            File.WriteAllText(editedFilePath, "content");
+            File.WriteAllText(projectABinAssembly, "binary");
+            File.WriteAllText(projectBObjAssembly, "binary");
+
+            MethodInfo? method = typeof(OutOfProcSyntaxColorizationTagger)
+                .GetMethod("EnumerateProjectAssemblyFiles", BindingFlags.Static | BindingFlags.NonPublic);
+
+            Assert.IsNotNull(method);
+
+            object? rawResult = method!.Invoke(null, new object[] { editedFilePath });
+            Assert.IsNotNull(rawResult);
+
+            var assemblies = ((IEnumerable<string>)rawResult)
+                .ToArray();
+
+            CollectionAssert.Contains(assemblies, projectABinAssembly);
+            CollectionAssert.Contains(assemblies, projectBObjAssembly);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Registry_LoadProfiles_DisablesProblematicExternalAssemblyWithoutThrowing()
+    {
+        var registry = new VisualStudioSyntaxColorisationRegistry();
+        MethodInfo? loadProfilesWithFiles = typeof(VisualStudioSyntaxColorisationRegistry)
+            .GetMethod("LoadProfiles", BindingFlags.Instance | BindingFlags.NonPublic, null, new[]
+            {
+                typeof(IEnumerable<Assembly>),
+                typeof(IEnumerable<string>),
+                typeof(IEnumerable<string>)
+            }, null);
+
+        Assert.IsNotNull(loadProfilesWithFiles);
+
+        string directory = Path.Combine(Path.GetTempPath(), $"problematic-{Guid.NewGuid():N}");
+        string problematicAssemblyPath = Path.Combine(directory, "BrokenColorisation.dll");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(problematicAssemblyPath, "invalid assembly");
+
+            object[] parameters =
+            {
+                System.Array.Empty<Assembly>(),
+                System.Array.Empty<string>(),
+                new[] { problematicAssemblyPath }
+            };
+
+            object? firstResult = loadProfilesWithFiles!.Invoke(registry, parameters);
+            object? secondResult = loadProfilesWithFiles.Invoke(registry, parameters);
+
+            Assert.IsNotNull(firstResult);
+            Assert.IsNotNull(secondResult);
+
+            var firstProfiles = (IReadOnlyList<ISyntaxColorisation>)firstResult;
+            var secondProfiles = (IReadOnlyList<ISyntaxColorisation>)secondResult;
+
+            Assert.AreEqual(0, firstProfiles.Count);
+            Assert.AreEqual(0, secondProfiles.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
     /// <summary>
     /// Represents a profile that always throws to validate fallback behavior.
     /// </summary>
@@ -295,4 +425,5 @@ public class VisualStudioSyntaxColorisationTests
             return null;
         }
     }
+
 }
