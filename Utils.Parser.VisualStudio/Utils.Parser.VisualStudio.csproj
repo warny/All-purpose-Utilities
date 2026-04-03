@@ -33,7 +33,7 @@
         </None>
     </ItemGroup>
 
-    <Target Name="EnsureSourceVsixManifest" BeforeTargets="GetVsixSourceItems">
+    <Target Name="EnsureSourceVsixManifest" BeforeTargets="DetokenizeVsixManifestFile">
         <MakeDir Directories="$(IntermediateOutputPath)" />
         <Copy
             SourceFiles="source.extension.vsixmanifest"
