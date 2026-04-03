@@ -404,7 +404,12 @@ public static class SyntaxColorisationGrammar
             if (trimmed.Contains(":", StringComparison.Ordinal))
             {
                 insideSection = !trimmed.StartsWith("@", StringComparison.Ordinal);
-                isFirstRuleLineInSection = insideSection;
+                // When the header already has content after ':', the first rule is inline:
+                // the next continuation line is NOT the first and must receive a leading '|'.
+                string afterColon = insideSection
+                    ? trimmed[(trimmed.IndexOf(':') + 1)..].Trim()
+                    : string.Empty;
+                isFirstRuleLineInSection = insideSection && string.IsNullOrWhiteSpace(afterColon);
                 normalized.Add(rawLine);
                 continue;
             }

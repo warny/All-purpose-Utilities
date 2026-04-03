@@ -204,30 +204,40 @@ internal static class SyntaxColorizationDescriptorParser
     }
 
     /// <summary>
-    /// Removes trailing <c>//</c> or <c>#</c> comments from a descriptor line segment.
+    /// Removes trailing <c>//</c> or <c>#</c> comments from a descriptor line segment,
+    /// skipping any occurrences that appear inside double-quoted strings.
     /// </summary>
     /// <param name="value">Raw line segment.</param>
     /// <returns>Segment without trailing comments.</returns>
     private static string StripInlineComment(string value)
     {
-        int slashComment = value.IndexOf("//", StringComparison.Ordinal);
-        int hashComment = value.IndexOf('#');
-        int cutIndex;
+        bool inQuotes = false;
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+                continue;
+            }
 
-        if (slashComment >= 0 && hashComment >= 0)
-        {
-            cutIndex = Math.Min(slashComment, hashComment);
-        }
-        else if (slashComment >= 0)
-        {
-            cutIndex = slashComment;
-        }
-        else
-        {
-            cutIndex = hashComment;
+            if (inQuotes)
+            {
+                continue;
+            }
+
+            if (c == '#')
+            {
+                return value.Substring(0, i);
+            }
+
+            if (c == '/' && i + 1 < value.Length && value[i + 1] == '/')
+            {
+                return value.Substring(0, i);
+            }
         }
 
-        return cutIndex >= 0 ? value.Substring(0, cutIndex) : value;
+        return value;
     }
 
     /// <summary>

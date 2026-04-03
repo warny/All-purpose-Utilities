@@ -141,4 +141,43 @@ public class SyntaxColorizationTests
         Assert.AreEqual(1, descriptor.Entries.Count);
         CollectionAssert.AreEqual(new[] { "ONE", "TWO", "THREE", "FOUR", "FIVE" }, descriptor.Entries[0].Rules);
     }
+
+    [TestMethod]
+    public void DescriptorParser_InlineSectionHeaderFollowedByContinuationLines()
+    {
+        // When the first rule is on the same line as the section header (Number : ONE),
+        // subsequent lines without '|' must still be treated as continuation rules.
+        var descriptor = SyntaxColorizationDescriptorParser.Parse("""
+            @FileExtension : ".inline"
+            Number : ONE
+                TWO
+                THREE
+            """);
+
+        Assert.AreEqual(1, descriptor.Entries.Count);
+        CollectionAssert.AreEqual(new[] { "ONE", "TWO", "THREE" }, descriptor.Entries[0].Rules);
+    }
+
+    [TestMethod]
+    public void DescriptorParser_QuotedValueContainingHashIsNotTruncated()
+    {
+        // "C#" contains '#' which must not be treated as a comment marker.
+        var descriptor = SyntaxColorizationDescriptorParser.Parse("""
+            @FileExtension : ".cs"
+            @StringSyntaxExtension : "C#"
+            """);
+
+        CollectionAssert.AreEquivalent(new[] { "C#" }, descriptor.StringSyntaxExtensions);
+    }
+
+    [TestMethod]
+    public void DescriptorParser_QuotedValueContainingDoubleSlashIsNotTruncated()
+    {
+        // A quoted value containing '//' must not be stripped.
+        var descriptor = SyntaxColorizationDescriptorParser.Parse("""
+            @StringSyntaxExtension : "http://example"
+            """);
+
+        CollectionAssert.AreEquivalent(new[] { "http://example" }, descriptor.StringSyntaxExtensions);
+    }
 }
