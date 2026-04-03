@@ -7,6 +7,7 @@ namespace Utils.Parser.Runtime;
 /// Stores the rule being attempted and the token-list position at which it was entered.
 /// </summary>
 internal record ParserFrame(Rule Rule, int InputPosition);
+internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
 
 /// <summary>
 /// Builds a parse tree from a flat token list using the rules in a
@@ -26,6 +27,7 @@ internal record ParserFrame(Rule Rule, int InputPosition);
 public sealed class ParserEngine(ParserDefinition definition)
 {
     private readonly Stack<ParserFrame> _ruleStack = new();
+    private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
     private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
 
     /// <summary>
@@ -79,9 +81,11 @@ public sealed class ParserEngine(ParserDefinition definition)
     private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence)
     {
         // Detect left-recursive infinite cycles.
-        if (_ruleStack.Any(f => f.Rule.Name == rule.Name && f.InputPosition == context.Position))
+        var frameKey = new ParserFrameKey(rule.Name, context.Position);
+        if (_activeRuleFrames.Contains(frameKey))
             return null;
 
+        _activeRuleFrames.Add(frameKey);
         _ruleStack.Push(new ParserFrame(rule, context.Position));
         try
         {
@@ -109,6 +113,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         finally
         {
             _ruleStack.Pop();
+            _activeRuleFrames.Remove(frameKey);
         }
     }
 
