@@ -1,7 +1,11 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Editor;
+
+using Utils.Parser.VisualStudio.Worker;
 
 namespace Utils.Parser.VisualStudio;
 
@@ -11,6 +15,11 @@ namespace Utils.Parser.VisualStudio;
 [VisualStudioContribution]
 public sealed class OutOfProcSyntaxColorizationTaggerProvider : ExtensionPart, ITextViewTaggerProvider<ClassificationTag>, ITextViewExtension
 {
+    // One worker process shared across all tagger instances to amortize startup cost.
+    // TryCreate returns null when the worker executable has not been deployed yet.
+    private static readonly Lazy<PluginWorkerProcess?> sharedWorker =
+        new(PluginWorkerProcess.TryCreate, LazyThreadSafetyMode.ExecutionAndPublication);
+
     /// <summary>
     /// Gets the activation scope for this text view extension.
     /// </summary>
@@ -30,6 +39,7 @@ public sealed class OutOfProcSyntaxColorizationTaggerProvider : ExtensionPart, I
     /// <returns>The created tagger instance.</returns>
     public Task<TextViewTagger<ClassificationTag>> CreateTaggerAsync(ITextViewSnapshot textView, CancellationToken cancellationToken)
     {
-        return Task.FromResult<TextViewTagger<ClassificationTag>>(new OutOfProcSyntaxColorizationTagger(textView));
+        return Task.FromResult<TextViewTagger<ClassificationTag>>(
+            new OutOfProcSyntaxColorizationTagger(textView, sharedWorker.Value));
     }
 }

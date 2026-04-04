@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <AssemblyName>Utils.Parser.VisualStudio.Worker</AssemblyName>
+        <RootNamespace>Utils.Parser.VisualStudio.Worker</RootNamespace>
+        <ImplicitUsings>disable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Utils.Parser/Utils.Parser.csproj" />
+    </ItemGroup>
+
+</Project>

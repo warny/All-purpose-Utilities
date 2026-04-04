@@ -49,6 +49,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.Generators", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.VisualStudio", "Utils.Parser.VisualStudio\Utils.Parser.VisualStudio.csproj", "{9FD002A8-671E-4307-B294-EDE0894A4C3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.VisualStudio.Worker", "Utils.Parser.VisualStudio.Worker\Utils.Parser.VisualStudio.Worker.csproj", "{4714446A-F112-419E-B5B1-866140CB81B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -474,6 +476,24 @@ Global
 		{9FD002A8-671E-4307-B294-EDE0894A4C3C}.Release|x64.Build.0 = Release|Any CPU
 		{9FD002A8-671E-4307-B294-EDE0894A4C3C}.Release|x86.ActiveCfg = Release|Any CPU
 		{9FD002A8-671E-4307-B294-EDE0894A4C3C}.Release|x86.Build.0 = Release|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Debug|x64.Build.0 = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Debug|x86.Build.0 = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.GitHub|x64.Build.0 = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.GitHub|x86.Build.0 = Debug|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x64.ActiveCfg = Release|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x64.Build.0 = Release|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x86.ActiveCfg = Release|Any CPU
+		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

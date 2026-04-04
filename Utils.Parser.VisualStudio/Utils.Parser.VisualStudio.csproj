@@ -15,6 +15,7 @@
         <PackageReference Include="Microsoft.VisualStudio.Extensibility" Version="17.14.2098" />
         <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608" PrivateAssets="all" />
         <PackageReference Include="Nerdbank.Streams" Version="2.11.90" />
+        <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,6 +33,30 @@
             <SubType>Designer</SubType>
         </None>
     </ItemGroup>
+
+    <!--
+        Build the plugin worker process and copy its output next to the extension DLL.
+        The tagger looks for the worker at $(OutputPath)worker\Utils.Parser.VisualStudio.Worker.exe.
+        Users drop ISyntaxColorisation DLLs in %LOCALAPPDATA%\Utils.Parser.VisualStudio\Plugins\
+        to enable out-of-process plugin isolation.
+    -->
+    <PropertyGroup>
+        <WorkerProjectPath>$(MSBuildThisFileDirectory)..\Utils.Parser.VisualStudio.Worker\Utils.Parser.VisualStudio.Worker.csproj</WorkerProjectPath>
+        <WorkerOutputDir>$(MSBuildThisFileDirectory)..\Utils.Parser.VisualStudio.Worker\bin\$(Configuration)\net8.0\</WorkerOutputDir>
+    </PropertyGroup>
+
+    <Target Name="BuildPluginWorker" BeforeTargets="Build">
+        <MSBuild Projects="$(WorkerProjectPath)" Properties="Configuration=$(Configuration)" Targets="Build" />
+    </Target>
+
+    <Target Name="CopyPluginWorkerToOutput" AfterTargets="Build">
+        <ItemGroup>
+            <WorkerOutputFiles Include="$(WorkerOutputDir)**\*.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(WorkerOutputFiles)"
+              DestinationFolder="$(OutputPath)worker\%(RecursiveDir)"
+              SkipUnchangedFiles="true" />
+    </Target>
 
     <Target Name="EnsureSourceVsixManifest" BeforeTargets="DetokenizeVsixManifestFile">
         <MakeDir Directories="$(IntermediateOutputPath)" />
