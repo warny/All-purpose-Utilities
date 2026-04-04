@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Reflection;
 using System.Runtime.Versioning;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,16 @@ namespace Utils.Parser.VisualStudio.Worker;
 /// </summary>
 internal sealed class PluginWorkerProcess : IAsyncDisposable
 {
+    /// <summary>
+    /// Maximum number of characters accepted from a single worker response.
+    /// Guards against a malicious plugin flooding the extension process with a huge JSON payload.
+    /// At ~2 bytes/char on average this is roughly 20 MB of raw JSON.
+    /// </summary>
+    private const int MaxResponseCharCount = 10 * 1024 * 1024;
+
+    /// <summary>Per-request timeout. Prevents a hung plugin from blocking the tagger indefinitely.</summary>
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
+
     private readonly string workerExePath;
     private readonly AppContainerSandbox? sandbox;
     private readonly SemaphoreSlim semaphore = new(1, 1);
@@ -87,7 +98,12 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
             var request = new ClassifyRequest(id, assemblyPaths, fileExtension, tokens);
             await pipeWriter!.WriteLineAsync(JsonSerializer.Serialize(request).AsMemory(), cancellationToken);
 
-            string? responseLine = await pipeReader!.ReadLineAsync(cancellationToken);
+            // Apply a per-request timeout independent of the VS cancellation token so a
+            // hung or slow plugin cannot stall the tagger indefinitely.
+            using var requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            requestTimeout.CancelAfter(RequestTimeout);
+
+            string? responseLine = await ReadBoundedLineAsync(pipeReader!, MaxResponseCharCount, requestTimeout.Token);
             if (responseLine is null)
             {
                 return new Dictionary<string, string?>();
@@ -102,7 +118,7 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         }
         catch
         {
-            // Worker died or pipe broke — reset so the next call can restart it.
+            // Worker died, pipe broke, or response was oversized — reset for the next call.
             await ResetWorkerAsync();
             return new Dictionary<string, string?>();
         }
@@ -130,13 +146,96 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         startupTimeout.CancelAfter(TimeSpan.FromSeconds(10));
         await serverPipe.WaitForConnectionAsync(startupTimeout.Token);
 
+        // Verify that the process that connected is the worker we just started, not
+        // an opportunistic third-party process that observed the pipe name in the
+        // worker's command-line arguments.
+        if (OperatingSystem.IsWindows())
+        {
+            VerifyPipeClient(serverPipe, workerProcess);
+        }
+
         pipeReader = new StreamReader(serverPipe, leaveOpen: true);
         pipeWriter = new StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
     }
 
     /// <summary>
+    /// Checks that the process connected to <paramref name="pipe"/> matches
+    /// <paramref name="expectedWorker"/>. Throws if the identity cannot be confirmed.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    private static void VerifyPipeClient(NamedPipeServerStream pipe, Process expectedWorker)
+    {
+        IntPtr pipeHandle = pipe.SafePipeHandle.DangerousGetHandle();
+
+        if (!WindowsNativeMethods.GetNamedPipeClientProcessId(pipeHandle, out uint clientPid))
+        {
+            throw new InvalidOperationException(
+                "GetNamedPipeClientProcessId failed: could not verify the identity of the " +
+                $"process connected to the plugin pipe (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}).");
+        }
+
+        if ((int)clientPid != expectedWorker.Id)
+        {
+            throw new InvalidOperationException(
+                $"Security violation: PID {clientPid} connected to the plugin pipe but " +
+                $"the expected worker PID is {expectedWorker.Id}. The connection was rejected.");
+        }
+    }
+
+    /// <summary>
+    /// Reads one line from <paramref name="reader"/>, rejecting responses longer than
+    /// <paramref name="maxCharCount"/> to prevent a malicious worker from allocating
+    /// unbounded memory in the extension process.
+    /// </summary>
+    private static async Task<string?> ReadBoundedLineAsync(
+        StreamReader reader, int maxCharCount, CancellationToken cancellationToken)
+    {
+        var accumulator = new StringBuilder();
+        char[] buf = new char[4096];
+
+        while (true)
+        {
+            int read = await reader.ReadAsync(buf.AsMemory(0, buf.Length), cancellationToken);
+            if (read == 0)
+            {
+                return accumulator.Length > 0 ? accumulator.ToString() : null;
+            }
+
+            int nlIndex = Array.IndexOf(buf, '\n', 0, read);
+            if (nlIndex >= 0)
+            {
+                // Found the line terminator — check accumulated + pre-newline length before appending.
+                if (accumulator.Length + nlIndex > maxCharCount)
+                {
+                    throw new InvalidDataException(
+                        $"IPC response from plugin worker exceeded the {maxCharCount:N0}-character limit.");
+                }
+
+                accumulator.Append(buf, 0, nlIndex);
+
+                // Strip trailing \r for CRLF line endings.
+                if (accumulator.Length > 0 && accumulator[accumulator.Length - 1] == '\r')
+                {
+                    accumulator.Length--;
+                }
+
+                return accumulator.ToString();
+            }
+
+            // No newline yet — check total before accumulating.
+            if (accumulator.Length + read > maxCharCount)
+            {
+                throw new InvalidDataException(
+                    $"IPC response from plugin worker exceeded the {maxCharCount:N0}-character limit.");
+            }
+
+            accumulator.Append(buf, 0, read);
+        }
+    }
+
+    /// <summary>
     /// Creates the named pipe server. When a sandbox is active, a <see cref="PipeSecurity"/>
-    /// ACL is applied so the AppContainer SID can connect.
+    /// ACL is applied so only the AppContainer SID can connect.
     /// </summary>
     private NamedPipeServerStream CreateServerPipe(string pipeName)
     {
@@ -153,9 +252,6 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     [SupportedOSPlatform("windows")]
     private NamedPipeServerStream CreateSecuredServerPipe(string pipeName)
     {
-        // Grant the AppContainer SID read+write access to this pipe so the sandboxed
-        // worker can connect. The pipe is randomly named (GUID) so there is no
-        // security concern in allowing the container to connect to it.
         var pipeSecurity = new PipeSecurity();
         pipeSecurity.AddAccessRule(new PipeAccessRule(
             sandbox!.GetContainerSid(),

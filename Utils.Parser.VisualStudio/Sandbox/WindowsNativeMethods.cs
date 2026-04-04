@@ -95,6 +95,13 @@ internal static class WindowsNativeMethods
         ref JOBOBJECT_BASIC_UI_RESTRICTIONS lpJobObjectInformation,
         int cbJobObjectInformationLength);
 
+    /// <summary>
+    /// Returns the PID of the client process connected to a named pipe server handle.
+    /// Used to verify that the process connecting to the IPC pipe is the worker we launched.
+    /// </summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    internal static extern bool GetNamedPipeClientProcessId(IntPtr Pipe, out uint ClientProcessId);
+
     // ─── Constants ───────────────────────────────────────────────────────────────
 
     /// <summary>Flag for CreateProcess indicating that lpStartupInfo is a STARTUPINFOEX.</summary>
