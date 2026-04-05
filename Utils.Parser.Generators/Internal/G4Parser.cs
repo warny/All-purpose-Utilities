@@ -366,18 +366,6 @@ internal sealed class G4Parser
         Consume(); // keyword
         if (Peek().Kind == G4TokenKind.BraceBlock)
             Consume();
-        else
-        {
-            // Legacy: manually skip to matching }
-            int depth = 0;
-            while (!AtEof())
-            {
-                var k = Peek().Kind;
-                if (k == G4TokenKind.LBrace) depth++;
-                else if (k == G4TokenKind.RBrace) { depth--; Consume(); if (depth == 0) break; }
-                Consume();
-            }
-        }
     }
 
     /// <summary>Parses <c>options { key=value; }</c> into the provided dictionary.</summary>

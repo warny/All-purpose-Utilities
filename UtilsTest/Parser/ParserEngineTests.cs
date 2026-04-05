@@ -194,6 +194,26 @@ public class ParserEngineTests
         Assert.AreEqual(5, numbers.Count);
     }
 
+    [TestMethod]
+    public void Parser_ComplexArithmeticExpression_ParsesWithoutCycle()
+    {
+        var tree = Parse("(5+10)*3/(10+2)-4+(3/2*(8-1))");
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+
+        var numbers = FindAllLexerNodes(tree, "Number");
+        Assert.AreEqual(10, numbers.Count);
+    }
+
+    [TestMethod]
+    public void Parser_CycleGuard_AllowsSameRuleAtDifferentPositions()
+    {
+        var tree = Parse("1+2+3+4+5+6+7+8+9");
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+
+        var numbers = FindAllLexerNodes(tree, "Number");
+        Assert.AreEqual(9, numbers.Count);
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // Whitespace handling
     // ═══════════════════════════════════════════════════════════════

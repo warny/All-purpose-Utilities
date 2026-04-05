@@ -154,11 +154,20 @@ internal static class SyntaxColorizationEmitter
     }
 
     /// <summary>
-    /// Escapes a C# string literal value.
+    /// Escapes a value for embedding inside a C# verbatim string literal.
+    /// Handles backslash, double-quote, and common control characters
+    /// that would otherwise produce invalid or surprising C# source.
     /// </summary>
     /// <param name="value">Value to escape.</param>
-    /// <returns>Escaped value.</returns>
-    private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    /// <returns>Escaped value safe for use inside a C# string literal.</returns>
+    private static string Escape(string value) =>
+        value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t")
+            .Replace("\0", "\\0");
 
     /// <summary>
     /// Joins string values as C# literals.

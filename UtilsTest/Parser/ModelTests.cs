@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
+using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
 
@@ -304,5 +305,39 @@ public class ModelTests
             [], null);
 
         Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition));
+    }
+
+    [TestMethod]
+    public void RuleResolver_LexerCycle_ResolvesAndProducesErrorTokens()
+    {
+        // A direct lexer cycle (A: B; B: A;) is not rejected at resolution time.
+        // The LexerEngine runtime guard detects the cycle at the same stream position
+        // and breaks it, causing the engine to fall through to panic mode which
+        // emits ERROR tokens — no StackOverflowException.
+        var ruleA = new Rule("A", 0, false,
+            new Alternation(new[]
+            {
+                new Alternative(0, Associativity.Left, new RuleRef("B"))
+            }));
+
+        var ruleB = new Rule("B", 1, false,
+            new Alternation(new[]
+            {
+                new Alternative(0, Associativity.Left, new RuleRef("A"))
+            }));
+
+        var definition = new ParserDefinition(
+            "Test", GrammarType.Lexer, null, [], [],
+            [new LexerMode("DEFAULT_MODE", [ruleA, ruleB])],
+            [], null);
+
+        // Resolution must succeed.
+        ParserDefinition resolved = RuleResolver.Resolve(definition);
+
+        // Tokenizing any input should produce ERROR tokens, not a StackOverflowException.
+        var lexer = new LexerEngine(resolved);
+        List<Token> tokens = lexer.Tokenize(new StringCharStream("x")).ToList();
+        Assert.IsTrue(tokens.Count > 0, "Expected at least one ERROR token");
+        Assert.IsTrue(tokens.All(t => t.RuleName == "ERROR"), "Expected all tokens to be ERROR");
     }
 }

@@ -5,6 +5,19 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Defines a syntax colorization contract that can be discovered by Visual Studio tooling.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Implementations of this interface are loaded and executed inside the Visual Studio extension process.
+/// They must be <strong>pure</strong>: they may not perform network access, write to disk, launch
+/// processes, or produce any observable side-effect beyond returning classification names.
+/// Read-only file access is permitted only when explicitly required (e.g., autocomplete support).
+/// Violations may be silently caught and the profile disabled.
+/// </para>
+/// <para>
+/// Constructors and property accessors must return within a few seconds.
+/// Long-running or blocking implementations will be abandoned and the profile ignored.
+/// </para>
+/// </remarks>
 public interface ISyntaxColorisation
 {
     /// <summary>

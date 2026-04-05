@@ -23,6 +23,7 @@ namespace Utils.Parser.VisualStudio;
 public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<ClassificationTag>
 {
     private static readonly Regex TokenRegex = new("[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
+    private const int MaxParentDirectoryHops = 12;
 
     // Trusted assemblies whose ISyntaxColorisation implementations run in-process.
     // Only the extension's own DLL and its direct library dependency are included.
@@ -326,8 +327,9 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
 
         var descriptors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         DirectoryInfo? current = new(directory);
+        int hops = 0;
 
-        while (current != null)
+        while (current != null && hops < MaxParentDirectoryHops)
         {
             FileInfo[] files;
             try
@@ -345,8 +347,10 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
             }
 
             current = current.Parent;
+            hops++;
         }
 
         return descriptors;
     }
+
 }

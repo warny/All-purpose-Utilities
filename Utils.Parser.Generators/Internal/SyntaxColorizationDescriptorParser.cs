@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Utils.Parser.Generators.Internal;
 
@@ -9,7 +10,6 @@ namespace Utils.Parser.Generators.Internal;
 /// </summary>
 internal static class SyntaxColorizationDescriptorParser
 {
-
     /// <summary>
     /// Parses descriptor text content.
     /// </summary>
@@ -17,40 +17,121 @@ internal static class SyntaxColorizationDescriptorParser
     /// <returns>The parsed descriptor model.</returns>
     public static SyntaxColorizationDescriptor Parse(string source)
     {
-        var descriptor = new SyntaxColorizationDescriptor();
-        SyntaxColorizationEntry currentEntry = null;
-
-        var lines = source.Replace("\r\n", "\n").Split('\n');
-        for (int index = 0; index < lines.Length; index++)
+        if (TryParseWithBootstrap(source, out SyntaxColorizationDescriptor? descriptor) && descriptor != null)
         {
-            string line = RemoveComments(lines[index]).Trim();
-            if (string.IsNullOrWhiteSpace(line))
+            return descriptor;
+        }
+
+        return ParseWithLegacyRules(source);
+    }
+
+    /// <summary>
+    /// Tries to parse descriptor content using <c>Utils.Parser.Bootstrap.SyntaxColorisationGrammar</c>.
+    /// </summary>
+    /// <param name="source">Descriptor source text.</param>
+    /// <param name="descriptor">Parsed descriptor when successful.</param>
+    /// <returns><see langword="true"/> when the bootstrap parser is available and successful.</returns>
+    private static bool TryParseWithBootstrap(string source, out SyntaxColorizationDescriptor? descriptor)
+    {
+        descriptor = null;
+
+        try
+        {
+            Assembly? parserAssembly = ResolveParserAssembly();
+
+            if (parserAssembly == null)
+            {
+                return false;
+            }
+
+            Type? grammarType = parserAssembly.GetType("Utils.Parser.Bootstrap.SyntaxColorisationGrammar", throwOnError: false);
+            MethodInfo? parseMethod = grammarType?.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string) }, null);
+            if (parseMethod == null)
+            {
+                return false;
+            }
+
+            object? document = parseMethod.Invoke(null, new object[] { source });
+            if (document == null)
+            {
+                return false;
+            }
+
+            descriptor = MapBootstrapDocument(document);
+            return true;
+        }
+        catch
+        {
+            descriptor = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the <c>Utils.Parser</c> assembly from the current load context or from known probing paths.
+    /// </summary>
+    /// <returns>The resolved parser assembly, or <see langword="null"/> when unavailable.</returns>
+    private static Assembly? ResolveParserAssembly()
+    {
+        Assembly? loadedAssembly = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .FirstOrDefault(assembly => string.Equals(assembly.GetName().Name, "Utils.Parser", StringComparison.OrdinalIgnoreCase));
+
+        if (loadedAssembly != null)
+        {
+            return loadedAssembly;
+        }
+
+        try
+        {
+            Type? grammarType = Type.GetType("Utils.Parser.Bootstrap.SyntaxColorisationGrammar, Utils.Parser", throwOnError: false);
+            return grammarType?.Assembly;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Parses descriptor content with a minimal built-in parser when the bootstrap parser is unavailable.
+    /// </summary>
+    /// <param name="source">Descriptor source text.</param>
+    /// <returns>The parsed descriptor.</returns>
+    private static SyntaxColorizationDescriptor ParseWithLegacyRules(string source)
+    {
+        var descriptor = new SyntaxColorizationDescriptor();
+        SyntaxColorizationEntry? currentEntry = null;
+
+        string[] lines = source.Replace("\r\n", "\n").Split('\n');
+        foreach (string rawLine in lines)
+        {
+            string trimmed = rawLine.Trim();
+            if (trimmed.Length == 0 || trimmed.StartsWith("#", StringComparison.Ordinal) || trimmed.StartsWith("//", StringComparison.Ordinal))
             {
                 continue;
             }
 
-            if (line.StartsWith("@", StringComparison.Ordinal))
+            if (trimmed.StartsWith("@", StringComparison.Ordinal))
             {
-                ParseDirective(descriptor, line, index + 1);
                 currentEntry = null;
+                ParseDirective(trimmed, descriptor);
                 continue;
             }
 
-            if (line.EndsWith(":", StringComparison.Ordinal))
+            int sectionSeparatorIndex = trimmed.IndexOf(':');
+            if (sectionSeparatorIndex >= 0)
             {
-                currentEntry = new SyntaxColorizationEntry(TrimTypeName(line.Substring(0, line.Length - 1)));
+                string classification = Unquote(trimmed.Substring(0, sectionSeparatorIndex).Trim());
+                currentEntry = new SyntaxColorizationEntry(classification);
                 descriptor.Entries.Add(currentEntry);
+                AddRulesFromSegment(trimmed.Substring(sectionSeparatorIndex + 1), currentEntry);
                 continue;
             }
 
-            if (currentEntry == null)
+            if (currentEntry != null)
             {
-                throw new InvalidOperationException($"Line {index + 1}: rule list found before a section header.");
-            }
-
-            foreach (string rule in ParseRules(line))
-            {
-                currentEntry.Rules.Add(rule);
+                AddRulesFromSegment(trimmed, currentEntry);
             }
         }
 
@@ -58,92 +139,61 @@ internal static class SyntaxColorizationDescriptorParser
     }
 
     /// <summary>
-    /// Parses a descriptor directive line and updates the descriptor.
+    /// Parses one descriptor directive line.
     /// </summary>
-    /// <param name="descriptor">Descriptor to update.</param>
-    /// <param name="line">Directive line.</param>
-    /// <param name="lineNumber">Current line number.</param>
-    private static void ParseDirective(SyntaxColorizationDescriptor descriptor, string line, int lineNumber)
+    /// <param name="trimmedDirectiveLine">Trimmed directive line.</param>
+    /// <param name="descriptor">Target descriptor.</param>
+    private static void ParseDirective(string trimmedDirectiveLine, SyntaxColorizationDescriptor descriptor)
     {
-        int separatorIndex = line.IndexOf(':');
+        trimmedDirectiveLine = StripInlineComment(trimmedDirectiveLine).Trim();
+        int separatorIndex = trimmedDirectiveLine.IndexOf(':');
         if (separatorIndex < 0)
         {
-            throw new InvalidOperationException($"Line {lineNumber}: malformed directive '{line}'.");
+            throw new InvalidOperationException($"Invalid directive syntax: {trimmedDirectiveLine}");
         }
 
-        string directive = line.Substring(0, separatorIndex).Trim();
-        string value = TrimQuoted(line.Substring(separatorIndex + 1).Trim());
+        string name = trimmedDirectiveLine.Substring(0, separatorIndex).Trim().TrimStart('@');
+        string value = Unquote(trimmedDirectiveLine.Substring(separatorIndex + 1).Trim());
 
-        if (directive.Equals("@FileExtension", StringComparison.OrdinalIgnoreCase))
+        if (name.Equals("FileExtension", StringComparison.OrdinalIgnoreCase))
         {
             descriptor.FileExtensions.Add(value);
             return;
         }
 
-        if (directive.Equals("@StringSyntaxExtension", StringComparison.OrdinalIgnoreCase))
+        if (name.Equals("StringSyntaxExtension", StringComparison.OrdinalIgnoreCase))
         {
             descriptor.StringSyntaxExtensions.Add(value);
             return;
         }
 
-        throw new InvalidOperationException($"Line {lineNumber}: unsupported directive '{directive}'.");
+        throw new InvalidOperationException($"Unsupported directive '{name}'.");
     }
 
-
     /// <summary>
-    /// Removes line comments (<c>#</c> and <c>//</c>) while preserving quoted text.
+    /// Adds rules parsed from one rule segment (<c>A | B</c>).
     /// </summary>
-    /// <param name="line">Input line.</param>
-    /// <returns>Line content without trailing comment.</returns>
-    private static string RemoveComments(string line)
+    /// <param name="segment">Rule segment text.</param>
+    /// <param name="entry">Target descriptor entry.</param>
+    private static void AddRulesFromSegment(string segment, SyntaxColorizationEntry entry)
     {
-        bool inQuotes = false;
-
-        for (int index = 0; index < line.Length; index++)
+        segment = StripInlineComment(segment);
+        foreach (string rawRule in segment.Split('|'))
         {
-            char current = line[index];
-            if (current == '"')
+            string rule = Unquote(rawRule.Trim());
+            if (rule.Length > 0)
             {
-                inQuotes = !inQuotes;
-                continue;
-            }
-
-            if (!inQuotes)
-            {
-                if (current == '#')
-                {
-                    return line.Substring(0, index);
-                }
-
-                if (current == '/' && index + 1 < line.Length && line[index + 1] == '/')
-                {
-                    return line.Substring(0, index);
-                }
+                entry.Rules.Add(rule);
             }
         }
-
-        return line;
     }
 
     /// <summary>
-    /// Parses a pipe-separated list of rules.
+    /// Removes surrounding quote characters when present.
     /// </summary>
-    /// <param name="line">Source line.</param>
-    /// <returns>Normalized rule names.</returns>
-    private static IEnumerable<string> ParseRules(string line)
-    {
-        return line
-            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(rule => rule.Trim())
-            .Where(rule => !string.IsNullOrWhiteSpace(rule));
-    }
-
-    /// <summary>
-    /// Trims optional quotes around directive values.
-    /// </summary>
-    /// <param name="value">Raw directive value.</param>
+    /// <param name="value">Raw value text.</param>
     /// <returns>Unquoted value.</returns>
-    private static string TrimQuoted(string value)
+    private static string Unquote(string value)
     {
         if (value.Length >= 2 && value[0] == '"' && value[value.Length - 1] == '"')
         {
@@ -154,12 +204,79 @@ internal static class SyntaxColorizationDescriptorParser
     }
 
     /// <summary>
-    /// Trims section type names and removes optional quotes.
+    /// Removes trailing <c>//</c> or <c>#</c> comments from a descriptor line segment,
+    /// skipping any occurrences that appear inside double-quoted strings.
     /// </summary>
-    /// <param name="value">Section type value.</param>
-    /// <returns>Normalized classification name.</returns>
-    private static string TrimTypeName(string value)
+    /// <param name="value">Raw line segment.</param>
+    /// <returns>Segment without trailing comments.</returns>
+    private static string StripInlineComment(string value)
     {
-        return TrimQuoted(value.Trim());
+        bool inQuotes = false;
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            if (inQuotes)
+            {
+                continue;
+            }
+
+            if (c == '#')
+            {
+                return value.Substring(0, i);
+            }
+
+            if (c == '/' && i + 1 < value.Length && value[i + 1] == '/')
+            {
+                return value.Substring(0, i);
+            }
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// Maps a bootstrap syntax colorisation document to generator descriptor model.
+    /// </summary>
+    /// <param name="document">Bootstrap parser document instance.</param>
+    /// <returns>Mapped descriptor.</returns>
+    private static SyntaxColorizationDescriptor MapBootstrapDocument(object document)
+    {
+        var descriptor = new SyntaxColorizationDescriptor();
+
+        PropertyInfo fileExtensionsProperty = document.GetType().GetProperty("FileExtensions")!;
+        PropertyInfo stringSyntaxExtensionsProperty = document.GetType().GetProperty("StringSyntaxExtensions")!;
+        PropertyInfo sectionsProperty = document.GetType().GetProperty("Sections")!;
+
+        foreach (string extension in (IEnumerable<string>)fileExtensionsProperty.GetValue(document)!)
+        {
+            descriptor.FileExtensions.Add(extension);
+        }
+
+        foreach (string extension in (IEnumerable<string>)stringSyntaxExtensionsProperty.GetValue(document)!)
+        {
+            descriptor.StringSyntaxExtensions.Add(extension);
+        }
+
+        foreach (object section in (IEnumerable<object>)sectionsProperty.GetValue(document)!)
+        {
+            PropertyInfo classificationProperty = section.GetType().GetProperty("Classification")!;
+            PropertyInfo rulesProperty = section.GetType().GetProperty("Rules")!;
+
+            var entry = new SyntaxColorizationEntry((string)classificationProperty.GetValue(section)!);
+            foreach (string rule in (IEnumerable<string>)rulesProperty.GetValue(section)!)
+            {
+                entry.Rules.Add(rule);
+            }
+
+            descriptor.Entries.Add(entry);
+        }
+
+        return descriptor;
     }
 }
