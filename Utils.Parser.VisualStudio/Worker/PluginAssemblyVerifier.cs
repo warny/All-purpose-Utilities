@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-using Utils.Parser.VisualStudio.Sandbox;
+using Utils.Reflection.ProcessIsolation;
 
 namespace Utils.Parser.VisualStudio.Worker;
 

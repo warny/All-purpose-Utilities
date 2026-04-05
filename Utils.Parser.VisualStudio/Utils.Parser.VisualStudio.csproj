@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../Utils.Reflection/Utils.Reflection.csproj" />
         <ProjectReference Include="../Utils.Parser/Utils.Parser.csproj" />
         <Compile Remove="SyntaxColorizationClassifier.cs" />
         <Compile Remove="SyntaxColorizationClassifierProvider.cs" />

@@ -3,19 +3,19 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 
-namespace Utils.Parser.VisualStudio.Sandbox;
+namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
 /// Win32 P/Invoke declarations for AppContainer sandboxing and Job Object lifecycle management.
 /// </summary>
 [SupportedOSPlatform("windows")]
-internal static class WindowsNativeMethods
+public static class WindowsNativeMethods
 {
     // ─── userenv.dll ────────────────────────────────────────────────────────────
 
     /// <summary>Creates an AppContainer profile (idempotent; returns <see cref="E_ALREADY_EXISTS"/> when the profile exists).</summary>
     [DllImport("userenv.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-    internal static extern int CreateAppContainerProfile(
+    public static extern int CreateAppContainerProfile(
         string pszAppContainerName,
         string pszDisplayName,
         string pszDescription,
@@ -25,29 +25,29 @@ internal static class WindowsNativeMethods
 
     /// <summary>Derives the AppContainer SID from a container name without creating a new profile.</summary>
     [DllImport("userenv.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-    internal static extern int DeriveAppContainerSidFromAppContainerName(
+    public static extern int DeriveAppContainerSidFromAppContainerName(
         string pszAppContainerName,
         out IntPtr ppsidAppContainerSid);
 
     // ─── advapi32.dll ────────────────────────────────────────────────────────────
 
     [DllImport("advapi32.dll")]
-    internal static extern void FreeSid(IntPtr pSid);
+    public static extern void FreeSid(IntPtr pSid);
 
     [DllImport("advapi32.dll")]
-    internal static extern int GetLengthSid(IntPtr pSid);
+    public static extern int GetLengthSid(IntPtr pSid);
 
     // ─── kernel32.dll ────────────────────────────────────────────────────────────
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool InitializeProcThreadAttributeList(
+    public static extern bool InitializeProcThreadAttributeList(
         IntPtr lpAttributeList,
         int dwAttributeCount,
         int dwFlags,
         ref IntPtr lpSize);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool UpdateProcThreadAttribute(
+    public static extern bool UpdateProcThreadAttribute(
         IntPtr lpAttributeList,
         uint dwFlags,
         IntPtr Attribute,
@@ -57,10 +57,10 @@ internal static class WindowsNativeMethods
         IntPtr lpReturnSize);
 
     [DllImport("kernel32.dll")]
-    internal static extern void DeleteProcThreadAttributeList(IntPtr lpAttributeList);
+    public static extern void DeleteProcThreadAttributeList(IntPtr lpAttributeList);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    internal static extern bool CreateProcess(
+    public static extern bool CreateProcess(
         string? lpApplicationName,
         StringBuilder lpCommandLine,
         IntPtr lpProcessAttributes,
@@ -73,23 +73,23 @@ internal static class WindowsNativeMethods
         out PROCESS_INFORMATION lpProcessInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool CloseHandle(IntPtr handle);
+    public static extern bool CloseHandle(IntPtr handle);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string? lpName);
+    public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string? lpName);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
+    public static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool SetInformationJobObject(
+    public static extern bool SetInformationJobObject(
         IntPtr hJob,
         JOBOBJECTINFOCLASS JobObjectInformationClass,
         ref JOBOBJECT_BASIC_LIMIT_INFORMATION lpJobObjectInformation,
         int cbJobObjectInformationLength);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool SetInformationJobObject(
+    public static extern bool SetInformationJobObject(
         IntPtr hJob,
         JOBOBJECTINFOCLASS JobObjectInformationClass,
         ref JOBOBJECT_BASIC_UI_RESTRICTIONS lpJobObjectInformation,
@@ -100,7 +100,7 @@ internal static class WindowsNativeMethods
     /// Used to verify that the process connecting to the IPC pipe is the worker we launched.
     /// </summary>
     [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern bool GetNamedPipeClientProcessId(IntPtr Pipe, out uint ClientProcessId);
+    public static extern bool GetNamedPipeClientProcessId(IntPtr Pipe, out uint ClientProcessId);
 
     // ─── wintrust.dll ────────────────────────────────────────────────────────────
 
@@ -112,7 +112,7 @@ internal static class WindowsNativeMethods
     /// </para>
     /// </summary>
     [DllImport("wintrust.dll", SetLastError = false)]
-    internal static extern int WinVerifyTrust(
+    public static extern int WinVerifyTrust(
         IntPtr hWnd,
         ref Guid pgActionID,
         ref WINTRUST_DATA pWVTData);
@@ -120,37 +120,37 @@ internal static class WindowsNativeMethods
     // ─── Constants ───────────────────────────────────────────────────────────────
 
     /// <summary>Flag for CreateProcess indicating that lpStartupInfo is a STARTUPINFOEX.</summary>
-    internal const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
+    public const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
 
-    internal const uint CREATE_NO_WINDOW = 0x08000000;
+    public const uint CREATE_NO_WINDOW = 0x08000000;
 
     /// <summary>
     /// PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES = ProcThreadAttributeValue(9, FALSE, TRUE, FALSE).
     /// Enables AppContainer sandboxing for the created process.
     /// </summary>
-    internal static readonly IntPtr PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES = (IntPtr)0x00020009;
+    public static readonly IntPtr PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES = (IntPtr)0x00020009;
 
     /// <summary>HRESULT returned when the AppContainer profile already exists.</summary>
-    internal const int E_ALREADY_EXISTS = unchecked((int)0x800700B7);
+    public const int E_ALREADY_EXISTS = unchecked((int)0x800700B7);
 
     // WinVerifyTrust dwUIChoice values
-    internal const uint WTD_UI_NONE = 2;
+    public const uint WTD_UI_NONE = 2;
 
     // WinVerifyTrust fdwRevocationChecks values
-    internal const uint WTD_REVOKE_NONE = 0;
+    public const uint WTD_REVOKE_NONE = 0;
 
     // WinVerifyTrust dwUnionChoice values
-    internal const uint WTD_CHOICE_FILE = 1;
+    public const uint WTD_CHOICE_FILE = 1;
 
     // WinVerifyTrust dwStateAction values
-    internal const uint WTD_STATEACTION_VERIFY = 1;
-    internal const uint WTD_STATEACTION_CLOSE = 2;
+    public const uint WTD_STATEACTION_VERIFY = 1;
+    public const uint WTD_STATEACTION_CLOSE = 2;
 
     /// <summary>
     /// Action GUID for standard Authenticode PE verification.
     /// {00AAC56B-CD44-11D0-8CC2-00C04FC295EE}
     /// </summary>
-    internal static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 =
+    public static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 =
         new("00AAC56B-CD44-11D0-8CC2-00C04FC295EE");
 
     // ─── Structures ──────────────────────────────────────────────────────────────
@@ -160,7 +160,7 @@ internal static class WindowsNativeMethods
     /// marshaler does not attempt string conversion for unused pointer fields.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    internal struct STARTUPINFO
+    public struct STARTUPINFO
     {
         public int cb;
         public IntPtr lpReserved;
@@ -184,14 +184,14 @@ internal static class WindowsNativeMethods
 
     /// <summary>Maps to Win32 STARTUPINFOEXW.</summary>
     [StructLayout(LayoutKind.Sequential)]
-    internal struct STARTUPINFOEX
+    public struct STARTUPINFOEX
     {
         public STARTUPINFO StartupInfo;
         public IntPtr lpAttributeList;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct PROCESS_INFORMATION
+    public struct PROCESS_INFORMATION
     {
         public IntPtr hProcess;
         public IntPtr hThread;
@@ -201,7 +201,7 @@ internal static class WindowsNativeMethods
 
     /// <summary>Security capabilities for an AppContainer process.</summary>
     [StructLayout(LayoutKind.Sequential)]
-    internal struct SECURITY_CAPABILITIES
+    public struct SECURITY_CAPABILITIES
     {
         public IntPtr AppContainerSid;
         public IntPtr Capabilities;     // PSID_AND_ATTRIBUTES — IntPtr.Zero for "no extra capabilities"
@@ -209,20 +209,20 @@ internal static class WindowsNativeMethods
         public uint Reserved;
     }
 
-    internal enum JOBOBJECTINFOCLASS
+    public enum JOBOBJECTINFOCLASS
     {
         JobObjectBasicLimitInformation = 2,
         JobObjectBasicUIRestrictions = 4,
     }
 
     [Flags]
-    internal enum JOB_OBJECT_LIMIT : uint
+    public enum JOB_OBJECT_LIMIT : uint
     {
         KillOnJobClose = 0x00002000,
     }
 
     [Flags]
-    internal enum JOB_OBJECT_UILIMIT : uint
+    public enum JOB_OBJECT_UILIMIT : uint
     {
         None = 0,
         Handles = 0x0001,
@@ -236,7 +236,7 @@ internal static class WindowsNativeMethods
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct JOBOBJECT_BASIC_LIMIT_INFORMATION
+    public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
     {
         public long PerProcessUserTimeLimit;
         public long PerJobUserTimeLimit;
@@ -250,7 +250,7 @@ internal static class WindowsNativeMethods
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct JOBOBJECT_BASIC_UI_RESTRICTIONS
+    public struct JOBOBJECT_BASIC_UI_RESTRICTIONS
     {
         public JOB_OBJECT_UILIMIT UIRestrictionsClass;
     }
@@ -259,7 +259,7 @@ internal static class WindowsNativeMethods
     /// Maps to Win32 WINTRUST_FILE_INFO. Describes the file whose Authenticode signature is verified.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct WINTRUST_FILE_INFO
+    public struct WINTRUST_FILE_INFO
     {
         public uint cbStruct;
         [MarshalAs(UnmanagedType.LPWStr)]
@@ -274,7 +274,7 @@ internal static class WindowsNativeMethods
     /// <c>dwUnionChoice</c> is <see cref="WTD_CHOICE_FILE"/>.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct WINTRUST_DATA
+    public struct WINTRUST_DATA
     {
         public uint cbStruct;
         public IntPtr pPolicyCallbackData;

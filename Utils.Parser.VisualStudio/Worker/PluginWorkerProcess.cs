@@ -10,14 +10,14 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Utils.Parser.VisualStudio.Sandbox;
+using Utils.Reflection.ProcessIsolation;
 
 namespace Utils.Parser.VisualStudio.Worker;
 
 /// <summary>
 /// Manages the lifecycle of the plugin worker process and communicates with it via a named pipe.
-/// When running on Windows, the worker is launched inside an <see cref="AppContainerSandbox"/>
-/// which restricts network access and file-system writes without requiring elevation.
+/// Depending on the current OS, the worker is launched in the strongest available
+/// process container (Windows AppContainer, Linux bubblewrap, macOS sandbox-exec).
 /// </summary>
 internal sealed class PluginWorkerProcess : IAsyncDisposable
 {
@@ -32,7 +32,7 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
 
     private readonly string workerExePath;
-    private readonly AppContainerSandbox? sandbox;
+    private readonly IProcessContainer? sandbox;
     private readonly SemaphoreSlim semaphore = new(1, 1);
     private int nextId;
     private Process? workerProcess;
@@ -40,7 +40,7 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     private StreamReader? pipeReader;
     private StreamWriter? pipeWriter;
 
-    private PluginWorkerProcess(string workerExePath, AppContainerSandbox? sandbox)
+    private PluginWorkerProcess(string workerExePath, IProcessContainer? sandbox)
     {
         this.workerExePath = workerExePath;
         this.sandbox = sandbox;
@@ -67,9 +67,10 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         }
 
         // Best-effort: create the sandbox. Falls back to an unsandboxed worker if setup fails.
-        AppContainerSandbox? sandbox = OperatingSystem.IsWindows()
-            ? AppContainerSandbox.TryCreate()
-            : null;
+        IProcessContainer? sandbox = ProcessContainerFactory.TryCreate(
+            windowsContainerName: "Utils.Parser.VisualStudio.PluginWorker.v1",
+            windowsDisplayName: "Utils.Parser.VisualStudio Plugin Worker",
+            windowsDescription: "Isolated process that loads and evaluates user-provided ISyntaxColorisation plugins.");
 
         return new PluginWorkerProcess(workerExe, sandbox);
     }
@@ -239,22 +240,24 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// </summary>
     private NamedPipeServerStream CreateServerPipe(string pipeName)
     {
-        if (sandbox is null || !OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows() || sandbox is not AppContainerSandbox appContainerSandbox)
         {
             return new NamedPipeServerStream(
                 pipeName, PipeDirection.InOut, maxNumberOfServerInstances: 1,
                 PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         }
 
-        return CreateSecuredServerPipe(pipeName);
+        return CreateSecuredServerPipe(pipeName, appContainerSandbox);
     }
 
     [SupportedOSPlatform("windows")]
-    private NamedPipeServerStream CreateSecuredServerPipe(string pipeName)
+    private static NamedPipeServerStream CreateSecuredServerPipe(
+        string pipeName,
+        AppContainerSandbox appContainerSandbox)
     {
         var pipeSecurity = new PipeSecurity();
         pipeSecurity.AddAccessRule(new PipeAccessRule(
-            sandbox!.GetContainerSid(),
+            appContainerSandbox.GetContainerSid(),
             PipeAccessRights.ReadWrite,
             System.Security.AccessControl.AccessControlType.Allow));
         pipeSecurity.AddAccessRule(new PipeAccessRule(
@@ -274,9 +277,9 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// </summary>
     private Process StartWorkerProcess(string pipeName)
     {
-        if (sandbox is not null && OperatingSystem.IsWindows())
+        if (sandbox is not null)
         {
-            return sandbox.StartProcess(workerExePath, pipeName);
+            return sandbox.StartProcess(workerExePath, new[] { pipeName });
         }
 
         var psi = new ProcessStartInfo(workerExePath, pipeName)
