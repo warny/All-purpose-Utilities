@@ -37,6 +37,12 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
     private readonly VisualStudioSyntaxColorisationExtension extension;
     private readonly PluginWorkerProcess? pluginWorker;
 
+    // Cache for in-process descriptor profiles. Invalidated when the set of .syntaxcolor
+    // files on disk changes (different paths or different last-write timestamps).
+    private IReadOnlyList<ISyntaxColorisation>? profileCache;
+    private string[] cachedDescriptorPaths = Array.Empty<string>();
+    private DateTime[] cachedDescriptorTimestamps = Array.Empty<DateTime>();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="OutOfProcSyntaxColorizationTagger"/> class.
     /// </summary>
@@ -149,7 +155,7 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
             return new Dictionary<string, string?>();
         }
 
-        string[] assemblyPaths = PluginDirectoryLocator.GetPluginAssemblyPaths();
+        string[] assemblyPaths = PluginAssemblyVerifier.Filter(PluginDirectoryLocator.GetPluginAssemblyPaths());
         if (assemblyPaths.Length == 0)
         {
             return new Dictionary<string, string?>();
@@ -215,20 +221,68 @@ public sealed class OutOfProcSyntaxColorizationTagger : TextViewTagger<Classific
     /// <summary>
     /// Loads profiles from the extension's trusted assemblies and from descriptor files only.
     /// User-provided assemblies are NOT loaded here; they run in the worker process instead.
+    /// Results are cached by (descriptor paths, last-write timestamps) and reused across
+    /// tag requests as long as no descriptor file is added, removed, or modified on disk.
     /// </summary>
     private IReadOnlyList<ISyntaxColorisation> LoadInProcessProfiles(string filePath, string fileExtension)
     {
+        string[] descriptorPaths = EnumerateDescriptorFiles(filePath)
+            .OrderBy(static p => p, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        DateTime[] timestamps = GetDescriptorTimestamps(descriptorPaths);
+
+        if (profileCache is not null &&
+            descriptorPaths.SequenceEqual(cachedDescriptorPaths, StringComparer.OrdinalIgnoreCase) &&
+            timestamps.SequenceEqual(cachedDescriptorTimestamps))
+        {
+            return profileCache;
+        }
+
         IReadOnlyList<ISyntaxColorisation> allProfiles;
         try
         {
-            allProfiles = registry.LoadProfiles(TrustedAssemblies, EnumerateDescriptorFiles(filePath));
+            allProfiles = registry.LoadProfiles(TrustedAssemblies, descriptorPaths);
         }
         catch
         {
-            return Array.Empty<ISyntaxColorisation>();
+            return [];
         }
 
-        return extension.GetSecondaryProfilesForFileExtension(allProfiles, fileExtension, Array.Empty<string>());
+        IReadOnlyList<ISyntaxColorisation> filtered =
+            extension.GetSecondaryProfilesForFileExtension(allProfiles, fileExtension, []);
+
+        profileCache = filtered;
+        cachedDescriptorPaths = descriptorPaths;
+        cachedDescriptorTimestamps = timestamps;
+
+        return filtered;
+    }
+
+    /// <summary>
+    /// Returns the UTC last-write timestamps of each descriptor file in
+    /// <paramref name="paths"/>, in the same order.
+    /// Files that cannot be read are given <see cref="DateTime.MinValue"/> so a
+    /// subsequent read attempt always causes a cache miss.
+    /// </summary>
+    /// <param name="paths">Sorted descriptor file paths.</param>
+    /// <returns>Array of UTC last-write timestamps, one per path.</returns>
+    private static DateTime[] GetDescriptorTimestamps(string[] paths)
+    {
+        var timestamps = new DateTime[paths.Length];
+        for (int i = 0; i < paths.Length; i++)
+        {
+            try
+            {
+                timestamps[i] = File.GetLastWriteTimeUtc(paths[i]);
+            }
+            catch
+            {
+                timestamps[i] = DateTime.MinValue;
+            }
+        }
+
+        return timestamps;
     }
 
     /// <summary>

@@ -27,7 +27,7 @@ internal static class PluginDirectoryLocator
     {
         if (!Directory.Exists(PluginDirectory))
         {
-            return Array.Empty<string>();
+            return [];
         }
 
         try
@@ -36,7 +36,7 @@ internal static class PluginDirectoryLocator
         }
         catch
         {
-            return Array.Empty<string>();
+            return [];
         }
     }
 }

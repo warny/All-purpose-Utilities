@@ -207,10 +207,20 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 // splitted[2..] = more optional parameters (e.g. for text encoding or reflection type info)
                 string relativePath = splitted[0].Replace('\\', Path.DirectorySeparatorChar);
                 string candidatePath = Path.GetFullPath(Path.Combine(basePath, relativePath));
-                if (!File.Exists(candidatePath))
+
+                // Guard against path traversal: the resolved path must stay within the
+                // directory that contains the .resx file. A crafted value such as
+                // "../../secret.txt" would otherwise escape to an arbitrary location.
+                string allowedRoot = Path.GetFullPath(basePath).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+
+                if (!candidatePath.StartsWith(allowedRoot, StringComparison.OrdinalIgnoreCase))
                 {
-                    candidatePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(basePath) ?? string.Empty, relativePath));
+                    // Path escapes the .resx directory — skip this resource entry.
+                    return;
                 }
+
                 string filePath = candidatePath;
                 string typeOrEncoding = splitted[1];
 

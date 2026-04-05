@@ -39,6 +39,14 @@ internal sealed class WorkerPluginHost
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="ISyntaxColorisation"/> profiles from each assembly in
+    /// <paramref name="assemblyPaths"/> whose declared file extensions include
+    /// <paramref name="fileExtension"/>.
+    /// </summary>
+    /// <param name="assemblyPaths">Paths of the plugin assemblies to load from.</param>
+    /// <param name="fileExtension">File extension to filter profiles by (e.g. <c>".sql"</c>).</param>
+    /// <returns>All matching profiles, in assembly order.</returns>
     private List<ISyntaxColorisation> LoadMatchingProfiles(string[] assemblyPaths, string fileExtension)
     {
         var profiles = new List<ISyntaxColorisation>();
@@ -58,6 +66,12 @@ internal sealed class WorkerPluginHost
         return profiles;
     }
 
+    /// <summary>
+    /// Returns the cached plugin entry for <paramref name="assemblyPath"/>, reloading
+    /// from disk when the file's last-write timestamp has changed (hot-reload).
+    /// </summary>
+    /// <param name="assemblyPath">Full path to the plugin assembly.</param>
+    /// <returns>The up-to-date <see cref="CachedPlugin"/> entry.</returns>
     private CachedPlugin GetOrLoad(string assemblyPath)
     {
         DateTime modifiedUtc = File.GetLastWriteTimeUtc(assemblyPath);
@@ -83,6 +97,14 @@ internal sealed class WorkerPluginHost
         return entry;
     }
 
+    /// <summary>
+    /// Discovers all <see cref="ISyntaxColorisation"/> implementations in
+    /// <paramref name="assembly"/> by reflection, preferring a public static
+    /// <c>Instance</c> property over the parameterless constructor.
+    /// Types that fail to instantiate are silently skipped.
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>All successfully instantiated profiles.</returns>
     private static List<ISyntaxColorisation> DiscoverProfiles(Assembly assembly)
     {
         var profiles = new List<ISyntaxColorisation>();
@@ -136,6 +158,14 @@ internal sealed class WorkerPluginHost
         return profiles;
     }
 
+    /// <summary>
+    /// Returns the first non-empty classification for <paramref name="token"/> found
+    /// across <paramref name="profiles"/>, trying the token as-is, upper-case, and
+    /// title-case in that order.
+    /// </summary>
+    /// <param name="token">The identifier to classify.</param>
+    /// <param name="profiles">Profiles to query in order.</param>
+    /// <returns>The classification name, or <see langword="null"/> if none matched.</returns>
     private static string? ResolveClassification(string token, IEnumerable<ISyntaxColorisation> profiles)
     {
         foreach (ISyntaxColorisation profile in profiles)
@@ -160,8 +190,18 @@ internal sealed class WorkerPluginHost
         return null;
     }
 
+    /// <summary>
+    /// Holds a loaded plugin assembly and its profiles, keyed by last-write timestamp
+    /// for cache invalidation.
+    /// </summary>
     private sealed class CachedPlugin
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CachedPlugin"/> class.
+        /// </summary>
+        /// <param name="context">The isolated assembly load context.</param>
+        /// <param name="profiles">Profiles discovered in the assembly.</param>
+        /// <param name="modifiedUtc">Last-write timestamp of the assembly file at load time.</param>
         public CachedPlugin(PluginAssemblyContext context, List<ISyntaxColorisation> profiles, DateTime modifiedUtc)
         {
             Context = context;
@@ -169,8 +209,13 @@ internal sealed class WorkerPluginHost
             ModifiedUtc = modifiedUtc;
         }
 
+        /// <summary>Gets the isolated assembly load context.</summary>
         public PluginAssemblyContext Context { get; }
+
+        /// <summary>Gets the colorization profiles discovered in the assembly.</summary>
         public List<ISyntaxColorisation> Profiles { get; }
+
+        /// <summary>Gets the assembly file's last-write timestamp at the time it was loaded.</summary>
         public DateTime ModifiedUtc { get; }
     }
 }

@@ -102,6 +102,21 @@ internal static class WindowsNativeMethods
     [DllImport("kernel32.dll", SetLastError = true)]
     internal static extern bool GetNamedPipeClientProcessId(IntPtr Pipe, out uint ClientProcessId);
 
+    // ─── wintrust.dll ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies the Authenticode signature on a file.
+    /// Returns 0 (ERROR_SUCCESS) when the signature is valid and trusted.
+    /// <para>
+    /// Pass <c>new IntPtr(-1)</c> for <paramref name="hWnd"/> to suppress all UI.
+    /// </para>
+    /// </summary>
+    [DllImport("wintrust.dll", SetLastError = false)]
+    internal static extern int WinVerifyTrust(
+        IntPtr hWnd,
+        ref Guid pgActionID,
+        ref WINTRUST_DATA pWVTData);
+
     // ─── Constants ───────────────────────────────────────────────────────────────
 
     /// <summary>Flag for CreateProcess indicating that lpStartupInfo is a STARTUPINFOEX.</summary>
@@ -117,6 +132,26 @@ internal static class WindowsNativeMethods
 
     /// <summary>HRESULT returned when the AppContainer profile already exists.</summary>
     internal const int E_ALREADY_EXISTS = unchecked((int)0x800700B7);
+
+    // WinVerifyTrust dwUIChoice values
+    internal const uint WTD_UI_NONE = 2;
+
+    // WinVerifyTrust fdwRevocationChecks values
+    internal const uint WTD_REVOKE_NONE = 0;
+
+    // WinVerifyTrust dwUnionChoice values
+    internal const uint WTD_CHOICE_FILE = 1;
+
+    // WinVerifyTrust dwStateAction values
+    internal const uint WTD_STATEACTION_VERIFY = 1;
+    internal const uint WTD_STATEACTION_CLOSE = 2;
+
+    /// <summary>
+    /// Action GUID for standard Authenticode PE verification.
+    /// {00AAC56B-CD44-11D0-8CC2-00C04FC295EE}
+    /// </summary>
+    internal static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 =
+        new("00AAC56B-CD44-11D0-8CC2-00C04FC295EE");
 
     // ─── Structures ──────────────────────────────────────────────────────────────
 
@@ -218,5 +253,40 @@ internal static class WindowsNativeMethods
     internal struct JOBOBJECT_BASIC_UI_RESTRICTIONS
     {
         public JOB_OBJECT_UILIMIT UIRestrictionsClass;
+    }
+
+    /// <summary>
+    /// Maps to Win32 WINTRUST_FILE_INFO. Describes the file whose Authenticode signature is verified.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct WINTRUST_FILE_INFO
+    {
+        public uint cbStruct;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string pcwszFilePath;
+        public IntPtr hFile;            // NULL — let WinVerifyTrust open the file
+        public IntPtr pgKnownSubject;   // NULL — use default subject interface package
+    }
+
+    /// <summary>
+    /// Maps to Win32 WINTRUST_DATA. Controls the behaviour of <see cref="WinVerifyTrust"/>.
+    /// The union field <c>pUnion</c> must point to a <see cref="WINTRUST_FILE_INFO"/> when
+    /// <c>dwUnionChoice</c> is <see cref="WTD_CHOICE_FILE"/>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct WINTRUST_DATA
+    {
+        public uint cbStruct;
+        public IntPtr pPolicyCallbackData;
+        public IntPtr pSIPClientData;
+        public uint dwUIChoice;
+        public uint fdwRevocationChecks;
+        public uint dwUnionChoice;
+        public IntPtr pUnion;           // points to WINTRUST_FILE_INFO when dwUnionChoice = WTD_CHOICE_FILE
+        public uint dwStateAction;
+        public IntPtr hWVTStateData;    // filled by WinVerifyTrust; must be passed back for CLOSE
+        public IntPtr pwszURLReference;
+        public uint dwProvFlags;
+        public uint dwUIContext;
     }
 }

@@ -66,4 +66,10 @@
             Condition="Exists('source.extension.vsixmanifest')" />
     </Target>
 
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UtilsTest</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
 </Project>
