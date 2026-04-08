@@ -349,11 +349,11 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// <remarks>
     /// Supported variables:
     /// <list type="bullet">
-    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_DISK_READ</c></item>
-    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_DISK_WRITE</c></item>
-    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_NETWORK</c></item>
-    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS</c></item>
-    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DISK_READ</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DISK_WRITE</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_NETWORK</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DEVICE_ACCESS</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DEBUGGING</c></item>
     /// </list>
     /// Missing or invalid values keep defaults.
     /// </remarks>
@@ -361,23 +361,78 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     private static ProcessContainerPermissions LoadPermissionsFromEnvironment()
     {
         var permissions = new ProcessContainerPermissions();
-        permissions.AllowDiskRead = ReadBool("UTILS_PARSER_WORKER_ALLOW_DISK_READ", permissions.AllowDiskRead);
-        permissions.AllowDiskWrite = ReadBool("UTILS_PARSER_WORKER_ALLOW_DISK_WRITE", permissions.AllowDiskWrite);
-        permissions.AllowNetwork = ReadBool("UTILS_PARSER_WORKER_ALLOW_NETWORK", permissions.AllowNetwork);
-        permissions.AllowDeviceAccess = ReadBool("UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS", permissions.AllowDeviceAccess);
-        permissions.AllowProcessDebugging = ReadBool("UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING", permissions.AllowProcessDebugging);
+        permissions.AllowDiskRead = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskRead, permissions.AllowDiskRead);
+        permissions.AllowDiskWrite = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskWrite, permissions.AllowDiskWrite);
+        permissions.AllowNetwork = ReadBool(WorkerPermissionEnvironmentVariable.AllowNetwork, permissions.AllowNetwork);
+        permissions.AllowDeviceAccess = ReadBool(WorkerPermissionEnvironmentVariable.AllowDeviceAccess, permissions.AllowDeviceAccess);
+        permissions.AllowProcessDebugging = ReadBool(WorkerPermissionEnvironmentVariable.AllowDebugging, permissions.AllowProcessDebugging);
         return permissions;
     }
 
     /// <summary>
     /// Reads a boolean environment variable with fallback.
     /// </summary>
-    /// <param name="name">Environment variable name.</param>
+    /// <param name="variable">Environment variable selector.</param>
     /// <param name="defaultValue">Value used when parsing fails.</param>
     /// <returns>Parsed boolean value or <paramref name="defaultValue"/>.</returns>
-    private static bool ReadBool(string name, bool defaultValue)
+    private static bool ReadBool(WorkerPermissionEnvironmentVariable variable, bool defaultValue)
     {
-        string? rawValue = Environment.GetEnvironmentVariable(name);
+        string? rawValue = Environment.GetEnvironmentVariable(GetEnvironmentVariableName(variable))
+            ?? Environment.GetEnvironmentVariable(GetLegacyEnvironmentVariableName(variable));
+
         return bool.TryParse(rawValue, out bool parsed) ? parsed : defaultValue;
+    }
+
+    /// <summary>
+    /// Converts a strongly-typed variable selector to its environment variable name.
+    /// </summary>
+    /// <param name="variable">Variable selector.</param>
+    /// <returns>Environment variable name.</returns>
+    private static string GetEnvironmentVariableName(WorkerPermissionEnvironmentVariable variable)
+    {
+        return variable switch
+        {
+            WorkerPermissionEnvironmentVariable.AllowDiskRead => "PROCESS_WORKER_ALLOW_DISK_READ",
+            WorkerPermissionEnvironmentVariable.AllowDiskWrite => "PROCESS_WORKER_ALLOW_DISK_WRITE",
+            WorkerPermissionEnvironmentVariable.AllowNetwork => "PROCESS_WORKER_ALLOW_NETWORK",
+            WorkerPermissionEnvironmentVariable.AllowDeviceAccess => "PROCESS_WORKER_ALLOW_DEVICE_ACCESS",
+            WorkerPermissionEnvironmentVariable.AllowDebugging => "PROCESS_WORKER_ALLOW_DEBUGGING",
+            _ => throw new ArgumentOutOfRangeException(nameof(variable), variable, null),
+        };
+    }
+
+    /// <summary>
+    /// Returns the legacy variable name kept for backward compatibility.
+    /// </summary>
+    /// <param name="variable">Variable selector.</param>
+    /// <returns>Legacy environment variable name.</returns>
+    private static string GetLegacyEnvironmentVariableName(WorkerPermissionEnvironmentVariable variable)
+    {
+        return variable switch
+        {
+            WorkerPermissionEnvironmentVariable.AllowDiskRead => "UTILS_PARSER_WORKER_ALLOW_DISK_READ",
+            WorkerPermissionEnvironmentVariable.AllowDiskWrite => "UTILS_PARSER_WORKER_ALLOW_DISK_WRITE",
+            WorkerPermissionEnvironmentVariable.AllowNetwork => "UTILS_PARSER_WORKER_ALLOW_NETWORK",
+            WorkerPermissionEnvironmentVariable.AllowDeviceAccess => "UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS",
+            WorkerPermissionEnvironmentVariable.AllowDebugging => "UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING",
+            _ => throw new ArgumentOutOfRangeException(nameof(variable), variable, null),
+        };
+    }
+
+    /// <summary>
+    /// Identifies each worker permission environment variable in a type-safe way.
+    /// </summary>
+    private enum WorkerPermissionEnvironmentVariable
+    {
+        /// <summary>Toggle for disk read access.</summary>
+        AllowDiskRead,
+        /// <summary>Toggle for disk write access.</summary>
+        AllowDiskWrite,
+        /// <summary>Toggle for network access.</summary>
+        AllowNetwork,
+        /// <summary>Toggle for device access.</summary>
+        AllowDeviceAccess,
+        /// <summary>Toggle for debugging access.</summary>
+        AllowDebugging,
     }
 }

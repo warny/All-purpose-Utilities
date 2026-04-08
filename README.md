@@ -63,11 +63,11 @@ Runtime permissions can be configured with environment variables:
 
 | Permission | Environment variable | Default | Windows (AppContainer mode) | Linux (`bwrap`) | macOS (`sandbox-exec`) |
 |---|---|---:|---|---|---|
-| Disk read | `UTILS_PARSER_WORKER_ALLOW_DISK_READ` | `true` | Required. If `false`, container creation is skipped. | Required. If `false`, container creation is skipped. | Required. If `false`, container creation is skipped. |
-| Disk write | `UTILS_PARSER_WORKER_ALLOW_DISK_WRITE` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls writable `/tmp` bind vs read-only tmpfs behavior. | Adds/removes `file-write*` rule in profile. |
-| Network | `UTILS_PARSER_WORKER_ALLOW_NETWORK` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls `--share-net`. | Adds/removes `network*` rule in profile. |
-| Device access | `UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls host `/dev` bind vs minimal device namespace. | Adds/removes `iokit-open` rule in profile. |
-| Process debugging | `UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Reserved for future hardening controls. | Adds/removes `process-info*` rule in profile. |
+| Disk read | `PROCESS_WORKER_ALLOW_DISK_READ` | `true` | Required. If `false`, container creation is skipped. | Required. If `false`, container creation is skipped. | Required. If `false`, container creation is skipped. |
+| Disk write | `PROCESS_WORKER_ALLOW_DISK_WRITE` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls writable `/tmp` bind vs read-only tmpfs behavior. | Adds/removes `file-write*` rule in profile. |
+| Network | `PROCESS_WORKER_ALLOW_NETWORK` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls `--share-net`. | Adds/removes `network*` rule in profile. |
+| Device access | `PROCESS_WORKER_ALLOW_DEVICE_ACCESS` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls host `/dev` bind vs minimal device namespace. | Adds/removes `iokit-open` rule in profile. |
+| Process debugging | `PROCESS_WORKER_ALLOW_DEBUGGING` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Reserved for future hardening controls. | Adds/removes `process-info*` rule in profile. |
 
 > If no supported container backend is available (or if requested permissions are incompatible with the selected restrictive backend), the runtime falls back to launching a regular child process.
 

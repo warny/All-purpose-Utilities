@@ -72,9 +72,9 @@ public class PluginWorkerProcessContainairisationTests
     [TestMethod]
     public void LoadPermissionsFromEnvironment_ReadsPermissionFlags()
     {
-        const string diskWriteVar = "UTILS_PARSER_WORKER_ALLOW_DISK_WRITE";
-        const string networkVar = "UTILS_PARSER_WORKER_ALLOW_NETWORK";
-        const string deviceVar = "UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS";
+        const string diskWriteVar = "PROCESS_WORKER_ALLOW_DISK_WRITE";
+        const string networkVar = "PROCESS_WORKER_ALLOW_NETWORK";
+        const string deviceVar = "PROCESS_WORKER_ALLOW_DEVICE_ACCESS";
 
         try
         {
