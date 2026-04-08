@@ -10,14 +10,14 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Utils.Parser.VisualStudio.Sandbox;
+using Utils.Reflection.ProcessIsolation;
 
 namespace Utils.Parser.VisualStudio.Worker;
 
 /// <summary>
 /// Manages the lifecycle of the plugin worker process and communicates with it via a named pipe.
-/// When running on Windows, the worker is launched inside an <see cref="AppContainerSandbox"/>
-/// which restricts network access and file-system writes without requiring elevation.
+/// Depending on the current OS, the worker is launched in the strongest available
+/// process container (Windows AppContainer, Linux bubblewrap, macOS sandbox-exec).
 /// </summary>
 internal sealed class PluginWorkerProcess : IAsyncDisposable
 {
@@ -32,7 +32,7 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
 
     private readonly string workerExePath;
-    private readonly AppContainerSandbox? sandbox;
+    private IProcessContainer? sandbox;
     private readonly SemaphoreSlim semaphore = new(1, 1);
     private int nextId;
     private Process? workerProcess;
@@ -40,7 +40,7 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     private StreamReader? pipeReader;
     private StreamWriter? pipeWriter;
 
-    private PluginWorkerProcess(string workerExePath, AppContainerSandbox? sandbox)
+    private PluginWorkerProcess(string workerExePath, IProcessContainer? sandbox)
     {
         this.workerExePath = workerExePath;
         this.sandbox = sandbox;
@@ -67,9 +67,12 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         }
 
         // Best-effort: create the sandbox. Falls back to an unsandboxed worker if setup fails.
-        AppContainerSandbox? sandbox = OperatingSystem.IsWindows()
-            ? AppContainerSandbox.TryCreate()
-            : null;
+        ProcessContainerPermissions permissions = LoadPermissionsFromEnvironment();
+        IProcessContainer? sandbox = ProcessContainerFactory.TryCreate(
+            windowsContainerName: "Utils.Parser.VisualStudio.PluginWorker.v1",
+            windowsDisplayName: "Utils.Parser.VisualStudio Plugin Worker",
+            windowsDescription: "Isolated process that loads and evaluates user-provided ISyntaxColorisation plugins.",
+            permissions: permissions);
 
         return new PluginWorkerProcess(workerExe, sandbox);
     }
@@ -165,20 +168,10 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     [SupportedOSPlatform("windows")]
     private static void VerifyPipeClient(NamedPipeServerStream pipe, Process expectedWorker)
     {
-        IntPtr pipeHandle = pipe.SafePipeHandle.DangerousGetHandle();
-
-        if (!WindowsNativeMethods.GetNamedPipeClientProcessId(pipeHandle, out uint clientPid))
+        if (!ProcessIsolationPlatformSecurity.IsExpectedNamedPipeClient(pipe, expectedWorker.Id))
         {
             throw new InvalidOperationException(
-                "GetNamedPipeClientProcessId failed: could not verify the identity of the " +
-                $"process connected to the plugin pipe (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}).");
-        }
-
-        if ((int)clientPid != expectedWorker.Id)
-        {
-            throw new InvalidOperationException(
-                $"Security violation: PID {clientPid} connected to the plugin pipe but " +
-                $"the expected worker PID is {expectedWorker.Id}. The connection was rejected.");
+                "Security violation: unexpected process connected to the plugin pipe.");
         }
     }
 
@@ -239,22 +232,27 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// </summary>
     private NamedPipeServerStream CreateServerPipe(string pipeName)
     {
-        if (sandbox is null || !OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows() ||
+            sandbox is null ||
+            !sandbox.TryGetSecurityIdentifier(out System.Security.Principal.SecurityIdentifier? securityIdentifier) ||
+            securityIdentifier is null)
         {
             return new NamedPipeServerStream(
                 pipeName, PipeDirection.InOut, maxNumberOfServerInstances: 1,
                 PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         }
 
-        return CreateSecuredServerPipe(pipeName);
+        return CreateSecuredServerPipe(pipeName, securityIdentifier);
     }
 
     [SupportedOSPlatform("windows")]
-    private NamedPipeServerStream CreateSecuredServerPipe(string pipeName)
+    private static NamedPipeServerStream CreateSecuredServerPipe(
+        string pipeName,
+        System.Security.Principal.SecurityIdentifier securityIdentifier)
     {
         var pipeSecurity = new PipeSecurity();
         pipeSecurity.AddAccessRule(new PipeAccessRule(
-            sandbox!.GetContainerSid(),
+            securityIdentifier,
             PipeAccessRights.ReadWrite,
             System.Security.AccessControl.AccessControlType.Allow));
         pipeSecurity.AddAccessRule(new PipeAccessRule(
@@ -274,9 +272,20 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// </summary>
     private Process StartWorkerProcess(string pipeName)
     {
-        if (sandbox is not null && OperatingSystem.IsWindows())
+        if (sandbox is not null)
         {
-            return sandbox.StartProcess(workerExePath, pipeName);
+            try
+            {
+                return sandbox.StartProcess(workerExePath, new[] { pipeName });
+            }
+            catch
+            {
+                // If a platform container is present but not runnable in the current host
+                // policy (for example bubblewrap disabled by kernel constraints), disable it
+                // for subsequent attempts and fall back to the direct child-process path.
+                sandbox.Dispose();
+                sandbox = null;
+            }
         }
 
         var psi = new ProcessStartInfo(workerExePath, pipeName)
@@ -325,5 +334,98 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         await ResetWorkerAsync();
         sandbox?.Dispose();
         semaphore.Dispose();
+    }
+
+    /// <summary>
+    /// Loads process-permission flags from environment variables.
+    /// </summary>
+    /// <remarks>
+    /// Supported variables:
+    /// <list type="bullet">
+    ///   <item><c>PROCESS_WORKER_ALLOW_DISK_READ</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DISK_WRITE</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_NETWORK</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DEVICE_ACCESS</c></item>
+    ///   <item><c>PROCESS_WORKER_ALLOW_DEBUGGING</c></item>
+    /// </list>
+    /// Missing or invalid values keep defaults.
+    /// </remarks>
+    /// <returns>Permission settings consumed by <see cref="ProcessContainerFactory"/>.</returns>
+    private static ProcessContainerPermissions LoadPermissionsFromEnvironment()
+    {
+        var permissions = new ProcessContainerPermissions();
+        permissions.AllowDiskRead = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskRead, permissions.AllowDiskRead);
+        permissions.AllowDiskWrite = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskWrite, permissions.AllowDiskWrite);
+        permissions.AllowNetwork = ReadBool(WorkerPermissionEnvironmentVariable.AllowNetwork, permissions.AllowNetwork);
+        permissions.AllowDeviceAccess = ReadBool(WorkerPermissionEnvironmentVariable.AllowDeviceAccess, permissions.AllowDeviceAccess);
+        permissions.AllowProcessDebugging = ReadBool(WorkerPermissionEnvironmentVariable.AllowDebugging, permissions.AllowProcessDebugging);
+        return permissions;
+    }
+
+    /// <summary>
+    /// Reads a boolean environment variable with fallback.
+    /// </summary>
+    /// <param name="variable">Environment variable selector.</param>
+    /// <param name="defaultValue">Value used when parsing fails.</param>
+    /// <returns>Parsed boolean value or <paramref name="defaultValue"/>.</returns>
+    private static bool ReadBool(WorkerPermissionEnvironmentVariable variable, bool defaultValue)
+    {
+        string? rawValue = Environment.GetEnvironmentVariable(GetEnvironmentVariableName(variable))
+            ?? Environment.GetEnvironmentVariable(GetLegacyEnvironmentVariableName(variable));
+
+        return bool.TryParse(rawValue, out bool parsed) ? parsed : defaultValue;
+    }
+
+    /// <summary>
+    /// Converts a strongly-typed variable selector to its environment variable name.
+    /// </summary>
+    /// <param name="variable">Variable selector.</param>
+    /// <returns>Environment variable name.</returns>
+    private static string GetEnvironmentVariableName(WorkerPermissionEnvironmentVariable variable)
+    {
+        return variable switch
+        {
+            WorkerPermissionEnvironmentVariable.AllowDiskRead => "PROCESS_WORKER_ALLOW_DISK_READ",
+            WorkerPermissionEnvironmentVariable.AllowDiskWrite => "PROCESS_WORKER_ALLOW_DISK_WRITE",
+            WorkerPermissionEnvironmentVariable.AllowNetwork => "PROCESS_WORKER_ALLOW_NETWORK",
+            WorkerPermissionEnvironmentVariable.AllowDeviceAccess => "PROCESS_WORKER_ALLOW_DEVICE_ACCESS",
+            WorkerPermissionEnvironmentVariable.AllowDebugging => "PROCESS_WORKER_ALLOW_DEBUGGING",
+            _ => throw new ArgumentOutOfRangeException(nameof(variable), variable, null),
+        };
+    }
+
+    /// <summary>
+    /// Returns the legacy variable name kept for backward compatibility.
+    /// </summary>
+    /// <param name="variable">Variable selector.</param>
+    /// <returns>Legacy environment variable name.</returns>
+    private static string GetLegacyEnvironmentVariableName(WorkerPermissionEnvironmentVariable variable)
+    {
+        return variable switch
+        {
+            WorkerPermissionEnvironmentVariable.AllowDiskRead => "UTILS_PARSER_WORKER_ALLOW_DISK_READ",
+            WorkerPermissionEnvironmentVariable.AllowDiskWrite => "UTILS_PARSER_WORKER_ALLOW_DISK_WRITE",
+            WorkerPermissionEnvironmentVariable.AllowNetwork => "UTILS_PARSER_WORKER_ALLOW_NETWORK",
+            WorkerPermissionEnvironmentVariable.AllowDeviceAccess => "UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS",
+            WorkerPermissionEnvironmentVariable.AllowDebugging => "UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING",
+            _ => throw new ArgumentOutOfRangeException(nameof(variable), variable, null),
+        };
+    }
+
+    /// <summary>
+    /// Identifies each worker permission environment variable in a type-safe way.
+    /// </summary>
+    private enum WorkerPermissionEnvironmentVariable
+    {
+        /// <summary>Toggle for disk read access.</summary>
+        AllowDiskRead,
+        /// <summary>Toggle for disk write access.</summary>
+        AllowDiskWrite,
+        /// <summary>Toggle for network access.</summary>
+        AllowNetwork,
+        /// <summary>Toggle for device access.</summary>
+        AllowDeviceAccess,
+        /// <summary>Toggle for debugging access.</summary>
+        AllowDebugging,
     }
 }

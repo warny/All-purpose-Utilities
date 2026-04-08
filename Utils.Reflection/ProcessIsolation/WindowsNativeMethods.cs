@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 
-namespace Utils.Parser.VisualStudio.Sandbox;
+namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
 /// Win32 P/Invoke declarations for AppContainer sandboxing and Job Object lifecycle management.

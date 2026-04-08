@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -7,7 +8,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 
-namespace Utils.Parser.VisualStudio.Sandbox;
+namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
 /// Manages an AppContainer sandbox for the plugin worker process.
@@ -33,16 +34,8 @@ namespace Utils.Parser.VisualStudio.Sandbox;
 /// </para>
 /// </remarks>
 [SupportedOSPlatform("windows")]
-internal sealed class AppContainerSandbox : IDisposable
+internal sealed class AppContainerSandbox : IProcessContainer
 {
-    /// <summary>
-    /// Stable name for the AppContainer profile.
-    /// Changing this creates a new profile in HKCU; the old one can be removed with
-    /// <c>DeleteAppContainerProfile</c> or from PowerShell:
-    /// <c>Get-AppxPackage | Where-Object Name -like 'Utils.Parser*'</c>.
-    /// </summary>
-    private const string ContainerName = "Utils.Parser.VisualStudio.PluginWorker.v1";
-
     private readonly IntPtr containerSid;
     private readonly IntPtr jobObjectHandle;
     private bool disposed;
@@ -57,24 +50,40 @@ internal sealed class AppContainerSandbox : IDisposable
     /// Creates the AppContainer sandbox.
     /// Returns <see langword="null"/> on any failure so the caller can degrade gracefully.
     /// </summary>
-    public static AppContainerSandbox? TryCreate()
+    /// <param name="containerName">
+    /// Stable name for the AppContainer profile.
+    /// Changing this creates a new profile in HKCU.
+    /// </param>
+    /// <param name="displayName">Human-readable display name used by Windows profile metadata.</param>
+    /// <param name="description">Human-readable profile description.</param>
+    /// <param name="permissions">Requested process permissions.</param>
+    public static AppContainerSandbox? TryCreate(
+        string containerName,
+        string displayName,
+        string description,
+        ProcessContainerPermissions permissions)
     {
         if (!OperatingSystem.IsWindows())
         {
             return null;
         }
 
+        if (!permissions.AllowDiskRead)
+        {
+            return null;
+        }
+
         IntPtr sid;
         int hr = WindowsNativeMethods.CreateAppContainerProfile(
-            ContainerName,
-            "Utils.Parser.VisualStudio Plugin Worker",
-            "Isolated process that loads and evaluates user-provided ISyntaxColorisation plugins.",
+            containerName,
+            displayName,
+            description,
             IntPtr.Zero, 0,
             out sid);
 
         if (hr == WindowsNativeMethods.E_ALREADY_EXISTS)
         {
-            hr = WindowsNativeMethods.DeriveAppContainerSidFromAppContainerName(ContainerName, out sid);
+            hr = WindowsNativeMethods.DeriveAppContainerSidFromAppContainerName(containerName, out sid);
         }
 
         if (hr != 0 || sid == IntPtr.Zero)
@@ -95,6 +104,17 @@ internal sealed class AppContainerSandbox : IDisposable
         byte[] bytes = new byte[len];
         Marshal.Copy(containerSid, bytes, 0, len);
         return new SecurityIdentifier(bytes, 0);
+    }
+
+    /// <summary>
+    /// Returns the AppContainer SID for IPC ACL hardening.
+    /// </summary>
+    /// <param name="securityIdentifier">Resolved AppContainer SID.</param>
+    /// <returns>Always <see langword="true"/>.</returns>
+    public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
+    {
+        securityIdentifier = GetContainerSid();
+        return true;
     }
 
     /// <summary>
@@ -132,8 +152,24 @@ internal sealed class AppContainerSandbox : IDisposable
     /// Starts <paramref name="exePath"/> inside the AppContainer and assigns it to the
     /// Job Object. Returns a <see cref="Process"/> wrapping the created process.
     /// </summary>
+    /// <param name="executablePath">Absolute path to the executable to run.</param>
+    /// <param name="arguments">Ordered arguments passed to the executable.</param>
     /// <exception cref="InvalidOperationException">Thrown when the process cannot be created.</exception>
-    public Process StartProcess(string exePath, string arguments)
+    public Process StartProcess(string executablePath, IEnumerable<string> arguments)
+    {
+        string argumentString = BuildArgumentString(arguments);
+        return StartProcessInternal(executablePath, argumentString);
+    }
+
+    /// <summary>
+    /// Starts <paramref name="exePath"/> inside the AppContainer and assigns it to the
+    /// Job Object. Returns a <see cref="Process"/> wrapping the created process.
+    /// </summary>
+    /// <param name="exePath">Absolute path to the executable to run.</param>
+    /// <param name="arguments">Command-line arguments as a single escaped string.</param>
+    /// <returns>The started process.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the process cannot be created.</exception>
+    private Process StartProcessInternal(string exePath, string arguments)
     {
         IntPtr attrList = IntPtr.Zero;
         IntPtr capPtr = IntPtr.Zero;
@@ -310,5 +346,76 @@ internal sealed class AppContainerSandbox : IDisposable
         }
 
         return attrList;
+    }
+
+    /// <summary>
+    /// Builds a process-safe command-line from the provided argument sequence.
+    /// </summary>
+    /// <param name="arguments">Ordered arguments to escape and join.</param>
+    /// <returns>An escaped command-line argument string.</returns>
+    private static string BuildArgumentString(IEnumerable<string> arguments)
+    {
+        var escaped = new List<string>();
+        foreach (string argument in arguments)
+        {
+            escaped.Add(QuoteArgument(argument));
+        }
+
+        return string.Join(' ', escaped);
+    }
+
+    /// <summary>
+    /// Escapes one command-line argument for Windows <c>CreateProcess</c>.
+    /// </summary>
+    /// <param name="argument">Argument to escape.</param>
+    /// <returns>The escaped argument.</returns>
+    private static string QuoteArgument(string argument)
+    {
+        if (argument.Length == 0)
+        {
+            return "\"\"";
+        }
+
+        if (!argument.Contains(' ') && !argument.Contains('\t') && !argument.Contains('"'))
+        {
+            return argument;
+        }
+
+        var sb = new StringBuilder(argument.Length + 2);
+        sb.Append('"');
+
+        int backslashCount = 0;
+        foreach (char ch in argument)
+        {
+            if (ch == '\\')
+            {
+                backslashCount++;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                sb.Append('\\', backslashCount * 2 + 1);
+                sb.Append('"');
+                backslashCount = 0;
+                continue;
+            }
+
+            if (backslashCount > 0)
+            {
+                sb.Append('\\', backslashCount);
+                backslashCount = 0;
+            }
+
+            sb.Append(ch);
+        }
+
+        if (backslashCount > 0)
+        {
+            sb.Append('\\', backslashCount * 2);
+        }
+
+        sb.Append('"');
+        return sb.ToString();
     }
 }
