@@ -56,9 +56,19 @@ public sealed class AppContainerSandbox : IProcessContainer
     /// </param>
     /// <param name="displayName">Human-readable display name used by Windows profile metadata.</param>
     /// <param name="description">Human-readable profile description.</param>
-    public static AppContainerSandbox? TryCreate(string containerName, string displayName, string description)
+    /// <param name="permissions">Requested process permissions.</param>
+    public static AppContainerSandbox? TryCreate(
+        string containerName,
+        string displayName,
+        string description,
+        ProcessContainerPermissions permissions)
     {
         if (!OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+
+        if (!permissions.AllowDiskRead)
         {
             return null;
         }

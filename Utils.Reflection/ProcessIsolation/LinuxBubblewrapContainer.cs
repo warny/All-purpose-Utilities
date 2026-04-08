@@ -11,24 +11,31 @@ namespace Utils.Reflection.ProcessIsolation;
 public sealed class LinuxBubblewrapContainer : IProcessContainer
 {
     private const string BubblewrapExecutableName = "bwrap";
+    private readonly ProcessContainerPermissions permissions;
 
-    private LinuxBubblewrapContainer()
+    private LinuxBubblewrapContainer(ProcessContainerPermissions permissions)
     {
+        this.permissions = permissions;
     }
 
     /// <summary>
     /// Creates a Linux process container when <c>bwrap</c> is available in the current environment.
     /// </summary>
     /// <returns>An initialized container, or <see langword="null"/> when unavailable.</returns>
-    public static LinuxBubblewrapContainer? TryCreate()
+    public static LinuxBubblewrapContainer? TryCreate(ProcessContainerPermissions permissions)
     {
         if (!OperatingSystem.IsLinux())
         {
             return null;
         }
 
+        if (!permissions.AllowDiskRead)
+        {
+            return null;
+        }
+
         return CommandAvailability.Exists(BubblewrapExecutableName)
-            ? new LinuxBubblewrapContainer()
+            ? new LinuxBubblewrapContainer(permissions)
             : null;
     }
 
@@ -45,17 +52,44 @@ public sealed class LinuxBubblewrapContainer : IProcessContainer
             "--die-with-parent",
             "--new-session",
             "--unshare-all",
-            "--share-net",
             "--ro-bind",
             "/",
             "/",
             "--proc",
             "/proc",
-            "--dev",
-            "/dev",
-            "--",
-            executablePath,
         };
+
+        if (permissions.AllowNetwork)
+        {
+            wrappedArguments.Add("--share-net");
+        }
+
+        if (permissions.AllowDeviceAccess)
+        {
+            wrappedArguments.Add("--dev-bind");
+            wrappedArguments.Add("/dev");
+            wrappedArguments.Add("/dev");
+        }
+        else
+        {
+            wrappedArguments.Add("--dev");
+            wrappedArguments.Add("/dev");
+        }
+
+        if (permissions.AllowDiskWrite)
+        {
+            wrappedArguments.Add("--bind");
+            wrappedArguments.Add("/tmp");
+            wrappedArguments.Add("/tmp");
+        }
+        else
+        {
+            wrappedArguments.Add("--tmpfs");
+            wrappedArguments.Add("/tmp");
+        }
+
+        wrappedArguments.Add("--");
+        wrappedArguments.Add(executablePath);
 
         wrappedArguments.AddRange(arguments);
 

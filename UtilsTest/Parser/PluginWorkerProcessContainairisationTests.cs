@@ -67,6 +67,42 @@ public class PluginWorkerProcessContainairisationTests
     }
 
     /// <summary>
+    /// Ensures worker permissions can be controlled through environment variables.
+    /// </summary>
+    [TestMethod]
+    public void LoadPermissionsFromEnvironment_ReadsPermissionFlags()
+    {
+        const string diskWriteVar = "UTILS_PARSER_WORKER_ALLOW_DISK_WRITE";
+        const string networkVar = "UTILS_PARSER_WORKER_ALLOW_NETWORK";
+        const string deviceVar = "UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS";
+
+        try
+        {
+            Environment.SetEnvironmentVariable(diskWriteVar, "true");
+            Environment.SetEnvironmentVariable(networkVar, "true");
+            Environment.SetEnvironmentVariable(deviceVar, "false");
+
+            MethodInfo loadPermissions = typeof(PluginWorkerProcess).GetMethod(
+                "LoadPermissionsFromEnvironment",
+                BindingFlags.Static | BindingFlags.NonPublic) ?? throw new AssertFailedException("LoadPermissionsFromEnvironment not found.");
+
+            ProcessContainerPermissions permissions =
+                (ProcessContainerPermissions)(loadPermissions.Invoke(null, null)
+                ?? throw new AssertFailedException("LoadPermissionsFromEnvironment returned null."));
+
+            Assert.IsTrue(permissions.AllowDiskWrite);
+            Assert.IsTrue(permissions.AllowNetwork);
+            Assert.IsFalse(permissions.AllowDeviceAccess);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(diskWriteVar, null);
+            Environment.SetEnvironmentVariable(networkVar, null);
+            Environment.SetEnvironmentVariable(deviceVar, null);
+        }
+    }
+
+    /// <summary>
     /// Test double that always fails process start requests.
     /// </summary>
     private sealed class ThrowingContainer : IProcessContainer

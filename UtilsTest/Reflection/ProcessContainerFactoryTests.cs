@@ -54,4 +54,24 @@ public class ProcessContainerFactoryTests
 
         Assert.IsNull(container);
     }
+
+    /// <summary>
+    /// Ensures disabling disk-read permission forces a direct-process fallback.
+    /// </summary>
+    [TestMethod]
+    public void ProcessContainerFactory_TryCreate_WithDiskReadDisabled_ReturnsNull()
+    {
+        var permissions = new ProcessContainerPermissions
+        {
+            AllowDiskRead = false,
+        };
+
+        IProcessContainer? container = ProcessContainerFactory.TryCreate(
+            windowsContainerName: "UtilsTest.ProcessContainerFactoryTests",
+            windowsDisplayName: "UtilsTest Container",
+            windowsDescription: "Container created for unit tests.",
+            permissions: permissions);
+
+        Assert.IsNull(container);
+    }
 }

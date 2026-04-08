@@ -67,10 +67,12 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         }
 
         // Best-effort: create the sandbox. Falls back to an unsandboxed worker if setup fails.
+        ProcessContainerPermissions permissions = LoadPermissionsFromEnvironment();
         IProcessContainer? sandbox = ProcessContainerFactory.TryCreate(
             windowsContainerName: "Utils.Parser.VisualStudio.PluginWorker.v1",
             windowsDisplayName: "Utils.Parser.VisualStudio Plugin Worker",
-            windowsDescription: "Isolated process that loads and evaluates user-provided ISyntaxColorisation plugins.");
+            windowsDescription: "Isolated process that loads and evaluates user-provided ISyntaxColorisation plugins.",
+            permissions: permissions);
 
         return new PluginWorkerProcess(workerExe, sandbox);
     }
@@ -339,5 +341,43 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
         await ResetWorkerAsync();
         sandbox?.Dispose();
         semaphore.Dispose();
+    }
+
+    /// <summary>
+    /// Loads process-permission flags from environment variables.
+    /// </summary>
+    /// <remarks>
+    /// Supported variables:
+    /// <list type="bullet">
+    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_DISK_READ</c></item>
+    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_DISK_WRITE</c></item>
+    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_NETWORK</c></item>
+    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS</c></item>
+    ///   <item><c>UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING</c></item>
+    /// </list>
+    /// Missing or invalid values keep defaults.
+    /// </remarks>
+    /// <returns>Permission settings consumed by <see cref="ProcessContainerFactory"/>.</returns>
+    private static ProcessContainerPermissions LoadPermissionsFromEnvironment()
+    {
+        var permissions = new ProcessContainerPermissions();
+        permissions.AllowDiskRead = ReadBool("UTILS_PARSER_WORKER_ALLOW_DISK_READ", permissions.AllowDiskRead);
+        permissions.AllowDiskWrite = ReadBool("UTILS_PARSER_WORKER_ALLOW_DISK_WRITE", permissions.AllowDiskWrite);
+        permissions.AllowNetwork = ReadBool("UTILS_PARSER_WORKER_ALLOW_NETWORK", permissions.AllowNetwork);
+        permissions.AllowDeviceAccess = ReadBool("UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS", permissions.AllowDeviceAccess);
+        permissions.AllowProcessDebugging = ReadBool("UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING", permissions.AllowProcessDebugging);
+        return permissions;
+    }
+
+    /// <summary>
+    /// Reads a boolean environment variable with fallback.
+    /// </summary>
+    /// <param name="name">Environment variable name.</param>
+    /// <param name="defaultValue">Value used when parsing fails.</param>
+    /// <returns>Parsed boolean value or <paramref name="defaultValue"/>.</returns>
+    private static bool ReadBool(string name, bool defaultValue)
+    {
+        string? rawValue = Environment.GetEnvironmentVariable(name);
+        return bool.TryParse(rawValue, out bool parsed) ? parsed : defaultValue;
     }
 }
