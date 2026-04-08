@@ -32,7 +32,7 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
 
     private readonly string workerExePath;
-    private readonly IProcessContainer? sandbox;
+    private IProcessContainer? sandbox;
     private readonly SemaphoreSlim semaphore = new(1, 1);
     private int nextId;
     private Process? workerProcess;
@@ -279,7 +279,18 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     {
         if (sandbox is not null)
         {
-            return sandbox.StartProcess(workerExePath, new[] { pipeName });
+            try
+            {
+                return sandbox.StartProcess(workerExePath, new[] { pipeName });
+            }
+            catch
+            {
+                // If a platform container is present but not runnable in the current host
+                // policy (for example bubblewrap disabled by kernel constraints), disable it
+                // for subsequent attempts and fall back to the direct child-process path.
+                sandbox.Dispose();
+                sandbox = null;
+            }
         }
 
         var psi = new ProcessStartInfo(workerExePath, pipeName)

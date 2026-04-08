@@ -360,6 +360,41 @@ public sealed class AppContainerSandbox : IProcessContainer
             return argument;
         }
 
-        return $"\"{argument.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"";
+        var sb = new StringBuilder(argument.Length + 2);
+        sb.Append('"');
+
+        int backslashCount = 0;
+        foreach (char ch in argument)
+        {
+            if (ch == '\\')
+            {
+                backslashCount++;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                sb.Append('\\', backslashCount * 2 + 1);
+                sb.Append('"');
+                backslashCount = 0;
+                continue;
+            }
+
+            if (backslashCount > 0)
+            {
+                sb.Append('\\', backslashCount);
+                backslashCount = 0;
+            }
+
+            sb.Append(ch);
+        }
+
+        if (backslashCount > 0)
+        {
+            sb.Append('\\', backslashCount * 2);
+        }
+
+        sb.Append('"');
+        return sb.ToString();
     }
 }
