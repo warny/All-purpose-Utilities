@@ -55,6 +55,35 @@ More examples are available inside each package README (see `Utils/README.md` fo
 - [Releasing guide](docs/releasing.md)
 - [Changelog](CHANGELOG.md)
 
+## External worker process permissions (Plugin isolation)
+
+Some components (notably parser plugin isolation) execute user-provided DLL logic in an **external worker process**. This is expected and intentional: the worker process is where sandboxing is applied.
+
+Runtime permissions can be configured with environment variables:
+
+| Permission | Environment variable | Default | Windows (AppContainer mode) | Linux (`bwrap`) | macOS (`sandbox-exec`) |
+|---|---|---:|---|---|---|
+| Disk read | `UTILS_PARSER_WORKER_ALLOW_DISK_READ` | `true` | Required. If `false`, container creation is skipped. | Required. If `false`, container creation is skipped. | Required. If `false`, container creation is skipped. |
+| Disk write | `UTILS_PARSER_WORKER_ALLOW_DISK_WRITE` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls writable `/tmp` bind vs read-only tmpfs behavior. | Adds/removes `file-write*` rule in profile. |
+| Network | `UTILS_PARSER_WORKER_ALLOW_NETWORK` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls `--share-net`. | Adds/removes `network*` rule in profile. |
+| Device access | `UTILS_PARSER_WORKER_ALLOW_DEVICE_ACCESS` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Controls host `/dev` bind vs minimal device namespace. | Adds/removes `iokit-open` rule in profile. |
+| Process debugging | `UTILS_PARSER_WORKER_ALLOW_PROCESS_DEBUGGING` | `false` | Not exposed in restrictive AppContainer mode. Requesting it falls back to direct process mode. | Reserved for future hardening controls. | Adds/removes `process-info*` rule in profile. |
+
+> If no supported container backend is available (or if requested permissions are incompatible with the selected restrictive backend), the runtime falls back to launching a regular child process.
+
+### Additional permissions worth adding
+
+The current model is intentionally small. Useful next additions could be:
+
+- **CPU quota / priority** (throttling untrusted plugins).
+- **Memory limit** (hard cap to prevent worker OOM impact on host).
+- **Execution time budget** per request (separate from IPC timeout).
+- **Allowed path allowlist** (restrict reads to plugin directory + explicit folders).
+- **Network destination allowlist** (host/IP/port filtering, not only on/off).
+- **Process creation control** (forbid spawning child processes from worker).
+- **Environment variable allowlist** (avoid leaking host secrets).
+- **System call profile selection** (Linux seccomp policy presets).
+
 ## Build from source
 
 The solution targets **.NET 9** for development. To build locally:
