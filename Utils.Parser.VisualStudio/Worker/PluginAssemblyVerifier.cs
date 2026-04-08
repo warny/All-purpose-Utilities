@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 using Utils.Reflection.ProcessIsolation;
@@ -131,57 +130,6 @@ internal static class PluginAssemblyVerifier
     [SupportedOSPlatform("windows")]
     private static bool HasValidAuthenticode(string filePath)
     {
-        IntPtr fileInfoPtr = IntPtr.Zero;
-        try
-        {
-            var fileInfo = new WindowsNativeMethods.WINTRUST_FILE_INFO
-            {
-                cbStruct = (uint)Marshal.SizeOf<WindowsNativeMethods.WINTRUST_FILE_INFO>(),
-                pcwszFilePath = filePath,
-                hFile = IntPtr.Zero,
-                pgKnownSubject = IntPtr.Zero,
-            };
-
-            fileInfoPtr = Marshal.AllocHGlobal(Marshal.SizeOf<WindowsNativeMethods.WINTRUST_FILE_INFO>());
-            Marshal.StructureToPtr(fileInfo, fileInfoPtr, fDeleteOld: false);
-
-            var data = new WindowsNativeMethods.WINTRUST_DATA
-            {
-                cbStruct = (uint)Marshal.SizeOf<WindowsNativeMethods.WINTRUST_DATA>(),
-                pPolicyCallbackData = IntPtr.Zero,
-                pSIPClientData = IntPtr.Zero,
-                dwUIChoice = WindowsNativeMethods.WTD_UI_NONE,
-                fdwRevocationChecks = WindowsNativeMethods.WTD_REVOKE_NONE,
-                dwUnionChoice = WindowsNativeMethods.WTD_CHOICE_FILE,
-                pUnion = fileInfoPtr,
-                dwStateAction = WindowsNativeMethods.WTD_STATEACTION_VERIFY,
-                hWVTStateData = IntPtr.Zero,
-                pwszURLReference = IntPtr.Zero,
-                dwProvFlags = 0,
-                dwUIContext = 0,
-            };
-
-            var actionId = WindowsNativeMethods.WINTRUST_ACTION_GENERIC_VERIFY_V2;
-            var hWnd = new IntPtr(-1); // INVALID_HANDLE_VALUE — suppress all UI
-
-            int result = WindowsNativeMethods.WinVerifyTrust(hWnd, ref actionId, ref data);
-
-            // Always close the state handle to free resources allocated by WinVerifyTrust.
-            data.dwStateAction = WindowsNativeMethods.WTD_STATEACTION_CLOSE;
-            WindowsNativeMethods.WinVerifyTrust(hWnd, ref actionId, ref data);
-
-            return result == 0; // ERROR_SUCCESS
-        }
-        catch
-        {
-            return false;
-        }
-        finally
-        {
-            if (fileInfoPtr != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(fileInfoPtr);
-            }
-        }
+        return ProcessIsolationPlatformSecurity.HasValidAuthenticodeSignature(filePath);
     }
 }

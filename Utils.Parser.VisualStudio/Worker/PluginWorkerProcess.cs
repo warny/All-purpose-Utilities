@@ -168,20 +168,10 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     [SupportedOSPlatform("windows")]
     private static void VerifyPipeClient(NamedPipeServerStream pipe, Process expectedWorker)
     {
-        IntPtr pipeHandle = pipe.SafePipeHandle.DangerousGetHandle();
-
-        if (!WindowsNativeMethods.GetNamedPipeClientProcessId(pipeHandle, out uint clientPid))
+        if (!ProcessIsolationPlatformSecurity.IsExpectedNamedPipeClient(pipe, expectedWorker.Id))
         {
             throw new InvalidOperationException(
-                "GetNamedPipeClientProcessId failed: could not verify the identity of the " +
-                $"process connected to the plugin pipe (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}).");
-        }
-
-        if ((int)clientPid != expectedWorker.Id)
-        {
-            throw new InvalidOperationException(
-                $"Security violation: PID {clientPid} connected to the plugin pipe but " +
-                $"the expected worker PID is {expectedWorker.Id}. The connection was rejected.");
+                "Security violation: unexpected process connected to the plugin pipe.");
         }
     }
 
@@ -242,24 +232,27 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// </summary>
     private NamedPipeServerStream CreateServerPipe(string pipeName)
     {
-        if (!OperatingSystem.IsWindows() || sandbox is not AppContainerSandbox appContainerSandbox)
+        if (!OperatingSystem.IsWindows() ||
+            sandbox is null ||
+            !sandbox.TryGetSecurityIdentifier(out System.Security.Principal.SecurityIdentifier? securityIdentifier) ||
+            securityIdentifier is null)
         {
             return new NamedPipeServerStream(
                 pipeName, PipeDirection.InOut, maxNumberOfServerInstances: 1,
                 PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         }
 
-        return CreateSecuredServerPipe(pipeName, appContainerSandbox);
+        return CreateSecuredServerPipe(pipeName, securityIdentifier);
     }
 
     [SupportedOSPlatform("windows")]
     private static NamedPipeServerStream CreateSecuredServerPipe(
         string pipeName,
-        AppContainerSandbox appContainerSandbox)
+        System.Security.Principal.SecurityIdentifier securityIdentifier)
     {
         var pipeSecurity = new PipeSecurity();
         pipeSecurity.AddAccessRule(new PipeAccessRule(
-            appContainerSandbox.GetContainerSid(),
+            securityIdentifier,
             PipeAccessRights.ReadWrite,
             System.Security.AccessControl.AccessControlType.Allow));
         pipeSecurity.AddAccessRule(new PipeAccessRule(

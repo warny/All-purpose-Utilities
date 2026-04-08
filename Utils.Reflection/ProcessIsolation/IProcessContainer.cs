@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace Utils.Reflection.ProcessIsolation;
 
@@ -24,4 +25,11 @@ public interface IProcessContainer : IDisposable
     /// </summary>
     /// <param name="directoryPath">Directory that should become readable for the child process.</param>
     void GrantDirectoryReadAccess(string directoryPath);
+
+    /// <summary>
+    /// Returns the security identifier used for IPC ACL hardening when available.
+    /// </summary>
+    /// <param name="securityIdentifier">Resolved security identifier.</param>
+    /// <returns><see langword="true"/> when a security identifier is available.</returns>
+    bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier);
 }

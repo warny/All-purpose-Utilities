@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Principal;
 
 namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
 /// Linux process container backed by <c>bwrap</c> (bubblewrap) when available.
 /// </summary>
-public sealed class LinuxBubblewrapContainer : IProcessContainer
+internal sealed class LinuxBubblewrapContainer : IProcessContainer
 {
     private const string BubblewrapExecutableName = "bwrap";
     private readonly ProcessContainerPermissions permissions;
@@ -122,5 +123,16 @@ public sealed class LinuxBubblewrapContainer : IProcessContainer
     /// </summary>
     public void Dispose()
     {
+    }
+
+    /// <summary>
+    /// Linux bubblewrap container does not expose a SID-style identifier for Windows ACLs.
+    /// </summary>
+    /// <param name="securityIdentifier">Always <see langword="null"/>.</param>
+    /// <returns>Always <see langword="false"/>.</returns>
+    public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
+    {
+        securityIdentifier = null;
+        return false;
     }
 }

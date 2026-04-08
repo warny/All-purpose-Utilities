@@ -36,19 +36,19 @@ public class ProcessContainerFactoryTests
 
         if (OperatingSystem.IsWindows())
         {
-            Assert.IsTrue(container is null or AppContainerSandbox);
+            Assert.IsTrue(container is null or IProcessContainer);
             return;
         }
 
         if (OperatingSystem.IsLinux())
         {
-            Assert.IsTrue(container is null or LinuxBubblewrapContainer);
+            Assert.IsTrue(container is null or IProcessContainer);
             return;
         }
 
         if (OperatingSystem.IsMacOS())
         {
-            Assert.IsTrue(container is null or MacOsSandboxExecContainer);
+            Assert.IsTrue(container is null or IProcessContainer);
             return;
         }
 

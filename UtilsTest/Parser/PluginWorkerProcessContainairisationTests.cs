@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Principal;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -134,6 +135,17 @@ public class PluginWorkerProcessContainairisationTests
         /// </summary>
         public void Dispose()
         {
+        }
+
+        /// <summary>
+        /// Test double does not expose a security identifier.
+        /// </summary>
+        /// <param name="securityIdentifier">Always <see langword="null"/>.</param>
+        /// <returns>Always <see langword="false"/>.</returns>
+        public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
+        {
+            securityIdentifier = null;
+            return false;
         }
     }
 }

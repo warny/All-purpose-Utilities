@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
 /// macOS process container backed by <c>sandbox-exec</c> when available.
 /// </summary>
-public sealed class MacOsSandboxExecContainer : IProcessContainer
+internal sealed class MacOsSandboxExecContainer : IProcessContainer
 {
     private const string SandboxExecutableName = "sandbox-exec";
     private readonly ProcessContainerPermissions permissions;
@@ -79,6 +80,17 @@ public sealed class MacOsSandboxExecContainer : IProcessContainer
     /// </summary>
     public void Dispose()
     {
+    }
+
+    /// <summary>
+    /// macOS sandbox-exec container does not expose a SID-style identifier for Windows ACLs.
+    /// </summary>
+    /// <param name="securityIdentifier">Always <see langword="null"/>.</param>
+    /// <returns>Always <see langword="false"/>.</returns>
+    public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
+    {
+        securityIdentifier = null;
+        return false;
     }
 
     /// <summary>

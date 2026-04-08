@@ -34,7 +34,7 @@ namespace Utils.Reflection.ProcessIsolation;
 /// </para>
 /// </remarks>
 [SupportedOSPlatform("windows")]
-public sealed class AppContainerSandbox : IProcessContainer
+internal sealed class AppContainerSandbox : IProcessContainer
 {
     private readonly IntPtr containerSid;
     private readonly IntPtr jobObjectHandle;
@@ -104,6 +104,17 @@ public sealed class AppContainerSandbox : IProcessContainer
         byte[] bytes = new byte[len];
         Marshal.Copy(containerSid, bytes, 0, len);
         return new SecurityIdentifier(bytes, 0);
+    }
+
+    /// <summary>
+    /// Returns the AppContainer SID for IPC ACL hardening.
+    /// </summary>
+    /// <param name="securityIdentifier">Resolved AppContainer SID.</param>
+    /// <returns>Always <see langword="true"/>.</returns>
+    public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
+    {
+        securityIdentifier = GetContainerSid();
+        return true;
     }
 
     /// <summary>
