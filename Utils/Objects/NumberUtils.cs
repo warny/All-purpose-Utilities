@@ -33,6 +33,49 @@ public static class NumberUtils
     private static bool IsNumeric(Type t) => t.IsDefinedBy(typeof(INumber<>));
 
     /// <summary>
+    /// Checks whether the given CLR <paramref name="type"/> is one of the native numeric primitives.
+    /// This helper intentionally targets built-in numeric types and is distinct from
+    /// generic math interface checks such as <see cref="INumber{TSelf}"/>.
+    /// </summary>
+    /// <param name="type">CLR type to test.</param>
+    /// <returns><c>true</c> when the type is a native numeric primitive; otherwise <c>false</c>.</returns>
+    public static bool IsNativeNumericType(Type type)
+    {
+        Type effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+        return effectiveType == typeof(byte)
+            || effectiveType == typeof(sbyte)
+            || effectiveType == typeof(short)
+            || effectiveType == typeof(ushort)
+            || effectiveType == typeof(int)
+            || effectiveType == typeof(uint)
+            || effectiveType == typeof(long)
+            || effectiveType == typeof(ulong)
+            || effectiveType == typeof(float)
+            || effectiveType == typeof(double)
+            || effectiveType == typeof(decimal);
+    }
+
+    /// <summary>
+    /// Checks whether the given CLR <paramref name="type"/> is one of the native integral primitives.
+    /// This helper intentionally targets built-in integer types and is distinct from
+    /// generic math interface checks such as <see cref="IBinaryInteger{TSelf}"/>.
+    /// </summary>
+    /// <param name="type">CLR type to test.</param>
+    /// <returns><c>true</c> when the type is a native integral primitive; otherwise <c>false</c>.</returns>
+    public static bool IsNativeIntegerType(Type type)
+    {
+        Type effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+        return effectiveType == typeof(byte)
+            || effectiveType == typeof(sbyte)
+            || effectiveType == typeof(short)
+            || effectiveType == typeof(ushort)
+            || effectiveType == typeof(int)
+            || effectiveType == typeof(uint)
+            || effectiveType == typeof(long)
+            || effectiveType == typeof(ulong);
+    }
+
+    /// <summary>
     /// Checks whether the given <paramref name="value"/> is integral,
     /// i.e. it implements <see cref="IBinaryInteger{TSelf}"/>.
     /// </summary>

@@ -51,6 +51,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.VisualStudio",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.VisualStudio.Worker", "Utils.Parser.VisualStudio.Worker\Utils.Parser.VisualStudio.Worker.csproj", "{4714446A-F112-419E-B5B1-866140CB81B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Expressions.CLike", "Utils.Expressions.CLike\Utils.Expressions.CLike.csproj", "{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.NumberToString", "Utils.NumberToString\Utils.NumberToString.csproj", "{D4577012-26E4-436E-A3CB-2924D09D9F85}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -494,6 +498,42 @@ Global
 		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x64.Build.0 = Release|Any CPU
 		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x86.ActiveCfg = Release|Any CPU
 		{4714446A-F112-419E-B5B1-866140CB81B1}.Release|x86.Build.0 = Release|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Debug|x64.Build.0 = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Debug|x86.Build.0 = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.GitHub|x64.Build.0 = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.GitHub|x86.Build.0 = Debug|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Release|x64.ActiveCfg = Release|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Release|x64.Build.0 = Release|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Release|x86.ActiveCfg = Release|Any CPU
+		{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}.Release|x86.Build.0 = Release|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Debug|x86.Build.0 = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.GitHub|x64.Build.0 = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.GitHub|x86.Build.0 = Debug|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Release|x64.Build.0 = Release|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Release|x86.ActiveCfg = Release|Any CPU
+		{D4577012-26E4-436E-A3CB-2924D09D9F85}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

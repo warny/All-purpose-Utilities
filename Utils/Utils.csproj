@@ -54,36 +54,26 @@
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+		<PackageTags>omy;utilities;helpers;collections;expressions;streams;security;reflection</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<Compile Remove="Globalization\**" />
+		<Compile Remove="Mathematics\NumberToStringConverter.cs" />
+		<Compile Remove="Mathematics\NumberToStringConverter.Globalization.cs" />
+		<Compile Remove="Mathematics\INumberToStringConverter.cs" />
+		<Compile Remove="Mathematics\NumberConverterConfiguration.cs" />
+		<Compile Remove="Mathematics\NumberConverterResources.Designer.cs" />
 		<EmbeddedResource Remove="Globalization\**" />
+		<EmbeddedResource Remove="Mathematics\NumberConverterResources.resx" />
 		<None Remove="Globalization\**" />
 	</ItemGroup>
 
 	<ItemGroup>
-	</ItemGroup>
-
-        <ItemGroup>
+		<ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
                 <PackageReference Include="System.Runtime" Version="4.3.1" />
                 <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
         </ItemGroup>
-
-        <ItemGroup>
-                <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
-                        <DesignTime>True</DesignTime>
-                        <AutoGen>True</AutoGen>
-                        <DependentUpon>NumberConverterResources.resx</DependentUpon>
-		</Compile>
-	</ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Update="Mathematics\NumberConverterResources.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
-		</EmbeddedResource>
-	</ItemGroup>
 
 	<ItemGroup>
 		<None Include="Objects\DateFormulaConfigurations\DateFormulaConfiguration.json">
