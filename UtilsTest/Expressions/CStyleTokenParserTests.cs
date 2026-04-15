@@ -88,17 +88,19 @@ public class CStyleTokenParserTests
     /// Ensures control-flow keyword grammars parse typical C-style instructions.
     /// </summary>
     [TestMethod]
-    public void ParseSupportsIfForWhileAndDoWhileInstructions()
+    public void ParseSupportsIfForForeachWhileAndDoWhileInstructions()
     {
         var parser = new CStyleTokenParser();
 
         ParseNode ifNode = parser.Parse("if (a < b) result = a else result = b");
         ParseNode forNode = parser.Parse("for (i = 0; i < 10; i = i + 1) total = total + i");
+        ParseNode foreachNode = parser.Parse("foreach (int item in values) total = total + item");
         ParseNode whileNode = parser.Parse("while (ready) counter = counter - 1");
         ParseNode doWhileNode = parser.Parse("do counter = counter + 1 while (counter < 10);");
 
         Assert.IsFalse(ifNode is ErrorNode);
         Assert.IsFalse(forNode is ErrorNode);
+        Assert.IsFalse(foreachNode is ErrorNode);
         Assert.IsFalse(whileNode is ErrorNode);
         Assert.IsFalse(doWhileNode is ErrorNode);
     }

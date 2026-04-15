@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
@@ -99,7 +100,8 @@ public class CStyleExpressionCompilerTests
         context.Set("add", (Func<double, double, double>)((a, b) => a + b));
 
         Expression invocation = compiler.Compile("add(2, 3)", context);
-        Assert.AreEqual(typeof(Func<double, double, double>), invocation.Type);
+        Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(invocation, typeof(double))).Compile();
+        Assert.AreEqual(5d, lambda());
     }
 
     /// <summary>
@@ -113,7 +115,8 @@ public class CStyleExpressionCompilerTests
         context.Set("increment", (Func<double, double>)(x => x + 1d));
 
         Expression invocation = compiler.Compile("increment(41)", context);
-        Assert.AreEqual(typeof(Func<double, double>), invocation.Type);
+        Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(invocation, typeof(double))).Compile();
+        Assert.AreEqual(42d, lambda());
     }
 
     /// <summary>
@@ -135,61 +138,57 @@ public class CStyleExpressionCompilerTests
     }
 
     /// <summary>
-    /// Ensures unsupported control structures currently fail with a compilation exception.
+    /// Ensures a <c>for</c> loop compiles into an expression node through <see cref="ExpressionEx.For"/>.
     /// </summary>
-    /// <param name="source">The source snippet containing an unsupported control-flow construct.</param>
-    [DataTestMethod]
-    [DataRow("for (i = 0; i < 3; i = i + 1) i")]
-    [DataRow("foreach (item in values) item")]
-    public void Compile_UnsupportedControlStructures_Throws(string source)
+    [TestMethod]
+    public void Compile_ForLoop_ProducesExpressionNode()
     {
         var compiler = new CStyleExpressionCompiler();
         var context = new CStyleCompilerContext();
-        context.Set("i", Expression.Parameter(typeof(double), "i"));
-        context.Set("values", new[] { 1d, 2d, 3d });
-        context.Set("item", 0d);
+        ParameterExpression iterator = Expression.Variable(typeof(int), "i");
+        ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
+        context.Set("i", iterator);
+        context.Set("sum", accumulator);
 
-        try
-        {
-            compiler.Compile(source, context);
-            Assert.Fail("Expected compilation to fail for unsupported control structure.");
-        }
-        catch (Exception)
-        {
-            // Expected: unsupported construct.
-        }
+        Expression loop = compiler.Compile("for (i = 0; i < 4; i = i + 1) sum = sum + i", context);
+        Assert.IsNotNull(loop);
     }
 
     /// <summary>
-    /// Ensures member-access structures that are not yet supported fail with clear exceptions.
+    /// Ensures a <c>foreach</c> loop compiles into an expression node through <see cref="ExpressionEx.ForEach"/>.
+    /// </summary>
+    [TestMethod]
+    public void Compile_ForeachLoop_ProducesExpressionNode()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        var context = new CStyleCompilerContext();
+        ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
+        ParameterExpression iterator = Expression.Variable(typeof(int), "item");
+        context.Set("sum", accumulator);
+        context.Set("item", iterator);
+        context.Set("values", new[] { 1, 2, 3, 4 });
+
+        Expression loop = compiler.Compile("foreach (int item in values) sum = sum + item", context);
+        Assert.IsNotNull(loop);
+    }
+
+    /// <summary>
+    /// Ensures member and indexer access structures compile successfully.
     /// </summary>
     /// <param name="source">The source snippet containing member/indexer access.</param>
     [DataTestMethod]
     [DataRow("sample.Field")]
     [DataRow("sample.Property")]
     [DataRow("sample.Method()")]
-    public void Compile_UnsupportedMemberAccess_ThrowsInvalidOperation(string source)
+    [DataRow("sample[0]")]
+    public void Compile_MemberAccess_CompilesSuccessfully(string source)
     {
         var compiler = new CStyleExpressionCompiler();
         var context = new CStyleCompilerContext();
         context.Set("sample", new SampleContainer());
 
-        Assert.ThrowsException<InvalidOperationException>(() => compiler.Compile(source, context));
-    }
-
-    /// <summary>
-    /// Ensures indexer access currently falls back to the base symbol expression.
-    /// </summary>
-    [TestMethod]
-    public void Compile_IndexerAccess_CurrentlyReturnsBaseSymbolExpression()
-    {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
-        context.Set("sample", new SampleContainer());
-
-        Expression expression = compiler.Compile("sample[0]", context);
-
-        Assert.AreEqual(typeof(SampleContainer), expression.Type);
+        Expression expression = compiler.Compile(source, context);
+        Assert.IsNotNull(expression);
     }
 
     /// <summary>

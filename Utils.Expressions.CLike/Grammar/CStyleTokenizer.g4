@@ -3,6 +3,7 @@ grammar CStyleTokenizer;
 instruction
     : if_instruction
     | for_instruction
+    | foreach_instruction
     | while_instruction
     | do_while_instruction
     | switch_instruction
@@ -90,6 +91,10 @@ if_instruction
 
 for_instruction
     : FOR OPEN_PAREN instruction? SEMICOLON instruction? SEMICOLON instruction? CLOSE_PAREN instruction
+    ;
+
+foreach_instruction
+    : FOREACH OPEN_PAREN (type_reference)? identifier IN instruction CLOSE_PAREN instruction
     ;
 
 while_instruction

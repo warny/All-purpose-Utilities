@@ -159,14 +159,20 @@ public static class ExpressionEx
         breakLoop ??= Expression.Label("__break__");
         continueLoop ??= Expression.Label("__continue__");
 
-        Type enumerableType = enumerable.Type.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == typeof(IEnumerable<>)) ?? enumerable.Type.GetInterfaces().FirstOrDefault(i => i == typeof(IEnumerable));
-        if (enumerableType != null) throw new InvalidOperationException($"{enumerable.Type} type is not enumerable");
+        Type enumerableType = enumerable.Type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            ?? enumerable.Type.GetInterfaces().FirstOrDefault(i => i == typeof(IEnumerable))
+            ?? throw new InvalidOperationException($"{enumerable.Type} type is not enumerable");
 
         var enumerableTyped = Expression.Variable(enumerableType, "__enumerable__");
         var getEnumeratorExpression = CreateExpressionCall(enumerableTyped, "GetEnumerator");
         var enumerator = Expression.Variable(getEnumeratorExpression.Type, "__enumerator__");
 
-        var iterateExpression = CreateExpressionCall(enumerator, "MoveNext");
+        var iterateExpression = Expression.Call(
+            Expression.Convert(enumerator, typeof(IEnumerator)),
+            typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext))!);
+        var currentExpression = Expression.Property(
+            Expression.Convert(enumerator, typeof(IEnumerator)),
+            nameof(IEnumerator.Current));
 
         return Expression.Block(
             [enumerableTyped, iterator, enumerator],
@@ -175,7 +181,7 @@ public static class ExpressionEx
             Expression.Loop(
                 Expression.Block(
                     Expression.IfThen(Expression.Not(iterateExpression), Expression.Goto(breakLoop)),
-                    Expression.Assign(iterator, Expression.Convert(CreateExpressionCall(enumerator, "Current"), iterator.Type)),
+                    Expression.Assign(iterator, Expression.Convert(currentExpression, iterator.Type)),
                     iteration
                 ),
                 breakLoop,
@@ -273,7 +279,7 @@ public static class ExpressionEx
     /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
     /// <returns>An <see cref="Expression"/> representing the member access.</returns>
     public static Expression CreateMemberExpression(Expression expression, string memberName, params Expression[] arguments)
-    => CreateMemberExpression(expression, memberName, BindingFlags.Public);
+    => CreateMemberExpression(expression, memberName, BindingFlags.Public, arguments);
 
     /// <summary>
     /// Creates an expression accessing a member on an instance using explicit binding flags.
@@ -377,7 +383,7 @@ public static class ExpressionEx
     /// <param name="arguments">Arguments used for indexed properties or method invocations.</param>
     /// <returns>An <see cref="Expression"/> representing the member access.</returns>
     public static Expression CreateStaticExpression(Type type, string memberName, params Expression[] arguments)
-        => CreateStaticExpression(type, memberName, BindingFlags.Public);
+        => CreateStaticExpression(type, memberName, BindingFlags.Public, arguments);
 
     /// <summary>
     /// Creates an expression accessing a static member using explicit binding flags.
@@ -436,7 +442,7 @@ public static class ExpressionEx
         if (replacementTypes.Length != typeToReplace.Length) return false;
         for (int i = 0; i < replacementTypes.Length; i++)
         {
-            if (!typeToReplace[i].IsAssignableFrom(replacementTypes[i])) return false;
+            if (!replacementTypes[i].IsAssignableFrom(typeToReplace[i])) return false;
         }
         return true;
     }

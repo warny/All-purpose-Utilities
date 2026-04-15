@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
 
@@ -107,8 +108,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("FALSE", (_, _) => Expression.Constant(false))
             .OnAscend("NULL", (_, _) => Expression.Constant(null))
             .OnAscend("STRING_LITERAL", (nav, _) => Expression.Constant(ParseStringLiteral(nav.Token!.Text)))
-            .OnAscend("IDENTIFIER", (nav, ctx) => ResolveIdentifier(ctx, nav.Token!.Text))
-            .OnAscend("identifier_part", (nav, _, children) => CompileIdentifierPart(nav, children))
+            .OnAscend("identifier_part", CompileIdentifierPart)
             .OnAscend("operation_or", CompileLogicalOr)
             .OnAscend("operation_and", CompileLogicalAnd)
             .OnAscend("operation_equality", CompileEquality)
@@ -120,6 +120,11 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("operation_unary", CompileUnary)
             .OnAscend("assignment_instruction", CompileAssignment)
             .OnAscend("invocation_instruction", CompileInvocation)
+            .OnAscend("if_instruction", CompileIfInstruction)
+            .OnAscend("for_instruction", CompileForInstruction)
+            .OnAscend("foreach_instruction", CompileForeachInstruction)
+            .OnAscend("while_instruction", CompileWhileInstruction)
+            .OnAscend("do_while_instruction", CompileDoWhileInstruction)
             .OnAscend("method_declaration", CompileMethodDeclaration)
             .OnAscend("block_instruction", CompileBlock)
             .DefaultAscend((_, _, children) => children.FirstOrDefault(static child => child is not null));
@@ -176,10 +181,21 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// <param name="nav">Current parser navigator.</param>
     /// <param name="children">Compiled child expressions.</param>
     /// <returns>Compiled identifier expression.</returns>
-    private static Expression? CompileIdentifierPart(ParseTreeNavigator nav, IReadOnlyList<Expression?> children)
+    private static Expression? CompileIdentifierPart(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
     {
-        // identifier_part := identifier_atom identifier_suffix*
-        return children.FirstOrDefault(static child => child is not null);
+        string expressionText = GetNodeSourceText(context, nav).Trim();
+        if (string.IsNullOrWhiteSpace(expressionText))
+        {
+            return children.FirstOrDefault(static child => child is not null);
+        }
+
+        char firstCharacter = expressionText[0];
+        if (!(char.IsLetter(firstCharacter) || firstCharacter == '_'))
+        {
+            return children.FirstOrDefault(static child => child is not null);
+        }
+
+        return CompileIdentifierExpression(expressionText, context);
     }
 
     /// <summary>
@@ -410,6 +426,12 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// <returns>Compiled invocation expression.</returns>
     private static Expression? CompileInvocation(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
     {
+        Expression? directInvocation = children.FirstOrDefault(static child => child is not null);
+        if (directInvocation is not null)
+        {
+            return directInvocation;
+        }
+
         string invocationText = GetNodeSourceText(context, nav);
         int openParenIndex = invocationText.IndexOf('(');
         int closeParenIndex = invocationText.LastIndexOf(')');
@@ -442,6 +464,165 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         }
 
         throw new InvalidOperationException($"Unknown invokable symbol '{calleeName}'.");
+    }
+
+    /// <summary>
+    /// Compiles an <c>if</c>/<c>else</c> control structure.
+    /// </summary>
+    /// <param name="nav">Current parser navigator.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <param name="children">Compiled child expressions.</param>
+    /// <returns>Conditional expression.</returns>
+    private static Expression? CompileIfInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        List<Expression> expressions = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        if (expressions.Count < 2)
+        {
+            return expressions.FirstOrDefault();
+        }
+
+        Expression test = EnsureBoolean(expressions[0]);
+        Expression whenTrue = expressions[1];
+        if (expressions.Count < 3)
+        {
+            return Expression.IfThen(test, whenTrue);
+        }
+
+        Expression whenFalse = expressions[2];
+        if (whenTrue.Type == whenFalse.Type)
+        {
+            return Expression.Condition(test, whenTrue, whenFalse);
+        }
+
+        if (whenTrue.Type == typeof(void) || whenFalse.Type == typeof(void))
+        {
+            return Expression.IfThenElse(test, EnsureVoidCompatible(whenTrue), EnsureVoidCompatible(whenFalse));
+        }
+
+        return Expression.Condition(test, whenTrue, ConvertIfNeeded(whenFalse, whenTrue.Type));
+    }
+
+    /// <summary>
+    /// Compiles a <c>while</c> loop structure.
+    /// </summary>
+    private static Expression? CompileWhileInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        List<Expression> expressions = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        if (expressions.Count < 2)
+        {
+            return expressions.FirstOrDefault();
+        }
+
+        return ExpressionEx.While(EnsureBoolean(expressions[0]), expressions[1]);
+    }
+
+    /// <summary>
+    /// Compiles a <c>do...while</c> loop structure.
+    /// </summary>
+    private static Expression? CompileDoWhileInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        List<Expression> expressions = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        if (expressions.Count < 2)
+        {
+            return expressions.FirstOrDefault();
+        }
+
+        return ExpressionEx.Do(EnsureBoolean(expressions[1]), expressions[0]);
+    }
+
+    /// <summary>
+    /// Compiles a <c>for</c> loop structure.
+    /// </summary>
+    private static Expression? CompileForInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        string source = GetNodeSourceText(context, nav);
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            source = FlattenNodeText(nav.Node);
+        }
+        if (!source.Contains('('))
+        {
+            source = context.SourceText;
+        }
+
+        (string header, string bodySource) = ExtractLoopHeaderAndBody(source);
+        List<string> headerParts = SplitTopLevel(header, ';').Select(static p => p.Trim()).ToList();
+        while (headerParts.Count < 3)
+        {
+            headerParts.Add(string.Empty);
+        }
+
+        Expression initExpression = headerParts[0].Length == 0
+            ? Expression.Constant(0d)
+            : CompileSubExpression(headerParts[0], context, null);
+        Expression testExpression = headerParts[1].Length == 0
+            ? Expression.Constant(true)
+            : EnsureBoolean(CompileSubExpression(headerParts[1], context, null));
+        Expression[] nextExpressions = headerParts[2].Length == 0
+            ? []
+            : [CompileSubExpression(headerParts[2], context, null)];
+        Expression bodyExpression = bodySource.Length == 0
+            ? Expression.Empty()
+            : CompileSubExpression(bodySource, context, null);
+
+        Type iteratorType = initExpression.Type == typeof(void) ? typeof(double) : initExpression.Type;
+        ParameterExpression iterator = Expression.Variable(iteratorType, "__for_iterator__");
+        Expression initValue = initExpression.Type == iteratorType
+            ? initExpression
+            : ConvertIfNeeded(initExpression, iteratorType);
+
+        return ExpressionEx.For(iterator, initValue, testExpression, nextExpressions, bodyExpression);
+    }
+
+    /// <summary>
+    /// Compiles a <c>foreach</c> loop structure.
+    /// </summary>
+    private static Expression? CompileForeachInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        string source = GetNodeSourceText(context, nav);
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            source = FlattenNodeText(nav.Node);
+        }
+        if (!source.Contains('('))
+        {
+            source = context.SourceText;
+        }
+
+        (string header, string bodySource) = ExtractLoopHeaderAndBody(source);
+        int inIndex = header.IndexOf(" in ", StringComparison.Ordinal);
+        if (inIndex < 0)
+        {
+            throw new InvalidOperationException("Unable to parse foreach header.");
+        }
+
+        string leftPart = header[..inIndex].Trim();
+        string enumerableSource = header[(inIndex + 4)..].Trim();
+        string[] iteratorParts = leftPart.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (iteratorParts.Length == 0)
+        {
+            throw new InvalidOperationException("Unable to parse foreach iterator.");
+        }
+
+        string iteratorName = iteratorParts[^1];
+        Expression enumerableExpression = CompileSubExpression(enumerableSource, context, null);
+        Type iteratorType = iteratorParts.Length > 1 && iteratorParts[0] != "var"
+            ? ResolveNativeType(iteratorParts[0])
+            : ResolveEnumerableElementType(enumerableExpression.Type);
+        ParameterExpression iterator = Expression.Variable(iteratorType, iteratorName);
+        ParameterExpression enumerableVariable = Expression.Variable(enumerableExpression.Type, "__foreach_source__");
+        Expression body = bodySource.Length == 0
+            ? Expression.Empty()
+            : CompileSubExpression(bodySource, context, new Dictionary<string, Expression>(StringComparer.Ordinal)
+            {
+                [iteratorName] = iterator,
+            });
+
+        Expression foreachBody = ExpressionEx.ForEach(iterator, enumerableVariable, body);
+        return Expression.Block(
+            [enumerableVariable],
+            Expression.Assign(enumerableVariable, enumerableExpression),
+            foreachBody);
     }
 
     /// <summary>
@@ -693,6 +874,123 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     }
 
     /// <summary>
+    /// Compiles a chained identifier/member/indexer/invocation expression.
+    /// </summary>
+    /// <param name="expressionText">Expression text to compile.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <returns>Compiled expression.</returns>
+    private static Expression CompileIdentifierExpression(string expressionText, CompilationContext context)
+    {
+        int index = 0;
+        SkipWhitespace(expressionText, ref index);
+        string identifier = ReadIdentifier(expressionText, ref index);
+        Expression current = ResolveIdentifier(context, identifier);
+
+        while (index < expressionText.Length)
+        {
+            SkipWhitespace(expressionText, ref index);
+            if (index >= expressionText.Length)
+            {
+                break;
+            }
+
+            if (expressionText[index] == '.')
+            {
+                index++;
+                string memberName = ReadIdentifier(expressionText, ref index);
+                SkipWhitespace(expressionText, ref index);
+                if (index < expressionText.Length && expressionText[index] == '(')
+                {
+                    string argumentText = ReadBalancedContent(expressionText, ref index, '(', ')');
+                    Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
+                    current = ExpressionEx.CreateMemberExpression(current, memberName, BindingFlags.Public | BindingFlags.IgnoreCase, arguments);
+                    continue;
+                }
+
+                current = ExpressionEx.CreateMemberExpression(current, memberName, BindingFlags.Public | BindingFlags.IgnoreCase);
+                continue;
+            }
+
+            if (expressionText[index] == '[')
+            {
+                string argumentText = ReadBalancedContent(expressionText, ref index, '[', ']');
+                Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
+                current = ExpressionEx.CreateMemberExpression(current, "Item", BindingFlags.Public | BindingFlags.IgnoreCase, arguments);
+                continue;
+            }
+
+            if (expressionText[index] == '(')
+            {
+                string argumentText = ReadBalancedContent(expressionText, ref index, '(', ')');
+                Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
+                MethodInfo? invokeMethod = current.Type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
+                if (invokeMethod is null)
+                {
+                    throw new InvalidOperationException($"Expression '{current}' is not invokable.");
+                }
+
+                current = Expression.Invoke(current, ConvertArgumentsForParameters(invokeMethod.GetParameters(), arguments));
+                continue;
+            }
+
+            break;
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// Reads an identifier token from source text.
+    /// </summary>
+    /// <param name="text">Source text.</param>
+    /// <param name="index">Read index (updated after read).</param>
+    /// <returns>Identifier text.</returns>
+    private static string ReadIdentifier(string text, ref int index)
+    {
+        int start = index;
+        while (index < text.Length && (char.IsLetterOrDigit(text[index]) || text[index] == '_'))
+        {
+            index++;
+        }
+
+        if (index == start)
+        {
+            throw new InvalidOperationException("Identifier expected.");
+        }
+
+        return text[start..index];
+    }
+
+    /// <summary>
+    /// Advances an index while whitespace characters are found.
+    /// </summary>
+    /// <param name="text">Source text.</param>
+    /// <param name="index">Index to advance.</param>
+    private static void SkipWhitespace(string text, ref int index)
+    {
+        while (index < text.Length && char.IsWhiteSpace(text[index]))
+        {
+            index++;
+        }
+    }
+
+    /// <summary>
+    /// Reads balanced content between delimiters and advances the index past the closing delimiter.
+    /// </summary>
+    /// <param name="text">Source text.</param>
+    /// <param name="index">Current index at opening delimiter.</param>
+    /// <param name="openDelimiter">Opening delimiter.</param>
+    /// <param name="closeDelimiter">Closing delimiter.</param>
+    /// <returns>Inner content between delimiters.</returns>
+    private static string ReadBalancedContent(string text, ref int index, char openDelimiter, char closeDelimiter)
+    {
+        int openIndex = index;
+        int closeIndex = FindMatchingDelimiter(text, openIndex, openDelimiter, closeDelimiter);
+        index = closeIndex + 1;
+        return text[(openIndex + 1)..closeIndex];
+    }
+
+    /// <summary>
     /// Parses invocation argument text into compiled expressions.
     /// </summary>
     /// <param name="argumentSegment">Raw argument segment.</param>
@@ -767,6 +1065,147 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         {
             yield return builder.ToString();
         }
+    }
+
+    /// <summary>
+    /// Compiles a source snippet while preserving the current compilation symbols.
+    /// </summary>
+    /// <param name="source">Source snippet to compile.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <param name="additionalSymbols">Optional symbols that override the current symbol table.</param>
+    /// <returns>Compiled expression.</returns>
+    private static Expression CompileSubExpression(string source, CompilationContext context, IReadOnlyDictionary<string, Expression>? additionalSymbols)
+    {
+        if (context.RuntimeContext is null)
+        {
+            Dictionary<string, Expression> merged = MergeSymbols(context.Symbols, additionalSymbols);
+            return context.Compiler.Compile(source, merged);
+        }
+
+        CStyleCompilerContext derivedContext = new();
+        foreach (KeyValuePair<string, object?> symbol in context.RuntimeContext.Symbols)
+        {
+            derivedContext.Set(symbol.Key, symbol.Value);
+        }
+
+        foreach (KeyValuePair<string, Expression> symbol in context.Symbols)
+        {
+            derivedContext.Set(symbol.Key, symbol.Value);
+        }
+
+        if (additionalSymbols is not null)
+        {
+            foreach (KeyValuePair<string, Expression> symbol in additionalSymbols)
+            {
+                derivedContext.Set(symbol.Key, symbol.Value);
+            }
+        }
+
+        return context.Compiler.Compile(source, derivedContext);
+    }
+
+    /// <summary>
+    /// Merges two symbol dictionaries while letting additional symbols override base symbols.
+    /// </summary>
+    /// <param name="baseSymbols">Base symbol table.</param>
+    /// <param name="additionalSymbols">Additional symbol table.</param>
+    /// <returns>Merged symbol dictionary.</returns>
+    private static Dictionary<string, Expression> MergeSymbols(
+        IReadOnlyDictionary<string, Expression> baseSymbols,
+        IReadOnlyDictionary<string, Expression>? additionalSymbols)
+    {
+        Dictionary<string, Expression> merged = new(baseSymbols, StringComparer.Ordinal);
+        if (additionalSymbols is null)
+        {
+            return merged;
+        }
+
+        foreach (KeyValuePair<string, Expression> symbol in additionalSymbols)
+        {
+            merged[symbol.Key] = symbol.Value;
+        }
+
+        return merged;
+    }
+
+    /// <summary>
+    /// Extracts the parenthesized loop header and body segment from a loop statement.
+    /// </summary>
+    /// <param name="loopSource">Full loop statement source.</param>
+    /// <returns>Tuple of header and body source segments.</returns>
+    private static (string Header, string Body) ExtractLoopHeaderAndBody(string loopSource)
+    {
+        int openParenthesis = loopSource.IndexOf('(');
+        if (openParenthesis < 0)
+        {
+            throw new InvalidOperationException("Loop header is missing.");
+        }
+
+        int closeParenthesis = FindMatchingDelimiter(loopSource, openParenthesis, '(', ')');
+        string header = loopSource[(openParenthesis + 1)..closeParenthesis];
+        string body = loopSource[(closeParenthesis + 1)..].Trim();
+        return (header, body);
+    }
+
+    /// <summary>
+    /// Finds the matching closing delimiter for an opening delimiter.
+    /// </summary>
+    /// <param name="text">Text to inspect.</param>
+    /// <param name="openIndex">Opening delimiter index.</param>
+    /// <param name="openDelimiter">Opening delimiter.</param>
+    /// <param name="closeDelimiter">Closing delimiter.</param>
+    /// <returns>Index of the matching closing delimiter.</returns>
+    private static int FindMatchingDelimiter(string text, int openIndex, char openDelimiter, char closeDelimiter)
+    {
+        int depth = 0;
+        for (int index = openIndex; index < text.Length; index++)
+        {
+            if (text[index] == openDelimiter)
+            {
+                depth++;
+            }
+            else if (text[index] == closeDelimiter)
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    return index;
+                }
+            }
+        }
+
+        throw new InvalidOperationException("Unable to find matching delimiter.");
+    }
+
+    /// <summary>
+    /// Ensures an expression can be safely used as a void branch.
+    /// </summary>
+    /// <param name="expression">Branch expression.</param>
+    /// <returns>Void-compatible expression.</returns>
+    private static Expression EnsureVoidCompatible(Expression expression)
+        => expression.Type == typeof(void) ? expression : Expression.Block(expression, Expression.Empty());
+
+    /// <summary>
+    /// Resolves the iterator element type for an enumerable type.
+    /// </summary>
+    /// <param name="enumerableType">Enumerable CLR type.</param>
+    /// <returns>Resolved element type.</returns>
+    private static Type ResolveEnumerableElementType(Type enumerableType)
+    {
+        if (enumerableType.IsArray)
+        {
+            return enumerableType.GetElementType()!;
+        }
+
+        Type? genericEnumerable = enumerableType
+            .GetInterfaces()
+            .FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+        if (genericEnumerable is not null)
+        {
+            return genericEnumerable.GetGenericArguments()[0];
+        }
+
+        return typeof(object);
     }
 
     /// <summary>
@@ -1198,6 +1637,11 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         if (expression.Type == targetType)
         {
             return expression;
+        }
+
+        if (ExpressionEx.TryGetConverter(targetType, expression, out Expression? converter))
+        {
+            return converter;
         }
 
         return Expression.Convert(expression, targetType);
