@@ -12,7 +12,7 @@ namespace Utils.Expressions.CLike.Runtime;
 /// Compiles C-like parse trees into LINQ expression trees by using
 /// <see cref="ParseTreeCompiler{TContext, TResult}"/>.
 /// </summary>
-public sealed class CStyleExpressionCompiler
+public sealed class CStyleExpressionCompiler : IExpressionCompiler
 {
     private readonly CStyleTokenParser _parser = new();
 
