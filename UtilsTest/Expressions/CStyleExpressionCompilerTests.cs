@@ -64,29 +64,36 @@ public class CStyleExpressionCompilerTests
     }
 
     /// <summary>
-    /// Ensures that explicit function declaration syntax is currently rejected by the compiler.
+    /// Ensures that explicit function declaration syntax can be compiled.
     /// </summary>
     [TestMethod]
-    public void Compile_FunctionDeclaration_CurrentlyThrows()
+    public void Compile_FunctionDeclaration_Compiles()
     {
         var compiler = new CStyleExpressionCompiler();
         var context = new CStyleCompilerContext();
-
-        Assert.ThrowsException<InvalidOperationException>(
-            () => compiler.Compile("public double add(double a, double b) { a + b }", context));
+        Expression declaration = compiler.Compile("public double add(double a, double b) { a + b }", context);
+        Assert.IsNotNull(declaration);
     }
 
     /// <summary>
-    /// Ensures that invoking another declared function from inside a function body is currently rejected.
+    /// Ensures that declared methods can reference methods declared later in source order.
     /// </summary>
     [TestMethod]
-    public void Compile_FunctionCallingAnotherFunction_ThrowsForUnknownInvokableSymbol()
+    public void Compile_FunctionCallingAnotherFunction_ResolvesForwardReference()
     {
         var compiler = new CStyleExpressionCompiler();
         var context = new CStyleCompilerContext();
+        compiler.CompileSource(
+            """
+            public double twice(double x) { add(x, x) }
+            public double add(double x, double y) { x + y; }
+            """,
+            context);
 
-        Assert.ThrowsException<InvalidOperationException>(
-            () => compiler.Compile("public double twice(double x) { add(x, x) }", context));
+        Assert.IsTrue(context.TryGet("twice", out object? twiceSymbol));
+        Assert.IsInstanceOfType<Func<double, double>>(twiceSymbol);
+        double value = ((Func<double, double>)twiceSymbol)(3d);
+        Assert.AreEqual(6d, value);
     }
 
     /// <summary>
@@ -192,15 +199,16 @@ public class CStyleExpressionCompilerTests
     }
 
     /// <summary>
-    /// Ensures explicit lambda-expression syntax currently fails compilation.
+    /// Ensures explicit lambda-expression syntax compiles to an expression node.
     /// </summary>
     [TestMethod]
-    public void Compile_LambdaExpressionSyntax_Throws()
+    public void Compile_LambdaExpressionSyntax_Compiles()
     {
         var compiler = new CStyleExpressionCompiler();
         var context = new CStyleCompilerContext();
 
-        Assert.ThrowsException<InvalidOperationException>(() => compiler.Compile("x => x + 1", context));
+        Expression expression = compiler.Compile("x => x + 1", context);
+        Assert.IsNotNull(expression);
     }
 
     /// <summary>

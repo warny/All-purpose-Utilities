@@ -12,9 +12,14 @@ instruction
     | method_declaration
     | lambda_expression
     | block_instruction
+    | empty_instruction
     | assignment_instruction
     | invocation_instruction
     | operation
+    ;
+
+empty_instruction
+    : SEMICOLON
     ;
 
 using_instruction

@@ -59,6 +59,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(context);
 
+        RegisterDeferredPublicMethods(source, context);
         string sourceToParse = source.TrimStart().StartsWith("{", StringComparison.Ordinal) ? source : "{ " + source + " }";
         ParseNode root = _parser.Parse(sourceToParse);
         return Compile(root, null, sourceToParse, context);
@@ -170,6 +171,16 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
                 Delegate valueDelegate => Expression.Constant(valueDelegate),
                 _ => Expression.Constant(value, value?.GetType() ?? typeof(object)),
             };
+        }
+
+        if (LooksLikeMethodDeclarationSource(context.SourceText))
+        {
+            return Expression.Parameter(typeof(double), identifier);
+        }
+
+        if (context.RuntimeContext is not null)
+        {
+            return Expression.Parameter(typeof(double), identifier);
         }
 
         throw new InvalidOperationException($"Unknown identifier '{identifier}'.");
@@ -645,15 +656,50 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             signature = InferParametersFromBody(signature);
         }
         var bodyContext = new CStyleCompilerContext();
+        foreach (KeyValuePair<string, object?> runtimeSymbol in context.RuntimeContext.Symbols)
+        {
+            bodyContext.Set(runtimeSymbol.Key, runtimeSymbol.Value);
+        }
         foreach (KeyValuePair<string, Expression> entry in signature.ParameterSymbols)
         {
             bodyContext.Set(entry.Key, entry.Value);
         }
 
-        Expression body = context.Compiler.Compile(signature.BodySource, bodyContext);
         Type delegateType = Expression.GetDelegateType([.. signature.Parameters.Select(static p => p.Type), signature.ReturnType]);
+        DeferredDelegateHolder? deferredHolder = null;
+        Delegate? deferredDelegate = null;
+        if (signature.IsPublic)
+        {
+            if (context.RuntimeContext.TryGet(GetDeferredHolderSymbolName(signature.Name), out object? holderObject)
+                && holderObject is DeferredDelegateHolder existingHolder
+                && context.RuntimeContext.TryGet(signature.Name, out object? delegateObject)
+                && delegateObject is Delegate existingDelegate)
+            {
+                deferredHolder = existingHolder;
+                deferredDelegate = existingDelegate;
+            }
+            else
+            {
+                deferredHolder = new DeferredDelegateHolder();
+                deferredDelegate = CreateDeferredDelegate(delegateType, signature.Parameters, deferredHolder, signature.ReturnType);
+                context.RuntimeContext.Set(signature.Name, deferredDelegate);
+                context.RuntimeContext.Set(GetDeferredHolderSymbolName(signature.Name), deferredHolder);
+            }
+
+            bodyContext.Set(signature.Name, deferredDelegate);
+        }
+
+        Expression body = context.Compiler.CompileSource(signature.BodySource, bodyContext);
         LambdaExpression lambda = Expression.Lambda(delegateType, ConvertIfNeeded(body, signature.ReturnType), signature.Parameters);
         Delegate compiledDelegate = lambda.Compile();
+
+        if (deferredHolder is not null && deferredDelegate is not null)
+        {
+            deferredHolder.Target = compiledDelegate;
+            context.RuntimeContext.Set(signature.Name, deferredDelegate);
+            context.RuntimeContext.Set(GetDeferredHolderSymbolName(signature.Name), deferredHolder);
+            return Expression.Empty();
+        }
 
         if (signature.IsPublic)
         {
@@ -1306,8 +1352,6 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// <returns>Parsed method signature model.</returns>
     private static MethodSignature ParseMethodSignature(ParseTreeNavigator nav, CompilationContext context)
     {
-        return ParseMethodSignatureFromWholeSource(context.SourceText);
-
         string declarationText = GetNodeSourceText(context, nav);
         string isolatedDeclaration = ExtractMethodDeclarationText(declarationText);
         Match regexMatch = Regex.Match(
@@ -1662,6 +1706,16 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     private static bool IsIntegerType(Type type) => NumberUtils.IsNativeIntegerType(type);
 
     /// <summary>
+    /// Indicates whether a source fragment likely represents a method declaration context.
+    /// </summary>
+    /// <param name="sourceText">Source text being compiled.</param>
+    /// <returns><c>true</c> when method declarations are detected; otherwise <c>false</c>.</returns>
+    private static bool LooksLikeMethodDeclarationSource(string sourceText)
+        => sourceText.Contains("public", StringComparison.Ordinal)
+           && sourceText.Contains("{", StringComparison.Ordinal)
+           && sourceText.Contains("(", StringComparison.Ordinal);
+
+    /// <summary>
     /// Immutable compilation context used by the parse-tree compiler.
     /// </summary>
     /// <param name="Symbols">Resolved expression symbols by identifier name.</param>
@@ -1694,4 +1748,109 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         IReadOnlyList<ParameterExpression> Parameters,
         IReadOnlyDictionary<string, Expression> ParameterSymbols,
         string BodySource);
+
+    /// <summary>
+    /// Mutable holder used by deferred delegates to enable forward method references.
+    /// </summary>
+    private sealed class DeferredDelegateHolder
+    {
+        /// <summary>
+        /// Gets or sets the compiled delegate target.
+        /// </summary>
+        public Delegate? Target { get; set; }
+    }
+
+    /// <summary>
+    /// Invokes the delegate currently stored in a deferred holder.
+    /// </summary>
+    /// <param name="holder">Holder containing the target delegate.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Delegate invocation result.</returns>
+    private static object? InvokeDeferred(DeferredDelegateHolder holder, object?[] arguments)
+    {
+        if (holder.Target is null)
+        {
+            throw new InvalidOperationException("The method body is not compiled yet.");
+        }
+
+        return holder.Target.DynamicInvoke(arguments);
+    }
+
+    /// <summary>
+    /// Creates a typed deferred delegate that dispatches to a holder target.
+    /// </summary>
+    /// <param name="delegateType">Delegate CLR type to create.</param>
+    /// <param name="parameters">Delegate parameters.</param>
+    /// <param name="holder">Deferred holder storing the final target.</param>
+    /// <param name="returnType">Delegate return type.</param>
+    /// <returns>Deferred delegate instance.</returns>
+    private static Delegate CreateDeferredDelegate(
+        Type delegateType,
+        IReadOnlyList<ParameterExpression> parameters,
+        DeferredDelegateHolder holder,
+        Type returnType)
+    {
+        Expression[] boxedArguments = [.. parameters.Select(static p => Expression.Convert(p, typeof(object)))];
+        Expression invoke = Expression.Call(
+            typeof(CStyleExpressionCompiler).GetMethod(nameof(InvokeDeferred), BindingFlags.NonPublic | BindingFlags.Static)!,
+            Expression.Constant(holder),
+            Expression.NewArrayInit(typeof(object), boxedArguments));
+        Expression body = returnType == typeof(void)
+            ? Expression.Block(invoke, Expression.Empty())
+            : ConvertIfNeeded(invoke, returnType);
+        return Expression.Lambda(delegateType, body, parameters).Compile();
+    }
+
+    /// <summary>
+    /// Registers public methods found in source as deferred delegates to support forward references.
+    /// </summary>
+    /// <param name="source">Source text to inspect.</param>
+    /// <param name="context">Runtime context receiving deferred symbols.</param>
+    private static void RegisterDeferredPublicMethods(string source, CStyleCompilerContext context)
+    {
+        foreach (Match match in Regex.Matches(
+                     source,
+                     @"(?<mods>(?:public|private|protected|internal|static|virtual|override|abstract|async)\s+)*(?<ret>[A-Za-z_][A-Za-z0-9_\.]*)\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\((?<params>[^)]*)\)\s*\{",
+                     RegexOptions.Singleline))
+        {
+            string modifiers = match.Groups["mods"].Value;
+            if (!modifiers.Contains("public", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string methodName = match.Groups["name"].Value;
+            if (context.TryGet(methodName, out _))
+            {
+                continue;
+            }
+
+            Type returnType = ResolveNativeType(match.Groups["ret"].Value);
+            List<ParameterExpression> parameters = new();
+            foreach (string parameterText in SplitTopLevel(match.Groups["params"].Value, ',').Select(static s => s.Trim()).Where(static s => s.Length > 0))
+            {
+                string[] parts = parameterText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 2)
+                {
+                    continue;
+                }
+
+                parameters.Add(Expression.Parameter(ResolveNativeType(parts[0]), parts[1]));
+            }
+
+            Type delegateType = Expression.GetDelegateType([.. parameters.Select(static p => p.Type), returnType]);
+            DeferredDelegateHolder holder = new();
+            Delegate deferredDelegate = CreateDeferredDelegate(delegateType, parameters, holder, returnType);
+            context.Set(methodName, deferredDelegate);
+            context.Set(GetDeferredHolderSymbolName(methodName), holder);
+        }
+    }
+
+    /// <summary>
+    /// Builds the internal symbol name used to store a deferred holder.
+    /// </summary>
+    /// <param name="methodName">Method name.</param>
+    /// <returns>Internal deferred-holder symbol name.</returns>
+    private static string GetDeferredHolderSymbolName(string methodName)
+        => "__deferred__" + methodName;
 }
