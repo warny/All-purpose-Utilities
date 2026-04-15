@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Globalization;
 using System.Numerics;
+using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
-using Utils.Expressions;
-using Utils.String;
 
 namespace Utils.Mathematics
 {
@@ -89,19 +86,24 @@ namespace Utils.Mathematics
             var result = new Dictionary<string, NumberToStringConverter>();
             foreach (var language in obj.Languages)
             {
-                var converter = ReadConverter(language);
                 foreach (var culture in language.Cultures)
                 {
                     if (!result.ContainsKey(culture))
                     {
-                        result.Add(culture, converter);
+                        result.Add(culture, ReadConverter(language, culture));
                     }
                 }
             }
             return result;
         }
 
-        private static NumberToStringConverter ReadConverter(LanguageType language)
+        /// <summary>
+        /// Builds a converter for a specific language definition and culture identifier.
+        /// </summary>
+        /// <param name="language">The language definition deserialized from XML.</param>
+        /// <param name="languageIdentifier">The culture or language identifier currently bound to the converter.</param>
+        /// <returns>A configured <see cref="NumberToStringConverter"/> instance.</returns>
+        private static NumberToStringConverter ReadConverter(LanguageType language, string languageIdentifier)
         {
             var confScale = language.NumberScale;
 
@@ -118,16 +120,7 @@ namespace Utils.Mathematics
                 confScale.FirstLetterUpperCase
             );
 
-            Func<string, string> adjustFunction;
-            if (language.AdjustFunction.IsNullOrWhiteSpace())
-            {
-                adjustFunction = s => s;
-            }
-            else
-            {
-                var e = ExpressionParser.Parse<Func<string, string>>(language.AdjustFunction, ["System.Text", "System.Text.RegularExpressions"]);
-                adjustFunction = e.Compile();
-            }
+            INumberToStringLanguageSpecifics languageSpecifics = ResolveLanguageSpecifics(language.LanguageSpecificsTypeName);
             var fractions = language.Fractions?.Fractions?.ToDictionary(f => f.Digits, f => f.StringValue) ?? new Dictionary<int, string>();
 
             BigInteger? maxNumber = null;
@@ -148,11 +141,63 @@ namespace Utils.Mathematics
                 language.Replacements?.Replacements
                     .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope)),
                 scale,
-                adjustFunction,
+                adjustFunction: null,
+                languageSpecifics,
+                languageIdentifier,
                 fractions,
                 maxNumber,
                 language.FractionSeparator
             );
+        }
+
+        /// <summary>
+        /// Resolves a language-specific finalizer from a configured type name.
+        /// </summary>
+        /// <param name="typeName">The configured type name.</param>
+        /// <returns>The resolved instance, or a no-op implementation when the type cannot be resolved.</returns>
+        private static INumberToStringLanguageSpecifics ResolveLanguageSpecifics(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return new DefaultNumberToStringLanguageSpecifics();
+            }
+
+            Type specificsType = Type.GetType(typeName, throwOnError: false);
+            if (specificsType == null)
+            {
+                specificsType = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(a => SafeGetTypes(a))
+                    .FirstOrDefault(t => string.Equals(t.FullName, typeName, StringComparison.Ordinal)
+                                         || string.Equals(t.Name, typeName, StringComparison.Ordinal));
+            }
+
+            if (specificsType == null
+                || !typeof(INumberToStringLanguageSpecifics).IsAssignableFrom(specificsType)
+                || specificsType.IsAbstract
+                || specificsType.IsInterface)
+            {
+                return new DefaultNumberToStringLanguageSpecifics();
+            }
+
+            return Activator.CreateInstance(specificsType) as INumberToStringLanguageSpecifics
+                   ?? new DefaultNumberToStringLanguageSpecifics();
+        }
+
+        /// <summary>
+        /// Safely enumerates types from an assembly.
+        /// </summary>
+        /// <param name="assembly">The assembly to inspect.</param>
+        /// <returns>The loadable types from <paramref name="assembly"/>.</returns>
+        private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(t => t != null);
+            }
         }
 
         /// <summary>

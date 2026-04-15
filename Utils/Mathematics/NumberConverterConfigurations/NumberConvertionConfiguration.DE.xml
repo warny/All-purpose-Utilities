@@ -79,14 +79,6 @@
 			<Number value="16" string="sechzehn" />
 			<Number value="17" string="siebzehn" />
 		</Exceptions>
-		<AdjustFunction>
-			<![CDATA[
-			(string s)=>	{
-				s = Regex.Replace(s, @"\bein (?<l>[A-Z])", "eine ${l}");
-				s = s.EndsWith("ein") ? s + "s" : s;
-				s
-			}
-			]]>
-		</AdjustFunction>
+		<LanguageSpecifics>GermanNumberToStringLanguageSpecifics</LanguageSpecifics>
 	</Language>
 </Numbers>

@@ -17,6 +17,8 @@
         <PackageTags>omy;utilities;parser;antlr4;grammar;generator;roslyn</PackageTags>
         <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 

@@ -54,6 +54,8 @@ namespace Utils.Mathematics
                         IEnumerable<ReplacementRule> replacements,
                         NumberScale scale,
                         Func<string, string> adjustFunction = null,
+                        INumberToStringLanguageSpecifics languageSpecifics = null,
+                        string languageIdentifier = null,
                         IReadOnlyDictionary<int, string> fractions = null,
                         BigInteger? maxNumber = null,
                         string fractionSeparator = null)
@@ -72,7 +74,9 @@ namespace Utils.Mathematics
             _replacementLookup = Replacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
             _substringReplacements = Replacements.Where(r => r.Scope == ReplacementScope.Anywhere).ToImmutableArray();
             Scale = scale;
-            AdjustFunction = adjustFunction ?? (s => s);
+            LanguageSpecifics = languageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
+            LanguageIdentifier = languageIdentifier ?? string.Empty;
+            AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (adjustFunction ?? (s => s))(input));
             Fractions = fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             MaxNumber = maxNumber;
             FractionSeparator = string.IsNullOrWhiteSpace(fractionSeparator) ? "/" : fractionSeparator;
@@ -106,6 +110,14 @@ namespace Utils.Mathematics
         /// Function to adjust the final output string
         /// </summary>
         public Func<string, string> AdjustFunction { get; }
+        /// <summary>
+        /// Gets the language-specific finalizer applied to produced texts.
+        /// </summary>
+        public INumberToStringLanguageSpecifics LanguageSpecifics { get; }
+        /// <summary>
+        /// Gets the language identifier used when finalizing written values.
+        /// </summary>
+        public string LanguageIdentifier { get; }
         /// <summary>
         /// Special cases for specific numbers
         /// </summary>

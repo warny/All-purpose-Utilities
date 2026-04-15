@@ -120,7 +120,7 @@
                                                                 </xs:complexType>
                                                         </xs:element>
 							<xs:element name="Exceptions" type="NumberListType" />
-                                                        <xs:element name="AdjustFunction" minOccurs="0" maxOccurs="1">
+                                                        <xs:element name="LanguageSpecifics" minOccurs="0" maxOccurs="1">
                                                                 <xs:complexType>
                                                                         <xs:simpleContent>
                                                                                 <xs:extension base="xs:string"/>
