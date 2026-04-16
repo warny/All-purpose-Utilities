@@ -38,6 +38,33 @@ public class DNSExpressionTests
     }
 
     /// <summary>
+    /// Ensures mixed numeric comparisons stay symmetric when the literal is on the left side.
+    /// </summary>
+    [TestMethod]
+    public void BuildExpression_MixedNumericConditionWithLeftLiteral_AvoidsNarrowingWraparound()
+    {
+        var parameter = Expression.Parameter(typeof(SampleRecord), "record");
+        var expression = BuildDnsConditionExpression(parameter, "256 == RetryCount");
+        var lambda = Expression.Lambda<Func<SampleRecord, bool>>(Expression.Convert(expression, typeof(bool)), parameter).Compile();
+
+        Assert.IsFalse(lambda(new SampleRecord { RetryCount = 0 }));
+    }
+
+    /// <summary>
+    /// Ensures quoted string literals are supported in DNS condition expressions.
+    /// </summary>
+    [TestMethod]
+    public void BuildExpression_StringLiteralCondition_EvaluatesCorrectly()
+    {
+        var parameter = Expression.Parameter(typeof(SampleRecord), "record");
+        var expression = BuildDnsConditionExpression(parameter, "Name == \"example\"");
+        var lambda = Expression.Lambda<Func<SampleRecord, bool>>(Expression.Convert(expression, typeof(bool)), parameter).Compile();
+
+        Assert.IsTrue(lambda(new SampleRecord { Name = "example" }));
+        Assert.IsFalse(lambda(new SampleRecord { Name = "other" }));
+    }
+
+    /// <summary>
     /// Builds a DNS condition expression through reflection on the internal DNSExpression type.
     /// </summary>
     /// <param name="parameter">Root parameter expression.</param>
@@ -74,5 +101,10 @@ public class DNSExpressionTests
         /// Gets or sets a sample byte counter.
         /// </summary>
         public byte RetryCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a sample string name.
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
     }
 }
