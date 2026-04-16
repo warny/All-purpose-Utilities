@@ -8,6 +8,7 @@
         <AssemblyName>Utils.Parser.VisualStudio.Worker</AssemblyName>
         <RootNamespace>Utils.Parser.VisualStudio.Worker</RootNamespace>
         <ImplicitUsings>disable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>

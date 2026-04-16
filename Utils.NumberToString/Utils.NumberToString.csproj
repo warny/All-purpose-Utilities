@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>Utils</RootNamespace>
+        <EnablePreviewFeatures>True</EnablePreviewFeatures>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>omy.Utils.NumberToString</PackageId>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Version>1.2.1</Version>
+        <Description>Number-to-string conversion library extracted from omy.Utils.</Description>
+        <PackageTags>omy;utilities;number;localization;text;converter</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Utils\Utils.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Utils\Mathematics\INumberToStringConverter.cs" Link="Mathematics\INumberToStringConverter.cs" />
+        <Compile Include="..\Utils\Mathematics\NumberConverterConfiguration.cs" Link="Mathematics\NumberConverterConfiguration.cs" />
+        <Compile Include="..\Utils\Mathematics\NumberToStringConverter.cs" Link="Mathematics\NumberToStringConverter.cs" />
+        <Compile Include="..\Utils\Mathematics\NumberToStringConverter.Globalization.cs" Link="Mathematics\NumberToStringConverter.Globalization.cs" />
+        <Compile Include="..\Utils\Mathematics\NumberConverterResources.Designer.cs" Link="Mathematics\NumberConverterResources.Designer.cs">
+            <DesignTime>true</DesignTime>
+            <AutoGen>true</AutoGen>
+            <DependentUpon>NumberConverterResources.resx</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="..\Utils\Mathematics\NumberConverterResources.resx" Link="Mathematics\NumberConverterResources.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+</Project>

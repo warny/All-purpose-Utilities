@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
+        <ProjectReference Include="..\Utils\Utils.csproj" />
+        <ProjectReference Include="..\Utils.Parser.Generators\Utils.Parser.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="Grammar\CStyleTokenizer.g4">
+            <Namespace>Utils.Expressions.CLike.Runtime</Namespace>
+            <ClassName>CStyleTokenizerGrammar</ClassName>
+        </AdditionalFiles>
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
+    </ItemGroup>
+
+    <Import Project="..\Utils.Parser.Generators\buildTransitive\Utils.Parser.Generators.targets"
+            Condition="Exists('..\Utils.Parser.Generators\buildTransitive\Utils.Parser.Generators.targets')" />
+</Project>

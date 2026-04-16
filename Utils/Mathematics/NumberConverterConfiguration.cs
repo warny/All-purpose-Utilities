@@ -314,10 +314,11 @@ public class LanguageType
     public ReplacementsListType Replacements { get; set; }
 
     /// <summary>
-    /// Gets or sets the optional lambda used to adjust the converted text.
+    /// Gets or sets the optional language-specific finalizer type name.
+    /// The value can be either the full type name or the short type name.
     /// </summary>
-    [XmlElement(ElementName = "AdjustFunction")]
-    public string AdjustFunction { get; set; }
+    [XmlElement(ElementName = "LanguageSpecifics")]
+    public string LanguageSpecificsTypeName { get; set; }
 
     /// <summary>
     /// Gets or sets the fraction configuration applied to decimal values.
