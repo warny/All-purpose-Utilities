@@ -80,13 +80,13 @@ internal static class ParserExtensions
 
     /// <summary>
     /// Compares the <see cref="Type"/> of two numeric expressions and adjusts the lower-level expression
-    /// to match the higher-level type, based on <see cref="IParserOptions.NumberTypeLevel"/>.
+    /// to match the higher-level type, based on <see cref="ParserOptions.NumberTypeLevel"/>.
     /// </summary>
     /// <param name="options">A <see cref="ParserOptions"/> containing numeric type priorities.</param>
     /// <param name="left">The left <see cref="Expression"/>.</param>
     /// <param name="right">The right <see cref="Expression"/>.</param>
     /// <returns>A tuple of adjusted (left, right) expressions.</returns>
-    public static (Expression left, Expression right) AdjustNumberType(this IParserOptions options, Expression left, Expression right)
+    public static (Expression left, Expression right) AdjustNumberType(this ParserOptions options, Expression left, Expression right)
     {
         if (left.Type == right.Type) return (left, right);
         if (!options.NumberTypeLevel.TryGetValue(left.Type, out int leftLevel)) return (left, right);
@@ -111,7 +111,7 @@ internal static class ParserExtensions
     /// <param name="type">The type to which the expression might need to adjust.</param>
     /// <param name="right">The <see cref="Expression"/> to potentially adjust.</param>
     /// <returns>An adjusted expression if the types differ and a higher-level type is required.</returns>
-    public static Expression AdjustNumberType(this IParserOptions options, Type type, Expression right)
+    public static Expression AdjustNumberType(this ParserOptions options, Type type, Expression right)
     {
         if (type == right.Type) return right;
         if (!options.NumberTypeLevel.TryGetValue(type, out int leftLevel)) return right;
@@ -132,7 +132,7 @@ internal static class ParserExtensions
     /// <param name="expression">The expression to convert.</param>
     /// <param name="type">The target type for conversion.</param>
     /// <returns>An <see cref="Expression"/> converted to the specified <paramref name="type"/>.</returns>
-    public static Expression AdjustType(this IParserOptions options, Expression expression, Type type)
+    public static Expression AdjustType(this ParserOptions options, Expression expression, Type type)
     {
         if (expression is ConstantExpression ce
             && options.NumberTypeLevel.TryGetValue(ce.Type, out var constLevel)
@@ -142,28 +142,6 @@ internal static class ParserExtensions
             return Expression.Constant(Convert.ChangeType(ce.Value, type), type);
         }
         return Expression.Convert(expression, type);
-    }
-
-    /// <summary>
-    /// Retrieves the operator priority level from <see cref="ParserOptions.OperatorPriorityLevel"/>,
-    /// optionally modifying the operator symbol for unary usage (e.g. "++before" or "+before").
-    /// </summary>
-    /// <param name="options">The <see cref="ParserOptions"/> containing operator priority info.</param>
-    /// <param name="operatorSymbol">The operator symbol being looked up.</param>
-    /// <param name="isBefore">
-    /// <see langword="true"/> for prefix usage (e.g., ++i), otherwise <see langword="false"/>.
-    /// </param>
-    /// <returns>An integer representing the operator's priority, or 100 if not found.</returns>
-    public static int GetOperatorLevel(this IParserOptions options, string operatorSymbol, bool isBefore)
-    {
-        operatorSymbol += operatorSymbol switch
-        {
-            "++" or "--" => isBefore ? "before" : "behind",
-            "+" or "-" => isBefore ? "before" : "",
-            _ => ""
-        };
-        if (!options.OperatorPriorityLevel.TryGetValue(operatorSymbol, out var result)) result = 100;
-        return result;
     }
 
     /// <summary>

@@ -7,17 +7,26 @@ namespace Utils.Expressions;
 /// including operator priorities, numeric type levels, default type keywords,
 /// and numeric suffix mappings.
 /// </summary>
-public class ParserOptions : IParserOptions
+public class ParserOptions
 {
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets a read-only dictionary mapping operators to their precedence levels.
+    /// </summary>
     public IReadOnlyDictionary<string, int> OperatorPriorityLevel { get; private set; }
-    /// <inheritdoc/>
+
+    /// <summary>
+    /// Gets a read-only dictionary mapping numeric types to precedence levels.
+    /// </summary>
     public IReadOnlyDictionary<Type, int> NumberTypeLevel { get; private set; }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the mapping of C# type keywords to runtime types.
+    /// </summary>
     public IReadOnlyDictionary<string, Type> DefaultTypes { get; private set; }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the mapping of numeric suffixes to conversion delegates.
+    /// </summary>
     public IReadOnlyDictionary<string, Func<string, object>> NumberSuffixes { get; private set; }
 
     /// <summary>
