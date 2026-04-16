@@ -1,49 +1,66 @@
-# Getting started with omy.Utils
+# Getting started with `omy.Utils`
 
-The **omy.Utils** family is a set of focused utility packages you can consume directly from NuGet. Use this guide to pick the right package, install it, and understand platform support.
+Use this guide to select the right package, install it quickly, and confirm supported target frameworks.
 
-## Which package should I choose?
+## 1) Choose a package
 
-- **omy.Utils** – foundational helpers (arrays, collections, expressions, strings, streams, security) that other packages build upon.
-- **omy.Utils.Net** – networking helpers, DNS/ICMP tools, and Wake-on-LAN utilities.
-- **omy.Utils.IO** – stream handling, base16/base32/base64 converters, and binary serialization.
-- **omy.Utils.Data** – map `IDataRecord`/`IDataReader` to strongly typed objects with attributes.
-- **omy.Utils.Imaging** – bitmap accessors, vector drawing, and color helpers.
-- **omy.Utils.Fonts** – TrueType/PostScript parsing and glyph metrics utilities.
-- **omy.Utils.Geography** – coordinate models, projections, and tile helpers.
-- **omy.Utils.Mathematics** – FFT, derivation/integration, SI conversions, and linear algebra types.
-- **omy.Utils.Reflection** – reflection extensions (`PropertyOrFieldInfo`, delegate invocation helpers).
-- **omy.Utils.Xml** – attribute-driven XML processing with `XmlDataProcessor` helpers.
-- **omy.Utils.VirtualMachine** – minimal VM framework with attribute-defined instructions.
-- **omy.Utils.OData** – OData client helpers and source generators.
-- **omy.Utils.DependencyInjection** – DI helpers plus source generators.
+Pick the smallest package that matches your use case.
 
-## Installation
+| Package | Purpose | TFM |
+|---|---|---|
+| `omy.Utils` | Shared foundation helpers used across the ecosystem. | `net8.0` |
+| `omy.Utils.Collections` | Collection structures and helpers (including skip list). | `net8.0` |
+| `omy.Utils.Data` | Map `IDataRecord` / `IDataReader` to typed objects. | `net8.0` |
+| `omy.Utils.DependencyInjection` | Attribute-driven DI registration helpers. | `net9.0` |
+| `omy.Utils.Fonts` | Font parsing and glyph/encoding helpers. | `net8.0` |
+| `omy.Utils.Geography` | Coordinates, projections, and map/tile helpers. | `net8.0` |
+| `omy.Utils.IO` | Streams, conversion helpers, and serialization primitives. | `net8.0` |
+| `omy.Utils.Imaging` | Imaging and drawing utilities. | `net8.0` |
+| `omy.Utils.Mathematics` | Math helpers, FFT, and algebra-related types. | `net8.0` |
+| `omy.Utils.Net` | Networking helpers (DNS, ICMP, WOL, URI tooling). | `net9.0` |
+| `omy.Utils.NumberToString` | Number-to-string conversion helpers. | `net8.0` |
+| `omy.Utils.OData` | OData client and metadata utilities. | `net9.0` |
+| `omy.Utils.Parser` | Runtime parsing infrastructure for ANTLR4 grammars. | `net8.0` |
+| `omy.Utils.Reflection` | Reflection wrappers and invocation helpers. | `net8.0` |
+| `omy.Utils.VirtualMachine` | Attribute-based byte-code interpreter support. | `net8.0` |
+| `omy.Utils.XML` | XML mapping and processing helpers. | `net8.0` |
+| `omy.Utils.DependencyInjection.Generators` | Source generators for DI. | `netstandard2.0` |
+| `omy.Utils.IO.Serialization.Generators` | Source generators for stream serializers. | `netstandard2.0` |
+| `omy.Utils.OData.Generators` | Source generators for OData metadata. | `netstandard2.0` |
+| `omy.Utils.Parser.Generators` | Parser/grammar source generator utilities. | `netstandard2.0` |
 
-Install the package that matches your scenario via the .NET CLI:
+## 2) Install
 
 ```bash
 dotnet add package omy.Utils
 # or
-dotnet add package omy.Utils.Net
+dotnet add package omy.Utils.IO
 ```
 
-Packages are published on NuGet under the `omy.` prefix.
+## 3) Minimal usage snippet
 
-## Supported target frameworks
+```csharp
+using Utils.Arrays;
 
-The libraries target stable target frameworks for consumers:
+int[] values = [0, 1, 2, 0];
+int[] trimmed = values.Trim(0);
+```
 
-- **net8.0** for most foundational packages
-- **net9.0** for networking and selected libraries
-- **netstandard2.0** for Roslyn source generators
+## Versioning policy
 
-Building the repository may require the latest .NET SDK, but consuming the NuGet packages only requires the listed TFMs.
+The repository uses semantic versioning per package. Patch and minor updates should remain non-breaking for existing public APIs.
 
-## Versioning and compatibility
-
-Releases follow semantic versioning across the package family. Avoid breaking changes when updating between patch releases. Check the [`CHANGELOG.md`](../CHANGELOG.md) for notable documentation and metadata updates.
+Track release notes in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Feedback and issues
 
-Report bugs or request enhancements via GitHub issues on the [project repository](https://github.com/warny/All-purpose-Utilities). Contributions are welcome through pull requests.
+Open issues and feature requests in the GitHub repository:
+
+- https://github.com/warny/All-purpose-Utilities/issues
+
+## Note for contributors
+
+Consuming packages and building the repository are different concerns:
+
+- **Consumers**: use the package TFM listed above.
+- **Contributors**: build/test via `Utils.sln`, which includes .NET 9 development/test projects.
