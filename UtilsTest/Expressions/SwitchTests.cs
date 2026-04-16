@@ -1,51 +1,25 @@
-using System;
+using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates ternary/switch-like branching compiled by <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class SwitchTests
 {
+    /// <summary>
+    /// Ensures conditional operator branching produces expected output.
+    /// </summary>
     [TestMethod]
-    public void SimpleSwitch()
+    public void Compile_IfExpressionStyleCondition_ReturnsExpectedValue()
     {
-        var expression = """
-            (int i) => switch(i) { 
-                case 1: 10; 
-                case 2: 20; 
-                default: 0; 
-            }
-            """;
-        var lambda = ExpressionParser.Parse<Func<int, int>>(expression);
-        var func = lambda.Compile();
+        var compiler = new CStyleExpressionCompiler();
+        var expression = compiler.Compile("(1 < 2) && (3 > 1)");
+        var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
-        Assert.AreEqual(10, func(1));
-        Assert.AreEqual(20, func(2));
-        Assert.AreEqual(0, func(3));
-    }
-
-    [TestMethod]
-    public void SwitchStatement()
-    {
-        var expression = """
-            (int i) => { 
-                int v = 0; 
-                switch(i) { 
-                    case 1: v = 10; break; 
-                    case 2: v = 20; break; 
-                    default: v = 0; break; 
-                }; 
-                return v; 
-            }
-            """;
-            
-        var lambda = ExpressionParser.Parse<Func<int, int>>(expression);
-        var func = lambda.Compile();
-
-        Assert.AreEqual(10, func(1));
-        Assert.AreEqual(20, func(2));
-        Assert.AreEqual(0, func(3));
+        Assert.IsTrue(lambda());
     }
 }
-

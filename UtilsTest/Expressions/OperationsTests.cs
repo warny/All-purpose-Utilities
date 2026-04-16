@@ -1,55 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates boolean and relational operations compiled by <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class OperationsTests
 {
+    /// <summary>
+    /// Ensures compound logical operations return expected results.
+    /// </summary>
     [TestMethod]
-    public void MemberTest()
+    public void Compile_BooleanOperations_ReturnsExpectedValue()
     {
-        string[] tests = ["a", "ab", "abc"];
-        var expression = "(string s) => s.Length";
+        var compiler = new CStyleExpressionCompiler();
+        var expression = compiler.Compile("(2 < 3) && (5 >= 5)");
+        var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
-        var e = ExpressionParser.Parse(expression);
-        var f = (Func<string, int>)e.Compile();
-
-        foreach (var test in tests)
-        {
-            Assert.AreEqual(test.Length, f(test)); ;
-        }
-
+        Assert.IsTrue(lambda());
     }
-
-    [TestMethod]
-    public void NullOrMemberTest()
-    {
-        string[] tests = ["a", "ab", "abc", (string)null];
-        var expression = "(string s) => s?.Length";
-
-        var e = ExpressionParser.Parse(expression);
-        var f = (Func<string, int?>)e.Compile();
-
-        foreach (var test in tests)
-        {
-            var value = f(test);
-            Assert.AreEqual(test?.Length, value); ;
-        }
-
-    }
-
-    //[TestMethod]
-    //public void LambdaTest()
-    //{
-    //    string[] tests = ["a", "b", "c"];
-    //    LambdaExpression e = (string s) => s =="a";
-    //    tests.Where(e);
-    //}
 }

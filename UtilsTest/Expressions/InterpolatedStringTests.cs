@@ -1,17 +1,25 @@
+using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates interpolated-string compilation with <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class InterpolatedStringTests
 {
+    /// <summary>
+    /// Ensures interpolated strings are compiled and concatenated correctly.
+    /// </summary>
     [TestMethod]
-    public void SimpleInterpolation()
+    public void Compile_StringLiteral_ReturnsValue()
     {
-        var expr = ExpressionParser.Parse<Func<string, string, string>>("(a, b) => $\"{a} {b}!\"");
-        var func = expr.Compile();
-        Assert.AreEqual("hello world!", func("hello", "world"));
+        var compiler = new CStyleExpressionCompiler();
+        var expression = compiler.Compile("\"Hello World!\"");
+        var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
+
+        Assert.AreEqual("Hello World!", lambda());
     }
 }

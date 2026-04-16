@@ -145,35 +145,6 @@ internal static class ParserExtensions
     }
 
     /// <summary>
-    /// Reads a bracketed substring from the tokenizer until the matching end bracket is encountered,
-    /// optionally assuming the start bracket has already been read.
-    /// </summary>
-    /// <param name="context">The current <see cref="ParserContext"/> managing tokens and state.</param>
-    /// <param name="markers">A <see cref="Parenthesis"/> structure specifying start/end symbols.</param>
-    /// <param name="hasReadPre">
-    /// <see langword="true"/> if the start symbol has already been read, otherwise <see langword="false"/>.
-    /// </param>
-    /// <returns>The substring inside the bracketed region, or <see langword="null"/> if unmatched.</returns>
-    public static string GetBracketString(ParserContext context, Parenthesis markers, bool hasReadPre)
-    {
-        // Read the opening parenthesis if it hasn't been read
-        if (!hasReadPre) context.Tokenizer.ReadSymbol(markers.Start);
-        int startPosition = context.Tokenizer.Position.Index + markers.Start.Length;
-
-        int depth = 1;
-        string str;
-        while (depth > 0)
-        {
-            str = context.Tokenizer.ReadToken(true);
-            // If an opening parenthesis is encountered, it indicates nested brackets
-            if (str == markers.Start) depth++;
-            if (str == markers.End) depth--;
-        }
-        int endPosition = context.Tokenizer.Position.Index - markers.End.Length + 1;
-        return context.Tokenizer.Content[startPosition..endPosition];
-    }
-
-    /// <summary>
     /// Retrieves the operator priority level from <see cref="ParserOptions.OperatorPriorityLevel"/>,
     /// optionally modifying the operator symbol for unary usage (e.g. "++before" or "+before").
     /// </summary>
