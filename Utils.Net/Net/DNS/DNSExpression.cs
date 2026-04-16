@@ -91,8 +91,8 @@ internal static class DNSExpression
     {
         var leftExpression = ResolveToken(element, leftToken);
         var rightExpression = ResolveToken(element, rightToken);
-        var promotedRightExpression = PromoteExpression(rightExpression, leftExpression.Type);
-        return comparisonFactory(leftExpression, promotedRightExpression);
+        (Expression normalizedLeft, Expression normalizedRight) = NormalizeComparisonOperands(leftExpression, rightExpression);
+        return comparisonFactory(normalizedLeft, normalizedRight);
     }
 
     /// <summary>
@@ -125,6 +125,11 @@ internal static class DNSExpression
     /// <returns>Resolved expression.</returns>
     private static Expression ResolveToken(Expression element, string token)
     {
+        if (TryResolveLiteral(token, out var literalExpression))
+        {
+            return literalExpression;
+        }
+
         if (TryResolveMemberPath(element, token, out var memberExpression))
         {
             return memberExpression;
@@ -136,6 +141,46 @@ internal static class DNSExpression
         }
 
         throw new InvalidOperationException($"Cannot resolve DNS condition token '{token}'.");
+    }
+
+    /// <summary>
+    /// Normalizes both operands to a common comparable type.
+    /// </summary>
+    /// <param name="leftExpression">Left operand expression.</param>
+    /// <param name="rightExpression">Right operand expression.</param>
+    /// <returns>Tuple containing normalized operands.</returns>
+    private static (Expression left, Expression right) NormalizeComparisonOperands(Expression leftExpression, Expression rightExpression)
+    {
+        if (leftExpression.Type == rightExpression.Type)
+        {
+            return (leftExpression, rightExpression);
+        }
+
+        var leftType = Nullable.GetUnderlyingType(leftExpression.Type) ?? leftExpression.Type;
+        var rightType = Nullable.GetUnderlyingType(rightExpression.Type) ?? rightExpression.Type;
+
+        if (TryGetNumericRank(leftType, out var leftRank) && TryGetNumericRank(rightType, out var rightRank))
+        {
+            var targetType = leftRank >= rightRank ? leftType : rightType;
+            return (PromoteExpression(leftExpression, targetType), PromoteExpression(rightExpression, targetType));
+        }
+
+        if (leftType == rightType)
+        {
+            return (PromoteExpression(leftExpression, leftType), PromoteExpression(rightExpression, rightType));
+        }
+
+        if (rightExpression is ConstantExpression)
+        {
+            return (leftExpression, PromoteExpression(rightExpression, leftExpression.Type));
+        }
+
+        if (leftExpression is ConstantExpression)
+        {
+            return (PromoteExpression(leftExpression, rightExpression.Type), rightExpression);
+        }
+
+        return (PromoteExpression(leftExpression, rightExpression.Type), rightExpression);
     }
 
     /// <summary>
@@ -237,6 +282,83 @@ internal static class DNSExpression
 
         value = null;
         return false;
+    }
+
+    /// <summary>
+    /// Tries to resolve primitive literal tokens used in DNS conditions.
+    /// </summary>
+    /// <param name="token">Raw token text.</param>
+    /// <param name="expression">Resolved literal expression when successful.</param>
+    /// <returns><see langword="true"/> when a literal was resolved; otherwise <see langword="false"/>.</returns>
+    private static bool TryResolveLiteral(string token, out Expression? expression)
+    {
+        var trimmedToken = token.Trim();
+        if (string.Equals(trimmedToken, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            expression = Expression.Constant(true);
+            return true;
+        }
+
+        if (string.Equals(trimmedToken, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            expression = Expression.Constant(false);
+            return true;
+        }
+
+        if (string.Equals(trimmedToken, "null", StringComparison.OrdinalIgnoreCase))
+        {
+            expression = Expression.Constant(null);
+            return true;
+        }
+
+        if (trimmedToken.Length >= 2 && trimmedToken[0] == '"' && trimmedToken[^1] == '"')
+        {
+            expression = Expression.Constant(trimmedToken[1..^1]);
+            return true;
+        }
+
+        if (int.TryParse(trimmedToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integerValue))
+        {
+            expression = Expression.Constant(integerValue);
+            return true;
+        }
+
+        if (long.TryParse(trimmedToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longValue))
+        {
+            expression = Expression.Constant(longValue);
+            return true;
+        }
+
+        if (double.TryParse(trimmedToken, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleValue))
+        {
+            expression = Expression.Constant(doubleValue);
+            return true;
+        }
+
+        expression = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to retrieve a numeric promotion rank for a CLR type.
+    /// </summary>
+    /// <param name="type">Type to evaluate.</param>
+    /// <param name="rank">Resolved rank when successful.</param>
+    /// <returns><see langword="true"/> for numeric types; otherwise <see langword="false"/>.</returns>
+    private static bool TryGetNumericRank(Type type, out int rank)
+    {
+        rank = type == typeof(byte) ? 1 :
+            type == typeof(short) ? 2 :
+            type == typeof(ushort) ? 3 :
+            type == typeof(int) ? 4 :
+            type == typeof(uint) ? 5 :
+            type == typeof(long) ? 6 :
+            type == typeof(ulong) ? 7 :
+            type == typeof(float) ? 8 :
+            type == typeof(double) ? 9 :
+            type == typeof(decimal) ? 10 :
+            0;
+        return rank > 0;
     }
 
     /// <summary>
