@@ -25,6 +25,134 @@ public class CStyleExpressionCompilerTests
     }
 
     /// <summary>
+    /// Duplicates legacy addition coverage from the historical expression compiler tests.
+    /// </summary>
+    [TestMethod]
+    public void Compile_AdditionExpression_MatchesLegacyCompilerBehavior()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        var random = new Random(42);
+        ParameterExpression x = Expression.Parameter(typeof(int), "x");
+        ParameterExpression y = Expression.Parameter(typeof(int), "y");
+        var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal)
+        {
+            ["x"] = x,
+            ["y"] = y,
+        };
+
+        Expression expression = compiler.Compile("x + y", symbols);
+        Func<int, int, int> lambda = Expression.Lambda<Func<int, int, int>>(Expression.Convert(expression, typeof(int)), x, y).Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int left = random.Next(-10_000, 10_001);
+            int right = random.Next(-10_000, 10_001);
+            Assert.AreEqual(left + right, lambda(left, right));
+        }
+    }
+
+    /// <summary>
+    /// Duplicates legacy subtraction coverage from the historical expression compiler tests.
+    /// </summary>
+    [TestMethod]
+    public void Compile_SubtractionExpression_MatchesLegacyCompilerBehavior()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        var random = new Random(84);
+        ParameterExpression x = Expression.Parameter(typeof(int), "x");
+        ParameterExpression y = Expression.Parameter(typeof(int), "y");
+        var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal)
+        {
+            ["x"] = x,
+            ["y"] = y,
+        };
+
+        Expression expression = compiler.Compile("x - y", symbols);
+        Func<int, int, int> lambda = Expression.Lambda<Func<int, int, int>>(Expression.Convert(expression, typeof(int)), x, y).Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int left = random.Next(-10_000, 10_001);
+            int right = random.Next(-10_000, 10_001);
+            Assert.AreEqual(left - right, lambda(left, right));
+        }
+    }
+
+    /// <summary>
+    /// Duplicates legacy multiplication/division precedence coverage from the historical expression compiler tests.
+    /// </summary>
+    [TestMethod]
+    public void Compile_MultiplicationAndDivisionExpressions_MatchLegacyCompilerBehavior()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        var random = new Random(126);
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal)
+        {
+            ["x"] = x,
+            ["y"] = y,
+        };
+
+        Expression multiply = compiler.Compile("x * y", symbols);
+        Expression divide = compiler.Compile("x / y", symbols);
+        Func<double, double, double> multiplyLambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(multiply, typeof(double)), x, y).Compile();
+        Func<double, double, double> divideLambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(divide, typeof(double)), x, y).Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            double left = random.Next(1, 10_000);
+            double right = random.Next(1, 10_000);
+            Assert.AreEqual(left * right, multiplyLambda(left, right), 1e-9);
+            Assert.AreEqual(left / right, divideLambda(left, right), 1e-9);
+        }
+    }
+
+    /// <summary>
+    /// Duplicates legacy precedence and parenthesis coverage from the historical expression compiler tests.
+    /// </summary>
+    [TestMethod]
+    public void Compile_PrecedenceAndParenthesisExpressions_MatchLegacyCompilerBehavior()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        var random = new Random(168);
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        ParameterExpression z = Expression.Parameter(typeof(double), "z");
+        var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal)
+        {
+            ["x"] = x,
+            ["y"] = y,
+            ["z"] = z,
+        };
+
+        Func<double, double, double, double> priority1 = Expression.Lambda<Func<double, double, double, double>>(
+            Expression.Convert(compiler.Compile("x * y + z", symbols), typeof(double)),
+            x, y, z).Compile();
+        Func<double, double, double, double> priority2 = Expression.Lambda<Func<double, double, double, double>>(
+            Expression.Convert(compiler.Compile("x + y * z", symbols), typeof(double)),
+            x, y, z).Compile();
+        Func<double, double, double, double> parenthesis1 = Expression.Lambda<Func<double, double, double, double>>(
+            Expression.Convert(compiler.Compile("x * (y + z)", symbols), typeof(double)),
+            x, y, z).Compile();
+        Func<double, double, double, double> parenthesis2 = Expression.Lambda<Func<double, double, double, double>>(
+            Expression.Convert(compiler.Compile("(x + y) * z", symbols), typeof(double)),
+            x, y, z).Compile();
+
+        for (int i = 0; i < 10; i++)
+        {
+            double left = random.Next(1, 1_000);
+            double mid = random.Next(1, 1_000);
+            double right = random.Next(1, 1_000);
+
+            Assert.AreEqual(left * mid + right, priority1(left, mid, right), 1e-9);
+            Assert.AreEqual(left + mid * right, priority2(left, mid, right), 1e-9);
+            Assert.AreEqual(left * (mid + right), parenthesis1(left, mid, right), 1e-9);
+            Assert.AreEqual((left + mid) * right, parenthesis2(left, mid, right), 1e-9);
+        }
+    }
+
+    /// <summary>
     /// Ensures identifiers are resolved from the provided symbol table.
     /// </summary>
     [TestMethod]
@@ -196,6 +324,27 @@ public class CStyleExpressionCompilerTests
 
         Expression expression = compiler.Compile(source, context);
         Assert.IsNotNull(expression);
+    }
+
+    /// <summary>
+    /// Duplicates legacy member-access coverage from the historical expression compiler tests.
+    /// </summary>
+    [TestMethod]
+    public void Compile_MemberLengthExpression_MatchesLegacyCompilerBehavior()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        string[] values = ["a", "ab", "abc"];
+
+        foreach (string value in values)
+        {
+            var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal)
+            {
+                ["s"] = Expression.Constant(value),
+            };
+            Expression expression = compiler.Compile("s.Length", symbols);
+            Func<int> lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
+            Assert.AreEqual(value.Length, lambda());
+        }
     }
 
     /// <summary>
