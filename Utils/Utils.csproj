@@ -12,45 +12,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Version>1.2.1</Version>
-		<Description>
-			General Functions
-
-			Expressions
-			- LambdaExpression Compiler
-			Array Utilities
-			File Utilities
-			Lists
-			- List with lazy loading of elements and cache
-			- Doubly Linked List
-			- Indexed List
-			- List with LRU cache
-			- Induced Key Dictionary
-			Mathematics
-			- Base Class for Expression Transformer
-			- Expression Simplifier
-			- Mathematical extended functions
-			Objects
-			- Date Utilities
-			- Number Utilities
-			- Object Extensions
-			- String Parser (replaces Convert.FromString)
-			- Advanced String Formatter
-			- String Comparator
-			- String Utilities
-			- Runtime string interpolation system
-			Reflection
-			- FieldOrPropertyInfo Processing Class
-			Security
-			- Google Authentication Calculation
-			Streams
-			- Base16, Base32, and Base64 Converters
-			- Binary Serialization
-			- Copying read stream to multiple write streams
-			- Utilities (copying data between streams)
-			- Cancelable Stream
-			Web
-			- Advanced URI Builder
-		</Description>
+		<Description>Shared foundation package for the omy.Utils ecosystem, including collections, expressions, streams, security, reflection, formatting, and general-purpose .NET utility helpers.</Description>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
