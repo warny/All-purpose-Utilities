@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions.CLike.Runtime;
+using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
 
@@ -10,13 +11,85 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class SimpleExpressionParserTest
 {
+    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    
+    [TestMethod]
+    public void ParseSimpleExpressions()
+    {
+        var parameters = new ParameterExpression[] {
+                Expression.Parameter(typeof(double), "x"),
+                Expression.Parameter(typeof(double), "y")
+            };
+
+        var tests = new (string Expression, Expression Expected)[] {
+                ("x+y", (double x, double y) => x + y),
+                ("x-y", (double x, double y) => x - y),
+                ("x*y", (double x, double y) => x * y),
+                ("x/y", (double x, double y) => x / y),
+                ("x%y", (double x, double y) => x % y),
+                ("x**y", (double x, double y) => Math.Pow(x, y)),
+            };
+
+        foreach (var test in tests)
+        {
+            var result = (LambdaExpression)compiler.Compile<Func<double, double, double>>(test.Expression, parameters);
+            Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
+        }
+    }
+
+    [TestMethod]
+    public void ParseGroupingExpressions()
+    {
+        var parameters = new ParameterExpression[] {
+                Expression.Parameter(typeof(double), "x"),
+                Expression.Parameter(typeof(double), "y"),
+                Expression.Parameter(typeof(double), "z")
+            };
+
+        var tests = new (string Expression, Expression Expected)[] {
+                ("x+y+z", (double x, double y, double z) => x + y + z),
+                ("x-y*z", (double x, double y, double z) => x - y * z),
+                ("(x-y)*z", (double x, double y, double z) => (x - y) * z),
+                ("x*y+z", (double x, double y, double z) => x * y + z),
+                ("x/(y-z)", (double x, double y, double z) => x / ( y - z )),
+            };
+
+
+        foreach (var test in tests)
+        {
+            var result = (LambdaExpression)compiler.Compile<Func<double, double, double, double>>(test.Expression, parameters);
+            Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
+        }
+    }
+
+    [TestMethod]
+    public void ParseFunctionExpressions()
+    {
+        var parameters = new ParameterExpression[] {
+                Expression.Parameter(typeof(double), "x"),
+            };
+
+        var tests = new (string Expression, Expression Expected)[] {
+                ("Cos(x)", (double x) => Math.Cos(x)),
+                ("Sin(x)", (double x) => Math.Sin(x)),
+                ("Tan(x)", (double x) => Math.Tan(x)),
+            };
+
+
+        foreach (var test in tests)
+        {
+            var result = (LambdaExpression)compiler.Compile<Func<double, double>>(test.Expression, parameters, typeof(Math), false);
+            Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
+        }
+    }
+
+
     /// <summary>
     /// Ensures two-variable arithmetic expressions compile and execute.
     /// </summary>
     [TestMethod]
     public void Compile_BinaryExpression_ReturnsExpectedValue()
     {
-        var compiler = new CStyleExpressionCompiler();
         var x = Expression.Parameter(typeof(double), "x");
         var y = Expression.Parameter(typeof(double), "y");
         var symbols = new Dictionary<string, Expression> { ["x"] = x, ["y"] = y };

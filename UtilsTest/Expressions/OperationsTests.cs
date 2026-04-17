@@ -10,13 +10,37 @@ namespace UtilsTest.Expressions;
 [TestClass]
 public class OperationsTests
 {
+    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+
+    [TestMethod]
+    public void MemberTest()
+    {
+        string[] tests = ["a", "ab", "abc"];
+        var expression = "(string s) => s.Length";
+
+        var e = (LambdaExpression)compiler.Compile(expression);
+        var f = (Func<string, int>)e.Compile();
+
+        foreach (var test in tests)
+        {
+            Assert.AreEqual(test.Length, f(test)); ;
+        }
+
+    }
+
+    [Ignore("Null-conditional operator ?. is not supported by the grammar")]
+    [TestMethod]
+    public void NullOrMemberTest()
+    {
+        // Grammar has no null-conditional operator; test kept for reference only.
+    }
+
     /// <summary>
     /// Ensures compound logical operations return expected results.
     /// </summary>
     [TestMethod]
     public void Compile_BooleanOperations_ReturnsExpectedValue()
     {
-        var compiler = new CStyleExpressionCompiler();
         var expression = compiler.Compile("(2 < 3) && (5 >= 5)");
         var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 

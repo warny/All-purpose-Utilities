@@ -29,8 +29,11 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(content);
+        content = PreprocessCompoundAssignments(content);
+        List<string> importedNamespaces = ExtractUsingDirectives(content);
+        content = StripUsingDirectives(content);
         ParseNode root = _parser.Parse(content);
-        return Compile(root, symbols, content, null);
+        return Compile(root, symbols, content, null, importedNamespaces);
     }
 
     /// <summary>
@@ -43,8 +46,11 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
+        content = PreprocessCompoundAssignments(content);
+        List<string> importedNamespaces = ExtractUsingDirectives(content);
+        content = StripUsingDirectives(content);
         ParseNode root = _parser.Parse(content);
-        return Compile(root, null, content, context);
+        return Compile(root, null, content, context, importedNamespaces);
     }
 
     /// <summary>
@@ -59,10 +65,66 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(context);
 
+        source = PreprocessCompoundAssignments(source);
+        List<string> importedNamespaces = ExtractUsingDirectives(source);
+        source = StripUsingDirectives(source);
         RegisterDeferredPublicMethods(source, context);
         string sourceToParse = source.TrimStart().StartsWith("{", StringComparison.Ordinal) ? source : "{ " + source + " }";
         ParseNode root = _parser.Parse(sourceToParse);
-        return Compile(root, null, sourceToParse, context);
+        return Compile(root, null, sourceToParse, context, importedNamespaces);
+    }
+
+    /// <summary>
+    /// Compiles a C-like lambda source into a typed delegate expression.
+    /// Untyped parameters are resolved from the delegate type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">C-like lambda source.</param>
+    /// <returns>Typed lambda expression.</returns>
+    public Expression<T> Compile<T>(string content) where T : Delegate
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")!;
+        ParameterInfo[] invokeParams = invokeMethod.GetParameters();
+
+        // Detect untyped lambda "(a, b) => ..." and inject types from T
+        Match m = Regex.Match(content.Trim(), @"^\(\s*([\w\s,]*?)\s*\)\s*=>");
+        if (m.Success)
+        {
+            string[] paramNames = m.Groups[1].Value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            bool allUntyped = paramNames.Length > 0 && paramNames.All(static n => !n.Contains(' '));
+            if (allUntyped && paramNames.Length == invokeParams.Length)
+            {
+                string typedParams = string.Join(", ", paramNames.Zip(invokeParams, static (name, p) => $"{GetCSharpTypeName(p.ParameterType)} {name}"));
+                int arrowIndex = content.IndexOf("=>", StringComparison.Ordinal);
+                content = "(" + typedParams + ") => " + content[(arrowIndex + 2)..].TrimStart();
+            }
+        }
+
+        Expression result = Compile(content);
+        if (result is Expression<T> typed) return typed;
+        if (result is LambdaExpression lambda) return Expression.Lambda<T>(lambda.Body, lambda.Parameters);
+        throw new InvalidOperationException($"Compiled expression cannot be converted to {typeof(T).Name}.");
+    }
+
+    /// <summary>
+    /// Compiles a C-like expression body with explicit parameters and return type,
+    /// returning a typed lambda expression.
+    /// </summary>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <param name="returnType">Expected return type; the body is converted if needed.</param>
+    /// <param name="strictTypes">Reserved; currently ignored.</param>
+    /// <returns>Lambda expression with the specified parameters and return type.</returns>
+    public LambdaExpression Compile(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(returnType);
+        Dictionary<string, Expression> symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p, StringComparer.Ordinal);
+        Expression body = Compile(content, symbols);
+        Expression convertedBody = ConvertIfNeeded(body, returnType);
+        return Expression.Lambda(convertedBody, parameters);
     }
 
     /// <summary>
@@ -88,14 +150,19 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ParseNode root,
         IReadOnlyDictionary<string, Expression>? symbols,
         string sourceText,
-        CStyleCompilerContext? runtimeContext)
+        CStyleCompilerContext? runtimeContext,
+        List<string>? importedNamespaces = null)
     {
+        importedNamespaces ??= ExtractUsingDirectives(sourceText);
+        var blockScope = new Dictionary<ParseNode, List<ParameterExpression>>(ReferenceEqualityComparer.Instance);
         var compiler = CreateCompiler();
         CompilationContext context = new(
             symbols ?? new Dictionary<string, Expression>(StringComparer.Ordinal),
             runtimeContext,
             sourceText,
-            this);
+            this,
+            importedNamespaces,
+            blockScope);
         Expression? compiled = compiler.Compile(root, context);
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
     }
@@ -109,6 +176,10 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("FALSE", (_, _) => Expression.Constant(false))
             .OnAscend("NULL", (_, _) => Expression.Constant(null))
             .OnAscend("STRING_LITERAL", (nav, _) => Expression.Constant(ParseStringLiteral(nav.Token!.Text)))
+            .OnAscend("INTERPOLATED_TEXT", (nav, _) => Expression.Constant(nav.Token!.Text))
+            .OnAscend("INTERPOLATED_ESCAPED_OPEN", (_, _) => Expression.Constant("{"))
+            .OnAscend("INTERPOLATED_ESCAPED_CLOSE", (_, _) => Expression.Constant("}"))
+            .OnAscend("interpolated_string", CompileInterpolatedString)
             .OnAscend("identifier_part", CompileIdentifierPart)
             .OnAscend("operation_or", CompileLogicalOr)
             .OnAscend("operation_and", CompileLogicalAnd)
@@ -120,6 +191,8 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("operation_pow", CompilePower)
             .OnAscend("operation_unary", CompileUnary)
             .OnAscend("assignment_instruction", CompileAssignment)
+            .OnAscend("variable_declaration_assignment", CompileVariableDeclaration)
+            .OnAscend("using_instruction", static (_, _) => Expression.Empty())
             .OnAscend("invocation_instruction", CompileInvocation)
             .OnAscend("if_instruction", CompileIfInstruction)
             .OnAscend("for_instruction", CompileForInstruction)
@@ -127,6 +200,9 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("while_instruction", CompileWhileInstruction)
             .OnAscend("do_while_instruction", CompileDoWhileInstruction)
             .OnAscend("method_declaration", CompileMethodDeclaration)
+            .OnDescend("lambda_expression", DescentLambdaExpression)
+            .OnAscend("lambda_expression", AscentLambdaExpression)
+            .OnDescend("block_instruction", DescentBlockInstruction)
             .OnAscend("block_instruction", CompileBlock)
             .DefaultAscend((_, _, children) => children.FirstOrDefault(static child => child is not null));
     }
@@ -261,8 +337,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         return FoldBinary(nav, children, (op, left, right) =>
         {
-            Expression l = EnsureNumeric(left);
-            Expression r = EnsureNumeric(right);
+            (Expression l, Expression r) = NormalizeNumericPair(left, right);
             return op switch
             {
                 "<" => Expression.LessThan(l, r),
@@ -307,12 +382,22 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         return FoldBinary(nav, children, (op, left, right) =>
         {
-            Expression l = EnsureNumeric(left);
-            Expression r = EnsureNumeric(right);
+            if (op == "+" && (left.Type == typeof(string) || right.Type == typeof(string)))
+            {
+                Expression l = left.Type == typeof(string) ? left
+                    : Expression.Call(left, left.Type.GetMethod(nameof(ToString), Type.EmptyTypes)!);
+                Expression r = right.Type == typeof(string) ? right
+                    : Expression.Call(right, right.Type.GetMethod(nameof(ToString), Type.EmptyTypes)!);
+                return Expression.Call(
+                    typeof(string).GetMethod(nameof(string.Concat), [typeof(string), typeof(string)])!,
+                    l, r);
+            }
+
+            (Expression ln, Expression rn) = NormalizeNumericPair(left, right);
             return op switch
             {
-                "+" => Expression.Add(l, r),
-                "-" => Expression.Subtract(l, r),
+                "+" => Expression.Add(ln, rn),
+                "-" => Expression.Subtract(ln, rn),
                 _ => throw new NotSupportedException($"Unsupported additive operator '{op}'."),
             };
         }, ["+", "-"]);
@@ -329,8 +414,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         return FoldBinary(nav, children, (op, left, right) =>
         {
-            Expression l = EnsureNumeric(left);
-            Expression r = EnsureNumeric(right);
+            (Expression l, Expression r) = NormalizeNumericPair(left, right);
             return op switch
             {
                 "*" => Expression.Multiply(l, r),
@@ -387,8 +471,8 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         Expression operand = RequireExpression(children[1], "unary operand");
         return op switch
         {
-            "+" => EnsureNumeric(operand),
-            "-" => Expression.Negate(EnsureNumeric(operand)),
+            "+" => IsNumericType(operand.Type) ? operand : throw new NotSupportedException($"Expression '{operand}' is not numeric."),
+            "-" => Expression.Negate(IsNumericType(operand.Type) ? operand : throw new NotSupportedException($"Expression '{operand}' is not numeric.")),
             "!" => Expression.Not(EnsureBoolean(operand)),
             "~" => Expression.OnesComplement(EnsureInteger(operand)),
             _ => throw new NotSupportedException($"Unsupported unary operator '{op}'."),
@@ -563,26 +647,59 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             headerParts.Add(string.Empty);
         }
 
-        Expression initExpression = headerParts[0].Length == 0
+        string initText = headerParts[0];
+        ParameterExpression? namedIterator = null;
+        Expression? initValue = null;
+        Dictionary<string, Expression>? forSymbols = null;
+
+        // Detect variable declaration in init: "type name = value"
+        if (initText.Length > 0 && TryParseForInitDeclaration(initText, out string declTypeName, out string declVarName, out string declValueText))
+        {
+            Type varType = ResolveNativeType(declTypeName, context.ImportedNamespaces);
+            namedIterator = Expression.Variable(varType, declVarName);
+            initValue = ConvertIfNeeded(CompileSubExpression(declValueText, context, null), varType);
+            forSymbols = new Dictionary<string, Expression>(StringComparer.Ordinal) { [declVarName] = namedIterator };
+        }
+
+        Expression rawInit = initText.Length == 0
             ? Expression.Constant(0d)
-            : CompileSubExpression(headerParts[0], context, null);
+            : initValue ?? CompileSubExpression(initText, context, null);
+
         Expression testExpression = headerParts[1].Length == 0
             ? Expression.Constant(true)
-            : EnsureBoolean(CompileSubExpression(headerParts[1], context, null));
+            : EnsureBoolean(CompileSubExpression(headerParts[1], context, forSymbols));
         Expression[] nextExpressions = headerParts[2].Length == 0
             ? []
-            : [CompileSubExpression(headerParts[2], context, null)];
+            : [CompileSubExpression(headerParts[2], context, forSymbols)];
         Expression bodyExpression = bodySource.Length == 0
             ? Expression.Empty()
-            : CompileSubExpression(bodySource, context, null);
+            : CompileSubExpression(bodySource, context, forSymbols);
 
-        Type iteratorType = initExpression.Type == typeof(void) ? typeof(double) : initExpression.Type;
-        ParameterExpression iterator = Expression.Variable(iteratorType, "__for_iterator__");
-        Expression initValue = initExpression.Type == iteratorType
-            ? initExpression
-            : ConvertIfNeeded(initExpression, iteratorType);
+        ParameterExpression iterator = namedIterator
+            ?? Expression.Variable(rawInit.Type == typeof(void) ? typeof(double) : rawInit.Type, "__for_iterator__");
+        Expression finalInit = initValue
+            ?? (rawInit.Type == iterator.Type ? rawInit : ConvertIfNeeded(rawInit, iterator.Type));
 
-        return ExpressionEx.For(iterator, initValue, testExpression, nextExpressions, bodyExpression);
+        return ExpressionEx.For(iterator, finalInit, testExpression, nextExpressions, bodyExpression);
+    }
+
+    /// <summary>
+    /// Tries to parse a for-loop init string as a variable declaration of the form
+    /// <c>type name = value</c>.
+    /// </summary>
+    private static bool TryParseForInitDeclaration(string text, out string typeName, out string varName, out string valueText)
+    {
+        Match m = Regex.Match(text.Trim(),
+            @"^([A-Za-z_][A-Za-z0-9_]*(?:<[^>]*>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$");
+        if (m.Success)
+        {
+            typeName = m.Groups[1].Value;
+            varName = m.Groups[2].Value;
+            valueText = m.Groups[3].Value;
+            return true;
+        }
+        typeName = varName = valueText = string.Empty;
+        return false;
     }
 
     /// <summary>
@@ -753,17 +870,20 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     private static Expression? CompileBlock(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
     {
         List<Expression> expressions = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        context.BlockScope.TryGetValue(nav.Node, out List<ParameterExpression>? blockVars);
+        List<ParameterExpression> vars = blockVars ?? [];
+
         if (expressions.Count == 0)
         {
-            return Expression.Empty();
+            return vars.Count > 0 ? Expression.Block(vars, Expression.Empty()) : Expression.Empty();
         }
 
-        if (expressions.Count == 1)
+        if (expressions.Count == 1 && vars.Count == 0)
         {
             return expressions[0];
         }
 
-        return Expression.Block(expressions);
+        return Expression.Block(vars, expressions);
     }
 
     /// <summary>
@@ -1224,6 +1344,21 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     }
 
     /// <summary>
+    /// Normalizes two numeric operands to a common type: preserves the type when both are
+    /// identical, otherwise widens both to <see cref="double"/>.
+    /// </summary>
+    private static (Expression Left, Expression Right) NormalizeNumericPair(Expression left, Expression right)
+    {
+        if (!IsNumericType(left.Type))
+            throw new NotSupportedException($"Expression '{left}' is not numeric.");
+        if (!IsNumericType(right.Type))
+            throw new NotSupportedException($"Expression '{right}' is not numeric.");
+        if (left.Type == right.Type)
+            return (left, right);
+        return (EnsureNumeric(left), EnsureNumeric(right));
+    }
+
+    /// <summary>
     /// Ensures an expression can be safely used as a void branch.
     /// </summary>
     /// <param name="expression">Branch expression.</param>
@@ -1538,29 +1673,80 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// </summary>
     /// <param name="typeName">Type token.</param>
     /// <returns>Resolved CLR type.</returns>
-    private static Type ResolveNativeType(string typeName)
+    /// <summary>Known namespace prefixes tried during unqualified type resolution.</summary>
+    private static readonly string[] DefaultNamespaces =
+    [
+        "System", "System.Collections", "System.Collections.Generic",
+        "System.Linq", "System.Text",
+    ];
+
+    /// <summary>
+    /// Resolves a native CLR type from a C-style type token.
+    /// </summary>
+    /// <param name="typeName">Type token, may include generic syntax (e.g. <c>IEnumerable&lt;int&gt;</c>).</param>
+    /// <param name="importedNamespaces">Optional extra namespaces to search.</param>
+    /// <returns>Resolved CLR type.</returns>
+    private static Type ResolveNativeType(string typeName, IReadOnlyList<string>? importedNamespaces = null)
     {
-        return typeName switch
+        switch (typeName)
         {
-            "void" => typeof(void),
-            "bool" => typeof(bool),
-            "byte" => typeof(byte),
-            "char" => typeof(char),
-            "decimal" => typeof(decimal),
-            "double" => typeof(double),
-            "float" => typeof(float),
-            "int" => typeof(int),
-            "long" => typeof(long),
-            "object" => typeof(object),
-            "sbyte" => typeof(sbyte),
-            "short" => typeof(short),
-            "string" => typeof(string),
-            "uint" => typeof(uint),
-            "ulong" => typeof(ulong),
-            "ushort" => typeof(ushort),
-            _ => Type.GetType(typeName, false)
-                ?? throw new NotSupportedException($"Unsupported type '{typeName}'."),
-        };
+            case "void": return typeof(void);
+            case "bool": return typeof(bool);
+            case "byte": return typeof(byte);
+            case "char": return typeof(char);
+            case "decimal": return typeof(decimal);
+            case "double": return typeof(double);
+            case "float": return typeof(float);
+            case "int": return typeof(int);
+            case "long": return typeof(long);
+            case "object": return typeof(object);
+            case "sbyte": return typeof(sbyte);
+            case "short": return typeof(short);
+            case "string": return typeof(string);
+            case "uint": return typeof(uint);
+            case "ulong": return typeof(ulong);
+            case "ushort": return typeof(ushort);
+        }
+
+        // Generic type: e.g. "IEnumerable<int>" or "Func<string, string>"
+        int lt = typeName.IndexOf('<');
+        if (lt > 0 && typeName.EndsWith(">", StringComparison.Ordinal))
+        {
+            string baseName = typeName[..lt].Trim();
+            string argsText = typeName[(lt + 1)..^1].Trim();
+            List<Type> typeArgs = [.. SplitTopLevel(argsText, ',').Select(a => ResolveNativeType(a.Trim(), importedNamespaces))];
+            Type? genericDef = FindTypeByName(baseName + "`" + typeArgs.Count, importedNamespaces);
+            if (genericDef is not null) return genericDef.MakeGenericType([.. typeArgs]);
+        }
+
+        return FindTypeByName(typeName, importedNamespaces)
+            ?? throw new NotSupportedException($"Unsupported type '{typeName}'.");
+    }
+
+    /// <summary>
+    /// Searches all loaded assemblies for a type by simple or qualified name,
+    /// trying both the name directly and with each known/imported namespace prefix.
+    /// </summary>
+    private static Type? FindTypeByName(string typeName, IReadOnlyList<string>? importedNamespaces)
+    {
+        Type? t = Type.GetType(typeName, false)
+            ?? AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetType(typeName, false))
+                .FirstOrDefault(static x => x is not null);
+        if (t is not null) return t;
+
+        IEnumerable<string> namespaces = (importedNamespaces ?? []).Concat(DefaultNamespaces);
+        foreach (string ns in namespaces)
+        {
+            string qualified = ns + "." + typeName;
+            t = Type.GetType(qualified, false)
+                ?? AppDomain.CurrentDomain.GetAssemblies()
+                    .Select(a => a.GetType(qualified, false))
+                    .FirstOrDefault(static x => x is not null);
+            if (t is not null) return t;
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -1716,21 +1902,21 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
            && sourceText.Contains("(", StringComparison.Ordinal);
 
     /// <summary>
-    /// Immutable compilation context used by the parse-tree compiler.
-    /// </summary>
-    /// <param name="Symbols">Resolved expression symbols by identifier name.</param>
-    /// <summary>
     /// Internal compilation context used by parse-tree handlers.
     /// </summary>
     /// <param name="Symbols">Expression symbols for identifier resolution.</param>
     /// <param name="RuntimeContext">Optional mutable runtime symbol context.</param>
     /// <param name="SourceText">Current source text.</param>
     /// <param name="Compiler">Owning compiler instance.</param>
+    /// <param name="ImportedNamespaces">Namespaces imported by <c>using</c> directives in the source.</param>
+    /// <param name="BlockScope">Per-node variable lists populated by descent handlers.</param>
     private sealed record CompilationContext(
         IReadOnlyDictionary<string, Expression> Symbols,
         CStyleCompilerContext? RuntimeContext,
         string SourceText,
-        CStyleExpressionCompiler Compiler);
+        CStyleExpressionCompiler Compiler,
+        IReadOnlyList<string> ImportedNamespaces,
+        Dictionary<ParseNode, List<ParameterExpression>> BlockScope);
 
     /// <summary>
     /// Represents a parsed method declaration signature.
@@ -1853,4 +2039,247 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// <returns>Internal deferred-holder symbol name.</returns>
     private static string GetDeferredHolderSymbolName(string methodName)
         => "__deferred__" + methodName;
+
+    // ── Lambda expression handlers ────────────────────────────────────────────
+
+    /// <summary>
+    /// Descent handler for <c>lambda_expression</c>: extracts typed parameters,
+    /// registers them as symbols for children, and stashes them in the block scope.
+    /// </summary>
+    private static CompilationContext DescentLambdaExpression(ParseTreeNavigator nav, CompilationContext context)
+    {
+        var parameters = new List<ParameterExpression>();
+        var symbols = new Dictionary<string, Expression>(context.Symbols, StringComparer.Ordinal);
+
+        // Only look at the direct lambda_parameters child to avoid picking up params
+        // from nested lambdas in the body.
+        ParseTreeNavigator? lambdaParamsNode = nav.Children()
+            .FirstOrDefault(static n => n.RuleName == "lambda_parameters");
+
+        if (lambdaParamsNode is not null)
+        {
+            foreach (ParseTreeNavigator paramNav in lambdaParamsNode.Descendants("parameter"))
+            {
+                ParseTreeNavigator? typeNav = paramNav.Children().FirstOrDefault(static n => n.RuleName == "type_reference");
+                ParseTreeNavigator? nameNav = paramNav.Children().FirstOrDefault(static n => n.RuleName == "identifier");
+                if (typeNav is null || nameNav is null) continue;
+
+                string typeName = FlattenNodeText(typeNav.Node);
+                string paramName = FlattenNodeText(nameNav.Node);
+                Type paramType = ResolveNativeType(typeName, context.ImportedNamespaces);
+                ParameterExpression param = Expression.Parameter(paramType, paramName);
+                parameters.Add(param);
+                symbols[paramName] = param;
+            }
+        }
+
+        context.BlockScope[nav.Node] = parameters;
+        return context with { Symbols = symbols };
+    }
+
+    /// <summary>
+    /// Ascent handler for <c>lambda_expression</c>: wraps the compiled body with the
+    /// parameters previously stored during descent.
+    /// </summary>
+    private static Expression? AscentLambdaExpression(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        Expression? body = children.LastOrDefault(static c => c is not null);
+        if (body is null) return null;
+
+        context.BlockScope.TryGetValue(nav.Node, out List<ParameterExpression>? parameters);
+        return Expression.Lambda(body, parameters ?? []);
+    }
+
+    // ── Block variable scoping handlers ──────────────────────────────────────
+
+    /// <summary>
+    /// Descent handler for <c>block_instruction</c>: pre-declares all local variables
+    /// found at the top level of this block so they are in scope for every child.
+    /// </summary>
+    private static CompilationContext DescentBlockInstruction(ParseTreeNavigator nav, CompilationContext context)
+    {
+        var variables = new List<ParameterExpression>();
+        var symbols = new Dictionary<string, Expression>(context.Symbols, StringComparer.Ordinal);
+
+        foreach (ParseTreeNavigator declNav in FindVarDeclarationsShallow(nav))
+        {
+            ParseTreeNavigator? typeNav = declNav.Children().FirstOrDefault(static n => n.RuleName == "type_reference");
+            ParseTreeNavigator? nameNav = declNav.Children().FirstOrDefault(static n => n.RuleName == "identifier");
+            if (typeNav is null || nameNav is null) continue;
+
+            string varName = FlattenNodeText(nameNav.Node);
+            if (symbols.ContainsKey(varName)) continue;
+
+            string typeName = FlattenNodeText(typeNav.Node);
+            Type varType = ResolveNativeType(typeName, context.ImportedNamespaces);
+            ParameterExpression variable = Expression.Variable(varType, varName);
+            variables.Add(variable);
+            symbols[varName] = variable;
+        }
+
+        context.BlockScope[nav.Node] = variables;
+        return context with { Symbols = symbols };
+    }
+
+    /// <summary>
+    /// Enumerates <c>variable_declaration_assignment</c> nodes that are direct logical children
+    /// of a block, without descending into nested blocks.
+    /// </summary>
+    private static IEnumerable<ParseTreeNavigator> FindVarDeclarationsShallow(ParseTreeNavigator blockNav)
+    {
+        foreach (ParseTreeNavigator child in blockNav.Children())
+        {
+            foreach (ParseTreeNavigator decl in FindVarDeclarationsShallowInNode(child))
+            {
+                yield return decl;
+            }
+        }
+    }
+
+    private static IEnumerable<ParseTreeNavigator> FindVarDeclarationsShallowInNode(ParseTreeNavigator nav)
+    {
+        if (nav.RuleName == "variable_declaration_assignment")
+        {
+            yield return nav;
+            yield break;
+        }
+
+        if (nav.RuleName == "block_instruction")
+        {
+            yield break;
+        }
+
+        foreach (ParseTreeNavigator child in nav.Children())
+        {
+            foreach (ParseTreeNavigator decl in FindVarDeclarationsShallowInNode(child))
+            {
+                yield return decl;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Ascent handler for <c>variable_declaration_assignment</c>: produces an assignment
+    /// expression using the pre-declared variable from the enclosing block scope.
+    /// </summary>
+    private static Expression? CompileVariableDeclaration(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        List<Expression> nonNull = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        if (nonNull.Count < 2) return nonNull.FirstOrDefault() ?? Expression.Empty();
+
+        Expression target = nonNull[0];
+        Expression value = nonNull[^1];
+        if (ReferenceEquals(target, value)) return target;
+
+        return Expression.Assign(target, ConvertIfNeeded(value, target.Type));
+    }
+
+    // ── Interpolated string handler ───────────────────────────────────────────
+
+    /// <summary>
+    /// Ascent handler for <c>interpolated_string</c>: concatenates text segments and
+    /// compiled interpolation expressions into a single string.
+    /// </summary>
+    private static Expression? CompileInterpolatedString(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        List<Expression> parts = children
+            .Where(static c => c is not null)
+            .Cast<Expression>()
+            .Select(static e => e.Type == typeof(string)
+                ? e
+                : Expression.Call(e, typeof(object).GetMethod(nameof(ToString), Type.EmptyTypes)!))
+            .ToList();
+
+        if (parts.Count == 0) return Expression.Constant(string.Empty);
+        if (parts.Count == 1) return parts[0];
+
+        return Expression.Call(
+            typeof(string).GetMethod(nameof(string.Concat), [typeof(string[])])!,
+            Expression.NewArrayInit(typeof(string), parts));
+    }
+
+    // ── Preprocessing helpers ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Replaces compound assignment operators (<c>+=</c>, <c>-=</c>, <c>*=</c>, <c>/=</c>,
+    /// <c>%=</c>) and increment/decrement operators (<c>++</c>, <c>--</c>)
+    /// with their equivalent simple-assignment + operation forms.
+    /// </summary>
+    private static string PreprocessCompoundAssignments(string content)
+    {
+        // Postfix increment/decrement: i++ → i = i + 1 , i-- → i = i - 1
+        content = Regex.Replace(
+            content,
+            @"(\b[A-Za-z_][A-Za-z0-9_]*)\s*(\+\+|--)",
+            static m =>
+            {
+                string name = m.Groups[1].Value;
+                string op = m.Groups[2].Value == "++" ? "+" : "-";
+                return $"{name} = {name} {op} 1";
+            });
+
+        // Prefix increment/decrement: ++i → i = i + 1 , --i → i = i - 1
+        content = Regex.Replace(
+            content,
+            @"(\+\+|--)\s*([A-Za-z_][A-Za-z0-9_]*\b)",
+            static m =>
+            {
+                string op = m.Groups[1].Value == "++" ? "+" : "-";
+                string name = m.Groups[2].Value;
+                return $"{name} = {name} {op} 1";
+            });
+
+        // Compound assignment: x += y → x = x + y
+        content = Regex.Replace(
+            content,
+            @"(\b[A-Za-z_][A-Za-z0-9_.]*)\s*([+\-*/%])\s*=(?!=)",
+            static m => $"{m.Groups[1].Value} = {m.Groups[1].Value} {m.Groups[2].Value} ");
+
+        return content;
+    }
+
+    /// <summary>
+    /// Removes <c>using Namespace.Name;</c> directives from source text.
+    /// The namespace names should be extracted with <see cref="ExtractUsingDirectives"/> before calling this.
+    /// </summary>
+    private static string StripUsingDirectives(string content)
+        => Regex.Replace(content, @"\busing\s+[\w.]+\s*;\s*", string.Empty);
+
+    /// <summary>
+    /// Extracts namespace names from <c>using Namespace.Name;</c> directives in source text.
+    /// </summary>
+    private static List<string> ExtractUsingDirectives(string content)
+    {
+        var namespaces = new List<string>();
+        foreach (Match m in Regex.Matches(content, @"\busing\s+([\w.]+)\s*;"))
+        {
+            namespaces.Add(m.Groups[1].Value);
+        }
+
+        return namespaces;
+    }
+
+    /// <summary>
+    /// Returns the C# keyword alias for a primitive type, or the full CLR type name.
+    /// </summary>
+    private static string GetCSharpTypeName(Type type)
+    {
+        if (type == typeof(void)) return "void";
+        if (type == typeof(bool)) return "bool";
+        if (type == typeof(byte)) return "byte";
+        if (type == typeof(char)) return "char";
+        if (type == typeof(decimal)) return "decimal";
+        if (type == typeof(double)) return "double";
+        if (type == typeof(float)) return "float";
+        if (type == typeof(int)) return "int";
+        if (type == typeof(long)) return "long";
+        if (type == typeof(object)) return "object";
+        if (type == typeof(sbyte)) return "sbyte";
+        if (type == typeof(short)) return "short";
+        if (type == typeof(string)) return "string";
+        if (type == typeof(uint)) return "uint";
+        if (type == typeof(ulong)) return "ulong";
+        if (type == typeof(ushort)) return "ushort";
+        return type.FullName ?? type.Name;
+    }
 }
