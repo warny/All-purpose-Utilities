@@ -87,6 +87,20 @@ public class SimpleExpressionParserTest
         }
     }
 
+    [TestMethod]
+    public void ParseImportedOverloadedFunctionExpressions()
+    {
+        var parameters = new ParameterExpression[] {
+                Expression.Parameter(typeof(double), "x"),
+            };
+
+        var result = (LambdaExpression)compiler.Compile<Func<double, double>>("Max(x, 1.5)", parameters, typeof(Math), false);
+        var resultFunc = (Func<double, double>)result.Compile();
+
+        Assert.AreEqual(2.2d, resultFunc(2.2d), 1e-9);
+        Assert.AreEqual(1.5d, resultFunc(0.3d), 1e-9);
+    }
+
 
     /// <summary>
     /// Ensures two-variable arithmetic expressions compile and execute.
