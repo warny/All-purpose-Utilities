@@ -153,10 +153,7 @@ public abstract class ODataContext
     {
         ArgumentNullException.ThrowIfNull(uri);
 
-        using var client = new HttpClient(new HttpClientHandler
-        {
-            AutomaticDecompression = DecompressionMethods.All
-        });
+        using var client = new HttpClient(CreateMetadataHttpClientHandler(uri));
 
         client.Timeout = MetadataDownloadTimeout;
 
@@ -174,6 +171,28 @@ public abstract class ODataContext
 
         using var responseStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
         return CopyToMemory(responseStream, MaxMetadataBytes);
+    }
+
+    /// <summary>
+    /// Creates an HTTP client handler configured for EDMX metadata downloads.
+    /// </summary>
+    /// <param name="uri">The remote URI containing the EDMX content.</param>
+    /// <returns>An <see cref="HttpClientHandler"/> configured for metadata retrieval.</returns>
+    private static HttpClientHandler CreateMetadataHttpClientHandler(Uri uri)
+    {
+        ArgumentNullException.ThrowIfNull(uri);
+
+        var handler = new HttpClientHandler
+        {
+            AutomaticDecompression = DecompressionMethods.All
+        };
+
+        if (uri.IsLoopback)
+        {
+            handler.UseProxy = false;
+        }
+
+        return handler;
     }
 
     /// <summary>
