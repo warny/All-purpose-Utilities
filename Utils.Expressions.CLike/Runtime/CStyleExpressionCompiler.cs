@@ -108,6 +108,55 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     }
 
     /// <summary>
+    /// Compiles a C-like expression body using explicit parameters and infers the return type
+    /// from the provided delegate type.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
+    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
+        => Compile<T>(content, parameters, null, strictTypes: false);
+
+    /// <summary>
+    /// Compiles a C-like expression body using explicit parameters and optional static member imports.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <param name="importType">
+    /// Optional type whose compatible public static methods are imported as callable symbols.
+    /// </param>
+    /// <param name="strictTypes">Reserved; currently ignored.</param>
+    /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
+    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")
+            ?? throw new InvalidOperationException($"Delegate type '{typeof(T).Name}' has no Invoke method.");
+        Type returnType = invokeMethod.ReturnType;
+        ParameterInfo[] delegateParameters = invokeMethod.GetParameters();
+        if (delegateParameters.Length != parameters.Length)
+        {
+            throw new ArgumentException(
+                $"Delegate '{typeof(T).Name}' expects {delegateParameters.Length} parameters, but {parameters.Length} were provided.",
+                nameof(parameters));
+        }
+
+        var symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p, StringComparer.Ordinal);
+        if (importType is not null)
+        {
+            RegisterStaticCallableSymbols(importType, symbols);
+        }
+
+        Expression body = Compile(content, symbols);
+        Expression convertedBody = ConvertIfNeeded(body, returnType);
+        return Expression.Lambda(convertedBody, parameters);
+    }
+
+    /// <summary>
     /// Compiles a C-like expression body with explicit parameters and return type,
     /// returning a typed lambda expression.
     /// </summary>
@@ -165,6 +214,55 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             blockScope);
         Expression? compiled = compiler.Compile(root, context);
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
+    }
+
+    /// <summary>
+    /// Registers compatible public static methods from a type as callable symbols.
+    /// </summary>
+    /// <param name="importType">Type providing static methods.</param>
+    /// <param name="symbols">Destination symbol table.</param>
+    private static void RegisterStaticCallableSymbols(Type importType, IDictionary<string, Expression> symbols)
+    {
+        ArgumentNullException.ThrowIfNull(importType);
+        ArgumentNullException.ThrowIfNull(symbols);
+
+        IEnumerable<IGrouping<string, MethodInfo>> methodsByName = importType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(static method => !method.ContainsGenericParameters && method.ReturnType != typeof(void))
+            .GroupBy(static method => method.Name, StringComparer.Ordinal);
+
+        foreach (IGrouping<string, MethodInfo> group in methodsByName)
+        {
+            if (symbols.ContainsKey(group.Key))
+            {
+                continue;
+            }
+
+            List<MethodInfo> supportedMethods = [];
+            foreach (MethodInfo method in group)
+            {
+                Type[] signature = method
+                    .GetParameters()
+                    .Select(static parameter => parameter.ParameterType)
+                    .Append(method.ReturnType)
+                    .ToArray();
+
+                try
+                {
+                    _ = Expression.GetDelegateType(signature);
+                    supportedMethods.Add(method);
+                }
+                catch (ArgumentException)
+                {
+                    // Skip unsupported signatures.
+                }
+            }
+
+            if (supportedMethods.Count > 0)
+            {
+                symbols[group.Key] = Expression.Constant(supportedMethods.ToArray(), typeof(MethodInfo[]));
+            }
+        }
     }
 
     private static ParseTreeCompiler<CompilationContext, Expression> CreateCompiler()
@@ -266,6 +364,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// Compiles an identifier-part rule. Only simple identifiers are supported.
     /// </summary>
     /// <param name="nav">Current parser navigator.</param>
+    /// <param name="context">Current compilation context.</param>
     /// <param name="children">Compiled child expressions.</param>
     /// <returns>Compiled identifier expression.</returns>
     private static Expression? CompileIdentifierPart(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
@@ -549,6 +648,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
                 Expression expression when typeof(Delegate).IsAssignableFrom(expression.Type)
                     => Expression.Invoke(expression, argumentArray),
                 MethodInfo methodInfo => Expression.Call(methodInfo, ConvertArgumentsForParameters(methodInfo.GetParameters(), argumentArray)),
+                MethodInfo[] methods when TryBuildMethodCall(methods, argumentArray, out Expression? overloadCall) => overloadCall,
                 _ => throw new NotSupportedException($"Symbol '{calleeName}' is not invokable."),
             };
         }
@@ -1089,6 +1189,20 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             {
                 string argumentText = ReadBalancedContent(expressionText, ref index, '(', ')');
                 Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
+
+                if (current is ConstantExpression { Value: MethodInfo methodInfo })
+                {
+                    current = Expression.Call(methodInfo, ConvertArgumentsForParameters(methodInfo.GetParameters(), arguments));
+                    continue;
+                }
+
+                if (current is ConstantExpression { Value: MethodInfo[] methodGroup } &&
+                    TryBuildMethodCall(methodGroup, arguments, out Expression? methodGroupCall))
+                {
+                    current = methodGroupCall;
+                    continue;
+                }
+
                 MethodInfo? invokeMethod = current.Type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
                 if (invokeMethod is null)
                 {
@@ -1467,9 +1581,9 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             return false;
         }
 
-        MethodInfo? method = type
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .FirstOrDefault(methodInfo => methodInfo.Name == methodName && methodInfo.GetParameters().Length == arguments.Length);
+        MethodInfo? method = SelectBestMethod(
+            type.GetMethods(BindingFlags.Public | BindingFlags.Static).Where(methodInfo => methodInfo.Name == methodName),
+            arguments);
         if (method is null)
         {
             return false;
@@ -1477,6 +1591,103 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
 
         callExpression = Expression.Call(method, ConvertArgumentsForParameters(method.GetParameters(), arguments));
         return true;
+    }
+
+    /// <summary>
+    /// Tries to build a method call for an overload set.
+    /// </summary>
+    /// <param name="methods">Candidate methods sharing the same source symbol.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <param name="callExpression">Resolved call expression.</param>
+    /// <returns><c>true</c> when a compatible method was selected; otherwise <c>false</c>.</returns>
+    private static bool TryBuildMethodCall(IReadOnlyList<MethodInfo> methods, Expression[] arguments, out Expression? callExpression)
+    {
+        callExpression = null;
+        MethodInfo? selectedMethod = SelectBestMethod(methods, arguments);
+        if (selectedMethod is null)
+        {
+            return false;
+        }
+
+        callExpression = Expression.Call(selectedMethod, ConvertArgumentsForParameters(selectedMethod.GetParameters(), arguments));
+        return true;
+    }
+
+    /// <summary>
+    /// Selects the best method candidate for provided invocation arguments.
+    /// </summary>
+    /// <param name="candidates">Method candidates.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Best method candidate or <c>null</c> when no compatible candidate exists.</returns>
+    private static MethodInfo? SelectBestMethod(IEnumerable<MethodInfo> candidates, Expression[] arguments)
+    {
+        MethodInfo? bestMethod = null;
+        int bestScore = int.MaxValue;
+        foreach (MethodInfo candidate in candidates)
+        {
+            ParameterInfo[] parameters = candidate.GetParameters();
+            if (parameters.Length != arguments.Length)
+            {
+                continue;
+            }
+
+            int? score = CalculateMethodCompatibilityScore(parameters, arguments);
+            if (score is null)
+            {
+                continue;
+            }
+
+            if (score.Value < bestScore)
+            {
+                bestScore = score.Value;
+                bestMethod = candidate;
+            }
+        }
+
+        return bestMethod;
+    }
+
+    /// <summary>
+    /// Calculates a compatibility score for a method candidate against provided arguments.
+    /// </summary>
+    /// <param name="parameters">Method parameters.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Compatibility score (lower is better) or <c>null</c> when incompatible.</returns>
+    private static int? CalculateMethodCompatibilityScore(IReadOnlyList<ParameterInfo> parameters, IReadOnlyList<Expression> arguments)
+    {
+        int score = 0;
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            Type parameterType = parameters[i].ParameterType;
+            Type argumentType = arguments[i].Type;
+
+            if (argumentType == parameterType)
+            {
+                continue;
+            }
+
+            if (parameterType.IsAssignableFrom(argumentType))
+            {
+                score += 1;
+                continue;
+            }
+
+            if (IsNumericType(parameterType) && IsNumericType(argumentType))
+            {
+                score += 2;
+                continue;
+            }
+
+            if (arguments[i] is ConstantExpression { Value: null } && !parameterType.IsValueType)
+            {
+                score += 3;
+                continue;
+            }
+
+            return null;
+        }
+
+        return score;
     }
 
     /// <summary>
@@ -1668,11 +1879,6 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         };
     }
 
-    /// <summary>
-    /// Resolves a native CLR type from a C-style type token.
-    /// </summary>
-    /// <param name="typeName">Type token.</param>
-    /// <returns>Resolved CLR type.</returns>
     /// <summary>Known namespace prefixes tried during unqualified type resolution.</summary>
     private static readonly string[] DefaultNamespaces =
     [

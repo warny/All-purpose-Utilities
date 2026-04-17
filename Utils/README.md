@@ -18,7 +18,7 @@
 - **Streams** – base16/base32/base64 converters and binary serialization
 - **Transactions** – batch reversible actions with commit/rollback handling
 
-> XML helpers are packaged separately in `omy.Utils.Xml`. Add a reference to access `XmlDataProcessor` and related extensions.
+> XML helpers are packaged separately in `omy.Utils.XML`. Add a reference to access `XmlDataProcessor` and related extensions.
 
 ## Usage examples
 
