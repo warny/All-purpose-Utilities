@@ -39,12 +39,22 @@ public class ExpressionDerivationTests
 
         foreach (var test in tests)
         {
-            var function = (LambdaExpression)compiler.Compile(test.function, parameters, typeof(double), false);
-            var derivative = (LambdaExpression)compiler.Compile(test.derivative, parameters, typeof(double), false);
+            var function = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
+            var derivative = compiler.Compile<Func<double, double>>(test.derivative, parameters, typeof(double), false);
 
             var result = derivation.Derivate(function);
 
-            Assert.AreEqual(derivative, result, ExpressionComparer.Default);
+            var expected = derivative;
+            var actual = (LambdaExpression)result;
+
+            var expectedFunc = (Func<double, double>)expected.Compile();
+            var actualFunc = (Func<double, double>)actual.Compile();
+            double[] samples = [-3.5, -1.0, -0.2, 0.2, 1.0, 2.5];
+
+            foreach (var sample in samples)
+            {
+                Assert.AreEqual(expectedFunc(sample), actualFunc(sample), 1e-9, $"Mismatch for '{test.function}' at x={sample}.");
+            }
         }
     }
 

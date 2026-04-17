@@ -84,7 +84,7 @@ namespace Utils.Mathematics.Expressions
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return right;  // x * 0 => 0
-            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return Transform(left);   // x * 1 => x
+            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;   // x * 1 => x
             if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left); // x * -1 => -x
             return null;
         }
@@ -295,12 +295,10 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            // Factor out
-            return Transform(
-                Expression.Multiply(
-                    Transform(Expression.Add(leftleft, rightleft)),
-                    leftright
-                )
+            // Factor out without recursively re-entering this rule on the same shape.
+            return Expression.Multiply(
+                Expression.Add(leftleft, rightleft),
+                leftright
             );
         }
 
@@ -364,11 +362,10 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return Transform(
-                Expression.Multiply(
-                    Transform(Expression.Subtract(leftleft, rightleft)),
-                    leftright
-                )
+            // Factor out without recursively re-entering this rule on the same shape.
+            return Expression.Multiply(
+                Expression.Subtract(leftleft, rightleft),
+                leftright
             );
         }
 
