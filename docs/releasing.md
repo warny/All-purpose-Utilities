@@ -16,7 +16,8 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 
 ## CI publishing pipeline
 
-- The `Publish NuGet` workflow builds the solution on the `release` branch and publishes NuGet packages when their version number changed.
+- The `Publish NuGet` workflow (`.github/workflows/nuget-publish.yml`) runs on pushes to the `release` branch.
+- It restores, builds, packs, and publishes only packages whose `<Version>` is not already present on nuget.org.
 - The workflow checks NuGet to ensure the package version is not already published before uploading.
 - Packages are pushed using the `NUGET_API_KEY` secret configured in the repository settings.
 

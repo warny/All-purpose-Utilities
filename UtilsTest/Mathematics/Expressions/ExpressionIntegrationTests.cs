@@ -26,8 +26,8 @@ public class ExpressionIntegrationTests
         var tests = new (string function, string integral)[]
         {
             ("1/x", "Log(x)"),
-            ("1/(x**2)", "-(1/x)"),
-            ("1/Sqrt(x)", "2*Sqrt(x)"),
+            ("1/(x**2)", "-(1.0/x)"),
+            ("1/Sqrt(x)", "2.0*Sqrt(x)"),
             ("Sinh(x)", "Cosh(x)"),
             ("Cosh(x)", "Sinh(x)"),
             ("Tanh(x)", "Log(Cosh(x))"),
@@ -35,8 +35,8 @@ public class ExpressionIntegrationTests
 
         foreach (var test in tests)
         {
-            var func = compiler.Compile(test.function, parameters, typeof(double), false);
-            var expected = compiler.Compile(test.integral, parameters, typeof(double), false);
+            var func = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
+            var expected = simplifier.Simplify(compiler.Compile<Func<double, double>>(test.integral, parameters, typeof(double), false));
             var result = simplifier.Simplify(integration.Integrate(func));
             Assert.AreEqual(expected, result, ExpressionComparer.Default);
         }

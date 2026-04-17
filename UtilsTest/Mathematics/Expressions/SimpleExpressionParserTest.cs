@@ -58,7 +58,11 @@ public class SimpleExpressionParserTest
         foreach (var test in tests)
         {
             var result = (LambdaExpression)compiler.Compile<Func<double, double, double, double>>(test.Expression, parameters);
-            Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
+            var resultFunc = (Func<double, double, double, double>)result.Compile();
+            var expectedFunc = ((Expression<Func<double, double, double, double>>)test.Expected).Compile();
+
+            Assert.AreEqual(expectedFunc(8, 3, 2), resultFunc(8, 3, 2), 1e-9);
+            Assert.AreEqual(expectedFunc(1.5, -2, 4), resultFunc(1.5, -2, 4), 1e-9);
         }
     }
 

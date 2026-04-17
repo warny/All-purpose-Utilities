@@ -108,6 +108,55 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     }
 
     /// <summary>
+    /// Compiles a C-like expression body using explicit parameters and infers the return type
+    /// from the provided delegate type.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
+    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
+        => Compile<T>(content, parameters, null, strictTypes: false);
+
+    /// <summary>
+    /// Compiles a C-like expression body using explicit parameters and optional static member imports.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <param name="importType">
+    /// Optional type whose compatible public static methods are imported as callable symbols.
+    /// </param>
+    /// <param name="strictTypes">Reserved; currently ignored.</param>
+    /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
+    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")
+            ?? throw new InvalidOperationException($"Delegate type '{typeof(T).Name}' has no Invoke method.");
+        Type returnType = invokeMethod.ReturnType;
+        ParameterInfo[] delegateParameters = invokeMethod.GetParameters();
+        if (delegateParameters.Length != parameters.Length)
+        {
+            throw new ArgumentException(
+                $"Delegate '{typeof(T).Name}' expects {delegateParameters.Length} parameters, but {parameters.Length} were provided.",
+                nameof(parameters));
+        }
+
+        var symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p, StringComparer.Ordinal);
+        if (importType is not null)
+        {
+            RegisterStaticCallableSymbols(importType, symbols);
+        }
+
+        Expression body = Compile(content, symbols);
+        Expression convertedBody = ConvertIfNeeded(body, returnType);
+        return Expression.Lambda(convertedBody, parameters);
+    }
+
+    /// <summary>
     /// Compiles a C-like expression body with explicit parameters and return type,
     /// returning a typed lambda expression.
     /// </summary>
@@ -165,6 +214,57 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             blockScope);
         Expression? compiled = compiler.Compile(root, context);
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
+    }
+
+    /// <summary>
+    /// Registers compatible public static methods from a type as callable symbols.
+    /// </summary>
+    /// <param name="importType">Type providing static methods.</param>
+    /// <param name="symbols">Destination symbol table.</param>
+    private static void RegisterStaticCallableSymbols(Type importType, IDictionary<string, Expression> symbols)
+    {
+        ArgumentNullException.ThrowIfNull(importType);
+        ArgumentNullException.ThrowIfNull(symbols);
+
+        IEnumerable<IGrouping<string, MethodInfo>> methodsByName = importType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(static method => !method.ContainsGenericParameters && method.ReturnType != typeof(void))
+            .GroupBy(static method => method.Name, StringComparer.Ordinal);
+
+        foreach (IGrouping<string, MethodInfo> group in methodsByName)
+        {
+            if (symbols.ContainsKey(group.Key))
+            {
+                continue;
+            }
+
+            MethodInfo? selectedMethod = group
+                .OrderByDescending(static method => method.GetParameters().Length == 1
+                    && method.GetParameters()[0].ParameterType == typeof(double)
+                    && method.ReturnType == typeof(double))
+                .ThenBy(static method => method.GetParameters().Length)
+                .FirstOrDefault();
+            if (selectedMethod is null)
+            {
+                continue;
+            }
+
+            Type[] signature = selectedMethod
+                .GetParameters()
+                .Select(static parameter => parameter.ParameterType)
+                .Append(selectedMethod.ReturnType)
+                .ToArray();
+
+            try
+            {
+                _ = Expression.GetDelegateType(signature);
+                symbols[group.Key] = Expression.Constant(selectedMethod, typeof(MethodInfo));
+            }
+            catch (ArgumentException)
+            {
+                // Skip unsupported signatures.
+            }
+        }
     }
 
     private static ParseTreeCompiler<CompilationContext, Expression> CreateCompiler()
@@ -1089,6 +1189,13 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             {
                 string argumentText = ReadBalancedContent(expressionText, ref index, '(', ')');
                 Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
+
+                if (current is ConstantExpression { Value: MethodInfo methodInfo })
+                {
+                    current = Expression.Call(methodInfo, ConvertArgumentsForParameters(methodInfo.GetParameters(), arguments));
+                    continue;
+                }
+
                 MethodInfo? invokeMethod = current.Type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
                 if (invokeMethod is null)
                 {
