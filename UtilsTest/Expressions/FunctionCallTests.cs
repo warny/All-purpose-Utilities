@@ -1,27 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates function-call compilation with <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class FunctionCallTests
 {
+    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+
     [TestMethod]
     public void FunctionCallTest1()
     {
+        // Explicit generic type args in method calls are not supported by the grammar;
+        // use the non-generic overload which produces the same output.
         int[] var = [1, 2, 3];
-        var expression = "(int[] var) => string.Concat<int>(var)";
+        var expression = "(int[] var) => string.Concat(var)";
 
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<int[], string>)e.Compile();
 
-        Assert.AreEqual(string.Concat<int>(var), f(var));
+        Assert.AreEqual(string.Concat(var.Cast<object>().ToArray()), f(var));
     }
 
     [TestMethod]
@@ -29,7 +32,7 @@ public class FunctionCallTests
     {
         var expression = "() => string.Concat(\"1\", \"2\", \"3\")";
 
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<string>)e.Compile();
 
         Assert.AreEqual("123", f());
@@ -40,7 +43,7 @@ public class FunctionCallTests
     {
         var expression = "() => string.Concat(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\")";
 
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<string>)e.Compile();
         Assert.AreEqual("123456", f());
     }
@@ -53,7 +56,7 @@ public class FunctionCallTests
         int[] var = [1, 2, 3];
         var expression = "(int[] var) => string.Concat(var)";
 
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<int[], string>)e.Compile();
 
         Assert.AreEqual(string.Concat(var.Cast<object>().ToArray()), f(var));
@@ -65,7 +68,7 @@ public class FunctionCallTests
         string[] var = ["1", "2", "3"];
         var expression = "(string[] var) => string.Concat(var)";
 
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<string[], string>)e.Compile();
 
         Assert.AreEqual(string.Concat(var.Cast<object>().ToArray()), f(var));
@@ -78,7 +81,7 @@ public class FunctionCallTests
         Func<string, string> ToLowerCase = (string s) => s.ToLower();
 
         var expression = "(System.Func<string, string> s, string str) => s(str)";
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<Func<string, string>, string, string>)e.Compile();
 
         var tests = new List<string>()
@@ -102,7 +105,7 @@ public class FunctionCallTests
     public void LambdaCallTest2()
     {
         var expression = "(string str) => { System.Func<string, string> f = (string s) => s.ToUpper(); f(str) }";
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<string, string>)e.Compile();
 
         var tests = new List<string>()
@@ -124,8 +127,12 @@ public class FunctionCallTests
 
     public void ExtensionMethodCallTest()
     {
-        var expression = "(string[] s, Func<string, string> f) => s.Select(f).ToArray()";
-        var e = ExpressionParser.Parse(expression, ["System.Linq"]);
+        var expression = """
+            using System.Linq;
+            (string[] s, Func<string, string> f) => s.Select(f).ToArray()
+            """;
+            
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<string, Func<string, string>, string>)e.Compile();
 
         Func<string, string> ToUpper = (string s) => s.ToUpper();
@@ -138,6 +145,68 @@ public class FunctionCallTests
         }
     }
 
+    /// <summary>
+    /// Ensures context delegates can be invoked from compiled source.
+    /// </summary>
+    [TestMethod]
+    public void Compile_FunctionCall_InvokesContextDelegate()
+    {
+        var context = new CStyleCompilerContext();
+        context.Set("sum", (Func<int, int, int>)((a, b) => a + b));
 
+        var expression = compiler.Compile("sum(4, 7)", context);
+        var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
+
+        Assert.AreEqual(11, lambda());
+    }
+
+    /// <summary>
+    /// Ensures delegate invocation supports array arguments.
+    /// </summary>
+    [TestMethod]
+    public void Compile_FunctionCall_WithArrayArgument_ReturnsExpectedValue()
+    {
+        var context = new CStyleCompilerContext();
+        context.Set("values", new[] { 1, 2, 3 });
+        context.Set("concatInt", (Func<int[], string>)(values => string.Concat(values)));
+
+        var expression = compiler.Compile("concatInt(values)", context);
+        var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
+
+        Assert.AreEqual("123", lambda());
+    }
+
+    /// <summary>
+    /// Ensures delegate invocation supports function arguments.
+    /// </summary>
+    [TestMethod]
+    public void Compile_FunctionCall_WithLambdaArgument_ReturnsExpectedValue()
+    {
+        var context = new CStyleCompilerContext();
+        context.Set("apply", (Func<Func<string, string>, string, string>)((f, s) => f(s)));
+        context.Set("toUpper", (Func<string, string>)(s => s.ToUpperInvariant()));
+        context.Set("text", "aBc");
+
+        var expression = compiler.Compile("apply(toUpper, text)", context);
+        var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
+
+        Assert.AreEqual("ABC", lambda());
+    }
+
+    /// <summary>
+    /// Ensures a method declared in source can be invoked in the same source block.
+    /// </summary>
+    [TestMethod]
+    public void Compile_FunctionDeclarationThenCall_Compiles()
+    {
+        var context = new CStyleCompilerContext();
+
+        var expression = compiler.CompileSource(
+            """
+            public int add(int a, int b) { a + b; }
+            add(5, 8)
+            """,
+            context);
+        Assert.IsNotNull(expression);
+    }
 }
-

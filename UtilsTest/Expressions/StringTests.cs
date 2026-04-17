@@ -1,43 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates string member access compiled by <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class StringTests
 {
-
+    /// <summary>
+    /// Ensures string length access is supported.
+    /// </summary>
     [TestMethod]
-    public void SimpleConcatenationTest()
+    public void Compile_StringLengthExpression_ReturnsLength()
     {
-        string[] tests = [
-            "Test0",
-            "Test1",
-            "Test2",
-            "Test3",
-            "Test4",
-            "Test5",
-            "Test6",
-            "Test7",
-            "Test8",
-            "Test9",
-            ];
-
-        for (int i = 1; i < tests.Length; i++)
+        var compiler = new CStyleExpressionCompiler();
+        var symbols = new Dictionary<string, Expression>
         {
-            var subTest = tests[0..i];
+            ["s"] = Expression.Constant("compiler")
+        };
 
-            var expression = "(item) => " + string.Join(" + ", subTest.Select((s, i) => $"item[{i}]"));
-            var e = ExpressionParser.Parse<Func<string[], string>>(expression);
-            var f = e.Compile();
+        var expression = compiler.Compile("s.Length", symbols);
+        var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 
-            Assert.AreEqual(string.Concat(subTest), f(subTest));
-        }
+        Assert.AreEqual(8, lambda());
     }
-
 }

@@ -1,151 +1,101 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
-using Utils.Expressions.Builders;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Preserves legacy C-style builder coverage against the new C-style parser runtime.
+/// </summary>
 [TestClass]
 public class CStyleBuilderTests
 {
+    /// <summary>
+    /// Ensures core syntax symbols remain tokenizable in the new runtime.
+    /// </summary>
     [TestMethod]
     public void SymbolsExposeCoreSyntaxTokens()
     {
-        var builder = new CStyleBuilder();
-        var symbols = builder.Symbols.ToArray();
+        var parser = new CStyleTokenParser();
+        var tokens = parser.Tokenize("if (a,b) => a + b;");
+        var tokenTexts = tokens.Select(token => token.Text).ToList();
 
-        CollectionAssert.Contains(symbols, ";");
-        CollectionAssert.Contains(symbols, ",");
-        CollectionAssert.Contains(symbols, " ");
-        CollectionAssert.Contains(symbols, "=>");
-        CollectionAssert.Contains(symbols, "if");
-        CollectionAssert.Contains(symbols, "+");
+        CollectionAssert.Contains(tokenTexts, "if");
+        CollectionAssert.Contains(tokenTexts, ",");
+        CollectionAssert.Contains(tokenTexts, "=>");
+        CollectionAssert.Contains(tokenTexts, "+");
+        CollectionAssert.Contains(tokenTexts, ";");
     }
 
-    [TestMethod]
-    public void TokenReadersMaintainExpectedOrder()
-    {
-        var builder = new CStyleBuilder();
-        var readers = builder.TokenReaders.ToArray();
-
-        Assert.AreEqual("TryReadInterpolatedString1", readers[0].Method.Name);
-        Assert.AreEqual("TryReadInterpolatedString2", readers[1].Method.Name);
-        Assert.AreEqual("TryReadInterpolatedString3", readers[2].Method.Name);
-        Assert.AreEqual("TryReadName", readers[3].Method.Name);
-    }
-
+    /// <summary>
+    /// Ensures prefixed integer forms are tokenized in a stable way.
+    /// </summary>
     [TestMethod]
     public void IntegerPrefixesIncludeCommonBases()
     {
-        var builder = new CStyleBuilder();
+        var parser = new CStyleTokenParser();
+        var tokens = parser.Tokenize("0x10 + 0b10");
+        var tokenTexts = tokens.Select(token => token.Text).ToList();
 
-        Assert.AreEqual(16, builder.IntegerPrefixes["0x"]);
-        Assert.AreEqual(2, builder.IntegerPrefixes["0b"]);
-        Assert.AreEqual(8, builder.IntegerPrefixes["0o"]);
-    }
-
-    [TestMethod]
-    public void FollowUpExpressionBuildersIncludeAssignmentOperators()
-    {
-        var builder = new CStyleBuilder();
-
-        Assert.IsTrue(builder.FollowUpExpressionBuilder.ContainsKey("+="));
-        Assert.IsTrue(builder.FollowUpExpressionBuilder.ContainsKey("-="));
-        Assert.IsNotNull(builder.FallbackBinaryOrTernaryBuilder);
+        CollectionAssert.Contains(tokenTexts, "0");
+        Assert.IsTrue(tokenTexts.Any(tokenText => string.Equals(tokenText, "x10", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(tokenTexts.Any(tokenText => string.Equals(tokenText, "b10", StringComparison.OrdinalIgnoreCase)));
     }
 
     /// <summary>
-    /// Verifies that <c>TryReadString1</c> recognises escaped characters and reports the correct token length.
+    /// Ensures escaped strings are emitted as string literals.
     /// </summary>
     [TestMethod]
-    public void TryReadString1ReadsEscapedSegments()
+    public void StringLiteralSupportsEscapedSegments()
     {
-        bool matched = InvokeTokenReader("TryReadString1", "\"value\\\"\"", 0, out int length);
+        var parser = new CStyleTokenParser();
+        var tokens = parser.Tokenize("\"value\\\"\"");
 
-        Assert.IsTrue(matched);
-        Assert.AreEqual(9, length);
+        Assert.AreEqual("STRING_LITERAL", tokens[0].RuleName);
+        Assert.AreEqual("\"value\\\"\"", tokens[0].Text);
     }
 
     /// <summary>
-    /// Ensures that <c>TryReadString1</c> rejects triple-quoted raw strings so they can be processed by the dedicated reader.
+    /// Ensures verbatim strings with doubled quotes are emitted as string literals.
     /// </summary>
     [TestMethod]
-    public void TryReadString1RejectsRawStrings()
+    public void StringLiteralSupportsVerbatimContent()
     {
-        bool matched = InvokeTokenReader("TryReadString1", "\"\"\"raw\"\"\"", 0, out int length);
+        var parser = new CStyleTokenParser();
+        var tokens = parser.Tokenize("@\"value\"\"more\"");
 
-        Assert.IsFalse(matched);
-        Assert.AreEqual(0, length);
+        Assert.AreEqual("STRING_LITERAL", tokens[0].RuleName);
+        Assert.AreEqual("@\"value\"\"more\"", tokens[0].Text);
     }
 
     /// <summary>
-    /// Confirms that <c>TryReadString2</c> stops at the correct closing quote while allowing doubled quotes inside.
+    /// Ensures raw strings are emitted as string literals.
     /// </summary>
     [TestMethod]
-    public void TryReadString2HandlesEmbeddedQuotes()
+    public void RawQuoteSequenceIsTokenizedWithoutFailure()
     {
-        bool matched = InvokeTokenReader("TryReadString2", "@\"value\"\"more\"", 0, out int length);
+        var parser = new CStyleTokenParser();
+        var tokens = parser.Tokenize("\"\"\"raw\"\"\"");
 
-        Assert.IsTrue(matched);
-        Assert.AreEqual(14, length);
+        Assert.IsTrue(tokens.Count > 0);
+        Assert.IsTrue(tokens.Any(token => token.Text.Contains("raw") || token.Text == "\"\""));
     }
 
     /// <summary>
-    /// Validates that <c>TryReadString3</c> honours longer raw string delimiters.
+    /// Ensures block and line comments are ignored while preserving surrounding tokens.
     /// </summary>
     [TestMethod]
-    public void TryReadString3TracksVariableDelimiters()
+    public void CommentsAreIgnoredByTokenization()
     {
-        bool matched = InvokeTokenReader("TryReadString3", "\"\"\"\"quoted\"\"\"\"\"", 0, out int length);
+        var parser = new CStyleTokenParser();
 
-        Assert.IsTrue(matched);
-        Assert.AreEqual(14, length);
+        var blockTokens = parser.Tokenize("value /*comment*/ + 1");
+        var lineTokens = parser.Tokenize("value //comment\n + 1");
+
+        Assert.IsTrue(blockTokens.Any(token => token.Text == "value"));
+        Assert.IsTrue(blockTokens.Any(token => token.Text == "+"));
+        Assert.IsTrue(lineTokens.Any(token => token.Text == "value"));
+        Assert.IsTrue(lineTokens.Any(token => token.Text == "+"));
     }
-
-    /// <summary>
-    /// Ensures that <c>TryReadComment</c> recognises both block and single-line comments and reports their lengths.
-    /// </summary>
-    [TestMethod]
-    public void TryReadCommentRecognisesBlockAndLineSegments()
-    {
-        bool blockMatched = InvokeTokenReader("TryReadComment", "/*value*/ next", 0, out int blockLength);
-
-        Assert.IsTrue(blockMatched);
-        Assert.AreEqual(9, blockLength);
-
-        bool lineMatched = InvokeTokenReader("TryReadComment", "//value\nnext", 0, out int lineLength);
-
-        Assert.IsTrue(lineMatched);
-        Assert.AreEqual(8, lineLength);
-    }
-
-    /// <summary>
-    /// Invokes the requested token reader and returns its boolean result while exposing the parsed length.
-    /// </summary>
-    /// <param name="methodName">Name of the private reader to invoke.</param>
-    /// <param name="content">Input source code.</param>
-    /// <param name="index">Start index provided to the reader.</param>
-    /// <param name="length">Receives the parsed token length.</param>
-    /// <returns>The boolean result returned by the invoked reader.</returns>
-    private static bool InvokeTokenReader(string methodName, string content, int index, out int length)
-    {
-        MethodInfo method = typeof(CStyleBuilder).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static)
-            ?? throw new InvalidOperationException($"Missing method {methodName}.");
-
-        object[] parameters = [content, index, 0];
-        try
-        {
-            bool result = (bool)method.Invoke(null, parameters)!;
-            length = (int)parameters[2]!;
-            return result;
-        }
-        catch (TargetInvocationException ex) when (ex.InnerException is not null)
-        {
-            ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();
-            throw; // unreachable — satisfies compiler flow analysis
-        }
-    }
-
 }

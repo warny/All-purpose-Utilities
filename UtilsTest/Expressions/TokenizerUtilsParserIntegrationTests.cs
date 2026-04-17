@@ -1,48 +1,25 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
-using Utils.Expressions.Builders;
+using System.Linq;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates the tokenizer integration that relies on the Utils.Parser-based grammar.
+/// Validates tokenizer integration through <see cref="CStyleTokenParser"/>.
 /// </summary>
 [TestClass]
 public class TokenizerUtilsParserIntegrationTests
 {
     /// <summary>
-    /// Ensures that grammar-based tokenization can parse mixed identifier/operator input.
+    /// Ensures tokenization returns identifier and operator tokens.
     /// </summary>
     [TestMethod]
-    public void ReadTokenParsesIdentifierAndOperatorSequence()
+    public void Tokenize_ContainsIdentifierAndOperatorTokens()
     {
-        var tokenizer = new Tokenizer("value /* skipped */ + 1", new CStyleBuilder());
+        var parser = new CStyleTokenParser();
+        var tokens = parser.Tokenize("value /* skipped */ + 1");
 
-        Assert.AreEqual("value", tokenizer.ReadToken());
-
-        bool foundPlus = false;
-        string? token;
-        while ((token = tokenizer.ReadToken()) is not null)
-        {
-            if (token == "+")
-            {
-                foundPlus = true;
-                break;
-            }
-        }
-
-        Assert.IsTrue(foundPlus);
-    }
-
-    /// <summary>
-    /// Ensures that the tokenizer still exposes transformed string content for escaped strings.
-    /// </summary>
-    [TestMethod]
-    public void ReadTokenPopulatesDefineStringForEscapedStringLiteral()
-    {
-        var tokenizer = new Tokenizer("\"va\\\"lue\"", new CStyleBuilder());
-
-        Assert.AreEqual("\"va\\\"lue\"", tokenizer.ReadToken());
-        Assert.AreEqual("va\"lue", tokenizer.DefineString);
+        Assert.IsTrue(tokens.Any(token => token.Text == "value"));
+        Assert.IsTrue(tokens.Any(token => token.Text == "+"));
     }
 }

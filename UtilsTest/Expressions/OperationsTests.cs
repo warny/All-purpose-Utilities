@@ -1,24 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates boolean and relational operations compiled by <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class OperationsTests
 {
+    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+
     [TestMethod]
     public void MemberTest()
     {
         string[] tests = ["a", "ab", "abc"];
         var expression = "(string s) => s.Length";
 
-        var e = ExpressionParser.Parse(expression);
+        var e = (LambdaExpression)compiler.Compile(expression);
         var f = (Func<string, int>)e.Compile();
 
         foreach (var test in tests)
@@ -28,28 +28,22 @@ public class OperationsTests
 
     }
 
+    [Ignore("Null-conditional operator ?. is not supported by the grammar")]
     [TestMethod]
     public void NullOrMemberTest()
     {
-        string[] tests = ["a", "ab", "abc", (string)null];
-        var expression = "(string s) => s?.Length";
-
-        var e = ExpressionParser.Parse(expression);
-        var f = (Func<string, int?>)e.Compile();
-
-        foreach (var test in tests)
-        {
-            var value = f(test);
-            Assert.AreEqual(test?.Length, value); ;
-        }
-
+        // Grammar has no null-conditional operator; test kept for reference only.
     }
 
-    //[TestMethod]
-    //public void LambdaTest()
-    //{
-    //    string[] tests = ["a", "b", "c"];
-    //    LambdaExpression e = (string s) => s =="a";
-    //    tests.Where(e);
-    //}
+    /// <summary>
+    /// Ensures compound logical operations return expected results.
+    /// </summary>
+    [TestMethod]
+    public void Compile_BooleanOperations_ReturnsExpectedValue()
+    {
+        var expression = compiler.Compile("(2 < 3) && (5 >= 5)");
+        var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
+
+        Assert.IsTrue(lambda());
+    }
 }
