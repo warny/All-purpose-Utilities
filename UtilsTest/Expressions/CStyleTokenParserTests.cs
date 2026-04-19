@@ -1,5 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Expressions;
@@ -8,7 +8,7 @@ namespace UtilsTest.Expressions;
 /// Covers grammar capabilities of the C-style token parser.
 /// </summary>
 [TestClass]
-public class CStyleTokenParserTests
+public class CSyntaxTokenParserTests
 {
     /// <summary>
     /// Ensures that language keywords are emitted as dedicated keyword tokens.
@@ -16,7 +16,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void TokenizeRecognizesKeywordTokens()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("if (true) return value;");
 
         Assert.AreEqual("IF", tokens[0].RuleName);
@@ -30,7 +30,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void TokenizeInterpolatedStringUsesDedicatedTokens()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("$\"hello {name}\"");
 
         CollectionAssert.Contains(tokens.Select(t => t.RuleName).ToList(), "INTERPOLATED_STRING_START");
@@ -44,7 +44,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void ParseKeepsBinaryOperatorPrecedenceInParseTree()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         ParseNode root = parser.Parse("1 + 2 * 3");
 
         Assert.IsFalse(root is ErrorNode);
@@ -58,7 +58,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void ParseSupportsExtendedAssignmentTargets()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
 
         ParseNode propertyAssign = parser.Parse("person.Name = value");
         ParseNode indexerAssign = parser.Parse("items[index] = value");
@@ -75,7 +75,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void ParseSupportsIdentifierPartChains()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
 
         ParseNode chainedCall = parser.Parse("root.child[index](arg)");
         ParseNode indexedThenCall = parser.Parse("values[0](item)");
@@ -90,7 +90,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void ParseSupportsIfForForeachWhileAndDoWhileInstructions()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
 
         ParseNode ifNode = parser.Parse("if (a < b) result = a else result = b");
         ParseNode forNode = parser.Parse("for (i = 0; i < 10; i = i + 1) total = total + i");
@@ -111,7 +111,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void ParseSupportsSwitchInstruction()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
 
         ParseNode switchNode = parser.Parse("switch (value) { case 1: result = one case 2: result = two default: result = other }");
 
@@ -124,7 +124,7 @@ public class CStyleTokenParserTests
     [TestMethod]
     public void ParseSupportsTypeUsingTryCatchAndMethodLambdaRules()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
 
         ParseNode varDeclaration = parser.Parse("var total = 42");
         ParseNode usingDirective = parser.Parse("using System.IO;");

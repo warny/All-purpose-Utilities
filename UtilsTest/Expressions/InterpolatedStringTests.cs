@@ -1,16 +1,16 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates interpolated-string compilation with <see cref="CStyleExpressionCompiler"/>.
+/// Validates interpolated-string compilation with <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class InterpolatedStringTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     [TestMethod]
     public void SimpleInterpolation()
     {

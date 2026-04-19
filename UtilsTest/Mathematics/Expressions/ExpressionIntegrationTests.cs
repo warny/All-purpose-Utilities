@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
@@ -11,7 +11,7 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class ExpressionIntegrationTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     readonly ExpressionIntegration integration = new ExpressionIntegration("x");
     readonly ExpressionSimplifier simplifier = new ExpressionSimplifier();
 

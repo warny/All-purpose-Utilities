@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 using Utils.Format;
 
 namespace UtilsTest.Objects;
@@ -33,9 +33,9 @@ public class StringFormatBuilderTests
     /// Ensures the C-style compiler can be consumed through the new compiler interface.
     /// </summary>
     [TestMethod]
-    public void CStyleCompiler_ImplementsExpressionCompilerInterface()
+    public void CSyntaxCompiler_ImplementsExpressionCompilerInterface()
     {
-        IExpressionCompiler compiler = new CStyleExpressionCompiler();
+        IExpressionCompiler compiler = new CSyntaxExpressionCompiler();
         Expression expression = compiler.Compile("1 + 2");
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 

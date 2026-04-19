@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates string member access compiled by <see cref="CStyleExpressionCompiler"/>.
+/// Validates string member access compiled by <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class StringTests
@@ -16,7 +16,7 @@ public class StringTests
     [TestMethod]
     public void Compile_StringLengthExpression_ReturnsLength()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         var symbols = new Dictionary<string, Expression>
         {
             ["s"] = Expression.Constant("compiler")

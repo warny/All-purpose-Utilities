@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
@@ -9,7 +9,7 @@ namespace UtilsTest.Expressions;
 /// Preserves legacy C-style builder coverage against the new C-style parser runtime.
 /// </summary>
 [TestClass]
-public class CStyleBuilderTests
+public class CSyntaxBuilderTests
 {
     /// <summary>
     /// Ensures core syntax symbols remain tokenizable in the new runtime.
@@ -17,7 +17,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void SymbolsExposeCoreSyntaxTokens()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("if (a,b) => a + b;");
         var tokenTexts = tokens.Select(token => token.Text).ToList();
 
@@ -34,7 +34,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void IntegerPrefixesIncludeCommonBases()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("0x10 + 0b10");
         var tokenTexts = tokens.Select(token => token.Text).ToList();
 
@@ -49,7 +49,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void StringLiteralSupportsEscapedSegments()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("\"value\\\"\"");
 
         Assert.AreEqual("STRING_LITERAL", tokens[0].RuleName);
@@ -62,7 +62,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void StringLiteralSupportsVerbatimContent()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("@\"value\"\"more\"");
 
         Assert.AreEqual("STRING_LITERAL", tokens[0].RuleName);
@@ -75,7 +75,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void RawQuoteSequenceIsTokenizedWithoutFailure()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("\"\"\"raw\"\"\"");
 
         Assert.IsTrue(tokens.Count > 0);
@@ -88,7 +88,7 @@ public class CStyleBuilderTests
     [TestMethod]
     public void CommentsAreIgnoredByTokenization()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
 
         var blockTokens = parser.Tokenize("value /*comment*/ + 1");
         var lineTokens = parser.Tokenize("value //comment\n + 1");

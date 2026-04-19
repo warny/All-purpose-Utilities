@@ -51,7 +51,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.VisualStudio",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.VisualStudio.Worker", "Utils.Parser.VisualStudio.Worker\Utils.Parser.VisualStudio.Worker.csproj", "{4714446A-F112-419E-B5B1-866140CB81B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Expressions.CLike", "Utils.Expressions.CLike\Utils.Expressions.CLike.csproj", "{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Expressions.CSyntax", "Utils.Expressions.CSyntax\Utils.Expressions.CSyntax.csproj", "{541CB2CE-4725-41FC-B8BF-609DC57BFAEB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.NumberToString", "Utils.NumberToString\Utils.NumberToString.csproj", "{D4577012-26E4-436E-A3CB-2924D09D9F85}"
 EndProject

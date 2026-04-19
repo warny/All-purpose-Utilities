@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 using Utils.Format;
 using Utils.Randomization;
 
@@ -20,7 +20,7 @@ namespace UtilsTest.Objects
         [TestMethod]
         public void StringFormatTest()
         {
-            IStringFormatBuilder builder = new StringFormatBuilder(new CStyleExpressionCompiler());
+            IStringFormatBuilder builder = new StringFormatBuilder(new CSyntaxExpressionCompiler());
             var format = builder.Create<Func<int, int, string>>("ceci est {var1} test de {var2,3:X2} formatage", "var1", "var2");
 
             for (int i = 0; i < 10; i++)
@@ -73,7 +73,7 @@ namespace UtilsTest.Objects
 
             var dr = dataRecord.Object;
 
-            IStringFormatBuilder builder = new StringFormatBuilder(new CStyleExpressionCompiler());
+            IStringFormatBuilder builder = new StringFormatBuilder(new CSyntaxExpressionCompiler());
             var format = builder.Create("{field1,-10} : {field2,8:X2} => {field3:yyyy-MM-dd} {field3_1} {{{field3_1:fluc}}} {field4}", formatter, CultureInfo.InvariantCulture, dr);
             var expected = string.Format(formatter, "{0,-10} : {1,8:X2} => {2:yyyy-MM-dd} {3} {{{3:fluc}}} {4}", dr[0], dr[1], dr[2], dr[3], dr[4]);
 
@@ -95,7 +95,7 @@ namespace UtilsTest.Objects
         [TestMethod]
         public void CustomHandlerTest()
         {
-            IStringFormatBuilder builder = new StringFormatBuilder(new CStyleExpressionCompiler());
+            IStringFormatBuilder builder = new StringFormatBuilder(new CSyntaxExpressionCompiler());
             var format = builder.Create<Func<string, string>, SimpleHandler>("Value: {text}", "text");
             Assert.AreEqual("Value: hello", format("hello"));
         }

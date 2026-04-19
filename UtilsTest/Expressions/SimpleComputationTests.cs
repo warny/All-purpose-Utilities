@@ -1,16 +1,16 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates arithmetic computations compiled by <see cref="CStyleExpressionCompiler"/>.
+/// Validates arithmetic computations compiled by <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class SimpleComputationTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
 
     [TestMethod]
     public void AdditionTests()
@@ -156,7 +156,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void Compile_ArithmeticExpression_RespectsPrecedence()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         var expression = compiler.Compile("(10 + 2) * 3 - 6 / 2");
         var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 

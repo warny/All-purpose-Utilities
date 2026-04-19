@@ -4,33 +4,48 @@
 
 It is designed for consumers who want small, task-oriented packages (networking, I/O, data mapping, parser tooling, source generators, and more) without adopting a single monolithic framework.
 
-## NuGet packages
+## Projects and project READMEs
 
-### Core and runtime libraries
+### Core libraries (NuGet)
 
-- `omy.Utils` — shared foundation with arrays, collections, expressions, streams, security, and utility helpers.
-- `omy.Utils.Collections` — skip list and collection-specific helpers.
-- `omy.Utils.Data` — attribute-based mapping from `IDataRecord` / `IDataReader` to objects.
-- `omy.Utils.DependencyInjection` — attribute-driven registration helpers for `Microsoft.Extensions.DependencyInjection`.
-- `omy.Utils.Fonts` — TrueType/PostScript parsing and font utilities.
-- `omy.Utils.Geography` — coordinates, projections, and map tile helpers.
-- `omy.Utils.IO` — stream utilities, binary serialization, base16/base32/base64.
-- `omy.Utils.Imaging` — bitmap accessors, color conversion, and drawing primitives.
-- `omy.Utils.Mathematics` — symbolic helpers, FFT, SI units, and algebra primitives.
-- `omy.Utils.Net` — DNS, ICMP, Wake-on-LAN, ARP, and URI tooling.
-- `omy.Utils.NumberToString` — number-to-string conversion package extracted from the base library.
-- `omy.Utils.OData` — OData client and metadata helpers.
-- `omy.Utils.Parser` — runtime ANTLR4 grammar loading, tokenization, and parsing utilities.
-- `omy.Utils.Reflection` — reflection helpers and dynamic access wrappers.
-- `omy.Utils.VirtualMachine` — attribute-driven byte-code interpreter primitives.
-- `omy.Utils.XML` — XML processing helpers (`XmlDataProcessor`, mapping attributes).
+| Project | Package (if published) | Purpose | README |
+|---|---|---|---|
+| `Utils` | `omy.Utils` | Shared foundational helpers. | [Utils/README.md](Utils/README.md) |
+| `Utils.Collections` | `omy.Utils.Collections` | Collection and indexing primitives. | [Utils.Collections/README.md](Utils.Collections/README.md) |
+| `Utils.Data` | `omy.Utils.Data` | Data-record to object mapping and SQL helpers. | [Utils.Data/README.md](Utils.Data/README.md) |
+| `Utils.DependencyInjection` | `omy.Utils.DependencyInjection` | DI registration helpers. | [Utils.DependencyInjection/README.md](Utils.DependencyInjection/README.md) |
+| `Utils.Expressions.CSyntax` | `omy.Utils.Expressions.CSyntax` | C-like expression compiler. | [Utils.Expressions.CSyntax/readme.md](Utils.Expressions.CSyntax/readme.md) |
+| `Utils.Fonts` | `omy.Utils.Fonts` | Font parsing and typography helpers. | [Utils.Fonts/README.md](Utils.Fonts/README.md) |
+| `Utils.Geography` | `omy.Utils.Geography` | Coordinate/projection utilities. | [Utils.Geography/README.md](Utils.Geography/README.md) |
+| `Utils.IO` | `omy.Utils.IO` | Stream, serialization, and encoding helpers. | [Utils.IO/README.md](Utils.IO/README.md) |
+| `Utils.Imaging` | `omy.Utils.Imaging` | Imaging and drawing primitives. | [Utils.Imaging/README.md](Utils.Imaging/README.md) |
+| `Utils.Mathematics` | `omy.Utils.Mathematics` | Math, algebra, and symbolic tooling. | [Utils.Mathematics/README.md](Utils.Mathematics/README.md) |
+| `Utils.Net` | `omy.Utils.Net` | Networking protocols and helpers. | [Utils.Net/README.md](Utils.Net/README.md) |
+| `Utils.NumberToString` | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | [Utils.NumberToString/README.md](Utils.NumberToString/README.md) |
+| `Utils.OData` | `omy.Utils.OData` | OData helpers/runtime pieces. | [Utils.OData/README.md](Utils.OData/README.md) |
+| `Utils.Parser` | `omy.Utils.Parser` | Parser runtime helpers and tokenization. | [Utils.Parser/README.md](Utils.Parser/README.md) |
+| `Utils.Reflection` | `omy.Utils.Reflection` | Reflection/process-isolation helpers. | [Utils.Reflection/README.md](Utils.Reflection/README.md) |
+| `Utils.VirtualMachine` | `omy.Utils.VirtualMachine` | VM and opcode helper abstractions. | [Utils.VirtualMachine/README.md](Utils.VirtualMachine/README.md) |
+| `Utils.Xml` | `omy.Utils.XML` | XML-related helpers. | [Utils.Xml/README.md](Utils.Xml/README.md) |
 
 ### Source generator packages
 
-- `omy.Utils.DependencyInjection.Generators` — generates DI registrations.
-- `omy.Utils.IO.Serialization.Generators` — generates serialization code for stream contracts.
-- `omy.Utils.OData.Generators` — generates OData models/helpers from EDMX metadata.
-- `omy.Utils.Parser.Generators` — grammar-related generation helpers.
+| Project | Package | Purpose | README |
+|---|---|---|---|
+| `Utils.DependencyInjection.Generators` | `omy.Utils.DependencyInjection.Generators` | Generates DI registrations. | [Utils.DependencyInjection.Generators/README.md](Utils.DependencyInjection.Generators/README.md) |
+| `Utils.IO.Serialization.Generators` | `omy.Utils.IO.Serialization.Generators` | Generates stream serialization code. | [Utils.IO.Serialization.Generators/README.md](Utils.IO.Serialization.Generators/README.md) |
+| `Utils.OData.Generators` | `omy.Utils.OData.Generators` | Generates OData helpers/models. | [Utils.OData.Generators/README.md](Utils.OData.Generators/README.md) |
+| `Utils.Parser.Generators` | `omy.Utils.Parser.Generators` | Grammar generation helpers. | [Utils.Parser.Generators/README.md](Utils.Parser.Generators/README.md) |
+
+### Tooling, samples, and tests
+
+| Project | Purpose | README |
+|---|---|---|
+| `Utils.Parser.VisualStudio` | Visual Studio integration layer for parser tooling. | [Utils.Parser.VisualStudio/README.md](Utils.Parser.VisualStudio/README.md) |
+| `Utils.Parser.VisualStudio.Worker` | Out-of-process worker used by VS integration. | [Utils.Parser.VisualStudio.Worker/README.md](Utils.Parser.VisualStudio.Worker/README.md) |
+| `DrawTest` | Windows Forms drawing sample app. | [DrawTest/README.md](DrawTest/README.md) |
+| `Fractals` | Windows Forms fractal sample app. | [Fractals/README.md](Fractals/README.md) |
+| `UtilsTest` | MSTest/SpecFlow integration and unit tests. | [UtilsTest/README.md](UtilsTest/README.md) |
 
 ## Quick install
 

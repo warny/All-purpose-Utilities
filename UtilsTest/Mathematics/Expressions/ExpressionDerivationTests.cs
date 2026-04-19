@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
@@ -12,7 +12,7 @@ namespace UtilsTest.Mathematics.Expressions;
 public class ExpressionDerivationTests
 {
     
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     ExpressionDerivation derivation = new ExpressionDerivation("x");
 
     [TestMethod]

@@ -1,4 +1,4 @@
-grammar CStyleTokenizer;
+grammar CSyntaxTokenizer;
 
 instruction
     : if_instruction

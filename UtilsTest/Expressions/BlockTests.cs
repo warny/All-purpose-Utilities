@@ -2,17 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates block-style expressions compiled by <see cref="CStyleExpressionCompiler"/>.
+/// Validates block-style expressions compiled by <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class BlockTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
 
 
     /// <summary>

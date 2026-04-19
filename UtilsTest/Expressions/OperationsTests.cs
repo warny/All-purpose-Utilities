@@ -1,16 +1,16 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates boolean and relational operations compiled by <see cref="CStyleExpressionCompiler"/>.
+/// Validates boolean and relational operations compiled by <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class OperationsTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
 
     [TestMethod]
     public void MemberTest()
