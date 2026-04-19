@@ -140,6 +140,7 @@ type_reference
     : (
         predefined_type
         | VAR
+        | DYNAMIC
         | generic_type_reference
         | qualified_identifier
       ) array_rank_specifier*
@@ -265,8 +266,13 @@ operation_primary
     : literal
     | identifier_part
     | invocation_instruction
+    | object_creation_expression
     | OPEN_PAREN instruction CLOSE_PAREN
     | interpolated_string
+    ;
+
+object_creation_expression
+    : NEW (type_reference | DYNAMIC)? (OPEN_PAREN argument_list? CLOSE_PAREN)?
     ;
 
 interpolated_string
@@ -312,6 +318,7 @@ DEFAULT : 'default' ;
 DELEGATE : 'delegate' ;
 DO : 'do' ;
 DOUBLE : 'double' ;
+DYNAMIC : 'dynamic' ;
 ELSE : 'else' ;
 ENUM : 'enum' ;
 EVENT : 'event' ;

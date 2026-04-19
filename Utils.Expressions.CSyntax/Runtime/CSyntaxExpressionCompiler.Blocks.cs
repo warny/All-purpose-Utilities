@@ -894,6 +894,50 @@ public sealed partial class CSyntaxExpressionCompiler
     }
 
     /// <summary>
+    /// Builds a constructor expression by selecting the most compatible constructor overload.
+    /// </summary>
+    /// <param name="targetType">Target CLR type to instantiate.</param>
+    /// <param name="arguments">Constructor arguments.</param>
+    /// <returns>Constructor expression.</returns>
+    private static Expression BuildObjectCreation(Type targetType, Expression[] arguments)
+    {
+        ConstructorInfo[] constructors = targetType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+        ConstructorInfo? selectedConstructor = SelectBestConstructor(constructors, arguments);
+        if (selectedConstructor is null)
+        {
+            throw new InvalidOperationException($"No compatible public constructor found on '{targetType.FullName}'.");
+        }
+
+        Expression[] convertedArguments = ConvertArgumentsForParameters(selectedConstructor.GetParameters(), arguments);
+        return Expression.New(selectedConstructor, convertedArguments);
+    }
+
+    /// <summary>
+    /// Selects the best constructor candidate for provided arguments.
+    /// </summary>
+    /// <param name="constructors">Available constructors.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Best constructor candidate or <c>null</c> when no compatible constructor exists.</returns>
+    private static ConstructorInfo? SelectBestConstructor(IEnumerable<ConstructorInfo> constructors, Expression[] arguments)
+    {
+        ConstructorInfo? bestConstructor = null;
+        int bestScore = int.MaxValue;
+        foreach (ConstructorInfo constructor in constructors)
+        {
+            int? score = CalculateMethodCompatibilityScore(constructor.GetParameters(), arguments);
+            if (score is null || score.Value >= bestScore)
+            {
+                continue;
+            }
+
+            bestScore = score.Value;
+            bestConstructor = constructor;
+        }
+
+        return bestConstructor;
+    }
+
+    /// <summary>
     /// Selects the best method candidate for provided invocation arguments.
     /// </summary>
     /// <param name="candidates">Method candidates.</param>
@@ -1403,6 +1447,11 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <returns>Resolved CLR type.</returns>
     private static Type ResolveNativeType(string typeName, IReadOnlyList<string>? importedNamespaces = null)
     {
+        if (string.Equals(typeName, "dynamic", StringComparison.Ordinal))
+        {
+            return typeof(object);
+        }
+
         int arrayRank = 0;
         while (typeName.EndsWith("[]", StringComparison.Ordinal))
         {
@@ -1789,7 +1838,9 @@ public sealed partial class CSyntaxExpressionCompiler
 
                 string typeName = FlattenNodeText(typeNav.Node);
                 string paramName = FlattenNodeText(nameNav.Node);
-                Type paramType = ResolveNativeType(typeName, context.ImportedNamespaces);
+                Type paramType = string.Equals(typeName, "var", StringComparison.Ordinal)
+                    ? typeof(object)
+                    : ResolveNativeType(typeName, context.ImportedNamespaces);
                 ParameterExpression param = Expression.Parameter(paramType, paramName);
                 parameters.Add(param);
                 symbols[paramName] = param;
@@ -1946,7 +1997,9 @@ public sealed partial class CSyntaxExpressionCompiler
             if (symbols.ContainsKey(varName)) continue;
 
             string typeName = FlattenNodeText(typeNav.Node);
-            Type varType = ResolveNativeType(typeName, context.ImportedNamespaces);
+            Type varType = string.Equals(typeName, "var", StringComparison.Ordinal)
+                ? typeof(object)
+                : ResolveNativeType(typeName, context.ImportedNamespaces);
             ParameterExpression variable = Expression.Variable(varType, varName);
             variables.Add(variable);
             symbols[varName] = variable;

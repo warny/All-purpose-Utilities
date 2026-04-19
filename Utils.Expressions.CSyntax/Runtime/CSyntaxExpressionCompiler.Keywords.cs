@@ -111,7 +111,9 @@ public sealed partial class CSyntaxExpressionCompiler
         // Detect variable declaration in init: "type name = value"
         if (initText.Length > 0 && TryParseForInitDeclaration(initText, out string declTypeName, out string declVarName, out string declValueText))
         {
-            Type varType = ResolveNativeType(declTypeName, context.ImportedNamespaces);
+            Type varType = string.Equals(declTypeName, "var", StringComparison.Ordinal)
+                ? typeof(object)
+                : ResolveNativeType(declTypeName, context.ImportedNamespaces);
             namedIterator = Expression.Variable(varType, declVarName);
             initValue = ConvertIfNeeded(CompileSubExpression(declValueText, context, null), varType);
             forSymbols = new Dictionary<string, Expression>(StringComparer.Ordinal) { [declVarName] = namedIterator };

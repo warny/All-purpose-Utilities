@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions.CSyntax.Runtime;
@@ -226,6 +227,48 @@ public class BlockTests
             var length = random.Next(5, 10);
             Assert.AreEqual(test.Sum(), f(test));
         }
+    }
+
+    /// <summary>
+    /// Ensures <c>dynamic obj = new();</c> creates an <see cref="ExpandoObject"/> instance.
+    /// </summary>
+    [TestMethod]
+    public void DynamicDeclarationWithTargetTypedNewCreatesExpandoObject()
+    {
+        var expression = "() => { dynamic obj = new(); obj; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<object>)compiled.Compile();
+
+        Assert.IsInstanceOfType<ExpandoObject>(function());
+    }
+
+    /// <summary>
+    /// Ensures <c>var obj = new dynamic;</c> creates an <see cref="ExpandoObject"/> instance.
+    /// </summary>
+    [TestMethod]
+    public void VarDeclarationWithNewDynamicCreatesExpandoObject()
+    {
+        var expression = "() => { var obj = new dynamic; obj; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<object>)compiled.Compile();
+
+        Assert.IsInstanceOfType<ExpandoObject>(function());
+    }
+
+    /// <summary>
+    /// Ensures <c>var obj = new();</c> creates an <see cref="ExpandoObject"/> instance.
+    /// </summary>
+    [TestMethod]
+    public void VarDeclarationWithTargetTypedNewCreatesExpandoObject()
+    {
+        var expression = "() => { var obj = new(); obj; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<object>)compiled.Compile();
+
+        Assert.IsInstanceOfType<ExpandoObject>(function());
     }
 
 }

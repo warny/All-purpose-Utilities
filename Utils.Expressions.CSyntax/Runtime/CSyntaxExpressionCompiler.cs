@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections;
+using System.Dynamic;
 using Utils.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
@@ -292,6 +293,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             .OnAscend("operation_mul", CompileMulDivMod)
             .OnAscend("operation_pow", CompilePower)
             .OnAscend("operation_unary", CompileUnary)
+            .OnAscend("object_creation_expression", CompileObjectCreationExpression)
             .OnAscend("assignment_instruction", CompileAssignment)
             .OnAscend("variable_declaration_assignment", CompileVariableDeclaration)
             .OnAscend("using_instruction", static (_, _) => Expression.Empty())
@@ -386,6 +388,11 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             return children.FirstOrDefault(static child => child is not null);
         }
 
+        if (string.Equals(expressionText, "var", StringComparison.Ordinal) && !context.Symbols.ContainsKey("var"))
+        {
+            return children.FirstOrDefault(static child => child is not null);
+        }
+
         return CompileIdentifierExpression(expressionText, context);
     }
 
@@ -437,6 +444,65 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
         }
 
         throw new InvalidOperationException($"Unknown invokable symbol '{calleeName}'.");
+    }
+
+    /// <summary>
+    /// Compiles object creation syntax such as <c>new()</c>, <c>new dynamic</c>, and <c>new Type(...)</c>.
+    /// </summary>
+    /// <param name="nav">Current parser navigator.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <param name="children">Compiled child expressions.</param>
+    /// <returns>Compiled constructor call expression.</returns>
+    private static Expression? CompileObjectCreationExpression(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        string source = GetNodeSourceText(context, nav).Trim();
+        if (!source.StartsWith("new", StringComparison.Ordinal))
+        {
+            return children.FirstOrDefault(static child => child is not null);
+        }
+
+        string creationBody = source[3..].Trim();
+        if (string.IsNullOrEmpty(creationBody))
+        {
+            return Expression.New(typeof(ExpandoObject));
+        }
+
+        bool hasParentheses = creationBody.Contains('(', StringComparison.Ordinal);
+        if (string.Equals(creationBody, "()", StringComparison.Ordinal) ||
+            string.Equals(creationBody, "dynamic", StringComparison.Ordinal) ||
+            string.Equals(creationBody, "dynamic()", StringComparison.Ordinal))
+        {
+            return Expression.New(typeof(ExpandoObject));
+        }
+
+        string typeName = creationBody;
+        Expression[] arguments = [];
+        if (hasParentheses)
+        {
+            int openParen = creationBody.IndexOf('(');
+            int closeParen = creationBody.LastIndexOf(')');
+            if (openParen < 0 || closeParen <= openParen)
+            {
+                throw new InvalidOperationException("Invalid object creation syntax.");
+            }
+
+            typeName = creationBody[..openParen].Trim();
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return Expression.New(typeof(ExpandoObject));
+            }
+
+            string argumentSegment = creationBody[(openParen + 1)..closeParen];
+            arguments = [.. ParseInvocationArguments(argumentSegment, context)];
+        }
+
+        if (string.Equals(typeName, "dynamic", StringComparison.Ordinal))
+        {
+            return Expression.New(typeof(ExpandoObject));
+        }
+
+        Type targetType = ResolveNativeType(typeName, context.ImportedNamespaces);
+        return BuildObjectCreation(targetType, arguments);
     }
 
     // ── Interpolated string handler ───────────────────────────────────────────
