@@ -1,19 +1,23 @@
-using System;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions;
+using Utils.Expressions.CLike.Runtime;
 
 namespace UtilsTest.Expressions;
 
+/// <summary>
+/// Validates arithmetic computations compiled by <see cref="CStyleExpressionCompiler"/>.
+/// </summary>
 [TestClass]
 public class SimpleComputationTests
 {
+    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+
     [TestMethod]
     public void AdditionTests()
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(int x, int y) => x + y");
+        var e = (LambdaExpression)compiler.Compile("(int x, int y) => x + y");
         var f = (Func<int, int, int>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -30,7 +34,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(int x, int y) => x - y");
+        var e = (LambdaExpression)compiler.Compile("(int x, int y) => x - y");
         var f = (Func<int, int, int>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -47,7 +51,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(double x, double y) => x * y");
+        var e = (LambdaExpression)compiler.Compile("(double x, double y) => x * y");
         var f = (Func<double, double, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -64,7 +68,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(double x, double y) => x / y");
+        var e = (LambdaExpression)compiler.Compile("(double x, double y) => x / y");
         var f = (Func<double, double, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -81,7 +85,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(double x, double y, double z) => x * y + z");
+        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * y + z");
         var f = (Func<double, double, double, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -98,7 +102,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(double x, double y, double z) => x + y * z");
+        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x + y * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -115,7 +119,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(double x, double y, double z) => x * (y + z)");
+        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * (y + z)");
         var f = (Func<double, double, double, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -132,7 +136,7 @@ public class SimpleComputationTests
     {
         var r = new Random();
 
-        var e = ExpressionParser.Parse("(double x, double y, double z) => (x + y) * z");
+        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => (x + y) * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -144,4 +148,18 @@ public class SimpleComputationTests
 
     }
 
+
+
+    /// <summary>
+    /// Ensures arithmetic precedence remains consistent.
+    /// </summary>
+    [TestMethod]
+    public void Compile_ArithmeticExpression_RespectsPrecedence()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        var expression = compiler.Compile("(10 + 2) * 3 - 6 / 2");
+        var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
+
+        Assert.AreEqual(33, lambda());
+    }
 }

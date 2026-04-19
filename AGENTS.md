@@ -31,6 +31,8 @@ This project targets **.NET 9**.
 
 ## Coding Standards  
 - Arrays must use **bracket syntax** (`[]`).  
+- For numeric math calls, prefer static methods on floating-point types (for example `double.Sin`) over `System.Math` when available through `IFloatingPoint<T>` and related interfaces.  
+- When selecting numeric helper methods, first validate that the target type implements the required numeric interface (such as `IFloatingPoint<T>`) and then resolve methods from that concrete type.  
 - If a method uses `params` and elements are read sequentially, prefer `params IEnumerable<T>`.  
 - File-reading methods must **only open the file** and then delegate content processing to a dedicated method.  
 - Large `switch` statements (more than **10 cases** or **30 lines**) must be replaced by either:  
