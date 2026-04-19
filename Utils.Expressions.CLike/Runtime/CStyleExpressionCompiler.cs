@@ -30,6 +30,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         ArgumentNullException.ThrowIfNull(content);
         content = PreprocessCompoundAssignments(content);
+        content = PreprocessSimpleInterpolatedStrings(content);
         List<string> importedNamespaces = ExtractUsingDirectives(content);
         content = StripUsingDirectives(content);
         ParseNode root = _parser.Parse(content);
@@ -47,6 +48,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
         content = PreprocessCompoundAssignments(content);
+        content = PreprocessSimpleInterpolatedStrings(content);
         List<string> importedNamespaces = ExtractUsingDirectives(content);
         content = StripUsingDirectives(content);
         ParseNode root = _parser.Parse(content);
@@ -66,6 +68,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(context);
 
         source = PreprocessCompoundAssignments(source);
+        source = PreprocessSimpleInterpolatedStrings(source);
         List<string> importedNamespaces = ExtractUsingDirectives(source);
         source = StripUsingDirectives(source);
         RegisterDeferredPublicMethods(source, context);
@@ -105,6 +108,55 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         if (result is Expression<T> typed) return typed;
         if (result is LambdaExpression lambda) return Expression.Lambda<T>(lambda.Body, lambda.Parameters);
         throw new InvalidOperationException($"Compiled expression cannot be converted to {typeof(T).Name}.");
+    }
+
+    /// <summary>
+    /// Compiles a C-like expression body using explicit parameters and infers the return type
+    /// from the provided delegate type.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
+    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
+        => Compile<T>(content, parameters, null, strictTypes: false);
+
+    /// <summary>
+    /// Compiles a C-like expression body using explicit parameters and optional static member imports.
+    /// </summary>
+    /// <typeparam name="T">Target delegate type.</typeparam>
+    /// <param name="content">Expression body source (no lambda syntax).</param>
+    /// <param name="parameters">Lambda parameters to bind as symbols.</param>
+    /// <param name="importType">
+    /// Optional type whose compatible public static methods are imported as callable symbols.
+    /// </param>
+    /// <param name="strictTypes">Reserved; currently ignored.</param>
+    /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
+    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")
+            ?? throw new InvalidOperationException($"Delegate type '{typeof(T).Name}' has no Invoke method.");
+        Type returnType = invokeMethod.ReturnType;
+        ParameterInfo[] delegateParameters = invokeMethod.GetParameters();
+        if (delegateParameters.Length != parameters.Length)
+        {
+            throw new ArgumentException(
+                $"Delegate '{typeof(T).Name}' expects {delegateParameters.Length} parameters, but {parameters.Length} were provided.",
+                nameof(parameters));
+        }
+
+        var symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p, StringComparer.Ordinal);
+        if (importType is not null)
+        {
+            RegisterStaticCallableSymbols(importType, symbols);
+        }
+
+        Expression body = Compile(content, symbols);
+        Expression convertedBody = ConvertIfNeeded(body, returnType);
+        return Expression.Lambda(convertedBody, parameters);
     }
 
     /// <summary>
@@ -167,6 +219,55 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
     }
 
+    /// <summary>
+    /// Registers compatible public static methods from a type as callable symbols.
+    /// </summary>
+    /// <param name="importType">Type providing static methods.</param>
+    /// <param name="symbols">Destination symbol table.</param>
+    private static void RegisterStaticCallableSymbols(Type importType, IDictionary<string, Expression> symbols)
+    {
+        ArgumentNullException.ThrowIfNull(importType);
+        ArgumentNullException.ThrowIfNull(symbols);
+
+        IEnumerable<IGrouping<string, MethodInfo>> methodsByName = importType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(static method => !method.ContainsGenericParameters && method.ReturnType != typeof(void))
+            .GroupBy(static method => method.Name, StringComparer.Ordinal);
+
+        foreach (IGrouping<string, MethodInfo> group in methodsByName)
+        {
+            if (symbols.ContainsKey(group.Key))
+            {
+                continue;
+            }
+
+            List<MethodInfo> supportedMethods = [];
+            foreach (MethodInfo method in group)
+            {
+                Type[] signature = method
+                    .GetParameters()
+                    .Select(static parameter => parameter.ParameterType)
+                    .Append(method.ReturnType)
+                    .ToArray();
+
+                try
+                {
+                    _ = Expression.GetDelegateType(signature);
+                    supportedMethods.Add(method);
+                }
+                catch (ArgumentException)
+                {
+                    // Skip unsupported signatures.
+                }
+            }
+
+            if (supportedMethods.Count > 0)
+            {
+                symbols[group.Key] = Expression.Constant(supportedMethods.ToArray(), typeof(MethodInfo[]));
+            }
+        }
+    }
+
     private static ParseTreeCompiler<CompilationContext, Expression> CreateCompiler()
     {
         return new ParseTreeCompiler<CompilationContext, Expression>()
@@ -201,6 +302,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("do_while_instruction", CompileDoWhileInstruction)
             .OnAscend("method_declaration", CompileMethodDeclaration)
             .OnDescend("lambda_expression", DescentLambdaExpression)
+            .OnDescend("foreach_instruction", DescentForeachInstruction)
             .OnAscend("lambda_expression", AscentLambdaExpression)
             .OnDescend("block_instruction", DescentBlockInstruction)
             .OnAscend("block_instruction", CompileBlock)
@@ -266,6 +368,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// Compiles an identifier-part rule. Only simple identifiers are supported.
     /// </summary>
     /// <param name="nav">Current parser navigator.</param>
+    /// <param name="context">Current compilation context.</param>
     /// <param name="children">Compiled child expressions.</param>
     /// <returns>Compiled identifier expression.</returns>
     private static Expression? CompileIdentifierPart(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
@@ -549,6 +652,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
                 Expression expression when typeof(Delegate).IsAssignableFrom(expression.Type)
                     => Expression.Invoke(expression, argumentArray),
                 MethodInfo methodInfo => Expression.Call(methodInfo, ConvertArgumentsForParameters(methodInfo.GetParameters(), argumentArray)),
+                MethodInfo[] methods when TryBuildMethodCall(methods, argumentArray, out Expression? overloadCall) => overloadCall,
                 _ => throw new NotSupportedException($"Symbol '{calleeName}' is not invokable."),
             };
         }
@@ -640,6 +744,8 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             source = context.SourceText;
         }
 
+        source = ExtractInstructionSource(source, "for");
+
         (string header, string bodySource) = ExtractLoopHeaderAndBody(source);
         List<string> headerParts = SplitTopLevel(header, ';').Select(static p => p.Trim()).ToList();
         while (headerParts.Count < 3)
@@ -668,12 +774,13 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         Expression testExpression = headerParts[1].Length == 0
             ? Expression.Constant(true)
             : EnsureBoolean(CompileSubExpression(headerParts[1], context, forSymbols));
-        Expression[] nextExpressions = headerParts[2].Length == 0
+        string nextExpressionText = NormalizeForIteratorStep(headerParts[2]);
+        Expression[] nextExpressions = nextExpressionText.Length == 0
             ? []
-            : [CompileSubExpression(headerParts[2], context, forSymbols)];
+            : [CompileSubExpression(nextExpressionText, context, forSymbols)];
         Expression bodyExpression = bodySource.Length == 0
             ? Expression.Empty()
-            : CompileSubExpression(bodySource, context, forSymbols);
+            : CompileSubExpression(NormalizeLoopBodySource(bodySource), context, forSymbols);
 
         ParameterExpression iterator = namedIterator
             ?? Expression.Variable(rawInit.Type == typeof(void) ? typeof(double) : rawInit.Type, "__for_iterator__");
@@ -717,15 +824,18 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             source = context.SourceText;
         }
 
+        source = ExtractInstructionSource(source, "foreach");
+
         (string header, string bodySource) = ExtractLoopHeaderAndBody(source);
-        int inIndex = header.IndexOf(" in ", StringComparison.Ordinal);
-        if (inIndex < 0)
+        Match inKeyword = Regex.Match(header, @"\bin\b");
+        if (!inKeyword.Success)
         {
             throw new InvalidOperationException("Unable to parse foreach header.");
         }
+        int inIndex = inKeyword.Index;
 
         string leftPart = header[..inIndex].Trim();
-        string enumerableSource = header[(inIndex + 4)..].Trim();
+        string enumerableSource = header[(inIndex + inKeyword.Length)..].Trim();
         string[] iteratorParts = leftPart.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (iteratorParts.Length == 0)
         {
@@ -741,7 +851,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ParameterExpression enumerableVariable = Expression.Variable(enumerableExpression.Type, "__foreach_source__");
         Expression body = bodySource.Length == 0
             ? Expression.Empty()
-            : CompileSubExpression(bodySource, context, new Dictionary<string, Expression>(StringComparer.Ordinal)
+            : CompileSubExpression(NormalizeLoopBodySource(bodySource), context, new Dictionary<string, Expression>(StringComparer.Ordinal)
             {
                 [iteratorName] = iterator,
             });
@@ -1050,7 +1160,10 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         int index = 0;
         SkipWhitespace(expressionText, ref index);
         string identifier = ReadIdentifier(expressionText, ref index);
-        Expression current = ResolveIdentifier(context, identifier);
+        Type? staticDeclaringType = TryResolveNativeTypeToken(identifier, context.ImportedNamespaces);
+        Expression? current = staticDeclaringType is null
+            ? ResolveIdentifier(context, identifier)
+            : null;
 
         while (index < expressionText.Length)
         {
@@ -1069,11 +1182,31 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
                 {
                     string argumentText = ReadBalancedContent(expressionText, ref index, '(', ')');
                     Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
-                    current = ExpressionEx.CreateMemberExpression(current, memberName, BindingFlags.Public | BindingFlags.IgnoreCase, arguments);
+                    if (staticDeclaringType is null)
+                    {
+                        current = ExpressionEx.CreateMemberExpression(current!, memberName, BindingFlags.Public | BindingFlags.IgnoreCase, arguments);
+                    }
+                    else
+                    {
+                        MethodInfo? method = SelectBestMethod(
+                            staticDeclaringType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                                .Where(methodInfo => string.Equals(methodInfo.Name, memberName, StringComparison.OrdinalIgnoreCase)),
+                            arguments);
+                        if (method is null)
+                        {
+                            throw new MissingMemberException(memberName);
+                        }
+
+                        current = Expression.Call(method, ConvertArgumentsForParameters(method.GetParameters(), arguments));
+                    }
+                    staticDeclaringType = null;
                     continue;
                 }
 
-                current = ExpressionEx.CreateMemberExpression(current, memberName, BindingFlags.Public | BindingFlags.IgnoreCase);
+                current = staticDeclaringType is null
+                    ? ExpressionEx.CreateMemberExpression(current!, memberName, BindingFlags.Public | BindingFlags.IgnoreCase)
+                    : ExpressionEx.CreateStaticExpression(staticDeclaringType, memberName, BindingFlags.Public | BindingFlags.IgnoreCase);
+                staticDeclaringType = null;
                 continue;
             }
 
@@ -1081,7 +1214,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             {
                 string argumentText = ReadBalancedContent(expressionText, ref index, '[', ']');
                 Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
-                current = ExpressionEx.CreateMemberExpression(current, "Item", BindingFlags.Public | BindingFlags.IgnoreCase, arguments);
+                current = ExpressionEx.CreateMemberExpression(current!, "Item", BindingFlags.Public | BindingFlags.IgnoreCase, arguments);
                 continue;
             }
 
@@ -1089,7 +1222,21 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             {
                 string argumentText = ReadBalancedContent(expressionText, ref index, '(', ')');
                 Expression[] arguments = [.. ParseInvocationArguments(argumentText, context)];
-                MethodInfo? invokeMethod = current.Type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
+
+                if (current is ConstantExpression { Value: MethodInfo methodInfo })
+                {
+                    current = Expression.Call(methodInfo, ConvertArgumentsForParameters(methodInfo.GetParameters(), arguments));
+                    continue;
+                }
+
+                if (current is ConstantExpression { Value: MethodInfo[] methodGroup } &&
+                    TryBuildMethodCall(methodGroup, arguments, out Expression? methodGroupCall))
+                {
+                    current = methodGroupCall;
+                    continue;
+                }
+
+                MethodInfo? invokeMethod = current!.Type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
                 if (invokeMethod is null)
                 {
                     throw new InvalidOperationException($"Expression '{current}' is not invokable.");
@@ -1102,7 +1249,25 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             break;
         }
 
-        return current;
+        return current ?? throw new InvalidOperationException($"Unable to resolve identifier expression '{expressionText}'.");
+    }
+
+    /// <summary>
+    /// Tries to resolve a native type token without throwing when the token is unknown.
+    /// </summary>
+    /// <param name="token">Type token candidate.</param>
+    /// <param name="importedNamespaces">Imported namespaces.</param>
+    /// <returns>Resolved type when recognized; otherwise <c>null</c>.</returns>
+    private static Type? TryResolveNativeTypeToken(string token, IReadOnlyList<string> importedNamespaces)
+    {
+        try
+        {
+            return ResolveNativeType(token, importedNamespaces);
+        }
+        catch (Exception) when (true)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -1244,8 +1409,21 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         if (context.RuntimeContext is null)
         {
-            Dictionary<string, Expression> merged = MergeSymbols(context.Symbols, additionalSymbols);
-            return context.Compiler.Compile(source, merged);
+            CStyleCompilerContext localContext = new();
+            foreach (KeyValuePair<string, Expression> symbol in context.Symbols)
+            {
+                localContext.Set(symbol.Key, symbol.Value);
+            }
+
+            if (additionalSymbols is not null)
+            {
+                foreach (KeyValuePair<string, Expression> symbol in additionalSymbols)
+                {
+                    localContext.Set(symbol.Key, symbol.Value);
+                }
+            }
+
+            return context.Compiler.CompileSource(source, localContext);
         }
 
         CStyleCompilerContext derivedContext = new();
@@ -1309,8 +1487,127 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
 
         int closeParenthesis = FindMatchingDelimiter(loopSource, openParenthesis, '(', ')');
         string header = loopSource[(openParenthesis + 1)..closeParenthesis];
-        string body = loopSource[(closeParenthesis + 1)..].Trim();
+        string remaining = loopSource[(closeParenthesis + 1)..].TrimStart();
+        string body = remaining;
+        if (remaining.StartsWith('{'))
+        {
+            int bodyEnd = FindMatchingDelimiter(remaining, 0, '{', '}');
+            body = remaining[..(bodyEnd + 1)];
+        }
+        else
+        {
+            int bodyEnd = FindTopLevelStatementTerminator(remaining);
+            if (bodyEnd >= 0)
+            {
+                body = remaining[..(bodyEnd + 1)];
+            }
+        }
+
         return (header, body);
+    }
+
+    /// <summary>
+    /// Finds the first top-level statement terminator index in source.
+    /// </summary>
+    /// <param name="source">Source to inspect.</param>
+    /// <returns>Index of the first top-level semicolon; otherwise <c>-1</c>.</returns>
+    private static int FindTopLevelStatementTerminator(string source)
+    {
+        int parenDepth = 0;
+        int bracketDepth = 0;
+        int braceDepth = 0;
+        for (int i = 0; i < source.Length; i++)
+        {
+            switch (source[i])
+            {
+                case '(':
+                    parenDepth++;
+                    break;
+                case ')':
+                    parenDepth--;
+                    break;
+                case '[':
+                    bracketDepth++;
+                    break;
+                case ']':
+                    bracketDepth--;
+                    break;
+                case '{':
+                    braceDepth++;
+                    break;
+                case '}':
+                    braceDepth--;
+                    break;
+                case ';':
+                    if (parenDepth == 0 && bracketDepth == 0 && braceDepth == 0)
+                    {
+                        return i;
+                    }
+                    break;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Extracts a source slice that starts at a specific instruction keyword.
+    /// </summary>
+    /// <param name="source">Source that may contain surrounding code (for example a lambda).</param>
+    /// <param name="keyword">Instruction keyword to locate.</param>
+    /// <returns>Source slice beginning at the requested keyword when found; otherwise original source.</returns>
+    private static string ExtractInstructionSource(string source, string keyword)
+    {
+        Match keywordMatch = Regex.Match(source, $@"\b{Regex.Escape(keyword)}\s*\(");
+        if (!keywordMatch.Success)
+        {
+            return source;
+        }
+
+        return source[keywordMatch.Index..];
+    }
+
+    /// <summary>
+    /// Removes an optional trailing semicolon from loop body source.
+    /// </summary>
+    /// <param name="bodySource">Raw loop body source.</param>
+    /// <returns>Normalized loop body source.</returns>
+    private static string NormalizeLoopBodySource(string bodySource)
+    {
+        string trimmed = bodySource.Trim();
+        return trimmed.EndsWith(';') ? trimmed[..^1].TrimEnd() : trimmed;
+    }
+
+    /// <summary>
+    /// Normalizes common for-loop iterator shorthand forms (<c>i++</c>, <c>--i</c>) into assignable expressions.
+    /// </summary>
+    /// <param name="stepExpression">Raw step expression text.</param>
+    /// <returns>Normalized step expression text.</returns>
+    private static string NormalizeForIteratorStep(string stepExpression)
+    {
+        string trimmed = stepExpression.Trim();
+        if (trimmed.Length == 0)
+        {
+            return trimmed;
+        }
+
+        Match postfix = Regex.Match(trimmed, @"^(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*(?<op>\+\+|--)$");
+        if (postfix.Success)
+        {
+            string name = postfix.Groups["name"].Value;
+            string arithmeticOperator = postfix.Groups["op"].Value == "++" ? "+" : "-";
+            return $"{name} = {name} {arithmeticOperator} 1";
+        }
+
+        Match prefix = Regex.Match(trimmed, @"^(?<op>\+\+|--)\s*(?<name>[A-Za-z_][A-Za-z0-9_]*)$");
+        if (prefix.Success)
+        {
+            string name = prefix.Groups["name"].Value;
+            string arithmeticOperator = prefix.Groups["op"].Value == "++" ? "+" : "-";
+            return $"{name} = {name} {arithmeticOperator} 1";
+        }
+
+        return trimmed;
     }
 
     /// <summary>
@@ -1428,9 +1725,59 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// <returns>Converted arguments.</returns>
     private static Expression[] ConvertArgumentsForParameters(IReadOnlyList<ParameterInfo> parameters, Expression[] arguments)
     {
-        if (parameters.Count != arguments.Length)
+        bool hasParamArray = parameters.Count > 0
+            && parameters[^1].IsDefined(typeof(ParamArrayAttribute), false);
+
+        if (!hasParamArray && parameters.Count != arguments.Length)
         {
             throw new InvalidOperationException("Invocation argument count does not match parameter count.");
+        }
+
+        if (hasParamArray)
+        {
+            int fixedCount = parameters.Count - 1;
+            if (arguments.Length < fixedCount)
+            {
+                throw new InvalidOperationException("Invocation argument count does not match parameter count.");
+            }
+
+            Expression[] convertedArguments = new Expression[parameters.Count];
+            for (int i = 0; i < fixedCount; i++)
+            {
+                convertedArguments[i] = ConvertIfNeeded(arguments[i], parameters[i].ParameterType);
+            }
+
+            Type elementType = parameters[^1].ParameterType.GetElementType()
+                ?? throw new InvalidOperationException("Invalid params parameter declaration.");
+            if (arguments.Length == parameters.Count)
+            {
+                Expression lastArgument = arguments[^1];
+                Type paramArrayType = parameters[^1].ParameterType;
+                if (lastArgument.Type != paramArrayType && lastArgument.Type.IsArray)
+                {
+                    Type sourceElementType = lastArgument.Type.GetElementType()
+                        ?? throw new InvalidOperationException("Invalid array argument.");
+                    if (elementType.IsAssignableFrom(sourceElementType))
+                    {
+                        MethodInfo castMethod = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .First(methodInfo => methodInfo.Name == nameof(Enumerable.Cast) && methodInfo.GetParameters().Length == 1)
+                            .MakeGenericMethod(elementType);
+                        MethodInfo toArrayMethod = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .First(methodInfo => methodInfo.Name == nameof(Enumerable.ToArray) && methodInfo.GetParameters().Length == 1)
+                            .MakeGenericMethod(elementType);
+                        Expression castExpression = Expression.Call(castMethod, lastArgument);
+                        convertedArguments[^1] = Expression.Call(toArrayMethod, castExpression);
+                        return convertedArguments;
+                    }
+                }
+            }
+
+            Expression[] paramsArguments = arguments
+                .Skip(fixedCount)
+                .Select(argument => ConvertIfNeeded(argument, elementType))
+                .ToArray();
+            convertedArguments[^1] = Expression.NewArrayInit(elementType, paramsArguments);
+            return convertedArguments;
         }
 
         Expression[] converted = new Expression[arguments.Length];
@@ -1467,9 +1814,9 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             return false;
         }
 
-        MethodInfo? method = type
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .FirstOrDefault(methodInfo => methodInfo.Name == methodName && methodInfo.GetParameters().Length == arguments.Length);
+        MethodInfo? method = SelectBestMethod(
+            type.GetMethods(BindingFlags.Public | BindingFlags.Static).Where(methodInfo => methodInfo.Name == methodName),
+            arguments);
         if (method is null)
         {
             return false;
@@ -1477,6 +1824,311 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
 
         callExpression = Expression.Call(method, ConvertArgumentsForParameters(method.GetParameters(), arguments));
         return true;
+    }
+
+    /// <summary>
+    /// Tries to build a method call for an overload set.
+    /// </summary>
+    /// <param name="methods">Candidate methods sharing the same source symbol.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <param name="callExpression">Resolved call expression.</param>
+    /// <returns><c>true</c> when a compatible method was selected; otherwise <c>false</c>.</returns>
+    private static bool TryBuildMethodCall(IReadOnlyList<MethodInfo> methods, Expression[] arguments, out Expression? callExpression)
+    {
+        callExpression = null;
+        MethodInfo? selectedMethod = SelectBestMethod(methods, arguments);
+        if (selectedMethod is null)
+        {
+            return false;
+        }
+
+        callExpression = Expression.Call(selectedMethod, ConvertArgumentsForParameters(selectedMethod.GetParameters(), arguments));
+        return true;
+    }
+
+    /// <summary>
+    /// Selects the best method candidate for provided invocation arguments.
+    /// </summary>
+    /// <param name="candidates">Method candidates.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Best method candidate or <c>null</c> when no compatible candidate exists.</returns>
+    private static MethodInfo? SelectBestMethod(IEnumerable<MethodInfo> candidates, Expression[] arguments)
+    {
+        MethodInfo? bestMethod = null;
+        int bestScore = int.MaxValue;
+        foreach (MethodInfo candidate in candidates)
+        {
+            MethodInfo method = candidate;
+            if (candidate.IsGenericMethodDefinition)
+            {
+                if (!TryCloseGenericMethod(candidate, arguments, out MethodInfo? closedMethod))
+                {
+                    continue;
+                }
+
+                method = closedMethod;
+            }
+
+            ParameterInfo[] parameters = method.GetParameters();
+            int? score = CalculateMethodCompatibilityScore(parameters, arguments);
+            if (score is null)
+            {
+                continue;
+            }
+
+            if (score.Value < bestScore)
+            {
+                bestScore = score.Value;
+                bestMethod = method;
+            }
+        }
+
+        return bestMethod;
+    }
+
+    /// <summary>
+    /// Tries to construct a generic method from invocation argument types.
+    /// </summary>
+    /// <param name="genericMethod">Generic method definition.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <param name="closedMethod">Constructed generic method when inference succeeds.</param>
+    /// <returns><c>true</c> when inference succeeds; otherwise <c>false</c>.</returns>
+    private static bool TryCloseGenericMethod(MethodInfo genericMethod, IReadOnlyList<Expression> arguments, out MethodInfo? closedMethod)
+    {
+        closedMethod = null;
+        ParameterInfo[] parameters = genericMethod.GetParameters();
+        bool hasParamArray = parameters.Length > 0 && parameters[^1].IsDefined(typeof(ParamArrayAttribute), false);
+        if (!hasParamArray && parameters.Length != arguments.Count)
+        {
+            return false;
+        }
+
+        if (hasParamArray && arguments.Count < parameters.Length - 1)
+        {
+            return false;
+        }
+
+        Dictionary<Type, Type> inferredTypes = new Dictionary<Type, Type>();
+        int fixedCount = hasParamArray ? parameters.Length - 1 : parameters.Length;
+        for (int i = 0; i < fixedCount; i++)
+        {
+            if (!TryInferGenericType(parameters[i].ParameterType, arguments[i].Type, inferredTypes))
+            {
+                return false;
+            }
+        }
+
+        if (hasParamArray)
+        {
+            Type paramsElementType = parameters[^1].ParameterType.GetElementType()
+                ?? throw new InvalidOperationException("Invalid params parameter declaration.");
+            for (int i = fixedCount; i < arguments.Count; i++)
+            {
+                if (!TryInferGenericType(paramsElementType, arguments[i].Type, inferredTypes))
+                {
+                    return false;
+                }
+            }
+        }
+
+        Type[] genericParameters = genericMethod.GetGenericArguments();
+        Type[] resolved = new Type[genericParameters.Length];
+        for (int i = 0; i < genericParameters.Length; i++)
+        {
+            if (!inferredTypes.TryGetValue(genericParameters[i], out Type? inferredType))
+            {
+                return false;
+            }
+
+            resolved[i] = inferredType;
+        }
+
+        closedMethod = genericMethod.MakeGenericMethod(resolved);
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to infer generic type arguments from a parameter/argument pair.
+    /// </summary>
+    /// <param name="parameterType">Parameter type (possibly containing generic parameters).</param>
+    /// <param name="argumentType">Argument type.</param>
+    /// <param name="inferredTypes">Accumulated inferred generic type arguments.</param>
+    /// <returns><c>true</c> when inference is compatible; otherwise <c>false</c>.</returns>
+    private static bool TryInferGenericType(Type parameterType, Type argumentType, IDictionary<Type, Type> inferredTypes)
+    {
+        if (parameterType.IsGenericParameter)
+        {
+            if (inferredTypes.TryGetValue(parameterType, out Type? current))
+            {
+                return current == argumentType;
+            }
+
+            inferredTypes[parameterType] = argumentType;
+            return true;
+        }
+
+        if (parameterType.IsArray)
+        {
+            if (!argumentType.IsArray)
+            {
+                return false;
+            }
+
+            Type parameterElementType = parameterType.GetElementType()!;
+            Type argumentElementType = argumentType.GetElementType()!;
+            return TryInferGenericType(parameterElementType, argumentElementType, inferredTypes);
+        }
+
+        if (parameterType.IsGenericType)
+        {
+            Type parameterGenericDefinition = parameterType.GetGenericTypeDefinition();
+            Type[] parameterGenericArguments = parameterType.GetGenericArguments();
+            Type[]? argumentGenericArguments = TryGetGenericArguments(argumentType, parameterGenericDefinition);
+            if (argumentGenericArguments is null || argumentGenericArguments.Length != parameterGenericArguments.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < parameterGenericArguments.Length; i++)
+            {
+                if (!TryInferGenericType(parameterGenericArguments[i], argumentGenericArguments[i], inferredTypes))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return parameterType.IsAssignableFrom(argumentType);
+    }
+
+    /// <summary>
+    /// Gets generic arguments for a target generic definition from a type, its interfaces, or its base types.
+    /// </summary>
+    /// <param name="sourceType">Source type to inspect.</param>
+    /// <param name="genericDefinition">Generic type definition to match.</param>
+    /// <returns>Generic arguments when a match is found; otherwise <c>null</c>.</returns>
+    private static Type[]? TryGetGenericArguments(Type sourceType, Type genericDefinition)
+    {
+        if (sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == genericDefinition)
+        {
+            return sourceType.GetGenericArguments();
+        }
+
+        foreach (Type interfaceType in sourceType.GetInterfaces())
+        {
+            if (interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == genericDefinition)
+            {
+                return interfaceType.GetGenericArguments();
+            }
+        }
+
+        Type? baseType = sourceType.BaseType;
+        while (baseType is not null)
+        {
+            if (baseType.IsGenericType && baseType.GetGenericTypeDefinition() == genericDefinition)
+            {
+                return baseType.GetGenericArguments();
+            }
+
+            baseType = baseType.BaseType;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Calculates a compatibility score for a method candidate against provided arguments.
+    /// </summary>
+    /// <param name="parameters">Method parameters.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Compatibility score (lower is better) or <c>null</c> when incompatible.</returns>
+    private static int? CalculateMethodCompatibilityScore(IReadOnlyList<ParameterInfo> parameters, IReadOnlyList<Expression> arguments)
+    {
+        bool hasParamArray = parameters.Count > 0
+            && parameters[^1].IsDefined(typeof(ParamArrayAttribute), false);
+        if (!hasParamArray && parameters.Count != arguments.Count)
+        {
+            return null;
+        }
+        if (hasParamArray && arguments.Count < parameters.Count - 1)
+        {
+            return null;
+        }
+
+        int score = hasParamArray ? 5 : 0;
+        int fixedCount = hasParamArray ? parameters.Count - 1 : parameters.Count;
+        for (int i = 0; i < fixedCount; i++)
+        {
+            Type parameterType = parameters[i].ParameterType;
+            Type argumentType = arguments[i].Type;
+
+            if (argumentType == parameterType)
+            {
+                continue;
+            }
+
+            if (parameterType.IsAssignableFrom(argumentType))
+            {
+                score += 1;
+                if (parameterType == typeof(object) && argumentType.IsArray)
+                {
+                    score += 10;
+                }
+                continue;
+            }
+
+            if (IsNumericType(parameterType) && IsNumericType(argumentType))
+            {
+                score += 2;
+                continue;
+            }
+
+            if (arguments[i] is ConstantExpression { Value: null } && !parameterType.IsValueType)
+            {
+                score += 3;
+                continue;
+            }
+
+            return null;
+        }
+
+        if (hasParamArray)
+        {
+            Type elementType = parameters[^1].ParameterType.GetElementType()
+                ?? throw new InvalidOperationException("Invalid params parameter declaration.");
+            for (int i = fixedCount; i < arguments.Count; i++)
+            {
+                Type argumentType = arguments[i].Type;
+                if (argumentType == elementType)
+                {
+                    continue;
+                }
+
+                if (elementType.IsAssignableFrom(argumentType))
+                {
+                    score += 1;
+                    continue;
+                }
+
+                if (IsNumericType(elementType) && IsNumericType(argumentType))
+                {
+                    score += 2;
+                    continue;
+                }
+
+                if (arguments[i] is ConstantExpression { Value: null } && !elementType.IsValueType)
+                {
+                    score += 3;
+                    continue;
+                }
+
+                return null;
+            }
+        }
+
+        return score;
     }
 
     /// <summary>
@@ -1668,11 +2320,6 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         };
     }
 
-    /// <summary>
-    /// Resolves a native CLR type from a C-style type token.
-    /// </summary>
-    /// <param name="typeName">Type token.</param>
-    /// <returns>Resolved CLR type.</returns>
     /// <summary>Known namespace prefixes tried during unqualified type resolution.</summary>
     private static readonly string[] DefaultNamespaces =
     [
@@ -1688,27 +2335,49 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     /// <returns>Resolved CLR type.</returns>
     private static Type ResolveNativeType(string typeName, IReadOnlyList<string>? importedNamespaces = null)
     {
-        switch (typeName)
+        int arrayRank = 0;
+        while (typeName.EndsWith("[]", StringComparison.Ordinal))
         {
-            case "void": return typeof(void);
-            case "bool": return typeof(bool);
-            case "byte": return typeof(byte);
-            case "char": return typeof(char);
-            case "decimal": return typeof(decimal);
-            case "double": return typeof(double);
-            case "float": return typeof(float);
-            case "int": return typeof(int);
-            case "long": return typeof(long);
-            case "object": return typeof(object);
-            case "sbyte": return typeof(sbyte);
-            case "short": return typeof(short);
-            case "string": return typeof(string);
-            case "uint": return typeof(uint);
-            case "ulong": return typeof(ulong);
-            case "ushort": return typeof(ushort);
+            arrayRank++;
+            typeName = typeName[..^2].TrimEnd();
         }
 
-        // Generic type: e.g. "IEnumerable<int>" or "Func<string, string>"
+        Type resolvedType = typeName switch
+        {
+            "void" => typeof(void),
+            "bool" => typeof(bool),
+            "byte" => typeof(byte),
+            "char" => typeof(char),
+            "decimal" => typeof(decimal),
+            "double" => typeof(double),
+            "float" => typeof(float),
+            "int" => typeof(int),
+            "long" => typeof(long),
+            "object" => typeof(object),
+            "sbyte" => typeof(sbyte),
+            "short" => typeof(short),
+            "string" => typeof(string),
+            "uint" => typeof(uint),
+            "ulong" => typeof(ulong),
+            "ushort" => typeof(ushort),
+            _ => ResolveComplexType(typeName, importedNamespaces),
+        };
+        while (arrayRank-- > 0)
+        {
+            resolvedType = resolvedType.MakeArrayType();
+        }
+
+        return resolvedType;
+    }
+
+    /// <summary>
+    /// Resolves complex CLR type names (generic or qualified).
+    /// </summary>
+    /// <param name="typeName">Type token to resolve.</param>
+    /// <param name="importedNamespaces">Optional extra namespaces to search.</param>
+    /// <returns>Resolved CLR type.</returns>
+    private static Type ResolveComplexType(string typeName, IReadOnlyList<string>? importedNamespaces)
+    {
         int lt = typeName.IndexOf('<');
         if (lt > 0 && typeName.EndsWith(">", StringComparison.Ordinal))
         {
@@ -1716,7 +2385,10 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             string argsText = typeName[(lt + 1)..^1].Trim();
             List<Type> typeArgs = [.. SplitTopLevel(argsText, ',').Select(a => ResolveNativeType(a.Trim(), importedNamespaces))];
             Type? genericDef = FindTypeByName(baseName + "`" + typeArgs.Count, importedNamespaces);
-            if (genericDef is not null) return genericDef.MakeGenericType([.. typeArgs]);
+            if (genericDef is not null)
+            {
+                return genericDef.MakeGenericType([.. typeArgs]);
+            }
         }
 
         return FindTypeByName(typeName, importedNamespaces)
@@ -2076,6 +2748,118 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         context.BlockScope[nav.Node] = parameters;
         return context with { Symbols = symbols };
     }
+
+    /// <summary>
+    /// Descent handler for <c>foreach_instruction</c>: pre-registers iterator symbol so child
+    /// nodes in the loop body can compile before the foreach node is recompiled from source.
+    /// </summary>
+    /// <param name="nav">Current foreach navigator.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <returns>Updated context with inferred iterator symbol when available.</returns>
+    private static CompilationContext DescentForeachInstruction(ParseTreeNavigator nav, CompilationContext context)
+    {
+        string source = GetNodeSourceText(context, nav);
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            source = FlattenNodeText(nav.Node);
+        }
+        if (!source.Contains('('))
+        {
+            source = context.SourceText;
+        }
+
+        source = ExtractInstructionSource(source, "foreach");
+        (string header, _) = ExtractLoopHeaderAndBody(source);
+        Match inKeyword = Regex.Match(header, @"\bin\b");
+        if (!inKeyword.Success)
+        {
+            return context;
+        }
+
+        string leftPart = header[..inKeyword.Index].Trim();
+        string[] iteratorParts = leftPart.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (iteratorParts.Length == 0)
+        {
+            return context;
+        }
+
+        string iteratorName = iteratorParts[^1];
+        Type iteratorType = typeof(double);
+        if (iteratorParts.Length > 1 && !string.Equals(iteratorParts[0], "var", StringComparison.Ordinal))
+        {
+            iteratorType = ResolveNativeType(iteratorParts[0], context.ImportedNamespaces);
+        }
+
+        var symbols = new Dictionary<string, Expression>(context.Symbols, StringComparer.Ordinal)
+        {
+            [iteratorName] = Expression.Parameter(iteratorType, iteratorName),
+        };
+        return context with { Symbols = symbols };
+    }
+
+    /// <summary>
+    /// Rewrites simple interpolated strings (<c>$"...{x}..."</c>) into concatenation expressions.
+    /// </summary>
+    /// <param name="source">Source expression text.</param>
+    /// <returns>Source with simple interpolated strings expanded.</returns>
+    private static string PreprocessSimpleInterpolatedStrings(string source)
+    {
+        return Regex.Replace(source, "\\$\\\"(?<inner>(?:[^\\\"\\\\]|\\\\.)*)\\\"", match =>
+        {
+            string inner = match.Groups["inner"].Value;
+            List<string> parts = new();
+            int index = 0;
+            while (index < inner.Length)
+            {
+                int openBrace = inner.IndexOf('{', index);
+                if (openBrace < 0)
+                {
+                    string trailing = inner[index..];
+                    if (trailing.Length > 0)
+                    {
+                        parts.Add(ToQuotedLiteral(trailing));
+                    }
+
+                    break;
+                }
+
+                if (openBrace > index)
+                {
+                    parts.Add(ToQuotedLiteral(inner[index..openBrace]));
+                }
+
+                int closeBrace = inner.IndexOf('}', openBrace + 1);
+                if (closeBrace < 0)
+                {
+                    return match.Value;
+                }
+
+                string expression = inner[(openBrace + 1)..closeBrace].Trim();
+                if (expression.Length == 0)
+                {
+                    return match.Value;
+                }
+
+                parts.Add(expression);
+                index = closeBrace + 1;
+            }
+
+            if (parts.Count == 0)
+            {
+                return "\"\"";
+            }
+
+            return "(" + string.Join(" + ", parts) + ")";
+        });
+    }
+
+    /// <summary>
+    /// Converts text content into a quoted literal suitable for source rewriting.
+    /// </summary>
+    /// <param name="text">Literal content.</param>
+    /// <returns>Quoted source literal.</returns>
+    private static string ToQuotedLiteral(string text)
+        => "\"" + text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal) + "\"";
 
     /// <summary>
     /// Ascent handler for <c>lambda_expression</c>: wraps the compiled body with the

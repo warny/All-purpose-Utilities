@@ -84,7 +84,7 @@ namespace Utils.Mathematics.Expressions
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return right;  // x * 0 => 0
-            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return Transform(left);   // x * 1 => x
+            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;   // x * 1 => x
             if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left); // x * -1 => -x
             return null;
         }
@@ -273,7 +273,10 @@ namespace Utils.Mathematics.Expressions
                 return null;
 
             // Attempt to unify or swap factors for factoring out
-            if (!leftAugmented && !rightAugmented && ExpressionComparer.Default.Equals(leftleft, rightleft))
+            if (!leftAugmented
+                && !rightAugmented
+                && ExpressionComparer.Default.Equals(leftleft, rightleft)
+                && !ExpressionComparer.Default.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
@@ -295,12 +298,10 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            // Factor out
-            return Transform(
-                Expression.Multiply(
-                    Transform(Expression.Add(leftleft, rightleft)),
-                    leftright
-                )
+            // Factor out without recursively re-entering this rule on the same shape.
+            return Expression.Multiply(
+                Expression.Add(leftleft, rightleft),
+                leftright
             );
         }
 
@@ -342,7 +343,9 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Attempt to unify or swap factors
-            if ((!leftAugmented && !rightAugmented) && ExpressionComparer.Default.Equals(leftleft, rightleft))
+            if ((!leftAugmented && !rightAugmented)
+                && ExpressionComparer.Default.Equals(leftleft, rightleft)
+                && !ExpressionComparer.Default.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
@@ -364,11 +367,15 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return Transform(
-                Expression.Multiply(
-                    Transform(Expression.Subtract(leftleft, rightleft)),
-                    leftright
-                )
+            if (ExpressionComparer.Default.Equals(leftleft, rightleft))
+            {
+                return Expression.Constant(Convert.ChangeType(0, e.Type), e.Type);
+            }
+
+            // Factor out without recursively re-entering this rule on the same shape.
+            return Expression.Multiply(
+                Expression.Subtract(leftleft, rightleft),
+                leftright
             );
         }
 

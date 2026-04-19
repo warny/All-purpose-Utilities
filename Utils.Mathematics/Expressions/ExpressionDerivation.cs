@@ -83,6 +83,36 @@ public class ExpressionDerivation : ExpressionTransformer
     }
 
     /// <summary>
+    /// Ignores conversion wrappers by differentiating the wrapped operand directly.
+    /// </summary>
+    /// <param name="e">Conversion expression to transform.</param>
+    /// <param name="operand">Wrapped expression operand.</param>
+    /// <returns>The derivative of the wrapped operand.</returns>
+    [ExpressionSignature(ExpressionType.Convert)]
+    protected Expression Convert(
+        UnaryExpression e,
+        Expression operand
+    )
+    {
+        return Transform(operand);
+    }
+
+    /// <summary>
+    /// Ignores checked conversion wrappers by differentiating the wrapped operand directly.
+    /// </summary>
+    /// <param name="e">Checked conversion expression to transform.</param>
+    /// <param name="operand">Wrapped expression operand.</param>
+    /// <returns>The derivative of the wrapped operand.</returns>
+    [ExpressionSignature(ExpressionType.ConvertChecked)]
+    protected Expression ConvertChecked(
+        UnaryExpression e,
+        Expression operand
+    )
+    {
+        return Transform(operand);
+    }
+
+    /// <summary>
     /// Applies the sum rule to differentiate the addition of two expressions.
     /// </summary>
     /// <param name="e">Addition expression to transform.</param>
@@ -209,7 +239,7 @@ public class ExpressionDerivation : ExpressionTransformer
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
-                            Expression.Call(typeof(double).GetMethod(nameof(double.Log)), left),
+                            Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), left),
                             Transform(right)
                         )
                     )
@@ -232,7 +262,7 @@ public class ExpressionDerivation : ExpressionTransformer
         return
             Expression.Multiply(
                 Transform(operand),
-                Expression.Call(typeof(double).GetMethod(nameof(double.Exp)), operand)
+                Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), operand)
             );
     }
 
@@ -286,7 +316,7 @@ public class ExpressionDerivation : ExpressionTransformer
     {
         return Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), operand));
+            Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand));
     }
 
     /// <summary>
@@ -303,7 +333,7 @@ public class ExpressionDerivation : ExpressionTransformer
         return Expression.Negate(
             Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Sin)), operand)));
+            Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), operand)));
     }
 
     /// <summary>
@@ -318,8 +348,8 @@ public class ExpressionDerivation : ExpressionTransformer
         Expression operand)
     {
         return Transform(Expression.Divide(
-             Expression.Call(typeof(double).GetMethod(nameof(double.Sin)), operand),
-             Expression.Call(typeof(double).GetMethod(nameof(double.Cos)), operand)
+             Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), operand),
+             Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand)
             ).Simplify()
         );
     }

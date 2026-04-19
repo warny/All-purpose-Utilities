@@ -137,10 +137,16 @@ variable_declaration_assignment
     ;
 
 type_reference
-    : predefined_type
-    | VAR
-    | generic_type_reference
-    | qualified_identifier
+    : (
+        predefined_type
+        | VAR
+        | generic_type_reference
+        | qualified_identifier
+      ) array_rank_specifier*
+    ;
+
+array_rank_specifier
+    : OPEN_BRACKET CLOSE_BRACKET
     ;
 
 generic_type_reference
@@ -180,6 +186,8 @@ identifier_part
 
 identifier_atom
     : IDENTIFIER
+    | VAR
+    | predefined_type
     ;
 
 identifier_suffix

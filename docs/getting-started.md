@@ -2,6 +2,8 @@
 
 Use this guide to select the right package, install it quickly, and confirm supported target frameworks.
 
+> Target framework values in this document are derived from the corresponding project (`*.csproj`) files in this repository.
+
 ## 1) Choose a package
 
 Pick the smallest package that matches your use case.
@@ -35,6 +37,12 @@ Pick the smallest package that matches your use case.
 dotnet add package omy.Utils
 # or
 dotnet add package omy.Utils.IO
+```
+
+For source-generator packages:
+
+```bash
+dotnet add package omy.Utils.DependencyInjection.Generators
 ```
 
 ## 3) Minimal usage snippet
