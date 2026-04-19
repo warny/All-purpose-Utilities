@@ -1,16 +1,16 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates unary operators compiled by <see cref="CStyleExpressionCompiler"/>.
+/// Validates unary operators compiled by <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class UnaryOperatorsTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     
     [TestMethod]
     public void PlusTest()

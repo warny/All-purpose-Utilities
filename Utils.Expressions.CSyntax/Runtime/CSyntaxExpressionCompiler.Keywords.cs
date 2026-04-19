@@ -7,13 +7,13 @@ using System.Text.RegularExpressions;
 using Utils.Objects;
 using Utils.Parser.Runtime;
 
-namespace Utils.Expressions.CLike.Runtime;
+namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
 /// Compiles C-like parse trees into LINQ expression trees by using
 /// <see cref="ParseTreeCompiler{TContext, TResult}"/>.
 /// </summary>
-public sealed partial class CStyleExpressionCompiler
+public sealed partial class CSyntaxExpressionCompiler
 {
     /// <summary>
     /// Compiles an <c>if</c>/<c>else</c> control structure.
@@ -232,7 +232,7 @@ public sealed partial class CStyleExpressionCompiler
         {
             signature = InferParametersFromBody(signature);
         }
-        var bodyContext = new CStyleCompilerContext();
+        var bodyContext = new CSyntaxCompilerContext();
         foreach (KeyValuePair<string, object?> runtimeSymbol in context.RuntimeContext.Symbols)
         {
             bodyContext.Set(runtimeSymbol.Key, runtimeSymbol.Value);

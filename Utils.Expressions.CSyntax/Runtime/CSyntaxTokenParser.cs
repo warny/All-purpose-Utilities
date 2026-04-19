@@ -1,33 +1,33 @@
 using Utils.Parser.Runtime;
 
-namespace Utils.Expressions.CLike.Runtime;
+namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
-/// Represents a C-style token exposed by <see cref="CStyleTokenParser"/>.
+/// Represents a C-style token exposed by <see cref="CSyntaxTokenParser"/>.
 /// </summary>
 /// <param name="RuleName">Grammar lexer rule name.</param>
 /// <param name="Text">Token raw text.</param>
 /// <param name="Position">Zero-based source position.</param>
 /// <param name="Length">Token length in characters.</param>
-public sealed record CStyleToken(string RuleName, string Text, int Position, int Length);
+public sealed record CSyntaxToken(string RuleName, string Text, int Position, int Length);
 
 /// <summary>
 /// Provides tokenization support for C-style expressions using <c>Utils.Parser</c>.
 /// </summary>
-public sealed class CStyleTokenParser
+public sealed class CSyntaxTokenParser
 {
-    private static readonly Lazy<CompiledGrammar> SharedGrammar = new(() => CStyleTokenizerGrammar.Grammar, true);
+    private static readonly Lazy<CompiledGrammar> SharedGrammar = new(() => CSyntaxTokenizerGrammar.Grammar, true);
 
     /// <summary>
     /// Tokenizes C-style source code and returns the raw token stream.
     /// </summary>
     /// <param name="content">Source code to tokenize.</param>
     /// <returns>A read-only list containing the parsed tokens in source order.</returns>
-    public IReadOnlyList<CStyleToken> Tokenize(string content)
+    public IReadOnlyList<CSyntaxToken> Tokenize(string content)
     {
         ArgumentNullException.ThrowIfNull(content);
         return SharedGrammar.Value.Tokenize(content)
-            .Select(token => new CStyleToken(token.RuleName, token.Text, token.Span.Position, token.Span.Length))
+            .Select(token => new CSyntaxToken(token.RuleName, token.Text, token.Span.Position, token.Span.Length))
             .ToList();
     }
 

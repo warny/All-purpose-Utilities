@@ -1,12 +1,12 @@
 using System.Linq.Expressions;
 
-namespace Utils.Expressions.CLike.Runtime;
+namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
-/// Represents a mutable symbol context used by <see cref="CStyleExpressionCompiler"/>.
+/// Represents a mutable symbol context used by <see cref="CSyntaxExpressionCompiler"/>.
 /// Symbols can be plain objects, delegates, or expression nodes.
 /// </summary>
-public sealed class CStyleCompilerContext
+public sealed class CSyntaxCompilerContext
 {
     /// <summary>
     /// Gets the symbol table used for source resolution.

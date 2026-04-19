@@ -5,13 +5,13 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Utils.Parser.Runtime;
 
-namespace Utils.Expressions.CLike.Runtime;
+namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
 /// Compiles C-like parse trees into LINQ expression trees by using
 /// <see cref="ParseTreeCompiler{TContext, TResult}"/>.
 /// </summary>
-public sealed partial class CStyleExpressionCompiler
+public sealed partial class CSyntaxExpressionCompiler
 {
     /// <summary>
     /// Compiles a logical OR chain.

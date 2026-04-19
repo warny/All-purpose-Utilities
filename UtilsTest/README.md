@@ -17,7 +17,7 @@ dotnet test UtilsTest/UtilsTest.csproj
 ### 2) Exécuter un sous-ensemble ciblé
 
 ```bash
-dotnet test UtilsTest/UtilsTest.csproj --filter "FullyQualifiedName~CStyleExpressionCompilerTests"
+dotnet test UtilsTest/UtilsTest.csproj --filter "FullyQualifiedName~CSyntaxExpressionCompilerTests"
 ```
 
 ### 3) Exécuter un dossier de tests spécifique

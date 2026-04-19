@@ -8,15 +8,15 @@ using Utils.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
 
-namespace Utils.Expressions.CLike.Runtime;
+namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
 /// Compiles C-like parse trees into LINQ expression trees by using
 /// <see cref="ParseTreeCompiler{TContext, TResult}"/>.
 /// </summary>
-public sealed partial class CStyleExpressionCompiler : IExpressionCompiler
+public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
 {
-    private readonly CStyleTokenParser _parser = new();
+    private readonly CSyntaxTokenParser _parser = new();
 
     /// <summary>
     /// Parses and compiles a C-like source expression into a LINQ expression tree.
@@ -44,7 +44,7 @@ public sealed partial class CStyleExpressionCompiler : IExpressionCompiler
     /// <param name="content">C-like source content.</param>
     /// <param name="context">Runtime compilation context.</param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, CStyleCompilerContext context)
+    public Expression Compile(string content, CSyntaxCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
@@ -63,7 +63,7 @@ public sealed partial class CStyleExpressionCompiler : IExpressionCompiler
     /// <param name="source">Source unit containing one or many C-like instructions.</param>
     /// <param name="context">Runtime compilation context.</param>
     /// <returns>Compiled expression for the full source unit.</returns>
-    public Expression CompileSource(string source, CStyleCompilerContext context)
+    public Expression CompileSource(string source, CSyntaxCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(context);
@@ -203,7 +203,7 @@ public sealed partial class CStyleExpressionCompiler : IExpressionCompiler
         ParseNode root,
         IReadOnlyDictionary<string, Expression>? symbols,
         string sourceText,
-        CStyleCompilerContext? runtimeContext,
+        CSyntaxCompilerContext? runtimeContext,
         List<string>? importedNamespaces = null)
     {
         importedNamespaces ??= ExtractUsingDirectives(sourceText);

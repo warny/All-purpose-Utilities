@@ -1,11 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates tokenizer integration through <see cref="CStyleTokenParser"/>.
+/// Validates tokenizer integration through <see cref="CSyntaxTokenParser"/>.
 /// </summary>
 [TestClass]
 public class TokenizerUtilsParserIntegrationTests
@@ -16,7 +16,7 @@ public class TokenizerUtilsParserIntegrationTests
     [TestMethod]
     public void Tokenize_ContainsIdentifierAndOperatorTokens()
     {
-        var parser = new CStyleTokenParser();
+        var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("value /* skipped */ + 1");
 
         Assert.IsTrue(tokens.Any(token => token.Text == "value"));

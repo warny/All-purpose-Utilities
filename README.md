@@ -14,7 +14,7 @@ It is designed for consumers who want small, task-oriented packages (networking,
 | `Utils.Collections` | `omy.Utils.Collections` | Collection and indexing primitives. | [Utils.Collections/README.md](Utils.Collections/README.md) |
 | `Utils.Data` | `omy.Utils.Data` | Data-record to object mapping and SQL helpers. | [Utils.Data/README.md](Utils.Data/README.md) |
 | `Utils.DependencyInjection` | `omy.Utils.DependencyInjection` | DI registration helpers. | [Utils.DependencyInjection/README.md](Utils.DependencyInjection/README.md) |
-| `Utils.Expressions.CLike` | `omy.Utils.Expressions.CLike` | C-like expression compiler. | [Utils.Expressions.CLike/readme.md](Utils.Expressions.CLike/readme.md) |
+| `Utils.Expressions.CSyntax` | `omy.Utils.Expressions.CSyntax` | C-like expression compiler. | [Utils.Expressions.CSyntax/readme.md](Utils.Expressions.CSyntax/readme.md) |
 | `Utils.Fonts` | `omy.Utils.Fonts` | Font parsing and typography helpers. | [Utils.Fonts/README.md](Utils.Fonts/README.md) |
 | `Utils.Geography` | `omy.Utils.Geography` | Coordinate/projection utilities. | [Utils.Geography/README.md](Utils.Geography/README.md) |
 | `Utils.IO` | `omy.Utils.IO` | Stream, serialization, and encoding helpers. | [Utils.IO/README.md](Utils.IO/README.md) |

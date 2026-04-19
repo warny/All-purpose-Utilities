@@ -1,17 +1,17 @@
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Validates function-call compilation with <see cref="CStyleExpressionCompiler"/>.
+/// Validates function-call compilation with <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class FunctionCallTests
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
 
     [TestMethod]
     public void FunctionCallTest1()
@@ -151,7 +151,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionCall_InvokesContextDelegate()
     {
-        var context = new CStyleCompilerContext();
+        var context = new CSyntaxCompilerContext();
         context.Set("sum", (Func<int, int, int>)((a, b) => a + b));
 
         var expression = compiler.Compile("sum(4, 7)", context);
@@ -166,7 +166,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionCall_WithArrayArgument_ReturnsExpectedValue()
     {
-        var context = new CStyleCompilerContext();
+        var context = new CSyntaxCompilerContext();
         context.Set("values", new[] { 1, 2, 3 });
         context.Set("concatInt", (Func<int[], string>)(values => string.Concat(values)));
 
@@ -182,7 +182,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionCall_WithLambdaArgument_ReturnsExpectedValue()
     {
-        var context = new CStyleCompilerContext();
+        var context = new CSyntaxCompilerContext();
         context.Set("apply", (Func<Func<string, string>, string, string>)((f, s) => f(s)));
         context.Set("toUpper", (Func<string, string>)(s => s.ToUpperInvariant()));
         context.Set("text", "aBc");
@@ -199,7 +199,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionDeclarationThenCall_Compiles()
     {
-        var context = new CStyleCompilerContext();
+        var context = new CSyntaxCompilerContext();
 
         var expression = compiler.CompileSource(
             """

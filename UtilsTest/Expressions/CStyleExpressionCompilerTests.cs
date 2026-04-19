@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
@@ -9,7 +9,7 @@ namespace UtilsTest.Expressions;
 /// Validates C-like parse-tree compilation to LINQ expression trees.
 /// </summary>
 [TestClass]
-public class CStyleExpressionCompilerTests
+public class CSyntaxExpressionCompilerTests
 {
     /// <summary>
     /// Ensures arithmetic precedence is preserved during parse-tree compilation.
@@ -17,7 +17,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_ArithmeticExpression_RespectsPrecedence()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         Expression expression = compiler.Compile("1 + 2 * 3");
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
@@ -30,7 +30,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_AdditionExpression_MatchesLegacyCompilerBehavior()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         var random = new Random(42);
         ParameterExpression x = Expression.Parameter(typeof(int), "x");
         ParameterExpression y = Expression.Parameter(typeof(int), "y");
@@ -57,7 +57,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_SubtractionExpression_MatchesLegacyCompilerBehavior()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         var random = new Random(84);
         ParameterExpression x = Expression.Parameter(typeof(int), "x");
         ParameterExpression y = Expression.Parameter(typeof(int), "y");
@@ -84,7 +84,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_MultiplicationAndDivisionExpressions_MatchLegacyCompilerBehavior()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         var random = new Random(126);
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression y = Expression.Parameter(typeof(double), "y");
@@ -114,7 +114,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_PrecedenceAndParenthesisExpressions_MatchLegacyCompilerBehavior()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         var random = new Random(168);
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression y = Expression.Parameter(typeof(double), "y");
@@ -158,7 +158,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_ExpressionWithIdentifier_UsesSymbolBinding()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>(StringComparer.Ordinal)
         {
@@ -175,7 +175,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_AssignmentInstruction_ProducesAssignmentExpression()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         ParameterExpression local = Expression.Variable(typeof(double), "value");
         Expression assignment = compiler.Compile("value = 10 + 5", new Dictionary<string, Expression>(StringComparer.Ordinal)
         {
@@ -197,8 +197,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_FunctionDeclaration_Compiles()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         Expression declaration = compiler.Compile("public double add(double a, double b) { a + b }", context);
         Assert.IsNotNull(declaration);
     }
@@ -209,8 +209,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_FunctionCallingAnotherFunction_ResolvesForwardReference()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         compiler.CompileSource(
             """
             public double twice(double x) { add(x, x) }
@@ -230,8 +230,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_FunctionDelegateReference_ReturnsDelegateExpression()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         context.Set("add", (Func<double, double, double>)((a, b) => a + b));
 
         Expression invocation = compiler.Compile("add(2, 3)", context);
@@ -245,8 +245,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_LambdaSymbolReference_ReturnsDelegateExpression()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         context.Set("increment", (Func<double, double>)(x => x + 1d));
 
         Expression invocation = compiler.Compile("increment(41)", context);
@@ -265,8 +265,8 @@ public class CStyleExpressionCompilerTests
     [DataRow("switch (1) { case 1: 2 default: 3 }")]
     public void Compile_SupportedControlStructures_ProducesExpressionNode(string source)
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
 
         Expression expression = compiler.Compile(source, context);
         Assert.IsNotNull(expression);
@@ -278,8 +278,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_ForLoop_ProducesExpressionNode()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         ParameterExpression iterator = Expression.Variable(typeof(int), "i");
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
         context.Set("i", iterator);
@@ -295,8 +295,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_ForeachLoop_ProducesExpressionNode()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
         ParameterExpression iterator = Expression.Variable(typeof(int), "item");
         context.Set("sum", accumulator);
@@ -318,8 +318,8 @@ public class CStyleExpressionCompilerTests
     [DataRow("sample[0]")]
     public void Compile_MemberAccess_CompilesSuccessfully(string source)
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
         context.Set("sample", new SampleContainer());
 
         Expression expression = compiler.Compile(source, context);
@@ -332,7 +332,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_MemberLengthExpression_MatchesLegacyCompilerBehavior()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         string[] values = ["a", "ab", "abc"];
 
         foreach (string value in values)
@@ -353,8 +353,8 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_LambdaExpressionSyntax_Compiles()
     {
-        var compiler = new CStyleExpressionCompiler();
-        var context = new CStyleCompilerContext();
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new CSyntaxCompilerContext();
 
         Expression expression = compiler.Compile("x => x + 1", context);
         Assert.IsNotNull(expression);
@@ -366,7 +366,7 @@ public class CStyleExpressionCompilerTests
     [TestMethod]
     public void Compile_GenericLambdaWithUntypedParameters_UsesAliasTypeConversions()
     {
-        var compiler = new CStyleExpressionCompiler();
+        var compiler = new CSyntaxExpressionCompiler();
         Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(value) => value + 1");
         Func<int, int> function = expression.Compile();
 

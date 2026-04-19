@@ -1,17 +1,17 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
 
 /// <summary>
-/// Validates simple arithmetic parsing with <see cref="CStyleExpressionCompiler"/>.
+/// Validates simple arithmetic parsing with <see cref="CSyntaxExpressionCompiler"/>.
 /// </summary>
 [TestClass]
 public class SimpleExpressionParserTest
 {
-    CStyleExpressionCompiler compiler = new CStyleExpressionCompiler();
+    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     
     [TestMethod]
     public void ParseSimpleExpressions()

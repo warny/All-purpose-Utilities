@@ -1,8 +1,8 @@
-# Utils.Expressions.CLike
+# Utils.Expressions.CSyntax
 
-`Utils.Expressions.CLike` fournit un compilateur d'expressions **C-like** vers des arbres LINQ (`System.Linq.Expressions`).
+`Utils.Expressions.CSyntax` fournit un compilateur d'expressions **C-like** vers des arbres LINQ (`System.Linq.Expressions`).
 
-Le composant principal est `CStyleExpressionCompiler` dans le namespace `Utils.Expressions.CLike.Runtime`.
+Le composant principal est `CSyntaxExpressionCompiler` dans le namespace `Utils.Expressions.CSyntax.Runtime`.
 
 ## À quoi ça sert
 
@@ -13,7 +13,7 @@ Le composant principal est `CStyleExpressionCompiler` dans le namespace `Utils.E
 ## Installation
 
 ```bash
-dotnet add package omy.Utils.Expressions.CLike
+dotnet add package omy.Utils.Expressions.CSyntax
 ```
 
 ## Exemples
@@ -22,9 +22,9 @@ dotnet add package omy.Utils.Expressions.CLike
 
 ```csharp
 using System.Linq.Expressions;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
+var compiler = new CSyntaxExpressionCompiler();
 Expression expression = compiler.Compile("1 + 2 * 3");
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
@@ -35,9 +35,9 @@ double result = lambda(); // 7
 
 ```csharp
 using System.Linq.Expressions;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
+var compiler = new CSyntaxExpressionCompiler();
 Expression expression = compiler.Compile("3 > 1 && 4 <= 4");
 var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
@@ -48,9 +48,9 @@ bool result = lambda(); // true
 
 ```csharp
 using System.Linq.Expressions;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
+var compiler = new CSyntaxExpressionCompiler();
 ParameterExpression x = Expression.Parameter(typeof(double), "x");
 
 Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>
@@ -66,9 +66,9 @@ double result = lambda(4); // 9
 ### 4) Compiler une lambda typée (one-liner)
 
 ```csharp
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
+var compiler = new CSyntaxExpressionCompiler();
 Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(x) => x + 1");
 Func<int, int> function = expression.Compile();
 
@@ -78,10 +78,10 @@ int result = function(41); // 42
 ### 5) Fonctions déclarées dans le source
 
 ```csharp
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
-var context = new CStyleCompilerContext();
+var compiler = new CSyntaxExpressionCompiler();
+var context = new CSyntaxCompilerContext();
 
 compiler.CompileSource(
     """
@@ -98,10 +98,10 @@ double result = twice(5); // 10
 
 ```csharp
 using System.Linq.Expressions;
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
-var context = new CStyleCompilerContext();
+var compiler = new CSyntaxExpressionCompiler();
+var context = new CSyntaxCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
 Expression expression = compiler.Compile("increment(41)", context);
@@ -113,10 +113,10 @@ double result = lambda(); // 42
 ### 7) Structures standard: `if / else`
 
 ```csharp
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
-var context = new CStyleCompilerContext();
+var compiler = new CSyntaxExpressionCompiler();
+var context = new CSyntaxCompilerContext();
 
 compiler.CompileSource(
     """
@@ -136,10 +136,10 @@ double b = abs(-3);  // 3
 ### 8) Structures standard: `for`
 
 ```csharp
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
-var context = new CStyleCompilerContext();
+var compiler = new CSyntaxExpressionCompiler();
+var context = new CSyntaxCompilerContext();
 
 compiler.CompileSource(
     """
@@ -160,10 +160,10 @@ double result = sumTo(4); // 10
 ### 9) Structures standard: `foreach`
 
 ```csharp
-using Utils.Expressions.CLike.Runtime;
+using Utils.Expressions.CSyntax.Runtime;
 
-var compiler = new CStyleExpressionCompiler();
-var context = new CStyleCompilerContext();
+var compiler = new CSyntaxExpressionCompiler();
+var context = new CSyntaxCompilerContext();
 context.Set("values", new[] { 1, 2, 3, 4 });
 
 compiler.CompileSource(
@@ -185,4 +185,4 @@ int result = sumValues(); // 10
 
 - Le compilateur accepte une syntaxe C-like (opérations arithmétiques, blocs, `if`, `for`, `foreach`, fonctions, etc.).
 - Le type final dépend du contexte et des conversions LINQ générées.
-- Pour les scénarios avancés, utiliser `CStyleCompilerContext` pour enregistrer symboles et fonctions.
+- Pour les scénarios avancés, utiliser `CSyntaxCompilerContext` pour enregistrer symboles et fonctions.

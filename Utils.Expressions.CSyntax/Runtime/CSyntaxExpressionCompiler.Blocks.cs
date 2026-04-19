@@ -9,13 +9,13 @@ using Utils.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
 
-namespace Utils.Expressions.CLike.Runtime;
+namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
 /// Compiles C-like parse trees into LINQ expression trees by using
 /// <see cref="ParseTreeCompiler{TContext, TResult}"/>.
 /// </summary>
-public sealed partial class CStyleExpressionCompiler
+public sealed partial class CSyntaxExpressionCompiler
 {
     /// <summary>
     /// Compiles a block instruction by sequencing child expressions.
@@ -456,7 +456,7 @@ public sealed partial class CStyleExpressionCompiler
     {
         if (context.RuntimeContext is null)
         {
-            CStyleCompilerContext localContext = new();
+            CSyntaxCompilerContext localContext = new();
             foreach (KeyValuePair<string, Expression> symbol in context.Symbols)
             {
                 localContext.Set(symbol.Key, symbol.Value);
@@ -473,7 +473,7 @@ public sealed partial class CStyleExpressionCompiler
             return context.Compiler.CompileSource(source, localContext);
         }
 
-        CStyleCompilerContext derivedContext = new();
+        CSyntaxCompilerContext derivedContext = new();
         foreach (KeyValuePair<string, object?> symbol in context.RuntimeContext.Symbols)
         {
             derivedContext.Set(symbol.Key, symbol.Value);
@@ -1635,9 +1635,9 @@ public sealed partial class CStyleExpressionCompiler
     /// <param name="BlockScope">Per-node variable lists populated by descent handlers.</param>
     private sealed record CompilationContext(
         IReadOnlyDictionary<string, Expression> Symbols,
-        CStyleCompilerContext? RuntimeContext,
+        CSyntaxCompilerContext? RuntimeContext,
         string SourceText,
-        CStyleExpressionCompiler Compiler,
+        CSyntaxExpressionCompiler Compiler,
         IReadOnlyList<string> ImportedNamespaces,
         Dictionary<ParseNode, List<ParameterExpression>> BlockScope);
 
@@ -1701,7 +1701,7 @@ public sealed partial class CStyleExpressionCompiler
     {
         Expression[] boxedArguments = [.. parameters.Select(static p => Expression.Convert(p, typeof(object)))];
         Expression invoke = Expression.Call(
-            typeof(CStyleExpressionCompiler).GetMethod(nameof(InvokeDeferred), BindingFlags.NonPublic | BindingFlags.Static)!,
+            typeof(CSyntaxExpressionCompiler).GetMethod(nameof(InvokeDeferred), BindingFlags.NonPublic | BindingFlags.Static)!,
             Expression.Constant(holder),
             Expression.NewArrayInit(typeof(object), boxedArguments));
         Expression body = returnType == typeof(void)
@@ -1715,7 +1715,7 @@ public sealed partial class CStyleExpressionCompiler
     /// </summary>
     /// <param name="source">Source text to inspect.</param>
     /// <param name="context">Runtime context receiving deferred symbols.</param>
-    private static void RegisterDeferredPublicMethods(string source, CStyleCompilerContext context)
+    private static void RegisterDeferredPublicMethods(string source, CSyntaxCompilerContext context)
     {
         foreach (Match match in Regex.Matches(
                      source,
