@@ -1405,8 +1405,21 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         if (context.RuntimeContext is null)
         {
-            Dictionary<string, Expression> merged = MergeSymbols(context.Symbols, additionalSymbols);
-            return context.Compiler.Compile(source, merged);
+            CStyleCompilerContext localContext = new();
+            foreach (KeyValuePair<string, Expression> symbol in context.Symbols)
+            {
+                localContext.Set(symbol.Key, symbol.Value);
+            }
+
+            if (additionalSymbols is not null)
+            {
+                foreach (KeyValuePair<string, Expression> symbol in additionalSymbols)
+                {
+                    localContext.Set(symbol.Key, symbol.Value);
+                }
+            }
+
+            return context.Compiler.CompileSource(source, localContext);
         }
 
         CStyleCompilerContext derivedContext = new();
@@ -1732,6 +1745,29 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
 
             Type elementType = parameters[^1].ParameterType.GetElementType()
                 ?? throw new InvalidOperationException("Invalid params parameter declaration.");
+            if (arguments.Length == parameters.Count)
+            {
+                Expression lastArgument = arguments[^1];
+                Type paramArrayType = parameters[^1].ParameterType;
+                if (lastArgument.Type != paramArrayType && lastArgument.Type.IsArray)
+                {
+                    Type sourceElementType = lastArgument.Type.GetElementType()
+                        ?? throw new InvalidOperationException("Invalid array argument.");
+                    if (elementType.IsAssignableFrom(sourceElementType))
+                    {
+                        MethodInfo castMethod = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .First(methodInfo => methodInfo.Name == nameof(Enumerable.Cast) && methodInfo.GetParameters().Length == 1)
+                            .MakeGenericMethod(elementType);
+                        MethodInfo toArrayMethod = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .First(methodInfo => methodInfo.Name == nameof(Enumerable.ToArray) && methodInfo.GetParameters().Length == 1)
+                            .MakeGenericMethod(elementType);
+                        Expression castExpression = Expression.Call(castMethod, lastArgument);
+                        convertedArguments[^1] = Expression.Call(toArrayMethod, castExpression);
+                        return convertedArguments;
+                    }
+                }
+            }
+
             Expression[] paramsArguments = arguments
                 .Skip(fixedCount)
                 .Select(argument => ConvertIfNeeded(argument, elementType))

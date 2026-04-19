@@ -159,7 +159,11 @@ public static class ExpressionEx
         breakLoop ??= Expression.Label("__break__");
         continueLoop ??= Expression.Label("__continue__");
 
-        Type enumerableType = enumerable.Type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        Type enumerableType = (enumerable.Type.IsGenericType && enumerable.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+                ? enumerable.Type
+                : null)
+            ?? (enumerable.Type == typeof(IEnumerable) ? typeof(IEnumerable) : null)
+            ?? enumerable.Type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
             ?? enumerable.Type.GetInterfaces().FirstOrDefault(i => i == typeof(IEnumerable))
             ?? throw new InvalidOperationException($"{enumerable.Type} type is not enumerable");
 
