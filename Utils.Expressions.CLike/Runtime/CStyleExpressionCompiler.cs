@@ -30,6 +30,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
     {
         ArgumentNullException.ThrowIfNull(content);
         content = PreprocessCompoundAssignments(content);
+        content = PreprocessSimpleInterpolatedStrings(content);
         List<string> importedNamespaces = ExtractUsingDirectives(content);
         content = StripUsingDirectives(content);
         ParseNode root = _parser.Parse(content);
@@ -47,6 +48,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
         content = PreprocessCompoundAssignments(content);
+        content = PreprocessSimpleInterpolatedStrings(content);
         List<string> importedNamespaces = ExtractUsingDirectives(content);
         content = StripUsingDirectives(content);
         ParseNode root = _parser.Parse(content);
@@ -66,6 +68,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(context);
 
         source = PreprocessCompoundAssignments(source);
+        source = PreprocessSimpleInterpolatedStrings(source);
         List<string> importedNamespaces = ExtractUsingDirectives(source);
         source = StripUsingDirectives(source);
         RegisterDeferredPublicMethods(source, context);
@@ -299,6 +302,7 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             .OnAscend("do_while_instruction", CompileDoWhileInstruction)
             .OnAscend("method_declaration", CompileMethodDeclaration)
             .OnDescend("lambda_expression", DescentLambdaExpression)
+            .OnDescend("foreach_instruction", DescentForeachInstruction)
             .OnAscend("lambda_expression", AscentLambdaExpression)
             .OnDescend("block_instruction", DescentBlockInstruction)
             .OnAscend("block_instruction", CompileBlock)
@@ -2068,6 +2072,10 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
             if (parameterType.IsAssignableFrom(argumentType))
             {
                 score += 1;
+                if (parameterType == typeof(object) && argumentType.IsArray)
+                {
+                    score += 10;
+                }
                 continue;
             }
 
@@ -2740,6 +2748,118 @@ public sealed class CStyleExpressionCompiler : IExpressionCompiler
         context.BlockScope[nav.Node] = parameters;
         return context with { Symbols = symbols };
     }
+
+    /// <summary>
+    /// Descent handler for <c>foreach_instruction</c>: pre-registers iterator symbol so child
+    /// nodes in the loop body can compile before the foreach node is recompiled from source.
+    /// </summary>
+    /// <param name="nav">Current foreach navigator.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <returns>Updated context with inferred iterator symbol when available.</returns>
+    private static CompilationContext DescentForeachInstruction(ParseTreeNavigator nav, CompilationContext context)
+    {
+        string source = GetNodeSourceText(context, nav);
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            source = FlattenNodeText(nav.Node);
+        }
+        if (!source.Contains('('))
+        {
+            source = context.SourceText;
+        }
+
+        source = ExtractInstructionSource(source, "foreach");
+        (string header, _) = ExtractLoopHeaderAndBody(source);
+        Match inKeyword = Regex.Match(header, @"\bin\b");
+        if (!inKeyword.Success)
+        {
+            return context;
+        }
+
+        string leftPart = header[..inKeyword.Index].Trim();
+        string[] iteratorParts = leftPart.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (iteratorParts.Length == 0)
+        {
+            return context;
+        }
+
+        string iteratorName = iteratorParts[^1];
+        Type iteratorType = typeof(double);
+        if (iteratorParts.Length > 1 && !string.Equals(iteratorParts[0], "var", StringComparison.Ordinal))
+        {
+            iteratorType = ResolveNativeType(iteratorParts[0], context.ImportedNamespaces);
+        }
+
+        var symbols = new Dictionary<string, Expression>(context.Symbols, StringComparer.Ordinal)
+        {
+            [iteratorName] = Expression.Parameter(iteratorType, iteratorName),
+        };
+        return context with { Symbols = symbols };
+    }
+
+    /// <summary>
+    /// Rewrites simple interpolated strings (<c>$"...{x}..."</c>) into concatenation expressions.
+    /// </summary>
+    /// <param name="source">Source expression text.</param>
+    /// <returns>Source with simple interpolated strings expanded.</returns>
+    private static string PreprocessSimpleInterpolatedStrings(string source)
+    {
+        return Regex.Replace(source, "\\$\\\"(?<inner>(?:[^\\\"\\\\]|\\\\.)*)\\\"", match =>
+        {
+            string inner = match.Groups["inner"].Value;
+            List<string> parts = new();
+            int index = 0;
+            while (index < inner.Length)
+            {
+                int openBrace = inner.IndexOf('{', index);
+                if (openBrace < 0)
+                {
+                    string trailing = inner[index..];
+                    if (trailing.Length > 0)
+                    {
+                        parts.Add(ToQuotedLiteral(trailing));
+                    }
+
+                    break;
+                }
+
+                if (openBrace > index)
+                {
+                    parts.Add(ToQuotedLiteral(inner[index..openBrace]));
+                }
+
+                int closeBrace = inner.IndexOf('}', openBrace + 1);
+                if (closeBrace < 0)
+                {
+                    return match.Value;
+                }
+
+                string expression = inner[(openBrace + 1)..closeBrace].Trim();
+                if (expression.Length == 0)
+                {
+                    return match.Value;
+                }
+
+                parts.Add(expression);
+                index = closeBrace + 1;
+            }
+
+            if (parts.Count == 0)
+            {
+                return "\"\"";
+            }
+
+            return "(" + string.Join(" + ", parts) + ")";
+        });
+    }
+
+    /// <summary>
+    /// Converts text content into a quoted literal suitable for source rewriting.
+    /// </summary>
+    /// <param name="text">Literal content.</param>
+    /// <returns>Quoted source literal.</returns>
+    private static string ToQuotedLiteral(string text)
+        => "\"" + text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal) + "\"";
 
     /// <summary>
     /// Ascent handler for <c>lambda_expression</c>: wraps the compiled body with the
