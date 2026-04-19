@@ -273,7 +273,10 @@ namespace Utils.Mathematics.Expressions
                 return null;
 
             // Attempt to unify or swap factors for factoring out
-            if (!leftAugmented && !rightAugmented && ExpressionComparer.Default.Equals(leftleft, rightleft))
+            if (!leftAugmented
+                && !rightAugmented
+                && ExpressionComparer.Default.Equals(leftleft, rightleft)
+                && !ExpressionComparer.Default.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
@@ -340,7 +343,9 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Attempt to unify or swap factors
-            if ((!leftAugmented && !rightAugmented) && ExpressionComparer.Default.Equals(leftleft, rightleft))
+            if ((!leftAugmented && !rightAugmented)
+                && ExpressionComparer.Default.Equals(leftleft, rightleft)
+                && !ExpressionComparer.Default.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
@@ -360,6 +365,11 @@ namespace Utils.Mathematics.Expressions
             else
             {
                 return null;
+            }
+
+            if (ExpressionComparer.Default.Equals(leftleft, rightleft))
+            {
+                return Expression.Constant(Convert.ChangeType(0, e.Type), e.Type);
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
