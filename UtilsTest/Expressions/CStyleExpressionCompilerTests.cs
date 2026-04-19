@@ -361,6 +361,19 @@ public class CStyleExpressionCompilerTests
     }
 
     /// <summary>
+    /// Ensures untyped lambda parameters are rewritten with C# aliases from the delegate signature.
+    /// </summary>
+    [TestMethod]
+    public void Compile_GenericLambdaWithUntypedParameters_UsesAliasTypeConversions()
+    {
+        var compiler = new CStyleExpressionCompiler();
+        Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(value) => value + 1");
+        Func<int, int> function = expression.Compile();
+
+        Assert.AreEqual(42, function(41));
+    }
+
+    /// <summary>
     /// Simple test container used for member-access compilation tests.
     /// </summary>
     private sealed class SampleContainer
