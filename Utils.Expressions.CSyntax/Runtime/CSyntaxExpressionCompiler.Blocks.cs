@@ -902,6 +902,11 @@ public sealed partial class CSyntaxExpressionCompiler
     private static Expression BuildObjectCreation(Type targetType, Expression[] arguments)
     {
         ConstructorInfo[] constructors = targetType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+        if (constructors.Length == 0 && arguments.Length == 0 && targetType.IsValueType)
+        {
+            return Expression.New(targetType);
+        }
+
         ConstructorInfo? selectedConstructor = SelectBestConstructor(constructors, arguments);
         if (selectedConstructor is null)
         {

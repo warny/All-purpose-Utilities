@@ -271,4 +271,31 @@ public class BlockTests
         Assert.IsInstanceOfType<ExpandoObject>(function());
     }
 
+    /// <summary>
+    /// Ensures value types without explicit public constructors still support <c>new T()</c>.
+    /// </summary>
+    [TestMethod]
+    public void ValueTypeConstructorWithoutExplicitCtorIsSupported()
+    {
+        var expression = "() => { int value = new int(); value; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int>)compiled.Compile();
+
+        Assert.AreEqual(0, function());
+    }
+
+    /// <summary>
+    /// Ensures target-typed <c>new(...)</c> with arguments fails with a clear error.
+    /// </summary>
+    [TestMethod]
+    public void TargetTypedNewWithArgumentsThrows()
+    {
+        var expression = "() => { var obj = new(1, 2); obj; }";
+
+        var exception = Assert.ThrowsException<InvalidOperationException>(() => compiler.Compile(expression));
+
+        StringAssert.Contains(exception.Message, "Target-typed new expressions with arguments are not supported.");
+    }
+
 }

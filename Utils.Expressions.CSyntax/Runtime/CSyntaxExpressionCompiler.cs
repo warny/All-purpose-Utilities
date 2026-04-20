@@ -489,11 +489,18 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             typeName = creationBody[..openParen].Trim();
             if (string.IsNullOrEmpty(typeName))
             {
+                string argumentSegment = creationBody[(openParen + 1)..closeParen];
+                arguments = [.. ParseInvocationArguments(argumentSegment, context)];
+                if (arguments.Length > 0)
+                {
+                    throw new InvalidOperationException("Target-typed new expressions with arguments are not supported.");
+                }
+
                 return Expression.New(typeof(ExpandoObject));
             }
 
-            string argumentSegment = creationBody[(openParen + 1)..closeParen];
-            arguments = [.. ParseInvocationArguments(argumentSegment, context)];
+            string typedArgumentSegment = creationBody[(openParen + 1)..closeParen];
+            arguments = [.. ParseInvocationArguments(typedArgumentSegment, context)];
         }
 
         if (string.Equals(typeName, "dynamic", StringComparison.Ordinal))
