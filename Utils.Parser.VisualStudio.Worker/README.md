@@ -1,36 +1,36 @@
 # Utils.Parser.VisualStudio.Worker
 
-`Utils.Parser.VisualStudio.Worker` est un exécutable worker utilisé par l'intégration Visual Studio pour la classification de tokens via un protocole JSON sur pipe nommé.
+`Utils.Parser.VisualStudio.Worker` is a worker executable used by the Visual Studio integration for token classification through a named-pipe JSON protocol.
 
-## Objectif
+## Purpose
 
-Découpler la classification/parsing du processus principal Visual Studio en exécutant la logique dans un processus dédié.
+Decouple classification/parsing work from the main Visual Studio process by running parser logic in a dedicated process.
 
-## Exemples
+## Examples
 
-### 1) Exécuter le worker avec un nom de pipe
+### 1) Run the worker with a pipe name
 
 ```bash
 dotnet run --project Utils.Parser.VisualStudio.Worker/Utils.Parser.VisualStudio.Worker.csproj -- my-pipe-name
 ```
 
-### 2) Construire le worker
+### 2) Build the worker
 
 ```bash
 dotnet build Utils.Parser.VisualStudio.Worker/Utils.Parser.VisualStudio.Worker.csproj
 ```
 
-### 3) Format de message (JSON line)
+### 3) Message format (JSON line)
 
-Le worker lit des lignes JSON et répond en JSON (voir `WorkerProtocol.cs`) :
+The worker reads JSON lines and responds with JSON (see `WorkerProtocol.cs`):
 
 ```json
 {"assemblyPath":"...","typeName":"...","tokens":["if","var","customId"]}
 ```
 
-Le point d'entrée et la gestion pipe se trouvent dans `Program.cs`.
+The entry point and named-pipe handling are in `Program.cs`.
 
-## Projets liés
+## Related projects
 
 - [`Utils.Parser`](../Utils.Parser/README.md)
 - [`Utils.Parser.VisualStudio`](../Utils.Parser.VisualStudio/README.md)

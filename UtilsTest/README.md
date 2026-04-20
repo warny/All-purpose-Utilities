@@ -1,34 +1,34 @@
 # UtilsTest
 
-`UtilsTest` contient les tests unitaires et tests d'intégration (MSTest + SpecFlow) pour l'ensemble des projets `Utils.*`.
+`UtilsTest` contains unit tests and integration tests (MSTest + SpecFlow) for the full `Utils.*` project set.
 
-## Objectif
+## Purpose
 
-Valider les comportements transverses des bibliothèques (collections, IO, réseau, mathématiques, parsing, imagerie, etc.).
+Validate cross-cutting library behavior (collections, IO, networking, mathematics, parsing, imaging, etc.).
 
-## Exemples
+## Examples
 
-### 1) Exécuter toute la suite
+### 1) Run the full suite
 
 ```bash
 dotnet test UtilsTest/UtilsTest.csproj
 ```
 
-### 2) Exécuter un sous-ensemble ciblé
+### 2) Run a targeted subset
 
 ```bash
 dotnet test UtilsTest/UtilsTest.csproj --filter "FullyQualifiedName~CSyntaxExpressionCompilerTests"
 ```
 
-### 3) Exécuter un dossier de tests spécifique
+### 3) Run tests for a specific area
 
 ```bash
 dotnet test UtilsTest/UtilsTest.csproj --filter "FullyQualifiedName~UtilsTest.Net"
 ```
 
-## Repères utiles
+## Useful landmarks
 
-- Tests d'expressions : `UtilsTest/Expressions/`
-- Tests réseau : `UtilsTest/Net/`
-- Tests mathématiques : `UtilsTest/Mathematics/`
-- Scénarios SpecFlow : `UtilsTest/Lists/` et `UtilsTest/Mathematics/LinearAlgebra/`
+- Expression tests: `UtilsTest/Expressions/`
+- Network tests: `UtilsTest/Net/`
+- Math tests: `UtilsTest/Mathematics/`
+- SpecFlow scenarios: `UtilsTest/Lists/` and `UtilsTest/Mathematics/LinearAlgebra/`

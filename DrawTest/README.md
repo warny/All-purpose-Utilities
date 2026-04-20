@@ -1,35 +1,35 @@
 # DrawTest
 
-`DrawTest` est une application Windows Forms de démonstration pour les primitives de dessin de `Utils.Imaging` et `Utils.Fonts`.
+`DrawTest` is a Windows Forms demo application for the drawing primitives provided by `Utils.Imaging` and `Utils.Fonts`.
 
-## Objectif
+## Purpose
 
-Ce projet permet de visualiser rapidement des tracés (lignes, courbes de Bézier, ellipses, texte) pour valider le rendu graphique.
+This project helps you quickly visualize rendering outputs (lines, Bézier curves, ellipses, text) to validate graphics behavior.
 
-## Exemples
+## Examples
 
-### 1) Lancer l'application
+### 1) Run the application
 
 ```bash
 dotnet run --project DrawTest/DrawTest.csproj
 ```
 
-### 2) Construire uniquement le projet
+### 2) Build only this project
 
 ```bash
 dotnet build DrawTest/DrawTest.csproj
 ```
 
-### 3) Explorer un exemple de rendu
+### 3) Explore a rendering example
 
-Le rendu principal se trouve dans `TestForm.Draw()` :
-- tracés de lignes et de courbes,
-- rendu de texte vectoriel,
-- remplissages et contours.
+The main rendering logic is in `TestForm.Draw()`:
+- line and curve drawing,
+- vector text rendering,
+- fill and stroke operations.
 
-Voir le code : `DrawTest/TestForm.cs`.
+See the code: `DrawTest/TestForm.cs`.
 
-## Projets liés
+## Related projects
 
 - [`Utils.Imaging`](../Utils.Imaging/README.md)
 - [`Utils.Fonts`](../Utils.Fonts/README.md)
