@@ -1,14 +1,14 @@
 # Utils.Expressions.CSyntax
 
-`Utils.Expressions.CSyntax` fournit un compilateur d'expressions **C-like** vers des arbres LINQ (`System.Linq.Expressions`).
+`Utils.Expressions.CSyntax` provides a **C-like** expression compiler that targets LINQ expression trees (`System.Linq.Expressions`).
 
-Le composant principal est `CSyntaxExpressionCompiler` dans le namespace `Utils.Expressions.CSyntax.Runtime`.
+The main component is `CSyntaxExpressionCompiler` in the `Utils.Expressions.CSyntax.Runtime` namespace.
 
-## À quoi ça sert
+## What it is for
 
-- Compiler des expressions textuelles vers des `Expression` .NET.
-- Exécuter des expressions dynamiques avec un contexte de symboles.
-- Déclarer des fonctions et les réutiliser dans le même source.
+- Compile textual expressions into .NET `Expression` trees.
+- Execute dynamic expressions with a symbol context.
+- Declare functions and reuse them in the same source.
 
 ## Installation
 
@@ -16,9 +16,9 @@ Le composant principal est `CSyntaxExpressionCompiler` dans le namespace `Utils.
 dotnet add package omy.Utils.Expressions.CSyntax
 ```
 
-## Exemples
+## Examples
 
-### 1) One-liner arithmétique
+### 1) Arithmetic one-liner
 
 ```csharp
 using System.Linq.Expressions;
@@ -31,7 +31,7 @@ var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, type
 double result = lambda(); // 7
 ```
 
-### 2) One-liner booléen
+### 2) Boolean one-liner
 
 ```csharp
 using System.Linq.Expressions;
@@ -44,7 +44,7 @@ var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof
 bool result = lambda(); // true
 ```
 
-### 3) Compiler avec des symboles
+### 3) Compile with symbols
 
 ```csharp
 using System.Linq.Expressions;
@@ -63,7 +63,7 @@ var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expressi
 double result = lambda(4); // 9
 ```
 
-### 4) Compiler une lambda typée (one-liner)
+### 4) Compile a strongly typed lambda (one-liner)
 
 ```csharp
 using Utils.Expressions.CSyntax.Runtime;
@@ -75,7 +75,7 @@ Func<int, int> function = expression.Compile();
 int result = function(41); // 42
 ```
 
-### 5) Fonctions déclarées dans le source
+### 5) Functions declared in source
 
 ```csharp
 using Utils.Expressions.CSyntax.Runtime;
@@ -94,7 +94,7 @@ var twice = (Func<double, double>)context.Get("twice");
 double result = twice(5); // 10
 ```
 
-### 6) Lambda dans le contexte + appel
+### 6) Lambda in context + invocation
 
 ```csharp
 using System.Linq.Expressions;
@@ -110,7 +110,7 @@ var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, type
 double result = lambda(); // 42
 ```
 
-### 7) Structures standard: `if / else`
+### 7) Standard control flow: `if / else`
 
 ```csharp
 using Utils.Expressions.CSyntax.Runtime;
@@ -133,7 +133,7 @@ double a = abs(3);   // 3
 double b = abs(-3);  // 3
 ```
 
-### 8) Structures standard: `for`
+### 8) Standard control flow: `for`
 
 ```csharp
 using Utils.Expressions.CSyntax.Runtime;
@@ -157,7 +157,7 @@ var sumTo = (Func<int, double>)context.Get("sumTo");
 double result = sumTo(4); // 10
 ```
 
-### 9) Structures standard: `foreach`
+### 9) Standard control flow: `foreach`
 
 ```csharp
 using Utils.Expressions.CSyntax.Runtime;
@@ -183,6 +183,6 @@ int result = sumValues(); // 10
 
 ## Notes
 
-- Le compilateur accepte une syntaxe C-like (opérations arithmétiques, blocs, `if`, `for`, `foreach`, fonctions, etc.).
-- Le type final dépend du contexte et des conversions LINQ générées.
-- Pour les scénarios avancés, utiliser `CSyntaxCompilerContext` pour enregistrer symboles et fonctions.
+- The compiler accepts C-like syntax (arithmetic operations, blocks, `if`, `for`, `foreach`, functions, etc.).
+- The final expression type depends on context and generated LINQ conversions.
+- For advanced scenarios, use `CSyntaxCompilerContext` to register symbols and functions.

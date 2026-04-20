@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
@@ -26,10 +27,14 @@ public sealed class Antlr4GrammarConverter
 {
     /// <summary>Declaration-order counter incremented as rules are created during conversion.</summary>
     private int _order;
+    private readonly DiagnosticBag? _diagnostics;
 
     /// <summary>Initialises a new converter instance. The <paramref name="sourceText"/> parameter is reserved for future use.</summary>
     /// <param name="sourceText">The original grammar source text (currently unused).</param>
-    public Antlr4GrammarConverter(string sourceText) { }
+    public Antlr4GrammarConverter(string sourceText, DiagnosticBag? diagnostics = null)
+    {
+        _diagnostics = diagnostics;
+    }
 
     // ─── Full pipeline ────────────────────────────────────────────────────
 
@@ -45,8 +50,8 @@ public sealed class Antlr4GrammarConverter
     /// <exception cref="GrammarParseException">
     /// Thrown when the input cannot be parsed as a valid ANTLR4 grammar.
     /// </exception>
-    public static Runtime.CompiledGrammar Compile([StringSyntax("ANTLR4")] string grammarText)
-        => new Runtime.CompiledGrammar(Parse(grammarText));
+    public static Runtime.CompiledGrammar Compile([StringSyntax("ANTLR4")] string grammarText, DiagnosticBag? diagnostics = null)
+        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics));
 
     /// <summary>
     /// Full pipeline: ANTLR4 grammar text → resolved <see cref="Utils.Parser.Model.ParserDefinition"/>.
@@ -62,7 +67,7 @@ public sealed class Antlr4GrammarConverter
     /// <exception cref="GrammarParseException">
     /// Thrown when the input cannot be parsed as a valid ANTLR4 grammar.
     /// </exception>
-    public static ParserDefinition Parse([StringSyntax("ANTLR4")] string grammarText)
+    public static ParserDefinition Parse([StringSyntax("ANTLR4")] string grammarText, DiagnosticBag? diagnostics = null)
     {
         var metaDefinition = RuleResolver.Resolve(Antlr4Grammar.Build());
         var lexer = new LexerEngine(metaDefinition);
@@ -76,10 +81,21 @@ public sealed class Antlr4GrammarConverter
         tokens.Add(new Token(new SourceSpan(grammarText.Length, 0), "EOF", "DEFAULT_MODE", ""));
 
         var parser = new ParserEngine(metaDefinition);
-        var root = parser.Parse(tokens);
+        var root = parser.Parse(tokens, diagnostics: diagnostics);
+        if (root is ErrorNode errorNode)
+        {
+            diagnostics?.AddWithContext(
+                ParserDiagnostics.ParseFailure,
+                errorNode.Span.Position,
+                errorNode.Span.Length,
+                null,
+                new GrammarParseException(errorNode.Message),
+                errorNode.Message);
+            throw new GrammarParseException(errorNode.Message);
+        }
 
-        var converter = new Antlr4GrammarConverter(grammarText);
-        return converter.Convert(root);
+        var converter = new Antlr4GrammarConverter(grammarText, diagnostics);
+        return converter.Convert(root, diagnostics);
     }
 
     /// <summary>
@@ -91,11 +107,20 @@ public sealed class Antlr4GrammarConverter
     /// <exception cref="GrammarParseException">
     /// Thrown when <paramref name="root"/> is not a <c>grammarSpec</c> parser node.
     /// </exception>
-    public ParserDefinition Convert(ParseNode root)
+    public ParserDefinition Convert(ParseNode root, DiagnosticBag? diagnostics = null)
     {
         if (root is not ParserNode grammarSpec || grammarSpec.Rule?.Name != "grammarSpec")
+        {
+            diagnostics?.AddWithContext(
+                ParserDiagnostics.InvalidGrammarRoot,
+                null,
+                null,
+                root.Rule?.Name,
+                null,
+                root.Rule?.Name ?? "(null)");
             throw new GrammarParseException(
                 $"Root must be a grammarSpec node, got: {root.Rule?.Name ?? "(null)"}");
+        }
 
         _order = 0;
 
@@ -106,7 +131,7 @@ public sealed class Antlr4GrammarConverter
         var imports = new List<GrammarImport>();
         var actions = new List<GrammarAction>();
         foreach (var prequel in All(grammarSpec, "prequelConstruct"))
-            ProcessPrequelConstruct(prequel, ref options, imports, actions);
+            ProcessPrequelConstruct(prequel, ref options, imports, actions, diagnostics);
 
         var rulesNode = First(grammarSpec, "rules");
         var (lexerRules, parserRules) = rulesNode != null
@@ -133,7 +158,7 @@ public sealed class Antlr4GrammarConverter
             RootRule: rootRule
         );
 
-        return RuleResolver.Resolve(definition);
+        return RuleResolver.Resolve(definition, diagnostics);
     }
 
     // ─── grammarDecl / grammarType ────────────────────────────────────────────
@@ -170,18 +195,31 @@ public sealed class Antlr4GrammarConverter
         ParserNode node,
         ref GrammarOptions? options,
         List<GrammarImport> imports,
-        List<GrammarAction> actions)
+        List<GrammarAction> actions,
+        DiagnosticBag? diagnostics)
     {
         var optSpec = First(node, "optionsSpec");
         if (optSpec != null) { options = ConvertOptionsSpec(optSpec); return; }
 
         var delegGrammars = First(node, "delegateGrammars");
-        if (delegGrammars != null) { imports.AddRange(ConvertDelegateGrammars(delegGrammars)); return; }
+        if (delegGrammars != null) { imports.AddRange(ConvertDelegateGrammars(delegGrammars, diagnostics)); return; }
+
+        if (First(node, "tokensSpec") != null)
+        {
+            diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored);
+            return;
+        }
+
+        if (First(node, "channelsSpec") != null)
+        {
+            diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored);
+            return;
+        }
 
         var actionNode = First(node, "action_");
         if (actionNode != null)
         {
-            var ga = ConvertGrammarAction(actionNode);
+            var ga = ConvertGrammarAction(actionNode, diagnostics);
             if (ga != null) actions.Add(ga);
         }
     }
@@ -202,7 +240,7 @@ public sealed class Antlr4GrammarConverter
     }
 
     /// <summary>Yields <see cref="GrammarImport"/> records from a <c>delegateGrammars</c> node.</summary>
-    private static IEnumerable<GrammarImport> ConvertDelegateGrammars(ParserNode node)
+    private static IEnumerable<GrammarImport> ConvertDelegateGrammars(ParserNode node, DiagnosticBag? diagnostics)
     {
         foreach (var dg in All(node, "delegateGrammar"))
         {
@@ -211,17 +249,29 @@ public sealed class Antlr4GrammarConverter
                 .Where(c => c.Rule?.Name == "identifier")
                 .ToList();
             if (idents.Count >= 2)
-                yield return new GrammarImport(GetIdentifierText(idents[1]), GetIdentifierText(idents[0]));
+            {
+                var import = new GrammarImport(GetIdentifierText(idents[1]), GetIdentifierText(idents[0]));
+                diagnostics?.Add(ParserDiagnostics.ImportParsedButNotResolved, import.GrammarName);
+                yield return import;
+            }
             else if (idents.Count == 1)
-                yield return new GrammarImport(GetIdentifierText(idents[0]));
+            {
+                var import = new GrammarImport(GetIdentifierText(idents[0]));
+                diagnostics?.Add(ParserDiagnostics.ImportParsedButNotResolved, import.GrammarName);
+                yield return import;
+            }
         }
     }
 
     /// <summary>Converts an <c>action_</c> node into a <see cref="GrammarAction"/>, or <c>null</c> when the node lacks an identifier.</summary>
-    private static GrammarAction? ConvertGrammarAction(ParserNode node)
+    private static GrammarAction? ConvertGrammarAction(ParserNode node, DiagnosticBag? diagnostics)
     {
         var identNode = First(node, "identifier");
-        if (identNode == null) return null;
+        if (identNode == null)
+        {
+            diagnostics?.Add(ParserDiagnostics.ActionIgnored, "@action(without identifier)");
+            return null;
+        }
         var name = GetIdentifierText(identNode);
 
         var scopeNode = First(node, "actionScopeName");
@@ -344,8 +394,10 @@ public sealed class Antlr4GrammarConverter
             if (HasToken(node, "QUESTION"))
             {
                 if (IsPrecpred(code)) return new PrecedencePredicate(ParsePrecpredLevel(code));
+                _diagnostics?.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
                 return new ValidatingPredicate(code);
             }
+            _diagnostics?.Add(ParserDiagnostics.InlineActionStoredNotExecuted);
             return new EmbeddedAction(code, ActionContext.Alternative, ActionPosition.Inline, ExtractLabels(code));
         }
 
@@ -417,10 +469,21 @@ public sealed class Antlr4GrammarConverter
             "pushMode" => LexerCommandType.PushMode,
             "popMode"  => LexerCommandType.PopMode,
             "mode"     => LexerCommandType.Mode,
-            _          => throw new GrammarParseException($"Unknown lexer command: '{nameText}'")
+            _          => throw UnknownLexerCommand(nameText)
         };
 
         return new LexerCommand(type, arg);
+    }
+
+    /// <summary>
+    /// Creates an exception for an unknown lexer command and records a diagnostic.
+    /// </summary>
+    /// <param name="commandName">Unsupported command name.</param>
+    /// <returns>Exception to throw.</returns>
+    private GrammarParseException UnknownLexerCommand(string commandName)
+    {
+        _diagnostics?.Add(ParserDiagnostics.UnexpectedToken, commandName);
+        return new GrammarParseException($"Unknown lexer command: '{commandName}'");
     }
 
     // ─── parserRuleSpec ───────────────────────────────────────────────────────
@@ -438,13 +501,21 @@ public sealed class Antlr4GrammarConverter
             if (argBlock != null)
             {
                 var raw = GetArgActionBlockText(argBlock);
-                if (raw.Length > 0) returns = [new RuleReturn(raw, raw)];
+                if (raw.Length > 0)
+                {
+                    returns = [new RuleReturn(raw, raw)];
+                    _diagnostics?.AddWithContext(ParserDiagnostics.ReturnsPartiallyApplied, null, null, name, null, name);
+                }
             }
         }
 
         EmbeddedAction? initAction = null, afterAction = null;
+        bool hasIgnoredRuleMetadata = false;
         foreach (var prequel in All(node, "rulePrequel"))
         {
+            if (First(prequel, "localsSpec") != null || First(prequel, "throwsSpec") != null)
+                hasIgnoredRuleMetadata = true;
+
             var ruleAction = First(prequel, "ruleAction");
             if (ruleAction == null) continue;
 
@@ -459,7 +530,14 @@ public sealed class Antlr4GrammarConverter
 
             if (actionName == "init") initAction = action;
             else if (actionName == "after") afterAction = action;
+            else _diagnostics?.AddWithContext(ParserDiagnostics.ActionIgnored, null, null, name, null, $"rule action @{actionName}");
         }
+
+        if (First(node, "exceptionGroup") != null)
+            hasIgnoredRuleMetadata = true;
+
+        if (hasIgnoredRuleMetadata)
+            _diagnostics?.AddWithContext(ParserDiagnostics.LocalsIgnored, null, null, name, null, name);
 
         var ruleBlock = Require(First(node, "ruleBlock"), "Missing ruleBlock");
         var ruleAltList = Require(First(ruleBlock, "ruleAltList"), "Missing ruleAltList");
@@ -525,8 +603,10 @@ public sealed class Antlr4GrammarConverter
             if (HasToken(node, "QUESTION"))
             {
                 if (IsPrecpred(code)) return new PrecedencePredicate(ParsePrecpredLevel(code));
+                _diagnostics?.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
                 return new ValidatingPredicate(code);
             }
+            _diagnostics?.Add(ParserDiagnostics.InlineActionStoredNotExecuted);
             return new EmbeddedAction(code, ActionContext.Alternative, ActionPosition.Inline, ExtractLabels(code));
         }
 

@@ -1,32 +1,32 @@
 # Fractals
 
-`Fractals` est une application Windows Forms de démonstration qui génère des fractales avec les bibliothèques utilitaires du dépôt.
+`Fractals` is a Windows Forms demo application that generates fractals using the utility libraries from this repository.
 
-## Objectif
+## Purpose
 
-Permettre un test visuel rapide des algorithmes de calcul/rendu de fractales (Mandelbrot, Julia).
+Provide a quick visual test bed for fractal computation/rendering algorithms (Mandelbrot, Julia).
 
-## Exemples
+## Examples
 
-### 1) Lancer l'application
+### 1) Run the application
 
 ```bash
 dotnet run --project Fractals/Fractals.csproj
 ```
 
-### 2) Construire le projet
+### 2) Build the project
 
 ```bash
 dotnet build Fractals/Fractals.csproj
 ```
 
-### 3) Explorer les implémentations
+### 3) Explore implementations
 
-- Logique de calcul : `Fractals/ComputeFractal.cs`
-- Types de fractales : `Fractals/IFractal.cs`
-- Formulaire principal : `Fractals/FactalsForm.cs`
+- Compute logic: `Fractals/ComputeFractal.cs`
+- Fractal types: `Fractals/IFractal.cs`
+- Main form: `Fractals/FactalsForm.cs`
 
-## Projets liés
+## Related projects
 
 - [`Utils.Imaging`](../Utils.Imaging/README.md)
 - [`Utils`](../Utils/README.md)
