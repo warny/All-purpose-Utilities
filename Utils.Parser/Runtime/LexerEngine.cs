@@ -50,7 +50,6 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// <returns>Lazy sequence of tokens.</returns>
     public IEnumerable<Token> Tokenize(ICharStream stream, DiagnosticBag? diagnostics = null)
     {
-        diagnostics ??= new DiagnosticBag();
         _modeStack.Clear();
         _modeStack.Push(GetDefaultMode());
         _moreTextBuilder.Clear();
@@ -68,7 +67,7 @@ public sealed class LexerEngine(ParserDefinition definition)
                 var pos = stream.Position;
                 var ch = stream.Peek();
                 stream.Consume();
-                diagnostics.AddWithContext(ParserDiagnostics.ParseFailure, pos, 1, null, null, $"Unrecognized character '{ch}'.");
+                diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, pos, 1, null, null, $"Unrecognized character '{ch}'.");
                 yield return new Token(
                     new SourceSpan(pos, 1), "ERROR", mode.Name, ch.ToString());
                 continue;
@@ -408,7 +407,7 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// <param name="commands">Commands from the matched path (may be empty).</param>
     /// <param name="token">The matched token; may be passed for context but is not mutated here.</param>
     /// <returns><c>true</c> if the token should be suppressed from output.</returns>
-    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag diagnostics)
+    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag? diagnostics)
     {
         bool skip = false;
         bool more = false;
@@ -432,7 +431,7 @@ public sealed class LexerEngine(ParserDefinition definition)
                         if (mode is not null)
                             _modeStack.Push(mode);
                         else
-                            diagnostics.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "pushMode");
+                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "pushMode");
                     }
                     break;
 
@@ -453,7 +452,7 @@ public sealed class LexerEngine(ParserDefinition definition)
                         }
                         else
                         {
-                            diagnostics.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "mode");
+                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "mode");
                         }
                     }
                     break;

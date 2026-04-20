@@ -31,7 +31,6 @@ public static class RuleResolver
     /// </exception>
     public static ParserDefinition Resolve(ParserDefinition definition, DiagnosticBag? diagnostics = null)
     {
-        diagnostics ??= new DiagnosticBag();
         // 1. Build AllRules, assigning known kinds at registration time.
         var allRules = new Dictionary<string, Rule>();
 
@@ -41,7 +40,7 @@ public static class RuleResolver
             {
                 if (!allRules.TryAdd(rule.Name, rule))
                 {
-                    diagnostics.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
+                    diagnostics?.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
                     throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
                 }
                 rule.Kind = RuleKind.Lexer;
@@ -52,7 +51,7 @@ public static class RuleResolver
         {
             if (!allRules.TryAdd(rule.Name, rule))
             {
-                diagnostics.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
+                diagnostics?.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
                 throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
             }
             rule.Kind = RuleKind.Parser;
@@ -134,14 +133,14 @@ public static class RuleResolver
         RuleContent content,
         IDictionary<string, Rule> rules,
         string contextRuleName,
-        DiagnosticBag diagnostics)
+        DiagnosticBag? diagnostics)
     {
         switch (content)
         {
             case RuleRef r:
                 if (!rules.ContainsKey(r.RuleName))
                 {
-                    diagnostics.AddWithContext(ParserDiagnostics.UnknownRuleReference, null, null, contextRuleName, null, contextRuleName, r.RuleName);
+                    diagnostics?.AddWithContext(ParserDiagnostics.UnknownRuleReference, null, null, contextRuleName, null, contextRuleName, r.RuleName);
                     throw new GrammarValidationException(
                         $"Rule '{contextRuleName}' references unknown rule '{r.RuleName}'");
                 }
@@ -177,14 +176,14 @@ public static class RuleResolver
         RuleContent content,
         IDictionary<string, Rule> rules,
         string contextRuleName,
-        DiagnosticBag diagnostics)
+        DiagnosticBag? diagnostics)
     {
         switch (content)
         {
             case RuleRef r when r.Label is not null:
                 if (!rules.ContainsKey(r.Label.RuleName))
                 {
-                    diagnostics.AddWithContext(ParserDiagnostics.UnknownRuleReference, null, null, contextRuleName, null, contextRuleName, r.Label.RuleName);
+                    diagnostics?.AddWithContext(ParserDiagnostics.UnknownRuleReference, null, null, contextRuleName, null, contextRuleName, r.Label.RuleName);
                     throw new GrammarValidationException(
                         $"Rule '{contextRuleName}' has label '{r.Label.Label}' " +
                         $"referencing unknown rule '{r.Label.RuleName}'");

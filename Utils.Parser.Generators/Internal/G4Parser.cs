@@ -12,13 +12,13 @@ namespace Utils.Parser.Generators.Internal;
 internal sealed class G4Parser
 {
     private readonly List<G4Token> _tokens;
-    private readonly DiagnosticBag _diagnostics;
+    private readonly DiagnosticBag? _diagnostics;
     private int _pos;
 
     public G4Parser(List<G4Token> tokens, DiagnosticBag? diagnostics = null)
     {
         _tokens = tokens;
-        _diagnostics = diagnostics ?? new DiagnosticBag();
+        _diagnostics = diagnostics;
     }
 
     // ── Public entry point ───────────────────────────────────────────
@@ -57,16 +57,16 @@ internal sealed class G4Parser
             if (PeekValue("options")) { ParseOptionsBlock(grammar.Options); continue; }
 
             // tokens { ... } — skip
-            if (PeekValue("tokens")) { _diagnostics.Add(ParserDiagnostics.TokensBlockIgnored); SkipBlock(); continue; }
+            if (PeekValue("tokens")) { _diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored); SkipBlock(); continue; }
 
             // @ action — skip
-            if (Peek().Kind == G4TokenKind.At) { _diagnostics.Add(ParserDiagnostics.ActionIgnored, "@action"); SkipAction(); continue; }
+            if (Peek().Kind == G4TokenKind.At) { _diagnostics?.Add(ParserDiagnostics.ActionIgnored, "@action"); SkipAction(); continue; }
 
             // import — skip line
-            if (PeekValue("import")) { _diagnostics.Add(ParserDiagnostics.ImportParsedButNotResolved, "import"); while (!AtEof() && Peek().Kind != G4TokenKind.Semi) Consume(); TryConsume(G4TokenKind.Semi); continue; }
+            if (PeekValue("import")) { _diagnostics?.Add(ParserDiagnostics.ImportParsedButNotResolved, "import"); while (!AtEof() && Peek().Kind != G4TokenKind.Semi) Consume(); TryConsume(G4TokenKind.Semi); continue; }
 
             // channels { ... } — skip
-            if (PeekValue("channels")) { _diagnostics.Add(ParserDiagnostics.ChannelsBlockIgnored); SkipBlock(); continue; }
+            if (PeekValue("channels")) { _diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored); SkipBlock(); continue; }
 
             // mode Name; — starts a new lexer mode
             if (PeekValue("mode"))
@@ -182,8 +182,8 @@ internal sealed class G4Parser
             var code = Consume().Value;
             bool isPred = Peek().Kind == G4TokenKind.QMark;
             if (isPred) Consume();
-            if (isPred) _diagnostics.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
-            else _diagnostics.Add(ParserDiagnostics.InlineActionStoredNotExecuted);
+            if (isPred) _diagnostics?.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
+            else _diagnostics?.Add(ParserDiagnostics.InlineActionStoredNotExecuted);
             return new G4EmbeddedAction { Code = code, IsPredicate = isPred };
         }
 
@@ -362,7 +362,7 @@ internal sealed class G4Parser
                 arg = Consume().Value;
             TryConsume(G4TokenKind.RParen);
             if (arg is null)
-                _diagnostics.Add(ParserDiagnostics.FallbackStrategyUsed, $"Lexer command '{name}' without identifier argument.");
+                _diagnostics?.Add(ParserDiagnostics.FallbackStrategyUsed, $"Lexer command '{name}' without identifier argument.");
         }
 
         return new G4LexerCommand { Name = name, Arg = arg };
@@ -442,8 +442,8 @@ internal sealed class G4Parser
             return;
         }
 
-        _diagnostics.Add(ParserDiagnostics.ExpectedTokenMissing, kind.ToString());
-        _diagnostics.Add(ParserDiagnostics.BestEffortRecoveryUsed, kind.ToString());
+        _diagnostics?.Add(ParserDiagnostics.ExpectedTokenMissing, kind.ToString());
+        _diagnostics?.Add(ParserDiagnostics.BestEffortRecoveryUsed, kind.ToString());
     }
 
     private void Expect(string keyword)
@@ -452,8 +452,8 @@ internal sealed class G4Parser
             Consume();
         else
         {
-            _diagnostics.Add(ParserDiagnostics.ExpectedTokenMissing, keyword);
-            _diagnostics.Add(ParserDiagnostics.BestEffortRecoveryUsed, keyword);
+            _diagnostics?.Add(ParserDiagnostics.ExpectedTokenMissing, keyword);
+            _diagnostics?.Add(ParserDiagnostics.BestEffortRecoveryUsed, keyword);
         }
     }
 
@@ -461,16 +461,16 @@ internal sealed class G4Parser
     {
         if (Peek().Kind == G4TokenKind.Identifier)
             return Consume().Value;
-        _diagnostics.Add(ParserDiagnostics.ExpectedTokenMissing, "Identifier");
-        _diagnostics.Add(ParserDiagnostics.BestEffortRecoveryUsed, "Identifier");
+        _diagnostics?.Add(ParserDiagnostics.ExpectedTokenMissing, "Identifier");
+        _diagnostics?.Add(ParserDiagnostics.BestEffortRecoveryUsed, "Identifier");
         return "";
     }
 
     private string ExpectToken(G4TokenKind kind)
     {
         if (Peek().Kind == kind) return Consume().Value;
-        _diagnostics.Add(ParserDiagnostics.ExpectedTokenMissing, kind.ToString());
-        _diagnostics.Add(ParserDiagnostics.BestEffortRecoveryUsed, kind.ToString());
+        _diagnostics?.Add(ParserDiagnostics.ExpectedTokenMissing, kind.ToString());
+        _diagnostics?.Add(ParserDiagnostics.BestEffortRecoveryUsed, kind.ToString());
         return "";
     }
 

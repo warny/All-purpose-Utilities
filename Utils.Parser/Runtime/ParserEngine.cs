@@ -45,7 +45,6 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// </exception>
     public ParseNode Parse(IEnumerable<Token> tokens, Rule? startRule = null, DiagnosticBag? diagnostics = null)
     {
-        diagnostics ??= new DiagnosticBag();
         var tokenList = tokens.ToList();
         var root = startRule ?? definition.RootRule
             ?? throw new InvalidOperationException("No root rule defined");
@@ -56,7 +55,7 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         if (result is null)
         {
-            diagnostics.Add(ParserDiagnostics.ParseFailure, "Failed to parse from root rule");
+            diagnostics?.Add(ParserDiagnostics.ParseFailure, "Failed to parse from root rule");
             return new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE",
                 "Failed to parse from root rule", root);
         }
@@ -65,7 +64,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         if (!context.IsEnd)
         {
             var trailing = context.Peek()!;
-            diagnostics.AddWithContext(
+            diagnostics?.AddWithContext(
                 ParserDiagnostics.TrailingTokensAfterParse,
                 trailing.Span.Position,
                 trailing.Span.Length,
@@ -76,7 +75,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 $"Unexpected token '{trailing.Text}' at position {trailing.Span.Position}", root);
         }
 
-        diagnostics.Add(ParserDiagnostics.DefaultBehaviorApplied, "Parser completed without recovery.");
+        diagnostics?.Add(ParserDiagnostics.DefaultBehaviorApplied, "Parser completed without recovery.");
         return result;
     }
 

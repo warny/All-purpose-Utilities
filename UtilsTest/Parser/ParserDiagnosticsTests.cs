@@ -145,4 +145,58 @@ public class ParserDiagnosticsTests
         Assert.IsFalse(node is ErrorNode);
         Assert.IsFalse(diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
     }
+
+    [TestMethod]
+    public void RuntimeEngines_WithNullDiagnostics_DoNotThrow()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar Exp;
+            eval   : Number ;
+            Number : ('0'..'9')+ ;
+            WS     : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """);
+
+        var lexer = new LexerEngine(definition);
+        var tokens = lexer.Tokenize(new StringCharStream("1 ?"), diagnostics: null).ToList();
+        var parser = new ParserEngine(definition);
+        var node = parser.Parse(tokens, diagnostics: null);
+
+        Assert.IsNotNull(node);
+        Assert.IsTrue(tokens.Any(t => t.RuleName == "ERROR"));
+    }
+
+    [TestMethod]
+    public void RuleResolver_WithNullDiagnostics_ThrowsExpectedExceptionOnly()
+    {
+        var parserRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("MissingRule"))
+            ]));
+
+        var definition = new ParserDefinition(
+            Name: "G",
+            Type: GrammarType.Parser,
+            Options: null,
+            Actions: [],
+            Imports: [],
+            Modes: [new LexerMode("DEFAULT_MODE", [])],
+            ParserRules: [parserRule],
+            RootRule: parserRule);
+
+        Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition, diagnostics: null));
+    }
+
+    [TestMethod]
+    public void GeneratorParser_WithNullDiagnostics_DoesNotThrow()
+    {
+        var tokens = new G4Tokenizer("grammar G; tokens { A }; rule : 'a' ;").Tokenize();
+        var parser = new G4Parser(tokens, diagnostics: null);
+        var grammar = parser.Parse();
+
+        Assert.IsNotNull(grammar);
+        Assert.AreEqual("G", grammar.Name);
+    }
 }
