@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Utils.Collections;
@@ -385,6 +386,12 @@ public sealed partial class CSyntaxExpressionCompiler
                 continue;
             }
 
+            if (TryCompileInterpolatedStringTemplate(trimmed, context, out Expression? interpolatedTemplate) && interpolatedTemplate is not null)
+            {
+                arguments.Add(interpolatedTemplate);
+                continue;
+            }
+
             arguments.Add(context.RuntimeContext is null
                 ? context.Compiler.Compile(trimmed, context.Symbols)
                 : context.Compiler.Compile(trimmed, context.RuntimeContext));
@@ -392,6 +399,143 @@ public sealed partial class CSyntaxExpressionCompiler
 
         return arguments;
     }
+
+    /// <summary>
+    /// Tries to compile a raw interpolated string argument into a deferred template expression.
+    /// </summary>
+    /// <param name="argumentText">Raw argument text.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <param name="templateExpression">Compiled template expression when parsing succeeds.</param>
+    /// <returns><c>true</c> when the argument is an interpolated string; otherwise <c>false</c>.</returns>
+    private static bool TryCompileInterpolatedStringTemplate(string argumentText, CompilationContext context, out Expression? templateExpression)
+    {
+        templateExpression = null;
+        string? content = null;
+        if (argumentText.StartsWith("$\"", StringComparison.Ordinal) && argumentText.EndsWith("\"", StringComparison.Ordinal) && argumentText.Length >= 3)
+        {
+            content = argumentText[2..^1];
+        }
+
+        if (content is null && TryParsePreprocessedInterpolatedConcatenation(argumentText, context, out InterpolatedStringTemplateExpression? preprocessedTemplate))
+        {
+            templateExpression = preprocessedTemplate;
+            return true;
+        }
+
+        if (content is null)
+        {
+            return false;
+        }
+
+        var parts = new List<InterpolatedTemplatePart>();
+        var literalBuilder = new StringBuilder();
+        int index = 0;
+        while (index < content.Length)
+        {
+            char current = content[index];
+            if (current == '{')
+            {
+                if (index + 1 < content.Length && content[index + 1] == '{')
+                {
+                    literalBuilder.Append('{');
+                    index += 2;
+                    continue;
+                }
+
+                if (literalBuilder.Length > 0)
+                {
+                    parts.Add(InterpolatedTemplatePart.FromLiteral(literalBuilder.ToString()));
+                    literalBuilder.Clear();
+                }
+
+                int closeIndex = content.IndexOf('}', index + 1);
+                if (closeIndex < 0)
+                {
+                    return false;
+                }
+
+                string expressionSource = content[(index + 1)..closeIndex].Trim();
+                if (expressionSource.Length == 0)
+                {
+                    return false;
+                }
+
+                Expression expression = CompileSubExpression(expressionSource, context, null);
+                parts.Add(InterpolatedTemplatePart.FromExpression(expression));
+                index = closeIndex + 1;
+                continue;
+            }
+
+            if (current == '}' && index + 1 < content.Length && content[index + 1] == '}')
+            {
+                literalBuilder.Append('}');
+                index += 2;
+                continue;
+            }
+
+            literalBuilder.Append(current);
+            index++;
+        }
+
+        if (literalBuilder.Length > 0)
+        {
+            parts.Add(InterpolatedTemplatePart.FromLiteral(literalBuilder.ToString()));
+        }
+
+        templateExpression = new InterpolatedStringTemplateExpression(parts);
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to parse an interpolated string already rewritten as a parenthesized concatenation.
+    /// </summary>
+    /// <param name="argumentText">Rewritten argument text.</param>
+    /// <param name="context">Current compilation context.</param>
+    /// <param name="templateExpression">Parsed template expression.</param>
+    /// <returns><c>true</c> when parsing succeeds; otherwise <c>false</c>.</returns>
+    private static bool TryParsePreprocessedInterpolatedConcatenation(
+        string argumentText,
+        CompilationContext context,
+        out InterpolatedStringTemplateExpression? templateExpression)
+    {
+        templateExpression = null;
+        string trimmed = argumentText.Trim();
+        if (!trimmed.StartsWith('(') || !trimmed.EndsWith(')'))
+        {
+            return false;
+        }
+
+        string inner = trimmed[1..^1];
+        List<string> segments = SplitTopLevel(inner, '+').Select(static part => part.Trim()).Where(static part => part.Length > 0).ToList();
+        if (segments.Count < 2)
+        {
+            return false;
+        }
+
+        var parts = new List<InterpolatedTemplatePart>();
+        foreach (string segment in segments)
+        {
+            if (segment.Length >= 2 && segment.StartsWith('\"') && segment.EndsWith('\"'))
+            {
+                parts.Add(InterpolatedTemplatePart.FromLiteral(UnescapeStringLiteral(segment[1..^1])));
+                continue;
+            }
+
+            Expression expression = CompileSubExpression(segment, context, null);
+            parts.Add(InterpolatedTemplatePart.FromExpression(expression));
+        }
+
+        templateExpression = new InterpolatedStringTemplateExpression(parts);
+        return true;
+    }
+
+    /// <summary>
+    /// Unescapes a source-level quoted string segment.
+    /// </summary>
+    /// <param name="value">Escaped string content.</param>
+    /// <returns>Unescaped content.</returns>
+    private static string UnescapeStringLiteral(string value)
+        => value.Replace("\\\"", "\"", StringComparison.Ordinal).Replace("\\\\", "\\", StringComparison.Ordinal);
 
     /// <summary>
     /// Splits source text on a separator while keeping nested scopes intact.
@@ -791,7 +935,7 @@ public sealed partial class CSyntaxExpressionCompiler
             Expression[] convertedArguments = new Expression[parameters.Count];
             for (int i = 0; i < fixedCount; i++)
             {
-                convertedArguments[i] = ConvertIfNeeded(arguments[i], parameters[i].ParameterType);
+                convertedArguments[i] = ConvertParameterArgument(parameters, arguments, i);
             }
 
             Type elementType = parameters[^1].ParameterType.GetElementType()
@@ -827,13 +971,32 @@ public sealed partial class CSyntaxExpressionCompiler
             return convertedArguments;
         }
 
-        Expression[] converted = new Expression[arguments.Length];
+            Expression[] converted = new Expression[arguments.Length];
         for (int i = 0; i < arguments.Length; i++)
         {
-            converted[i] = ConvertIfNeeded(arguments[i], parameters[i].ParameterType);
+            converted[i] = ConvertParameterArgument(parameters, arguments, i);
         }
 
         return converted;
+    }
+
+    /// <summary>
+    /// Converts one argument according to a concrete method/constructor parameter.
+    /// </summary>
+    /// <param name="parameters">Target parameters.</param>
+    /// <param name="arguments">Source arguments.</param>
+    /// <param name="parameterIndex">Parameter index to convert.</param>
+    /// <returns>Converted argument expression.</returns>
+    private static Expression ConvertParameterArgument(IReadOnlyList<ParameterInfo> parameters, IReadOnlyList<Expression> arguments, int parameterIndex)
+    {
+        if (arguments[parameterIndex] is InterpolatedStringTemplateExpression template
+            && IsInterpolatedStringHandlerType(parameters[parameterIndex].ParameterType)
+            && TryBuildInterpolatedStringHandlerExpression(parameters[parameterIndex].ParameterType, template, out Expression? handlerExpression))
+        {
+            return handlerExpression;
+        }
+
+        return ConvertIfNeeded(arguments[parameterIndex], parameters[parameterIndex].ParameterType);
     }
 
     /// <summary>
@@ -891,6 +1054,55 @@ public sealed partial class CSyntaxExpressionCompiler
 
         callExpression = Expression.Call(selectedMethod, ConvertArgumentsForParameters(selectedMethod.GetParameters(), arguments));
         return true;
+    }
+
+    /// <summary>
+    /// Builds a constructor expression by selecting the most compatible constructor overload.
+    /// </summary>
+    /// <param name="targetType">Target CLR type to instantiate.</param>
+    /// <param name="arguments">Constructor arguments.</param>
+    /// <returns>Constructor expression.</returns>
+    private static Expression BuildObjectCreation(Type targetType, Expression[] arguments)
+    {
+        ConstructorInfo[] constructors = targetType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+        if (constructors.Length == 0 && arguments.Length == 0 && targetType.IsValueType)
+        {
+            return Expression.New(targetType);
+        }
+
+        ConstructorInfo? selectedConstructor = SelectBestConstructor(constructors, arguments);
+        if (selectedConstructor is null)
+        {
+            throw new InvalidOperationException($"No compatible public constructor found on '{targetType.FullName}'.");
+        }
+
+        Expression[] convertedArguments = ConvertArgumentsForParameters(selectedConstructor.GetParameters(), arguments);
+        return Expression.New(selectedConstructor, convertedArguments);
+    }
+
+    /// <summary>
+    /// Selects the best constructor candidate for provided arguments.
+    /// </summary>
+    /// <param name="constructors">Available constructors.</param>
+    /// <param name="arguments">Invocation arguments.</param>
+    /// <returns>Best constructor candidate or <c>null</c> when no compatible constructor exists.</returns>
+    private static ConstructorInfo? SelectBestConstructor(IEnumerable<ConstructorInfo> constructors, Expression[] arguments)
+    {
+        ConstructorInfo? bestConstructor = null;
+        int bestScore = int.MaxValue;
+        foreach (ConstructorInfo constructor in constructors)
+        {
+            int? score = CalculateMethodCompatibilityScore(constructor.GetParameters(), arguments);
+            if (score is null || score.Value >= bestScore)
+            {
+                continue;
+            }
+
+            bestScore = score.Value;
+            bestConstructor = constructor;
+        }
+
+        return bestConstructor;
     }
 
     /// <summary>
@@ -1110,6 +1322,17 @@ public sealed partial class CSyntaxExpressionCompiler
         {
             Type parameterType = parameters[i].ParameterType;
             Type argumentType = arguments[i].Type;
+            bool isInterpolatedHandler = IsInterpolatedStringHandlerType(parameterType);
+            if (arguments[i] is InterpolatedStringTemplateExpression template && isInterpolatedHandler)
+            {
+                if (!TryBuildInterpolatedStringHandlerExpression(parameterType, template, out _))
+                {
+                    return null;
+                }
+
+                score -= 50;
+                continue;
+            }
 
             if (argumentType == parameterType)
             {
@@ -1176,6 +1399,100 @@ public sealed partial class CSyntaxExpressionCompiler
         }
 
         return score;
+    }
+
+    /// <summary>
+    /// Indicates whether a type is an interpolated string handler type.
+    /// </summary>
+    /// <param name="type">Candidate type.</param>
+    /// <returns><c>true</c> when decorated as interpolated string handler; otherwise <c>false</c>.</returns>
+    private static bool IsInterpolatedStringHandlerType(Type type)
+        => type.IsDefined(typeof(InterpolatedStringHandlerAttribute), false);
+
+    /// <summary>
+    /// Tries to build an interpolated string handler instance from a parsed template.
+    /// </summary>
+    /// <param name="handlerType">Handler CLR type.</param>
+    /// <param name="template">Parsed interpolated string template.</param>
+    /// <param name="handlerExpression">Generated handler expression.</param>
+    /// <returns><c>true</c> when construction succeeded; otherwise <c>false</c>.</returns>
+    private static bool TryBuildInterpolatedStringHandlerExpression(
+        Type handlerType,
+        InterpolatedStringTemplateExpression template,
+        out Expression? handlerExpression)
+    {
+        handlerExpression = null;
+
+        ConstructorInfo? constructor = handlerType
+            .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(static ctor =>
+            {
+                ParameterInfo[] ctorParameters = ctor.GetParameters();
+                return ctorParameters.Length >= 2
+                    && ctorParameters[0].ParameterType == typeof(int)
+                    && ctorParameters[1].ParameterType == typeof(int);
+            });
+        if (constructor is null)
+        {
+            return false;
+        }
+
+        ParameterInfo[] constructorParameters = constructor.GetParameters();
+        var constructorArguments = new List<Expression>
+        {
+            Expression.Constant(template.TotalLiteralLength, typeof(int)),
+            Expression.Constant(template.FormattedCount, typeof(int)),
+        };
+        for (int i = 2; i < constructorParameters.Length; i++)
+        {
+            if (constructorParameters[i].HasDefaultValue)
+            {
+                object? defaultValue = constructorParameters[i].DefaultValue;
+                constructorArguments.Add(Expression.Constant(defaultValue, constructorParameters[i].ParameterType));
+                continue;
+            }
+
+            return false;
+        }
+
+        MethodInfo? appendLiteral = handlerType.GetMethod("AppendLiteral", BindingFlags.Public | BindingFlags.Instance, [typeof(string)]);
+        if (appendLiteral is null)
+        {
+            return false;
+        }
+
+        MethodInfo? appendFormattedBase = handlerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(static method =>
+                method.Name == "AppendFormatted"
+                && method.IsGenericMethodDefinition
+                && method.GetParameters().Length == 1);
+        if (appendFormattedBase is null)
+        {
+            return false;
+        }
+
+        ParameterExpression handlerVariable = Expression.Variable(handlerType, "__interpolatedHandler");
+        var instructions = new List<Expression>
+        {
+            Expression.Assign(handlerVariable, Expression.New(constructor, constructorArguments)),
+        };
+
+        foreach (InterpolatedTemplatePart part in template.Parts)
+        {
+            if (part.IsLiteral)
+            {
+                instructions.Add(Expression.Call(handlerVariable, appendLiteral, Expression.Constant(part.Literal!)));
+                continue;
+            }
+
+            Expression valueExpression = part.Expression!;
+            MethodInfo appendFormatted = appendFormattedBase.MakeGenericMethod(valueExpression.Type);
+            instructions.Add(Expression.Call(handlerVariable, appendFormatted, valueExpression));
+        }
+
+        instructions.Add(handlerVariable);
+        handlerExpression = Expression.Block([handlerVariable], instructions);
+        return true;
     }
 
     /// <summary>
@@ -1403,6 +1720,11 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <returns>Resolved CLR type.</returns>
     private static Type ResolveNativeType(string typeName, IReadOnlyList<string>? importedNamespaces = null)
     {
+        if (string.Equals(typeName, "dynamic", StringComparison.Ordinal))
+        {
+            return typeof(object);
+        }
+
         int arrayRank = 0;
         while (typeName.EndsWith("[]", StringComparison.Ordinal))
         {
@@ -1670,6 +1992,125 @@ public sealed partial class CSyntaxExpressionCompiler
     }
 
     /// <summary>
+    /// Represents one part of a parsed interpolated-string template.
+    /// </summary>
+    private sealed record InterpolatedTemplatePart
+    {
+        /// <summary>
+        /// Gets a value indicating whether this part is a literal text segment.
+        /// </summary>
+        public bool IsLiteral { get; }
+
+        /// <summary>
+        /// Gets the literal text segment when <see cref="IsLiteral"/> is <c>true</c>.
+        /// </summary>
+        public string? Literal { get; }
+
+        /// <summary>
+        /// Gets the interpolation expression when <see cref="IsLiteral"/> is <c>false</c>.
+        /// </summary>
+        public Expression? Expression { get; }
+
+        private InterpolatedTemplatePart(bool isLiteral, string? literal, Expression? expression)
+        {
+            IsLiteral = isLiteral;
+            Literal = literal;
+            Expression = expression;
+        }
+
+        /// <summary>
+        /// Creates a literal template part.
+        /// </summary>
+        /// <param name="literal">Literal content.</param>
+        /// <returns>Literal template part.</returns>
+        public static InterpolatedTemplatePart FromLiteral(string literal)
+            => new(true, literal, null);
+
+        /// <summary>
+        /// Creates an expression template part.
+        /// </summary>
+        /// <param name="expression">Interpolation expression.</param>
+        /// <returns>Expression template part.</returns>
+        public static InterpolatedTemplatePart FromExpression(Expression expression)
+            => new(false, null, expression);
+    }
+
+    /// <summary>
+    /// Expression node representing a parsed interpolated string template before final conversion.
+    /// </summary>
+    private sealed class InterpolatedStringTemplateExpression : Expression
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InterpolatedStringTemplateExpression"/> class.
+        /// </summary>
+        /// <param name="parts">Template parts.</param>
+        public InterpolatedStringTemplateExpression(IReadOnlyList<InterpolatedTemplatePart> parts)
+        {
+            Parts = parts;
+            FormattedCount = parts.Count(static part => !part.IsLiteral);
+            TotalLiteralLength = parts.Where(static part => part.IsLiteral).Sum(static part => part.Literal!.Length);
+        }
+
+        /// <summary>
+        /// Gets the template parts.
+        /// </summary>
+        public IReadOnlyList<InterpolatedTemplatePart> Parts { get; }
+
+        /// <summary>
+        /// Gets the number of formatted interpolation slots.
+        /// </summary>
+        public int FormattedCount { get; }
+
+        /// <summary>
+        /// Gets the total literal character count.
+        /// </summary>
+        public int TotalLiteralLength { get; }
+
+        /// <inheritdoc />
+        public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <inheritdoc />
+        public override Type Type => typeof(string);
+
+        /// <inheritdoc />
+        public override bool CanReduce => true;
+
+        /// <inheritdoc />
+        public override Expression Reduce()
+        {
+            List<Expression> pieces = new();
+            foreach (InterpolatedTemplatePart part in Parts)
+            {
+                if (part.IsLiteral)
+                {
+                    pieces.Add(Expression.Constant(part.Literal ?? string.Empty));
+                    continue;
+                }
+
+                Expression valueExpression = part.Expression
+                    ?? throw new InvalidOperationException("Invalid interpolated template part.");
+                pieces.Add(valueExpression.Type == typeof(string)
+                    ? valueExpression
+                    : Expression.Call(valueExpression, typeof(object).GetMethod(nameof(ToString), Type.EmptyTypes)!));
+            }
+
+            if (pieces.Count == 0)
+            {
+                return Expression.Constant(string.Empty);
+            }
+
+            if (pieces.Count == 1)
+            {
+                return pieces[0];
+            }
+
+            return Expression.Call(
+                typeof(string).GetMethod(nameof(string.Concat), [typeof(string[])])!,
+                Expression.NewArrayInit(typeof(string), pieces));
+        }
+    }
+
+    /// <summary>
     /// Invokes the delegate currently stored in a deferred holder.
     /// </summary>
     /// <param name="holder">Holder containing the target delegate.</param>
@@ -1789,7 +2230,9 @@ public sealed partial class CSyntaxExpressionCompiler
 
                 string typeName = FlattenNodeText(typeNav.Node);
                 string paramName = FlattenNodeText(nameNav.Node);
-                Type paramType = ResolveNativeType(typeName, context.ImportedNamespaces);
+                Type paramType = string.Equals(typeName, "var", StringComparison.Ordinal)
+                    ? typeof(object)
+                    : ResolveNativeType(typeName, context.ImportedNamespaces);
                 ParameterExpression param = Expression.Parameter(paramType, paramName);
                 parameters.Add(param);
                 symbols[paramName] = param;
@@ -1900,6 +2343,11 @@ public sealed partial class CSyntaxExpressionCompiler
                 return "\"\"";
             }
 
+            if (parts.Count == 1 && !parts[0].StartsWith('\"'))
+            {
+                return "(\"\" + " + parts[0] + ")";
+            }
+
             return "(" + string.Join(" + ", parts) + ")";
         });
     }
@@ -1946,7 +2394,9 @@ public sealed partial class CSyntaxExpressionCompiler
             if (symbols.ContainsKey(varName)) continue;
 
             string typeName = FlattenNodeText(typeNav.Node);
-            Type varType = ResolveNativeType(typeName, context.ImportedNamespaces);
+            Type varType = string.Equals(typeName, "var", StringComparison.Ordinal)
+                ? typeof(object)
+                : ResolveNativeType(typeName, context.ImportedNamespaces);
             ParameterExpression variable = Expression.Variable(varType, varName);
             variables.Add(variable);
             symbols[varName] = variable;

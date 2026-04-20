@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions.CSyntax.Runtime;
@@ -226,6 +227,93 @@ public class BlockTests
             var length = random.Next(5, 10);
             Assert.AreEqual(test.Sum(), f(test));
         }
+    }
+
+    /// <summary>
+    /// Ensures <c>dynamic obj = new();</c> creates an <see cref="ExpandoObject"/> instance.
+    /// </summary>
+    [TestMethod]
+    public void DynamicDeclarationWithTargetTypedNewCreatesExpandoObject()
+    {
+        var expression = "() => { dynamic obj = new(); obj; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<object>)compiled.Compile();
+        var result = function();
+
+        Assert.IsInstanceOfType<ExpandoObject>(result);
+
+        var values = (IDictionary<string, object?>)result;
+        values["value"] = 42;
+
+        Assert.AreEqual(42, values["value"]);
+    }
+
+    /// <summary>
+    /// Ensures <c>var obj = new dynamic;</c> creates an <see cref="ExpandoObject"/> instance.
+    /// </summary>
+    [TestMethod]
+    public void VarDeclarationWithNewDynamicCreatesExpandoObject()
+    {
+        var expression = "() => { var obj = new dynamic; obj; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<object>)compiled.Compile();
+        var result = function();
+
+        Assert.IsInstanceOfType<ExpandoObject>(result);
+
+        var values = (IDictionary<string, object?>)result;
+        values["value"] = 84;
+
+        Assert.AreEqual(84, values["value"]);
+    }
+
+    /// <summary>
+    /// Ensures <c>var obj = new();</c> creates an <see cref="ExpandoObject"/> instance.
+    /// </summary>
+    [TestMethod]
+    public void VarDeclarationWithTargetTypedNewCreatesExpandoObject()
+    {
+        var expression = "() => { var obj = new(); obj; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<object>)compiled.Compile();
+        var result = function();
+
+        Assert.IsInstanceOfType<ExpandoObject>(result);
+
+        var values = (IDictionary<string, object?>)result;
+        values["value"] = 126;
+
+        Assert.AreEqual(126, values["value"]);
+    }
+
+    /// <summary>
+    /// Ensures value types without explicit public constructors still support <c>new T()</c>.
+    /// </summary>
+    [TestMethod]
+    public void ValueTypeConstructorWithoutExplicitCtorIsSupported()
+    {
+        var expression = "() => { int value = new int(); value; }";
+
+        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int>)compiled.Compile();
+
+        Assert.AreEqual(0, function());
+    }
+
+    /// <summary>
+    /// Ensures target-typed <c>new(...)</c> with arguments fails with a clear error.
+    /// </summary>
+    [TestMethod]
+    public void TargetTypedNewWithArgumentsThrows()
+    {
+        var expression = "() => { var obj = new(1, 2); obj; }";
+
+        var exception = Assert.ThrowsException<InvalidOperationException>(() => compiler.Compile(expression));
+
+        StringAssert.Contains(exception.Message, "Target-typed new expressions with arguments are not supported.");
     }
 
 }
