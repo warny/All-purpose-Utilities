@@ -239,8 +239,14 @@ public class BlockTests
 
         var compiled = (LambdaExpression)compiler.Compile(expression);
         var function = (Func<object>)compiled.Compile();
+        var result = function();
 
-        Assert.IsInstanceOfType<ExpandoObject>(function());
+        Assert.IsInstanceOfType<ExpandoObject>(result);
+
+        var values = (IDictionary<string, object?>)result;
+        values["value"] = 42;
+
+        Assert.AreEqual(42, values["value"]);
     }
 
     /// <summary>
@@ -253,8 +259,14 @@ public class BlockTests
 
         var compiled = (LambdaExpression)compiler.Compile(expression);
         var function = (Func<object>)compiled.Compile();
+        var result = function();
 
-        Assert.IsInstanceOfType<ExpandoObject>(function());
+        Assert.IsInstanceOfType<ExpandoObject>(result);
+
+        var values = (IDictionary<string, object?>)result;
+        values["value"] = 84;
+
+        Assert.AreEqual(84, values["value"]);
     }
 
     /// <summary>
@@ -267,8 +279,14 @@ public class BlockTests
 
         var compiled = (LambdaExpression)compiler.Compile(expression);
         var function = (Func<object>)compiled.Compile();
+        var result = function();
 
-        Assert.IsInstanceOfType<ExpandoObject>(function());
+        Assert.IsInstanceOfType<ExpandoObject>(result);
+
+        var values = (IDictionary<string, object?>)result;
+        values["value"] = 126;
+
+        Assert.AreEqual(126, values["value"]);
     }
 
     /// <summary>
