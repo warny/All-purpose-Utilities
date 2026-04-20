@@ -1,4 +1,5 @@
 using Utils.Parser.Model;
+using Utils.Parser.Diagnostics;
 
 namespace Utils.Parser.Runtime;
 
@@ -42,28 +43,40 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// Thrown when no start rule is available (neither <paramref name="startRule"/>
     /// nor <see cref="ParserDefinition.RootRule"/> is set).
     /// </exception>
-    public ParseNode Parse(IEnumerable<Token> tokens, Rule? startRule = null)
+    public ParseNode Parse(IEnumerable<Token> tokens, Rule? startRule = null, DiagnosticBag? diagnostics = null)
     {
+        diagnostics ??= new DiagnosticBag();
         var tokenList = tokens.ToList();
         var root = startRule ?? definition.RootRule
             ?? throw new InvalidOperationException("No root rule defined");
 
         _activeRuleFrames.Clear();
         var context = new ParseContext(tokenList);
-        var result = ParseRule(context, root, precedence: 0);
+        var result = ParseRule(context, root, precedence: 0, diagnostics);
 
         if (result is null)
+        {
+            diagnostics.Add(ParserDiagnostics.ParseFailure, "Failed to parse from root rule");
             return new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE",
                 "Failed to parse from root rule", root);
+        }
 
         // Reject parses that leave trailing tokens unconsumed.
         if (!context.IsEnd)
         {
             var trailing = context.Peek()!;
+            diagnostics.AddWithContext(
+                ParserDiagnostics.TrailingTokensAfterParse,
+                trailing.Span.Position,
+                trailing.Span.Length,
+                null,
+                null,
+                trailing.Text);
             return new ErrorNode(result.Span, result.ModeName,
                 $"Unexpected token '{trailing.Text}' at position {trailing.Span.Position}", root);
         }
 
+        diagnostics.Add(ParserDiagnostics.DefaultBehaviorApplied, "Parser completed without recovery.");
         return result;
     }
 
@@ -77,8 +90,9 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="rule">Parser rule to attempt.</param>
     /// <param name="precedence">Minimum precedence level accepted for this parse attempt.</param>
-    private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence)
+    private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence, DiagnosticBag? diagnostics = null)
     {
+        diagnostics?.AddWithContext(ParserDiagnostics.EnteringRule, null, null, rule.Name, null, rule.Name);
         // Detect left-recursive infinite cycles in O(1).
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
         if (!_activeRuleFrames.Add(frameKey))
@@ -93,7 +107,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                     continue;
 
                 var savedPos = context.SavePosition();
-                var result = TryParseAlternative(context, alternative, rule);
+                var result = TryParseAlternative(context, alternative, rule, diagnostics);
                 if (result is not null)
                 {
                     // Ensure the returned node is tagged with this rule.
@@ -102,6 +116,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                     return new ParserNode(result.Span, result.ModeName, rule,
                         new List<ParseNode> { result });
                 }
+                diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, null, null, rule.Name, null, rule.Name);
                 context.RestorePosition(savedPos);
             }
 
@@ -110,6 +125,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         finally
         {
             _activeRuleFrames.Remove(frameKey);
+            diagnostics?.AddWithContext(ParserDiagnostics.LeavingRule, null, null, rule.Name, null, rule.Name);
         }
     }
 
@@ -158,9 +174,9 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="alt">Alternative to attempt.</param>
     /// <param name="rule">Parent rule (carried to child nodes).</param>
-    private ParseNode? TryParseAlternative(ParseContext context, Alternative alt, Rule rule)
+    private ParseNode? TryParseAlternative(ParseContext context, Alternative alt, Rule rule, DiagnosticBag? diagnostics = null)
     {
-        return TryParseContent(context, alt.Content, rule);
+        return TryParseContent(context, alt.Content, rule, diagnostics);
     }
 
     /// <summary>
@@ -171,34 +187,35 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="content">Grammar element to match.</param>
     /// <param name="rule">Rule in whose context the element is being matched.</param>
-    private ParseNode? TryParseContent(ParseContext context, RuleContent content, Rule rule)
+    private ParseNode? TryParseContent(ParseContext context, RuleContent content, Rule rule, DiagnosticBag? diagnostics = null)
     {
         switch (content)
         {
             case RuleRef ruleRef:
-                return TryParseRuleRef(context, ruleRef, rule);
+                return TryParseRuleRef(context, ruleRef, rule, diagnostics);
 
             case Sequence seq:
-                return TryParseSequence(context, seq, rule);
+                return TryParseSequence(context, seq, rule, diagnostics);
 
             case Alternation alternation:
-                return TryParseAlternation(context, alternation, rule);
+                return TryParseAlternation(context, alternation, rule, diagnostics);
 
             case Alternative alt:
-                return TryParseAlternative(context, alt, rule);
+                return TryParseAlternative(context, alt, rule, diagnostics);
 
             case Quantifier quant:
-                return TryParseQuantifier(context, quant, rule);
+                return TryParseQuantifier(context, quant, rule, diagnostics);
 
             case LiteralMatch lit:
                 return TryParseLiteral(context, lit, rule);
 
             case Negation neg:
-                return TryParseNegation(context, neg, rule);
+                return TryParseNegation(context, neg, rule, diagnostics);
 
             case ValidatingPredicate:
             case GatingPredicate:
                 // Semantic predicates: silently accepted without evaluation.
+                diagnostics?.AddWithContext(ParserDiagnostics.SemanticPredicateNotEnforced, null, null, rule.Name, null);
                 return CreateEmptyNode(context, rule);
 
             case PrecedencePredicate:
@@ -207,6 +224,7 @@ public sealed class ParserEngine(ParserDefinition definition)
 
             case EmbeddedAction:
                 // Embedded actions: never executed, always succeed.
+                diagnostics?.AddWithContext(ParserDiagnostics.InlineActionStoredNotExecuted, null, null, rule.Name, null);
                 return CreateEmptyNode(context, rule);
 
             default:
@@ -221,7 +239,7 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="ruleRef">Reference to resolve.</param>
     /// <param name="parentRule">The rule in which this reference appears.</param>
-    private ParseNode? TryParseRuleRef(ParseContext context, RuleRef ruleRef, Rule parentRule)
+    private ParseNode? TryParseRuleRef(ParseContext context, RuleRef ruleRef, Rule parentRule, DiagnosticBag? diagnostics = null)
     {
         if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
             return null;
@@ -235,13 +253,21 @@ public sealed class ParserEngine(ParserDefinition definition)
             if (token.RuleName == ruleRef.RuleName)
             {
                 context.Consume();
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.TokenMatched,
+                    token.Span.Position,
+                    token.Span.Length,
+                    ruleRef.RuleName,
+                    null,
+                    ruleRef.RuleName,
+                    token.Text);
                 return new LexerNode(token.Span, token.ModeName, referencedRule, token);
             }
             return null;
         }
 
         // Parser rule: recurse.
-        return ParseRule(context, referencedRule, precedence: 0);
+        return ParseRule(context, referencedRule, precedence: 0, diagnostics);
     }
 
     /// <summary>
@@ -253,7 +279,7 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="seq">Sequence to match.</param>
     /// <param name="rule">Owning rule for the returned node.</param>
-    private ParseNode? TryParseSequence(ParseContext context, Sequence seq, Rule rule)
+    private ParseNode? TryParseSequence(ParseContext context, Sequence seq, Rule rule, DiagnosticBag? diagnostics = null)
     {
         var children = new List<ParseNode>();
         var startPos = context.Position;
@@ -264,7 +290,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             if (item is EmbeddedAction or Model.LexerCommand)
                 continue;
 
-            var node = TryParseContent(context, item, rule);
+            var node = TryParseContent(context, item, rule, diagnostics);
             if (node is null)
                 return null;
 
@@ -285,14 +311,15 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="alternation">Alternation to evaluate.</param>
     /// <param name="rule">Owning rule (carried to child matches).</param>
-    private ParseNode? TryParseAlternation(ParseContext context, Alternation alternation, Rule rule)
+    private ParseNode? TryParseAlternation(ParseContext context, Alternation alternation, Rule rule, DiagnosticBag? diagnostics = null)
     {
         foreach (var alt in alternation.Alternatives.OrderBy(a => a.Priority))
         {
             var savedPos = context.SavePosition();
-            var result = TryParseContent(context, alt.Content, rule);
+            var result = TryParseContent(context, alt.Content, rule, diagnostics);
             if (result is not null)
                 return result;
+            diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, null, null, rule.Name, null, rule.Name);
             context.RestorePosition(savedPos);
         }
         return null;
@@ -307,7 +334,7 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="quant">Quantifier to evaluate.</param>
     /// <param name="rule">Owning rule for the returned node.</param>
-    private ParseNode? TryParseQuantifier(ParseContext context, Quantifier quant, Rule rule)
+    private ParseNode? TryParseQuantifier(ParseContext context, Quantifier quant, Rule rule, DiagnosticBag? diagnostics = null)
     {
         var children = new List<ParseNode>();
         var startPos = context.Position;
@@ -317,7 +344,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         while (quant.Max is null || count < quant.Max.Value)
         {
             var savedPos = context.SavePosition();
-            var node = TryParseContent(context, quant.Inner, rule);
+            var node = TryParseContent(context, quant.Inner, rule, diagnostics);
             if (node is null)
             {
                 context.RestorePosition(savedPos);
@@ -378,13 +405,13 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="neg">Negation element to evaluate.</param>
     /// <param name="rule">Owning rule for the returned node.</param>
-    private ParseNode? TryParseNegation(ParseContext context, Negation neg, Rule rule)
+    private ParseNode? TryParseNegation(ParseContext context, Negation neg, Rule rule, DiagnosticBag? diagnostics = null)
     {
         var token = context.Peek();
         if (token is null) return null;
 
         var savedPos = context.SavePosition();
-        var matched = TryParseContent(context, neg.Inner, rule);
+        var matched = TryParseContent(context, neg.Inner, rule, diagnostics);
         context.RestorePosition(savedPos);
 
         if (matched is null)

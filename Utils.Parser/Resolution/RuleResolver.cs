@@ -1,4 +1,5 @@
 using Utils.Parser.Model;
+using Utils.Parser.Diagnostics;
 
 namespace Utils.Parser.Resolution;
 
@@ -28,8 +29,9 @@ public static class RuleResolver
     /// Thrown when duplicate rule names are detected, a rule references an unknown rule,
     /// rule kinds cannot be consistently resolved, or structural constraints are violated.
     /// </exception>
-    public static ParserDefinition Resolve(ParserDefinition definition)
+    public static ParserDefinition Resolve(ParserDefinition definition, DiagnosticBag? diagnostics = null)
     {
+        diagnostics ??= new DiagnosticBag();
         // 1. Build AllRules, assigning known kinds at registration time.
         var allRules = new Dictionary<string, Rule>();
 
@@ -38,7 +40,10 @@ public static class RuleResolver
             foreach (var rule in mode.Rules)
             {
                 if (!allRules.TryAdd(rule.Name, rule))
+                {
+                    diagnostics.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
                     throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
+                }
                 rule.Kind = RuleKind.Lexer;
             }
         }
@@ -46,7 +51,10 @@ public static class RuleResolver
         foreach (var rule in definition.ParserRules)
         {
             if (!allRules.TryAdd(rule.Name, rule))
+            {
+                diagnostics.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
                 throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
+            }
             rule.Kind = RuleKind.Parser;
         }
 
@@ -56,7 +64,7 @@ public static class RuleResolver
         // 2. Verify that all RuleRefs point to existing rules.
         foreach (var rule in allRules.Values)
         {
-            ValidateRuleRefs(rule.Content, allRules, rule.Name);
+            ValidateRuleRefs(rule.Content, allRules, rule.Name, diagnostics);
         }
 
         // 3. Infer RuleKind for any rules still marked Unresolved.
@@ -109,7 +117,7 @@ public static class RuleResolver
         // 6. Validate labels: ensure every label's target rule exists.
         foreach (var rule in allRules.Values)
         {
-            ValidateLabels(rule.Content, allRules, rule.Name);
+            ValidateLabels(rule.Content, allRules, rule.Name, diagnostics);
         }
 
         return definition;
@@ -125,31 +133,35 @@ public static class RuleResolver
     private static void ValidateRuleRefs(
         RuleContent content,
         IDictionary<string, Rule> rules,
-        string contextRuleName)
+        string contextRuleName,
+        DiagnosticBag diagnostics)
     {
         switch (content)
         {
             case RuleRef r:
                 if (!rules.ContainsKey(r.RuleName))
+                {
+                    diagnostics.AddWithContext(ParserDiagnostics.UnknownRuleReference, null, null, contextRuleName, null, contextRuleName, r.RuleName);
                     throw new GrammarValidationException(
                         $"Rule '{contextRuleName}' references unknown rule '{r.RuleName}'");
+                }
                 break;
             case Sequence s:
                 foreach (var item in s.Items)
-                    ValidateRuleRefs(item, rules, contextRuleName);
+                    ValidateRuleRefs(item, rules, contextRuleName, diagnostics);
                 break;
             case Alternation a:
                 foreach (var alt in a.Alternatives)
-                    ValidateRuleRefs(alt.Content, rules, contextRuleName);
+                    ValidateRuleRefs(alt.Content, rules, contextRuleName, diagnostics);
                 break;
             case Alternative alt:
-                ValidateRuleRefs(alt.Content, rules, contextRuleName);
+                ValidateRuleRefs(alt.Content, rules, contextRuleName, diagnostics);
                 break;
             case Quantifier q:
-                ValidateRuleRefs(q.Inner, rules, contextRuleName);
+                ValidateRuleRefs(q.Inner, rules, contextRuleName, diagnostics);
                 break;
             case Negation n:
-                ValidateRuleRefs(n.Inner, rules, contextRuleName);
+                ValidateRuleRefs(n.Inner, rules, contextRuleName, diagnostics);
                 break;
         }
     }
@@ -164,32 +176,36 @@ public static class RuleResolver
     private static void ValidateLabels(
         RuleContent content,
         IDictionary<string, Rule> rules,
-        string contextRuleName)
+        string contextRuleName,
+        DiagnosticBag diagnostics)
     {
         switch (content)
         {
             case RuleRef r when r.Label is not null:
                 if (!rules.ContainsKey(r.Label.RuleName))
+                {
+                    diagnostics.AddWithContext(ParserDiagnostics.UnknownRuleReference, null, null, contextRuleName, null, contextRuleName, r.Label.RuleName);
                     throw new GrammarValidationException(
                         $"Rule '{contextRuleName}' has label '{r.Label.Label}' " +
                         $"referencing unknown rule '{r.Label.RuleName}'");
+                }
                 break;
             case Sequence s:
                 foreach (var item in s.Items)
-                    ValidateLabels(item, rules, contextRuleName);
+                    ValidateLabels(item, rules, contextRuleName, diagnostics);
                 break;
             case Alternation a:
                 foreach (var alt in a.Alternatives)
-                    ValidateLabels(alt.Content, rules, contextRuleName);
+                    ValidateLabels(alt.Content, rules, contextRuleName, diagnostics);
                 break;
             case Alternative alt:
-                ValidateLabels(alt.Content, rules, contextRuleName);
+                ValidateLabels(alt.Content, rules, contextRuleName, diagnostics);
                 break;
             case Quantifier q:
-                ValidateLabels(q.Inner, rules, contextRuleName);
+                ValidateLabels(q.Inner, rules, contextRuleName, diagnostics);
                 break;
             case Negation n:
-                ValidateLabels(n.Inner, rules, contextRuleName);
+                ValidateLabels(n.Inner, rules, contextRuleName, diagnostics);
                 break;
         }
     }

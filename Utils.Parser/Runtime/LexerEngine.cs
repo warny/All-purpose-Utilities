@@ -1,4 +1,5 @@
 using System.Text;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
 
 namespace Utils.Parser.Runtime;
@@ -47,8 +48,9 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// </summary>
     /// <param name="stream">Character stream to tokenize.</param>
     /// <returns>Lazy sequence of tokens.</returns>
-    public IEnumerable<Token> Tokenize(ICharStream stream)
+    public IEnumerable<Token> Tokenize(ICharStream stream, DiagnosticBag? diagnostics = null)
     {
+        diagnostics ??= new DiagnosticBag();
         _modeStack.Clear();
         _modeStack.Push(GetDefaultMode());
         _moreTextBuilder.Clear();
@@ -66,13 +68,14 @@ public sealed class LexerEngine(ParserDefinition definition)
                 var pos = stream.Position;
                 var ch = stream.Peek();
                 stream.Consume();
+                diagnostics.AddWithContext(ParserDiagnostics.ParseFailure, pos, 1, null, null, $"Unrecognized character '{ch}'.");
                 yield return new Token(
                     new SourceSpan(pos, 1), "ERROR", mode.Name, ch.ToString());
                 continue;
             }
 
             // Execute commands collected only from the matched path.
-            bool skip = ExecuteLexerCommands(commands, ref token);
+            bool skip = ExecuteLexerCommands(commands, ref token, diagnostics);
 
             if (rule!.IsFragment || skip)
                 continue;
@@ -405,7 +408,7 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// <param name="commands">Commands from the matched path (may be empty).</param>
     /// <param name="token">The matched token; may be passed for context but is not mutated here.</param>
     /// <returns><c>true</c> if the token should be suppressed from output.</returns>
-    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token)
+    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag diagnostics)
     {
         bool skip = false;
         bool more = false;
@@ -428,6 +431,8 @@ public sealed class LexerEngine(ParserDefinition definition)
                         var mode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
                         if (mode is not null)
                             _modeStack.Push(mode);
+                        else
+                            diagnostics.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "pushMode");
                     }
                     break;
 
@@ -445,6 +450,10 @@ public sealed class LexerEngine(ParserDefinition definition)
                             if (_modeStack.Count > 0)
                                 _modeStack.Pop();
                             _modeStack.Push(targetMode);
+                        }
+                        else
+                        {
+                            diagnostics.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "mode");
                         }
                     }
                     break;

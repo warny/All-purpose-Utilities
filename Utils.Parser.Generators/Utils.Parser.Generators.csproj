@@ -37,4 +37,9 @@
         <None Include="buildTransitive\Utils.Parser.Generators.targets" Pack="true" PackagePath="buildTransitive\Utils.Parser.Generators.targets" />
     </ItemGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" />
+    </ItemGroup>
+
 </Project>

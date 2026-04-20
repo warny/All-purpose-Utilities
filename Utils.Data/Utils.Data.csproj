@@ -26,6 +26,7 @@
         </AdditionalFiles>
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
+            <ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

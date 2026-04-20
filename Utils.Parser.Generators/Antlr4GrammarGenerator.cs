@@ -4,7 +4,9 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Generators.Internal;
+using RoslynDiagnosticSeverity = Microsoft.CodeAnalysis.DiagnosticSeverity;
 
 namespace Utils.Parser.Generators;
 
@@ -39,7 +41,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         title:              "Grammar generation failed",
         messageFormat:      "Failed to generate grammar for '{0}': {1}",
         category:           "Utils.Parser.Generators",
-        defaultSeverity:    DiagnosticSeverity.Error,
+        defaultSeverity:    RoslynDiagnosticSeverity.Error,
         isEnabledByDefault: true,
         description:        "An error occurred while parsing or emitting the ANTLR4 .g4 grammar file.");
 
@@ -48,7 +50,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         title:              "Invalid source generator metadata",
         messageFormat:      "Invalid source generator metadata for '{0}': {1}",
         category:           "Utils.Parser.Generators",
-        defaultSeverity:    DiagnosticSeverity.Error,
+        defaultSeverity:    RoslynDiagnosticSeverity.Error,
         isEnabledByDefault: true,
         description:        "AdditionalFiles metadata contains invalid namespace or class name values.");
 
@@ -57,7 +59,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         title:              "Invalid syntax colorization descriptor",
         messageFormat:      "Invalid syntax colorization descriptor '{0}': {1}",
         category:           "Utils.Parser.Generators",
-        defaultSeverity:    DiagnosticSeverity.Error,
+        defaultSeverity:    RoslynDiagnosticSeverity.Error,
         isEnabledByDefault: true,
         description:        "The syntax colorization descriptor does not contain required sections or directives.");
 
@@ -123,8 +125,10 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         {
             var source    = text.ToString();
             var tokens    = new G4Tokenizer(source).Tokenize();
-            var grammar   = new G4Parser(tokens).Parse();
+            var diagnostics = new DiagnosticBag();
+            var grammar   = new G4Parser(tokens, diagnostics).Parse();
             var generated = GrammarEmitter.Emit(grammar, namespaceName!, className!, fileName);
+            ReportParserDiagnostics(context, diagnostics, fileName);
 
             context.AddSource($"{className}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));
         }
@@ -133,6 +137,44 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             context.ReportDiagnostic(
                 Diagnostic.Create(s_errorDescriptor, Location.None, fileName, ex.Message));
         }
+    }
+
+    /// <summary>
+    /// Reports shared parser diagnostics into Roslyn's diagnostic pipeline.
+    /// </summary>
+    /// <param name="context">Source production context.</param>
+    /// <param name="diagnostics">Collected parser diagnostics.</param>
+    /// <param name="fileName">Source file name used in message formatting.</param>
+    private static void ReportParserDiagnostics(SourceProductionContext context, DiagnosticBag diagnostics, string fileName)
+    {
+        foreach (var diagnostic in diagnostics)
+        {
+            var descriptor = new DiagnosticDescriptor(
+                id: diagnostic.Code,
+                title: diagnostic.Descriptor.Title,
+                messageFormat: "{0}",
+                category: diagnostic.Descriptor.Category ?? "Utils.Parser",
+                defaultSeverity: ToRoslynSeverity(diagnostic.Severity),
+                isEnabledByDefault: true);
+
+            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location.None, $"{fileName}: {diagnostic.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// Converts shared parser diagnostic severity to Roslyn severity.
+    /// </summary>
+    /// <param name="severity">Shared diagnostic severity.</param>
+    /// <returns>Roslyn severity value.</returns>
+    private static RoslynDiagnosticSeverity ToRoslynSeverity(Utils.Parser.Diagnostics.DiagnosticSeverity severity)
+    {
+        return severity switch
+        {
+            Utils.Parser.Diagnostics.DiagnosticSeverity.Error => RoslynDiagnosticSeverity.Error,
+            Utils.Parser.Diagnostics.DiagnosticSeverity.Warning => RoslynDiagnosticSeverity.Warning,
+            Utils.Parser.Diagnostics.DiagnosticSeverity.Info => RoslynDiagnosticSeverity.Info,
+            _ => RoslynDiagnosticSeverity.Hidden,
+        };
     }
 
     /// <summary>

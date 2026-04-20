@@ -245,11 +245,107 @@ a comprehensive real-world example.
 
 ---
 
+## Diagnostics
+
+The runtime parser and the source generator now share the same diagnostic model
+(`Utils.Parser.Diagnostics`), including descriptor codes and message templates.
+
+### Code scheme
+
+- `UP0xxx`: blocking errors
+- `UP1xxx` to `UP7xxx`: warnings for unsupported/ignored/partial behavior
+- `UP8xxx`: informational diagnostics
+- `UP9xxx`: debug traces
+
+Severity is derived from the code prefix (not manually assigned per call site).
+
+### Shared descriptor table
+
+Use `ParserDiagnostics` to access named descriptors and global lookup:
+
+```csharp
+var descriptor = ParserDiagnostics.UnexpectedToken;
+var allByCode = ParserDiagnostics.All;
+```
+
+### Collecting diagnostics at runtime
+
+```csharp
+using Utils.Parser.Diagnostics;
+
+var diagnostics = new DiagnosticBag();
+var definition = Antlr4GrammarConverter.Parse(grammarText, diagnostics);
+```
+
+`DiagnosticBag` supports direct `Add(...)`, descriptor-based `Add(...)`, range merge,
+read-only enumeration, and severity filtering (`GetAtLeast(...)`).
+
+### Generator compatibility
+
+`Utils.Parser.Generators` uses the same `ParserDiagnostics` descriptors and `DiagnosticBag`
+during `.g4` parsing, then maps emitted diagnostics to Roslyn diagnostics.
+
+---
+
 ## Self-describing design
 
 The ANTLR4 grammar reader is itself built with the same `ParserDefinition`, `Rule`, and
 `RuleContent` objects that every other grammar uses. There is no special-cased code for the
 meta-grammar — it is a first-class consumer of the framework.
+
+---
+
+## Current limitations
+
+The parser framework targets broad ANTLR4 compatibility, but some constructs are currently
+parsed in a simplified way, stored without full semantics, or ignored by one pipeline.
+The points below reflect the current implementation behavior.
+
+### Grammar ingestion (runtime converter: `Antlr4GrammarConverter`)
+
+- `options { ... }`, `import ...`, and top-level `@... { ... }` actions are ingested.
+- `tokens { ... }` and `channels { ... }` are recognized by the meta-grammar but not mapped
+  into `ParserDefinition` during conversion.
+- `returns [...]` is currently stored as one raw argument-block string (`RuleReturn(raw, raw)`),
+  not as structured typed returns.
+- `throws`, `locals`, `catch`, `finally`, rule arguments, and rule modifiers are parsed by the
+  meta-grammar but not converted into dedicated runtime semantics.
+- Only `@init` and `@after` rule actions are mapped to dedicated rule-level action slots.
+- Labels on `labeledElement` are applied when the labeled item is a `RuleRef`; labels on
+  non-reference items are currently ignored.
+
+### Runtime semantics (`LexerEngine` / `ParserEngine`)
+
+- Embedded actions and semantic predicates are parsed and stored, but the parser engine does
+  not execute them; they are accepted as successful empty matches.
+- Precedence is only enforced through recognized `precpred(_ctx, N)` patterns.
+- `precpred` extraction is regex-based; if the level cannot be parsed, precedence falls back
+  to `0`.
+- Lexer commands are restricted to known commands (`skip`, `more`, `channel`, `type`,
+  `pushMode`, `popMode`, `mode`); unknown command names raise a conversion error.
+- Parsing is not error-recovering: parsing failures return `ErrorNode`, and trailing tokens are
+  reported as an error instead of attempting recovery.
+
+### Source generator pipeline limitations (`G4Parser`)
+
+- The generator parser is best-effort by design: `Expect(...)` methods do not fail hard and may
+  silently continue on missing tokens.
+- `tokens { ... }`, `channels { ... }`, `import ...`, and `@...` actions are skipped.
+- Rule headers are simplified: text before `:` (such as `returns`, `throws`, `locals`, and other
+  pre-`:` constructs) is skipped rather than modeled.
+- Embedded actions/predicates are represented as raw block text (`G4EmbeddedAction`) without
+  semantic execution in the generator parser itself.
+- Lexer command arguments are currently parsed only from parenthesized identifiers.
+
+### Runtime vs source generator differences
+
+- Runtime conversion keeps a subset of prequel metadata (`options`, `imports`, grammar actions),
+  while the source generator skips imports and grammar actions entirely.
+- Runtime conversion throws explicit errors for unknown lexer commands; the source generator keeps
+  lexer commands as parsed name/argument pairs without command-name validation at parse time.
+- Both pipelines recognize large parts of ANTLR4 syntax, but they do not currently provide full
+  ANTLR4 semantic equivalence for actions, predicates, exception handlers, and advanced rule
+  header metadata.
 
 ---
 
