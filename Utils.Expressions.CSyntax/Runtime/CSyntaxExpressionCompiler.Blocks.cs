@@ -2343,6 +2343,11 @@ public sealed partial class CSyntaxExpressionCompiler
                 return "\"\"";
             }
 
+            if (parts.Count == 1 && !parts[0].StartsWith('\"'))
+            {
+                return "(\"\" + " + parts[0] + ")";
+            }
+
             return "(" + string.Join(" + ", parts) + ")";
         });
     }

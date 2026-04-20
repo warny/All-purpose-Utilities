@@ -53,6 +53,23 @@ public class InterpolatedStringTests
     }
 
     /// <summary>
+    /// Ensures handler overload selection also works when interpolation contains no literal segment.
+    /// </summary>
+    [TestMethod]
+    public void MethodOverloadPrefersInterpolatedStringHandlerWithoutLiteral()
+    {
+        ParameterExpression value = Expression.Parameter(typeof(int), "value");
+        CSyntaxCompilerContext context = new();
+        context.Set("value", value);
+        context.Set("Choose", typeof(InterpolatedHandlerTarget).GetMethods().Where(static method => method.Name == nameof(InterpolatedHandlerTarget.Choose)).ToArray());
+
+        Expression body = compiler.Compile("Choose($\"{value}\")", context);
+        var function = Expression.Lambda<Func<int, string>>(Expression.Convert(body, typeof(string)), value).Compile();
+
+        Assert.AreEqual("handler:9", function(9));
+    }
+
+    /// <summary>
     /// Ensures constructor overload resolution prioritizes interpolated string handlers when available.
     /// </summary>
     [TestMethod]
