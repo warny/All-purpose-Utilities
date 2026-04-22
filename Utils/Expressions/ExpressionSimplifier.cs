@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Utils.Expressions;
@@ -166,7 +167,27 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
+            if (ExpressionComparer.Default.Equals(left, right.Operand))
+            {
+                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+            }
+
             return Transform(Expression.Subtract(left, right.Operand));
+        }
+
+        /// <summary>
+        /// Simplifies <c>(-left) + right</c> to <c>0</c> when both operands are equal.
+        /// Otherwise rewrites it as <c>right - left</c>.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        protected Expression AdditionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
+        {
+            if (ExpressionComparer.Default.Equals(left.Operand, right))
+            {
+                return Expression.Constant(Convert.ChangeType(0, right.Type), right.Type);
+            }
+
+            return Transform(Expression.Subtract(right, left.Operand));
         }
 
         /// <summary>
@@ -698,7 +719,208 @@ namespace Utils.Mathematics.Expressions
         /// <returns>A copy of <paramref name="e"/> with sub-expressions replaced by <paramref name="parameters"/>.</returns>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
         {
+            ArgumentNullException.ThrowIfNull(e);
+            ArgumentNullException.ThrowIfNull(parameters);
+
+            if (e is BinaryExpression binaryExpression)
+            {
+                if (binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
+                {
+                    return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1]);
+                }
+
+                if (binaryExpression.NodeType == ExpressionType.Multiply)
+                {
+                    return CanonicalizeMultiplicativeExpression(parameters[0], parameters[1]);
+                }
+            }
+
             return CopyExpression(e, parameters);
+        }
+
+        /// <summary>
+        /// Creates a canonical additive form from a binary add or subtract expression by flattening, sorting,
+        /// and right-associating terms.
+        /// </summary>
+        /// <param name="nodeType">The additive node type that produced this operation.</param>
+        /// <param name="left">Left expression branch.</param>
+        /// <param name="right">Right expression branch.</param>
+        /// <returns>A deterministic additive expression tree preserving semantics.</returns>
+        private Expression CanonicalizeAdditiveExpression(ExpressionType nodeType, Expression left, Expression right)
+        {
+            var terms = new List<(Expression Term, bool IsNegative)>();
+            CollectAdditiveTerms(terms, left, false);
+            CollectAdditiveTerms(terms, right, nodeType == ExpressionType.Subtract);
+
+            if (terms.Count == 0)
+            {
+                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+            }
+
+            var orderedTerms = terms
+                .OrderBy(static term => GetAdditiveGroupingKey(term.Term), StringComparer.Ordinal)
+                .ThenBy(static term => term.IsNegative ? 0 : 1)
+                .ThenBy(static term => GetCanonicalExpressionKey(term.Term), StringComparer.Ordinal)
+                .ToList();
+
+            var rebuiltTerms = new List<Expression>();
+            foreach (var termGroup in orderedTerms.GroupBy(static term => GetAdditiveGroupingKey(term.Term)))
+            {
+                var groupedExpressions = termGroup
+                    .Select(static term => term.IsNegative ? Expression.Negate(term.Term) : term.Term)
+                    .ToList();
+
+                rebuiltTerms.Add(BuildRightAssociative(groupedExpressions, Expression.Add));
+            }
+
+            return BuildRightAssociative(rebuiltTerms, Expression.Add);
+        }
+
+        /// <summary>
+        /// Creates a canonical multiplicative form by flattening factors, sorting them, and right-associating.
+        /// </summary>
+        /// <param name="left">Left expression branch.</param>
+        /// <param name="right">Right expression branch.</param>
+        /// <returns>A deterministic multiplicative expression tree preserving semantics.</returns>
+        private Expression CanonicalizeMultiplicativeExpression(Expression left, Expression right)
+        {
+            var factors = new List<Expression>();
+            CollectMultiplicativeFactors(factors, left);
+            CollectMultiplicativeFactors(factors, right);
+
+            var orderedFactors = factors
+                .OrderBy(GetCanonicalExpressionKey, StringComparer.Ordinal)
+                .ToList();
+
+            return BuildRightAssociative(orderedFactors, Expression.Multiply);
+        }
+
+        /// <summary>
+        /// Recursively flattens additive and subtractive nodes into signed terms.
+        /// </summary>
+        /// <param name="terms">Destination list containing additive terms and their sign.</param>
+        /// <param name="expression">Current expression being processed.</param>
+        /// <param name="isNegative">Whether the current branch sign is negative.</param>
+        private void CollectAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Expression expression, bool isNegative)
+        {
+            if (expression is BinaryExpression binaryExpression)
+            {
+                if (binaryExpression.NodeType == ExpressionType.Add)
+                {
+                    CollectAdditiveTerms(terms, binaryExpression.Left, isNegative);
+                    CollectAdditiveTerms(terms, binaryExpression.Right, isNegative);
+                    return;
+                }
+
+                if (binaryExpression.NodeType == ExpressionType.Subtract)
+                {
+                    CollectAdditiveTerms(terms, binaryExpression.Left, isNegative);
+                    CollectAdditiveTerms(terms, binaryExpression.Right, !isNegative);
+                    return;
+                }
+            }
+
+            if (expression is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Negate)
+            {
+                CollectAdditiveTerms(terms, unaryExpression.Operand, !isNegative);
+                return;
+            }
+
+            terms.Add((expression, isNegative));
+        }
+
+        /// <summary>
+        /// Recursively flattens multiplication nodes into a linear factors list.
+        /// </summary>
+        /// <param name="factors">Destination list receiving factors.</param>
+        /// <param name="expression">Current expression being processed.</param>
+        private void CollectMultiplicativeFactors(List<Expression> factors, Expression expression)
+        {
+            if (expression is BinaryExpression binaryExpression && binaryExpression.NodeType == ExpressionType.Multiply)
+            {
+                CollectMultiplicativeFactors(factors, binaryExpression.Left);
+                CollectMultiplicativeFactors(factors, binaryExpression.Right);
+                return;
+            }
+
+            factors.Add(expression);
+        }
+
+        /// <summary>
+        /// Builds a right-associated expression chain from an ordered list.
+        /// </summary>
+        /// <param name="expressions">Ordered expression items.</param>
+        /// <param name="combine">Binary node factory used to combine two expressions.</param>
+        /// <returns>The right-associated expression chain.</returns>
+        private static Expression BuildRightAssociative(IReadOnlyList<Expression> expressions, Func<Expression, Expression, BinaryExpression> combine)
+        {
+            ArgumentNullException.ThrowIfNull(expressions);
+            ArgumentNullException.ThrowIfNull(combine);
+
+            if (expressions.Count == 0)
+            {
+                throw new ArgumentException("At least one expression is required.", nameof(expressions));
+            }
+
+            Expression result = expressions[^1];
+            for (int index = expressions.Count - 2; index >= 0; index--)
+            {
+                result = combine(expressions[index], result);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Returns the additive grouping key used to cluster functions by argument list and function family.
+        /// </summary>
+        /// <param name="expression">Expression for which to compute a grouping key.</param>
+        /// <returns>A deterministic key suitable for additive grouping.</returns>
+        private static string GetAdditiveGroupingKey(Expression expression)
+        {
+            if (expression is BinaryExpression powerExpression
+                && powerExpression.NodeType == ExpressionType.Power
+                && powerExpression.Left is MethodCallExpression powerMethodCallExpression)
+            {
+                string argumentsKey = string.Join("|", powerMethodCallExpression.Arguments.Select(GetCanonicalExpressionKey));
+                int categoryOrder = GetFunctionCategoryOrder(powerMethodCallExpression.Method.Name);
+                return $"func:{argumentsKey}:{categoryOrder}";
+            }
+
+            if (expression is MethodCallExpression methodCallExpression)
+            {
+                string argumentsKey = string.Join("|", methodCallExpression.Arguments.Select(GetCanonicalExpressionKey));
+                int categoryOrder = GetFunctionCategoryOrder(methodCallExpression.Method.Name);
+                return $"func:{argumentsKey}:{categoryOrder}";
+            }
+
+            return $"expr:{GetCanonicalExpressionKey(expression)}";
+        }
+
+        /// <summary>
+        /// Produces a deterministic textual key for ordering expressions.
+        /// </summary>
+        /// <param name="expression">Expression to encode.</param>
+        /// <returns>A canonical textual key.</returns>
+        private static string GetCanonicalExpressionKey(Expression expression)
+        {
+            return expression.ToString();
+        }
+
+        /// <summary>
+        /// Returns an ordering bucket for mathematical function names.
+        /// </summary>
+        /// <param name="functionName">Function name to classify.</param>
+        /// <returns>An integer order where lower values are sorted first.</returns>
+        private static int GetFunctionCategoryOrder(string functionName)
+        {
+            return functionName switch
+            {
+                nameof(double.Sin) or nameof(double.Cos) or nameof(double.Tan) or nameof(double.Asin) or nameof(double.Acos) or nameof(double.Atan) => 0,
+                nameof(double.Sinh) or nameof(double.Cosh) or nameof(double.Tanh) or nameof(double.Asinh) or nameof(double.Acosh) or nameof(double.Atanh) => 1,
+                nameof(double.Exp) or nameof(double.Log) or nameof(double.Log2) or nameof(double.Log10) or nameof(double.Pow) => 2,
+                _ => 3
+            };
         }
     }
 }
