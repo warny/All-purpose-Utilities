@@ -11,9 +11,16 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class ExpressionDerivationTests
 {
-    
+
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     ExpressionDerivation derivation = new ExpressionDerivation("x");
+
+    /// <summary>
+    /// A sample unknown function used to validate finite-difference fallback derivatives.
+    /// </summary>
+    /// <param name="x">Input value.</param>
+    /// <returns>Function value at <paramref name="x"/>.</returns>
+    private static double CustomUnknown(double x) => x * x * x + 1.0;
 
     [TestMethod]
     public void ExpressionsTests()
@@ -69,5 +76,43 @@ public class ExpressionDerivationTests
         var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
 
         Assert.AreEqual(15d, lambda(3d), 1e-9);
+    }
+
+    /// <summary>
+    /// Ensures unknown single-argument double functions use centered finite differences during derivation.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_UnknownDoubleFunction_UsesFiniteDifferenceFallback()
+    {
+        Expression<Func<double, double>> function = x => CustomUnknown(x);
+        var result = (Expression<Func<double, double>>)derivation.Derivate(function);
+        var derivative = result.Compile();
+
+        double[] samples = [-2.0, -0.5, 0.25, 1.5];
+        foreach (var sample in samples)
+        {
+            double expected = 3.0 * sample * sample;
+            double actual = derivative(sample);
+            Assert.AreEqual(expected, actual, 1e-4, $"Fallback derivative mismatch at x={sample}.");
+        }
+    }
+
+    /// <summary>
+    /// Ensures finite-difference fallback applies the chain rule for composed unknown functions.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ComposedUnknownDoubleFunction_AppliesChainRule()
+    {
+        Expression<Func<double, double>> function = x => CustomUnknown(x * x);
+        var result = (Expression<Func<double, double>>)derivation.Derivate(function);
+        var derivative = result.Compile();
+
+        double[] samples = [-1.5, -0.75, 0.5, 1.25];
+        foreach (var sample in samples)
+        {
+            double expected = 6.0 * sample * Math.Pow(sample * sample, 2);
+            double actual = derivative(sample);
+            Assert.AreEqual(expected, actual, 5e-4, $"Composed fallback derivative mismatch at x={sample}.");
+        }
     }
 }

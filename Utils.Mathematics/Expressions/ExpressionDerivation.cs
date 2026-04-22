@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq;
+using System.Linq.Expressions;
 using Utils.Expressions;
 
 namespace Utils.Mathematics.Expressions;
@@ -8,6 +10,8 @@ namespace Utils.Mathematics.Expressions;
 /// </summary>
 public class ExpressionDerivation : ExpressionTransformer
 {
+    private const double FiniteDifferenceEpsilon = 1e-7;
+
     /// <summary>
     /// Gets the name of the parameter that will be considered the differentiation variable.
     /// </summary>
@@ -352,6 +356,77 @@ public class ExpressionDerivation : ExpressionTransformer
              Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand)
             ).Simplify()
         );
+    }
+
+    /// <summary>
+    /// Handles method-call derivatives that are not covered by specific derivative rules.
+    /// For single-argument <see cref="double"/> functions, this applies a centered finite-difference
+    /// approximation and multiplies by the inner derivative.
+    /// </summary>
+    /// <param name="e">Expression currently being finalized.</param>
+    /// <param name="parameters">Prepared child expressions.</param>
+    /// <returns>A derivative expression when supported.</returns>
+    protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        if (e is MethodCallExpression methodCallExpression)
+        {
+            return DeriveUnknownMethodCall(methodCallExpression, parameters);
+        }
+
+        throw new NotSupportedException($"The expression '{e.NodeType}' is not supported by {nameof(ExpressionDerivation)}.");
+    }
+
+    /// <summary>
+    /// Applies a finite-difference fallback derivative for unknown single-argument <see cref="double"/> methods.
+    /// </summary>
+    /// <param name="methodCallExpression">Method call to derive.</param>
+    /// <param name="parameters">Prepared arguments for the call.</param>
+    /// <returns>The derivative expression using centered finite difference.</returns>
+    private Expression DeriveUnknownMethodCall(MethodCallExpression methodCallExpression, Expression[] parameters)
+    {
+        if (methodCallExpression.Method.ReturnType != typeof(double)
+            || methodCallExpression.Method.GetParameters().Length != 1
+            || methodCallExpression.Method.GetParameters()[0].ParameterType != typeof(double))
+        {
+            throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.");
+        }
+
+        Expression operand = parameters[0];
+        if (!ContainsParameter(operand))
+        {
+            return Expression.Constant(0.0);
+        }
+
+        var epsilon = Expression.Constant(FiniteDifferenceEpsilon);
+        var twoEpsilon = Expression.Constant(2.0 * FiniteDifferenceEpsilon);
+        var operandDerivative = Transform(operand);
+
+        var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
+        var minus = Expression.Call(methodCallExpression.Method, Expression.Subtract(operand, epsilon));
+        var finiteDifference = Expression.Divide(Expression.Subtract(plus, minus), twoEpsilon);
+
+        return Expression.Multiply(finiteDifference, operandDerivative);
+    }
+
+    /// <summary>
+    /// Determines whether an expression depends on the configured differentiation parameter.
+    /// </summary>
+    /// <param name="expression">Expression to inspect.</param>
+    /// <returns><see langword="true"/> when the expression depends on the target parameter; otherwise <see langword="false"/>.</returns>
+    private bool ContainsParameter(Expression expression)
+    {
+        return expression switch
+        {
+            ParameterExpression parameterExpression => parameterExpression.Name == ParameterName,
+            UnaryExpression unaryExpression => ContainsParameter(unaryExpression.Operand),
+            BinaryExpression binaryExpression => ContainsParameter(binaryExpression.Left) || ContainsParameter(binaryExpression.Right),
+            MethodCallExpression methodCallExpression => methodCallExpression.Arguments.Any(ContainsParameter),
+            InvocationExpression invocationExpression => invocationExpression.Arguments.Any(ContainsParameter),
+            _ => false
+        };
     }
 
 }
