@@ -257,6 +257,11 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
+            if (!left.Type.In(Types.Number) || !right.Type.In(Types.Number))
+            {
+                return null;
+            }
+
             bool leftAugmented = false;
             Expression leftleft;
             Expression leftright;
@@ -333,6 +338,11 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
+            if (!left.Type.In(Types.Number) || !right.Type.In(Types.Number))
+            {
+                return null;
+            }
+
             bool leftAugmented = false;
             Expression leftleft;
             Expression leftright;
@@ -724,12 +734,14 @@ namespace Utils.Mathematics.Expressions
 
             if (e is BinaryExpression binaryExpression)
             {
-                if (binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
+                if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
+                    && CanCanonicalizeCommutativeBinary(binaryExpression))
                 {
                     return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1]);
                 }
 
-                if (binaryExpression.NodeType == ExpressionType.Multiply)
+                if (binaryExpression.NodeType == ExpressionType.Multiply
+                    && CanCanonicalizeCommutativeBinary(binaryExpression))
                 {
                     return CanonicalizeMultiplicativeExpression(parameters[0], parameters[1]);
                 }
@@ -766,11 +778,7 @@ namespace Utils.Mathematics.Expressions
             var rebuiltTerms = new List<Expression>();
             foreach (var termGroup in orderedTerms.GroupBy(static term => GetAdditiveGroupingKey(term.Term)))
             {
-                var groupedExpressions = termGroup
-                    .Select(static term => term.IsNegative ? Expression.Negate(term.Term) : term.Term)
-                    .ToList();
-
-                rebuiltTerms.Add(BuildRightAssociative(groupedExpressions, Expression.Add));
+                rebuiltTerms.Add(BuildAdditiveExpression(termGroup.ToList(), left.Type));
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);
@@ -921,6 +929,47 @@ namespace Utils.Mathematics.Expressions
                 nameof(double.Exp) or nameof(double.Log) or nameof(double.Log2) or nameof(double.Log10) or nameof(double.Pow) => 2,
                 _ => 3
             };
+        }
+
+        /// <summary>
+        /// Rebuilds a list of signed additive terms without relying on unary negation.
+        /// </summary>
+        /// <param name="signedTerms">Ordered signed terms to rebuild.</param>
+        /// <param name="resultType">Result type of the additive expression.</param>
+        /// <returns>An equivalent additive expression.</returns>
+        private static Expression BuildAdditiveExpression(IReadOnlyList<(Expression Term, bool IsNegative)> signedTerms, Type resultType)
+        {
+            ArgumentNullException.ThrowIfNull(signedTerms);
+            ArgumentNullException.ThrowIfNull(resultType);
+
+            if (signedTerms.Count == 0)
+            {
+                throw new ArgumentException("At least one term is required.", nameof(signedTerms));
+            }
+
+            Expression result = signedTerms[^1].IsNegative
+                ? Expression.Subtract(Expression.Constant(Convert.ChangeType(0, resultType), resultType), signedTerms[^1].Term)
+                : signedTerms[^1].Term;
+
+            for (int index = signedTerms.Count - 2; index >= 0; index--)
+            {
+                result = signedTerms[index].IsNegative
+                    ? Expression.Subtract(result, signedTerms[index].Term)
+                    : Expression.Add(signedTerms[index].Term, result);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Determines whether binary canonicalization is safe for the current operator and type.
+        /// </summary>
+        /// <param name="binaryExpression">Binary expression candidate.</param>
+        /// <returns><see langword="true"/> when canonicalization is safe; otherwise <see langword="false"/>.</returns>
+        private static bool CanCanonicalizeCommutativeBinary(BinaryExpression binaryExpression)
+        {
+            return binaryExpression.Method is null
+                && binaryExpression.Type.In(Types.Number);
         }
     }
 }
