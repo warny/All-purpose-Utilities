@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
@@ -42,7 +43,7 @@ public class InterpolatedStringTests
     public void MethodOverloadPrefersInterpolatedStringHandler()
     {
         ParameterExpression value = Expression.Parameter(typeof(int), "value");
-        CSyntaxCompilerContext context = new();
+        ExpressionCompilerContext context = new();
         context.Set("value", value);
         context.Set("Choose", typeof(InterpolatedHandlerTarget).GetMethods().Where(static method => method.Name == nameof(InterpolatedHandlerTarget.Choose)).ToArray());
 
@@ -59,7 +60,7 @@ public class InterpolatedStringTests
     public void MethodOverloadPrefersInterpolatedStringHandlerWithoutLiteral()
     {
         ParameterExpression value = Expression.Parameter(typeof(int), "value");
-        CSyntaxCompilerContext context = new();
+        ExpressionCompilerContext context = new();
         context.Set("value", value);
         context.Set("Choose", typeof(InterpolatedHandlerTarget).GetMethods().Where(static method => method.Name == nameof(InterpolatedHandlerTarget.Choose)).ToArray());
 

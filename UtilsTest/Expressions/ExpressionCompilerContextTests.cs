@@ -1,7 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using Utils.Expressions;
-using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
 
@@ -83,25 +82,6 @@ public class ExpressionCompilerContextTests
         Assert.AreEqual(42, restored.answer);
         Assert.AreEqual(7, restored.add(3, 4));
         Assert.AreEqual("left-right", restored.combine("left", "right"));
-    }
-
-    /// <summary>
-    /// Ensures that the C-syntax context can also be reloaded from a stream.
-    /// </summary>
-    [TestMethod]
-    public void CSyntaxReadFromStream_PreservesValues()
-    {
-        CSyntaxCompilerContext source = new();
-        source.Set("value", 12);
-
-        using MemoryStream stream = new();
-        source.WriteToStream(stream);
-        stream.Position = 0;
-
-        CSyntaxCompilerContext restored = CSyntaxCompilerContext.ReadFromStream(stream);
-
-        Assert.IsTrue(restored.TryGet("value", out object? value));
-        Assert.AreEqual(12, value);
     }
 
     /// <summary>

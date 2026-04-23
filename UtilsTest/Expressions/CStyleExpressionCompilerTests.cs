@@ -216,7 +216,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_FunctionDeclaration_Compiles()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         Expression declaration = compiler.Compile("public double add(double a, double b) { a + b }", context);
         Assert.IsNotNull(declaration);
     }
@@ -228,7 +228,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_FunctionCallingAnotherFunction_ResolvesForwardReference()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         compiler.CompileSource(
             """
             public double twice(double x) { add(x, x) }
@@ -249,7 +249,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_FunctionDelegateReference_ReturnsDelegateExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("add", (Func<double, double, double>)((a, b) => a + b));
 
         Expression invocation = compiler.Compile("add(2, 3)", context);
@@ -264,7 +264,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_LambdaSymbolReference_ReturnsDelegateExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("increment", (Func<double, double>)(x => x + 1d));
 
         Expression invocation = compiler.Compile("increment(41)", context);
@@ -284,7 +284,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_SupportedControlStructures_ProducesExpressionNode(string source)
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
 
         Expression expression = compiler.Compile(source, context);
         Assert.IsNotNull(expression);
@@ -297,7 +297,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_ForLoop_ProducesExpressionNode()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         ParameterExpression iterator = Expression.Variable(typeof(int), "i");
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
         context.Set("i", iterator);
@@ -314,7 +314,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_ForeachLoop_ProducesExpressionNode()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
         ParameterExpression iterator = Expression.Variable(typeof(int), "item");
         context.Set("sum", accumulator);
@@ -337,7 +337,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_MemberAccess_CompilesSuccessfully(string source)
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("sample", new SampleContainer());
 
         Expression expression = compiler.Compile(source, context);
@@ -372,7 +372,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_LambdaExpressionSyntax_Compiles()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
 
         Expression expression = compiler.Compile("x => x + 1", context);
         Assert.IsNotNull(expression);

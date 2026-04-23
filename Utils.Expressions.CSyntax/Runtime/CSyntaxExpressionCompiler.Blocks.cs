@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.Expressions;
 using Utils.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
@@ -602,7 +603,7 @@ public sealed partial class CSyntaxExpressionCompiler
     {
         if (context.RuntimeContext is null)
         {
-            CSyntaxCompilerContext localContext = new();
+            ExpressionCompilerContext localContext = new();
             foreach (KeyValuePair<string, Expression> symbol in context.Symbols)
             {
                 localContext.Set(symbol.Key, symbol.Value);
@@ -619,7 +620,7 @@ public sealed partial class CSyntaxExpressionCompiler
             return context.Compiler.CompileSource(source, localContext);
         }
 
-        CSyntaxCompilerContext derivedContext = new();
+        ExpressionCompilerContext derivedContext = new();
         foreach (KeyValuePair<string, object?> symbol in context.RuntimeContext.Symbols)
         {
             derivedContext.Set(symbol.Key, symbol.Value);
@@ -1959,7 +1960,7 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="BlockScope">Per-node variable lists populated by descent handlers.</param>
     private sealed record CompilationContext(
         IReadOnlyDictionary<string, Expression> Symbols,
-        CSyntaxCompilerContext? RuntimeContext,
+        ExpressionCompilerContext? RuntimeContext,
         string SourceText,
         CSyntaxExpressionCompiler Compiler,
         IReadOnlyList<string> ImportedNamespaces,
@@ -2158,7 +2159,7 @@ public sealed partial class CSyntaxExpressionCompiler
     /// </summary>
     /// <param name="source">Source text to inspect.</param>
     /// <param name="context">Runtime context receiving deferred symbols.</param>
-    private static void RegisterDeferredPublicMethods(string source, CSyntaxCompilerContext context)
+    private static void RegisterDeferredPublicMethods(string source, ExpressionCompilerContext context)
     {
         foreach (Match match in Regex.Matches(
                      source,

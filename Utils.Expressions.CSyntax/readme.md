@@ -81,7 +81,7 @@ int result = function(41); // 42
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 
 compiler.CompileSource(
     """
@@ -101,7 +101,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
 Expression expression = compiler.Compile("increment(41)", context);
@@ -116,7 +116,7 @@ double result = lambda(); // 42
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 
 compiler.CompileSource(
     """
@@ -139,7 +139,7 @@ double b = abs(-3);  // 3
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 
 compiler.CompileSource(
     """
@@ -163,7 +163,7 @@ double result = sumTo(4); // 10
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 context.Set("values", new[] { 1, 2, 3, 4 });
 
 compiler.CompileSource(
@@ -185,4 +185,4 @@ int result = sumValues(); // 10
 
 - The compiler accepts C-like syntax (arithmetic operations, blocks, `if`, `for`, `foreach`, functions, etc.).
 - The final expression type depends on context and generated LINQ conversions.
-- For advanced scenarios, use `CSyntaxCompilerContext` to register symbols and functions.
+- For advanced scenarios, use `ExpressionCompilerContext` to register symbols and functions.
