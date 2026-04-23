@@ -68,6 +68,12 @@ builder.QueryString["key"].Add("value");
 Console.WriteLine(builder.ToString());
 ```
 
+## Recent expression updates
+
+- `ExpressionCompilerContext` is now the shared runtime context for expression compilers.
+- `Utils.Expressions.CSyntax` supports forward-referenced function declarations with shared context usage.
+- Generic symbolic math APIs are available through `ExpressionDerivation<T>`, `ExpressionIntegration<T>`, and `MathExpressionExtensions` (`Derivate<T>` / `Integrate<T>`).
+
 ## Documentation
 
 - [Getting started](docs/getting-started.md)
