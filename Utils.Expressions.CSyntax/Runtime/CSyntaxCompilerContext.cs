@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+using Utils.Expressions;
 
 namespace Utils.Expressions.CSyntax.Runtime;
 
@@ -6,29 +6,32 @@ namespace Utils.Expressions.CSyntax.Runtime;
 /// Represents a mutable symbol context used by <see cref="CSyntaxExpressionCompiler"/>.
 /// Symbols can be plain objects, delegates, or expression nodes.
 /// </summary>
-public sealed class CSyntaxCompilerContext
+public sealed class CSyntaxCompilerContext : ExpressionCompilerContext
 {
     /// <summary>
-    /// Gets the symbol table used for source resolution.
+    /// Reads a C-syntax context from a stream.
     /// </summary>
-    public IDictionary<string, object?> Symbols { get; } = new Dictionary<string, object?>(StringComparer.Ordinal);
-
-    /// <summary>
-    /// Adds or replaces a symbol in the context.
-    /// </summary>
-    /// <param name="name">Symbol name.</param>
-    /// <param name="value">Symbol value.</param>
-    public void Set(string name, object? value)
+    /// <param name="stream">Source stream.</param>
+    /// <returns>A populated C-syntax context.</returns>
+    public static CSyntaxCompilerContext ReadFromStream(Stream stream)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        Symbols[name] = value;
+        ExpressionCompilerContext context = ReadFromStreamCore(stream);
+        CSyntaxCompilerContext result = new();
+        foreach (KeyValuePair<string, object?> symbol in context.Symbols)
+        {
+            result.Symbols[symbol.Key] = symbol.Value;
+        }
+
+        return result;
     }
 
     /// <summary>
-    /// Tries to resolve a symbol by name.
+    /// Reads a shared compiler context from a stream.
     /// </summary>
-    /// <param name="name">Symbol name.</param>
-    /// <param name="value">Resolved value.</param>
-    /// <returns><c>true</c> when the symbol exists; otherwise <c>false</c>.</returns>
-    public bool TryGet(string name, out object? value) => Symbols.TryGetValue(name, out value);
+    /// <param name="stream">Source stream.</param>
+    /// <returns>A populated context.</returns>
+    private static ExpressionCompilerContext ReadFromStreamCore(Stream stream)
+    {
+        return ExpressionCompilerContext.ReadFromStream(stream);
+    }
 }
