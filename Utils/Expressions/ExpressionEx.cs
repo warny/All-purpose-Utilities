@@ -21,8 +21,8 @@ public static class ExpressionEx
     /// <typeparam name="TNumber">Numeric target type.</typeparam>
     /// <param name="value">Source value.</param>
     /// <returns>Constant expression typed as <typeparamref name="TNumber"/>.</returns>
-    public static ConstantExpression CreateConstant<TNumber>(double value) where TNumber : INumberBase<TNumber>
-        => Expression.Constant(TNumber.CreateChecked(value));
+    public static ConstantExpression CreateConstant<TNumber>(TNumber value) where TNumber : INumberBase<TNumber>
+        => Expression.Constant(value);
 
     /// <summary>
     /// Create an expression call on an object given the specified arguments
