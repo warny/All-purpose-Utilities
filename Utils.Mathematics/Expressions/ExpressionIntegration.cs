@@ -1,5 +1,6 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using Utils.Expressions;
 using Utils.Objects;
 
@@ -9,7 +10,7 @@ namespace Utils.Mathematics.Expressions;
 /// <summary>
 /// Provides integration rules for mathematical expression trees.
 /// </summary>
-public class ExpressionIntegration : ExpressionTransformer
+public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatingPoint<T>
 {
     /// <summary>
     /// Gets the name of the parameter used as the integration variable.
@@ -33,11 +34,38 @@ public class ExpressionIntegration : ExpressionTransformer
         parameter = e.Parameters.FirstOrDefault(p => p.Name == ParameterName)
                 ?? throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
 
-        return Expression.Lambda(Transform(e.Body), e.Parameters);
+        if (typeof(T) == typeof(double))
+        {
+            return Expression.Lambda(Transform(e.Body), e.Parameters);
+        }
+
+        ParameterExpression[] normalizedParameters = e.Parameters
+            .Select(parameterExpression => Expression.Parameter(typeof(double), parameterExpression.Name))
+            .ToArray();
+
+        Dictionary<Expression, Expression> toDoubleMap = e.Parameters
+            .Zip(normalizedParameters)
+            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)pair.Second);
+
+        Expression normalizedBody = new IntegrationExpressionReplacementVisitor(toDoubleMap).Visit(Expression.Convert(e.Body, typeof(double)))
+            ?? throw new InvalidOperationException("Unable to normalize expression for generic integration.");
+
+        parameter = normalizedParameters.First(parameterExpression => parameterExpression.Name == ParameterName);
+        Expression transformed = Transform(normalizedBody);
+
+        Dictionary<Expression, Expression> fromDoubleMap = normalizedParameters
+            .Zip(e.Parameters)
+            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)Expression.Convert(pair.Second, typeof(double)));
+
+        Expression mappedBack = new IntegrationExpressionReplacementVisitor(fromDoubleMap).Visit(transformed)
+            ?? throw new InvalidOperationException("Unable to restore normalized parameters after integration.");
+        Expression typedBody = Expression.Convert(mappedBack, typeof(T));
+
+        return Expression.Lambda(typedBody, e.Parameters);
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExpressionIntegration"/> class.
+    /// Initializes a new instance of the <see cref="ExpressionIntegration{T}"/> class.
     /// </summary>
     /// <param name="parameterName">The name of the parameter serving as the integration variable.</param>
     public ExpressionIntegration(string parameterName)
@@ -45,6 +73,37 @@ public class ExpressionIntegration : ExpressionTransformer
         this.ParameterName = parameterName;
     }
 
+
+
+    /// <summary>
+    /// Ignores conversion wrappers by integrating the wrapped operand.
+    /// </summary>
+    /// <param name="e">The conversion expression.</param>
+    /// <param name="operand">The wrapped operand.</param>
+    /// <returns>The integral of the wrapped operand.</returns>
+    [ExpressionSignature(ExpressionType.Convert)]
+    public Expression Convert(
+        UnaryExpression e,
+        Expression operand
+    )
+    {
+        return Transform(operand);
+    }
+
+    /// <summary>
+    /// Ignores checked conversion wrappers by integrating the wrapped operand.
+    /// </summary>
+    /// <param name="e">The checked conversion expression.</param>
+    /// <param name="operand">The wrapped operand.</param>
+    /// <returns>The integral of the wrapped operand.</returns>
+    [ExpressionSignature(ExpressionType.ConvertChecked)]
+    public Expression ConvertChecked(
+        UnaryExpression e,
+        Expression operand
+    )
+    {
+        return Transform(operand);
+    }
     /// <summary>
     /// Integrates a numeric constant by multiplying it with the integration parameter.
     /// </summary>
@@ -57,7 +116,7 @@ public class ExpressionIntegration : ExpressionTransformer
         object value
     )
     {
-        return Expression.Multiply(e, parameter);
+        return Expression.Multiply(Expression.Convert(e, typeof(double)), parameter);
     }
 
     /// <summary>
@@ -233,7 +292,7 @@ public class ExpressionIntegration : ExpressionTransformer
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
 
-        ConstantExpression numericLeft = Expression.Constant(Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
         return Expression.Multiply(
             numericLeft,
             Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), right)
@@ -271,7 +330,7 @@ public class ExpressionIntegration : ExpressionTransformer
             return null;
         }
 
-        double n = Convert.ToDouble(expo.Value);
+        double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n - 1.0) < double.Epsilon)
         {
             return Expression.Multiply(
@@ -303,7 +362,7 @@ public class ExpressionIntegration : ExpressionTransformer
     {
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
-        ConstantExpression numericLeft = Expression.Constant(Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
         return Divide(e, numericLeft, right);
     }
 
@@ -326,7 +385,7 @@ public class ExpressionIntegration : ExpressionTransformer
             right.Arguments[0] is ParameterExpression pSqrt &&
             pSqrt.Name == ParameterName)
         {
-            double factor = 2.0 * Convert.ToDouble(left.Value);
+            double factor = 2.0 * System.Convert.ToDouble(left.Value);
             return Expression.Multiply(
                 Expression.Constant(factor),
                 Expression.Call(typeof(double).GetMethod(nameof(double.Sqrt), [typeof(double)]), pSqrt)
@@ -350,7 +409,7 @@ public class ExpressionIntegration : ExpressionTransformer
                 return null;
             }
 
-            double n = Convert.ToDouble(exponent.Value);
+            double n = System.Convert.ToDouble(exponent.Value);
             if (double.Abs(n - 1.0) < double.Epsilon)
             {
                 return Expression.Multiply(
@@ -385,7 +444,7 @@ public class ExpressionIntegration : ExpressionTransformer
     {
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
-        ConstantExpression numericLeft = Expression.Constant(Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
         return Divide(e, numericLeft, right);
     }
 
@@ -447,7 +506,7 @@ public class ExpressionIntegration : ExpressionTransformer
 )
     {
         if (p.Name != ParameterName) return null;
-        double n = Convert.ToDouble(expo.Value);
+        double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < double.Epsilon)
         {
             return Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), p);
@@ -482,7 +541,7 @@ public class ExpressionIntegration : ExpressionTransformer
             return null;
         }
 
-        return Power(e, p, Expression.Constant(Convert.ToDouble(constantExpo.Value)));
+        return Power(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
     }
 
     /// <summary>
@@ -785,4 +844,50 @@ public class ExpressionIntegration : ExpressionTransformer
     }
 
 }
+
+
+    /// <summary>
+    /// Replaces exact expression instances according to a mapping table.
+    /// </summary>
+    internal sealed class IntegrationExpressionReplacementVisitor : ExpressionVisitor
+    {
+        private IReadOnlyDictionary<Expression, Expression> Replacements { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IntegrationExpressionReplacementVisitor"/> class.
+        /// </summary>
+        /// <param name="replacements">Replacement map keyed by expression instances.</param>
+        public IntegrationExpressionReplacementVisitor(IReadOnlyDictionary<Expression, Expression> replacements)
+        {
+            Replacements = replacements;
+        }
+
+        /// <inheritdoc />
+        public override Expression? Visit(Expression? node)
+        {
+            if (node is not null && Replacements.TryGetValue(node, out Expression replacement))
+            {
+                return replacement;
+            }
+
+            return base.Visit(node);
+        }
+    }
+
+
+/// <summary>
+/// Provides the historical non-generic entry-point for double-based integration.
+/// </summary>
+public class ExpressionIntegration : ExpressionIntegration<double>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpressionIntegration"/> class.
+    /// </summary>
+    /// <param name="parameterName">The name of the parameter serving as the integration variable.</param>
+    public ExpressionIntegration(string parameterName)
+        : base(parameterName)
+    {
+    }
+}
+
 #pragma warning restore CS8604 // Existence possible d'un argument de référence null.

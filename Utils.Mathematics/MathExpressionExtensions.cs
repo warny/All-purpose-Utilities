@@ -1,10 +1,10 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
 
 /// <summary>
-/// Provides helper methods to derive lambda expressions using <see cref="ExpressionDerivation"/>.
+/// Provides helper methods to derive lambda expressions using <see cref="ExpressionDerivation{T}"/>.
 /// </summary>
 public static class MathExpressionExtensions
 {
@@ -30,7 +30,7 @@ public static class MathExpressionExtensions
     {
         e.Arg().MustNotBeNull();
 
-        ExpressionDerivation derivation = new ExpressionDerivation(paramName);
+        ExpressionDerivation<double> derivation = new ExpressionDerivation<double>(paramName);
         var expression = e.Body.Simplify();
         expression = derivation.Derivate((LambdaExpression)expression);
         expression = expression.Simplify();

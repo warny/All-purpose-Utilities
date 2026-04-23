@@ -13,7 +13,7 @@ public class ExpressionDerivationTests
 {
 
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
-    ExpressionDerivation derivation = new ExpressionDerivation("x");
+    ExpressionDerivation<double> derivation = new ExpressionDerivation<double>("x");
 
     /// <summary>
     /// A sample unknown function used to validate finite-difference fallback derivatives.
@@ -110,9 +110,32 @@ public class ExpressionDerivationTests
         double[] samples = [-1.5, -0.75, 0.5, 1.25];
         foreach (var sample in samples)
         {
-            double expected = 6.0 * sample * Math.Pow(sample * sample, 2);
+            double expected = 6.0 * sample * double.Pow(sample * sample, 2);
             double actual = derivative(sample);
             Assert.AreEqual(expected, actual, 5e-4, $"Composed fallback derivative mismatch at x={sample}.");
         }
     }
+
+
+    /// <summary>
+    /// Ensures generic derivation also works for <see cref="float"/> lambdas.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FloatLambda_WorksWithGenericDerivation()
+    {
+        ExpressionDerivation<float> floatDerivation = new("x");
+        Expression<Func<float, float>> function = x => x;
+
+        var result = (Expression<Func<float, float>>)floatDerivation.Derivate(function);
+        var derivative = result.Compile();
+
+        float[] samples = [-2f, -0.5f, 0f, 1.25f];
+        foreach (float sample in samples)
+        {
+            float expected = 1f;
+            float actual = derivative(sample);
+            Assert.AreEqual(expected, actual, 5e-3f, $"Float derivative mismatch at x={sample}.");
+        }
+    }
+
 }

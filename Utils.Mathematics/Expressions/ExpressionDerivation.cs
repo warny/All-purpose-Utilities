@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using Utils.Expressions;
 
 namespace Utils.Mathematics.Expressions;
@@ -8,9 +9,9 @@ namespace Utils.Mathematics.Expressions;
 /// <summary>
 /// Provides single-variable symbolic differentiation for LINQ expression trees.
 /// </summary>
-public class ExpressionDerivation : ExpressionTransformer
+public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloatingPoint<T>
 {
-    private const double FiniteDifferenceEpsilon = 1e-7;
+    private static readonly double FiniteDifferenceEpsilon = typeof(T) == typeof(float) ? 1e-4 : 1e-7;
 
     /// <summary>
     /// Gets the name of the parameter that will be considered the differentiation variable.
@@ -18,7 +19,7 @@ public class ExpressionDerivation : ExpressionTransformer
     public string ParameterName { get; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExpressionDerivation"/> class for the specified parameter.
+    /// Initializes a new instance of the <see cref="ExpressionDerivation{T}"/> class for the specified parameter.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
     public ExpressionDerivation(string parameterName)
@@ -33,7 +34,33 @@ public class ExpressionDerivation : ExpressionTransformer
     /// <returns>The simplified derivative expression.</returns>
     public Expression Derivate(LambdaExpression e)
     {
-        return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        ArgumentNullException.ThrowIfNull(e);
+
+        if (typeof(T) == typeof(double))
+        {
+            return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        }
+
+        ParameterExpression[] normalizedParameters = e.Parameters
+            .Select(parameter => Expression.Parameter(typeof(double), parameter.Name))
+            .ToArray();
+        Dictionary<Expression, Expression> toDoubleMap = e.Parameters
+            .Zip(normalizedParameters)
+            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)pair.Second);
+
+        Expression normalizedBody = new DerivationExpressionReplacementVisitor(toDoubleMap).Visit(e.Body)
+            ?? throw new InvalidOperationException("Unable to normalize expression for generic derivation.");
+        Expression transformed = Transform(normalizedBody).Simplify();
+
+        Dictionary<Expression, Expression> fromDoubleMap = normalizedParameters
+            .Zip(e.Parameters)
+            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)Expression.Convert(pair.Second, typeof(double)));
+
+        Expression mappedBack = new DerivationExpressionReplacementVisitor(fromDoubleMap).Visit(transformed)
+            ?? throw new InvalidOperationException("Unable to restore normalized parameters after derivation.");
+        Expression typedBody = Expression.Convert(mappedBack, typeof(T));
+
+        return Expression.Lambda(typedBody, e.Parameters);
     }
 
     /// <summary>
@@ -376,7 +403,7 @@ public class ExpressionDerivation : ExpressionTransformer
             return DeriveUnknownMethodCall(methodCallExpression, parameters);
         }
 
-        throw new NotSupportedException($"The expression '{e.NodeType}' is not supported by {nameof(ExpressionDerivation)}.");
+        throw new NotSupportedException($"The expression '{e.NodeType}' is not supported by {nameof(ExpressionDerivation<T>)}.");
     }
 
     /// <summary>
@@ -430,5 +457,51 @@ public class ExpressionDerivation : ExpressionTransformer
     }
 
 }
+
+
+    /// <summary>
+    /// Replaces exact expression instances according to a mapping table.
+    /// </summary>
+    internal sealed class DerivationExpressionReplacementVisitor : ExpressionVisitor
+    {
+        private IReadOnlyDictionary<Expression, Expression> Replacements { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DerivationExpressionReplacementVisitor"/> class.
+        /// </summary>
+        /// <param name="replacements">Replacement map keyed by expression instances.</param>
+        public DerivationExpressionReplacementVisitor(IReadOnlyDictionary<Expression, Expression> replacements)
+        {
+            Replacements = replacements;
+        }
+
+        /// <inheritdoc />
+        public override Expression? Visit(Expression? node)
+        {
+            if (node is not null && Replacements.TryGetValue(node, out Expression replacement))
+            {
+                return replacement;
+            }
+
+            return base.Visit(node);
+        }
+    }
+
+
+/// <summary>
+/// Provides the historical non-generic entry-point for double-based derivation.
+/// </summary>
+public class ExpressionDerivation : ExpressionDerivation<double>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpressionDerivation"/> class.
+    /// </summary>
+    /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
+    public ExpressionDerivation(string parameterName)
+        : base(parameterName)
+    {
+    }
+}
+
 
 #pragma warning restore CS8604
