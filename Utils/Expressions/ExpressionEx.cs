@@ -213,7 +213,8 @@ public static class ExpressionEx
         var loopExpressions = new List<Expression>
         {
             Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop)),
-            iteration
+            iteration,
+            Expression.Label(continueLoop)
         };
 
         if (next is { Length: > 0 })
@@ -226,7 +227,7 @@ public static class ExpressionEx
             Expression.Assign(iterator, init),
             Expression.Loop(
                 Expression.Block(loopExpressions),
-                breakLoop, continueLoop
+                breakLoop
             )
         );
     }
@@ -269,9 +270,10 @@ public static class ExpressionEx
         return Expression.Loop(
             Expression.Block(
                 iteration,
+                Expression.Label(continueLoop),
                 Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop))
             ),
-            breakLoop, continueLoop
+            breakLoop
         );
     }
 
