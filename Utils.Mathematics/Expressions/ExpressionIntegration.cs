@@ -122,8 +122,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (e.Name == ParameterName)
         {
             return Expression.Divide(
-                Expression.Power(e, CreateConstant(2d)),
-                CreateConstant(2d)
+                Expression.Power(e, CreateConstant<T>(2d)),
+                CreateConstant<T>(2d)
             );
         }
         else
@@ -438,7 +438,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
                     parameter,
                     Expression.Subtract(
                         Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), parameter),
-                        CreateConstant(1d)
+                        CreateConstant<T>(1d)
                         )
                 );
     }
@@ -456,7 +456,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     )
     {
         if (p.Name != ParameterName) return null;
-        var ln10 = CreateConstant(double.Log(10.0));
+        var ln10 = CreateConstant<T>(double.Log(10.0));
         return Expression.Subtract(
             Expression.Multiply(p,
                 Expression.Call(typeof(T).GetMethod(nameof(double.Log10), [typeof(T)]), p)),
@@ -821,9 +821,9 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     /// </summary>
     /// <param name="value">Source value.</param>
     /// <returns>Constant expression of type <typeparamref name="T"/>.</returns>
-    private static ConstantExpression CreateConstant(double value)
+    private static ConstantExpression CreateConstant<TOther>(double value) where TOther : INumberBase<TOther>
     {
-        return Expression.Constant(T.CreateChecked(value));
+        return Expression.Constant(TOther.CreateChecked(value));
     }
 
 }
