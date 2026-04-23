@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
@@ -189,6 +190,23 @@ public class CSyntaxExpressionCompilerTests
         Func<double> lambda = Expression.Lambda<Func<double>>(block).Compile();
 
         Assert.AreEqual(15d, lambda());
+    }
+
+    /// <summary>
+    /// Ensures unused local declarations are ignored when building block variables.
+    /// </summary>
+    [TestMethod]
+    public void Compile_BlockWithUnusedDeclaration_IgnoresUnusedVariable()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("{ int used = 1; int unused = 2; used }");
+
+        Assert.IsInstanceOfType<BlockExpression>(expression);
+        var block = (BlockExpression)expression;
+        Assert.IsFalse(block.Variables.Any(variable => variable.Name == "unused"));
+
+        Func<int> lambda = Expression.Lambda<Func<int>>(Expression.Convert(block, typeof(int))).Compile();
+        Assert.AreEqual(1, lambda());
     }
 
     /// <summary>
