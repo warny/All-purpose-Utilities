@@ -85,6 +85,40 @@ public class ExpressionCompilerContextTests
     }
 
     /// <summary>
+    /// Ensures callable symbols with the same name are merged as overloads.
+    /// </summary>
+    [TestMethod]
+    public void Set_SameFunctionNameDifferentSignatures_MergesOverloads()
+    {
+        dynamic context = new ExpressionCompilerContext();
+        context.Set("combine", (Func<int, int, int>)TestMethods.Combine);
+        context.Set("combine", (Func<string, string, string>)TestMethods.Combine);
+
+        Assert.AreEqual(5, context.combine(2, 3));
+        Assert.AreEqual("a-b", context.combine("a", "b"));
+    }
+
+    /// <summary>
+    /// Ensures merged overloads can be persisted and restored through streams.
+    /// </summary>
+    [TestMethod]
+    public void WriteToStreamAndReadFromStream_PreservesMergedOverloads()
+    {
+        ExpressionCompilerContext source = new();
+        source.Set("combine", (Func<int, int, int>)TestMethods.Combine);
+        source.Set("combine", (Func<string, string, string>)TestMethods.Combine);
+
+        using MemoryStream stream = new();
+        source.WriteToStream(stream);
+        stream.Position = 0;
+
+        dynamic restored = ExpressionCompilerContext.ReadFromStream(stream);
+
+        Assert.AreEqual(11, restored.combine(5, 6));
+        Assert.AreEqual("left-right", restored.combine("left", "right"));
+    }
+
+    /// <summary>
     /// Provides overloaded methods used by invocation tests.
     /// </summary>
     private static class TestMethods

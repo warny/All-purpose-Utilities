@@ -78,4 +78,17 @@ public class ExpressionIntegrationTests
         }
     }
 
+    /// <summary>
+    /// Ensures the generic extension entry-point can integrate with a float type parameter.
+    /// </summary>
+    [TestMethod]
+    public void IntegrateExtension_GenericFloat_Works()
+    {
+        Expression<Func<float, float>> function = x => 1f;
+        var integrated = (Expression<Func<float, float>>)function.Integrate<float>("x");
+        Func<float, float> compiled = integrated.Compile();
+
+        Assert.AreEqual(3f, compiled(3f), 5e-3f);
+    }
+
 }

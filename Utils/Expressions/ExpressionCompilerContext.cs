@@ -27,6 +27,12 @@ public class ExpressionCompilerContext : DynamicObject
     public void Set(string name, object? value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (Symbols.TryGetValue(name, out object? existing))
+        {
+            Symbols[name] = MergeSymbols(existing, value);
+            return;
+        }
+
         Symbols[name] = value;
     }
 
@@ -88,7 +94,7 @@ public class ExpressionCompilerContext : DynamicObject
     /// <inheritdoc />
     public override bool TrySetMember(SetMemberBinder binder, object? value)
     {
-        Symbols[binder.Name] = value;
+        Set(binder.Name, value);
         return true;
     }
 
@@ -145,6 +151,43 @@ public class ExpressionCompilerContext : DynamicObject
 
         result = null;
         return false;
+    }
+
+    /// <summary>
+    /// Merges symbol values when the same name is registered multiple times.
+    /// </summary>
+    /// <param name="existing">Existing value.</param>
+    /// <param name="incoming">Incoming value.</param>
+    /// <returns>Merged symbol value.</returns>
+    private static object? MergeSymbols(object? existing, object? incoming)
+    {
+        MethodInfo[]? existingMethods = AsMethodArray(existing);
+        MethodInfo[]? incomingMethods = AsMethodArray(incoming);
+        if (existingMethods is null || incomingMethods is null)
+        {
+            return incoming;
+        }
+
+        return existingMethods
+            .Concat(incomingMethods)
+            .Distinct(MethodSignatureComparer.Instance)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Converts a callable symbol into a method array representation.
+    /// </summary>
+    /// <param name="value">Symbol value.</param>
+    /// <returns>Method array when value is callable; otherwise <see langword="null"/>.</returns>
+    private static MethodInfo[]? AsMethodArray(object? value)
+    {
+        return value switch
+        {
+            null => null,
+            MethodInfo[] methods => methods,
+            Delegate delegateValue => [delegateValue.Method],
+            _ => null
+        };
     }
 
     private static SerializedValue CreateSerializedValue(object? value)
@@ -286,4 +329,47 @@ public class ExpressionCompilerContext : DynamicObject
         MethodReference[]? Methods);
 
     private sealed record MethodReference(string? DeclaringType, string Name, string?[] ParameterTypes);
+
+    /// <summary>
+    /// Compares methods by declaration, name and parameter types to remove duplicate overloads.
+    /// </summary>
+    private sealed class MethodSignatureComparer : IEqualityComparer<MethodInfo>
+    {
+        /// <summary>
+        /// Singleton instance.
+        /// </summary>
+        public static MethodSignatureComparer Instance { get; } = new();
+
+        /// <inheritdoc />
+        public bool Equals(MethodInfo? x, MethodInfo? y)
+        {
+            if (x is null || y is null)
+            {
+                return x is null && y is null;
+            }
+
+            if (!Equals(x.DeclaringType, y.DeclaringType) || x.Name != y.Name)
+            {
+                return false;
+            }
+
+            Type[] xParameters = x.GetParameters().Select(parameter => parameter.ParameterType).ToArray();
+            Type[] yParameters = y.GetParameters().Select(parameter => parameter.ParameterType).ToArray();
+            return xParameters.SequenceEqual(yParameters);
+        }
+
+        /// <inheritdoc />
+        public int GetHashCode(MethodInfo obj)
+        {
+            HashCode hash = new();
+            hash.Add(obj.DeclaringType);
+            hash.Add(obj.Name);
+            foreach (ParameterInfo parameter in obj.GetParameters())
+            {
+                hash.Add(parameter.ParameterType);
+            }
+
+            return hash.ToHashCode();
+        }
+    }
 }

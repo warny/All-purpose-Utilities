@@ -50,7 +50,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         object value
     )
     {
-        return CreateConstant<T>(0d);
+        return ExpressionEx.CreateConstant<T>(0d);
     }
 
     /// <summary>
@@ -65,11 +65,11 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         if (e.Name == ParameterName)
         {
-            return CreateConstant<T>(1d);
+            return ExpressionEx.CreateConstant<T>(1d);
         }
         else
         {
-            return CreateConstant<T>(0d);
+            return ExpressionEx.CreateConstant<T>(0d);
         }
     }
 
@@ -196,7 +196,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression.Subtract(
                 Expression.Multiply(left, Transform(right)),
                 Expression.Multiply(Transform(left), right)),
-            Expression.Power(right, CreateConstant<T>(2d)));
+            Expression.Power(right, ExpressionEx.CreateConstant<T>(2d)));
     }
 
     /// <summary>
@@ -215,7 +215,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Multiply(
             right,
             Expression.Multiply(
-                Expression.Power(left, Expression.Subtract(right, CreateConstant<T>(1d))),
+                Expression.Power(left, Expression.Subtract(right, ExpressionEx.CreateConstant<T>(1d))),
                 Transform(left)
                 )
             );
@@ -238,7 +238,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression.Multiply(
                 Expression.Power(
                     left,
-                    Expression.Subtract(right, CreateConstant<T>(1d))
+                    Expression.Subtract(right, ExpressionEx.CreateConstant<T>(1d))
                 ),
                 Expression.Add(
                     Expression.Multiply(right, Transform(left)),
@@ -303,7 +303,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Divide(
             operand,
             Expression.Multiply(
-                CreateConstant<T>(double.Log(10d)),
+                ExpressionEx.CreateConstant<T>(double.Log(10d)),
                 Transform(operand)
             )
         );
@@ -399,7 +399,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand = parameters[0];
         if (!ContainsParameter(operand))
         {
-            return CreateConstant<T>(0d);
+            return ExpressionEx.CreateConstant<T>(0d);
         }
 
         var epsilon = Expression.Constant(FiniteDifferenceEpsilon);
@@ -429,16 +429,6 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             InvocationExpression invocationExpression => invocationExpression.Arguments.Any(ContainsParameter),
             _ => false
         };
-    }
-
-    /// <summary>
-    /// Creates a typed numeric constant for <typeparamref name="T"/>.
-    /// </summary>
-    /// <param name="value">Source value.</param>
-    /// <returns>Constant expression of type <typeparamref name="T"/>.</returns>
-    private static ConstantExpression CreateConstant<TOther>(double value) where TOther : INumberBase<TOther>
-    {
-        return Expression.Constant(TOther.CreateChecked(value));
     }
 
 }

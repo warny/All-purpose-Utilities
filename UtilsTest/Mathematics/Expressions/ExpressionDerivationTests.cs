@@ -138,4 +138,17 @@ public class ExpressionDerivationTests
         }
     }
 
+    /// <summary>
+    /// Ensures the generic extension entry-point can derive with a float type parameter.
+    /// </summary>
+    [TestMethod]
+    public void DerivateExtension_GenericFloat_Works()
+    {
+        Expression<Func<float, float>> function = x => x;
+        var derived = (Expression<Func<float, float>>)function.Derivate<float>("x");
+        Func<float, float> compiled = derived.Compile();
+
+        Assert.AreEqual(1f, compiled(4f), 5e-3f);
+    }
+
 }

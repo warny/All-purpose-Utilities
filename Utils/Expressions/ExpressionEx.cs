@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 
 namespace Utils.Expressions;
@@ -14,6 +15,15 @@ namespace Utils.Expressions;
 /// </summary>
 public static class ExpressionEx
 {
+    /// <summary>
+    /// Creates a numeric constant expression from a <see cref="double"/> value for the provided numeric type.
+    /// </summary>
+    /// <typeparam name="TNumber">Numeric target type.</typeparam>
+    /// <param name="value">Source value.</param>
+    /// <returns>Constant expression typed as <typeparamref name="TNumber"/>.</returns>
+    public static ConstantExpression CreateConstant<TNumber>(double value) where TNumber : INumberBase<TNumber>
+        => Expression.Constant(TNumber.CreateChecked(value));
+
     /// <summary>
     /// Create an expression call on an object given the specified arguments
     /// </summary>
