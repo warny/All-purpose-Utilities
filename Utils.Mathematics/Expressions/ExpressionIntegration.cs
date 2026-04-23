@@ -34,34 +34,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         parameter = e.Parameters.FirstOrDefault(p => p.Name == ParameterName)
                 ?? throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
 
-        if (typeof(T) == typeof(double))
-        {
-            return Expression.Lambda(Transform(e.Body), e.Parameters);
-        }
-
-        ParameterExpression[] normalizedParameters = e.Parameters
-            .Select(parameterExpression => Expression.Parameter(typeof(double), parameterExpression.Name))
-            .ToArray();
-
-        Dictionary<Expression, Expression> toDoubleMap = e.Parameters
-            .Zip(normalizedParameters)
-            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)pair.Second);
-
-        Expression normalizedBody = new IntegrationExpressionReplacementVisitor(toDoubleMap).Visit(Expression.Convert(e.Body, typeof(double)))
-            ?? throw new InvalidOperationException("Unable to normalize expression for generic integration.");
-
-        parameter = normalizedParameters.First(parameterExpression => parameterExpression.Name == ParameterName);
-        Expression transformed = Transform(normalizedBody);
-
-        Dictionary<Expression, Expression> fromDoubleMap = normalizedParameters
-            .Zip(e.Parameters)
-            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)Expression.Convert(pair.Second, typeof(double)));
-
-        Expression mappedBack = new IntegrationExpressionReplacementVisitor(fromDoubleMap).Visit(transformed)
-            ?? throw new InvalidOperationException("Unable to restore normalized parameters after integration.");
-        Expression typedBody = Expression.Convert(mappedBack, typeof(T));
-
-        return Expression.Lambda(typedBody, e.Parameters);
+        return Expression.Lambda(Transform(e.Body), e.Parameters);
     }
 
     /// <summary>
@@ -116,7 +89,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         object value
     )
     {
-        return Expression.Multiply(Expression.Convert(e, typeof(double)), parameter);
+        return Expression.Multiply(Expression.Convert(e, typeof(T)), parameter);
     }
 
     /// <summary>
@@ -149,8 +122,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (e.Name == ParameterName)
         {
             return Expression.Divide(
-                Expression.Power(e, Expression.Constant(2.0)),
-                Expression.Constant(2.0)
+                Expression.Power(e, CreateConstant(2d)),
+                CreateConstant(2d)
             );
         }
         else
@@ -269,7 +242,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (right.Name != ParameterName) return null;
         return Expression.Multiply(
                 left,
-                Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), right)
+                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), right)
             );
     }
 
@@ -295,7 +268,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
         return Expression.Multiply(
             numericLeft,
-            Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), right)
+            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), right)
         );
     }
 
@@ -335,7 +308,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             return Expression.Multiply(
                 left,
-                Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), p)
+                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p)
             );
         }
 
@@ -388,7 +361,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             double factor = 2.0 * System.Convert.ToDouble(left.Value);
             return Expression.Multiply(
                 Expression.Constant(factor),
-                Expression.Call(typeof(double).GetMethod(nameof(double.Sqrt), [typeof(double)]), pSqrt)
+                Expression.Call(typeof(T).GetMethod(nameof(double.Sqrt), [typeof(T)]), pSqrt)
             );
         }
 
@@ -414,7 +387,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             {
                 return Expression.Multiply(
                     left,
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), pPow)
+                    Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), pPow)
                 );
             }
 
@@ -464,8 +437,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         return Expression.Multiply(
                     parameter,
                     Expression.Subtract(
-                        Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), parameter),
-                        Expression.Constant(1.0)
+                        Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), parameter),
+                        CreateConstant(1d)
                         )
                 );
     }
@@ -483,10 +456,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     )
     {
         if (p.Name != ParameterName) return null;
-        var ln10 = Expression.Constant(double.Log(10.0));
+        var ln10 = CreateConstant(double.Log(10.0));
         return Expression.Subtract(
             Expression.Multiply(p,
-                Expression.Call(typeof(double).GetMethod(nameof(double.Log10), [typeof(double)]), p)),
+                Expression.Call(typeof(T).GetMethod(nameof(double.Log10), [typeof(T)]), p)),
             Expression.Divide(p, ln10)
         );
     }
@@ -509,7 +482,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < double.Epsilon)
         {
-            return Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), p);
+            return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
         }
         return Expression.Divide(
             Expression.Power(p, Expression.Constant(n + 1.0)),
@@ -557,7 +530,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
 )
     {
         if (op.Name != ParameterName) return null;
-        return Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), op);
+        return Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), op);
     }
 
     /// <summary>
@@ -579,7 +552,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), be),
+                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), be),
                 c
             );
     }
@@ -598,7 +571,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (op.Name != ParameterName) return null;
         return Expression.Negate(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), op)
+                Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), op)
             );
     }
 
@@ -621,7 +594,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), be)),
+                Expression.Negate(Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), be)),
                 c
             );
     }
@@ -639,7 +612,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
 )
     {
         if (op.Name != ParameterName) return null;
-        return Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), op);
+        return Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), op);
     }
 
     /// <summary>
@@ -661,7 +634,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), be),
+                Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), be),
                 c
             );
     }
@@ -682,8 +655,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (op.Name != ParameterName) return null;
 
         return Expression.Negate(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), op))
+                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
+                    Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), op))
             );
     }
 
@@ -706,8 +679,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), be))),
+                Expression.Negate(Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
+                    Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), be))),
                 c
             );
     }
@@ -728,7 +701,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             return null;
         }
-        return Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), op);
+        return Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), op);
     }
 
     /// <summary>
@@ -750,7 +723,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), be),
+                Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), be),
                 c
             );
     }
@@ -769,7 +742,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (op.Name != ParameterName) return null;
 
-        return Expression.Call(typeof(double).GetMethod(nameof(double.Sinh), [typeof(double)]), op);
+        return Expression.Call(typeof(T).GetMethod(nameof(double.Sinh), [typeof(T)]), op);
     }
 
     /// <summary>
@@ -791,7 +764,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(double).GetMethod(nameof(double.Sinh), [typeof(double)]), be),
+                Expression.Call(typeof(T).GetMethod(nameof(double.Sinh), [typeof(T)]), be),
                 c
             );
     }
@@ -811,8 +784,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (op.Name != ParameterName) return null;
 
         return Expression.Call(
-            typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), op)
+            typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
+            Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), op)
         );
     }
 
@@ -836,43 +809,25 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         }
         return Expression.Divide(
                 Expression.Call(
-                    typeof(double).GetMethod(nameof(double.Log), [typeof(double)]),
-                    Expression.Call(typeof(double).GetMethod(nameof(double.Cosh), [typeof(double)]), be)
+                    typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
+                    Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), be)
                 ),
                 c
             );
     }
 
+    /// <summary>
+    /// Creates a typed numeric constant for <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="value">Source value.</param>
+    /// <returns>Constant expression of type <typeparamref name="T"/>.</returns>
+    private static ConstantExpression CreateConstant(double value)
+    {
+        return Expression.Constant(T.CreateChecked(value));
+    }
+
 }
 
-
-    /// <summary>
-    /// Replaces exact expression instances according to a mapping table.
-    /// </summary>
-    internal sealed class IntegrationExpressionReplacementVisitor : ExpressionVisitor
-    {
-        private IReadOnlyDictionary<Expression, Expression> Replacements { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IntegrationExpressionReplacementVisitor"/> class.
-        /// </summary>
-        /// <param name="replacements">Replacement map keyed by expression instances.</param>
-        public IntegrationExpressionReplacementVisitor(IReadOnlyDictionary<Expression, Expression> replacements)
-        {
-            Replacements = replacements;
-        }
-
-        /// <inheritdoc />
-        public override Expression? Visit(Expression? node)
-        {
-            if (node is not null && Replacements.TryGetValue(node, out Expression replacement))
-            {
-                return replacement;
-            }
-
-            return base.Visit(node);
-        }
-    }
 
 
 /// <summary>

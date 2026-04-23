@@ -35,32 +35,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     public Expression Derivate(LambdaExpression e)
     {
         ArgumentNullException.ThrowIfNull(e);
-
-        if (typeof(T) == typeof(double))
-        {
-            return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
-        }
-
-        ParameterExpression[] normalizedParameters = e.Parameters
-            .Select(parameter => Expression.Parameter(typeof(double), parameter.Name))
-            .ToArray();
-        Dictionary<Expression, Expression> toDoubleMap = e.Parameters
-            .Zip(normalizedParameters)
-            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)pair.Second);
-
-        Expression normalizedBody = new DerivationExpressionReplacementVisitor(toDoubleMap).Visit(e.Body)
-            ?? throw new InvalidOperationException("Unable to normalize expression for generic derivation.");
-        Expression transformed = Transform(normalizedBody).Simplify();
-
-        Dictionary<Expression, Expression> fromDoubleMap = normalizedParameters
-            .Zip(e.Parameters)
-            .ToDictionary(pair => (Expression)pair.First, pair => (Expression)Expression.Convert(pair.Second, typeof(double)));
-
-        Expression mappedBack = new DerivationExpressionReplacementVisitor(fromDoubleMap).Visit(transformed)
-            ?? throw new InvalidOperationException("Unable to restore normalized parameters after derivation.");
-        Expression typedBody = Expression.Convert(mappedBack, typeof(T));
-
-        return Expression.Lambda(typedBody, e.Parameters);
+        return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
     }
 
     /// <summary>
@@ -75,7 +50,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         object value
     )
     {
-        return Expression.Constant(0.0);
+        return CreateConstant(0d);
     }
 
     /// <summary>
@@ -90,11 +65,11 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         if (e.Name == ParameterName)
         {
-            return Expression.Constant(1.0);
+            return CreateConstant(1d);
         }
         else
         {
-            return Expression.Constant(0.0);
+            return CreateConstant(0d);
         }
     }
 
@@ -221,7 +196,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression.Subtract(
                 Expression.Multiply(left, Transform(right)),
                 Expression.Multiply(Transform(left), right)),
-            Expression.Power(right, Expression.Constant(2.0)));
+            Expression.Power(right, CreateConstant(2d)));
     }
 
     /// <summary>
@@ -240,7 +215,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Multiply(
             right,
             Expression.Multiply(
-                Expression.Power(left, Expression.Subtract(right, Expression.Constant(1.0))),
+                Expression.Power(left, Expression.Subtract(right, CreateConstant(1d))),
                 Transform(left)
                 )
             );
@@ -263,14 +238,14 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression.Multiply(
                 Expression.Power(
                     left,
-                    Expression.Subtract(right, Expression.Constant(1.0))
+                    Expression.Subtract(right, CreateConstant(1d))
                 ),
                 Expression.Add(
                     Expression.Multiply(right, Transform(left)),
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
-                            Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), left),
+                            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), left),
                             Transform(right)
                         )
                     )
@@ -293,7 +268,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return
             Expression.Multiply(
                 Transform(operand),
-                Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), operand)
+                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), operand)
             );
     }
 
@@ -328,7 +303,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Divide(
             operand,
             Expression.Multiply(
-                Expression.Constant(Math.Log(10)),
+                CreateConstant(double.Log(10d)),
                 Transform(operand)
             )
         );
@@ -347,7 +322,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand));
+            Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand));
     }
 
     /// <summary>
@@ -364,7 +339,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Negate(
             Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), operand)));
+            Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand)));
     }
 
     /// <summary>
@@ -379,8 +354,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand)
     {
         return Transform(Expression.Divide(
-             Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), operand),
-             Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand)
+             Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand),
+             Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand)
             ).Simplify()
         );
     }
@@ -424,7 +399,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand = parameters[0];
         if (!ContainsParameter(operand))
         {
-            return Expression.Constant(0.0);
+            return CreateConstant(0d);
         }
 
         var epsilon = Expression.Constant(FiniteDifferenceEpsilon);
@@ -456,36 +431,18 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         };
     }
 
+    /// <summary>
+    /// Creates a typed numeric constant for <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="value">Source value.</param>
+    /// <returns>Constant expression of type <typeparamref name="T"/>.</returns>
+    private static ConstantExpression CreateConstant(double value)
+    {
+        return Expression.Constant(T.CreateChecked(value));
+    }
+
 }
 
-
-    /// <summary>
-    /// Replaces exact expression instances according to a mapping table.
-    /// </summary>
-    internal sealed class DerivationExpressionReplacementVisitor : ExpressionVisitor
-    {
-        private IReadOnlyDictionary<Expression, Expression> Replacements { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DerivationExpressionReplacementVisitor"/> class.
-        /// </summary>
-        /// <param name="replacements">Replacement map keyed by expression instances.</param>
-        public DerivationExpressionReplacementVisitor(IReadOnlyDictionary<Expression, Expression> replacements)
-        {
-            Replacements = replacements;
-        }
-
-        /// <inheritdoc />
-        public override Expression? Visit(Expression? node)
-        {
-            if (node is not null && Replacements.TryGetValue(node, out Expression replacement))
-            {
-                return replacement;
-            }
-
-            return base.Visit(node);
-        }
-    }
 
 
 /// <summary>
