@@ -96,4 +96,64 @@ public sealed class ExpressionExTests
 
         Assert.AreEqual(4, result);
     }
+
+    /// <summary>
+    /// Ensures foreach over arrays uses index-based loop construction instead of enumerator calls.
+    /// </summary>
+    [TestMethod]
+    public void ForEach_Array_UsesIndexBasedLoop()
+    {
+        var iterator = Expression.Variable(typeof(int), "item");
+        var enumerable = Expression.Variable(typeof(int[]), "values");
+        var loop = ExpressionEx.ForEach(iterator, enumerable, Expression.Empty());
+
+        Assert.IsFalse(ContainsMethodCall(loop, nameof(System.Collections.IEnumerable.GetEnumerator)));
+        Assert.IsFalse(ContainsMethodCall(loop, nameof(System.Collections.IEnumerator.MoveNext)));
+    }
+
+    /// <summary>
+    /// Checks whether an expression tree contains a method call by name.
+    /// </summary>
+    /// <param name="expression">Expression tree to inspect.</param>
+    /// <param name="methodName">Method name to search for.</param>
+    /// <returns><see langword="true"/> when the method call is found; otherwise <see langword="false"/>.</returns>
+    private static bool ContainsMethodCall(Expression expression, string methodName)
+    {
+        var visitor = new MethodNameSearchVisitor(methodName);
+        visitor.Visit(expression);
+        return visitor.Found;
+    }
+
+    /// <summary>
+    /// Visits expression trees and tracks whether a matching method call was found.
+    /// </summary>
+    private sealed class MethodNameSearchVisitor : ExpressionVisitor
+    {
+        private readonly string _methodName;
+
+        /// <summary>
+        /// Gets a value indicating whether the target method call has been found.
+        /// </summary>
+        public bool Found { get; private set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MethodNameSearchVisitor"/> class.
+        /// </summary>
+        /// <param name="methodName">Method name to match.</param>
+        public MethodNameSearchVisitor(string methodName)
+        {
+            _methodName = methodName;
+        }
+
+        /// <inheritdoc />
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            if (node.Method.Name == _methodName)
+            {
+                Found = true;
+            }
+
+            return base.VisitMethodCall(node);
+        }
+    }
 }
