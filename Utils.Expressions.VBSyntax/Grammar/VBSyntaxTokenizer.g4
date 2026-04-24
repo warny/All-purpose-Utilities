@@ -232,7 +232,7 @@ literal
     | NOTHING
     ;
 
-// Keywords — longer alternatives must appear before shorter prefixes.
+// Keywords
 ANDALSO : 'AndAlso' ;
 AND : 'And' ;
 AS : 'As' ;
