@@ -13,6 +13,12 @@ namespace Utils.Parser.Runtime;
 /// ties by <see cref="Rule.DeclarationOrder"/> (lower order wins).
 /// </para>
 /// <para>
+/// Pure-literal rules (keywords and operators) are handled by a per-mode
+/// <see cref="KeywordLookup"/> trie built at construction time.  The trie traversal
+/// is O(keyword_length) instead of O(n_rules × keyword_length), and it always finds
+/// the longest match regardless of declaration order in the grammar source.
+/// </para>
+/// <para>
 /// Lexer modes are handled via an internal stack. Structured
 /// <see cref="LexerCommand"/> directives (<c>pushMode</c>, <c>popMode</c>, <c>mode</c>,
 /// <c>skip</c>, etc.) are executed after each successful match.
@@ -22,6 +28,11 @@ public sealed class LexerEngine(ParserDefinition definition)
 {
     private readonly Stack<LexerMode> _modeStack = new();
     private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
+
+    // ── Keyword trie ──────────────────────────────────────────────────────────────
+    // One KeywordLookup per lexer mode, built once at construction.
+    private readonly IReadOnlyDictionary<string, KeywordLookup> _keywordTrieByMode =
+        BuildKeywordTries(definition, IsCaseInsensitive(definition));
 
     // ── "more" buffering state ────────────────────────────────────────────────
     // When a token fires "-> more", its text is accumulated here and prepended to
@@ -100,6 +111,11 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// produced by the rule that matches the most characters at the current stream position.
     /// Ties are broken by <see cref="Rule.DeclarationOrder"/>: the rule with the lower
     /// order value wins. Returns <c>(null, null)</c> when no rule matches.
+    /// <para>
+    /// Pure-literal rules (keywords, operators, punctuation) are matched via the
+    /// pre-built <see cref="KeywordLookup"/> trie in a single O(keyword_length) pass.
+    /// All other rules (character classes, quantifiers, etc.) are still tried individually.
+    /// </para>
     /// </summary>
     /// <param name="stream">Character stream positioned at the start of the next token.</param>
     /// <param name="mode">Active lexer mode whose rules are tried.</param>
@@ -110,9 +126,22 @@ public sealed class LexerEngine(ParserDefinition definition)
         Rule? bestRule = null;
         var bestCommands = new List<Model.LexerCommand>();
 
+        // ── Fast path: trie lookup for all pure-literal rules (keywords / operators) ──
+        // Pure-literal rules carry no lexer commands, so bestCommands stays empty.
+        if (_keywordTrieByMode.TryGetValue(mode.Name, out var trie) && !trie.IsEmpty)
+        {
+            var (trieToken, trieRule) = trie.TryMatch(stream, mode.Name);
+            if (trieToken is not null)
+            {
+                best = trieToken;
+                bestRule = trieRule;
+            }
+        }
+
+        // ── Regular path: all non-literal, non-fragment rules ─────────────────────────
         foreach (var rule in mode.Rules.OrderBy(r => r.DeclarationOrder))
         {
-            if (rule.IsFragment)
+            if (rule.IsFragment || IsPureLiteralRule(rule))
                 continue;
 
             var savedPos = stream.SavePosition();
@@ -135,6 +164,43 @@ public sealed class LexerEngine(ParserDefinition definition)
 
         return (best, bestRule, bestCommands);
     }
+
+    // ── Keyword-trie construction ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Builds one <see cref="KeywordLookup"/> trie per lexer mode from all rules that
+    /// consist exclusively of <see cref="LiteralMatch"/> alternatives.
+    /// </summary>
+    private static IReadOnlyDictionary<string, KeywordLookup> BuildKeywordTries(
+        ParserDefinition definition, bool caseInsensitive)
+    {
+        var result = new Dictionary<string, KeywordLookup>(StringComparer.Ordinal);
+        foreach (var mode in definition.Modes)
+        {
+            var trie = new KeywordLookup(caseInsensitive);
+            foreach (var rule in mode.Rules)
+            {
+                if (rule.IsFragment || !IsPureLiteralRule(rule))
+                    continue;
+
+                foreach (var alt in rule.Content.Alternatives)
+                    trie.Add(((LiteralMatch)alt.Content).Value, rule);
+            }
+
+            result[mode.Name] = trie;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when every alternative in <paramref name="rule"/>
+    /// is a bare <see cref="LiteralMatch"/> with no sequences, quantifiers, or commands.
+    /// Such rules are handled entirely by the <see cref="KeywordLookup"/> trie and
+    /// need not be tried individually in <see cref="MatchLongest"/>.
+    /// </summary>
+    private static bool IsPureLiteralRule(Rule rule) =>
+        rule.Content.Alternatives.All(static a => a.Content is LiteralMatch);
 
     /// <summary>
     /// Attempts to match <paramref name="rule"/> at the current stream position.
