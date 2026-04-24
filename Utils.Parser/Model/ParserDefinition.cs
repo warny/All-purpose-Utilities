@@ -37,6 +37,17 @@ public record ParserDefinition(
 )
 {
     /// <summary>
+    /// Normalized effective options derived from <see cref="Options"/> and <see cref="Type"/>.
+    /// Populated by <c>RuleResolver.Resolve</c>.
+    /// </summary>
+    public EffectiveGrammarOptions EffectiveOptions { get; init; } = new();
+
+    /// <summary>
+    /// Allows parser grammars to include external lexer rules provided by project-level compilation.
+    /// </summary>
+    public bool AllowExternalLexerRules { get; init; }
+
+    /// <summary>
     /// Flat lookup of all rules (both lexer and parser) by name.
     /// Populated during the resolution pass by <c>RuleResolver.Resolve</c>.
     /// </summary>

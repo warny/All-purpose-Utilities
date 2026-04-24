@@ -20,6 +20,24 @@ public enum GrammarType
 public record GrammarOptions(IReadOnlyDictionary<string, string> Values);
 
 /// <summary>
+/// Represents normalized and runtime-consumable grammar options.
+/// </summary>
+public sealed record EffectiveGrammarOptions
+{
+    /// <summary>Gets the optional token vocabulary dependency grammar name.</summary>
+    public string? TokenVocab { get; init; }
+
+    /// <summary>Gets the optional parser base class declared through <c>superClass</c>.</summary>
+    public string? ParserSuperClass { get; init; }
+
+    /// <summary>Gets the optional lexer base class declared through <c>superClass</c>.</summary>
+    public string? LexerSuperClass { get; init; }
+
+    /// <summary>Gets a value indicating whether matching is case-insensitive.</summary>
+    public bool CaseInsensitive { get; init; }
+}
+
+/// <summary>
 /// Represents a named action block declared at grammar level,
 /// such as <c>@header { import ... }</c> or <c>@members { int count = 0; }</c>.
 /// </summary>

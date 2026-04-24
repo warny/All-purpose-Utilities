@@ -34,6 +34,23 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor InternalInconsistency =
         new("UP0006", "Internal inconsistency", "Internal inconsistency: {0}", DefaultCategory);
 
+
+    /// <summary>Imported grammar could not be resolved.</summary>
+    public static readonly ParserDiagnosticDescriptor ImportedGrammarNotFound =
+        new("UP0010", "Imported grammar not found", "Unable to resolve imported grammar '{0}'.", DefaultCategory);
+
+    /// <summary>Import cycle detected while resolving grammars.</summary>
+    public static readonly ParserDiagnosticDescriptor ImportCycleDetected =
+        new("UP0011", "Import cycle detected", "Import cycle detected: {0}", DefaultCategory);
+
+    /// <summary>Parser rule declared in a lexer grammar.</summary>
+    public static readonly ParserDiagnosticDescriptor ParserRuleNotAllowedInLexerGrammar =
+        new("UP0012", "Parser rule not allowed in lexer grammar", "Parser rule '{0}' is not allowed in a lexer grammar.", DefaultCategory);
+
+    /// <summary>Lexer rule declared in a parser grammar.</summary>
+    public static readonly ParserDiagnosticDescriptor LexerRuleNotAllowedInParserGrammar =
+        new("UP0013", "Lexer rule not allowed in parser grammar", "Lexer rule '{0}' is not allowed in a parser grammar.", DefaultCategory);
+
     // Unsupported / ignored / partial support (UP1xxx)
     /// <summary>Import parsed but not resolved.</summary>
     public static readonly ParserDiagnosticDescriptor ImportParsedButNotResolved =
@@ -71,6 +88,10 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor RuntimeGeneratorMismatch =
         new("UP1009", "Runtime/generator mismatch", "Runtime and source generator support differ for '{0}'.", DefaultCategory);
 
+    /// <summary>ANTLR language option ignored by this runtime.</summary>
+    public static readonly ParserDiagnosticDescriptor UnsupportedAntlrLanguageOptionIgnored =
+        new("UP1010", "ANTLR language option ignored", "The ANTLR option 'language' is not supported by Utils.Parser and will be ignored (value: '{0}').", DefaultCategory);
+
     // Warnings (UP5xxx)
     /// <summary>Best-effort recovery used.</summary>
     public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed =
@@ -96,6 +117,11 @@ public static class ParserDiagnostics
     /// <summary>Default behavior applied.</summary>
     public static readonly ParserDiagnosticDescriptor DefaultBehaviorApplied =
         new("UP8001", "Default behavior applied", "Default behavior applied: {0}", DefaultCategory);
+
+
+    /// <summary>Imported rule ignored because a primary rule already exists.</summary>
+    public static readonly ParserDiagnosticDescriptor ImportedRuleIgnoredBecauseAlreadyDefined =
+        new("UP8002", "Imported rule ignored", "Imported rule '{0}' was ignored because the entry grammar already defines it.", DefaultCategory);
 
     // Debug (UP9xxx)
     /// <summary>Debug trace for entering a rule.</summary>
@@ -126,6 +152,10 @@ public static class ParserDiagnostics
             [UnknownLexerMode.Code] = UnknownLexerMode,
             [ParseFailure.Code] = ParseFailure,
             [InternalInconsistency.Code] = InternalInconsistency,
+            [ImportedGrammarNotFound.Code] = ImportedGrammarNotFound,
+            [ImportCycleDetected.Code] = ImportCycleDetected,
+            [ParserRuleNotAllowedInLexerGrammar.Code] = ParserRuleNotAllowedInLexerGrammar,
+            [LexerRuleNotAllowedInParserGrammar.Code] = LexerRuleNotAllowedInParserGrammar,
             [ImportParsedButNotResolved.Code] = ImportParsedButNotResolved,
             [TokensBlockIgnored.Code] = TokensBlockIgnored,
             [ChannelsBlockIgnored.Code] = ChannelsBlockIgnored,
@@ -135,12 +165,14 @@ public static class ParserDiagnostics
             [ReturnsPartiallyApplied.Code] = ReturnsPartiallyApplied,
             [LocalsIgnored.Code] = LocalsIgnored,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
+            [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,
             [FallbackStrategyUsed.Code] = FallbackStrategyUsed,
             [TrailingTokensAfterParse.Code] = TrailingTokensAfterParse,
             [AmbiguousConstructResolvedHeuristically.Code] = AmbiguousConstructResolvedHeuristically,
             [DefaultBehaviorApplied.Code] = DefaultBehaviorApplied,
+            [ImportedRuleIgnoredBecauseAlreadyDefined.Code] = ImportedRuleIgnoredBecauseAlreadyDefined,
             [EnteringRule.Code] = EnteringRule,
             [LeavingRule.Code] = LeavingRule,
             [TokenMatched.Code] = TokenMatched,

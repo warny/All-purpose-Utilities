@@ -369,9 +369,7 @@ public sealed class LexerEngine(ParserDefinition definition)
 
     /// <summary>Returns <c>true</c> when the grammar declares <c>caseInsensitive = true</c>.</summary>
     private static bool IsCaseInsensitive(ParserDefinition definition) =>
-        definition.Options?.Values.TryGetValue("caseInsensitive", out var value) == true
-        && bool.TryParse(value, out var parsedValue)
-        && parsedValue;
+        definition.EffectiveOptions.CaseInsensitive;
 
     /// <summary>Compares two characters using ordinal or case-insensitive semantics.</summary>
     private static bool CharsEqual(char left, char right, bool caseInsensitive) =>

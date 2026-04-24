@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
+using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -290,6 +292,22 @@ public class Antlr4GrammarConverterTests
         Assert.AreEqual("ABC", tokens[0].Text);
     }
 
+    [TestMethod]
+    public void ParseCaseInsensitiveFalse_KeepsExistingCaseSensitiveBehavior()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            lexer grammar A;
+            options { caseInsensitive=false; }
+            WORD : 'abc' ;
+            """);
+
+        var lexer = new LexerEngine(def);
+        var tokens = lexer.Tokenize(new StringCharStream("ABC")).ToList();
+
+        Assert.IsTrue(tokens.Count > 0);
+        Assert.IsTrue(tokens.All(token => token.RuleName == "ERROR"));
+    }
+
     // ─── 12. mode spec ────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -326,6 +344,28 @@ public class Antlr4GrammarConverterTests
         Assert.IsTrue(def.AllRules.ContainsKey("B"));
     }
 
+    [TestMethod]
+    public void ParseLexerGrammar_WithParserRule_ThrowsValidation()
+    {
+        Assert.ThrowsExactly<GrammarValidationException>(() =>
+            Antlr4GrammarConverter.Parse("""
+                lexer grammar L;
+                start : TOKEN ;
+                TOKEN : 'a' ;
+                """));
+    }
+
+    [TestMethod]
+    public void ParseParserGrammar_WithLexerRule_ThrowsValidation()
+    {
+        Assert.ThrowsExactly<GrammarValidationException>(() =>
+            Antlr4GrammarConverter.Parse("""
+                parser grammar P;
+                start : TOKEN ;
+                TOKEN : 'a' ;
+                """));
+    }
+
     // ─── 14. combined grammar type ────────────────────────────────────────────
 
     [TestMethod]
@@ -337,6 +377,74 @@ public class Antlr4GrammarConverterTests
             """);
 
         Assert.AreEqual(GrammarType.Combined, def.Type);
+    }
+
+    [TestMethod]
+    public void ParseCombinedGrammar_WithLexerAndParserRules_IsValid()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar C;
+            start : TOKEN ;
+            TOKEN : 'x' ;
+            """);
+
+        Assert.AreEqual(1, def.ParserRules.Count);
+        Assert.IsTrue(def.Modes[0].Rules.Any(rule => rule.Name == "TOKEN"));
+    }
+
+    [TestMethod]
+    public void ParseSuperClass_InParserGrammar_PopulatesParserSuperClass()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            parser grammar P;
+            options { superClass=MyBaseParser; }
+            start : 'x' ;
+            """);
+
+        Assert.AreEqual("MyBaseParser", def.EffectiveOptions.ParserSuperClass);
+        Assert.IsNull(def.EffectiveOptions.LexerSuperClass);
+    }
+
+    [TestMethod]
+    public void ParseSuperClass_InLexerGrammar_PopulatesLexerSuperClass()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            lexer grammar L;
+            options { superClass=MyBaseLexer; }
+            ID : 'a' ;
+            """);
+
+        Assert.AreEqual("MyBaseLexer", def.EffectiveOptions.LexerSuperClass);
+        Assert.IsNull(def.EffectiveOptions.ParserSuperClass);
+    }
+
+    [TestMethod]
+    public void ParseSuperClass_InCombinedGrammar_PopulatesParserSuperClass()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar C;
+            options { superClass=MyBaseParser; }
+            start : ID ;
+            ID : 'a' ;
+            """);
+
+        Assert.AreEqual("MyBaseParser", def.EffectiveOptions.ParserSuperClass);
+        Assert.IsNull(def.EffectiveOptions.LexerSuperClass);
+    }
+
+    [DataTestMethod]
+    [DataRow("CSharp")]
+    [DataRow("Java")]
+    public void ParseLanguageOption_EmitsWarning(string language)
+    {
+        var diagnostics = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse($$"""
+            grammar C;
+            options { language={{language}}; }
+            start : 'x' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.UnsupportedAntlrLanguageOptionIgnored.Code));
     }
 
     // ─── 15. grammaire invalide → exception ──────────────────────────────────

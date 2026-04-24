@@ -393,9 +393,7 @@ public sealed class ParserEngine(ParserDefinition definition)
 
     /// <summary>Returns <c>true</c> when the grammar declares <c>caseInsensitive = true</c>.</summary>
     private static bool IsCaseInsensitive(ParserDefinition definition) =>
-        definition.Options?.Values.TryGetValue("caseInsensitive", out var value) == true
-        && bool.TryParse(value, out var parsedValue)
-        && parsedValue;
+        definition.EffectiveOptions.CaseInsensitive;
 
     /// <summary>
     /// Implements the <c>~</c> negation operator at the token level: consumes the

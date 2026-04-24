@@ -12,7 +12,7 @@ public sealed class VBSyntaxCompilerContext
     /// Gets the symbol table used for source resolution.
     /// </summary>
     public IDictionary<string, object?> Symbols { get; } =
-        new Dictionary<string, object?>(StringComparer.Ordinal);
+        new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Adds or replaces a symbol in the context.

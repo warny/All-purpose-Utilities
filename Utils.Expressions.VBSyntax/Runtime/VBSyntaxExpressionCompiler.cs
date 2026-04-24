@@ -18,7 +18,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     // ── Maps VB predefined type names to CLR types ────────────────────────────
 
     private static readonly IReadOnlyDictionary<string, Type> VBTypeMap =
-        new Dictionary<string, Type>(StringComparer.Ordinal)
+        new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
         {
             ["Boolean"] = typeof(bool),
             ["Byte"]    = typeof(byte),
@@ -127,7 +127,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
             ?? throw new InvalidOperationException($"'{typeof(T).Name}' has no Invoke method.");
         Type returnType = invoke.ReturnType;
         var symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p,
-            StringComparer.Ordinal);
+            StringComparer.OrdinalIgnoreCase);
         Expression body = Compile(content, symbols);
         return Expression.Lambda(ConvertIfNeeded(body, returnType), parameters);
     }
@@ -148,7 +148,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
             ReferenceEqualityComparer.Instance);
         var compiler = CreateCompiler();
         var context = new CompilationContext(
-            symbols ?? new Dictionary<string, Expression>(StringComparer.Ordinal),
+            symbols ?? new Dictionary<string, Expression>(StringComparer.OrdinalIgnoreCase),
             runtimeContext,
             sourceText,
             this,
