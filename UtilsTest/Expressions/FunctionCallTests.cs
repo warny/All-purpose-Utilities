@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 namespace UtilsTest.Expressions;
@@ -151,7 +152,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionCall_InvokesContextDelegate()
     {
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("sum", (Func<int, int, int>)((a, b) => a + b));
 
         var expression = compiler.Compile("sum(4, 7)", context);
@@ -166,7 +167,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionCall_WithArrayArgument_ReturnsExpectedValue()
     {
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("values", new[] { 1, 2, 3 });
         context.Set("concatInt", (Func<int[], string>)(values => string.Concat(values)));
 
@@ -182,7 +183,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionCall_WithLambdaArgument_ReturnsExpectedValue()
     {
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("apply", (Func<Func<string, string>, string, string>)((f, s) => f(s)));
         context.Set("toUpper", (Func<string, string>)(s => s.ToUpperInvariant()));
         context.Set("text", "aBc");
@@ -199,7 +200,7 @@ public class FunctionCallTests
     [TestMethod]
     public void Compile_FunctionDeclarationThenCall_Compiles()
     {
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
 
         var expression = compiler.CompileSource(
             """

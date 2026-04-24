@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.Expressions;
 using Utils.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
@@ -30,6 +31,8 @@ public sealed partial class CSyntaxExpressionCompiler
         List<Expression> expressions = children.Where(static c => c is not null).Cast<Expression>().ToList();
         context.BlockScope.TryGetValue(nav.Node, out List<ParameterExpression>? blockVars);
         List<ParameterExpression> vars = blockVars ?? [];
+        expressions = RemoveUnusedDeclarationAssignments(vars, expressions, out HashSet<ParameterExpression> usedVariables);
+        vars = vars.Where(usedVariables.Contains).ToList();
 
         if (expressions.Count == 0)
         {
@@ -600,7 +603,7 @@ public sealed partial class CSyntaxExpressionCompiler
     {
         if (context.RuntimeContext is null)
         {
-            CSyntaxCompilerContext localContext = new();
+            ExpressionCompilerContext localContext = new();
             foreach (KeyValuePair<string, Expression> symbol in context.Symbols)
             {
                 localContext.Set(symbol.Key, symbol.Value);
@@ -617,7 +620,7 @@ public sealed partial class CSyntaxExpressionCompiler
             return context.Compiler.CompileSource(source, localContext);
         }
 
-        CSyntaxCompilerContext derivedContext = new();
+        ExpressionCompilerContext derivedContext = new();
         foreach (KeyValuePair<string, object?> symbol in context.RuntimeContext.Symbols)
         {
             derivedContext.Set(symbol.Key, symbol.Value);
@@ -1957,7 +1960,7 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="BlockScope">Per-node variable lists populated by descent handlers.</param>
     private sealed record CompilationContext(
         IReadOnlyDictionary<string, Expression> Symbols,
-        CSyntaxCompilerContext? RuntimeContext,
+        ExpressionCompilerContext? RuntimeContext,
         string SourceText,
         CSyntaxExpressionCompiler Compiler,
         IReadOnlyList<string> ImportedNamespaces,
@@ -2156,7 +2159,7 @@ public sealed partial class CSyntaxExpressionCompiler
     /// </summary>
     /// <param name="source">Source text to inspect.</param>
     /// <param name="context">Runtime context receiving deferred symbols.</param>
-    private static void RegisterDeferredPublicMethods(string source, CSyntaxCompilerContext context)
+    private static void RegisterDeferredPublicMethods(string source, ExpressionCompilerContext context)
     {
         foreach (Match match in Regex.Matches(
                      source,
@@ -2457,6 +2460,131 @@ public sealed partial class CSyntaxExpressionCompiler
         if (ReferenceEquals(target, value)) return target;
 
         return Expression.Assign(target, ConvertIfNeeded(value, target.Type));
+    }
+
+    /// <summary>
+    /// Removes declaration assignments for variables that are never used by non-declaration expressions.
+    /// </summary>
+    /// <param name="variables">Declared block variables.</param>
+    /// <param name="expressions">Compiled expressions in the block.</param>
+    /// <param name="usedVariables">Receives the final set of used variables.</param>
+    /// <returns>Filtered expressions preserving execution order.</returns>
+    private static List<Expression> RemoveUnusedDeclarationAssignments(
+        IReadOnlyList<ParameterExpression> variables,
+        IReadOnlyList<Expression> expressions,
+        out HashSet<ParameterExpression> usedVariables)
+    {
+        if (variables.Count == 0 || expressions.Count == 0)
+        {
+            usedVariables = [];
+            return expressions.ToList();
+        }
+
+        var variableSet = variables.ToHashSet();
+        var declarationAssignments = new List<(int Index, ParameterExpression Target, BinaryExpression Assignment)>();
+        var nonDeclarationExpressions = new List<Expression>();
+        for (int index = 0; index < expressions.Count; index++)
+        {
+            if (TryGetDeclarationAssignment(expressions[index], variableSet, out var target, out var assignment))
+            {
+                declarationAssignments.Add((index, target, assignment));
+                continue;
+            }
+
+            nonDeclarationExpressions.Add(expressions[index]);
+        }
+
+        usedVariables = CollectUsedVariables(nonDeclarationExpressions);
+
+        var declarationIndexes = declarationAssignments.Select(static declaration => declaration.Index).ToHashSet();
+        var keptDeclarationIndexes = new HashSet<int>();
+        for (int i = declarationAssignments.Count - 1; i >= 0; i--)
+        {
+            var declaration = declarationAssignments[i];
+            if (!usedVariables.Contains(declaration.Target))
+            {
+                continue;
+            }
+
+            keptDeclarationIndexes.Add(declaration.Index);
+            usedVariables.UnionWith(CollectUsedVariables([declaration.Assignment.Right]));
+        }
+
+        var result = new List<Expression>(expressions.Count);
+        for (int i = 0; i < expressions.Count; i++)
+        {
+            if (declarationIndexes.Contains(i) && !keptDeclarationIndexes.Contains(i))
+            {
+                continue;
+            }
+
+            result.Add(expressions[i]);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Attempts to identify declaration assignments in block expressions.
+    /// </summary>
+    /// <param name="expression">Expression to inspect.</param>
+    /// <param name="declaredVariables">Variables declared in the current block.</param>
+    /// <param name="target">Assignment target when recognized.</param>
+    /// <param name="assignment">Assignment expression when recognized.</param>
+    /// <returns><see langword="true"/> when expression is a declaration assignment candidate.</returns>
+    private static bool TryGetDeclarationAssignment(
+        Expression expression,
+        ISet<ParameterExpression> declaredVariables,
+        out ParameterExpression target,
+        out BinaryExpression assignment)
+    {
+        if (expression is BinaryExpression binaryExpression
+            && binaryExpression.NodeType == ExpressionType.Assign
+            && binaryExpression.Left is ParameterExpression parameterExpression
+            && declaredVariables.Contains(parameterExpression))
+        {
+            target = parameterExpression;
+            assignment = binaryExpression;
+            return true;
+        }
+
+        target = null!;
+        assignment = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// Collects variables referenced by a sequence of expressions.
+    /// </summary>
+    /// <param name="expressions">Expressions to inspect.</param>
+    /// <returns>Set of referenced variables.</returns>
+    private static HashSet<ParameterExpression> CollectUsedVariables(IEnumerable<Expression> expressions)
+    {
+        var usageVisitor = new ParameterUsageVisitor();
+        foreach (Expression expression in expressions)
+        {
+            usageVisitor.Visit(expression);
+        }
+
+        return usageVisitor.UsedVariables;
+    }
+
+    /// <summary>
+    /// Tracks parameter-expression usage inside an expression tree.
+    /// </summary>
+    private sealed class ParameterUsageVisitor : ExpressionVisitor
+    {
+        /// <summary>
+        /// Gets the set of referenced parameters.
+        /// </summary>
+        public HashSet<ParameterExpression> UsedVariables { get; } = [];
+
+        /// <inheritdoc />
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            UsedVariables.Add(node);
+            return base.VisitParameter(node);
+        }
     }
 
 }

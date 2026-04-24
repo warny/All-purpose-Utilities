@@ -42,4 +42,11 @@ public record ParserDefinition(
     /// </summary>
     public IReadOnlyDictionary<string, Rule> AllRules { get; init; }
         = new Dictionary<string, Rule>();
+
+    /// <summary>
+    /// Lookup table of direct left-recursive parser rules computed during
+    /// resolution.
+    /// </summary>
+    public IReadOnlyDictionary<string, LeftRecursiveRuleInfo> LeftRecursiveRules { get; init; }
+        = new Dictionary<string, LeftRecursiveRuleInfo>();
 }
