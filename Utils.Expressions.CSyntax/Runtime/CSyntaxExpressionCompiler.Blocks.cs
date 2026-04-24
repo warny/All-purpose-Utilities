@@ -2510,11 +2510,21 @@ public sealed partial class CSyntaxExpressionCompiler
             usedVariables.UnionWith(CollectUsedVariables([declaration.Assignment.Right]));
         }
 
+        var initializerByIndex = declarationAssignments.ToDictionary(static d => d.Index);
+
         var result = new List<Expression>(expressions.Count);
         for (int i = 0; i < expressions.Count; i++)
         {
             if (declarationIndexes.Contains(i) && !keptDeclarationIndexes.Contains(i))
             {
+                // Keep the initializer expression to preserve any side effects even though
+                // the variable itself is unused (e.g. int unused = SideEffect()).
+                Expression initializer = initializerByIndex[i].Assignment.Right;
+                if (initializer is not ConstantExpression and not ParameterExpression)
+                {
+                    result.Add(initializer);
+                }
+
                 continue;
             }
 
