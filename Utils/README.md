@@ -7,7 +7,7 @@
 - **Async** – asynchronous execution helpers
 - **Arrays** – comparison helpers, multi-dimensional utilities, specialized comparers
 - **Collections** – indexed lists, skip lists, LRU caches, dictionary extensions
-- **Expressions** – expression parsing, compilation, and lambda utilities
+- **Expressions** – expression parsing, compilation, lambda utilities, and shared compiler context (`ExpressionCompilerContext`)
 - **Files** – filesystem helpers to manipulate paths and temporary files
 - **Mathematics** – base classes for expression transformation and math functions
 - **Net** – advanced URI builder and network helpers
@@ -88,3 +88,11 @@ The package follows semantic versioning and is treated as a stable dependency fo
 - **omy.Utils.Imaging** – imaging and drawing utilities
 
 See the root README for the full package list and installation instructions.
+
+## Expression compiler context highlights
+
+`ExpressionCompilerContext` can be shared between expression compilers and supports:
+
+- dynamic symbol registration (`Set` / dynamic members),
+- callable overload storage under a single symbol name,
+- stream persistence (`WriteToStream` / `ReadFromStream`) for values and static callable entries.

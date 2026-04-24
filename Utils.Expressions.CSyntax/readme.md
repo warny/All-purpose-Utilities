@@ -9,6 +9,8 @@ The main component is `CSyntaxExpressionCompiler` in the `Utils.Expressions.CSyn
 - Compile textual expressions into .NET `Expression` trees.
 - Execute dynamic expressions with a symbol context.
 - Declare functions and reuse them in the same source.
+- Share one context instance across multiple expression compilers.
+- Persist runtime symbols (values and static callables) to/from streams.
 
 ## Installation
 
@@ -81,7 +83,7 @@ int result = function(41); // 42
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 
 compiler.CompileSource(
     """
@@ -90,8 +92,12 @@ compiler.CompileSource(
     """,
     context);
 
-var twice = (Func<double, double>)context.Get("twice");
-double result = twice(5); // 10
+if (!context.TryGet("twice", out object? twiceSymbol) || twiceSymbol is not Func<double, double> twice)
+{
+    throw new InvalidOperationException("Unable to resolve function 'twice'.");
+}
+
+double result = twice(5d); // 10
 ```
 
 ### 6) Lambda in context + invocation
@@ -101,7 +107,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
 Expression expression = compiler.Compile("increment(41)", context);
@@ -116,7 +122,7 @@ double result = lambda(); // 42
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 
 compiler.CompileSource(
     """
@@ -128,7 +134,11 @@ compiler.CompileSource(
     """,
     context);
 
-var abs = (Func<double, double>)context.Get("abs");
+if (!context.TryGet("abs", out object? absSymbol) || absSymbol is not Func<double, double> abs)
+{
+    throw new InvalidOperationException("Unable to resolve function 'abs'.");
+}
+
 double a = abs(3);   // 3
 double b = abs(-3);  // 3
 ```
@@ -139,7 +149,7 @@ double b = abs(-3);  // 3
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 
 compiler.CompileSource(
     """
@@ -153,7 +163,11 @@ compiler.CompileSource(
     """,
     context);
 
-var sumTo = (Func<int, double>)context.Get("sumTo");
+if (!context.TryGet("sumTo", out object? sumToSymbol) || sumToSymbol is not Func<int, double> sumTo)
+{
+    throw new InvalidOperationException("Unable to resolve function 'sumTo'.");
+}
+
 double result = sumTo(4); // 10
 ```
 
@@ -163,7 +177,7 @@ double result = sumTo(4); // 10
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-var context = new CSyntaxCompilerContext();
+var context = new ExpressionCompilerContext();
 context.Set("values", new[] { 1, 2, 3, 4 });
 
 compiler.CompileSource(
@@ -177,12 +191,36 @@ compiler.CompileSource(
     """,
     context);
 
-var sumValues = (Func<int>)context.Get("sumValues");
+if (!context.TryGet("sumValues", out object? sumValuesSymbol) || sumValuesSymbol is not Func<int> sumValues)
+{
+    throw new InvalidOperationException("Unable to resolve function 'sumValues'.");
+}
+
 int result = sumValues(); // 10
+```
+
+### 10) Persist and restore a shared context
+
+```csharp
+using Utils.Expressions;
+using Utils.Expressions.CSyntax.Runtime;
+
+var compiler = new CSyntaxExpressionCompiler();
+var context = new ExpressionCompilerContext();
+context.Set("add", (Func<int, int, int>)((a, b) => a + b));
+compiler.CompileSource("public int twice(int x) { add(x, x); }", context);
+
+using MemoryStream stream = new();
+context.WriteToStream(stream);
+stream.Position = 0;
+
+ExpressionCompilerContext restored = ExpressionCompilerContext.ReadFromStream(stream);
+Expression expression = compiler.Compile("twice(21)", restored);
+int result = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile()(); // 42
 ```
 
 ## Notes
 
 - The compiler accepts C-like syntax (arithmetic operations, blocks, `if`, `for`, `foreach`, functions, etc.).
 - The final expression type depends on context and generated LINQ conversions.
-- For advanced scenarios, use `CSyntaxCompilerContext` to register symbols and functions.
+- For advanced scenarios, use `ExpressionCompilerContext` to register symbols, overloaded callables, and persisted runtime values.

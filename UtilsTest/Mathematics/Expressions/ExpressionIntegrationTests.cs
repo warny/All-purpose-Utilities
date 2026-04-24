@@ -12,7 +12,7 @@ namespace UtilsTest.Mathematics.Expressions;
 public class ExpressionIntegrationTests
 {
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
-    readonly ExpressionIntegration integration = new ExpressionIntegration("x");
+    readonly ExpressionIntegration<double> integration = new ExpressionIntegration<double>("x");
     readonly ExpressionSimplifier simplifier = new ExpressionSimplifier();
 
     [TestMethod]
@@ -55,4 +55,40 @@ public class ExpressionIntegrationTests
 
         Assert.AreEqual(10d, lambda(3d), 1e-9);
     }
+
+
+    /// <summary>
+    /// Ensures generic integration also works for <see cref="float"/> lambdas.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_FloatLambda_WorksWithGenericIntegration()
+    {
+        ExpressionIntegration<float> floatIntegration = new("x");
+        Expression<Func<float, float>> function = x => 1f;
+
+        var result = (Expression<Func<float, float>>)floatIntegration.Integrate(function);
+        var integral = result.Compile();
+
+        float[] samples = [-2f, -0.5f, 0f, 1.25f];
+        foreach (float sample in samples)
+        {
+            float expected = sample;
+            float actual = integral(sample);
+            Assert.AreEqual(expected, actual, 5e-3f, $"Float integral mismatch at x={sample}.");
+        }
+    }
+
+    /// <summary>
+    /// Ensures the generic extension entry-point can integrate with a float type parameter.
+    /// </summary>
+    [TestMethod]
+    public void IntegrateExtension_GenericFloat_Works()
+    {
+        Expression<Func<float, float>> function = x => 1f;
+        var integrated = (Expression<Func<float, float>>)function.Integrate<float>("x");
+        Func<float, float> compiled = integrated.Compile();
+
+        Assert.AreEqual(3f, compiled(3f), 5e-3f);
+    }
+
 }

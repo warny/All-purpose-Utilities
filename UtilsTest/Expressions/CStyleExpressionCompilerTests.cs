@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
@@ -192,13 +193,30 @@ public class CSyntaxExpressionCompilerTests
     }
 
     /// <summary>
+    /// Ensures unused local declarations are ignored when building block variables.
+    /// </summary>
+    [TestMethod]
+    public void Compile_BlockWithUnusedDeclaration_IgnoresUnusedVariable()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("{ int used = 1; int unused = 2; used }");
+
+        Assert.IsInstanceOfType<BlockExpression>(expression);
+        var block = (BlockExpression)expression;
+        Assert.IsFalse(block.Variables.Any(variable => variable.Name == "unused"));
+
+        Func<int> lambda = Expression.Lambda<Func<int>>(Expression.Convert(block, typeof(int))).Compile();
+        Assert.AreEqual(1, lambda());
+    }
+
+    /// <summary>
     /// Ensures that explicit function declaration syntax can be compiled.
     /// </summary>
     [TestMethod]
     public void Compile_FunctionDeclaration_Compiles()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         Expression declaration = compiler.Compile("public double add(double a, double b) { a + b }", context);
         Assert.IsNotNull(declaration);
     }
@@ -210,7 +228,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_FunctionCallingAnotherFunction_ResolvesForwardReference()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         compiler.CompileSource(
             """
             public double twice(double x) { add(x, x) }
@@ -231,7 +249,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_FunctionDelegateReference_ReturnsDelegateExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("add", (Func<double, double, double>)((a, b) => a + b));
 
         Expression invocation = compiler.Compile("add(2, 3)", context);
@@ -246,7 +264,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_LambdaSymbolReference_ReturnsDelegateExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("increment", (Func<double, double>)(x => x + 1d));
 
         Expression invocation = compiler.Compile("increment(41)", context);
@@ -266,7 +284,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_SupportedControlStructures_ProducesExpressionNode(string source)
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
 
         Expression expression = compiler.Compile(source, context);
         Assert.IsNotNull(expression);
@@ -279,7 +297,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_ForLoop_ProducesExpressionNode()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         ParameterExpression iterator = Expression.Variable(typeof(int), "i");
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
         context.Set("i", iterator);
@@ -296,7 +314,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_ForeachLoop_ProducesExpressionNode()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
         ParameterExpression iterator = Expression.Variable(typeof(int), "item");
         context.Set("sum", accumulator);
@@ -319,7 +337,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_MemberAccess_CompilesSuccessfully(string source)
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
         context.Set("sample", new SampleContainer());
 
         Expression expression = compiler.Compile(source, context);
@@ -354,7 +372,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_LambdaExpressionSyntax_Compiles()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new CSyntaxCompilerContext();
+        var context = new ExpressionCompilerContext();
 
         Expression expression = compiler.Compile("x => x + 1", context);
         Assert.IsNotNull(expression);
@@ -371,6 +389,39 @@ public class CSyntaxExpressionCompilerTests
         Func<int, int> function = expression.Compile();
 
         Assert.AreEqual(42, function(41));
+    }
+
+    /// <summary>
+    /// Ensures that the initializer of an unused variable is still executed for its side effects.
+    /// </summary>
+    [TestMethod]
+    public void CompileSource_UnusedVariableWithSideEffect_StillExecutesInitializer()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new ExpressionCompilerContext();
+        int callCount = 0;
+        context.Set("sideEffect", (Func<int>)(() => { callCount++; return 42; }));
+
+        compiler.CompileSource(
+            """
+            {
+                int unused = sideEffect();
+                1;
+            }
+            """,
+            context);
+
+        // Force compilation and execution
+        var source = """
+            {
+                int unused = sideEffect();
+                1;
+            }
+            """;
+        var expr = compiler.CompileSource(source, context);
+        Expression.Lambda<Func<int>>(Expression.Convert(expr, typeof(int))).Compile().Invoke();
+
+        Assert.IsTrue(callCount > 0, "The initializer side effect must still execute even when the variable is unused.");
     }
 
     /// <summary>

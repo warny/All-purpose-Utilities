@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Utils.Objects;
 using Utils.Parser.Runtime;
 
+using Utils.Expressions;
 namespace Utils.Expressions.CSyntax.Runtime;
 
 /// <summary>
@@ -234,7 +235,7 @@ public sealed partial class CSyntaxExpressionCompiler
         {
             signature = InferParametersFromBody(signature);
         }
-        var bodyContext = new CSyntaxCompilerContext();
+        var bodyContext = new ExpressionCompilerContext();
         foreach (KeyValuePair<string, object?> runtimeSymbol in context.RuntimeContext.Symbols)
         {
             bodyContext.Set(runtimeSymbol.Key, runtimeSymbol.Value);
@@ -275,8 +276,6 @@ public sealed partial class CSyntaxExpressionCompiler
         if (deferredHolder is not null && deferredDelegate is not null)
         {
             deferredHolder.Target = compiledDelegate;
-            context.RuntimeContext.Set(signature.Name, deferredDelegate);
-            context.RuntimeContext.Set(GetDeferredHolderSymbolName(signature.Name), deferredHolder);
             return Expression.Empty();
         }
 

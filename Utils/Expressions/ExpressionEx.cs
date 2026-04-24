@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 
 namespace Utils.Expressions;
@@ -14,6 +15,15 @@ namespace Utils.Expressions;
 /// </summary>
 public static class ExpressionEx
 {
+    /// <summary>
+    /// Creates a numeric constant expression from a <see cref="double"/> value for the provided numeric type.
+    /// </summary>
+    /// <typeparam name="TNumber">Numeric target type.</typeparam>
+    /// <param name="value">Source value.</param>
+    /// <returns>Constant expression typed as <typeparamref name="TNumber"/>.</returns>
+    public static ConstantExpression CreateConstant<TNumber>(TNumber value) where TNumber : INumberBase<TNumber>
+        => Expression.Constant(value);
+
     /// <summary>
     /// Create an expression call on an object given the specified arguments
     /// </summary>
@@ -159,6 +169,11 @@ public static class ExpressionEx
         breakLoop ??= Expression.Label("__break__");
         continueLoop ??= Expression.Label("__continue__");
 
+        if (TryBuildIndexBasedLoop(iterator, enumerable, iteration, breakLoop, continueLoop, out var indexLoop))
+        {
+            return indexLoop;
+        }
+
         Type enumerableType = (enumerable.Type.IsGenericType && enumerable.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>)
                 ? enumerable.Type
                 : null)
@@ -195,6 +210,120 @@ public static class ExpressionEx
     }
 
     /// <summary>
+    /// Attempts to build a <c>for</c>-style loop when the target can be accessed through index and length/count.
+    /// This path is preferred for span-compatible targets.
+    /// </summary>
+    /// <param name="iterator">Loop item variable.</param>
+    /// <param name="enumerable">Source enumerable variable.</param>
+    /// <param name="iteration">Body for each item.</param>
+    /// <param name="breakLoop">Break label.</param>
+    /// <param name="continueLoop">Continue label.</param>
+    /// <param name="loopExpression">Resulting index-based loop expression when successful.</param>
+    /// <returns><see langword="true"/> when an index-based loop was built.</returns>
+    private static bool TryBuildIndexBasedLoop(
+        ParameterExpression iterator,
+        ParameterExpression enumerable,
+        Expression iteration,
+        LabelTarget breakLoop,
+        LabelTarget continueLoop,
+        out Expression loopExpression)
+    {
+        var source = Expression.Variable(enumerable.Type, "__source__");
+        var index = Expression.Variable(typeof(int), "__index__");
+
+        if (!TryGetIndexBasedAccess(source, index, out var lengthExpression, out var currentItemExpression))
+        {
+            loopExpression = null;
+            return false;
+        }
+
+        var itemAssignement = iterator.Type == currentItemExpression.Type
+            ? Expression.Assign(iterator, currentItemExpression)
+            : Expression.Assign(iterator, Expression.Convert(currentItemExpression, iterator.Type));
+
+        loopExpression = Expression.Block(
+            [source, iterator],
+            Expression.Assign(source, enumerable),
+            For(
+                index,
+                Expression.Constant(0),
+                Expression.LessThan(index, lengthExpression),
+                [Expression.PostIncrementAssign(index)],
+                Expression.Block(itemAssignement, iteration),
+                breakLoop,
+                continueLoop));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Attempts to resolve length/count and index access expressions for index-based iteration.
+    /// </summary>
+    /// <param name="source">Source expression to iterate.</param>
+    /// <param name="index">Index expression.</param>
+    /// <param name="lengthExpression">Resolved length/count expression.</param>
+    /// <param name="currentItemExpression">Resolved indexed item expression.</param>
+    /// <returns><see langword="true"/> when index-based access is supported.</returns>
+    private static bool TryGetIndexBasedAccess(Expression source, Expression index, out Expression lengthExpression, out Expression currentItemExpression)
+    {
+        if (source.Type.IsArray)
+        {
+            lengthExpression = Expression.ArrayLength(source);
+            currentItemExpression = Expression.ArrayIndex(source, index);
+            return true;
+        }
+
+        var lengthProperty = source.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance);
+        if (lengthProperty is not null
+            && lengthProperty.PropertyType == typeof(int)
+            && TryGetIndexerAccess(source, index, out currentItemExpression))
+        {
+            lengthExpression = Expression.Property(source, lengthProperty);
+            return true;
+        }
+
+        var countProperty = source.Type.GetProperty("Count", BindingFlags.Public | BindingFlags.Instance);
+        if (countProperty is not null
+            && countProperty.PropertyType == typeof(int)
+            && TryGetIndexerAccess(source, index, out currentItemExpression))
+        {
+            lengthExpression = Expression.Property(source, countProperty);
+            return true;
+        }
+
+        lengthExpression = null;
+        currentItemExpression = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to build indexer access using an integer index.
+    /// </summary>
+    /// <param name="source">Source expression.</param>
+    /// <param name="index">Integer index expression.</param>
+    /// <param name="access">Indexed access expression.</param>
+    /// <returns><see langword="true"/> when an indexer is available.</returns>
+    private static bool TryGetIndexerAccess(Expression source, Expression index, out Expression access)
+    {
+        var indexer = source.Type.GetDefaultMembers()
+            .OfType<PropertyInfo>()
+            .FirstOrDefault(propertyInfo =>
+            {
+                var indexParameters = propertyInfo.GetIndexParameters();
+                return indexParameters.Length == 1 && indexParameters[0].ParameterType == typeof(int);
+            });
+
+        if (indexer is null)
+        {
+            access = null;
+            return false;
+        }
+
+        access = Expression.MakeIndex(source, indexer, [index]);
+        return true;
+    }
+
+    /// <summary>
     /// Builds a traditional <c>for</c> loop expression.
     /// </summary>
     /// <param name="iterator">Loop variable that is initialized, tested, and incremented.</param>
@@ -213,7 +342,8 @@ public static class ExpressionEx
         var loopExpressions = new List<Expression>
         {
             Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop)),
-            iteration
+            iteration,
+            Expression.Label(continueLoop)
         };
 
         if (next is { Length: > 0 })
@@ -226,7 +356,7 @@ public static class ExpressionEx
             Expression.Assign(iterator, init),
             Expression.Loop(
                 Expression.Block(loopExpressions),
-                breakLoop, continueLoop
+                breakLoop
             )
         );
     }
@@ -269,9 +399,10 @@ public static class ExpressionEx
         return Expression.Loop(
             Expression.Block(
                 iteration,
+                Expression.Label(continueLoop),
                 Expression.IfThen(Expression.Not(test), Expression.Goto(breakLoop))
             ),
-            breakLoop, continueLoop
+            breakLoop
         );
     }
 

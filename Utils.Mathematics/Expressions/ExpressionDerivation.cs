@@ -1,4 +1,7 @@
-﻿using System.Linq.Expressions;
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Numerics;
 using Utils.Expressions;
 
 namespace Utils.Mathematics.Expressions;
@@ -6,15 +9,17 @@ namespace Utils.Mathematics.Expressions;
 /// <summary>
 /// Provides single-variable symbolic differentiation for LINQ expression trees.
 /// </summary>
-public class ExpressionDerivation : ExpressionTransformer
+public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloatingPoint<T>
 {
+    private static readonly double FiniteDifferenceEpsilon = typeof(T) == typeof(float) ? 1e-4 : 1e-7;
+
     /// <summary>
     /// Gets the name of the parameter that will be considered the differentiation variable.
     /// </summary>
     public string ParameterName { get; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExpressionDerivation"/> class for the specified parameter.
+    /// Initializes a new instance of the <see cref="ExpressionDerivation{T}"/> class for the specified parameter.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
     public ExpressionDerivation(string parameterName)
@@ -29,6 +34,7 @@ public class ExpressionDerivation : ExpressionTransformer
     /// <returns>The simplified derivative expression.</returns>
     public Expression Derivate(LambdaExpression e)
     {
+        ArgumentNullException.ThrowIfNull(e);
         return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
     }
 
@@ -44,7 +50,7 @@ public class ExpressionDerivation : ExpressionTransformer
         object value
     )
     {
-        return Expression.Constant(0.0);
+        return ExpressionEx.CreateConstant(T.CreateChecked(0d));
     }
 
     /// <summary>
@@ -59,11 +65,11 @@ public class ExpressionDerivation : ExpressionTransformer
     {
         if (e.Name == ParameterName)
         {
-            return Expression.Constant(1.0);
+            return ExpressionEx.CreateConstant(T.CreateChecked(1d));
         }
         else
         {
-            return Expression.Constant(0.0);
+            return ExpressionEx.CreateConstant(T.CreateChecked(0d));
         }
     }
 
@@ -190,7 +196,7 @@ public class ExpressionDerivation : ExpressionTransformer
             Expression.Subtract(
                 Expression.Multiply(left, Transform(right)),
                 Expression.Multiply(Transform(left), right)),
-            Expression.Power(right, Expression.Constant(2.0)));
+            Expression.Power(right, ExpressionEx.CreateConstant(T.CreateChecked(2d))));
     }
 
     /// <summary>
@@ -209,7 +215,7 @@ public class ExpressionDerivation : ExpressionTransformer
         return Expression.Multiply(
             right,
             Expression.Multiply(
-                Expression.Power(left, Expression.Subtract(right, Expression.Constant(1.0))),
+                Expression.Power(left, Expression.Subtract(right, ExpressionEx.CreateConstant(T.CreateChecked(1d)))),
                 Transform(left)
                 )
             );
@@ -232,14 +238,14 @@ public class ExpressionDerivation : ExpressionTransformer
             Expression.Multiply(
                 Expression.Power(
                     left,
-                    Expression.Subtract(right, Expression.Constant(1.0))
+                    Expression.Subtract(right, ExpressionEx.CreateConstant(T.CreateChecked(1d)))
                 ),
                 Expression.Add(
                     Expression.Multiply(right, Transform(left)),
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
-                            Expression.Call(typeof(double).GetMethod(nameof(double.Log), [typeof(double)]), left),
+                            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), left),
                             Transform(right)
                         )
                     )
@@ -262,7 +268,7 @@ public class ExpressionDerivation : ExpressionTransformer
         return
             Expression.Multiply(
                 Transform(operand),
-                Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), operand)
+                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), operand)
             );
     }
 
@@ -297,7 +303,7 @@ public class ExpressionDerivation : ExpressionTransformer
         return Expression.Divide(
             operand,
             Expression.Multiply(
-                Expression.Constant(Math.Log(10)),
+                ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10d))),
                 Transform(operand)
             )
         );
@@ -316,7 +322,7 @@ public class ExpressionDerivation : ExpressionTransformer
     {
         return Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand));
+            Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand));
     }
 
     /// <summary>
@@ -333,7 +339,7 @@ public class ExpressionDerivation : ExpressionTransformer
         return Expression.Negate(
             Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), operand)));
+            Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand)));
     }
 
     /// <summary>
@@ -348,12 +354,101 @@ public class ExpressionDerivation : ExpressionTransformer
         Expression operand)
     {
         return Transform(Expression.Divide(
-             Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)]), operand),
-             Expression.Call(typeof(double).GetMethod(nameof(double.Cos), [typeof(double)]), operand)
+             Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand),
+             Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand)
             ).Simplify()
         );
     }
 
+    /// <summary>
+    /// Handles method-call derivatives that are not covered by specific derivative rules.
+    /// For single-argument <see cref="double"/> functions, this applies a centered finite-difference
+    /// approximation and multiplies by the inner derivative.
+    /// </summary>
+    /// <param name="e">Expression currently being finalized.</param>
+    /// <param name="parameters">Prepared child expressions.</param>
+    /// <returns>A derivative expression when supported.</returns>
+    protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        if (e is MethodCallExpression methodCallExpression)
+        {
+            return DeriveUnknownMethodCall(methodCallExpression, parameters);
+        }
+
+        throw new NotSupportedException($"The expression '{e.NodeType}' is not supported by {nameof(ExpressionDerivation<T>)}.");
+    }
+
+    /// <summary>
+    /// Applies a finite-difference fallback derivative for unknown single-argument <see cref="double"/> methods.
+    /// </summary>
+    /// <param name="methodCallExpression">Method call to derive.</param>
+    /// <param name="parameters">Prepared arguments for the call.</param>
+    /// <returns>The derivative expression using centered finite difference.</returns>
+    private Expression DeriveUnknownMethodCall(MethodCallExpression methodCallExpression, Expression[] parameters)
+    {
+        if (methodCallExpression.Method.ReturnType != typeof(double)
+            || methodCallExpression.Method.GetParameters().Length != 1
+            || methodCallExpression.Method.GetParameters()[0].ParameterType != typeof(double))
+        {
+            throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.");
+        }
+
+        Expression operand = parameters[0];
+        if (!ContainsParameter(operand))
+        {
+            return ExpressionEx.CreateConstant(T.CreateChecked(0d));
+        }
+
+        var epsilon = Expression.Constant(FiniteDifferenceEpsilon);
+        var twoEpsilon = Expression.Constant(2.0 * FiniteDifferenceEpsilon);
+        var operandDerivative = Transform(operand);
+
+        var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
+        var minus = Expression.Call(methodCallExpression.Method, Expression.Subtract(operand, epsilon));
+        var finiteDifference = Expression.Divide(Expression.Subtract(plus, minus), twoEpsilon);
+
+        return Expression.Multiply(finiteDifference, operandDerivative);
+    }
+
+    /// <summary>
+    /// Determines whether an expression depends on the configured differentiation parameter.
+    /// </summary>
+    /// <param name="expression">Expression to inspect.</param>
+    /// <returns><see langword="true"/> when the expression depends on the target parameter; otherwise <see langword="false"/>.</returns>
+    private bool ContainsParameter(Expression expression)
+    {
+        return expression switch
+        {
+            ParameterExpression parameterExpression => parameterExpression.Name == ParameterName,
+            UnaryExpression unaryExpression => ContainsParameter(unaryExpression.Operand),
+            BinaryExpression binaryExpression => ContainsParameter(binaryExpression.Left) || ContainsParameter(binaryExpression.Right),
+            MethodCallExpression methodCallExpression => methodCallExpression.Arguments.Any(ContainsParameter),
+            InvocationExpression invocationExpression => invocationExpression.Arguments.Any(ContainsParameter),
+            _ => false
+        };
+    }
+
 }
+
+
+
+/// <summary>
+/// Provides the historical non-generic entry-point for double-based derivation.
+/// </summary>
+public class ExpressionDerivation : ExpressionDerivation<double>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpressionDerivation"/> class.
+    /// </summary>
+    /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
+    public ExpressionDerivation(string parameterName)
+        : base(parameterName)
+    {
+    }
+}
+
 
 #pragma warning restore CS8604

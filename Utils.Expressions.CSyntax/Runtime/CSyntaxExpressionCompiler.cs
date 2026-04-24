@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections;
 using System.Dynamic;
+using Utils.Expressions;
 using Utils.Collections;
 using Utils.Objects;
 using Utils.Parser.Runtime;
@@ -45,7 +46,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">C-like source content.</param>
     /// <param name="context">Runtime compilation context.</param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, CSyntaxCompilerContext context)
+    public Expression Compile(string content, ExpressionCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
@@ -64,7 +65,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="source">Source unit containing one or many C-like instructions.</param>
     /// <param name="context">Runtime compilation context.</param>
     /// <returns>Compiled expression for the full source unit.</returns>
-    public Expression CompileSource(string source, CSyntaxCompilerContext context)
+    public Expression CompileSource(string source, ExpressionCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(context);
@@ -204,7 +205,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
         ParseNode root,
         IReadOnlyDictionary<string, Expression>? symbols,
         string sourceText,
-        CSyntaxCompilerContext? runtimeContext,
+        ExpressionCompilerContext? runtimeContext,
         List<string>? importedNamespaces = null)
     {
         importedNamespaces ??= ExtractUsingDirectives(sourceText);
