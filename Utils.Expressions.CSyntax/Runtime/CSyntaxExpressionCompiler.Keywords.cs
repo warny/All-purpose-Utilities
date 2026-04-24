@@ -276,8 +276,6 @@ public sealed partial class CSyntaxExpressionCompiler
         if (deferredHolder is not null && deferredDelegate is not null)
         {
             deferredHolder.Target = compiledDelegate;
-            context.RuntimeContext.Set(signature.Name, deferredDelegate);
-            context.RuntimeContext.Set(GetDeferredHolderSymbolName(signature.Name), deferredHolder);
             return Expression.Empty();
         }
 
