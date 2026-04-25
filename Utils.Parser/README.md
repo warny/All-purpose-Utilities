@@ -24,6 +24,18 @@ ANTLR4 `.g4` support is currently **partial**.
 - ⚠️ Full ANTLR4 compatibility is not guaranteed for every advanced syntax/rule.
 - ✅ If you need stricter build-time guarantees, also use `omy.Utils.Parser.Generators`.
 
+### Known missing or limited features
+
+The items below are not guaranteed yet and should be considered missing or limited support areas:
+
+- Full ANTLR4 parity across all grammar constructs (combined/parser/lexer edge cases).
+- Embedded target-language actions and action-dependent behavior parity with ANTLR4 toolchains.
+- Complete semantic predicate and advanced precedence behavior parity in all grammar shapes.
+- Full interoperability parity for complex multi-file grammar composition/import scenarios.
+- Complete error-recovery parity with ANTLR4-generated parsers in highly ambiguous grammars.
+
+If a grammar relies on one of these areas, validate it with targeted tests before production rollout.
+
 ## Key concepts
 
 | Class / Type | Role |
