@@ -16,13 +16,13 @@ dotnet add package omy.Utils.Parser
 
 - net9.0
 
-## État du support des fichiers `.g4`
+## `.g4` file support status
 
-Le support ANTLR4 `.g4` est **partiel** à ce stade.
+ANTLR4 `.g4` support is currently **partial**.
 
-- ✅ Les scénarios couverts par les tests `UtilsTest.Parser` sont supportés.
-- ⚠️ La compatibilité ANTLR4 complète n'est pas garantie pour toutes les syntaxes/règles avancées.
-- ✅ Si vous avez besoin d'un flux plus strict côté build, utilisez aussi `omy.Utils.Parser.Generators`.
+- ✅ Scenarios covered by the `UtilsTest.Parser` test suite are supported.
+- ⚠️ Full ANTLR4 compatibility is not guaranteed for every advanced syntax/rule.
+- ✅ If you need stricter build-time guarantees, also use `omy.Utils.Parser.Generators`.
 
 ## Key concepts
 

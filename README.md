@@ -82,19 +82,19 @@ Console.WriteLine(builder.ToString());
 - [GitHub About proposal](docs/github-about.md)
 - [Changelog](CHANGELOG.md)
 - [Base package README (`omy.Utils`)](Utils/README.md)
-- [`.g4` support status (`Utils.Parser`)](Utils.Parser/README.md#etat-du-support-des-fichiers-g4)
+- [`.g4` support status (`Utils.Parser`)](Utils.Parser/README.md#g4-file-support-status)
 
-## État du support des fichiers `.g4`
+## `.g4` file support status
 
-Le support ANTLR4 dans ce dépôt est **en progression** et n'est **pas encore 100% compatible ANTLR4**.
+ANTLR4 support in this repository is **still evolving** and is **not yet 100% ANTLR4-compatible**.
 
-- ✅ Utilisation recommandée: grammaires `.g4` validées par les tests du projet `Utils.Parser`.
-- ⚠️ Certaines constructions ANTLR4 avancées peuvent être partiellement supportées, ou non supportées selon les versions.
-- ✅ Pour un usage stable en production, privilégier:
-  - les patterns déjà couverts par les tests unitaires,
-  - ou la génération/validation en amont via `omy.Utils.Parser.Generators`.
+- ✅ Recommended usage: `.g4` grammars already validated by the `Utils.Parser` test suite.
+- ⚠️ Some advanced ANTLR4 constructs may be partially supported or unsupported, depending on version and scenario.
+- ✅ For stable production usage, prefer:
+  - patterns already covered by automated tests,
+  - or build-time generation/validation through `omy.Utils.Parser.Generators`.
 
-Consultez le README `Utils.Parser` pour les détails et la portée exacte du support actuel.
+See the `Utils.Parser` README for details about current support scope.
 
 ## Consumer vs contributor requirements
 
