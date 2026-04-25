@@ -1,7 +1,7 @@
 # Utils.Parser
 
-A **self-describing universal parser framework** for .NET that turns any ANTLR4 `.g4`
-grammar into a tokenizer and parse-tree builder — no code generation required.
+A parser framework for .NET that can load and execute a **subset of ANTLR4 `.g4` grammars**
+at runtime (without mandatory code generation).
 
 ## Install
 
@@ -15,6 +15,14 @@ dotnet add package omy.Utils.Parser
 ## Supported frameworks
 
 - net9.0
+
+## État du support des fichiers `.g4`
+
+Le support ANTLR4 `.g4` est **partiel** à ce stade.
+
+- ✅ Les scénarios couverts par les tests `UtilsTest.Parser` sont supportés.
+- ⚠️ La compatibilité ANTLR4 complète n'est pas garantie pour toutes les syntaxes/règles avancées.
+- ✅ Si vous avez besoin d'un flux plus strict côté build, utilisez aussi `omy.Utils.Parser.Generators`.
 
 ## Key concepts
 
@@ -54,9 +62,10 @@ var definition = Antlr4GrammarConverter.Parse("""
 
 ```csharp
 using Utils.Parser.Runtime;
+using System.IO;
 
 var lexer  = new LexerEngine(definition);
-var tokens = lexer.Tokenize(new StringCharStream("1 + 2 * 3")).ToList();
+var tokens = lexer.Tokenize(new StringReader("1 + 2 * 3")).ToList();
 
 foreach (var token in tokens)
     Console.WriteLine($"{token.RuleName,-12} {token.Text}");

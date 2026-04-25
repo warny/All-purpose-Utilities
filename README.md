@@ -23,7 +23,7 @@ It is designed for consumers who want small, task-oriented packages (networking,
 | `Utils.Net` | `omy.Utils.Net` | Networking protocols and helpers. | [Utils.Net/README.md](Utils.Net/README.md) |
 | `Utils.NumberToString` | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | [Utils.NumberToString/README.md](Utils.NumberToString/README.md) |
 | `Utils.OData` | `omy.Utils.OData` | OData helpers/runtime pieces. | [Utils.OData/README.md](Utils.OData/README.md) |
-| `Utils.Parser` | `omy.Utils.Parser` | Parser runtime helpers and tokenization. | [Utils.Parser/README.md](Utils.Parser/README.md) |
+| `Utils.Parser` | `omy.Utils.Parser` | Parser runtime and tokenizer with **partial ANTLR4 `.g4` support** (see support status). | [Utils.Parser/README.md](Utils.Parser/README.md) |
 | `Utils.Parser.Diagnostics` | `omy.Utils.Parser.Diagnostics` | Shared parser diagnostics contracts for runtime and generators. | [Utils.Parser.Diagnostics/README.md](Utils.Parser.Diagnostics/README.md) |
 | `Utils.Reflection` | `omy.Utils.Reflection` | Reflection/process-isolation helpers. | [Utils.Reflection/README.md](Utils.Reflection/README.md) |
 | `Utils.VirtualMachine` | `omy.Utils.VirtualMachine` | VM and opcode helper abstractions. | [Utils.VirtualMachine/README.md](Utils.VirtualMachine/README.md) |
@@ -82,6 +82,19 @@ Console.WriteLine(builder.ToString());
 - [GitHub About proposal](docs/github-about.md)
 - [Changelog](CHANGELOG.md)
 - [Base package README (`omy.Utils`)](Utils/README.md)
+- [`.g4` support status (`Utils.Parser`)](Utils.Parser/README.md#etat-du-support-des-fichiers-g4)
+
+## État du support des fichiers `.g4`
+
+Le support ANTLR4 dans ce dépôt est **en progression** et n'est **pas encore 100% compatible ANTLR4**.
+
+- ✅ Utilisation recommandée: grammaires `.g4` validées par les tests du projet `Utils.Parser`.
+- ⚠️ Certaines constructions ANTLR4 avancées peuvent être partiellement supportées, ou non supportées selon les versions.
+- ✅ Pour un usage stable en production, privilégier:
+  - les patterns déjà couverts par les tests unitaires,
+  - ou la génération/validation en amont via `omy.Utils.Parser.Generators`.
+
+Consultez le README `Utils.Parser` pour les détails et la portée exacte du support actuel.
 
 ## Consumer vs contributor requirements
 
