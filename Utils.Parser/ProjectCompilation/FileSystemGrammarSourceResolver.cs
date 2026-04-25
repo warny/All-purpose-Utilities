@@ -92,24 +92,9 @@ public sealed class FileSystemGrammarSourceResolver : IGrammarSourceResolver
     }
 
     /// <summary>
-    /// Opens a grammar file and delegates stream processing to a dedicated method.
+    /// Reads all text from a grammar file.
     /// </summary>
     /// <param name="path">File path to read.</param>
     /// <returns>File content.</returns>
-    private static string ReadAllText(string path)
-    {
-        using var stream = File.OpenRead(path);
-        return ReadAllText(stream);
-    }
-
-    /// <summary>
-    /// Reads all text from an open stream.
-    /// </summary>
-    /// <param name="stream">Input stream.</param>
-    /// <returns>Decoded text.</returns>
-    private static string ReadAllText(Stream stream)
-    {
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
-    }
+    private static string ReadAllText(string path) => File.ReadAllText(path);
 }
