@@ -68,6 +68,25 @@ public sealed class Antlr4GrammarConverter
     /// Thrown when the input cannot be parsed as a valid ANTLR4 grammar.
     /// </exception>
     public static ParserDefinition Parse([StringSyntax("ANTLR4")] string grammarText, DiagnosticBag? diagnostics = null)
+        => Parse(grammarText, diagnostics, resolve: true);
+
+    /// <summary>
+    /// Parses an ANTLR4 grammar text without running final cross-rule resolution.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source (<c>.g4</c> content).</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <returns>An unresolved <see cref="ParserDefinition"/> suitable for project-level merging.</returns>
+    public static ParserDefinition ParseUnresolved([StringSyntax("ANTLR4")] string grammarText, DiagnosticBag? diagnostics = null)
+        => Parse(grammarText, diagnostics, resolve: false);
+
+    /// <summary>
+    /// Full pipeline with optional resolution step.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source (<c>.g4</c> content).</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <param name="resolve"><c>true</c> to run <c>RuleResolver.Resolve</c>; otherwise returns unresolved definition.</param>
+    /// <returns>A parser definition.</returns>
+    private static ParserDefinition Parse([StringSyntax("ANTLR4")] string grammarText, DiagnosticBag? diagnostics, bool resolve)
     {
         var metaDefinition = RuleResolver.Resolve(Antlr4Grammar.Build());
         var lexer = new LexerEngine(metaDefinition);
@@ -95,7 +114,7 @@ public sealed class Antlr4GrammarConverter
         }
 
         var converter = new Antlr4GrammarConverter(grammarText, diagnostics);
-        return converter.Convert(root, diagnostics);
+        return converter.Convert(root, diagnostics, resolve);
     }
 
     /// <summary>
@@ -108,6 +127,16 @@ public sealed class Antlr4GrammarConverter
     /// Thrown when <paramref name="root"/> is not a <c>grammarSpec</c> parser node.
     /// </exception>
     public ParserDefinition Convert(ParseNode root, DiagnosticBag? diagnostics = null)
+        => Convert(root, diagnostics, resolve: true);
+
+    /// <summary>
+    /// Converts a parse tree whose root is a <c>grammarSpec</c> node into a parser definition.
+    /// </summary>
+    /// <param name="root">Root node returned by <see cref="Utils.Parser.Runtime.ParserEngine.Parse"/>.</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <param name="resolve"><c>true</c> to run <c>RuleResolver.Resolve</c>; otherwise returns unresolved definition.</param>
+    /// <returns>A parser definition.</returns>
+    public ParserDefinition Convert(ParseNode root, DiagnosticBag? diagnostics, bool resolve)
     {
         if (root is not ParserNode grammarSpec || grammarSpec.Rule?.Name != "grammarSpec")
         {
@@ -158,7 +187,7 @@ public sealed class Antlr4GrammarConverter
             RootRule: rootRule
         );
 
-        return RuleResolver.Resolve(definition, diagnostics);
+        return resolve ? RuleResolver.Resolve(definition, diagnostics) : definition;
     }
 
     // ─── grammarDecl / grammarType ────────────────────────────────────────────
