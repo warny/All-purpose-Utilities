@@ -287,6 +287,19 @@ public sealed partial class CSyntaxExpressionCompiler
                     continue;
                 }
 
+                if (current is ConstantExpression { Value: MethodInfo[] } &&
+                    IsSimpleIdentifier(identifier) &&
+                    context.RuntimeContext is not null &&
+                    context.RuntimeContext.TryGet(identifier, out object? runtimeValue))
+                {
+                    current = runtimeValue switch
+                    {
+                        Expression runtimeExpression => runtimeExpression,
+                        Delegate runtimeDelegate => Expression.Constant(runtimeDelegate),
+                        _ => Expression.Constant(runtimeValue, runtimeValue?.GetType() ?? typeof(object)),
+                    };
+                }
+
                 MethodInfo? invokeMethod = current!.Type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
                 if (invokeMethod is null)
                 {
@@ -341,6 +354,34 @@ public sealed partial class CSyntaxExpressionCompiler
         }
 
         return text[start..index];
+    }
+
+    /// <summary>
+    /// Indicates whether a text segment is a simple identifier.
+    /// </summary>
+    /// <param name="text">Text segment to inspect.</param>
+    /// <returns><c>true</c> when the segment is a valid identifier; otherwise <c>false</c>.</returns>
+    private static bool IsSimpleIdentifier(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        if (!(char.IsLetter(text[0]) || text[0] == '_'))
+        {
+            return false;
+        }
+
+        for (int i = 1; i < text.Length; i++)
+        {
+            if (!(char.IsLetterOrDigit(text[i]) || text[i] == '_'))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -2194,8 +2235,8 @@ public sealed partial class CSyntaxExpressionCompiler
             Type delegateType = Expression.GetDelegateType([.. parameters.Select(static p => p.Type), returnType]);
             DeferredDelegateHolder holder = new();
             Delegate deferredDelegate = CreateDeferredDelegate(delegateType, parameters, holder, returnType);
-            context.Set(methodName, deferredDelegate);
-            context.Set(GetDeferredHolderSymbolName(methodName), holder);
+            context.Symbols[methodName] = deferredDelegate;
+            context.Symbols[GetDeferredHolderSymbolName(methodName)] = holder;
         }
     }
 
