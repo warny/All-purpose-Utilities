@@ -212,6 +212,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         }
 
         var current = seed;
+        var currentEndPosition = context.Position;
         while (true)
         {
             var extension = TryExtendLeft(context, info, current, minimumPrecedence, diagnostics);
@@ -220,6 +221,14 @@ public sealed class ParserEngine(ParserDefinition definition)
                 break;
             }
 
+            // Guard against infinite loops: if the extension did not consume any tokens,
+            // further iterations cannot make progress either.
+            if (context.Position <= currentEndPosition)
+            {
+                break;
+            }
+
+            currentEndPosition = context.Position;
             current = extension;
         }
 
