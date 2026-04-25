@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using Utils.Parser.Runtime;
 
 namespace Utils.Expressions.VBSyntax.Runtime;
@@ -20,21 +21,18 @@ public sealed partial class VBSyntaxExpressionCompiler
         if (operands.Count == 0) return null;
         if (operands.Count == 1) return operands[0];
 
-        string source = GetNodeSourceText(context, nav);
         Expression result = operands[0];
-        int pos = 0;
-        for (int i = 1; i < operands.Count; i++)
+        var operators = ExtractOperatorsFromSource(GetNodeSourceText(context, nav), "OrElse", "Or", "Xor");
+        int pairCount = Math.Min(operators.Count, operands.Count - 1);
+        for (int i = 0; i < pairCount; i++)
         {
-            // Find the operator between operand i-1 and operand i in the source.
-            int opStart = IndexAfterOperand(source, pos, operands[i - 1]);
-            string op = ExtractOperatorToken(source, opStart, ["OrElse", "Or", "Xor"]);
+            string op = operators[i];
             result = op switch
             {
-                "OrElse" => Expression.OrElse(result, operands[i]),
-                "Xor"    => Expression.ExclusiveOr(result, operands[i]),
-                _        => Expression.Or(result, operands[i]),
+                "OrElse" => Expression.OrElse(result, operands[i + 1]),
+                "Xor" => Expression.ExclusiveOr(result, operands[i + 1]),
+                _ => Expression.Or(result, operands[i + 1]),
             };
-            pos = opStart;
         }
 
         return result;
@@ -54,17 +52,15 @@ public sealed partial class VBSyntaxExpressionCompiler
         if (operands.Count == 0) return null;
         if (operands.Count == 1) return operands[0];
 
-        string source = GetNodeSourceText(context, nav);
         Expression result = operands[0];
-        int pos = 0;
-        for (int i = 1; i < operands.Count; i++)
+        var operators = ExtractOperatorsFromSource(GetNodeSourceText(context, nav), "AndAlso", "And");
+        int pairCount = Math.Min(operators.Count, operands.Count - 1);
+        for (int i = 0; i < pairCount; i++)
         {
-            int opStart = IndexAfterOperand(source, pos, operands[i - 1]);
-            string op = ExtractOperatorToken(source, opStart, ["AndAlso", "And"]);
+            string op = operators[i];
             result = op == "AndAlso"
-                ? Expression.AndAlso(result, operands[i])
-                : Expression.And(result, operands[i]);
-            pos = opStart;
+                ? Expression.AndAlso(result, operands[i + 1])
+                : Expression.And(result, operands[i + 1]);
         }
 
         return result;
@@ -274,12 +270,6 @@ public sealed partial class VBSyntaxExpressionCompiler
     // ── Operator scanning utilities ───────────────────────────────────────────
 
     /// <summary>
-    /// Returns the index in <paramref name="source"/> immediately after the first token
-    /// that is a keyword or symbol from <paramref name="operators"/>.
-    /// </summary>
-    private static int IndexAfterOperand(string source, int from, Expression _) => from;
-
-    /// <summary>
     /// Scans <paramref name="source"/> starting at <paramref name="from"/> and returns
     /// the first operator token found from <paramref name="candidates"/>.
     /// </summary>
@@ -289,7 +279,7 @@ public sealed partial class VBSyntaxExpressionCompiler
         string found = candidates[^1];
         foreach (string candidate in candidates)
         {
-            int idx = source.IndexOf(candidate, from, StringComparison.OrdinalIgnoreCase);
+            int idx = FindOperatorIndex(source, from, candidate);
             if (idx >= 0 && idx < best)
             {
                 best = idx;
@@ -298,6 +288,107 @@ public sealed partial class VBSyntaxExpressionCompiler
         }
 
         return found;
+    }
+
+    /// <summary>
+    /// Finds the index of an operator token while enforcing word boundaries for keyword operators.
+    /// </summary>
+    /// <param name="source">Source text.</param>
+    /// <param name="from">Search start index.</param>
+    /// <param name="candidate">Operator candidate.</param>
+    /// <returns>Operator index, or <c>-1</c> when not found.</returns>
+    private static int FindOperatorIndex(string source, int from, string candidate)
+    {
+        int index = source.IndexOf(candidate, from, StringComparison.OrdinalIgnoreCase);
+        while (index >= 0)
+        {
+            if (!IsWordOperator(candidate) || IsWholeWordMatch(source, index, candidate.Length))
+            {
+                return index;
+            }
+
+            int nextStart = index + 1;
+            index = nextStart < source.Length
+                ? source.IndexOf(candidate, nextStart, StringComparison.OrdinalIgnoreCase)
+                : -1;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Determines whether an operator token is keyword-like (alphabetic).
+    /// </summary>
+    /// <param name="candidate">Operator candidate.</param>
+    /// <returns><c>true</c> for alphabetic operators; otherwise <c>false</c>.</returns>
+    private static bool IsWordOperator(string candidate)
+    {
+        return candidate.All(static c => char.IsLetter(c));
+    }
+
+    /// <summary>
+    /// Validates that an operator occurrence is delimited as a whole word.
+    /// </summary>
+    /// <param name="source">Source text.</param>
+    /// <param name="startIndex">Match start index.</param>
+    /// <param name="length">Match length.</param>
+    /// <returns><c>true</c> when boundaries are valid; otherwise <c>false</c>.</returns>
+    private static bool IsWholeWordMatch(string source, int startIndex, int length)
+    {
+        int before = startIndex - 1;
+        int after = startIndex + length;
+        bool beforeIsWord = before >= 0 && (char.IsLetterOrDigit(source[before]) || source[before] == '_');
+        bool afterIsWord = after < source.Length && (char.IsLetterOrDigit(source[after]) || source[after] == '_');
+        return !beforeIsWord && !afterIsWord;
+    }
+
+    /// <summary>
+    /// Collects operator tokens from the parse-tree children in traversal order.
+    /// </summary>
+    /// <param name="nodes">Nodes to inspect.</param>
+    /// <param name="allowedOperators">Allowed operator tokens.</param>
+    /// <returns>Operator tokens in encountered order.</returns>
+    private static IEnumerable<string> CollectOperatorTokens(IEnumerable<ParseNode> nodes, ISet<string> allowedOperators)
+    {
+        foreach (ParseNode node in nodes)
+        {
+            if (node is LexerNode lexerNode)
+            {
+                if (allowedOperators.Contains(lexerNode.Token.Text))
+                {
+                    yield return lexerNode.Token.Text;
+                }
+
+                continue;
+            }
+
+            if (node is ParserNode parserNode)
+            {
+                foreach (string token in CollectOperatorTokens(parserNode.Children, allowedOperators))
+                {
+                    yield return token;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extracts operators from source text in lexical order using whole-word matching.
+    /// </summary>
+    /// <param name="source">Source text to scan.</param>
+    /// <param name="operators">Supported operators.</param>
+    /// <returns>Operators in source order.</returns>
+    private static List<string> ExtractOperatorsFromSource(string source, params string[] operators)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return [];
+        }
+
+        string pattern = @"\b(?:" + string.Join("|", operators.Select(Regex.Escape)) + @")\b";
+        return Regex.Matches(source, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+            .Select(static match => match.Value)
+            .ToList();
     }
 
     // ── Numeric type conversion ───────────────────────────────────────────────

@@ -1,0 +1,140 @@
+lexer grammar CSyntaxLexer;
+
+ABSTRACT : 'abstract' ;
+ASYNC : 'async' ;
+AS : 'as' ;
+BASE : 'base' ;
+BOOL : 'bool' ;
+BREAK : 'break' ;
+BYTE : 'byte' ;
+CASE : 'case' ;
+CATCH : 'catch' ;
+CHAR : 'char' ;
+CHECKED : 'checked' ;
+CLASS : 'class' ;
+CONST : 'const' ;
+CONTINUE : 'continue' ;
+DECIMAL : 'decimal' ;
+DEFAULT : 'default' ;
+DELEGATE : 'delegate' ;
+DO : 'do' ;
+DOUBLE : 'double' ;
+DYNAMIC : 'dynamic' ;
+ELSE : 'else' ;
+ENUM : 'enum' ;
+EVENT : 'event' ;
+EXPLICIT : 'explicit' ;
+EXTERN : 'extern' ;
+FALSE : 'false' ;
+FINALLY : 'finally' ;
+FIXED : 'fixed' ;
+FLOAT : 'float' ;
+FOR : 'for' ;
+FOREACH : 'foreach' ;
+GOTO : 'goto' ;
+IF : 'if' ;
+IMPLICIT : 'implicit' ;
+IN : 'in' ;
+INT : 'int' ;
+INTERFACE : 'interface' ;
+INTERNAL : 'internal' ;
+IS : 'is' ;
+LOCK : 'lock' ;
+LONG : 'long' ;
+NAMESPACE : 'namespace' ;
+NEW : 'new' ;
+NULL : 'null' ;
+OBJECT : 'object' ;
+OPERATOR : 'operator' ;
+OUT : 'out' ;
+OVERRIDE : 'override' ;
+PARAMS : 'params' ;
+PRIVATE : 'private' ;
+PROTECTED : 'protected' ;
+PUBLIC : 'public' ;
+READONLY : 'readonly' ;
+REF : 'ref' ;
+RETURN : 'return' ;
+SBYTE : 'sbyte' ;
+SEALED : 'sealed' ;
+SHORT : 'short' ;
+SIZEOF : 'sizeof' ;
+STACKALLOC : 'stackalloc' ;
+STATIC : 'static' ;
+STRING : 'string' ;
+STRUCT : 'struct' ;
+SWITCH : 'switch' ;
+THIS : 'this' ;
+THROW : 'throw' ;
+TRUE : 'true' ;
+TRY : 'try' ;
+TYPEOF : 'typeof' ;
+UINT : 'uint' ;
+ULONG : 'ulong' ;
+UNCHECKED : 'unchecked' ;
+UNSAFE : 'unsafe' ;
+USHORT : 'ushort' ;
+USING : 'using' ;
+VIRTUAL : 'virtual' ;
+VAR : 'var' ;
+VOID : 'void' ;
+VOLATILE : 'volatile' ;
+WHILE : 'while' ;
+
+IDENTIFIER : [a-zA-Z_$] [a-zA-Z0-9_$]* ;
+NUMBER : [0-9]+ ('.' [0-9]+)? ([eE] [+-]? [0-9]+)? [fFdDmMuUlL]* ;
+
+STRING_LITERAL
+    : '@"' (~["] | '""')* '"'
+    | '"' (~["\\\r\n] | '\\' .)* '"'
+    ;
+
+CHAR_LITERAL : '\'' (~['\\\r\n] | '\\' .) '\'' ;
+
+INTERPOLATED_STRING_START : '$"' -> pushMode(INTERPOLATED_STRING_MODE) ;
+
+LINE_COMMENT : '//' ~[\r\n]* -> skip ;
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
+WS : [ \t\r\n]+ -> skip ;
+
+OP_POWER : '**' ;
+OP_SHIFT_LEFT : '<<' ;
+OP_SHIFT_RIGHT : '>>' ;
+OP_LESS_EQUAL : '<=' ;
+OP_GREATER_EQUAL : '>=' ;
+OP_EQUAL : '==' ;
+OP_NOT_EQUAL : '!=' ;
+OP_AND : '&&' ;
+OP_OR : '||' ;
+OP_LAMBDA : '=>' ;
+OP_ASSIGN : '=' ;
+OP_PLUS : '+' ;
+OP_MINUS : '-' ;
+OP_MULTIPLY : '*' ;
+OP_DIVIDE : '/' ;
+OP_MODULO : '%' ;
+OP_NOT : '!' ;
+OP_BITWISE_NOT : '~' ;
+OP_LESS : '<' ;
+OP_GREATER : '>' ;
+DOT : '.' ;
+
+OPEN_PAREN : '(' ;
+CLOSE_PAREN : ')' ;
+OPEN_BRACE : '{' ;
+CLOSE_BRACE : '}' ;
+OPEN_BRACKET : '[' ;
+CLOSE_BRACKET : ']' ;
+COMMA : ',' ;
+SEMICOLON : ';' ;
+COLON : ':' ;
+
+mode INTERPOLATED_STRING_MODE;
+
+INTERPOLATED_STRING_END : '"' -> popMode ;
+INTERPOLATED_ESCAPED_OPEN : '{{' ;
+INTERPOLATED_ESCAPED_CLOSE : '}}' ;
+INTERPOLATED_INTERPOLATION_START : '{' ;
+INTERPOLATED_INTERPOLATION_END : '}' ;
+INTERPOLATED_TEXT : ~["{}]+ ;
+INTERPOLATED_MODE_WS : [ \t\r\n]+ -> skip ;

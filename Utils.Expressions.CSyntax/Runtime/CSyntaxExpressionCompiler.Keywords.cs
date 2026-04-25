@@ -262,8 +262,8 @@ public sealed partial class CSyntaxExpressionCompiler
             {
                 deferredHolder = new DeferredDelegateHolder();
                 deferredDelegate = CreateDeferredDelegate(delegateType, signature.Parameters, deferredHolder, signature.ReturnType);
-                context.RuntimeContext.Set(signature.Name, deferredDelegate);
-                context.RuntimeContext.Set(GetDeferredHolderSymbolName(signature.Name), deferredHolder);
+                context.RuntimeContext.Symbols[signature.Name] = deferredDelegate;
+                context.RuntimeContext.Symbols[GetDeferredHolderSymbolName(signature.Name)] = deferredHolder;
             }
 
             bodyContext.Set(signature.Name, deferredDelegate);
@@ -281,7 +281,7 @@ public sealed partial class CSyntaxExpressionCompiler
 
         if (signature.IsPublic)
         {
-            context.RuntimeContext.Set(signature.Name, compiledDelegate);
+            context.RuntimeContext.Symbols[signature.Name] = compiledDelegate;
         }
 
         return Expression.Empty();

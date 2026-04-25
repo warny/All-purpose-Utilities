@@ -224,3 +224,4 @@ int result = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(
 - The compiler accepts C-like syntax (arithmetic operations, blocks, `if`, `for`, `foreach`, functions, etc.).
 - The final expression type depends on context and generated LINQ conversions.
 - For advanced scenarios, use `ExpressionCompilerContext` to register symbols, overloaded callables, and persisted runtime values.
+- **Unused variable elimination** — local variable declarations that are never read are silently removed from the compiled block. If the initializer expression has observable side effects (e.g. a method call), the initializer is kept as a standalone statement and the variable itself is dropped. Pure initializers (constants, parameter references) are discarded entirely.

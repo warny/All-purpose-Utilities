@@ -207,7 +207,7 @@ public sealed class ExpressionOptimiser
             }
 
             double actualValue = Convert.ToDouble(constantExpression.Value);
-            return Math.Abs(actualValue - expectedValue) < double.Epsilon;
+            return double.Abs(actualValue - expectedValue) < double.Epsilon;
         }
     }
 }
