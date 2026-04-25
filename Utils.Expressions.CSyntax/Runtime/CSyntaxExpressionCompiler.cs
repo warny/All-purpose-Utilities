@@ -340,11 +340,6 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <returns>Resolved symbol expression.</returns>
     private static Expression ResolveIdentifier(CompilationContext context, string identifier)
     {
-        if (context.Symbols.TryGetValue(identifier, out Expression? expression))
-        {
-            return expression;
-        }
-
         if (context.RuntimeContext is not null && context.RuntimeContext.TryGet(identifier, out object? value))
         {
             return value switch
@@ -353,6 +348,11 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
                 Delegate valueDelegate => Expression.Constant(valueDelegate),
                 _ => Expression.Constant(value, value?.GetType() ?? typeof(object)),
             };
+        }
+
+        if (context.Symbols.TryGetValue(identifier, out Expression? expression))
+        {
+            return expression;
         }
 
         if (LooksLikeMethodDeclarationSource(context.SourceText))

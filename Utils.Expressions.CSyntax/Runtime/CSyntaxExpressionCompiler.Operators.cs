@@ -190,13 +190,45 @@ public sealed partial class CSyntaxExpressionCompiler
             return null;
         }
 
-        if (nav.RawChildren.Count == 1)
+        HashSet<string> unaryOperators = new HashSet<string>(StringComparer.Ordinal) { "+", "-", "!", "~" };
+        string? op = null;
+        int operatorChildIndex = -1;
+        for (int i = 0; i < nav.RawChildren.Count; i++)
         {
-            return children[0];
+            if (nav.RawChildren[i] is LexerNode lexerNode && unaryOperators.Contains(lexerNode.Token.Text))
+            {
+                op = lexerNode.Token.Text;
+                operatorChildIndex = i;
+                break;
+            }
+
+            if (i == 0 && nav.RawChildren.Count > 1 && nav.RawChildren[i] is ParserNode parserNode)
+            {
+                string? nestedOperator = CollectOperatorTokens(parserNode.Children, unaryOperators).FirstOrDefault();
+                if (nestedOperator is not null)
+                {
+                    op = nestedOperator;
+                    operatorChildIndex = i;
+                    break;
+                }
+            }
         }
 
-        string op = ((LexerNode)nav.RawChildren[0]).Token.Text;
-        Expression operand = RequireExpression(children[1], "unary operand");
+        Expression? operandCandidate = op is null
+            ? children.FirstOrDefault(static child => child is not null)
+            : children.Skip(operatorChildIndex + 1).FirstOrDefault(static child => child is not null)
+                ?? children.FirstOrDefault(static child => child is not null);
+        if (operandCandidate is null)
+        {
+            return null;
+        }
+
+        if (op is null)
+        {
+            return operandCandidate;
+        }
+
+        Expression operand = RequireExpression(operandCandidate, "unary operand");
         return op switch
         {
             "+" => IsNumericType(operand.Type) ? operand : throw new NotSupportedException($"Expression '{operand}' is not numeric."),
