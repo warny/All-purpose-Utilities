@@ -2235,8 +2235,8 @@ public sealed partial class CSyntaxExpressionCompiler
             Type delegateType = Expression.GetDelegateType([.. parameters.Select(static p => p.Type), returnType]);
             DeferredDelegateHolder holder = new();
             Delegate deferredDelegate = CreateDeferredDelegate(delegateType, parameters, holder, returnType);
-            context.Set(methodName, deferredDelegate);
-            context.Set(GetDeferredHolderSymbolName(methodName), holder);
+            context.Symbols[methodName] = deferredDelegate;
+            context.Symbols[GetDeferredHolderSymbolName(methodName)] = holder;
         }
     }
 
