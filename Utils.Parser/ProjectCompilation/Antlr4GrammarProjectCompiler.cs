@@ -81,6 +81,7 @@ public static class Antlr4GrammarProjectCompiler
     private static ParserDefinition BuildMergedDefinition(IReadOnlyDictionary<string, LoadedGrammarDefinition> graph, string entryGrammarName, DiagnosticBag? diagnostics)
     {
         var entry = graph[entryGrammarName].Definition;
+        ValidateEntryGrammarTypeConstraints(entry, diagnostics);
 
         var modes = new List<LexerMode>();
         var parserRules = new List<Rule>();
@@ -127,6 +128,32 @@ public static class Antlr4GrammarProjectCompiler
         };
 
         return RuleResolver.Resolve(mergedDefinition, diagnostics);
+    }
+
+    /// <summary>
+    /// Validates grammar-type constraints that must be enforced before project-level merging.
+    /// </summary>
+    /// <param name="entry">Entry grammar definition.</param>
+    /// <param name="diagnostics">Optional diagnostics collection.</param>
+    /// <exception cref="GrammarValidationException">Thrown when the entry grammar violates type constraints.</exception>
+    private static void ValidateEntryGrammarTypeConstraints(ParserDefinition entry, DiagnosticBag? diagnostics)
+    {
+        if (entry.Type != GrammarType.Parser)
+        {
+            return;
+        }
+
+        foreach (LexerMode mode in entry.Modes)
+        {
+            if (mode.Rules.Count == 0)
+            {
+                continue;
+            }
+
+            string offendingRule = mode.Rules[0].Name;
+            diagnostics?.AddWithContext(ParserDiagnostics.LexerRuleNotAllowedInParserGrammar, null, null, offendingRule, null, offendingRule);
+            throw new GrammarValidationException($"Lexer rule '{offendingRule}' is not allowed in a parser grammar.");
+        }
     }
 
     /// <summary>
