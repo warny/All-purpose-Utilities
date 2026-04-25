@@ -1,3 +1,4 @@
+using System;
 using Utils.Parser.Model;
 using Utils.Parser.Diagnostics;
 
@@ -31,6 +32,11 @@ public static class RuleResolver
     /// </exception>
     public static ParserDefinition Resolve(ParserDefinition definition, DiagnosticBag? diagnostics = null)
     {
+        var effectiveOptions = BuildEffectiveOptions(definition, diagnostics);
+        definition = definition with { EffectiveOptions = effectiveOptions };
+
+        ValidateGrammarTypeConstraints(definition, diagnostics);
+
         // 1. Build AllRules, assigning known kinds at registration time.
         var allRules = new Dictionary<string, Rule>();
 
@@ -120,6 +126,100 @@ public static class RuleResolver
         }
 
         return definition;
+    }
+
+    /// <summary>
+    /// Builds effective options from raw grammar options.
+    /// </summary>
+    /// <param name="definition">Grammar definition.</param>
+    /// <param name="diagnostics">Optional diagnostics sink.</param>
+    /// <returns>Normalized effective options.</returns>
+    private static EffectiveGrammarOptions BuildEffectiveOptions(ParserDefinition definition, DiagnosticBag? diagnostics)
+    {
+        var options = definition.Options?.Values;
+        if (options is null)
+        {
+            return new EffectiveGrammarOptions();
+        }
+
+        options.TryGetValue("tokenVocab", out var tokenVocab);
+        options.TryGetValue("superClass", out var superClass);
+        options.TryGetValue("caseInsensitive", out var caseInsensitiveText);
+        options.TryGetValue("language", out var language);
+
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            diagnostics?.Add(ParserDiagnostics.UnsupportedAntlrLanguageOptionIgnored, language);
+        }
+
+        return definition.Type switch
+        {
+            GrammarType.Lexer => new EffectiveGrammarOptions
+            {
+                TokenVocab = tokenVocab,
+                LexerSuperClass = superClass,
+                CaseInsensitive = IsTrue(caseInsensitiveText),
+            },
+            GrammarType.Parser => new EffectiveGrammarOptions
+            {
+                TokenVocab = tokenVocab,
+                ParserSuperClass = superClass,
+                CaseInsensitive = IsTrue(caseInsensitiveText),
+            },
+            _ => new EffectiveGrammarOptions
+            {
+                TokenVocab = tokenVocab,
+                ParserSuperClass = superClass,
+                CaseInsensitive = IsTrue(caseInsensitiveText),
+            },
+        };
+    }
+
+    /// <summary>
+    /// Validates lexer/parser rule placement against the declared grammar type.
+    /// </summary>
+    /// <param name="definition">Grammar definition to validate.</param>
+    /// <param name="diagnostics">Optional diagnostics sink.</param>
+    /// <exception cref="GrammarValidationException">Thrown when a forbidden rule kind is found.</exception>
+    private static void ValidateGrammarTypeConstraints(ParserDefinition definition, DiagnosticBag? diagnostics)
+    {
+        if (definition.Type == GrammarType.Lexer && definition.ParserRules.Count > 0)
+        {
+            var offendingRule = definition.ParserRules[0].Name;
+            diagnostics?.AddWithContext(ParserDiagnostics.ParserRuleNotAllowedInLexerGrammar, null, null, offendingRule, null, offendingRule);
+            throw new GrammarValidationException($"Parser rule '{offendingRule}' is not allowed in a lexer grammar.");
+        }
+
+        if (definition.Type == GrammarType.Parser)
+        {
+            if (definition.AllowExternalLexerRules)
+            {
+                return;
+            }
+
+            foreach (var mode in definition.Modes)
+            {
+                if (mode.Rules.Count == 0)
+                {
+                    continue;
+                }
+
+                var offendingRule = mode.Rules[0].Name;
+                diagnostics?.AddWithContext(ParserDiagnostics.LexerRuleNotAllowedInParserGrammar, null, null, offendingRule, null, offendingRule);
+                throw new GrammarValidationException($"Lexer rule '{offendingRule}' is not allowed in a parser grammar.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> for canonical ANTLR boolean values representing true.
+    /// </summary>
+    /// <param name="value">Raw option value.</param>
+    /// <returns><c>true</c> when the value equals <c>true</c> or <c>1</c>.</returns>
+    private static bool IsTrue(string? value)
+    {
+        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "1", StringComparison.Ordinal);
     }
 
     /// <summary>

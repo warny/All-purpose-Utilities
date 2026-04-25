@@ -1,5 +1,7 @@
 grammar VBSyntaxTokenizer;
 
+options { caseInsensitive=true; }
+
 // Top-level rule — a VB-like instruction or expression.
 instruction
     : if_instruction
