@@ -210,7 +210,6 @@ public static class ParserDiagnostics
             [ParseMemoHit.Code] = ParseMemoHit,
             [ParseMemoMiss.Code] = ParseMemoMiss,
             [LeftRecursivePrecedencePartiallySupported.Code] = LeftRecursivePrecedencePartiallySupported,
-
             [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,

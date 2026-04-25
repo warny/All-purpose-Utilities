@@ -51,6 +51,7 @@ public class ExpressionOptimiserTests
 
         Assert.AreEqual(2, optimized.Compile().Invoke());
     }
+
     /// <summary>
     /// Ensures that <c>expr &amp;&amp; false</c> still evaluates <c>expr</c> for side effects.
     /// </summary>

@@ -2552,6 +2552,7 @@ public sealed partial class CSyntaxExpressionCompiler
         }
 
         var initializerByIndex = declarationAssignments.ToDictionary(static d => d.Index);
+
         var result = new List<Expression>(expressions.Count);
         for (int i = 0; i < expressions.Count; i++)
         {
@@ -2564,6 +2565,7 @@ public sealed partial class CSyntaxExpressionCompiler
                 {
                     result.Add(initializer);
                 }
+
                 continue;
             }
 
