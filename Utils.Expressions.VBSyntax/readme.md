@@ -243,3 +243,4 @@ int result = sumValues(); // 10
 - The `=` operator means equality in expressions and assignment in statements; the compiler infers intent from whether the left-hand side is writeable.
 - Public `Function`/`Sub` declarations are registered as delegates in the `VBSyntaxCompilerContext` and can be retrieved with `context.Get(name)`.
 - For advanced scenarios, use `VBSyntaxCompilerContext` to pre-register symbols and delegates that the compiled code can call.
+- **Keyword operator disambiguation** — logical keyword operators are extracted using regex patterns with word-boundary anchors (`\b`). This guarantees that `OrElse` is never misidentified as `Or`, and `AndAlso` is never split into `And` + `Also`, even when multiple chained operators appear in a single expression.

@@ -8,6 +8,51 @@ namespace Utils.Parser.Runtime;
 /// A cycle is detected when the same rule is re-entered at the same token-list position.
 /// </summary>
 internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
+internal readonly record struct ParseMemoKey(string RuleName, int InputPosition, int MinimumPrecedence);
+
+internal sealed record ParseMemoEntry
+{
+    public required ParseNode? Node { get; init; }
+
+    public required int EndPosition { get; init; }
+
+    public required bool IsFailure { get; init; }
+}
+
+internal sealed record RuleContentCursor
+{
+    public required int Index { get; init; }
+
+    public required string Kind { get; init; }
+}
+
+internal sealed record ParseBranch
+{
+    public required Rule Rule { get; init; }
+
+    public required Alternative Alternative { get; init; }
+
+    public required int InputPosition { get; init; }
+
+    public required RuleContentCursor Cursor { get; init; }
+
+    public required ParseNode PartialNode { get; init; }
+
+    public required int EndPosition { get; init; }
+
+    public bool IsComplete { get; init; }
+}
+
+internal sealed record BranchKey
+{
+    public required string RuleName { get; init; }
+
+    public required int InputPosition { get; init; }
+
+    public required string CursorKey { get; init; }
+
+    public required string ParentContextKey { get; init; }
+}
 
 /// <summary>
 /// Builds a parse tree from a flat token list using the rules in a
@@ -27,6 +72,7 @@ internal readonly record struct ParserFrameKey(string RuleName, int InputPositio
 public sealed class ParserEngine(ParserDefinition definition)
 {
     private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
+    private readonly Dictionary<ParseMemoKey, ParseMemoEntry> _memo = new();
     private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
 
     /// <summary>
@@ -50,6 +96,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             ?? throw new InvalidOperationException("No root rule defined");
 
         _activeRuleFrames.Clear();
+        _memo.Clear();
         var context = new ParseContext(tokenList);
         var result = ParseRule(context, root, precedence: 0, diagnostics);
 
@@ -92,40 +139,207 @@ public sealed class ParserEngine(ParserDefinition definition)
     private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence, DiagnosticBag? diagnostics = null)
     {
         diagnostics?.AddWithContext(ParserDiagnostics.EnteringRule, null, null, rule.Name, null, rule.Name);
-        // Detect left-recursive infinite cycles in O(1).
+        var memoKey = new ParseMemoKey(rule.Name, context.Position, precedence);
+        if (_memo.TryGetValue(memoKey, out var memoEntry))
+        {
+            diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
+            context.RestorePosition(memoEntry.EndPosition);
+            return memoEntry.IsFailure ? null : memoEntry.Node;
+        }
+
+        diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
+        var initialPosition = context.Position;
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
         if (!_activeRuleFrames.Add(frameKey))
+        {
             return null;
+        }
 
         try
         {
-            foreach (var alternative in rule.Content.Alternatives.OrderBy(a => a.Priority))
+            ParseNode? parsed;
+            if (definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
             {
-                // Skip alternatives whose precedence predicate is below the current level.
-                if (!CheckPrecedence(alternative, precedence))
-                    continue;
-
-                var savedPos = context.SavePosition();
-                var result = TryParseAlternative(context, alternative, rule, diagnostics);
-                if (result is not null)
-                {
-                    // Ensure the returned node is tagged with this rule.
-                    if (result is ParserNode pn && object.ReferenceEquals(pn.Rule, rule))
-                        return pn;
-                    return new ParserNode(result.Span, result.ModeName, rule,
-                        new List<ParseNode> { result });
-                }
-                diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, null, null, rule.Name, null, rule.Name);
-                context.RestorePosition(savedPos);
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.LeftRecursivePrecedencePartiallySupported,
+                    null,
+                    null,
+                    rule.Name,
+                    null,
+                    rule.Name);
+                parsed = ParseLeftRecursiveRule(context, leftRecursiveInfo, precedence, diagnostics);
+            }
+            else
+            {
+                parsed = TryParseAlternativesParallel(context, rule.Content.Alternatives, rule, precedence, diagnostics);
             }
 
-            return null;
+            _memo[memoKey] = new ParseMemoEntry
+            {
+                Node = parsed,
+                EndPosition = context.Position,
+                IsFailure = parsed is null
+            };
+
+            return parsed;
         }
         finally
         {
             _activeRuleFrames.Remove(frameKey);
+            if (context.Position < initialPosition)
+            {
+                context.RestorePosition(initialPosition);
+            }
             diagnostics?.AddWithContext(ParserDiagnostics.LeavingRule, null, null, rule.Name, null, rule.Name);
         }
+    }
+
+    private ParseNode? ParseLeftRecursiveRule(
+        ParseContext context,
+        LeftRecursiveRuleInfo info,
+        int minimumPrecedence,
+        DiagnosticBag? diagnostics)
+    {
+        var seed = TryParseAlternativesParallel(
+            context,
+            info.BaseAlternatives,
+            info.Rule,
+            minimumPrecedence,
+            diagnostics);
+        if (seed is null)
+        {
+            return null;
+        }
+
+        var current = seed;
+        var currentEndPosition = context.Position;
+        while (true)
+        {
+            var extension = TryExtendLeft(context, info, current, minimumPrecedence, diagnostics);
+            if (extension is null)
+            {
+                break;
+            }
+
+            // Guard against infinite loops: if the extension did not consume any tokens,
+            // further iterations cannot make progress either.
+            if (context.Position <= currentEndPosition)
+            {
+                break;
+            }
+
+            currentEndPosition = context.Position;
+            current = extension;
+        }
+
+        return current;
+    }
+
+    private ParseNode? TryExtendLeft(
+        ParseContext context,
+        LeftRecursiveRuleInfo info,
+        ParseNode current,
+        int minimumPrecedence,
+        DiagnosticBag? diagnostics)
+    {
+        var startPosition = context.Position;
+        ParseBranch? bestBranch = null;
+        var recursiveAlternatives = info.RecursiveAlternatives.OrderBy(a => a.Priority).ToList();
+
+        for (int index = 0; index < recursiveAlternatives.Count; index++)
+        {
+            var alternative = recursiveAlternatives[index];
+            var precedenceLevel = recursiveAlternatives.Count - index;
+            if (precedenceLevel < minimumPrecedence || !CheckPrecedence(alternative, minimumPrecedence))
+            {
+                continue;
+            }
+
+            var saved = context.SavePosition();
+            var candidate = TryParseRecursiveAlternative(
+                context,
+                info.Rule,
+                alternative,
+                current,
+                precedenceLevel,
+                diagnostics);
+            if (candidate is null)
+            {
+                context.RestorePosition(saved);
+                continue;
+            }
+
+            var branch = new ParseBranch
+            {
+                Rule = info.Rule,
+                Alternative = alternative,
+                InputPosition = startPosition,
+                Cursor = new RuleContentCursor { Index = 0, Kind = "recursive-extension" },
+                PartialNode = candidate,
+                EndPosition = context.Position,
+                IsComplete = true
+            };
+
+            if (bestBranch is null || IsBetterBranch(branch, bestBranch))
+            {
+                if (bestBranch is not null)
+                {
+                    diagnostics?.AddWithContext(ParserDiagnostics.ParseBranchPruned, null, null, info.Rule.Name, null, info.Rule.Name);
+                }
+
+                bestBranch = branch;
+            }
+            else
+            {
+                diagnostics?.AddWithContext(ParserDiagnostics.ParseBranchPruned, null, null, info.Rule.Name, null, info.Rule.Name);
+            }
+
+            context.RestorePosition(saved);
+        }
+
+        if (bestBranch is null)
+        {
+            context.RestorePosition(startPosition);
+            return null;
+        }
+
+        context.RestorePosition(bestBranch.EndPosition);
+        return bestBranch.PartialNode;
+    }
+
+    private ParseNode? TryParseRecursiveAlternative(
+        ParseContext context,
+        Rule ownerRule,
+        Alternative alternative,
+        ParseNode leftSeed,
+        int precedenceLevel,
+        DiagnosticBag? diagnostics)
+    {
+        var children = new List<ParseNode> { leftSeed };
+
+        var tailContent = RemoveLeadingSelfReference(ownerRule.Name, alternative.Content);
+        if (tailContent is null)
+        {
+            return null;
+        }
+
+        var tailNodes = TryParseLeftRecursiveTail(
+            context,
+            tailContent,
+            ownerRule,
+            alternative.Assoc,
+            precedenceLevel,
+            diagnostics);
+        if (tailNodes is null)
+        {
+            return null;
+        }
+
+        children.AddRange(tailNodes);
+        var endToken = context.Peek(-1);
+        var end = endToken is null ? leftSeed.Span.Position + leftSeed.Span.Length : endToken.Span.Position + endToken.Span.Length;
+        var span = new SourceSpan(leftSeed.Span.Position, Math.Max(0, end - leftSeed.Span.Position));
+        return new ParserNode(span, leftSeed.ModeName, ownerRule, children);
     }
 
     /// <summary>
@@ -312,16 +526,142 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="rule">Owning rule (carried to child matches).</param>
     private ParseNode? TryParseAlternation(ParseContext context, Alternation alternation, Rule rule, DiagnosticBag? diagnostics = null)
     {
-        foreach (var alt in alternation.Alternatives.OrderBy(a => a.Priority))
+        return TryParseAlternativesParallel(context, alternation.Alternatives, rule, precedence: 0, diagnostics);
+    }
+
+    private ParseNode? TryParseAlternativesParallel(
+        ParseContext context,
+        IEnumerable<Alternative> alternatives,
+        Rule rule,
+        int precedence,
+        DiagnosticBag? diagnostics)
+    {
+        var alternativeList = alternatives.OrderBy(a => a.Priority).ToList();
+        var startPosition = context.Position;
+        var startToken = context.Peek();
+        var survivingBranches = new List<ParseBranch>();
+
+        foreach (var alt in alternativeList)
         {
+            if (!CheckPrecedence(alt, precedence))
+            {
+                continue;
+            }
+
             var savedPos = context.SavePosition();
             var result = TryParseContent(context, alt.Content, rule, diagnostics);
-            if (result is not null)
-                return result;
-            diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, null, null, rule.Name, null, rule.Name);
+            if (result is null)
+            {
+                diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, null, null, rule.Name, null, rule.Name);
+                context.RestorePosition(savedPos);
+                continue;
+            }
+
+            survivingBranches.Add(new ParseBranch
+            {
+                Rule = rule,
+                Alternative = alt,
+                InputPosition = startPosition,
+                Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+                PartialNode = result,
+                EndPosition = context.Position,
+                IsComplete = true
+            });
             context.RestorePosition(savedPos);
         }
-        return null;
+
+        if (survivingBranches.Count == 0)
+        {
+            return null;
+        }
+
+        var pruned = PruneEquivalentBranches(survivingBranches, diagnostics);
+        var winner = pruned[0];
+        for (int i = 1; i < pruned.Count; i++)
+        {
+            if (IsBetterBranch(pruned[i], winner))
+            {
+                winner = pruned[i];
+            }
+        }
+
+        context.RestorePosition(winner.EndPosition);
+        if (winner.PartialNode is ParserNode parserNode && ReferenceEquals(parserNode.Rule, rule))
+        {
+            return parserNode;
+        }
+
+        var span = ComputeSpan(startToken, context, startPosition);
+        return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+    private static bool IsBetterBranch(ParseBranch candidate, ParseBranch current)
+    {
+        if (candidate.EndPosition != current.EndPosition)
+        {
+            return candidate.EndPosition > current.EndPosition;
+        }
+
+        return candidate.Alternative.Priority < current.Alternative.Priority;
+    }
+
+    private List<ParseBranch> PruneEquivalentBranches(
+        IReadOnlyList<ParseBranch> branches,
+        DiagnosticBag? diagnostics)
+    {
+        var map = new Dictionary<BranchKey, ParseBranch>();
+        foreach (var branch in branches)
+        {
+            var key = new BranchKey
+            {
+                RuleName = branch.Rule.Name,
+                InputPosition = branch.InputPosition,
+                CursorKey = $"{branch.Cursor.Kind}:{branch.Cursor.Index}:{branch.EndPosition}",
+                ParentContextKey = branch.Alternative.Label ?? string.Empty
+            };
+
+            if (!map.TryGetValue(key, out var existing))
+            {
+                map[key] = branch;
+                continue;
+            }
+
+            if (HasDistinctSemantics(existing.Alternative, branch.Alternative))
+            {
+                continue;
+            }
+
+            if (branch.Alternative.Priority < existing.Alternative.Priority)
+            {
+                map[key] = branch;
+            }
+
+            diagnostics?.AddWithContext(ParserDiagnostics.AmbiguousAlternativesPruned, null, null, branch.Rule.Name, null, branch.Rule.Name);
+        }
+
+        return map.Values.OrderBy(b => b.Alternative.Priority).ToList();
+    }
+
+    private static bool HasDistinctSemantics(Alternative left, Alternative right)
+    {
+        return !string.Equals(left.Label, right.Label, StringComparison.Ordinal)
+            || left.Assoc != right.Assoc
+            || ContainsPredicateOrAction(left.Content)
+            || ContainsPredicateOrAction(right.Content);
+    }
+
+    private static bool ContainsPredicateOrAction(RuleContent content)
+    {
+        return content switch
+        {
+            ValidatingPredicate or GatingPredicate or EmbeddedAction => true,
+            Sequence seq => seq.Items.Any(ContainsPredicateOrAction),
+            Alternation alt => alt.Alternatives.Any(a => ContainsPredicateOrAction(a.Content)),
+            Quantifier q => ContainsPredicateOrAction(q.Inner),
+            Negation n => ContainsPredicateOrAction(n.Inner),
+            Alternative a => ContainsPredicateOrAction(a.Content),
+            _ => false
+        };
     }
 
     /// <summary>
@@ -419,6 +759,81 @@ public sealed class ParserEngine(ParserDefinition definition)
         }
 
         return null;
+    }
+
+    private static RuleContent? RemoveLeadingSelfReference(string ruleName, RuleContent content)
+    {
+        switch (content)
+        {
+            case RuleRef ruleRef when string.Equals(ruleRef.RuleName, ruleName, StringComparison.Ordinal):
+                return new Sequence([]);
+            case Sequence sequence when sequence.Items.Count > 0:
+            {
+                if (sequence.Items[0] is RuleRef leading &&
+                    string.Equals(leading.RuleName, ruleName, StringComparison.Ordinal))
+                {
+                    return new Sequence(sequence.Items.Skip(1).ToList());
+                }
+
+                return null;
+            }
+            default:
+                return null;
+        }
+    }
+
+    private List<ParseNode>? TryParseLeftRecursiveTail(
+        ParseContext context,
+        RuleContent tailContent,
+        Rule ownerRule,
+        Associativity associativity,
+        int precedenceLevel,
+        DiagnosticBag? diagnostics)
+    {
+        if (tailContent is Sequence sequence)
+        {
+            var result = new List<ParseNode>();
+            foreach (var item in sequence.Items)
+            {
+                ParseNode? node;
+                if (item is RuleRef rr &&
+                    string.Equals(rr.RuleName, ownerRule.Name, StringComparison.Ordinal) &&
+                    definition.AllRules.TryGetValue(rr.RuleName, out var recursiveRule))
+                {
+                    var minimumRightPrecedence = GetRightPrecedenceThreshold(associativity, precedenceLevel);
+                    node = ParseRule(context, recursiveRule, minimumRightPrecedence, diagnostics);
+                }
+                else
+                {
+                    node = TryParseContent(context, item, ownerRule, diagnostics);
+                }
+
+                if (node is null)
+                {
+                    return null;
+                }
+
+                if (node.Span.Length > 0 || node is ParserNode { Children.Count: > 0 })
+                {
+                    result.Add(node);
+                }
+            }
+
+            return result;
+        }
+
+        var tailNode = TryParseContent(context, tailContent, ownerRule, diagnostics);
+        return tailNode is null ? null : [tailNode];
+    }
+
+    private static int GetRightPrecedenceThreshold(Associativity associativity, int precedenceLevel)
+    {
+        if (associativity == Associativity.Right)
+        {
+            return precedenceLevel;
+        }
+
+        return precedenceLevel + 1;
     }
 
     /// <summary>

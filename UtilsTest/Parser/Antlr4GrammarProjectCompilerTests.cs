@@ -161,6 +161,23 @@ public class Antlr4GrammarProjectCompilerTests
     }
 
     /// <summary>
+    /// Verifies parser grammars cannot declare their own lexer rules.
+    /// </summary>
+    [TestMethod]
+    public void Parse_ParserGrammarWithOwnLexerRule_ThrowsValidationException()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(
+            ("MainParser", "parser grammar MainParser; start : ID ; ID : 'a'+ ;"));
+
+        var exception = Assert.ThrowsExactly<GrammarValidationException>(
+            () => Antlr4GrammarProjectCompiler.Parse("MainParser", resolver, diagnostics));
+
+        StringAssert.Contains(exception.Message, "ID");
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.LexerRuleNotAllowedInParserGrammar.Code));
+    }
+
+    /// <summary>
     /// Verifies that imported lexer modes are merged with existing modes.
     /// </summary>
     [TestMethod]

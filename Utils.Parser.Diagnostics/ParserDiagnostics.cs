@@ -88,9 +88,45 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor RuntimeGeneratorMismatch =
         new("UP1009", "Runtime/generator mismatch", "Runtime and source generator support differ for '{0}'.", DefaultCategory);
 
+    /// <summary>Direct left recursion detected on a parser rule.</summary>
+    public static readonly ParserDiagnosticDescriptor DirectLeftRecursionDetected =
+        new("UP1010", "Direct left recursion detected", "Direct left recursion detected on rule '{0}'.", DefaultCategory);
+
+    /// <summary>Indirect left recursion is currently unsupported.</summary>
+    public static readonly ParserDiagnosticDescriptor IndirectLeftRecursionNotSupported =
+        new("UP1011", "Indirect left recursion not supported", "Indirect left recursion is not supported yet for rule '{0}'.", DefaultCategory);
+
+    /// <summary>Left-recursive rule does not define any base alternative.</summary>
+    public static readonly ParserDiagnosticDescriptor LeftRecursiveRuleWithoutBaseAlternative =
+        new("UP1012", "Left-recursive rule without base alternative", "Left-recursive rule '{0}' has no base alternative.", DefaultCategory);
+
+    /// <summary>Equivalent parse branches were pruned using alternative priority.</summary>
+    public static readonly ParserDiagnosticDescriptor AmbiguousAlternativesPruned =
+        new("UP1013", "Ambiguous alternatives pruned", "Equivalent alternatives were pruned in rule '{0}'.", DefaultCategory);
+
+    /// <summary>Strict duplicate alternatives were removed at resolution time.</summary>
+    public static readonly ParserDiagnosticDescriptor StaticDuplicateAlternativeRemoved =
+        new("UP1014", "Static duplicate alternative removed", "Duplicate alternative removed in rule '{0}'.", DefaultCategory);
+
+    /// <summary>A parse branch was pruned during runtime branch selection.</summary>
+    public static readonly ParserDiagnosticDescriptor ParseBranchPruned =
+        new("UP1015", "Parse branch pruned", "Parse branch pruned in rule '{0}'.", DefaultCategory);
+
+    /// <summary>Memoization hit for parser rule evaluation.</summary>
+    public static readonly ParserDiagnosticDescriptor ParseMemoHit =
+        new("UP1016", "Parse memo hit", "Parse memoization hit for rule '{0}'.", DefaultCategory);
+
+    /// <summary>Memoization miss for parser rule evaluation.</summary>
+    public static readonly ParserDiagnosticDescriptor ParseMemoMiss =
+        new("UP1017", "Parse memo miss", "Parse memoization miss for rule '{0}'.", DefaultCategory);
+
+    /// <summary>Left-recursive precedence support is partial compared to ANTLR4.</summary>
+    public static readonly ParserDiagnosticDescriptor LeftRecursivePrecedencePartiallySupported =
+        new("UP1018", "Left-recursive precedence partially supported", "Left-recursive precedence is partially supported for rule '{0}'.", DefaultCategory);
+
     /// <summary>ANTLR language option ignored by this runtime.</summary>
     public static readonly ParserDiagnosticDescriptor UnsupportedAntlrLanguageOptionIgnored =
-        new("UP1010", "ANTLR language option ignored", "The ANTLR option 'language' is not supported by Utils.Parser and will be ignored (value: '{0}').", DefaultCategory);
+        new("UP1019", "ANTLR language option ignored", "The ANTLR option 'language' is not supported by Utils.Parser and will be ignored (value: '{0}').", DefaultCategory);
 
     // Warnings (UP5xxx)
     /// <summary>Best-effort recovery used.</summary>
@@ -165,6 +201,15 @@ public static class ParserDiagnostics
             [ReturnsPartiallyApplied.Code] = ReturnsPartiallyApplied,
             [LocalsIgnored.Code] = LocalsIgnored,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
+            [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
+            [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,
+            [LeftRecursiveRuleWithoutBaseAlternative.Code] = LeftRecursiveRuleWithoutBaseAlternative,
+            [AmbiguousAlternativesPruned.Code] = AmbiguousAlternativesPruned,
+            [StaticDuplicateAlternativeRemoved.Code] = StaticDuplicateAlternativeRemoved,
+            [ParseBranchPruned.Code] = ParseBranchPruned,
+            [ParseMemoHit.Code] = ParseMemoHit,
+            [ParseMemoMiss.Code] = ParseMemoMiss,
+            [LeftRecursivePrecedencePartiallySupported.Code] = LeftRecursivePrecedencePartiallySupported,
             [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,

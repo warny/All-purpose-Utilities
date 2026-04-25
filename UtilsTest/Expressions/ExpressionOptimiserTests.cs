@@ -58,7 +58,6 @@ public class ExpressionOptimiserTests
     [TestMethod]
     public void Optimize_AndAlsoFalse_PreservesLeftSideEffect()
     {
-        int sideEffect = 0;
         var counter = Expression.Parameter(typeof(int).MakeByRefType(), "counter");
         var increment = Expression.PreIncrementAssign(counter);
         var andAlso = Expression.AndAlso(Expression.GreaterThan(increment, Expression.Constant(int.MaxValue)), Expression.Constant(false));

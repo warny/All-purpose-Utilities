@@ -125,7 +125,105 @@ public static class RuleResolver
             ValidateLabels(rule.Content, allRules, rule.Name, diagnostics);
         }
 
+        // 7. Remove strict duplicate alternatives while preserving labels/actions semantics.
+        definition = NormalizeAlternatives(definition, diagnostics);
+
+        // 8. Analyze direct left recursion metadata and unsupported indirect cycles.
+        var leftRecursiveRules = LeftRecursionAnalyzer.Analyze(definition, diagnostics);
+        definition = definition with { LeftRecursiveRules = leftRecursiveRules };
+
         return definition;
+    }
+
+    private static ParserDefinition NormalizeAlternatives(ParserDefinition definition, DiagnosticBag? diagnostics)
+    {
+        var updatedParserRules = new List<Rule>(definition.ParserRules.Count);
+        bool changedAny = false;
+
+        foreach (var rule in definition.ParserRules)
+        {
+            var grouped = rule.Content.Alternatives
+                .GroupBy(BuildAlternativeFingerprint)
+                .ToList();
+
+            if (grouped.All(g => g.Count() == 1))
+            {
+                updatedParserRules.Add(rule);
+                continue;
+            }
+
+            var normalized = new List<Alternative>();
+            foreach (var group in grouped)
+            {
+                var kept = group.OrderBy(a => a.Priority).First();
+                normalized.Add(kept);
+                if (group.Count() > 1)
+                {
+                    diagnostics?.AddWithContext(
+                        ParserDiagnostics.StaticDuplicateAlternativeRemoved,
+                        null,
+                        null,
+                        rule.Name,
+                        null,
+                        rule.Name);
+                }
+            }
+
+            var updatedRule = rule with
+            {
+                Content = new Alternation(normalized.OrderBy(a => a.Priority).ToList())
+            };
+            updatedRule.Kind = rule.Kind;
+            updatedParserRules.Add(updatedRule);
+            changedAny = true;
+        }
+
+        if (!changedAny)
+        {
+            return definition;
+        }
+
+        var updatedAllRules = new Dictionary<string, Rule>(definition.AllRules, StringComparer.Ordinal);
+        foreach (var parserRule in updatedParserRules)
+        {
+            updatedAllRules[parserRule.Name] = parserRule;
+        }
+
+        return definition with
+        {
+            ParserRules = updatedParserRules,
+            RootRule = definition.RootRule is null ? null : updatedAllRules[definition.RootRule.Name],
+            AllRules = updatedAllRules
+        };
+    }
+
+    private static string BuildAlternativeFingerprint(Alternative alternative)
+    {
+        return $"{alternative.Assoc}|{alternative.Label}|{BuildContentFingerprint(alternative.Content)}";
+    }
+
+    private static string BuildContentFingerprint(RuleContent content)
+    {
+        return content switch
+        {
+            RuleRef r => $"Ref({r.RuleName},{r.Label?.Label},{r.Label?.RuleName},{r.Label?.IsAdditive})",
+            LiteralMatch l => $"Lit({l.Value})",
+            RangeMatch r => $"Range({r.From},{r.To})",
+            CharSetMatch c => $"Set({c.Negated}:{new string(c.Chars.OrderBy(ch => ch).ToArray())})",
+            AnyChar => "AnyChar",
+            Sequence s => $"Seq[{string.Join(",", s.Items.Select(BuildContentFingerprint))}]",
+            Alternation a => $"Alt[{string.Join("|", a.Alternatives.Select(BuildAlternativeFingerprint))}]",
+            Alternative a => BuildAlternativeFingerprint(a),
+            Quantifier q => $"Quant({q.Min},{q.Max},{q.Greedy}:{BuildContentFingerprint(q.Inner)})",
+            Negation n => $"Neg({BuildContentFingerprint(n.Inner)})",
+            ValidatingPredicate v => $"ValPred({v.Code})",
+            GatingPredicate g => $"GatePred({g.Code})",
+            PrecedencePredicate p => $"PrecPred({p.Level})",
+            EmbeddedAction action => $"Action({action.Context},{action.Position},{action.RawCode})",
+            LexerCommand cmd => $"Cmd({cmd.Type},{cmd.Argument})",
+            ModeSwitch mode => $"Mode({mode.ModeName},{mode.Push})",
+            _ => content.GetType().Name
+        };
     }
 
     /// <summary>
