@@ -63,8 +63,8 @@ public sealed class ExpressionOptimiser
             {
                 if (IsNumericConstant(right, 1d)) return left;
                 if (IsNumericConstant(left, 1d)) return right;
-                if (IsNumericConstant(right, 0d)) return Expression.Constant(Convert.ChangeType(0, node.Type), node.Type);
-                if (IsNumericConstant(left, 0d)) return Expression.Constant(Convert.ChangeType(0, node.Type), node.Type);
+                if (IsNumericConstant(right, 0d)) return CreateZeroConstant(node.Type);
+                if (IsNumericConstant(left, 0d)) return CreateZeroConstant(node.Type);
             }
 
             if (node.NodeType == ExpressionType.Divide && IsNumericType(node.Type))
@@ -79,9 +79,11 @@ public sealed class ExpressionOptimiser
                     return leftBool ? right : Expression.Constant(false);
                 }
 
-                if (TryGetBooleanConstant(right, out var rightBool))
+                // Only simplify when the right constant is true: left && true → left.
+                // When right is false, left must still be evaluated for side effects.
+                if (TryGetBooleanConstant(right, out var rightBool) && rightBool)
                 {
-                    return rightBool ? left : Expression.Constant(false);
+                    return left;
                 }
             }
 
@@ -92,9 +94,11 @@ public sealed class ExpressionOptimiser
                     return leftBool ? Expression.Constant(true) : right;
                 }
 
-                if (TryGetBooleanConstant(right, out var rightBool))
+                // Only simplify when the right constant is false: left || false → left.
+                // When right is true, left must still be evaluated for side effects.
+                if (TryGetBooleanConstant(right, out var rightBool) && !rightBool)
                 {
-                    return rightBool ? Expression.Constant(true) : left;
+                    return left;
                 }
             }
 
@@ -135,6 +139,18 @@ public sealed class ExpressionOptimiser
             }
 
             return Expression.Block(node.Variables, visitedExpressions);
+        }
+
+        /// <summary>
+        /// Creates a zero constant expression for the given numeric type, handling nullable types.
+        /// </summary>
+        /// <param name="type">Target type (may be nullable).</param>
+        /// <returns>Constant expression representing zero for the given type.</returns>
+        private static ConstantExpression CreateZeroConstant(Type type)
+        {
+            Type underlying = Nullable.GetUnderlyingType(type) ?? type;
+            object zero = Convert.ChangeType(0, underlying);
+            return Expression.Constant(zero, type);
         }
 
         /// <summary>
@@ -191,7 +207,7 @@ public sealed class ExpressionOptimiser
             }
 
             double actualValue = Convert.ToDouble(constantExpression.Value);
-            return Math.Abs(actualValue - expectedValue) < double.Epsilon;
+            return double.Abs(actualValue - expectedValue) < double.Epsilon;
         }
     }
 }

@@ -24,6 +24,7 @@ It is designed for consumers who want small, task-oriented packages (networking,
 | `Utils.NumberToString` | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | [Utils.NumberToString/README.md](Utils.NumberToString/README.md) |
 | `Utils.OData` | `omy.Utils.OData` | OData helpers/runtime pieces. | [Utils.OData/README.md](Utils.OData/README.md) |
 | `Utils.Parser` | `omy.Utils.Parser` | Parser runtime helpers and tokenization. | [Utils.Parser/README.md](Utils.Parser/README.md) |
+| `Utils.Parser.Diagnostics` | `omy.Utils.Parser.Diagnostics` | Shared parser diagnostics contracts for runtime and generators. | [Utils.Parser.Diagnostics/README.md](Utils.Parser.Diagnostics/README.md) |
 | `Utils.Reflection` | `omy.Utils.Reflection` | Reflection/process-isolation helpers. | [Utils.Reflection/README.md](Utils.Reflection/README.md) |
 | `Utils.VirtualMachine` | `omy.Utils.VirtualMachine` | VM and opcode helper abstractions. | [Utils.VirtualMachine/README.md](Utils.VirtualMachine/README.md) |
 | `Utils.Xml` | `omy.Utils.XML` | XML-related helpers. | [Utils.Xml/README.md](Utils.Xml/README.md) |

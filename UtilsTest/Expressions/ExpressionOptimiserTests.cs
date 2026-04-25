@@ -51,4 +51,54 @@ public class ExpressionOptimiserTests
 
         Assert.AreEqual(2, optimized.Compile().Invoke());
     }
+    /// <summary>
+    /// Ensures that <c>expr &amp;&amp; false</c> still evaluates <c>expr</c> for side effects.
+    /// </summary>
+    [TestMethod]
+    public void Optimize_AndAlsoFalse_PreservesLeftSideEffect()
+    {
+        var counter = Expression.Parameter(typeof(int).MakeByRefType(), "counter");
+        var increment = Expression.PreIncrementAssign(counter);
+        var andAlso = Expression.AndAlso(Expression.GreaterThan(increment, Expression.Constant(int.MaxValue)), Expression.Constant(false));
+        var optimiser = new ExpressionOptimiser();
+
+        var optimized = optimiser.Optimize(andAlso);
+
+        // The optimised tree must not be a simple false constant — left must still execute.
+        Assert.AreNotEqual(ExpressionType.Constant, optimized.NodeType,
+            "Optimising expr && false must not discard the left operand.");
+    }
+
+    /// <summary>
+    /// Ensures that <c>expr || true</c> still evaluates <c>expr</c> for side effects.
+    /// </summary>
+    [TestMethod]
+    public void Optimize_OrElseTrue_PreservesLeftSideEffect()
+    {
+        var flag = Expression.Parameter(typeof(bool), "flag");
+        var orElse = Expression.OrElse(flag, Expression.Constant(true));
+        var optimiser = new ExpressionOptimiser();
+
+        var optimized = optimiser.Optimize(orElse);
+
+        // The optimised tree must not be a simple true constant — left must still execute.
+        Assert.AreNotEqual(ExpressionType.Constant, optimized.NodeType,
+            "Optimising expr || true must not discard the left operand.");
+    }
+
+    /// <summary>
+    /// Ensures multiply-by-zero optimisation handles nullable numeric types without throwing.
+    /// </summary>
+    [TestMethod]
+    public void Optimize_MultiplyByZero_NullableType_DoesNotThrow()
+    {
+        var x = Expression.Parameter(typeof(int?), "x");
+        var multiply = Expression.Multiply(x, Expression.Constant((int?)0, typeof(int?)));
+        var optimiser = new ExpressionOptimiser();
+
+        Expression result = optimiser.Optimize(multiply);
+
+        Assert.IsInstanceOfType<ConstantExpression>(result);
+        Assert.AreEqual(typeof(int?), result.Type);
+    }
 }

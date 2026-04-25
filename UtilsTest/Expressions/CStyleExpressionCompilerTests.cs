@@ -392,6 +392,39 @@ public class CSyntaxExpressionCompilerTests
     }
 
     /// <summary>
+    /// Ensures that the initializer of an unused variable is still executed for its side effects.
+    /// </summary>
+    [TestMethod]
+    public void CompileSource_UnusedVariableWithSideEffect_StillExecutesInitializer()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        var context = new ExpressionCompilerContext();
+        int callCount = 0;
+        context.Set("sideEffect", (Func<int>)(() => { callCount++; return 42; }));
+
+        compiler.CompileSource(
+            """
+            {
+                int unused = sideEffect();
+                1;
+            }
+            """,
+            context);
+
+        // Force compilation and execution
+        var source = """
+            {
+                int unused = sideEffect();
+                1;
+            }
+            """;
+        var expr = compiler.CompileSource(source, context);
+        Expression.Lambda<Func<int>>(Expression.Convert(expr, typeof(int))).Compile().Invoke();
+
+        Assert.IsTrue(callCount > 0, "The initializer side effect must still execute even when the variable is unused.");
+    }
+
+    /// <summary>
     /// Simple test container used for member-access compilation tests.
     /// </summary>
     private sealed class SampleContainer

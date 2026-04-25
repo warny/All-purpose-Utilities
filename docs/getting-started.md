@@ -23,6 +23,7 @@ Pick the smallest package that matches your use case.
 | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | `net8.0` |
 | `omy.Utils.OData` | OData client and metadata utilities. | `net9.0` |
 | `omy.Utils.Parser` | Runtime parsing infrastructure for ANTLR4 grammars. | `net8.0` |
+| `omy.Utils.Parser.Diagnostics` | Shared diagnostics contracts used by parser runtime and generators. | `netstandard2.0` |
 | `omy.Utils.Reflection` | Reflection wrappers and invocation helpers. | `net8.0` |
 | `omy.Utils.VirtualMachine` | Attribute-based byte-code interpreter support. | `net8.0` |
 | `omy.Utils.XML` | XML mapping and processing helpers. | `net8.0` |

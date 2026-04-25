@@ -63,6 +63,15 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         isEnabledByDefault: true,
         description:        "The syntax colorization descriptor does not contain required sections or directives.");
 
+    private static readonly DiagnosticDescriptor s_unsupportedSuperClassDescriptor = new DiagnosticDescriptor(
+        id:                 "APU0103",
+        title:              "ANTLR superClass is not applied by generator",
+        messageFormat:      "Grammar '{0}' declares superClass='{1}', but generated runtime inheritance is not supported and the option is kept as metadata only.",
+        category:           "Utils.Parser.Generators",
+        defaultSeverity:    RoslynDiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description:        "The current generator keeps ANTLR superClass in options metadata but does not change generated type inheritance.");
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -127,6 +136,10 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             var tokens    = new G4Tokenizer(source).Tokenize();
             var diagnostics = new DiagnosticBag();
             var grammar   = new G4Parser(tokens, diagnostics).Parse();
+            if (grammar.Options.TryGetValue("superClass", out var superClass) && !string.IsNullOrWhiteSpace(superClass))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
+            }
             var generated = GrammarEmitter.Emit(grammar, namespaceName!, className!, fileName);
             ReportParserDiagnostics(context, diagnostics, fileName);
 
