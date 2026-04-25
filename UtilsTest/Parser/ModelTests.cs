@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
+using System.IO;
 
 namespace UtilsTest.Parser;
 
@@ -336,7 +337,7 @@ public class ModelTests
 
         // Tokenizing any input should produce ERROR tokens, not a StackOverflowException.
         var lexer = new LexerEngine(resolved);
-        List<Token> tokens = lexer.Tokenize(new StringCharStream("x")).ToList();
+        List<Token> tokens = lexer.Tokenize(new StringReader("x")).ToList();
         Assert.IsTrue(tokens.Count > 0, "Expected at least one ERROR token");
         Assert.IsTrue(tokens.All(t => t.RuleName == "ERROR"), "Expected all tokens to be ERROR");
     }

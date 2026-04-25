@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Runtime;
+using System.IO;
 
 namespace UtilsTest.Parser;
 
@@ -11,81 +12,19 @@ public class LexerEngineTests
     {
         var definition = ExpGrammar.Build();
         var lexer = new LexerEngine(definition);
-        var stream = new StringCharStream(input);
+        var stream = new StringReader(input);
         return lexer.Tokenize(stream).ToList();
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // StringCharStream tests
-    // ═══════════════════════════════════════════════════════════════
-
     [TestMethod]
-    public void StringCharStream_EmptyString()
+    public void Lexer_LineAndColumn_AreComputed()
     {
-        var stream = new StringCharStream("");
-        Assert.IsTrue(stream.IsEnd);
-        Assert.AreEqual(0, stream.Position);
-    }
-
-    [TestMethod]
-    public void StringCharStream_PeekAndConsume()
-    {
-        var stream = new StringCharStream("abc");
-        Assert.AreEqual('a', stream.Peek());
-        Assert.AreEqual('b', stream.Peek(1));
-        Assert.AreEqual('c', stream.Peek(2));
-        Assert.AreEqual('\0', stream.Peek(3));
-
-        stream.Consume();
-        Assert.AreEqual('b', stream.Peek());
-        Assert.AreEqual(1, stream.Position);
-    }
-
-    [TestMethod]
-    public void StringCharStream_SaveRestore()
-    {
-        var stream = new StringCharStream("abc");
-        stream.Consume(2);
-        Assert.AreEqual('c', stream.Peek());
-
-        var saved = stream.SavePosition();
-        stream.Consume();
-        Assert.IsTrue(stream.IsEnd);
-
-        stream.RestorePosition(saved);
-        Assert.AreEqual('c', stream.Peek());
-        Assert.IsFalse(stream.IsEnd);
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // SourceSpan tests
-    // ═══════════════════════════════════════════════════════════════
-
-    [TestMethod]
-    public void SourceSpan_ToLineColumn_FirstChar()
-    {
-        var span = new SourceSpan(0, 1);
-        var (line, col) = span.ToLineColumn("hello");
-        Assert.AreEqual(1, line);
-        Assert.AreEqual(1, col);
-    }
-
-    [TestMethod]
-    public void SourceSpan_ToLineColumn_SecondLine()
-    {
-        var span = new SourceSpan(6, 1);
-        var (line, col) = span.ToLineColumn("hello\nworld");
-        Assert.AreEqual(2, line);
-        Assert.AreEqual(1, col);
-    }
-
-    [TestMethod]
-    public void SourceSpan_ToLineColumn_ThirdColumn()
-    {
-        var span = new SourceSpan(2, 1);
-        var (line, col) = span.ToLineColumn("hello");
-        Assert.AreEqual(1, line);
-        Assert.AreEqual(3, col);
+        var tokens = Tokenize("1\n2");
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual(1, tokens[0].Span.Line);
+        Assert.AreEqual(1, tokens[0].Span.Column);
+        Assert.AreEqual(2, tokens[1].Span.Line);
+        Assert.AreEqual(1, tokens[1].Span.Column);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -355,7 +294,7 @@ public class LexerEngineTests
             TOK : 'a' -> skip | 'b' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("b");
+        var stream = new StringReader("b");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(1, tokens.Count,
@@ -372,7 +311,7 @@ public class LexerEngineTests
             TOK : 'a' -> skip | 'b' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("a");
+        var stream = new StringReader("a");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(0, tokens.Count, "Token 'a' must be skipped.");
@@ -395,7 +334,7 @@ public class LexerEngineTests
             WORD   : 'fix' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("prefix");
+        var stream = new StringReader("prefix");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(1, tokens.Count,
@@ -413,7 +352,7 @@ public class LexerEngineTests
             WORD   : 'fix' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("prefix");
+        var stream = new StringReader("prefix");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(1, tokens.Count);

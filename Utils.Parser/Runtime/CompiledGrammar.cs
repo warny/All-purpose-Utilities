@@ -1,4 +1,5 @@
 using Utils.Parser.Model;
+using System.IO;
 
 namespace Utils.Parser.Runtime;
 
@@ -40,7 +41,7 @@ public sealed class CompiledGrammar
     /// <returns>Read-only list of tokens.</returns>
     public IReadOnlyList<Token> Tokenize(string input)
     {
-        var stream = new StringCharStream(input);
+        var stream = new StringReader(input);
         return _lexer.Tokenize(stream).ToList();
     }
 
@@ -56,7 +57,7 @@ public sealed class CompiledGrammar
     /// </returns>
     public ParseNode Parse(string input)
     {
-        var stream = new StringCharStream(input);
+        var stream = new StringReader(input);
         var tokens = _lexer.Tokenize(stream).ToList();
         return _parser.Parse(tokens);
     }

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Utils.Parser.Model;
 
@@ -980,6 +982,9 @@ public static class Antlr4Grammar
             Actions: [],
             Imports: [],
             Modes: [defaultMode, argumentMode, lexerCharSetMode],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
             ParserRules: parserRules,
             RootRule: pGrammarSpec
         );

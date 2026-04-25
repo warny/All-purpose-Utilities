@@ -91,7 +91,7 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// </exception>
     public ParseNode Parse(IEnumerable<Token> tokens, Rule? startRule = null, DiagnosticBag? diagnostics = null)
     {
-        var tokenList = tokens.ToList();
+        var tokenList = tokens.Where(static token => token.Channel == "DEFAULT_CHANNEL").ToList();
         var root = startRule ?? definition.RootRule
             ?? throw new InvalidOperationException("No root rule defined");
 

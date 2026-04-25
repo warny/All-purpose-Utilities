@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Utils.Parser.Model;
 
 /// <summary>
@@ -30,12 +33,57 @@ public record ParserDefinition(
     /// Each mode holds an ordered list of lexer rules.
     /// </summary>
     IReadOnlyList<LexerMode> Modes,
+    /// <summary>Token names declared in optional <c>tokens { ... }</c> blocks.</summary>
+    IReadOnlySet<string>? DeclaredTokens,
+    /// <summary>Channel names declared in optional <c>channels { ... }</c> blocks.</summary>
+    IReadOnlySet<string>? DeclaredChannels,
+    /// <summary>Grammar-superClass extension bindings discovered during compilation.</summary>
+    IReadOnlyList<GrammarExtensionBinding>? ExtensionBindings,
     /// <summary>Parser rules in declaration order.</summary>
     IReadOnlyList<Rule> ParserRules,
     /// <summary>Entry-point rule (first parser rule), or <c>null</c> for lexer-only grammars.</summary>
     Rule? RootRule
 )
 {
+    /// <summary>
+    /// Backward-compatible constructor used by generated code that does not provide extension metadata.
+    /// </summary>
+    public ParserDefinition(
+        string Name,
+        GrammarType Type,
+        GrammarOptions? Options,
+        IReadOnlyList<GrammarAction> Actions,
+        IReadOnlyList<GrammarImport> Imports,
+        IReadOnlyList<LexerMode> Modes,
+        IReadOnlyList<Rule> ParserRules,
+        Rule? RootRule)
+        : this(
+            Name,
+            Type,
+            Options,
+            Actions,
+            Imports,
+            Modes,
+            new HashSet<string>(StringComparer.Ordinal),
+            new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            [],
+            ParserRules: ParserRules,
+            RootRule: RootRule)
+    {
+    }
+
+    /// <summary>Token names declared in optional <c>tokens { ... }</c> blocks.</summary>
+    public IReadOnlySet<string> DeclaredTokens { get; init; } =
+        DeclaredTokens ?? new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Channel names declared in optional <c>channels { ... }</c> blocks.</summary>
+    public IReadOnlySet<string> DeclaredChannels { get; init; } =
+        DeclaredChannels ?? new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Grammar-superClass extension bindings discovered during compilation.</summary>
+    public IReadOnlyList<GrammarExtensionBinding> ExtensionBindings { get; init; } =
+        ExtensionBindings ?? [];
+
     /// <summary>
     /// Normalized effective options derived from <see cref="Options"/> and <see cref="Type"/>.
     /// Populated by <c>RuleResolver.Resolve</c>.

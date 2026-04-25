@@ -5,6 +5,7 @@ using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
+using System.IO;
 
 namespace Utils.Parser.Bootstrap;
 
@@ -90,14 +91,14 @@ public sealed class Antlr4GrammarConverter
     {
         var metaDefinition = RuleResolver.Resolve(Antlr4Grammar.Build());
         var lexer = new LexerEngine(metaDefinition);
-        var stream = new StringCharStream(grammarText);
+        var stream = new StringReader(grammarText);
         var tokens = lexer.Tokenize(stream)
             .Where(t => t.RuleName is not ("WS" or "LINE_COMMENT" or "BLOCK_COMMENT" or "DOC_COMMENT"))
             .ToList();
 
         // Add a sentinel EOF token: grammarSpec ends with Ref("EOF") but the lexer never
         // emits an EOF token (Lit("") produces length=0 which is rejected by TryMatchRule).
-        tokens.Add(new Token(new SourceSpan(grammarText.Length, 0), "EOF", "DEFAULT_MODE", ""));
+        tokens.Add(new Token(new SourceSpan(grammarText.Length, 0, 1, 1), "EOF", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""));
 
         var parser = new ParserEngine(metaDefinition);
         var root = parser.Parse(tokens, diagnostics: diagnostics);
@@ -159,8 +160,10 @@ public sealed class Antlr4GrammarConverter
         GrammarOptions? options = null;
         var imports = new List<GrammarImport>();
         var actions = new List<GrammarAction>();
+        var declaredTokens = new HashSet<string>(StringComparer.Ordinal);
+        var declaredChannels = new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" };
         foreach (var prequel in All(grammarSpec, "prequelConstruct"))
-            ProcessPrequelConstruct(prequel, ref options, imports, actions, diagnostics);
+            ProcessPrequelConstruct(prequel, ref options, imports, actions, declaredTokens, declaredChannels, diagnostics);
 
         var rulesNode = First(grammarSpec, "rules");
         var (lexerRules, parserRules) = rulesNode != null
@@ -176,6 +179,8 @@ public sealed class Antlr4GrammarConverter
 
         var rootRule = parserRules.FirstOrDefault();
 
+        var extensionBindings = BuildExtensionBindings(grammarName, grammarType, options, allModes, declaredTokens, declaredChannels);
+
         var definition = new ParserDefinition(
             Name: grammarName,
             Type: grammarType,
@@ -183,6 +188,9 @@ public sealed class Antlr4GrammarConverter
             Actions: actions,
             Imports: imports,
             Modes: allModes,
+            DeclaredTokens: declaredTokens,
+            DeclaredChannels: declaredChannels,
+            ExtensionBindings: extensionBindings,
             ParserRules: parserRules,
             RootRule: rootRule
         );
@@ -225,6 +233,8 @@ public sealed class Antlr4GrammarConverter
         ref GrammarOptions? options,
         List<GrammarImport> imports,
         List<GrammarAction> actions,
+        HashSet<string> declaredTokens,
+        HashSet<string> declaredChannels,
         DiagnosticBag? diagnostics)
     {
         var optSpec = First(node, "optionsSpec");
@@ -235,13 +245,21 @@ public sealed class Antlr4GrammarConverter
 
         if (First(node, "tokensSpec") != null)
         {
-            diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored);
+            foreach (var tokenName in ExtractIdentifiers(First(node, "tokensSpec")!))
+            {
+                declaredTokens.Add(tokenName);
+            }
+
             return;
         }
 
         if (First(node, "channelsSpec") != null)
         {
-            diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored);
+            foreach (var channelName in ExtractIdentifiers(First(node, "channelsSpec")!))
+            {
+                declaredChannels.Add(channelName);
+            }
+
             return;
         }
 
@@ -250,6 +268,45 @@ public sealed class Antlr4GrammarConverter
         {
             var ga = ConvertGrammarAction(actionNode, diagnostics);
             if (ga != null) actions.Add(ga);
+        }
+    }
+
+    private static IReadOnlyList<GrammarExtensionBinding> BuildExtensionBindings(
+        string grammarName,
+        GrammarType grammarType,
+        GrammarOptions? options,
+        IReadOnlyList<LexerMode> modes,
+        IReadOnlySet<string> declaredTokens,
+        IReadOnlySet<string> declaredChannels)
+    {
+        if (options is null || !options.Values.TryGetValue("superClass", out string? superClass) || string.IsNullOrWhiteSpace(superClass))
+        {
+            return [];
+        }
+
+        var lexerRuleNames = modes.SelectMany(static mode => mode.Rules).Select(static rule => rule.Name).ToHashSet(StringComparer.Ordinal);
+        return
+        [
+            new GrammarExtensionBinding
+            {
+                GrammarName = grammarName,
+                AppliesTo = grammarType,
+                SuperClassName = superClass,
+                LexerRuleNames = lexerRuleNames,
+                DeclaredTokens = new HashSet<string>(declaredTokens, StringComparer.Ordinal),
+                DeclaredChannels = new HashSet<string>(declaredChannels, StringComparer.Ordinal),
+            }
+        ];
+    }
+
+    private static IEnumerable<string> ExtractIdentifiers(ParserNode node)
+    {
+        foreach (var child in FlatChildren(node).OfType<ParserNode>())
+        {
+            if (child.Rule?.Name == "identifier")
+            {
+                yield return GetIdentifierText(child);
+            }
         }
     }
 

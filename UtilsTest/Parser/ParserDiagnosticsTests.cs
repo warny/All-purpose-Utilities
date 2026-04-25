@@ -6,6 +6,9 @@ using Utils.Parser.Generators.Internal;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
+using System.IO;
+using System;
+using System.Collections.Generic;
 
 namespace UtilsTest.Parser;
 
@@ -71,6 +74,9 @@ public class ParserDiagnosticsTests
             Actions: [],
             Imports: [],
             Modes: [new LexerMode("DEFAULT_MODE", [])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
             ParserRules: [parserRule],
             RootRule: parserRule));
 
@@ -99,6 +105,9 @@ public class ParserDiagnosticsTests
             Actions: [],
             Imports: [],
             Modes: [new LexerMode("DEFAULT_MODE", [])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
             ParserRules: [parserRule],
             RootRule: parserRule);
 
@@ -118,7 +127,7 @@ public class ParserDiagnosticsTests
             """, diagnostics);
 
         var lexer = new LexerEngine(definition);
-        var tokens = lexer.Tokenize(new StringCharStream("1 2"), diagnostics).ToList();
+        var tokens = lexer.Tokenize(new StringReader("1 2"), diagnostics: diagnostics).ToList();
         var parser = new ParserEngine(definition);
         var node = parser.Parse(tokens, diagnostics: diagnostics);
 
@@ -138,7 +147,7 @@ public class ParserDiagnosticsTests
             """, diagnostics);
 
         var lexer = new LexerEngine(definition);
-        var tokens = lexer.Tokenize(new StringCharStream("1"), diagnostics).ToList();
+        var tokens = lexer.Tokenize(new StringReader("1"), diagnostics: diagnostics).ToList();
         var parser = new ParserEngine(definition);
         var node = parser.Parse(tokens, diagnostics: diagnostics);
 
@@ -157,7 +166,7 @@ public class ParserDiagnosticsTests
             """);
 
         var lexer = new LexerEngine(definition);
-        var tokens = lexer.Tokenize(new StringCharStream("1 ?"), diagnostics: null).ToList();
+        var tokens = lexer.Tokenize(new StringReader("1 ?"), diagnostics: null).ToList();
         var parser = new ParserEngine(definition);
         var node = parser.Parse(tokens, diagnostics: null);
 
@@ -183,6 +192,9 @@ public class ParserDiagnosticsTests
             Actions: [],
             Imports: [],
             Modes: [new LexerMode("DEFAULT_MODE", [])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
             ParserRules: [parserRule],
             RootRule: parserRule);
 

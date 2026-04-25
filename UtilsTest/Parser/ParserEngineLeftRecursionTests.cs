@@ -4,6 +4,7 @@ using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
+using System.IO;
 
 namespace UtilsTest.Parser;
 
@@ -191,7 +192,7 @@ public class ParserEngineLeftRecursionTests
             """, diagnostics);
 
         var lexer = new LexerEngine(definition);
-        var tokens = lexer.Tokenize(new StringCharStream("1+2+3"), diagnostics).ToList();
+        var tokens = lexer.Tokenize(new StringReader("1+2+3"), diagnostics: diagnostics).ToList();
         var parser = new ParserEngine(definition);
         var result = parser.Parse(tokens, diagnostics: diagnostics);
 
@@ -204,7 +205,7 @@ public class ParserEngineLeftRecursionTests
     {
         var definition = Antlr4GrammarConverter.Parse(grammar);
         var lexer = new LexerEngine(definition);
-        var tokens = lexer.Tokenize(new StringCharStream(input)).ToList();
+        var tokens = lexer.Tokenize(new StringReader(input)).ToList();
         var parser = new ParserEngine(definition);
         return (parser.Parse(tokens), definition);
     }

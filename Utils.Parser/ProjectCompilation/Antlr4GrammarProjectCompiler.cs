@@ -85,6 +85,9 @@ public static class Antlr4GrammarProjectCompiler
 
         var modes = new List<LexerMode>();
         var parserRules = new List<Rule>();
+        var declaredTokens = new HashSet<string>(entry.DeclaredTokens, StringComparer.Ordinal);
+        var declaredChannels = new HashSet<string>(entry.DeclaredChannels, StringComparer.Ordinal);
+        var extensionBindings = new List<GrammarExtensionBinding>(entry.ExtensionBindings);
         var existingRuleNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var mode in entry.Modes)
@@ -111,6 +114,9 @@ public static class Antlr4GrammarProjectCompiler
             }
 
             MergeModes(modes, definition.Modes, existingRuleNames, diagnostics, entry.Name);
+            declaredTokens.UnionWith(definition.DeclaredTokens);
+            declaredChannels.UnionWith(definition.DeclaredChannels);
+            extensionBindings.AddRange(definition.ExtensionBindings);
             if (loadedDefinition.IncludeParserRules)
             {
                 MergeParserRules(parserRules, definition.ParserRules, existingRuleNames, diagnostics, entry.Name);
@@ -122,6 +128,9 @@ public static class Antlr4GrammarProjectCompiler
         var mergedDefinition = entry with
         {
             Modes = modes,
+            DeclaredTokens = declaredTokens,
+            DeclaredChannels = declaredChannels,
+            ExtensionBindings = extensionBindings,
             ParserRules = parserRules,
             RootRule = entry.RootRule,
             AllowExternalLexerRules = true

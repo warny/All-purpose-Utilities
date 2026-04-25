@@ -84,7 +84,7 @@ public static class SyntaxColorisationGrammar
         var lexer = new LexerEngine(Definition);
         int maxTokenCount = ComputeTokenLimit(normalizedSource);
         var tokens = new List<Token>();
-        foreach (Token token in lexer.Tokenize(new StringCharStream(normalizedSource)))
+        foreach (Token token in lexer.Tokenize(new StringReader(normalizedSource)))
         {
             if (token.RuleName is "WS" or "LINE_COMMENT" or "HASH_COMMENT")
             {
@@ -141,6 +141,9 @@ public static class SyntaxColorisationGrammar
             Array.Empty<GrammarAction>(),
             Array.Empty<GrammarImport>(),
             new[] { new LexerMode("DEFAULT_MODE", lexerRules) },
+            new HashSet<string>(StringComparer.Ordinal),
+            new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            Array.Empty<GrammarExtensionBinding>(),
             parserRules,
             parserRules[0]);
     }
