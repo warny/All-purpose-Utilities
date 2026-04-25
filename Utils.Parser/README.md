@@ -242,6 +242,16 @@ a comprehensive real-world example.
 | Left-recursion detection | Cycles (same rule at the same token position) are detected and skipped. |
 | Precedence predicates | `<assoc=right>` / priority-annotated alternatives are respected. |
 | Trailing-token validation | `Parse()` returns an `ErrorNode` when unconsumed tokens remain after the root rule. |
+| Parse memoization | Results at each rule/position pair are cached to avoid redundant re-evaluation in backtracking scenarios. |
+
+## Grammar validation
+
+`RuleResolver` enforces grammar type constraints before resolution:
+
+- **Lexer grammars** (`lexer grammar`) must not contain parser rules — violators raise `GrammarValidationException` with diagnostic `UP0008`.
+- **Parser grammars** (`parser grammar`) must not declare their own lexer rules — violators raise `GrammarValidationException` with diagnostic `UP0007`. Merged definitions (after project-level imports are resolved) are exempt from this check since imported lexer rules are expected.
+
+`Antlr4GrammarProjectCompiler` performs an additional pre-merge validation step (`ValidateEntryGrammarTypeConstraints`) that catches lexer rules declared directly inside the entry parser grammar before any merging takes place.
 
 ---
 
@@ -252,8 +262,9 @@ The runtime parser and the source generator now share the same diagnostic model
 
 ### Code scheme
 
-- `UP0xxx`: blocking errors
-- `UP1xxx` to `UP7xxx`: warnings for unsupported/ignored/partial behavior
+- `UP0xxx`: blocking errors (unknown rules, grammar type violations, …)
+- `UP1xxx`: unsupported / ignored / partial behavior (embedded actions, left-recursion handling, memoization traces, …)
+- `UP5xxx`: best-effort recovery warnings
 - `UP8xxx`: informational diagnostics
 - `UP9xxx`: debug traces
 

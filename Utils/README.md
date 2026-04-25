@@ -7,7 +7,7 @@
 - **Async** – asynchronous execution helpers
 - **Arrays** – comparison helpers, multi-dimensional utilities, specialized comparers
 - **Collections** – indexed lists, skip lists, LRU caches, dictionary extensions
-- **Expressions** – expression parsing, compilation, lambda utilities, and shared compiler context (`ExpressionCompilerContext`)
+- **Expressions** – expression parsing, compilation, lambda utilities, shared compiler context (`ExpressionCompilerContext`), and expression tree optimization (`ExpressionOptimiser`)
 - **Files** – filesystem helpers to manipulate paths and temporary files
 - **Mathematics** – base classes for expression transformation and math functions
 - **Net** – advanced URI builder and network helpers
@@ -96,3 +96,29 @@ See the root README for the full package list and installation instructions.
 - dynamic symbol registration (`Set` / dynamic members),
 - callable overload storage under a single symbol name,
 - stream persistence (`WriteToStream` / `ReadFromStream`) for values and static callable entries.
+
+## ExpressionOptimiser
+
+`ExpressionOptimiser` rewrites LINQ `Expression` trees to produce simpler, faster-executing equivalents without changing observable behavior.
+
+Supported rewrites include:
+
+- **Constant folding** — `1 + 2` → `3`, `true && false` → `false`
+- **Algebraic identities** — `x * 1` → `x`, `x + 0` → `x`, `x * 0` → `0`, `x - x` → `0`
+- **Boolean short-circuit** — `expr || true` → `true` (preserving side effects in `expr`), `expr && false` → evaluates `expr` for side effects only
+- **Negation elimination** — `!!x` → `x`
+- **Conditional simplification** — `cond ? x : x` → `x`
+
+```csharp
+using Utils.Expressions;
+using System.Linq.Expressions;
+
+var optimiser = new ExpressionOptimiser();
+
+Expression<Func<int>> expr = () => (1 + 1) * 3 - 4 + 2;
+var optimised = (Expression<Func<int>>)optimiser.Optimize(expr);
+
+int result = optimised.Compile()(); // 2, computed without any arithmetic at runtime
+```
+
+Side effects are always preserved: the optimiser never removes sub-expressions that may have observable effects (method calls, increments, etc.).
