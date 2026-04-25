@@ -118,12 +118,12 @@ public sealed class LexerEngine(ParserDefinition definition)
     {
         if (definition.DeclaredTokens.Count > 0 && definition.ExtensionBindings.Count == 0)
         {
-            diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, null, null, null, null, FormatError(filePath, 1, 1, "UP2001", "tokens { ... } requires superClass / extension binding."));
+            ThrowValidation(diagnostics, filePath, 1, 1, null, "UP2001", "tokens { ... } requires superClass / extension binding.");
         }
 
         if (definition.ExtensionBindings.Count > 0 && extensions.Count == 0)
         {
-            diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, null, null, null, null, FormatError(filePath, 1, 1, "UP2002", "superClass extension binding exists but no ILexerExtension is configured."));
+            ThrowValidation(diagnostics, filePath, 1, 1, null, "UP2002", "superClass extension binding exists but no ILexerExtension is configured.");
         }
     }
 
@@ -131,12 +131,33 @@ public sealed class LexerEngine(ParserDefinition definition)
     {
         foreach (ILexerExtension extension in extensions)
         {
+            int startPosition = input.Position;
             var context = new LexerExtensionContext(definition, input, emittedTokens, modeName);
-            var tokens = extension.TryReadTokens(context) ?? [];
+            var tokens = extension.TryReadTokens(context);
+            if (tokens is null)
+            {
+                ThrowValidation(diagnostics, filePath, input.Line, input.Column, null, "UP2102", $"Extension '{extension.GetType().Name}' returned null from TryReadTokens.");
+            }
+
+            int consumedFromExtension = 0;
+            bool emitted = false;
             foreach (Token token in tokens)
             {
+                emitted = true;
                 ValidateTokenEmission(token, diagnostics, filePath);
+                int end = token.Span.Position + token.Span.Length;
+                consumedFromExtension = Math.Max(consumedFromExtension, end - startPosition);
                 yield return token;
+            }
+
+            if (emitted)
+            {
+                if (consumedFromExtension <= 0)
+                {
+                    ThrowValidation(diagnostics, filePath, input.Line, input.Column, null, "UP2103", $"Extension '{extension.GetType().Name}' emitted token(s) without consuming input.");
+                }
+
+                input.Consume(consumedFromExtension);
             }
         }
     }
@@ -146,7 +167,12 @@ public sealed class LexerEngine(ParserDefinition definition)
         foreach (ILexerExtension extension in extensions)
         {
             var context = new LexerExtensionContext(definition, input, emittedTokens, modeName);
-            var extra = extension.OnAfterToken(token, context) ?? [];
+            var extra = extension.OnAfterToken(token, context);
+            if (extra is null)
+            {
+                ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2104", $"Extension '{extension.GetType().Name}' returned null from OnAfterToken.");
+            }
+
             foreach (Token extraToken in extra)
             {
                 ValidateTokenEmission(extraToken, diagnostics, filePath);
@@ -160,7 +186,12 @@ public sealed class LexerEngine(ParserDefinition definition)
         foreach (ILexerExtension extension in extensions)
         {
             var context = new LexerExtensionContext(definition, input, emittedTokens, _modeStack.Peek().Name);
-            var extra = extension.OnEndOfInput(context) ?? [];
+            var extra = extension.OnEndOfInput(context);
+            if (extra is null)
+            {
+                ThrowValidation(diagnostics, filePath, input.Line, input.Column, null, "UP2105", $"Extension '{extension.GetType().Name}' returned null from OnEndOfInput.");
+            }
+
             foreach (Token extraToken in extra)
             {
                 ValidateTokenEmission(extraToken, diagnostics, filePath);
@@ -171,16 +202,19 @@ public sealed class LexerEngine(ParserDefinition definition)
 
     private void ValidateTokenEmission(Token token, DiagnosticBag? diagnostics, string? filePath)
     {
+        if (token.Span.Position < 0 || token.Span.Length < 0 || token.Span.Line < 1 || token.Span.Column < 1)
+        {
+            ThrowValidation(diagnostics, filePath, Math.Max(1, token.Span.Line), Math.Max(1, token.Span.Column), token.Span, "UP2106", $"Invalid token span for '{token.RuleName}'.");
+        }
+
         if (!definition.AllRules.ContainsKey(token.RuleName) && !definition.DeclaredTokens.Contains(token.RuleName) && token.RuleName != "ERROR")
         {
-            diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, token.Span.Position, token.Span.Length, null, null,
-                FormatError(filePath, token.Span.Line, token.Span.Column, "UP2100", $"Unknown emitted token '{token.RuleName}'."));
+            ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2100", $"Unknown emitted token '{token.RuleName}'.");
         }
 
         if (!definition.DeclaredChannels.Contains(token.Channel) && token.Channel is not (DefaultChannel or HiddenChannel))
         {
-            diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, token.Span.Position, token.Span.Length, null, null,
-                FormatError(filePath, token.Span.Line, token.Span.Column, "UP2101", $"Unknown channel '{token.Channel}'."));
+            ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2101", $"Unknown channel '{token.Channel}'.");
         }
     }
 
@@ -454,11 +488,6 @@ public sealed class LexerEngine(ParserDefinition definition)
             return true;
         }
 
-        if (token.Channel == HiddenChannel)
-        {
-            skip = true;
-        }
-
         return skip;
     }
 
@@ -558,5 +587,25 @@ public sealed class LexerEngine(ParserDefinition definition)
         }
 
         return new string(chars);
+    }
+
+    private static void ThrowValidation(
+        DiagnosticBag? diagnostics,
+        string? filePath,
+        int line,
+        int column,
+        SourceSpan? span,
+        string code,
+        string message)
+    {
+        string formatted = FormatError(filePath, line, column, code, message);
+        diagnostics?.AddWithContext(
+            ParserDiagnostics.ParseFailure,
+            span?.Position,
+            span?.Length,
+            null,
+            null,
+            formatted);
+        throw new LexerValidationException(formatted);
     }
 }

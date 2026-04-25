@@ -8,7 +8,8 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
 {
-    private readonly Queue<char> _lookahead = [];
+    private readonly List<char> _buffer = [];
+    private int _startIndex;
     private int _position;
     private int _line = 1;
     private int _column = 1;
@@ -35,21 +36,19 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
         }
 
         EnsureBuffered(offset + 1);
-        if (_lookahead.Count <= offset)
+        int index = _startIndex + offset;
+        if (index >= _buffer.Count)
         {
             return -1;
         }
 
-        return _lookahead.ElementAt(offset);
+        return _buffer[index];
     }
 
     /// <summary>
     /// Consumes a single character.
     /// </summary>
-    public void Consume()
-    {
-        Consume(1);
-    }
+    public void Consume() => Consume(1);
 
     /// <summary>
     /// Consumes the specified number of characters.
@@ -70,19 +69,12 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
                 throw new InvalidOperationException("Cannot consume past end of input.");
             }
 
-            _lookahead.Dequeue();
+            _startIndex++;
             _position++;
-
-            if (next == '\n')
-            {
-                _line++;
-                _column = 1;
-            }
-            else
-            {
-                _column++;
-            }
+            UpdateLineAndColumn((char)next);
         }
+
+        CompactBufferIfNeeded();
     }
 
     /// <summary>
@@ -104,22 +96,15 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
         }
 
         EnsureBuffered(length);
-        if (_lookahead.Count < length)
+        if (_startIndex + length > _buffer.Count)
         {
             throw new InvalidOperationException("Unable to read requested text length from forward-only buffer.");
         }
 
         var builder = new StringBuilder(length);
-        int index = 0;
-        foreach (char value in _lookahead)
+        for (int i = 0; i < length; i++)
         {
-            if (index >= length)
-            {
-                break;
-            }
-
-            builder.Append(value);
-            index++;
+            builder.Append(_buffer[_startIndex + i]);
         }
 
         return builder.ToString();
@@ -127,7 +112,7 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
 
     private void EnsureBuffered(int count)
     {
-        while (!_isEnd && _lookahead.Count < count)
+        while (!_isEnd && _buffer.Count - _startIndex < count)
         {
             int read = reader.Read();
             if (read < 0)
@@ -136,7 +121,46 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
                 break;
             }
 
-            _lookahead.Enqueue((char)read);
+            _buffer.Add((char)read);
+        }
+    }
+
+    private void UpdateLineAndColumn(char value)
+    {
+        if (value == '\r')
+        {
+            if (Peek(0) == '\n')
+            {
+                _startIndex++;
+                _position++;
+            }
+
+            _line++;
+            _column = 1;
+            return;
+        }
+
+        if (value == '\n')
+        {
+            _line++;
+            _column = 1;
+            return;
+        }
+
+        _column++;
+    }
+
+    private void CompactBufferIfNeeded()
+    {
+        if (_startIndex == 0)
+        {
+            return;
+        }
+
+        if (_startIndex > 1024 || _startIndex * 2 > _buffer.Count)
+        {
+            _buffer.RemoveRange(0, _startIndex);
+            _startIndex = 0;
         }
     }
 }
