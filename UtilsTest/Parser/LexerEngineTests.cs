@@ -440,11 +440,40 @@ public class LexerEngineTests
         Assert.AreEqual('\n', buffer.Peek(2));
         Assert.AreEqual('b', buffer.Peek(3));
 
-        buffer.Consume();
-        buffer.Consume();
+        buffer.Consume(); // a
+        Assert.AreEqual(1, buffer.Position);
+        Assert.AreEqual(1, buffer.Line);
+        Assert.AreEqual(2, buffer.Column);
+        Assert.AreEqual('\r', buffer.Peek(0));
+
+        buffer.Consume(); // \r
+        Assert.AreEqual(2, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(1, buffer.Column);
+        Assert.AreEqual('\n', buffer.Peek(0));
+
+        buffer.Consume(); // \n
+        Assert.AreEqual(3, buffer.Position);
         Assert.AreEqual(2, buffer.Line);
         Assert.AreEqual(1, buffer.Column);
         Assert.AreEqual('b', buffer.Peek(0));
+
+        buffer.Consume(); // b
+        Assert.AreEqual(4, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(2, buffer.Column);
+    }
+
+    [TestMethod]
+    public void Lexer_TextReaderBuffer_ConsumeCount_ConsumesExactlyCountCharacters()
+    {
+        var buffer = new TextReaderBuffer(new StringReader("\r\nx"));
+        buffer.Consume(2);
+
+        Assert.AreEqual(2, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(1, buffer.Column);
+        Assert.AreEqual('x', buffer.Peek(0));
     }
 
     [TestMethod]
@@ -640,6 +669,39 @@ public class LexerEngineTests
 
         var parser = new ParserEngine(grammar);
         var result = parser.Parse(tokenized);
+        Assert.IsNotInstanceOfType<ErrorNode>(result);
+    }
+
+    [TestMethod]
+    public void Lexer_Integration_CrLfWhitespace_IsKeptAndParserStaysSynchronized()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            root : ID ID ;
+            ID : 'a'..'z'+ ;
+            WS : (' ' | '\r' | '\n')+ -> channel(HIDDEN);
+            """);
+        var lexer = new LexerEngine(grammar);
+        var tokens = lexer.Tokenize(new StringReader("a\r\nb")).ToList();
+
+        Assert.AreEqual(3, tokens.Count);
+        Assert.AreEqual("ID", tokens[0].RuleName);
+        Assert.AreEqual(0, tokens[0].Span.Position);
+
+        Assert.AreEqual("WS", tokens[1].RuleName);
+        Assert.AreEqual("\r\n", tokens[1].Text);
+        Assert.AreEqual(1, tokens[1].Span.Position);
+        Assert.AreEqual(2, tokens[1].Span.Length);
+        Assert.AreEqual("HIDDEN", tokens[1].Channel);
+
+        Assert.AreEqual("ID", tokens[2].RuleName);
+        Assert.AreEqual("b", tokens[2].Text);
+        Assert.AreEqual(3, tokens[2].Span.Position);
+        Assert.AreEqual(2, tokens[2].Span.Line);
+        Assert.AreEqual(1, tokens[2].Span.Column);
+
+        var parser = new ParserEngine(grammar);
+        var result = parser.Parse(tokens);
         Assert.IsNotInstanceOfType<ErrorNode>(result);
     }
 

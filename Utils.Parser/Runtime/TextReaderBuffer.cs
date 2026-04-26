@@ -14,6 +14,7 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
     private int _line = 1;
     private int _column = 1;
     private bool _isEnd;
+    private bool _previousWasCarriageReturn;
 
     /// <inheritdoc />
     public int Position => _position;
@@ -129,25 +130,26 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
     {
         if (value == '\r')
         {
-            if (Peek(0) == '\n')
-            {
-                _startIndex++;
-                _position++;
-            }
-
             _line++;
             _column = 1;
+            _previousWasCarriageReturn = true;
             return;
         }
 
         if (value == '\n')
         {
-            _line++;
-            _column = 1;
+            if (!_previousWasCarriageReturn)
+            {
+                _line++;
+                _column = 1;
+            }
+
+            _previousWasCarriageReturn = false;
             return;
         }
 
         _column++;
+        _previousWasCarriageReturn = false;
     }
 
     private void CompactBufferIfNeeded()
