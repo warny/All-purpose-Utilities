@@ -344,6 +344,27 @@ The parser framework targets broad ANTLR4 compatibility, but some constructs are
 parsed in a simplified way, stored without full semantics, or ignored by one pipeline.
 The points below reflect the current implementation behavior.
 
+### ANTLR4 G4 feature support matrix
+
+| ANTLR4 feature | Runtime converter + engine (`Antlr4GrammarConverter` / `LexerEngine` / `ParserEngine`) | Source generator parser (`G4Parser`) | Notes |
+| --- | --- | --- | --- |
+| Grammar options (`options { ... }`) | ✅ Supported (ingested) | ⚠️ Partially supported | Runtime keeps effective options. |
+| Grammar imports (`import ...`) | ⚠️ Partially supported | ❌ Not supported | Runtime parses imports with resolver constraints. |
+| `tokens { ... }` block | ⚠️ Parsed but not mapped | ❌ Not supported | Recognized but ignored in model conversion. |
+| `channels { ... }` block | ⚠️ Parsed but not mapped | ❌ Not supported | Recognized but ignored in model conversion. |
+| Top-level grammar actions (`@... { ... }`) | ⚠️ Parsed but not executed | ❌ Not supported | Stored metadata only. |
+| Rule actions (`@init`, `@after`, inline `{...}`) | ⚠️ Partially supported | ⚠️ Parsed as raw blocks | Runtime stores actions and does not execute them. |
+| Semantic predicates (`{...}?`) | ⚠️ Parsed but not enforced | ⚠️ Parsed as raw blocks | Runtime accepts as empty successful matches. |
+| `returns [...]` | ⚠️ Partially supported | ❌ Not supported | Runtime stores raw return text. |
+| `locals`, `throws`, `catch`, `finally` | ⚠️ Parsed but ignored | ❌ Not supported | No runtime semantics yet. |
+| Rule labels | ⚠️ Partially supported | ⚠️ Partially supported | Runtime applies labels on `RuleRef` paths. |
+| Lexer commands (`skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`) | ✅ Supported | ⚠️ Parsed without full validation | Runtime validates command names and known behaviors. |
+| Unknown lexer commands | ❌ Not supported (explicit error) | ⚠️ Kept as parsed tokens | Runtime rejects unknown commands. |
+| Direct left recursion | ⚠️ Partially supported | N/A | Runtime supports guarded direct left recursion. |
+| Indirect left recursion | ❌ Not supported | ❌ Not supported | Explicitly diagnosed as unsupported. |
+| Precedence predicates (`precpred(_ctx, N)`) | ⚠️ Partially supported | ❌ Not supported | Runtime extraction is pattern-based. |
+| Error recovery during parsing | ❌ Not supported | ⚠️ Best-effort parser behavior | Runtime returns `ErrorNode` on failure. |
+
 ### Grammar ingestion (runtime converter: `Antlr4GrammarConverter`)
 
 - `options { ... }`, `import ...`, and top-level `@... { ... }` actions are ingested.
