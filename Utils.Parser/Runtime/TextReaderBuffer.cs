@@ -141,9 +141,9 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
             if (!_previousWasCarriageReturn)
             {
                 _line++;
-                _column = 1;
             }
 
+            _column = 1;
             _previousWasCarriageReturn = false;
             return;
         }
