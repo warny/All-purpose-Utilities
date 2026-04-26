@@ -94,6 +94,7 @@ ANTLR4 support in this repository is **still evolving** and is **not yet 100% AN
   - patterns already covered by automated tests,
   - or build-time generation/validation through `omy.Utils.Parser.Generators`.
 - ℹ️ Known missing/limited capabilities are documented in `Utils.Parser/README.md` under **Known missing or limited features**.
+- ℹ️ A high-level support matrix is also available in `Utils.Parser/README.md` under **Current support matrix (high-level)**.
 
 See the `Utils.Parser` README for details about current support scope.
 
