@@ -33,6 +33,24 @@ public class ParserEngineSafetyGuardsTests
     }
 
     /// <summary>
+    /// Ensures plus quantifiers with optional inner content do not loop forever and fail when no consuming match exists.
+    /// </summary>
+    [TestMethod]
+    public void Quantifier_EmptyMatchPlus_FailsCleanlyAndReportsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics("""
+            grammar G;
+            start : (A?)+ ;
+            A : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, string.Empty, diagnostics);
+
+        Assert.IsInstanceOfType<ErrorNode>(tree);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.NonProgressiveQuantifierStopped.Code));
+    }
+
+    /// <summary>
     /// Ensures ambiguous repeated alternatives are parsed without entering repeated parser states forever.
     /// </summary>
     [TestMethod]
@@ -46,6 +64,7 @@ public class ParserEngineSafetyGuardsTests
             """, "a a a", diagnostics);
 
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.AreEqual(3, CountTokens(tree, "a"));
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
     }
 
@@ -68,6 +87,27 @@ public class ParserEngineSafetyGuardsTests
 
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
         Assert.AreEqual(3, CountTokens(tree, "INT"));
+    }
+
+    /// <summary>
+    /// Ensures directly recursive rules without consuming tail content terminate with a non-progressive diagnostic.
+    /// </summary>
+    [TestMethod]
+    public void DirectLeftRecursion_NoProgress_TerminatesAndReportsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics("""
+            grammar G;
+            start : expr ;
+            expr : expr
+                 | INT
+                 ;
+            INT : ('0'..'9')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "1", diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.NonProgressiveLeftRecursionStopped.Code));
     }
 
     /// <summary>
@@ -98,11 +138,14 @@ public class ParserEngineSafetyGuardsTests
         return parser.Parse(tokens, diagnostics: diagnostics);
     }
 
-    private static int CountTokens(ParseNode node, string ruleName)
+    private static int CountTokens(ParseNode node, string ruleNameOrText)
     {
         if (node is LexerNode lexerNode)
         {
-            return string.Equals(lexerNode.Token.RuleName, ruleName, StringComparison.Ordinal) ? 1 : 0;
+            return string.Equals(lexerNode.Token.RuleName, ruleNameOrText, StringComparison.Ordinal)
+                || string.Equals(lexerNode.Token.Text, ruleNameOrText, StringComparison.Ordinal)
+                ? 1
+                : 0;
         }
 
         if (node is not ParserNode parserNode)
@@ -110,6 +153,6 @@ public class ParserEngineSafetyGuardsTests
             return 0;
         }
 
-        return parserNode.Children.Sum(child => CountTokens(child, ruleName));
+        return parserNode.Children.Sum(child => CountTokens(child, ruleNameOrText));
     }
 }
