@@ -62,6 +62,15 @@ public sealed class ParserDiagnostic
     /// </summary>
     public int? SpanLength { get; }
 
+    /// <summary>Gets the optional source file path.</summary>
+    public string? FilePath { get; set; }
+
+    /// <summary>Gets the optional 1-based line.</summary>
+    public int? Line { get; set; }
+
+    /// <summary>Gets the optional 1-based column.</summary>
+    public int? Column { get; set; }
+
     /// <summary>
     /// Gets the optional rule name context.
     /// </summary>
@@ -71,4 +80,18 @@ public sealed class ParserDiagnostic
     /// Gets the optional related exception.
     /// </summary>
     public Exception? Exception { get; }
+
+    /// <summary>
+    /// Formats the diagnostic in file/line/column style.
+    /// </summary>
+    public string ToDisplayString()
+    {
+        if (Line is null || Column is null)
+        {
+            return $"{Code}: {Message}";
+        }
+
+        string path = string.IsNullOrWhiteSpace(FilePath) ? "<input>" : FilePath;
+        return $"{path}({Line},{Column}): {Severity.ToString().ToLowerInvariant()} {Code}: {Message}";
+    }
 }

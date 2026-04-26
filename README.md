@@ -23,7 +23,7 @@ It is designed for consumers who want small, task-oriented packages (networking,
 | `Utils.Net` | `omy.Utils.Net` | Networking protocols and helpers. | [Utils.Net/README.md](Utils.Net/README.md) |
 | `Utils.NumberToString` | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | [Utils.NumberToString/README.md](Utils.NumberToString/README.md) |
 | `Utils.OData` | `omy.Utils.OData` | OData helpers/runtime pieces. | [Utils.OData/README.md](Utils.OData/README.md) |
-| `Utils.Parser` | `omy.Utils.Parser` | Parser runtime helpers and tokenization. | [Utils.Parser/README.md](Utils.Parser/README.md) |
+| `Utils.Parser` | `omy.Utils.Parser` | Parser runtime and tokenizer with **partial ANTLR4 `.g4` support** (see support status). | [Utils.Parser/README.md](Utils.Parser/README.md) |
 | `Utils.Parser.Diagnostics` | `omy.Utils.Parser.Diagnostics` | Shared parser diagnostics contracts for runtime and generators. | [Utils.Parser.Diagnostics/README.md](Utils.Parser.Diagnostics/README.md) |
 | `Utils.Reflection` | `omy.Utils.Reflection` | Reflection/process-isolation helpers. | [Utils.Reflection/README.md](Utils.Reflection/README.md) |
 | `Utils.VirtualMachine` | `omy.Utils.VirtualMachine` | VM and opcode helper abstractions. | [Utils.VirtualMachine/README.md](Utils.VirtualMachine/README.md) |
@@ -82,6 +82,21 @@ Console.WriteLine(builder.ToString());
 - [GitHub About proposal](docs/github-about.md)
 - [Changelog](CHANGELOG.md)
 - [Base package README (`omy.Utils`)](Utils/README.md)
+- [`.g4` support status (`Utils.Parser`)](Utils.Parser/README.md#g4-file-support-status)
+
+## `.g4` file support status
+
+ANTLR4 support in this repository is **still evolving** and is **not yet 100% ANTLR4-compatible**.
+
+- ✅ Recommended usage: `.g4` grammars already validated by the `Utils.Parser` test suite.
+- ⚠️ Some advanced ANTLR4 constructs may be partially supported or unsupported, depending on version and scenario.
+- ✅ For stable production usage, prefer:
+  - patterns already covered by automated tests,
+  - or build-time generation/validation through `omy.Utils.Parser.Generators`.
+- ℹ️ Known missing/limited capabilities are documented in `Utils.Parser/README.md` under **Known missing or limited features**.
+- ℹ️ A high-level support matrix is also available in `Utils.Parser/README.md` under **Current support matrix (high-level)**.
+
+See the `Utils.Parser` README for details about current support scope.
 
 ## Consumer vs contributor requirements
 

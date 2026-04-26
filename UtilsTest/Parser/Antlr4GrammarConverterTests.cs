@@ -4,6 +4,7 @@ using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
+using System.IO;
 
 namespace UtilsTest.Parser;
 
@@ -285,7 +286,7 @@ public class Antlr4GrammarConverterTests
             """);
 
         var lexer = new LexerEngine(def);
-        var tokens = lexer.Tokenize(new StringCharStream("ABC")).ToList();
+        var tokens = lexer.Tokenize(new StringReader("ABC")).ToList();
 
         Assert.AreEqual(1, tokens.Count);
         Assert.AreEqual("WORD", tokens[0].RuleName);
@@ -302,7 +303,7 @@ public class Antlr4GrammarConverterTests
             """);
 
         var lexer = new LexerEngine(def);
-        var tokens = lexer.Tokenize(new StringCharStream("ABC")).ToList();
+        var tokens = lexer.Tokenize(new StringReader("ABC")).ToList();
 
         Assert.IsTrue(tokens.Count > 0);
         Assert.IsTrue(tokens.All(token => token.RuleName == "ERROR"));

@@ -1,6 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Runtime;
+using System.IO;
+using Utils.Parser.Model;
 
 namespace UtilsTest.Parser;
 
@@ -11,81 +14,19 @@ public class LexerEngineTests
     {
         var definition = ExpGrammar.Build();
         var lexer = new LexerEngine(definition);
-        var stream = new StringCharStream(input);
+        var stream = new StringReader(input);
         return lexer.Tokenize(stream).ToList();
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // StringCharStream tests
-    // ═══════════════════════════════════════════════════════════════
-
     [TestMethod]
-    public void StringCharStream_EmptyString()
+    public void Lexer_LineAndColumn_AreComputed()
     {
-        var stream = new StringCharStream("");
-        Assert.IsTrue(stream.IsEnd);
-        Assert.AreEqual(0, stream.Position);
-    }
-
-    [TestMethod]
-    public void StringCharStream_PeekAndConsume()
-    {
-        var stream = new StringCharStream("abc");
-        Assert.AreEqual('a', stream.Peek());
-        Assert.AreEqual('b', stream.Peek(1));
-        Assert.AreEqual('c', stream.Peek(2));
-        Assert.AreEqual('\0', stream.Peek(3));
-
-        stream.Consume();
-        Assert.AreEqual('b', stream.Peek());
-        Assert.AreEqual(1, stream.Position);
-    }
-
-    [TestMethod]
-    public void StringCharStream_SaveRestore()
-    {
-        var stream = new StringCharStream("abc");
-        stream.Consume(2);
-        Assert.AreEqual('c', stream.Peek());
-
-        var saved = stream.SavePosition();
-        stream.Consume();
-        Assert.IsTrue(stream.IsEnd);
-
-        stream.RestorePosition(saved);
-        Assert.AreEqual('c', stream.Peek());
-        Assert.IsFalse(stream.IsEnd);
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // SourceSpan tests
-    // ═══════════════════════════════════════════════════════════════
-
-    [TestMethod]
-    public void SourceSpan_ToLineColumn_FirstChar()
-    {
-        var span = new SourceSpan(0, 1);
-        var (line, col) = span.ToLineColumn("hello");
-        Assert.AreEqual(1, line);
-        Assert.AreEqual(1, col);
-    }
-
-    [TestMethod]
-    public void SourceSpan_ToLineColumn_SecondLine()
-    {
-        var span = new SourceSpan(6, 1);
-        var (line, col) = span.ToLineColumn("hello\nworld");
-        Assert.AreEqual(2, line);
-        Assert.AreEqual(1, col);
-    }
-
-    [TestMethod]
-    public void SourceSpan_ToLineColumn_ThirdColumn()
-    {
-        var span = new SourceSpan(2, 1);
-        var (line, col) = span.ToLineColumn("hello");
-        Assert.AreEqual(1, line);
-        Assert.AreEqual(3, col);
+        var tokens = Tokenize("1\n2");
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual(1, tokens[0].Span.Line);
+        Assert.AreEqual(1, tokens[0].Span.Column);
+        Assert.AreEqual(2, tokens[1].Span.Line);
+        Assert.AreEqual(1, tokens[1].Span.Column);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -355,7 +296,7 @@ public class LexerEngineTests
             TOK : 'a' -> skip | 'b' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("b");
+        var stream = new StringReader("b");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(1, tokens.Count,
@@ -372,7 +313,7 @@ public class LexerEngineTests
             TOK : 'a' -> skip | 'b' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("a");
+        var stream = new StringReader("a");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(0, tokens.Count, "Token 'a' must be skipped.");
@@ -395,7 +336,7 @@ public class LexerEngineTests
             WORD   : 'fix' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("prefix");
+        var stream = new StringReader("prefix");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(1, tokens.Count,
@@ -413,11 +354,509 @@ public class LexerEngineTests
             WORD   : 'fix' ;
             """);
         var lexer  = new LexerEngine(grammar);
-        var stream = new StringCharStream("prefix");
+        var stream = new StringReader("prefix");
         var tokens = lexer.Tokenize(stream).ToList();
 
         Assert.AreEqual(1, tokens.Count);
         Assert.AreEqual(0, tokens[0].Span.Position, "Span must start at position 0 (before 'pre').");
         Assert.AreEqual(6, tokens[0].Span.Length,   "Span must cover all 6 characters of 'prefix'.");
+    }
+
+    [TestMethod]
+    public void Lexer_ChannelHidden_IsNotSkipped()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            root : ID ID ;
+            ID : 'a'..'z'+ ;
+            WS : (' ' | '\t')+ -> channel(HIDDEN) ;
+            """);
+        var lexer = new LexerEngine(grammar);
+        var tokens = lexer.Tokenize(new StringReader("a b")).ToList();
+
+        Assert.AreEqual(3, tokens.Count);
+        Assert.AreEqual("ID", tokens[0].RuleName);
+        Assert.AreEqual("WS", tokens[1].RuleName);
+        Assert.AreEqual("HIDDEN", tokens[1].Channel);
+        Assert.AreEqual("ID", tokens[2].RuleName);
+    }
+
+    [TestMethod]
+    public void Lexer_CustomChannel_IsPreserved()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            channels { COMMENTS }
+            root : ID ID ;
+            ID : 'a'..'z'+ ;
+            COMMENT : '/' '/' ~('\r' | '\n')* -> channel(COMMENTS) ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> channel(HIDDEN) ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredChannels = new HashSet<string>(grammar.DeclaredChannels, StringComparer.Ordinal) { "COMMENTS" },
+        };
+        var lexer = new LexerEngine(grammar);
+        var tokens = lexer.Tokenize(new StringReader("foo //comment\n bar")).ToList();
+
+        Assert.IsTrue(tokens.Any(token => token.RuleName == "COMMENT" && token.Channel == "COMMENTS"));
+    }
+
+    [TestMethod]
+    public void Lexer_Skip_RemovesToken()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            root : ID ID ;
+            ID : 'a'..'z'+ ;
+            SKIP_WS : (' ' | '\t')+ -> skip ;
+            """);
+        var lexer = new LexerEngine(grammar);
+        var tokens = lexer.Tokenize(new StringReader("a b")).ToList();
+
+        Assert.AreEqual(2, tokens.Count);
+        Assert.IsFalse(tokens.Any(token => token.RuleName == "SKIP_WS"));
+    }
+
+    [TestMethod]
+    public void Lexer_UnknownChannelFromRule_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            ID : 'a'..'z'+ ;
+            BAD : '!' -> channel(UNKNOWN) ;
+            """);
+        var lexer = new LexerEngine(grammar);
+
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("!")).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_TextReaderBuffer_HandlesCrLfAndPeek()
+    {
+        var buffer = new TextReaderBuffer(new StringReader("a\r\nb"));
+        Assert.AreEqual('a', buffer.Peek(0));
+        Assert.AreEqual('\r', buffer.Peek(1));
+        Assert.AreEqual('\n', buffer.Peek(2));
+        Assert.AreEqual('b', buffer.Peek(3));
+
+        buffer.Consume(); // a
+        Assert.AreEqual(1, buffer.Position);
+        Assert.AreEqual(1, buffer.Line);
+        Assert.AreEqual(2, buffer.Column);
+        Assert.AreEqual('\r', buffer.Peek(0));
+
+        buffer.Consume(); // \r
+        Assert.AreEqual(2, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(1, buffer.Column);
+        Assert.AreEqual('\n', buffer.Peek(0));
+
+        buffer.Consume(); // \n
+        Assert.AreEqual(3, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(1, buffer.Column);
+        Assert.AreEqual('b', buffer.Peek(0));
+
+        buffer.Consume(); // b
+        Assert.AreEqual(4, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(2, buffer.Column);
+    }
+
+    [TestMethod]
+    public void Lexer_TextReaderBuffer_ConsumeCount_ConsumesExactlyCountCharacters()
+    {
+        var buffer = new TextReaderBuffer(new StringReader("\r\nx"));
+        buffer.Consume(2);
+
+        Assert.AreEqual(2, buffer.Position);
+        Assert.AreEqual(2, buffer.Line);
+        Assert.AreEqual(1, buffer.Column);
+        Assert.AreEqual('x', buffer.Peek(0));
+    }
+
+    [TestMethod]
+    public void Lexer_TextReaderBuffer_PeekLargeOffsetAndLookaheadAfterConsume()
+    {
+        var input = "ab" + new string('x', 120) + "z";
+        var buffer = new TextReaderBuffer(new StringReader(input));
+
+        Assert.AreEqual('a', buffer.Peek(0));
+        Assert.AreEqual('b', buffer.Peek(1));
+        Assert.AreEqual('x', buffer.Peek(100));
+
+        buffer.Consume(2);
+
+        Assert.AreEqual(2, buffer.Position);
+        Assert.AreEqual('x', buffer.Peek(0));
+        Assert.AreEqual('z', buffer.Peek(120));
+    }
+
+    [TestMethod]
+    public void Lexer_TextReaderBuffer_HandlesCrOnlyAndLfOnly()
+    {
+        var lfBuffer = new TextReaderBuffer(new StringReader("a\nb"));
+        lfBuffer.Consume();
+        lfBuffer.Consume();
+        Assert.AreEqual(2, lfBuffer.Line);
+        Assert.AreEqual(1, lfBuffer.Column);
+
+        var crBuffer = new TextReaderBuffer(new StringReader("a\rb"));
+        crBuffer.Consume();
+        crBuffer.Consume();
+        Assert.AreEqual(2, crBuffer.Line);
+        Assert.AreEqual(1, crBuffer.Column);
+    }
+
+    [TestMethod]
+    public void Lexer_TokensWithoutSuperClass_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            tokens { INDENT }
+            root : ID ;
+            ID : 'a' ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+        var lexer = new LexerEngine(grammar);
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a")).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_SuperClassWithoutExtension_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            ID : 'a' ;
+            """);
+        var lexer = new LexerEngine(grammar);
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a")).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionUnknownToken_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            ID : 'a' ;
+            """);
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new UnknownTokenExtension()] };
+
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionUnknownChannel_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            ID : 'a' ;
+            """);
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new UnknownChannelExtension()] };
+
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionReturningNull_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            ID : 'a' ;
+            """);
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new NullTryReadExtension()] };
+
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionInvalidSpan_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            tokens { INDENT }
+            ID : 'a' ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new InvalidSpanExtension()] };
+
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionTryReadWithoutProgress_Throws()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            tokens { INDENT }
+            ID : 'a' ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new NoProgressExtension()] };
+
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options).ToList());
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionTryReadWithProgress_IsAllowed()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            tokens { INDENT }
+            ID : 'a' ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new ConsumingExtension()] };
+        var tokens = lexer.Tokenize(new StringReader("a"), options).ToList();
+
+        Assert.IsTrue(tokens.Any(token => token.RuleName == "INDENT"));
+    }
+
+    [TestMethod]
+    public void Lexer_Integration_CommentsAndHiddenAreKeptButParserIgnoresThem()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar Test;
+
+            channels { COMMENTS }
+            tokens { INDENT }
+            options { superClass=TestLexerExtension; }
+
+            root : ID ID ;
+
+            ID : ('a'..'z' | 'A'..'Z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> channel(HIDDEN);
+            COMMENT : '/' '/' ~('\r' | '\n')* -> channel(COMMENTS);
+            """);
+        grammar = grammar with
+        {
+            DeclaredChannels = new HashSet<string>(grammar.DeclaredChannels, StringComparer.Ordinal) { "COMMENTS" },
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new NoopExtension()] };
+        var tokenized = lexer.Tokenize(new StringReader("foo // comment\n bar"), options).ToList();
+
+        Assert.IsTrue(tokenized.Any(token => token.RuleName == "COMMENT" && token.Channel == "COMMENTS"));
+        Assert.IsTrue(tokenized.Any(token => token.RuleName == "WS" && token.Channel == "HIDDEN"));
+
+        var parser = new ParserEngine(grammar);
+        var result = parser.Parse(tokenized);
+        Assert.IsNotInstanceOfType<ErrorNode>(result);
+    }
+
+    [TestMethod]
+    public void Lexer_Integration_CrLfWhitespace_IsKeptAndParserStaysSynchronized()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            root : ID ID ;
+            ID : 'a'..'z'+ ;
+            WS : (' ' | '\r' | '\n')+ -> channel(HIDDEN);
+            """);
+        var lexer = new LexerEngine(grammar);
+        var tokens = lexer.Tokenize(new StringReader("a\r\nb")).ToList();
+
+        Assert.AreEqual(3, tokens.Count);
+        Assert.AreEqual("ID", tokens[0].RuleName);
+        Assert.AreEqual(0, tokens[0].Span.Position);
+
+        Assert.AreEqual("WS", tokens[1].RuleName);
+        Assert.AreEqual("\r\n", tokens[1].Text);
+        Assert.AreEqual(1, tokens[1].Span.Position);
+        Assert.AreEqual(2, tokens[1].Span.Length);
+        Assert.AreEqual("HIDDEN", tokens[1].Channel);
+
+        Assert.AreEqual("ID", tokens[2].RuleName);
+        Assert.AreEqual("b", tokens[2].Text);
+        Assert.AreEqual(3, tokens[2].Span.Position);
+        Assert.AreEqual(2, tokens[2].Span.Line);
+        Assert.AreEqual(1, tokens[2].Span.Column);
+
+        var parser = new ParserEngine(grammar);
+        var result = parser.Parse(tokens);
+        Assert.IsNotInstanceOfType<ErrorNode>(result);
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionOnAfterToken_EmitsWithoutConsuming_IsAllowed()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            tokens { INDENT }
+            ID : 'a' ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new AfterTokenEmitterExtension()] };
+        var tokens = lexer.Tokenize(new StringReader("a"), options).ToList();
+
+        Assert.IsTrue(tokens.Any(token => token.RuleName == "INDENT"));
+    }
+
+    [TestMethod]
+    public void Lexer_ExtensionOnEndOfInput_EmitsWithoutConsuming_IsAllowed()
+    {
+        var grammar = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { superClass=MyExt; }
+            tokens { INDENT }
+            ID : 'a' ;
+            """);
+        grammar = grammar with
+        {
+            DeclaredTokens = new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal) { "INDENT" },
+        };
+
+        var lexer = new LexerEngine(grammar);
+        var options = new LexerEngineOptions { Extensions = [new EndOfInputEmitterExtension()] };
+        var tokens = lexer.Tokenize(new StringReader("a"), options).ToList();
+
+        Assert.IsTrue(tokens.Any(token => token.RuleName == "INDENT"));
+    }
+
+    private sealed class UnknownTokenExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(context.Position, 1, context.Line, context.Column), "UNKNOWN", "DEFAULT_MODE", "DEFAULT_CHANNEL", "x"),
+        ];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class UnknownChannelExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(context.Position, 1, context.Line, context.Column), "ID", "DEFAULT_MODE", "UNKNOWN_CHANNEL", "x"),
+        ];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class NullTryReadExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) => null!;
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class InvalidSpanExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(-1, -1, context.Line, context.Column), "INDENT", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""),
+        ];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class NoProgressExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(context.Position, 0, context.Line, context.Column), "INDENT", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""),
+        ];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class ConsumingExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context)
+        {
+            if (context.Position == 0)
+            {
+                return
+                [
+                    new Token(new SourceSpan(context.Position, 1, context.Line, context.Column), "ID", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a"),
+                ];
+            }
+
+            return [];
+        }
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(context.Position, 0, context.Line, context.Column), "INDENT", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""),
+        ];
+    }
+
+    private sealed class NoopExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class AfterTokenEmitterExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(token.Span.Position + token.Span.Length, 0, context.Line, context.Column), "INDENT", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""),
+        ];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
+    }
+
+    private sealed class EndOfInputEmitterExtension : ILexerExtension
+    {
+        public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
+
+        public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) =>
+        [
+            new Token(new SourceSpan(context.Position, 0, context.Line, context.Column), "INDENT", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""),
+        ];
     }
 }

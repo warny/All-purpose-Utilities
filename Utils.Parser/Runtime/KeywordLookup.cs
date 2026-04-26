@@ -78,7 +78,7 @@ internal sealed class KeywordLookup
     /// The matched <see cref="Token"/> and its <see cref="Rule"/> on success,
     /// or <c>(null, null)</c> when no keyword matches at the current position.
     /// </returns>
-    public (Token? Token, Rule? Rule) TryMatch(ICharStream stream, string modeName)
+    public (SourceSpan? Span, Rule? Rule) TryMatch(TextReaderLookahead stream, string modeName, string? filePath)
     {
         var nodes = _root;
         Rule? bestRule = null;
@@ -87,8 +87,9 @@ internal sealed class KeywordLookup
 
         while (true)
         {
-            char c = stream.Peek(offset);
-            if (c == '\0') break;                                // end of stream
+            int peeked = stream.Peek(offset);
+            if (peeked < 0) break;                                // end of stream
+            char c = (char)peeked;
 
             char key = Normalize(c);
             if (!nodes.TryGetValue(key, out var node)) break;   // no further trie path
@@ -105,30 +106,13 @@ internal sealed class KeywordLookup
         }
 
         if (bestRule is null) return (null, null);
-
-        // Build the actual matched text from the stream characters (preserves original
-        // casing for case-insensitive grammars and avoids a redundant allocation on
-        // the common case where text == keyword literal).
-        string text = BuildText(stream, bestLength);
-        var token = new Token(
-            new SourceSpan(stream.Position, bestLength),
-            bestRule.Name, modeName, text);
-        return (token, bestRule);
+        return (new SourceSpan(stream.Position, bestLength, stream.Line, stream.Column, filePath), bestRule);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
     private char Normalize(char c) =>
         _caseInsensitive ? char.ToUpperInvariant(c) : c;
-
-    private static string BuildText(ICharStream stream, int length)
-    {
-        if (length == 0) return string.Empty;
-        var chars = new char[length];
-        for (int i = 0; i < length; i++)
-            chars[i] = stream.Peek(i);
-        return new string(chars);
-    }
 
     // ── Node ──────────────────────────────────────────────────────────────────────
 

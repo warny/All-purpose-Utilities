@@ -1,7 +1,7 @@
 # Utils.Parser
 
-A **self-describing universal parser framework** for .NET that turns any ANTLR4 `.g4`
-grammar into a tokenizer and parse-tree builder — no code generation required.
+A parser framework for .NET that can load and execute a **subset of ANTLR4 `.g4` grammars**
+at runtime (without mandatory code generation).
 
 ## Install
 
@@ -15,6 +15,37 @@ dotnet add package omy.Utils.Parser
 ## Supported frameworks
 
 - net9.0
+
+## `.g4` file support status
+
+ANTLR4 `.g4` support is currently **partial**.
+
+- ✅ Scenarios covered by the `UtilsTest.Parser` test suite are supported.
+- ⚠️ Full ANTLR4 compatibility is not guaranteed for every advanced syntax/rule.
+- ✅ If you need stricter build-time guarantees, also use `omy.Utils.Parser.Generators`.
+
+### Known missing or limited features
+
+The items below are not guaranteed yet and should be considered missing or limited support areas:
+
+- Full ANTLR4 parity across all grammar constructs (combined/parser/lexer edge cases).
+- Embedded target-language actions and action-dependent behavior parity with ANTLR4 toolchains.
+- Complete semantic predicate and advanced precedence behavior parity in all grammar shapes.
+- Full interoperability parity for complex multi-file grammar composition/import scenarios.
+- Complete error-recovery parity with ANTLR4-generated parsers in highly ambiguous grammars.
+
+If a grammar relies on one of these areas, validate it with targeted tests before production rollout.
+
+### Current support matrix (high-level)
+
+| Area | Status | Notes |
+|---|---|---|
+| Runtime `.g4` parsing (`Antlr4GrammarConverter`) | Partial | Works for covered scenarios; full ANTLR4 parity is not claimed. |
+| Lexer commands `skip` / `more` / `type` / `channel` | Implemented | Core commands are supported by runtime lexer execution. |
+| Lexer modes (`pushMode`, `popMode`, `mode`) | Implemented | Mode stack behavior is available in runtime lexer. |
+| Declared `tokens { ... }` and `channels { ... }` metadata | Partial | Available in model/runtime, but must be validated against your grammar set. |
+| Runtime lexer extensions (`ILexerExtension`) | Implemented | Hooks are available (`TryReadTokens`, `OnAfterToken`, `OnEndOfInput`). |
+| Full ANTLR4 grammar compatibility | Not guaranteed | Advanced/edge constructs may differ from ANTLR4 behavior. |
 
 ## Key concepts
 
@@ -54,9 +85,10 @@ var definition = Antlr4GrammarConverter.Parse("""
 
 ```csharp
 using Utils.Parser.Runtime;
+using System.IO;
 
 var lexer  = new LexerEngine(definition);
-var tokens = lexer.Tokenize(new StringCharStream("1 + 2 * 3")).ToList();
+var tokens = lexer.Tokenize(new StringReader("1 + 2 * 3")).ToList();
 
 foreach (var token in tokens)
     Console.WriteLine($"{token.RuleName,-12} {token.Text}");

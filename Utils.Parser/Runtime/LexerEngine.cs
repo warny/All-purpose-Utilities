@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
@@ -5,186 +6,558 @@ using Utils.Parser.Model;
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Converts an <see cref="ICharStream"/> into a sequence of <see cref="Token"/> values
+/// Converts a <see cref="TextReader"/> into a sequence of <see cref="Token"/> values
 /// using the lexer rules in a <see cref="ParserDefinition"/>.
-/// <para>
-/// The engine uses <em>maximal-munch</em> (longest-match) tokenization: among all rules
-/// that match at the current position it picks the one with the longest match, breaking
-/// ties by <see cref="Rule.DeclarationOrder"/> (lower order wins).
-/// </para>
-/// <para>
-/// Pure-literal rules (keywords and operators) are handled by a per-mode
-/// <see cref="KeywordLookup"/> trie built at construction time.  The trie traversal
-/// is O(keyword_length) instead of O(n_rules × keyword_length), and it always finds
-/// the longest match regardless of declaration order in the grammar source.
-/// </para>
-/// <para>
-/// Lexer modes are handled via an internal stack. Structured
-/// <see cref="LexerCommand"/> directives (<c>pushMode</c>, <c>popMode</c>, <c>mode</c>,
-/// <c>skip</c>, etc.) are executed after each successful match.
-/// </para>
 /// </summary>
 public sealed class LexerEngine(ParserDefinition definition)
 {
-    private readonly Stack<LexerMode> _modeStack = new();
-    private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
+    private const string DefaultChannel = "DEFAULT_CHANNEL";
+    private const string HiddenChannel = "HIDDEN";
 
-    // ── Keyword trie ──────────────────────────────────────────────────────────────
-    // One KeywordLookup per lexer mode, built once at construction.
+    private readonly Stack<LexerMode> _modeStack = [];
+    private readonly bool _caseInsensitive = definition.EffectiveOptions.CaseInsensitive;
     private readonly IReadOnlyDictionary<string, KeywordLookup> _keywordTrieByMode =
-        BuildKeywordTries(definition, IsCaseInsensitive(definition));
-
-    // ── "more" buffering state ────────────────────────────────────────────────
-    // When a token fires "-> more", its text is accumulated here and prepended to
-    // the next emitted token, with _moreStartPos recording the original start.
+        BuildKeywordTries(definition, definition.EffectiveOptions.CaseInsensitive);
     private readonly StringBuilder _moreTextBuilder = new();
-    private int    _moreStartPos = -1;
-
-    // ── Lexer cycle detection ─────────────────────────────────────────────────
-    // Tracks (ruleName, streamPosition) pairs that are currently being expanded.
-    // A same pair appearing twice means the rule cannot consume any input at that
-    // position, which would cause infinite recursion (e.g. A: A; or deep mutual
-    // recursion between fragments). The set is maintained with push/pop semantics
-    // inside TryMatchContent so it is always empty between top-level token matches.
-    private readonly HashSet<(string RuleName, int Position)> _activeRuleRefs = new();
+    private readonly HashSet<(string RuleName, int Offset)> _activeRuleRefs = [];
+    private int _moreStartPos = -1;
 
     /// <summary>
-    /// Tokenizes the entire <paramref name="stream"/>, yielding one <see cref="Token"/>
-    /// per recognized lexical unit.
-    /// <para>
-    /// Fragment rules and tokens marked with <c>-> skip</c> are consumed but not yielded.
-    /// When no rule matches at the current position the engine enters panic mode:
-    /// it consumes one character and emits an <c>ERROR</c> token.
-    /// </para>
+    /// Tokenizes the full input stream with a strict forward-only reader.
     /// </summary>
-    /// <param name="stream">Character stream to tokenize.</param>
-    /// <returns>Lazy sequence of tokens.</returns>
-    public IEnumerable<Token> Tokenize(ICharStream stream, DiagnosticBag? diagnostics = null)
+    /// <param name="reader">Input text reader.</param>
+    /// <param name="options">Optional lexer options.</param>
+    /// <param name="diagnostics">Optional diagnostics sink.</param>
+    /// <param name="filePath">Optional source file path for diagnostics.</param>
+    /// <returns>Token stream including non-default channels.</returns>
+    public IEnumerable<Token> Tokenize(
+        TextReader reader,
+        LexerEngineOptions? options = null,
+        DiagnosticBag? diagnostics = null,
+        string? filePath = null)
     {
+        options ??= new LexerEngineOptions();
+        var input = new TextReaderBuffer(reader);
+        var emittedTokens = new List<Token>();
+
+        ValidateExtensions(options.Extensions, diagnostics, filePath);
+
         _modeStack.Clear();
         _modeStack.Push(GetDefaultMode());
         _moreTextBuilder.Clear();
         _moreStartPos = -1;
-        _activeRuleRefs.Clear();
 
-        while (!stream.IsEnd)
+        while (!input.IsEnd)
         {
             var mode = _modeStack.Peek();
-            var (token, rule, commands) = MatchLongest(stream, mode);
 
-            if (token is null)
+            foreach (Token extensionToken in RunTryReadTokensExtensions(options.Extensions, input, emittedTokens, mode.Name, diagnostics, filePath))
             {
-                // Panic mode: consume one character and emit an error token.
-                var pos = stream.Position;
-                var ch = stream.Peek();
-                stream.Consume();
-                diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, pos, 1, null, null, $"Unrecognized character '{ch}'.");
-                yield return new Token(
-                    new SourceSpan(pos, 1), "ERROR", mode.Name, ch.ToString());
+                emittedTokens.Add(extensionToken);
+                yield return extensionToken;
+            }
+
+            if (input.IsEnd)
+            {
+                break;
+            }
+
+            var (match, rule, commands) = MatchLongest(input, mode, filePath);
+            if (match is null)
+            {
+                int bad = input.Peek(0);
+                var text = bad < 0 ? string.Empty : ((char)bad).ToString();
+                var span = new SourceSpan(input.Position, 1, input.Line, input.Column, filePath);
+                diagnostics?.AddWithContext(ParserDiagnostics.ParseFailure, span.Position, span.Length, null, null, $"Unrecognized character '{text}'.");
+                input.Consume();
+                var errorToken = new Token(span, "ERROR", mode.Name, DefaultChannel, text);
+                emittedTokens.Add(errorToken);
+                yield return errorToken;
                 continue;
             }
 
-            // Execute commands collected only from the matched path.
-            bool skip = ExecuteLexerCommands(commands, ref token, diagnostics);
+            string tokenText = BuildText(input, match.Length);
+            input.Consume(match.Length);
+            var token = new Token(match, rule!.Name, mode.Name, DefaultChannel, tokenText);
 
-            if (rule!.IsFragment || skip)
+            bool skip = ExecuteLexerCommands(commands, ref token, diagnostics, filePath);
+            if (rule.IsFragment || skip)
+            {
                 continue;
+            }
 
-            // Apply any accumulated "more" text, then emit.
             if (_moreTextBuilder.Length > 0)
             {
-                var combinedSpan = new SourceSpan(
-                    _moreStartPos,
-                    token.Span.Position + token.Span.Length - _moreStartPos);
-                token = new Token(combinedSpan, token.RuleName, token.ModeName,
-                    _moreTextBuilder.ToString() + token.Text);
+                var combinedSpan = new SourceSpan(_moreStartPos, token.Span.Position + token.Span.Length - _moreStartPos, token.Span.Line, token.Span.Column, filePath);
+                token = token with { Span = combinedSpan, Text = _moreTextBuilder + token.Text };
                 _moreTextBuilder.Clear();
                 _moreStartPos = -1;
             }
 
+            ValidateTokenEmission(token, diagnostics, filePath);
+
+            emittedTokens.Add(token);
             yield return token;
+
+            foreach (Token extensionToken in RunAfterTokenExtensions(options.Extensions, token, input, emittedTokens, mode.Name, diagnostics, filePath))
+            {
+                emittedTokens.Add(extensionToken);
+                yield return extensionToken;
+            }
+        }
+
+        foreach (Token endToken in RunEndOfInputExtensions(options.Extensions, input, emittedTokens, diagnostics, filePath))
+        {
+            emittedTokens.Add(endToken);
+            yield return endToken;
+        }
+
+    }
+
+    private void ValidateExtensions(IReadOnlyList<ILexerExtension> extensions, DiagnosticBag? diagnostics, string? filePath)
+    {
+        if (definition.DeclaredTokens.Count > 0 && definition.ExtensionBindings.Count == 0)
+        {
+            ThrowValidation(diagnostics, filePath, 1, 1, null, "UP2001", "tokens { ... } requires superClass / extension binding.");
+        }
+
+        if (definition.ExtensionBindings.Count > 0 && extensions.Count == 0)
+        {
+            ThrowValidation(diagnostics, filePath, 1, 1, null, "UP2002", "superClass extension binding exists but no ILexerExtension is configured.");
         }
     }
 
-    /// <summary>
-    /// Scans all non-fragment rules in <paramref name="mode"/> and returns the token
-    /// produced by the rule that matches the most characters at the current stream position.
-    /// Ties are broken by <see cref="Rule.DeclarationOrder"/>: the rule with the lower
-    /// order value wins. Returns <c>(null, null)</c> when no rule matches.
-    /// <para>
-    /// Pure-literal rules (keywords, operators, punctuation) are matched via the
-    /// pre-built <see cref="KeywordLookup"/> trie in a single O(keyword_length) pass.
-    /// All other rules (character classes, quantifiers, etc.) are still tried individually.
-    /// </para>
-    /// </summary>
-    /// <param name="stream">Character stream positioned at the start of the next token.</param>
-    /// <param name="mode">Active lexer mode whose rules are tried.</param>
-    private (Token? token, Rule? rule, List<Model.LexerCommand> commands) MatchLongest(
-        ICharStream stream, LexerMode mode)
+    private IEnumerable<Token> RunTryReadTokensExtensions(IReadOnlyList<ILexerExtension> extensions, TextReaderBuffer input, IReadOnlyList<Token> emittedTokens, string modeName, DiagnosticBag? diagnostics, string? filePath)
     {
-        Token? best = null;
-        Rule? bestRule = null;
-        var bestCommands = new List<Model.LexerCommand>();
+        foreach (ILexerExtension extension in extensions)
+        {
+            int startPosition = input.Position;
+            var context = new LexerExtensionContext(definition, input, emittedTokens, modeName);
+            var tokens = extension.TryReadTokens(context);
+            if (tokens is null)
+            {
+                ThrowValidation(diagnostics, filePath, input.Line, input.Column, null, "UP2102", $"Extension '{extension.GetType().Name}' returned null from TryReadTokens.");
+            }
 
-        // ── Fast path: trie lookup for all pure-literal rules (keywords / operators) ──
-        // Pure-literal rules carry no lexer commands, so bestCommands stays empty.
+            int consumedFromExtension = 0;
+            bool emitted = false;
+            foreach (Token token in tokens)
+            {
+                emitted = true;
+                ValidateTokenEmission(token, diagnostics, filePath);
+                int end = token.Span.Position + token.Span.Length;
+                consumedFromExtension = Math.Max(consumedFromExtension, end - startPosition);
+                yield return token;
+            }
+
+            if (emitted)
+            {
+                if (consumedFromExtension <= 0)
+                {
+                    ThrowValidation(diagnostics, filePath, input.Line, input.Column, null, "UP2103", $"Extension '{extension.GetType().Name}' emitted token(s) without consuming input.");
+                }
+
+                input.Consume(consumedFromExtension);
+            }
+        }
+    }
+
+    private IEnumerable<Token> RunAfterTokenExtensions(IReadOnlyList<ILexerExtension> extensions, Token token, TextReaderBuffer input, IReadOnlyList<Token> emittedTokens, string modeName, DiagnosticBag? diagnostics, string? filePath)
+    {
+        foreach (ILexerExtension extension in extensions)
+        {
+            var context = new LexerExtensionContext(definition, input, emittedTokens, modeName);
+            var extra = extension.OnAfterToken(token, context);
+            if (extra is null)
+            {
+                ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2104", $"Extension '{extension.GetType().Name}' returned null from OnAfterToken.");
+            }
+
+            foreach (Token extraToken in extra)
+            {
+                ValidateTokenEmission(extraToken, diagnostics, filePath);
+                yield return extraToken;
+            }
+        }
+    }
+
+    private IEnumerable<Token> RunEndOfInputExtensions(IReadOnlyList<ILexerExtension> extensions, TextReaderBuffer input, IReadOnlyList<Token> emittedTokens, DiagnosticBag? diagnostics, string? filePath)
+    {
+        foreach (ILexerExtension extension in extensions)
+        {
+            var context = new LexerExtensionContext(definition, input, emittedTokens, _modeStack.Peek().Name);
+            var extra = extension.OnEndOfInput(context);
+            if (extra is null)
+            {
+                ThrowValidation(diagnostics, filePath, input.Line, input.Column, null, "UP2105", $"Extension '{extension.GetType().Name}' returned null from OnEndOfInput.");
+            }
+
+            foreach (Token extraToken in extra)
+            {
+                ValidateTokenEmission(extraToken, diagnostics, filePath);
+                yield return extraToken;
+            }
+        }
+    }
+
+    private void ValidateTokenEmission(Token token, DiagnosticBag? diagnostics, string? filePath)
+    {
+        if (token.Span.Position < 0 || token.Span.Length < 0 || token.Span.Line < 1 || token.Span.Column < 1)
+        {
+            ThrowValidation(diagnostics, filePath, Math.Max(1, token.Span.Line), Math.Max(1, token.Span.Column), token.Span, "UP2106", $"Invalid token span for '{token.RuleName}'.");
+        }
+
+        if (!definition.AllRules.ContainsKey(token.RuleName) && !definition.DeclaredTokens.Contains(token.RuleName) && token.RuleName != "ERROR")
+        {
+            ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2100", $"Unknown emitted token '{token.RuleName}'.");
+        }
+
+        if (!definition.DeclaredChannels.Contains(token.Channel) && token.Channel is not (DefaultChannel or HiddenChannel))
+        {
+            ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2101", $"Unknown channel '{token.Channel}'.");
+        }
+    }
+
+    private (SourceSpan? Span, Rule? Rule, List<Model.LexerCommand> Commands) MatchLongest(TextReaderBuffer input, LexerMode mode, string? filePath)
+    {
+        SourceSpan? best = null;
+        Rule? bestRule = null;
+        List<Model.LexerCommand> bestCommands = [];
+
         if (_keywordTrieByMode.TryGetValue(mode.Name, out var trie) && !trie.IsEmpty)
         {
-            var (trieToken, trieRule) = trie.TryMatch(stream, mode.Name);
-            if (trieToken is not null)
+            var (span, rule) = trie.TryMatch(input, mode.Name, filePath);
+            if (span is not null)
             {
-                best = trieToken;
-                bestRule = trieRule;
+                best = span;
+                bestRule = rule;
             }
         }
 
-        // ── Regular path: all non-literal, non-fragment rules ─────────────────────────
-        foreach (var rule in mode.Rules.OrderBy(r => r.DeclarationOrder))
+        foreach (var rule in mode.Rules.OrderBy(static r => r.DeclarationOrder))
         {
             if (rule.IsFragment || IsPureLiteralRule(rule))
-                continue;
-
-            var savedPos = stream.SavePosition();
-            var ruleCommands = new List<Model.LexerCommand>();
-            var matched = TryMatchRule(stream, rule, mode.Name, ruleCommands);
-
-            if (matched is not null &&
-                (best is null || matched.Span.Length > best.Span.Length))
             {
-                best = matched;
-                bestRule = rule;
-                bestCommands = ruleCommands;
+                continue;
             }
 
-            stream.RestorePosition(savedPos);
+            var commands = new List<Model.LexerCommand>();
+            if (TryMatchContent(input, rule.Content, 0, commands, out int length) && length > 0)
+            {
+                if (best is null || length > best.Length)
+                {
+                    best = new SourceSpan(input.Position, length, input.Line, input.Column, filePath);
+                    bestRule = rule;
+                    bestCommands = commands;
+                }
+            }
         }
-
-        if (best is not null)
-            stream.Consume(best.Span.Length);
 
         return (best, bestRule, bestCommands);
     }
 
-    // ── Keyword-trie construction ─────────────────────────────────────────────────
+    private bool TryMatchContent(TextReaderBuffer input, RuleContent content, int offset, List<Model.LexerCommand>? commands, out int consumed)
+    {
+        switch (content)
+        {
+            case LiteralMatch lit:
+                consumed = TryMatchLiteral(input, lit.Value, offset, _caseInsensitive) ? lit.Value.Length : 0;
+                return consumed > 0 || lit.Value.Length == 0;
 
-    /// <summary>
-    /// Builds one <see cref="KeywordLookup"/> trie per lexer mode from all rules that
-    /// consist exclusively of <see cref="LiteralMatch"/> alternatives.
-    /// </summary>
-    private static IReadOnlyDictionary<string, KeywordLookup> BuildKeywordTries(
-        ParserDefinition definition, bool caseInsensitive)
+            case RangeMatch range:
+                int rangeCh = input.Peek(offset);
+                if (rangeCh >= 0 && IsCharInRange((char)rangeCh, range.From, range.To, _caseInsensitive))
+                {
+                    consumed = 1;
+                    return true;
+                }
+
+                consumed = 0;
+                return false;
+
+            case CharSetMatch set:
+                int setCh = input.Peek(offset);
+                if (setCh >= 0)
+                {
+                    bool inSet = IsCharInSet(set.Chars, (char)setCh, _caseInsensitive);
+                    if (set.Negated ? !inSet : inSet)
+                    {
+                        consumed = 1;
+                        return true;
+                    }
+                }
+
+                consumed = 0;
+                return false;
+
+            case AnyChar:
+                consumed = input.Peek(offset) >= 0 ? 1 : 0;
+                return consumed == 1;
+
+            case RuleRef ruleRef:
+                if (definition.AllRules.TryGetValue(ruleRef.RuleName, out var referenced))
+                {
+                    var key = (ruleRef.RuleName, offset);
+                    if (!_activeRuleRefs.Add(key))
+                    {
+                        consumed = 0;
+                        return false;
+                    }
+
+                    try
+                    {
+                        return TryMatchContent(input, referenced.Content, offset, commands, out consumed);
+                    }
+                    finally
+                    {
+                        _activeRuleRefs.Remove(key);
+                    }
+                }
+
+                consumed = 0;
+                return false;
+
+            case Sequence seq:
+                int total = 0;
+                foreach (RuleContent item in seq.Items)
+                {
+                    if (!TryMatchContent(input, item, offset + total, commands, out int part))
+                    {
+                        consumed = 0;
+                        return false;
+                    }
+
+                    total += part;
+                }
+
+                consumed = total;
+                return true;
+
+            case Alternation alternation:
+                foreach (Alternative alt in alternation.Alternatives)
+                {
+                    var branch = commands is null ? null : new List<Model.LexerCommand>();
+                    if (TryMatchContent(input, alt.Content, offset, branch, out int altLen))
+                    {
+                        commands?.AddRange(branch!);
+                        consumed = altLen;
+                        return true;
+                    }
+                }
+
+                consumed = 0;
+                return false;
+
+            case Alternative alternative:
+                return TryMatchContent(input, alternative.Content, offset, commands, out consumed);
+
+            case Quantifier quant:
+                return TryMatchQuantifier(input, quant, offset, commands, out consumed);
+
+            case Negation neg:
+                if (!TryMatchContent(input, neg.Inner, offset, null, out _) && input.Peek(offset) >= 0)
+                {
+                    consumed = 1;
+                    return true;
+                }
+
+                consumed = 0;
+                return false;
+
+            case Model.LexerCommand cmd:
+                commands?.Add(cmd);
+                consumed = 0;
+                return true;
+
+            case EmbeddedAction:
+                consumed = 0;
+                return true;
+
+            default:
+                consumed = 0;
+                return false;
+        }
+    }
+
+    private bool TryMatchQuantifier(TextReaderBuffer input, Quantifier quant, int offset, List<Model.LexerCommand>? commands, out int consumed)
+    {
+        int count = 0;
+        int total = 0;
+
+        while (quant.Max is null || count < quant.Max.Value)
+        {
+            if (!TryMatchContent(input, quant.Inner, offset + total, commands, out int inner))
+            {
+                break;
+            }
+
+            if (inner == 0)
+            {
+                break;
+            }
+
+            total += inner;
+            count++;
+            if (!quant.Greedy && count >= quant.Min)
+            {
+                break;
+            }
+        }
+
+        consumed = total;
+        return count >= quant.Min;
+    }
+
+    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag? diagnostics, string? filePath)
+    {
+        bool skip = false;
+        bool more = false;
+        foreach (var cmd in commands)
+        {
+            switch (cmd.Type)
+            {
+                case LexerCommandType.Skip:
+                    skip = true;
+                    break;
+                case LexerCommandType.More:
+                    more = true;
+                    break;
+                case LexerCommandType.PushMode:
+                    if (cmd.Argument is not null)
+                    {
+                        var mode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
+                        if (mode is null)
+                        {
+                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "pushMode");
+                        }
+                        else
+                        {
+                            _modeStack.Push(mode);
+                        }
+                    }
+
+                    break;
+                case LexerCommandType.PopMode:
+                    if (_modeStack.Count > 1)
+                    {
+                        _modeStack.Pop();
+                    }
+
+                    break;
+                case LexerCommandType.Mode:
+                    if (cmd.Argument is not null)
+                    {
+                        var mode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
+                        if (mode is null)
+                        {
+                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "mode");
+                        }
+                        else
+                        {
+                            _modeStack.Pop();
+                            _modeStack.Push(mode);
+                        }
+                    }
+
+                    break;
+                case LexerCommandType.Channel:
+                    if (cmd.Argument is not null)
+                    {
+                        token = token with { Channel = cmd.Argument };
+                    }
+
+                    break;
+                case LexerCommandType.Type:
+                    if (cmd.Argument is not null)
+                    {
+                        token = token with { RuleName = cmd.Argument };
+                    }
+
+                    break;
+            }
+        }
+
+        if (more)
+        {
+            if (_moreStartPos < 0)
+            {
+                _moreStartPos = token.Span.Position;
+            }
+
+            _moreTextBuilder.Append(token.Text);
+            return true;
+        }
+
+        return skip;
+    }
+
+    private LexerMode GetDefaultMode() =>
+        definition.Modes.FirstOrDefault(static mode => mode.Name == "DEFAULT_MODE") ?? definition.Modes[0];
+
+    private static bool IsPureLiteralRule(Rule rule) => rule.Content.Alternatives.All(static alternative => alternative.Content is LiteralMatch);
+
+    private static bool TryMatchLiteral(TextReaderBuffer stream, string value, int offset, bool caseInsensitive)
+    {
+        for (int i = 0; i < value.Length; i++)
+        {
+            int source = stream.Peek(offset + i);
+            if (source < 0 || !CharsEqual((char)source, value[i], caseInsensitive))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool CharsEqual(char left, char right, bool caseInsensitive) =>
+        caseInsensitive ? char.ToUpperInvariant(left) == char.ToUpperInvariant(right) : left == right;
+
+    private static bool IsCharInRange(char value, char start, char end, bool caseInsensitive)
+    {
+        if (!caseInsensitive)
+        {
+            return value >= start && value <= end;
+        }
+
+        char normalizedValue = char.ToUpperInvariant(value);
+        char normalizedStart = char.ToUpperInvariant(start);
+        char normalizedEnd = char.ToUpperInvariant(end);
+        return normalizedValue >= normalizedStart && normalizedValue <= normalizedEnd;
+    }
+
+    private static bool IsCharInSet(IReadOnlySet<char> chars, char value, bool caseInsensitive)
+    {
+        if (chars.Contains(value))
+        {
+            return true;
+        }
+
+        if (!caseInsensitive)
+        {
+            return false;
+        }
+
+        return chars.Contains(char.ToUpperInvariant(value)) || chars.Contains(char.ToLowerInvariant(value));
+    }
+
+    private static IReadOnlyDictionary<string, KeywordLookup> BuildKeywordTries(ParserDefinition parserDefinition, bool caseInsensitive)
     {
         var result = new Dictionary<string, KeywordLookup>(StringComparer.Ordinal);
-        foreach (var mode in definition.Modes)
+        foreach (var mode in parserDefinition.Modes)
         {
             var trie = new KeywordLookup(caseInsensitive);
             foreach (var rule in mode.Rules)
             {
                 if (rule.IsFragment || !IsPureLiteralRule(rule))
+                {
                     continue;
+                }
 
                 foreach (var alt in rule.Content.Alternatives)
+                {
                     trie.Add(((LiteralMatch)alt.Content).Value, rule);
+                }
             }
 
             result[mode.Name] = trie;
@@ -193,396 +566,46 @@ public sealed class LexerEngine(ParserDefinition definition)
         return result;
     }
 
-    /// <summary>
-    /// Returns <see langword="true"/> when every alternative in <paramref name="rule"/>
-    /// is a bare <see cref="LiteralMatch"/> with no sequences, quantifiers, or commands.
-    /// Such rules are handled entirely by the <see cref="KeywordLookup"/> trie and
-    /// need not be tried individually in <see cref="MatchLongest"/>.
-    /// </summary>
-    private static bool IsPureLiteralRule(Rule rule) =>
-        rule.Content.Alternatives.All(static a => a.Content is LiteralMatch);
-
-    /// <summary>
-    /// Attempts to match <paramref name="rule"/> at the current stream position.
-    /// Returns a <see cref="Token"/> on success, or <c>null</c> when the rule does not match.
-    /// Zero-length matches are rejected.
-    /// On success <paramref name="matchedCommands"/> is populated with the
-    /// <see cref="LexerCommand"/> nodes encountered only along the matched path.
-    /// </summary>
-    /// <param name="stream">Character stream (position is not permanently advanced on failure).</param>
-    /// <param name="rule">Lexer rule to try.</param>
-    /// <param name="modeName">Name of the active mode, recorded in the token.</param>
-    /// <param name="matchedCommands">Receives commands from the matched path only.</param>
-    private Token? TryMatchRule(ICharStream stream, Rule rule, string modeName,
-        List<Model.LexerCommand> matchedCommands)
+    private static string FormatError(string? filePath, int line, int column, string code, string message)
     {
-        var startPos = stream.Position;
-        if (TryMatchContent(stream, rule.Content, matchedCommands))
-        {
-            var length = stream.Position - startPos;
-            if (length == 0)
-                return null;
-
-            var text = ExtractText(stream, startPos, length);
-            return new Token(new SourceSpan(startPos, length), rule.Name, modeName, text);
-        }
-        return null;
+        var path = string.IsNullOrWhiteSpace(filePath) ? "<input>" : filePath;
+        return $"{path}({line},{column}): error {code}: {message}";
     }
 
-    /// <summary>
-    /// Recursively attempts to match a <see cref="RuleContent"/> node against the
-    /// current stream position. Advances the stream on success; leaves it unchanged
-    /// on failure (callers are responsible for saving/restoring the position when needed).
-    /// </summary>
-    /// <param name="stream">Character stream.</param>
-    /// <param name="content">Grammar element to match.</param>
-    /// <param name="commands">
-    /// When non-<c>null</c>, any <see cref="LexerCommand"/> nodes encountered
-    /// <em>along the matched path only</em> are appended to this list.
-    /// Commands in alternatives that did not match are not collected.
-    /// </param>
-    /// <returns><c>true</c> if the element matched and the stream was advanced accordingly.</returns>
-    private bool TryMatchContent(ICharStream stream, RuleContent content,
-        List<Model.LexerCommand>? commands = null)
+    private static string BuildText(TextReaderBuffer input, int length)
     {
-        switch (content)
+        if (length <= 0)
         {
-            case LiteralMatch lit:
-                return TryMatchLiteral(stream, lit.Value, _caseInsensitive);
-
-            case RangeMatch range:
-                if (stream.IsEnd) return false;
-                var ch = stream.Peek();
-                if (IsCharInRange(ch, range.From, range.To, _caseInsensitive))
-                {
-                    stream.Consume();
-                    return true;
-                }
-                return false;
-
-            case CharSetMatch charSet:
-                if (stream.IsEnd) return false;
-                var c = stream.Peek();
-                var inSet = IsCharInSet(charSet.Chars, c, _caseInsensitive);
-                if (charSet.Negated ? !inSet : inSet)
-                {
-                    stream.Consume();
-                    return true;
-                }
-                return false;
-
-            case AnyChar:
-                if (stream.IsEnd) return false;
-                stream.Consume();
-                return true;
-
-            case RuleRef ruleRef:
-                if (definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
-                {
-                    // Guard against infinite recursion: if this rule is already being
-                    // expanded at the same stream position, it cannot make progress.
-                    var cycleKey = (ruleRef.RuleName, stream.Position);
-                    if (!_activeRuleRefs.Add(cycleKey))
-                        return false;
-                    try
-                    {
-                        return TryMatchContent(stream, referencedRule.Content, commands);
-                    }
-                    finally
-                    {
-                        _activeRuleRefs.Remove(cycleKey);
-                    }
-                }
-                return false;
-
-            case Sequence seq:
-                var seqSave = stream.SavePosition();
-                foreach (var item in seq.Items)
-                {
-                    if (!TryMatchContent(stream, item, commands))
-                    {
-                        stream.RestorePosition(seqSave);
-                        return false;
-                    }
-                }
-                return true;
-
-            case Alternation alternation:
-                foreach (var alt in alternation.Alternatives)
-                {
-                    var altSave = stream.SavePosition();
-                    // Use a branch-local list so commands from failing branches are discarded.
-                    var branchCommands = commands is not null ? new List<Model.LexerCommand>() : null;
-                    if (TryMatchContent(stream, alt.Content, branchCommands))
-                    {
-                        commands?.AddRange(branchCommands!);
-                        return true;
-                    }
-                    stream.RestorePosition(altSave);
-                }
-                return false;
-
-            case Alternative alt:
-                return TryMatchContent(stream, alt.Content, commands);
-
-            case Quantifier quant:
-                return TryMatchQuantifier(stream, quant, commands);
-
-            case Negation neg:
-                return TryMatchNegation(stream, neg);
-
-            case Model.LexerCommand cmd:
-                // Collect only when we are on the matched path (commands != null).
-                commands?.Add(cmd);
-                return true;
-
-            case EmbeddedAction:
-                return true; // Does not consume characters.
-
-            default:
-                return false;
+            return string.Empty;
         }
+
+        var chars = new char[length];
+        for (int index = 0; index < length; index++)
+        {
+            int value = input.Peek(index);
+            chars[index] = value < 0 ? '\0' : (char)value;
+        }
+
+        return new string(chars);
     }
 
-    /// <summary>
-    /// Tries to consume the exact character sequence <paramref name="value"/> from
-    /// <paramref name="stream"/>. Advances the stream on success.
-    /// </summary>
-    /// <param name="stream">Character stream.</param>
-    /// <param name="value">Literal string to match.</param>
-    /// <param name="caseInsensitive"><c>true</c> to compare characters without regard to letter case.</param>
-    /// <returns><c>true</c> if the full literal was matched.</returns>
-    private static bool TryMatchLiteral(ICharStream stream, string value, bool caseInsensitive)
+    private static void ThrowValidation(
+        DiagnosticBag? diagnostics,
+        string? filePath,
+        int line,
+        int column,
+        SourceSpan? span,
+        string code,
+        string message)
     {
-        if (value.Length == 0)
-            return true;
-
-        for (int i = 0; i < value.Length; i++)
-        {
-            if (!CharsEqual(stream.Peek(i), value[i], caseInsensitive))
-                return false;
-        }
-
-        stream.Consume(value.Length);
-        return true;
-    }
-
-    /// <summary>Returns <c>true</c> when the grammar declares <c>caseInsensitive = true</c>.</summary>
-    private static bool IsCaseInsensitive(ParserDefinition definition) =>
-        definition.EffectiveOptions.CaseInsensitive;
-
-    /// <summary>Compares two characters using ordinal or case-insensitive semantics.</summary>
-    private static bool CharsEqual(char left, char right, bool caseInsensitive) =>
-        caseInsensitive
-            ? char.ToUpperInvariant(left) == char.ToUpperInvariant(right)
-            : left == right;
-
-    /// <summary>Checks whether <paramref name="value"/> belongs to the inclusive range.</summary>
-    private static bool IsCharInRange(char value, char start, char end, bool caseInsensitive)
-    {
-        if (!caseInsensitive)
-            return value >= start && value <= end;
-
-        char normalizedValue = char.ToUpperInvariant(value);
-        char normalizedStart = char.ToUpperInvariant(start);
-        char normalizedEnd = char.ToUpperInvariant(end);
-        return normalizedValue >= normalizedStart && normalizedValue <= normalizedEnd;
-    }
-
-    /// <summary>Checks membership in a character set, optionally ignoring case.</summary>
-    private static bool IsCharInSet(IReadOnlySet<char> chars, char value, bool caseInsensitive)
-    {
-        if (chars.Contains(value))
-            return true;
-
-        if (!caseInsensitive)
-            return false;
-
-        return chars.Contains(char.ToUpperInvariant(value))
-            || chars.Contains(char.ToLowerInvariant(value));
-    }
-
-    /// <summary>
-    /// Matches the inner element of a <see cref="Quantifier"/> as many times as
-    /// allowed by its bounds. Protects against infinite loops caused by zero-length matches.
-    /// </summary>
-    /// <param name="stream">Character stream.</param>
-    /// <param name="quant">Quantifier to evaluate.</param>
-    /// <param name="commands">Receives commands collected from each successful iteration.</param>
-    /// <returns><c>true</c> if the minimum repetition count was satisfied.</returns>
-    private bool TryMatchQuantifier(ICharStream stream, Quantifier quant,
-        List<Model.LexerCommand>? commands = null)
-    {
-        int count = 0;
-
-        while (quant.Max is null || count < quant.Max.Value)
-        {
-            var savedPos = stream.SavePosition();
-            if (!TryMatchContent(stream, quant.Inner, commands))
-            {
-                stream.RestorePosition(savedPos);
-                break;
-            }
-
-            // Guard against zero-length matches to prevent infinite loops.
-            if (stream.Position == savedPos)
-                break;
-
-            count++;
-
-            if (!quant.Greedy && count >= quant.Min)
-                break;
-        }
-
-        return count >= quant.Min;
-    }
-
-    /// <summary>
-    /// Implements the <c>~</c> negation operator: succeeds when the inner element
-    /// does <em>not</em> match, consuming exactly one character.
-    /// </summary>
-    /// <param name="stream">Character stream.</param>
-    /// <param name="neg">Negation element to evaluate.</param>
-    /// <returns><c>true</c> if the inner element did not match (and one character was consumed).</returns>
-    private bool TryMatchNegation(ICharStream stream, Negation neg)
-    {
-        if (stream.IsEnd) return false;
-
-        var savedPos = stream.SavePosition();
-        var matched = TryMatchContent(stream, neg.Inner);
-        stream.RestorePosition(savedPos);
-
-        if (!matched)
-        {
-            stream.Consume();
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Executes the <see cref="LexerCommand"/> directives that were collected
-    /// <em>only from the matched path</em> during <see cref="TryMatchContent"/>.
-    /// Updates the mode stack and returns whether the token should be skipped.
-    /// When a <c>more</c> command is found, the token text is accumulated in
-    /// <see cref="_moreTextBuilder"/> and the method returns <c>true</c> (suppress emit).
-    /// </summary>
-    /// <param name="commands">Commands from the matched path (may be empty).</param>
-    /// <param name="token">The matched token; may be passed for context but is not mutated here.</param>
-    /// <returns><c>true</c> if the token should be suppressed from output.</returns>
-    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag? diagnostics)
-    {
-        bool skip = false;
-        bool more = false;
-
-        foreach (var cmd in commands)
-        {
-            switch (cmd.Type)
-            {
-                case LexerCommandType.Skip:
-                    skip = true;
-                    break;
-
-                case LexerCommandType.More:
-                    more = true;
-                    break;
-
-                case LexerCommandType.PushMode:
-                    if (cmd.Argument is not null)
-                    {
-                        var mode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
-                        if (mode is not null)
-                            _modeStack.Push(mode);
-                        else
-                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "pushMode");
-                    }
-                    break;
-
-                case LexerCommandType.PopMode:
-                    if (_modeStack.Count > 1)
-                        _modeStack.Pop();
-                    break;
-
-                case LexerCommandType.Mode:
-                    if (cmd.Argument is not null)
-                    {
-                        var targetMode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
-                        if (targetMode is not null)
-                        {
-                            if (_modeStack.Count > 0)
-                                _modeStack.Pop();
-                            _modeStack.Push(targetMode);
-                        }
-                        else
-                        {
-                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "mode");
-                        }
-                    }
-                    break;
-
-                case LexerCommandType.Channel:
-                case LexerCommandType.Type:
-                    // Token metadata; handled downstream.
-                    break;
-            }
-        }
-
-        if (more)
-        {
-            // Accumulate text for the next token.
-            if (_moreStartPos < 0)
-                _moreStartPos = token.Span.Position;
-            _moreTextBuilder.Append(token.Text);
-            return true; // suppress this token
-        }
-
-        return skip;
-    }
-
-    /// <summary>
-    /// Returns the <c>DEFAULT_MODE</c> from the grammar definition, falling back
-    /// to the first mode when <c>DEFAULT_MODE</c> is not found.
-    /// </summary>
-    private LexerMode GetDefaultMode() =>
-        definition.Modes.FirstOrDefault(m => m.Name == "DEFAULT_MODE")
-        ?? definition.Modes[0];
-
-    /// <summary>
-    /// Reads <paramref name="length"/> characters starting at <paramref name="startPos"/>
-    /// from <paramref name="stream"/> and returns them as a string.
-    /// For <see cref="StringCharStream"/> this is done without advancing the stream;
-    /// for other implementations the current position is saved and restored.
-    /// </summary>
-    /// <param name="stream">Character stream to read from.</param>
-    /// <param name="startPos">Absolute start position of the region to extract.</param>
-    /// <param name="length">Number of characters to read.</param>
-    /// <returns>The extracted text.</returns>
-    private static string ExtractText(ICharStream stream, int startPos, int length)
-    {
-        // For StringCharStream we can access the underlying characters directly.
-        if (stream is StringCharStream scs)
-        {
-            var savedPos = stream.SavePosition();
-            stream.RestorePosition(startPos);
-            var chars = new char[length];
-            for (int i = 0; i < length; i++)
-            {
-                chars[i] = stream.Peek(i);
-            }
-            stream.RestorePosition(savedPos);
-            return new string(chars);
-        }
-
-        // Generic fallback for other ICharStream implementations.
-        var saved = stream.SavePosition();
-        stream.RestorePosition(startPos);
-        var buffer = new char[length];
-        for (int i = 0; i < length; i++)
-        {
-            buffer[i] = stream.Peek(i);
-        }
-        stream.RestorePosition(saved);
-        return new string(buffer);
+        string formatted = FormatError(filePath, line, column, code, message);
+        diagnostics?.AddWithContext(
+            ParserDiagnostics.ParseFailure,
+            span?.Position,
+            span?.Length,
+            null,
+            null,
+            formatted);
+        throw new LexerValidationException(formatted);
     }
 }

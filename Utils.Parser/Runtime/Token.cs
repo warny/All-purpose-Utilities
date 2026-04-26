@@ -1,33 +1,32 @@
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// An absolute position and length within a source text.
-/// Line/column information is computed on demand via <see cref="ToLineColumn"/>.
+/// Represents a concrete location in a source file.
 /// </summary>
-public record SourceSpan(
+public sealed record SourceLocation(
+    /// <summary>Optional path of the source file containing the location.</summary>
+    string? FilePath,
+    /// <summary>1-based line number.</summary>
+    int Line,
+    /// <summary>1-based column number.</summary>
+    int Column,
+    /// <summary>Zero-based absolute position from the start of the source.</summary>
+    int Position);
+
+/// <summary>
+/// An absolute position and length within a source text.
+/// </summary>
+public sealed record SourceSpan(
     /// <summary>Zero-based character offset from the start of the source.</summary>
     int Position,
     /// <summary>Number of characters covered by this span.</summary>
-    int Length
-)
-{
-    /// <summary>
-    /// Converts the absolute character offset to a 1-based (line, column) pair
-    /// by scanning through <paramref name="source"/> up to <see cref="Position"/>.
-    /// </summary>
-    /// <param name="source">The full source text.</param>
-    /// <returns>A tuple of (1-based line number, 1-based column number).</returns>
-    public (int Line, int Column) ToLineColumn(string source)
-    {
-        int line = 1, col = 1;
-        for (int i = 0; i < Position && i < source.Length; i++)
-        {
-            if (source[i] == '\n') { line++; col = 1; }
-            else col++;
-        }
-        return (line, col);
-    }
-}
+    int Length,
+    /// <summary>1-based line where the span starts.</summary>
+    int Line = 1,
+    /// <summary>1-based column where the span starts.</summary>
+    int Column = 1,
+    /// <summary>Optional source file path for diagnostics formatting.</summary>
+    string? FilePath = null);
 
 /// <summary>
 /// An atomic lexical unit produced by <see cref="LexerEngine"/>.
@@ -41,6 +40,8 @@ public record Token(
     string RuleName,
     /// <summary>Name of the active lexer mode when this token was produced.</summary>
     string ModeName,
+    /// <summary>Channel name assigned to this token.</summary>
+    string Channel,
     /// <summary>Raw matched text.</summary>
     string Text
 );
