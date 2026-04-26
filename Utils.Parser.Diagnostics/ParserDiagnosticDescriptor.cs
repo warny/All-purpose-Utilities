@@ -8,12 +8,12 @@ namespace Utils.Parser.Diagnostics;
 /// </summary>
 public sealed class ParserDiagnosticDescriptor
 {
-    private static readonly Regex s_codeRegex = new("^UP[0-9]{4}$", RegexOptions.Compiled);
+    private static readonly Regex s_codeRegex = new("^(UP[0-9]{4}|PARSER[0-9]{3})$", RegexOptions.Compiled);
 
     /// <summary>
     /// Initializes a new diagnostic descriptor and validates the diagnostic code format.
     /// </summary>
-    /// <param name="code">Diagnostic code in the form <c>UPxxxx</c>.</param>
+    /// <param name="code">Diagnostic code in the form <c>UPxxxx</c> or <c>PARSERxxx</c>.</param>
     /// <param name="title">Short diagnostic title.</param>
     /// <param name="messageFormat">Composite format string used to build diagnostic messages.</param>
     /// <param name="category">Optional diagnostic category.</param>
@@ -22,7 +22,7 @@ public sealed class ParserDiagnosticDescriptor
     {
         if (!s_codeRegex.IsMatch(code))
         {
-            throw new ArgumentException($"Invalid diagnostic code '{code}'. Expected format UPxxxx.", nameof(code));
+            throw new ArgumentException($"Invalid diagnostic code '{code}'. Expected format UPxxxx or PARSERxxx.", nameof(code));
         }
 
         Code = code;

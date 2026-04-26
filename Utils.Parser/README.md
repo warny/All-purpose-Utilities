@@ -368,6 +368,11 @@ The points below reflect the current implementation behavior.
   `pushMode`, `popMode`, `mode`); unknown command names raise a conversion error.
 - Parsing is not error-recovering: parsing failures return `ErrorNode`, and trailing tokens are
   reported as an error instead of attempting recovery.
+- Runtime safety guards stop non-progressive loops in quantifiers (`*`, `+`, `?`) and
+  repeated parser-state cycles during branch exploration.
+- Direct left-recursive extension is guarded by strict input-progress checks to avoid
+  non-terminating expansion attempts.
+- Backtracking is still part of the current architecture and has not been removed yet.
 
 ### Source generator pipeline limitations (`G4Parser`)
 

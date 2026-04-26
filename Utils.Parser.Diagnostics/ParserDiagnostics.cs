@@ -149,6 +149,18 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor AmbiguousConstructResolvedHeuristically =
         new("UP5005", "Ambiguous construct resolved", "Ambiguous construct resolved heuristically: {0}", DefaultCategory);
 
+    /// <summary>Parsing branch aborted because the parser entered a repeated state.</summary>
+    public static readonly ParserDiagnosticDescriptor ParserStateCycleDetected =
+        new("PARSER001", "Parser state cycle detected", "Parsing branch aborted due to repeated parser state.", DefaultCategory);
+
+    /// <summary>Quantifier iteration stopped because the inner rule made no progress.</summary>
+    public static readonly ParserDiagnosticDescriptor NonProgressiveQuantifierStopped =
+        new("PARSER002", "Non-progressive quantifier stopped", "Quantifier stopped because inner rule matched without consuming input.", DefaultCategory);
+
+    /// <summary>Left-recursive extension stopped because no progress was observed.</summary>
+    public static readonly ParserDiagnosticDescriptor NonProgressiveLeftRecursionStopped =
+        new("PARSER003", "Non-progressive left recursion stopped", "Left-recursive extension stopped because no input progress was made.", DefaultCategory);
+
     // Info (UP8xxx)
     /// <summary>Default behavior applied.</summary>
     public static readonly ParserDiagnosticDescriptor DefaultBehaviorApplied =
@@ -175,6 +187,10 @@ public static class ParserDiagnostics
     /// <summary>Debug trace for backtracking usage.</summary>
     public static readonly ParserDiagnosticDescriptor BacktrackingUsed =
         new("UP9004", "Backtracking used", "Backtracking used in rule '{0}'.", DefaultCategory);
+
+    /// <summary>Debug trace for parser states rejected by runtime safeguards.</summary>
+    public static readonly ParserDiagnosticDescriptor ParserStateRejected =
+        new("UP9005", "Parser state rejected", "Parser state rejected in rule '{0}': {1}.", DefaultCategory);
 
     /// <summary>
     /// Gets all known parser diagnostics keyed by code.
@@ -216,12 +232,16 @@ public static class ParserDiagnostics
             [FallbackStrategyUsed.Code] = FallbackStrategyUsed,
             [TrailingTokensAfterParse.Code] = TrailingTokensAfterParse,
             [AmbiguousConstructResolvedHeuristically.Code] = AmbiguousConstructResolvedHeuristically,
+            [ParserStateCycleDetected.Code] = ParserStateCycleDetected,
+            [NonProgressiveQuantifierStopped.Code] = NonProgressiveQuantifierStopped,
+            [NonProgressiveLeftRecursionStopped.Code] = NonProgressiveLeftRecursionStopped,
             [DefaultBehaviorApplied.Code] = DefaultBehaviorApplied,
             [ImportedRuleIgnoredBecauseAlreadyDefined.Code] = ImportedRuleIgnoredBecauseAlreadyDefined,
             [EnteringRule.Code] = EnteringRule,
             [LeavingRule.Code] = LeavingRule,
             [TokenMatched.Code] = TokenMatched,
             [BacktrackingUsed.Code] = BacktrackingUsed,
+            [ParserStateRejected.Code] = ParserStateRejected,
         };
 
     /// <summary>

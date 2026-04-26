@@ -9,6 +9,12 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
 internal readonly record struct ParseMemoKey(string RuleName, int InputPosition, int MinimumPrecedence);
+internal readonly record struct ParserStateKey(
+    string RuleName,
+    int InputPosition,
+    int AlternativeIndex,
+    int ElementIndex,
+    int MinimumPrecedence);
 
 internal sealed record ParseMemoEntry
 {
@@ -213,9 +219,10 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         var current = seed;
         var currentEndPosition = context.Position;
+        var visitedStates = new HashSet<ParserStateKey>();
         while (true)
         {
-            var extension = TryExtendLeft(context, info, current, minimumPrecedence, diagnostics);
+            var extension = TryExtendLeft(context, info, current, minimumPrecedence, visitedStates, diagnostics);
             if (extension is null)
             {
                 break;
@@ -223,8 +230,22 @@ public sealed class ParserEngine(ParserDefinition definition)
 
             // Guard against infinite loops: if the extension did not consume any tokens,
             // further iterations cannot make progress either.
-            if (context.Position <= currentEndPosition)
+            if (!context.HasStrictProgress(currentEndPosition))
             {
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.NonProgressiveLeftRecursionStopped,
+                    null,
+                    null,
+                    info.Rule.Name,
+                    null);
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateRejected,
+                    null,
+                    null,
+                    info.Rule.Name,
+                    null,
+                    info.Rule.Name,
+                    $"left recursion non-progressive at position {context.Position}");
                 break;
             }
 
@@ -240,6 +261,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         LeftRecursiveRuleInfo info,
         ParseNode current,
         int minimumPrecedence,
+        HashSet<ParserStateKey> visitedStates,
         DiagnosticBag? diagnostics)
     {
         var startPosition = context.Position;
@@ -249,6 +271,26 @@ public sealed class ParserEngine(ParserDefinition definition)
         for (int index = 0; index < recursiveAlternatives.Count; index++)
         {
             var alternative = recursiveAlternatives[index];
+            var stateKey = new ParserStateKey(info.Rule.Name, startPosition, index, 0, minimumPrecedence);
+            if (!visitedStates.Add(stateKey))
+            {
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateCycleDetected,
+                    null,
+                    null,
+                    info.Rule.Name,
+                    null);
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateRejected,
+                    null,
+                    null,
+                    info.Rule.Name,
+                    null,
+                    info.Rule.Name,
+                    $"repeated state {stateKey}");
+                continue;
+            }
+
             var precedenceLevel = recursiveAlternatives.Count - index;
             if (precedenceLevel < minimumPrecedence || !CheckPrecedence(alternative, minimumPrecedence))
             {
@@ -540,9 +582,31 @@ public sealed class ParserEngine(ParserDefinition definition)
         var startPosition = context.Position;
         var startToken = context.Peek();
         var survivingBranches = new List<ParseBranch>();
+        var visitedStates = new HashSet<ParserStateKey>();
 
-        foreach (var alt in alternativeList)
+        for (int index = 0; index < alternativeList.Count; index++)
         {
+            var alt = alternativeList[index];
+            var stateKey = new ParserStateKey(rule.Name, startPosition, index, 0, precedence);
+            if (!visitedStates.Add(stateKey))
+            {
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateCycleDetected,
+                    null,
+                    null,
+                    rule.Name,
+                    null);
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateRejected,
+                    null,
+                    null,
+                    rule.Name,
+                    null,
+                    rule.Name,
+                    $"repeated state {stateKey}");
+                continue;
+            }
+
             if (!CheckPrecedence(alt, precedence))
             {
                 continue;
@@ -680,6 +744,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         var startToken = context.Peek();
 
         int count = 0;
+        int previousPosition = context.Position;
         while (quant.Max is null || count < quant.Max.Value)
         {
             var savedPos = context.SavePosition();
@@ -691,11 +756,28 @@ public sealed class ParserEngine(ParserDefinition definition)
             }
 
             // Guard against zero-length matches.
-            if (context.Position == savedPos)
+            if (context.Position <= previousPosition)
+            {
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.NonProgressiveQuantifierStopped,
+                    null,
+                    null,
+                    rule.Name,
+                    null);
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateRejected,
+                    null,
+                    null,
+                    rule.Name,
+                    null,
+                    rule.Name,
+                    $"quantifier inner matched without progress at position {context.Position}");
                 break;
+            }
 
             children.Add(node);
             count++;
+            previousPosition = context.Position;
 
             if (!quant.Greedy && count >= quant.Min)
                 break;
