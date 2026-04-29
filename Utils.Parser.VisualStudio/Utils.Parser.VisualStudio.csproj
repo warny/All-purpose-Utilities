@@ -47,7 +47,7 @@
     </PropertyGroup>
 
     <Target Name="BuildPluginWorker" BeforeTargets="Build">
-        <MSBuild Projects="$(WorkerProjectPath)" Properties="Configuration=$(Configuration)" Targets="Build" />
+        <MSBuild Projects="$(WorkerProjectPath)" Properties="Configuration=$(Configuration)" Targets="Restore;Build" />
     </Target>
 
     <Target Name="CopyPluginWorkerToOutput" AfterTargets="Build">
