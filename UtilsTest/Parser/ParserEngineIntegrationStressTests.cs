@@ -17,7 +17,7 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class ParserEngineIntegrationStressTests
 {
-    private static readonly string RepositoryRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
+    private static readonly string RepositoryRoot = ResolveRepositoryRoot();
 
     /// <summary>
     /// Ensures C-like parser/lexer grammar assets bootstrap and parse nested constructs without safety regressions.
@@ -28,6 +28,7 @@ public class ParserEngineIntegrationStressTests
     {
         var diagnostics = new DiagnosticBag();
         var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.CSyntax", "Grammar", "CSyntaxParser.g4");
+        Assert.IsTrue(File.Exists(parserGrammarPath), $"Grammar file was not found: {parserGrammarPath}");
         var definition = Antlr4GrammarProjectCompiler.ParseFromFile(parserGrammarPath, diagnostics);
 
         Assert.IsNotNull(definition.RootRule);
@@ -63,6 +64,7 @@ public class ParserEngineIntegrationStressTests
     {
         var diagnostics = new DiagnosticBag();
         var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.VBSyntax", "Grammar", "VBSyntaxParser.g4");
+        Assert.IsTrue(File.Exists(parserGrammarPath), $"Grammar file was not found: {parserGrammarPath}");
         var definition = Antlr4GrammarProjectCompiler.ParseFromFile(parserGrammarPath, diagnostics);
 
         Assert.IsNotNull(definition.RootRule);
@@ -100,6 +102,7 @@ public class ParserEngineIntegrationStressTests
     {
         var diagnostics = new DiagnosticBag();
         var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.CSyntax", "Grammar", "CSyntaxParser.g4");
+        Assert.IsTrue(File.Exists(parserGrammarPath), $"Grammar file was not found: {parserGrammarPath}");
         var definition = Antlr4GrammarProjectCompiler.ParseFromFile(parserGrammarPath, diagnostics);
 
         var repeatedAssignments = string.Join(Environment.NewLine, Enumerable.Range(0, 120)
@@ -140,5 +143,25 @@ public class ParserEngineIntegrationStressTests
         Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ParseFailure.Code));
         Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error),
             "Unexpected error diagnostics: " + string.Join(" | ", diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).Select(diagnostic => diagnostic.Code)));
+    }
+
+    /// <summary>
+    /// Resolves the repository root directory from the test execution directory.
+    /// </summary>
+    private static string ResolveRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            var markerDirectory = Path.Combine(current.FullName, "Utils.Expressions.CSyntax");
+            if (Directory.Exists(markerDirectory))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException($"Unable to resolve repository root from '{AppContext.BaseDirectory}'.");
     }
 }
