@@ -239,6 +239,14 @@ public sealed class ParserEngine(ParserDefinition definition)
         diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
         var initialPosition = context.Position;
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
+        var completed = _stateRegistry.GetCompletedResults(invocationKey);
+        var reusableSuccess = completed.FirstOrDefault(result => !result.IsFailure);
+        if (reusableSuccess.Node is not null)
+        {
+            context.RestorePosition(reusableSuccess.EndPosition);
+            diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
+            return reusableSuccess.Node;
+        }
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
         if (!_activeRuleFrames.Add(frameKey))
         {
@@ -358,13 +366,18 @@ public sealed class ParserEngine(ParserDefinition definition)
         {
             var alternative = recursiveAlternatives[index];
             var stateKey = new ParserStateKey(info.Rule.Name, startPosition, index, index, minimumPrecedence);
-            _stateRegistry.MarkVisited(new ParseStateKey(
+            if (!_stateRegistry.MarkVisited(new ParseStateKey(
                 info.Rule.Name,
                 index,
                 index,
                 startPosition,
                 context.Position,
-                minimumPrecedence));
+                minimumPrecedence)))
+            {
+                var diagnosticSpan = ResolveDiagnosticSpan(context);
+                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateCycleDetected, diagnosticSpan.Start, diagnosticSpan.Length, info.Rule.Name, null);
+                continue;
+            }
             if (!visitedStates.Add(stateKey))
             {
                 var span = ResolveDiagnosticSpan(context);
@@ -532,9 +545,10 @@ public sealed class ParserEngine(ParserDefinition definition)
         Rule rule,
         int precedence = 0,
         int alternativeIndex = -1,
+        int elementIndex = -1,
         DiagnosticBag? diagnostics = null)
     {
-        return TryParseContent(context, alt.Content, rule, precedence, alternativeIndex, diagnostics);
+        return TryParseContent(context, alt.Content, rule, precedence, alternativeIndex, elementIndex, diagnostics);
     }
 
     /// <summary>
@@ -551,12 +565,13 @@ public sealed class ParserEngine(ParserDefinition definition)
         Rule rule,
         int precedence = 0,
         int alternativeIndex = -1,
+        int elementIndex = -1,
         DiagnosticBag? diagnostics = null)
     {
         switch (content)
         {
             case RuleRef ruleRef:
-                return TryParseRuleRef(context, ruleRef, rule, diagnostics);
+                return TryParseRuleRef(context, ruleRef, rule, precedence, alternativeIndex, elementIndex, diagnostics);
 
             case Sequence seq:
                 return TryParseSequence(context, seq, rule, precedence, alternativeIndex, diagnostics);
@@ -565,7 +580,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 return TryParseAlternation(context, alternation, rule, precedence, diagnostics);
 
             case Alternative alt:
-                return TryParseAlternative(context, alt, rule, precedence, alternativeIndex, diagnostics);
+                return TryParseAlternative(context, alt, rule, precedence, alternativeIndex, elementIndex, diagnostics);
 
             case Quantifier quant:
                 return TryParseQuantifier(context, quant, rule, precedence, alternativeIndex, diagnostics);
@@ -603,7 +618,14 @@ public sealed class ParserEngine(ParserDefinition definition)
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="ruleRef">Reference to resolve.</param>
     /// <param name="parentRule">The rule in which this reference appears.</param>
-    private ParseNode? TryParseRuleRef(ParseContext context, RuleRef ruleRef, Rule parentRule, DiagnosticBag? diagnostics = null)
+    private ParseNode? TryParseRuleRef(
+        ParseContext context,
+        RuleRef ruleRef,
+        Rule parentRule,
+        int minimumPrecedence,
+        int alternativeIndex,
+        int elementIndex,
+        DiagnosticBag? diagnostics = null)
     {
         if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
             return null;
@@ -612,8 +634,8 @@ public sealed class ParserEngine(ParserDefinition definition)
         // different callers can legitimately invoke the same rule at the same input position.
         // We therefore keep lightweight continuation metadata for future state-based parsing.
         _stateRegistry.AddContinuation(
-            new RuleInvocationKey(ruleRef.RuleName, context.Position, 0),
-            new ContinuationKey(parentRule.Name, -1, -1, context.Position, 0));
+            new RuleInvocationKey(ruleRef.RuleName, context.Position, minimumPrecedence),
+            new ContinuationKey(parentRule.Name, alternativeIndex, elementIndex, context.Position, minimumPrecedence));
 
         if (referencedRule.Kind == RuleKind.Lexer)
         {
@@ -704,7 +726,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             }
             _stateRegistry.MarkVisited(parseStateKey);
 
-            var node = TryParseContent(context, item, rule, minimumPrecedence, alternativeIndex, diagnostics);
+            var node = TryParseContent(context, item, rule, minimumPrecedence, alternativeIndex, itemIndex, diagnostics);
             if (node is null)
                 return null;
 
@@ -752,13 +774,18 @@ public sealed class ParserEngine(ParserDefinition definition)
         {
             var alt = alternativeList[index];
             var stateKey = new ParserStateKey(rule.Name, startPosition, index, index, precedence);
-            _stateRegistry.MarkVisited(new ParseStateKey(
+            if (!_stateRegistry.MarkVisited(new ParseStateKey(
                 rule.Name,
                 index,
                 index,
                 startPosition,
                 context.Position,
-                precedence));
+                precedence)))
+            {
+                var diagnosticSpan = ResolveDiagnosticSpan(context);
+                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateCycleDetected, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null);
+                continue;
+            }
             if (!visitedStates.Add(stateKey))
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
@@ -785,7 +812,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             }
 
             var savedPos = context.SavePosition();
-            var result = TryParseContent(context, alt.Content, rule, precedence, index, diagnostics);
+            var result = TryParseContent(context, alt.Content, rule, precedence, index, index, diagnostics);
             if (result is null)
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
@@ -933,7 +960,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         while (quant.Max is null || count < quant.Max.Value)
         {
             var savedPos = context.SavePosition();
-            var node = TryParseContent(context, quant.Inner, rule, minimumPrecedence, alternativeIndex, diagnostics);
+            var node = TryParseContent(context, quant.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
             if (node is null)
             {
                 context.RestorePosition(savedPos);
@@ -1023,7 +1050,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         if (token is null) return null;
 
         var savedPos = context.SavePosition();
-        var matched = TryParseContent(context, neg.Inner, rule, minimumPrecedence, alternativeIndex, diagnostics);
+        var matched = TryParseContent(context, neg.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
         context.RestorePosition(savedPos);
 
         if (matched is null)
@@ -1082,7 +1109,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 }
                 else
                 {
-                    node = TryParseContent(context, item, ownerRule, precedenceLevel, itemIndex, diagnostics);
+                    node = TryParseContent(context, item, ownerRule, precedenceLevel, alternativeIndex, itemIndex, diagnostics);
                 }
 
                 if (node is null)
@@ -1099,7 +1126,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             return result;
         }
 
-        var tailNode = TryParseContent(context, tailContent, ownerRule, precedenceLevel, alternativeIndex, diagnostics);
+        var tailNode = TryParseContent(context, tailContent, ownerRule, precedenceLevel, alternativeIndex, alternativeIndex, diagnostics);
         return tailNode is null ? null : [tailNode];
     }
 
