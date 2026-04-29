@@ -45,6 +45,14 @@ internal sealed class ParserStateRegistry
     private readonly Dictionary<RuleInvocationKey, HashSet<ContinuationKey>> _continuations = [];
     private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
 
+    /// <summary>Resets all registry state for a new parse.</summary>
+    public void Clear()
+    {
+        _visitedStates.Clear();
+        _continuations.Clear();
+        _completedResults.Clear();
+    }
+
     /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>
     public bool MarkVisited(ParseStateKey key) => _visitedStates.Add(key);
 
@@ -186,6 +194,7 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         _activeRuleFrames.Clear();
         _memo.Clear();
+        _stateRegistry.Clear();
         var context = new ParseContext(tokenList);
         var result = ParseRule(context, root, precedence: 0, diagnostics);
 
@@ -326,6 +335,12 @@ public sealed class ParserEngine(ParserDefinition definition)
             if (!context.HasStrictProgress(currentEndPosition))
             {
                 var span = ResolveDiagnosticSpan(context);
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.ParserStateCycleDetected,
+                    span.Start,
+                    span.Length,
+                    info.Rule.Name,
+                    null);
                 diagnostics?.AddWithContext(
                     ParserDiagnostics.NonProgressiveLeftRecursionStopped,
                     span.Start,
