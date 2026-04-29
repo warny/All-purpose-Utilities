@@ -33,6 +33,24 @@ public class ParserEngineSafetyGuardsTests
     }
 
     /// <summary>
+    /// Ensures nested star inside plus also stops on non-progressive matches.
+    /// </summary>
+    [TestMethod]
+    public void Quantifier_NestedStarInsidePlus_FailsCleanlyAndReportsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics("""
+            grammar G;
+            start : (B*)+ ;
+            B : 'b' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, string.Empty, diagnostics);
+
+        Assert.IsInstanceOfType<ErrorNode>(tree);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.NonProgressiveQuantifierStopped.Code));
+    }
+
+    /// <summary>
     /// Ensures plus quantifiers with optional inner content do not loop forever and fail when no consuming match exists.
     /// </summary>
     [TestMethod]
@@ -66,6 +84,28 @@ public class ParserEngineSafetyGuardsTests
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
         Assert.AreEqual(3, CountTokens(tree, "a"));
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+    }
+
+    /// <summary>
+    /// Ensures the parser emits cycle-related diagnostics on recursive non-progressive patterns.
+    /// </summary>
+    [TestMethod]
+    public void RecursiveNonProgressivePattern_EmitsCycleDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = ParseWithDiagnostics("""
+            grammar G;
+            start : expr ;
+            expr : expr
+                 | INT
+                 ;
+            INT : ('0'..'9')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "1", diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d =>
+            d.Code == ParserDiagnostics.ParserStateCycleDetected.Code
+            || d.Code == ParserDiagnostics.NonProgressiveLeftRecursionStopped.Code));
     }
 
     /// <summary>
