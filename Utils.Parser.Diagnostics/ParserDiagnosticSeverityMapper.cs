@@ -9,8 +9,9 @@ public static class ParserDiagnosticSeverityMapper
 {
     /// <summary>
     /// Resolves severity from a code using the first digit after <c>UP</c>.
+    /// Codes using the <c>PARSERxxx</c> convention map to warning severity.
     /// </summary>
-    /// <param name="code">Diagnostic code in the form <c>UPxxxx</c>.</param>
+    /// <param name="code">Diagnostic code in the form <c>UPxxxx</c> or <c>PARSERxxx</c>.</param>
     /// <returns>Mapped diagnostic severity.</returns>
     /// <exception cref="ArgumentException">Thrown when the code prefix is invalid.</exception>
     public static DiagnosticSeverity FromCode(string code)
@@ -18,6 +19,15 @@ public static class ParserDiagnosticSeverityMapper
         if (code is null)
         {
             throw new ArgumentNullException(nameof(code));
+        }
+
+        if (code.StartsWith("PARSER", StringComparison.Ordinal) &&
+            code.Length == 9 &&
+            char.IsDigit(code[6]) &&
+            char.IsDigit(code[7]) &&
+            char.IsDigit(code[8]))
+        {
+            return DiagnosticSeverity.Warning;
         }
 
         if (code.Length != 6 || !code.StartsWith("UP", StringComparison.Ordinal) || !char.IsDigit(code[2]))

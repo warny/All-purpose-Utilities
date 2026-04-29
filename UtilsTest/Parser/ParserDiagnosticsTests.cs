@@ -26,6 +26,7 @@ public class ParserDiagnosticsTests
         Assert.AreEqual(DiagnosticSeverity.Warning, ParserDiagnosticSeverityMapper.FromCode("UP5001"));
         Assert.AreEqual(DiagnosticSeverity.Info, ParserDiagnosticSeverityMapper.FromCode("UP8001"));
         Assert.AreEqual(DiagnosticSeverity.Debug, ParserDiagnosticSeverityMapper.FromCode("UP9001"));
+        Assert.AreEqual(DiagnosticSeverity.Warning, ParserDiagnosticSeverityMapper.FromCode("PARSER001"));
     }
 
     [TestMethod]

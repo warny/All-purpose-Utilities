@@ -40,4 +40,11 @@ internal sealed class ParseContext(IReadOnlyList<Token> tokens)
     /// <summary>Restores the position to a value previously returned by <see cref="SavePosition"/>.</summary>
     /// <param name="saved">Value returned by a prior call to <see cref="SavePosition"/>.</param>
     public void RestorePosition(int saved) => _position = saved;
+
+    /// <summary>
+    /// Returns <c>true</c> when the current position is strictly greater than
+    /// <paramref name="savedPosition"/>.
+    /// </summary>
+    /// <param name="savedPosition">Position snapshot captured before an operation.</param>
+    public bool HasStrictProgress(int savedPosition) => _position > savedPosition;
 }
