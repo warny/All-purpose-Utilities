@@ -123,6 +123,55 @@ public class BlockTests
     }
 
     [TestMethod]
+    public void ForIfBreakTest()
+    {
+        var expression =
+            """
+            (int max) => {
+                int i = 0;
+                for (i = 0; i < 100; i = i + 1) {
+                    if (i >= max) {
+                        break;
+                    };
+                };
+                i;
+            }
+            """;
+
+        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int, int>)lambda.Compile();
+
+        Assert.AreEqual(0, function(0));
+        Assert.AreEqual(3, function(3));
+        Assert.AreEqual(7, function(7));
+    }
+
+    [TestMethod]
+    public void DoWhileIfBreakTest()
+    {
+        var expression =
+            """
+            (int max) => {
+                int i = 0;
+                do {
+                    if (i >= max) {
+                        break;
+                    };
+                    i = i + 1;
+                } while (i < 100);
+                i;
+            }
+            """;
+
+        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int, int>)lambda.Compile();
+
+        Assert.AreEqual(0, function(0));
+        Assert.AreEqual(3, function(3));
+        Assert.AreEqual(7, function(7));
+    }
+
+    [TestMethod]
     public void ForTest()
     {
         Random random = new Random();
