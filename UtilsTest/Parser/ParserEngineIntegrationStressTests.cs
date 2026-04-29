@@ -119,7 +119,7 @@ public class ParserEngineIntegrationStressTests
     /// <summary>
     /// Tokenizes and parses input from a compiled grammar definition while collecting diagnostics.
     /// </summary>
-    private static ParseNode ParseWithDefinition(GrammarDefinition definition, string input, DiagnosticBag diagnostics, out int tokenCount)
+    private static ParseNode ParseWithDefinition(ParserDefinition definition, string input, DiagnosticBag diagnostics, out int tokenCount)
     {
         var lexer = new LexerEngine(definition);
         var tokens = lexer.Tokenize(new StringReader(input), diagnostics: diagnostics).ToList();
