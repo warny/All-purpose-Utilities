@@ -299,6 +299,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             .OnAscend("variable_declaration_assignment", CompileVariableDeclaration)
             .OnAscend("using_instruction", static (_, _) => Expression.Empty())
             .OnAscend("invocation_instruction", CompileInvocation)
+            .OnAscend("break_instruction", CompileBreakInstruction)
             .OnAscend("if_instruction", CompileIfInstruction)
             .OnAscend("for_instruction", CompileForInstruction)
             .OnAscend("foreach_instruction", CompileForeachInstruction)

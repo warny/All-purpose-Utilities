@@ -15,11 +15,16 @@ instruction
     | empty_instruction
     | assignment_instruction
     | invocation_instruction
+    | break_instruction
     | operation
     ;
 
 empty_instruction
     : SEMICOLON
+    ;
+
+break_instruction
+    : BREAK SEMICOLON
     ;
 
 using_instruction

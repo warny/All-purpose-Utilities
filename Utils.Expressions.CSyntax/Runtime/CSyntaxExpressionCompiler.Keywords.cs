@@ -17,6 +17,17 @@ namespace Utils.Expressions.CSyntax.Runtime;
 public sealed partial class CSyntaxExpressionCompiler
 {
     /// <summary>
+    /// Compiles a <c>break</c> instruction.
+    /// </summary>
+    private static Expression? CompileBreakInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
+    {
+        _ = nav;
+        _ = context;
+        _ = children;
+        return Expression.Throw(Expression.New(typeof(LoopBreakException)), typeof(void));
+    }
+
+    /// <summary>
     /// Compiles an <c>if</c>/<c>else</c> control structure.
     /// </summary>
     /// <param name="nav">Current parser navigator.</param>
@@ -63,7 +74,8 @@ public sealed partial class CSyntaxExpressionCompiler
             return expressions.FirstOrDefault();
         }
 
-        return ExpressionEx.While(EnsureBoolean(expressions[0]), expressions[1]);
+        Expression loop = ExpressionEx.While(EnsureBoolean(expressions[0]), expressions[1]);
+        return WrapLoopWithBreakHandling(loop);
     }
 
     /// <summary>
@@ -77,7 +89,8 @@ public sealed partial class CSyntaxExpressionCompiler
             return expressions.FirstOrDefault();
         }
 
-        return ExpressionEx.Do(EnsureBoolean(expressions[1]), expressions[0]);
+        Expression loop = ExpressionEx.Do(EnsureBoolean(expressions[1]), expressions[0]);
+        return WrapLoopWithBreakHandling(loop);
     }
 
     /// <summary>
@@ -140,7 +153,8 @@ public sealed partial class CSyntaxExpressionCompiler
         Expression finalInit = initValue
             ?? (rawInit.Type == iterator.Type ? rawInit : ConvertIfNeeded(rawInit, iterator.Type));
 
-        return ExpressionEx.For(iterator, finalInit, testExpression, nextExpressions, bodyExpression);
+        Expression loop = ExpressionEx.For(iterator, finalInit, testExpression, nextExpressions, bodyExpression);
+        return WrapLoopWithBreakHandling(loop);
     }
 
     /// <summary>
@@ -210,10 +224,21 @@ public sealed partial class CSyntaxExpressionCompiler
             });
 
         Expression foreachBody = ExpressionEx.ForEach(iterator, enumerableVariable, body);
-        return Expression.Block(
+        Expression loop = Expression.Block(
             [enumerableVariable],
             Expression.Assign(enumerableVariable, enumerableExpression),
             foreachBody);
+        return WrapLoopWithBreakHandling(loop);
+    }
+
+    /// <summary>
+    /// Wraps loop expressions so <c>break</c> instructions can terminate the current loop scope.
+    /// </summary>
+    private static Expression WrapLoopWithBreakHandling(Expression loop)
+    {
+        return Expression.TryCatch(
+            loop,
+            Expression.Catch(typeof(LoopBreakException), Expression.Empty()));
     }
 
     /// <summary>

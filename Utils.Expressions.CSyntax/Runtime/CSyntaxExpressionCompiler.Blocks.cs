@@ -2036,6 +2036,13 @@ public sealed partial class CSyntaxExpressionCompiler
     }
 
     /// <summary>
+    /// Internal sentinel exception used to implement <c>break</c> inside loop expressions.
+    /// </summary>
+    private sealed class LoopBreakException : Exception
+    {
+    }
+
+    /// <summary>
     /// Represents one part of a parsed interpolated-string template.
     /// </summary>
     private sealed record InterpolatedTemplatePart
