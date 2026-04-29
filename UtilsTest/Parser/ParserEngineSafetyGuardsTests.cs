@@ -87,10 +87,13 @@ public class ParserEngineSafetyGuardsTests
     }
 
     /// <summary>
-    /// Ensures the parser emits cycle-related diagnostics on recursive non-progressive patterns.
+    /// Ensures the parser emits both a cycle diagnostic and a non-progressive diagnostic
+    /// for left-recursive rules whose extension produces no token progress.
+    /// Both codes are expected because a non-progressive extension is simultaneously
+    /// a cycle state and a termination trigger.
     /// </summary>
     [TestMethod]
-    public void RecursiveNonProgressivePattern_EmitsCycleDiagnostic()
+    public void RecursiveNonProgressivePattern_EmitsBothCycleAndNonProgressiveDiagnostics()
     {
         var diagnostics = new DiagnosticBag();
         _ = ParseWithDiagnostics("""
@@ -103,9 +106,10 @@ public class ParserEngineSafetyGuardsTests
             WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
             """, "1", diagnostics);
 
-        Assert.IsTrue(diagnostics.Any(d =>
-            d.Code == ParserDiagnostics.ParserStateCycleDetected.Code
-            || d.Code == ParserDiagnostics.NonProgressiveLeftRecursionStopped.Code));
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code),
+            "expected ParserStateCycleDetected for non-progressive left-recursive extension");
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.NonProgressiveLeftRecursionStopped.Code),
+            "expected NonProgressiveLeftRecursionStopped for non-progressive left-recursive extension");
     }
 
     /// <summary>
@@ -205,33 +209,38 @@ public class ParserEngineSafetyGuardsTests
     }
 
     /// <summary>
-    /// Ensures same rule invocation key can feed distinct parent continuations without false cycle diagnostics.
+    /// Ensures same rule invoked at the same position from two different alternatives
+    /// (distinct continuations) is not rejected as a false cycle.
+    /// Within a single parse, both alternatives of root call 'common' at position 0:
+    /// alt[0] continues with 'X', alt[1] continues with 'Y'.
+    /// The engine must allow both and select the correct winner for each input.
     /// </summary>
     [TestMethod]
     public void SameRuleSamePositionDifferentContinuation_IsAllowed()
     {
-        var diagnosticsA = new DiagnosticBag();
-        var treeA = ParseWithDiagnostics("""
+        const string grammar = """
             grammar G;
-            root : common 'X' ;
+            root : common 'X'
+                 | common 'Y'
+                 ;
             common : ID ;
             ID : ('a'..'z')+ ;
             WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
-            """, "id X", diagnosticsA);
+            """;
 
-        var diagnosticsB = new DiagnosticBag();
-        var treeB = ParseWithDiagnostics("""
-            grammar G;
-            root : common 'Y' ;
-            common : ID ;
-            ID : ('a'..'z')+ ;
-            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
-            """, "id Y", diagnosticsB);
+        var diagnosticsX = new DiagnosticBag();
+        var treeX = ParseWithDiagnostics(grammar, "id X", diagnosticsX);
 
-        Assert.IsNotInstanceOfType<ErrorNode>(treeA);
-        Assert.IsNotInstanceOfType<ErrorNode>(treeB);
-        Assert.IsFalse(diagnosticsA.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
-        Assert.IsFalse(diagnosticsB.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+        var diagnosticsY = new DiagnosticBag();
+        var treeY = ParseWithDiagnostics(grammar, "id Y", diagnosticsY);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(treeX);
+        Assert.IsNotInstanceOfType<ErrorNode>(treeY);
+        // The correct continuation wins: 'X' terminal in first parse, 'Y' in second.
+        Assert.AreEqual(1, CountTokens(treeX, "X"), "alt[0] continuation should win for 'id X'");
+        Assert.AreEqual(1, CountTokens(treeY, "Y"), "alt[1] continuation should win for 'id Y'");
+        Assert.IsFalse(diagnosticsX.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+        Assert.IsFalse(diagnosticsY.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
     }
 
     /// <summary>
