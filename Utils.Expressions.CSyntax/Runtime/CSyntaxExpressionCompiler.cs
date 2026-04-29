@@ -206,7 +206,8 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
         IReadOnlyDictionary<string, Expression>? symbols,
         string sourceText,
         ExpressionCompilerContext? runtimeContext,
-        List<string>? importedNamespaces = null)
+        List<string>? importedNamespaces = null,
+        bool isInLoopContext = false)
     {
         importedNamespaces ??= ExtractUsingDirectives(sourceText);
         var blockScope = new Dictionary<ParseNode, List<ParameterExpression>>(ReferenceEqualityComparer.Instance);
@@ -217,9 +218,32 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             sourceText,
             this,
             importedNamespaces,
-            blockScope);
+            blockScope,
+            isInLoopContext);
         Expression? compiled = compiler.Compile(root, context);
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
+    }
+
+    private Expression CompileSourceWithContext(string source, ExpressionCompilerContext context, bool isInLoopContext)
+    {
+        source = PreprocessCompoundAssignments(source);
+        source = PreprocessSimpleInterpolatedStrings(source);
+        List<string> importedNamespaces = ExtractUsingDirectives(source);
+        source = StripUsingDirectives(source);
+        RegisterDeferredPublicMethods(source, context);
+        string sourceToParse = source.TrimStart().StartsWith("{", StringComparison.Ordinal) ? source : "{ " + source + " }";
+        ParseNode root = _parser.Parse(sourceToParse);
+        return Compile(root, null, sourceToParse, context, importedNamespaces, isInLoopContext);
+    }
+
+    private Expression CompileWithContext(string source, ExpressionCompilerContext context, bool isInLoopContext)
+    {
+        source = PreprocessCompoundAssignments(source);
+        source = PreprocessSimpleInterpolatedStrings(source);
+        List<string> importedNamespaces = ExtractUsingDirectives(source);
+        source = StripUsingDirectives(source);
+        ParseNode root = _parser.Parse(source);
+        return Compile(root, null, source, context, importedNamespaces, isInLoopContext);
     }
 
     /// <summary>

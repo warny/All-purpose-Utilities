@@ -22,8 +22,13 @@ public sealed partial class CSyntaxExpressionCompiler
     private static Expression? CompileBreakInstruction(ParseTreeNavigator nav, CompilationContext context, IReadOnlyList<Expression?> children)
     {
         _ = nav;
-        _ = context;
         _ = children;
+        if (!context.IsInLoopContext
+            && !Regex.IsMatch(context.SourceText, @"\b(while|for|foreach|do)\b", RegexOptions.IgnoreCase))
+        {
+            throw new InvalidOperationException("'break' statement must be used inside a loop.");
+        }
+
         return Expression.Throw(Expression.New(typeof(LoopBreakException)), typeof(void));
     }
 
@@ -146,7 +151,7 @@ public sealed partial class CSyntaxExpressionCompiler
             : [CompileSubExpression(nextExpressionText, context, forSymbols)];
         Expression bodyExpression = bodySource.Length == 0
             ? Expression.Empty()
-            : CompileSubExpression(NormalizeLoopBodySource(bodySource), context, forSymbols);
+            : CompileSubExpression(NormalizeLoopBodySource(bodySource), context, forSymbols, isInLoopContext: true);
 
         ParameterExpression iterator = namedIterator
             ?? Expression.Variable(rawInit.Type == typeof(void) ? typeof(double) : rawInit.Type, "__for_iterator__");
@@ -221,7 +226,7 @@ public sealed partial class CSyntaxExpressionCompiler
             : CompileSubExpression(NormalizeLoopBodySource(bodySource), context, new Dictionary<string, Expression>(StringComparer.Ordinal)
             {
                 [iteratorName] = iterator,
-            });
+            }, isInLoopContext: true);
 
         Expression foreachBody = ExpressionEx.ForEach(iterator, enumerableVariable, body);
         Expression loop = Expression.Block(

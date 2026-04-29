@@ -172,6 +172,15 @@ public class BlockTests
     }
 
     [TestMethod]
+    public void BreakOutsideLoop_ThrowsInvalidOperationException()
+    {
+        var expression = "(int max) => { break; max; }";
+
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        StringAssert.Contains(exception.Message, "inside a loop");
+    }
+
+    [TestMethod]
     public void ForTest()
     {
         Random random = new Random();

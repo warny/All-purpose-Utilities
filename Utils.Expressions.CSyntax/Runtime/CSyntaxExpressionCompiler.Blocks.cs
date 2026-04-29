@@ -641,6 +641,13 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="additionalSymbols">Optional symbols that override the current symbol table.</param>
     /// <returns>Compiled expression.</returns>
     private static Expression CompileSubExpression(string source, CompilationContext context, IReadOnlyDictionary<string, Expression>? additionalSymbols)
+        => CompileSubExpression(source, context, additionalSymbols, isInLoopContext: false);
+
+    private static Expression CompileSubExpression(
+        string source,
+        CompilationContext context,
+        IReadOnlyDictionary<string, Expression>? additionalSymbols,
+        bool isInLoopContext)
     {
         if (context.RuntimeContext is null)
         {
@@ -658,7 +665,7 @@ public sealed partial class CSyntaxExpressionCompiler
                 }
             }
 
-            return context.Compiler.CompileSource(source, localContext);
+            return context.Compiler.CompileSourceWithContext(source, localContext, isInLoopContext);
         }
 
         ExpressionCompilerContext derivedContext = new();
@@ -680,7 +687,7 @@ public sealed partial class CSyntaxExpressionCompiler
             }
         }
 
-        return context.Compiler.Compile(source, derivedContext);
+        return context.Compiler.CompileWithContext(source, derivedContext, isInLoopContext);
     }
 
     /// <summary>
@@ -2005,7 +2012,8 @@ public sealed partial class CSyntaxExpressionCompiler
         string SourceText,
         CSyntaxExpressionCompiler Compiler,
         IReadOnlyList<string> ImportedNamespaces,
-        Dictionary<ParseNode, List<ParameterExpression>> BlockScope);
+        Dictionary<ParseNode, List<ParameterExpression>> BlockScope,
+        bool IsInLoopContext);
 
     /// <summary>
     /// Represents a parsed method declaration signature.
