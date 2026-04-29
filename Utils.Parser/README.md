@@ -271,10 +271,15 @@ a comprehensive real-world example.
 | Feature | Description |
 |---|---|
 | Backtracking | Each alternative is tried in priority order; the cursor is restored on failure. |
-| Left-recursion detection | Cycles (same rule at the same token position) are detected and skipped. |
-| Precedence predicates | `<assoc=right>` / priority-annotated alternatives are respected. |
+| Parallel alternative exploration | All alternatives are tried at each choice point; the best match (longest, then lowest priority) is selected. |
+| Left-recursion handling | Direct left-recursive rules are detected at resolution time and parsed using a seed-and-extend loop. |
+| Precedence predicates | `<assoc=right>` / priority-annotated alternatives are respected during left-recursive extension. |
 | Trailing-token validation | `Parse()` returns an `ErrorNode` when unconsumed tokens remain after the root rule. |
-| Parse memoization | Results at each rule/position pair are cached to avoid redundant re-evaluation in backtracking scenarios. |
+| Parse memoization | Results at each (rule, position, precedence) triple are cached to avoid redundant re-evaluation. |
+| Non-progressive quantifier guard | Quantifier iterations (`*`, `+`) that match without consuming any token are stopped immediately (`PARSER002`). |
+| Non-progressive left-recursion guard | Left-recursive extensions that produce no token progress are stopped and reported (`PARSER003`). |
+| Parser state cycle detection | Repeated parser states (same rule, position, and alternative index) during alternative exploration are detected and skipped (`PARSER001`). |
+| Ambiguous alternative pruning | Structurally equivalent branches are pruned; the lower-priority winner is kept (`UP1013`). |
 
 ## Grammar validation
 
@@ -294,11 +299,14 @@ The runtime parser and the source generator now share the same diagnostic model
 
 ### Code scheme
 
-- `UP0xxx`: blocking errors (unknown rules, grammar type violations, …)
-- `UP1xxx`: unsupported / ignored / partial behavior (embedded actions, left-recursion handling, memoization traces, …)
-- `UP5xxx`: best-effort recovery warnings
-- `UP8xxx`: informational diagnostics
-- `UP9xxx`: debug traces
+| Prefix | Severity | Purpose |
+|---|---|---|
+| `UP0xxx` | Error | Blocking errors (unresolved rules, grammar type violations, import failures, …) |
+| `UP1xxx` | Warning | Unsupported / ignored / partial behavior (embedded actions, left-recursion handling, memoization traces, …) |
+| `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguous constructs, …) |
+| `UP8xxx` | Info | Informational runtime events |
+| `UP9xxx` | Debug | Detailed execution traces (entering/leaving rules, backtracking, memo hits, …) |
+| `PARSER0xx` | Warning / Info | Runtime safety guard events (cycle detection, non-progressive loop termination) |
 
 Severity is derived from the code prefix (not manually assigned per call site).
 
@@ -394,6 +402,9 @@ The points below reflect the current implementation behavior.
 - Direct left-recursive extension is guarded by strict input-progress checks to avoid
   non-terminating expansion attempts.
 - Backtracking is still part of the current architecture and has not been removed yet.
+- Runtime safety guards (`PARSER001`–`PARSER003`) stop non-terminating patterns:
+  `PARSER001` aborts repeated parser states; `PARSER002` stops zero-progress quantifier iterations;
+  `PARSER003` stops zero-progress left-recursive extension loops.
 
 ### Source generator pipeline limitations (`G4Parser`)
 
