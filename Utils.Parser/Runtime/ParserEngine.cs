@@ -8,13 +8,11 @@ namespace Utils.Parser.Runtime;
 /// A cycle is detected when the same rule is re-entered at the same token-list position.
 /// </summary>
 internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
-internal readonly record struct ParseMemoKey(string RuleName, int InputPosition, int MinimumPrecedence);
 internal readonly record struct ParseStateKey(
     string RuleName,
+    int InputPosition,
     int AlternativeIndex,
     int ElementIndex,
-    int OriginPosition,
-    int CurrentPosition,
     int MinimumPrecedence);
 internal readonly record struct RuleInvocationKey(
     string RuleName,
@@ -41,7 +39,7 @@ internal readonly record struct ParserRuleResult(ParseNode? Node, int EndPositio
 /// </summary>
 internal sealed class ParserStateRegistry
 {
-    private readonly HashSet<ParseStateKey> _visitedStates = [];
+    private readonly HashSet<ParserStateKey> _visitedStates = [];
     private readonly Dictionary<RuleInvocationKey, HashSet<ContinuationKey>> _continuations = [];
     private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
 
@@ -54,7 +52,11 @@ internal sealed class ParserStateRegistry
     }
 
     /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>
-    public bool MarkVisited(ParseStateKey key) => _visitedStates.Add(key);
+    public bool TryEnterState(ParserStateKey key) => _visitedStates.Add(key);
+
+    /// <summary>Maps a parse-level state key into the engine-level parser state space.</summary>
+    public bool TryEnterState(ParseStateKey key) => TryEnterState(
+        new ParserStateKey(key.RuleName, key.InputPosition, key.AlternativeIndex, key.ElementIndex, key.MinimumPrecedence));
 
     /// <summary>Adds a continuation for a shared rule invocation.</summary>
     public bool AddContinuation(RuleInvocationKey invocation, ContinuationKey continuation)
@@ -99,15 +101,25 @@ internal sealed class ParserStateRegistry
     {
         return _completedResults.TryGetValue(invocation, out var list) ? list : [];
     }
-}
 
-internal sealed record ParseMemoEntry
-{
-    public required ParseNode? Node { get; init; }
+    /// <summary>Determines whether an invocation has a reusable deterministic success result.</summary>
+    public bool TryGetReusableSuccess(RuleInvocationKey invocation, out ParserRuleResult result)
+    {
+        result = default;
+        if (!_completedResults.TryGetValue(invocation, out var list))
+        {
+            return false;
+        }
 
-    public required int EndPosition { get; init; }
+        var success = list.FirstOrDefault(static item => !item.IsFailure && item.Node is not null);
+        if (success.Node is null)
+        {
+            return false;
+        }
 
-    public required bool IsFailure { get; init; }
+        result = success;
+        return true;
+    }
 }
 
 internal sealed record RuleContentCursor
@@ -168,7 +180,6 @@ internal sealed record BranchKey
 public sealed class ParserEngine(ParserDefinition definition)
 {
     private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
-    private readonly Dictionary<ParseMemoKey, ParseMemoEntry> _memo = new();
     private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
     private readonly ParserStateRegistry _stateRegistry = new();
 
@@ -193,7 +204,6 @@ public sealed class ParserEngine(ParserDefinition definition)
             ?? throw new InvalidOperationException("No root rule defined");
 
         _activeRuleFrames.Clear();
-        _memo.Clear();
         _stateRegistry.Clear();
         var context = new ParseContext(tokenList);
         var result = ParseRule(context, root, precedence: 0, diagnostics);
@@ -237,25 +247,15 @@ public sealed class ParserEngine(ParserDefinition definition)
     private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence, DiagnosticBag? diagnostics = null)
     {
         diagnostics?.AddWithContext(ParserDiagnostics.EnteringRule, null, null, rule.Name, null, rule.Name);
-        var memoKey = new ParseMemoKey(rule.Name, context.Position, precedence);
-        if (_memo.TryGetValue(memoKey, out var memoEntry))
-        {
-            diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
-            context.RestorePosition(memoEntry.EndPosition);
-            return memoEntry.IsFailure ? null : memoEntry.Node;
-        }
-
-        diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
         var initialPosition = context.Position;
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
-        var completed = _stateRegistry.GetCompletedResults(invocationKey);
-        var reusableSuccess = completed.FirstOrDefault(result => !result.IsFailure);
-        if (reusableSuccess.Node is not null)
+        if (_stateRegistry.TryGetReusableSuccess(invocationKey, out var reusableSuccess))
         {
             context.RestorePosition(reusableSuccess.EndPosition);
             diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
             return reusableSuccess.Node;
         }
+        diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
         if (!_activeRuleFrames.Add(frameKey))
         {
@@ -281,12 +281,6 @@ public sealed class ParserEngine(ParserDefinition definition)
                 parsed = TryParseAlternativesParallel(context, rule.Content.Alternatives, rule, precedence, diagnostics);
             }
 
-            _memo[memoKey] = new ParseMemoEntry
-            {
-                Node = parsed,
-                EndPosition = context.Position,
-                IsFailure = parsed is null
-            };
             _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null));
 
             return parsed;
@@ -384,12 +378,11 @@ public sealed class ParserEngine(ParserDefinition definition)
             // Registry state is currently preparatory for future active-state parsing.
             // We keep recording here, but branch rejection remains driven by local state
             // checks to avoid false positives across legitimate shared invocations.
-            _stateRegistry.MarkVisited(new ParseStateKey(
+            _stateRegistry.TryEnterState(new ParseStateKey(
                 info.Rule.Name,
-                index,
-                index,
                 startPosition,
-                context.Position,
+                index,
+                index,
                 minimumPrecedence));
             if (!visitedStates.Add(stateKey))
             {
@@ -713,10 +706,9 @@ public sealed class ParserEngine(ParserDefinition definition)
                 minimumPrecedence);
             var parseStateKey = new ParseStateKey(
                 rule.Name,
+                itemStartPosition,
                 alternativeIndex,
                 itemIndex,
-                startPos,
-                itemStartPosition,
                 minimumPrecedence);
             if (!visitedStates.Add(stateKey))
             {
@@ -737,8 +729,6 @@ public sealed class ParserEngine(ParserDefinition definition)
                     $"repeated sequence item state {stateKey}");
                 return null;
             }
-            _stateRegistry.MarkVisited(parseStateKey);
-
             var node = TryParseContent(context, item, rule, minimumPrecedence, alternativeIndex, itemIndex, diagnostics);
             if (node is null)
                 return null;
@@ -790,12 +780,11 @@ public sealed class ParserEngine(ParserDefinition definition)
             // Registry state is currently preparatory for future active-state parsing.
             // We keep recording here, but branch rejection remains driven by local state
             // checks to avoid false positives across legitimate shared invocations.
-            _stateRegistry.MarkVisited(new ParseStateKey(
+            _stateRegistry.TryEnterState(new ParseStateKey(
                 rule.Name,
-                index,
-                index,
                 startPosition,
-                context.Position,
+                index,
+                index,
                 precedence));
             if (!visitedStates.Add(stateKey))
             {
