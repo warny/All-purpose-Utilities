@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Diagnostics;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Model;
-using Utils.Parser.ProjectCompilation;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -27,9 +27,9 @@ public class ParserEngineIntegrationStressTests
     public void CSyntaxGrammar_IntegrationParse_CompletesWithoutSafetyDiagnostics()
     {
         var diagnostics = new DiagnosticBag();
-        var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.CSyntax", "Grammar", "CSyntaxParser.g4");
+        var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.CSyntax", "Grammar", "CSyntaxTokenizer.g4");
         Assert.IsTrue(File.Exists(parserGrammarPath), $"Grammar file was not found: {parserGrammarPath}");
-        var definition = Antlr4GrammarProjectCompiler.ParseFromFile(parserGrammarPath, diagnostics);
+        var definition = Antlr4GrammarConverter.Parse(File.ReadAllText(parserGrammarPath), diagnostics);
 
         Assert.IsNotNull(definition.RootRule);
         Assert.IsTrue(definition.AllRules.ContainsKey("instruction"));
@@ -63,9 +63,9 @@ public class ParserEngineIntegrationStressTests
     public void VbSyntaxGrammar_IntegrationParse_CompletesWithoutSafetyDiagnostics()
     {
         var diagnostics = new DiagnosticBag();
-        var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.VBSyntax", "Grammar", "VBSyntaxParser.g4");
+        var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.VBSyntax", "Grammar", "VBSyntaxTokenizer.g4");
         Assert.IsTrue(File.Exists(parserGrammarPath), $"Grammar file was not found: {parserGrammarPath}");
-        var definition = Antlr4GrammarProjectCompiler.ParseFromFile(parserGrammarPath, diagnostics);
+        var definition = Antlr4GrammarConverter.Parse(File.ReadAllText(parserGrammarPath), diagnostics);
 
         Assert.IsNotNull(definition.RootRule);
         Assert.IsTrue(definition.AllRules.ContainsKey("instruction"));
@@ -101,9 +101,9 @@ public class ParserEngineIntegrationStressTests
     public void CSyntaxGrammar_RepeatedBlocks_ParsesWithinReasonableTime()
     {
         var diagnostics = new DiagnosticBag();
-        var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.CSyntax", "Grammar", "CSyntaxParser.g4");
+        var parserGrammarPath = Path.Combine(RepositoryRoot, "Utils.Expressions.CSyntax", "Grammar", "CSyntaxTokenizer.g4");
         Assert.IsTrue(File.Exists(parserGrammarPath), $"Grammar file was not found: {parserGrammarPath}");
-        var definition = Antlr4GrammarProjectCompiler.ParseFromFile(parserGrammarPath, diagnostics);
+        var definition = Antlr4GrammarConverter.Parse(File.ReadAllText(parserGrammarPath), diagnostics);
 
         var repeatedAssignments = string.Join(Environment.NewLine, Enumerable.Range(0, 120)
             .Select(index => $"value{index}=value{index}+1;"));
