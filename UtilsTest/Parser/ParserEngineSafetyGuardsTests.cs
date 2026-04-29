@@ -169,6 +169,41 @@ public class ParserEngineSafetyGuardsTests
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.IndirectLeftRecursionNotSupported.Code));
     }
 
+    /// <summary>
+    /// Ensures shared rule invocations from different parent alternatives are not rejected as false cycles.
+    /// </summary>
+    [TestMethod]
+    public void SharedRuleInvocation_FromDifferentParents_IsAllowed()
+    {
+        var diagnosticsA = new DiagnosticBag();
+        var treeA = ParseWithDiagnostics("""
+            grammar G;
+            root : a | b ;
+            a : common 'X' ;
+            b : common 'Y' ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "id X", diagnosticsA);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(treeA);
+
+        var diagnosticsB = new DiagnosticBag();
+        var treeB = ParseWithDiagnostics("""
+            grammar G;
+            root : a | b ;
+            a : common 'X' ;
+            b : common 'Y' ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "id Y", diagnosticsB);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(treeB);
+        Assert.IsFalse(diagnosticsA.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+        Assert.IsFalse(diagnosticsB.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+    }
+
     private static ParseNode ParseWithDiagnostics(string grammar, string input, DiagnosticBag diagnostics)
     {
         var definition = Antlr4GrammarConverter.Parse(grammar, diagnostics);

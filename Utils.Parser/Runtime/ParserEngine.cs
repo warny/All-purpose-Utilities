@@ -9,12 +9,89 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
 internal readonly record struct ParseMemoKey(string RuleName, int InputPosition, int MinimumPrecedence);
+internal readonly record struct ParseStateKey(
+    string RuleName,
+    int AlternativeIndex,
+    int ElementIndex,
+    int OriginPosition,
+    int CurrentPosition,
+    int MinimumPrecedence);
+internal readonly record struct RuleInvocationKey(
+    string RuleName,
+    int OriginPosition,
+    int MinimumPrecedence);
+internal readonly record struct ContinuationKey(
+    string CallerRuleName,
+    int CallerAlternativeIndex,
+    int CallerElementIndex,
+    int ResumePosition,
+    int MinimumPrecedence);
 internal readonly record struct ParserStateKey(
     string RuleName,
     int InputPosition,
     int AlternativeIndex,
     int ElementIndex,
     int MinimumPrecedence);
+
+internal readonly record struct ParserRuleResult(ParseNode? Node, int EndPosition, bool IsFailure);
+
+/// <summary>
+/// Stores visited parser states, shared rule invocations, and continuation metadata.
+/// This prepares a future no-backtracking parser model while keeping current behavior.
+/// </summary>
+internal sealed class ParserStateRegistry
+{
+    private readonly HashSet<ParseStateKey> _visitedStates = [];
+    private readonly Dictionary<RuleInvocationKey, HashSet<ContinuationKey>> _continuations = [];
+    private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
+
+    /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>
+    public bool MarkVisited(ParseStateKey key) => _visitedStates.Add(key);
+
+    /// <summary>Adds a continuation for a shared rule invocation.</summary>
+    public bool AddContinuation(RuleInvocationKey invocation, ContinuationKey continuation)
+    {
+        if (!_continuations.TryGetValue(invocation, out var set))
+        {
+            set = [];
+            _continuations[invocation] = set;
+        }
+
+        return set.Add(continuation);
+    }
+
+    /// <summary>Adds a completed result for a shared rule invocation.</summary>
+    public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result)
+    {
+        if (!_completedResults.TryGetValue(invocation, out var list))
+        {
+            list = [];
+            _completedResults[invocation] = list;
+        }
+
+        if (list.Any(existing => existing.EndPosition == result.EndPosition
+            && existing.IsFailure == result.IsFailure
+            && ReferenceEquals(existing.Node, result.Node)))
+        {
+            return false;
+        }
+
+        list.Add(result);
+        return true;
+    }
+
+    /// <summary>Gets continuations previously registered for an invocation.</summary>
+    public IReadOnlyList<ContinuationKey> GetContinuations(RuleInvocationKey invocation)
+    {
+        return _continuations.TryGetValue(invocation, out var set) ? [.. set] : [];
+    }
+
+    /// <summary>Gets completed results previously registered for an invocation.</summary>
+    public IReadOnlyList<ParserRuleResult> GetCompletedResults(RuleInvocationKey invocation)
+    {
+        return _completedResults.TryGetValue(invocation, out var list) ? list : [];
+    }
+}
 
 internal sealed record ParseMemoEntry
 {
@@ -85,6 +162,7 @@ public sealed class ParserEngine(ParserDefinition definition)
     private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
     private readonly Dictionary<ParseMemoKey, ParseMemoEntry> _memo = new();
     private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
+    private readonly ParserStateRegistry _stateRegistry = new();
 
     /// <summary>
     /// Parses <paramref name="tokens"/> starting from <paramref name="startRule"/>
@@ -160,6 +238,7 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
         var initialPosition = context.Position;
+        var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
         if (!_activeRuleFrames.Add(frameKey))
         {
@@ -191,6 +270,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 EndPosition = context.Position,
                 IsFailure = parsed is null
             };
+            _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null));
 
             return parsed;
         }
@@ -278,6 +358,13 @@ public sealed class ParserEngine(ParserDefinition definition)
         {
             var alternative = recursiveAlternatives[index];
             var stateKey = new ParserStateKey(info.Rule.Name, startPosition, index, index, minimumPrecedence);
+            _stateRegistry.MarkVisited(new ParseStateKey(
+                info.Rule.Name,
+                index,
+                index,
+                startPosition,
+                context.Position,
+                minimumPrecedence));
             if (!visitedStates.Add(stateKey))
             {
                 var span = ResolveDiagnosticSpan(context);
@@ -521,6 +608,13 @@ public sealed class ParserEngine(ParserDefinition definition)
         if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
             return null;
 
+        // The tuple (RuleName, Position) alone is not enough to reject a shared call:
+        // different callers can legitimately invoke the same rule at the same input position.
+        // We therefore keep lightweight continuation metadata for future state-based parsing.
+        _stateRegistry.AddContinuation(
+            new RuleInvocationKey(ruleRef.RuleName, context.Position, 0),
+            new ContinuationKey(parentRule.Name, -1, -1, context.Position, 0));
+
         if (referencedRule.Kind == RuleKind.Lexer)
         {
             // Direct token match: the next token must have been produced by this lexer rule.
@@ -582,6 +676,13 @@ public sealed class ParserEngine(ParserDefinition definition)
                 alternativeIndex,
                 itemIndex,
                 minimumPrecedence);
+            var parseStateKey = new ParseStateKey(
+                rule.Name,
+                alternativeIndex,
+                itemIndex,
+                startPos,
+                itemStartPosition,
+                minimumPrecedence);
             if (!visitedStates.Add(stateKey))
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
@@ -601,6 +702,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                     $"repeated sequence item state {stateKey}");
                 return null;
             }
+            _stateRegistry.MarkVisited(parseStateKey);
 
             var node = TryParseContent(context, item, rule, minimumPrecedence, alternativeIndex, diagnostics);
             if (node is null)
@@ -650,6 +752,13 @@ public sealed class ParserEngine(ParserDefinition definition)
         {
             var alt = alternativeList[index];
             var stateKey = new ParserStateKey(rule.Name, startPosition, index, index, precedence);
+            _stateRegistry.MarkVisited(new ParseStateKey(
+                rule.Name,
+                index,
+                index,
+                startPosition,
+                context.Position,
+                precedence));
             if (!visitedStates.Add(stateKey))
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
