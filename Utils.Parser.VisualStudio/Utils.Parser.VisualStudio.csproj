@@ -44,10 +44,12 @@
     <PropertyGroup>
         <WorkerProjectPath>$(MSBuildThisFileDirectory)..\Utils.Parser.VisualStudio.Worker\Utils.Parser.VisualStudio.Worker.csproj</WorkerProjectPath>
         <WorkerOutputDir>$(MSBuildThisFileDirectory)..\Utils.Parser.VisualStudio.Worker\bin\$(Configuration)\net8.0\</WorkerOutputDir>
+        <WorkerBuildTargets Condition="'$(Restore)' == 'false'">Build</WorkerBuildTargets>
+        <WorkerBuildTargets Condition="'$(Restore)' != 'false'">Restore;Build</WorkerBuildTargets>
     </PropertyGroup>
 
     <Target Name="BuildPluginWorker" BeforeTargets="Build">
-        <MSBuild Projects="$(WorkerProjectPath)" Properties="Configuration=$(Configuration)" Targets="Build" />
+        <MSBuild Projects="$(WorkerProjectPath)" Properties="Configuration=$(Configuration)" Targets="$(WorkerBuildTargets)" />
     </Target>
 
     <Target Name="CopyPluginWorkerToOutput" AfterTargets="Build">

@@ -206,7 +206,8 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
         IReadOnlyDictionary<string, Expression>? symbols,
         string sourceText,
         ExpressionCompilerContext? runtimeContext,
-        List<string>? importedNamespaces = null)
+        List<string>? importedNamespaces = null,
+        bool isInLoopContext = false)
     {
         importedNamespaces ??= ExtractUsingDirectives(sourceText);
         var blockScope = new Dictionary<ParseNode, List<ParameterExpression>>(ReferenceEqualityComparer.Instance);
@@ -217,9 +218,33 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             sourceText,
             this,
             importedNamespaces,
-            blockScope);
+            blockScope,
+            isInLoopContext,
+            isInLoopContext ? 1 : 0);
         Expression? compiled = compiler.Compile(root, context);
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
+    }
+
+    private Expression CompileSourceWithContext(string source, ExpressionCompilerContext context, bool isInLoopContext)
+    {
+        source = PreprocessCompoundAssignments(source);
+        source = PreprocessSimpleInterpolatedStrings(source);
+        List<string> importedNamespaces = ExtractUsingDirectives(source);
+        source = StripUsingDirectives(source);
+        RegisterDeferredPublicMethods(source, context);
+        string sourceToParse = source.TrimStart().StartsWith("{", StringComparison.Ordinal) ? source : "{ " + source + " }";
+        ParseNode root = _parser.Parse(sourceToParse);
+        return Compile(root, null, sourceToParse, context, importedNamespaces, isInLoopContext);
+    }
+
+    private Expression CompileWithContext(string source, ExpressionCompilerContext context, bool isInLoopContext)
+    {
+        source = PreprocessCompoundAssignments(source);
+        source = PreprocessSimpleInterpolatedStrings(source);
+        List<string> importedNamespaces = ExtractUsingDirectives(source);
+        source = StripUsingDirectives(source);
+        ParseNode root = _parser.Parse(source);
+        return Compile(root, null, source, context, importedNamespaces, isInLoopContext);
     }
 
     /// <summary>
@@ -299,6 +324,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             .OnAscend("variable_declaration_assignment", CompileVariableDeclaration)
             .OnAscend("using_instruction", static (_, _) => Expression.Empty())
             .OnAscend("invocation_instruction", CompileInvocation)
+            .OnAscend("break_instruction", CompileBreakInstruction)
             .OnAscend("if_instruction", CompileIfInstruction)
             .OnAscend("for_instruction", CompileForInstruction)
             .OnAscend("foreach_instruction", CompileForeachInstruction)
@@ -306,6 +332,9 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             .OnAscend("do_while_instruction", CompileDoWhileInstruction)
             .OnAscend("method_declaration", CompileMethodDeclaration)
             .OnDescend("lambda_expression", DescentLambdaExpression)
+            .OnDescend("for_instruction", DescentLoopInstruction)
+            .OnDescend("while_instruction", DescentLoopInstruction)
+            .OnDescend("do_while_instruction", DescentLoopInstruction)
             .OnDescend("foreach_instruction", DescentForeachInstruction)
             .OnAscend("lambda_expression", AscentLambdaExpression)
             .OnDescend("block_instruction", DescentBlockInstruction)

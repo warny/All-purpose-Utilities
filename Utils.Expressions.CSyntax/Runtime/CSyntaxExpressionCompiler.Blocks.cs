@@ -641,6 +641,13 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="additionalSymbols">Optional symbols that override the current symbol table.</param>
     /// <returns>Compiled expression.</returns>
     private static Expression CompileSubExpression(string source, CompilationContext context, IReadOnlyDictionary<string, Expression>? additionalSymbols)
+        => CompileSubExpression(source, context, additionalSymbols, isInLoopContext: false);
+
+    private static Expression CompileSubExpression(
+        string source,
+        CompilationContext context,
+        IReadOnlyDictionary<string, Expression>? additionalSymbols,
+        bool isInLoopContext)
     {
         if (context.RuntimeContext is null)
         {
@@ -658,7 +665,7 @@ public sealed partial class CSyntaxExpressionCompiler
                 }
             }
 
-            return context.Compiler.CompileSource(source, localContext);
+            return context.Compiler.CompileSourceWithContext(source, localContext, isInLoopContext);
         }
 
         ExpressionCompilerContext derivedContext = new();
@@ -680,7 +687,7 @@ public sealed partial class CSyntaxExpressionCompiler
             }
         }
 
-        return context.Compiler.Compile(source, derivedContext);
+        return context.Compiler.CompileWithContext(source, derivedContext, isInLoopContext);
     }
 
     /// <summary>
@@ -2005,7 +2012,9 @@ public sealed partial class CSyntaxExpressionCompiler
         string SourceText,
         CSyntaxExpressionCompiler Compiler,
         IReadOnlyList<string> ImportedNamespaces,
-        Dictionary<ParseNode, List<ParameterExpression>> BlockScope);
+        Dictionary<ParseNode, List<ParameterExpression>> BlockScope,
+        bool IsInLoopContext,
+        int LoopContextDepth);
 
     /// <summary>
     /// Represents a parsed method declaration signature.
@@ -2033,6 +2042,13 @@ public sealed partial class CSyntaxExpressionCompiler
         /// Gets or sets the compiled delegate target.
         /// </summary>
         public Delegate? Target { get; set; }
+    }
+
+    /// <summary>
+    /// Internal sentinel exception used to implement <c>break</c> inside loop expressions.
+    /// </summary>
+    private sealed class LoopBreakException : Exception
+    {
     }
 
     /// <summary>
@@ -2332,7 +2348,16 @@ public sealed partial class CSyntaxExpressionCompiler
         {
             [iteratorName] = Expression.Parameter(iteratorType, iteratorName),
         };
-        return context with { Symbols = symbols };
+        return context with { Symbols = symbols, LoopContextDepth = context.LoopContextDepth + 1 };
+    }
+
+    /// <summary>
+    /// Descent handler for loop instructions. Marks nested compilation as loop context.
+    /// </summary>
+    private static CompilationContext DescentLoopInstruction(ParseTreeNavigator nav, CompilationContext context)
+    {
+        _ = nav;
+        return context with { LoopContextDepth = context.LoopContextDepth + 1 };
     }
 
     /// <summary>

@@ -97,11 +97,112 @@ public class BlockTests
         }
     }
 
-    [Ignore("'break' statement is not supported by the grammar")]
     [TestMethod]
     public void WhileIfBreakTest()
     {
-        // Grammar has no break statement rule; test kept for reference only.
+        var expression =
+            """
+            (int max) => {
+                int i = 0;
+                while (i < 100) {
+                    if (i >= max) {
+                        break;
+                    };
+                    i = i + 1;
+                };
+                i;
+            }
+            """;
+
+        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int, int>)lambda.Compile();
+
+        Assert.AreEqual(0, function(0));
+        Assert.AreEqual(3, function(3));
+        Assert.AreEqual(7, function(7));
+    }
+
+    [TestMethod]
+    public void ForIfBreakTest()
+    {
+        var expression =
+            """
+            (int max) => {
+                int i = 0;
+                for (i = 0; i < 100; i = i + 1) {
+                    if (i >= max) {
+                        break;
+                    };
+                };
+                i;
+            }
+            """;
+
+        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int, int>)lambda.Compile();
+
+        Assert.AreEqual(0, function(0));
+        Assert.AreEqual(3, function(3));
+        Assert.AreEqual(7, function(7));
+    }
+
+    [TestMethod]
+    public void DoWhileIfBreakTest()
+    {
+        var expression =
+            """
+            (int max) => {
+                int i = 0;
+                do {
+                    if (i >= max) {
+                        break;
+                    };
+                    i = i + 1;
+                } while (i < 100);
+                i;
+            }
+            """;
+
+        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var function = (Func<int, int>)lambda.Compile();
+
+        Assert.AreEqual(0, function(0));
+        Assert.AreEqual(3, function(3));
+        Assert.AreEqual(7, function(7));
+    }
+
+    [TestMethod]
+    public void BreakOutsideLoop_ThrowsInvalidOperationException()
+    {
+        var expression = "(int max) => { break; max; }";
+
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        StringAssert.Contains(exception.Message, "inside a loop");
+    }
+
+    [TestMethod]
+    public void BreakOutsideLoop_WithWhileInString_ThrowsInvalidOperationException()
+    {
+        var expression = "(int x) => { string s = \"while\"; break; x; }";
+
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        StringAssert.Contains(exception.Message, "inside a loop");
+    }
+
+    [TestMethod]
+    public void BreakOutsideLoop_WithWhileInComment_ThrowsInvalidOperationException()
+    {
+        var expression =
+            """
+            (int x) => {
+                // while
+                break;
+                x;
+            }
+            """;
+
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        StringAssert.Contains(exception.Message, "inside a loop");
     }
 
     [TestMethod]
