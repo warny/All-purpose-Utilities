@@ -2013,7 +2013,8 @@ public sealed partial class CSyntaxExpressionCompiler
         CSyntaxExpressionCompiler Compiler,
         IReadOnlyList<string> ImportedNamespaces,
         Dictionary<ParseNode, List<ParameterExpression>> BlockScope,
-        bool IsInLoopContext);
+        bool IsInLoopContext,
+        int LoopContextDepth);
 
     /// <summary>
     /// Represents a parsed method declaration signature.
@@ -2347,7 +2348,16 @@ public sealed partial class CSyntaxExpressionCompiler
         {
             [iteratorName] = Expression.Parameter(iteratorType, iteratorName),
         };
-        return context with { Symbols = symbols };
+        return context with { Symbols = symbols, LoopContextDepth = context.LoopContextDepth + 1 };
+    }
+
+    /// <summary>
+    /// Descent handler for loop instructions. Marks nested compilation as loop context.
+    /// </summary>
+    private static CompilationContext DescentLoopInstruction(ParseTreeNavigator nav, CompilationContext context)
+    {
+        _ = nav;
+        return context with { LoopContextDepth = context.LoopContextDepth + 1 };
     }
 
     /// <summary>

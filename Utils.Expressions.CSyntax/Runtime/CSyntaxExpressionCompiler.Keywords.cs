@@ -23,8 +23,7 @@ public sealed partial class CSyntaxExpressionCompiler
     {
         _ = nav;
         _ = children;
-        if (!context.IsInLoopContext
-            && !Regex.IsMatch(context.SourceText, @"\b(while|for|foreach|do)\b", RegexOptions.IgnoreCase))
+        if (context.LoopContextDepth <= 0)
         {
             throw new InvalidOperationException("'break' statement must be used inside a loop.");
         }

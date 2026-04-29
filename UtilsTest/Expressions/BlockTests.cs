@@ -181,6 +181,31 @@ public class BlockTests
     }
 
     [TestMethod]
+    public void BreakOutsideLoop_WithWhileInString_ThrowsInvalidOperationException()
+    {
+        var expression = "(int x) => { string s = \"while\"; break; x; }";
+
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        StringAssert.Contains(exception.Message, "inside a loop");
+    }
+
+    [TestMethod]
+    public void BreakOutsideLoop_WithWhileInComment_ThrowsInvalidOperationException()
+    {
+        var expression =
+            """
+            (int x) => {
+                // while
+                break;
+                x;
+            }
+            """;
+
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        StringAssert.Contains(exception.Message, "inside a loop");
+    }
+
+    [TestMethod]
     public void ForTest()
     {
         Random random = new Random();

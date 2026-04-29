@@ -219,7 +219,8 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             this,
             importedNamespaces,
             blockScope,
-            isInLoopContext);
+            isInLoopContext,
+            isInLoopContext ? 1 : 0);
         Expression? compiled = compiler.Compile(root, context);
         return compiled ?? throw new InvalidOperationException("Unable to compile the provided C-like parse tree.");
     }
@@ -331,6 +332,9 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             .OnAscend("do_while_instruction", CompileDoWhileInstruction)
             .OnAscend("method_declaration", CompileMethodDeclaration)
             .OnDescend("lambda_expression", DescentLambdaExpression)
+            .OnDescend("for_instruction", DescentLoopInstruction)
+            .OnDescend("while_instruction", DescentLoopInstruction)
+            .OnDescend("do_while_instruction", DescentLoopInstruction)
             .OnDescend("foreach_instruction", DescentForeachInstruction)
             .OnAscend("lambda_expression", AscentLambdaExpression)
             .OnDescend("block_instruction", DescentBlockInstruction)
