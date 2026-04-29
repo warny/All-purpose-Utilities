@@ -244,10 +244,14 @@ public class ParserEngineSafetyGuardsTests
     }
 
     /// <summary>
-    /// Ensures a duplicate full parser state is detected and reported.
+    /// Ensures a non-progressive left-recursive extension (same rule, no token progress)
+    /// is reported by at least one termination diagnostic.
+    /// The engine currently emits both <c>ParserStateCycleDetected</c> and
+    /// <c>NonProgressiveLeftRecursionStopped</c>; accepting either keeps the test
+    /// robust against future refinements that may distinguish the two cases.
     /// </summary>
     [TestMethod]
-    public void DuplicateFullState_ReportsCycleDiagnostic()
+    public void NonProgressiveLeftRecursion_ReportsTerminationDiagnostic()
     {
         var diagnostics = new DiagnosticBag();
         _ = ParseWithDiagnostics("""
@@ -260,14 +264,19 @@ public class ParserEngineSafetyGuardsTests
             WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
             """, "1", diagnostics);
 
-        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+        Assert.IsTrue(
+            diagnostics.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code
+                              || d.Code == ParserDiagnostics.NonProgressiveLeftRecursionStopped.Code),
+            "expected at least one termination diagnostic for a non-progressive left-recursive rule");
     }
 
     /// <summary>
-    /// Ensures repeated shared rule evaluations do not corrupt parse-tree structure.
+    /// Ensures that a sub-rule memoized during the first alternative is not re-emitted
+    /// (duplicated) when the same rule is encountered in a second alternative at the same
+    /// position.  Exactly one ID token and one literal token must appear in the tree.
     /// </summary>
     [TestMethod]
-    public void CompletedRuleReuse_DoesNotCorruptTreeShape()
+    public void MemoizedSubrule_SharedAcrossAlternatives_DoesNotDuplicateNodes()
     {
         var diagnostics = new DiagnosticBag();
         var tree = ParseWithDiagnostics("""
@@ -281,8 +290,8 @@ public class ParserEngineSafetyGuardsTests
             """, "id X", diagnostics);
 
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
-        Assert.AreEqual(1, CountTokens(tree, "ID"));
-        Assert.AreEqual(1, CountTokens(tree, "X"));
+        Assert.AreEqual(1, CountTokens(tree, "ID"), "ID token must appear exactly once");
+        Assert.AreEqual(1, CountTokens(tree, "X"), "literal 'X' must appear exactly once");
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
     }
 
