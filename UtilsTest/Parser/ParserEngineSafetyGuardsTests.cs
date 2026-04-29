@@ -204,6 +204,79 @@ public class ParserEngineSafetyGuardsTests
         Assert.IsFalse(diagnosticsB.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
     }
 
+    /// <summary>
+    /// Ensures same rule invocation key can feed distinct parent continuations without false cycle diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void SameRuleSamePositionDifferentContinuation_IsAllowed()
+    {
+        var diagnosticsA = new DiagnosticBag();
+        var treeA = ParseWithDiagnostics("""
+            grammar G;
+            root : common 'X' ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "id X", diagnosticsA);
+
+        var diagnosticsB = new DiagnosticBag();
+        var treeB = ParseWithDiagnostics("""
+            grammar G;
+            root : common 'Y' ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "id Y", diagnosticsB);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(treeA);
+        Assert.IsNotInstanceOfType<ErrorNode>(treeB);
+        Assert.IsFalse(diagnosticsA.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+        Assert.IsFalse(diagnosticsB.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+    }
+
+    /// <summary>
+    /// Ensures a duplicate full parser state is detected and reported.
+    /// </summary>
+    [TestMethod]
+    public void DuplicateFullState_ReportsCycleDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = ParseWithDiagnostics("""
+            grammar G;
+            start : expr ;
+            expr : expr
+                 | INT
+                 ;
+            INT : ('0'..'9')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "1", diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+    }
+
+    /// <summary>
+    /// Ensures repeated shared rule evaluations do not corrupt parse-tree structure.
+    /// </summary>
+    [TestMethod]
+    public void CompletedRuleReuse_DoesNotCorruptTreeShape()
+    {
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics("""
+            grammar G;
+            root : common 'X'
+                 | common 'Y'
+                 ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "id X", diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.AreEqual(1, CountTokens(tree, "ID"));
+        Assert.AreEqual(1, CountTokens(tree, "X"));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+    }
+
     private static ParseNode ParseWithDiagnostics(string grammar, string input, DiagnosticBag diagnostics)
     {
         var definition = Antlr4GrammarConverter.Parse(grammar, diagnostics);
