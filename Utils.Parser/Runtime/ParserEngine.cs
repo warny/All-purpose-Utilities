@@ -366,18 +366,16 @@ public sealed class ParserEngine(ParserDefinition definition)
         {
             var alternative = recursiveAlternatives[index];
             var stateKey = new ParserStateKey(info.Rule.Name, startPosition, index, index, minimumPrecedence);
-            if (!_stateRegistry.MarkVisited(new ParseStateKey(
+            // Registry state is currently preparatory for future active-state parsing.
+            // We keep recording here, but branch rejection remains driven by local state
+            // checks to avoid false positives across legitimate shared invocations.
+            _stateRegistry.MarkVisited(new ParseStateKey(
                 info.Rule.Name,
                 index,
                 index,
                 startPosition,
                 context.Position,
-                minimumPrecedence)))
-            {
-                var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateCycleDetected, diagnosticSpan.Start, diagnosticSpan.Length, info.Rule.Name, null);
-                continue;
-            }
+                minimumPrecedence));
             if (!visitedStates.Add(stateKey))
             {
                 var span = ResolveDiagnosticSpan(context);
@@ -774,18 +772,16 @@ public sealed class ParserEngine(ParserDefinition definition)
         {
             var alt = alternativeList[index];
             var stateKey = new ParserStateKey(rule.Name, startPosition, index, index, precedence);
-            if (!_stateRegistry.MarkVisited(new ParseStateKey(
+            // Registry state is currently preparatory for future active-state parsing.
+            // We keep recording here, but branch rejection remains driven by local state
+            // checks to avoid false positives across legitimate shared invocations.
+            _stateRegistry.MarkVisited(new ParseStateKey(
                 rule.Name,
                 index,
                 index,
                 startPosition,
                 context.Position,
-                precedence)))
-            {
-                var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateCycleDetected, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null);
-                continue;
-            }
+                precedence));
             if (!visitedStates.Add(stateKey))
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
