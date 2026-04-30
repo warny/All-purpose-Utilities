@@ -46,6 +46,45 @@ public class ParserEngineRegistryRegressionTests
     }
 
     /// <summary>
+    /// Ensures two alternatives invoking the same rule at the same position select
+    /// the same observable parse result as an equivalent grammar with reversed alternative order.
+    /// </summary>
+    [TestMethod]
+    public void SameRuleSamePositionAcrossAlternatives_MatchesBaselineSelection()
+    {
+        const string grammarPreferredOrder = """
+            grammar G;
+            root : common 'X'
+                 | common 'Y'
+                 ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+        const string grammarReversedOrder = """
+            grammar G;
+            root : common 'Y'
+                 | common 'X'
+                 ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var diagnosticsA = new DiagnosticBag();
+        var treeA = ParseWithDiagnostics(grammarPreferredOrder, "id X", diagnosticsA);
+
+        var diagnosticsB = new DiagnosticBag();
+        var treeB = ParseWithDiagnostics(grammarReversedOrder, "id X", diagnosticsB);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(treeA);
+        Assert.IsNotInstanceOfType<ErrorNode>(treeB);
+        Assert.AreEqual(1, CountTokenText(treeA, "X"));
+        Assert.AreEqual(1, CountTokenText(treeB, "X"));
+        Assert.AreEqual(treeA.ToString(), treeB.ToString());
+    }
+
+    /// <summary>
     /// Ensures a failing invocation completion does not block a later successful path.
     /// </summary>
     [TestMethod]
@@ -96,12 +135,24 @@ public class ParserEngineRegistryRegressionTests
             EOF : '<EOF>' ;
             WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
             """;
+        const string baselineGrammar = """
+            grammar G;
+            start : seq EOF ;
+            seq : ('aa' | 'a')+ ;
+            EOF : '<EOF>' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
 
         var diagnostics = new DiagnosticBag();
         var tree = ParseWithDiagnostics(grammar, "aa aa <EOF>", diagnostics);
+        var baselineDiagnostics = new DiagnosticBag();
+        var baselineTree = ParseWithDiagnostics(baselineGrammar, "aa aa <EOF>", baselineDiagnostics);
 
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsNotInstanceOfType<ErrorNode>(baselineTree);
+        Assert.AreEqual(baselineTree.ToString(), tree.ToString(), "Ambiguous grammar should keep the same selected parse tree.");
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.BacktrackingUsed.Code));
+        Assert.IsTrue(baselineDiagnostics.Any(d => d.Code == ParserDiagnostics.BacktrackingUsed.Code));
     }
 
     /// <summary>
@@ -148,25 +199,6 @@ public class ParserEngineRegistryRegressionTests
         var tokens = lexer.Tokenize(reader, diagnostics: diagnostics);
         var parser = new ParserEngine(definition);
         return parser.Parse(tokens, diagnostics: diagnostics);
-    }
-
-    private static int CountRule(ParseNode node, string ruleName)
-    {
-        var count = 0;
-        if (node.Rule?.Name == ruleName)
-        {
-            count++;
-        }
-
-        if (node is ParserNode parserNode)
-        {
-            foreach (var child in parserNode.Children)
-            {
-                count += CountRule(child, ruleName);
-            }
-        }
-
-        return count;
     }
 
     private static int CountTokenText(ParseNode node, string tokenText)
