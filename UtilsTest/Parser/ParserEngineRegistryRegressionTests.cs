@@ -104,6 +104,37 @@ public class ParserEngineRegistryRegressionTests
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.BacktrackingUsed.Code));
     }
 
+    /// <summary>
+    /// Ensures observable behavior is preserved when the same parser rule is invoked
+    /// from multiple alternatives at the same input position.
+    /// </summary>
+    [TestMethod]
+    public void SameRuleSamePositionAcrossAlternatives_PreservesObservableBehavior()
+    {
+        const string grammar = """
+            grammar G;
+            root : common 'X'
+                 | common 'Y'
+                 ;
+            common : ID ;
+            ID : ('a'..'z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var diagnosticsX = new DiagnosticBag();
+        var treeX = ParseWithDiagnostics(grammar, "id X", diagnosticsX);
+
+        var diagnosticsY = new DiagnosticBag();
+        var treeY = ParseWithDiagnostics(grammar, "id Y", diagnosticsY);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(treeX);
+        Assert.IsNotInstanceOfType<ErrorNode>(treeY);
+        Assert.AreEqual(1, CountTokenText(treeX, "X"));
+        Assert.AreEqual(1, CountTokenText(treeY, "Y"));
+        Assert.IsFalse(diagnosticsX.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+        Assert.IsFalse(diagnosticsY.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
+    }
+
     private static ParseNode ParseWithDiagnostics(string grammarText, string input, DiagnosticBag diagnostics)
     {
         var definition = Antlr4GrammarConverter.Parse(grammarText, diagnostics);
