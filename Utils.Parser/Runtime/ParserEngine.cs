@@ -34,8 +34,9 @@ internal readonly record struct ParserStateKey(
 internal readonly record struct ParserRuleResult(ParseNode? Node, int EndPosition, bool IsFailure);
 
 /// <summary>
-/// Stores visited parser states, shared rule invocations, and continuation metadata.
-/// This prepares a future no-backtracking parser model while keeping current behavior.
+/// Stores parser-state tracking, shared rule invocation completions, and continuation metadata.
+/// This registry is currently authoritative for completed invocation tracking and safe reuse lookup.
+/// It is preparatory for future path scheduling work, but it is not yet a full branch scheduler.
 /// </summary>
 internal sealed class ParserStateRegistry
 {
@@ -248,6 +249,12 @@ public sealed class ParserEngine(ParserDefinition definition)
     {
         diagnostics?.AddWithContext(ParserDiagnostics.EnteringRule, null, null, rule.Name, null, rule.Name);
         var initialPosition = context.Position;
+        // Registry-backed completion cache:
+        // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
+        // Safety currently depends on RuleInvocationKey identity:
+        //   (rule name, input position, minimum precedence).
+        // This is sufficient for current parser semantics because semantic predicates/actions are not executed.
+        // TODO: revisit key shape when semantic state, mode-sensitive parser state, or predicate execution is enabled.
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
         if (_stateRegistry.TryGetReusableSuccess(invocationKey, out var reusableSuccess))
         {
