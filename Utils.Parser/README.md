@@ -275,7 +275,8 @@ a comprehensive real-world example.
 | Left-recursion handling | Direct left-recursive rules are detected at resolution time and parsed using a seed-and-extend loop. |
 | Precedence predicates | `<assoc=right>` / priority-annotated alternatives are respected during left-recursive extension. |
 | Trailing-token validation | `Parse()` returns an `ErrorNode` when unconsumed tokens remain after the root rule. |
-| Parse memoization | Results at each (rule, position, precedence) triple are cached to avoid redundant re-evaluation. |
+| Registry-backed invocation reuse | Completed rule invocations are centralized in `ParserStateRegistry` and reused only for matching `(rule, position, precedence)` identities. |
+| Continuation tracking (preparatory) | Shared rule invocations register continuation metadata in `ParserStateRegistry` to prepare future active-state scheduling work. |
 | Non-progressive quantifier guard | Quantifier iterations (`*`, `+`) that match without consuming any token are stopped immediately (`PARSER002`). |
 | Non-progressive left-recursion guard | Left-recursive extensions that produce no token progress are stopped and reported (`PARSER003`). |
 | Parser state cycle detection | Repeated parser states (same rule, position, and alternative index) during alternative exploration are detected and skipped (`PARSER001`). |
@@ -302,10 +303,10 @@ The runtime parser and the source generator now share the same diagnostic model
 | Prefix | Severity | Purpose |
 |---|---|---|
 | `UP0xxx` | Error | Blocking errors (unresolved rules, grammar type violations, import failures, …) |
-| `UP1xxx` | Warning | Unsupported / ignored / partial behavior (embedded actions, left-recursion handling, memoization traces, …) |
+| `UP1xxx` | Warning | Unsupported / ignored / partial behavior (embedded actions, left-recursion handling, registry reuse traces, …) |
 | `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguous constructs, …) |
 | `UP8xxx` | Info | Informational runtime events |
-| `UP9xxx` | Debug | Detailed execution traces (entering/leaving rules, backtracking, memo hits, …) |
+| `UP9xxx` | Debug | Detailed execution traces (entering/leaving rules, backtracking, registry reuse hits, …) |
 | `PARSER0xx` | Warning / Info | Runtime safety guard events (cycle detection, non-progressive loop termination) |
 
 Severity is derived from the code prefix (not manually assigned per call site).
