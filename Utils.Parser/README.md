@@ -282,6 +282,22 @@ a comprehensive real-world example.
 | Parser state cycle detection | Repeated parser states (same rule, position, and alternative index) during alternative exploration are detected and skipped (`PARSER001`). |
 | Ambiguous alternative pruning | Structurally equivalent branches are pruned; the lower-priority winner is kept (`UP1013`). |
 
+### Registry-backed reuse semantics
+
+`ParserStateRegistry` is currently authoritative for completed invocation reuse:
+
+- Reuse key: `(ruleName, originPosition, minimumPrecedence)`.
+- Reusable completion can be:
+  - a successful parse result (`ParseNode`),
+  - or a deterministic failure for the same invocation key.
+- When both success and failure entries exist for a key, success is preferred.
+- Failure reuse avoids re-evaluating the same failing rule invocation across backtracked alternatives.
+
+Current scope is intentionally limited:
+
+- ✅ implemented: completed invocation reuse + continuation metadata recording.
+- ❌ not implemented yet: full active parse-state scheduling / parallel alternative execution.
+
 ## Grammar validation
 
 `RuleResolver` enforces grammar type constraints before resolution:
