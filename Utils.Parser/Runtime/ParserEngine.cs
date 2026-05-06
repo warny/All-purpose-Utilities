@@ -565,12 +565,6 @@ public sealed class ParserEngine
                 alternativeIndex,
                 itemIndex,
                 minimumPrecedence);
-            var parseStateKey = new ParserStateKey(
-                rule.Name,
-                itemStartPosition,
-                alternativeIndex,
-                itemIndex,
-                minimumPrecedence);
             if (!visitedStates.Add(stateKey))
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
@@ -639,7 +633,7 @@ public sealed class ParserEngine
             parseAlternative: (alternative, alternativeIndex) =>
             {
                 var stateKey = new ParserStateKey(rule.Name, startPosition, alternativeIndex, alternativeIndex, precedence);
-                _stateRegistry.TryEnterState(new ParserStateKey(stateKey.RuleName, stateKey.InputPosition, stateKey.AlternativeIndex, stateKey.ElementIndex, stateKey.MinimumPrecedence));
+                _stateRegistry.TryEnterState(stateKey);
 
                 if (!CheckPrecedence(alternative, precedence))
                 {
