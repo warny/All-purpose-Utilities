@@ -170,8 +170,7 @@ internal readonly record struct ActiveParseBranchEquivalenceKey(
     int OriginInputPosition,
     int CurrentOrEndPosition,
     string CursorKind,
-    int CursorIndex,
-    string ParentSemanticContextKey);
+    int CursorIndex);
 
 internal enum ActiveParseStateStatus
 {
@@ -259,8 +258,7 @@ internal sealed record ActiveParseState
             OriginInputPosition,
             EndPosition ?? CurrentInputPosition,
             Cursor.Kind,
-            Cursor.Index,
-            Alternative.Label ?? string.Empty);
+            Cursor.Index);
     }
 
     /// <summary>Creates a new state marked as completed.</summary>
@@ -1099,39 +1097,57 @@ public sealed class ParserEngine(ParserDefinition definition)
         IReadOnlyList<ActiveParseState> states,
         DiagnosticBag? diagnostics)
     {
-        var map = new Dictionary<ActiveParseBranchEquivalenceKey, ActiveParseState>();
+        // Each shape-key bucket holds one representative per distinct semantic class.
+        // States with the same shape but different semantics (label/assoc/predicates) are
+        // kept as separate entries within the same bucket rather than being dropped.
+        var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
         foreach (var state in states)
         {
             var key = state.ToBranchEquivalenceKey();
-            if (!map.TryGetValue(key, out var existing))
+            if (!groups.TryGetValue(key, out var group))
             {
-                map[key] = state;
+                groups[key] = [state];
                 continue;
             }
 
-            if (HasDistinctSemantics(existing.Alternative, state.Alternative))
+            bool merged = false;
+            for (int i = 0; i < group.Count; i++)
             {
-                continue;
+                if (HasDistinctSemantics(group[i].Alternative, state.Alternative))
+                {
+                    continue;
+                }
+
+                if (state.Alternative.Priority < group[i].Alternative.Priority)
+                {
+                    group[i] = state;
+                }
+
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.AmbiguousAlternativesPruned,
+                    state.PartialNode.Span.Position,
+                    state.PartialNode.Span.Length,
+                    state.Rule.Name,
+                    null,
+                    state.Rule.Name);
+
+                merged = true;
+                break;
             }
 
-            if (state.Alternative.Priority < existing.Alternative.Priority)
+            if (!merged)
             {
-                map[key] = state;
+                group.Add(state);
             }
-
-            diagnostics?.AddWithContext(
-                ParserDiagnostics.AmbiguousAlternativesPruned,
-                state.PartialNode.Span.Position,
-                state.PartialNode.Span.Length,
-                state.Rule.Name,
-                null,
-                state.Rule.Name);
         }
 
-        return map.Values.OrderBy(static s => s.Alternative.Priority).ToList();
+        return groups.Values
+            .SelectMany(static g => g)
+            .OrderBy(static s => s.Alternative.Priority)
+            .ToList();
     }
 
-    private static bool HasDistinctSemantics(Alternative left, Alternative right)
+    internal static bool HasDistinctSemantics(Alternative left, Alternative right)
     {
         return !string.Equals(left.Label, right.Label, StringComparison.Ordinal)
             || left.Assoc != right.Assoc

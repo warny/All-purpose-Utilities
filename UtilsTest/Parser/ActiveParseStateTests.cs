@@ -84,13 +84,12 @@ public class ActiveParseStateTests
     }
 
     [TestMethod]
-    public void ActiveParseState_ToBranchEquivalenceKey_SameKeyForDifferentAlternativeIndices()
+    public void ActiveParseState_ToBranchEquivalenceKey_SameKeyForDifferentAlternativeIndicesAndLabels()
     {
-        // Two states that reach the same semantic position from different alternatives must share
-        // the same equivalence key so that ambiguity pruning can collapse them.
-        // Both use priority=1 so the label ("alt1") is identical; only AlternativeIndex differs.
+        // Two states that reach the same parser-state shape must share the equivalence key
+        // regardless of which alternative (index, priority, label) produced them.
         var stateA = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 10).Complete(10);
-        var stateB = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 3, currentPosition: 10).Complete(10);
+        var stateB = CreateActiveState(priority: 2, cursorIndex: 0, alternativeIndex: 3, currentPosition: 10).Complete(10);
 
         Assert.AreEqual(stateA.ToBranchEquivalenceKey(), stateB.ToBranchEquivalenceKey());
         // Scheduler identity must still distinguish them.
@@ -104,6 +103,22 @@ public class ActiveParseStateTests
         var stateB = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 12).Complete(12);
 
         Assert.AreNotEqual(stateA.ToBranchEquivalenceKey(), stateB.ToBranchEquivalenceKey());
+    }
+
+    [TestMethod]
+    public void ActiveParseState_ToBranchEquivalenceKey_DifferentLabels_SameShapeKey_NotPruned()
+    {
+        // States with different labels must map to the same shape key so that
+        // HasDistinctSemantics — not the key — is responsible for keeping them alive.
+        var stateA = CreateActiveStateWithLabel(priority: 1, alternativeIndex: 0, currentPosition: 10, label: "ExprAdd");
+        var stateB = CreateActiveStateWithLabel(priority: 2, alternativeIndex: 1, currentPosition: 10, label: "ExprSub");
+
+        // Same parser-state shape.
+        Assert.AreEqual(stateA.ToBranchEquivalenceKey(), stateB.ToBranchEquivalenceKey());
+
+        // HasDistinctSemantics returns true for different labels, so PruneEquivalentActiveStates
+        // keeps both states in the result instead of dropping the lower-priority one.
+        Assert.IsTrue(ParserEngine.HasDistinctSemantics(stateA.Alternative, stateB.Alternative));
     }
 
     [TestMethod]
@@ -155,6 +170,28 @@ public class ActiveParseStateTests
             Depth = 0,
             Continuation = null
         };
+    }
+
+    private static ActiveParseState CreateActiveStateWithLabel(int priority, int alternativeIndex, int currentPosition, string label)
+    {
+        var alternative = new Alternative(priority, Associativity.Left, new LiteralMatch("A"), label);
+        var rule = new Rule("sampleRule", 0, false, new Alternation([alternative]));
+
+        return new ActiveParseState
+        {
+            Rule = rule,
+            Alternative = alternative,
+            OriginInputPosition = 4,
+            CurrentInputPosition = currentPosition,
+            AlternativeIndex = alternativeIndex,
+            Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+            PartialNode = new ParserNode(new SourceSpan(2, 3), "DEFAULT_MODE", rule, []),
+            EndPosition = null,
+            Status = ActiveParseStateStatus.Active,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        }.Complete(currentPosition);
     }
 
     private static ParseBranch CreateBranch(int priority, int cursorIndex)
