@@ -56,12 +56,44 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 | `RuleContent` | Abstract base for grammar elements: `LiteralMatch`, `RangeMatch`, `CharSetMatch`, `Sequence`, `Alternation`, `Quantifier`, `RuleRef`, `Negation`, `LexerCommand`, … |
 | `LexerEngine` | Tokenizes a character stream using lexer rules (maximal-munch, lexer modes, `skip` / `more` / `pushMode` / `popMode`). |
 | `ParserEngine` | Builds a parse tree from a token list using parser rules (backtracking recursive-descent, left-recursion detection, precedence predicates). |
+| `ActiveParseState` *(internal)* | Infrastructure record representing an explicit active parser branch/state candidate. Exposes two distinct key projections: `ToStateKey()` (scheduler identity) and `ToBranchEquivalenceKey()` (semantic pruning equivalence). |
+| `ActiveParseStateKey` *(internal)* | **Scheduler identity key.** Uniquely identifies a parse state for registry/scheduling purposes. Includes alternative index, priority, and continuation — fields that distinguish every scheduler path but must not be used for ambiguity pruning. |
+| `ActiveParseBranchEquivalenceKey` *(internal)* | **Semantic pruning key.** Groups branches that reached the same parser-state shape (rule, origin, end position, cursor kind/index). Excludes alternative index, priority, and label — those are handled by `HasDistinctSemantics`. |
 | `ParseTreeNavigator` | Fluent, index- and name-based navigation over a `ParseNode` tree. |
 | `ParseTreeCompiler<TContext,TResult>` | Generic depth-first compiler: descent handlers enrich context top-down; ascent handlers fold results bottom-up. |
 | `Antlr4GrammarConverter` | Compiles a `.g4` source string into a `ParserDefinition` at runtime. |
 | `RuleResolver` | Validates and enriches a `ParserDefinition` (rule-kind inference, reference validation). |
 
 ---
+
+
+### Parser runtime architecture notes
+
+`ParserEngine` keeps the current recursive/backtracking execution model, and introduces
+an internal `ActiveParseState` normalization layer for branch candidates.
+
+- This is **infrastructural only**: no public API changes.
+- Current diagnostics and parse-tree behavior remain unchanged.
+- The abstraction is used to prepare future explicit scheduling features (shared
+  alternative evaluation, continuation-driven orchestration, pruning strategies),
+  without enabling parallel parsing at this stage.
+
+#### Two separate identity concepts on `ActiveParseState`
+
+`ActiveParseState` deliberately exposes two distinct key projections:
+
+| Method | Returns | Purpose | Fields included |
+|---|---|---|---|
+| `ToStateKey(precedence)` | `ActiveParseStateKey` | Scheduler identity — uniquely tags every parser path for registry and cycle detection | rule name, origin position, current position, alternative index, alternative priority, cursor index/kind, minimum precedence, continuation |
+| `ToBranchEquivalenceKey()` | `ActiveParseBranchEquivalenceKey` | Semantic pruning — groups branches that reached the same parser-state shape | rule name, origin position, end/current position, cursor kind, cursor index |
+
+`ActiveParseBranchEquivalenceKey` intentionally excludes alternative index, priority,
+label, and continuation. Two branches that consumed the same input span and left the
+cursor at the same shape are shape-equivalent regardless of which alternative produced
+them. Whether those branches are also *semantically* equivalent (i.e., safe to prune) is
+decided separately by `HasDistinctSemantics`, which checks label, associativity, and the
+presence of predicates or actions. Pruning occurs only when both conditions hold: same
+shape key **and** `HasDistinctSemantics` returns `false`.
 
 ## Quick start
 

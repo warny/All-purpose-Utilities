@@ -154,16 +154,210 @@ internal sealed record ParseBranch
     public bool IsComplete { get; init; }
 }
 
-internal sealed record BranchKey
+internal readonly record struct ActiveParseStateKey(
+    string RuleName,
+    int OriginInputPosition,
+    int CurrentInputPosition,
+    int AlternativeIndex,
+    int AlternativePriority,
+    int CursorIndex,
+    string CursorKind,
+    int MinimumPrecedence,
+    ContinuationKey? Continuation);
+
+internal readonly record struct ActiveParseBranchEquivalenceKey(
+    string RuleName,
+    int OriginInputPosition,
+    int CurrentOrEndPosition,
+    string CursorKind,
+    int CursorIndex);
+
+internal enum ActiveParseStateStatus
 {
-    public required string RuleName { get; init; }
-
-    public required int InputPosition { get; init; }
-
-    public required string CursorKey { get; init; }
-
-    public required string ParentContextKey { get; init; }
+    Active,
+    Completed,
+    Failed,
+    Pruned
 }
+
+/// <summary>
+/// Represents an active parser state/branch candidate during alternative exploration.
+/// This data container is intentionally immutable and infrastructure-only.
+/// It prepares explicit scheduling of parser work without changing current execution semantics.
+/// </summary>
+internal sealed record ActiveParseState
+{
+    /// <summary>Gets the parser rule that owns the active state.</summary>
+    public required Rule Rule { get; init; }
+
+    /// <summary>Gets the alternative currently represented by this state.</summary>
+    public required Alternative Alternative { get; init; }
+
+    /// <summary>Gets the input position at which this state started.</summary>
+    public required int OriginInputPosition { get; init; }
+
+    /// <summary>Gets the current input position reached while evaluating this state.</summary>
+    public required int CurrentInputPosition { get; init; }
+
+    /// <summary>Gets the alternative index within ordered evaluation.</summary>
+    public required int AlternativeIndex { get; init; }
+
+    /// <summary>Gets the logical cursor within the rule content traversal.</summary>
+    public required RuleContentCursor Cursor { get; init; }
+
+    /// <summary>Gets the partially built parse node for this state.</summary>
+    public required ParseNode PartialNode { get; init; }
+
+    /// <summary>Gets the input end position reached by this state when completed.</summary>
+    public int? EndPosition { get; init; }
+
+    /// <summary>Gets the current lifecycle status of this active parse state.</summary>
+    public ActiveParseStateStatus Status { get; init; }
+
+    /// <summary>Gets the parent state key for lineage tracking, when available.</summary>
+    public ActiveParseStateKey? ParentStateKey { get; init; }
+
+    /// <summary>Gets the depth of this branch in lineage tracking.</summary>
+    public int Depth { get; init; }
+
+    /// <summary>Gets the continuation identity associated with this state, when known.</summary>
+    public ContinuationKey? Continuation { get; init; }
+
+    /// <summary>
+    /// Creates a deterministic identity key for registry/scheduling-oriented state comparisons.
+    /// Includes scheduler-specific fields (alternative index, priority, continuation) that must
+    /// NOT be used for semantic-equivalence pruning.
+    /// </summary>
+    /// <param name="minimumPrecedence">Minimum precedence associated with this active state evaluation.</param>
+    /// <returns>A stable identity key for this active parse state.</returns>
+    public ActiveParseStateKey ToStateKey(int minimumPrecedence)
+    {
+        return new ActiveParseStateKey(
+            Rule.Name,
+            OriginInputPosition,
+            CurrentInputPosition,
+            AlternativeIndex,
+            Alternative.Priority,
+            Cursor.Index,
+            Cursor.Kind,
+            minimumPrecedence,
+            Continuation);
+    }
+
+    /// <summary>
+    /// Creates a semantic equivalence key used exclusively for ambiguity pruning.
+    /// Excludes scheduler-identity fields (alternative index, priority, continuation) so that
+    /// two alternatives reaching the same parser position are considered equivalent regardless
+    /// of which alternative produced them.
+    /// </summary>
+    /// <returns>A key that identifies semantically equivalent active parse states.</returns>
+    public ActiveParseBranchEquivalenceKey ToBranchEquivalenceKey()
+    {
+        return new ActiveParseBranchEquivalenceKey(
+            Rule.Name,
+            OriginInputPosition,
+            EndPosition ?? CurrentInputPosition,
+            Cursor.Kind,
+            Cursor.Index);
+    }
+
+    /// <summary>Creates a new state marked as completed.</summary>
+    public ActiveParseState Complete(int endPosition)
+    {
+        return this with { Status = ActiveParseStateStatus.Completed, CurrentInputPosition = endPosition, EndPosition = endPosition };
+    }
+
+    /// <summary>Creates a new state marked as failed.</summary>
+    public ActiveParseState Fail()
+    {
+        return this with { Status = ActiveParseStateStatus.Failed, EndPosition = null };
+    }
+
+    /// <summary>Creates a new state marked as pruned.</summary>
+    public ActiveParseState Prune()
+    {
+        return this with { Status = ActiveParseStateStatus.Pruned };
+    }
+
+    /// <summary>Creates a new state with an attached continuation identity.</summary>
+    public ActiveParseState WithContinuation(ContinuationKey continuation)
+    {
+        return this with { Continuation = continuation };
+    }
+
+    /// <summary>Creates a new state advanced to a new cursor and input position.</summary>
+    public ActiveParseState Advance(int currentInputPosition, RuleContentCursor cursor)
+    {
+        return this with { CurrentInputPosition = currentInputPosition, Cursor = cursor };
+    }
+
+    /// <summary>Creates a new state with explicit lineage metadata.</summary>
+    public ActiveParseState WithLineage(ActiveParseStateKey? parentStateKey, int depth)
+    {
+        return this with { ParentStateKey = parentStateKey, Depth = depth };
+    }
+
+    /// <summary>Creates a parser-state key projection for visited-state integration.</summary>
+    public ParserStateKey ToParserStateKey(int minimumPrecedence)
+    {
+        return new ParserStateKey(Rule.Name, CurrentInputPosition, AlternativeIndex, Cursor.Index, minimumPrecedence);
+    }
+
+    /// <summary>Creates a rule invocation projection for completion registry integration.</summary>
+    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence)
+    {
+        return new RuleInvocationKey(Rule.Name, OriginInputPosition, minimumPrecedence);
+    }
+
+    /// <summary>Creates a continuation key projection for future resumable scheduling.</summary>
+    public ContinuationKey ToContinuationKey(int resumePosition, int minimumPrecedence)
+    {
+        return new ContinuationKey(Rule.Name, AlternativeIndex, Cursor.Index, resumePosition, minimumPrecedence);
+    }
+
+    /// <summary>
+    /// Creates an active state from a completed branch.
+    /// </summary>
+    /// <param name="branch">Completed branch produced by the current runtime.</param>
+    /// <returns>A normalized active parser state.</returns>
+    public static ActiveParseState FromBranch(ParseBranch branch)
+    {
+        return new ActiveParseState
+        {
+            Rule = branch.Rule,
+            Alternative = branch.Alternative,
+            OriginInputPosition = branch.InputPosition,
+            CurrentInputPosition = branch.EndPosition,
+            AlternativeIndex = -1,
+            Cursor = branch.Cursor,
+            PartialNode = branch.PartialNode,
+            EndPosition = branch.EndPosition,
+            Status = branch.IsComplete ? ActiveParseStateStatus.Completed : ActiveParseStateStatus.Failed,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        };
+    }
+
+    /// <summary>
+    /// Converts this active state back to the legacy branch representation.
+    /// </summary>
+    /// <returns>A <see cref="ParseBranch"/> with equivalent data.</returns>
+    public ParseBranch ToBranch()
+    {
+        return new ParseBranch
+        {
+            Rule = Rule,
+            Alternative = Alternative,
+            InputPosition = OriginInputPosition,
+            Cursor = Cursor,
+            PartialNode = PartialNode,
+            EndPosition = EndPosition ?? CurrentInputPosition,
+            IsComplete = Status == ActiveParseStateStatus.Completed
+        };
+    }
+}
+
 
 /// <summary>
 /// Builds a parse tree from a flat token list using the rules in a
@@ -784,7 +978,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         var alternativeList = alternatives.OrderBy(a => a.Priority).ToList();
         var startPosition = context.Position;
         var startToken = context.Peek();
-        var survivingBranches = new List<ParseBranch>();
+        var activeStates = new List<ActiveParseState>();
         var visitedStates = new HashSet<ParserStateKey>();
 
         for (int index = 0; index < alternativeList.Count; index++)
@@ -835,35 +1029,41 @@ public sealed class ParserEngine(ParserDefinition definition)
                 continue;
             }
 
-            survivingBranches.Add(new ParseBranch
+            var activeState = new ActiveParseState
             {
                 Rule = rule,
                 Alternative = alt,
-                InputPosition = startPosition,
+                OriginInputPosition = startPosition,
+                CurrentInputPosition = context.Position,
+                AlternativeIndex = index,
                 Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
                 PartialNode = result,
-                EndPosition = context.Position,
-                IsComplete = true
-            });
+                EndPosition = null,
+                Status = ActiveParseStateStatus.Active,
+                ParentStateKey = null,
+                Depth = 0,
+                Continuation = null
+            }.Complete(context.Position);
+            activeStates.Add(activeState);
             context.RestorePosition(savedPos);
         }
 
-        if (survivingBranches.Count == 0)
+        if (activeStates.Count == 0)
         {
             return null;
         }
 
-        var pruned = PruneEquivalentBranches(survivingBranches, diagnostics);
-        var winner = pruned[0];
-        for (int i = 1; i < pruned.Count; i++)
+        var prunedStates = PruneEquivalentActiveStates(activeStates, diagnostics);
+        var winner = prunedStates[0];
+        for (int i = 1; i < prunedStates.Count; i++)
         {
-            if (IsBetterBranch(pruned[i], winner))
+            if (IsBetterActiveState(prunedStates[i], winner))
             {
-                winner = pruned[i];
+                winner = prunedStates[i];
             }
         }
 
-        context.RestorePosition(winner.EndPosition);
+        context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
         if (winner.PartialNode is ParserNode parserNode && ReferenceEquals(parserNode.Rule, rule))
         {
             return parserNode;
@@ -871,6 +1071,16 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         var span = ComputeSpan(startToken, context, startPosition);
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+    private static bool IsBetterActiveState(ActiveParseState candidate, ActiveParseState current)
+    {
+        if (candidate.CurrentInputPosition != current.CurrentInputPosition)
+        {
+            return candidate.CurrentInputPosition > current.CurrentInputPosition;
+        }
+
+        return candidate.Alternative.Priority < current.Alternative.Priority;
     }
 
     private static bool IsBetterBranch(ParseBranch candidate, ParseBranch current)
@@ -883,50 +1093,61 @@ public sealed class ParserEngine(ParserDefinition definition)
         return candidate.Alternative.Priority < current.Alternative.Priority;
     }
 
-    private List<ParseBranch> PruneEquivalentBranches(
-        IReadOnlyList<ParseBranch> branches,
+    private List<ActiveParseState> PruneEquivalentActiveStates(
+        IReadOnlyList<ActiveParseState> states,
         DiagnosticBag? diagnostics)
     {
-        var map = new Dictionary<BranchKey, ParseBranch>();
-        foreach (var branch in branches)
+        // Each shape-key bucket holds one representative per distinct semantic class.
+        // States with the same shape but different semantics (label/assoc/predicates) are
+        // kept as separate entries within the same bucket rather than being dropped.
+        var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
+        foreach (var state in states)
         {
-            var key = new BranchKey
+            var key = state.ToBranchEquivalenceKey();
+            if (!groups.TryGetValue(key, out var group))
             {
-                RuleName = branch.Rule.Name,
-                InputPosition = branch.InputPosition,
-                CursorKey = $"{branch.Cursor.Kind}:{branch.Cursor.Index}:{branch.EndPosition}",
-                ParentContextKey = branch.Alternative.Label ?? string.Empty
-            };
-
-            if (!map.TryGetValue(key, out var existing))
-            {
-                map[key] = branch;
+                groups[key] = [state];
                 continue;
             }
 
-            if (HasDistinctSemantics(existing.Alternative, branch.Alternative))
+            bool merged = false;
+            for (int i = 0; i < group.Count; i++)
             {
-                continue;
+                if (HasDistinctSemantics(group[i].Alternative, state.Alternative))
+                {
+                    continue;
+                }
+
+                if (state.Alternative.Priority < group[i].Alternative.Priority)
+                {
+                    group[i] = state;
+                }
+
+                diagnostics?.AddWithContext(
+                    ParserDiagnostics.AmbiguousAlternativesPruned,
+                    state.PartialNode.Span.Position,
+                    state.PartialNode.Span.Length,
+                    state.Rule.Name,
+                    null,
+                    state.Rule.Name);
+
+                merged = true;
+                break;
             }
 
-            if (branch.Alternative.Priority < existing.Alternative.Priority)
+            if (!merged)
             {
-                map[key] = branch;
+                group.Add(state);
             }
-
-            diagnostics?.AddWithContext(
-                ParserDiagnostics.AmbiguousAlternativesPruned,
-                branch.PartialNode.Span.Position,
-                branch.PartialNode.Span.Length,
-                branch.Rule.Name,
-                null,
-                branch.Rule.Name);
         }
 
-        return map.Values.OrderBy(b => b.Alternative.Priority).ToList();
+        return groups.Values
+            .SelectMany(static g => g)
+            .OrderBy(static s => s.Alternative.Priority)
+            .ToList();
     }
 
-    private static bool HasDistinctSemantics(Alternative left, Alternative right)
+    internal static bool HasDistinctSemantics(Alternative left, Alternative right)
     {
         return !string.Equals(left.Label, right.Label, StringComparison.Ordinal)
             || left.Assoc != right.Assoc
