@@ -12,60 +12,37 @@ internal sealed class AlternativeScheduler
     /// Drives alternative orchestration for a single alternation parse attempt.
     /// </summary>
     public AlternativeSchedulingResult Run(
-        ParseContext context,
-        IEnumerable<Alternative> alternatives,
         Rule rule,
+        IEnumerable<Alternative> alternatives,
+        int originInputPosition,
         int minimumPrecedence,
         DiagnosticBag? diagnostics,
-        Func<Alternative, int, bool> checkPrecedence,
-        Func<Alternative, int, ParseNode?> tryParseAlternative,
-        Action<ParserStateKey> registerVisitedState,
-        Action<Alternative, int, ParserStateKey> onRepeatedState,
-        Action onBacktracking)
+        Func<Alternative, int, ActiveParseState?> parseAlternative)
     {
-        var alternativeList = alternatives.OrderBy(static a => a.Priority).ToList();
-        var startPosition = context.Position;
-        var activeStates = new List<ActiveParseState>();
+        var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
+        var completedStates = new List<ActiveParseState>();
         var failedStates = new List<ActiveParseState>();
-        var visitedStates = new HashSet<ParserStateKey>();
 
-        for (int index = 0; index < alternativeList.Count; index++)
+        for (int index = 0; index < ordered.Count; index++)
         {
-            var alternative = alternativeList[index];
-            var stateKey = new ParserStateKey(rule.Name, startPosition, index, index, minimumPrecedence);
-            registerVisitedState(stateKey);
-
-            if (!visitedStates.Add(stateKey))
-            {
-                onRepeatedState(alternative, index, stateKey);
-                continue;
-            }
-
-            if (!checkPrecedence(alternative, minimumPrecedence))
-            {
-                continue;
-            }
-
-            var savedPosition = context.SavePosition();
-            var parsed = tryParseAlternative(alternative, index);
+            var alternative = ordered[index];
+            var initial = CreateInitialState(rule, alternative, originInputPosition, index);
+            var parsed = parseAlternative(alternative, index);
             if (parsed is null)
             {
-                failedStates.Add(CreateState(rule, alternative, startPosition, context.Position, index, null, ActiveParseStateStatus.Failed));
-                onBacktracking();
-                context.RestorePosition(savedPosition);
+                failedStates.Add(initial.Fail());
                 continue;
             }
 
-            activeStates.Add(CreateState(rule, alternative, startPosition, context.Position, index, parsed, ActiveParseStateStatus.Completed));
-            context.RestorePosition(savedPosition);
+            completedStates.Add(EnsureInitialized(parsed, initial));
         }
 
-        if (activeStates.Count == 0)
+        if (completedStates.Count == 0)
         {
             return new AlternativeSchedulingResult(null, [], failedStates, []);
         }
 
-        var deduplicated = DeduplicateStates(activeStates, minimumPrecedence);
+        var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
         var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
         var prunedSet = new HashSet<ActiveParseState>(pruned);
         var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
@@ -82,32 +59,40 @@ internal sealed class AlternativeScheduler
         return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates);
     }
 
-    /// <summary>
-    /// Creates an active parse state for alternative scheduling.
-    /// </summary>
-    private static ActiveParseState CreateState(
-        Rule rule,
-        Alternative alternative,
-        int originInputPosition,
-        int currentInputPosition,
-        int alternativeIndex,
-        ParseNode? parsedNode,
-        ActiveParseStateStatus status)
+    private static ActiveParseState CreateInitialState(Rule rule, Alternative alternative, int originInputPosition, int alternativeIndex)
     {
         return new ActiveParseState
         {
             Rule = rule,
             Alternative = alternative,
             OriginInputPosition = originInputPosition,
-            CurrentInputPosition = currentInputPosition,
+            CurrentInputPosition = originInputPosition,
             AlternativeIndex = alternativeIndex,
             Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
-            PartialNode = parsedNode ?? new ErrorNode(new SourceSpan(currentInputPosition, 0), "DEFAULT_MODE", "Alternative failed", rule),
-            EndPosition = status == ActiveParseStateStatus.Completed ? currentInputPosition : null,
-            Status = status,
+            PartialNode = new ErrorNode(new SourceSpan(originInputPosition, 0), "DEFAULT_MODE", "Alternative not evaluated", rule),
+            EndPosition = null,
+            Status = ActiveParseStateStatus.Active,
             ParentStateKey = null,
             Depth = 0,
             Continuation = null
+        };
+    }
+
+    private static ActiveParseState EnsureInitialized(ActiveParseState state, ActiveParseState fallback)
+    {
+        return state with
+        {
+            Rule = state.Rule,
+            Alternative = state.Alternative,
+            OriginInputPosition = state.OriginInputPosition,
+            AlternativeIndex = state.AlternativeIndex,
+            Cursor = state.Cursor,
+            PartialNode = state.PartialNode,
+            Status = state.Status == ActiveParseStateStatus.Active ? ActiveParseStateStatus.Completed : state.Status,
+            EndPosition = state.EndPosition ?? state.CurrentInputPosition,
+            ParentStateKey = state.ParentStateKey,
+            Depth = state.Depth,
+            Continuation = state.Continuation
         };
     }
 
@@ -123,11 +108,7 @@ internal sealed class AlternativeScheduler
             }
         }
 
-        return byIdentity.Values
-            .OrderBy(static s => s.Alternative.Priority)
-            .ThenBy(static s => s.AlternativeIndex)
-            .ThenBy(static s => s.CurrentInputPosition)
-            .ToList();
+        return byIdentity.Values.OrderBy(static s => s.Alternative.Priority).ThenBy(static s => s.AlternativeIndex).ThenBy(static s => s.CurrentInputPosition).ToList();
     }
 
     private static bool IsBetterState(ActiveParseState candidate, ActiveParseState current)
@@ -181,11 +162,7 @@ internal sealed class AlternativeScheduler
             }
         }
 
-        return groups.Values.SelectMany(static g => g)
-            .OrderBy(static s => s.Alternative.Priority)
-            .ThenBy(static s => s.AlternativeIndex)
-            .ThenByDescending(static s => s.CurrentInputPosition)
-            .ToList();
+        return groups.Values.SelectMany(static g => g).OrderBy(static s => s.Alternative.Priority).ThenBy(static s => s.AlternativeIndex).ThenByDescending(static s => s.CurrentInputPosition).ToList();
     }
 }
 
@@ -200,10 +177,7 @@ internal sealed class AlternativeSchedulingResult
     }
 
     public ActiveParseState? SelectedState { get; }
-
     public IReadOnlyList<ActiveParseState> CompletedStates { get; }
-
     public IReadOnlyList<ActiveParseState> FailedStates { get; }
-
     public IReadOnlyList<ActiveParseState> PrunedStates { get; }
 }

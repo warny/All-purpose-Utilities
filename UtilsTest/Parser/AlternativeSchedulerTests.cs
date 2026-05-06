@@ -15,16 +15,14 @@ public class AlternativeSchedulerTests
         var (context, rule, alternatives) = CreateAlternatives();
 
         var result = scheduler.Run(
-            context,
-            alternatives,
             rule,
+            alternatives,
+            originInputPosition: context.Position,
             minimumPrecedence: 3,
             diagnostics: null,
-            checkPrecedence: static (_, _) => true,
-            tryParseAlternative: (_, index) => index == 0 || index == 1 ? CreateNode(rule, 2) : null,
-            registerVisitedState: _ => { },
-            onRepeatedState: (_, _, _) => { },
-            onBacktracking: () => { });
+            parseAlternative: (_, index) => index == 0 || index == 1
+                ? CreateState(rule, alternatives[index], context.Position, 2, index)
+                : null);
 
         Assert.AreEqual(1, result.CompletedStates.Count);
     }
@@ -42,16 +40,12 @@ public class AlternativeSchedulerTests
         var diagnostics = new DiagnosticBag();
 
         var result = scheduler.Run(
-            context,
-            rule.Content.Alternatives,
             rule,
+            rule.Content.Alternatives,
+            originInputPosition: context.Position,
             minimumPrecedence: 1,
             diagnostics,
-            checkPrecedence: static (_, _) => true,
-            tryParseAlternative: (_, _) => CreateNode(rule, 4),
-            registerVisitedState: _ => { },
-            onRepeatedState: (_, _, _) => { },
-            onBacktracking: () => { });
+            parseAlternative: (alternative, index) => CreateState(rule, alternative, context.Position, 4, index));
 
         Assert.AreEqual(2, result.CompletedStates.Count);
         Assert.AreEqual(1, result.PrunedStates.Count);
@@ -59,32 +53,20 @@ public class AlternativeSchedulerTests
     }
 
     [TestMethod]
-    public void Run_UsesMinimumPrecedenceAndBacktrackingCallback()
+    public void Run_UsesMinimumPrecedenceInIdentity()
     {
         var scheduler = new AlternativeScheduler();
         var (context, rule, alternatives) = CreateAlternatives();
-        int callbackCount = 0;
-        int precedenceSeen = -1;
-
         var result = scheduler.Run(
-            context,
-            alternatives,
             rule,
+            alternatives,
+            originInputPosition: context.Position,
             minimumPrecedence: 7,
             diagnostics: null,
-            checkPrecedence: (_, precedence) =>
-            {
-                precedenceSeen = precedence;
-                return true;
-            },
-            tryParseAlternative: (_, index) => index == 0 ? null : CreateNode(rule, 5),
-            registerVisitedState: _ => { },
-            onRepeatedState: (_, _, _) => { },
-            onBacktracking: () => callbackCount++);
+            parseAlternative: (alternative, index) => index == 0 ? null : CreateState(rule, alternative, context.Position, 5, index));
 
-        Assert.AreEqual(7, precedenceSeen);
-        Assert.AreEqual(1, callbackCount);
         Assert.IsNotNull(result.SelectedState);
+        Assert.IsTrue(result.CompletedStates.All(s => s.ToStateKey(7).MinimumPrecedence == 7));
     }
 
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
@@ -102,4 +84,25 @@ public class AlternativeSchedulerTests
     {
         return new ParserNode(new SourceSpan(0, position), "DEFAULT_MODE", rule, []);
     }
+
+    private static ActiveParseState CreateState(Rule rule, Alternative alternative, int origin, int current, int alternativeIndex)
+    {
+        return new ActiveParseState
+        {
+            Rule = rule,
+            Alternative = alternative,
+            OriginInputPosition = origin,
+            CurrentInputPosition = current,
+            AlternativeIndex = alternativeIndex,
+            Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+            PartialNode = CreateNode(rule, current),
+            EndPosition = current,
+            Status = ActiveParseStateStatus.Completed,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        };
+    }
 }
+
+

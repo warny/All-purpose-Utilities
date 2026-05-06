@@ -987,27 +987,49 @@ public sealed class ParserEngine
         var startPosition = context.Position;
         var startToken = context.Peek();
         var scheduling = _alternativeScheduler.Run(
-            context,
-            alternatives,
             rule,
+            alternatives,
+            startPosition,
             precedence,
             diagnostics,
-            checkPrecedence: CheckPrecedence,
-            tryParseAlternative: (alternative, alternativeIndex) => TryParseContent(context, alternative.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics),
-            registerVisitedState: stateKey =>
+            parseAlternative: (alternative, alternativeIndex) =>
             {
+                var stateKey = new ParserStateKey(rule.Name, startPosition, alternativeIndex, alternativeIndex, precedence);
                 _stateRegistry.TryEnterState(new ParseStateKey(stateKey.RuleName, stateKey.InputPosition, stateKey.AlternativeIndex, stateKey.ElementIndex, stateKey.MinimumPrecedence));
-            },
-            onRepeatedState: (_, _, stateKey) =>
-            {
-                var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateCycleDetected, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null);
-                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateRejected, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name, $"repeated state {stateKey}");
-            },
-            onBacktracking: () =>
-            {
-                var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
+
+                if (!CheckPrecedence(alternative, precedence))
+                {
+                    return null;
+                }
+
+                var savedPosition = context.SavePosition();
+                var result = TryParseContent(context, alternative.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics);
+                if (result is null)
+                {
+                    var diagnosticSpan = ResolveDiagnosticSpan(context);
+                    diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
+                    context.RestorePosition(savedPosition);
+                    return null;
+                }
+
+                var state = new ActiveParseState
+                {
+                    Rule = rule,
+                    Alternative = alternative,
+                    OriginInputPosition = startPosition,
+                    CurrentInputPosition = context.Position,
+                    AlternativeIndex = alternativeIndex,
+                    Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+                    PartialNode = result,
+                    EndPosition = context.Position,
+                    Status = ActiveParseStateStatus.Completed,
+                    ParentStateKey = null,
+                    Depth = 0,
+                    Continuation = null
+                };
+
+                context.RestorePosition(savedPosition);
+                return state;
             });
 
         if (scheduling.SelectedState is null)
