@@ -168,10 +168,22 @@ internal sealed record BranchKey
 
 internal readonly record struct ActiveParseStateKey(
     string RuleName,
-    int InputPosition,
+    int OriginInputPosition,
+    int CurrentInputPosition,
+    int AlternativeIndex,
     int AlternativePriority,
     int CursorIndex,
-    int MinimumPrecedence);
+    string CursorKind,
+    int MinimumPrecedence,
+    ContinuationKey? Continuation);
+
+internal enum ActiveParseStateStatus
+{
+    Active,
+    Completed,
+    Failed,
+    Pruned
+}
 
 /// <summary>
 /// Represents an active parser state/branch candidate during alternative exploration.
@@ -187,7 +199,13 @@ internal sealed record ActiveParseState
     public required Alternative Alternative { get; init; }
 
     /// <summary>Gets the input position at which this state started.</summary>
-    public required int InputPosition { get; init; }
+    public required int OriginInputPosition { get; init; }
+
+    /// <summary>Gets the current input position reached while evaluating this state.</summary>
+    public required int CurrentInputPosition { get; init; }
+
+    /// <summary>Gets the alternative index within ordered evaluation.</summary>
+    public required int AlternativeIndex { get; init; }
 
     /// <summary>Gets the logical cursor within the rule content traversal.</summary>
     public required RuleContentCursor Cursor { get; init; }
@@ -195,11 +213,20 @@ internal sealed record ActiveParseState
     /// <summary>Gets the partially built parse node for this state.</summary>
     public required ParseNode PartialNode { get; init; }
 
-    /// <summary>Gets the input end position reached by this state.</summary>
-    public required int EndPosition { get; init; }
+    /// <summary>Gets the input end position reached by this state when completed.</summary>
+    public int? EndPosition { get; init; }
 
-    /// <summary>Gets a value indicating whether this state completed successfully.</summary>
-    public bool IsComplete { get; init; }
+    /// <summary>Gets the current lifecycle status of this active parse state.</summary>
+    public ActiveParseStateStatus Status { get; init; }
+
+    /// <summary>Gets the parent state key for lineage tracking, when available.</summary>
+    public ActiveParseStateKey? ParentStateKey { get; init; }
+
+    /// <summary>Gets the depth of this branch in lineage tracking.</summary>
+    public int Depth { get; init; }
+
+    /// <summary>Gets the continuation identity associated with this state, when known.</summary>
+    public ContinuationKey? Continuation { get; init; }
 
     /// <summary>
     /// Creates a deterministic identity key for registry/scheduling-oriented state comparisons.
@@ -210,10 +237,68 @@ internal sealed record ActiveParseState
     {
         return new ActiveParseStateKey(
             Rule.Name,
-            InputPosition,
+            OriginInputPosition,
+            CurrentInputPosition,
+            AlternativeIndex,
             Alternative.Priority,
             Cursor.Index,
-            minimumPrecedence);
+            Cursor.Kind,
+            minimumPrecedence,
+            Continuation);
+    }
+
+    /// <summary>Creates a new state marked as completed.</summary>
+    public ActiveParseState Complete(int endPosition)
+    {
+        return this with { Status = ActiveParseStateStatus.Completed, CurrentInputPosition = endPosition, EndPosition = endPosition };
+    }
+
+    /// <summary>Creates a new state marked as failed.</summary>
+    public ActiveParseState Fail()
+    {
+        return this with { Status = ActiveParseStateStatus.Failed, EndPosition = null };
+    }
+
+    /// <summary>Creates a new state marked as pruned.</summary>
+    public ActiveParseState Prune()
+    {
+        return this with { Status = ActiveParseStateStatus.Pruned };
+    }
+
+    /// <summary>Creates a new state with an attached continuation identity.</summary>
+    public ActiveParseState WithContinuation(ContinuationKey continuation)
+    {
+        return this with { Continuation = continuation };
+    }
+
+    /// <summary>Creates a new state advanced to a new cursor and input position.</summary>
+    public ActiveParseState Advance(int currentInputPosition, RuleContentCursor cursor)
+    {
+        return this with { CurrentInputPosition = currentInputPosition, Cursor = cursor };
+    }
+
+    /// <summary>Creates a new state with explicit lineage metadata.</summary>
+    public ActiveParseState WithLineage(ActiveParseStateKey? parentStateKey, int depth)
+    {
+        return this with { ParentStateKey = parentStateKey, Depth = depth };
+    }
+
+    /// <summary>Creates a parser-state key projection for visited-state integration.</summary>
+    public ParserStateKey ToParserStateKey(int minimumPrecedence)
+    {
+        return new ParserStateKey(Rule.Name, CurrentInputPosition, AlternativeIndex, Cursor.Index, minimumPrecedence);
+    }
+
+    /// <summary>Creates a rule invocation projection for completion registry integration.</summary>
+    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence)
+    {
+        return new RuleInvocationKey(Rule.Name, OriginInputPosition, minimumPrecedence);
+    }
+
+    /// <summary>Creates a continuation key projection for future resumable scheduling.</summary>
+    public ContinuationKey ToContinuationKey(int resumePosition, int minimumPrecedence)
+    {
+        return new ContinuationKey(Rule.Name, AlternativeIndex, Cursor.Index, resumePosition, minimumPrecedence);
     }
 
     /// <summary>
@@ -227,11 +312,16 @@ internal sealed record ActiveParseState
         {
             Rule = branch.Rule,
             Alternative = branch.Alternative,
-            InputPosition = branch.InputPosition,
+            OriginInputPosition = branch.InputPosition,
+            CurrentInputPosition = branch.EndPosition,
+            AlternativeIndex = -1,
             Cursor = branch.Cursor,
             PartialNode = branch.PartialNode,
             EndPosition = branch.EndPosition,
-            IsComplete = branch.IsComplete
+            Status = branch.IsComplete ? ActiveParseStateStatus.Completed : ActiveParseStateStatus.Failed,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
         };
     }
 
@@ -245,11 +335,11 @@ internal sealed record ActiveParseState
         {
             Rule = Rule,
             Alternative = Alternative,
-            InputPosition = InputPosition,
+            InputPosition = OriginInputPosition,
             Cursor = Cursor,
             PartialNode = PartialNode,
-            EndPosition = EndPosition,
-            IsComplete = IsComplete
+            EndPosition = EndPosition ?? CurrentInputPosition,
+            IsComplete = Status == ActiveParseStateStatus.Completed
         };
     }
 }
@@ -929,12 +1019,17 @@ public sealed class ParserEngine(ParserDefinition definition)
             {
                 Rule = rule,
                 Alternative = alt,
-                InputPosition = startPosition,
+                OriginInputPosition = startPosition,
+                CurrentInputPosition = context.Position,
+                AlternativeIndex = index,
                 Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
                 PartialNode = result,
-                EndPosition = context.Position,
-                IsComplete = true
-            };
+                EndPosition = null,
+                Status = ActiveParseStateStatus.Active,
+                ParentStateKey = null,
+                Depth = 0,
+                Continuation = null
+            }.Complete(context.Position);
             _ = activeState.ToStateKey(precedence);
             activeStates.Add(activeState);
             context.RestorePosition(savedPos);
@@ -957,7 +1052,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             }
         }
 
-        context.RestorePosition(winner.EndPosition);
+        context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
         if (winner.PartialNode is ParserNode parserNode && ReferenceEquals(parserNode.Rule, rule))
         {
             return parserNode;

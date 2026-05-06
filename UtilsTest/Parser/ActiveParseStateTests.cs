@@ -4,15 +4,9 @@ using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
 
-/// <summary>
-/// Tests for the ActiveParseState infrastructure mapping and identity semantics.
-/// </summary>
 [TestClass]
 public class ActiveParseStateTests
 {
-    /// <summary>
-    /// Ensures conversion from legacy branch representation to active parse state and back preserves data.
-    /// </summary>
     [TestMethod]
     public void ActiveParseState_BranchRoundTrip_PreservesStateData()
     {
@@ -32,14 +26,11 @@ public class ActiveParseStateTests
         Assert.AreSame(branch.PartialNode, restoredBranch.PartialNode);
     }
 
-    /// <summary>
-    /// Ensures state keys built from equivalent active states are equal and produce the same hash code.
-    /// </summary>
     [TestMethod]
     public void ActiveParseState_ToStateKey_EquivalentStatesAreEqual()
     {
-        var left = ActiveParseState.FromBranch(CreateBranch(priority: 1, cursorIndex: 0));
-        var right = ActiveParseState.FromBranch(CreateBranch(priority: 1, cursorIndex: 0));
+        var left = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 6);
+        var right = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 6);
 
         var leftKey = left.ToStateKey(minimumPrecedence: 3);
         var rightKey = right.ToStateKey(minimumPrecedence: 3);
@@ -48,20 +39,70 @@ public class ActiveParseStateTests
         Assert.AreEqual(leftKey.GetHashCode(), rightKey.GetHashCode());
     }
 
-    /// <summary>
-    /// Ensures state key identity changes when alternative priority, cursor index, or precedence differs.
-    /// </summary>
     [TestMethod]
     public void ActiveParseState_ToStateKey_DifferentDimensionsProduceDifferentKeys()
     {
-        var baseline = ActiveParseState.FromBranch(CreateBranch(priority: 1, cursorIndex: 0)).ToStateKey(minimumPrecedence: 2);
-        var differentAlternative = ActiveParseState.FromBranch(CreateBranch(priority: 2, cursorIndex: 0)).ToStateKey(minimumPrecedence: 2);
-        var differentCursor = ActiveParseState.FromBranch(CreateBranch(priority: 1, cursorIndex: 1)).ToStateKey(minimumPrecedence: 2);
-        var differentPrecedence = ActiveParseState.FromBranch(CreateBranch(priority: 1, cursorIndex: 0)).ToStateKey(minimumPrecedence: 4);
+        var baseline = CreateActiveState(1, 0, 0, 6).ToStateKey(2);
+        Assert.AreNotEqual(baseline, CreateActiveState(2, 0, 1, 6).ToStateKey(2));
+        Assert.AreNotEqual(baseline, CreateActiveState(1, 1, 0, 6).ToStateKey(2));
+        Assert.AreNotEqual(baseline, CreateActiveState(1, 0, 0, 7).ToStateKey(2));
+        Assert.AreNotEqual(baseline, CreateActiveState(1, 0, 0, 6).ToStateKey(4));
+        Assert.AreNotEqual(baseline, CreateActiveState(1, 0, 0, 6).WithContinuation(new ContinuationKey("r", 0, 0, 6, 2)).ToStateKey(2));
+    }
 
-        Assert.AreNotEqual(baseline, differentAlternative);
-        Assert.AreNotEqual(baseline, differentCursor);
-        Assert.AreNotEqual(baseline, differentPrecedence);
+    [TestMethod]
+    public void ActiveParseState_LifecycleTransitions_AreExplicit()
+    {
+        var active = CreateActiveState(1, 0, 0, 4);
+        Assert.AreEqual(ActiveParseStateStatus.Active, active.Status);
+
+        var completed = active.Complete(8);
+        Assert.AreEqual(ActiveParseStateStatus.Completed, completed.Status);
+        Assert.AreEqual(8, completed.EndPosition);
+
+        var failed = active.Fail();
+        Assert.AreEqual(ActiveParseStateStatus.Failed, failed.Status);
+        Assert.IsNull(failed.EndPosition);
+
+        var pruned = active.Prune();
+        Assert.AreEqual(ActiveParseStateStatus.Pruned, pruned.Status);
+    }
+
+    [TestMethod]
+    public void ActiveParseState_RegistryProjection_UsesExpectedKeys()
+    {
+        var state = CreateActiveState(3, 2, 5, 10);
+
+        var parserStateKey = state.ToParserStateKey(4);
+        Assert.AreEqual(new ParserStateKey("sampleRule", 10, 5, 2, 4), parserStateKey);
+
+        var invocationKey = state.ToRuleInvocationKey(4);
+        Assert.AreEqual(new RuleInvocationKey("sampleRule", 4, 4), invocationKey);
+
+        var continuationKey = state.ToContinuationKey(11, 4);
+        Assert.AreEqual(new ContinuationKey("sampleRule", 5, 2, 11, 4), continuationKey);
+    }
+
+    private static ActiveParseState CreateActiveState(int priority, int cursorIndex, int alternativeIndex, int currentPosition)
+    {
+        var alternative = new Alternative(priority, Associativity.Left, new LiteralMatch("A"), $"alt{priority}");
+        var rule = new Rule("sampleRule", 0, false, new Alternation([alternative]));
+
+        return new ActiveParseState
+        {
+            Rule = rule,
+            Alternative = alternative,
+            OriginInputPosition = 4,
+            CurrentInputPosition = currentPosition,
+            AlternativeIndex = alternativeIndex,
+            Cursor = new RuleContentCursor { Index = cursorIndex, Kind = "alternative-root" },
+            PartialNode = new ParserNode(new SourceSpan(2, 3), "DEFAULT_MODE", rule, []),
+            EndPosition = null,
+            Status = ActiveParseStateStatus.Active,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        };
     }
 
     private static ParseBranch CreateBranch(int priority, int cursorIndex)
