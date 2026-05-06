@@ -7,4 +7,6 @@ internal readonly record struct ParserLookaheadKey(
     string RuleName,
     int OriginPosition,
     int AlternativeIndex,
-    int MinimumPrecedence);
+    int MinimumPrecedence,
+    string CursorKind,
+    int CursorIndex);

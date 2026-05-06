@@ -14,7 +14,7 @@ public class ParserLookaheadCacheTests
     public void ParserLookaheadCache_StoresAndRetrievesResult()
     {
         var cache = new ParserLookaheadCache();
-        var key = new ParserLookaheadKey("root", 0, 0, 0);
+        var key = new ParserLookaheadKey("root", 0, 0, 0, "rule-root", -1);
         var expected = new ParserLookaheadResult(false, "ID", "id");
 
         Assert.IsTrue(cache.TryAdd(key, expected));
@@ -26,8 +26,8 @@ public class ParserLookaheadCacheTests
     public void ParserLookaheadCache_IsolatesByAlternativeIndex()
     {
         var cache = new ParserLookaheadCache();
-        var first = new ParserLookaheadKey("root", 0, 0, 0);
-        var second = new ParserLookaheadKey("root", 0, 1, 0);
+        var first = new ParserLookaheadKey("root", 0, 0, 0, "rule-root", -1);
+        var second = new ParserLookaheadKey("root", 0, 1, 0, "rule-root", -1);
 
         cache.TryAdd(first, new ParserLookaheadResult(false, "ID", "id"));
 
@@ -38,8 +38,8 @@ public class ParserLookaheadCacheTests
     public void ParserLookaheadCache_IsolatesByPrecedence()
     {
         var cache = new ParserLookaheadCache();
-        var lower = new ParserLookaheadKey("root", 0, 0, 0);
-        var higher = new ParserLookaheadKey("root", 0, 0, 1);
+        var lower = new ParserLookaheadKey("root", 0, 0, 0, "rule-root", -1);
+        var higher = new ParserLookaheadKey("root", 0, 0, 1, "rule-root", -1);
 
         cache.TryAdd(lower, new ParserLookaheadResult(false, "ID", "id"));
 
@@ -98,6 +98,18 @@ public class ParserLookaheadCacheTests
         _ = Parse(grammar, "a <EOF>", out var diagnostics);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+    }
+
+    [TestMethod]
+    public void ParserLookaheadCache_IsolatesByCursorContext()
+    {
+        var cache = new ParserLookaheadCache();
+        var first = new ParserLookaheadKey("root", 0, 0, 0, "alternation", 1);
+        var second = new ParserLookaheadKey("root", 0, 0, 0, "alternation", 2);
+
+        cache.TryAdd(first, new ParserLookaheadResult(false, "ID", "id"));
+
+        Assert.IsFalse(cache.TryGet(second, out _));
     }
 
     private static ParseNode Parse(string grammarText, string input, out DiagnosticBag diagnostics)

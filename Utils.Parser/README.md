@@ -80,7 +80,7 @@ This layer is now orchestrated by an internal `AlternativeScheduler` that execut
 - The abstraction is used to prepare future explicit scheduling features (shared
   alternative evaluation, continuation-driven orchestration, pruning strategies),
   without enabling parallel parsing at this stage.
-- `ParserEngine` also keeps an internal look-ahead cache keyed by rule name, origin position, alternative index, and minimum precedence.
+- `ParserEngine` also keeps an internal look-ahead cache keyed by rule name, origin position, alternative index, minimum precedence, and alternation cursor context.
 - The cache stores lightweight start observations only (can-start flag + first token snapshot), does not store parse trees, does not replace `ParserStateRegistry`, and does not change alternative selection semantics.
 - Execution remains sequential: no parallel alternative parsing, no continuation queue, and no shared look-ahead graph in this step.
 
