@@ -83,6 +83,24 @@ public class ActiveParseStateTests
         Assert.AreEqual(new ContinuationKey("sampleRule", 5, 2, 11, 4), continuationKey);
     }
 
+    [TestMethod]
+    public void ActiveParseState_RegistryIntegration_StableReuseKeys()
+    {
+        var state = CreateActiveState(1, 0, 0, 4).Complete(9);
+        var registry = new ParserStateRegistry();
+        var invocationKey = state.ToRuleInvocationKey(2);
+        var parserKey = state.ToParserStateKey(2);
+
+        Assert.IsTrue(registry.TryEnterState(parserKey));
+        Assert.IsFalse(registry.TryEnterState(parserKey), "Same parser state key should deduplicate.");
+
+        var result = new ParserRuleResult(state.PartialNode, state.EndPosition ?? state.CurrentInputPosition, IsFailure: false);
+        Assert.IsTrue(registry.AddCompletedResult(invocationKey, result));
+        Assert.IsTrue(registry.TryGetReusableResult(invocationKey, out var reusable));
+        Assert.AreEqual(result.EndPosition, reusable.EndPosition);
+        Assert.AreSame(result.Node, reusable.Node);
+    }
+
     private static ActiveParseState CreateActiveState(int priority, int cursorIndex, int alternativeIndex, int currentPosition)
     {
         var alternative = new Alternative(priority, Associativity.Left, new LiteralMatch("A"), $"alt{priority}");

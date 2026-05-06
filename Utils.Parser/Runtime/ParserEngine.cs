@@ -1040,13 +1040,11 @@ public sealed class ParserEngine(ParserDefinition definition)
             return null;
         }
 
-        var prunedStates = PruneEquivalentBranches([.. activeStates.Select(static state => state.ToBranch())], diagnostics)
-            .Select(static branch => ActiveParseState.FromBranch(branch))
-            .ToList();
+        var prunedStates = PruneEquivalentActiveStates(activeStates, diagnostics, precedence);
         var winner = prunedStates[0];
         for (int i = 1; i < prunedStates.Count; i++)
         {
-            if (IsBetterBranch(prunedStates[i].ToBranch(), winner.ToBranch()))
+            if (IsBetterActiveState(prunedStates[i], winner))
             {
                 winner = prunedStates[i];
             }
@@ -1060,6 +1058,16 @@ public sealed class ParserEngine(ParserDefinition definition)
 
         var span = ComputeSpan(startToken, context, startPosition);
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+    private static bool IsBetterActiveState(ActiveParseState candidate, ActiveParseState current)
+    {
+        if (candidate.CurrentInputPosition != current.CurrentInputPosition)
+        {
+            return candidate.CurrentInputPosition > current.CurrentInputPosition;
+        }
+
+        return candidate.Alternative.Priority < current.Alternative.Priority;
     }
 
     private static bool IsBetterBranch(ParseBranch candidate, ParseBranch current)
@@ -1113,6 +1121,43 @@ public sealed class ParserEngine(ParserDefinition definition)
         }
 
         return map.Values.OrderBy(b => b.Alternative.Priority).ToList();
+    }
+
+    private List<ActiveParseState> PruneEquivalentActiveStates(
+        IReadOnlyList<ActiveParseState> states,
+        DiagnosticBag? diagnostics,
+        int precedence)
+    {
+        var map = new Dictionary<ActiveParseStateKey, ActiveParseState>();
+        foreach (var state in states)
+        {
+            var key = state.ToStateKey(precedence);
+            if (!map.TryGetValue(key, out var existing))
+            {
+                map[key] = state;
+                continue;
+            }
+
+            if (HasDistinctSemantics(existing.Alternative, state.Alternative))
+            {
+                continue;
+            }
+
+            if (state.Alternative.Priority < existing.Alternative.Priority)
+            {
+                map[key] = state;
+            }
+
+            diagnostics?.AddWithContext(
+                ParserDiagnostics.AmbiguousAlternativesPruned,
+                state.PartialNode.Span.Position,
+                state.PartialNode.Span.Length,
+                state.Rule.Name,
+                null,
+                state.Rule.Name);
+        }
+
+        return map.Values.OrderBy(static s => s.Alternative.Priority).ToList();
     }
 
     private static bool HasDistinctSemantics(Alternative left, Alternative right)
