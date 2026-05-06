@@ -72,6 +72,8 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 `ParserEngine` keeps the current recursive/backtracking execution model, and introduces
 an internal `ActiveParseState` normalization layer for branch candidates.
 
+This layer is now orchestrated by an internal `AlternativeScheduler` that executes alternatives sequentially in deterministic order, applies `ActiveParseBranchEquivalenceKey`-based pruning, and selects the same winning branch as before.
+
 - This is **infrastructural only**: no public API changes.
 - Current diagnostics and parse-tree behavior remain unchanged.
 - The abstraction is used to prepare future explicit scheduling features (shared

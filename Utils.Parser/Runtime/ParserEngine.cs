@@ -379,11 +379,20 @@ internal sealed record ActiveParseState
 /// execution; they have no effect on the parse tree shape.
 /// </para>
 /// </summary>
-public sealed class ParserEngine(ParserDefinition definition)
+public sealed class ParserEngine
 {
+    private readonly ParserDefinition _definition;
     private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
-    private readonly bool _caseInsensitive = IsCaseInsensitive(definition);
+    private readonly bool _caseInsensitive;
     private readonly ParserStateRegistry _stateRegistry = new();
+    private readonly AlternativeScheduler _alternativeScheduler;
+
+    public ParserEngine(ParserDefinition definition)
+    {
+        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+        _caseInsensitive = IsCaseInsensitive(_definition);
+        _alternativeScheduler = new AlternativeScheduler(_stateRegistry);
+    }
 
     /// <summary>
     /// Parses <paramref name="tokens"/> starting from <paramref name="startRule"/>
@@ -402,7 +411,7 @@ public sealed class ParserEngine(ParserDefinition definition)
     public ParseNode Parse(IEnumerable<Token> tokens, Rule? startRule = null, DiagnosticBag? diagnostics = null)
     {
         var tokenList = tokens.Where(static token => token.Channel == "DEFAULT_CHANNEL").ToList();
-        var root = startRule ?? definition.RootRule
+        var root = startRule ?? _definition.RootRule
             ?? throw new InvalidOperationException("No root rule defined");
 
         _activeRuleFrames.Clear();
@@ -473,7 +482,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         try
         {
             ParseNode? parsed;
-            if (definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+            if (_definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
             {
                 diagnostics?.AddWithContext(
                     ParserDiagnostics.LeftRecursivePrecedencePartiallySupported,
@@ -841,7 +850,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         int elementIndex,
         DiagnosticBag? diagnostics = null)
     {
-        if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
+        if (!_definition.AllRules.TryGetValue(ruleRef.RuleName, out var referencedRule))
             return null;
 
         // The tuple (RuleName, Position) alone is not enough to reject a shared call:
@@ -1053,14 +1062,11 @@ public sealed class ParserEngine(ParserDefinition definition)
             return null;
         }
 
-        var prunedStates = PruneEquivalentActiveStates(activeStates, diagnostics);
-        var winner = prunedStates[0];
-        for (int i = 1; i < prunedStates.Count; i++)
+        var scheduling = _alternativeScheduler.Run(activeStates, diagnostics);
+        var winner = scheduling.SelectedState;
+        if (winner is null)
         {
-            if (IsBetterActiveState(prunedStates[i], winner))
-            {
-                winner = prunedStates[i];
-            }
+            return null;
         }
 
         context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
@@ -1073,16 +1079,6 @@ public sealed class ParserEngine(ParserDefinition definition)
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
     }
 
-    private static bool IsBetterActiveState(ActiveParseState candidate, ActiveParseState current)
-    {
-        if (candidate.CurrentInputPosition != current.CurrentInputPosition)
-        {
-            return candidate.CurrentInputPosition > current.CurrentInputPosition;
-        }
-
-        return candidate.Alternative.Priority < current.Alternative.Priority;
-    }
-
     private static bool IsBetterBranch(ParseBranch candidate, ParseBranch current)
     {
         if (candidate.EndPosition != current.EndPosition)
@@ -1091,60 +1087,6 @@ public sealed class ParserEngine(ParserDefinition definition)
         }
 
         return candidate.Alternative.Priority < current.Alternative.Priority;
-    }
-
-    private List<ActiveParseState> PruneEquivalentActiveStates(
-        IReadOnlyList<ActiveParseState> states,
-        DiagnosticBag? diagnostics)
-    {
-        // Each shape-key bucket holds one representative per distinct semantic class.
-        // States with the same shape but different semantics (label/assoc/predicates) are
-        // kept as separate entries within the same bucket rather than being dropped.
-        var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
-        foreach (var state in states)
-        {
-            var key = state.ToBranchEquivalenceKey();
-            if (!groups.TryGetValue(key, out var group))
-            {
-                groups[key] = [state];
-                continue;
-            }
-
-            bool merged = false;
-            for (int i = 0; i < group.Count; i++)
-            {
-                if (HasDistinctSemantics(group[i].Alternative, state.Alternative))
-                {
-                    continue;
-                }
-
-                if (state.Alternative.Priority < group[i].Alternative.Priority)
-                {
-                    group[i] = state;
-                }
-
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.AmbiguousAlternativesPruned,
-                    state.PartialNode.Span.Position,
-                    state.PartialNode.Span.Length,
-                    state.Rule.Name,
-                    null,
-                    state.Rule.Name);
-
-                merged = true;
-                break;
-            }
-
-            if (!merged)
-            {
-                group.Add(state);
-            }
-        }
-
-        return groups.Values
-            .SelectMany(static g => g)
-            .OrderBy(static s => s.Alternative.Priority)
-            .ToList();
     }
 
     internal static bool HasDistinctSemantics(Alternative left, Alternative right)
@@ -1337,7 +1279,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 ParseNode? node;
                 if (item is RuleRef rr &&
                     string.Equals(rr.RuleName, ownerRule.Name, StringComparison.Ordinal) &&
-                    definition.AllRules.TryGetValue(rr.RuleName, out var recursiveRule))
+                    _definition.AllRules.TryGetValue(rr.RuleName, out var recursiveRule))
                 {
                     var minimumRightPrecedence = GetRightPrecedenceThreshold(associativity, precedenceLevel);
                     node = ParseRule(context, recursiveRule, minimumRightPrecedence, diagnostics);
