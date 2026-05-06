@@ -391,7 +391,7 @@ public sealed class ParserEngine
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         _caseInsensitive = IsCaseInsensitive(_definition);
-        _alternativeScheduler = new AlternativeScheduler(_stateRegistry);
+        _alternativeScheduler = new AlternativeScheduler();
     }
 
     /// <summary>
@@ -984,91 +984,38 @@ public sealed class ParserEngine
         int precedence,
         DiagnosticBag? diagnostics)
     {
-        var alternativeList = alternatives.OrderBy(a => a.Priority).ToList();
         var startPosition = context.Position;
         var startToken = context.Peek();
-        var activeStates = new List<ActiveParseState>();
-        var visitedStates = new HashSet<ParserStateKey>();
-
-        for (int index = 0; index < alternativeList.Count; index++)
-        {
-            var alt = alternativeList[index];
-            var stateKey = new ParserStateKey(rule.Name, startPosition, index, index, precedence);
-            // Registry state is currently preparatory for future active-state parsing.
-            // We keep recording here, but branch rejection remains driven by local state
-            // checks to avoid false positives across legitimate shared invocations.
-            _stateRegistry.TryEnterState(new ParseStateKey(
-                rule.Name,
-                startPosition,
-                index,
-                index,
-                precedence));
-            if (!visitedStates.Add(stateKey))
+        var scheduling = _alternativeScheduler.Run(
+            context,
+            alternatives,
+            rule,
+            precedence,
+            diagnostics,
+            checkPrecedence: CheckPrecedence,
+            tryParseAlternative: (alternative, alternativeIndex) => TryParseContent(context, alternative.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics),
+            registerVisitedState: stateKey =>
+            {
+                _stateRegistry.TryEnterState(new ParseStateKey(stateKey.RuleName, stateKey.InputPosition, stateKey.AlternativeIndex, stateKey.ElementIndex, stateKey.MinimumPrecedence));
+            },
+            onRepeatedState: (_, _, stateKey) =>
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.ParserStateCycleDetected,
-                    diagnosticSpan.Start,
-                    diagnosticSpan.Length,
-                    rule.Name,
-                    null);
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.ParserStateRejected,
-                    diagnosticSpan.Start,
-                    diagnosticSpan.Length,
-                    rule.Name,
-                    null,
-                    rule.Name,
-                    $"repeated state {stateKey}");
-                continue;
-            }
-
-            if (!CheckPrecedence(alt, precedence))
-            {
-                continue;
-            }
-
-            var savedPos = context.SavePosition();
-            var result = TryParseContent(context, alt.Content, rule, precedence, index, index, diagnostics);
-            if (result is null)
+                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateCycleDetected, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null);
+                diagnostics?.AddWithContext(ParserDiagnostics.ParserStateRejected, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name, $"repeated state {stateKey}");
+            },
+            onBacktracking: () =>
             {
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
                 diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
-                context.RestorePosition(savedPos);
-                continue;
-            }
+            });
 
-            var activeState = new ActiveParseState
-            {
-                Rule = rule,
-                Alternative = alt,
-                OriginInputPosition = startPosition,
-                CurrentInputPosition = context.Position,
-                AlternativeIndex = index,
-                Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
-                PartialNode = result,
-                EndPosition = null,
-                Status = ActiveParseStateStatus.Active,
-                ParentStateKey = null,
-                Depth = 0,
-                Continuation = null
-            }.Complete(context.Position);
-            activeStates.Add(activeState);
-            context.RestorePosition(savedPos);
-        }
-
-        if (activeStates.Count == 0)
+        if (scheduling.SelectedState is null)
         {
             return null;
         }
 
-        var scheduling = _alternativeScheduler.Run(activeStates, diagnostics);
         var winner = scheduling.SelectedState;
-        if (winner is null)
-        {
-            return null;
-        }
-
         context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
         if (winner.PartialNode is ParserNode parserNode && ReferenceEquals(parserNode.Rule, rule))
         {

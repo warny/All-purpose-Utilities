@@ -1,4 +1,5 @@
 using Utils.Parser.Diagnostics;
+using Utils.Parser.Model;
 
 namespace Utils.Parser.Runtime;
 
@@ -7,66 +8,128 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class AlternativeScheduler
 {
-    private readonly ParserStateRegistry _registry;
-
     /// <summary>
-    /// Initializes a scheduler bound to the parser state registry.
+    /// Drives alternative orchestration for a single alternation parse attempt.
     /// </summary>
-    /// <param name="registry">Shared registry used by the parser engine.</param>
-    public AlternativeScheduler(ParserStateRegistry registry)
-    {
-        _registry = registry;
-    }
-
-    /// <summary>
-    /// Schedules already evaluated alternative states, applies pruning, and selects the winning state.
-    /// </summary>
-    /// <param name="initialStates">Completed active states produced for alternatives.</param>
-    /// <param name="diagnostics">Optional diagnostic collector.</param>
-    /// <returns>Scheduling result with selected and categorized states.</returns>
     public AlternativeSchedulingResult Run(
-        IReadOnlyList<ActiveParseState> initialStates,
-        DiagnosticBag? diagnostics)
+        ParseContext context,
+        IEnumerable<Alternative> alternatives,
+        Rule rule,
+        int minimumPrecedence,
+        DiagnosticBag? diagnostics,
+        Func<Alternative, int, bool> checkPrecedence,
+        Func<Alternative, int, ParseNode?> tryParseAlternative,
+        Action<ParserStateKey> registerVisitedState,
+        Action<Alternative, int, ParserStateKey> onRepeatedState,
+        Action onBacktracking)
     {
-        var statesByKey = new Dictionary<ActiveParseStateKey, ActiveParseState>();
-        foreach (var state in initialStates)
+        var alternativeList = alternatives.OrderBy(static a => a.Priority).ToList();
+        var startPosition = context.Position;
+        var activeStates = new List<ActiveParseState>();
+        var failedStates = new List<ActiveParseState>();
+        var visitedStates = new HashSet<ParserStateKey>();
+
+        for (int index = 0; index < alternativeList.Count; index++)
         {
-            // Scheduler identity deduplicates exact same state identity only.
-            var key = state.ToStateKey(minimumPrecedence: 0);
-            if (!statesByKey.TryGetValue(key, out var existing) || IsBetterState(state, existing))
+            var alternative = alternativeList[index];
+            var stateKey = new ParserStateKey(rule.Name, startPosition, index, index, minimumPrecedence);
+            registerVisitedState(stateKey);
+
+            if (!visitedStates.Add(stateKey))
             {
-                statesByKey[key] = state;
+                onRepeatedState(alternative, index, stateKey);
+                continue;
+            }
+
+            if (!checkPrecedence(alternative, minimumPrecedence))
+            {
+                continue;
+            }
+
+            var savedPosition = context.SavePosition();
+            var parsed = tryParseAlternative(alternative, index);
+            if (parsed is null)
+            {
+                failedStates.Add(CreateState(rule, alternative, startPosition, context.Position, index, null, ActiveParseStateStatus.Failed));
+                onBacktracking();
+                context.RestorePosition(savedPosition);
+                continue;
+            }
+
+            activeStates.Add(CreateState(rule, alternative, startPosition, context.Position, index, parsed, ActiveParseStateStatus.Completed));
+            context.RestorePosition(savedPosition);
+        }
+
+        if (activeStates.Count == 0)
+        {
+            return new AlternativeSchedulingResult(null, [], failedStates, []);
+        }
+
+        var deduplicated = DeduplicateStates(activeStates, minimumPrecedence);
+        var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
+        var prunedSet = new HashSet<ActiveParseState>(pruned);
+        var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
+
+        ActiveParseState? winner = null;
+        foreach (var state in pruned)
+        {
+            if (winner is null || IsBetterState(state, winner))
+            {
+                winner = state;
             }
         }
 
-        var deduplicated = statesByKey.Values
+        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates);
+    }
+
+    /// <summary>
+    /// Creates an active parse state for alternative scheduling.
+    /// </summary>
+    private static ActiveParseState CreateState(
+        Rule rule,
+        Alternative alternative,
+        int originInputPosition,
+        int currentInputPosition,
+        int alternativeIndex,
+        ParseNode? parsedNode,
+        ActiveParseStateStatus status)
+    {
+        return new ActiveParseState
+        {
+            Rule = rule,
+            Alternative = alternative,
+            OriginInputPosition = originInputPosition,
+            CurrentInputPosition = currentInputPosition,
+            AlternativeIndex = alternativeIndex,
+            Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+            PartialNode = parsedNode ?? new ErrorNode(new SourceSpan(currentInputPosition, 0), "DEFAULT_MODE", "Alternative failed", rule),
+            EndPosition = status == ActiveParseStateStatus.Completed ? currentInputPosition : null,
+            Status = status,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        };
+    }
+
+    private static List<ActiveParseState> DeduplicateStates(IReadOnlyList<ActiveParseState> states, int minimumPrecedence)
+    {
+        var byIdentity = new Dictionary<ActiveParseStateKey, ActiveParseState>();
+        foreach (var state in states)
+        {
+            var key = state.ToStateKey(minimumPrecedence);
+            if (!byIdentity.TryGetValue(key, out var existing) || IsBetterState(state, existing))
+            {
+                byIdentity[key] = state;
+            }
+        }
+
+        return byIdentity.Values
             .OrderBy(static s => s.Alternative.Priority)
             .ThenBy(static s => s.AlternativeIndex)
             .ThenBy(static s => s.CurrentInputPosition)
             .ToList();
-
-        var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
-        var prunedSet = new HashSet<ActiveParseState>(pruned);
-        var prunedStates = deduplicated
-            .Where(s => !prunedSet.Contains(s))
-            .Select(static s => s.Prune())
-            .ToList();
-
-        ActiveParseState? selected = null;
-        foreach (var state in pruned)
-        {
-            if (selected is null || IsBetterState(state, selected))
-            {
-                selected = state;
-            }
-        }
-
-        return new AlternativeSchedulingResult(selected, pruned, [], prunedStates);
     }
 
-    /// <summary>
-    /// Compares two active states using parser-compatible deterministic tie-breaking.
-    /// </summary>
     private static bool IsBetterState(ActiveParseState candidate, ActiveParseState current)
     {
         if (candidate.CurrentInputPosition != current.CurrentInputPosition)
@@ -82,12 +145,7 @@ internal sealed class AlternativeScheduler
         return candidate.AlternativeIndex < current.AlternativeIndex;
     }
 
-    /// <summary>
-    /// Prunes states that are equivalent in parse shape while preserving semantically distinct alternatives.
-    /// </summary>
-    private static List<ActiveParseState> PruneEquivalentActiveStates(
-        IReadOnlyList<ActiveParseState> states,
-        DiagnosticBag? diagnostics)
+    private static List<ActiveParseState> PruneEquivalentActiveStates(IReadOnlyList<ActiveParseState> states, DiagnosticBag? diagnostics)
     {
         var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
         foreach (var state in states)
@@ -112,14 +170,7 @@ internal sealed class AlternativeScheduler
                     group[i] = state;
                 }
 
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.AmbiguousAlternativesPruned,
-                    state.PartialNode.Span.Position,
-                    state.PartialNode.Span.Length,
-                    state.Rule.Name,
-                    null,
-                    state.Rule.Name);
-
+                diagnostics?.AddWithContext(ParserDiagnostics.AmbiguousAlternativesPruned, state.PartialNode.Span.Position, state.PartialNode.Span.Length, state.Rule.Name, null, state.Rule.Name);
                 merged = true;
                 break;
             }
@@ -130,8 +181,7 @@ internal sealed class AlternativeScheduler
             }
         }
 
-        return groups.Values
-            .SelectMany(static g => g)
+        return groups.Values.SelectMany(static g => g)
             .OrderBy(static s => s.Alternative.Priority)
             .ThenBy(static s => s.AlternativeIndex)
             .ThenByDescending(static s => s.CurrentInputPosition)
@@ -139,19 +189,9 @@ internal sealed class AlternativeScheduler
     }
 }
 
-/// <summary>
-/// Represents the output of a deterministic alternative scheduling pass.
-/// </summary>
 internal sealed class AlternativeSchedulingResult
 {
-    /// <summary>
-    /// Initializes a new scheduling result.
-    /// </summary>
-    public AlternativeSchedulingResult(
-        ActiveParseState? selectedState,
-        IReadOnlyList<ActiveParseState> completedStates,
-        IReadOnlyList<ActiveParseState> failedStates,
-        IReadOnlyList<ActiveParseState> prunedStates)
+    public AlternativeSchedulingResult(ActiveParseState? selectedState, IReadOnlyList<ActiveParseState> completedStates, IReadOnlyList<ActiveParseState> failedStates, IReadOnlyList<ActiveParseState> prunedStates)
     {
         SelectedState = selectedState;
         CompletedStates = completedStates;
