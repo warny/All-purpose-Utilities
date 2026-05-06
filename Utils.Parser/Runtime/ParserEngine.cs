@@ -154,18 +154,6 @@ internal sealed record ParseBranch
     public bool IsComplete { get; init; }
 }
 
-internal sealed record BranchKey
-{
-    public required string RuleName { get; init; }
-
-    public required int InputPosition { get; init; }
-
-    public required string CursorKey { get; init; }
-
-    public required string ParentContextKey { get; init; }
-}
-
-
 internal readonly record struct ActiveParseStateKey(
     string RuleName,
     int OriginInputPosition,
@@ -176,6 +164,14 @@ internal readonly record struct ActiveParseStateKey(
     string CursorKind,
     int MinimumPrecedence,
     ContinuationKey? Continuation);
+
+internal readonly record struct ActiveParseBranchEquivalenceKey(
+    string RuleName,
+    int OriginInputPosition,
+    int CurrentOrEndPosition,
+    string CursorKind,
+    int CursorIndex,
+    string ParentSemanticContextKey);
 
 internal enum ActiveParseStateStatus
 {
@@ -1040,7 +1036,7 @@ public sealed class ParserEngine(ParserDefinition definition)
             return null;
         }
 
-        var prunedStates = PruneEquivalentActiveStates(activeStates, diagnostics, precedence);
+        var prunedStates = PruneEquivalentActiveStates(activeStates, diagnostics);
         var winner = prunedStates[0];
         for (int i = 1; i < prunedStates.Count; i++)
         {
@@ -1080,58 +1076,20 @@ public sealed class ParserEngine(ParserDefinition definition)
         return candidate.Alternative.Priority < current.Alternative.Priority;
     }
 
-    private List<ParseBranch> PruneEquivalentBranches(
-        IReadOnlyList<ParseBranch> branches,
-        DiagnosticBag? diagnostics)
-    {
-        var map = new Dictionary<BranchKey, ParseBranch>();
-        foreach (var branch in branches)
-        {
-            var key = new BranchKey
-            {
-                RuleName = branch.Rule.Name,
-                InputPosition = branch.InputPosition,
-                CursorKey = $"{branch.Cursor.Kind}:{branch.Cursor.Index}:{branch.EndPosition}",
-                ParentContextKey = branch.Alternative.Label ?? string.Empty
-            };
-
-            if (!map.TryGetValue(key, out var existing))
-            {
-                map[key] = branch;
-                continue;
-            }
-
-            if (HasDistinctSemantics(existing.Alternative, branch.Alternative))
-            {
-                continue;
-            }
-
-            if (branch.Alternative.Priority < existing.Alternative.Priority)
-            {
-                map[key] = branch;
-            }
-
-            diagnostics?.AddWithContext(
-                ParserDiagnostics.AmbiguousAlternativesPruned,
-                branch.PartialNode.Span.Position,
-                branch.PartialNode.Span.Length,
-                branch.Rule.Name,
-                null,
-                branch.Rule.Name);
-        }
-
-        return map.Values.OrderBy(b => b.Alternative.Priority).ToList();
-    }
-
     private List<ActiveParseState> PruneEquivalentActiveStates(
         IReadOnlyList<ActiveParseState> states,
-        DiagnosticBag? diagnostics,
-        int precedence)
+        DiagnosticBag? diagnostics)
     {
-        var map = new Dictionary<ActiveParseStateKey, ActiveParseState>();
+        var map = new Dictionary<ActiveParseBranchEquivalenceKey, ActiveParseState>();
         foreach (var state in states)
         {
-            var key = state.ToStateKey(precedence);
+            var key = new ActiveParseBranchEquivalenceKey(
+                state.Rule.Name,
+                state.OriginInputPosition,
+                state.EndPosition ?? state.CurrentInputPosition,
+                state.Cursor.Kind,
+                state.Cursor.Index,
+                state.Alternative.Label ?? string.Empty);
             if (!map.TryGetValue(key, out var existing))
             {
                 map[key] = state;

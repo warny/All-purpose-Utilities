@@ -156,6 +156,26 @@ public class ParserEngineRegistryRegressionTests
     }
 
     /// <summary>
+    /// Ensures equivalent ambiguous alternatives are still pruned and diagnostics remain emitted.
+    /// </summary>
+    [TestMethod]
+    public void EquivalentAmbiguousAlternatives_ArePruned_WithDiagnostic()
+    {
+        const string grammar = """
+            grammar G;
+            root : ('a' | 'a') EOF ;
+            EOF : '<EOF>' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics(grammar, "a <EOF>", diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+    }
+
+    /// <summary>
     /// Ensures observable behavior is preserved when the same parser rule is invoked
     /// from multiple alternatives at the same input position.
     /// </summary>
