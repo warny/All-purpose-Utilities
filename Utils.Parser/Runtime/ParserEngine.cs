@@ -30,6 +30,7 @@ public sealed class ParserEngine
     private readonly bool _caseInsensitive;
     private readonly ParserStateRegistry _stateRegistry = new();
     private readonly AlternativeScheduler _alternativeScheduler;
+    private readonly ParserLookaheadCache _lookaheadCache = new();
 
     public ParserEngine(ParserDefinition definition)
     {
@@ -60,6 +61,7 @@ public sealed class ParserEngine
 
         _activeRuleFrames.Clear();
         _stateRegistry.Clear();
+        _lookaheadCache.Clear();
         var context = new ParseContext(tokenList);
         var result = ParseRule(context, root, precedence: 0, diagnostics);
 
@@ -640,15 +642,31 @@ public sealed class ParserEngine
                     return null;
                 }
 
+                var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence);
+                var token = context.Peek();
+                if (_lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead) && !cachedLookahead.CanStart)
+                {
+                    var diagnosticSpan = ResolveDiagnosticSpan(context);
+                    diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
+                    return null;
+                }
+
                 var savedPosition = context.SavePosition();
                 var result = TryParseContent(context, alternative.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics);
                 if (result is null)
                 {
+                    if (!ContainsPredicateOrAction(alternative.Content))
+                    {
+                        _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(false, token?.RuleName, token?.Text));
+                    }
+
                     var diagnosticSpan = ResolveDiagnosticSpan(context);
                     diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
                     context.RestorePosition(savedPosition);
                     return null;
                 }
+
+                _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(true, token?.RuleName, token?.Text));
 
                 var state = new ActiveParseState
                 {
