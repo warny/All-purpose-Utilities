@@ -186,6 +186,48 @@ public class ParserEngineRegistryRegressionTests
         Assert.IsFalse(diagnosticsY.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
     }
 
+    /// <summary>
+    /// Ensures deterministic failures are memoized per invocation key and not re-evaluated for each backtracked alternative.
+    /// </summary>
+    [TestMethod]
+    public void FailedInvocation_IsMemoizedAcrossBacktrackedAlternatives()
+    {
+        const string grammar = """
+            grammar FailureMemoRegression;
+            start : alt EOF ;
+            alt
+                : prefix failing suffix1
+                | prefix failing suffix2
+                | prefix failing suffix3
+                | prefix ok
+                ;
+            prefix : 'a' ;
+            failing : 'x' 'y' 'z' ;
+            suffix1 : '1' ;
+            suffix2 : '2' ;
+            suffix3 : '3' ;
+            ok : 'b' ;
+            EOF : '<EOF>' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics(grammar, "a b <EOF>", diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.AreEqual(1, CountTokenText(tree, "b"));
+
+        var failingMemoMisses = diagnostics.Count(d =>
+            d.Code == ParserDiagnostics.ParseMemoMiss.Code
+            && d.RuleName == "failing");
+        Assert.AreEqual(1, failingMemoMisses, "failing rule should miss memo only once for identical invocation key.");
+
+        var failingMemoHits = diagnostics.Count(d =>
+            d.Code == ParserDiagnostics.ParseMemoHit.Code
+            && d.RuleName == "failing");
+        Assert.IsTrue(failingMemoHits >= 2, "backtracked alternatives should reuse memoized failure.");
+    }
+
     private static ParseNode ParseWithDiagnostics(string grammarText, string input, DiagnosticBag diagnostics)
     {
         var definition = Antlr4GrammarConverter.Parse(grammarText, diagnostics);

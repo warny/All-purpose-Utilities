@@ -121,6 +121,32 @@ internal sealed class ParserStateRegistry
         result = success;
         return true;
     }
+
+    /// <summary>Determines whether an invocation has any reusable deterministic completion result (success or failure).</summary>
+    public bool TryGetReusableResult(RuleInvocationKey invocation, out ParserRuleResult result)
+    {
+        result = default;
+        if (!_completedResults.TryGetValue(invocation, out var list) || list.Count == 0)
+        {
+            return false;
+        }
+
+        var success = list.FirstOrDefault(static item => !item.IsFailure && item.Node is not null);
+        if (success.Node is not null)
+        {
+            result = success;
+            return true;
+        }
+
+        var failure = list.FirstOrDefault(static item => item.IsFailure);
+        if (!failure.IsFailure)
+        {
+            return false;
+        }
+
+        result = failure;
+        return true;
+    }
 }
 
 internal sealed record RuleContentCursor
@@ -256,11 +282,11 @@ public sealed class ParserEngine(ParserDefinition definition)
         // This is sufficient for current parser semantics because semantic predicates/actions are not executed.
         // TODO: revisit key shape when semantic state, mode-sensitive parser state, or predicate execution is enabled.
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
-        if (_stateRegistry.TryGetReusableSuccess(invocationKey, out var reusableSuccess))
+        if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
         {
-            context.RestorePosition(reusableSuccess.EndPosition);
+            context.RestorePosition(reusableResult.EndPosition);
             diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
-            return reusableSuccess.Node;
+            return reusableResult.IsFailure ? null : reusableResult.Node;
         }
         diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
         var frameKey = new ParserFrameKey(rule.Name, context.Position);
