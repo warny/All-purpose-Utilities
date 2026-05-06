@@ -165,6 +165,14 @@ internal sealed record BranchKey
     public required string ParentContextKey { get; init; }
 }
 
+
+internal readonly record struct ActiveParseStateKey(
+    string RuleName,
+    int InputPosition,
+    int AlternativePriority,
+    int CursorIndex,
+    int MinimumPrecedence);
+
 /// <summary>
 /// Represents an active parser state/branch candidate during alternative exploration.
 /// This data container is intentionally immutable and infrastructure-only.
@@ -192,6 +200,21 @@ internal sealed record ActiveParseState
 
     /// <summary>Gets a value indicating whether this state completed successfully.</summary>
     public bool IsComplete { get; init; }
+
+    /// <summary>
+    /// Creates a deterministic identity key for registry/scheduling-oriented state comparisons.
+    /// </summary>
+    /// <param name="minimumPrecedence">Minimum precedence associated with this active state evaluation.</param>
+    /// <returns>A stable identity key for this active parse state.</returns>
+    public ActiveParseStateKey ToStateKey(int minimumPrecedence)
+    {
+        return new ActiveParseStateKey(
+            Rule.Name,
+            InputPosition,
+            Alternative.Priority,
+            Cursor.Index,
+            minimumPrecedence);
+    }
 
     /// <summary>
     /// Creates an active state from a completed branch.
@@ -902,7 +925,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 continue;
             }
 
-            activeStates.Add(new ActiveParseState
+            var activeState = new ActiveParseState
             {
                 Rule = rule,
                 Alternative = alt,
@@ -911,7 +934,9 @@ public sealed class ParserEngine(ParserDefinition definition)
                 PartialNode = result,
                 EndPosition = context.Position,
                 IsComplete = true
-            });
+            };
+            _ = activeState.ToStateKey(precedence);
+            activeStates.Add(activeState);
             context.RestorePosition(savedPos);
         }
 
