@@ -166,6 +166,73 @@ internal sealed record BranchKey
 }
 
 /// <summary>
+/// Represents an active parser state/branch candidate during alternative exploration.
+/// This data container is intentionally immutable and infrastructure-only.
+/// It prepares explicit scheduling of parser work without changing current execution semantics.
+/// </summary>
+internal sealed record ActiveParseState
+{
+    /// <summary>Gets the parser rule that owns the active state.</summary>
+    public required Rule Rule { get; init; }
+
+    /// <summary>Gets the alternative currently represented by this state.</summary>
+    public required Alternative Alternative { get; init; }
+
+    /// <summary>Gets the input position at which this state started.</summary>
+    public required int InputPosition { get; init; }
+
+    /// <summary>Gets the logical cursor within the rule content traversal.</summary>
+    public required RuleContentCursor Cursor { get; init; }
+
+    /// <summary>Gets the partially built parse node for this state.</summary>
+    public required ParseNode PartialNode { get; init; }
+
+    /// <summary>Gets the input end position reached by this state.</summary>
+    public required int EndPosition { get; init; }
+
+    /// <summary>Gets a value indicating whether this state completed successfully.</summary>
+    public bool IsComplete { get; init; }
+
+    /// <summary>
+    /// Creates an active state from a completed branch.
+    /// </summary>
+    /// <param name="branch">Completed branch produced by the current runtime.</param>
+    /// <returns>A normalized active parser state.</returns>
+    public static ActiveParseState FromBranch(ParseBranch branch)
+    {
+        return new ActiveParseState
+        {
+            Rule = branch.Rule,
+            Alternative = branch.Alternative,
+            InputPosition = branch.InputPosition,
+            Cursor = branch.Cursor,
+            PartialNode = branch.PartialNode,
+            EndPosition = branch.EndPosition,
+            IsComplete = branch.IsComplete
+        };
+    }
+
+    /// <summary>
+    /// Converts this active state back to the legacy branch representation.
+    /// </summary>
+    /// <returns>A <see cref="ParseBranch"/> with equivalent data.</returns>
+    public ParseBranch ToBranch()
+    {
+        return new ParseBranch
+        {
+            Rule = Rule,
+            Alternative = Alternative,
+            InputPosition = InputPosition,
+            Cursor = Cursor,
+            PartialNode = PartialNode,
+            EndPosition = EndPosition,
+            IsComplete = IsComplete
+        };
+    }
+}
+
+
+/// <summary>
 /// Builds a parse tree from a flat token list using the rules in a
 /// <see cref="ParserDefinition"/>.
 /// <para>
@@ -784,7 +851,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         var alternativeList = alternatives.OrderBy(a => a.Priority).ToList();
         var startPosition = context.Position;
         var startToken = context.Peek();
-        var survivingBranches = new List<ParseBranch>();
+        var activeStates = new List<ActiveParseState>();
         var visitedStates = new HashSet<ParserStateKey>();
 
         for (int index = 0; index < alternativeList.Count; index++)
@@ -835,7 +902,7 @@ public sealed class ParserEngine(ParserDefinition definition)
                 continue;
             }
 
-            survivingBranches.Add(new ParseBranch
+            activeStates.Add(new ActiveParseState
             {
                 Rule = rule,
                 Alternative = alt,
@@ -848,18 +915,20 @@ public sealed class ParserEngine(ParserDefinition definition)
             context.RestorePosition(savedPos);
         }
 
-        if (survivingBranches.Count == 0)
+        if (activeStates.Count == 0)
         {
             return null;
         }
 
-        var pruned = PruneEquivalentBranches(survivingBranches, diagnostics);
-        var winner = pruned[0];
-        for (int i = 1; i < pruned.Count; i++)
+        var prunedStates = PruneEquivalentBranches([.. activeStates.Select(static state => state.ToBranch())], diagnostics)
+            .Select(static branch => ActiveParseState.FromBranch(branch))
+            .ToList();
+        var winner = prunedStates[0];
+        for (int i = 1; i < prunedStates.Count; i++)
         {
-            if (IsBetterBranch(pruned[i], winner))
+            if (IsBetterBranch(prunedStates[i].ToBranch(), winner.ToBranch()))
             {
-                winner = pruned[i];
+                winner = prunedStates[i];
             }
         }
 

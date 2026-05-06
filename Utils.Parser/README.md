@@ -56,12 +56,25 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 | `RuleContent` | Abstract base for grammar elements: `LiteralMatch`, `RangeMatch`, `CharSetMatch`, `Sequence`, `Alternation`, `Quantifier`, `RuleRef`, `Negation`, `LexerCommand`, … |
 | `LexerEngine` | Tokenizes a character stream using lexer rules (maximal-munch, lexer modes, `skip` / `more` / `pushMode` / `popMode`). |
 | `ParserEngine` | Builds a parse tree from a token list using parser rules (backtracking recursive-descent, left-recursion detection, precedence predicates). |
+| `ActiveParseState` *(internal)* | Infrastructure record representing an explicit active parser branch/state candidate. It currently preserves existing behavior while preparing future explicit scheduling work. |
 | `ParseTreeNavigator` | Fluent, index- and name-based navigation over a `ParseNode` tree. |
 | `ParseTreeCompiler<TContext,TResult>` | Generic depth-first compiler: descent handlers enrich context top-down; ascent handlers fold results bottom-up. |
 | `Antlr4GrammarConverter` | Compiles a `.g4` source string into a `ParserDefinition` at runtime. |
 | `RuleResolver` | Validates and enriches a `ParserDefinition` (rule-kind inference, reference validation). |
 
 ---
+
+
+### Parser runtime architecture notes
+
+`ParserEngine` keeps the current recursive/backtracking execution model, and introduces
+an internal `ActiveParseState` normalization layer for branch candidates.
+
+- This is **infrastructural only**: no public API changes.
+- Current diagnostics and parse-tree behavior remain unchanged.
+- The abstraction is used to prepare future explicit scheduling features (shared
+  alternative evaluation, continuation-driven orchestration, pruning strategies),
+  without enabling parallel parsing at this stage.
 
 ## Quick start
 
