@@ -112,6 +112,36 @@ public class ParserLookaheadCacheTests
         Assert.IsFalse(cache.TryGet(second, out _));
     }
 
+    [TestMethod]
+    public void DiagnosticsProvided_NegativeLookaheadDoesNotSkipRuleDiagnostics()
+    {
+        const string grammar = """
+            grammar G;
+            root : failing 'X'
+                 | failing 'Y'
+                 | ok
+                 ;
+            failing : 'z' ;
+            ok : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var tree = Parse(grammar, "a", out var diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.AreEqual(1, CountTokenText(tree, "a"));
+
+        var failingMisses = diagnostics.Count(d =>
+            d.Code == ParserDiagnostics.ParseMemoMiss.Code
+            && d.RuleName == "failing");
+        var failingHits = diagnostics.Count(d =>
+            d.Code == ParserDiagnostics.ParseMemoHit.Code
+            && d.RuleName == "failing");
+
+        Assert.AreEqual(1, failingMisses);
+        Assert.IsTrue(failingHits >= 1);
+    }
+
     private static ParseNode Parse(string grammarText, string input, out DiagnosticBag diagnostics)
     {
         diagnostics = new DiagnosticBag();

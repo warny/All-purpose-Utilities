@@ -650,10 +650,10 @@ public sealed class ParserEngine
 
                 var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
                 var token = context.Peek();
-                if (_lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead) && !cachedLookahead.CanStart)
+                if (diagnostics is null
+                    && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
+                    && !cachedLookahead.CanStart)
                 {
-                    var diagnosticSpan = ResolveDiagnosticSpan(context);
-                    diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
                     return null;
                 }
 
