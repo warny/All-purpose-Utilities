@@ -4,362 +4,6 @@ using Utils.Parser.Diagnostics;
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Key used for O(1) detection of left-recursive cycles in the parser engine.
-/// A cycle is detected when the same rule is re-entered at the same token-list position.
-/// </summary>
-internal readonly record struct ParserFrameKey(string RuleName, int InputPosition);
-internal readonly record struct ParseStateKey(
-    string RuleName,
-    int InputPosition,
-    int AlternativeIndex,
-    int ElementIndex,
-    int MinimumPrecedence);
-internal readonly record struct RuleInvocationKey(
-    string RuleName,
-    int OriginPosition,
-    int MinimumPrecedence);
-internal readonly record struct ContinuationKey(
-    string CallerRuleName,
-    int CallerAlternativeIndex,
-    int CallerElementIndex,
-    int ResumePosition,
-    int MinimumPrecedence);
-internal readonly record struct ParserStateKey(
-    string RuleName,
-    int InputPosition,
-    int AlternativeIndex,
-    int ElementIndex,
-    int MinimumPrecedence);
-
-internal readonly record struct ParserRuleResult(ParseNode? Node, int EndPosition, bool IsFailure);
-
-/// <summary>
-/// Stores parser-state tracking, shared rule invocation completions, and continuation metadata.
-/// This registry is currently authoritative for completed invocation tracking and safe reuse lookup.
-/// It is preparatory for future path scheduling work, but it is not yet a full branch scheduler.
-/// </summary>
-internal sealed class ParserStateRegistry
-{
-    private readonly HashSet<ParserStateKey> _visitedStates = [];
-    private readonly Dictionary<RuleInvocationKey, HashSet<ContinuationKey>> _continuations = [];
-    private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
-
-    /// <summary>Resets all registry state for a new parse.</summary>
-    public void Clear()
-    {
-        _visitedStates.Clear();
-        _continuations.Clear();
-        _completedResults.Clear();
-    }
-
-    /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>
-    public bool TryEnterState(ParserStateKey key) => _visitedStates.Add(key);
-
-    /// <summary>Maps a parse-level state key into the engine-level parser state space.</summary>
-    public bool TryEnterState(ParseStateKey key) => TryEnterState(
-        new ParserStateKey(key.RuleName, key.InputPosition, key.AlternativeIndex, key.ElementIndex, key.MinimumPrecedence));
-
-    /// <summary>Adds a continuation for a shared rule invocation.</summary>
-    public bool AddContinuation(RuleInvocationKey invocation, ContinuationKey continuation)
-    {
-        if (!_continuations.TryGetValue(invocation, out var set))
-        {
-            set = [];
-            _continuations[invocation] = set;
-        }
-
-        return set.Add(continuation);
-    }
-
-    /// <summary>Adds a completed result for a shared rule invocation.</summary>
-    public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result)
-    {
-        if (!_completedResults.TryGetValue(invocation, out var list))
-        {
-            list = [];
-            _completedResults[invocation] = list;
-        }
-
-        if (list.Any(existing => existing.EndPosition == result.EndPosition
-            && existing.IsFailure == result.IsFailure
-            && ReferenceEquals(existing.Node, result.Node)))
-        {
-            return false;
-        }
-
-        list.Add(result);
-        return true;
-    }
-
-    /// <summary>Gets continuations previously registered for an invocation.</summary>
-    public IReadOnlyList<ContinuationKey> GetContinuations(RuleInvocationKey invocation)
-    {
-        return _continuations.TryGetValue(invocation, out var set) ? [.. set] : [];
-    }
-
-    /// <summary>Gets completed results previously registered for an invocation.</summary>
-    public IReadOnlyList<ParserRuleResult> GetCompletedResults(RuleInvocationKey invocation)
-    {
-        return _completedResults.TryGetValue(invocation, out var list) ? list : [];
-    }
-
-    /// <summary>Determines whether an invocation has any reusable deterministic completion result (success or failure).</summary>
-    public bool TryGetReusableResult(RuleInvocationKey invocation, out ParserRuleResult result)
-    {
-        result = default;
-        if (!_completedResults.TryGetValue(invocation, out var list) || list.Count == 0)
-        {
-            return false;
-        }
-
-        var success = list.FirstOrDefault(static item => !item.IsFailure && item.Node is not null);
-        if (success.Node is not null)
-        {
-            result = success;
-            return true;
-        }
-
-        var failure = list.FirstOrDefault(static item => item.IsFailure);
-        if (!failure.IsFailure)
-        {
-            return false;
-        }
-
-        result = failure;
-        return true;
-    }
-}
-
-internal sealed record RuleContentCursor
-{
-    public required int Index { get; init; }
-
-    public required string Kind { get; init; }
-}
-
-internal sealed record ParseBranch
-{
-    public required Rule Rule { get; init; }
-
-    public required Alternative Alternative { get; init; }
-
-    public required int InputPosition { get; init; }
-
-    public required RuleContentCursor Cursor { get; init; }
-
-    public required ParseNode PartialNode { get; init; }
-
-    public required int EndPosition { get; init; }
-
-    public bool IsComplete { get; init; }
-}
-
-internal readonly record struct ActiveParseStateKey(
-    string RuleName,
-    int OriginInputPosition,
-    int CurrentInputPosition,
-    int AlternativeIndex,
-    int AlternativePriority,
-    int CursorIndex,
-    string CursorKind,
-    int MinimumPrecedence,
-    ContinuationKey? Continuation);
-
-internal readonly record struct ActiveParseBranchEquivalenceKey(
-    string RuleName,
-    int OriginInputPosition,
-    int CurrentOrEndPosition,
-    string CursorKind,
-    int CursorIndex);
-
-internal enum ActiveParseStateStatus
-{
-    Active,
-    Completed,
-    Failed,
-    Pruned
-}
-
-/// <summary>
-/// Represents an active parser state/branch candidate during alternative exploration.
-/// This data container is intentionally immutable and infrastructure-only.
-/// It prepares explicit scheduling of parser work without changing current execution semantics.
-/// </summary>
-internal sealed record ActiveParseState
-{
-    /// <summary>Gets the parser rule that owns the active state.</summary>
-    public required Rule Rule { get; init; }
-
-    /// <summary>Gets the alternative currently represented by this state.</summary>
-    public required Alternative Alternative { get; init; }
-
-    /// <summary>Gets the input position at which this state started.</summary>
-    public required int OriginInputPosition { get; init; }
-
-    /// <summary>Gets the current input position reached while evaluating this state.</summary>
-    public required int CurrentInputPosition { get; init; }
-
-    /// <summary>Gets the alternative index within ordered evaluation.</summary>
-    public required int AlternativeIndex { get; init; }
-
-    /// <summary>Gets the logical cursor within the rule content traversal.</summary>
-    public required RuleContentCursor Cursor { get; init; }
-
-    /// <summary>Gets the partially built parse node for this state.</summary>
-    public required ParseNode PartialNode { get; init; }
-
-    /// <summary>Gets the input end position reached by this state when completed.</summary>
-    public int? EndPosition { get; init; }
-
-    /// <summary>Gets the current lifecycle status of this active parse state.</summary>
-    public ActiveParseStateStatus Status { get; init; }
-
-    /// <summary>Gets the parent state key for lineage tracking, when available.</summary>
-    public ActiveParseStateKey? ParentStateKey { get; init; }
-
-    /// <summary>Gets the depth of this branch in lineage tracking.</summary>
-    public int Depth { get; init; }
-
-    /// <summary>Gets the continuation identity associated with this state, when known.</summary>
-    public ContinuationKey? Continuation { get; init; }
-
-    /// <summary>
-    /// Creates a deterministic identity key for registry/scheduling-oriented state comparisons.
-    /// Includes scheduler-specific fields (alternative index, priority, continuation) that must
-    /// NOT be used for semantic-equivalence pruning.
-    /// </summary>
-    /// <param name="minimumPrecedence">Minimum precedence associated with this active state evaluation.</param>
-    /// <returns>A stable identity key for this active parse state.</returns>
-    public ActiveParseStateKey ToStateKey(int minimumPrecedence)
-    {
-        return new ActiveParseStateKey(
-            Rule.Name,
-            OriginInputPosition,
-            CurrentInputPosition,
-            AlternativeIndex,
-            Alternative.Priority,
-            Cursor.Index,
-            Cursor.Kind,
-            minimumPrecedence,
-            Continuation);
-    }
-
-    /// <summary>
-    /// Creates a semantic equivalence key used exclusively for ambiguity pruning.
-    /// Excludes scheduler-identity fields (alternative index, priority, continuation) so that
-    /// two alternatives reaching the same parser position are considered equivalent regardless
-    /// of which alternative produced them.
-    /// </summary>
-    /// <returns>A key that identifies semantically equivalent active parse states.</returns>
-    public ActiveParseBranchEquivalenceKey ToBranchEquivalenceKey()
-    {
-        return new ActiveParseBranchEquivalenceKey(
-            Rule.Name,
-            OriginInputPosition,
-            EndPosition ?? CurrentInputPosition,
-            Cursor.Kind,
-            Cursor.Index);
-    }
-
-    /// <summary>Creates a new state marked as completed.</summary>
-    public ActiveParseState Complete(int endPosition)
-    {
-        return this with { Status = ActiveParseStateStatus.Completed, CurrentInputPosition = endPosition, EndPosition = endPosition };
-    }
-
-    /// <summary>Creates a new state marked as failed.</summary>
-    public ActiveParseState Fail()
-    {
-        return this with { Status = ActiveParseStateStatus.Failed, EndPosition = null };
-    }
-
-    /// <summary>Creates a new state marked as pruned.</summary>
-    public ActiveParseState Prune()
-    {
-        return this with { Status = ActiveParseStateStatus.Pruned };
-    }
-
-    /// <summary>Creates a new state with an attached continuation identity.</summary>
-    public ActiveParseState WithContinuation(ContinuationKey continuation)
-    {
-        return this with { Continuation = continuation };
-    }
-
-    /// <summary>Creates a new state advanced to a new cursor and input position.</summary>
-    public ActiveParseState Advance(int currentInputPosition, RuleContentCursor cursor)
-    {
-        return this with { CurrentInputPosition = currentInputPosition, Cursor = cursor };
-    }
-
-    /// <summary>Creates a new state with explicit lineage metadata.</summary>
-    public ActiveParseState WithLineage(ActiveParseStateKey? parentStateKey, int depth)
-    {
-        return this with { ParentStateKey = parentStateKey, Depth = depth };
-    }
-
-    /// <summary>Creates a parser-state key projection for visited-state integration.</summary>
-    public ParserStateKey ToParserStateKey(int minimumPrecedence)
-    {
-        return new ParserStateKey(Rule.Name, CurrentInputPosition, AlternativeIndex, Cursor.Index, minimumPrecedence);
-    }
-
-    /// <summary>Creates a rule invocation projection for completion registry integration.</summary>
-    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence)
-    {
-        return new RuleInvocationKey(Rule.Name, OriginInputPosition, minimumPrecedence);
-    }
-
-    /// <summary>Creates a continuation key projection for future resumable scheduling.</summary>
-    public ContinuationKey ToContinuationKey(int resumePosition, int minimumPrecedence)
-    {
-        return new ContinuationKey(Rule.Name, AlternativeIndex, Cursor.Index, resumePosition, minimumPrecedence);
-    }
-
-    /// <summary>
-    /// Creates an active state from a completed branch.
-    /// </summary>
-    /// <param name="branch">Completed branch produced by the current runtime.</param>
-    /// <returns>A normalized active parser state.</returns>
-    public static ActiveParseState FromBranch(ParseBranch branch)
-    {
-        return new ActiveParseState
-        {
-            Rule = branch.Rule,
-            Alternative = branch.Alternative,
-            OriginInputPosition = branch.InputPosition,
-            CurrentInputPosition = branch.EndPosition,
-            AlternativeIndex = -1,
-            Cursor = branch.Cursor,
-            PartialNode = branch.PartialNode,
-            EndPosition = branch.EndPosition,
-            Status = branch.IsComplete ? ActiveParseStateStatus.Completed : ActiveParseStateStatus.Failed,
-            ParentStateKey = null,
-            Depth = 0,
-            Continuation = null
-        };
-    }
-
-    /// <summary>
-    /// Converts this active state back to the legacy branch representation.
-    /// </summary>
-    /// <returns>A <see cref="ParseBranch"/> with equivalent data.</returns>
-    public ParseBranch ToBranch()
-    {
-        return new ParseBranch
-        {
-            Rule = Rule,
-            Alternative = Alternative,
-            InputPosition = OriginInputPosition,
-            Cursor = Cursor,
-            PartialNode = PartialNode,
-            EndPosition = EndPosition ?? CurrentInputPosition,
-            IsComplete = Status == ActiveParseStateStatus.Completed
-        };
-    }
-}
-
-
-/// <summary>
 /// Builds a parse tree from a flat token list using the rules in a
 /// <see cref="ParserDefinition"/>.
 /// <para>
@@ -495,7 +139,7 @@ public sealed class ParserEngine
             }
             else
             {
-                parsed = TryParseAlternativesParallel(context, rule.Content.Alternatives, rule, precedence, diagnostics);
+                parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics);
             }
 
             _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null));
@@ -519,7 +163,7 @@ public sealed class ParserEngine
         int minimumPrecedence,
         DiagnosticBag? diagnostics)
     {
-        var seed = TryParseAlternativesParallel(
+        var seed = TryParseScheduledAlternatives(
             context,
             info.BaseAlternatives,
             info.Rule,
@@ -595,7 +239,7 @@ public sealed class ParserEngine
             // Registry state is currently preparatory for future active-state parsing.
             // We keep recording here, but branch rejection remains driven by local state
             // checks to avoid false positives across legitimate shared invocations.
-            _stateRegistry.TryEnterState(new ParseStateKey(
+            _stateRegistry.TryEnterState(new ParserStateKey(
                 info.Rule.Name,
                 startPosition,
                 index,
@@ -921,7 +565,7 @@ public sealed class ParserEngine
                 alternativeIndex,
                 itemIndex,
                 minimumPrecedence);
-            var parseStateKey = new ParseStateKey(
+            var parseStateKey = new ParserStateKey(
                 rule.Name,
                 itemStartPosition,
                 alternativeIndex,
@@ -974,10 +618,10 @@ public sealed class ParserEngine
         int precedence = 0,
         DiagnosticBag? diagnostics = null)
     {
-        return TryParseAlternativesParallel(context, alternation.Alternatives, rule, precedence, diagnostics);
+        return TryParseScheduledAlternatives(context, alternation.Alternatives, rule, precedence, diagnostics);
     }
 
-    private ParseNode? TryParseAlternativesParallel(
+    private ParseNode? TryParseScheduledAlternatives(
         ParseContext context,
         IEnumerable<Alternative> alternatives,
         Rule rule,
@@ -995,7 +639,7 @@ public sealed class ParserEngine
             parseAlternative: (alternative, alternativeIndex) =>
             {
                 var stateKey = new ParserStateKey(rule.Name, startPosition, alternativeIndex, alternativeIndex, precedence);
-                _stateRegistry.TryEnterState(new ParseStateKey(stateKey.RuleName, stateKey.InputPosition, stateKey.AlternativeIndex, stateKey.ElementIndex, stateKey.MinimumPrecedence));
+                _stateRegistry.TryEnterState(new ParserStateKey(stateKey.RuleName, stateKey.InputPosition, stateKey.AlternativeIndex, stateKey.ElementIndex, stateKey.MinimumPrecedence));
 
                 if (!CheckPrecedence(alternative, precedence))
                 {

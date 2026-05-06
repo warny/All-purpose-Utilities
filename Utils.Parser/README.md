@@ -305,7 +305,7 @@ a comprehensive real-world example.
 | Feature | Description |
 |---|---|
 | Backtracking | Each alternative is tried in priority order; the cursor is restored on failure. |
-| Parallel alternative exploration | All alternatives are tried at each choice point; the best match (longest, then lowest priority) is selected. |
+| Explicit alternative scheduling | Alternatives are evaluated sequentially in deterministic order; equivalent branches may be pruned, and the best match (longest, then lowest priority) is selected. |
 | Left-recursion handling | Direct left-recursive rules are detected at resolution time and parsed using a seed-and-extend loop. |
 | Precedence predicates | `<assoc=right>` / priority-annotated alternatives are respected during left-recursive extension. |
 | Trailing-token validation | `Parse()` returns an `ErrorNode` when unconsumed tokens remain after the root rule. |
@@ -330,7 +330,7 @@ a comprehensive real-world example.
 Current scope is intentionally limited:
 
 - ✅ implemented: completed invocation reuse + continuation metadata recording.
-- ❌ not implemented yet: full active parse-state scheduling / parallel alternative execution.
+- ❌ not implemented yet: shared look-ahead, continuation-driven parsing, or concurrent alternative execution.
 
 ## Grammar validation
 
