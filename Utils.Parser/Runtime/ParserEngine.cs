@@ -226,6 +226,8 @@ internal sealed record ActiveParseState
 
     /// <summary>
     /// Creates a deterministic identity key for registry/scheduling-oriented state comparisons.
+    /// Includes scheduler-specific fields (alternative index, priority, continuation) that must
+    /// NOT be used for semantic-equivalence pruning.
     /// </summary>
     /// <param name="minimumPrecedence">Minimum precedence associated with this active state evaluation.</param>
     /// <returns>A stable identity key for this active parse state.</returns>
@@ -241,6 +243,24 @@ internal sealed record ActiveParseState
             Cursor.Kind,
             minimumPrecedence,
             Continuation);
+    }
+
+    /// <summary>
+    /// Creates a semantic equivalence key used exclusively for ambiguity pruning.
+    /// Excludes scheduler-identity fields (alternative index, priority, continuation) so that
+    /// two alternatives reaching the same parser position are considered equivalent regardless
+    /// of which alternative produced them.
+    /// </summary>
+    /// <returns>A key that identifies semantically equivalent active parse states.</returns>
+    public ActiveParseBranchEquivalenceKey ToBranchEquivalenceKey()
+    {
+        return new ActiveParseBranchEquivalenceKey(
+            Rule.Name,
+            OriginInputPosition,
+            EndPosition ?? CurrentInputPosition,
+            Cursor.Kind,
+            Cursor.Index,
+            Alternative.Label ?? string.Empty);
     }
 
     /// <summary>Creates a new state marked as completed.</summary>
@@ -1026,7 +1046,6 @@ public sealed class ParserEngine(ParserDefinition definition)
                 Depth = 0,
                 Continuation = null
             }.Complete(context.Position);
-            _ = activeState.ToStateKey(precedence);
             activeStates.Add(activeState);
             context.RestorePosition(savedPos);
         }
@@ -1083,13 +1102,7 @@ public sealed class ParserEngine(ParserDefinition definition)
         var map = new Dictionary<ActiveParseBranchEquivalenceKey, ActiveParseState>();
         foreach (var state in states)
         {
-            var key = new ActiveParseBranchEquivalenceKey(
-                state.Rule.Name,
-                state.OriginInputPosition,
-                state.EndPosition ?? state.CurrentInputPosition,
-                state.Cursor.Kind,
-                state.Cursor.Index,
-                state.Alternative.Label ?? string.Empty);
+            var key = state.ToBranchEquivalenceKey();
             if (!map.TryGetValue(key, out var existing))
             {
                 map[key] = state;

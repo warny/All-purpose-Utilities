@@ -84,6 +84,40 @@ public class ActiveParseStateTests
     }
 
     [TestMethod]
+    public void ActiveParseState_ToBranchEquivalenceKey_SameKeyForDifferentAlternativeIndices()
+    {
+        // Two states that reach the same semantic position from different alternatives must share
+        // the same equivalence key so that ambiguity pruning can collapse them.
+        // Both use priority=1 so the label ("alt1") is identical; only AlternativeIndex differs.
+        var stateA = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 10).Complete(10);
+        var stateB = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 3, currentPosition: 10).Complete(10);
+
+        Assert.AreEqual(stateA.ToBranchEquivalenceKey(), stateB.ToBranchEquivalenceKey());
+        // Scheduler identity must still distinguish them.
+        Assert.AreNotEqual(stateA.ToStateKey(2), stateB.ToStateKey(2));
+    }
+
+    [TestMethod]
+    public void ActiveParseState_ToBranchEquivalenceKey_DifferentKeyForDifferentEndPosition()
+    {
+        var stateA = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 10).Complete(10);
+        var stateB = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 12).Complete(12);
+
+        Assert.AreNotEqual(stateA.ToBranchEquivalenceKey(), stateB.ToBranchEquivalenceKey());
+    }
+
+    [TestMethod]
+    public void ActiveParseState_ToBranchEquivalenceKey_IndependentOfSchedulerIdentity()
+    {
+        // Equivalence key must be independent of scheduler-identity fields so it does not
+        // accidentally prevent pruning of semantically identical states on different paths.
+        var state = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 6).Complete(6);
+        var withContinuation = state.WithContinuation(new ContinuationKey("sampleRule", 0, 0, 6, 2));
+
+        Assert.AreEqual(state.ToBranchEquivalenceKey(), withContinuation.ToBranchEquivalenceKey());
+    }
+
+    [TestMethod]
     public void ActiveParseState_RegistryIntegration_StableReuseKeys()
     {
         var state = CreateActiveState(1, 0, 0, 4).Complete(9);
