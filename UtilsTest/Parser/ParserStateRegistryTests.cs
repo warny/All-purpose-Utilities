@@ -39,7 +39,7 @@ public class ParserStateRegistryTests
     /// Ensures successful completed results are reusable for the same invocation key.
     /// </summary>
     [TestMethod]
-    public void Registry_Memoization_ReusableSuccess_IsReturned()
+    public void Registry_Memoization_ReusableSuccess_IsReturnedFirst()
     {
         var registry = new ParserStateRegistry();
         var invocation = new RuleInvocationKey("expr", 0, 0);
@@ -47,22 +47,39 @@ public class ParserStateRegistryTests
 
         registry.AddCompletedResult(invocation, new ParserRuleResult(node, 4, false));
 
-        Assert.IsTrue(registry.TryGetReusableSuccess(invocation, out var reusable));
+        registry.AddCompletedResult(invocation, new ParserRuleResult(null, 0, true));
+
+        Assert.IsTrue(registry.TryGetReusableResult(invocation, out var reusable));
         Assert.AreEqual(4, reusable.EndPosition);
         Assert.AreSame(node, reusable.Node);
+        Assert.IsFalse(reusable.IsFailure);
     }
 
     /// <summary>
-    /// Ensures failure-only invocations are not considered reusable successes.
+    /// Ensures failure-only invocations return reusable failures.
     /// </summary>
     [TestMethod]
-    public void Registry_Memoization_FailureOnly_IsNotReusable()
+    public void Registry_Memoization_FailureOnly_ReturnsReusableFailure()
     {
         var registry = new ParserStateRegistry();
         var invocation = new RuleInvocationKey("expr", 0, 0);
 
         registry.AddCompletedResult(invocation, new ParserRuleResult(null, 0, true));
 
-        Assert.IsFalse(registry.TryGetReusableSuccess(invocation, out _));
+        Assert.IsTrue(registry.TryGetReusableResult(invocation, out var reusable));
+        Assert.IsTrue(reusable.IsFailure);
+        Assert.IsNull(reusable.Node);
+    }
+
+    /// <summary>
+    /// Ensures missing invocations are not reusable.
+    /// </summary>
+    [TestMethod]
+    public void Registry_Memoization_MissingInvocation_ReturnsFalse()
+    {
+        var registry = new ParserStateRegistry();
+        var invocation = new RuleInvocationKey("expr", 0, 0);
+
+        Assert.IsFalse(registry.TryGetReusableResult(invocation, out _));
     }
 }

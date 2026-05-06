@@ -103,25 +103,6 @@ internal sealed class ParserStateRegistry
         return _completedResults.TryGetValue(invocation, out var list) ? list : [];
     }
 
-    /// <summary>Determines whether an invocation has a reusable deterministic success result.</summary>
-    public bool TryGetReusableSuccess(RuleInvocationKey invocation, out ParserRuleResult result)
-    {
-        result = default;
-        if (!_completedResults.TryGetValue(invocation, out var list))
-        {
-            return false;
-        }
-
-        var success = list.FirstOrDefault(static item => !item.IsFailure && item.Node is not null);
-        if (success.Node is null)
-        {
-            return false;
-        }
-
-        result = success;
-        return true;
-    }
-
     /// <summary>Determines whether an invocation has any reusable deterministic completion result (success or failure).</summary>
     public bool TryGetReusableResult(RuleInvocationKey invocation, out ParserRuleResult result)
     {
