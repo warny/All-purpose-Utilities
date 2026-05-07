@@ -99,6 +99,45 @@ public class AlternativeSchedulingMetadataTests
     }
 
 
+
+    [TestMethod]
+    public void Scheduler_Metadata_DoesNotChangeSelection_WhenProbeMetadataDiffers()
+    {
+        var scheduler = new AlternativeScheduler();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new RuleRef("ID"), "a"),
+            new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+
+        ScheduledAlternativeExecutionResult ParseWithProbe(IReadOnlyList<string> expected, int index)
+        {
+            return new ScheduledAlternativeExecutionResult(CreateState(rule, alternatives[index], index, 1), Probe(expected));
+        }
+
+        var withSharedPrefix = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (_, index) => ParseWithProbe(["ID"], index));
+
+        var withoutSharedPrefix = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (_, index) => index == 0 ? ParseWithProbe(["ID"], index) : ParseWithProbe(["NUMBER"], index));
+
+        Assert.IsNotNull(withSharedPrefix.SelectedState);
+        Assert.IsNotNull(withoutSharedPrefix.SelectedState);
+        Assert.AreEqual(withSharedPrefix.SelectedState.AlternativeIndex, withoutSharedPrefix.SelectedState.AlternativeIndex);
+        Assert.AreEqual(withSharedPrefix.SelectedState.CurrentInputPosition, withoutSharedPrefix.SelectedState.CurrentInputPosition);
+    }
+
     [TestMethod]
     public void Scheduler_Metadata_IncludesFailedAlternativesLookahead()
     {
