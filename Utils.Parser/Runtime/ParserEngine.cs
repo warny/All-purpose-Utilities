@@ -651,6 +651,7 @@ public sealed class ParserEngine
                 var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
                 var token = context.Peek();
                 if (diagnostics is null
+                    && (cursorKind == "rule-root" || cursorKind == "left-recursive-seed")
                     && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
                     && !cachedLookahead.CanStart)
                 {
