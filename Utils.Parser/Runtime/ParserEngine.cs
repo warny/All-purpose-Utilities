@@ -594,11 +594,8 @@ public sealed class ParserEngine
             if (node is null)
                 return null;
 
-            // Omit placeholder nodes produced by predicates/actions (same rule, zero span, zero children).
-            // Keep epsilon-matched parser rule refs (different rule, zero span, zero children) so that
-            // callers such as the grammar converter can navigate the tree when alternatives are empty.
-            if (node.Span.Length > 0
-                || (node is ParserNode pn && (pn.Children.Count > 0 || !ReferenceEquals(pn.Rule, rule))))
+            // Omit empty nodes (predicates, actions) from the child list.
+            if (node.Span.Length > 0 || node is ParserNode { Children.Count: > 0 })
                 children.Add(node);
         }
 

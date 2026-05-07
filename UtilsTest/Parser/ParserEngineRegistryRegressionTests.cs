@@ -249,8 +249,9 @@ public class ParserEngineRegistryRegressionTests
     }
 
     /// <summary>
-    /// Regression: a parser rule ref at EOF must not be rejected by the look-ahead probe
-    /// before the parser tries to match an empty alternative.
+    /// Regression: a parser rule ref at EOF must not be rejected by the look-ahead probe.
+    /// The probe must return Unknown for parser rule refs (they may consume no tokens),
+    /// so the parser still attempts to parse the referenced rule.
     /// </summary>
     [TestMethod]
     public void ParserLookaheadProbe_DoesNotRejectParserRuleRefAtEof()
@@ -258,8 +259,9 @@ public class ParserEngineRegistryRegressionTests
         const string grammar = """
             grammar G;
             root : opt ;
-            opt  : ;
-            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            opt  : ID* ;
+            ID   : ('a'..'z')+ ;
+            WS   : (' ' | '\t' | '\r' | '\n')+ -> skip ;
             """;
 
         var diagnostics = new DiagnosticBag();
