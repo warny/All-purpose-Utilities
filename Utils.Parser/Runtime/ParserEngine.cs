@@ -649,9 +649,12 @@ public sealed class ParserEngine
                 }
 
                 var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
+                var allowNegativeShortcut =
+                    diagnostics is null
+                    && (cursorKind == "rule-root"
+                        || cursorKind == "left-recursive-seed");
                 var token = context.Peek();
-                if (diagnostics is null
-                    && (cursorKind == "rule-root" || cursorKind == "left-recursive-seed")
+                if (allowNegativeShortcut
                     && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
                     && !cachedLookahead.CanStart)
                 {
@@ -663,7 +666,9 @@ public sealed class ParserEngine
                 if (result is null)
                 {
                     var consumed = context.Position > savedPosition;
-                    if (!consumed && !ContainsPredicateOrAction(alternative.Content))
+                    if (allowNegativeShortcut
+                        && !consumed
+                        && !ContainsPredicateOrAction(alternative.Content))
                     {
                         _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(false, token?.RuleName, token?.Text));
                     }
