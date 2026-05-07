@@ -36,6 +36,13 @@ public class ParserLookaheadProbeTests
     }
 
     [TestMethod]
+    public void Probe_LiteralMatch_ProvidesExpectedTokenNames()
+    {
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(new LiteralMatch("if")), TokenWithText("if"), static _ => null, false);
+        CollectionAssert.AreEqual(new[] { "if" }, result.ExpectedTokenNames!.ToArray());
+    }
+
+    [TestMethod]
     public void Probe_LexerRuleRef_MatchingTokenRule_ReturnsRequiresParse()
     {
         Rule? Resolve(string name) => name == "ID" ? new Rule("ID", 0, false, new Alternation([])) { Kind = RuleKind.Lexer } : null;
@@ -49,6 +56,14 @@ public class ParserLookaheadProbeTests
         Rule? Resolve(string name) => name == "ID" ? new Rule("ID", 0, false, new Alternation([])) { Kind = RuleKind.Lexer } : null;
         var result = new ParserLookaheadProbe().Probe(CreateAlternative(new RuleRef("ID")), TokenWithRule("NUMBER"), Resolve, false);
         Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_LexerRuleRef_ProvidesExpectedTokenNames()
+    {
+        Rule? Resolve(string name) => name == "ID" ? new Rule("ID", 0, false, new Alternation([])) { Kind = RuleKind.Lexer } : null;
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(new RuleRef("ID")), TokenWithRule("ID"), Resolve, false);
+        CollectionAssert.AreEqual(new[] { "ID" }, result.ExpectedTokenNames!.ToArray());
     }
 
     [TestMethod]
@@ -89,6 +104,42 @@ public class ParserLookaheadProbeTests
         Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, result.Kind);
     }
 
+    [TestMethod]
+    public void Probe_AlternationOfSimpleTokens_ProvidesExpectedTokenNames()
+    {
+        Rule? Resolve(string name) => name == "ID" ? new Rule("ID", 0, false, new Alternation([])) { Kind = RuleKind.Lexer } : null;
+        var alternation = new Alternation([
+            CreateAlternative(new LiteralMatch("if")),
+            CreateAlternative(new LiteralMatch("for")),
+            CreateAlternative(new RuleRef("ID"))
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(alternation), TokenWithText("if"), Resolve, false);
+        CollectionAssert.AreEqual(new[] { "if", "for", "ID" }, result.ExpectedTokenNames!.ToArray());
+    }
+
+    [TestMethod]
+    public void Probe_AlternationWithUnsupportedBranch_ReturnsNullExpectedNames()
+    {
+        Rule? Resolve(string name) => name == "expr" ? new Rule("expr", 0, false, new Alternation([])) { Kind = RuleKind.Parser } : null;
+        var alternation = new Alternation([
+            CreateAlternative(new LiteralMatch("if")),
+            CreateAlternative(new RuleRef("expr"))
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(alternation), TokenWithText("if"), Resolve, false);
+        Assert.IsNull(result.ExpectedTokenNames);
+    }
+
+    [TestMethod]
+    public void Probe_Sequence_PropagatesFirstMeaningfulExpectedNames()
+    {
+        var sequence = new Sequence([
+            new EmbeddedAction("x", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LiteralMatch("if")
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("if"), static _ => null, false);
+        CollectionAssert.AreEqual(new[] { "if" }, result.ExpectedTokenNames!.ToArray());
+    }
+
 
     [TestMethod]
     public void Probe_OptionalQuantifier_ReturnsEpsilonPossible()
@@ -122,6 +173,25 @@ public class ParserLookaheadProbeTests
         ]);
         var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("stop"), static _ => null, false);
         Assert.AreEqual(ParserLookaheadProbeKind.Unknown, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_EpsilonThenLiteral_ReturnsNullExpectedNames()
+    {
+        var sequence = new Sequence([
+            new Quantifier(new LiteralMatch("x"), 0, 1),
+            new LiteralMatch("y")
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("y"), static _ => null, false);
+        Assert.IsNull(result.ExpectedTokenNames);
+    }
+
+    [TestMethod]
+    public void Probe_Quantifier_ReturnsNullExpectedNames()
+    {
+        var quantifier = new Quantifier(new LiteralMatch("x"), 0, 1);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(quantifier), TokenWithText("x"), static _ => null, false);
+        Assert.IsNull(result.ExpectedTokenNames);
     }
 
     [TestMethod]

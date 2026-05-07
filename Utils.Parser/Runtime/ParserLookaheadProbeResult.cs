@@ -6,4 +6,5 @@ namespace Utils.Parser.Runtime;
 internal readonly record struct ParserLookaheadProbeResult(
     ParserLookaheadProbeKind Kind,
     string? TokenRuleName,
-    string? TokenText);
+    string? TokenText,
+    IReadOnlyList<string>? ExpectedTokenNames = null);
