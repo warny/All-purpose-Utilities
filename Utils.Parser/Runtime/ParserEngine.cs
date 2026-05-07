@@ -30,6 +30,7 @@ public sealed class ParserEngine
     private readonly bool _caseInsensitive;
     private readonly ParserStateRegistry _stateRegistry = new();
     private readonly AlternativeScheduler _alternativeScheduler;
+    private readonly ParserLookaheadCache _lookaheadCache = new();
 
     public ParserEngine(ParserDefinition definition)
     {
@@ -60,6 +61,7 @@ public sealed class ParserEngine
 
         _activeRuleFrames.Clear();
         _stateRegistry.Clear();
+        _lookaheadCache.Clear();
         var context = new ParseContext(tokenList);
         var result = ParseRule(context, root, precedence: 0, diagnostics);
 
@@ -139,7 +141,7 @@ public sealed class ParserEngine
             }
             else
             {
-                parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics);
+                parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, "rule-root", -1);
             }
 
             _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null));
@@ -168,7 +170,9 @@ public sealed class ParserEngine
             info.BaseAlternatives,
             info.Rule,
             minimumPrecedence,
-            diagnostics);
+            diagnostics,
+            "left-recursive-seed",
+            -1);
         if (seed is null)
         {
             return null;
@@ -444,7 +448,7 @@ public sealed class ParserEngine
                 return TryParseSequence(context, seq, rule, precedence, alternativeIndex, diagnostics);
 
             case Alternation alternation:
-                return TryParseAlternation(context, alternation, rule, precedence, diagnostics);
+                return TryParseAlternation(context, alternation, rule, precedence, alternativeIndex, elementIndex, diagnostics);
 
             case Alternative alt:
                 return TryParseAlternative(context, alt, rule, precedence, alternativeIndex, elementIndex, diagnostics);
@@ -610,9 +614,11 @@ public sealed class ParserEngine
         Alternation alternation,
         Rule rule,
         int precedence = 0,
+        int alternativeIndex = -1,
+        int elementIndex = -1,
         DiagnosticBag? diagnostics = null)
     {
-        return TryParseScheduledAlternatives(context, alternation.Alternatives, rule, precedence, diagnostics);
+        return TryParseScheduledAlternatives(context, alternation.Alternatives, rule, precedence, diagnostics, "alternation", elementIndex >= 0 ? elementIndex : alternativeIndex);
     }
 
     private ParseNode? TryParseScheduledAlternatives(
@@ -620,7 +626,9 @@ public sealed class ParserEngine
         IEnumerable<Alternative> alternatives,
         Rule rule,
         int precedence,
-        DiagnosticBag? diagnostics)
+        DiagnosticBag? diagnostics,
+        string cursorKind,
+        int cursorIndex)
     {
         var startPosition = context.Position;
         var startToken = context.Peek();
@@ -640,15 +648,38 @@ public sealed class ParserEngine
                     return null;
                 }
 
+                var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
+                var allowNegativeShortcut =
+                    diagnostics is null
+                    && (cursorKind == "rule-root"
+                        || cursorKind == "left-recursive-seed");
+                var token = context.Peek();
+                if (allowNegativeShortcut
+                    && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
+                    && !cachedLookahead.CanStart)
+                {
+                    return null;
+                }
+
                 var savedPosition = context.SavePosition();
                 var result = TryParseContent(context, alternative.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics);
                 if (result is null)
                 {
+                    var consumed = context.Position > savedPosition;
+                    if (allowNegativeShortcut
+                        && !consumed
+                        && !ContainsPredicateOrAction(alternative.Content))
+                    {
+                        _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(false, token?.RuleName, token?.Text));
+                    }
+
                     var diagnosticSpan = ResolveDiagnosticSpan(context);
                     diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
                     context.RestorePosition(savedPosition);
                     return null;
                 }
+
+                _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(true, token?.RuleName, token?.Text));
 
                 var state = new ActiveParseState
                 {

@@ -46,6 +46,7 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 | Declared `tokens { ... }` and `channels { ... }` metadata | Partial | Available in model/runtime, but must be validated against your grammar set. |
 | Runtime lexer extensions (`ILexerExtension`) | Implemented | Hooks are available (`TryReadTokens`, `OnAfterToken`, `OnEndOfInput`). |
 | Full ANTLR4 grammar compatibility | Not guaranteed | Advanced/edge constructs may differ from ANTLR4 behavior. |
+| Scheduled alternative look-ahead | Implemented (internal) | Lightweight cache records alternative-start observations to avoid repeated obviously impossible starts during deterministic sequential scheduling. |
 
 ## Key concepts
 
@@ -79,6 +80,10 @@ This layer is now orchestrated by an internal `AlternativeScheduler` that execut
 - The abstraction is used to prepare future explicit scheduling features (shared
   alternative evaluation, continuation-driven orchestration, pruning strategies),
   without enabling parallel parsing at this stage.
+- `ParserEngine` also keeps an internal look-ahead cache keyed by rule name, origin position, alternative index, minimum precedence, and alternation cursor context.
+- The cache stores lightweight start observations only (can-start flag + first token snapshot), does not store parse trees, does not replace `ParserStateRegistry`, and does not change alternative selection semantics.
+- The current implementation only applies negative shortcut reuse to top-level rule alternative scheduling and left-recursive seed scheduling. Nested alternations are intentionally excluded in this step to preserve diagnostic stability and keep the optimization conservative.
+- Execution remains sequential: no parallel alternative parsing, no continuation queue, and no shared look-ahead graph in this step.
 
 #### Two separate identity concepts on `ActiveParseState`
 
