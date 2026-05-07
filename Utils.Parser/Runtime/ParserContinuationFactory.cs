@@ -25,7 +25,7 @@ internal sealed class ParserContinuationFactory
             .Where(static item => item is not EmbeddedAction and not LexerCommand)
             .ToArray();
 
-        if (meaningfulItems.Length == 0 || !IsSharedTokenMatch(meaningfulItems[0], sharedTokenName))
+        if (meaningfulItems.Length == 0 || !IsSharedTokenMatchFromProbeMetadata(meaningfulItems[0], sharedTokenName))
         {
             return 0;
         }
@@ -95,10 +95,12 @@ internal sealed class ParserContinuationFactory
     }
 
     /// <summary>
-    /// Determines whether a shallow sequence item matches a shared token name.
-    /// Only literal matches and direct rule references are supported.
+    /// Determines whether a shallow sequence item matches a shared token name
+    /// coming from look-ahead probe metadata.
+    /// This helper intentionally performs no rule-kind resolution and therefore
+    /// must only be used with probe metadata that already represents shallow token candidates.
     /// </summary>
-    private static bool IsSharedTokenMatch(RuleContent content, string sharedTokenName)
+    private static bool IsSharedTokenMatchFromProbeMetadata(RuleContent content, string sharedTokenName)
     {
         return content switch
         {

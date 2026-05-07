@@ -137,6 +137,21 @@ public class ParserSharedPrefixPlanFactoryTests
 
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual("ID", result[0].Segment.SharedTokenName);
-        CollectionAssert.AreEqual(new[] { "ID" }, result[0].Segment.Boundary.ExpectedTokenNames?.ToArray() ?? []);
+        Assert.IsNull(result[0].Segment.Boundary.ExpectedTokenNames);
+    }
+
+    [TestMethod]
+    public void CreatePlans_BoundaryFallsBackToZero_WhenContinuationPositionsDiverge()
+    {
+        var factory = new ParserSharedPrefixPlanFactory();
+        var result = factory.CreatePlans(
+            [Candidate("ID", [0, 1])],
+            [
+                new ParserContinuationDescriptor(new ParserContinuationKey("expr", 0, 1), ["ID"], true),
+                new ParserContinuationDescriptor(new ParserContinuationKey("expr", 1, 2), ["ID"], true)
+            ]);
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(0, result[0].Segment.Boundary.SequencePosition);
     }
 }

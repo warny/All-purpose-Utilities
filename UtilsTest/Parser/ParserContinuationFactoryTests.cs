@@ -144,4 +144,15 @@ public class ParserContinuationFactoryTests
 
         Assert.AreEqual(0, result);
     }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_RuleRefNameMismatch_FallsBackToZero()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("expr"), new RuleRef("tail")]));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(0, result);
+    }
 }
