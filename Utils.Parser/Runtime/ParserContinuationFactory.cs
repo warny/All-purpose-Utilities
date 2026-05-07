@@ -12,6 +12,7 @@ internal sealed class ParserContinuationFactory
     /// </summary>
     /// <param name="rule">Owning rule for the continuation point.</param>
     /// <param name="alternative">Owning alternative for the continuation point.</param>
+    /// <param name="alternativeIndex">Structural alternative index within the owning rule.</param>
     /// <param name="sequencePosition">Structural position within the alternative sequence.</param>
     /// <param name="expectedTokenNames">Optional shallow expected token names for this point.</param>
     /// <param name="isSharedPrefixCandidate">Whether this point was observed from a shared-prefix candidate.</param>
@@ -19,14 +20,15 @@ internal sealed class ParserContinuationFactory
     public ParserContinuationDescriptor Create(
         Rule rule,
         Alternative alternative,
+        int alternativeIndex,
         int sequencePosition,
         IReadOnlyList<string>? expectedTokenNames,
         bool isSharedPrefixCandidate)
     {
         var normalizedSequencePosition = ComputeSequencePosition(alternative, sequencePosition);
         return new ParserContinuationDescriptor(
-            new ParserContinuationKey(rule.Name, alternative.Priority, normalizedSequencePosition),
-            expectedTokenNames,
+            new ParserContinuationKey(rule.Name, alternativeIndex, normalizedSequencePosition),
+            expectedTokenNames?.ToArray(),
             isSharedPrefixCandidate);
     }
 

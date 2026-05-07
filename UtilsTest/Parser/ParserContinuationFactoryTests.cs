@@ -14,7 +14,7 @@ public class ParserContinuationFactoryTests
         var rule = new Rule("expr", 0, false, new Alternation([]));
         var alternative = new Alternative(2, Associativity.Left, new RuleRef("ID"));
 
-        var descriptor = factory.Create(rule, alternative, 3, null, false);
+        var descriptor = factory.Create(rule, alternative, 0, 3, null, false);
 
         Assert.AreEqual(0, descriptor.Key.SequencePosition);
     }
@@ -31,8 +31,8 @@ public class ParserContinuationFactoryTests
         ]);
         var alternative = new Alternative(1, Associativity.Left, sequence);
 
-        var literalDescriptor = factory.Create(rule, alternative, 1, null, false);
-        var ruleRefDescriptor = factory.Create(rule, alternative, 2, null, false);
+        var literalDescriptor = factory.Create(rule, alternative, 0, 1, null, false);
+        var ruleRefDescriptor = factory.Create(rule, alternative, 0, 2, null, false);
 
         Assert.AreEqual(0, literalDescriptor.Key.SequencePosition);
         Assert.AreEqual(1, ruleRefDescriptor.Key.SequencePosition);
@@ -46,7 +46,7 @@ public class ParserContinuationFactoryTests
         var alternative = new Alternative(0, Associativity.Left, new RuleRef("ID"));
         IReadOnlyList<string> expectedTokenNames = ["ID", "NUMBER"];
 
-        var descriptor = factory.Create(rule, alternative, 0, expectedTokenNames, false);
+        var descriptor = factory.Create(rule, alternative, 0, 0, expectedTokenNames, false);
 
         CollectionAssert.AreEqual(expectedTokenNames.ToArray(), descriptor.ExpectedTokenNames?.ToArray() ?? []);
     }
@@ -58,9 +58,23 @@ public class ParserContinuationFactoryTests
         var rule = new Rule("expr", 0, false, new Alternation([]));
         var alternative = new Alternative(0, Associativity.Left, new RuleRef("ID"));
 
-        var descriptor = factory.Create(rule, alternative, 0, null, true);
+        var descriptor = factory.Create(rule, alternative, 0, 0, null, true);
 
         Assert.IsTrue(descriptor.IsSharedPrefixCandidate);
+    }
+
+    [TestMethod]
+    public void Create_AlternativeIndex_IsIndependentFromPriority()
+    {
+        var factory = new ParserContinuationFactory();
+        var rule = new Rule("expr", 0, false, new Alternation([]));
+        var firstAlternative = new Alternative(0, Associativity.Left, new RuleRef("ID"));
+        var secondAlternative = new Alternative(0, Associativity.Left, new RuleRef("NUMBER"));
+
+        var firstDescriptor = factory.Create(rule, firstAlternative, 0, 0, null, false);
+        var secondDescriptor = factory.Create(rule, secondAlternative, 1, 0, null, false);
+
+        Assert.AreNotEqual(firstDescriptor.Key, secondDescriptor.Key);
     }
 
     [TestMethod]
