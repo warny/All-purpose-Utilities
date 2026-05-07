@@ -139,6 +139,10 @@ internal sealed class ParserLookaheadProbe
             : Unknown(token, expectedTokenNames);
     }
 
+    /// <summary>
+    /// Extracts shallow expected-token names for supported rule-content shapes.
+    /// Returns <c>null</c> when the shape is unsupported or ambiguous.
+    /// </summary>
     private static IReadOnlyList<string>? TryGetExpectedTokenNames(RuleContent content, Func<string, Rule?> resolveRule)
     {
         return content switch
@@ -152,12 +156,20 @@ internal sealed class ParserLookaheadProbe
         };
     }
 
+    /// <summary>
+    /// Returns the lexer rule name when the reference targets a lexer rule.
+    /// Parser-rule references return <c>null</c>.
+    /// </summary>
     private static IReadOnlyList<string>? TryGetExpectedTokenNamesForRuleReference(RuleRef ruleRef, Func<string, Rule?> resolveRule)
     {
         var target = resolveRule(ruleRef.RuleName);
         return target is { Kind: RuleKind.Lexer } ? [ruleRef.RuleName] : null;
     }
 
+    /// <summary>
+    /// Aggregates expected-token names for flat alternations when all branches
+    /// are shallow and supported; otherwise returns <c>null</c>.
+    /// </summary>
     private static IReadOnlyList<string>? TryGetExpectedTokenNamesForAlternation(
         Alternation alternation,
         Func<string, Rule?> resolveRule)
@@ -177,6 +189,10 @@ internal sealed class ParserLookaheadProbe
         return expected;
     }
 
+    /// <summary>
+    /// Extracts expected-token names from the first meaningful sequence item.
+    /// Returns <c>null</c> when epsilon-first ambiguity is detected.
+    /// </summary>
     private static IReadOnlyList<string>? TryGetExpectedTokenNamesForSequence(Sequence sequence, Func<string, Rule?> resolveRule)
     {
         var meaningfulItems = sequence.Items.Where(static item => item is not EmbeddedAction and not LexerCommand).ToArray();
@@ -199,15 +215,27 @@ internal sealed class ParserLookaheadProbe
         return firstProbe;
     }
 
+    /// <summary>
+    /// Creates an unknown probe result while preserving token snapshot metadata.
+    /// </summary>
     private static ParserLookaheadProbeResult Unknown(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
         new(ParserLookaheadProbeKind.Unknown, token?.RuleName, token?.Text, expectedTokenNames);
 
+    /// <summary>
+    /// Creates an immediate-reject probe result while preserving token snapshot metadata.
+    /// </summary>
     private static ParserLookaheadProbeResult ImmediateReject(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
         new(ParserLookaheadProbeKind.ImmediateReject, token?.RuleName, token?.Text, expectedTokenNames);
 
+    /// <summary>
+    /// Creates a requires-parse probe result while preserving token snapshot metadata.
+    /// </summary>
     private static ParserLookaheadProbeResult RequiresParse(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
         new(ParserLookaheadProbeKind.RequiresParse, token?.RuleName, token?.Text, expectedTokenNames);
 
+    /// <summary>
+    /// Creates an epsilon-possible probe result while preserving token snapshot metadata.
+    /// </summary>
     private static ParserLookaheadProbeResult EpsilonPossible(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
         new(ParserLookaheadProbeKind.EpsilonPossible, token?.RuleName, token?.Text, expectedTokenNames);
 }
