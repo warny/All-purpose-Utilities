@@ -106,4 +106,42 @@ public class ParserContinuationFactoryTests
         Assert.IsNull(descriptorType.GetProperty("TokenStream"));
         Assert.AreEqual(0, descriptorType.GetProperties().Count(static p => typeof(Delegate).IsAssignableFrom(p.PropertyType)));
     }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_SequenceWithSharedFirstToken_ReturnsOne()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")]));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(1, result);
+    }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_IgnoresEmbeddedActionAndLexerCommand()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([
+            new EmbeddedAction("x();", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LexerCommand(LexerCommandType.Skip, null),
+            new RuleRef("ID"),
+            new LiteralMatch("-")
+        ]));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(1, result);
+    }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_UnsupportedStructure_FallsBackToZero()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new RuleRef("expr"));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(0, result);
+    }
 }

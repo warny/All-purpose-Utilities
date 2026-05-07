@@ -87,17 +87,39 @@ internal sealed class AlternativeScheduler
         for (var index = 0; index < orderedAlternatives.Count; index++)
         {
             var expectedTokenNames = lookaheadProbes[index].ExpectedTokenNames;
+            var sharedTokenName = ResolveSharedTokenName(candidates, index);
+            var sharedPrefixSequencePosition = sharedTokenName is null
+                ? 0
+                : _continuationFactory.ComputeSharedPrefixSequencePosition(orderedAlternatives[index], sharedTokenName);
             continuations.Add(_continuationFactory.Create(
                 rule,
                 orderedAlternatives[index],
                 index,
-                sequencePosition: 0,
+                sequencePosition: sharedPrefixSequencePosition,
                 expectedTokenNames,
                 candidateIndexes.Contains(index)));
         }
 
         var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations);
         return new AlternativeSchedulingMetadata { SharedPrefixPlans = plans };
+    }
+
+    /// <summary>
+    /// Resolves the first shared token candidate for an alternative while preserving detector ordering.
+    /// </summary>
+    private static string? ResolveSharedTokenName(
+        IReadOnlyList<ParserLookaheadSharedPrefixCandidate> candidates,
+        int alternativeIndex)
+    {
+        for (var index = 0; index < candidates.Count; index++)
+        {
+            if (candidates[index].AlternativeIndexes.Contains(alternativeIndex))
+            {
+                return candidates[index].TokenName;
+            }
+        }
+
+        return null;
     }
     private static ActiveParseState CreateInitialState(Rule rule, Alternative alternative, int originInputPosition, int alternativeIndex)
     {

@@ -84,10 +84,24 @@ public class AlternativeSchedulingMetadataTests
     [TestMethod]
     public void Scheduler_Metadata_CreatesContinuationDescriptors()
     {
-        var result = Run(new[] { new[] { "ID" }, new[] { "ID" } });
+        var scheduler = new AlternativeScheduler();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")]), "a"),
+            new Alternative(1, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("-"), new RuleRef("expr")]), "b")
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe("ID")));
         var continuations = result.Metadata.SharedPrefixPlans[0].Continuations;
         Assert.AreEqual(2, continuations.Count);
-        Assert.IsTrue(continuations.All(static c => c.Key.SequencePosition == 0));
+        Assert.IsTrue(continuations.All(static c => c.Key.SequencePosition == 1));
+        Assert.AreEqual(1, result.Metadata.SharedPrefixPlans[0].Segment.Boundary.SequencePosition);
     }
 
     [TestMethod]

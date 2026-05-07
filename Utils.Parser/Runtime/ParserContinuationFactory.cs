@@ -8,6 +8,32 @@ namespace Utils.Parser.Runtime;
 internal sealed class ParserContinuationFactory
 {
     /// <summary>
+    /// Computes a conservative sequence position for shared-token continuation metadata.
+    /// This shallow analysis is preparatory only and intentionally avoids deep parser semantics.
+    /// </summary>
+    /// <param name="alternative">Alternative containing the shared token.</param>
+    /// <param name="sharedTokenName">Shared token identifier from look-ahead metadata.</param>
+    /// <returns>Sequence position after the shared token, or zero when unsupported/ambiguous.</returns>
+    public int ComputeSharedPrefixSequencePosition(Alternative alternative, string sharedTokenName)
+    {
+        if (alternative.Content is not Sequence sequence)
+        {
+            return 0;
+        }
+
+        var meaningfulItems = sequence.Items
+            .Where(static item => item is not EmbeddedAction and not LexerCommand)
+            .ToArray();
+
+        if (meaningfulItems.Length == 0 || !IsSharedTokenMatch(meaningfulItems[0], sharedTokenName))
+        {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    /// <summary>
     /// Creates a continuation descriptor from shallow rule/alternative location metadata.
     /// </summary>
     /// <param name="rule">Owning rule for the continuation point.</param>
@@ -66,5 +92,19 @@ internal sealed class ParserContinuationFactory
         }
 
         return meaningfulIndex;
+    }
+
+    /// <summary>
+    /// Determines whether a shallow sequence item matches a shared token name.
+    /// Only literal matches and direct rule references are supported.
+    /// </summary>
+    private static bool IsSharedTokenMatch(RuleContent content, string sharedTokenName)
+    {
+        return content switch
+        {
+            LiteralMatch literal => string.Equals(literal.Value, sharedTokenName, StringComparison.Ordinal),
+            RuleRef ruleRef => string.Equals(ruleRef.RuleName, sharedTokenName, StringComparison.Ordinal),
+            _ => false
+        };
     }
 }
