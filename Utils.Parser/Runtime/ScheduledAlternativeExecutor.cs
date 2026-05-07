@@ -54,7 +54,7 @@ internal sealed class ScheduledAlternativeExecutor
         var token = context.Peek();
         if (allowNegativeShortcut
             && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
-            && !cachedLookahead.CanStart)
+            && cachedLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
         {
             return null;
         }
@@ -68,7 +68,12 @@ internal sealed class ScheduledAlternativeExecutor
                 && !consumed
                 && !containsPredicateOrAction(alternative.Content))
             {
-                _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(false, token?.RuleName, token?.Text));
+                _lookaheadCache.TryAdd(
+                    lookaheadKey,
+                    new ParserLookaheadProbeResult(
+                        ParserLookaheadProbeKind.ImmediateReject,
+                        token?.RuleName,
+                        token?.Text));
             }
 
             var diagnosticSpan = resolveDiagnosticSpan(context);
@@ -77,7 +82,12 @@ internal sealed class ScheduledAlternativeExecutor
             return null;
         }
 
-        _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(true, token?.RuleName, token?.Text));
+        _lookaheadCache.TryAdd(
+            lookaheadKey,
+            new ParserLookaheadProbeResult(
+                ParserLookaheadProbeKind.RequiresParse,
+                token?.RuleName,
+                token?.Text));
 
         var state = new ActiveParseState
         {
