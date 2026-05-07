@@ -38,7 +38,7 @@ public sealed class ParserEngine
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler();
-        _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache);
+        _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, new ParserLookaheadProbe());
     }
 
     /// <summary>
@@ -654,6 +654,8 @@ public sealed class ParserEngine
                 cursorIndex,
                 diagnostics,
                 checkPrecedence: candidate => CheckPrecedence(candidate, precedence),
+                resolveRule: ResolveRule,
+                caseInsensitive: _caseInsensitive,
                 containsPredicateOrAction: ContainsPredicateOrAction,
                 resolveDiagnosticSpan: ResolveDiagnosticSpan,
                 parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics)));
@@ -672,6 +674,14 @@ public sealed class ParserEngine
 
         var span = ComputeSpan(startToken, context, startPosition);
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+    /// <summary>
+    /// Resolves a rule by name from the parser definition.
+    /// </summary>
+    private Rule? ResolveRule(string ruleName)
+    {
+        return _definition.AllRules.TryGetValue(ruleName, out var rule) ? rule : null;
     }
 
     private static bool IsBetterBranch(ParseBranch candidate, ParseBranch current)

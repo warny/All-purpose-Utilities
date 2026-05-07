@@ -11,14 +11,16 @@ internal sealed class ScheduledAlternativeExecutor
 {
     private readonly ParserStateRegistry _stateRegistry;
     private readonly ParserLookaheadCache _lookaheadCache;
+    private readonly ParserLookaheadProbe _lookaheadProbe;
 
     /// <summary>
     /// Creates an executor bound to parser runtime registries.
     /// </summary>
-    public ScheduledAlternativeExecutor(ParserStateRegistry stateRegistry, ParserLookaheadCache lookaheadCache)
+    public ScheduledAlternativeExecutor(ParserStateRegistry stateRegistry, ParserLookaheadCache lookaheadCache, ParserLookaheadProbe lookaheadProbe)
     {
         _stateRegistry = stateRegistry;
         _lookaheadCache = lookaheadCache;
+        _lookaheadProbe = lookaheadProbe;
     }
 
     /// <summary>
@@ -35,6 +37,8 @@ internal sealed class ScheduledAlternativeExecutor
         int cursorIndex,
         DiagnosticBag? diagnostics,
         Func<Alternative, bool> checkPrecedence,
+        Func<string, Rule?> resolveRule,
+        bool caseInsensitive,
         Func<RuleContent, bool> containsPredicateOrAction,
         Func<ParseContext, (int? Start, int? Length)> resolveDiagnosticSpan,
         Func<Alternative, ParseNode?> parseAlternative)
@@ -52,9 +56,17 @@ internal sealed class ScheduledAlternativeExecutor
             diagnostics is null
             && ScheduledAlternativeCursorKinds.AllowsNegativeLookaheadShortcut(cursorKind);
         var token = context.Peek();
+        _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead);
+
+        var probedLookahead = _lookaheadProbe.Probe(alternative, token, resolveRule, caseInsensitive);
+        if (probedLookahead.Kind != ParserLookaheadProbeKind.Unknown)
+        {
+            _lookaheadCache.TryAdd(lookaheadKey, probedLookahead);
+        }
+
         if (allowNegativeShortcut
-            && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
-            && cachedLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
+            && ((cachedLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
+                || (probedLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)))
         {
             return null;
         }
