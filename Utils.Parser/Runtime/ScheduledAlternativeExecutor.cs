@@ -26,7 +26,7 @@ internal sealed class ScheduledAlternativeExecutor
     /// <summary>
     /// Executes one alternative from the scheduler and returns a completed parse state when successful.
     /// </summary>
-    public ActiveParseState? Execute(
+    public (ActiveParseState? State, ParserLookaheadProbeResult Probe) Execute(
         ParseContext context,
         Rule rule,
         Alternative alternative,
@@ -48,7 +48,7 @@ internal sealed class ScheduledAlternativeExecutor
 
         if (!checkPrecedence(alternative))
         {
-            return null;
+            return (null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null));
         }
 
         var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
@@ -76,7 +76,7 @@ internal sealed class ScheduledAlternativeExecutor
         if (allowNegativeShortcut
             && effectiveLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
         {
-            return null;
+            return (null, effectiveLookahead);
         }
 
         var savedPosition = context.SavePosition();
@@ -99,7 +99,7 @@ internal sealed class ScheduledAlternativeExecutor
             var diagnosticSpan = resolveDiagnosticSpan(context);
             diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
             context.RestorePosition(savedPosition);
-            return null;
+            return (null, effectiveLookahead);
         }
 
         _lookaheadCache.TryAdd(
@@ -126,6 +126,6 @@ internal sealed class ScheduledAlternativeExecutor
         };
 
         context.RestorePosition(savedPosition);
-        return state;
+        return (state, effectiveLookahead);
     }
 }

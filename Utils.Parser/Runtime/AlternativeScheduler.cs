@@ -8,6 +8,9 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class AlternativeScheduler
 {
+    private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
+    private readonly ParserContinuationFactory _continuationFactory = new();
+    private readonly ParserSharedPrefixPlanFactory _sharedPrefixPlanFactory = new();
     /// <summary>
     /// Drives alternative orchestration for a single alternation parse attempt.
     /// </summary>
@@ -17,9 +20,10 @@ internal sealed class AlternativeScheduler
         int originInputPosition,
         int minimumPrecedence,
         DiagnosticBag? diagnostics,
-        Func<Alternative, int, ActiveParseState?> parseAlternative)
+        Func<Alternative, int, (ActiveParseState? State, ParserLookaheadProbeResult Probe)> parseAlternative)
     {
         var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
+        var lookaheadProbesByAlternative = new ParserLookaheadProbeResult[ordered.Count];
         var completedStates = new List<ActiveParseState>();
         var failedStates = new List<ActiveParseState>();
 
@@ -27,7 +31,9 @@ internal sealed class AlternativeScheduler
         {
             var alternative = ordered[index];
             var initial = CreateInitialState(rule, alternative, originInputPosition, index);
-            var parsed = parseAlternative(alternative, index);
+            var scheduled = parseAlternative(alternative, index);
+            var parsed = scheduled.State;
+            lookaheadProbesByAlternative[index] = scheduled.Probe;
             if (parsed is null)
             {
                 failedStates.Add(initial.Fail());
@@ -39,7 +45,7 @@ internal sealed class AlternativeScheduler
 
         if (completedStates.Count == 0)
         {
-            return new AlternativeSchedulingResult(null, [], failedStates, []);
+            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
         }
 
         var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
@@ -56,9 +62,40 @@ internal sealed class AlternativeScheduler
             }
         }
 
-        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates);
+        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
     }
 
+
+
+    /// <summary>
+    /// Builds informational scheduling metadata from shallow look-ahead observations.
+    /// </summary>
+    private AlternativeSchedulingMetadata BuildMetadata(
+        Rule rule,
+        IReadOnlyList<Alternative> orderedAlternatives,
+        IReadOnlyList<ParserLookaheadProbeResult> lookaheadProbes)
+    {
+        var candidates = _sharedPrefixDetector.Detect(lookaheadProbes);
+        var candidateIndexes = candidates
+            .SelectMany(static candidate => candidate.AlternativeIndexes)
+            .ToHashSet();
+
+        var continuations = new List<ParserContinuationDescriptor>(orderedAlternatives.Count);
+        for (var index = 0; index < orderedAlternatives.Count; index++)
+        {
+            var expectedTokenNames = lookaheadProbes[index].ExpectedTokenNames;
+            continuations.Add(_continuationFactory.Create(
+                rule,
+                orderedAlternatives[index],
+                index,
+                sequencePosition: 0,
+                expectedTokenNames,
+                candidateIndexes.Contains(index)));
+        }
+
+        var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations);
+        return new AlternativeSchedulingMetadata { SharedPrefixPlans = plans };
+    }
     private static ActiveParseState CreateInitialState(Rule rule, Alternative alternative, int originInputPosition, int alternativeIndex)
     {
         return new ActiveParseState
@@ -168,16 +205,18 @@ internal sealed class AlternativeScheduler
 
 internal sealed class AlternativeSchedulingResult
 {
-    public AlternativeSchedulingResult(ActiveParseState? selectedState, IReadOnlyList<ActiveParseState> completedStates, IReadOnlyList<ActiveParseState> failedStates, IReadOnlyList<ActiveParseState> prunedStates)
+    public AlternativeSchedulingResult(ActiveParseState? selectedState, IReadOnlyList<ActiveParseState> completedStates, IReadOnlyList<ActiveParseState> failedStates, IReadOnlyList<ActiveParseState> prunedStates, AlternativeSchedulingMetadata metadata)
     {
         SelectedState = selectedState;
         CompletedStates = completedStates;
         FailedStates = failedStates;
         PrunedStates = prunedStates;
+        Metadata = metadata;
     }
 
     public ActiveParseState? SelectedState { get; }
     public IReadOnlyList<ActiveParseState> CompletedStates { get; }
     public IReadOnlyList<ActiveParseState> FailedStates { get; }
     public IReadOnlyList<ActiveParseState> PrunedStates { get; }
+    public AlternativeSchedulingMetadata Metadata { get; }
 }
