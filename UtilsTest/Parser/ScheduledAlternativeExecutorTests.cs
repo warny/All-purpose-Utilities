@@ -345,6 +345,45 @@ public class ScheduledAlternativeExecutorTests
         Assert.AreEqual(0, probeCallCount, "Probe must not run when the cache already holds an authoritative result.");
     }
 
+
+
+    [TestMethod]
+    public void Execute_EpsilonPossible_DoesNotTriggerShortcut()
+    {
+        var registry = new ParserStateRegistry();
+        var cache = new ParserLookaheadCache();
+        var executor = new ScheduledAlternativeExecutor(registry, cache, new ParserLookaheadProbe());
+        var rule = CreateRule();
+        var alternative = rule.Content.Alternatives[0];
+        var context = new ParseContext([new Token(new SourceSpan(0, 1), "ID", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
+        var lookaheadKey = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+        cache.TryAdd(lookaheadKey, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.EpsilonPossible, null, null));
+        var attemptCount = 0;
+
+        _ = executor.Execute(
+            context,
+            rule,
+            alternative,
+            alternativeIndex: 0,
+            startPosition: 0,
+            precedence: 0,
+            cursorKind: ScheduledAlternativeCursorKinds.RuleRoot,
+            cursorIndex: -1,
+            diagnostics: null,
+            checkPrecedence: static _ => true,
+            resolveRule: static _ => null,
+            caseInsensitive: false,
+            containsPredicateOrAction: static _ => false,
+            resolveDiagnosticSpan: static _ => (0, 0),
+            parseAlternative: _ =>
+            {
+                attemptCount++;
+                return null;
+            });
+
+        Assert.AreEqual(1, attemptCount);
+    }
+
     private static Rule CreateRule()
     {
         return new Rule("root", 0, false, new Alternation([

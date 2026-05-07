@@ -89,6 +89,64 @@ public class ParserLookaheadProbeTests
         Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, result.Kind);
     }
 
+
+    [TestMethod]
+    public void Probe_OptionalQuantifier_ReturnsEpsilonPossible()
+    {
+        var quantifier = new Quantifier(new LiteralMatch("x"), 0, 1);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(quantifier), TokenWithText("y"), static _ => null, false);
+        Assert.AreEqual(ParserLookaheadProbeKind.EpsilonPossible, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_StarQuantifier_ReturnsEpsilonPossible()
+    {
+        var quantifier = new Quantifier(new LiteralMatch("x"), 0, null);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(quantifier), TokenWithText("y"), static _ => null, false);
+        Assert.AreEqual(ParserLookaheadProbeKind.EpsilonPossible, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_EmptySequence_ReturnsEpsilonPossible()
+    {
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(new Sequence([])), TokenWithText("x"), static _ => null, false);
+        Assert.AreEqual(ParserLookaheadProbeKind.EpsilonPossible, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_Sequence_ContinuesPastEpsilonPossible()
+    {
+        var sequence = new Sequence([
+            new Quantifier(new LiteralMatch("x"), 0, 1),
+            new LiteralMatch("go")
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("stop"), static _ => null, false);
+        Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_Sequence_AllOptional_ReturnsEpsilonPossible()
+    {
+        var sequence = new Sequence([
+            new Quantifier(new LiteralMatch("x"), 0, 1),
+            new Quantifier(new LiteralMatch("y"), 0, null)
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("z"), static _ => null, false);
+        Assert.AreEqual(ParserLookaheadProbeKind.EpsilonPossible, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_Sequence_UnknownStopsAnalysis()
+    {
+        Rule? Resolve(string name) => name == "expr" ? new Rule("expr", 0, false, new Alternation([])) { Kind = RuleKind.Parser } : null;
+        var sequence = new Sequence([
+            new RuleRef("expr"),
+            new LiteralMatch("go")
+        ]);
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("go"), Resolve, false);
+        Assert.AreEqual(ParserLookaheadProbeKind.Unknown, result.Kind);
+    }
+
     [TestMethod]
     public void Probe_NestedAlternation_ReturnsUnknown()
     {
