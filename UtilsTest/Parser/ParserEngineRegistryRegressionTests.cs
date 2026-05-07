@@ -248,6 +248,28 @@ public class ParserEngineRegistryRegressionTests
         Assert.IsTrue(failingMemoHits >= 2, "backtracked alternatives should reuse memoized failure.");
     }
 
+    /// <summary>
+    /// Regression: a parser rule ref at EOF must not be rejected by the look-ahead probe.
+    /// The probe must return Unknown for parser rule refs (they may consume no tokens),
+    /// so the parser still attempts to parse the referenced rule.
+    /// </summary>
+    [TestMethod]
+    public void ParserLookaheadProbe_DoesNotRejectParserRuleRefAtEof()
+    {
+        const string grammar = """
+            grammar G;
+            root : opt ;
+            opt  : ID* ;
+            ID   : ('a'..'z')+ ;
+            WS   : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics(grammar, "", diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree, "parser rule ref at EOF should not be rejected by the look-ahead probe.");
+    }
+
     private static ParseNode ParseWithDiagnostics(string grammarText, string input, DiagnosticBag diagnostics)
     {
         var definition = Antlr4GrammarConverter.Parse(grammarText, diagnostics);
