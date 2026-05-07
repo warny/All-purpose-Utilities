@@ -206,6 +206,28 @@ public class ParserEngineRegistryRegressionTests
         Assert.IsFalse(diagnosticsY.Any(d => d.Code == ParserDiagnostics.ParserStateCycleDetected.Code));
     }
 
+
+    /// <summary>
+    /// Ensures epsilon-capable look-ahead classification does not skip a valid parse path
+    /// when an optional prefix can consume the current token.
+    /// </summary>
+    [TestMethod]
+    public void OptionalPrefixFollowedByLiteral_DoesNotRegressViaNegativeShortcut()
+    {
+        const string grammar = """
+            grammar G;
+            root : 'x'? 'y' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var diagnostics = new DiagnosticBag();
+        var tree = ParseWithDiagnostics(grammar, "x y", diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.AreEqual(1, CountTokenText(tree, "x"));
+        Assert.AreEqual(1, CountTokenText(tree, "y"));
+    }
+
     /// <summary>
     /// Ensures deterministic failures are memoized per invocation key and not re-evaluated for each backtracked alternative.
     /// </summary>

@@ -69,6 +69,12 @@ builder.QueryString["key"].Add("value");
 Console.WriteLine(builder.ToString());
 ```
 
+## Parser look-ahead note
+
+The look-ahead probe layer can now conservatively classify structurally epsilon-capable alternatives such as optional or zero-or-more quantifiers. This classification remains informational and does not bypass normal parsing.
+
+Still intentionally out of scope: adaptive prediction, recursive FIRST-set analysis, shared look-ahead graphs, continuation queues, and parallel parsing.
+
 ## Recent expression updates
 
 - `ExpressionCompilerContext` is now the shared runtime context for expression compilers.
