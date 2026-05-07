@@ -98,7 +98,7 @@ public class ParserSharedPrefixPlanFactoryTests
     }
 
     [TestMethod]
-    public void CreatePlans_PreservesContinuationOrder()
+    public void CreatePlans_PreservesContinuationOrderByAlternativeIndex()
     {
         var factory = new ParserSharedPrefixPlanFactory();
         var candidates = new[] { Candidate("ID", [0, 1, 2]) };
@@ -111,7 +111,7 @@ public class ParserSharedPrefixPlanFactoryTests
         ]);
 
         Assert.AreEqual(1, result.Count);
-        CollectionAssert.AreEqual(new[] { 2, 0, 1 }, result[0].AlternativeIndexes.ToArray());
+        CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result[0].AlternativeIndexes.ToArray());
     }
 
     private static ParserLookaheadSharedPrefixCandidate Candidate(string tokenName, IReadOnlyList<int> alternatives)

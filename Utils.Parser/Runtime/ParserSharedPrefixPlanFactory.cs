@@ -44,13 +44,13 @@ internal sealed class ParserSharedPrefixPlanFactory
     /// </summary>
     /// <param name="candidate">Shared-prefix candidate token and alternatives.</param>
     /// <param name="continuations">Ordered continuation descriptors.</param>
-    /// <returns>Matching continuation descriptors in stable input order.</returns>
+    /// <returns>Matching continuation descriptors ordered by alternative index.</returns>
     private static List<ParserContinuationDescriptor> MatchContinuations(
         ParserLookaheadSharedPrefixCandidate candidate,
         IReadOnlyList<ParserContinuationDescriptor> continuations)
     {
         var candidateIndexes = candidate.AlternativeIndexes.ToHashSet();
-        var matching = new List<ParserContinuationDescriptor>();
+        var matchingByAlternative = new Dictionary<int, ParserContinuationDescriptor>();
 
         foreach (var continuation in continuations)
         {
@@ -64,10 +64,18 @@ internal sealed class ParserSharedPrefixPlanFactory
                 continue;
             }
 
-            matching.Add(continuation);
+            if (!matchingByAlternative.ContainsKey(continuation.Key.AlternativeIndex))
+            {
+                matchingByAlternative[continuation.Key.AlternativeIndex] = continuation;
+            }
         }
 
-        return matching;
+        var orderedMatching = matchingByAlternative
+            .OrderBy(static pair => pair.Key)
+            .Select(static pair => pair.Value)
+            .ToList();
+
+        return orderedMatching;
     }
 
     /// <summary>
