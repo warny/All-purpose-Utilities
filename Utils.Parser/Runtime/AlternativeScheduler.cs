@@ -20,7 +20,7 @@ internal sealed class AlternativeScheduler
         int originInputPosition,
         int minimumPrecedence,
         DiagnosticBag? diagnostics,
-        Func<Alternative, int, (ActiveParseState? State, ParserLookaheadProbeResult Probe)> parseAlternative)
+        Func<Alternative, int, ScheduledAlternativeExecutionResult> parseAlternative)
     {
         var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
         var lookaheadProbesByAlternative = new ParserLookaheadProbeResult[ordered.Count];
@@ -75,6 +75,9 @@ internal sealed class AlternativeScheduler
         IReadOnlyList<Alternative> orderedAlternatives,
         IReadOnlyList<ParserLookaheadProbeResult> lookaheadProbes)
     {
+        // Metadata generation intentionally includes shallow observations from attempted
+        // alternatives even when parsing fails. Shared-prefix planning metadata is
+        // structural and observational only.
         var candidates = _sharedPrefixDetector.Detect(lookaheadProbes);
         var candidateIndexes = candidates
             .SelectMany(static candidate => candidate.AlternativeIndexes)

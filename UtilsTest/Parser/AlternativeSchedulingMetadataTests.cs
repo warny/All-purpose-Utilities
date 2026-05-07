@@ -47,7 +47,7 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             new DiagnosticBag(),
-            (alternative, index) => (CreateState(rule, alternative, index, 2), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
 
         Assert.AreEqual(1, result.CompletedStates.Count);
         Assert.AreEqual(1, result.PrunedStates.Count);
@@ -69,7 +69,7 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             diagnostics,
-            (alternative, index) => (CreateState(rule, alternative, index, 2), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
 
         Assert.AreEqual(1, diagnostics.Count(static d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
     }
@@ -98,6 +98,33 @@ public class AlternativeSchedulingMetadataTests
         CollectionAssert.AreEqual(new[] { 0, 1 }, indexes);
     }
 
+
+    [TestMethod]
+    public void Scheduler_Metadata_IncludesFailedAlternativesLookahead()
+    {
+        var scheduler = new AlternativeScheduler();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new RuleRef("ID"), "a"),
+            new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => index == 0
+                ? new ScheduledAlternativeExecutionResult(null, Probe("ID"))
+                : new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe("ID")));
+
+        Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
+        Assert.AreEqual("ID", result.Metadata.SharedPrefixPlans[0].SharedTokenName);
+        Assert.AreEqual(1, result.CompletedStates.Count);
+        Assert.AreEqual(1, result.FailedStates.Count);
+    }
     private static AlternativeSchedulingResult Run(IReadOnlyList<IReadOnlyList<string>> expected)
     {
         var scheduler = new AlternativeScheduler();
@@ -113,7 +140,7 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             null,
-            (alternative, index) => (CreateState(rule, alternative, index, 1), Probe(expected[index])));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe(expected[index])));
     }
 
     private static ParserLookaheadProbeResult Probe(IReadOnlyList<string> expected) =>
