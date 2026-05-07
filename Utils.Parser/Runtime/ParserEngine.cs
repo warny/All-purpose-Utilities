@@ -141,7 +141,7 @@ public sealed class ParserEngine
             }
             else
             {
-                parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, "rule-root", -1);
+                parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
             }
 
             _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null));
@@ -171,7 +171,7 @@ public sealed class ParserEngine
             info.Rule,
             minimumPrecedence,
             diagnostics,
-            "left-recursive-seed",
+            ScheduledAlternativeCursorKinds.LeftRecursiveSeed,
             -1);
         if (seed is null)
         {
@@ -618,9 +618,12 @@ public sealed class ParserEngine
         int elementIndex = -1,
         DiagnosticBag? diagnostics = null)
     {
-        return TryParseScheduledAlternatives(context, alternation.Alternatives, rule, precedence, diagnostics, "alternation", elementIndex >= 0 ? elementIndex : alternativeIndex);
+        return TryParseScheduledAlternatives(context, alternation.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.Alternation, elementIndex >= 0 ? elementIndex : alternativeIndex);
     }
 
+    // cursorKind/cursorIndex identify the scheduling context for look-ahead observations.
+    // They deliberately distinguish rule-root, left-recursive seed, and nested alternation
+    // attempts so conservative negative look-ahead reuse cannot cross parser-shape boundaries.
     private ParseNode? TryParseScheduledAlternatives(
         ParseContext context,
         IEnumerable<Alternative> alternatives,
@@ -651,8 +654,7 @@ public sealed class ParserEngine
                 var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
                 var allowNegativeShortcut =
                     diagnostics is null
-                    && (cursorKind == "rule-root"
-                        || cursorKind == "left-recursive-seed");
+                    && ScheduledAlternativeCursorKinds.AllowsNegativeLookaheadShortcut(cursorKind);
                 var token = context.Peek();
                 if (allowNegativeShortcut
                     && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
