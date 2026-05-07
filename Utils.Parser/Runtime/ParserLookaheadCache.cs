@@ -5,7 +5,7 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ParserLookaheadCache
 {
-    private readonly Dictionary<ParserLookaheadKey, ParserLookaheadResult> _results = [];
+    private readonly Dictionary<ParserLookaheadKey, ParserLookaheadProbeResult> _results = [];
 
     /// <summary>
     /// Clears all cached look-ahead observations.
@@ -18,7 +18,7 @@ internal sealed class ParserLookaheadCache
     /// <summary>
     /// Tries to get a cached look-ahead observation for the provided key.
     /// </summary>
-    public bool TryGet(ParserLookaheadKey key, out ParserLookaheadResult result)
+    public bool TryGet(ParserLookaheadKey key, out ParserLookaheadProbeResult result)
     {
         return _results.TryGetValue(key, out result);
     }
@@ -26,7 +26,7 @@ internal sealed class ParserLookaheadCache
     /// <summary>
     /// Adds a look-ahead observation when no value exists for the same key.
     /// </summary>
-    public bool TryAdd(ParserLookaheadKey key, ParserLookaheadResult result)
+    public bool TryAdd(ParserLookaheadKey key, ParserLookaheadProbeResult result)
     {
         if (_results.ContainsKey(key))
         {

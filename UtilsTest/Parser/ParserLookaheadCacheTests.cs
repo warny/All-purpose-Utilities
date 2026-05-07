@@ -15,7 +15,7 @@ public class ParserLookaheadCacheTests
     {
         var cache = new ParserLookaheadCache();
         var key = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
-        var expected = new ParserLookaheadResult(false, "ID", "id");
+        var expected = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id");
 
         Assert.IsTrue(cache.TryAdd(key, expected));
         Assert.IsTrue(cache.TryGet(key, out var actual));
@@ -29,7 +29,7 @@ public class ParserLookaheadCacheTests
         var first = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
         var second = new ParserLookaheadKey("root", 0, 1, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
 
-        cache.TryAdd(first, new ParserLookaheadResult(false, "ID", "id"));
+        cache.TryAdd(first, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id"));
 
         Assert.IsFalse(cache.TryGet(second, out _));
     }
@@ -41,7 +41,7 @@ public class ParserLookaheadCacheTests
         var lower = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
         var higher = new ParserLookaheadKey("root", 0, 0, 1, ScheduledAlternativeCursorKinds.RuleRoot, -1);
 
-        cache.TryAdd(lower, new ParserLookaheadResult(false, "ID", "id"));
+        cache.TryAdd(lower, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id"));
 
         Assert.IsFalse(cache.TryGet(higher, out _));
     }
@@ -107,7 +107,7 @@ public class ParserLookaheadCacheTests
         var first = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.Alternation, 1);
         var second = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.Alternation, 2);
 
-        cache.TryAdd(first, new ParserLookaheadResult(false, "ID", "id"));
+        cache.TryAdd(first, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id"));
 
         Assert.IsFalse(cache.TryGet(second, out _));
     }
@@ -120,9 +120,33 @@ public class ParserLookaheadCacheTests
         var ruleRoot = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
         var nestedAlternation = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.Alternation, -1);
 
-        cache.TryAdd(ruleRoot, new ParserLookaheadResult(false, "ID", "id"));
+        cache.TryAdd(ruleRoot, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id"));
 
         Assert.IsFalse(cache.TryGet(nestedAlternation, out _));
+    }
+
+    [TestMethod]
+    public void ParserLookaheadProbeResult_StoresImmediateReject()
+    {
+        var cache = new ParserLookaheadCache();
+        var key = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+        var expected = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id");
+
+        Assert.IsTrue(cache.TryAdd(key, expected));
+        Assert.IsTrue(cache.TryGet(key, out var actual));
+        Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, actual.Kind);
+    }
+
+    [TestMethod]
+    public void ParserLookaheadProbeResult_StoresRequiresParse()
+    {
+        var cache = new ParserLookaheadCache();
+        var key = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+        var expected = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id");
+
+        Assert.IsTrue(cache.TryAdd(key, expected));
+        Assert.IsTrue(cache.TryGet(key, out var actual));
+        Assert.AreEqual(ParserLookaheadProbeKind.RequiresParse, actual.Kind);
     }
 
     [TestMethod]
