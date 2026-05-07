@@ -114,14 +114,14 @@ public class ParserLookaheadProbeTests
     }
 
     [TestMethod]
-    public void Probe_Sequence_ContinuesPastEpsilonPossible()
+    public void Probe_Sequence_EpsilonPossibleBeforeLiteral_ReturnsUnknown()
     {
         var sequence = new Sequence([
             new Quantifier(new LiteralMatch("x"), 0, 1),
             new LiteralMatch("go")
         ]);
         var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("stop"), static _ => null, false);
-        Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, result.Kind);
+        Assert.AreEqual(ParserLookaheadProbeKind.Unknown, result.Kind);
     }
 
     [TestMethod]

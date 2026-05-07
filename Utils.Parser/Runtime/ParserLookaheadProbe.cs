@@ -88,21 +88,27 @@ internal sealed class ParserLookaheadProbe
         Func<string, Rule?> resolveRule,
         bool caseInsensitive)
     {
-        foreach (var item in sequence.Items)
-        {
-            if (item is EmbeddedAction or LexerCommand)
-            {
-                continue;
-            }
+        var meaningfulItems = sequence.Items
+            .Where(static item => item is not EmbeddedAction and not LexerCommand)
+            .ToArray();
 
-            var itemProbe = ProbeContent(item, token, resolveRule, caseInsensitive);
+        if (meaningfulItems.Length == 0)
+        {
+            return EpsilonPossible(token);
+        }
+
+        var encounteredEpsilonPossible = false;
+
+        for (var i = 0; i < meaningfulItems.Length; i++)
+        {
+            var itemProbe = ProbeContent(meaningfulItems[i], token, resolveRule, caseInsensitive);
             switch (itemProbe.Kind)
             {
                 case ParserLookaheadProbeKind.ImmediateReject:
-                    return itemProbe;
                 case ParserLookaheadProbeKind.RequiresParse:
-                    return itemProbe;
+                    return encounteredEpsilonPossible ? Unknown(token) : itemProbe;
                 case ParserLookaheadProbeKind.EpsilonPossible:
+                    encounteredEpsilonPossible = true;
                     continue;
                 case ParserLookaheadProbeKind.Unknown:
                 default:
