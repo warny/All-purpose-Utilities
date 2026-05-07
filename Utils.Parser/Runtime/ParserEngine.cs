@@ -31,12 +31,14 @@ public sealed class ParserEngine
     private readonly ParserStateRegistry _stateRegistry = new();
     private readonly AlternativeScheduler _alternativeScheduler;
     private readonly ParserLookaheadCache _lookaheadCache = new();
+    private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
 
     public ParserEngine(ParserDefinition definition)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler();
+        _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache);
     }
 
     /// <summary>
@@ -641,67 +643,20 @@ public sealed class ParserEngine
             startPosition,
             precedence,
             diagnostics,
-            parseAlternative: (alternative, alternativeIndex) =>
-            {
-                var stateKey = new ParserStateKey(rule.Name, startPosition, alternativeIndex, alternativeIndex, precedence);
-                _stateRegistry.TryEnterState(stateKey);
-
-                if (!CheckPrecedence(alternative, precedence))
-                {
-                    return null;
-                }
-
-                var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
-                var allowNegativeShortcut =
-                    diagnostics is null
-                    && ScheduledAlternativeCursorKinds.AllowsNegativeLookaheadShortcut(cursorKind);
-                var token = context.Peek();
-                if (allowNegativeShortcut
-                    && _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead)
-                    && !cachedLookahead.CanStart)
-                {
-                    return null;
-                }
-
-                var savedPosition = context.SavePosition();
-                var result = TryParseContent(context, alternative.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics);
-                if (result is null)
-                {
-                    var consumed = context.Position > savedPosition;
-                    if (allowNegativeShortcut
-                        && !consumed
-                        && !ContainsPredicateOrAction(alternative.Content))
-                    {
-                        _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(false, token?.RuleName, token?.Text));
-                    }
-
-                    var diagnosticSpan = ResolveDiagnosticSpan(context);
-                    diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
-                    context.RestorePosition(savedPosition);
-                    return null;
-                }
-
-                _lookaheadCache.TryAdd(lookaheadKey, new ParserLookaheadResult(true, token?.RuleName, token?.Text));
-
-                var state = new ActiveParseState
-                {
-                    Rule = rule,
-                    Alternative = alternative,
-                    OriginInputPosition = startPosition,
-                    CurrentInputPosition = context.Position,
-                    AlternativeIndex = alternativeIndex,
-                    Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
-                    PartialNode = result,
-                    EndPosition = context.Position,
-                    Status = ActiveParseStateStatus.Completed,
-                    ParentStateKey = null,
-                    Depth = 0,
-                    Continuation = null
-                };
-
-                context.RestorePosition(savedPosition);
-                return state;
-            });
+            parseAlternative: (alternative, alternativeIndex) => _scheduledAlternativeExecutor.Execute(
+                context,
+                rule,
+                alternative,
+                alternativeIndex,
+                startPosition,
+                precedence,
+                cursorKind,
+                cursorIndex,
+                diagnostics,
+                checkPrecedence: candidate => CheckPrecedence(candidate, precedence),
+                containsPredicateOrAction: ContainsPredicateOrAction,
+                resolveDiagnosticSpan: ResolveDiagnosticSpan,
+                parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics)));
 
         if (scheduling.SelectedState is null)
         {
