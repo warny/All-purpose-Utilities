@@ -82,6 +82,8 @@ This layer is now orchestrated by an internal `AlternativeScheduler` that execut
   without enabling parallel parsing at this stage.
 - `ParserEngine` also keeps an internal look-ahead cache keyed by rule name, origin position, alternative index, minimum precedence, and alternation cursor context.
 - The cache stores lightweight structured look-ahead probe observations only (immediate reject vs requires parse, plus first token snapshot), does not store parse trees, does not replace `ParserStateRegistry`, and does not change alternative selection semantics.
+- The scheduled alternative look-ahead layer now performs conservative first-token probing for simple literal matches and lexer-rule references; unsupported or ambiguous constructs return `Unknown` and fall back to normal parsing.
+- There is still no shared look-ahead graph, no adaptive prediction, no parallel parsing, no continuation queue, and nested alternations are not structurally explored yet.
 - The current implementation only applies negative shortcut reuse to top-level rule alternative scheduling and left-recursive seed scheduling. Nested alternations are intentionally excluded in this step to preserve diagnostic stability and keep the optimization conservative.
 - The scheduled alternative cursor context is part of the cache key so observations cannot be reused across different parser-shape positions, such as a rule-root choice and a nested alternation.
 - Execution remains sequential: no parallel alternative parsing, no continuation queue, and no shared look-ahead graph in this step.
