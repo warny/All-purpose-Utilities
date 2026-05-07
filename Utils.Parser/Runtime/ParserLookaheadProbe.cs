@@ -55,21 +55,22 @@ internal sealed class ParserLookaheadProbe
 
     /// <summary>
     /// Probes a rule reference when the target is a lexer rule.
+    /// Parser rule references always return Unknown because they may accept empty input.
     /// </summary>
     private static ParserLookaheadProbeResult ProbeRuleReference(
         RuleRef ruleRef,
         Token? token,
         Func<string, Rule?> resolveRule)
     {
-        if (token is null)
-        {
-            return ImmediateReject(token);
-        }
-
         var resolved = resolveRule(ruleRef.RuleName);
         if (resolved is null || resolved.Kind != RuleKind.Lexer)
         {
             return Unknown(token);
+        }
+
+        if (token is null)
+        {
+            return ImmediateReject(token);
         }
 
         return string.Equals(token.RuleName, ruleRef.RuleName, StringComparison.Ordinal)
