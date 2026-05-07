@@ -33,6 +33,7 @@ internal sealed class ParserLookaheadProbe
             LiteralMatch literal => ProbeLiteralMatch(literal, token, caseInsensitive),
             RuleRef ruleRef => ProbeRuleReference(ruleRef, token, resolveRule),
             Sequence sequence => ProbeSequence(sequence, token, resolveRule, caseInsensitive),
+            Quantifier quantifier => ProbeQuantifier(quantifier, token),
             _ => Unknown(token)
         };
     }
@@ -79,7 +80,7 @@ internal sealed class ParserLookaheadProbe
     }
 
     /// <summary>
-    /// Probes the first meaningful sequence item while skipping non-semantic runtime directives.
+    /// Probes sequence items while skipping non-semantic runtime directives.
     /// </summary>
     private static ParserLookaheadProbeResult ProbeSequence(
         Sequence sequence,
@@ -87,17 +88,45 @@ internal sealed class ParserLookaheadProbe
         Func<string, Rule?> resolveRule,
         bool caseInsensitive)
     {
-        foreach (var item in sequence.Items)
-        {
-            if (item is EmbeddedAction or LexerCommand)
-            {
-                continue;
-            }
+        var meaningfulItems = sequence.Items
+            .Where(static item => item is not EmbeddedAction and not LexerCommand)
+            .ToArray();
 
-            return ProbeContent(item, token, resolveRule, caseInsensitive);
+        if (meaningfulItems.Length == 0)
+        {
+            return EpsilonPossible(token);
         }
 
-        return Unknown(token);
+        var encounteredEpsilonPossible = false;
+
+        for (var i = 0; i < meaningfulItems.Length; i++)
+        {
+            var itemProbe = ProbeContent(meaningfulItems[i], token, resolveRule, caseInsensitive);
+            switch (itemProbe.Kind)
+            {
+                case ParserLookaheadProbeKind.ImmediateReject:
+                case ParserLookaheadProbeKind.RequiresParse:
+                    return encounteredEpsilonPossible ? Unknown(token) : itemProbe;
+                case ParserLookaheadProbeKind.EpsilonPossible:
+                    encounteredEpsilonPossible = true;
+                    continue;
+                case ParserLookaheadProbeKind.Unknown:
+                default:
+                    return itemProbe;
+            }
+        }
+
+        return EpsilonPossible(token);
+    }
+
+    /// <summary>
+    /// Probes quantifiers conservatively for local epsilon capability only.
+    /// </summary>
+    private static ParserLookaheadProbeResult ProbeQuantifier(Quantifier quantifier, Token? token)
+    {
+        return quantifier.Min == 0
+            ? EpsilonPossible(token)
+            : Unknown(token);
     }
 
     private static ParserLookaheadProbeResult Unknown(Token? token) =>
@@ -108,4 +137,9 @@ internal sealed class ParserLookaheadProbe
 
     private static ParserLookaheadProbeResult RequiresParse(Token? token) =>
         new(ParserLookaheadProbeKind.RequiresParse, token?.RuleName, token?.Text);
+
+    private static ParserLookaheadProbeResult EpsilonPossible(Token? token) =>
+        new(ParserLookaheadProbeKind.EpsilonPossible, token?.RuleName, token?.Text);
 }
+
+
