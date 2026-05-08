@@ -104,6 +104,41 @@ public class AlternativeSchedulingMetadataTests
         Assert.AreEqual(1, result.Metadata.SharedPrefixPlans[0].Segment.Boundary.SequencePosition);
     }
 
+
+    [TestMethod]
+    public void Scheduler_Metadata_ProducesReadableSharedPrefixDryRunOutput()
+    {
+        var scheduler = new AlternativeScheduler();
+        var formatter = new ParserSharedPrefixPlanFormatter();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")]), "a"),
+            new Alternative(1, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("-"), new RuleRef("expr")]), "b")
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe("ID")));
+
+        Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
+        Assert.AreEqual("ID", result.Metadata.SharedPrefixPlans[0].SharedTokenName);
+        Assert.IsTrue(result.Metadata.SharedPrefixPlans[0].Continuations.All(static c => c.Key.SequencePosition == 1));
+
+        var lines = formatter.FormatPlans(result.Metadata.SharedPrefixPlans);
+
+        Assert.AreEqual(1, lines.Count);
+        StringAssert.Contains(lines[0], "shared segment: ID");
+        StringAssert.Contains(lines[0], "boundary: position 1");
+        StringAssert.Contains(lines[0], "continuations:");
+        StringAssert.Contains(lines[0], "alt 0 -> position 1");
+        StringAssert.Contains(lines[0], "alt 1 -> position 1");
+    }
+
     [TestMethod]
     public void Scheduler_Metadata_PreservesStableAlternativeIndexes()
     {
