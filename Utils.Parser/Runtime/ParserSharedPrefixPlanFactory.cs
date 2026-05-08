@@ -33,7 +33,9 @@ internal sealed class ParserSharedPrefixPlanFactory
             }
 
             var alternativeIndexes = matchingContinuations.Select(static continuation => continuation.Key.AlternativeIndex).ToArray();
-            plans.Add(new ParserSharedPrefixPlan(candidate.TokenName, alternativeIndexes, matchingContinuations));
+            var boundary = BuildBoundary(matchingContinuations);
+            var segment = new ParserSharedPrefixSegment(candidate.TokenName, boundary);
+            plans.Add(new ParserSharedPrefixPlan(candidate.TokenName, alternativeIndexes, matchingContinuations, segment));
         }
 
         return plans;
@@ -100,5 +102,31 @@ internal sealed class ParserSharedPrefixPlanFactory
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Builds a conservative shared-prefix boundary from matching continuations.
+    /// Falls back to sequence position zero when continuations disagree.
+    /// Expected-token names remain <see langword="null"/> to avoid suggesting
+    /// runtime FOLLOW-token or continuation-restart semantics.
+    /// </summary>
+    private static ParserSharedPrefixBoundary BuildBoundary(
+        IReadOnlyList<ParserContinuationDescriptor> continuations)
+    {
+        if (continuations.Count == 0)
+        {
+            return new ParserSharedPrefixBoundary(0, null);
+        }
+
+        var expectedPosition = continuations[0].Key.SequencePosition;
+        for (var index = 1; index < continuations.Count; index++)
+        {
+            if (continuations[index].Key.SequencePosition != expectedPosition)
+            {
+                return new ParserSharedPrefixBoundary(0, null);
+            }
+        }
+
+        return new ParserSharedPrefixBoundary(expectedPosition, null);
     }
 }

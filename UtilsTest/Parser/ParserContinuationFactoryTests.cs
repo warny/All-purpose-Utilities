@@ -106,4 +106,72 @@ public class ParserContinuationFactoryTests
         Assert.IsNull(descriptorType.GetProperty("TokenStream"));
         Assert.AreEqual(0, descriptorType.GetProperties().Count(static p => typeof(Delegate).IsAssignableFrom(p.PropertyType)));
     }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_SequenceWithSharedFirstToken_ReturnsOne()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")]));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(1, result);
+    }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_IgnoresEmbeddedActionAndLexerCommand()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([
+            new EmbeddedAction("x();", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LexerCommand(LexerCommandType.Skip, null),
+            new RuleRef("ID"),
+            new LiteralMatch("-")
+        ]));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(3, result);
+    }
+
+    [TestMethod]
+    public void Create_WithRawSharedPrefixSequencePosition_NormalizesMeaningfulBoundary()
+    {
+        var factory = new ParserContinuationFactory();
+        var rule = new Rule("expr", 0, false, new Alternation([]));
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([
+            new EmbeddedAction("x();", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LexerCommand(LexerCommandType.Skip, null),
+            new RuleRef("ID"),
+            new RuleRef("expr")
+        ]));
+
+        var rawSequencePosition = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+        var descriptor = factory.Create(rule, alternative, 0, rawSequencePosition, ["ID"], true);
+
+        Assert.AreEqual(3, rawSequencePosition);
+        Assert.AreEqual(1, descriptor.Key.SequencePosition);
+    }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_UnsupportedStructure_FallsBackToZero()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new RuleRef("expr"));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(0, result);
+    }
+
+    [TestMethod]
+    public void ComputeSharedPrefixSequencePosition_RuleRefNameMismatch_FallsBackToZero()
+    {
+        var factory = new ParserContinuationFactory();
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("expr"), new RuleRef("tail")]));
+
+        var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+
+        Assert.AreEqual(0, result);
+    }
 }

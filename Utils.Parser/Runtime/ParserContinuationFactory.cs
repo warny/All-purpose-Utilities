@@ -8,6 +8,40 @@ namespace Utils.Parser.Runtime;
 internal sealed class ParserContinuationFactory
 {
     /// <summary>
+    /// Computes a conservative sequence position for shared-token continuation metadata.
+    /// This shallow analysis is preparatory only and intentionally avoids deep parser semantics.
+    /// </summary>
+    /// <param name="alternative">Alternative containing the shared token.</param>
+    /// <param name="sharedTokenName">Shared token identifier from look-ahead metadata.</param>
+    /// <returns>Raw sequence-item index after the shared token, or zero when unsupported/ambiguous.</returns>
+    public int ComputeSharedPrefixSequencePosition(Alternative alternative, string sharedTokenName)
+    {
+        if (alternative.Content is not Sequence sequence)
+        {
+            return 0;
+        }
+
+        var firstMeaningfulItemIndex = -1;
+        for (var index = 0; index < sequence.Items.Count; index++)
+        {
+            if (sequence.Items[index] is EmbeddedAction or LexerCommand)
+            {
+                continue;
+            }
+
+            firstMeaningfulItemIndex = index;
+            break;
+        }
+
+        if (firstMeaningfulItemIndex < 0 || !IsSharedTokenMatchFromProbeMetadata(sequence.Items[firstMeaningfulItemIndex], sharedTokenName))
+        {
+            return 0;
+        }
+
+        return firstMeaningfulItemIndex + 1;
+    }
+
+    /// <summary>
     /// Creates a continuation descriptor from shallow rule/alternative location metadata.
     /// </summary>
     /// <param name="rule">Owning rule for the continuation point.</param>
@@ -66,5 +100,21 @@ internal sealed class ParserContinuationFactory
         }
 
         return meaningfulIndex;
+    }
+
+    /// <summary>
+    /// Determines whether a shallow sequence item matches a shared token name
+    /// coming from look-ahead probe metadata.
+    /// This helper intentionally performs no rule-kind resolution and therefore
+    /// must only be used with probe metadata that already represents shallow token candidates.
+    /// </summary>
+    private static bool IsSharedTokenMatchFromProbeMetadata(RuleContent content, string sharedTokenName)
+    {
+        return content switch
+        {
+            LiteralMatch literal => string.Equals(literal.Value, sharedTokenName, StringComparison.Ordinal),
+            RuleRef ruleRef => string.Equals(ruleRef.RuleName, sharedTokenName, StringComparison.Ordinal),
+            _ => false
+        };
     }
 }
