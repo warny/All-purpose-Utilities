@@ -13,7 +13,7 @@ internal sealed class ParserContinuationFactory
     /// </summary>
     /// <param name="alternative">Alternative containing the shared token.</param>
     /// <param name="sharedTokenName">Shared token identifier from look-ahead metadata.</param>
-    /// <returns>Sequence position after the shared token, or zero when unsupported/ambiguous.</returns>
+    /// <returns>Raw sequence-item index after the shared token, or zero when unsupported/ambiguous.</returns>
     public int ComputeSharedPrefixSequencePosition(Alternative alternative, string sharedTokenName)
     {
         if (alternative.Content is not Sequence sequence)
@@ -21,16 +21,24 @@ internal sealed class ParserContinuationFactory
             return 0;
         }
 
-        var meaningfulItems = sequence.Items
-            .Where(static item => item is not EmbeddedAction and not LexerCommand)
-            .ToArray();
+        var firstMeaningfulItemIndex = -1;
+        for (var index = 0; index < sequence.Items.Count; index++)
+        {
+            if (sequence.Items[index] is EmbeddedAction or LexerCommand)
+            {
+                continue;
+            }
 
-        if (meaningfulItems.Length == 0 || !IsSharedTokenMatchFromProbeMetadata(meaningfulItems[0], sharedTokenName))
+            firstMeaningfulItemIndex = index;
+            break;
+        }
+
+        if (firstMeaningfulItemIndex < 0 || !IsSharedTokenMatchFromProbeMetadata(sequence.Items[firstMeaningfulItemIndex], sharedTokenName))
         {
             return 0;
         }
 
-        return 1;
+        return firstMeaningfulItemIndex + 1;
     }
 
     /// <summary>

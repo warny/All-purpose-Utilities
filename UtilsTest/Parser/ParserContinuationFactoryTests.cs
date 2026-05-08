@@ -131,7 +131,26 @@ public class ParserContinuationFactoryTests
 
         var result = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
 
-        Assert.AreEqual(1, result);
+        Assert.AreEqual(3, result);
+    }
+
+    [TestMethod]
+    public void Create_WithRawSharedPrefixSequencePosition_NormalizesMeaningfulBoundary()
+    {
+        var factory = new ParserContinuationFactory();
+        var rule = new Rule("expr", 0, false, new Alternation([]));
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([
+            new EmbeddedAction("x();", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LexerCommand(LexerCommandType.Skip, null),
+            new RuleRef("ID"),
+            new RuleRef("expr")
+        ]));
+
+        var rawSequencePosition = factory.ComputeSharedPrefixSequencePosition(alternative, "ID");
+        var descriptor = factory.Create(rule, alternative, 0, rawSequencePosition, ["ID"], true);
+
+        Assert.AreEqual(3, rawSequencePosition);
+        Assert.AreEqual(1, descriptor.Key.SequencePosition);
     }
 
     [TestMethod]
