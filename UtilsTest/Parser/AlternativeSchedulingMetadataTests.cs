@@ -132,9 +132,11 @@ public class AlternativeSchedulingMetadataTests
         var lines = formatter.FormatPlans(result.Metadata.SharedPrefixPlans);
 
         Assert.AreEqual(1, lines.Count);
-        StringAssert.Contains(lines[0], "shared token: ID");
-        StringAssert.Contains(lines[0], "alt 0 -> after position 1");
-        StringAssert.Contains(lines[0], "alt 1 -> after position 1");
+        StringAssert.Contains(lines[0], "shared segment: ID");
+        StringAssert.Contains(lines[0], "boundary: position 1");
+        StringAssert.Contains(lines[0], "continuations:");
+        StringAssert.Contains(lines[0], "alt 0 -> position 1");
+        StringAssert.Contains(lines[0], "alt 1 -> position 1");
     }
 
     [TestMethod]

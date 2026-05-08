@@ -6,10 +6,10 @@ namespace Utils.Parser.Runtime;
 internal sealed class ParserSharedPrefixPlanFormatter
 {
     /// <summary>
-    /// Formats a list of shared-prefix plans while preserving plan order.
+    /// Formats a list of shared-prefix plans while preserving plan and continuation order.
     /// </summary>
     /// <param name="plans">Shared-prefix plans to format.</param>
-    /// <returns>A deterministic list of readable dry-run lines.</returns>
+    /// <returns>A deterministic list of multi-line readable dry-run blocks.</returns>
     public IReadOnlyList<string> FormatPlans(IReadOnlyList<ParserSharedPrefixPlan> plans)
     {
         if (plans.Count == 0)
@@ -27,40 +27,40 @@ internal sealed class ParserSharedPrefixPlanFormatter
     }
 
     /// <summary>
-    /// Formats one shared-prefix plan into a single deterministic dry-run line.
+    /// Formats one shared-prefix plan into a deterministic multi-line dry-run block.
     /// </summary>
     /// <param name="plan">Shared-prefix plan metadata.</param>
-    /// <returns>A readable dry-run line with shared token, optional boundary, and continuation positions.</returns>
+    /// <returns>A readable block with explicit shared segment, boundary, and continuations.</returns>
     private static string FormatPlan(ParserSharedPrefixPlan plan)
     {
-        var parts = new List<string>
+        var isFallbackBoundary = IsFallbackBoundary(plan);
+        var lines = new List<string>
         {
-            $"shared token: {plan.SharedTokenName}"
+            $"shared segment: {plan.Segment.SharedTokenName}",
+            isFallbackBoundary
+                ? $"boundary: position {plan.Segment.Boundary.SequencePosition} (fallback)"
+                : $"boundary: position {plan.Segment.Boundary.SequencePosition}",
+            "continuations:"
         };
-
-        if (ShouldRenderBoundary(plan))
-        {
-            parts.Add($"boundary: position {plan.Segment.Boundary.SequencePosition}");
-        }
 
         for (var index = 0; index < plan.Continuations.Count; index++)
         {
             var continuation = plan.Continuations[index];
-            parts.Add($"alt {continuation.Key.AlternativeIndex} -> after position {continuation.Key.SequencePosition}");
+            lines.Add($"  alt {continuation.Key.AlternativeIndex} -> position {continuation.Key.SequencePosition}");
         }
 
-        return string.Join(" | ", parts);
+        return string.Join("\n", lines);
     }
 
     /// <summary>
-    /// Determines whether the shared-prefix boundary should be rendered explicitly.
+    /// Determines whether the boundary corresponds to a fallback state.
     /// </summary>
     /// <param name="plan">Plan to inspect.</param>
     /// <returns>
     /// <see langword="true"/> when at least one continuation position differs from the boundary position;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    private static bool ShouldRenderBoundary(ParserSharedPrefixPlan plan)
+    private static bool IsFallbackBoundary(ParserSharedPrefixPlan plan)
     {
         for (var index = 0; index < plan.Continuations.Count; index++)
         {
