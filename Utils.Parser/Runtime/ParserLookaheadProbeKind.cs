@@ -18,5 +18,11 @@ internal enum ParserLookaheadProbeKind
     /// <summary>
     /// The alternative may start and requires an actual parse attempt.
     /// </summary>
-    RequiresParse
+    RequiresParse,
+
+    /// <summary>
+    /// The alternative may succeed without consuming input.
+    /// Parsing must still execute normally.
+    /// </summary>
+    EpsilonPossible
 }

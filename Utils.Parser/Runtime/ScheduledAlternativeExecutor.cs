@@ -26,7 +26,7 @@ internal sealed class ScheduledAlternativeExecutor
     /// <summary>
     /// Executes one alternative from the scheduler and returns a completed parse state when successful.
     /// </summary>
-    public ActiveParseState? Execute(
+    public ScheduledAlternativeExecutionResult Execute(
         ParseContext context,
         Rule rule,
         Alternative alternative,
@@ -48,7 +48,7 @@ internal sealed class ScheduledAlternativeExecutor
 
         if (!checkPrecedence(alternative))
         {
-            return null;
+            return new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null));
         }
 
         var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, alternativeIndex, precedence, cursorKind, cursorIndex);
@@ -56,19 +56,27 @@ internal sealed class ScheduledAlternativeExecutor
             diagnostics is null
             && ScheduledAlternativeCursorKinds.AllowsNegativeLookaheadShortcut(cursorKind);
         var token = context.Peek();
-        _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead);
 
-        var probedLookahead = _lookaheadProbe.Probe(alternative, token, resolveRule, caseInsensitive);
-        if (probedLookahead.Kind != ParserLookaheadProbeKind.Unknown)
+        var hasCached = _lookaheadCache.TryGet(lookaheadKey, out var cachedLookahead);
+
+        ParserLookaheadProbeResult effectiveLookahead;
+        if (hasCached)
         {
-            _lookaheadCache.TryAdd(lookaheadKey, probedLookahead);
+            effectiveLookahead = cachedLookahead;
+        }
+        else
+        {
+            effectiveLookahead = _lookaheadProbe.Probe(alternative, token, resolveRule, caseInsensitive);
+            if (effectiveLookahead.Kind != ParserLookaheadProbeKind.Unknown)
+            {
+                _lookaheadCache.TryAdd(lookaheadKey, effectiveLookahead);
+            }
         }
 
         if (allowNegativeShortcut
-            && ((cachedLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
-                || (probedLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)))
+            && effectiveLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
         {
-            return null;
+            return new ScheduledAlternativeExecutionResult(null, effectiveLookahead);
         }
 
         var savedPosition = context.SavePosition();
@@ -91,7 +99,7 @@ internal sealed class ScheduledAlternativeExecutor
             var diagnosticSpan = resolveDiagnosticSpan(context);
             diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
             context.RestorePosition(savedPosition);
-            return null;
+            return new ScheduledAlternativeExecutionResult(null, effectiveLookahead);
         }
 
         _lookaheadCache.TryAdd(
@@ -118,6 +126,6 @@ internal sealed class ScheduledAlternativeExecutor
         };
 
         context.RestorePosition(savedPosition);
-        return state;
+        return new ScheduledAlternativeExecutionResult(state, effectiveLookahead);
     }
 }

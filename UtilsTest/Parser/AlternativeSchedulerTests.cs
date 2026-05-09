@@ -21,8 +21,8 @@ public class AlternativeSchedulerTests
             minimumPrecedence: 3,
             diagnostics: null,
             parseAlternative: (_, index) => index == 0 || index == 1
-                ? CreateState(rule, alternatives[index], context.Position, 2, index)
-                : null);
+                ? new ScheduledAlternativeExecutionResult(CreateState(rule, alternatives[index], context.Position, 2, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"]))
+                : new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
 
         Assert.AreEqual(1, result.CompletedStates.Count);
     }
@@ -45,7 +45,7 @@ public class AlternativeSchedulerTests
             originInputPosition: context.Position,
             minimumPrecedence: 1,
             diagnostics,
-            parseAlternative: (alternative, index) => CreateState(rule, alternative, context.Position, 4, index));
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 4, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
 
         Assert.AreEqual(2, result.CompletedStates.Count);
         Assert.AreEqual(1, result.PrunedStates.Count);
@@ -63,7 +63,9 @@ public class AlternativeSchedulerTests
             originInputPosition: context.Position,
             minimumPrecedence: 7,
             diagnostics: null,
-            parseAlternative: (alternative, index) => index == 0 ? null : CreateState(rule, alternative, context.Position, 5, index));
+            parseAlternative: (alternative, index) => index == 0
+                ? new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null))
+                : new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 5, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
 
         Assert.IsNotNull(result.SelectedState);
         Assert.IsTrue(result.CompletedStates.All(s => s.ToStateKey(7).MinimumPrecedence == 7));

@@ -28,83 +28,214 @@ internal sealed class ParserLookaheadProbe
         Func<string, Rule?> resolveRule,
         bool caseInsensitive)
     {
+        var expectedTokenNames = TryGetExpectedTokenNames(content, resolveRule);
         return content switch
         {
-            LiteralMatch literal => ProbeLiteralMatch(literal, token, caseInsensitive),
-            RuleRef ruleRef => ProbeRuleReference(ruleRef, token, resolveRule),
-            Sequence sequence => ProbeSequence(sequence, token, resolveRule, caseInsensitive),
-            _ => Unknown(token)
+            LiteralMatch literal => ProbeLiteralMatch(literal, token, caseInsensitive, expectedTokenNames),
+            RuleRef ruleRef => ProbeRuleReference(ruleRef, token, resolveRule, expectedTokenNames),
+            Sequence sequence => ProbeSequence(sequence, token, resolveRule, caseInsensitive, expectedTokenNames),
+            Quantifier quantifier => ProbeQuantifier(quantifier, token, expectedTokenNames),
+            _ => Unknown(token, expectedTokenNames)
         };
     }
 
     /// <summary>
     /// Probes a literal first item against the current token text.
     /// </summary>
-    private static ParserLookaheadProbeResult ProbeLiteralMatch(LiteralMatch literal, Token? token, bool caseInsensitive)
+    private static ParserLookaheadProbeResult ProbeLiteralMatch(
+        LiteralMatch literal,
+        Token? token,
+        bool caseInsensitive,
+        IReadOnlyList<string>? expectedTokenNames)
     {
         if (token is null)
         {
-            return ImmediateReject(token);
+            return ImmediateReject(token, expectedTokenNames);
         }
 
         var comparison = caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return string.Equals(token.Text, literal.Value, comparison)
-            ? RequiresParse(token)
-            : ImmediateReject(token);
+            ? RequiresParse(token, expectedTokenNames)
+            : ImmediateReject(token, expectedTokenNames);
     }
 
     /// <summary>
     /// Probes a rule reference when the target is a lexer rule.
+    /// Parser rule references always return Unknown because they may accept empty input.
     /// </summary>
     private static ParserLookaheadProbeResult ProbeRuleReference(
         RuleRef ruleRef,
         Token? token,
-        Func<string, Rule?> resolveRule)
+        Func<string, Rule?> resolveRule,
+        IReadOnlyList<string>? expectedTokenNames)
     {
-        if (token is null)
-        {
-            return ImmediateReject(token);
-        }
-
         var resolved = resolveRule(ruleRef.RuleName);
         if (resolved is null || resolved.Kind != RuleKind.Lexer)
         {
-            return Unknown(token);
+            return Unknown(token, expectedTokenNames);
+        }
+
+        if (token is null)
+        {
+            return ImmediateReject(token, expectedTokenNames);
         }
 
         return string.Equals(token.RuleName, ruleRef.RuleName, StringComparison.Ordinal)
-            ? RequiresParse(token)
-            : ImmediateReject(token);
+            ? RequiresParse(token, expectedTokenNames)
+            : ImmediateReject(token, expectedTokenNames);
     }
 
     /// <summary>
-    /// Probes the first meaningful sequence item while skipping non-semantic runtime directives.
+    /// Probes sequence items while skipping non-semantic runtime directives.
     /// </summary>
     private static ParserLookaheadProbeResult ProbeSequence(
         Sequence sequence,
         Token? token,
         Func<string, Rule?> resolveRule,
-        bool caseInsensitive)
+        bool caseInsensitive,
+        IReadOnlyList<string>? expectedTokenNames)
     {
-        foreach (var item in sequence.Items)
-        {
-            if (item is EmbeddedAction or LexerCommand)
-            {
-                continue;
-            }
+        var meaningfulItems = sequence.Items
+            .Where(static item => item is not EmbeddedAction and not LexerCommand)
+            .ToArray();
 
-            return ProbeContent(item, token, resolveRule, caseInsensitive);
+        if (meaningfulItems.Length == 0)
+        {
+            return EpsilonPossible(token, expectedTokenNames);
         }
 
-        return Unknown(token);
+        var encounteredEpsilonPossible = false;
+
+        for (var i = 0; i < meaningfulItems.Length; i++)
+        {
+            var itemProbe = ProbeContent(meaningfulItems[i], token, resolveRule, caseInsensitive);
+            switch (itemProbe.Kind)
+            {
+                case ParserLookaheadProbeKind.ImmediateReject:
+                case ParserLookaheadProbeKind.RequiresParse:
+                    return encounteredEpsilonPossible ? Unknown(token, expectedTokenNames) : itemProbe;
+                case ParserLookaheadProbeKind.EpsilonPossible:
+                    encounteredEpsilonPossible = true;
+                    continue;
+                case ParserLookaheadProbeKind.Unknown:
+                default:
+                    return itemProbe.ExpectedTokenNames is null ? Unknown(token, expectedTokenNames) : itemProbe;
+            }
+        }
+
+        return EpsilonPossible(token, expectedTokenNames);
     }
 
-    private static ParserLookaheadProbeResult Unknown(Token? token) =>
-        new(ParserLookaheadProbeKind.Unknown, token?.RuleName, token?.Text);
+    /// <summary>
+    /// Probes quantifiers conservatively for local epsilon capability only.
+    /// </summary>
+    private static ParserLookaheadProbeResult ProbeQuantifier(
+        Quantifier quantifier,
+        Token? token,
+        IReadOnlyList<string>? expectedTokenNames)
+    {
+        return quantifier.Min == 0
+            ? EpsilonPossible(token, expectedTokenNames)
+            : Unknown(token, expectedTokenNames);
+    }
 
-    private static ParserLookaheadProbeResult ImmediateReject(Token? token) =>
-        new(ParserLookaheadProbeKind.ImmediateReject, token?.RuleName, token?.Text);
+    /// <summary>
+    /// Extracts shallow expected-token names for supported rule-content shapes.
+    /// Returns <c>null</c> when the shape is unsupported or ambiguous.
+    /// </summary>
+    private static IReadOnlyList<string>? TryGetExpectedTokenNames(RuleContent content, Func<string, Rule?> resolveRule)
+    {
+        return content switch
+        {
+            LiteralMatch literal => [literal.Value],
+            RuleRef ruleRef => TryGetExpectedTokenNamesForRuleReference(ruleRef, resolveRule),
+            Alternation alternation => TryGetExpectedTokenNamesForAlternation(alternation, resolveRule),
+            Sequence sequence => TryGetExpectedTokenNamesForSequence(sequence, resolveRule),
+            Quantifier => null,
+            _ => null
+        };
+    }
 
-    private static ParserLookaheadProbeResult RequiresParse(Token? token) =>
-        new(ParserLookaheadProbeKind.RequiresParse, token?.RuleName, token?.Text);
+    /// <summary>
+    /// Returns the lexer rule name when the reference targets a lexer rule.
+    /// Parser-rule references return <c>null</c>.
+    /// </summary>
+    private static IReadOnlyList<string>? TryGetExpectedTokenNamesForRuleReference(RuleRef ruleRef, Func<string, Rule?> resolveRule)
+    {
+        var target = resolveRule(ruleRef.RuleName);
+        return target is { Kind: RuleKind.Lexer } ? [ruleRef.RuleName] : null;
+    }
+
+    /// <summary>
+    /// Aggregates expected-token names for flat alternations when all branches
+    /// are shallow and supported; otherwise returns <c>null</c>.
+    /// </summary>
+    private static IReadOnlyList<string>? TryGetExpectedTokenNamesForAlternation(
+        Alternation alternation,
+        Func<string, Rule?> resolveRule)
+    {
+        var expected = new List<string>();
+        foreach (var alternative in alternation.Alternatives)
+        {
+            var alternativeExpected = TryGetExpectedTokenNames(alternative.Content, resolveRule);
+            if (alternativeExpected is null)
+            {
+                return null;
+            }
+
+            expected.AddRange(alternativeExpected);
+        }
+
+        return expected;
+    }
+
+    /// <summary>
+    /// Extracts expected-token names from the first meaningful sequence item.
+    /// Returns <c>null</c> when epsilon-first ambiguity is detected.
+    /// </summary>
+    private static IReadOnlyList<string>? TryGetExpectedTokenNamesForSequence(Sequence sequence, Func<string, Rule?> resolveRule)
+    {
+        var meaningfulItems = sequence.Items.Where(static item => item is not EmbeddedAction and not LexerCommand).ToArray();
+        if (meaningfulItems.Length == 0)
+        {
+            return null;
+        }
+
+        var firstProbe = TryGetExpectedTokenNames(meaningfulItems[0], resolveRule);
+        if (firstProbe is null)
+        {
+            return null;
+        }
+
+        if (meaningfulItems[0] is Quantifier quantifier && quantifier.Min == 0 && meaningfulItems.Length > 1)
+        {
+            return null;
+        }
+
+        return firstProbe;
+    }
+
+    /// <summary>
+    /// Creates an unknown probe result while preserving token snapshot metadata.
+    /// </summary>
+    private static ParserLookaheadProbeResult Unknown(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
+        new(ParserLookaheadProbeKind.Unknown, token?.RuleName, token?.Text, expectedTokenNames);
+
+    /// <summary>
+    /// Creates an immediate-reject probe result while preserving token snapshot metadata.
+    /// </summary>
+    private static ParserLookaheadProbeResult ImmediateReject(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
+        new(ParserLookaheadProbeKind.ImmediateReject, token?.RuleName, token?.Text, expectedTokenNames);
+
+    /// <summary>
+    /// Creates a requires-parse probe result while preserving token snapshot metadata.
+    /// </summary>
+    private static ParserLookaheadProbeResult RequiresParse(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
+        new(ParserLookaheadProbeKind.RequiresParse, token?.RuleName, token?.Text, expectedTokenNames);
+
+    /// <summary>
+    /// Creates an epsilon-possible probe result while preserving token snapshot metadata.
+    /// </summary>
+    private static ParserLookaheadProbeResult EpsilonPossible(Token? token, IReadOnlyList<string>? expectedTokenNames) =>
+        new(ParserLookaheadProbeKind.EpsilonPossible, token?.RuleName, token?.Text, expectedTokenNames);
 }
