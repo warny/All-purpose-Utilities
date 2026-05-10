@@ -11,6 +11,8 @@ internal static class ScheduledAlternativeCursorKinds
 
     public const string Alternation = "alternation";
 
+    public const string AlternativeRoot = "alternative-root";
+
     /// <summary>
     /// Returns <c>true</c> when the cursor kind supports conservative negative look-ahead shortcut reuse.
     /// </summary>

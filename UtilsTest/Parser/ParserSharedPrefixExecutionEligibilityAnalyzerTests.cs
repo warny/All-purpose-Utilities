@@ -68,15 +68,27 @@ public class ParserSharedPrefixExecutionEligibilityAnalyzerTests
     }
 
     [TestMethod]
-    public void Analyze_ReturnsUnsafe_ForNegativePositions()
+    public void Analyze_ReturnsUnsafe_ForNegativeBoundaryPosition()
     {
         var analyzer = new ParserSharedPrefixExecutionEligibilityAnalyzer();
-        var plan = Plan("ID", -1, [Continuation(0, -1), Continuation(1, 1)]);
+        var plan = Plan("ID", -1, [Continuation(0, 1), Continuation(1, 1)]);
 
         var result = analyzer.Analyze(plan);
 
         Assert.AreEqual(ParserSharedPrefixExecutionEligibility.Unsafe, result.Eligibility);
         Assert.IsTrue(result.Blockers.Any(static blocker => blocker.Code == "SP004"));
+    }
+
+    [TestMethod]
+    public void Analyze_ReturnsUnsafe_ForNegativeContinuationPosition()
+    {
+        var analyzer = new ParserSharedPrefixExecutionEligibilityAnalyzer();
+        var plan = Plan("ID", 1, [Continuation(0, -1), Continuation(1, 1)]);
+
+        var result = analyzer.Analyze(plan);
+
+        Assert.AreEqual(ParserSharedPrefixExecutionEligibility.Unsafe, result.Eligibility);
+        Assert.IsTrue(result.Blockers.Any(static blocker => blocker.Code == "SP008"));
     }
 
     private static ParserSharedPrefixPlan Plan(

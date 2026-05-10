@@ -108,7 +108,7 @@ internal sealed class ParserSharedPrefixExecutionEligibilityAnalyzer
 
         if (hasNegativeContinuationPosition)
         {
-            blockers.Add(new ParserSharedPrefixExecutionBlocker("SP004", "Negative shared-prefix position detected."));
+            blockers.Add(new ParserSharedPrefixExecutionBlocker("SP008", "Negative continuation sequence position detected."));
         }
 
         if (hasDivergentContinuationPosition)
@@ -145,11 +145,7 @@ internal sealed class ParserSharedPrefixExecutionEligibilityAnalyzer
             return new ParserSharedPrefixExecutionEligibilityResult(ParserSharedPrefixExecutionEligibility.RequiresFallback, blockers);
         }
 
-        if (validation.IsValid
-            && blockers.Count == 0
-            && boundaryPosition > 0
-            && !hasDivergentContinuationPosition
-            && !hasDuplicateAlternativeIndex)
+        if (validation.IsValid && blockers.Count == 0)
         {
             return new ParserSharedPrefixExecutionEligibilityResult(ParserSharedPrefixExecutionEligibility.Eligible, blockers);
         }
