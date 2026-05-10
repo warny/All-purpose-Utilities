@@ -31,10 +31,23 @@ public class ParserSharedPrefixPlanValidatorTests
     }
 
     [TestMethod]
-    public void Validate_ReturnsValidWithInfoAndWarning_WhenBoundaryDiverges()
+    public void Validate_ReturnsValidWithInfoWithoutNonFallbackWarning_WhenBoundaryIsFallbackAndDiverges()
     {
         var validator = new ParserSharedPrefixPlanValidator();
         var plan = Plan("ID", 0, [Continuation(0, 1), Continuation(1, 2)]);
+
+        var result = validator.Validate(plan);
+
+        Assert.IsTrue(result.IsValid);
+        Assert.IsTrue(result.Issues.Any(static issue => issue.Severity == ParserSharedPrefixPlanValidationSeverity.Info));
+        Assert.IsFalse(result.Issues.Any(static issue => issue.Message.Contains("non-fallback", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void Validate_ReturnsValidWithInfoAndNonFallbackWarning_WhenBoundaryIsNonFallbackAndDiverges()
+    {
+        var validator = new ParserSharedPrefixPlanValidator();
+        var plan = Plan("ID", 1, [Continuation(0, 2), Continuation(1, 3)]);
 
         var result = validator.Validate(plan);
 

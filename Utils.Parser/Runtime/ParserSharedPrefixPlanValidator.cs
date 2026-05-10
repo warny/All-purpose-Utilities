@@ -108,7 +108,7 @@ internal sealed class ParserSharedPrefixPlanValidator
                 ParserSharedPrefixPlanValidationSeverity.Info,
                 "Shared-prefix boundary diverges from continuation positions; fallback metadata is expected."));
 
-            if (plan.Segment.Boundary.SequencePosition >= 0)
+            if (plan.Segment.Boundary.SequencePosition != 0)
             {
                 issues.Add(new ParserSharedPrefixPlanValidationIssue(
                     ParserSharedPrefixPlanValidationSeverity.Warning,
