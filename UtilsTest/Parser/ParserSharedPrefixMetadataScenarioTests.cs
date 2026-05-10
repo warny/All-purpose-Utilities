@@ -5,8 +5,14 @@ using Utils.Parser.Runtime;
 namespace UtilsTest.Parser;
 
 [TestClass]
+/// <summary>
+/// Validates grammar-like shared-prefix metadata scenarios across the dry-run pipeline components.
+/// </summary>
 public class ParserSharedPrefixMetadataScenarioTests
 {
+    /// <summary>
+    /// Verifies shared-prefix metadata for operator alternatives that begin with the same identifier token.
+    /// </summary>
     [TestMethod]
     public void Pipeline_SimpleOperatorAlternatives_ProducesStablePlanMetadata()
     {
@@ -33,6 +39,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual("shared segment: ID\nboundary: position 1\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1", formatted[0]);
     }
 
+    /// <summary>
+    /// Verifies shared-prefix metadata for a call-or-identifier shape without requiring fallback boundaries.
+    /// </summary>
     [TestMethod]
     public void Pipeline_CallOrIdentifier_ProducesSharedPrefixMetadataWithoutFallback()
     {
@@ -65,6 +74,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.IsFalse(formatted[0].Contains("fallback", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Verifies that alternatives with different first tokens do not produce shared-prefix plans.
+    /// </summary>
     [TestMethod]
     public void Pipeline_NoSharedPrefix_ProducesNoPlan()
     {
@@ -79,6 +91,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual(0, plans.Count);
     }
 
+    /// <summary>
+    /// Verifies normalization of continuation positions when actions or lexer commands prefix the shared token.
+    /// </summary>
     [TestMethod]
     public void Pipeline_ActionPrefixedAlternatives_NormalizeContinuationPositionsAfterId()
     {
@@ -103,6 +118,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual("shared segment: ID\nboundary: position 1\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1", formatted[0]);
     }
 
+    /// <summary>
+    /// Verifies fallback divergence handling emits informational validation and fallback formatting markers.
+    /// </summary>
     [TestMethod]
     public void ValidatorAndFormatter_FallbackDivergence_EmitsInfoAndFallbackMarker()
     {
@@ -118,6 +136,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual("shared segment: ID\nboundary: position 0 (fallback)\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 2", formatted[0]);
     }
 
+    /// <summary>
+    /// Verifies non-fallback divergence emits both informational and warning validation issues.
+    /// </summary>
     [TestMethod]
     public void Validator_NonFallbackDivergence_EmitsInfoAndWarning()
     {
@@ -131,6 +152,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.IsTrue(validation.Issues.Any(static i => i.Message.Contains("non-fallback", StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// Builds shared-prefix plans by probing alternatives and flowing metadata through detector, continuation, and plan factories.
+    /// </summary>
     private static IReadOnlyList<ParserSharedPrefixPlan> CreatePlansFromAlternatives(IReadOnlyList<Alternative> alternatives, Token token)
     {
         var lookaheadProbe = new ParserLookaheadProbe();
@@ -155,6 +179,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         return planFactory.CreatePlans(candidates, continuations);
     }
 
+    /// <summary>
+    /// Resolves token-like names as lexer rules and all other names as parser rules for probe metadata tests.
+    /// </summary>
     private static Rule? ResolveRule(string name)
     {
         if (name is "ID" or "NUMBER")
@@ -165,6 +192,9 @@ public class ParserSharedPrefixMetadataScenarioTests
         return new Rule(name, 0, false, new Alternation([])) { Kind = RuleKind.Parser };
     }
 
+    /// <summary>
+    /// Creates a shared-prefix plan with explicit boundary metadata for validator and formatter scenarios.
+    /// </summary>
     private static ParserSharedPrefixPlan Plan(string tokenName, int boundaryPosition, IReadOnlyList<ParserContinuationDescriptor> continuations)
     {
         var alternativeIndexes = continuations.Select(static continuation => continuation.Key.AlternativeIndex).ToArray();
@@ -175,6 +205,9 @@ public class ParserSharedPrefixMetadataScenarioTests
             new ParserSharedPrefixSegment(tokenName, new ParserSharedPrefixBoundary(boundaryPosition, null)));
     }
 
+    /// <summary>
+    /// Creates a continuation descriptor with deterministic expected-token metadata for shared-prefix tests.
+    /// </summary>
     private static ParserContinuationDescriptor Continuation(int alternativeIndex, int sequencePosition)
     {
         return new ParserContinuationDescriptor(
@@ -183,16 +216,25 @@ public class ParserSharedPrefixMetadataScenarioTests
             true);
     }
 
+    /// <summary>
+    /// Creates a parser alternative with left associativity for compact scenario setup.
+    /// </summary>
     private static Alternative Alternative(int index, RuleContent content)
     {
         return new Alternative(index, Associativity.Left, content, null);
     }
 
+    /// <summary>
+    /// Creates a sequence content node from ordered rule-content items.
+    /// </summary>
     private static Sequence Sequence(params RuleContent[] items)
     {
         return new Sequence(items);
     }
 
+    /// <summary>
+    /// Creates a token instance used as lookahead input for probe-driven metadata scenarios.
+    /// </summary>
     private static Token Token(string ruleName, string text)
     {
         return new Token(new SourceSpan(0, text.Length), ruleName, "DEFAULT_MODE", "DEFAULT_CHANNEL", text);
