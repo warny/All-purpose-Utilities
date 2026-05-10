@@ -380,7 +380,8 @@ public static class SyntaxColorisationGrammar
     internal static int ComputeTokenLimit(string source)
     {
         int sourceLength = source?.Length ?? 0;
-        return Math.Max(256, (sourceLength + 1) * 4);
+        long computed = ((long)sourceLength + 1) * 4;
+        return (int)Math.Max(256, Math.Min(computed, int.MaxValue));
     }
 
     /// <summary>

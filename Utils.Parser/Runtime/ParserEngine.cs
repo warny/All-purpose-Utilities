@@ -23,6 +23,10 @@ namespace Utils.Parser.Runtime;
 /// execution; they have no effect on the parse tree shape.
 /// </para>
 /// </summary>
+/// <remarks>
+/// This class is not thread-safe. Each concurrent parse must use a separate
+/// <see cref="ParserEngine"/> instance.
+/// </remarks>
 public sealed class ParserEngine
 {
     private readonly ParserDefinition _definition;

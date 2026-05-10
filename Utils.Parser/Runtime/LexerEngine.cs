@@ -9,6 +9,10 @@ namespace Utils.Parser.Runtime;
 /// Converts a <see cref="TextReader"/> into a sequence of <see cref="Token"/> values
 /// using the lexer rules in a <see cref="ParserDefinition"/>.
 /// </summary>
+/// <remarks>
+/// This class is not thread-safe. Each concurrent tokenization must use a separate
+/// <see cref="LexerEngine"/> instance.
+/// </remarks>
 public sealed class LexerEngine(ParserDefinition definition)
 {
     private const string DefaultChannel = "DEFAULT_CHANNEL";

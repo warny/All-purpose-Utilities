@@ -89,7 +89,7 @@ internal sealed class KeywordLookup
         {
             int peeked = stream.Peek(offset);
             if (peeked < 0) break;                                // end of stream
-            char c = (char)peeked;
+            char c = (char)peeked;                                // safe: buffer stores char (UTF-16 units)
 
             char key = Normalize(c);
             if (!nodes.TryGetValue(key, out var node)) break;   // no further trie path
