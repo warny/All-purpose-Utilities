@@ -64,7 +64,7 @@ internal sealed class ParserSharedPrefixExecutionEligibilityAnalyzer
         var boundaryPosition = plan.Segment.Boundary.SequencePosition;
         if (boundaryPosition < 0)
         {
-            blockers.Add(new ParserSharedPrefixExecutionBlocker("SP004", "Negative continuation position detected."));
+            blockers.Add(new ParserSharedPrefixExecutionBlocker("SP004", "Negative shared-prefix position detected."));
         }
 
         if (string.IsNullOrWhiteSpace(plan.Segment.SharedTokenName))
@@ -108,7 +108,7 @@ internal sealed class ParserSharedPrefixExecutionEligibilityAnalyzer
 
         if (hasNegativeContinuationPosition)
         {
-            blockers.Add(new ParserSharedPrefixExecutionBlocker("SP004", "Negative continuation position detected."));
+            blockers.Add(new ParserSharedPrefixExecutionBlocker("SP004", "Negative shared-prefix position detected."));
         }
 
         if (hasDivergentContinuationPosition)
