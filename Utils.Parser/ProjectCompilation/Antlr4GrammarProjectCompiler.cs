@@ -368,7 +368,7 @@ public static class Antlr4GrammarProjectCompiler
             }
 
             _stack.Add(grammarName);
-            var definition = Antlr4GrammarConverter.ParseUnresolved(source.Text, _diagnostics);
+            var definition = ParseUnresolvedForProjectCompilation(source.Text);
             _definitionsByName[definition.Name] = new LoadedGrammarDefinition(
                 definition,
                 resolutionMode == DependencyResolutionMode.FullImport);
@@ -400,6 +400,29 @@ public static class Antlr4GrammarProjectCompiler
             return definition.Options?.Values.TryGetValue("tokenVocab", out var tokenVocab) == true
                 ? tokenVocab
                 : null;
+        }
+
+        /// <summary>
+        /// Parses an unresolved grammar and suppresses converter-level unresolved-import diagnostics.
+        /// </summary>
+        /// <param name="grammarText">Grammar source text.</param>
+        /// <returns>Unresolved parser definition.</returns>
+        private ParserDefinition ParseUnresolvedForProjectCompilation(string grammarText)
+        {
+            var converterDiagnostics = new DiagnosticBag();
+            var definition = Antlr4GrammarConverter.ParseUnresolved(grammarText, converterDiagnostics);
+
+            foreach (var diagnostic in converterDiagnostics)
+            {
+                if (diagnostic.Code == ParserDiagnostics.ImportParsedButNotResolved.Code)
+                {
+                    continue;
+                }
+
+                _diagnostics?.Add(diagnostic);
+            }
+
+            return definition;
         }
     }
 
