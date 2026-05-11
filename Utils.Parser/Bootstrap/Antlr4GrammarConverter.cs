@@ -31,8 +31,8 @@ public sealed class Antlr4GrammarConverter
     private readonly DiagnosticBag? _diagnostics;
     private readonly string _sourceText;
 
-    /// <summary>Initialises a new converter instance. The <paramref name="sourceText"/> parameter is reserved for future use.</summary>
-    /// <param name="sourceText">The original grammar source text (currently unused).</param>
+    /// <summary>Initialises a new converter instance.</summary>
+    /// <param name="sourceText">The original grammar source text.</param>
     public Antlr4GrammarConverter(string sourceText, DiagnosticBag? diagnostics = null)
     {
         _sourceText = sourceText;
@@ -665,12 +665,12 @@ public sealed class Antlr4GrammarConverter
     /// <summary>Resolves the associativity declared through ANTLR4 <c>&lt;assoc=...&gt;</c> alternative options.</summary>
     private Associativity ResolveAlternativeAssociativity(ParserNode labeledAltNode, ParserNode alternativeNode)
     {
-        var alternativeText = ExtractSourceText(alternativeNode.Span);
-        if (HasRightAssociativityOption(alternativeText))
-            return Associativity.Right;
+        var optionsNode = First(alternativeNode, "elementOptions") ?? First(labeledAltNode, "elementOptions");
+        if (optionsNode == null)
+            return Associativity.Left;
 
-        var labeledAltText = ExtractSourceText(labeledAltNode.Span);
-        return HasRightAssociativityOption(labeledAltText) ? Associativity.Right : Associativity.Left;
+        var optionsText = ExtractSourceText(optionsNode.Span);
+        return HasRightAssociativityOption(optionsText) ? Associativity.Right : Associativity.Left;
     }
 
     /// <summary>Extracts the exact source slice represented by <paramref name="span"/>.</summary>

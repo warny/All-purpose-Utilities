@@ -94,9 +94,9 @@ public class ParserEngineLeftRecursionTests
             """, "1 ^ 2 ^ 3");
 
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
-        var caretDepths = FindTokenDepths(tree, "^").OrderBy(x => x).ToList();
+        var caretDepths = FindTokenDepths(tree, "^");
         Assert.AreEqual(2, caretDepths.Count);
-        Assert.IsTrue(caretDepths[1] > caretDepths[0], "Expected right-associative tree nesting.");
+        Assert.IsTrue(caretDepths[1] > caretDepths[0], "Expected right-associative traversal order (outer '^' before inner '^').");
     }
 
     [TestMethod]
