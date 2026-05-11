@@ -53,6 +53,45 @@ public class AlternativeSchedulerTests
     }
 
     [TestMethod]
+    public void Run_ReturnsNoSelectedState_WhenAlternativesIsEmpty()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([]));
+        var context = new ParseContext([]);
+
+        var result = scheduler.Run(
+            rule,
+            [],
+            originInputPosition: 0,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (_, _) => new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        Assert.IsNull(result.SelectedState);
+        Assert.AreEqual(0, result.CompletedStates.Count);
+        Assert.AreEqual(0, result.FailedStates.Count);
+    }
+
+    [TestMethod]
+    public void Run_AllAlternativesFail_ReturnsNullSelectedStateAndAllFailed()
+    {
+        var scheduler = new AlternativeScheduler();
+        var (context, rule, alternatives) = CreateAlternatives();
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            originInputPosition: context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (_, _) => new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        Assert.IsNull(result.SelectedState);
+        Assert.AreEqual(0, result.CompletedStates.Count);
+        Assert.AreEqual(alternatives.Count, result.FailedStates.Count);
+    }
+
+    [TestMethod]
     public void Run_UsesMinimumPrecedenceInIdentity()
     {
         var scheduler = new AlternativeScheduler();

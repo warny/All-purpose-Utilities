@@ -116,7 +116,7 @@ internal sealed class ScheduledAlternativeExecutor
             OriginInputPosition = startPosition,
             CurrentInputPosition = context.Position,
             AlternativeIndex = alternativeIndex,
-            Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+            Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
             PartialNode = result,
             EndPosition = context.Position,
             Status = ActiveParseStateStatus.Completed,

@@ -40,7 +40,7 @@ internal sealed class AlternativeScheduler
                 continue;
             }
 
-            completedStates.Add(EnsureInitialized(parsed, initial));
+            completedStates.Add(EnsureInitialized(parsed));
         }
 
         if (completedStates.Count == 0)
@@ -130,7 +130,7 @@ internal sealed class AlternativeScheduler
             OriginInputPosition = originInputPosition,
             CurrentInputPosition = originInputPosition,
             AlternativeIndex = alternativeIndex,
-            Cursor = new RuleContentCursor { Index = 0, Kind = "alternative-root" },
+            Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
             PartialNode = new ErrorNode(new SourceSpan(originInputPosition, 0), "DEFAULT_MODE", "Alternative not evaluated", rule),
             EndPosition = null,
             Status = ActiveParseStateStatus.Active,
@@ -140,21 +140,12 @@ internal sealed class AlternativeScheduler
         };
     }
 
-    private static ActiveParseState EnsureInitialized(ActiveParseState state, ActiveParseState fallback)
+    private static ActiveParseState EnsureInitialized(ActiveParseState state)
     {
         return state with
         {
-            Rule = state.Rule,
-            Alternative = state.Alternative,
-            OriginInputPosition = state.OriginInputPosition,
-            AlternativeIndex = state.AlternativeIndex,
-            Cursor = state.Cursor,
-            PartialNode = state.PartialNode,
             Status = state.Status == ActiveParseStateStatus.Active ? ActiveParseStateStatus.Completed : state.Status,
-            EndPosition = state.EndPosition ?? state.CurrentInputPosition,
-            ParentStateKey = state.ParentStateKey,
-            Depth = state.Depth,
-            Continuation = state.Continuation
+            EndPosition = state.EndPosition ?? state.CurrentInputPosition
         };
     }
 
