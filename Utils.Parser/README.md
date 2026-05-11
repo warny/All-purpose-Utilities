@@ -40,18 +40,6 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 
 For a detailed, implementation-aligned compatibility status (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md).
 
-### Current support matrix (high-level)
-
-| Area | Status | Notes |
-|---|---|---|
-| Runtime `.g4` parsing (`Antlr4GrammarConverter`) | Partial | Works for covered scenarios; full ANTLR4 parity is not claimed. |
-| Lexer commands `skip` / `more` / `type` / `channel` | Implemented | Core commands are supported by runtime lexer execution. |
-| Lexer modes (`pushMode`, `popMode`, `mode`) | Implemented | Mode stack behavior is available in runtime lexer. |
-| Declared `tokens { ... }` and `channels { ... }` metadata | Partial | Available in model/runtime, but must be validated against your grammar set. |
-| Runtime lexer extensions (`ILexerExtension`) | Implemented | Hooks are available (`TryReadTokens`, `OnAfterToken`, `OnEndOfInput`). |
-| Full ANTLR4 grammar compatibility | Not guaranteed | Advanced/edge constructs may differ from ANTLR4 behavior. |
-| Scheduled alternative look-ahead | Implemented (internal) | Lightweight cache records alternative-start observations to avoid repeated obviously impossible starts during deterministic sequential scheduling. |
-
 ## Key concepts
 
 | Class / Type | Role |
