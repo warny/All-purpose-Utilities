@@ -154,6 +154,46 @@ public class ParserContinuationFactoryTests
     }
 
     [TestMethod]
+    public void Create_SequenceContinuationAfterFinalItem_PreservesMeaningfulPosition()
+    {
+        var factory = new ParserContinuationFactory();
+        var rule = new Rule("expr", 0, false, new Alternation([]));
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID")]));
+
+        var descriptor = factory.Create(rule, alternative, 0, 1, null, false);
+
+        Assert.AreEqual(1, descriptor.Key.SequencePosition);
+    }
+
+    [TestMethod]
+    public void Create_SequenceContinuationAfterMeaningfulItem_IgnoresEmbeddedActionAndLexerCommand()
+    {
+        var factory = new ParserContinuationFactory();
+        var rule = new Rule("expr", 0, false, new Alternation([]));
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([
+            new EmbeddedAction("x();", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LexerCommand(LexerCommandType.Skip, null),
+            new RuleRef("ID")
+        ]));
+
+        var descriptor = factory.Create(rule, alternative, 0, 3, null, false);
+
+        Assert.AreEqual(1, descriptor.Key.SequencePosition);
+    }
+
+    [TestMethod]
+    public void Create_SequenceContinuationBeyondLength_ClampsToSequenceLength()
+    {
+        var factory = new ParserContinuationFactory();
+        var rule = new Rule("expr", 0, false, new Alternation([]));
+        var alternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new RuleRef("expr")]));
+
+        var descriptor = factory.Create(rule, alternative, 0, 99, null, false);
+
+        Assert.AreEqual(2, descriptor.Key.SequencePosition);
+    }
+
+    [TestMethod]
     public void ComputeSharedPrefixSequencePosition_UnsupportedStructure_FallsBackToZero()
     {
         var factory = new ParserContinuationFactory();
