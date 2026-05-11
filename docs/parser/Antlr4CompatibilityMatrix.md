@@ -14,25 +14,25 @@ Support levels are intentionally explicit:
 
 This document describes the current implementation status only. It does not define roadmap commitments.
 
-## Fully supported
+## Supported in current runtime/project compiler
 
 The features below are operational in current runtime and project-compilation flows.
 
 | Feature | Status | Notes |
 |---|---|---|
-| Parser grammars (`parser grammar`) | Fully supported | Rule loading, resolution, and parsing are supported within current runtime constraints. |
-| Lexer grammars (`lexer grammar`) | Fully supported | Tokenization supports lexer rules, commands, and mode handling already implemented. |
-| Combined grammars (`grammar`) | Fully supported | Combined parser/lexer grammars are supported as an input form. |
-| Lexer modes (`mode`, `pushMode`, `popMode`) | Fully supported | Mode stack behavior is implemented by the lexer runtime. |
-| Token channels (`channels { ... }` and `-> channel(...)`) | Fully supported (runtime command), metadata support available | Channel command execution is supported; declared channel metadata is recognized by the grammar pipeline. |
-| Token vocabularies (`tokenVocab`) | Fully supported for dependency loading | Used by grammar loading and dependency resolution in project compilation workflows. |
-| Direct left recursion | Fully supported | Runtime includes direct-left-recursion handling with diagnostics and safeguards. |
+| Parser grammars (`parser grammar`) | Supported as grammar input form | Rule loading, resolution, and parsing are supported within current runtime constraints. |
+| Lexer grammars (`lexer grammar`) | Supported as grammar input form | Tokenization supports lexer rules, commands, and mode handling already implemented. |
+| Combined grammars (`grammar`) | Supported as grammar input form | Combined parser/lexer grammars are supported as an input form. |
+| Lexer modes (`mode`, `pushMode`, `popMode`) | Supported | Mode stack behavior is implemented by the lexer runtime. |
+| Token channels (`channels { ... }` and `-> channel(...)`) | Supported (runtime command), metadata support available | Channel command execution is supported; declared channel metadata is recognized by the grammar pipeline. |
+| Token vocabularies (`tokenVocab`) | Supported for project dependency loading | Used by grammar loading and dependency resolution in project compilation workflows. |
+| Direct left recursion | Supported with safeguards | Runtime includes direct-left-recursion handling with diagnostics and safeguards. |
 | Precedence handling | Supported with known limits | Left-recursive precedence exists, with explicit partial-parity diagnostic for complex ANTLR4 shapes. |
-| `<assoc=right>` | Fully supported | Right-associative alternative metadata is parsed and applied in current precedence behavior. |
-| Project-level grammar imports | Fully supported in project compilation | Multi-file import resolution is supported in `Antlr4GrammarProjectCompiler`. |
-| Transitive imports | Fully supported in project compilation | Imported dependencies are resolved recursively at project-compilation level. |
-| Import cycle detection | Fully supported in project compilation | Cycles are detected and surfaced with dedicated diagnostics. |
-| Deterministic conflict resolution | Fully supported | Entry grammar definitions win deterministically over imported duplicates, with diagnostic traceability. |
+| `<assoc=right>` | Supported | Right-associative alternative metadata is parsed and applied in current precedence behavior. |
+| Project-level grammar imports | Supported in project compilation | Multi-file import resolution is supported in `Antlr4GrammarProjectCompiler`. |
+| Transitive imports | Supported in project compilation | Imported dependencies are resolved recursively at project-compilation level. |
+| Import cycle detection | Supported in project compilation | Cycles are detected and surfaced with dedicated diagnostics. |
+| Deterministic conflict resolution | Supported | Entry grammar definitions win deterministically over imported duplicates, with diagnostic traceability. |
 
 ## Parsed but not executed
 
