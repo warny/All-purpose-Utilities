@@ -200,6 +200,45 @@ public class Antlr4GrammarConverterTests
         Assert.IsTrue(second.Label.IsAdditive);
     }
 
+
+    [TestMethod]
+    public void ParseParserRule_AssocRight_SetsRightAssociativity()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            expr
+              : <assoc=right> expr '^' expr
+              | INT
+              ;
+            INT : ('0'..'9')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """);
+
+        var expr = def.AllRules["expr"];
+        var powerAlternative = expr.Content.Alternatives
+            .First(a => a.Content is Sequence seq && seq.Items.OfType<LiteralMatch>().Any(l => l.Value == "^"));
+        Assert.AreEqual(Associativity.Right, powerAlternative.Assoc);
+    }
+
+    [TestMethod]
+    public void ParseParserRule_WithoutAssocOption_DefaultsToLeftAssociativity()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            expr
+              : expr '^' expr
+              | INT
+              ;
+            INT : ('0'..'9')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """);
+
+        var expr = def.AllRules["expr"];
+        var powerAlternative = expr.Content.Alternatives
+            .First(a => a.Content is Sequence seq && seq.Items.OfType<LiteralMatch>().Any(l => l.Value == "^"));
+        Assert.AreEqual(Associativity.Left, powerAlternative.Assoc);
+    }
+
     // ─── 8. Alternative label # Label ─────────────────────────────────────────
 
     [TestMethod]

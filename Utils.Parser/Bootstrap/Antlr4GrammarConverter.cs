@@ -648,6 +648,7 @@ public sealed class Antlr4GrammarConverter
     {
         var altNode = Require(First(node, "alternative"), "Missing alternative in labeledAlt");
         var content = ConvertAlternative(altNode);
+        var associativity = ResolveAlternativeAssociativity(altNode);
 
         string? label = null;
         if (HasToken(node, "POUND"))
@@ -656,7 +657,38 @@ public sealed class Antlr4GrammarConverter
             label = identNode != null ? GetIdentifierText(identNode) : null;
         }
 
-        return new Alternative(index, Associativity.Left, content, label);
+        return new Alternative(index, associativity, content, label);
+    }
+
+    /// <summary>
+    /// Resolves associativity from the <c>&lt;assoc=right&gt;</c> option that may appear at the
+    /// start of an ANTLR4 <c>alternative</c> node as an <c>elementOptions</c> child.
+    /// Navigates the parse tree: <c>alternative → elementOptions → elementOption → identifier / qualifiedIdentifier</c>.
+    /// </summary>
+    private static Associativity ResolveAlternativeAssociativity(ParserNode alternativeNode)
+    {
+        var elementOptions = First(alternativeNode, "elementOptions");
+        if (elementOptions is null)
+            return Associativity.Left;
+
+        foreach (var elementOption in All(elementOptions, "elementOption"))
+        {
+            // Only the key=value form carries assoc: identifier ASSIGN qualifiedIdentifier
+            if (!HasToken(elementOption, "ASSIGN"))
+                continue;
+
+            var keyNode = First(elementOption, "identifier");
+            if (!string.Equals(TryGetIdentifierText(keyNode!), "assoc", StringComparison.Ordinal))
+                continue;
+
+            // Value is a qualifiedIdentifier node whose first identifier child holds the text
+            var qualifiedId = First(elementOption, "qualifiedIdentifier");
+            var valueIdent = qualifiedId is not null ? First(qualifiedId, "identifier") : null;
+            if (string.Equals(TryGetIdentifierText(valueIdent!), "right", StringComparison.Ordinal))
+                return Associativity.Right;
+        }
+
+        return Associativity.Left;
     }
 
     /// <summary>Converts an <c>alternative</c> node into a <see cref="RuleContent"/> (sequence or single element).</summary>
