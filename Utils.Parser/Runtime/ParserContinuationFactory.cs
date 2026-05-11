@@ -85,8 +85,7 @@ internal sealed class ParserContinuationFactory
         }
 
         var meaningfulIndex = 0;
-        var maxIndex = sequence.Items.Count - 1;
-        var boundedPosition = sequencePosition > maxIndex ? maxIndex : sequencePosition;
+        var boundedPosition = sequencePosition > sequence.Items.Count ? sequence.Items.Count : sequencePosition;
 
         for (var index = 0; index < boundedPosition; index++)
         {
