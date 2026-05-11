@@ -6,6 +6,7 @@ using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Utils.Parser.Bootstrap;
 
@@ -665,12 +666,18 @@ public sealed class Antlr4GrammarConverter
     /// <summary>Resolves the associativity declared through ANTLR4 <c>&lt;assoc=...&gt;</c> alternative options.</summary>
     private Associativity ResolveAlternativeAssociativity(ParserNode labeledAltNode, ParserNode alternativeNode)
     {
-        var optionsNode = First(alternativeNode, "elementOptions") ?? First(labeledAltNode, "elementOptions");
-        if (optionsNode == null)
+        var alternativeText = ExtractSourceText(alternativeNode.Span).TrimStart();
+        if (!alternativeText.StartsWith("<", StringComparison.Ordinal))
             return Associativity.Left;
 
-        var optionsText = ExtractSourceText(optionsNode.Span);
-        return HasRightAssociativityOption(optionsText) ? Associativity.Right : Associativity.Left;
+        var gtIndex = alternativeText.IndexOf('>');
+        if (gtIndex < 0)
+            return Associativity.Left;
+
+        var leadingOptions = alternativeText[..(gtIndex + 1)];
+        return Regex.IsMatch(leadingOptions, @"<\s*assoc\s*=\s*right\s*>", RegexOptions.CultureInvariant)
+            ? Associativity.Right
+            : Associativity.Left;
     }
 
     /// <summary>Extracts the exact source slice represented by <paramref name="span"/>.</summary>
@@ -682,10 +689,6 @@ public sealed class Antlr4GrammarConverter
         var safeLength = int.Min(span.Length, _sourceText.Length - span.Position);
         return safeLength > 0 ? _sourceText.Substring(span.Position, safeLength) : string.Empty;
     }
-
-    /// <summary>Checks whether a text fragment declares <c>&lt;assoc=right&gt;</c>.</summary>
-    private static bool HasRightAssociativityOption(string text)
-        => Regex.IsMatch(text, @"<\s*assoc\s*=\s*right\s*>", RegexOptions.CultureInvariant);
 
     /// <summary>Converts an <c>alternative</c> node into a <see cref="RuleContent"/> (sequence or single element).</summary>
     private RuleContent ConvertAlternative(ParserNode node)
