@@ -114,28 +114,15 @@ public class Antlr4GrammarGeneratorTests
 
     // ── G4Parser ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
-    public void Parser_CombinedGrammarDeclaration()
+    [DataTestMethod]
+    [DataRow("grammar Exp; rule : 'a' ;",         "Exp", (int)G4GrammarKind.Combined)]
+    [DataRow("lexer grammar Lex; TOKEN : 'a' ;",  "Lex", (int)G4GrammarKind.Lexer)]
+    [DataRow("parser grammar Par; rule : TOKEN ;", "Par", (int)G4GrammarKind.Parser)]
+    public void Parser_GrammarDeclaration_IsClassifiedCorrectly(string g4, string expectedName, int expectedKind)
     {
-        var g = Parse("grammar Exp; rule : 'a' ;");
-        Assert.AreEqual("Exp",              g.Name);
-        Assert.AreEqual(G4GrammarKind.Combined, g.Kind);
-    }
-
-    [TestMethod]
-    public void Parser_LexerGrammarDeclaration()
-    {
-        var g = Parse("lexer grammar Lex; TOKEN : 'a' ;");
-        Assert.AreEqual("Lex",           g.Name);
-        Assert.AreEqual(G4GrammarKind.Lexer, g.Kind);
-    }
-
-    [TestMethod]
-    public void Parser_ParserGrammarDeclaration()
-    {
-        var g = Parse("parser grammar Par; rule : TOKEN ;");
-        Assert.AreEqual("Par",            g.Name);
-        Assert.AreEqual(G4GrammarKind.Parser, g.Kind);
+        var g = Parse(g4);
+        Assert.AreEqual(expectedName, g.Name);
+        Assert.AreEqual((G4GrammarKind)expectedKind, g.Kind);
     }
 
     [TestMethod]
