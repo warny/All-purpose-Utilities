@@ -42,7 +42,7 @@ The following constructs are parsed and stored, but runtime semantic execution i
 |---|---|---|
 | Semantic predicates (`{ condition }?`) | Parsed and represented in grammar model; runtime does not evaluate predicate semantics. | `SemanticPredicateNotEnforced` |
 | Inline actions (`{ code }`) | Parsed and stored; runtime does not execute target-language code blocks. | `InlineActionStoredNotExecuted` |
-| Rule actions (`@init`, `@after`) | Parsed as action metadata where present; no execution hook is active in runtime parsing. | `ActionIgnored` (pipeline-dependent) |
+| Rule actions (`@init`, `@after`) | Parsed as action metadata where present; no execution hook is active in runtime parsing. | `InlineActionStoredNotExecuted` when represented as runtime embedded actions; `ActionIgnored` may apply to top-level/pipeline actions. |
 
 Rationale: execution of user code and semantic predicates requires explicit policy boundaries and execution abstractions that are intentionally not part of the current deterministic runtime.
 
