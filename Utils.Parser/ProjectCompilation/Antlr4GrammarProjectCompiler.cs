@@ -410,19 +410,22 @@ public static class Antlr4GrammarProjectCompiler
         private ParserDefinition ParseUnresolvedForProjectCompilation(string grammarText)
         {
             var converterDiagnostics = new DiagnosticBag();
-            var definition = Antlr4GrammarConverter.ParseUnresolved(grammarText, converterDiagnostics);
-
-            foreach (var diagnostic in converterDiagnostics)
+            try
             {
-                if (diagnostic.Code == ParserDiagnostics.ImportParsedButNotResolved.Code)
-                {
-                    continue;
-                }
-
-                _diagnostics?.Add(diagnostic);
+                return Antlr4GrammarConverter.ParseUnresolved(grammarText, converterDiagnostics);
             }
+            finally
+            {
+                foreach (var diagnostic in converterDiagnostics)
+                {
+                    if (diagnostic.Code == ParserDiagnostics.ImportParsedButNotResolved.Code)
+                    {
+                        continue;
+                    }
 
-            return definition;
+                    _diagnostics?.Add(diagnostic);
+                }
+            }
         }
     }
 

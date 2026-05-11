@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.ProjectCompilation;
 using Utils.Parser.Resolution;
@@ -179,6 +180,21 @@ public class Antlr4GrammarProjectCompilerTests
 
         Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("A", resolver, diagnostics));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportCycleDetected.Code));
+    }
+
+    /// <summary>
+    /// Verifies converter diagnostics are propagated when an imported grammar fails to parse.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_InvalidImportedGrammar_PropagatesParseDiagnostics()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(
+            ("Main", "grammar Main; import Broken; start : ID ;"),
+            ("Broken", "grammar Broken; $$$"));
+
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarProjectCompiler.Parse("Main", resolver, diagnostics));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ParseFailure.Code));
     }
 
     /// <summary>
