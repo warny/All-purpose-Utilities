@@ -6,7 +6,6 @@ using Utils.Parser.Model;
 using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
 using System.IO;
-using System.Text.RegularExpressions;
 
 namespace Utils.Parser.Bootstrap;
 
@@ -30,13 +29,11 @@ public sealed class Antlr4GrammarConverter
     /// <summary>Declaration-order counter incremented as rules are created during conversion.</summary>
     private int _order;
     private readonly DiagnosticBag? _diagnostics;
-    private readonly string _sourceText;
 
-    /// <summary>Initialises a new converter instance.</summary>
-    /// <param name="sourceText">The original grammar source text.</param>
+    /// <summary>Initialises a new converter instance. The <paramref name="sourceText"/> parameter is reserved for future use.</summary>
+    /// <param name="sourceText">The original grammar source text (currently unused).</param>
     public Antlr4GrammarConverter(string sourceText, DiagnosticBag? diagnostics = null)
     {
-        _sourceText = sourceText;
         _diagnostics = diagnostics;
     }
 
@@ -651,7 +648,7 @@ public sealed class Antlr4GrammarConverter
     {
         var altNode = Require(First(node, "alternative"), "Missing alternative in labeledAlt");
         var content = ConvertAlternative(altNode);
-        var associativity = ResolveAlternativeAssociativity(node, altNode);
+        var associativity = ResolveAlternativeAssociativity(altNode);
 
         string? label = null;
         if (HasToken(node, "POUND"))
@@ -663,31 +660,35 @@ public sealed class Antlr4GrammarConverter
         return new Alternative(index, associativity, content, label);
     }
 
-    /// <summary>Resolves the associativity declared through ANTLR4 <c>&lt;assoc=...&gt;</c> alternative options.</summary>
-    private Associativity ResolveAlternativeAssociativity(ParserNode labeledAltNode, ParserNode alternativeNode)
+    /// <summary>
+    /// Resolves associativity from the <c>&lt;assoc=right&gt;</c> option that may appear at the
+    /// start of an ANTLR4 <c>alternative</c> node as an <c>elementOptions</c> child.
+    /// Navigates the parse tree: <c>alternative → elementOptions → elementOption → identifier / qualifiedIdentifier</c>.
+    /// </summary>
+    private static Associativity ResolveAlternativeAssociativity(ParserNode alternativeNode)
     {
-        var alternativeText = ExtractSourceText(alternativeNode.Span).TrimStart();
-        if (!alternativeText.StartsWith("<", StringComparison.Ordinal))
+        var elementOptions = First(alternativeNode, "elementOptions");
+        if (elementOptions is null)
             return Associativity.Left;
 
-        var gtIndex = alternativeText.IndexOf('>');
-        if (gtIndex < 0)
-            return Associativity.Left;
+        foreach (var elementOption in All(elementOptions, "elementOption"))
+        {
+            // Only the key=value form carries assoc: identifier ASSIGN qualifiedIdentifier
+            if (!HasToken(elementOption, "ASSIGN"))
+                continue;
 
-        var leadingOptions = alternativeText[..(gtIndex + 1)];
-        return Regex.IsMatch(leadingOptions, @"<\s*assoc\s*=\s*right\s*>", RegexOptions.CultureInvariant)
-            ? Associativity.Right
-            : Associativity.Left;
-    }
+            var keyNode = First(elementOption, "identifier");
+            if (!string.Equals(TryGetIdentifierText(keyNode!), "assoc", StringComparison.Ordinal))
+                continue;
 
-    /// <summary>Extracts the exact source slice represented by <paramref name="span"/>.</summary>
-    private string ExtractSourceText(SourceSpan span)
-    {
-        if (span.Position < 0 || span.Position >= _sourceText.Length || span.Length <= 0)
-            return string.Empty;
+            // Value is a qualifiedIdentifier node whose first identifier child holds the text
+            var qualifiedId = First(elementOption, "qualifiedIdentifier");
+            var valueIdent = qualifiedId is not null ? First(qualifiedId, "identifier") : null;
+            if (string.Equals(TryGetIdentifierText(valueIdent!), "right", StringComparison.Ordinal))
+                return Associativity.Right;
+        }
 
-        var safeLength = int.Min(span.Length, _sourceText.Length - span.Position);
-        return safeLength > 0 ? _sourceText.Substring(span.Position, safeLength) : string.Empty;
+        return Associativity.Left;
     }
 
     /// <summary>Converts an <c>alternative</c> node into a <see cref="RuleContent"/> (sequence or single element).</summary>
