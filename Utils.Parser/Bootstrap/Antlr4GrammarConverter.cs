@@ -29,11 +29,13 @@ public sealed class Antlr4GrammarConverter
     /// <summary>Declaration-order counter incremented as rules are created during conversion.</summary>
     private int _order;
     private readonly DiagnosticBag? _diagnostics;
+    private readonly string _sourceText;
 
     /// <summary>Initialises a new converter instance. The <paramref name="sourceText"/> parameter is reserved for future use.</summary>
     /// <param name="sourceText">The original grammar source text (currently unused).</param>
     public Antlr4GrammarConverter(string sourceText, DiagnosticBag? diagnostics = null)
     {
+        _sourceText = sourceText;
         _diagnostics = diagnostics;
     }
 
@@ -661,39 +663,29 @@ public sealed class Antlr4GrammarConverter
     }
 
     /// <summary>Resolves the associativity declared through ANTLR4 <c>&lt;assoc=...&gt;</c> alternative options.</summary>
-    private static Associativity ResolveAlternativeAssociativity(ParserNode labeledAltNode, ParserNode alternativeNode)
+    private Associativity ResolveAlternativeAssociativity(ParserNode labeledAltNode, ParserNode alternativeNode)
     {
-        static Associativity ResolveFromTokens(IEnumerable<Token> tokens)
-        {
-            var list = tokens.ToList();
-            for (int i = 0; i <= list.Count - 5; i++)
-            {
-                if (list[i].RuleName != "LT" || list[i + 2].RuleName != "ASSIGN" || list[i + 4].RuleName != "GT")
-                    continue;
+        var alternativeText = ExtractSourceText(alternativeNode.Span);
+        if (HasRightAssociativityOption(alternativeText))
+            return Associativity.Right;
 
-                var key = list[i + 1].Text;
-                if (!string.Equals(key, "assoc", StringComparison.Ordinal))
-                    continue;
-
-                var valueToken = list[i + 3];
-                var value = valueToken.RuleName == "STRING_LITERAL"
-                    ? UnquoteString(valueToken.Text)
-                    : valueToken.Text;
-
-                return string.Equals(value, "right", StringComparison.Ordinal)
-                    ? Associativity.Right
-                    : Associativity.Left;
-            }
-
-            return Associativity.Left;
-        }
-
-        var assoc = ResolveFromTokens(FlatChildren(alternativeNode).OfType<LexerNode>().Select(n => n.Token));
-        if (assoc == Associativity.Right)
-            return assoc;
-
-        return ResolveFromTokens(FlatChildren(labeledAltNode).OfType<LexerNode>().Select(n => n.Token));
+        var labeledAltText = ExtractSourceText(labeledAltNode.Span);
+        return HasRightAssociativityOption(labeledAltText) ? Associativity.Right : Associativity.Left;
     }
+
+    /// <summary>Extracts the exact source slice represented by <paramref name="span"/>.</summary>
+    private string ExtractSourceText(SourceSpan span)
+    {
+        if (span.Position < 0 || span.Position >= _sourceText.Length || span.Length <= 0)
+            return string.Empty;
+
+        var safeLength = int.Min(span.Length, _sourceText.Length - span.Position);
+        return safeLength > 0 ? _sourceText.Substring(span.Position, safeLength) : string.Empty;
+    }
+
+    /// <summary>Checks whether a text fragment declares <c>&lt;assoc=right&gt;</c>.</summary>
+    private static bool HasRightAssociativityOption(string text)
+        => Regex.IsMatch(text, @"<\s*assoc\s*=\s*right\s*>", RegexOptions.CultureInvariant);
 
     /// <summary>Converts an <c>alternative</c> node into a <see cref="RuleContent"/> (sequence or single element).</summary>
     private RuleContent ConvertAlternative(ParserNode node)

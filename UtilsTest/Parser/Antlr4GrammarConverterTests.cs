@@ -216,7 +216,7 @@ public class Antlr4GrammarConverterTests
 
         var expr = def.AllRules["expr"];
         var powerAlternative = expr.Content.Alternatives
-            .First(a => a.Content is Sequence seq && seq.Items.OfType<LiteralMatch>().Any(l => l.Literal == "^"));
+            .First(a => a.Content is Sequence seq && seq.Items.OfType<LiteralMatch>().Any(l => l.Value == "^"));
         Assert.AreEqual(Associativity.Right, powerAlternative.Assoc);
     }
 
