@@ -26,8 +26,9 @@ public class ParserSharedPrefixPlanFormatterTests
 
         Assert.AreEqual(1, lines.Count);
         Assert.AreEqual(
-            "shared segment: ID\nboundary: position 1\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1",
+            "shared segment: ID\nboundary: position 1\neligibility: Eligible\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1",
             lines[0]);
+        Assert.IsFalse(lines[0].Contains("\nblockers:\n", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -57,8 +58,10 @@ public class ParserSharedPrefixPlanFormatterTests
 
         Assert.AreEqual(1, lines.Count);
         Assert.AreEqual(
-            "shared segment: ID\nboundary: position 0 (fallback)\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 2",
+            "shared segment: ID\nboundary: position 0 (fallback)\neligibility: RequiresFallback\nblockers:\n  SP002: Continuation positions diverge.\n  SP001: Fallback boundary prevents safe execution.\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 2",
             lines[0]);
+        StringAssert.Contains(lines[0], "SP001");
+        StringAssert.Contains(lines[0], "SP002");
     }
 
     [TestMethod]
@@ -71,8 +74,35 @@ public class ParserSharedPrefixPlanFormatterTests
 
         Assert.AreEqual(1, lines.Count);
         Assert.AreEqual(
-            "shared segment: ID\nboundary: position 1\ncontinuations:\n  alt 2 -> position 1\n  alt 0 -> position 1\n  alt 1 -> position 1",
+            "shared segment: ID\nboundary: position 1\neligibility: Eligible\ncontinuations:\n  alt 2 -> position 1\n  alt 0 -> position 1\n  alt 1 -> position 1",
             lines[0]);
+    }
+
+    [TestMethod]
+    public void FormatPlans_FormatsUnsafeEligibilityAndBlockers()
+    {
+        var formatter = new ParserSharedPrefixPlanFormatter();
+        var plan = Plan("ID", -1, [Continuation(0, -1), Continuation(1, -1)]);
+
+        var lines = formatter.FormatPlans([plan]);
+
+        Assert.AreEqual(1, lines.Count);
+        StringAssert.Contains(lines[0], "eligibility: Unsafe");
+        StringAssert.Contains(lines[0], "SP004");
+        StringAssert.Contains(lines[0], "SP008");
+    }
+
+    [TestMethod]
+    public void FormatPlans_FormatsNotEligibleEligibility()
+    {
+        var formatter = new ParserSharedPrefixPlanFormatter();
+        var plan = Plan(" ", 1, [Continuation(0, 1), Continuation(1, 1)]);
+
+        var lines = formatter.FormatPlans([plan]);
+
+        Assert.AreEqual(1, lines.Count);
+        StringAssert.Contains(lines[0], "eligibility: NotEligible");
+        StringAssert.Contains(lines[0], "SP005");
     }
 
     [TestMethod]
