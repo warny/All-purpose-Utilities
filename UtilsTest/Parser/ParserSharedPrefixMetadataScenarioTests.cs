@@ -36,7 +36,7 @@ public class ParserSharedPrefixMetadataScenarioTests
 
         var formatted = new ParserSharedPrefixPlanFormatter().FormatPlans(plans);
         Assert.AreEqual(1, formatted.Count);
-        Assert.AreEqual("shared segment: ID\nboundary: position 1\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1", formatted[0]);
+        Assert.AreEqual("shared segment: ID\nboundary: position 1\neligibility: Eligible\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1", formatted[0]);
     }
 
     /// <summary>
@@ -115,7 +115,7 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.IsTrue(validation.IsValid);
 
         var formatted = new ParserSharedPrefixPlanFormatter().FormatPlans(plans);
-        Assert.AreEqual("shared segment: ID\nboundary: position 1\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1", formatted[0]);
+        Assert.AreEqual("shared segment: ID\nboundary: position 1\neligibility: Eligible\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 1", formatted[0]);
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.IsFalse(validation.Issues.Any(static i => i.Message.Contains("non-fallback", StringComparison.Ordinal)));
 
         var formatted = new ParserSharedPrefixPlanFormatter().FormatPlans([plan]);
-        Assert.AreEqual("shared segment: ID\nboundary: position 0 (fallback)\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 2", formatted[0]);
+        Assert.AreEqual("shared segment: ID\nboundary: position 0 (fallback)\neligibility: RequiresFallback\nblockers:\n  SP002: Continuation positions diverge.\n  SP001: Fallback boundary prevents safe execution.\ncontinuations:\n  alt 0 -> position 1\n  alt 1 -> position 2", formatted[0]);
     }
 
     /// <summary>

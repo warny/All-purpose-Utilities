@@ -5,6 +5,8 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ParserSharedPrefixPlanFormatter
 {
+    private readonly ParserSharedPrefixExecutionEligibilityAnalyzer eligibilityAnalyzer = new();
+
     /// <summary>
     /// Formats a list of shared-prefix plans while preserving plan and continuation order.
     /// </summary>
@@ -30,18 +32,36 @@ internal sealed class ParserSharedPrefixPlanFormatter
     /// Formats one shared-prefix plan into a deterministic multi-line dry-run block.
     /// </summary>
     /// <param name="plan">Shared-prefix plan metadata.</param>
-    /// <returns>A readable block with explicit shared segment, boundary, and continuations.</returns>
-    private static string FormatPlan(ParserSharedPrefixPlan plan)
+    /// <returns>
+    /// A readable block with explicit shared segment, boundary, eligibility status,
+    /// optional blockers, and continuations.
+    /// </returns>
+    private string FormatPlan(ParserSharedPrefixPlan plan)
     {
         var isFallbackBoundary = IsFallbackBoundary(plan);
+        var eligibility = this.eligibilityAnalyzer.Analyze(plan);
         var lines = new List<string>
         {
             $"shared segment: {plan.Segment.SharedTokenName}",
             isFallbackBoundary
                 ? $"boundary: position {plan.Segment.Boundary.SequencePosition} (fallback)"
                 : $"boundary: position {plan.Segment.Boundary.SequencePosition}",
-            "continuations:"
+            $"eligibility: {eligibility.Eligibility}",
         };
+
+        if (eligibility.Blockers.Count > 0)
+        {
+            lines.Add("blockers:");
+            for (var index = 0; index < eligibility.Blockers.Count; index++)
+            {
+                var blocker = eligibility.Blockers[index];
+                lines.Add($"  {blocker.Code}: {blocker.Message}");
+            }
+        }
+
+        lines.Add(
+            "continuations:"
+        );
 
         for (var index = 0; index < plan.Continuations.Count; index++)
         {
