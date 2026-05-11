@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.ProjectCompilation;
 using Utils.Parser.Resolution;
@@ -46,6 +47,24 @@ public class Antlr4GrammarProjectCompilerTests
     }
 
     /// <summary>
+    /// Verifies that direct imports provide lexer rules to the entry grammar and allow parsing.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_ImportsLexerRulesIntoMainGrammar()
+    {
+        var resolver = CreateResolver(
+            ("Base", "grammar Base; ID : ('a'..'z')+ ; WS : (' ' | '\\t' | '\\r' | '\\n')+ -> skip ;"),
+            ("Main", "grammar Main; import Base; start : ID ;"));
+
+        var definition = Antlr4GrammarProjectCompiler.Parse("Main", resolver);
+        var compiled = Antlr4GrammarProjectCompiler.Compile("Main", resolver);
+        var parseTree = compiled.Parse("abc");
+
+        Assert.IsTrue(definition.AllRules.ContainsKey("ID"));
+        Assert.IsNotNull(parseTree);
+    }
+
+    /// <summary>
     /// Verifies that entry grammar rules override imported rules with identical names.
     /// </summary>
     [TestMethod]
@@ -61,6 +80,26 @@ public class Antlr4GrammarProjectCompilerTests
         Assert.AreEqual("start", definition.RootRule?.Name);
         Assert.AreEqual(1, definition.ParserRules.Count(static rule => rule.Name == "start"));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportedRuleIgnoredBecauseAlreadyDefined.Code));
+    }
+
+    /// <summary>
+    /// Verifies that entry parser rules override imported parser rules with the same name.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_ImporterRuleOverridesImportedRule()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(
+            ("Base", "grammar Base; item : 'base' ;"),
+            ("Main", "grammar Main; import Base; item : 'main' ; start : item ;"));
+
+        var definition = Antlr4GrammarProjectCompiler.Parse("Main", resolver, diagnostics);
+        var compiled = Antlr4GrammarProjectCompiler.Compile("Main", resolver);
+        var parseMain = compiled.Parse("main");
+
+        Assert.AreEqual(1, definition.ParserRules.Count(rule => rule.Name == "item"));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportedRuleIgnoredBecauseAlreadyDefined.Code));
+        Assert.IsNotNull(parseMain);
     }
 
     /// <summary>
@@ -80,6 +119,23 @@ public class Antlr4GrammarProjectCompilerTests
     }
 
     /// <summary>
+    /// Verifies that transitive imports are available in the final merged grammar.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_SupportsTransitiveImports()
+    {
+        var resolver = CreateResolver(
+            ("Tokens", "grammar Tokens; ID : ('a'..'z')+ ; WS : (' ' | '\\t' | '\\r' | '\\n')+ -> skip ;"),
+            ("Base", "grammar Base; import Tokens;"),
+            ("Main", "grammar Main; import Base; start : ID ;"));
+
+        var compiled = Antlr4GrammarProjectCompiler.Compile("Main", resolver);
+        var parseTree = compiled.Parse("abc");
+
+        Assert.IsNotNull(parseTree);
+    }
+
+    /// <summary>
     /// Verifies that cyclic imports are detected.
     /// </summary>
     [TestMethod]
@@ -94,6 +150,51 @@ public class Antlr4GrammarProjectCompilerTests
 
         StringAssert.Contains(exception.Message, "Import cycle");
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportCycleDetected.Code));
+    }
+
+    /// <summary>
+    /// Verifies that missing imports keep project compilation deterministic and diagnostic-driven.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_ReportsMissingImport()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(("Main", "grammar Main; import Missing; start : 'a' ;"));
+
+        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("Main", resolver, diagnostics));
+        Assert.IsTrue(diagnostics.Any(diagnostic =>
+            diagnostic.Code == ParserDiagnostics.ImportParsedButNotResolved.Code
+            || diagnostic.Code == ParserDiagnostics.ImportedGrammarNotFound.Code));
+    }
+
+    /// <summary>
+    /// Verifies that cyclic imports are detected without recursive overflow.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_DetectsImportCycles()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(
+            ("A", "grammar A; import B; start : 'a' ;"),
+            ("B", "grammar B; import A; b : 'b' ;"));
+
+        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("A", resolver, diagnostics));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportCycleDetected.Code));
+    }
+
+    /// <summary>
+    /// Verifies converter diagnostics are propagated when an imported grammar fails to parse.
+    /// </summary>
+    [TestMethod]
+    public void ImportResolution_InvalidImportedGrammar_PropagatesParseDiagnostics()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(
+            ("Main", "grammar Main; import Broken; start : ID ;"),
+            ("Broken", "grammar Broken; $$$"));
+
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarProjectCompiler.Parse("Main", resolver, diagnostics));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ParseFailure.Code));
     }
 
     /// <summary>
