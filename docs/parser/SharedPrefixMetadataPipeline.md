@@ -21,17 +21,33 @@ This document describes what exists now for preparation, validation, and archite
 
 ## 2. High-Level Metadata Pipeline
 
-Current metadata flow:
+### Runtime metadata production (active path)
+
+Current scheduling-time metadata production flow:
 
 ```text
 ParserLookaheadProbe
     -> ParserLookaheadSharedPrefixDetector
     -> ParserContinuationFactory
     -> ParserSharedPrefixPlanFactory
+```
+
+`AlternativeScheduler.BuildMetadata` uses this active path to produce plan metadata and return it as scheduling metadata output.
+
+### Inspection and audit tooling (non-scheduling path)
+
+Inspection flow over already-produced plans:
+
+```text
+ParserSharedPrefixPlan
     -> ParserSharedPrefixPlanValidator
+ParserSharedPrefixPlan
     -> ParserSharedPrefixExecutionEligibilityAnalyzer
+ParserSharedPrefixPlan
     -> ParserSharedPrefixPlanFormatter
 ```
+
+The validator and eligibility analyzer are not active scheduling stages. The eligibility analyzer is currently consumed by inspection/formatting workflows, not by runtime scheduling decisions.
 
 Stage intent:
 
@@ -39,11 +55,11 @@ Stage intent:
 2. `ParserLookaheadSharedPrefixDetector` identifies potential shared-prefix candidates from observations.
 3. `ParserContinuationFactory` derives structural continuation descriptors for alternatives.
 4. `ParserSharedPrefixPlanFactory` builds metadata plans describing boundaries and segments.
-5. `ParserSharedPrefixPlanValidator` checks structural consistency of produced plans.
-6. `ParserSharedPrefixExecutionEligibilityAnalyzer` classifies whether future execution experiments could be theoretically safe.
+5. `ParserSharedPrefixPlanValidator` checks structural consistency of produced plans for audit and verification usage.
+6. `ParserSharedPrefixExecutionEligibilityAnalyzer` classifies whether future execution experiments could be theoretically safe for analysis/debug views.
 7. `ParserSharedPrefixPlanFormatter` produces dry-run/debug output for inspection.
 
-The pipeline currently produces metadata artifacts only. It must not alter parse execution.
+All stages currently produce metadata artifacts only. They must not alter parse execution.
 
 ## 3. Component Responsibilities
 
@@ -120,7 +136,8 @@ The runtime must preserve all of the following invariants:
 - deterministic scheduling;
 - parse-tree stability;
 - diagnostics stability;
-- no speculative parsing;
+- no additional speculative parsing introduced by shared-prefix metadata;
+- existing parser backtracking semantics remain unchanged;
 - no shared-prefix execution;
 - no continuation replay;
 - no parser graph traversal;
