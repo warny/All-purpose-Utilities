@@ -36,6 +36,10 @@ The items below are not guaranteed yet and should be considered missing or limit
 
 If a grammar relies on one of these areas, validate it with targeted tests before production rollout.
 
+### Detailed compatibility reference
+
+For a detailed, implementation-aligned compatibility status (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md).
+
 ### Current support matrix (high-level)
 
 | Area | Status | Notes |
