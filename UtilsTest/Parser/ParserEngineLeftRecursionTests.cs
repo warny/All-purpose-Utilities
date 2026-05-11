@@ -78,6 +78,27 @@ public class ParserEngineLeftRecursionTests
         Assert.IsTrue(plusDepths[1] > plusDepths[0], "Expected left-associative tree nesting.");
     }
 
+
+    [TestMethod]
+    public void LeftRecursion_AssocRight_IsApplied()
+    {
+        var (tree, _) = Parse("""
+            grammar G;
+            start : expr ;
+            expr
+              : <assoc=right> expr '^' expr
+              | INT
+              ;
+            INT : ('0'..'9')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, "1 ^ 2 ^ 3");
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        var caretDepths = FindTokenDepths(tree, "^").OrderBy(x => x).ToList();
+        Assert.AreEqual(2, caretDepths.Count);
+        Assert.IsTrue(caretDepths[1] > caretDepths[0], "Expected right-associative tree nesting.");
+    }
+
     [TestMethod]
     public void LeftRecursion_WithoutBaseAlternative_Throws()
     {

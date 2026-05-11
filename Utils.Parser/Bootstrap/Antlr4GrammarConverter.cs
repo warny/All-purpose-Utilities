@@ -648,6 +648,7 @@ public sealed class Antlr4GrammarConverter
     {
         var altNode = Require(First(node, "alternative"), "Missing alternative in labeledAlt");
         var content = ConvertAlternative(altNode);
+        var associativity = ResolveAlternativeAssociativity(node, altNode);
 
         string? label = null;
         if (HasToken(node, "POUND"))
@@ -656,7 +657,42 @@ public sealed class Antlr4GrammarConverter
             label = identNode != null ? GetIdentifierText(identNode) : null;
         }
 
-        return new Alternative(index, Associativity.Left, content, label);
+        return new Alternative(index, associativity, content, label);
+    }
+
+    /// <summary>Resolves the associativity declared through ANTLR4 <c>&lt;assoc=...&gt;</c> alternative options.</summary>
+    private static Associativity ResolveAlternativeAssociativity(ParserNode labeledAltNode, ParserNode alternativeNode)
+    {
+        static Associativity ResolveFromTokens(IEnumerable<Token> tokens)
+        {
+            var list = tokens.ToList();
+            for (int i = 0; i <= list.Count - 5; i++)
+            {
+                if (list[i].RuleName != "LT" || list[i + 2].RuleName != "ASSIGN" || list[i + 4].RuleName != "GT")
+                    continue;
+
+                var key = list[i + 1].Text;
+                if (!string.Equals(key, "assoc", StringComparison.Ordinal))
+                    continue;
+
+                var valueToken = list[i + 3];
+                var value = valueToken.RuleName == "STRING_LITERAL"
+                    ? UnquoteString(valueToken.Text)
+                    : valueToken.Text;
+
+                return string.Equals(value, "right", StringComparison.Ordinal)
+                    ? Associativity.Right
+                    : Associativity.Left;
+            }
+
+            return Associativity.Left;
+        }
+
+        var assoc = ResolveFromTokens(FlatChildren(alternativeNode).OfType<LexerNode>().Select(n => n.Token));
+        if (assoc == Associativity.Right)
+            return assoc;
+
+        return ResolveFromTokens(FlatChildren(labeledAltNode).OfType<LexerNode>().Select(n => n.Token));
     }
 
     /// <summary>Converts an <c>alternative</c> node into a <see cref="RuleContent"/> (sequence or single element).</summary>
