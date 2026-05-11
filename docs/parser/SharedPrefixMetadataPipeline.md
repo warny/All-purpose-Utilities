@@ -49,6 +49,12 @@ ParserSharedPrefixPlan
 
 The validator and eligibility analyzer are not active scheduling stages. The eligibility analyzer is currently consumed by inspection/formatting workflows, not by runtime scheduling decisions.
 
+Authoritative implementation notes for this status:
+
+- runtime scheduling metadata is produced in `AlternativeScheduler.BuildMetadata`;
+- plan formatting consumes eligibility analysis in `ParserSharedPrefixPlanFormatter`;
+- parser execution/backtracking semantics remain in `ParserEngine` and scheduled execution paths.
+
 Stage intent:
 
 1. `ParserLookaheadProbe` captures conservative lookahead observations.
