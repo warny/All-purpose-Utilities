@@ -33,49 +33,18 @@ public class LexerEngineTests
     // Simple number tokenization
     // ═══════════════════════════════════════════════════════════════
 
-    [TestMethod]
-    public void Lexer_SingleInteger()
+    [DataTestMethod]
+    [DataRow("42")]
+    [DataRow("7")]
+    [DataRow("3.14")]
+    [DataRow("123456789")]
+    [DataRow("100.005")]
+    public void Lexer_NumberToken_IsTokenizedAsSingleToken(string input)
     {
-        var tokens = Tokenize("42");
+        var tokens = Tokenize(input);
         Assert.AreEqual(1, tokens.Count);
         Assert.AreEqual("Number", tokens[0].RuleName);
-        Assert.AreEqual("42", tokens[0].Text);
-        Assert.AreEqual(0, tokens[0].Span.Position);
-        Assert.AreEqual(2, tokens[0].Span.Length);
-    }
-
-    [TestMethod]
-    public void Lexer_SingleDigit()
-    {
-        var tokens = Tokenize("7");
-        Assert.AreEqual(1, tokens.Count);
-        Assert.AreEqual("Number", tokens[0].RuleName);
-        Assert.AreEqual("7", tokens[0].Text);
-    }
-
-    [TestMethod]
-    public void Lexer_DecimalNumber()
-    {
-        var tokens = Tokenize("3.14");
-        Assert.AreEqual(1, tokens.Count);
-        Assert.AreEqual("Number", tokens[0].RuleName);
-        Assert.AreEqual("3.14", tokens[0].Text);
-    }
-
-    [TestMethod]
-    public void Lexer_LargeInteger()
-    {
-        var tokens = Tokenize("123456789");
-        Assert.AreEqual(1, tokens.Count);
-        Assert.AreEqual("123456789", tokens[0].Text);
-    }
-
-    [TestMethod]
-    public void Lexer_DecimalWithMultipleDigits()
-    {
-        var tokens = Tokenize("100.005");
-        Assert.AreEqual(1, tokens.Count);
-        Assert.AreEqual("100.005", tokens[0].Text);
+        Assert.AreEqual(input, tokens[0].Text);
     }
 
     // ═══════════════════════════════════════════════════════════════

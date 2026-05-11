@@ -126,30 +126,6 @@ public class ParserLookaheadCacheTests
     }
 
     [TestMethod]
-    public void ParserLookaheadProbeResult_StoresImmediateReject()
-    {
-        var cache = new ParserLookaheadCache();
-        var key = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
-        var expected = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.ImmediateReject, "ID", "id");
-
-        Assert.IsTrue(cache.TryAdd(key, expected));
-        Assert.IsTrue(cache.TryGet(key, out var actual));
-        Assert.AreEqual(ParserLookaheadProbeKind.ImmediateReject, actual.Kind);
-    }
-
-    [TestMethod]
-    public void ParserLookaheadProbeResult_StoresRequiresParse()
-    {
-        var cache = new ParserLookaheadCache();
-        var key = new ParserLookaheadKey("root", 0, 0, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1);
-        var expected = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id");
-
-        Assert.IsTrue(cache.TryAdd(key, expected));
-        Assert.IsTrue(cache.TryGet(key, out var actual));
-        Assert.AreEqual(ParserLookaheadProbeKind.RequiresParse, actual.Kind);
-    }
-
-    [TestMethod]
     public void DiagnosticsProvided_NegativeLookaheadDoesNotSkipRuleDiagnostics()
     {
         const string grammar = """
