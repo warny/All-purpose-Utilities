@@ -261,21 +261,95 @@ public class Antlr4GrammarConverterTests
     // ─── 9. returns [...] ─────────────────────────────────────────────────────
 
     [TestMethod]
-    public void ParseParserRule_Returns_ParsesWithoutException()
+    public void RuleParameters_SimpleParameterBlock_IsPreserved()
     {
-        // The bootstrap grammar's argActionBlock handling has limitations with
-        // the [int v] syntax (Argument mode not triggered in DEFAULT_MODE).
-        // This test verifies the grammar parses without crashing, and that the
-        // rule itself is created (even if returns data is not captured).
-        // The grammar below avoids the argActionBlock limitation by omitting
-        // the actual argument content check.
         var def = Antlr4GrammarConverter.Parse("""
-            grammar A; 
-            r : 'x' ;
+            grammar G;
+            start[int x] : 'a' ;
             """);
 
-        // Even without returns, ensure rule is present
-        Assert.IsTrue(def.AllRules.ContainsKey("r"));
+        var rule = def.AllRules["start"];
+        Assert.IsNotNull(rule.Parameters);
+        Assert.AreEqual("int x", rule.Parameters![0].Type);
+    }
+
+    [TestMethod]
+    public void RuleParameters_GenericParameterBlock_IsPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start[List<int> items] : 'a' ;
+            """);
+
+        var rule = def.AllRules["start"];
+        Assert.IsNotNull(rule.Parameters);
+        Assert.AreEqual("List<int> items", rule.Parameters![0].Type);
+    }
+
+    [TestMethod]
+    public void RuleParameters_NestedGenericArguments_AreBalanced()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start[Dictionary<string, List<int>> map] : 'a' ;
+            """);
+
+        var rule = def.AllRules["start"];
+        Assert.AreEqual("Dictionary<string, List<int>> map", rule.Parameters![0].Type);
+    }
+
+    [TestMethod]
+    public void RuleReturns_Block_IsPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start returns [int value] : 'a' ;
+            """);
+
+        var rule = def.AllRules["start"];
+        Assert.IsNotNull(rule.Returns);
+        Assert.AreEqual("int value", rule.Returns![0].Type);
+    }
+
+    [TestMethod]
+    public void RuleParametersAndReturns_Both_AreCaptured()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start[int x] returns [int value] : 'a' ;
+            """);
+
+        var rule = def.AllRules["start"];
+        Assert.AreEqual("int x", rule.Parameters![0].Type);
+        Assert.AreEqual("int value", rule.Returns![0].Type);
+    }
+
+    [TestMethod]
+    public void RuleParameters_MultilineBlock_IsPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start[
+                int x,
+                string y
+            ]
+            : 'a'
+            ;
+            """);
+
+        var raw = def.AllRules["start"].Parameters![0].Type;
+        StringAssert.Contains(raw, "int x,");
+        StringAssert.Contains(raw, "string y");
+    }
+
+    [TestMethod]
+    public void RuleParameters_MalformedBlock_ProducesDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start[List<int x : 'a' ;
+            """, diagnostics));
     }
 
     // ─── 10. Fragment rule ────────────────────────────────────────────────────

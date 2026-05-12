@@ -623,6 +623,17 @@ public sealed class Antlr4GrammarConverter
     {
         var name = Require(FirstToken(node, "RULE_REF"), "Missing RULE_REF in parserRuleSpec").Text;
 
+        List<RuleParameter>? parameters = null;
+        var parameterBlock = First(node, "argActionBlock");
+        if (parameterBlock != null)
+        {
+            var raw = GetArgActionBlockText(parameterBlock);
+            if (raw.Length > 0)
+            {
+                parameters = [new RuleParameter(raw, raw)];
+            }
+        }
+
         List<RuleReturn>? returns = null;
         var returnsNode = First(node, "ruleReturns");
         if (returnsNode != null)
@@ -673,7 +684,7 @@ public sealed class Antlr4GrammarConverter
         var ruleAltList = Require(First(ruleBlock, "ruleAltList"), "Missing ruleAltList");
         var content = ConvertRuleAltList(ruleAltList);
 
-        return new Rule(name, _order++, false, content, null, null, returns, initAction, afterAction);
+        return new Rule(name, _order++, false, content, null, parameters, returns, initAction, afterAction);
     }
 
     // ─── ruleAltList / labeledAlt / alternative ───────────────────────────────
@@ -997,13 +1008,22 @@ public sealed class Antlr4GrammarConverter
         throw new GrammarParseException("Unknown lexerCommandExpr");
     }
 
-    /// <summary>Concatenates all <c>ARGUMENT_CONTENT</c> token texts inside an <c>argActionBlock</c> node.</summary>
-    private static string GetArgActionBlockText(ParserNode node) =>
-        string.Concat(FlatChildren(node)
+    /// <summary>
+    /// Concatenates all token text inside an <c>argActionBlock</c> node while excluding
+    /// the outer <c>[</c> and <c>]</c> delimiters.
+    /// </summary>
+    private static string GetArgActionBlockText(ParserNode node)
+    {
+        var tokens = FlatChildren(node)
             .OfType<LexerNode>()
-            .Where(n => n.Rule?.Name == "ARGUMENT_CONTENT")
-            .Select(n => n.Token.Text))
-        .Trim();
+            .Select(n => n.Token.Text)
+            .ToList();
+
+        if (tokens.Count >= 2 && tokens[0] == "[" && tokens[^1] == "]")
+            return string.Concat(tokens.Skip(1).Take(tokens.Count - 2));
+
+        return string.Concat(tokens);
+    }
 
     /// <summary>Extracts the string representation of an option value from an <c>optionValue</c> node.</summary>
     private static string GetOptionValueText(ParserNode node)
