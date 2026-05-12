@@ -37,9 +37,10 @@ public sealed class ParserEngine
     private readonly ParserLookaheadCache _lookaheadCache = new();
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
     private readonly ISemanticPredicateEvaluator _semanticPredicateEvaluator;
+    private readonly IParserActionExecutor _parserActionExecutor;
 
     public ParserEngine(ParserDefinition definition)
-        : this(definition, new DefaultSemanticPredicateEvaluator())
+        : this(definition, new DefaultSemanticPredicateEvaluator(), new DefaultParserActionExecutor())
     {
     }
 
@@ -51,9 +52,21 @@ public sealed class ParserEngine
     /// Strategy used to evaluate semantic predicates without executing arbitrary source code.
     /// </param>
     public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
+        : this(definition, semanticPredicateEvaluator, new DefaultParserActionExecutor())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a parser engine with explicit semantic predicate and action execution policies.
+    /// </summary>
+    /// <param name="definition">Resolved parser definition.</param>
+    /// <param name="semanticPredicateEvaluator">Policy used to evaluate semantic predicates.</param>
+    /// <param name="parserActionExecutor">Policy used to handle parser embedded actions.</param>
+    public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator, IParserActionExecutor parserActionExecutor)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         _semanticPredicateEvaluator = semanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(semanticPredicateEvaluator));
+        _parserActionExecutor = parserActionExecutor ?? throw new ArgumentNullException(nameof(parserActionExecutor));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler();
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, new ParserLookaheadProbe());
@@ -492,14 +505,41 @@ public sealed class ParserEngine
                 // Already handled in CheckPrecedence.
                 return CreateEmptyNode(context, rule);
 
-            case EmbeddedAction:
-                // Embedded actions: never executed, always succeed.
-                diagnostics?.AddWithContext(ParserDiagnostics.InlineActionStoredNotExecuted, null, null, rule.Name, null);
-                return CreateEmptyNode(context, rule);
+            case EmbeddedAction embeddedAction:
+                return HandleEmbeddedAction(context, rule, embeddedAction, alternativeIndex, elementIndex, diagnostics);
 
             default:
                 return null;
         }
+    }
+
+
+    /// <summary>
+    /// Handles embedded parser actions using the configured executor policy.
+    /// </summary>
+    private ParseNode HandleEmbeddedAction(
+        ParseContext context,
+        Rule rule,
+        EmbeddedAction action,
+        int alternativeIndex,
+        int elementIndex,
+        DiagnosticBag? diagnostics)
+    {
+        var executionContext = new ParserActionExecutionContext(
+            rule,
+            action,
+            action.RawCode,
+            context.Position,
+            alternativeIndex,
+            elementIndex);
+
+        var executionResult = _parserActionExecutor.Execute(executionContext);
+        if (executionResult == ParserActionExecutionResult.NotExecuted)
+        {
+            diagnostics?.AddWithContext(ParserDiagnostics.InlineActionStoredNotExecuted, null, null, rule.Name, null);
+        }
+
+        return CreateEmptyNode(context, rule);
     }
 
     /// <summary>
@@ -614,7 +654,13 @@ public sealed class ParserEngine
         for (int itemIndex = 0; itemIndex < seq.Items.Count; itemIndex++)
         {
             var item = seq.Items[itemIndex];
-            if (item is EmbeddedAction or Model.LexerCommand)
+            if (item is EmbeddedAction embeddedAction)
+            {
+                _ = HandleEmbeddedAction(context, rule, embeddedAction, alternativeIndex, itemIndex, diagnostics);
+                continue;
+            }
+
+            if (item is Model.LexerCommand)
                 continue;
 
             var itemStartPosition = context.Position;

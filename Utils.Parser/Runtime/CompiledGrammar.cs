@@ -26,7 +26,7 @@ public sealed class CompiledGrammar
     /// </summary>
     /// <param name="definition">A resolved grammar definition.</param>
     public CompiledGrammar(ParserDefinition definition)
-        : this(definition, new DefaultSemanticPredicateEvaluator())
+        : this(definition, new DefaultSemanticPredicateEvaluator(), new DefaultParserActionExecutor())
     {
     }
 
@@ -39,10 +39,22 @@ public sealed class CompiledGrammar
     /// Evaluator used by the embedded <see cref="ParserEngine"/> for semantic predicates.
     /// </param>
     public CompiledGrammar(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
+        : this(definition, semanticPredicateEvaluator, new DefaultParserActionExecutor())
+    {
+    }
+
+    /// <summary>
+    /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
+    /// <see cref="ParserDefinition"/> with explicit predicate and action policies.
+    /// </summary>
+    /// <param name="definition">A resolved grammar definition.</param>
+    /// <param name="semanticPredicateEvaluator">Semantic predicate evaluator policy.</param>
+    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
+    public CompiledGrammar(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator, IParserActionExecutor parserActionExecutor)
     {
         Definition = definition;
         _lexer = new LexerEngine(definition);
-        _parser = new ParserEngine(definition, semanticPredicateEvaluator);
+        _parser = new ParserEngine(definition, semanticPredicateEvaluator, parserActionExecutor);
     }
 
     /// <summary>
