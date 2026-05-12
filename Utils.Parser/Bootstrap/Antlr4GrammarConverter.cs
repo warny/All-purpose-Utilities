@@ -66,7 +66,37 @@ public sealed class Antlr4GrammarConverter
         [StringSyntax("ANTLR4")] string grammarText,
         ISemanticPredicateEvaluator semanticPredicateEvaluator,
         DiagnosticBag? diagnostics = null)
-        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator);
+        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator, new DefaultParserActionExecutor());
+
+    /// <summary>
+    /// Convenience factory: compiles <paramref name="grammarText"/> and configures
+    /// parser embedded action handling with <paramref name="parserActionExecutor"/>.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source (<c>.g4</c> content).</param>
+    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <returns>A compiled grammar instance with injected action executor.</returns>
+    public static Runtime.CompiledGrammar Compile(
+        [StringSyntax("ANTLR4")] string grammarText,
+        IParserActionExecutor parserActionExecutor,
+        DiagnosticBag? diagnostics = null)
+        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), new DefaultSemanticPredicateEvaluator(), parserActionExecutor);
+
+    /// <summary>
+    /// Convenience factory: compiles <paramref name="grammarText"/> and configures explicit
+    /// semantic predicate and parser action execution policies.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source (<c>.g4</c> content).</param>
+    /// <param name="semanticPredicateEvaluator">Semantic predicate evaluator policy.</param>
+    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <returns>A compiled grammar instance with injected runtime policies.</returns>
+    public static Runtime.CompiledGrammar Compile(
+        [StringSyntax("ANTLR4")] string grammarText,
+        ISemanticPredicateEvaluator semanticPredicateEvaluator,
+        IParserActionExecutor parserActionExecutor,
+        DiagnosticBag? diagnostics = null)
+        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator, parserActionExecutor);
 
     /// <summary>
     /// Full pipeline: ANTLR4 grammar text → resolved <see cref="Utils.Parser.Model.ParserDefinition"/>.

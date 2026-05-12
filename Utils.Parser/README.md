@@ -419,7 +419,7 @@ The points below reflect the current implementation behavior.
 | `tokens { ... }` block | ⚠️ Parsed but not mapped | ❌ Not supported | Recognized but ignored in model conversion. |
 | `channels { ... }` block | ⚠️ Parsed but not mapped | ❌ Not supported | Recognized but ignored in model conversion. |
 | Top-level grammar actions (`@... { ... }`) | ⚠️ Parsed but not executed | ❌ Not supported | Stored metadata only. |
-| Rule actions (`@init`, `@after`, inline `{...}`) | ⚠️ Partially supported | ⚠️ Parsed as raw blocks | Runtime stores actions and does not execute them. |
+| Rule actions (`@init`, `@after`, inline `{...}`) | ⚠️ Partially supported | ⚠️ Parsed as raw blocks | Runtime exposes an action executor abstraction; default policy stores actions and does not execute them. |
 | Semantic predicates (`{...}?`) | ⚠️ Parsed but not enforced | ⚠️ Parsed as raw blocks | Runtime accepts as empty successful matches. |
 | `returns [...]` | ⚠️ Partially supported | ❌ Not supported | Runtime stores raw return text. |
 | `locals`, `throws`, `catch`, `finally` | ⚠️ Parsed but ignored | ❌ Not supported | No runtime semantics yet. |
@@ -446,8 +446,7 @@ The points below reflect the current implementation behavior.
 
 ### Runtime semantics (`LexerEngine` / `ParserEngine`)
 
-- Embedded actions and semantic predicates are parsed and stored, but the parser engine does
-  not execute them; they are accepted as successful empty matches.
+- Embedded actions and semantic predicates are parsed and stored. Embedded actions are routed through a policy abstraction and default to not executed; semantic predicates are evaluator-driven.
 - Precedence is only enforced through recognized `precpred(_ctx, N)` patterns.
 - `precpred` extraction is regex-based; if the level cannot be parsed, precedence falls back
   to `0`.
