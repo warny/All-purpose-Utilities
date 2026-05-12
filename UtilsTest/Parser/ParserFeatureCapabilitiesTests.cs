@@ -42,7 +42,7 @@ public class ParserFeatureCapabilitiesTests
 
         foreach (var capability in ParserFeatureCapabilities.All.Where(static item => !string.IsNullOrWhiteSpace(item.RelatedDiagnosticCode)))
         {
-            Assert.IsTrue(Utils.Parser.Diagnostics.ParserDiagnostics.TryGet(capability.RelatedDiagnosticCode!, out _), $"Unknown diagnostic code: {capability.RelatedDiagnosticCode}");
+            Assert.IsTrue(ParserDiagnostics.TryGet(capability.RelatedDiagnosticCode!, out _), $"Unknown diagnostic code: {capability.RelatedDiagnosticCode}");
         }
     }
 
