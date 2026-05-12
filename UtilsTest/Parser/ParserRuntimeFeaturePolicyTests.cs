@@ -13,6 +13,9 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class ParserRuntimeFeaturePolicyTests
 {
+    /// <summary>
+    /// Verifies that the default runtime feature policy preserves the existing conservative strategies.
+    /// </summary>
     [TestMethod]
     public void ParserRuntimeFeaturePolicy_DefaultPreservesCurrentBehavior()
     {
@@ -20,6 +23,9 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(ParserRuntimeFeaturePolicy.Default.ParserActionExecutor);
     }
 
+    /// <summary>
+    /// Verifies that existing constructor overloads map runtime strategies exactly as before.
+    /// </summary>
     [TestMethod]
     public void ParserEngine_ExistingOverloads_ProduceEquivalentPolicies()
     {
@@ -41,6 +47,9 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreSame(executor, GetParserActionExecutor(combined));
     }
 
+    /// <summary>
+    /// Verifies that explicitly configured runtime strategy instances are propagated to the parser engine.
+    /// </summary>
     [TestMethod]
     public void ParserRuntimeFeaturePolicy_CustomStrategies_ArePropagated()
     {
@@ -59,6 +68,9 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreSame(executor, GetParserActionExecutor(parser));
     }
 
+    /// <summary>
+    /// Verifies that using the explicit default runtime policy does not change emitted diagnostics.
+    /// </summary>
     [TestMethod]
     public void RuntimePolicy_DoesNotAlterDefaultDiagnostics()
     {
@@ -86,18 +98,32 @@ public class ParserRuntimeFeaturePolicyTests
             diagnosticsWithDefaultPolicy.Select(static diagnostic => diagnostic.Code).ToArray());
     }
 
+    /// <summary>
+    /// Gets the semantic predicate evaluator instance currently held by the parser engine.
+    /// </summary>
+    /// <param name="parser">Parser engine to inspect.</param>
+    /// <returns>Configured semantic predicate evaluator.</returns>
     private static ISemanticPredicateEvaluator GetSemanticPredicateEvaluator(ParserEngine parser)
     {
         var field = typeof(ParserEngine).GetField("_semanticPredicateEvaluator", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         return (ISemanticPredicateEvaluator)field.GetValue(parser)!;
     }
 
+    /// <summary>
+    /// Gets the parser action executor instance currently held by the parser engine.
+    /// </summary>
+    /// <param name="parser">Parser engine to inspect.</param>
+    /// <returns>Configured parser action executor.</returns>
     private static IParserActionExecutor GetParserActionExecutor(ParserEngine parser)
     {
         var field = typeof(ParserEngine).GetField("_parserActionExecutor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         return (IParserActionExecutor)field.GetValue(parser)!;
     }
 
+    /// <summary>
+    /// Creates a minimal resolved parser definition suitable for constructor wiring tests.
+    /// </summary>
+    /// <returns>A resolved parser definition.</returns>
     private static ParserDefinition CreateMinimalDefinition()
     {
         var startRule = new Rule("start", 0, false, new Alternation([new Alternative(0, Associativity.Left, new Sequence([]))]));
@@ -115,30 +141,54 @@ public class ParserRuntimeFeaturePolicyTests
             RootRule: startRule));
     }
 
+    /// <summary>
+    /// Semantic predicate evaluator used by tests to return a deterministic result.
+    /// </summary>
     private sealed class ConstantSemanticPredicateEvaluator : ISemanticPredicateEvaluator
     {
         private readonly SemanticPredicateEvaluationResult _result;
 
+        /// <summary>
+        /// Initializes the evaluator with the configured evaluation result.
+        /// </summary>
+        /// <param name="result">Result returned for all predicate evaluations.</param>
         public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
         {
             _result = result;
         }
 
+        /// <summary>
+        /// Returns the configured semantic predicate evaluation result.
+        /// </summary>
+        /// <param name="context">Semantic predicate evaluation context.</param>
+        /// <returns>The configured result.</returns>
         public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
         {
             return _result;
         }
     }
 
+    /// <summary>
+    /// Parser action executor used by tests to return a deterministic result.
+    /// </summary>
     private sealed class ConstantParserActionExecutor : IParserActionExecutor
     {
         private readonly ParserActionExecutionResult _result;
 
+        /// <summary>
+        /// Initializes the executor with the configured action execution result.
+        /// </summary>
+        /// <param name="result">Result returned for all action executions.</param>
         public ConstantParserActionExecutor(ParserActionExecutionResult result)
         {
             _result = result;
         }
 
+        /// <summary>
+        /// Returns the configured parser action execution result.
+        /// </summary>
+        /// <param name="context">Parser action execution context.</param>
+        /// <returns>The configured result.</returns>
         public ParserActionExecutionResult Execute(ParserActionExecutionContext context)
         {
             return _result;

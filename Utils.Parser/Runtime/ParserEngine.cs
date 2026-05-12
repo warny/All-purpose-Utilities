@@ -39,6 +39,10 @@ public sealed class ParserEngine
     private readonly ISemanticPredicateEvaluator _semanticPredicateEvaluator;
     private readonly IParserActionExecutor _parserActionExecutor;
 
+    /// <summary>
+    /// Initializes a parser engine with the conservative default runtime feature policy.
+    /// </summary>
+    /// <param name="definition">Resolved parser definition.</param>
     public ParserEngine(ParserDefinition definition)
         : this(definition, ParserRuntimeFeaturePolicy.Default)
     {
