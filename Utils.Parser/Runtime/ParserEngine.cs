@@ -711,7 +711,7 @@ public sealed class ParserEngine
                 caseInsensitive: _caseInsensitive,
                 containsPredicateOrAction: ContainsPredicateOrAction,
                 resolveDiagnosticSpan: ResolveDiagnosticSpan,
-                parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, alternativeIndex, diagnostics)));
+                parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, -1, diagnostics)));
 
         if (scheduling.SelectedState is null)
         {

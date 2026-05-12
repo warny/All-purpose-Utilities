@@ -51,6 +51,50 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     }
 
     [TestMethod]
+    public void Parse_WithSecondAlternativePredicate_ProvidesCorrectAlternativeAndElementIndices()
+    {
+        var tokenRuleA = new Rule("A", 0, true, new Alternation([new Alternative(0, Associativity.Left, new LiteralMatch("a"))]));
+        var tokenRuleB = new Rule("B", 1, true, new Alternation([new Alternative(0, Associativity.Left, new LiteralMatch("b"))]));
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("B")),
+                new Alternative(1, Associativity.Left, new Sequence([
+                    new ValidatingPredicate("canProceed"),
+                    new RuleRef("A")
+                ]))
+            ]));
+
+        var definition = RuleResolver.Resolve(new ParserDefinition(
+            Name: "G",
+            Type: GrammarType.Combined,
+            Options: null,
+            Actions: [],
+            Imports: [],
+            Modes: [new LexerMode("DEFAULT_MODE", [tokenRuleA, tokenRuleB])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
+            ParserRules: [startRule],
+            RootRule: startRule));
+
+        var observer = new ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var tokens = new List<Token>
+        {
+            new(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")
+        };
+        var parser = new ParserEngine(definition, observer);
+
+        var result = parser.Parse(tokens);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, observer.LastContext?.AlternativeIndex);
+        Assert.AreEqual(0, observer.LastContext?.ElementIndex);
+    }
+
+    [TestMethod]
     public void CompileAndParse_FromAntlrText_UsesInjectedEvaluator()
     {
         var definition = Antlr4GrammarConverter.Parse(
@@ -138,6 +182,35 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         /// <inheritdoc />
         public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
         {
+            return _result;
+        }
+    }
+
+    /// <summary>
+    /// Test evaluator that captures the latest context for assertions.
+    /// </summary>
+    private sealed class ObservingSemanticPredicateEvaluator : ISemanticPredicateEvaluator
+    {
+        private readonly SemanticPredicateEvaluationResult _result;
+
+        /// <summary>
+        /// Initializes the evaluator.
+        /// </summary>
+        /// <param name="result">Result returned by <see cref="Evaluate"/>.</param>
+        public ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        {
+            _result = result;
+        }
+
+        /// <summary>
+        /// Gets the last context passed to <see cref="Evaluate"/>.
+        /// </summary>
+        public SemanticPredicateEvaluationContext? LastContext { get; private set; }
+
+        /// <inheritdoc />
+        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        {
+            LastContext = context;
             return _result;
         }
     }
