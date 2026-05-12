@@ -6,6 +6,15 @@ This document consolidates parser documentation that explains what is currently 
 
 It is factual and conservative. It does not define a roadmap commitment.
 
+## Consolidation note
+
+This document intentionally consolidates previous shared-prefix architecture documents to keep invariants and runtime-limitation guidance in one place:
+
+- `SharedPrefixExecutionPreconditions.md`
+- `SharedPrefixMetadataPipeline.md`
+
+It also replaces narrower invocation-frame-only wording with a broader metadata/runtime limitations scope.
+
 ## 1) Parameters and `returns`: parsed and preserved as metadata
 
 The grammar ingestion pipeline supports ANTLR4-style rule signatures such as:
@@ -125,3 +134,38 @@ Current implementation does not provide and this document does not propose:
 For a feature-by-feature status view (supported / parsed-only / unsupported), see:
 
 - [ANTLR4 Compatibility Matrix](./Antlr4CompatibilityMatrix.md)
+
+## 8) Preconditions philosophy for any future execution experiments
+
+No shared-prefix execution experiment should be considered unless all targeted-scenario preconditions are demonstrated, including:
+
+- deterministic scheduling equivalence;
+- stable continuation anchors;
+- no diagnostics divergence;
+- no parse-tree divergence;
+- no observable side-effect reordering;
+- no unsafe predicate/action influence in the shared segment.
+
+If any precondition is not proven, baseline duplicated work per alternative should remain in place.
+
+## 9) Unsupported cases to reject by default
+
+Execution-oriented work should reject, by default:
+
+- recursive shared-prefix replay;
+- nested shared-prefix execution/replay;
+- fallback-boundary execution;
+- divergent continuation layouts;
+- speculative replay semantics;
+- parser graph traversal semantics.
+
+## 10) Review gate language for future execution-oriented PRs
+
+Any future PR proposing execution changes would need to demonstrate, at minimum:
+
+1. which invariants are preserved and how equivalence was validated;
+2. which unsupported cases remain rejected;
+3. why parser determinism, diagnostics ordering/content, and parse-tree shape remain equivalent;
+4. a rollback path to baseline behavior.
+
+Without this evidence, execution-oriented changes should not be merged.
