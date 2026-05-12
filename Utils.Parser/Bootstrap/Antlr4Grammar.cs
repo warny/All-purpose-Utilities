@@ -108,6 +108,14 @@ public static class Antlr4Grammar
                 Alt(4, Range('\u0300', '\u036F')),
                 Alt(5, Range('\u203F', '\u2040'))));
 
+        // Inline block comment pattern reused in NESTED_ACTION and top-level comment rules.
+        // Star(Alts(Seq("*", not-"/"), not-"*")) matches every character inside /* ... */
+        // including bare '*' not followed by '/' — without relying on non-greedy matching,
+        // which the lexer engine does not support with lookahead.
+        var blockCommentBody = Star(Alts(
+            Alt(0, Seq(Lit("*"), NegCharSet("/"))),
+            Alt(1, NegCharSet("*"))));
+
         var nestedAction = new Rule("NESTED_ACTION", order++, true,
             Alts(Alt(0, Seq(
                 Lit("{"),
@@ -117,9 +125,10 @@ public static class Antlr4Grammar
                     Alt(2, Ref("DoubleQuoteLiteral")),
                     Alt(3, Ref("TripleQuoteLiteral")),
                     Alt(4, Ref("BacktickQuoteLiteral")),
-                    Alt(5, Seq(Lit("//"), Star(NegCharSet("\r\n")))),
-                    Alt(6, Seq(Lit("\\"), Any())),
-                    Alt(7, NegCharSet("\\\"'`{}"))
+                    Alt(5, Seq(Lit("/*"), blockCommentBody, Lit("*/"))),
+                    Alt(6, Seq(Lit("//"), Star(NegCharSet("\r\n")))),
+                    Alt(7, Seq(Lit("\\"), Any())),
+                    Alt(8, NegCharSet("\\\"'`{}"))
                 )),
                 Lit("}")
             ))));
@@ -134,7 +143,7 @@ public static class Antlr4Grammar
         var docComment = new Rule("DOC_COMMENT", order++, false,
             Alts(Alt(0, Seq(
                 Lit("/**"),
-                Star(Any(), greedy: false),
+                blockCommentBody,
                 Alts(
                     Alt(0, Lit("*/")),
                     Alt(1, Ref("EOF")))))));
@@ -142,7 +151,7 @@ public static class Antlr4Grammar
         var blockComment = new Rule("BLOCK_COMMENT", order++, false,
             Alts(Alt(0, Seq(
                 Lit("/*"),
-                Star(Any(), greedy: false),
+                blockCommentBody,
                 Alts(
                     Alt(0, Lit("*/")),
                     Alt(1, Ref("EOF")))))));
