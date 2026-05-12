@@ -52,10 +52,12 @@ The following constructs are recognized but not fully resolved into executable r
 
 | Construct | Current behavior | Limitations |
 |---|---|---|
-| Rule parameters (`rule[int x]`) | Bracketed parameter blocks are parsed with balanced-text capture and preserved as raw metadata text (including multiline and nested generic-like syntax). | No runtime invocation-frame/value binding model is implemented. |
-| Rule returns (`returns [int value]`) | Returns blocks are parsed with the same balanced-text preservation strategy and stored as raw metadata text. | No runtime value propagation/extraction contract exists for parser execution. |
+| Rule parameters (`rule[int x]`) | Parsed with balanced-text preservation and stored as raw metadata text (including multiline and nested generic-like syntax). | No runtime invocation semantics exist (no argument passing, no typed binding, no invocation-frame model). |
+| Rule returns (`returns [int value]`) | Parsed with balanced-text preservation and stored as raw metadata text. | No runtime return propagation semantics exist (no value extraction or runtime binding). |
 
 These constructs are treated as syntax/metadata compatibility points, not as fully executable semantics.
+
+Additional architectural context and explicit non-goals are documented in `docs/parser/ParserMetadataAndRuntimeLimitations.md`.
 
 ## Partially supported
 
