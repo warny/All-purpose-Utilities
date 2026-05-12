@@ -57,6 +57,16 @@ public sealed class ParserEngine
     }
 
     /// <summary>
+    /// Initializes a parser engine with an explicit parser action execution policy.
+    /// </summary>
+    /// <param name="definition">Resolved parser definition.</param>
+    /// <param name="parserActionExecutor">Policy used to handle parser embedded actions.</param>
+    public ParserEngine(ParserDefinition definition, IParserActionExecutor parserActionExecutor)
+        : this(definition, new DefaultSemanticPredicateEvaluator(), parserActionExecutor)
+    {
+    }
+
+    /// <summary>
     /// Initializes a parser engine with explicit semantic predicate and action execution policies.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>

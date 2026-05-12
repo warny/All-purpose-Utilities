@@ -45,6 +45,17 @@ public sealed class CompiledGrammar
 
     /// <summary>
     /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
+    /// <see cref="ParserDefinition"/> and an explicit parser action execution policy.
+    /// </summary>
+    /// <param name="definition">A resolved grammar definition.</param>
+    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
+    public CompiledGrammar(ParserDefinition definition, IParserActionExecutor parserActionExecutor)
+        : this(definition, new DefaultSemanticPredicateEvaluator(), parserActionExecutor)
+    {
+    }
+
+    /// <summary>
+    /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
     /// <see cref="ParserDefinition"/> with explicit predicate and action policies.
     /// </summary>
     /// <param name="definition">A resolved grammar definition.</param>

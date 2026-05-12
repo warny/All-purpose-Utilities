@@ -59,6 +59,25 @@ public class ParserEngineActionExecutorTests
         Assert.IsInstanceOfType<ParserNode>(result);
     }
 
+
+    [TestMethod]
+    public void CompileAndParse_FromAntlrText_ActionOnlyOverload_UsesInjectedActionExecutor()
+    {
+        var observer = new ObservingParserActionExecutor(ParserActionExecutionResult.NotExecuted);
+        var grammar = Antlr4GrammarConverter.Compile(
+            """
+            grammar P;
+            start : { log(); } A ;
+            A : 'a' ;
+            """,
+            observer);
+
+        var result = grammar.Parse("a");
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsNotNull(observer.LastContext);
+    }
+
     [TestMethod]
     public void CompileAndParse_FromAntlrText_UsesInjectedActionExecutor()
     {

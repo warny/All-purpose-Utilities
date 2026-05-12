@@ -69,6 +69,20 @@ public sealed class Antlr4GrammarConverter
         => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator, new DefaultParserActionExecutor());
 
     /// <summary>
+    /// Convenience factory: compiles <paramref name="grammarText"/> and configures
+    /// parser embedded action handling with <paramref name="parserActionExecutor"/>.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source (<c>.g4</c> content).</param>
+    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <returns>A compiled grammar instance with injected action executor.</returns>
+    public static Runtime.CompiledGrammar Compile(
+        [StringSyntax("ANTLR4")] string grammarText,
+        IParserActionExecutor parserActionExecutor,
+        DiagnosticBag? diagnostics = null)
+        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), new DefaultSemanticPredicateEvaluator(), parserActionExecutor);
+
+    /// <summary>
     /// Convenience factory: compiles <paramref name="grammarText"/> and configures explicit
     /// semantic predicate and parser action execution policies.
     /// </summary>
