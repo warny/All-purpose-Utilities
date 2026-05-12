@@ -623,6 +623,17 @@ public sealed class Antlr4GrammarConverter
     {
         var name = Require(FirstToken(node, "RULE_REF"), "Missing RULE_REF in parserRuleSpec").Text;
 
+        List<RuleParameter>? parameters = null;
+        var parameterBlock = First(node, "argActionBlock");
+        if (parameterBlock != null)
+        {
+            var raw = GetArgActionBlockText(parameterBlock);
+            if (raw.Length > 0)
+            {
+                parameters = [new RuleParameter(raw, raw)];
+            }
+        }
+
         List<RuleReturn>? returns = null;
         var returnsNode = First(node, "ruleReturns");
         if (returnsNode != null)
@@ -673,7 +684,7 @@ public sealed class Antlr4GrammarConverter
         var ruleAltList = Require(First(ruleBlock, "ruleAltList"), "Missing ruleAltList");
         var content = ConvertRuleAltList(ruleAltList);
 
-        return new Rule(name, _order++, false, content, null, null, returns, initAction, afterAction);
+        return new Rule(name, _order++, false, content, null, parameters, returns, initAction, afterAction);
     }
 
     // ─── ruleAltList / labeledAlt / alternative ───────────────────────────────
@@ -997,13 +1008,38 @@ public sealed class Antlr4GrammarConverter
         throw new GrammarParseException("Unknown lexerCommandExpr");
     }
 
-    /// <summary>Concatenates all <c>ARGUMENT_CONTENT</c> token texts inside an <c>argActionBlock</c> node.</summary>
-    private static string GetArgActionBlockText(ParserNode node) =>
-        string.Concat(FlatChildren(node)
-            .OfType<LexerNode>()
-            .Where(n => n.Rule?.Name == "ARGUMENT_CONTENT")
-            .Select(n => n.Token.Text))
-        .Trim();
+    /// <summary>
+    /// Concatenates all token text inside an <c>argActionBlock</c> node while excluding
+    /// the outer <c>[</c> and <c>]</c> delimiters.
+    /// Uses a deep leaf-token walk because <c>argumentElement</c> sub-nodes wrap the
+    /// individual <c>ARGUMENT_CONTENT</c> tokens and are not flattened by <see cref="FlatChildren"/>.
+    /// </summary>
+    private static string GetArgActionBlockText(ParserNode node)
+    {
+        var tokens = AllLeafTokens(node).ToList();
+
+        if (tokens.Count >= 2 && tokens[0] == "[" && tokens[^1] == "]")
+            return string.Concat(tokens.Skip(1).Take(tokens.Count - 2));
+
+        return string.Concat(tokens);
+    }
+
+    /// <summary>Yields the text of every leaf <see cref="LexerNode"/> in depth-first order.</summary>
+    private static IEnumerable<string> AllLeafTokens(ParseNode node)
+    {
+        if (node is LexerNode lex)
+        {
+            yield return lex.Token.Text;
+            yield break;
+        }
+
+        if (node is ParserNode pn)
+        {
+            foreach (var child in pn.Children)
+                foreach (var tok in AllLeafTokens(child))
+                    yield return tok;
+        }
+    }
 
     /// <summary>Extracts the string representation of an option value from an <c>optionValue</c> node.</summary>
     private static string GetOptionValueText(ParserNode node)

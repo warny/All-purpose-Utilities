@@ -182,7 +182,9 @@ public static class Antlr4Grammar
                     Alt(1, NegCharSet("'\r\n\\"))))))));
 
         var beginArgument = new Rule("BEGIN_ARGUMENT", order++, false,
-            Alts(Alt(0, Lit("["))));
+            Alts(Alt(0, Seq(
+                Lit("["),
+                new Model.LexerCommand(LexerCommandType.PushMode, "Argument")))));
 
         var action = new Rule("ACTION", order++, false,
             Alts(Alt(0, Ref("NESTED_ACTION"))));
@@ -489,11 +491,22 @@ public static class Antlr4Grammar
         var pActionBlock = new Rule("actionBlock", pOrder++, false,
             Alts(Alt(0, Ref("ACTION"))));
 
-        // argActionBlock : BEGIN_ARGUMENT ARGUMENT_CONTENT*? END_ARGUMENT
+        // argumentElement : ARGUMENT_CONTENT | ARGUMENT_ESCAPE | ARGUMENT_STRING_LITERAL | ARGUMENT_CHAR_LITERAL | NESTED_ARGUMENT
+        var pArgumentElement = new Rule("argumentElement", pOrder++, false,
+            Alts(
+                Alt(0, Ref("ARGUMENT_CONTENT")),
+                Alt(1, Ref("ARGUMENT_ESCAPE")),
+                Alt(2, Ref("ARGUMENT_STRING_LITERAL")),
+                Alt(3, Ref("ARGUMENT_CHAR_LITERAL")),
+                Alt(4, Ref("NESTED_ARGUMENT"))));
+
+        // argActionBlock : BEGIN_ARGUMENT argumentElement* END_ARGUMENT
+        // Greedy star is correct: argumentElement never matches END_ARGUMENT (']'),
+        // so the star stops naturally when the closing bracket is reached.
         var pArgActionBlock = new Rule("argActionBlock", pOrder++, false,
             Alts(Alt(0, Seq(
                 Ref("BEGIN_ARGUMENT"),
-                Star(Ref("ARGUMENT_CONTENT"), greedy: false),
+                Star(Ref("argumentElement")),
                 Ref("END_ARGUMENT")))));
 
         // elementOption : qualifiedIdentifier | identifier ASSIGN (qualifiedIdentifier | STRING_LITERAL | INT)
@@ -965,7 +978,7 @@ public static class Antlr4Grammar
             pPrequelConstruct, pOptionsSpec, pOption, pOptionValue,
             pDelegateGrammars, pDelegateGrammar,
             pTokensSpec, pChannelsSpec, pIdList,
-            pAction, pActionScopeName, pActionBlock, pArgActionBlock,
+            pAction, pActionScopeName, pActionBlock, pArgumentElement, pArgActionBlock,
             pModeSpec, pRules, pRuleSpec,
             pParserRuleSpec, pExceptionGroup, pExceptionHandler, pFinallyClause,
             pRulePrequel, pRuleReturns, pThrowsSpec, pLocalsSpec,
