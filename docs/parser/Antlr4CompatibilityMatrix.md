@@ -57,7 +57,7 @@ The following constructs are recognized but not fully resolved into executable r
 
 These constructs are treated as syntax/metadata compatibility points, not as fully executable semantics.
 
-Additional architectural context and explicit non-goals are documented in `docs/parser/ParserInvocationFrameDesignNotes.md`.
+Additional architectural context and explicit non-goals are documented in `docs/parser/ParserMetadataAndRuntimeLimitations.md`.
 
 ## Partially supported
 
