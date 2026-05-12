@@ -1011,18 +1011,34 @@ public sealed class Antlr4GrammarConverter
     /// <summary>
     /// Concatenates all token text inside an <c>argActionBlock</c> node while excluding
     /// the outer <c>[</c> and <c>]</c> delimiters.
+    /// Uses a deep leaf-token walk because <c>argumentElement</c> sub-nodes wrap the
+    /// individual <c>ARGUMENT_CONTENT</c> tokens and are not flattened by <see cref="FlatChildren"/>.
     /// </summary>
     private static string GetArgActionBlockText(ParserNode node)
     {
-        var tokens = FlatChildren(node)
-            .OfType<LexerNode>()
-            .Select(n => n.Token.Text)
-            .ToList();
+        var tokens = AllLeafTokens(node).ToList();
 
         if (tokens.Count >= 2 && tokens[0] == "[" && tokens[^1] == "]")
             return string.Concat(tokens.Skip(1).Take(tokens.Count - 2));
 
         return string.Concat(tokens);
+    }
+
+    /// <summary>Yields the text of every leaf <see cref="LexerNode"/> in depth-first order.</summary>
+    private static IEnumerable<string> AllLeafTokens(ParseNode node)
+    {
+        if (node is LexerNode lex)
+        {
+            yield return lex.Token.Text;
+            yield break;
+        }
+
+        if (node is ParserNode pn)
+        {
+            foreach (var child in pn.Children)
+                foreach (var tok in AllLeafTokens(child))
+                    yield return tok;
+        }
     }
 
     /// <summary>Extracts the string representation of an option value from an <c>optionValue</c> node.</summary>

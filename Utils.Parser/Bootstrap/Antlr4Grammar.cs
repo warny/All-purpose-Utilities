@@ -500,11 +500,13 @@ public static class Antlr4Grammar
                 Alt(3, Ref("ARGUMENT_CHAR_LITERAL")),
                 Alt(4, Ref("NESTED_ARGUMENT"))));
 
-        // argActionBlock : BEGIN_ARGUMENT argumentElement*? END_ARGUMENT
+        // argActionBlock : BEGIN_ARGUMENT argumentElement* END_ARGUMENT
+        // Greedy star is correct: argumentElement never matches END_ARGUMENT (']'),
+        // so the star stops naturally when the closing bracket is reached.
         var pArgActionBlock = new Rule("argActionBlock", pOrder++, false,
             Alts(Alt(0, Seq(
                 Ref("BEGIN_ARGUMENT"),
-                Star(Ref("argumentElement"), greedy: false),
+                Star(Ref("argumentElement")),
                 Ref("END_ARGUMENT")))));
 
         // elementOption : qualifiedIdentifier | identifier ASSIGN (qualifiedIdentifier | STRING_LITERAL | INT)
