@@ -1,7 +1,0 @@
-# Parser Invocation Frame Design Notes
-
-This content has been merged into:
-
-- [Parser Metadata and Runtime Limitations](./ParserMetadataAndRuntimeLimitations.md)
-
-This file is kept as a redirect for existing links.
