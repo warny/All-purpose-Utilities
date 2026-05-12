@@ -169,3 +169,9 @@ Any future PR proposing execution changes would need to demonstrate, at minimum:
 4. a rollback path to baseline behavior.
 
 Without this evidence, execution-oriented changes should not be merged.
+
+## Capability model note
+
+A centralized parser capability descriptor model is available in code (`ParserFeatureCapabilities`) to make support status queryable and auditable.
+
+It is intentionally descriptive metadata and is **not** used to gate parsing, alter diagnostics, or introduce new runtime behavior.
