@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Metadata;
 
 namespace UtilsTest.Parser;
@@ -36,8 +37,8 @@ public class ParserFeatureCapabilitiesTests
         var semanticPredicates = ParserFeatureCapabilities.Get(ParserFeature.SemanticPredicates);
         var inlineActions = ParserFeatureCapabilities.Get(ParserFeature.InlineActions);
 
-        Assert.AreEqual("UP1006", semanticPredicates.RelatedDiagnosticCode);
-        Assert.AreEqual("UP1005", inlineActions.RelatedDiagnosticCode);
+        Assert.AreEqual(ParserDiagnostics.SemanticPredicateNotEnforced.Code, semanticPredicates.RelatedDiagnosticCode);
+        Assert.AreEqual(ParserDiagnostics.InlineActionStoredNotExecuted.Code, inlineActions.RelatedDiagnosticCode);
 
         foreach (var capability in ParserFeatureCapabilities.All.Where(static item => !string.IsNullOrWhiteSpace(item.RelatedDiagnosticCode)))
         {
