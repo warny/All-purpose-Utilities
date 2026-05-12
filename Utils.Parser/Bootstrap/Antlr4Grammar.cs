@@ -117,11 +117,10 @@ public static class Antlr4Grammar
                     Alt(2, Ref("DoubleQuoteLiteral")),
                     Alt(3, Ref("TripleQuoteLiteral")),
                     Alt(4, Ref("BacktickQuoteLiteral")),
-                    Alt(5, Seq(Lit("/*"), Star(Any(), greedy: false), Lit("*/"))),
-                    Alt(6, Seq(Lit("//"), Star(NegCharSet("\r\n")))),
-                    Alt(7, Seq(Lit("\\"), Any())),
-                    Alt(8, NegCharSet("\\\"'`{"))
-                ), greedy: false),
+                    Alt(5, Seq(Lit("//"), Star(NegCharSet("\r\n")))),
+                    Alt(6, Seq(Lit("\\"), Any())),
+                    Alt(7, NegCharSet("\\\"'`{}"))
+                )),
                 Lit("}")
             ))));
 

@@ -100,30 +100,14 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         var definition = Antlr4GrammarConverter.Parse(
             """
             grammar P;
+            start : {canProceed}? A ;
             A : 'a' ;
             WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
             """,
             diagnostics: null);
 
-        var startWithPredicate = new Rule(
-            "start",
-            0,
-            false,
-            new Alternation([
-                new Alternative(0, Associativity.Left, new Sequence([
-                    new ValidatingPredicate("canProceed"),
-                    new RuleRef("A")
-                ]))
-            ]));
-
-        var overriddenDefinition = RuleResolver.Resolve(definition with
-        {
-            ParserRules = [startWithPredicate],
-            RootRule = startWithPredicate
-        });
-
         var grammar = new CompiledGrammar(
-            overriddenDefinition,
+            definition,
             new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
 
         var result = grammar.Parse("a");

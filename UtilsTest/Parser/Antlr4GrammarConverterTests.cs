@@ -496,6 +496,26 @@ public class Antlr4GrammarConverterTests
             Antlr4GrammarConverter.Parse("not a valid grammar at all"));
     }
 
+    // ─── Semantic predicates ──────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ParseGrammar_WithSemanticPredicate_ProducesValidatingPredicate()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start : {canProceed}? A ;
+            A : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, diagnostics: null);
+
+        Assert.AreEqual(1, def.ParserRules.Count);
+        var startRule = def.AllRules["start"];
+        var alt = ((Alternation)startRule.Content).Alternatives[0];
+        var seq = (Sequence)alt.Content;
+        Assert.IsInstanceOfType<ValidatingPredicate>(seq.Items[0]);
+        Assert.AreEqual("canProceed", ((ValidatingPredicate)seq.Items[0]).Code);
+    }
+
     // ─── Utilitaires ─────────────────────────────────────────────────────────
 
     private static bool ContainsLexerCommand(RuleContent content, LexerCommandType type)
