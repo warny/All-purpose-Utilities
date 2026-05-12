@@ -37,6 +37,13 @@ public static class ParserFeatureCapabilities
         return capability;
     }
 
+    /// <summary>
+    /// Builds the canonical capability descriptors used by this catalog.
+    /// </summary>
+    /// <remarks>
+    /// This method is intentionally descriptive only and must not introduce runtime behavior changes.
+    /// </remarks>
+    /// <returns>An array containing one descriptor per <see cref="ParserFeature"/>.</returns>
     private static ParserFeatureCapability[] BuildCapabilities()
     {
         return
