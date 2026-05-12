@@ -19,8 +19,13 @@ namespace Utils.Parser.Runtime;
 /// </para>
 /// <para>
 /// Semantic predicates (<see cref="ValidatingPredicate"/>, <see cref="GatingPredicate"/>)
-/// and embedded actions (<see cref="EmbeddedAction"/>) are silently accepted without
-/// execution; they have no effect on the parse tree shape.
+/// and embedded actions (<see cref="EmbeddedAction"/>) are controlled by the configured
+/// <see cref="ParserRuntimeFeaturePolicy"/>.
+/// The default policy preserves conservative behavior:
+/// semantic predicates return <see cref="SemanticPredicateEvaluationResult.NotEvaluated"/>
+/// and parser actions return <see cref="ParserActionExecutionResult.NotExecuted"/>.
+/// Custom injected policies may reject alternatives and may execute action handlers,
+/// which can influence parse outcomes.
 /// </para>
 /// </summary>
 /// <remarks>
@@ -177,8 +182,12 @@ public sealed class ParserEngine
         // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
         // Safety currently depends on RuleInvocationKey identity:
         //   (rule name, input position, minimum precedence).
-        // This is sufficient for current parser semantics because semantic predicates/actions are not executed.
-        // TODO: revisit key shape when semantic state, mode-sensitive parser state, or predicate execution is enabled.
+        // Runtime reuse currently assumes predicate/action policies are deterministic for a given invocation key.
+        // The memoization key does not currently include runtime policy state, evaluator external state,
+        // or side-effect state. Custom policies should therefore avoid invocation-count-dependent behavior
+        // and externally observable mutable semantic state.
+        // Future runtime work may require a wider key shape when semantic runtime state or rollback-aware
+        // action semantics are modeled explicitly.
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
         if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
         {
@@ -493,7 +502,9 @@ public sealed class ParserEngine
     /// <summary>
     /// Dispatches to the appropriate handler based on the concrete type of
     /// <paramref name="content"/>.
-    /// Predicates and embedded actions are silently treated as empty successful matches.
+    /// Predicates and embedded actions are delegated to the configured runtime policy.
+    /// Default policy keeps conservative behavior by returning empty successful matches when
+    /// predicates are not evaluated and actions are not executed.
     /// </summary>
     /// <param name="context">Mutable token-stream cursor.</param>
     /// <param name="content">Grammar element to match.</param>

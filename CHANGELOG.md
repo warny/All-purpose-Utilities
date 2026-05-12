@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - Updated the `omy.Utils` NuGet description to a concise consumer-facing summary aligned with the package README and discoverability goals.
 
 ### Added
+- Clarified parser runtime documentation for policy-controlled semantic predicates/actions, conservative defaults, memoization assumptions, and related diagnostics semantics.
 - Corrected package casing reference from `omy.Utils.Xml` to `omy.Utils.XML` in the base package README to match the published NuGet package identifier.
 - Refined consumer documentation: updated root README and getting-started guide with complete package inventory, install-first flow, and explicit consumer vs contributor requirements.
 - Clarified getting-started and release documentation with csproj-derived TFM guidance, source-generator install example, and explicit CI workflow mapping.
