@@ -3,6 +3,7 @@ using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 using Utils.Parser.Resolution;
 using Utils.Parser.Diagnostics;
+using Utils.Parser.Bootstrap;
 
 namespace UtilsTest.Parser;
 
@@ -47,6 +48,43 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         parser.Parse([], diagnostics: diagnostics);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
+    }
+
+    [TestMethod]
+    public void CompileAndParse_FromAntlrText_UsesInjectedEvaluator()
+    {
+        var definition = Antlr4GrammarConverter.Parse(
+            """
+            grammar P;
+            A : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """,
+            diagnostics: null);
+
+        var startWithPredicate = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new Sequence([
+                    new ValidatingPredicate("canProceed"),
+                    new RuleRef("A")
+                ]))
+            ]));
+
+        var overriddenDefinition = RuleResolver.Resolve(definition with
+        {
+            ParserRules = [startWithPredicate],
+            RootRule = startWithPredicate
+        });
+
+        var grammar = new CompiledGrammar(
+            overriddenDefinition,
+            new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+
+        var result = grammar.Parse("a");
+
+        Assert.IsInstanceOfType<ErrorNode>(result);
     }
 
     private static Rule CreateStartRuleWithPredicate(RuleContent predicate)

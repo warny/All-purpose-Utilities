@@ -40,7 +40,7 @@ The following constructs are parsed and stored, but runtime semantic execution i
 
 | Construct | Current behavior | Diagnostics |
 |---|---|---|
-| Semantic predicates (`{ condition }?`) | Parsed and represented in grammar model; runtime does not evaluate predicate semantics. | `SemanticPredicateNotEnforced` |
+| Semantic predicates (`{ condition }?`) | Parsed and represented in grammar model; runtime uses an evaluation abstraction (`ISemanticPredicateEvaluator`). Default policy is `NotEvaluated` (no predicate execution). | `SemanticPredicateNotEnforced` when evaluator returns `NotEvaluated` |
 | Inline actions (`{ code }`) | Parsed and stored; runtime does not execute target-language code blocks. | `InlineActionStoredNotExecuted` |
 | Rule actions (`@init`, `@after`) | Parsed as action metadata where present; no execution hook is active in runtime parsing. | `InlineActionStoredNotExecuted` when represented as runtime embedded actions; `ActionIgnored` may apply to top-level/pipeline actions. |
 
