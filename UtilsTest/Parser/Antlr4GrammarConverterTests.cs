@@ -496,6 +496,95 @@ public class Antlr4GrammarConverterTests
             Antlr4GrammarConverter.Parse("not a valid grammar at all"));
     }
 
+    // ─── Action block / semantic predicate parsing ───────────────────────────
+
+    [TestMethod]
+    public void ParseGrammar_WithSemanticPredicate_ProducesValidatingPredicate()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start : {canProceed}? A ;
+            A : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """, diagnostics: null);
+
+        Assert.AreEqual(1, def.ParserRules.Count);
+        var startRule = def.AllRules["start"];
+        var alt = ((Alternation)startRule.Content).Alternatives[0];
+        var seq = (Sequence)alt.Content;
+        Assert.IsInstanceOfType<ValidatingPredicate>(seq.Items[0]);
+        Assert.AreEqual("canProceed", ((ValidatingPredicate)seq.Items[0]).Code);
+    }
+
+    [TestMethod]
+    public void ParseGrammar_ActionWithLineComment_Succeeds()
+    {
+        var def = Antlr4GrammarConverter.Parse(
+            "grammar P;\nstart : {canProceed // check\n}? A ;\nA : 'a' ;\n",
+            diagnostics: null);
+
+        var alt = ((Alternation)def.AllRules["start"].Content).Alternatives[0];
+        var pred = (ValidatingPredicate)((Sequence)alt.Content).Items[0];
+        StringAssert.StartsWith(pred.Code, "canProceed");
+    }
+
+    [TestMethod]
+    public void ParseGrammar_ActionWithBlockComment_Succeeds()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start : {/* check */ canProceed}? A ;
+            A : 'a' ;
+            """, diagnostics: null);
+
+        var alt = ((Alternation)def.AllRules["start"].Content).Alternatives[0];
+        var pred = (ValidatingPredicate)((Sequence)alt.Content).Items[0];
+        StringAssert.Contains(pred.Code, "canProceed");
+    }
+
+    [TestMethod]
+    public void ParseGrammar_ActionWithBlockComment_ContainingClosingBrace_Succeeds()
+    {
+        // Verifies that '}' inside /* ... */ does not prematurely terminate the action block.
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start : {/* } */ canProceed}? A ;
+            A : 'a' ;
+            """, diagnostics: null);
+
+        var alt = ((Alternation)def.AllRules["start"].Content).Alternatives[0];
+        var pred = (ValidatingPredicate)((Sequence)alt.Content).Items[0];
+        StringAssert.Contains(pred.Code, "canProceed");
+    }
+
+    [TestMethod]
+    public void ParseGrammar_ActionWithNestedBraces_Succeeds()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start : {f({x})}? A ;
+            A : 'a' ;
+            """, diagnostics: null);
+
+        var alt = ((Alternation)def.AllRules["start"].Content).Alternatives[0];
+        var pred = (ValidatingPredicate)((Sequence)alt.Content).Items[0];
+        StringAssert.Contains(pred.Code, "f(");
+    }
+
+    [TestMethod]
+    public void ParseGrammar_WithBlockCommentInBody_Succeeds()
+    {
+        // Verifies that multi-character block comments in grammar text are skipped correctly.
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            /* this is a block comment */
+            start : A ;
+            A : 'a' ;
+            """, diagnostics: null);
+
+        Assert.IsTrue(def.AllRules.ContainsKey("start"));
+    }
+
     // ─── Utilitaires ─────────────────────────────────────────────────────────
 
     private static bool ContainsLexerCommand(RuleContent content, LexerCommandType type)

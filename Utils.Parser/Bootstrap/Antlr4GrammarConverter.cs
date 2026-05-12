@@ -55,6 +55,20 @@ public sealed class Antlr4GrammarConverter
         => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics));
 
     /// <summary>
+    /// Convenience factory: compiles <paramref name="grammarText"/> and configures
+    /// semantic predicate evaluation with <paramref name="semanticPredicateEvaluator"/>.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source (<c>.g4</c> content).</param>
+    /// <param name="semanticPredicateEvaluator">Semantic predicate evaluator policy.</param>
+    /// <param name="diagnostics">Optional diagnostics bag.</param>
+    /// <returns>A compiled grammar instance with injected predicate evaluator.</returns>
+    public static Runtime.CompiledGrammar Compile(
+        [StringSyntax("ANTLR4")] string grammarText,
+        ISemanticPredicateEvaluator semanticPredicateEvaluator,
+        DiagnosticBag? diagnostics = null)
+        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator);
+
+    /// <summary>
     /// Full pipeline: ANTLR4 grammar text → resolved <see cref="Utils.Parser.Model.ParserDefinition"/>.
     /// <list type="number">
     ///   <item>Tokenizes <paramref name="grammarText"/> using the meta-grammar built by <see cref="Antlr4Grammar.Build()"/>.</item>
