@@ -36,10 +36,24 @@ public sealed class ParserEngine
     private readonly AlternativeScheduler _alternativeScheduler;
     private readonly ParserLookaheadCache _lookaheadCache = new();
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
+    private readonly ISemanticPredicateEvaluator _semanticPredicateEvaluator;
 
     public ParserEngine(ParserDefinition definition)
+        : this(definition, new DefaultSemanticPredicateEvaluator())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a parser engine with an explicit semantic predicate evaluation policy.
+    /// </summary>
+    /// <param name="definition">Resolved parser definition.</param>
+    /// <param name="semanticPredicateEvaluator">
+    /// Strategy used to evaluate semantic predicates without executing arbitrary source code.
+    /// </param>
+    public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+        _semanticPredicateEvaluator = semanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(semanticPredicateEvaluator));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler();
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, new ParserLookaheadProbe());
@@ -468,11 +482,11 @@ public sealed class ParserEngine
             case Negation neg:
                 return TryParseNegation(context, neg, rule, precedence, alternativeIndex, diagnostics);
 
-            case ValidatingPredicate:
-            case GatingPredicate:
-                // Semantic predicates: silently accepted without evaluation.
-                diagnostics?.AddWithContext(ParserDiagnostics.SemanticPredicateNotEnforced, null, null, rule.Name, null);
-                return CreateEmptyNode(context, rule);
+            case ValidatingPredicate validatingPredicate:
+                return EvaluateSemanticPredicate(context, rule, validatingPredicate, validatingPredicate.Code, alternativeIndex, elementIndex, diagnostics);
+
+            case GatingPredicate gatingPredicate:
+                return EvaluateSemanticPredicate(context, rule, gatingPredicate, gatingPredicate.Code, alternativeIndex, elementIndex, diagnostics);
 
             case PrecedencePredicate:
                 // Already handled in CheckPrecedence.
@@ -485,6 +499,41 @@ public sealed class ParserEngine
 
             default:
                 return null;
+        }
+    }
+
+    /// <summary>
+    /// Evaluates a semantic predicate using the configured evaluator.
+    /// </summary>
+    private ParseNode? EvaluateSemanticPredicate(
+        ParseContext context,
+        Rule rule,
+        RuleContent predicate,
+        string predicateCode,
+        int alternativeIndex,
+        int elementIndex,
+        DiagnosticBag? diagnostics)
+    {
+        var evaluationContext = new SemanticPredicateEvaluationContext(
+            rule,
+            predicate,
+            predicateCode,
+            context.Position,
+            alternativeIndex,
+            elementIndex);
+
+        var evaluation = _semanticPredicateEvaluator.Evaluate(evaluationContext);
+        switch (evaluation)
+        {
+            case SemanticPredicateEvaluationResult.Satisfied:
+                return CreateEmptyNode(context, rule);
+            case SemanticPredicateEvaluationResult.Rejected:
+                return null;
+            case SemanticPredicateEvaluationResult.NotEvaluated:
+                diagnostics?.AddWithContext(ParserDiagnostics.SemanticPredicateNotEnforced, null, null, rule.Name, null);
+                return CreateEmptyNode(context, rule);
+            default:
+                throw new InvalidOperationException($"Unsupported semantic predicate evaluation result: {evaluation}.");
         }
     }
 
