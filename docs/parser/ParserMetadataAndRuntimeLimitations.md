@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document consolidates parser documentation that explains what is currently implemented as metadata, what is intentionally not executed at runtime, and which architectural constraints protect deterministic parser behavior.
+This document consolidates parser documentation that explains what is currently implemented as metadata, what is policy-controlled at runtime, and which architectural constraints protect deterministic parser behavior.
 
 It is factual and conservative. It does not define a roadmap commitment.
 
@@ -14,6 +14,41 @@ This document intentionally consolidates previous shared-prefix architecture doc
 - `SharedPrefixMetadataPipeline.md`
 
 It also replaces narrower invocation-frame-only wording with a broader metadata/runtime limitations scope.
+
+
+## Runtime policy boundaries (semantic predicates and actions)
+
+`ParserEngine` delegates semantic predicates and embedded actions to `ParserRuntimeFeaturePolicy`:
+
+- Default policy is conservative:
+  - semantic predicates return `NotEvaluated`;
+  - parser actions return `NotExecuted`.
+- Custom policies may:
+  - reject branches (`SemanticPredicateEvaluationResult.Rejected`);
+  - accept branches (`Satisfied`);
+  - execute parser actions (`ParserActionExecutionResult.Executed`).
+
+This means runtime behavior can depend on injected evaluators/executors, even though default behavior preserves legacy conservative semantics.
+
+## Memoization assumptions and limits
+
+Invocation reuse currently keys completed results by `(rule, input position, precedence)`.
+The memoization layer does **not** currently model:
+
+- runtime feature policy state;
+- semantic evaluator external state;
+- parser action side-effect state;
+- rollback-safe mutable semantic frames.
+
+As a result, custom policies are expected to remain deterministic for equivalent invocations, avoid invocation-count-dependent behavior, and avoid externally observable mutable semantic state.
+Future runtime work may require broader memoization keys and rollback-aware semantic-state modeling.
+
+## Diagnostics meaning for policy-controlled features
+
+- `SemanticPredicateNotEnforced` is emitted when a predicate is encountered and the active evaluator returns `NotEvaluated`.
+- `InlineActionStoredNotExecuted` is emitted when an embedded action is encountered and the active executor returns `NotExecuted`.
+
+With custom policies, these diagnostics may be reduced or suppressed when predicates/actions are actively handled.
 
 ## 1) Parameters and `returns`: parsed and preserved as metadata
 

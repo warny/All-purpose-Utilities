@@ -44,7 +44,7 @@ The following constructs are parsed and stored, but runtime semantic execution i
 | Inline actions (`{ code }`) | Parsed and stored; runtime does not execute target-language code blocks. | `InlineActionStoredNotExecuted` |
 | Rule actions (`@init`, `@after`) | Parsed as action metadata where present; no execution hook is active in runtime parsing. | `InlineActionStoredNotExecuted` when represented as runtime embedded actions; `ActionIgnored` may apply to top-level/pipeline actions. |
 
-Rationale: execution of user code and semantic predicates requires explicit policy boundaries and execution abstractions that are intentionally not part of the current deterministic runtime.
+Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior (not evaluated / not executed), while custom policies may alter branch acceptance and action handling within the documented runtime boundaries.
 
 ## Parsed but not fully resolved
 
@@ -112,3 +112,10 @@ This policy avoids speculative runtime complexity while still enabling progressi
 The repository now also exposes a code-facing capability descriptor model (`ParserFeatureCapabilities`) that centralizes feature support levels (Supported, SupportedWithLimits, RuntimeOptional, MetadataOnly, ParsedOnly, Unsupported).
 
 This model is **descriptive only** and does not change parser behavior, diagnostics emission, parse-tree shape, or runtime execution policies.
+
+
+## Memoization and policy assumptions
+
+Parser invocation reuse is currently keyed by rule, input position, and precedence.
+This model currently assumes policy handlers are deterministic for equivalent invocations and does not include evaluator/executor external state in the memoization key.
+Custom policies should therefore avoid invocation-count-dependent decisions and externally observable mutable semantic state.

@@ -489,3 +489,17 @@ The points below reflect the current implementation behavior.
 ## License
 
 Apache 2.0 — see the repository root for details.
+
+
+## Runtime policy defaults and safety boundaries
+
+`ParserEngine` routes semantic predicates and embedded parser actions through `ParserRuntimeFeaturePolicy`.
+By default, behavior remains conservative:
+
+- predicates -> `NotEvaluated`;
+- actions -> `NotExecuted`.
+
+Custom `ISemanticPredicateEvaluator` and `IParserActionExecutor` implementations may influence branch acceptance and may execute action logic.
+Memoization currently reuses rule results by `(rule, input position, precedence)` and does not model external semantic/action state, so custom runtime policies should remain deterministic for equivalent invocations.
+
+Current runtime still does not provide invocation frames, rollback-safe mutable semantic state, speculative action replay, continuation replay, or shared-prefix execution.

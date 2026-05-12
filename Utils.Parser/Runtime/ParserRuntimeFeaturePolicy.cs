@@ -3,6 +3,7 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Immutable runtime feature policy used by parser components to centralize optional
 /// runtime strategies such as semantic predicate evaluation and parser action execution.
+/// The policy can affect branch acceptance and action execution, but does not change parser scheduling mechanics.
 /// </summary>
 public sealed record ParserRuntimeFeaturePolicy
 {
