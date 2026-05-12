@@ -106,3 +106,9 @@ The above architecture supports auditability and controlled evolution without ch
 - audit-friendly boundaries between metadata, resolution, and runtime execution.
 
 This policy avoids speculative runtime complexity while still enabling progressive ANTLR4 syntax coverage.
+
+## Capability descriptor model (code-facing)
+
+The repository now also exposes a code-facing capability descriptor model (`ParserFeatureCapabilities`) that centralizes feature support levels (Supported, SupportedWithLimits, RuntimeOptional, MetadataOnly, ParsedOnly, Unsupported).
+
+This model is **descriptive only** and does not change parser behavior, diagnostics emission, parse-tree shape, or runtime execution policies.
