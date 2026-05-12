@@ -40,7 +40,7 @@ public sealed class ParserEngine
     private readonly IParserActionExecutor _parserActionExecutor;
 
     public ParserEngine(ParserDefinition definition)
-        : this(definition, new DefaultSemanticPredicateEvaluator(), new DefaultParserActionExecutor())
+        : this(definition, ParserRuntimeFeaturePolicy.Default)
     {
     }
 
@@ -52,7 +52,9 @@ public sealed class ParserEngine
     /// Strategy used to evaluate semantic predicates without executing arbitrary source code.
     /// </param>
     public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
-        : this(definition, semanticPredicateEvaluator, new DefaultParserActionExecutor())
+        : this(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = semanticPredicateEvaluator })
     {
     }
 
@@ -62,7 +64,9 @@ public sealed class ParserEngine
     /// <param name="definition">Resolved parser definition.</param>
     /// <param name="parserActionExecutor">Policy used to handle parser embedded actions.</param>
     public ParserEngine(ParserDefinition definition, IParserActionExecutor parserActionExecutor)
-        : this(definition, new DefaultSemanticPredicateEvaluator(), parserActionExecutor)
+        : this(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = parserActionExecutor })
     {
     }
 
@@ -73,10 +77,27 @@ public sealed class ParserEngine
     /// <param name="semanticPredicateEvaluator">Policy used to evaluate semantic predicates.</param>
     /// <param name="parserActionExecutor">Policy used to handle parser embedded actions.</param>
     public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator, IParserActionExecutor parserActionExecutor)
+        : this(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = semanticPredicateEvaluator,
+                ParserActionExecutor = parserActionExecutor
+            })
+    {
+    }
+
+    /// <summary>
+    /// Initializes a parser engine with an explicit runtime feature policy.
+    /// </summary>
+    /// <param name="definition">Resolved parser definition.</param>
+    /// <param name="runtimeFeaturePolicy">Runtime feature policy for optional parser behavior.</param>
+    public ParserEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-        _semanticPredicateEvaluator = semanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(semanticPredicateEvaluator));
-        _parserActionExecutor = parserActionExecutor ?? throw new ArgumentNullException(nameof(parserActionExecutor));
+        var effectivePolicy = runtimeFeaturePolicy ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
+        _semanticPredicateEvaluator = effectivePolicy.SemanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
+        _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler();
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, new ParserLookaheadProbe());

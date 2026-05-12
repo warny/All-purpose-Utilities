@@ -26,7 +26,7 @@ public sealed class CompiledGrammar
     /// </summary>
     /// <param name="definition">A resolved grammar definition.</param>
     public CompiledGrammar(ParserDefinition definition)
-        : this(definition, new DefaultSemanticPredicateEvaluator(), new DefaultParserActionExecutor())
+        : this(definition, ParserRuntimeFeaturePolicy.Default)
     {
     }
 
@@ -39,7 +39,7 @@ public sealed class CompiledGrammar
     /// Evaluator used by the embedded <see cref="ParserEngine"/> for semantic predicates.
     /// </param>
     public CompiledGrammar(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
-        : this(definition, semanticPredicateEvaluator, new DefaultParserActionExecutor())
+        : this(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = semanticPredicateEvaluator })
     {
     }
 
@@ -50,7 +50,7 @@ public sealed class CompiledGrammar
     /// <param name="definition">A resolved grammar definition.</param>
     /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
     public CompiledGrammar(ParserDefinition definition, IParserActionExecutor parserActionExecutor)
-        : this(definition, new DefaultSemanticPredicateEvaluator(), parserActionExecutor)
+        : this(definition, ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = parserActionExecutor })
     {
     }
 
@@ -62,10 +62,27 @@ public sealed class CompiledGrammar
     /// <param name="semanticPredicateEvaluator">Semantic predicate evaluator policy.</param>
     /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
     public CompiledGrammar(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator, IParserActionExecutor parserActionExecutor)
+        : this(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = semanticPredicateEvaluator,
+                ParserActionExecutor = parserActionExecutor
+            })
+    {
+    }
+
+    /// <summary>
+    /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
+    /// <see cref="ParserDefinition"/> with an explicit runtime feature policy.
+    /// </summary>
+    /// <param name="definition">A resolved grammar definition.</param>
+    /// <param name="runtimeFeaturePolicy">Runtime feature policy applied to parser execution.</param>
+    public CompiledGrammar(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy)
     {
         Definition = definition;
         _lexer = new LexerEngine(definition);
-        _parser = new ParserEngine(definition, semanticPredicateEvaluator, parserActionExecutor);
+        _parser = new ParserEngine(definition, runtimeFeaturePolicy);
     }
 
     /// <summary>

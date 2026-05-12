@@ -175,3 +175,13 @@ Without this evidence, execution-oriented changes should not be merged.
 A centralized parser capability descriptor model is available in code (`ParserFeatureCapabilities`) to make support status queryable and auditable.
 
 It is intentionally descriptive metadata and is **not** used to gate parsing, alter diagnostics, or introduce new runtime behavior.
+
+
+## Runtime feature policy
+
+Parser runtime optional behaviors are centralized through `ParserRuntimeFeaturePolicy` (`Utils.Parser.Runtime`).
+The default policy remains conservative and unchanged:
+- semantic predicates use `DefaultSemanticPredicateEvaluator` and are reported as not enforced;
+- inline parser actions use `DefaultParserActionExecutor` and are reported as not executed.
+
+Existing constructors that accept `ISemanticPredicateEvaluator` and/or `IParserActionExecutor` are still supported and internally normalized to the runtime policy object.

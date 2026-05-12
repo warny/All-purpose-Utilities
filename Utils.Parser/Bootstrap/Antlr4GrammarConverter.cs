@@ -66,7 +66,9 @@ public sealed class Antlr4GrammarConverter
         [StringSyntax("ANTLR4")] string grammarText,
         ISemanticPredicateEvaluator semanticPredicateEvaluator,
         DiagnosticBag? diagnostics = null)
-        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator, new DefaultParserActionExecutor());
+        => new Runtime.CompiledGrammar(
+            Parse(grammarText, diagnostics),
+            ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = semanticPredicateEvaluator });
 
     /// <summary>
     /// Convenience factory: compiles <paramref name="grammarText"/> and configures
@@ -80,7 +82,9 @@ public sealed class Antlr4GrammarConverter
         [StringSyntax("ANTLR4")] string grammarText,
         IParserActionExecutor parserActionExecutor,
         DiagnosticBag? diagnostics = null)
-        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), new DefaultSemanticPredicateEvaluator(), parserActionExecutor);
+        => new Runtime.CompiledGrammar(
+            Parse(grammarText, diagnostics),
+            ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = parserActionExecutor });
 
     /// <summary>
     /// Convenience factory: compiles <paramref name="grammarText"/> and configures explicit
