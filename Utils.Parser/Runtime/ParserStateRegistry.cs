@@ -72,6 +72,8 @@ internal sealed class ParserStateRegistry
 
     /// <summary>
     /// Determines whether an invocation has any reusable completion result (success or failure).
+    /// Current deterministic preference is: first reusable success, otherwise first reusable failure.
+    /// This is invocation-local completion reuse, not final branch-selection authority.
     /// Reuse currently assumes deterministic evaluator/executor behavior for the same invocation key
     /// and does not model external semantic/action state.
     /// </summary>

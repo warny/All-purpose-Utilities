@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 using static UtilsTest.Parser.TestInfrastructure.ParserEngineTestHelpers;
@@ -11,6 +12,25 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class ParserEngineAlternativeSelectionTests
 {
+    [TestMethod]
+    public void Parser_Alternatives_LongerSuccessfulBranchIsSelected()
+    {
+        var root = new Rule("root", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new Sequence([new LiteralMatch("a"), new LiteralMatch("b")]), "Long"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "Short")
+        ]));
+
+        var parser = CreateParser(root, "AltLongest");
+        var diagnostics = new DiagnosticBag();
+        var tree = parser.Parse([
+            Token(0, 1, "A", "a"),
+            Token(1, 1, "B", "b")
+        ], diagnostics: diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
     [TestMethod]
     public void Parser_Alternatives_SimpleAndFailedThenSuccess_Preserved()
     {
@@ -93,5 +113,54 @@ public class ParserEngineAlternativeSelectionTests
 
         var tree = parser.Parse(tokens);
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
+    }
+
+    [TestMethod]
+    public void Parser_Alternatives_EquivalentBranchesCanBePrunedWithoutParseFailure()
+    {
+        var root = new Rule("root", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "Same"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "Same")
+        ]));
+        var parser = CreateParser(root, "AltPrune");
+        var diagnostics = new DiagnosticBag();
+
+        var tree = parser.Parse([Token(0, 1, "A", "a")], diagnostics: diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+    [TestMethod]
+    public void Parser_Alternatives_BacktrackingDiagnosticDoesNotBecomeParseFailureDiagnostic()
+    {
+        var root = new Rule("root", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new Sequence([new LiteralMatch("a"), new LiteralMatch("c")]), "FirstFails"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "SecondSucceeds")
+        ]));
+        var parser = CreateParser(root, "AltBacktracking");
+        var diagnostics = new DiagnosticBag();
+
+        var tree = parser.Parse([Token(0, 1, "A", "a")], diagnostics: diagnostics);
+
+        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.BacktrackingUsed.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+    private static ParserEngine CreateParser(Rule root, string grammarName)
+    {
+        return new ParserEngine(Utils.Parser.Resolution.RuleResolver.Resolve(new ParserDefinition(
+            Name: grammarName,
+            Type: GrammarType.Parser,
+            Options: null,
+            Actions: [],
+            Imports: [],
+            Modes: [new LexerMode("DEFAULT_MODE", [])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
+            ParserRules: [root],
+            RootRule: root)));
     }
 }
