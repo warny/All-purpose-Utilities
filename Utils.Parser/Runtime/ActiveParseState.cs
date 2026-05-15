@@ -48,6 +48,8 @@ internal enum ActiveParseStateStatus
 
 /// <summary>
 /// Represents an active parser state/branch candidate during alternative exploration.
+/// The outcome model remains local: this type can describe branch success/failure/pruning,
+/// but it cannot determine global parse acceptance or final diagnostics.
 /// This data container is intentionally immutable and infrastructure-only.
 /// It prepares explicit scheduling of parser work without changing current execution semantics.
 /// The model is descriptive scheduling/runtime-local state only: it is non-replayable,

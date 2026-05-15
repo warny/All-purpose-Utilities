@@ -136,3 +136,48 @@ The runtime remains deterministic, conservative, syntax-oriented, and execution-
 - Partial nodes inside `ActiveParseState` are local scheduling/runtime artifacts.
 - They support branch-local selection and metadata flow only.
 - Final parse-tree authority remains in `ParserEngine` parse outcomes.
+
+## Branch outcome model
+
+Branch outcomes are intentionally split between **local** exploration and **global** parse authority.
+
+- **Local success**
+  - Means one branch completed for one invocation context.
+  - Does **not** imply global parse acceptance.
+  - Does **not** guarantee trailing-token consumption.
+  - Does **not** guarantee final branch selection.
+- **Global success**
+  - Decided only by `ParserEngine`.
+  - Requires an accepted final outcome and full-input consumption.
+- **Local failure**
+  - Means one branch attempt failed in current exploration.
+  - Does **not** imply global parse failure.
+  - May still contribute local diagnostic context.
+  - May be stored as reusable invocation-local outcome.
+- **Global failure**
+  - Decided only by `ParserEngine`.
+  - Occurs when no acceptable final outcome remains, or when trailing-token validation rejects the parse.
+- **Pruned outcome**
+  - Pruning is an orchestration optimization in scheduling.
+  - Pruning is **not** syntax invalidity.
+  - Pruning is **not** final parse failure.
+  - Pruning diagnostics (when emitted) are separate from syntax-failure diagnostics.
+
+### Diagnostic propagation model
+
+Diagnostics can be observed at multiple runtime layers, but final authority remains centralized.
+
+- **Local diagnostics** are exploratory descriptions generated during branch attempts.
+- **Transported diagnostics** may flow through local result containers without ownership transfer.
+- **Pruning diagnostics** describe orchestration decisions, not syntax invalidity.
+- **Global diagnostics** are the emitted parse diagnostics selected by `ParserEngine` for the final outcome.
+
+### Partial parse outcomes
+
+Partial outcomes are descriptive runtime artifacts:
+
+- partial nodes in local branch states,
+- completed local branch outcomes,
+- rejected local branch outcomes.
+
+They support deterministic orchestration and reuse, but they are not authoritative parse acceptance decisions.
