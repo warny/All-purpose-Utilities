@@ -6,6 +6,8 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Builds a parse tree from a flat token list using the rules in a
 /// <see cref="ParserDefinition"/>.
+/// This engine is the runtime authority for token consumption, diagnostics, parse-tree
+/// construction, and final parse outcomes.
 /// <para>
 /// The engine is a recursive-descent parser with full backtracking.
 /// It tries each alternative in priority order and rolls back the token position on
@@ -26,6 +28,11 @@ namespace Utils.Parser.Runtime;
 /// and parser actions return <see cref="ParserActionExecutionResult.NotExecuted"/>.
 /// Custom injected policies may reject alternatives and may execute action handlers,
 /// which can influence parse outcomes.
+/// </para>
+/// <para>
+/// Scheduling and metadata components do not own parse decisions:
+/// continuation descriptors are descriptive only, shared-prefix plans are informational only,
+/// and neither metadata pipeline executes runtime continuations.
 /// </para>
 /// </summary>
 /// <remarks>

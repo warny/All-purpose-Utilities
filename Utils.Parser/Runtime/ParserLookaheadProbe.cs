@@ -6,6 +6,8 @@ namespace Utils.Parser.Runtime;
 /// Performs conservative first-token look-ahead probing for a scheduled alternative.
 /// The probe is intentionally shallow: it must not evaluate semantic predicates, execute parser actions,
 /// or consult external semantic runtime state.
+/// It is syntax-oriented only and does not execute parser rules speculatively,
+/// traverse parser graphs semantically, or run continuation metadata.
 /// </summary>
 internal sealed class ParserLookaheadProbe
 {

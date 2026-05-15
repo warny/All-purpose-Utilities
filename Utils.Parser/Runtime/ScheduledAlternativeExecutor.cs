@@ -6,6 +6,10 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Executes a single scheduled alternative attempt while keeping parser semantics
 /// in runtime components owned by <see cref="ParserEngine"/>.
+/// This executor is local and non-authoritative: it does not provide global parse authority,
+/// rollback safety, transactional isolation, or replay semantics.
+/// Its role is bounded coordination between <see cref="AlternativeScheduler"/>,
+/// <see cref="ParserStateRegistry"/>, and engine-owned parsing callbacks.
 /// </summary>
 internal sealed class ScheduledAlternativeExecutor
 {

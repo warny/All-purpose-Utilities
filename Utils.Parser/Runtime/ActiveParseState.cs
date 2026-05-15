@@ -32,9 +32,15 @@ internal enum ActiveParseStateStatus
 /// Represents an active parser state/branch candidate during alternative exploration.
 /// This data container is intentionally immutable and infrastructure-only.
 /// It prepares explicit scheduling of parser work without changing current execution semantics.
+/// The model is descriptive scheduling/runtime-local state only: it is non-replayable,
+/// non-resumable, and not rollback-aware.
 /// <para>
 /// <see cref="Continuation"/> is metadata that describes a potential continuation anchor.
 /// It is not executable runtime replay state and does not imply resume/rollback semantics.
+/// </para>
+/// <para>
+/// <see cref="ParentStateKey"/> models lineage for scheduling metadata and is not an execution stack.
+/// <see cref="Depth"/> is structural lineage depth, not semantic invocation-frame depth.
 /// </para>
 /// </summary>
 internal sealed record ActiveParseState
