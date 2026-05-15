@@ -12,6 +12,9 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class ParserEngineAlternativeSelectionTests
 {
+    /// <summary>
+    /// Verifies that when both alternatives can start, the branch that consumes more input is selected.
+    /// </summary>
     [TestMethod]
     public void Parser_Alternatives_LongerSuccessfulBranchIsSelected()
     {
@@ -116,6 +119,9 @@ public class ParserEngineAlternativeSelectionTests
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
     }
 
+    /// <summary>
+    /// Verifies orchestration pruning for equivalent branches without escalating to parse-failure diagnostics.
+    /// </summary>
     [TestMethod]
     public void Parser_Alternatives_EquivalentBranchesCanBePrunedWithoutParseFailure()
     {
@@ -157,6 +163,9 @@ public class ParserEngineAlternativeSelectionTests
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
     }
 
+    /// <summary>
+    /// Verifies that backtracking diagnostics remain scoped and do not become parse-failure diagnostics on success.
+    /// </summary>
     [TestMethod]
     public void Parser_Alternatives_BacktrackingDiagnosticDoesNotBecomeParseFailureDiagnostic()
     {
@@ -174,6 +183,9 @@ public class ParserEngineAlternativeSelectionTests
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
     }
 
+    /// <summary>
+    /// Collects lexer token texts from the parse tree in traversal order.
+    /// </summary>
     private static List<string> CollectTokenTexts(ParseNode node)
     {
         var texts = new List<string>();
@@ -181,6 +193,9 @@ public class ParserEngineAlternativeSelectionTests
         return texts;
     }
 
+    /// <summary>
+    /// Recursively traverses parse nodes and appends lexer token texts to <paramref name="texts"/>.
+    /// </summary>
     private static void CollectTokenTextsCore(ParseNode node, List<string> texts)
     {
         switch (node)
@@ -200,6 +215,9 @@ public class ParserEngineAlternativeSelectionTests
         }
     }
 
+    /// <summary>
+    /// Creates a parser engine for tests using a single root parser rule and default channels/mode.
+    /// </summary>
     private static ParserEngine CreateParser(Rule root, string grammarName)
     {
         return new ParserEngine(Utils.Parser.Resolution.RuleResolver.Resolve(new ParserDefinition(
