@@ -33,7 +33,7 @@ public class ParserEngineAlternativeSelectionTests
         var tokens = new List<Token>
         {
             Token(0, 1, "A", "a"),
-            new(new SourceSpan(1, 1), "B", "DEFAULT_MODE", "DEFAULT_CHANNEL", "b")
+            Token(1, 1, "B", "b")
         };
 
         var tree = parser.Parse(tokens);
@@ -94,6 +94,4 @@ public class ParserEngineAlternativeSelectionTests
         var tree = parser.Parse(tokens);
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
     }
-
-
 }
