@@ -22,9 +22,27 @@ internal readonly record struct ActiveParseBranchEquivalenceKey(
 
 internal enum ActiveParseStateStatus
 {
+    /// <summary>
+    /// Local exploratory state. This status is runtime-local, non-authoritative,
+    /// and may only transition through immutable state cloning.
+    /// </summary>
     Active,
+    /// <summary>
+    /// Local completion for one branch attempt. This does not imply global parse acceptance.
+    /// Global acceptance remains owned by <see cref="ParserEngine"/>.
+    /// </summary>
     Completed,
+    /// <summary>
+    /// Local branch failure. This does not imply global parse failure and may still
+    /// contribute to diagnostic context chosen by <see cref="ParserEngine"/>.
+    /// </summary>
     Failed,
+    /// <summary>
+    /// Orchestration-only pruning marker used by scheduling infrastructure.
+    /// This status does not imply syntax invalidity and must not alter parse outcome,
+    /// parse-tree shape, or syntax-error diagnostics. Explicit pruning/ambiguity diagnostics
+    /// may still be emitted where supported.
+    /// </summary>
     Pruned
 }
 
@@ -51,6 +69,10 @@ internal sealed record ActiveParseState
     public required int CurrentInputPosition { get; init; }
     public required int AlternativeIndex { get; init; }
     public required RuleContentCursor Cursor { get; init; }
+    /// <summary>
+    /// Local partial parse node for branch-level scheduling.
+    /// It is descriptive only and does not grant parse-tree authority.
+    /// </summary>
     public required ParseNode PartialNode { get; init; }
     public int? EndPosition { get; init; }
     public ActiveParseStateStatus Status { get; init; }

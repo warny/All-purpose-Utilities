@@ -152,6 +152,83 @@ public class ParserRuntimeInvariantTests
         Assert.AreEqual(ScheduledAlternativeCursorKinds.AlternativeRoot, branch.Cursor.Kind);
     }
 
+
+    [TestMethod]
+    public void LocalCompletedAlternative_DoesNotGuaranteeGlobalParseAcceptance_WhenTrailingTokensRemain()
+    {
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("A"))
+            ]));
+        var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
+        var parser = new ParserEngine(definition);
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ErrorNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
+    [TestMethod]
+    public void FailedAlternative_DoesNotForceGlobalParseFailure_WhenAnotherAlternativeSucceeds()
+    {
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new Sequence([
+                    new RuleRef("A"),
+                    new RuleRef("B")
+                ])),
+                new Alternative(1, Associativity.Left, new RuleRef("A"))
+            ]));
+        var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
+        var parser = new ParserEngine(definition);
+
+        var result = parser.Parse([Token("A", "a")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsFalse(result is ErrorNode);
+    }
+
+    [TestMethod]
+    public void Pruning_EmitsOnlyAmbiguityPruningDiagnostic_ForSchedulerLevelDeduplication()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X")
+        ]));
+        var state = new ActiveParseState
+        {
+            Rule = rule,
+            Alternative = rule.Content.Alternatives[0],
+            OriginInputPosition = 0,
+            CurrentInputPosition = 1,
+            AlternativeIndex = 0,
+            Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
+            PartialNode = new ParserNode(new SourceSpan(0, 1), "DEFAULT_MODE", rule, []),
+            EndPosition = 1,
+            Status = ActiveParseStateStatus.Completed,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        };
+        var diagnostics = new DiagnosticBag();
+
+        _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, diagnostics, (_, i) =>
+            new ScheduledAlternativeExecutionResult(state with { Alternative = rule.Content.Alternatives[i], AlternativeIndex = i }, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
     [TestMethod]
     public void LookaheadProbe_DoesNotEvaluatePredicatesOrExecuteActions()
     {

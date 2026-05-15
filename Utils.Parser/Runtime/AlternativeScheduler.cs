@@ -7,6 +7,7 @@ namespace Utils.Parser.Runtime;
 /// Runs deterministic sequential scheduling for parser alternatives represented as <see cref="ActiveParseState"/>.
 /// This component is orchestration-only: it does not own semantic evaluation, diagnostics authority,
 /// parser-graph execution, replay, or speculative execution.
+/// It can mark states as pruned for local orchestration purposes only; pruning is not a syntax verdict.
 /// Parse acceptance remains decided by <see cref="ParserEngine"/>.
 /// </summary>
 internal sealed class AlternativeScheduler
@@ -182,6 +183,11 @@ internal sealed class AlternativeScheduler
         return candidate.AlternativeIndex < current.AlternativeIndex;
     }
 
+    /// <summary>
+    /// Prunes equivalent states for orchestration efficiency only.
+    /// This method must not create new syntax diagnostics beyond delegated ambiguity reporting,
+    /// and must not alter parse authority owned by <see cref="ParserEngine"/>.
+    /// </summary>
     private static List<ActiveParseState> PruneEquivalentActiveStates(IReadOnlyList<ActiveParseState> states, DiagnosticBag? diagnostics)
     {
         // Pruning safety invariant:

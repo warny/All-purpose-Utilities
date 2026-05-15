@@ -8,6 +8,8 @@ namespace Utils.Parser.Runtime;
 /// in runtime components owned by <see cref="ParserEngine"/>.
 /// This executor is local and non-authoritative: it does not provide global parse authority,
 /// rollback safety, transactional isolation, or replay semantics.
+/// It may propagate branch-local diagnostics through callback outputs, but final diagnostic authority
+/// remains in <see cref="ParserEngine"/>.
 /// Its role is bounded coordination between <see cref="AlternativeScheduler"/>,
 /// <see cref="ParserStateRegistry"/>, and engine-owned parsing callbacks.
 /// </summary>

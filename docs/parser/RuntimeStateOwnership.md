@@ -103,3 +103,36 @@ The current runtime does **not** implement:
 - semantic-state-aware memoization.
 
 The runtime remains deterministic, conservative, syntax-oriented, and execution-conservative.
+
+## Runtime lifecycle contracts
+
+`ActiveParseState` lifecycle values are local runtime contracts, not global parse outcomes.
+
+- `Active`: exploratory branch-local state.
+  - mutable transitions are represented only by creating new immutable state values.
+  - not authoritative for global acceptance/rejection.
+- `Completed`: local branch completion.
+  - does **not** mean the full parse is accepted.
+  - may still be rejected by higher-level orchestration in `ParserEngine`.
+- `Failed`: local branch failure.
+  - does **not** mean global parse failure.
+  - may still participate in diagnostic context propagation.
+- `Pruned`: orchestration-only elimination marker.
+  - not a syntax-invalidity signal.
+  - must not alter parse outcome, parse-tree shape, or syntax-error diagnostics.
+  - may emit explicit pruning/ambiguity diagnostics where already supported.
+
+### Diagnostics ownership contracts
+
+- `ParserEngine` is final authority for emitted diagnostics and final parse outcome diagnostics.
+- `ScheduledAlternativeExecutor` can return branch-level outcomes that carry diagnostic context,
+  but it is not the final diagnostics authority.
+- `AlternativeScheduler` coordinates branch attempts and may report ambiguity-pruning context,
+  but it must not invent new syntax diagnostics as parse authority.
+- `ActiveParseState` is descriptive-only local runtime data and does not own diagnostic decisions.
+
+### Partial parse-node ownership contracts
+
+- Partial nodes inside `ActiveParseState` are local scheduling/runtime artifacts.
+- They support branch-local selection and metadata flow only.
+- Final parse-tree authority remains in `ParserEngine` parse outcomes.
