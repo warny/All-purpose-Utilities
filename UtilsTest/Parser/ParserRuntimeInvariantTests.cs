@@ -168,7 +168,7 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
-    public void SharedPrefixMetadata_RemainsNonAuthoritative_ForParseOutcome()
+    public void ParserEngine_RuntimeParseOutcome_RemainsAuthoritative_WhenAlternativesSharePrefix()
     {
         var startRule = new Rule(
             "start",
@@ -191,6 +191,7 @@ public class ParserRuntimeInvariantTests
 
         Assert.IsInstanceOfType<ParserNode>(result);
         Assert.AreEqual("start", result.Rule?.Name);
+        Assert.IsFalse(result is ErrorNode);
     }
 
     [TestMethod]
