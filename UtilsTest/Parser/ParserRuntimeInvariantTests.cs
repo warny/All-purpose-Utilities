@@ -13,11 +13,11 @@ namespace UtilsTest.Parser;
 public class ParserRuntimeInvariantTests
 {
     [TestMethod]
-    public void Memoization_WithDeterministicPolicies_ReusesStableResultPerInvocationKey()
+    public void Memoization_IntraParse_ReusesSubRuleInvocationWithoutReevaluatingPredicate()
     {
-        var startRule = new Rule(
-            "start",
-            0,
+        var subRule = new Rule(
+            "sub",
+            1,
             false,
             new Alternation([
                 new Alternative(0, Associativity.Left, new Sequence([
@@ -25,18 +25,25 @@ public class ParserRuntimeInvariantTests
                     new RuleRef("A")
                 ]))
             ]));
-        var tokenRuleA = LexerRule("A", "a");
-        var definition = CreateDefinition(startRule, tokenRuleA);
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new Sequence([
+                    new RuleRef("sub"),
+                    new RuleRef("B")
+                ])),
+                new Alternative(1, Associativity.Left, new RuleRef("sub"))
+            ]));
+        var definition = CreateDefinition(startRule, [subRule], LexerRule("A", "a"), LexerRule("B", "b"));
         var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
         var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionResult.NotExecuted));
 
-        var tokens = new[] { Token("A", "a") };
-        var first = parser.Parse(tokens);
-        var second = parser.Parse(tokens);
+        var result = parser.Parse([Token("A", "a")]);
 
-        Assert.IsInstanceOfType<ParserNode>(first);
-        Assert.IsInstanceOfType<ParserNode>(second);
-        Assert.AreEqual(2, evaluator.EvaluationCount);
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, evaluator.EvaluationCount);
     }
 
     [TestMethod]
@@ -65,7 +72,7 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
-    public void PredicateDeterministicPolicy_InfluencesBranchAcceptance_WithoutMemoizationShapeChanges()
+    public void PredicateDeterministicPolicy_Satisfied_UsesPredicateBranchAndConsumesAllTokens()
     {
         var startRule = new Rule(
             "start",
@@ -74,22 +81,53 @@ public class ParserRuntimeInvariantTests
             new Alternation([
                 new Alternative(0, Associativity.Left, new Sequence([
                     new ValidatingPredicate("onlyWhenAllowed"),
-                    new RuleRef("A")
+                    new RuleRef("A"),
+                    new RuleRef("B")
                 ])),
                 new Alternative(1, Associativity.Left, new RuleRef("A"))
             ]));
-        var definition = CreateDefinition(startRule, LexerRule("A", "a"));
-        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected);
+        var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
+        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
         var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionResult.NotExecuted));
+        var diagnostics = new DiagnosticBag();
 
-        var result = parser.Parse([Token("A", "a")]);
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
 
         Assert.IsInstanceOfType<ParserNode>(result);
         Assert.AreEqual(1, evaluator.EvaluationCount);
+        Assert.IsFalse(result is ErrorNode);
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
     }
 
     [TestMethod]
-    public void SharedPrefixContinuations_AreMetadataOnly_NotReplayState()
+    public void PredicateDeterministicPolicy_Rejected_FallsBackAndLeavesTrailingToken()
+    {
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new Sequence([
+                    new ValidatingPredicate("onlyWhenAllowed"),
+                    new RuleRef("A"),
+                    new RuleRef("B")
+                ])),
+                new Alternative(1, Associativity.Left, new RuleRef("A"))
+            ]));
+        var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
+        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected);
+        var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionResult.NotExecuted));
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ErrorNode>(result);
+        Assert.AreEqual(1, evaluator.EvaluationCount);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
+    [TestMethod]
+    public void ActiveParseState_ToBranch_PreservesDescriptiveContinuationMetadata()
     {
         var first = new ActiveParseState
         {
@@ -129,7 +167,7 @@ public class ParserRuntimeInvariantTests
         Assert.AreEqual(ParserLookaheadProbeKind.Unknown, result.Kind);
     }
 
-    private static ParserDefinition CreateDefinition(Rule startRule, params Rule[] lexerRules)
+    private static ParserDefinition CreateDefinition(Rule startRule, Rule[] parserRules, params Rule[] lexerRules)
     {
         return RuleResolver.Resolve(new ParserDefinition(
             Name: "G",
@@ -141,8 +179,13 @@ public class ParserRuntimeInvariantTests
             DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
             DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
             ExtensionBindings: [],
-            ParserRules: [startRule],
+            ParserRules: [startRule, .. parserRules],
             RootRule: startRule));
+    }
+
+    private static ParserDefinition CreateDefinition(Rule startRule, params Rule[] lexerRules)
+    {
+        return CreateDefinition(startRule, [], lexerRules);
     }
 
     private static Rule LexerRule(string name, string literal)
