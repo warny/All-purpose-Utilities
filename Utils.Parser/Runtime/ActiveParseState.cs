@@ -39,7 +39,9 @@ internal enum ActiveParseStateStatus
     Failed,
     /// <summary>
     /// Orchestration-only pruning marker used by scheduling infrastructure.
-    /// This status does not imply syntax invalidity and must not change observable diagnostics.
+    /// This status does not imply syntax invalidity and must not alter parse outcome,
+    /// parse-tree shape, or syntax-error diagnostics. Explicit pruning/ambiguity diagnostics
+    /// may still be emitted where supported.
     /// </summary>
     Pruned
 }

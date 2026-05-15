@@ -119,7 +119,8 @@ The runtime remains deterministic, conservative, syntax-oriented, and execution-
   - may still participate in diagnostic context propagation.
 - `Pruned`: orchestration-only elimination marker.
   - not a syntax-invalidity signal.
-  - must not alter observable diagnostics.
+  - must not alter parse outcome, parse-tree shape, or syntax-error diagnostics.
+  - may emit explicit pruning/ambiguity diagnostics where already supported.
 
 ### Diagnostics ownership contracts
 

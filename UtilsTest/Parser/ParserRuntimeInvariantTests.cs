@@ -154,28 +154,23 @@ public class ParserRuntimeInvariantTests
 
 
     [TestMethod]
-    public void LocalCompletedAlternative_DoesNotGuaranteeGlobalParseAcceptance()
+    public void LocalCompletedAlternative_DoesNotGuaranteeGlobalParseAcceptance_WhenTrailingTokensRemain()
     {
         var startRule = new Rule(
             "start",
             0,
             false,
             new Alternation([
-                new Alternative(0, Associativity.Left, new Sequence([
-                    new RuleRef("A"),
-                    new RuleRef("B")
-                ])),
-                new Alternative(1, Associativity.Left, new RuleRef("A"))
+                new Alternative(0, Associativity.Left, new RuleRef("A"))
             ]));
         var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
         var parser = new ParserEngine(definition);
         var diagnostics = new DiagnosticBag();
 
-        var result = parser.Parse([Token("A", "a")], diagnostics: diagnostics);
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
 
-        Assert.IsInstanceOfType<ParserNode>(result);
-        Assert.AreEqual("start", result.Rule?.Name);
-        Assert.IsFalse(result is ErrorNode);
+        Assert.IsInstanceOfType<ErrorNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
     }
 
     [TestMethod]
@@ -202,7 +197,7 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
-    public void Pruning_RemainsOrchestrationOnly_ForObservableDiagnostics()
+    public void Pruning_EmitsOnlyAmbiguityPruningDiagnostic_ForSchedulerLevelDeduplication()
     {
         var scheduler = new AlternativeScheduler();
         var rule = new Rule("r", 0, false, new Alternation([
@@ -224,17 +219,14 @@ public class ParserRuntimeInvariantTests
             Depth = 0,
             Continuation = null
         };
-        var diagnosticsA = new DiagnosticBag();
-        var diagnosticsB = new DiagnosticBag();
+        var diagnostics = new DiagnosticBag();
 
-        _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, diagnosticsA, (_, i) =>
-            new ScheduledAlternativeExecutionResult(state with { Alternative = rule.Content.Alternatives[i], AlternativeIndex = i }, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
-        _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, diagnosticsB, (_, i) =>
+        _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, diagnostics, (_, i) =>
             new ScheduledAlternativeExecutionResult(state with { Alternative = rule.Content.Alternatives[i], AlternativeIndex = i }, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
 
-        Assert.AreEqual(
-            diagnosticsA.Count(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code),
-            diagnosticsB.Count(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
     }
 
     [TestMethod]
