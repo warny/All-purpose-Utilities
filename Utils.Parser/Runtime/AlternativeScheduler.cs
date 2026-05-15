@@ -162,8 +162,8 @@ internal sealed class AlternativeScheduler
 
     /// <summary>
     /// Deduplicates locally completed states by structural scheduling identity.
-    /// Tie-breaking remains deterministic and conservative:
-    /// longest consumption first, then lower priority value, then lower declaration index.
+    /// Deduplication keeps the strongest state per identity using <see cref="IsBetterState"/>,
+    /// then returns states in deterministic traversal order.
     /// </summary>
     private static List<ActiveParseState> DeduplicateStates(IReadOnlyList<ActiveParseState> states, int minimumPrecedence)
     {
@@ -181,7 +181,7 @@ internal sealed class AlternativeScheduler
     }
 
     /// <summary>
-    /// Compares two local candidates using the current observable contract:
+    /// Compares two local candidates for best-candidate selection using the current observable contract:
     /// longer match wins; if tied, lower precedence priority value wins; if still tied,
     /// lower alternative index wins.
     /// </summary>

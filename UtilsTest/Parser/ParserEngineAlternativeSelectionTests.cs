@@ -29,6 +29,7 @@ public class ParserEngineAlternativeSelectionTests
 
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+        Assert.IsTrue(CollectTokenTexts(tree).Contains("b"));
     }
 
     [TestMethod]
@@ -118,16 +119,41 @@ public class ParserEngineAlternativeSelectionTests
     [TestMethod]
     public void Parser_Alternatives_EquivalentBranchesCanBePrunedWithoutParseFailure()
     {
-        var root = new Rule("root", 0, false, new Alternation([
-            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "Same"),
-            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "Same")
-        ]));
-        var parser = CreateParser(root, "AltPrune");
+        var scheduler = new AlternativeScheduler();
         var diagnostics = new DiagnosticBag();
+        var rule = new Rule("root", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "Same"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "Same"),
+            new Alternative(2, Associativity.Left, new LiteralMatch("a"), "Different")
+        ]));
 
-        var tree = parser.Parse([Token(0, 1, "A", "a")], diagnostics: diagnostics);
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: 0,
+            minimumPrecedence: 0,
+            diagnostics,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                new ActiveParseState
+                {
+                    Rule = rule,
+                    Alternative = alternative,
+                    OriginInputPosition = 0,
+                    CurrentInputPosition = 1,
+                    AlternativeIndex = index,
+                    Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
+                    PartialNode = new ParserNode(new SourceSpan(0, 1), "DEFAULT_MODE", rule, []),
+                    EndPosition = 1,
+                    Status = ActiveParseStateStatus.Completed,
+                    ParentStateKey = null,
+                    Depth = 0,
+                    Continuation = null
+                },
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
 
-        Assert.IsNotInstanceOfType<ErrorNode>(tree);
+        Assert.IsNotNull(result.SelectedState);
+        Assert.IsTrue(result.PrunedStates.Count > 0);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
     }
 
@@ -146,6 +172,32 @@ public class ParserEngineAlternativeSelectionTests
         Assert.IsNotInstanceOfType<ErrorNode>(tree);
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.BacktrackingUsed.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+    private static List<string> CollectTokenTexts(ParseNode node)
+    {
+        var texts = new List<string>();
+        CollectTokenTextsCore(node, texts);
+        return texts;
+    }
+
+    private static void CollectTokenTextsCore(ParseNode node, List<string> texts)
+    {
+        switch (node)
+        {
+            case LexerNode lexerNode:
+                texts.Add(lexerNode.Token.Text);
+                return;
+            case ParserNode parserNode:
+                foreach (var child in parserNode.Children)
+                {
+                    CollectTokenTextsCore(child, texts);
+                }
+
+                return;
+            default:
+                return;
+        }
     }
 
     private static ParserEngine CreateParser(Rule root, string grammarName)
