@@ -5,6 +5,9 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Runs deterministic sequential scheduling for parser alternatives represented as <see cref="ActiveParseState"/>.
+/// This component is orchestration-only: it does not own semantic evaluation, diagnostics authority,
+/// parser-graph execution, replay, or speculative execution.
+/// Parse acceptance remains decided by <see cref="ParserEngine"/>.
 /// </summary>
 internal sealed class AlternativeScheduler
 {

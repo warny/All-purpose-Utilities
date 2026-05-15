@@ -1,0 +1,105 @@
+# Runtime State Ownership
+
+This document consolidates runtime-state ownership and authority boundaries for `Utils.Parser`.
+It is intentionally conservative and describes current behavior only.
+
+## Runtime authority model
+
+The parser runtime is authority-layered.
+
+- `ParserEngine` is the final runtime authority for:
+  - token consumption,
+  - parse-tree construction,
+  - diagnostic production,
+  - final parse outcomes.
+- Supporting runtime components provide orchestration, probing, caching, and metadata.
+- Metadata components are descriptive and cannot decide parse outcomes on their own.
+
+## Parsing authority
+
+`ParserEngine` remains the authoritative parser execution component.
+
+- It owns recursive rule parsing decisions.
+- It owns branch acceptance/rejection outcomes.
+- It owns final success/failure and trailing-token validation.
+- It owns parse result materialization.
+
+Non-engine components may assist the engine but do not replace these decisions.
+
+## Scheduling authority
+
+`AlternativeScheduler` is an orchestrator, not an autonomous parser executor.
+
+- It orders and coordinates alternative attempts.
+- It aggregates descriptive metadata for shared-prefix scenarios.
+- It does not own semantic predicate truth.
+- It does not own diagnostics authority.
+- It does not implement replay, rollback, speculative execution, or parser-graph traversal.
+
+`ScheduledAlternativeExecutor` performs local alternative attempts.
+
+- It is bounded to one alternative attempt at one invocation origin.
+- It does not provide global parse authority.
+- It does not provide transactional isolation.
+- It does not provide rollback or replay.
+
+## State ownership
+
+The runtime separates state by authority.
+
+### Reusable runtime state (authoritative)
+
+Owned by `ParserStateRegistry` for invocation-keyed reuse safety:
+
+- visited parser state tracking,
+- completed invocation outcomes,
+- reusable success/failure outcomes.
+
+### Metadata state (non-authoritative)
+
+Stored or computed as descriptive structures only:
+
+- continuation descriptors,
+- shared-prefix plans,
+- shared-prefix candidates,
+- scheduling annotations.
+
+### Preparatory state (non-authoritative)
+
+Used to coordinate execution attempts:
+
+- scheduler candidate sets,
+- lookahead probe outcomes,
+- lookahead cache entries.
+
+### Descriptive state (non-authoritative)
+
+`ActiveParseState` and related keys are structural runtime descriptors.
+
+- `Continuation` is descriptive metadata only.
+- `ParentStateKey` is lineage metadata, not an execution stack.
+- `Depth` is descriptive lineage depth, not semantic frame depth.
+
+## Metadata-only boundaries
+
+The following remain metadata-only and non-executable:
+
+- continuation descriptors,
+- shared-prefix plans,
+- lookahead metadata,
+- scheduling metadata.
+
+These structures cannot execute parsing, resume execution, or replay previous runtime steps.
+
+## Explicit non-goals
+
+The current runtime does **not** implement:
+
+- replay,
+- rollback,
+- semantic runtime frames,
+- parser graph execution,
+- speculative execution,
+- semantic-state-aware memoization.
+
+The runtime remains deterministic, conservative, syntax-oriented, and execution-conservative.

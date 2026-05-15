@@ -2,9 +2,10 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Stores parser-state tracking, shared rule invocation completions, and continuation metadata.
-/// This registry is currently authoritative for completed invocation tracking and safe reuse lookup.
-/// It is preparatory for future path scheduling work, but it is not yet a full branch scheduler.
-/// Continuations are descriptive metadata only; they are not replay-ready runtime frames.
+/// Runtime-authoritative state in this registry is limited to visited states, invocation completion tracking,
+/// and reusable parse outcomes keyed by invocation identity.
+/// Continuation descriptors and shared-prefix scheduling metadata are non-authoritative descriptive data.
+/// This registry does not contain replay frames, semantic runtime frames, rollback state, or executable continuations.
 /// </summary>
 internal sealed class ParserStateRegistry
 {
