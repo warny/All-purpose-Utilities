@@ -181,6 +181,9 @@ internal sealed class AlternativeScheduler
 
     private static List<ActiveParseState> PruneEquivalentActiveStates(IReadOnlyList<ActiveParseState> states, DiagnosticBag? diagnostics)
     {
+        // Pruning safety invariant:
+        // two branches are mergeable only when HasDistinctSemantics reports no potential semantic divergence.
+        // If distinct semantics are possible, both branches must be preserved.
         var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
         foreach (var state in states)
         {

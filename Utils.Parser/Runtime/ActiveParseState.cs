@@ -32,6 +32,10 @@ internal enum ActiveParseStateStatus
 /// Represents an active parser state/branch candidate during alternative exploration.
 /// This data container is intentionally immutable and infrastructure-only.
 /// It prepares explicit scheduling of parser work without changing current execution semantics.
+/// <para>
+/// <see cref="Continuation"/> is metadata that describes a potential continuation anchor.
+/// It is not executable runtime replay state and does not imply resume/rollback semantics.
+/// </para>
 /// </summary>
 internal sealed record ActiveParseState
 {

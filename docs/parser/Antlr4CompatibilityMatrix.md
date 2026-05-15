@@ -116,6 +116,10 @@ This model is **descriptive only** and does not change parser behavior, diagnost
 
 ## Memoization and policy assumptions
 
+
+Custom predicate/action policies can influence branch acceptance and therefore parse outcomes.
+However, invocation memoization remains keyed by `(rule, input position, precedence)` and does not model semantic runtime state.
+
 Parser invocation reuse is currently keyed by rule, input position, and precedence.
 This model currently assumes policy handlers are deterministic for equivalent invocations and does not include evaluator/executor external state in the memoization key.
 Custom policies should therefore avoid invocation-count-dependent decisions and externally observable mutable semantic state.
