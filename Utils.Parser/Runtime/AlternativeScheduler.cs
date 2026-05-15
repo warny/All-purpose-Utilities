@@ -17,6 +17,8 @@ internal sealed class AlternativeScheduler
     private readonly ParserSharedPrefixPlanFactory _sharedPrefixPlanFactory = new();
     /// <summary>
     /// Drives alternative orchestration for a single alternation parse attempt.
+    /// Local outcomes here are descriptive scheduling artifacts:
+    /// completed/failed/pruned states do not decide global parse success or failure.
     /// </summary>
     public AlternativeSchedulingResult Run(
         Rule rule,
@@ -53,6 +55,7 @@ internal sealed class AlternativeScheduler
         }
 
         var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
+        // Pruning is an orchestration optimization only; it is not a syntax-validity verdict.
         var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
         var prunedSet = new HashSet<ActiveParseState>(pruned);
         var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();

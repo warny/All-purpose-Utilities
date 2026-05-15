@@ -152,7 +152,9 @@ public sealed class ParserEngine
                 "Failed to parse from root rule", root);
         }
 
-        // Reject parses that leave trailing tokens unconsumed.
+        // A locally completed branch can still be globally rejected.
+        // Global success requires both a selected parse outcome and full input consumption.
+        // Trailing-token rejection is therefore a global-outcome gate owned by ParserEngine.
         if (!context.IsEnd)
         {
             var trailing = context.Peek()!;

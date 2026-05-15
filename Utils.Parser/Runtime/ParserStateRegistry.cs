@@ -2,6 +2,8 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Stores parser-state tracking, shared rule invocation completions, and continuation metadata.
+/// Reusable results in this registry are invocation-local transport artifacts; they do not
+/// independently decide final parse acceptance, rejection, or final diagnostic selection.
 /// Runtime-authoritative state in this registry is limited to visited states, invocation completion tracking,
 /// and reusable parse outcomes keyed by invocation identity.
 /// Continuation descriptors and shared-prefix scheduling metadata are non-authoritative descriptive data.
