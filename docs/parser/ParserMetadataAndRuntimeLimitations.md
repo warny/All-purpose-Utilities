@@ -43,6 +43,19 @@ The memoization layer does **not** currently model:
 As a result, custom policies are expected to remain deterministic for equivalent invocations, avoid invocation-count-dependent behavior, and avoid externally observable mutable semantic state.
 Future runtime work may require broader memoization keys and rollback-aware semantic-state modeling.
 
+
+## Backtracking and observable action execution
+
+Backtracking can execute embedded parser actions in branches that are later rejected or pruned.
+Current runtime guarantees are intentionally conservative:
+
+- no rollback is applied to external action side effects;
+- no exactly-once guarantee is provided for actions across backtracked attempts;
+- no transactional isolation exists between competing alternatives;
+- memoization remains syntax-oriented and is not semantic-state-aware.
+
+Custom runtime policies should therefore remain deterministic and conservative, and should avoid dependence on mutable external semantic state.
+
 ## Diagnostics meaning for policy-controlled features
 
 - `SemanticPredicateNotEnforced` is emitted when a predicate is encountered and the active evaluator returns `NotEvaluated`.

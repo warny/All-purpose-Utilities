@@ -25,6 +25,8 @@ internal sealed class ScheduledAlternativeExecutor
 
     /// <summary>
     /// Executes one alternative from the scheduler and returns a completed parse state when successful.
+    /// Embedded parser actions may run during this attempt even when the branch is later rejected.
+    /// The runtime does not provide rollback, exactly-once, or transactional isolation guarantees for external side effects.
     /// </summary>
     public ScheduledAlternativeExecutionResult Execute(
         ParseContext context,
