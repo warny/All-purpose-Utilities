@@ -83,6 +83,14 @@ The following capabilities are currently unsupported by design:
 
 These are intentionally outside the current runtime envelope.
 
+## Diagnostics interpretation for compatibility
+
+Compatibility diagnostics are intended to document capability boundaries, not to redefine parse authority:
+
+- unsupported/ignored ANTLR4 feature diagnostics are compatibility-oriented and may appear even when parse succeeds;
+- orchestration diagnostics (such as pruning/backtracking) remain separate from compatibility diagnostics;
+- engine-authoritative parse diagnostics (parse failure, trailing tokens) remain owned by `ParserEngine`.
+
 ## Architectural notes
 
 Current parser architecture includes explicit metadata infrastructure for future-safe analysis, while preserving deterministic execution boundaries.

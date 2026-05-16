@@ -137,6 +137,56 @@ public class ParserDiagnosticsTests
     }
 
     [TestMethod]
+    public void ParserEngine_BacktrackingDiagnostic_RemainsOrchestrationOnly_OnSuccessfulParse()
+    {
+        var diagnostics = new DiagnosticBag();
+        var rule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new Sequence([new LiteralMatch("a"), new LiteralMatch("b")])),
+                new Alternative(1, Associativity.Left, new LiteralMatch("a"))
+            ]));
+        var definition = RuleResolver.Resolve(new ParserDefinition(
+            Name: "DiagBacktracking",
+            Type: GrammarType.Parser,
+            Options: null,
+            Actions: [],
+            Imports: [],
+            Modes: [new LexerMode("DEFAULT_MODE", [])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
+            ParserRules: [rule],
+            RootRule: rule));
+
+        var parser = new ParserEngine(definition);
+        var result = parser.Parse([new Token(new SourceSpan(0, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.BacktrackingUsed.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+    [TestMethod]
+    public void UnsupportedFeatureDiagnostic_SurvivesIndependently_FromRuntimeParseOutcome()
+    {
+        var diagnostics = new DiagnosticBag();
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            options { language = Cpp; }
+            start : 'a' ;
+            """, diagnostics);
+
+        var parser = new ParserEngine(definition);
+        var node = parser.Parse([new Token(new SourceSpan(0, 1), "a", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(node);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.UnsupportedAntlrLanguageOptionIgnored.Code));
+    }
+
+    [TestMethod]
     public void ValidCase_EmitsNoErrorDiagnostics()
     {
         var diagnostics = new DiagnosticBag();

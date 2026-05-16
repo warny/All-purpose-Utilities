@@ -172,6 +172,35 @@ Diagnostics can be observed at multiple runtime layers, but final authority rema
 - **Pruning diagnostics** describe orchestration decisions, not syntax invalidity.
 - **Global diagnostics** are the emitted parse diagnostics selected by `ParserEngine` for the final outcome.
 
+### Observable diagnostics categories (current runtime)
+
+Current observable categories are implementation-aligned and intentionally flat:
+
+- **Syntax/parse-failure diagnostics**: parse failure when no acceptable root outcome exists.
+- **Trailing-token diagnostics**: engine-authoritative rejection when input remains after local success.
+- **Pruning diagnostics**: orchestration ambiguity/pruning information produced by scheduling flow.
+- **Backtracking diagnostics**: orchestration-only information about branch rewinds during exploration.
+- **Unsupported-feature diagnostics**: compatibility-oriented diagnostics for parsed-but-not-executed or unsupported ANTLR4 features.
+- **Informational diagnostics**: runtime traceability diagnostics such as entering/leaving rule and default behavior applied.
+
+These categories describe current behavior and ownership boundaries; they are not a new runtime hierarchy.
+
+### Diagnostics lifecycle (current behavior)
+
+Diagnostics follow a conservative lifecycle:
+
+1. **Creation** in the component currently executing logic (`ParserEngine`, scheduler/executor, resolver/converter pipelines).
+2. **Propagation** via shared `DiagnosticBag` references passed through runtime calls.
+3. **Transport** through local branch outcomes where needed for orchestration visibility.
+4. **Global visibility decision** through engine-owned final parse acceptance/rejection gates.
+
+Important lifecycle boundary:
+
+- branch-local diagnostics are descriptive and may be present even when that branch is later rejected;
+- successful global parse can still keep orchestration diagnostics (for example pruning/backtracking);
+- rejected local branch outcomes do not automatically become authoritative parse-failure diagnostics;
+- trailing-token diagnostics are emitted only by final engine acceptance checks.
+
 ### Partial parse outcomes
 
 Partial outcomes are descriptive runtime artifacts:
