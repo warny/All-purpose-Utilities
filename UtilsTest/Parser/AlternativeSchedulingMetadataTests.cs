@@ -213,6 +213,107 @@ public class AlternativeSchedulingMetadataTests
         Assert.AreEqual(1, result.CompletedStates.Count);
         Assert.AreEqual(1, result.FailedStates.Count);
     }
+
+    [TestMethod]
+    public void Scheduler_MetadataPresence_DoesNotChangeParseAcceptanceSelection()
+    {
+        var withSharedMetadata = Run(new[] { new[] { "ID" }, new[] { "ID" } });
+        var withoutSharedMetadata = Run(new[] { new[] { "ID" }, new[] { "NUMBER" } });
+
+        Assert.IsNotNull(withSharedMetadata.SelectedState);
+        Assert.IsNotNull(withoutSharedMetadata.SelectedState);
+        Assert.AreEqual(withSharedMetadata.SelectedState.AlternativeIndex, withoutSharedMetadata.SelectedState.AlternativeIndex);
+        Assert.AreEqual(withSharedMetadata.SelectedState.CurrentInputPosition, withoutSharedMetadata.SelectedState.CurrentInputPosition);
+    }
+
+    [TestMethod]
+    public void Scheduler_MetadataPresence_DoesNotSuppressPruningDiagnostics()
+    {
+        var scheduler = new AlternativeScheduler();
+        var diagnostics = new DiagnosticBag();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X")
+        ]));
+
+        _ = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            0,
+            0,
+            diagnostics,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+    }
+
+    [TestMethod]
+    public void Scheduler_Metadata_DoesNotImplySemanticEquivalenceAcrossDistinctAlternatives()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "Y")
+        ]));
+
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
+
+        Assert.AreEqual(2, result.CompletedStates.Count);
+        Assert.AreEqual(0, result.PrunedStates.Count);
+    }
+
+    [TestMethod]
+    public void Scheduler_Metadata_DoesNotOwnBranchSelection()
+    {
+        var scheduler = new AlternativeScheduler();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new RuleRef("ID"), "a"),
+            new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, index == 0 ? 1 : 3), Probe("ID")));
+
+        Assert.IsNotNull(result.SelectedState);
+        Assert.AreEqual(1, result.SelectedState.AlternativeIndex);
+    }
+
+    [TestMethod]
+    public void Scheduler_Metadata_CanExistWhenNoBranchIsAuthoritativelyAccepted()
+    {
+        var scheduler = new AlternativeScheduler();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new RuleRef("ID"), "a"),
+            new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(null, Probe("ID")));
+
+        Assert.IsNull(result.SelectedState);
+        Assert.AreEqual(0, result.CompletedStates.Count);
+        Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
+    }
     private static AlternativeSchedulingResult Run(IReadOnlyList<IReadOnlyList<string>> expected)
     {
         var scheduler = new AlternativeScheduler();

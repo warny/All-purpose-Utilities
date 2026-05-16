@@ -243,6 +243,13 @@ Allowed work:
 - metadata validation,
 - documentation.
 
+Current clarification status:
+
+- shared-prefix metadata is explicitly documented as descriptive and non-authoritative,
+- metadata ownership and lifecycle boundaries are explicitly documented,
+- non-authority guarantees are explicit (no replay, no continuation execution, no branch merging, no semantic-equivalence guarantee),
+- future activation prerequisites are documented as boundaries only.
+
 Forbidden work:
 
 - shared-prefix execution,

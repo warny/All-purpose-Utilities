@@ -276,3 +276,45 @@ This ordering is used in scheduler deduplication and best-candidate selection, a
 - Multiple local completions may coexist.
 - Only one deterministic local winner is selected by scheduling.
 - Final parse acceptance still depends on engine-level gates (including full-input consumption).
+
+
+## Shared-prefix metadata ownership and lifecycle (current runtime)
+
+Shared-prefix structures are intentionally metadata-only.
+
+- Production: metadata is produced from shallow lookahead observations and scheduler orchestration context.
+- Transport: metadata is transported through runtime result containers for visibility and auditability.
+- Reuse: metadata may be reused for formatting/validation/analysis in the same conservative execution model.
+- Discardability: metadata may be dropped without changing parse acceptance, branch selection, parse-tree shape, or diagnostics authority.
+- Observability: metadata is observable as runtime information, not executable state.
+
+Ownership boundaries:
+
+- `ParserEngine` owns parse acceptance/rejection and final diagnostics.
+- `AlternativeScheduler` owns deterministic orchestration and metadata aggregation.
+- `ParserStateRegistry` owns invocation-local reusable tracking and metadata transport storage.
+- Metadata structures (`ParserSharedPrefixPlan`, continuation descriptors, shared-prefix candidates) do not own execution authority.
+
+Explicit non-authority guarantees:
+
+- metadata does not authorize replay,
+- metadata does not authorize continuation execution,
+- metadata does not authorize branch merging,
+- metadata does not establish semantic equivalence,
+- metadata does not imply rollback safety,
+- metadata does not override diagnostics ownership.
+
+## Future activation preconditions (documentation boundary only)
+
+Before any future activation work (such as replay, shared execution, continuation resume, or duplicated-work elimination), minimum architectural preconditions would need explicit designs and tests, including:
+
+- explicit rollback model,
+- semantic-state ownership model,
+- side-effect safety model,
+- deterministic replay semantics,
+- diagnostics replay and ownership rules,
+- parse-tree compatibility guarantees,
+- branch identity guarantees,
+- continuation ownership and execution authority model.
+
+This section documents boundaries only. None of these systems are implemented by the current runtime.

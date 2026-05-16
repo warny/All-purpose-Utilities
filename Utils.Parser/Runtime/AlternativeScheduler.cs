@@ -10,6 +10,8 @@ namespace Utils.Parser.Runtime;
 /// It can mark states as pruned for local orchestration purposes only; pruning is not a syntax verdict.
 /// Parse acceptance remains decided by <see cref="ParserEngine"/>.
 /// Look-ahead observations transported by this scheduler remain advisory metadata and do not authorize branch acceptance.
+/// Shared-prefix plans produced here remain descriptive lifecycle artifacts:
+/// they can be produced, transported, observed, reused for analysis, or discarded without changing parse authority.
 /// </summary>
 internal sealed class AlternativeScheduler
 {
@@ -81,15 +83,17 @@ internal sealed class AlternativeScheduler
 
     /// <summary>
     /// Builds informational scheduling metadata from shallow look-ahead observations.
+    /// Produced metadata remains non-authoritative and does not change branch execution requirements.
     /// </summary>
     private AlternativeSchedulingMetadata BuildMetadata(
         Rule rule,
         IReadOnlyList<Alternative> orderedAlternatives,
         IReadOnlyList<ParserLookaheadProbeResult> lookaheadProbes)
     {
-        // Metadata generation intentionally includes shallow observations from attempted
-        // alternatives even when parsing fails. Shared-prefix planning metadata is
-        // structural and observational only.
+        // Metadata lifecycle boundary:
+        // observations are produced from attempted alternatives, transported through scheduling,
+        // and exposed for diagnostics/audit tooling. This metadata remains structural-only,
+        // independent from parse acceptance, and discardable without semantic changes.
         var candidates = _sharedPrefixDetector.Detect(lookaheadProbes);
         var candidateIndexes = candidates
             .SelectMany(static candidate => candidate.AlternativeIndexes)

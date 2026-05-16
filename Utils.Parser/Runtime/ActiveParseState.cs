@@ -54,6 +54,8 @@ internal enum ActiveParseStateStatus
 /// It prepares explicit scheduling of parser work without changing current execution semantics.
 /// The model is descriptive scheduling/runtime-local state only: it is non-replayable,
 /// non-resumable, and not rollback-aware.
+/// Shared-prefix-related fields in this state are observational metadata boundaries only;
+/// they do not grant branch-selection authority, parse acceptance authority, or semantic equivalence guarantees.
 /// <para>
 /// <see cref="Continuation"/> is metadata that describes a potential continuation anchor.
 /// It is not executable runtime replay state and does not imply resume/rollback semantics.
@@ -100,9 +102,25 @@ internal sealed record ActiveParseState
         Cursor.Kind,
         Cursor.Index);
 
+    /// <summary>
+    /// Produces a new local completion state for scheduling transport.
+    /// This transformation is non-authoritative and does not finalize global parse outcomes.
+    /// </summary>
     public ActiveParseState Complete(int endPosition) => this with { Status = ActiveParseStateStatus.Completed, CurrentInputPosition = endPosition, EndPosition = endPosition };
+    /// <summary>
+    /// Produces a new local failure state for branch-level orchestration.
+    /// This does not assert global parse failure.
+    /// </summary>
     public ActiveParseState Fail() => this with { Status = ActiveParseStateStatus.Failed, EndPosition = null };
+    /// <summary>
+    /// Produces an orchestration-only pruned marker.
+    /// Pruning metadata is not a syntax-invalidity verdict.
+    /// </summary>
     public ActiveParseState Prune() => this with { Status = ActiveParseStateStatus.Pruned };
+    /// <summary>
+    /// Attaches continuation metadata to this state.
+    /// The attached key is descriptive and never executable replay authority.
+    /// </summary>
     public ActiveParseState WithContinuation(ContinuationKey continuation) => this with { Continuation = continuation };
     public ActiveParseState Advance(int currentInputPosition, RuleContentCursor cursor) => this with { CurrentInputPosition = currentInputPosition, Cursor = cursor };
     public ActiveParseState WithLineage(ActiveParseStateKey? parentStateKey, int depth) => this with { ParentStateKey = parentStateKey, Depth = depth };
