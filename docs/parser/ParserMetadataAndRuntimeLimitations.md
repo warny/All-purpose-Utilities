@@ -63,6 +63,17 @@ Custom runtime policies should therefore remain deterministic and conservative, 
 
 With custom policies, these diagnostics may be reduced or suppressed when predicates/actions are actively handled.
 
+## Diagnostics ownership and lifecycle boundaries
+
+Current diagnostics behavior is intentionally conservative:
+
+- `ParserEngine` owns final observable parse outcome diagnostics (including parse failure and trailing tokens).
+- `AlternativeScheduler` and `ScheduledAlternativeExecutor` may emit orchestration diagnostics (for example pruning/backtracking) but do not own final parse acceptance.
+- `ParserLookaheadProbe` and `ParserLookaheadCache` provide shallow transport/probing metadata and do not establish parse-authoritative diagnostics by themselves.
+
+Local branch diagnostics are descriptive runtime context and do not automatically become global parse failure diagnostics.
+Compatibility diagnostics (unsupported or parsed-only ANTLR4 capabilities) are independent from branch success/failure and may coexist with successful parse outcomes.
+
 ## 1) Parameters and `returns`: parsed and preserved as metadata
 
 The grammar ingestion pipeline supports ANTLR4-style rule signatures such as:

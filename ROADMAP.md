@@ -183,6 +183,13 @@ Forbidden work:
 - changing diagnostic format,
 - changing observable diagnostic behavior without an explicit bug-fix PR.
 
+Current clarification status:
+
+- diagnostics ownership and authority boundaries are explicitly documented,
+- local vs global diagnostics lifecycle is explicitly documented,
+- orchestration diagnostics (pruning/backtracking) are explicitly separated from engine-authoritative parse diagnostics,
+- compatibility diagnostics are explicitly documented as independent from parse success/failure.
+
 ### Phase 3 — Lookahead contract consolidation
 
 Goal: keep lookahead shallow, conservative, and syntax-oriented while clarifying future options.
