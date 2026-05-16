@@ -297,8 +297,14 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
-    public void ContinuationMetadata_Presence_DoesNotChangeParseAcceptance()
+    public void ContinuationMetadata_StoredInRegistry_DoesNotCreateReusableParseOutcome()
     {
+        var registry = new ParserStateRegistry();
+        var invocation = new RuleInvocationKey("start", 0, 0);
+
+        Assert.IsTrue(registry.AddContinuation(invocation, new ContinuationKey("start", 0, 0, 1, 0)));
+        Assert.IsFalse(registry.TryGetReusableResult(invocation, out _));
+
         var startRule = new Rule(
             "start",
             0,
@@ -306,32 +312,11 @@ public class ParserRuntimeInvariantTests
             new Alternation([
                 new Alternative(0, Associativity.Left, new RuleRef("A"))
             ]));
-        var definition = CreateDefinition(startRule, LexerRule("A", "a"));
-        var parser = new ParserEngine(definition);
+        var parser = new ParserEngine(CreateDefinition(startRule, LexerRule("A", "a")));
 
-        var baseline = parser.Parse([Token("A", "a")]);
+        var parseResult = parser.Parse([Token("A", "a")]);
 
-        var stateWithContinuation = new ActiveParseState
-        {
-            Rule = startRule,
-            Alternative = startRule.Content.Alternatives[0],
-            OriginInputPosition = 0,
-            CurrentInputPosition = 1,
-            AlternativeIndex = 0,
-            Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
-            PartialNode = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "metadata", null),
-            EndPosition = 1,
-            Status = ActiveParseStateStatus.Completed,
-            ParentStateKey = null,
-            Depth = 0,
-            Continuation = new ContinuationKey("start", 0, 0, 1, 0)
-        };
-
-        var withMetadata = parser.Parse([Token("A", "a")]);
-
-        Assert.IsInstanceOfType<ParserNode>(baseline);
-        Assert.IsInstanceOfType<ParserNode>(withMetadata);
-        Assert.IsNotNull(stateWithContinuation.Continuation);
+        Assert.IsInstanceOfType<ParserNode>(parseResult);
     }
 
     [TestMethod]
