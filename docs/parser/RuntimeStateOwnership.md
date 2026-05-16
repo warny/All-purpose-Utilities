@@ -3,6 +3,23 @@
 This document consolidates runtime-state ownership and authority boundaries for `Utils.Parser`.
 It is intentionally conservative and describes current behavior only.
 
+## Document role in parser documentation set
+
+This file is the **authoritative ownership reference** for current runtime authority boundaries.
+
+Use this document when the question is: *"which component owns which decision?"*
+
+Companion roles:
+
+- `docs/parser/ParserMetadataAndRuntimeLimitations.md`: conceptual limitations and preconditions overview.
+- Runtime source comments (`Utils.Parser/Runtime/*`): implementation-local guardrails for maintainers.
+
+To limit drift and repetition:
+
+- keep ownership and authority contracts canonical here,
+- keep conceptual narrative and limitations in the metadata/limitations document,
+- keep source comments short and implementation-aligned, and refer to this document for canonical authority rules.
+
 ## Runtime authority model
 
 The parser runtime is authority-layered.

@@ -2,6 +2,17 @@
 
 ## Purpose
 
+This file is the **conceptual overview** for metadata scope and runtime limitations.
+
+Use this document when the question is: *"what is metadata-only today, and what structural limits/preconditions exist?"*
+
+Companion roles:
+
+- `docs/parser/RuntimeStateOwnership.md`: authoritative ownership and parse-authority reference.
+- Runtime source comments (`Utils.Parser/Runtime/*`): implementation-local reminders and invariants near code.
+
+To reduce repetition, this document avoids redefining detailed ownership tables when already covered in `RuntimeStateOwnership.md`.
+
 This document consolidates parser documentation that explains what is currently implemented as metadata, what is policy-controlled at runtime, and which architectural constraints protect deterministic parser behavior.
 
 It is factual and conservative. It does not define a roadmap commitment.
