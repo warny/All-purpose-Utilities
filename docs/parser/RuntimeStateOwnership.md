@@ -181,3 +181,49 @@ Partial outcomes are descriptive runtime artifacts:
 - rejected local branch outcomes.
 
 They support deterministic orchestration and reuse, but they are not authoritative parse acceptance decisions.
+
+## Alternative selection and pruning contracts (current behavior)
+
+This section documents current observable behavior only. It is not a forward design proposal.
+
+- Final selected parse outcome is owned by `ParserEngine`.
+- `AlternativeScheduler` computes a best local candidate among locally completed states.
+- `ScheduledAlternativeExecutor` only transports local branch outcomes; it does not own final selection.
+
+### Local candidate eligibility
+
+- A branch is a local completion candidate only when an `ActiveParseState` is completed.
+- Failed local branches remain useful for diagnostics/backtracking context, but are not completion candidates.
+- Branches may complete locally and still be globally rejected later (for example, trailing tokens).
+
+### Deterministic local comparison order
+
+Current local comparison uses the following stable ordering:
+
+1. longest consumed input (`CurrentInputPosition`),
+2. lower `Alternative.Priority` value,
+3. lower `AlternativeIndex`.
+
+This ordering is used in scheduler deduplication and best-candidate selection, and is intentionally deterministic.
+
+### Branch equivalence and pruning eligibility
+
+- Equivalence keys are structural/runtime-orchestration keys (rule, origin, end/current position, cursor kind/index).
+- Pruning is allowed only when branch semantics are not considered distinct by the current runtime check.
+- Equivalence here is conservative and structural; it is **not** a complete semantic-equivalence proof.
+- Equivalent branches can still each have locally successful outcomes before pruning.
+
+### Pruning semantics and diagnostics
+
+- Pruning is orchestration-only elimination.
+- Pruning is not syntax invalidity.
+- Pruning is not parse failure.
+- Pruning does not own final parse acceptance.
+- Pruning diagnostics are ambiguity/orchestration diagnostics and remain separate from syntax-failure diagnostics.
+
+### Completed state versus final selected outcome
+
+- A completed local state means one branch reached a local completion point.
+- Multiple local completions may coexist.
+- Only one deterministic local winner is selected by scheduling.
+- Final parse acceptance still depends on engine-level gates (including full-input consumption).

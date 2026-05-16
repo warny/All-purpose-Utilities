@@ -54,12 +54,16 @@ internal sealed class AlternativeScheduler
             return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
         }
 
+        // Deduplication keeps the strongest local completion for one structural state identity.
+        // This is not the final parse selection contract; it only reduces equivalent local candidates.
         var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
         // Pruning is an orchestration optimization only; it is not a syntax-validity verdict.
         var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
         var prunedSet = new HashSet<ActiveParseState>(pruned);
         var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
 
+        // The selected state is the scheduler's best local candidate after orchestration filters.
+        // ParserEngine still owns final parse acceptance (including trailing-token validation).
         ActiveParseState? winner = null;
         foreach (var state in pruned)
         {
@@ -156,6 +160,11 @@ internal sealed class AlternativeScheduler
         };
     }
 
+    /// <summary>
+    /// Deduplicates locally completed states by structural scheduling identity.
+    /// Deduplication keeps the strongest state per identity using <see cref="IsBetterState"/>,
+    /// then returns states in deterministic traversal order.
+    /// </summary>
     private static List<ActiveParseState> DeduplicateStates(IReadOnlyList<ActiveParseState> states, int minimumPrecedence)
     {
         var byIdentity = new Dictionary<ActiveParseStateKey, ActiveParseState>();
@@ -171,6 +180,11 @@ internal sealed class AlternativeScheduler
         return byIdentity.Values.OrderBy(static s => s.Alternative.Priority).ThenBy(static s => s.AlternativeIndex).ThenBy(static s => s.CurrentInputPosition).ToList();
     }
 
+    /// <summary>
+    /// Compares two local candidates for best-candidate selection using the current observable contract:
+    /// longer match wins; if tied, lower precedence priority value wins; if still tied,
+    /// lower alternative index wins.
+    /// </summary>
     private static bool IsBetterState(ActiveParseState candidate, ActiveParseState current)
     {
         if (candidate.CurrentInputPosition != current.CurrentInputPosition)
@@ -195,6 +209,8 @@ internal sealed class AlternativeScheduler
     {
         // Pruning safety invariant:
         // two branches are mergeable only when HasDistinctSemantics reports no potential semantic divergence.
+        // This equivalence is structural/orchestration-oriented and intentionally conservative;
+        // it does not claim semantic-runtime equivalence beyond current heuristics.
         // If distinct semantics are possible, both branches must be preserved.
         var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
         foreach (var state in states)

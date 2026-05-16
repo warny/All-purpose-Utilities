@@ -139,6 +139,12 @@ Scope:
 - local outcome prioritization,
 - diagnostics around pruning and backtracking.
 
+Current clarification status:
+
+- local alternative comparison order is explicitly documented (longest match, then priority, then declaration order),
+- pruning is explicitly documented as orchestration-only and non-syntax-authoritative,
+- structural branch equivalence limits are explicitly documented as conservative and non-semantic-proof.
+
 Allowed work:
 
 - comments,
