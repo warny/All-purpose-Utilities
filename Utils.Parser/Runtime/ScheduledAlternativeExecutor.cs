@@ -14,6 +14,8 @@ namespace Utils.Parser.Runtime;
 /// remains in <see cref="ParserEngine"/>.
 /// Its role is bounded coordination between <see cref="AlternativeScheduler"/>,
 /// <see cref="ParserStateRegistry"/>, and engine-owned parsing callbacks.
+/// Shared-prefix metadata observed during execution is non-authoritative and never enables replay,
+/// continuation resume, shared-frame execution, or branch merging.
 /// </summary>
 internal sealed class ScheduledAlternativeExecutor
 {

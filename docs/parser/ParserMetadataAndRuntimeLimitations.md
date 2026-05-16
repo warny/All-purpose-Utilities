@@ -2,6 +2,17 @@
 
 ## Purpose
 
+This file is the **conceptual overview** for metadata scope and runtime limitations.
+
+Use this document when the question is: *"what is metadata-only today, and what structural limits/preconditions exist?"*
+
+Companion roles:
+
+- `docs/parser/RuntimeStateOwnership.md`: authoritative ownership and parse-authority reference.
+- Runtime source comments (`Utils.Parser/Runtime/*`): implementation-local reminders and invariants near code.
+
+To reduce repetition, this document avoids redefining detailed ownership tables when already covered in `RuntimeStateOwnership.md`.
+
 This document consolidates parser documentation that explains what is currently implemented as metadata, what is policy-controlled at runtime, and which architectural constraints protect deterministic parser behavior.
 
 It is factual and conservative. It does not define a roadmap commitment.
@@ -127,6 +138,56 @@ rule[Dictionary<string, List<int>> map]
 No parameter evaluation and no return extraction occurs at runtime.
 
 ## 2) Shared-prefix infrastructure: metadata-only
+
+
+## Shared-prefix metadata authority, limitations, and lifecycle
+
+Current shared-prefix infrastructure is descriptive-only.
+
+Authority clarifications:
+
+- Shared-prefix metadata does not own parse acceptance or rejection.
+- Shared-prefix metadata does not own branch selection.
+- Shared-prefix metadata does not authorize replay, continuation execution, or branch merging.
+- Shared-prefix metadata does not establish semantic equivalence between alternatives.
+- Shared-prefix metadata does not imply rollback safety, side-effect isolation, or speculative safety.
+
+Current structural limitations (explicit):
+
+- no shared execution frames,
+- no continuation replay,
+- no parser-graph execution,
+- no action replay safety model,
+- no semantic-runtime-aware equivalence model,
+- no rollback guarantees,
+- no side-effect isolation model,
+- no shared semantic state,
+- no speculative execution.
+
+Lifecycle clarifications:
+
+- production: metadata is produced from shallow lookahead and scheduling context,
+- transport: metadata is carried through scheduler output and registry-attached structures,
+- reuse: metadata is reused for validation/formatting/analysis,
+- discardability: metadata can be discarded without changing parse-authoritative outcomes,
+- observability: metadata is observable for audit/documentation purposes only.
+
+Metadata lifecycle remains independent from parse authority and diagnostics authority.
+
+## Conservative preconditions before any future activation work
+
+Any future work that attempts replay/shared execution/continuation resume must first define and validate, at minimum:
+
+- explicit rollback semantics,
+- semantic-state ownership and isolation,
+- deterministic replay rules,
+- diagnostics replay/ownership rules,
+- parse-tree compatibility/equivalence proofs,
+- branch identity and merge-safety contracts,
+- continuation ownership and execution authority contracts.
+
+These are prerequisite boundaries, not current capabilities.
+
 
 The shared-prefix pipeline exists for analysis, validation, and auditability. It does not execute shared prefixes.
 

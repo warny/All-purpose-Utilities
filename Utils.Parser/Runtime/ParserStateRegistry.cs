@@ -7,6 +7,8 @@ namespace Utils.Parser.Runtime;
 /// Runtime-authoritative state in this registry is limited to visited states, invocation completion tracking,
 /// and reusable parse outcomes keyed by invocation identity.
 /// Continuation descriptors and shared-prefix scheduling metadata are non-authoritative descriptive data.
+/// Shared-prefix metadata in this registry is descriptive-only and does not authorize replay,
+/// continuation execution, branch merging, semantic equivalence, or rollback safety assumptions.
 /// This registry does not contain replay frames, semantic runtime frames, rollback state, or executable continuations.
 /// </summary>
 internal sealed class ParserStateRegistry
@@ -26,7 +28,10 @@ internal sealed class ParserStateRegistry
     /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>
     public bool TryEnterState(ParserStateKey key) => _visitedStates.Add(key);
 
-    /// <summary>Adds a continuation for a shared rule invocation.</summary>
+    /// <summary>
+    /// Adds continuation metadata for a shared rule invocation.
+    /// The recorded continuation key is observational transport data only and is not executable resume authority.
+    /// </summary>
     public bool AddContinuation(RuleInvocationKey invocation, ContinuationKey continuation)
     {
         if (!_continuations.TryGetValue(invocation, out var set))
@@ -38,7 +43,10 @@ internal sealed class ParserStateRegistry
         return set.Add(continuation);
     }
 
-    /// <summary>Adds a completed result for a shared rule invocation.</summary>
+    /// <summary>
+    /// Adds a completed result for a shared rule invocation.
+    /// Stored outcomes are invocation-local reuse artifacts and do not transfer global parse-authority ownership.
+    /// </summary>
     public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result)
     {
         if (!_completedResults.TryGetValue(invocation, out var list))
@@ -58,13 +66,19 @@ internal sealed class ParserStateRegistry
         return true;
     }
 
-    /// <summary>Gets continuations previously registered for an invocation.</summary>
+    /// <summary>
+    /// Gets continuations previously registered for an invocation.
+    /// Returned values are metadata snapshots and remain discardable from an execution-authority perspective.
+    /// </summary>
     public IReadOnlyList<ContinuationKey> GetContinuations(RuleInvocationKey invocation)
     {
         return _continuations.TryGetValue(invocation, out var set) ? [.. set] : [];
     }
 
-    /// <summary>Gets completed results previously registered for an invocation.</summary>
+    /// <summary>
+    /// Gets completed results previously registered for an invocation.
+    /// Retrieved values are reusable local outcomes and not final parse acceptance decisions.
+    /// </summary>
     public IReadOnlyList<ParserRuleResult> GetCompletedResults(RuleInvocationKey invocation)
     {
         return _completedResults.TryGetValue(invocation, out var list) ? list : [];
