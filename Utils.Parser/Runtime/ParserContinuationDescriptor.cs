@@ -1,7 +1,10 @@
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Describes shallow continuation metadata for future continuation-aware parser orchestration.
+/// Describes shallow continuation metadata captured during parser exploration.
+/// This descriptor is descriptive-only runtime metadata: it is non-authoritative and non-executable.
+/// It does not grant parse acceptance, branch selection, replay, continuation execution,
+/// resumable parsing, frame restoration, rollback safety, or semantic-equivalence guarantees.
 /// </summary>
 /// <param name="Key">Stable continuation identity.</param>
 /// <param name="ExpectedTokenNames">Optional shallow expected token names at this continuation point.</param>

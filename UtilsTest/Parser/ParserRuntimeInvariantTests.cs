@@ -297,6 +297,55 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
+    public void ContinuationMetadata_StoredInRegistry_DoesNotCreateReusableParseOutcome()
+    {
+        var registry = new ParserStateRegistry();
+        var invocation = new RuleInvocationKey("start", 0, 0);
+
+        Assert.IsTrue(registry.AddContinuation(invocation, new ContinuationKey("start", 0, 0, 1, 0)));
+        Assert.IsFalse(registry.TryGetReusableResult(invocation, out _));
+
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("A"))
+            ]));
+        var parser = new ParserEngine(CreateDefinition(startRule, LexerRule("A", "a")));
+
+        var parseResult = parser.Parse([Token("A", "a")]);
+
+        Assert.IsInstanceOfType<ParserNode>(parseResult);
+    }
+
+    [TestMethod]
+    public void ContinuationMetadata_DoesNotAuthorizeReplayOrResumability()
+    {
+        var invocation = new RuleInvocationKey("expr", 0, 0);
+        var continuation = new ContinuationKey("expr", 0, 0, 1, 0);
+        var registry = new ParserStateRegistry();
+
+        Assert.IsTrue(registry.AddContinuation(invocation, continuation));
+        Assert.IsFalse(registry.TryGetReusableResult(invocation, out _));
+
+        var continuations = registry.GetContinuations(invocation);
+        Assert.AreEqual(1, continuations.Count);
+        Assert.AreEqual(continuation, continuations[0]);
+    }
+
+    [TestMethod]
+    public void ContinuationIdentity_DoesNotImplySemanticRuntimeEquivalence()
+    {
+        var continuation = new ContinuationKey("expr", 0, 1, 4, 0);
+        var firstResult = new ParserRuleResult(new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "first"), 4, false);
+        var secondResult = new ParserRuleResult(new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "second"), 4, false);
+
+        Assert.AreEqual(continuation, new ContinuationKey("expr", 0, 1, 4, 0));
+        Assert.AreNotEqual(((ErrorNode)firstResult.Node!).Message, ((ErrorNode)secondResult.Node!).Message);
+    }
+
+    [TestMethod]
     public void ActiveParseState_ContinuationMetadata_IsDescriptiveOnly()
     {
         var state = new ActiveParseState
