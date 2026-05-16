@@ -74,6 +74,24 @@ Current diagnostics behavior is intentionally conservative:
 Local branch diagnostics are descriptive runtime context and do not automatically become global parse failure diagnostics.
 Compatibility diagnostics (unsupported or parsed-only ANTLR4 capabilities) are independent from branch success/failure and may coexist with successful parse outcomes.
 
+## Lookahead limitations and fallback-to-parse contract
+
+Current lookahead behavior is intentionally conservative and shallow.
+
+- Lookahead probing is first-token-oriented and does not perform deep parser-rule simulation.
+- Parser-rule references in lookahead remain advisory and may return `Unknown`.
+- Epsilon-sensitive shapes may produce `Unknown`/`EpsilonPossible` to avoid over-claiming acceptance.
+- Predicates are never evaluated by lookahead as parse-authoritative evidence.
+- Parser actions are never executed by lookahead as parse-authoritative evidence.
+- Lookahead is semantic-state-agnostic and does not model external mutable runtime state.
+
+Fallback semantics:
+
+- `ImmediateReject` can be used as deterministic local reject evidence in allowed scheduler/executor contexts.
+- `RequiresParse`, `Unknown`, and `EpsilonPossible` are parse-required outcomes.
+- Ambiguous or parser-rule-dependent outcomes must defer to real parsing.
+- Cached lookahead entries are reusable advisory metadata only and do not replace parse execution.
+
 ## 1) Parameters and `returns`: parsed and preserved as metadata
 
 The grammar ingestion pipeline supports ANTLR4-style rule signatures such as:

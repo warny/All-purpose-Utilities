@@ -218,6 +218,32 @@ public class ParserLookaheadProbeTests
     }
 
     [TestMethod]
+    public void Probe_Sequence_WithPredicateThenLiteral_RemainsUnknown()
+    {
+        var sequence = new Sequence([
+            new GatingPredicate("isEnabled"),
+            new LiteralMatch("go")
+        ]);
+
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("go"), static _ => null, false);
+
+        Assert.AreEqual(ParserLookaheadProbeKind.Unknown, result.Kind);
+    }
+
+    [TestMethod]
+    public void Probe_Sequence_WithActionThenLiteral_RemainsRequiresParse()
+    {
+        var sequence = new Sequence([
+            new EmbeddedAction("mark", ActionContext.Alternative, ActionPosition.Inline, []),
+            new LiteralMatch("go")
+        ]);
+
+        var result = new ParserLookaheadProbe().Probe(CreateAlternative(sequence), TokenWithText("go"), static _ => null, false);
+
+        Assert.AreEqual(ParserLookaheadProbeKind.RequiresParse, result.Kind);
+    }
+
+    [TestMethod]
     public void Probe_NestedAlternation_ReturnsUnknown()
     {
         var nested = new Alternation([new Alternative(0, Associativity.Left, new LiteralMatch("x"), null)]);

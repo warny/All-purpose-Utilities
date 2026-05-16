@@ -41,14 +41,50 @@ namespace Utils.Parser.Runtime;
 /// </remarks>
 public sealed class ParserEngine
 {
+    /// <summary>
+    /// Parser definition that provides grammar rules, root rule, and runtime metadata.
+    /// </summary>
     private readonly ParserDefinition _definition;
+
+    /// <summary>
+    /// Active recursion-guard frame set used to prevent re-entering the same rule at the same input position.
+    /// </summary>
     private readonly HashSet<ParserFrameKey> _activeRuleFrames = new();
+
+    /// <summary>
+    /// Indicates whether parser token/literal matching is performed using case-insensitive comparison.
+    /// </summary>
     private readonly bool _caseInsensitive;
+
+    /// <summary>
+    /// Registry for visited states and reusable per-invocation parse outcomes.
+    /// </summary>
     private readonly ParserStateRegistry _stateRegistry = new();
+
+    /// <summary>
+    /// Sequential alternative-orchestration component used for local branch scheduling.
+    /// </summary>
     private readonly AlternativeScheduler _alternativeScheduler;
+    /// <summary>
+    /// Look-ahead cache scoped to a single parse execution.
+    /// Stored entries are advisory probe metadata and do not alter engine-owned parse authority
+    /// or trailing-token final validation.
+    /// </summary>
     private readonly ParserLookaheadCache _lookaheadCache = new();
+
+    /// <summary>
+    /// Local alternative-execution coordinator used by scheduling flow.
+    /// </summary>
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
+
+    /// <summary>
+    /// Policy component used to evaluate semantic predicates under runtime feature constraints.
+    /// </summary>
     private readonly ISemanticPredicateEvaluator _semanticPredicateEvaluator;
+
+    /// <summary>
+    /// Policy component used to handle parser embedded actions under runtime feature constraints.
+    /// </summary>
     private readonly IParserActionExecutor _parserActionExecutor;
 
     /// <summary>
