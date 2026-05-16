@@ -137,6 +137,10 @@ public class ParserDiagnosticsTests
     }
 
     [TestMethod]
+    /// <summary>
+    /// Verifies that backtracking diagnostics remain orchestration-oriented and do not
+    /// escalate to parse-failure diagnostics when the final parse succeeds.
+    /// </summary>
     public void ParserEngine_BacktrackingDiagnostic_RemainsOrchestrationOnly_OnSuccessfulParse()
     {
         var diagnostics = new DiagnosticBag();
@@ -170,6 +174,10 @@ public class ParserDiagnosticsTests
     }
 
     [TestMethod]
+    /// <summary>
+    /// Verifies that unsupported-feature compatibility diagnostics remain observable
+    /// independently of final parse success.
+    /// </summary>
     public void UnsupportedFeatureDiagnostic_SurvivesIndependently_FromRuntimeParseOutcome()
     {
         var diagnostics = new DiagnosticBag();
