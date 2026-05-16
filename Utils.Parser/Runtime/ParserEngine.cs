@@ -65,9 +65,11 @@ public sealed class ParserEngine
     /// Sequential alternative-orchestration component used for local branch scheduling.
     /// </summary>
     private readonly AlternativeScheduler _alternativeScheduler;
-    // Look-ahead cache ownership boundary:
-    // cache entries are advisory probe metadata scoped to one Parse invocation.
-    // They do not alter engine-owned parse authority or trailing-token final validation.
+    /// <summary>
+    /// Look-ahead cache scoped to a single parse execution.
+    /// Stored entries are advisory probe metadata and do not alter engine-owned parse authority
+    /// or trailing-token final validation.
+    /// </summary>
     private readonly ParserLookaheadCache _lookaheadCache = new();
 
     /// <summary>
