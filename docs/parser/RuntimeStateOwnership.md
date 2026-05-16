@@ -42,6 +42,26 @@ Non-engine components may assist the engine but do not replace these decisions.
 - It does not provide global parse authority.
 - It does not provide transactional isolation.
 - It does not provide rollback or replay.
+- It can use lookahead for conservative local shortcut rejection only.
+- It cannot accept alternatives based on lookahead-only outcomes.
+
+## Lookahead authority and ownership (current model)
+
+Lookahead is intentionally split across three components with explicit boundaries:
+
+- `ParserLookaheadProbe`
+  - Computes shallow, first-token-oriented observations only.
+  - Can authoritatively conclude `ImmediateReject` when deterministic mismatch is observed.
+  - Cannot authoritatively conclude parse success.
+- `ParserLookaheadCache`
+  - Stores probe observations as runtime metadata for reuse in the same parse execution.
+  - Does not own parse acceptance/rejection decisions.
+  - Does not imply semantic equivalence between branches.
+- `ParserEngine` (through scheduled execution)
+  - Owns final parse acceptance and all branch confirmation.
+  - Uses lookahead as advisory input only.
+
+Authoritative parse acceptance always requires real parsing in engine-owned execution paths.
 
 ## State ownership
 

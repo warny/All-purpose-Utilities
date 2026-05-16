@@ -8,6 +8,8 @@ namespace Utils.Parser.Runtime;
 /// in runtime components owned by <see cref="ParserEngine"/>.
 /// This executor is local and non-authoritative: it does not provide global parse authority,
 /// rollback safety, transactional isolation, or replay semantics.
+/// Look-ahead data (live probe or cached result) is advisory orchestration metadata:
+/// it can only support conservative shortcut rejection paths and never directly accept a branch.
 /// It may propagate branch-local diagnostics through callback outputs, but final diagnostic authority
 /// remains in <see cref="ParserEngine"/>.
 /// Its role is bounded coordination between <see cref="AlternativeScheduler"/>,
@@ -82,6 +84,9 @@ internal sealed class ScheduledAlternativeExecutor
             }
         }
 
+        // Authoritative shortcut boundary:
+        // look-ahead can reject immediately when deterministic first-token mismatch is observed,
+        // but it cannot accept a branch. Any non-reject outcome requires real parsing.
         if (allowNegativeShortcut
             && effectiveLookahead.Kind == ParserLookaheadProbeKind.ImmediateReject)
         {

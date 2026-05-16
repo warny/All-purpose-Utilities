@@ -9,6 +9,7 @@ namespace Utils.Parser.Runtime;
 /// parser-graph execution, replay, or speculative execution.
 /// It can mark states as pruned for local orchestration purposes only; pruning is not a syntax verdict.
 /// Parse acceptance remains decided by <see cref="ParserEngine"/>.
+/// Look-ahead observations transported by this scheduler remain advisory metadata and do not authorize branch acceptance.
 /// </summary>
 internal sealed class AlternativeScheduler
 {

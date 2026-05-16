@@ -4,6 +4,8 @@ namespace Utils.Parser.Runtime;
 /// Caches lightweight scheduled-alternative look-ahead observations for the current parse execution.
 /// Entries are syntax-oriented probe metadata only and are independent from semantic runtime state,
 /// parser action side effects, replay frames, and rollback mechanisms.
+/// Cached values are advisory: they may inform conservative shortcut rejection, but they never
+/// own parse acceptance and never replace authoritative parse execution in <see cref="ParserEngine"/>.
 /// </summary>
 internal sealed class ParserLookaheadCache
 {

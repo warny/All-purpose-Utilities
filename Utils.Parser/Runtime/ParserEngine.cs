@@ -46,6 +46,9 @@ public sealed class ParserEngine
     private readonly bool _caseInsensitive;
     private readonly ParserStateRegistry _stateRegistry = new();
     private readonly AlternativeScheduler _alternativeScheduler;
+    // Look-ahead cache ownership boundary:
+    // cache entries are advisory probe metadata scoped to one Parse invocation.
+    // They do not alter engine-owned parse authority or trailing-token final validation.
     private readonly ParserLookaheadCache _lookaheadCache = new();
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
     private readonly ISemanticPredicateEvaluator _semanticPredicateEvaluator;

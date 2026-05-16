@@ -8,6 +8,9 @@ namespace Utils.Parser.Runtime;
 /// or consult external semantic runtime state.
 /// It is syntax-oriented only and does not execute parser rules speculatively,
 /// traverse parser graphs semantically, or run continuation metadata.
+/// Probe results are advisory metadata consumed by orchestration components.
+/// This probe can only provide deterministic immediate-reject evidence; all non-reject outcomes
+/// remain parse-required and must be confirmed by authoritative parser execution.
 /// </summary>
 internal sealed class ParserLookaheadProbe
 {
@@ -65,7 +68,8 @@ internal sealed class ParserLookaheadProbe
 
     /// <summary>
     /// Probes a rule reference when the target is a lexer rule.
-    /// Parser rule references always return Unknown because they may accept empty input.
+    /// Parser-rule references always return Unknown to preserve conservative fallback-to-parse behavior:
+    /// parser rules may accept empty input and may depend on deeper structure that shallow probing cannot prove.
     /// </summary>
     private static ParserLookaheadProbeResult ProbeRuleReference(
         RuleRef ruleRef,

@@ -216,6 +216,14 @@ Forbidden work:
 - evaluating predicates during lookahead,
 - executing actions during lookahead.
 
+Current clarification status:
+
+- lookahead ownership boundaries are explicit (`ParserLookaheadProbe` / `ParserLookaheadCache` / engine authority),
+- advisory vs authoritative lookahead outcomes are explicitly documented,
+- fallback-to-parse behavior is documented for `RequiresParse`, `Unknown`, and ambiguous/epsilon-sensitive outcomes,
+- cache semantics are explicit as metadata-only and non-authoritative,
+- invariant tests cover conservative behavior for parser-rule references, predicates/actions, and ambiguous shallow outcomes.
+
 ### Phase 4 — Shared-prefix metadata maturity
 
 Goal: improve shared-prefix metadata quality without activating execution.
