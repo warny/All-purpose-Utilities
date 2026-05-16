@@ -117,6 +117,28 @@ Used to coordinate execution attempts:
 - `ParentStateKey` is lineage metadata, not an execution stack.
 - `Depth` is descriptive lineage depth, not semantic frame depth.
 
+
+## Continuation metadata ownership and lifecycle (current runtime)
+
+Continuation structures (`ContinuationKey`, `ParserContinuationKey`, `ParserContinuationDescriptor`, and `ActiveParseState.Continuation`) are metadata-only.
+
+Ownership and authority boundaries:
+
+- `ParserEngine` remains final authority for parse acceptance, diagnostics, and parse-tree outcomes.
+- `ActiveParseState` can attach continuation metadata for branch-local observability only.
+- `ParserStateRegistry` can transport continuation metadata grouped by invocation key.
+- Neither attachment nor transport grants replay, resumability, frame restoration, rollback safety, or semantic equivalence.
+
+Lifecycle (current behavior only):
+
+1. **Production**: shallow continuation identities/descriptors may be produced from rule/alternative/cursor context.
+2. **Attachment**: branch-local state may attach `ContinuationKey` in `ActiveParseState`.
+3. **Transport**: registry may store/retrieve continuation keys per invocation identity.
+4. **Observation/reuse**: callers may inspect metadata for diagnostics, formatting, or auditability.
+5. **Discardability**: metadata can be removed or ignored without changing parse-authoritative outcomes.
+
+Continuations are therefore independent from parse authority and independent from diagnostics authority.
+
 ## Metadata-only boundaries
 
 The following remain metadata-only and non-executable:

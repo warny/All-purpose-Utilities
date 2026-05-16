@@ -103,6 +103,33 @@ Fallback semantics:
 - Ambiguous or parser-rule-dependent outcomes must defer to real parsing.
 - Cached lookahead entries are reusable advisory metadata only and do not replace parse execution.
 
+
+## Continuation metadata model (current, metadata-only)
+
+Current continuation infrastructure is intentionally descriptive.
+
+Explicit non-authority guarantees:
+
+- continuation metadata does not own parse acceptance;
+- continuation metadata does not own branch selection;
+- continuation metadata does not authorize replay;
+- continuation metadata does not authorize continuation execution;
+- continuation metadata does not authorize resumable parsing;
+- continuation metadata does not authorize frame restoration;
+- continuation metadata does not establish semantic equivalence;
+- continuation metadata does not imply rollback safety.
+
+Current structural limitations:
+
+- no continuation execution runtime;
+- no continuation replay runtime;
+- no parser frame restoration runtime;
+- no semantic-state restoration model;
+- no replay-safe side-effect model;
+- no continuation scheduling/execution graph semantics.
+
+These are current runtime facts, not temporary promises.
+
 ## 1) Parameters and `returns`: parsed and preserved as metadata
 
 The grammar ingestion pipeline supports ANTLR4-style rule signatures such as:

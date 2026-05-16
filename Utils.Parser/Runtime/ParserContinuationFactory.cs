@@ -4,6 +4,7 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Creates structural parser continuation metadata descriptors.
+/// Produced descriptors are transport metadata only and never executable parser runtime frames.
 /// </summary>
 internal sealed class ParserContinuationFactory
 {
@@ -43,6 +44,7 @@ internal sealed class ParserContinuationFactory
 
     /// <summary>
     /// Creates a continuation descriptor from shallow rule/alternative location metadata.
+    /// The output is observational metadata and can be discarded without changing parse-authoritative outcomes.
     /// </summary>
     /// <param name="rule">Owning rule for the continuation point.</param>
     /// <param name="alternative">Owning alternative for the continuation point.</param>
