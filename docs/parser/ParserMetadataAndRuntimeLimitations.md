@@ -351,51 +351,20 @@ The default policy remains conservative and unchanged:
 
 Existing constructors that accept `ISemanticPredicateEvaluator` and/or `IParserActionExecutor` are still supported and internally normalized to the runtime policy object.
 
-
 ## Metadata lifecycle and observability model
 
-The current runtime uses a strict metadata lifecycle with four phases:
+For the detailed lifecycle contract (production, transport, observation, discard) and
+component-by-component ownership boundaries, see:
 
-1. **Production**: metadata is produced by runtime components while parsing is orchestrated (scheduler observations, lookahead probes, continuation descriptors, shared-prefix plans, pruning annotations).
-2. **Transport**: metadata is transported through runtime containers (`ActiveParseState`, scheduler results, and `ParserStateRegistry`) to keep orchestration deterministic and auditable.
-3. **Observation**: metadata is inspectable by tests, diagnostics plumbing, and formatting/analysis helpers.
-4. **Discard**: metadata can be ignored or removed without changing parser correctness.
+- [`RuntimeStateOwnership.md`](./RuntimeStateOwnership.md#metadata-lifecycle-and-observability-model)
 
-Ownership boundaries in this lifecycle are explicit:
+This document keeps only the limitations/non-authority angle:
 
-- `ParserEngine` is parse-authoritative (acceptance, parse-tree result, final diagnostics authority).
-- `AlternativeScheduler` owns deterministic orchestration and orchestration-local metadata aggregation.
-- `ParserStateRegistry` owns invocation-local reuse tracking plus metadata transport storage (continuations and related descriptors).
-- `ActiveParseState` owns branch-local descriptive state transport.
-- Continuation metadata, shared-prefix metadata, and lookahead metadata are descriptive artifacts only.
+- metadata remains descriptive, not parse-authoritative;
+- metadata may inform orchestration visibility, but cannot finalize parse acceptance;
+- metadata cannot independently finalize diagnostics authority;
+- metadata reuse is not semantic equivalence evidence;
+- metadata presence does not imply replay, rollback, or resumability;
+- metadata grouping does not grant branch-merge permission;
+- metadata remains discardable without changing parser correctness.
 
-Observability contract:
-
-- Observable metadata includes scheduler metadata, pruning metadata, continuation metadata, lookahead probe metadata, and shared-prefix metadata.
-- Observable does **not** mean authoritative: metadata can be inspected, tested, and used to guide orchestration, but it cannot override parse-authoritative execution.
-
-Non-authority guarantees:
-
-- metadata is descriptive, not parse-authoritative;
-- metadata may influence orchestration ordering/visibility only;
-- metadata must not independently finalize parse acceptance;
-- metadata must not independently finalize diagnostics authority;
-- metadata must not imply semantic equivalence;
-- metadata transport is not execution ownership.
-
-Discardability invariants:
-
-Removing metadata must not change:
-
-- parse-tree shape,
-- syntax validity,
-- parse acceptance,
-- diagnostics authority ownership,
-- semantic behavior.
-
-Additional clarifications that must remain true:
-
-- metadata reuse != semantic equivalence;
-- metadata presence != replay capability;
-- metadata presence != resumability or rollback support;
-- metadata grouping != branch merge permission.
