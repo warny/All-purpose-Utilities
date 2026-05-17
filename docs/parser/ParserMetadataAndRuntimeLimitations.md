@@ -350,3 +350,21 @@ The default policy remains conservative and unchanged:
 - inline parser actions use `DefaultParserActionExecutor` and are reported as not executed.
 
 Existing constructors that accept `ISemanticPredicateEvaluator` and/or `IParserActionExecutor` are still supported and internally normalized to the runtime policy object.
+
+## Metadata lifecycle and observability model
+
+For the detailed lifecycle contract (production, transport, observation, discard) and
+component-by-component ownership boundaries, see:
+
+- [`RuntimeStateOwnership.md`](./RuntimeStateOwnership.md#metadata-lifecycle-and-observability-model)
+
+This document keeps only the limitations/non-authority angle:
+
+- metadata remains descriptive, not parse-authoritative;
+- metadata may inform orchestration visibility, but cannot finalize parse acceptance;
+- metadata cannot independently finalize diagnostics authority;
+- metadata reuse is not semantic equivalence evidence;
+- metadata presence does not imply replay, rollback, or resumability;
+- metadata grouping does not grant branch-merge permission;
+- metadata remains discardable without changing parser correctness.
+

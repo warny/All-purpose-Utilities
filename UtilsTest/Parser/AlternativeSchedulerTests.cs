@@ -137,6 +137,39 @@ public class AlternativeSchedulerTests
         Assert.AreEqual(1, result.PrunedStates.Count);
     }
 
+
+    [TestMethod]
+    public void Run_MetadataProbeDifferences_DoNotChangeSelectedState()
+    {
+        var scheduler = new AlternativeScheduler();
+        var (context, rule, alternatives) = CreateAlternatives();
+
+        var withMetadata = scheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 5 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
+
+        var withoutMetadata = scheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 5 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        Assert.IsNotNull(withMetadata.SelectedState);
+        Assert.IsNotNull(withoutMetadata.SelectedState);
+        Assert.AreEqual(withMetadata.SelectedState.CurrentInputPosition, withoutMetadata.SelectedState.CurrentInputPosition);
+        Assert.AreEqual(withMetadata.SelectedState.AlternativeIndex, withoutMetadata.SelectedState.AlternativeIndex);
+    }
+
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
     {
         var a = new Alternative(2, Associativity.Left, new LiteralMatch("a"), "A");
