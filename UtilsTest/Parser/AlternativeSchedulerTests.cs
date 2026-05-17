@@ -170,6 +170,63 @@ public class AlternativeSchedulerTests
         Assert.AreEqual(withMetadata.SelectedState.AlternativeIndex, withoutMetadata.SelectedState.AlternativeIndex);
     }
 
+    [TestMethod]
+    public void Run_DeterministicSelection_UsesLengthThenPriorityThenAlternativeIndex()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(4, Associativity.Left, new LiteralMatch("a"), "A"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "A"),
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "A")
+        ]));
+        var context = new ParseContext([]);
+
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => index switch
+            {
+                0 => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 10, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)),
+                1 => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 12, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)),
+                _ => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 12, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null))
+            });
+
+        Assert.IsNotNull(result.SelectedState);
+        Assert.AreEqual(12, result.SelectedState.CurrentInputPosition);
+        Assert.AreEqual(1, result.SelectedState.Alternative.Priority);
+        Assert.AreEqual(1, result.SelectedState.AlternativeIndex);
+    }
+
+    [TestMethod]
+    public void Run_PrunedStatesAssertions_AreMembershipBased_NotOrderBased()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X"),
+            new Alternative(2, Associativity.Left, new LiteralMatch("a"), "X"),
+            new Alternative(3, Associativity.Left, new LiteralMatch("a"), "Y")
+        ]));
+        var context = new ParseContext([]);
+
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 8, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
+
+        Assert.AreEqual(1, result.PrunedStates.Count);
+        Assert.IsTrue(result.PrunedStates.All(static state => state.Status == ActiveParseStateStatus.Pruned));
+        Assert.IsTrue(result.CompletedStates.Any(static state => state.Alternative.Label == "X"));
+        Assert.IsTrue(result.CompletedStates.Any(static state => state.Alternative.Label == "Y"));
+    }
+
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
     {
         var a = new Alternative(2, Associativity.Left, new LiteralMatch("a"), "A");
@@ -205,4 +262,3 @@ public class AlternativeSchedulerTests
         };
     }
 }
-

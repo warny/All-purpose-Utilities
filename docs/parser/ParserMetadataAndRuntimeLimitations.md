@@ -368,3 +368,53 @@ This document keeps only the limitations/non-authority angle:
 - metadata grouping does not grant branch-merge permission;
 - metadata remains discardable without changing parser correctness.
 
+## Deterministic runtime observability model (limitations view)
+
+This limitations-oriented view aligns with `RuntimeStateOwnership.md` and avoids introducing new runtime guarantees.
+
+### Authoritative runtime behavior (owned by parse authority)
+
+Authoritative/stable boundaries remain:
+
+- parse acceptance/rejection,
+- parse-tree outcome authority,
+- final diagnostics authority,
+- deterministic correctness from real parser execution,
+- documented invocation reuse behavior in `ParserStateRegistry`.
+
+### Observable orchestration behavior (testable, non-authoritative)
+
+Observable/runtime-analysis artifacts include:
+
+- scheduler metadata,
+- pruning metadata/diagnostics,
+- continuation/shared-prefix metadata,
+- lookahead probe observations,
+- branch grouping observations,
+- completed-state and related orchestration collections.
+
+Observable does not mean parse-authoritative.
+
+### Non-contractual implementation details
+
+Unless explicitly documented, the following are implementation details:
+
+- internal iteration/traversal details,
+- internal metadata grouping/storage shape,
+- local container/layout choices,
+- incidental ordering of internal collections.
+
+Tests should prefer structural equivalence and membership/group assertions over undocumented ordering assertions.
+
+### Explicit ordering semantics boundary
+
+Currently deterministic where documented:
+
+- alternative scheduling by priority,
+- local candidate comparison order (longest consumed input, then lower priority value, then lower alternative index).
+
+Not guaranteed:
+
+- incidental dictionary/set traversal order,
+- incidental internal metadata collection order,
+- undocumented internal grouping traversal order.
