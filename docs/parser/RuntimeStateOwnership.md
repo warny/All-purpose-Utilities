@@ -139,6 +139,23 @@ Lifecycle (current behavior only):
 
 Continuations are therefore independent from parse authority and independent from diagnostics authority.
 
+## Parser identity and registry reuse boundaries
+
+Parser runtime identities are intentionally split by ownership purpose and must remain distinct.
+
+- `ParserStateKey` is for visited-state tracking and duplicate state-entry prevention.
+- `RuleInvocationKey` is for invocation-local completed-result reuse.
+- `ContinuationKey` is descriptive continuation metadata only.
+- `ActiveParseStateKey` is scheduling/local-state identity for branch-local transport.
+- `ActiveParseBranchEquivalenceKey` is pruning/orchestration identity for conservative branch grouping.
+
+These identities must not be collapsed into one semantic identity.
+
+Additional invariants:
+
+- Continuation metadata must not affect reusable parse-result selection.
+- Reusable parse results are invocation-local reuse artifacts and are not final parse acceptance authority.
+
 ## Metadata-only boundaries
 
 The following remain metadata-only and non-executable:
