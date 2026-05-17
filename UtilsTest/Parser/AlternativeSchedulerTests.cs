@@ -110,6 +110,33 @@ public class AlternativeSchedulerTests
         Assert.IsTrue(result.CompletedStates.All(s => s.ToStateKey(7).MinimumPrecedence == 7));
     }
 
+    [TestMethod]
+    public void Run_BranchEquivalence_IgnoresPriorityAndContinuationMetadata()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
+            new Alternative(9, Associativity.Left, new LiteralMatch("a"), "X")
+        ]));
+        var context = new ParseContext([]);
+
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: context.Position,
+            minimumPrecedence: 2,
+            diagnostics: null,
+            parseAlternative: (alternative, index) =>
+            {
+                var state = CreateState(rule, alternative, context.Position, 4, index)
+                    .WithContinuation(new ContinuationKey(rule.Name, index, 0, 4 + index, 2));
+                return new ScheduledAlternativeExecutionResult(state, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"]));
+            });
+
+        Assert.AreEqual(1, result.CompletedStates.Count, "Equivalent pruning key should keep a single branch.");
+        Assert.AreEqual(1, result.PrunedStates.Count);
+    }
+
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
     {
         var a = new Alternative(2, Associativity.Left, new LiteralMatch("a"), "A");
@@ -145,5 +172,4 @@ public class AlternativeSchedulerTests
         };
     }
 }
-
 

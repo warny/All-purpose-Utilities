@@ -57,7 +57,8 @@ internal sealed class AlternativeScheduler
             return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
         }
 
-        // Deduplication keeps the strongest local completion for one structural state identity.
+        // Deduplication uses scheduling identity (ActiveParseStateKey) and is intentionally
+        // separate from pruning equivalence (ActiveParseBranchEquivalenceKey).
         // This is not the final parse selection contract; it only reduces equivalent local candidates.
         var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
         // Pruning is an orchestration optimization only; it is not a syntax-validity verdict.
@@ -216,6 +217,7 @@ internal sealed class AlternativeScheduler
         // two branches are mergeable only when HasDistinctSemantics reports no potential semantic divergence.
         // This equivalence is structural/orchestration-oriented and intentionally conservative;
         // it does not claim semantic-runtime equivalence beyond current heuristics.
+        // Branch equivalence and invocation-result reuse are separate identity systems.
         // If distinct semantics are possible, both branches must be preserved.
         var groups = new Dictionary<ActiveParseBranchEquivalenceKey, List<ActiveParseState>>();
         foreach (var state in states)

@@ -106,6 +106,17 @@ public class ActiveParseStateTests
     }
 
     [TestMethod]
+    public void ActiveParseState_ToBranchEquivalenceKey_DifferentCursorKindOrIndex_ProduceDifferentKeys()
+    {
+        var baseline = CreateActiveState(priority: 1, cursorIndex: 0, alternativeIndex: 0, currentPosition: 10).Complete(10);
+        var differentIndex = baseline with { Cursor = new RuleContentCursor { Kind = baseline.Cursor.Kind, Index = 1 } };
+        var differentKind = baseline with { Cursor = new RuleContentCursor { Kind = "rule-ref", Index = baseline.Cursor.Index } };
+
+        Assert.AreNotEqual(baseline.ToBranchEquivalenceKey(), differentIndex.ToBranchEquivalenceKey());
+        Assert.AreNotEqual(baseline.ToBranchEquivalenceKey(), differentKind.ToBranchEquivalenceKey());
+    }
+
+    [TestMethod]
     public void ActiveParseState_ToBranchEquivalenceKey_DifferentLabels_SameShapeKey_NotPruned()
     {
         // States with different labels must map to the same shape key so that

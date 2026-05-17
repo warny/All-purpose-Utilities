@@ -139,22 +139,45 @@ Lifecycle (current behavior only):
 
 Continuations are therefore independent from parse authority and independent from diagnostics authority.
 
-## Parser identity and registry reuse boundaries
+## Runtime identity and equivalence model
 
 Parser runtime identities are intentionally split by ownership purpose and must remain distinct.
 
-- `ParserStateKey` is for visited-state tracking and duplicate state-entry prevention.
-- `RuleInvocationKey` is for invocation-local completed-result reuse.
-- `ContinuationKey` is descriptive continuation metadata only.
-- `ActiveParseStateKey` is scheduling/local-state identity for branch-local transport.
-- `ActiveParseBranchEquivalenceKey` is pruning/orchestration identity for conservative branch grouping.
+- `ParserStateKey`:
+  - visited-state tracking identity only.
+- `RuleInvocationKey`:
+  - invocation-local reusable completion identity only.
+- `ContinuationKey`:
+  - metadata transport identity only.
+- `ActiveParseStateKey`:
+  - local scheduling/deduplication identity only.
+- `ActiveParseBranchEquivalenceKey`:
+  - pruning/orchestration grouping identity only.
 
-These identities must not be collapsed into one semantic identity.
+These identities are intentionally non-equivalent:
+
+- none imply semantic equivalence;
+- none imply replay safety;
+- none imply rollback safety;
+- none imply branch merge safety;
+- none imply semantic-state equivalence.
+
+Critical boundary comparisons:
+
+- scheduling deduplication identity (`ActiveParseStateKey`) **!=** pruning equivalence identity (`ActiveParseBranchEquivalenceKey`);
+- pruning equivalence **!=** reusable invocation result identity (`RuleInvocationKey`);
+- reusable invocation identity **!=** parse acceptance identity (`ParserEngine` authority).
+
+Why multiple identities exist:
+
+- each runtime layer owns different decisions (visited-state tracking, invocation reuse, local scheduling, local pruning);
+- collapsing identities would over-claim equivalence and could silently break conservative runtime guarantees.
 
 Additional invariants:
 
-- Continuation metadata must not affect reusable parse-result selection.
-- Reusable parse results are invocation-local reuse artifacts and are not final parse acceptance authority.
+- continuation metadata must not affect pruning grouping;
+- continuation metadata must not affect reusable parse-result selection;
+- reusable parse results are invocation-local reuse artifacts and are not final parse acceptance authority.
 
 ## Metadata-only boundaries
 
