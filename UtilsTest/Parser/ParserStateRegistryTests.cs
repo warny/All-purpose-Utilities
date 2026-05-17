@@ -264,4 +264,24 @@ public class ParserStateRegistryTests
 
         Assert.IsFalse(registry.TryGetReusableResult(invocation, out _));
     }
+
+    /// <summary>
+    /// Ensures continuation metadata does not influence reusable result selection order.
+    /// </summary>
+    [TestMethod]
+    public void Registry_Memoization_ContinuationMetadata_DoesNotInfluenceReusableSelection()
+    {
+        var registry = new ParserStateRegistry();
+        var invocation = new RuleInvocationKey("expr", 0, 0);
+        var expectedNode = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "expected");
+
+        registry.AddContinuation(invocation, new ContinuationKey("expr", 0, 1, 2, 0));
+        registry.AddContinuation(invocation, new ContinuationKey("expr", 1, 3, 4, 0));
+        registry.AddCompletedResult(invocation, new ParserRuleResult(expectedNode, 5, false));
+
+        Assert.IsTrue(registry.TryGetReusableResult(invocation, out var reusable));
+        Assert.IsFalse(reusable.IsFailure);
+        Assert.AreEqual(5, reusable.EndPosition);
+        Assert.AreSame(expectedNode, reusable.Node);
+    }
 }

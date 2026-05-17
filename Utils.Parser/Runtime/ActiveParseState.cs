@@ -12,6 +12,9 @@ internal readonly record struct ActiveParseStateKey(
     string CursorKind,
     int MinimumPrecedence,
     ContinuationKey? Continuation);
+// Scheduling identity only:
+// this key is intentionally richer than pruning identity because deduplication must preserve
+// local execution-shape differences (for example continuation metadata and precedence context).
 
 internal readonly record struct ActiveParseBranchEquivalenceKey(
     string RuleName,
@@ -19,6 +22,9 @@ internal readonly record struct ActiveParseBranchEquivalenceKey(
     int CurrentOrEndPosition,
     string CursorKind,
     int CursorIndex);
+// Pruning/orchestration grouping identity only:
+// this key intentionally excludes scheduler-local dimensions (for example alternative priority
+// and continuation metadata) and must not be interpreted as semantic equivalence evidence.
 
 internal enum ActiveParseStateStatus
 {

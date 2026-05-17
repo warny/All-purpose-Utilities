@@ -26,6 +26,10 @@ internal sealed class ParserStateRegistry
     }
 
     /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>
+    /// <remarks>
+    /// <see cref="ParserStateKey"/> is visited-state tracking identity only.
+    /// It is intentionally independent from local scheduler identity and pruning equivalence identity.
+    /// </remarks>
     public bool TryEnterState(ParserStateKey key) => _visitedStates.Add(key);
 
     /// <summary>
@@ -46,6 +50,7 @@ internal sealed class ParserStateRegistry
     /// <summary>
     /// Adds a completed result for a shared rule invocation.
     /// Stored outcomes are invocation-local reuse artifacts and do not transfer global parse-authority ownership.
+    /// Reuse identity (<see cref="RuleInvocationKey"/>) is intentionally independent from pruning/scheduling identities.
     /// </summary>
     public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result)
     {
