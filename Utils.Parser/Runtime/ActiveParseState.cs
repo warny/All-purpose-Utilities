@@ -7,6 +7,15 @@ namespace Utils.Parser.Runtime;
 /// This key is intentionally richer than pruning identity because scheduler deduplication
 /// must preserve local execution-shape differences (for example continuation metadata and precedence context).
 /// </summary>
+/// <param name="RuleName">Rule name associated with the local scheduled state.</param>
+/// <param name="OriginInputPosition">Input position where the rule invocation started.</param>
+/// <param name="CurrentInputPosition">Current input position reached by this local state.</param>
+/// <param name="AlternativeIndex">Alternative index in scheduler traversal order.</param>
+/// <param name="AlternativePriority">Alternative priority value used by deterministic ordering.</param>
+/// <param name="CursorIndex">Cursor index in the alternative content.</param>
+/// <param name="CursorKind">Cursor kind used to distinguish local traversal shape.</param>
+/// <param name="MinimumPrecedence">Minimum precedence context for this scheduled exploration.</param>
+/// <param name="Continuation">Optional continuation metadata key (transport metadata only).</param>
 internal readonly record struct ActiveParseStateKey(
     string RuleName,
     int OriginInputPosition,
@@ -23,6 +32,11 @@ internal readonly record struct ActiveParseStateKey(
 /// This key intentionally excludes scheduler-local dimensions (for example alternative priority
 /// and continuation metadata) and must not be interpreted as semantic equivalence evidence.
 /// </summary>
+/// <param name="RuleName">Rule name associated with the local branch state.</param>
+/// <param name="OriginInputPosition">Input position where the branch invocation started.</param>
+/// <param name="CurrentOrEndPosition">Current/end position used by structural branch grouping.</param>
+/// <param name="CursorKind">Cursor kind used by branch-equivalence grouping.</param>
+/// <param name="CursorIndex">Cursor index used by branch-equivalence grouping.</param>
 internal readonly record struct ActiveParseBranchEquivalenceKey(
     string RuleName,
     int OriginInputPosition,
