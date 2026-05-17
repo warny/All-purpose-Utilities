@@ -237,6 +237,28 @@ public class ParserStateRegistryTests
         Assert.AreEqual(2, registry.GetCompletedResults(invocation).Count);
     }
 
+
+    [TestMethod]
+    public void Registry_RemovingContinuationMetadata_DoesNotChangeReusableCompletedResult()
+    {
+        var registry = new ParserStateRegistry();
+        var invocation = new RuleInvocationKey("expr", 0, 0);
+        var node = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "result");
+        var continuation = new ContinuationKey("expr", 0, 1, 3, 0);
+
+        registry.AddContinuation(invocation, continuation);
+        registry.AddCompletedResult(invocation, new ParserRuleResult(node, 3, false));
+        Assert.IsTrue(registry.TryGetReusableResult(invocation, out var withMetadata));
+
+        registry.Clear();
+        registry.AddCompletedResult(invocation, new ParserRuleResult(node, 3, false));
+        Assert.IsTrue(registry.TryGetReusableResult(invocation, out var withoutMetadata));
+
+        Assert.AreEqual(withMetadata.EndPosition, withoutMetadata.EndPosition);
+        Assert.AreEqual(withMetadata.IsFailure, withoutMetadata.IsFailure);
+        Assert.AreSame(withMetadata.Node, withoutMetadata.Node);
+    }
+
     /// <summary>
     /// Ensures failure-only invocations return reusable failures.
     /// </summary>
