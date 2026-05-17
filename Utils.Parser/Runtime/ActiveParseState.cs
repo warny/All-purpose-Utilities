@@ -2,6 +2,11 @@ using Utils.Parser.Model;
 
 namespace Utils.Parser.Runtime;
 
+/// <summary>
+/// Scheduling identity only.
+/// This key is intentionally richer than pruning identity because scheduler deduplication
+/// must preserve local execution-shape differences (for example continuation metadata and precedence context).
+/// </summary>
 internal readonly record struct ActiveParseStateKey(
     string RuleName,
     int OriginInputPosition,
@@ -12,19 +17,18 @@ internal readonly record struct ActiveParseStateKey(
     string CursorKind,
     int MinimumPrecedence,
     ContinuationKey? Continuation);
-// Scheduling identity only:
-// this key is intentionally richer than pruning identity because deduplication must preserve
-// local execution-shape differences (for example continuation metadata and precedence context).
 
+/// <summary>
+/// Pruning/orchestration grouping identity only.
+/// This key intentionally excludes scheduler-local dimensions (for example alternative priority
+/// and continuation metadata) and must not be interpreted as semantic equivalence evidence.
+/// </summary>
 internal readonly record struct ActiveParseBranchEquivalenceKey(
     string RuleName,
     int OriginInputPosition,
     int CurrentOrEndPosition,
     string CursorKind,
     int CursorIndex);
-// Pruning/orchestration grouping identity only:
-// this key intentionally excludes scheduler-local dimensions (for example alternative priority
-// and continuation metadata) and must not be interpreted as semantic equivalence evidence.
 
 internal enum ActiveParseStateStatus
 {
