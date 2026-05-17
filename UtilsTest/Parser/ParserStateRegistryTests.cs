@@ -157,14 +157,16 @@ public class ParserStateRegistryTests
     {
         var registry = new ParserStateRegistry();
         var invocation = new RuleInvocationKey("expr", 0, 0);
-        var successNode = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "success");
+        var firstSuccessNode = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "success-1");
+        var secondSuccessNode = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "success-2");
 
         registry.AddCompletedResult(invocation, new ParserRuleResult(null, 0, true));
-        registry.AddCompletedResult(invocation, new ParserRuleResult(successNode, 5, false));
+        registry.AddCompletedResult(invocation, new ParserRuleResult(firstSuccessNode, 5, false));
+        registry.AddCompletedResult(invocation, new ParserRuleResult(secondSuccessNode, 6, false));
 
         Assert.IsTrue(registry.TryGetReusableResult(invocation, out var reusable));
         Assert.IsFalse(reusable.IsFailure);
-        Assert.AreSame(successNode, reusable.Node);
+        Assert.AreSame(firstSuccessNode, reusable.Node);
         Assert.AreEqual(5, reusable.EndPosition);
     }
 
@@ -198,6 +200,9 @@ public class ParserStateRegistryTests
 
         Assert.IsTrue(registry.AddCompletedResult(invocation, result));
         Assert.IsFalse(registry.AddCompletedResult(invocation, result));
+
+        var reconstructedDuplicate = new ParserRuleResult(node, 2, false);
+        Assert.IsFalse(registry.AddCompletedResult(invocation, reconstructedDuplicate));
         Assert.AreEqual(1, registry.GetCompletedResults(invocation).Count);
     }
 
