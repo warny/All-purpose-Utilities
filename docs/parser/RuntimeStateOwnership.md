@@ -32,6 +32,48 @@ The parser runtime is authority-layered.
 - Supporting runtime components provide orchestration, probing, caching, and metadata.
 - Metadata components are descriptive and cannot decide parse outcomes on their own.
 
+## Deterministic runtime observability model
+
+This section clarifies what is intentionally contractual versus what remains implementation-internal.
+
+### A) Authoritative runtime behavior (stable contract)
+
+The following are runtime-authoritative and intentionally stable:
+
+- parse acceptance/rejection ownership (`ParserEngine`),
+- parse-tree result ownership and shape authority (`ParserEngine`),
+- final diagnostics authority and emission ownership (`ParserEngine`),
+- deterministic correctness behavior from real parser execution,
+- invocation reuse semantics documented for `ParserStateRegistry.TryGetReusableResult`,
+- metadata-only boundaries (metadata remains non-execution authority).
+
+These are intended runtime guarantees.
+
+### B) Observable orchestration behavior (non-authoritative but testable)
+
+The following are observable and can be tested as runtime-analysis artifacts:
+
+- scheduler metadata and selected local candidate transport,
+- pruning observations and pruning diagnostics,
+- continuation metadata and shared-prefix plan metadata,
+- lookahead probe observations,
+- branch grouping observations,
+- completed/failed/pruned state collections.
+
+These are intentionally observable for deterministic auditing, but remain non-authoritative.
+
+### C) Non-contractual implementation details (must not be frozen by tests)
+
+The following are intentionally non-contractual unless explicitly documented otherwise:
+
+- internal collection traversal details,
+- internal grouping container layout,
+- metadata storage shape/internal representation,
+- local orchestration implementation structure,
+- incidental ordering not explicitly listed as deterministic.
+
+Tests should avoid relying on these details.
+
 ## Parsing authority
 
 `ParserEngine` remains the authoritative parser execution component.
@@ -333,6 +375,22 @@ Current local comparison uses the following stable ordering:
 3. lower `AlternativeIndex`.
 
 This ordering is used in scheduler deduplication and best-candidate selection, and is intentionally deterministic.
+
+### Ordering semantics: guaranteed vs not guaranteed
+
+Guaranteed deterministic ordering in current runtime:
+
+- alternative scheduling input ordering by `Alternative.Priority` (ascending),
+- local candidate comparison order: longest consumed input, then lower priority value, then lower alternative index,
+- deterministic selected-state resolution from the above comparison.
+
+Not guaranteed as ordered contracts:
+
+- dictionary/hash-set iteration order used internally for grouping and metadata transport,
+- incidental traversal order of observational collections unless documented by a specific contract,
+- internal layout/order of metadata group storage.
+
+Collections without explicit ordering guarantees should be tested as membership/grouping sets.
 
 ### Branch equivalence and pruning eligibility
 
