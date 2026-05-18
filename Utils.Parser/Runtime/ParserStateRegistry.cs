@@ -74,6 +74,7 @@ internal sealed class ParserStateRegistry
     /// <summary>
     /// Gets continuations previously registered for an invocation.
     /// Returned values are metadata snapshots and remain discardable from an execution-authority perspective.
+    /// Retrieval does not provide replay/resume capability and does not imply executable parser frames.
     /// </summary>
     public IReadOnlyList<ContinuationKey> GetContinuations(RuleInvocationKey invocation)
     {

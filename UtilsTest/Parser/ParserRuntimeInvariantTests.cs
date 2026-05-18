@@ -335,6 +335,25 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
+    public void ContinuationMetadata_Discardability_DoesNotChangeReusableResultSelection()
+    {
+        var invocation = new RuleInvocationKey("expr", 0, 0);
+        var successNode = new ParserNode(new SourceSpan(0, 1), "DEFAULT_MODE", null, []);
+        var reusableSuccess = new ParserRuleResult(successNode, 1, false);
+        var registryWithContinuation = new ParserStateRegistry();
+        var registryWithoutContinuation = new ParserStateRegistry();
+
+        Assert.IsTrue(registryWithContinuation.AddCompletedResult(invocation, reusableSuccess));
+        Assert.IsTrue(registryWithoutContinuation.AddCompletedResult(invocation, reusableSuccess));
+        Assert.IsTrue(registryWithContinuation.AddContinuation(invocation, new ContinuationKey("expr", 0, 0, 1, 0)));
+
+        Assert.IsTrue(registryWithContinuation.TryGetReusableResult(invocation, out var withContinuation));
+        Assert.IsTrue(registryWithoutContinuation.TryGetReusableResult(invocation, out var withoutContinuation));
+        Assert.AreEqual(withoutContinuation.EndPosition, withContinuation.EndPosition);
+        Assert.AreEqual(withoutContinuation.IsFailure, withContinuation.IsFailure);
+    }
+
+    [TestMethod]
     public void ContinuationIdentity_DoesNotImplySemanticRuntimeEquivalence()
     {
         var continuation = new ContinuationKey("expr", 0, 1, 4, 0);
@@ -370,6 +389,50 @@ public class ParserRuntimeInvariantTests
         Assert.AreEqual(1, advanced.CurrentInputPosition);
         Assert.AreEqual(0, state.Continuation?.ResumePosition);
         Assert.AreEqual(0, advanced.Continuation?.ResumePosition);
+    }
+
+    [TestMethod]
+    public void SharedPrefixMetadata_Observation_DoesNotAuthorizeBranchMergeAcrossDistinctSemantics()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("expr", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new RuleRef("ID"), "label-a"),
+            new Alternative(1, Associativity.Left, new RuleRef("ID"), "label-b")
+        ]));
+
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            0,
+            0,
+            diagnostics: null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, index, 1),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
+
+        Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
+        CollectionAssert.AreEquivalent(new[] { 0, 1 }, result.Metadata.SharedPrefixPlans[0].AlternativeIndexes.ToArray());
+        Assert.AreEqual(2, result.CompletedStates.Count);
+        Assert.AreEqual(0, result.PrunedStates.Count);
+    }
+
+    private static ActiveParseState CreateState(Rule rule, Alternative alternative, int index, int endPosition)
+    {
+        return new ActiveParseState
+        {
+            Rule = rule,
+            Alternative = alternative,
+            OriginInputPosition = 0,
+            CurrentInputPosition = endPosition,
+            AlternativeIndex = index,
+            Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
+            PartialNode = new ParserNode(new SourceSpan(0, endPosition), "DEFAULT_MODE", rule, []),
+            EndPosition = endPosition,
+            Status = ActiveParseStateStatus.Completed,
+            ParentStateKey = null,
+            Depth = 0,
+            Continuation = null
+        };
     }
 
     private static ParserDefinition CreateDefinition(Rule startRule, Rule[] parserRules, params Rule[] lexerRules)

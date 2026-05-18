@@ -106,6 +106,11 @@ internal sealed record ActiveParseState
     public ActiveParseStateStatus Status { get; init; }
     public ActiveParseStateKey? ParentStateKey { get; init; }
     public int Depth { get; init; }
+    /// <summary>
+    /// Optional continuation transport metadata.
+    /// This value is observable but non-authoritative and remains discardable
+    /// without changing parse-authoritative correctness.
+    /// </summary>
     public ContinuationKey? Continuation { get; init; }
 
     public ActiveParseStateKey ToStateKey(int minimumPrecedence) => new(

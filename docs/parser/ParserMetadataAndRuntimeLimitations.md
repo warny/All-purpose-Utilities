@@ -161,6 +161,23 @@ Current structural limitations:
 
 These are current runtime facts, not temporary promises.
 
+### Continuation lifecycle model (limitations view)
+
+Continuation metadata lifecycle remains strictly descriptive:
+
+1. produced from deterministic parser context,
+2. attached/transported as metadata,
+3. observed for auditing/tests/formatting,
+4. discarded without changing parse-authoritative behavior.
+
+Interpretation boundaries that must remain explicit:
+
+- continuation metadata != replay capability;
+- continuation metadata != resumability;
+- continuation transport != execution authority;
+- continuation metadata != branch merge permission;
+- continuation metadata != semantic-equivalence proof.
+
 ## 1) Parameters and `returns`: parsed and preserved as metadata
 
 The grammar ingestion pipeline supports ANTLR4-style rule signatures such as:
@@ -231,6 +248,23 @@ Lifecycle clarifications:
 - observability: metadata is observable for audit/documentation purposes only.
 
 Metadata lifecycle remains independent from parse authority and diagnostics authority.
+
+### Shared-prefix observability model (limitations view)
+
+Shared-prefix metadata remains observational/grouping-only metadata:
+
+- it exists for deterministic runtime visibility,
+- it does not authorize execution sharing,
+- it does not authorize branch merge,
+- it does not establish semantic equivalence,
+- it does not change parse-authoritative selection or diagnostics authority.
+
+Shared-prefix lifecycle remains:
+
+1. production (lookahead + scheduler context),
+2. transport (metadata containers),
+3. observation (auditability/debugging/tests),
+4. discardability (no parser-correctness impact).
 
 ## Conservative preconditions before any future activation work
 
