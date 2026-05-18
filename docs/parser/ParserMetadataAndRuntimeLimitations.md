@@ -120,6 +120,17 @@ This section aligns terminology with `RuntimeStateOwnership.md` while keeping a 
 
 Current lookahead behavior is intentionally conservative and shallow.
 
+### Lookahead authority model (limitations view)
+
+Lookahead remains advisory metadata and orchestration guidance only.
+
+- It may expose shallow token prediction and deterministic probe observability.
+- It may help scheduling visibility and ambiguity analysis.
+- It does not own parse acceptance.
+- It does not own diagnostics authority.
+- It is not semantic-equivalence evidence.
+- It is not adaptive parsing capability.
+
 - Lookahead probing is first-token-oriented and does not perform deep parser-rule simulation.
 - Parser-rule references in lookahead remain advisory and may return `Unknown`.
 - Epsilon-sensitive shapes may produce `Unknown`/`EpsilonPossible` to avoid over-claiming acceptance.
@@ -133,6 +144,22 @@ Fallback semantics:
 - `RequiresParse`, `Unknown`, and `EpsilonPossible` are parse-required outcomes.
 - Ambiguous or parser-rule-dependent outcomes must defer to real parsing.
 - Cached lookahead entries are reusable advisory metadata only and do not replace parse execution.
+
+### Probe lifecycle and observability (limitations view)
+
+Probe lifecycle remains deterministic and metadata-only:
+
+1. production,
+2. transport,
+3. observation,
+4. discardability.
+
+Observability boundaries:
+
+- probe observations are audit/debug/test artifacts;
+- probe observations do not authorize syntax acceptance;
+- probe observations do not authorize diagnostics ownership changes;
+- probe reuse does not grant parser replay, rollback, or adaptive execution semantics.
 
 
 ## Continuation metadata model (current, metadata-only)
