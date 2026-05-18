@@ -175,6 +175,53 @@ public class ParserDiagnosticsTests
 
     [TestMethod]
     /// <summary>
+    /// Verifies that branch-equivalence orchestration remains non-authoritative for
+    /// parser failure semantics on a successful parse.
+    /// </summary>
+    public void ParserEngine_BranchEquivalenceObservations_DoNotCreateParseFailure_OnSuccessfulParse()
+    {
+        var scheduler = new AlternativeScheduler();
+        var diagnostics = new DiagnosticBag();
+        var rule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
+                new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X"),
+                new Alternative(2, Associativity.Left, new LiteralMatch("a"), "Y")
+            ]));
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: 0,
+            minimumPrecedence: 0,
+            diagnostics,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                new ActiveParseState
+                {
+                    Rule = rule,
+                    Alternative = alternative,
+                    OriginInputPosition = 0,
+                    CurrentInputPosition = 1,
+                    AlternativeIndex = index,
+                    Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
+                    PartialNode = new ParserNode(new SourceSpan(0, 1), "DEFAULT_MODE", rule, []),
+                    EndPosition = 1,
+                    Status = ActiveParseStateStatus.Completed,
+                    ParentStateKey = null,
+                    Depth = 0,
+                    Continuation = null
+                },
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
+
+        Assert.IsNotNull(result.SelectedState);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+    [TestMethod]
+    /// <summary>
     /// Verifies that unsupported-feature compatibility diagnostics remain observable
     /// independently of final parse success.
     /// </summary>
