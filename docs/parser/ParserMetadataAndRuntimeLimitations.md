@@ -85,6 +85,37 @@ Current diagnostics behavior is intentionally conservative:
 Local branch diagnostics are descriptive runtime context and do not automatically become global parse failure diagnostics.
 Compatibility diagnostics (unsupported or parsed-only ANTLR4 capabilities) are independent from branch success/failure and may coexist with successful parse outcomes.
 
+## Diagnostics authority and observability model (limitations view)
+
+This section aligns terminology with `RuntimeStateOwnership.md` while keeping a limitations-first framing.
+
+### A) Parse-authoritative diagnostics
+
+- `ParserEngine` owns final parse diagnostics authority.
+- Syntax diagnostics authority is tied to parser-authoritative acceptance/rejection outcomes.
+- Orchestration metadata and transport layers cannot independently finalize parse-failure authority.
+
+### B) Observable orchestration/runtime reporting (non-authoritative)
+
+- Pruning/backtracking observations, lookahead observations, continuation metadata, shared-prefix metadata,
+  and scheduler metadata are observable and testable.
+- These observations are useful for deterministic auditability and debugging.
+- These observations are not independent syntax-failure authority and do not by themselves reject parsing.
+
+### C) Non-contractual reporting details
+
+- Incidental ordering of orchestration-local observations is non-contractual unless explicitly documented.
+- Internal traversal/grouping/layout details remain implementation-local.
+- Tests should avoid freezing incidental ordering and should prefer membership/group assertions.
+
+### Explicit boundary statements
+
+- pruning != syntax failure;
+- backtracking observation != syntax failure;
+- metadata transport != diagnostics authority;
+- branch equivalence != parse rejection;
+- orchestration visibility != authoritative parser result.
+
 ## Lookahead limitations and fallback-to-parse contract
 
 Current lookahead behavior is intentionally conservative and shallow.

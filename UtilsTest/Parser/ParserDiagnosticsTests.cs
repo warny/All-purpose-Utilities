@@ -175,6 +175,43 @@ public class ParserDiagnosticsTests
 
     [TestMethod]
     /// <summary>
+    /// Verifies that branch-equivalence orchestration remains non-authoritative for
+    /// parser failure semantics on a successful parse.
+    /// </summary>
+    public void ParserEngine_BranchEquivalenceObservations_DoNotCreateParseFailure_OnSuccessfulParse()
+    {
+        var diagnostics = new DiagnosticBag();
+        var rule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
+                new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X"),
+                new Alternative(2, Associativity.Left, new LiteralMatch("a"), "Y")
+            ]));
+        var definition = RuleResolver.Resolve(new ParserDefinition(
+            Name: "DiagPruning",
+            Type: GrammarType.Parser,
+            Options: null,
+            Actions: [],
+            Imports: [],
+            Modes: [new LexerMode("DEFAULT_MODE", [])],
+            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
+            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
+            ExtensionBindings: [],
+            ParserRules: [rule],
+            RootRule: rule));
+
+        var parser = new ParserEngine(definition);
+        var result = parser.Parse([new Token(new SourceSpan(0, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+    [TestMethod]
+    /// <summary>
     /// Verifies that unsupported-feature compatibility diagnostics remain observable
     /// independently of final parse success.
     /// </summary>

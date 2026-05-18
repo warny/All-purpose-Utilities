@@ -74,6 +74,37 @@ The following are intentionally non-contractual unless explicitly documented oth
 
 Tests should avoid relying on these details.
 
+## Diagnostics authority and observability model
+
+This section is the canonical diagnostics-boundary reference for runtime contributors.
+
+### A) Parse-authoritative diagnostics
+
+- Syntax-failure diagnostics and final parse diagnostics are owned by `ParserEngine`.
+- Parse acceptance/rejection remains the authority boundary for diagnostics meaning.
+- Orchestration metadata transport cannot independently emit authoritative parse-failure decisions.
+
+### B) Observable orchestration/runtime reporting (non-authoritative)
+
+- Pruning observations, backtracking observations, lookahead probe observations, continuation metadata,
+  shared-prefix metadata, and scheduling metadata remain observable/testable runtime artifacts.
+- These observations support deterministic auditing and debugging.
+- These observations do not independently invalidate parsing and do not own syntax-failure authority.
+
+### C) Non-contractual reporting details
+
+- Incidental ordering of orchestration-local observations remains non-contractual unless explicitly documented.
+- Internal grouping/traversal order and metadata layout remain implementation-local details.
+- Tests should assert documented guarantees only; for observational collections, prefer membership/group assertions.
+
+### Explicit boundary statements
+
+- pruning != syntax failure;
+- backtracking observation != syntax failure;
+- metadata transport != diagnostics authority;
+- branch equivalence != parse rejection;
+- orchestration visibility != authoritative parser result.
+
 ## Parsing authority
 
 `ParserEngine` remains the authoritative parser execution component.
