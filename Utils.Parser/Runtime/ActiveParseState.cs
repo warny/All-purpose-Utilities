@@ -185,12 +185,35 @@ internal sealed record ActiveParseState
     /// The attached key is descriptive and never executable replay authority.
     /// </summary>
     public ActiveParseState WithContinuation(ContinuationKey continuation) => this with { Continuation = continuation };
+    /// <summary>
+    /// Advances local descriptive traversal state.
+    /// This update is orchestration metadata only and does not imply execution replay capability.
+    /// </summary>
     public ActiveParseState Advance(int currentInputPosition, RuleContentCursor cursor) => this with { CurrentInputPosition = currentInputPosition, Cursor = cursor };
+    /// <summary>
+    /// Attaches lineage metadata for deterministic runtime observability.
+    /// Lineage metadata is non-executable and does not represent resumable runtime frames.
+    /// </summary>
     public ActiveParseState WithLineage(ActiveParseStateKey? parentStateKey, int depth) => this with { ParentStateKey = parentStateKey, Depth = depth };
+    /// <summary>
+    /// Projects this descriptive state into parser visited-state identity.
+    /// </summary>
     public ParserStateKey ToParserStateKey(int minimumPrecedence) => new(Rule.Name, CurrentInputPosition, AlternativeIndex, Cursor.Index, minimumPrecedence);
+    /// <summary>
+    /// Projects this state into invocation-reuse identity.
+    /// Invocation reuse identity is not execution-replay identity.
+    /// </summary>
     public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence) => new(Rule.Name, OriginInputPosition, minimumPrecedence);
+    /// <summary>
+    /// Builds continuation transport metadata from the current descriptive state.
+    /// Returned key is metadata-only and not executable continuation state.
+    /// </summary>
     public ContinuationKey ToContinuationKey(int resumePosition, int minimumPrecedence) => new(Rule.Name, AlternativeIndex, Cursor.Index, resumePosition, minimumPrecedence);
 
+    /// <summary>
+    /// Rehydrates descriptive scheduling state from a branch snapshot.
+    /// This conversion does not reconstruct execution history.
+    /// </summary>
     public static ActiveParseState FromBranch(ParseBranch branch) => new()
     {
         Rule = branch.Rule,
