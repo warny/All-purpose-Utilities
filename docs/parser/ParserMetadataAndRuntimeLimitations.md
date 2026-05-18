@@ -54,6 +54,50 @@ The memoization layer does **not** currently model:
 As a result, custom policies are expected to remain deterministic for equivalent invocations, avoid invocation-count-dependent behavior, and avoid externally observable mutable semantic state.
 Future runtime work may require broader memoization keys and rollback-aware semantic-state modeling.
 
+### ParserStateRegistry lifecycle model (limitations view)
+
+`ParserStateRegistry` remains parse-execution-scoped metadata/runtime support infrastructure.
+
+It owns storage and retrieval for:
+
+- visited parser-state tracking,
+- invocation-local continuation transport metadata,
+- invocation-local completed results,
+- deterministic reusable completion artifacts.
+
+It does not own:
+
+- final parse acceptance/rejection authority,
+- final diagnostics authority,
+- parse-tree authority,
+- semantic runtime-state persistence or restoration.
+
+`Clear()` resets registry-owned state for a new parse lifecycle. This reset is discardability-oriented and does not imply semantic invalidation logic.
+
+### Memoization ownership and reuse boundaries (limitations view)
+
+Current memoization/reuse remains syntax-oriented and non-semantic.
+
+Explicit boundaries:
+
+- invocation reuse != execution replay,
+- completed-result reuse != execution-history reconstruction,
+- reusable-result selection != final parse outcome authority,
+- continuation metadata transport != memoization identity broadening.
+
+Reusable-result selection remains deterministic and invocation-local. Registry keys do not include semantic evaluator external state or parser-action side-effect state.
+
+### Registry cleanup and discardability semantics (limitations view)
+
+Registry cleanup/reset is conservative:
+
+- data is discardable between parse executions,
+- no cross-parse persistence is provided,
+- no semantic rollback model is provided,
+- no semantic-aware invalidation system is provided.
+
+This PR scope remains clarification-only and does not introduce semantic-aware memoization.
+
 
 ## Backtracking and observable action execution
 

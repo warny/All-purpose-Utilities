@@ -306,4 +306,36 @@ public class ParserStateRegistryTests
         Assert.AreEqual(5, reusable.EndPosition);
         Assert.AreSame(expectedNode, reusable.Node);
     }
+
+    /// <summary>
+    /// Ensures reusable completed results remain invocation-local and do not cross invocation boundaries.
+    /// </summary>
+    [TestMethod]
+    public void Registry_Memoization_ReusableResult_DoesNotCrossInvocationBoundary()
+    {
+        var registry = new ParserStateRegistry();
+        var sourceInvocation = new RuleInvocationKey("expr", 0, 0);
+        var otherInvocation = new RuleInvocationKey("expr", 1, 0);
+        var node = new ErrorNode(new SourceSpan(0, 0), "DEFAULT_MODE", "invocation-local");
+
+        registry.AddCompletedResult(sourceInvocation, new ParserRuleResult(node, 1, false));
+
+        Assert.IsTrue(registry.TryGetReusableResult(sourceInvocation, out _));
+        Assert.IsFalse(registry.TryGetReusableResult(otherInvocation, out _));
+    }
+
+    /// <summary>
+    /// Ensures visited-state tracking does not create reusable completion artifacts.
+    /// </summary>
+    [TestMethod]
+    public void Registry_Memoization_VisitedStateTracking_DoesNotCreateReusableResult()
+    {
+        var registry = new ParserStateRegistry();
+        var state = new ParserStateKey("expr", 0, 0, 0, 0);
+        var invocation = new RuleInvocationKey("expr", 0, 0);
+
+        Assert.IsTrue(registry.TryEnterState(state));
+        Assert.IsFalse(registry.TryGetReusableResult(invocation, out _));
+        Assert.AreEqual(0, registry.GetCompletedResults(invocation).Count);
+    }
 }
