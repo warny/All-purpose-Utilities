@@ -334,6 +334,10 @@ public class ParserRuntimeInvariantTests
         Assert.AreEqual(continuation, continuations[0]);
     }
 
+    /// <summary>
+    /// Ensures continuation metadata can be present or absent without changing
+    /// invocation-level reusable result selection semantics.
+    /// </summary>
     [TestMethod]
     public void ContinuationMetadata_Discardability_DoesNotChangeReusableResultSelection()
     {
@@ -391,6 +395,10 @@ public class ParserRuntimeInvariantTests
         Assert.AreEqual(0, advanced.Continuation?.ResumePosition);
     }
 
+    /// <summary>
+    /// Verifies shared-prefix metadata remains observational and does not authorize
+    /// semantic branch merge across alternatives with distinct labels.
+    /// </summary>
     [TestMethod]
     public void SharedPrefixMetadata_Observation_DoesNotAuthorizeBranchMergeAcrossDistinctSemantics()
     {
@@ -416,6 +424,10 @@ public class ParserRuntimeInvariantTests
         Assert.AreEqual(0, result.PrunedStates.Count);
     }
 
+    /// <summary>
+    /// Creates a deterministic completed <see cref="ActiveParseState"/> for scheduler-focused
+    /// metadata invariant tests without introducing parser-authoritative behavior changes.
+    /// </summary>
     private static ActiveParseState CreateState(Rule rule, Alternative alternative, int index, int endPosition)
     {
         return new ActiveParseState
