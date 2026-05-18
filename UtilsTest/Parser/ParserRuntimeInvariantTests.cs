@@ -299,6 +299,18 @@ public class ParserRuntimeInvariantTests
     [TestMethod]
     public void LookaheadProbe_InconclusiveOutcome_StillRequiresParserAuthoritativeValidation()
     {
+        var probe = new ParserLookaheadProbe();
+        var probeAlternative = new Alternative(
+            0,
+            Associativity.Left,
+            new Sequence([
+                new Quantifier(new LiteralMatch("x"), 0, 1),
+                new RuleRef("A")
+            ]));
+        var probeResult = probe.Probe(probeAlternative, Token("A", "a"), static _ => null, false);
+
+        Assert.AreEqual(ParserLookaheadProbeKind.Unknown, probeResult.Kind);
+
         var startRule = new Rule(
             "start",
             0,
@@ -322,7 +334,7 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
-    public void LookaheadMetadataVariations_DoNotChangeParserAuthoritativeDiagnosticsOutcome()
+    public void ParserEngine_TrailingTokens_RemainsParserAuthoritativeDiagnosticOutcome()
     {
         var startRule = new Rule(
             "start",
