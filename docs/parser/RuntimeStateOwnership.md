@@ -32,6 +32,48 @@ The parser runtime is authority-layered.
 - Supporting runtime components provide orchestration, probing, caching, and metadata.
 - Metadata components are descriptive and cannot decide parse outcomes on their own.
 
+## Lookahead authority model
+
+Lookahead remains explicitly **advisory** in the current runtime.
+
+- Lookahead may provide shallow token prediction, ambiguity visibility, shared-prefix observation, and deterministic probe metadata.
+- Lookahead may influence orchestration and scheduling visibility only.
+- Lookahead cannot independently finalize parse acceptance.
+- Lookahead cannot independently finalize diagnostics authority.
+
+Parse-authoritative execution remains mandatory:
+
+- `ParserEngine` remains the final authority for syntax confirmation.
+- Lookahead observations cannot replace parser-authoritative execution.
+- Any syntax-confirmation boundary must conservatively fall back to real parsing.
+
+## Fallback-to-parse guarantees
+
+The runtime keeps conservative fallback guarantees to prevent authority drift:
+
+- ambiguous lookahead outcomes must fall back to parser-authoritative execution;
+- inconclusive lookahead outcomes must fall back to parser-authoritative execution;
+- epsilon-sensitive uncertainty must fall back to parser-authoritative execution;
+- runtime must not silently skip parser validation because advisory lookahead looked favorable.
+
+These guarantees are invariants, not optimization hooks.
+
+## Probe observability and lifecycle
+
+Lookahead probes are metadata-only artifacts with a deterministic lifecycle:
+
+1. **production** from current rule/alternative and visible token context,
+2. **transport** through scheduler/runtime metadata surfaces,
+3. **observation** for deterministic diagnostics/audit/testing visibility,
+4. **discardability** without changing parse-authoritative outcomes.
+
+Boundary clarifications:
+
+- probe metadata does not reconstruct execution state;
+- probe similarity does not authorize branch merge;
+- deterministic probes do not imply adaptive parsing;
+- probe reuse does not imply replay capability.
+
 ## Deterministic runtime observability model
 
 This section clarifies what is intentionally contractual versus what remains implementation-internal.

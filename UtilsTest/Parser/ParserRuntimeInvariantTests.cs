@@ -297,6 +297,62 @@ public class ParserRuntimeInvariantTests
     }
 
     [TestMethod]
+    public void LookaheadProbe_InconclusiveOutcome_StillRequiresParserAuthoritativeValidation()
+    {
+        var probe = new ParserLookaheadProbe();
+        var probeAlternative = new Alternative(
+            0,
+            Associativity.Left,
+            new Sequence([
+                new Quantifier(new LiteralMatch("x"), 0, 1),
+                new RuleRef("A")
+            ]));
+        var probeResult = probe.Probe(probeAlternative, Token("A", "a"), static _ => null, false);
+
+        Assert.AreEqual(ParserLookaheadProbeKind.Unknown, probeResult.Kind);
+
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new Sequence([
+                    new Quantifier(new LiteralMatch("x"), 0, 1),
+                    new RuleRef("A")
+                ]))
+            ]));
+        var parser = new ParserEngine(CreateDefinition(startRule, LexerRule("A", "a")));
+        var diagnostics = new DiagnosticBag();
+
+        // The optional prefix keeps lookahead conservative (Unknown/EpsilonPossible path),
+        // so parse-authoritative execution must still validate syntax.
+        var result = parser.Parse([Token("A", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsFalse(result is ErrorNode);
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
+    [TestMethod]
+    public void ParserEngine_TrailingTokens_RemainsParserAuthoritativeDiagnosticOutcome()
+    {
+        var startRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("A"))
+            ]));
+        var parser = new ParserEngine(CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b")));
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ErrorNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
+    [TestMethod]
     public void ContinuationMetadata_StoredInRegistry_DoesNotCreateReusableParseOutcome()
     {
         var registry = new ParserStateRegistry();
