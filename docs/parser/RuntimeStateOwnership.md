@@ -32,6 +32,55 @@ The parser runtime is authority-layered.
 - Supporting runtime components provide orchestration, probing, caching, and metadata.
 - Metadata components are descriptive and cannot decide parse outcomes on their own.
 
+## ParserStateRegistry lifecycle model
+
+`ParserStateRegistry` is parse-lifecycle-scoped runtime storage.
+
+Registry-owned state:
+
+- visited parser-state tracking (`ParserStateKey`),
+- invocation-local continuation transport metadata (`ContinuationKey` grouped by `RuleInvocationKey`),
+- invocation-local completed results (`ParserRuleResult` grouped by `RuleInvocationKey`),
+- deterministic reusable completion selection inputs.
+
+Registry non-authority boundaries:
+
+- registry storage/retrieval is not final parse acceptance authority,
+- registry storage/retrieval is not final diagnostics authority,
+- registry storage/retrieval is not parse-tree authority,
+- registry metadata identity is not semantic runtime identity.
+
+Lifecycle boundary:
+
+- `Clear()` resets all registry-owned state for a new parse execution lifecycle,
+- registry content is explicitly discardable between parse executions,
+- cleanup does not imply semantic invalidation hooks or semantic-state rollback.
+
+## Memoization ownership and reuse boundaries
+
+Invocation reuse and execution authority are intentionally separate:
+
+- invocation reuse != execution reuse,
+- completed result reuse != parser replay,
+- reusable result selection != final parse acceptance,
+- registry metadata != semantic equivalence.
+
+Current reusable-result contract:
+
+- reusable results are invocation-local completion artifacts,
+- selection remains deterministic (first reusable success, otherwise first reusable failure),
+- continuation metadata transport does not broaden memoization identity,
+- visited-state tracking does not broaden memoization identity.
+
+## Registry cleanup and discardability semantics
+
+Registry cleanup is conservative and deterministic:
+
+- cleanup resets parse-execution-scoped registry artifacts only,
+- cleanup is safe without semantic invalidation systems,
+- cleanup does not persist or restore semantic/runtime external state,
+- cleanup does not introduce replay, rollback, or continuation execution semantics.
+
 ## Lookahead authority model
 
 Lookahead remains explicitly **advisory** in the current runtime.
