@@ -180,6 +180,7 @@ public class ParserDiagnosticsTests
     /// </summary>
     public void ParserEngine_BranchEquivalenceObservations_DoNotCreateParseFailure_OnSuccessfulParse()
     {
+        var scheduler = new AlternativeScheduler();
         var diagnostics = new DiagnosticBag();
         var rule = new Rule(
             "start",
@@ -190,23 +191,32 @@ public class ParserDiagnosticsTests
                 new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X"),
                 new Alternative(2, Associativity.Left, new LiteralMatch("a"), "Y")
             ]));
-        var definition = RuleResolver.Resolve(new ParserDefinition(
-            Name: "DiagPruning",
-            Type: GrammarType.Parser,
-            Options: null,
-            Actions: [],
-            Imports: [],
-            Modes: [new LexerMode("DEFAULT_MODE", [])],
-            DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
-            DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
-            ExtensionBindings: [],
-            ParserRules: [rule],
-            RootRule: rule));
+        var result = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: 0,
+            minimumPrecedence: 0,
+            diagnostics,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                new ActiveParseState
+                {
+                    Rule = rule,
+                    Alternative = alternative,
+                    OriginInputPosition = 0,
+                    CurrentInputPosition = 1,
+                    AlternativeIndex = index,
+                    Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
+                    PartialNode = new ParserNode(new SourceSpan(0, 1), "DEFAULT_MODE", rule, []),
+                    EndPosition = 1,
+                    Status = ActiveParseStateStatus.Completed,
+                    ParentStateKey = null,
+                    Depth = 0,
+                    Continuation = null
+                },
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
 
-        var parser = new ParserEngine(definition);
-        var result = parser.Parse([new Token(new SourceSpan(0, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
-
-        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsNotNull(result.SelectedState);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
     }
 
