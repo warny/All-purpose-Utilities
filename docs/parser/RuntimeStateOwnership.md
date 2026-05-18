@@ -212,6 +212,29 @@ Lifecycle (current behavior only):
 
 Continuations are therefore independent from parse authority and independent from diagnostics authority.
 
+### Continuation lifecycle model (consolidated)
+
+Continuation metadata follows a strict, metadata-only lifecycle:
+
+1. **Production**: continuation identities/descriptors are produced from deterministic parser context (rule, alternative, sequence/cursor, position).
+2. **Attachment/transport**: continuation keys may be attached to `ActiveParseState` and transported through `ParserStateRegistry`.
+3. **Observability**: continuation metadata can be inspected for auditing, formatting, diagnostics context, and invariant tests.
+4. **Discardability**: continuation metadata can be ignored or removed without changing parse correctness, parse-tree shape, diagnostics authority, or final acceptance ownership.
+
+Mandatory ownership boundary:
+
+- `ParserEngine` remains parse-authoritative.
+- Continuation metadata remains orchestration/runtime metadata only.
+- Continuation metadata never owns execution authority.
+
+Explicit non-feature boundaries:
+
+- continuation metadata != replay support;
+- continuation metadata != resumable execution frame;
+- continuation transport != execution ownership;
+- continuation metadata != branch-merge authorization;
+- continuation metadata != semantic equivalence guarantee.
+
 ## Runtime identity and equivalence model
 
 Parser runtime identities are intentionally split by ownership purpose and must remain distinct.
@@ -471,6 +494,28 @@ Explicit non-authority guarantees:
 - metadata does not establish semantic equivalence,
 - metadata does not imply rollback safety,
 - metadata does not override diagnostics ownership.
+
+### Shared-prefix observability model (consolidated)
+
+Shared-prefix metadata is deterministic observability/grouping metadata:
+
+- it exposes orchestration/runtime structure;
+- it does not execute shared prefixes;
+- it does not alter parse-authoritative behavior.
+
+Shared-prefix grouping boundaries:
+
+- grouping != execution sharing;
+- grouping != semantic equivalence;
+- grouping != branch-merge permission;
+- grouping remains non-authoritative.
+
+Shared-prefix lifecycle boundaries:
+
+1. **Production** from shallow lookahead and scheduler context.
+2. **Transport** through scheduling/registry metadata containers.
+3. **Observation** for deterministic auditing and diagnostics-adjacent visibility.
+4. **Discardability** without changing parser correctness or parse authority.
 
 ## Future activation preconditions (documentation boundary only)
 
