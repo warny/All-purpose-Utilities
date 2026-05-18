@@ -91,20 +91,54 @@ internal enum ActiveParseStateStatus
 /// </summary>
 internal sealed record ActiveParseState
 {
+    /// <summary>
+    /// Parser rule associated with this local scheduling state.
+    /// </summary>
     public required Rule Rule { get; init; }
+    /// <summary>
+    /// Alternative associated with this local scheduling state.
+    /// </summary>
     public required Alternative Alternative { get; init; }
+    /// <summary>
+    /// Input position where this rule invocation started.
+    /// </summary>
     public required int OriginInputPosition { get; init; }
+    /// <summary>
+    /// Current input position reached by this local state.
+    /// </summary>
     public required int CurrentInputPosition { get; init; }
+    /// <summary>
+    /// Stable scheduler-local index of the explored alternative.
+    /// </summary>
     public required int AlternativeIndex { get; init; }
+    /// <summary>
+    /// Local traversal cursor describing where exploration currently is in the alternative content.
+    /// </summary>
     public required RuleContentCursor Cursor { get; init; }
     /// <summary>
     /// Local partial parse node for branch-level scheduling.
     /// It is descriptive only and does not grant parse-tree authority.
     /// </summary>
     public required ParseNode PartialNode { get; init; }
+    /// <summary>
+    /// Optional local end position for completed/failed states.
+    /// When null, the state is still represented by its current input position.
+    /// </summary>
     public int? EndPosition { get; init; }
+    /// <summary>
+    /// Local branch status used by scheduling orchestration.
+    /// This status is descriptive and not parse-authoritative.
+    /// </summary>
     public ActiveParseStateStatus Status { get; init; }
+    /// <summary>
+    /// Optional lineage key for parent scheduling state metadata.
+    /// This is not an executable runtime stack frame reference.
+    /// </summary>
     public ActiveParseStateKey? ParentStateKey { get; init; }
+    /// <summary>
+    /// Structural lineage depth for scheduling metadata.
+    /// This value is descriptive and does not model semantic invocation depth.
+    /// </summary>
     public int Depth { get; init; }
     /// <summary>
     /// Optional continuation transport metadata.
