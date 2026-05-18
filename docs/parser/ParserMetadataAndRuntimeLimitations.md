@@ -483,3 +483,59 @@ Not guaranteed:
 - incidental dictionary/set traversal order,
 - incidental internal metadata collection order,
 - undocumented internal grouping traversal order.
+
+
+## Duplicated-work-reduction constraint model (limitations view)
+
+Current metadata-rich infrastructure is intentionally preparation-oriented and non-executable.
+It supports deterministic auditability and future analysis only.
+
+### Reusable metadata (non-authoritative)
+
+Reusable metadata currently includes:
+
+- lookahead observations,
+- shared-prefix grouping metadata,
+- continuation transport metadata,
+- invocation completion metadata,
+- orchestration/runtime observations.
+
+These do not imply replay, resumability, semantic equivalence, or execution authority transfer.
+
+### Non-shareable runtime state
+
+Current runtime does not permit sharing or reconstruction of:
+
+- active execution state,
+- semantic parser context,
+- mutable branch-local state,
+- diagnostics-authoritative execution state,
+- parse-tree-authoritative execution ownership.
+
+No runtime contract currently establishes safe replay, rollback, or branch-merge semantics.
+
+## Execution-sharing safety boundaries (limitations view)
+
+The following equivalence assumptions are explicitly invalid in current runtime:
+
+- metadata grouping != execution sharing,
+- reusable completion != branch replay,
+- invocation reuse != execution reuse,
+- continuation transport != resumable execution,
+- shared-prefix grouping != merge permission,
+- deterministic observability != semantic equivalence,
+- structural similarity != safe state sharing.
+
+### Future activation preconditions
+
+Any future duplicated-work reduction execution work would require explicit modeling and validation of:
+
+- semantic-state ownership,
+- replay safety,
+- rollback guarantees,
+- merge semantics,
+- diagnostics ownership resolution,
+- parse-tree authority preservation,
+- dedicated runtime invariants and tests.
+
+These are prerequisite boundaries only, not active capabilities.

@@ -105,6 +105,7 @@ internal sealed class ParserStateRegistry
             return false;
         }
 
+        // Reuse chooses an invocation-completion artifact only; it does not recreate branch execution history.
         var success = list.FirstOrDefault(static item => !item.IsFailure && item.Node is not null);
         if (success.Node is not null)
         {

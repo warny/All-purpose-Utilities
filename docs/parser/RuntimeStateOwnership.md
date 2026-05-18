@@ -580,3 +580,64 @@ Additional clarifications that must remain true:
 - metadata presence != replay capability;
 - metadata presence != resumability or rollback support;
 - metadata grouping != branch merge permission.
+
+
+## Duplicated-work-reduction constraint model
+
+The current runtime exposes metadata that can support **future analysis** of duplicated work, but not execution sharing.
+
+### Reusable metadata (non-authoritative)
+
+The following are reusable as observational metadata only:
+
+- lookahead observations,
+- shared-prefix grouping metadata,
+- continuation transport metadata,
+- invocation completion metadata,
+- orchestration/runtime observations.
+
+These metadata forms:
+
+- may support future duplicated-work analysis,
+- do not authorize replay,
+- do not authorize resumability,
+- do not prove semantic equivalence,
+- do not transfer parse or diagnostics authority.
+
+### Non-shareable runtime state (authoritative or semantically coupled)
+
+The following remain isolated and non-shareable in current runtime contracts:
+
+- active parser execution state,
+- semantic parser context,
+- mutable branch-local state,
+- diagnostics-authoritative execution state,
+- parse-tree-authoritative execution ownership.
+
+No current contract establishes safe sharing, replay, rollback, or merge of these states.
+
+## Execution-sharing safety boundaries
+
+Explicit non-feature boundaries that must remain true:
+
+- metadata grouping != execution sharing,
+- reusable completion != branch replay,
+- invocation reuse != execution reuse,
+- continuation transport != resumable execution,
+- shared-prefix grouping != merge permission,
+- deterministic observability != semantic equivalence,
+- structural similarity != safe state sharing.
+
+### Future activation preconditions (boundary-only)
+
+Any future duplicated-work reduction activation would require all of the following to be explicitly modeled and validated first:
+
+- semantic-state ownership,
+- replay safety guarantees,
+- rollback guarantees,
+- merge semantics,
+- diagnostics ownership resolution,
+- parse-tree authority preservation,
+- dedicated runtime invariants and tests.
+
+This document intentionally records constraints only; it does not define an implementation design.
