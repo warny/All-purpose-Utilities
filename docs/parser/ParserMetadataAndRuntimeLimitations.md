@@ -108,6 +108,49 @@ Limitation boundaries:
 
 Orchestration/pruning/backtracking observations are non-authoritative even when observable.
 
+
+## Runtime policy boundaries (semantic predicates and actions)
+
+`ParserEngine` delegates semantic predicates and embedded actions to `ParserRuntimeFeaturePolicy`.
+
+- Default policy remains conservative (`NotEvaluated` / `NotExecuted`).
+- Custom policies may evaluate predicates or execute actions.
+
+Runtime limitation boundaries remain explicit:
+
+- actions may execute in branches that are later rejected or pruned;
+- no rollback is provided for external action side effects;
+- no exactly-once guarantee exists across backtracked attempts;
+- no transactional isolation exists across competing alternatives.
+
+## ANTLR parameters/returns: parsed metadata vs runtime support
+
+ANTLR4-style parameter and `returns` signatures are parsed and preserved as metadata text.
+
+Current runtime does **not** provide:
+
+- invocation-frame parameter binding,
+- return-value propagation,
+- runtime parameter/return scopes,
+- semantic type-resolution for parameter/return runtime semantics.
+
+So: parsed/preserved metadata != supported runtime invocation semantics.
+
+## Shared-prefix pipeline (metadata production only)
+
+Shared-prefix infrastructure is analysis/observability metadata only.
+The current metadata production path is:
+
+`ParserLookaheadProbe -> ParserLookaheadSharedPrefixDetector -> ParserContinuationFactory -> ParserSharedPrefixPlanFactory`
+
+Validation/inspection components remain descriptive and non-authoritative.
+
+## Capability model note
+
+`ParserFeatureCapabilities` is descriptive metadata for support visibility.
+It is not used to alter parse authority, parsing behavior, or diagnostics authority.
+
+
 ## Continuation metadata model (current, metadata-only)
 
 Continuation metadata is metadata-only and non-authoritative.
@@ -171,6 +214,16 @@ Any future activation requires explicit future design and dedicated tests, inclu
 - explicit compatibility contracts and documentation.
 
 These are boundary-only preconditions, not active capabilities.
+
+### Future execution-oriented PR review gates
+
+Any future execution-oriented PR must show, at minimum:
+
+1. which invariants are preserved and how equivalence was validated;
+2. why diagnostics content/ordering remain equivalent;
+3. why parse-tree shape remains equivalent;
+4. which unsupported cases remain rejected by default;
+5. a rollback path to baseline behavior.
 
 ## Compatibility matrix reference
 
