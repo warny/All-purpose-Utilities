@@ -314,7 +314,10 @@ public sealed class LexerEngine(ParserDefinition definition)
 
         while (quant.Max is null || count < quant.Max.Value)
         {
-            if (!TryMatchContent(input, quant.Inner, offset + total, commands, out int inner))
+            // Isolate each iteration so that commands from a failed attempt — or from
+            // an attempt that matched zero characters — never reach the caller's list.
+            var iterationCommands = commands is null ? null : new List<Model.LexerCommand>();
+            if (!TryMatchContent(input, quant.Inner, offset + total, iterationCommands, out int inner))
             {
                 break;
             }
@@ -324,6 +327,7 @@ public sealed class LexerEngine(ParserDefinition definition)
                 break;
             }
 
+            commands?.AddRange(iterationCommands!);
             total += inner;
             count++;
             if (!quant.Greedy && count >= quant.Min)
@@ -336,12 +340,14 @@ public sealed class LexerEngine(ParserDefinition definition)
         return count >= quant.Min;
     }
 
+    /// <summary>Matches a literal string at <paramref name="offset"/> using the current case-sensitivity setting.</summary>
     private LexerMatchResult MatchLiteralContent(TextReaderBuffer input, LiteralMatch lit, int offset)
     {
         int consumed = TryMatchLiteral(input, lit.Value, offset, _caseInsensitive) ? lit.Value.Length : 0;
         return new(consumed > 0 || lit.Value.Length == 0, consumed);
     }
 
+    /// <summary>Matches a single character within an inclusive character range.</summary>
     private LexerMatchResult MatchRangeContent(TextReaderBuffer input, RangeMatch range, int offset)
     {
         int ch = input.Peek(offset);
@@ -349,6 +355,7 @@ public sealed class LexerEngine(ParserDefinition definition)
         return new(matched, matched ? 1 : 0);
     }
 
+    /// <summary>Matches a single character that is (or is not, when negated) a member of an explicit set.</summary>
     private LexerMatchResult MatchCharSetContent(TextReaderBuffer input, CharSetMatch set, int offset)
     {
         int ch = input.Peek(offset);
@@ -364,12 +371,17 @@ public sealed class LexerEngine(ParserDefinition definition)
         return new(false, 0);
     }
 
+    /// <summary>Matches any single character (the <c>.</c> wildcard) at <paramref name="offset"/>.</summary>
     private static LexerMatchResult MatchAnyCharContent(TextReaderBuffer input, int offset)
     {
         int consumed = input.Peek(offset) >= 0 ? 1 : 0;
         return new(consumed == 1, consumed);
     }
 
+    /// <summary>
+    /// Resolves and matches a rule reference, guarding against direct left-recursion
+    /// via the active-rule-refs set.
+    /// </summary>
     private LexerMatchResult MatchRuleRefContent(TextReaderBuffer input, RuleRef ruleRef, int offset, List<Model.LexerCommand>? commands)
     {
         if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referenced))
@@ -394,12 +406,22 @@ public sealed class LexerEngine(ParserDefinition definition)
         }
     }
 
+    /// <summary>
+    /// Matches all items in a sequence in order.
+    /// Commands are accumulated in a local buffer and flushed to <paramref name="commands"/>
+    /// only when the entire sequence succeeds — ensuring that a partially-matched but
+    /// ultimately failed sequence never leaks commands into the caller's list.
+    /// </summary>
     private LexerMatchResult MatchSequenceContent(TextReaderBuffer input, Sequence seq, int offset, List<Model.LexerCommand>? commands)
     {
+        // Accumulate into a local buffer so that commands from partially-matched
+        // items are never visible to the caller when the sequence ultimately fails.
+        // Only flush to `commands` when every item has succeeded.
+        var local = commands is null ? null : new List<Model.LexerCommand>();
         int total = 0;
         foreach (RuleContent item in seq.Items)
         {
-            if (!TryMatchContent(input, item, offset + total, commands, out int part))
+            if (!TryMatchContent(input, item, offset + total, local, out int part))
             {
                 return new(false, 0);
             }
@@ -407,9 +429,15 @@ public sealed class LexerEngine(ParserDefinition definition)
             total += part;
         }
 
+        commands?.AddRange(local!);
         return new(true, total);
     }
 
+    /// <summary>
+    /// Tries each alternative in order using an isolated branch buffer.
+    /// The branch buffer is merged into <paramref name="commands"/> only when
+    /// an alternative succeeds; failed alternatives are discarded without side-effects.
+    /// </summary>
     private LexerMatchResult MatchAlternationContent(TextReaderBuffer input, Alternation alternation, int offset, List<Model.LexerCommand>? commands)
     {
         foreach (Alternative alt in alternation.Alternatives)
@@ -425,18 +453,21 @@ public sealed class LexerEngine(ParserDefinition definition)
         return new(false, 0);
     }
 
+    /// <summary>Delegates to the content of a single <see cref="Alternative"/>.</summary>
     private LexerMatchResult MatchAlternativeContent(TextReaderBuffer input, Alternative alternative, int offset, List<Model.LexerCommand>? commands)
     {
         bool matched = TryMatchContent(input, alternative.Content, offset, commands, out int consumed);
         return new(matched, consumed);
     }
 
+    /// <summary>Delegates to <see cref="TryMatchQuantifier"/> and wraps the result.</summary>
     private LexerMatchResult MatchQuantifierContent(TextReaderBuffer input, Quantifier quant, int offset, List<Model.LexerCommand>? commands)
     {
         bool matched = TryMatchQuantifier(input, quant, offset, commands, out int consumed);
         return new(matched, consumed);
     }
 
+    /// <summary>Implements the <c>~</c> negation operator: succeeds when the inner element does not match.</summary>
     private LexerMatchResult MatchNegationContent(TextReaderBuffer input, Negation neg, int offset)
     {
         if (!TryMatchContent(input, neg.Inner, offset, null, out _) && input.Peek(offset) >= 0)
@@ -447,6 +478,7 @@ public sealed class LexerEngine(ParserDefinition definition)
         return new(false, 0);
     }
 
+    /// <summary>Records a structured lexer command and always succeeds with zero consumed characters.</summary>
     private static LexerMatchResult MatchLexerCommandContent(LexerCommand cmd, List<Model.LexerCommand>? commands)
     {
         commands?.Add(cmd);

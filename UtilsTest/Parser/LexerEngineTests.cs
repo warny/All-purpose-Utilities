@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Runtime;
+using Utils.Parser.Resolution;
 using System.IO;
 using Utils.Parser.Model;
 
@@ -827,5 +828,148 @@ public class LexerEngineTests
         [
             new Token(new SourceSpan(context.Position, 0, context.Line, context.Column), "INDENT", "DEFAULT_MODE", "DEFAULT_CHANNEL", ""),
         ];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Lexer-command scoping — regression tests for command leakage
+    //
+    // Invariant: commands must remain scoped to successful matches only.
+    // A failed sequence or a failed quantifier iteration must not
+    // contribute commands to the enclosing match.
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Builds a lexer-only <see cref="ParserDefinition"/> from the supplied rules,
+    /// running the full resolution pass so that <c>AllRules</c> and <c>Kind</c> are set.
+    /// </summary>
+    private static ParserDefinition BuildLexerDef(params Rule[] rules)
+    {
+        var mode = new LexerMode("DEFAULT_MODE", rules);
+        var def = new ParserDefinition(
+            "Test", GrammarType.Lexer, null, [], [], [mode], [], null);
+        return RuleResolver.Resolve(def, null);
+    }
+
+    /// <summary>
+    /// Wraps <paramref name="content"/> in a single-alternative <see cref="Alternation"/>
+    /// and returns the resulting lexer <see cref="Rule"/>.
+    /// </summary>
+    private static Rule LexerRule(string name, int order, RuleContent content) =>
+        new Rule(name, order, false,
+            new Alternation([new Alternative(0, Associativity.Left, content)]));
+
+    private static List<Token> TokenizeWith(ParserDefinition def, string input)
+    {
+        var lexer = new LexerEngine(def);
+        return lexer.Tokenize(new StringReader(input)).ToList();
+    }
+
+    // ── A: Quantifier — failed iteration must not leak commands ──────────────
+
+    [TestMethod]
+    public void Lexer_QuantifierFailedIteration_DoesNotLeakCommands()
+    {
+        // Rule:  TOK = (channel_cmd 'x')* 'a'
+        //
+        // 'channel_cmd' is a LexerCommand(Channel, HIDDEN) placed as the FIRST
+        // item in the iteration sequence, before the character match.
+        // On input "a" the quantifier attempts one iteration:
+        //   1. channel_cmd always succeeds and appends HIDDEN to the command buffer.
+        //   2. LiteralMatch('x') then fails against 'a'.
+        // Without isolation: the HIDDEN command leaks into the outer buffer,
+        // causing the produced token to land on the HIDDEN channel.
+        // With isolation: the failed iteration's local buffer is discarded.
+
+        var hiddenCmd = new LexerCommand(LexerCommandType.Channel, "HIDDEN");
+        var iterSeq = new Sequence([hiddenCmd, new LiteralMatch("x")]);
+        var quant = new Quantifier(iterSeq, 0, null);      // (cmd 'x')*
+        var outerSeq = new Sequence([quant, new LiteralMatch("a")]);
+        var def = BuildLexerDef(LexerRule("TOK", 0, outerSeq));
+
+        var tokens = TokenizeWith(def, "a");
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("TOK", tokens[0].RuleName);
+        Assert.AreEqual("DEFAULT_CHANNEL", tokens[0].Channel,
+            "Channel command from a failed quantifier iteration must not leak.");
+    }
+
+    // ── B: Sequence — failed sequence must not leak commands ─────────────────
+
+    [TestMethod]
+    public void Lexer_FailedSequenceItem_DoesNotLeakCommandsFromEarlierItems()
+    {
+        // Rule:  TOK = (skip_cmd 'x' 'y') | 'a'
+        //
+        // Alternative 1 contains Sequence([LexerCommand(Skip), Literal('x'), Literal('y')]).
+        // On input "a": skip_cmd always succeeds (appends Skip), then Literal('x') fails.
+        // Without isolation: the Skip command is already in the buffer when the sequence
+        // fails, so the fallback token from Alternative 2 gets Skip applied and is
+        // discarded — leaving an empty token list.
+        // With isolation: the failed sequence's local buffer is discarded before
+        // Alternative 2 is tried.
+
+        var skipCmd = new LexerCommand(LexerCommandType.Skip, null);
+        var failSeq = new Sequence([skipCmd, new LiteralMatch("x"), new LiteralMatch("y")]);
+        var alt1 = new Alternative(0, Associativity.Left, failSeq);
+        var alt2 = new Alternative(1, Associativity.Left, new LiteralMatch("a"));
+        var rule = new Rule("TOK", 0, false, new Alternation([alt1, alt2]));
+        var def = BuildLexerDef(rule);
+
+        var tokens = TokenizeWith(def, "a");
+
+        Assert.AreEqual(1, tokens.Count,
+            "The skip command from the failed sequence must not be applied to the fallback match.");
+        Assert.AreEqual("TOK", tokens[0].RuleName);
+        Assert.AreEqual("a", tokens[0].Text);
+    }
+
+    // ── C: Sequence — successful sequence still propagates commands ───────────
+
+    [TestMethod]
+    public void Lexer_SuccessfulSequence_PropagatesCommandsCorrectly()
+    {
+        // Rule:  TOK = 'a' channel_cmd
+        //
+        // On input "a": Literal('a') succeeds, then the command is appended.
+        // The sequence succeeds — commands must be flushed to the caller.
+
+        var hiddenCmd = new LexerCommand(LexerCommandType.Channel, "HIDDEN");
+        var seq = new Sequence([new LiteralMatch("a"), hiddenCmd]);
+        var def = BuildLexerDef(LexerRule("TOK", 0, seq));
+
+        var tokens = TokenizeWith(def, "a");
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("TOK", tokens[0].RuleName);
+        Assert.AreEqual("HIDDEN", tokens[0].Channel,
+            "Command from a successful sequence must be applied.");
+    }
+
+    // ── D: Quantifier — successful iterations still propagate commands ────────
+
+    [TestMethod]
+    public void Lexer_SuccessfulQuantifierIterations_PropagateCommandsCorrectly()
+    {
+        // Rule:  TOK = ('x' channel_cmd)+ 'a'
+        //
+        // channel_cmd = LexerCommand(Channel, HIDDEN).
+        // On input "xa": iteration 1 matches 'x' and records the HIDDEN command.
+        // The quantifier (min=1) then succeeds.
+        // The outer sequence then matches 'a'.
+        // The HIDDEN command from the successful iteration must survive to the token.
+
+        var hiddenCmd = new LexerCommand(LexerCommandType.Channel, "HIDDEN");
+        var iterSeq = new Sequence([new LiteralMatch("x"), hiddenCmd]);
+        var quant = new Quantifier(iterSeq, 1, null);      // (x cmd)+
+        var outerSeq = new Sequence([quant, new LiteralMatch("a")]);
+        var def = BuildLexerDef(LexerRule("TOK", 0, outerSeq));
+
+        var tokens = TokenizeWith(def, "xa");
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("TOK", tokens[0].RuleName);
+        Assert.AreEqual("HIDDEN", tokens[0].Channel,
+            "Command from a successful quantifier iteration must be applied.");
     }
 }
