@@ -333,6 +333,41 @@ public class ParserRuntimeInvariantTests
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
     }
 
+    /// <summary>
+    /// Verifies that shared-prefix metadata observability and parseable surface behavior
+    /// do not establish semantic support guarantees, and that parser-authoritative
+    /// trailing-token diagnostics remain decisive for final acceptance.
+    /// </summary>
+    [TestMethod]
+    public void ParseableSharedPrefixMetadata_DoesNotByItselfEstablishSemanticSupportGuarantees()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("start", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new RuleRef("A"), "left"),
+            new Alternative(1, Associativity.Left, new RuleRef("A"), "right")
+        ]));
+
+        var scheduleResult = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            0,
+            0,
+            diagnostics: null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, index, 1),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
+
+        Assert.AreEqual(1, scheduleResult.Metadata.SharedPrefixPlans.Count);
+        Assert.AreEqual(2, scheduleResult.CompletedStates.Count);
+
+        var parser = new ParserEngine(CreateDefinition(rule, LexerRule("A", "a"), LexerRule("B", "b")));
+        var diagnostics = new DiagnosticBag();
+        var parseResult = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ErrorNode>(parseResult);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
+    }
+
     [TestMethod]
     public void ParserEngine_TrailingTokens_RemainsParserAuthoritativeDiagnosticOutcome()
     {

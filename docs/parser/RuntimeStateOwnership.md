@@ -32,6 +32,55 @@ The parser runtime is authority-layered.
 - Supporting runtime components provide orchestration, probing, caching, and metadata.
 - Metadata components are descriptive and cannot decide parse outcomes on their own.
 
+## Supported vs unsupported runtime semantics
+
+This section is intentionally contractual and boundary-oriented.
+
+### Supported runtime semantics (current contract)
+
+The following are explicitly supported runtime guarantees:
+
+- deterministic syntax-oriented parsing with `ParserEngine` as final authority;
+- explicit and conservative scheduling/orchestration;
+- advisory lookahead with mandatory parser-authoritative fallback when uncertain;
+- deterministic diagnostics ownership boundaries;
+- invocation-local reuse/memoization artifacts;
+- metadata-only continuations and metadata-only shared-prefix infrastructure.
+
+### Unsupported runtime semantics (no compatibility contract)
+
+The following are explicitly unsupported in the current runtime:
+
+- semantic-aware memoization;
+- adaptive parsing;
+- parser replay;
+- rollback parsing;
+- branch merge execution;
+- semantic-aware pruning;
+- resumable continuation execution;
+- speculative parser execution.
+
+Unsupported means:
+
+- no runtime guarantee exists;
+- no semantic compatibility contract exists;
+- observed behavior in an edge case must not be treated as supported semantics.
+
+### Parseable vs supported boundaries
+
+Some inputs or grammar shapes may appear parseable, partially executable, or metadata-observable without becoming supported runtime semantics.
+
+Examples of non-contractual observations:
+
+- parser-rule-dependent lookahead observations;
+- metadata grouping or shared-prefix observations;
+- reusable completion artifacts in invocation-local contexts;
+- conservative fallback behavior under uncertainty.
+
+Boundary rule:
+
+- parseable or observable != supported compatibility contract.
+
 ## ParserStateRegistry lifecycle model
 
 `ParserStateRegistry` is parse-lifecycle-scoped runtime storage.
