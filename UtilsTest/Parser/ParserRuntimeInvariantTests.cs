@@ -333,6 +333,11 @@ public class ParserRuntimeInvariantTests
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.TrailingTokensAfterParse.Code));
     }
 
+    /// <summary>
+    /// Verifies that shared-prefix metadata observability and parseable surface behavior
+    /// do not establish semantic support guarantees, and that parser-authoritative
+    /// trailing-token diagnostics remain decisive for final acceptance.
+    /// </summary>
     [TestMethod]
     public void ParseableSharedPrefixMetadata_DoesNotByItselfEstablishSemanticSupportGuarantees()
     {
