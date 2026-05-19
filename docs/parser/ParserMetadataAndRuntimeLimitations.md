@@ -17,6 +17,60 @@ This document consolidates parser documentation that explains what is currently 
 
 It is factual and conservative. It does not define a roadmap commitment.
 
+## Compatibility and conservative fallback boundaries
+
+This document is limitation-first and compatibility-oriented.
+
+### Supported runtime semantics (current compatibility guarantees)
+
+Current supported guarantees are intentionally conservative:
+
+- deterministic, syntax-oriented parser-authoritative execution;
+- explicit orchestration with non-authoritative metadata observability;
+- advisory lookahead with parse-required fallback for non-reject outcomes;
+- invocation-local metadata/reuse lifecycle with deterministic discardability;
+- deterministic diagnostics ownership boundaries.
+
+### Unsupported runtime semantics (intentionally out of scope)
+
+The runtime does not currently support:
+
+- semantic-aware memoization;
+- adaptive parsing;
+- parser replay;
+- rollback parsing;
+- branch merge execution;
+- resumable continuation execution;
+- semantic-aware pruning;
+- speculative parser execution.
+
+Unsupported semantics have no compatibility guarantee and may evolve only through explicit runtime-contract work.
+
+### Parseable vs supported semantics
+
+Some constructs may be syntactically parseable or metadata-observable while still remaining unsupported as runtime semantics.
+
+Examples:
+
+- parser-rule-dependent lookahead observations;
+- shared-prefix/continuation metadata visibility;
+- reusable completion artifacts;
+- conservative fallback behavior.
+
+These observations do not establish semantic compatibility guarantees.
+
+### Future feature activation expectations (boundaries only)
+
+Future support for currently unsupported semantics requires all of the following:
+
+- explicit runtime contracts;
+- explicit diagnostics expectations;
+- dedicated invariant tests;
+- explicit documentation/roadmap updates;
+- explicit authority and lifecycle modeling.
+
+This section defines activation prerequisites only. It does not design those systems.
+
 ## Consolidation note
 
 This document intentionally consolidates previous shared-prefix architecture documents to keep invariants and runtime-limitation guidance in one place:
