@@ -616,7 +616,7 @@ public sealed class Antlr4GrammarConverter
     /// <returns>Exception to throw.</returns>
     private GrammarParseException UnknownLexerCommand(string commandName)
     {
-        _diagnostics?.Add(ParserDiagnostics.UnexpectedToken, commandName);
+        _diagnostics?.Add(ParserDiagnostics.UnsupportedLexerCommand, commandName);
         return new GrammarParseException($"Unknown lexer command: '{commandName}'");
     }
 

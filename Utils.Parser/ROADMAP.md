@@ -189,6 +189,7 @@ Current clarification status:
 - local vs global diagnostics lifecycle is explicitly documented,
 - orchestration diagnostics (pruning/backtracking) are explicitly separated from engine-authoritative parse diagnostics,
 - compatibility diagnostics are explicitly documented as independent from parse success/failure.
+- unsupported ANTLR4 lexer-command constructs are now surfaced via explicit deterministic compatibility diagnostics.
 
 ### Phase 3 — Lookahead contract consolidation
 
