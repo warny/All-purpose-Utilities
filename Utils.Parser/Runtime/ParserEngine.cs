@@ -544,6 +544,49 @@ public sealed class ParserEngine
         return TryParseContent(context, alt.Content, rule, precedence, alternativeIndex, elementIndex, diagnostics);
     }
 
+    private delegate ParseNode? ContentParser(
+        ParserEngine engine,
+        ParseContext context,
+        RuleContent content,
+        Rule rule,
+        int precedence,
+        int alternativeIndex,
+        int elementIndex,
+        DiagnosticBag? diagnostics);
+
+    /// <summary>Maps each concrete <see cref="RuleContent"/> type to its parse handler.</summary>
+    private static readonly Dictionary<Type, ContentParser> ContentParsers = new()
+    {
+        [typeof(RuleRef)] = static (e, ctx, c, rule, prec, altIdx, elIdx, diag) =>
+            e.TryParseRuleRef(ctx, (RuleRef)c, rule, prec, altIdx, elIdx, diag),
+        [typeof(Sequence)] = static (e, ctx, c, rule, prec, altIdx, _, diag) =>
+            e.TryParseSequence(ctx, (Sequence)c, rule, prec, altIdx, diag),
+        [typeof(Alternation)] = static (e, ctx, c, rule, prec, altIdx, elIdx, diag) =>
+            e.TryParseAlternation(ctx, (Alternation)c, rule, prec, altIdx, elIdx, diag),
+        [typeof(Alternative)] = static (e, ctx, c, rule, prec, altIdx, elIdx, diag) =>
+            e.TryParseAlternative(ctx, (Alternative)c, rule, prec, altIdx, elIdx, diag),
+        [typeof(Quantifier)] = static (e, ctx, c, rule, prec, altIdx, _, diag) =>
+            e.TryParseQuantifier(ctx, (Quantifier)c, rule, prec, altIdx, diag),
+        [typeof(LiteralMatch)] = static (e, ctx, c, rule, _, _, _, _) =>
+            e.TryParseLiteral(ctx, (LiteralMatch)c, rule),
+        [typeof(Negation)] = static (e, ctx, c, rule, prec, altIdx, _, diag) =>
+            e.TryParseNegation(ctx, (Negation)c, rule, prec, altIdx, diag),
+        [typeof(ValidatingPredicate)] = static (e, ctx, c, rule, _, altIdx, elIdx, diag) =>
+        {
+            var vp = (ValidatingPredicate)c;
+            return e.EvaluateSemanticPredicate(ctx, rule, vp, vp.Code, altIdx, elIdx, diag);
+        },
+        [typeof(GatingPredicate)] = static (e, ctx, c, rule, _, altIdx, elIdx, diag) =>
+        {
+            var gp = (GatingPredicate)c;
+            return e.EvaluateSemanticPredicate(ctx, rule, gp, gp.Code, altIdx, elIdx, diag);
+        },
+        [typeof(PrecedencePredicate)] = static (e, ctx, _, rule, _, _, _, _) =>
+            CreateEmptyNode(ctx, rule),
+        [typeof(EmbeddedAction)] = static (e, ctx, c, rule, _, altIdx, elIdx, diag) =>
+            e.HandleEmbeddedAction(ctx, rule, (EmbeddedAction)c, altIdx, elIdx, diag),
+    };
+
     /// <summary>
     /// Dispatches to the appropriate handler based on the concrete type of
     /// <paramref name="content"/>.
@@ -563,45 +606,9 @@ public sealed class ParserEngine
         int elementIndex = -1,
         DiagnosticBag? diagnostics = null)
     {
-        switch (content)
-        {
-            case RuleRef ruleRef:
-                return TryParseRuleRef(context, ruleRef, rule, precedence, alternativeIndex, elementIndex, diagnostics);
-
-            case Sequence seq:
-                return TryParseSequence(context, seq, rule, precedence, alternativeIndex, diagnostics);
-
-            case Alternation alternation:
-                return TryParseAlternation(context, alternation, rule, precedence, alternativeIndex, elementIndex, diagnostics);
-
-            case Alternative alt:
-                return TryParseAlternative(context, alt, rule, precedence, alternativeIndex, elementIndex, diagnostics);
-
-            case Quantifier quant:
-                return TryParseQuantifier(context, quant, rule, precedence, alternativeIndex, diagnostics);
-
-            case LiteralMatch lit:
-                return TryParseLiteral(context, lit, rule);
-
-            case Negation neg:
-                return TryParseNegation(context, neg, rule, precedence, alternativeIndex, diagnostics);
-
-            case ValidatingPredicate validatingPredicate:
-                return EvaluateSemanticPredicate(context, rule, validatingPredicate, validatingPredicate.Code, alternativeIndex, elementIndex, diagnostics);
-
-            case GatingPredicate gatingPredicate:
-                return EvaluateSemanticPredicate(context, rule, gatingPredicate, gatingPredicate.Code, alternativeIndex, elementIndex, diagnostics);
-
-            case PrecedencePredicate:
-                // Already handled in CheckPrecedence.
-                return CreateEmptyNode(context, rule);
-
-            case EmbeddedAction embeddedAction:
-                return HandleEmbeddedAction(context, rule, embeddedAction, alternativeIndex, elementIndex, diagnostics);
-
-            default:
-                return null;
-        }
+        return ContentParsers.TryGetValue(content.GetType(), out var parser)
+            ? parser(this, context, content, rule, precedence, alternativeIndex, elementIndex, diagnostics)
+            : null;
     }
 
 
