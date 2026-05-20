@@ -239,6 +239,20 @@ public class Antlr4GrammarConverterTests
         Assert.AreEqual(Associativity.Left, powerAlternative.Assoc);
     }
 
+    [TestMethod]
+    public void ParseLexerRule_UnsupportedLexerCommand_EmitsDeterministicDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID : 'a' -> customCommand ;
+            """, diagnostics));
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.UnsupportedLexerCommand.Code));
+    }
+
     // ─── 8. Alternative label # Label ─────────────────────────────────────────
 
     [TestMethod]

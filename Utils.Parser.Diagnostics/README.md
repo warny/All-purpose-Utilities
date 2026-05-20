@@ -60,6 +60,7 @@ All named descriptors are defined in the `ParserDiagnostics` static class and ac
 | UP1017 | `ParseMemoMiss` | No cached result existed for a (rule, position, precedence) triple |
 | UP1018 | `LeftRecursivePrecedencePartiallySupported` | Left-recursive precedence predicates are only partially handled |
 | UP1019 | `UnsupportedAntlrLanguageOptionIgnored` | The ANTLR4 `language` option is not supported and is silently ignored |
+| UP1020 | `UnsupportedLexerCommand` | A lexer command was parsed but is outside the currently supported command set |
 
 ### UP5xxx — Warnings (recovery / best-effort)
 
