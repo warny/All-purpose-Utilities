@@ -225,8 +225,8 @@ public class ParserDiagnosticsTests
 
     [TestMethod]
     /// <summary>
-    /// Verifies that rule-level ANTLR4 actions remain metadata-only compatibility points
-    /// and emit explicit deterministic ignored-action diagnostics.
+    /// Verifies that semantic-predicate compatibility diagnostics remain deterministic
+    /// and observable independently from final parse success.
     /// </summary>
     public void SemanticPredicateCompatibilityDiagnostic_IsDeterministic_AndIndependentFromParseSuccess()
     {
