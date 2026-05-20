@@ -15,9 +15,19 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class AlternativeScheduler
 {
+    private readonly IParserRuntimeObserver? _runtimeObserver;
     private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
     private readonly ParserContinuationFactory _continuationFactory = new();
     private readonly ParserSharedPrefixPlanFactory _sharedPrefixPlanFactory = new();
+
+    /// <summary>
+    /// Initializes a scheduler with an optional passive runtime observer.
+    /// </summary>
+    /// <param name="runtimeObserver">Descriptive observer that cannot influence scheduler decisions.</param>
+    public AlternativeScheduler(IParserRuntimeObserver? runtimeObserver = null)
+    {
+        _runtimeObserver = runtimeObserver;
+    }
     /// <summary>
     /// Drives alternative orchestration for a single alternation parse attempt.
     /// Local outcomes here are descriptive scheduling artifacts:
@@ -40,16 +50,21 @@ internal sealed class AlternativeScheduler
         {
             var alternative = ordered[index];
             var initial = CreateInitialState(rule, alternative, originInputPosition, index);
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeStarted(observation), CreateObservation(initial));
             var scheduled = parseAlternative(alternative, index);
             var parsed = scheduled.State;
             lookaheadProbesByAlternative[index] = scheduled.Probe;
             if (parsed is null)
             {
-                failedStates.Add(initial.Fail());
+                var failedState = initial.Fail();
+                failedStates.Add(failedState);
+                NotifyObserver(observation => _runtimeObserver?.OnAlternativeFailed(observation), CreateObservation(failedState));
                 continue;
             }
 
-            completedStates.Add(EnsureInitialized(parsed));
+            var completedState = EnsureInitialized(parsed);
+            completedStates.Add(completedState);
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeCompleted(observation), CreateObservation(completedState));
         }
 
         if (completedStates.Count == 0)
@@ -65,6 +80,10 @@ internal sealed class AlternativeScheduler
         var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
         var prunedSet = new HashSet<ActiveParseState>(pruned);
         var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
+        foreach (var prunedState in prunedStates)
+        {
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativePruned(observation), CreateObservation(prunedState));
+        }
 
         // The selected state is the scheduler's best local candidate after orchestration filters.
         // ParserEngine still owns final parse acceptance (including trailing-token validation).
@@ -75,6 +94,11 @@ internal sealed class AlternativeScheduler
             {
                 winner = state;
             }
+        }
+
+        if (winner is not null)
+        {
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(winner));
         }
 
         return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
@@ -141,6 +165,45 @@ internal sealed class AlternativeScheduler
 
         return null;
     }
+    /// <summary>
+    /// Creates a passive immutable observation payload from a parse state.
+    /// </summary>
+    /// <param name="state">State to project to observation data.</param>
+    /// <returns>Immutable observation payload.</returns>
+    private static AlternativeRuntimeObservation CreateObservation(ActiveParseState state)
+    {
+        return new AlternativeRuntimeObservation(
+            state.Rule.Name,
+            state.AlternativeIndex,
+            state.Alternative.Priority,
+            state.OriginInputPosition,
+            state.CurrentInputPosition,
+            state.Status.ToString());
+    }
+
+
+    /// <summary>
+    /// Notifies a runtime observer callback while isolating observer exceptions from parser scheduling flow.
+    /// </summary>
+    /// <param name="callback">Observer callback to invoke.</param>
+    /// <param name="observation">Immutable observation payload passed to the callback.</param>
+    private static void NotifyObserver(Action<AlternativeRuntimeObservation>? callback, AlternativeRuntimeObservation observation)
+    {
+        if (callback is null)
+        {
+            return;
+        }
+
+        try
+        {
+            callback(observation);
+        }
+        catch
+        {
+            // Observer callbacks are intentionally isolated from runtime control flow.
+        }
+    }
+
     private static ActiveParseState CreateInitialState(Rule rule, Alternative alternative, int originInputPosition, int alternativeIndex)
     {
         return new ActiveParseState

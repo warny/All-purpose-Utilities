@@ -14,7 +14,8 @@ public sealed record ParserRuntimeFeaturePolicy
     public static ParserRuntimeFeaturePolicy Default { get; } = new()
     {
         SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
-        ParserActionExecutor = new DefaultParserActionExecutor()
+        ParserActionExecutor = new DefaultParserActionExecutor(),
+        RuntimeObserver = null
     };
 
     /// <summary>
@@ -26,4 +27,11 @@ public sealed record ParserRuntimeFeaturePolicy
     /// Gets the parser action execution strategy.
     /// </summary>
     public required IParserActionExecutor ParserActionExecutor { get; init; }
+
+    /// <summary>
+    /// Gets the optional passive runtime observer for scheduling introspection.
+    /// This observer is descriptive-only and does not control parser execution.
+    /// </summary>
+    public IParserRuntimeObserver? RuntimeObserver { get; init; }
 }
+
