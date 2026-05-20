@@ -227,6 +227,67 @@ public class AlternativeSchedulerTests
         Assert.IsTrue(result.CompletedStates.Any(static state => state.Alternative.Label == "Y"));
     }
 
+    [TestMethod]
+    public void Run_WithObserver_ProducesDeterministicEventOrdering()
+    {
+        var observer = new RecordingRuntimeObserver();
+        var scheduler = new AlternativeScheduler(observer);
+        var (context, rule, alternatives) = CreateAlternatives();
+
+        _ = scheduler.Run(
+            rule,
+            alternatives,
+            originInputPosition: context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 5 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
+
+        CollectionAssert.AreEqual(
+            new string[]
+            {
+                "started:0", "completed:0",
+                "started:1", "completed:1",
+                "started:2", "completed:2",
+                "selected:2"
+            },
+            observer.Events);
+    }
+
+    [TestMethod]
+    public void Run_WithObserver_DoesNotChangeSchedulerSelection()
+    {
+        var withObserverScheduler = new AlternativeScheduler(new RecordingRuntimeObserver());
+        var withoutObserverScheduler = new AlternativeScheduler();
+        var (context, rule, alternatives) = CreateAlternatives();
+
+        var withObserver = withObserverScheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 7 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        var withoutObserver = withoutObserverScheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 7 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        Assert.IsNotNull(withObserver.SelectedState);
+        Assert.IsNotNull(withoutObserver.SelectedState);
+        Assert.AreEqual(withoutObserver.SelectedState.AlternativeIndex, withObserver.SelectedState.AlternativeIndex);
+        Assert.AreEqual(withoutObserver.SelectedState.CurrentInputPosition, withObserver.SelectedState.CurrentInputPosition);
+    }
+
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
     {
         var a = new Alternative(2, Associativity.Left, new LiteralMatch("a"), "A");
@@ -260,5 +321,20 @@ public class AlternativeSchedulerTests
             Depth = 0,
             Continuation = null
         };
+    }
+
+    private sealed class RecordingRuntimeObserver : IParserRuntimeObserver
+    {
+        public List<string> Events { get; } = [];
+
+        public void OnAlternativeStarted(AlternativeRuntimeObservation observation) => Events.Add($"started:{observation.AlternativeIndex}");
+
+        public void OnAlternativeCompleted(AlternativeRuntimeObservation observation) => Events.Add($"completed:{observation.AlternativeIndex}");
+
+        public void OnAlternativeFailed(AlternativeRuntimeObservation observation) => Events.Add($"failed:{observation.AlternativeIndex}");
+
+        public void OnAlternativePruned(AlternativeRuntimeObservation observation) => Events.Add($"pruned:{observation.AlternativeIndex}");
+
+        public void OnAlternativeSelected(AlternativeRuntimeObservation observation) => Events.Add($"selected:{observation.AlternativeIndex}");
     }
 }

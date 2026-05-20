@@ -162,3 +162,8 @@ No support for:
 - semantic-aware memoization.
 
 These boundaries are current-contract statements only.
+
+
+## Runtime observation
+
+The optional `IParserRuntimeObserver` infrastructure is passive and descriptive only. Observer callbacks do not return control decisions and cannot influence scheduling, pruning, parse acceptance, parse-tree shape, or diagnostics authority.
