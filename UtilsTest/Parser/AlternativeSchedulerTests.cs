@@ -288,6 +288,41 @@ public class AlternativeSchedulerTests
         Assert.AreEqual(withoutObserver.SelectedState.CurrentInputPosition, withObserver.SelectedState.CurrentInputPosition);
     }
 
+
+
+    [TestMethod]
+    public void Run_WithThrowingObserver_DoesNotChangeSchedulerSelection()
+    {
+        var withThrowingObserverScheduler = new AlternativeScheduler(new ThrowingRuntimeObserver());
+        var withoutObserverScheduler = new AlternativeScheduler();
+        var (context, rule, alternatives) = CreateAlternatives();
+
+        var withThrowingObserver = withThrowingObserverScheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 7 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        var withoutObserver = withoutObserverScheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 7 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        Assert.IsNotNull(withThrowingObserver.SelectedState);
+        Assert.IsNotNull(withoutObserver.SelectedState);
+        Assert.AreEqual(withoutObserver.SelectedState.AlternativeIndex, withThrowingObserver.SelectedState.AlternativeIndex);
+        Assert.AreEqual(withoutObserver.SelectedState.CurrentInputPosition, withThrowingObserver.SelectedState.CurrentInputPosition);
+    }
+
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
     {
         var a = new Alternative(2, Associativity.Left, new LiteralMatch("a"), "A");
@@ -321,6 +356,21 @@ public class AlternativeSchedulerTests
             Depth = 0,
             Continuation = null
         };
+    }
+
+
+
+    private sealed class ThrowingRuntimeObserver : IParserRuntimeObserver
+    {
+        public void OnAlternativeStarted(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
+
+        public void OnAlternativeCompleted(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
+
+        public void OnAlternativeFailed(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
+
+        public void OnAlternativePruned(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
+
+        public void OnAlternativeSelected(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
     }
 
     private sealed class RecordingRuntimeObserver : IParserRuntimeObserver

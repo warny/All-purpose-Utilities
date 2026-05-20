@@ -50,7 +50,7 @@ internal sealed class AlternativeScheduler
         {
             var alternative = ordered[index];
             var initial = CreateInitialState(rule, alternative, originInputPosition, index);
-            _runtimeObserver?.OnAlternativeStarted(CreateObservation(initial));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeStarted(observation), CreateObservation(initial));
             var scheduled = parseAlternative(alternative, index);
             var parsed = scheduled.State;
             lookaheadProbesByAlternative[index] = scheduled.Probe;
@@ -58,13 +58,13 @@ internal sealed class AlternativeScheduler
             {
                 var failedState = initial.Fail();
                 failedStates.Add(failedState);
-                _runtimeObserver?.OnAlternativeFailed(CreateObservation(failedState));
+                NotifyObserver(observation => _runtimeObserver?.OnAlternativeFailed(observation), CreateObservation(failedState));
                 continue;
             }
 
             var completedState = EnsureInitialized(parsed);
             completedStates.Add(completedState);
-            _runtimeObserver?.OnAlternativeCompleted(CreateObservation(completedState));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeCompleted(observation), CreateObservation(completedState));
         }
 
         if (completedStates.Count == 0)
@@ -82,7 +82,7 @@ internal sealed class AlternativeScheduler
         var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
         foreach (var prunedState in prunedStates)
         {
-            _runtimeObserver?.OnAlternativePruned(CreateObservation(prunedState));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativePruned(observation), CreateObservation(prunedState));
         }
 
         // The selected state is the scheduler's best local candidate after orchestration filters.
@@ -98,7 +98,7 @@ internal sealed class AlternativeScheduler
 
         if (winner is not null)
         {
-            _runtimeObserver?.OnAlternativeSelected(CreateObservation(winner));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(winner));
         }
 
         return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
@@ -179,6 +179,29 @@ internal sealed class AlternativeScheduler
             state.OriginInputPosition,
             state.CurrentInputPosition,
             state.Status.ToString());
+    }
+
+
+    /// <summary>
+    /// Notifies a runtime observer callback while isolating observer exceptions from parser scheduling flow.
+    /// </summary>
+    /// <param name="callback">Observer callback to invoke.</param>
+    /// <param name="observation">Immutable observation payload passed to the callback.</param>
+    private static void NotifyObserver(Action<AlternativeRuntimeObservation>? callback, AlternativeRuntimeObservation observation)
+    {
+        if (callback is null)
+        {
+            return;
+        }
+
+        try
+        {
+            callback(observation);
+        }
+        catch
+        {
+            // Observer callbacks are intentionally isolated from runtime control flow.
+        }
     }
 
     private static ActiveParseState CreateInitialState(Rule rule, Alternative alternative, int originInputPosition, int alternativeIndex)
