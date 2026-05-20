@@ -38,11 +38,11 @@ The features below are operational in current runtime and project-compilation fl
 
 The following constructs are parsed and stored, but runtime semantic execution is intentionally disabled.
 
-| Construct | Current behavior | Diagnostics |
-|---|---|---|
-| Semantic predicates (`{ condition }?`) | Parsed and represented in grammar model; runtime uses an evaluation abstraction (`ISemanticPredicateEvaluator`). Default policy is `NotEvaluated` (no predicate execution). | `SemanticPredicateNotEnforced` when evaluator returns `NotEvaluated` |
-| Inline actions (`{ code }`) | Parsed and stored; runtime does not execute target-language code blocks. | `InlineActionStoredNotExecuted` |
-| Rule actions (`@init`, `@after`) | Parsed as action metadata where present; no execution hook is active in runtime parsing. | `InlineActionStoredNotExecuted` when represented as runtime embedded actions; `ActionIgnored` may apply to top-level/pipeline actions. |
+| Construct | Parsed | Stored | Resolved | Executable | Runtime-supported | Diagnostics |
+|---|---|---|---|---|---|---|
+| Semantic predicates (`{ condition }?`) | Yes | Yes (predicate metadata) | Partially (policy-routed) | Policy-dependent only | Conservative by default (`NotEvaluated`) | `SemanticPredicateNotEnforced` when evaluator returns `NotEvaluated` |
+| Inline actions (`{ code }`) | Yes | Yes (embedded action metadata) | No target-language semantic resolution | No by default | Parsed-but-not-executed compatibility only | `InlineActionStoredNotExecuted` |
+| Rule actions (`@init`, `@after`, unsupported action slots) | Yes | Yes (rule/action metadata) | Limited to recognized metadata slots | No | Metadata-only/ignored compatibility path | `ActionIgnored` for ignored rule or grammar action entries; `InlineActionStoredNotExecuted` when an embedded action reaches runtime policy flow |
 
 Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior (not evaluated / not executed), while custom policies may alter branch acceptance and action handling within the documented runtime boundaries.
 
