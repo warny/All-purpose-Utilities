@@ -85,6 +85,7 @@ public class ParserDiagnosticsTests
         parser.Parse([], diagnostics: diagnostics);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.InlineActionStoredNotExecuted.Code));
     }
 
     [TestMethod]
@@ -218,6 +219,28 @@ public class ParserDiagnosticsTests
         Assert.IsNotNull(result.SelectedState);
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
+    }
+
+
+
+    [TestMethod]
+    /// <summary>
+    /// Verifies that rule-level ANTLR4 actions remain metadata-only compatibility points
+    /// and emit explicit deterministic ignored-action diagnostics.
+    /// </summary>
+    public void SemanticPredicateCompatibilityDiagnostic_IsDeterministic_AndIndependentFromParseSuccess()
+    {
+        var diagnostics = new DiagnosticBag();
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar PredicateDiag;
+            start : {canProceed}? 'a' ;
+            """, diagnostics);
+
+        var parser = new ParserEngine(definition);
+        var node = parser.Parse([new Token(new SourceSpan(0, 1), "a", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(node);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
     }
 
     [TestMethod]
