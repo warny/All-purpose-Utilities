@@ -575,6 +575,34 @@ public class Antlr4GrammarConverterTests
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.UnsupportedAntlrLanguageOptionIgnored.Code));
     }
 
+    [TestMethod]
+    public void ParseUnsupportedOption_EmitsExplicitDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar C;
+            options { visitor=true; }
+            start : 'x' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.UnsupportedAntlrOptionIgnored.Code));
+    }
+
+    [TestMethod]
+    public void ParseTokensAndChannelsSpec_EmitsPartialSupportDiagnostics()
+    {
+        var diagnostics = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar C;
+            tokens { A, B }
+            channels { COMMENTS }
+            start : 'x' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.TokensBlockIgnored.Code));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ChannelsBlockIgnored.Code));
+    }
+
     // ─── 15. grammaire invalide → exception ──────────────────────────────────
 
     [TestMethod]

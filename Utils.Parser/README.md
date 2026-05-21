@@ -20,6 +20,9 @@ dotnet add package omy.Utils.Parser
 
 ANTLR4 `.g4` support is currently **partial**.
 
+ANTLR4 compatibility is intentionally conservative: unsupported constructs fail explicitly through diagnostics instead of being silently ignored.
+
+
 - ✅ Scenarios covered by the `UtilsTest.Parser` test suite are supported.
 - ⚠️ Full ANTLR4 compatibility is not guaranteed for every advanced syntax/rule.
 - ✅ If you need stricter build-time guarantees, also use `omy.Utils.Parser.Generators`.

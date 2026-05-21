@@ -132,6 +132,10 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor UnsupportedLexerCommand =
         new("UP1020", "Unsupported lexer command", "Lexer command '{0}' is parsed but not supported by Utils.Parser.", DefaultCategory);
 
+    /// <summary>ANTLR option parsed but not supported by this runtime.</summary>
+    public static readonly ParserDiagnosticDescriptor UnsupportedAntlrOptionIgnored =
+        new("UP1021", "ANTLR option ignored", "ANTLR option '{0}' is currently unsupported and will be ignored.", DefaultCategory);
+
     // Warnings (UP5xxx)
     /// <summary>Best-effort recovery used.</summary>
     public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed =
@@ -232,6 +236,7 @@ public static class ParserDiagnostics
             [LeftRecursivePrecedencePartiallySupported.Code] = LeftRecursivePrecedencePartiallySupported,
             [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [UnsupportedLexerCommand.Code] = UnsupportedLexerCommand,
+            [UnsupportedAntlrOptionIgnored.Code] = UnsupportedAntlrOptionIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,
             [FallbackStrategyUsed.Code] = FallbackStrategyUsed,
