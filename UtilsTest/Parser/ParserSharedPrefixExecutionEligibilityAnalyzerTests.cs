@@ -101,7 +101,7 @@ public class ParserSharedPrefixExecutionEligibilityAnalyzerTests
             tokenName,
             alternativeIndexes,
             continuations,
-            new ParserSharedPrefixSegment(tokenName, new ParserSharedPrefixBoundary(boundaryPosition, null)));
+            new ParserSharedPrefixSegment(tokenName, [tokenName], new ParserSharedPrefixBoundary(boundaryPosition, null)));
     }
 
     private static ParserContinuationDescriptor Continuation(int alternativeIndex, int sequencePosition)

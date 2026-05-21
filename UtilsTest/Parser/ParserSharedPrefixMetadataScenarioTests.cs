@@ -27,6 +27,7 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual(1, plans.Count);
         var plan = plans[0];
         Assert.AreEqual("ID", plan.Segment.SharedTokenName);
+        CollectionAssert.AreEqual(new[] { "ID" }, plan.Segment.StructuralTokens.ToArray());
         Assert.AreEqual(1, plan.Segment.Boundary.SequencePosition);
         CollectionAssert.AreEqual(new[] { 1, 1 }, plan.Continuations.Select(static c => c.Key.SequencePosition).ToArray());
 
@@ -63,6 +64,7 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual(1, plans.Count);
         var plan = plans[0];
         Assert.AreEqual("ID", plan.Segment.SharedTokenName);
+        CollectionAssert.AreEqual(new[] { "ID" }, plan.Segment.StructuralTokens.ToArray());
         Assert.AreEqual(1, plan.Segment.Boundary.SequencePosition);
         CollectionAssert.AreEqual(new[] { 1, 1 }, plan.Continuations.Select(static c => c.Key.SequencePosition).ToArray());
 
@@ -89,6 +91,36 @@ public class ParserSharedPrefixMetadataScenarioTests
         var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
 
         Assert.AreEqual(0, plans.Count);
+    }
+
+    [TestMethod]
+    public void Pipeline_SharedIdDotPrefix_ProducesTwoTokenStructuralPrefix()
+    {
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("A"))),
+            Alternative(1, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("B")))
+        };
+
+        var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID", "." }, plans[0].Segment.StructuralTokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Pipeline_NestedParenthesizedRuleRefs_ProducesSingleTokenStructuralPrefix()
+    {
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("A"), 1, 1))),
+            Alternative(1, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("B"), 1, 1)))
+        };
+
+        var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID" }, plans[0].Segment.StructuralTokens.ToArray());
     }
 
     /// <summary>
@@ -152,6 +184,123 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.IsTrue(validation.Issues.Any(static i => i.Message.Contains("non-fallback", StringComparison.Ordinal)));
     }
 
+    // ─── AlternativeStructuralPrefixExtractor tests ──────────────────────────
+
+    [TestMethod]
+    public void Extractor_SequenceAlternatives_ProducesCorrectDescriptors()
+    {
+        var extractor = new AlternativeStructuralPrefixExtractor();
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("A"))),
+            Alternative(1, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("B")))
+        };
+
+        var descriptors = extractor.ExtractAll(alternatives);
+
+        Assert.AreEqual(2, descriptors.Count);
+        Assert.AreEqual(0, descriptors[0].AlternativeIndex);
+        Assert.AreEqual(1, descriptors[1].AlternativeIndex);
+        CollectionAssert.AreEqual(new[] { "ID", ".", "A" }, descriptors[0].StructuralTokens.ToArray());
+        CollectionAssert.AreEqual(new[] { "ID", ".", "B" }, descriptors[1].StructuralTokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Extractor_QuantifierStopsExtraction_Conservatively()
+    {
+        var extractor = new AlternativeStructuralPrefixExtractor();
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("X"), 1, 1)))
+        };
+
+        var descriptors = extractor.ExtractAll(alternatives);
+
+        CollectionAssert.AreEqual(new[] { "ID" }, descriptors[0].StructuralTokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Extractor_SingleRuleRef_ProducesSingleTokenDescriptor()
+    {
+        var extractor = new AlternativeStructuralPrefixExtractor();
+        var alternatives = new[]
+        {
+            Alternative(0, new RuleRef("ID"))
+        };
+
+        var descriptors = extractor.ExtractAll(alternatives);
+
+        CollectionAssert.AreEqual(new[] { "ID" }, descriptors[0].StructuralTokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Extractor_StructuralTokens_IsReadOnly_CannotBeMutated()
+    {
+        var extractor = new AlternativeStructuralPrefixExtractor();
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new LiteralMatch("+")))
+        };
+
+        var tokens = extractor.ExtractAll(alternatives)[0].StructuralTokens;
+
+        Assert.IsTrue(((ICollection<string>)tokens).IsReadOnly,
+            "StructuralTokens must be wrapped in a read-only collection");
+    }
+
+    [TestMethod]
+    public void Factory_WithNoDescriptors_FallsBackToSharedTokenName()
+    {
+        var candidates = new[]
+        {
+            new ParserLookaheadSharedPrefixCandidate("ID", [0, 1])
+        };
+        var continuations = new[]
+        {
+            Continuation(0, 1),
+            Continuation(1, 1)
+        };
+
+        var plans = new ParserSharedPrefixPlanFactory().CreatePlans(candidates, continuations);
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID" }, plans[0].Segment.StructuralTokens.ToArray());
+    }
+
+    // ─── Regression: scheduler integration ───────────────────────────────────
+
+    [TestMethod]
+    public void Regression_SharedIdDotPrefix_StillProducesTwoTokenPrefix()
+    {
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("A"))),
+            Alternative(1, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("B")))
+        };
+
+        var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID", "." }, plans[0].Segment.StructuralTokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Regression_QuantifierAlternatives_StillProducesSingleTokenPrefix()
+    {
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("A"), 1, 1))),
+            Alternative(1, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("B"), 1, 1)))
+        };
+
+        var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID" }, plans[0].Segment.StructuralTokens.ToArray());
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
     /// <summary>
     /// Builds shared-prefix plans by probing alternatives and flowing metadata through detector, continuation, and plan factories.
     /// </summary>
@@ -176,7 +325,8 @@ public class ParserSharedPrefixMetadataScenarioTests
             }))
             .ToArray();
 
-        return planFactory.CreatePlans(candidates, continuations);
+        var descriptors = new AlternativeStructuralPrefixExtractor().ExtractAll(alternatives);
+        return planFactory.CreatePlans(candidates, continuations, descriptors);
     }
 
     /// <summary>
@@ -202,7 +352,7 @@ public class ParserSharedPrefixMetadataScenarioTests
             tokenName,
             alternativeIndexes,
             continuations,
-            new ParserSharedPrefixSegment(tokenName, new ParserSharedPrefixBoundary(boundaryPosition, null)));
+            new ParserSharedPrefixSegment(tokenName, [tokenName], new ParserSharedPrefixBoundary(boundaryPosition, null)));
     }
 
     /// <summary>
