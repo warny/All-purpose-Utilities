@@ -19,6 +19,19 @@ public class RuntimeObservationConsumersTests
     }
 
     [TestMethod]
+    public void RuntimeObservationRecorder_Observations_ReturnsDefensiveSnapshot()
+    {
+        var recorder = new RuntimeObservationRecorder();
+        recorder.OnAlternativeStarted(CreateObservation(ParserRuntimeObservationKind.AlternativeStarted, ParserRuntimeObservationStatus.Active, 0));
+
+        var firstSnapshot = recorder.Observations;
+        recorder.OnAlternativeCompleted(CreateObservation(ParserRuntimeObservationKind.AlternativeCompleted, ParserRuntimeObservationStatus.Completed, 0));
+
+        Assert.AreEqual(1, firstSnapshot.Count);
+        Assert.AreEqual(2, recorder.Observations.Count);
+    }
+
+    [TestMethod]
     public void RuntimeObservationTextWriter_ProducesStableDeterministicOutput()
     {
         var text = RuntimeObservationTextWriter.Write(CreateTraceObservations());
