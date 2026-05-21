@@ -126,7 +126,6 @@ var definition = Antlr4GrammarConverter.Parse("""
 
 ```csharp
 using Utils.Parser.Runtime;
-using System.IO;
 
 var lexer  = new LexerEngine(definition);
 var tokens = lexer.Tokenize(new StringReader("1 + 2 * 3")).ToList();
@@ -264,6 +263,39 @@ var compiler = new ParseTreeCompiler<int, int>()
 | 3 (lowest) | `DefaultDescend` / `DefaultAscend` | Always (fallback) |
 
 ---
+
+
+## Runtime observation consumers (tooling)
+
+Runtime observations are passive and non-authoritative. They describe scheduler events and must not drive parser execution.
+
+Example consumer usage:
+
+```csharp
+using Utils.Parser.Bootstrap;
+using Utils.Parser.Runtime;
+
+var definition = Antlr4GrammarConverter.Parse("""
+    grammar Sample;
+    start : A ;
+    A     : 'a' ;
+    WS    : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+    """);
+
+var recorder = new RuntimeObservationRecorder();
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuntimeObserver = recorder
+};
+var parser = new ParserEngine(definition, policy);
+var tokens = new CompiledGrammar(definition).Tokenize("a");
+
+var result = parser.Parse(tokens);
+var textTrace = RuntimeObservationTextWriter.Write(recorder.Observations);
+var jsonTrace = RuntimeObservationJsonWriter.Write(recorder.Observations);
+```
+
+Current observation exports are intentionally limited to the observation payload itself. They do not expose scheduler internals, active parser state internals, replay capabilities, or execution control hooks.
 
 ## Build a grammar programmatically
 
