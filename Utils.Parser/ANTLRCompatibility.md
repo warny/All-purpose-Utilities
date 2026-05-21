@@ -51,23 +51,29 @@ These features are supported but work differently. Read the **Usage** section be
 
 **Standard ANTLR4**: `options { superClass = MyBase; }` sets the generated parser or lexer class's base class.
 
-**Utils.Parser**: `superClass` is parsed and stored in `EffectiveGrammarOptions.ParserSuperClass` / `LexerSuperClass`. It is not used for class inheritance. Instead, it is the key that links a grammar to a registered `ILexerExtension` implementation, which injects tokens at runtime.
+**Utils.Parser**: `superClass` is parsed and stored as metadata in `EffectiveGrammarOptions.ParserSuperClass` / `LexerSuperClass` and in `GrammarExtensionBinding`. It has no effect on class inheritance.
 
-**Usage** — register a lexer extension bound to the declared `superClass` name:
+At runtime, the lexer calls **all** registered `ILexerExtension` instances in sequence — there is no automatic dispatch by `superClass` name. The `superClass` value is readable by an extension via `context.Definition.ExtensionBindings`, which lets the extension decide whether to apply its logic to a given grammar. The runtime enforces one constraint: if `ExtensionBindings.Count > 0` (i.e. the grammar declared `superClass`) but no extensions are registered, a validation error is raised.
+
+**Usage** — implement and register a lexer extension; inspect `ExtensionBindings` to filter by grammar if needed:
 
 ```csharp
 // Grammar declares:  options { superClass = IndentTracker; }
 
 public class IndentTrackerExtension : ILexerExtension
 {
-    public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) => [];
-
-    public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context)
+    public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context)
     {
-        // inject INDENT / DEDENT tokens based on indentation changes
+        // Optionally guard by superClass name:
+        bool applies = context.Definition.ExtensionBindings
+            .Any(b => b.SuperClassName == "IndentTracker");
+        if (!applies) return [];
+
+        // Custom token injection logic here.
         return [];
     }
 
+    public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
     public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
 }
 
@@ -78,7 +84,7 @@ var options = new LexerEngineOptions
 var lexer = new LexerEngine(definition, options);
 ```
 
-The `GrammarExtensionBinding` record on `ParserDefinition` exposes the declared `SuperClassName`, the owning grammar's lexer rule names, and its declared tokens and channels, so the extension can make context-aware decisions.
+The `GrammarExtensionBinding` record exposes `SuperClassName`, the owning grammar's lexer rule names, declared tokens, and declared channels.
 
 ---
 
