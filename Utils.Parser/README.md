@@ -309,6 +309,34 @@ var jsonTrace = RuntimeObservationJsonWriter.Write(recorder.Observations);
 
 Current observation exports are intentionally limited to the observation payload itself. They do not expose scheduler internals, active parser state internals, replay capabilities, or execution control hooks.
 
+
+### Runtime trace tooling workflow (illustrative)
+
+The current tooling flow is intentionally one-way and descriptive:
+
+1. Parse with a `RuntimeObservationRecorder` attached to `ParserRuntimeFeaturePolicy`.
+2. Export recorder observations with `RuntimeObservationTextWriter` / `RuntimeObservationJsonWriter`.
+3. Analyze deterministic observation sequences via `RuntimeTraceAnalyzer.Summarize(...)` and `RuntimeTraceAnalyzer.Compare(...)`.
+
+```csharp
+var recorder = new RuntimeObservationRecorder();
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuntimeObserver = recorder
+};
+
+var parser = new ParserEngine(definition, policy);
+var result = parser.Parse(tokens);
+
+var textExport = RuntimeObservationTextWriter.Write(recorder.Observations);
+var jsonExport = RuntimeObservationJsonWriter.Write(recorder.Observations);
+
+var summary = RuntimeTraceAnalyzer.Summarize(recorder.Observations);
+```
+
+For full end-to-end examples and boundary guidance, see
+[`docs/parser/RuntimeTraceAnalysis.md`](../docs/parser/RuntimeTraceAnalysis.md).
+
 ## Build a grammar programmatically
 
 Every grammar can also be constructed in pure C# using the model objects:

@@ -367,6 +367,7 @@ Current clarification status:
 
 - runtime trace analysis abstractions are available as tooling-only, read-only, deterministic consumers of passive observations/exports,
 - analysis outputs are explicitly descriptive and non-authoritative (no replay, no runtime ownership transfer, no parser/diagnostics authority transfer).
+- end-to-end runtime-observation/export/analysis usage guidance is documented as illustrative tooling only, with explicit non-framework/non-authoritative boundaries.
 
 ### Phase 8 — Future runtime research gates
 
