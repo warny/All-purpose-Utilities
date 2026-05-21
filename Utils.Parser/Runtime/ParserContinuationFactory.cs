@@ -62,10 +62,44 @@ internal sealed class ParserContinuationFactory
         bool isSharedPrefixCandidate)
     {
         var normalizedSequencePosition = ComputeSequencePosition(alternative, sequencePosition);
+        var category = ClassifyContinuation(normalizedSequencePosition, expectedTokenNames, isSharedPrefixCandidate);
         return new ParserContinuationDescriptor(
             new ParserContinuationKey(rule.Name, alternativeIndex, normalizedSequencePosition),
+            normalizedSequencePosition,
+            category,
             expectedTokenNames?.ToArray(),
             isSharedPrefixCandidate);
+    }
+
+    /// <summary>
+    /// Classifies a continuation descriptor with conservative descriptive categories.
+    /// Classification remains metadata-only and does not imply replay, execution, or resume capabilities.
+    /// </summary>
+    /// <param name="normalizedSequencePosition">Normalized sequence depth.</param>
+    /// <param name="expectedTokenNames">Shallow expected token names.</param>
+    /// <param name="isSharedPrefixCandidate">Whether shared-prefix candidate metadata was detected.</param>
+    /// <returns>A deterministic descriptive category.</returns>
+    private static ParserContinuationCategory ClassifyContinuation(
+        int normalizedSequencePosition,
+        IReadOnlyList<string>? expectedTokenNames,
+        bool isSharedPrefixCandidate)
+    {
+        if (isSharedPrefixCandidate)
+        {
+            return ParserContinuationCategory.SharedPrefixCandidate;
+        }
+
+        if (normalizedSequencePosition < 0)
+        {
+            return ParserContinuationCategory.Deferred;
+        }
+
+        if (expectedTokenNames is null || expectedTokenNames.Count == 0)
+        {
+            return ParserContinuationCategory.Terminal;
+        }
+
+        return ParserContinuationCategory.Sequential;
     }
 
     /// <summary>

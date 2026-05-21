@@ -276,7 +276,7 @@ Forbidden work:
 
 ### Phase 5 — Continuation metadata maturity
 
-**Status: not started.**
+**Status: in progress.**
 
 Goal: clarify and mature continuation metadata as descriptive infrastructure only.
 
