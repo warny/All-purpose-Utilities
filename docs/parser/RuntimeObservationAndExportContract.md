@@ -14,6 +14,7 @@ See also:
 - [`Utils.Parser/ROADMAP.md`](../../Utils.Parser/ROADMAP.md)
 - [`docs/parser/RuntimeStateOwnership.md`](./RuntimeStateOwnership.md)
 - [`docs/parser/ParserMetadataAndRuntimeLimitations.md`](./ParserMetadataAndRuntimeLimitations.md)
+- [`docs/parser/DiagnosticsObservationCorrelation.md`](./DiagnosticsObservationCorrelation.md)
 
 ## 1) Runtime observation contract
 
