@@ -104,6 +104,18 @@ decided separately by `HasDistinctSemantics`, which checks label, associativity,
 presence of predicates or actions. Pruning occurs only when both conditions hold: same
 shape key **and** `HasDistinctSemantics` returns `false`.
 
+
+### Runtime observation and export contract
+
+Runtime observation is passive, descriptive, and non-authoritative.
+
+- Observation contract (runtime semantics): `AlternativeRuntimeObservation`, `ParserRuntimeObservationKind`, `ParserRuntimeObservationStatus`, `IParserRuntimeObserver`.
+- Export contract (tooling renderers): `RuntimeObservationTextWriter`, `RuntimeObservationJsonWriter`.
+
+These are intentionally separate contracts. Export formats are deterministic tooling outputs, not replay or parser-control mechanisms.
+
+See [`docs/parser/RuntimeObservationAndExportContract.md`](../docs/parser/RuntimeObservationAndExportContract.md) for guarantees, non-guarantees, and stability boundaries.
+
 ## Quick start
 
 ### 1 — Parse a grammar from a `.g4` string
