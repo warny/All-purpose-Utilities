@@ -65,6 +65,7 @@ Current capabilities and responsibilities:
 - Branch outcome documentation exists.
 - Parser tests are organized to reflect runtime contracts.
 - Runtime observation and export contract is documented (`docs/parser/RuntimeObservationAndExportContract.md`).
+- Diagnostics/observation correlation boundaries are documented (`docs/parser/DiagnosticsObservationCorrelation.md`) as descriptive-only and non-authoritative.
 
 Clarifications that must remain true:
 
@@ -152,6 +153,7 @@ Current clarification status:
 - passive runtime observation is available for tooling/audit visibility and is explicitly non-authoritative (no control over scheduling, pruning, parse acceptance, parse-tree outcomes, or diagnostics authority).
 - observation contracts are normalized as immutable descriptive payloads; observer exceptions are isolated from parser execution semantics.
 - observation and export contract is formally documented in `docs/parser/RuntimeObservationAndExportContract.md`, covering runtime observation guarantees, export format stability, and non-authoritative boundaries.
+- diagnostics/observation correlation boundaries are explicitly documented as optional one-way descriptive identifiers only, with no replay/navigation authority.
 
 Allowed work:
 
