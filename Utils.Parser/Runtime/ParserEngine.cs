@@ -151,7 +151,7 @@ public sealed class ParserEngine
         _semanticPredicateEvaluator = effectivePolicy.SemanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
-        _alternativeScheduler = new AlternativeScheduler();
+        _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, new ParserLookaheadProbe());
     }
 

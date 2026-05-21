@@ -54,6 +54,7 @@ Current capabilities and responsibilities:
 - `ActiveParseState` provides local descriptive branch state.
 - `ParserLookaheadProbe` and `ParserLookaheadCache` provide conservative shallow lookahead.
 - Runtime feature policies are present.
+- Passive runtime observation hooks are available via policy configuration and remain non-authoritative.
 - Semantic predicate evaluator abstraction is present.
 - Parser action executor abstraction is present.
 - Continuation metadata is present.
@@ -73,6 +74,7 @@ Clarifications that must remain true:
 - `ActiveParseState` is not a runtime invocation frame.
 - Continuations are metadata-only.
 - Shared-prefix infrastructure is metadata-only.
+- Runtime observers are descriptive only and do not control scheduling, pruning, parse acceptance, parse-tree outcomes, or diagnostics authority.
 
 ## Explicit non-goals
 
@@ -144,6 +146,7 @@ Current clarification status:
 - local alternative comparison order is explicitly documented (longest match, then priority, then declaration order),
 - pruning is explicitly documented as orchestration-only and non-syntax-authoritative,
 - structural branch equivalence limits are explicitly documented as conservative and non-semantic-proof.
+- passive runtime observation is available for tooling/audit visibility and is explicitly non-authoritative (no control over scheduling, pruning, parse acceptance, parse-tree outcomes, or diagnostics authority).
 
 Allowed work:
 
