@@ -121,9 +121,9 @@ RuntimeTraceSummary baselineSummary = RuntimeTraceAnalyzer.Summarize(baseline);
 RuntimeTraceSummary candidateSummary = RuntimeTraceAnalyzer.Summarize(candidate);
 RuntimeTraceComparison comparison = RuntimeTraceAnalyzer.Compare(baseline, candidate);
 
-Console.WriteLine($"Baseline events: {baselineSummary.TotalObservationCount}");
-Console.WriteLine($"Candidate events: {candidateSummary.TotalObservationCount}");
-Console.WriteLine($"Delta events: {comparison.TotalObservationCountDelta}");
+Console.WriteLine($"Baseline events: {baselineSummary.TotalObservations}");
+Console.WriteLine($"Candidate events: {candidateSummary.TotalObservations}");
+Console.WriteLine($"Delta events: {comparison.FirstTotalObservations - comparison.SecondTotalObservations}");
 Console.WriteLine($"Text export identical: {comparison.AreTextExportsIdentical}");
 Console.WriteLine($"Json export identical: {comparison.AreJsonExportsIdentical}");
 ```
