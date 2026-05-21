@@ -560,6 +560,19 @@ public class Antlr4GrammarConverterTests
         Assert.IsNull(def.EffectiveOptions.LexerSuperClass);
     }
 
+    [TestMethod]
+    public void ParseSuperClass_DoesNotEmitUnsupportedOptionDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar C;
+            options { superClass=MyBaseParser; }
+            start : 'x' ;
+            """, diagnostics);
+
+        Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.UnsupportedAntlrOptionIgnored.Code));
+    }
+
     [DataTestMethod]
     [DataRow("CSharp")]
     [DataRow("Java")]

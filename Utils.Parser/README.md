@@ -43,6 +43,17 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 
 For a detailed, implementation-aligned compatibility status (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md).
 
+### `superClass` compatibility contract
+
+`superClass` is treated as compatibility metadata:
+
+- accepted by grammar ingestion,
+- preserved in grammar options,
+- normalized into `EffectiveGrammarOptions` (`ParserSuperClass` / `LexerSuperClass`),
+- exposed through extension metadata (`GrammarExtensionBinding`).
+
+It is not interpreted as automatic runtime inheritance execution for parser or lexer behavior.
+
 ## Key concepts
 
 | Class / Type | Role |
