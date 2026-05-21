@@ -339,7 +339,7 @@ Forbidden work:
 
 ### Phase 7 — Code generation and tooling
 
-**Status: not started.**
+**Status: in progress.**
 
 Goal: move toward tooling capabilities once runtime behavior is stable.
 
@@ -362,6 +362,11 @@ Forbidden work:
 
 - destabilizing `ParserEngine`,
 - tying IDE tooling to unstable runtime internals.
+
+Current clarification status:
+
+- runtime trace analysis abstractions are available as tooling-only, read-only, deterministic consumers of passive observations/exports,
+- analysis outputs are explicitly descriptive and non-authoritative (no replay, no runtime ownership transfer, no parser/diagnostics authority transfer).
 
 ### Phase 8 — Future runtime research gates
 
