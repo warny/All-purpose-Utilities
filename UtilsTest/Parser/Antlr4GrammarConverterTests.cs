@@ -573,6 +573,19 @@ public class Antlr4GrammarConverterTests
         Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.UnsupportedAntlrOptionIgnored.Code));
     }
 
+    [TestMethod]
+    public void ParseCaseInsensitive_DoesNotEmitUnsupportedOptionDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar C;
+            options { caseInsensitive=true; }
+            start : 'x' ;
+            """, diagnostics);
+
+        Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.UnsupportedAntlrOptionIgnored.Code));
+    }
+
     [DataTestMethod]
     [DataRow("CSharp")]
     [DataRow("Java")]

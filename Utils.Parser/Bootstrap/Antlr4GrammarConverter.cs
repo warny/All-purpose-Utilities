@@ -394,6 +394,7 @@ public sealed class Antlr4GrammarConverter
 
         return !string.Equals(optionName, "language", StringComparison.Ordinal)
             && !string.Equals(optionName, "superClass", StringComparison.Ordinal)
+            && !string.Equals(optionName, "caseInsensitive", StringComparison.Ordinal)
             && !string.Equals(optionName, "tokenVocab", StringComparison.Ordinal);
     }
 
