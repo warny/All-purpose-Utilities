@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
@@ -59,6 +60,50 @@ public class RuntimeObservationConsumersTests
         Assert.AreEqual(first, second);
     }
 
+
+
+    [TestMethod]
+    public void RuntimeObservationJsonWriter_UsesStableFieldNamesAndDistinctKindStatus()
+    {
+        var json = RuntimeObservationJsonWriter.Write(CreateTraceObservations());
+        using var document = JsonDocument.Parse(json);
+        var first = document.RootElement[0];
+
+        Assert.IsTrue(first.TryGetProperty("Kind", out var kind));
+        Assert.IsTrue(first.TryGetProperty("Status", out var status));
+        Assert.IsTrue(first.TryGetProperty("Rule", out _));
+        Assert.IsTrue(first.TryGetProperty("Alternative", out _));
+        Assert.IsTrue(first.TryGetProperty("CurrentInputPosition", out _));
+        Assert.IsTrue(first.TryGetProperty("OriginInputPosition", out _));
+        Assert.IsTrue(first.TryGetProperty("Priority", out _));
+        Assert.AreEqual("AlternativeStarted", kind.GetString());
+        Assert.AreEqual("Active", status.GetString());
+    }
+
+    [TestMethod]
+    public void RuntimeObservationExports_DoNotExposeActiveParseStateInternals()
+    {
+        var observations = CreateTraceObservations();
+
+        var text = RuntimeObservationTextWriter.Write(observations);
+        var json = RuntimeObservationJsonWriter.Write(observations);
+
+        Assert.IsFalse(text.Contains("ActiveParseState", StringComparison.Ordinal));
+        Assert.IsFalse(text.Contains("StateKey", StringComparison.Ordinal));
+        Assert.IsFalse(json.Contains("ActiveParseState", StringComparison.Ordinal));
+        Assert.IsFalse(json.Contains("StateKey", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void RuntimeObservationExports_AreDeterministicAcrossEquivalentParserRuns()
+    {
+        var first = RunObservedParse("a");
+        var second = RunObservedParse("a");
+
+        Assert.AreEqual(first.TextTrace, second.TextTrace);
+        Assert.AreEqual(first.JsonTrace, second.JsonTrace);
+    }
+
     [TestMethod]
     public void RuntimeObservationRecorder_WorksWithRealParserPipeline()
     {
@@ -87,6 +132,35 @@ public class RuntimeObservationConsumersTests
         Assert.IsTrue(recorder.Observations.Count > 0);
         Assert.IsTrue(textTrace.Length > 0);
         Assert.IsTrue(jsonTrace.StartsWith("[", StringComparison.Ordinal));
+    }
+
+
+
+    private static (string TextTrace, string JsonTrace) RunObservedParse(string input)
+    {
+        const string grammar = """
+            grammar Sample;
+            start : A ;
+            A : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+
+        var definition = Antlr4GrammarConverter.Parse(grammar);
+        var recorder = new RuntimeObservationRecorder();
+        var parser = new ParserEngine(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                RuntimeObserver = recorder
+            });
+        var diagnostics = new DiagnosticBag();
+        var tokens = new CompiledGrammar(definition).Tokenize(input);
+
+        _ = parser.Parse(tokens, diagnostics: diagnostics);
+
+        return (
+            RuntimeObservationTextWriter.Write(recorder.Observations),
+            RuntimeObservationJsonWriter.Write(recorder.Observations));
     }
 
     private static AlternativeRuntimeObservation[] CreateTraceObservations()
