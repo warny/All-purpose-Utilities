@@ -122,7 +122,6 @@ public class ParserSharedPrefixPlanValidatorTests
     {
         return new ParserContinuationDescriptor(
             new ParserContinuationKey("expr", alternativeIndex, sequencePosition),
-            sequencePosition,
             ParserContinuationCategory.SharedPrefixCandidate,
             ["ID"],
             true);

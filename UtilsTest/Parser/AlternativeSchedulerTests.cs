@@ -198,7 +198,7 @@ public class AlternativeSchedulerTests
 
         Assert.AreEqual(1, continuationCategories.Length);
         Assert.AreEqual(ParserContinuationCategory.SharedPrefixCandidate, continuationCategories[0]);
-        Assert.IsTrue(withSharedPrefix.Metadata.SharedPrefixPlans.SelectMany(static p => p.Continuations).All(static c => c.Depth >= 0));
+        Assert.IsTrue(withSharedPrefix.Metadata.SharedPrefixPlans.SelectMany(static p => p.Continuations).All(static c => c.Key.SequencePosition >= 0));
     }
 
     [TestMethod]

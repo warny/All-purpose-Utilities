@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Continuation metadata provides a deterministic, structural description of potential future parser paths prepared before execution.
+Continuation metadata provides a deterministic, structural description of potential future parser paths.
 
 **Continuation metadata is descriptive only.**
 
@@ -10,21 +10,20 @@ Continuation metadata provides a deterministic, structural description of potent
 
 ## Ownership and lifecycle
 
-The ownership flow is:
+The current ownership flow is:
 
-Grammar preparation  
-→ continuation metadata  
-→ scheduler consumption  
+Scheduler preparation  
+→ continuation metadata production  
 → runtime transport
 
-The scheduler consumes prepared continuation descriptors and does not gain continuation execution authority.
+Continuation metadata is produced during scheduling preparation and transported during execution.  
+The scheduler does not gain continuation execution authority.
 
 ## Descriptor model
 
 Current continuation descriptors carry only structural metadata:
 
 - origin alternative (`AlternativeIndex`);
-- continuation depth (`Depth`);
 - continuation category (`ParserContinuationCategory`);
 - continuation position (`SequencePosition`);
 - optional shallow expected token names.

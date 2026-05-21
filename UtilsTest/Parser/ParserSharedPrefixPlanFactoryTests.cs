@@ -124,7 +124,6 @@ public class ParserSharedPrefixPlanFactoryTests
     {
         return new ParserContinuationDescriptor(
             new ParserContinuationKey("expr", alternativeIndex, 0),
-            0,
             ParserContinuationCategory.SharedPrefixCandidate,
             expectedTokenNames,
             true);
@@ -149,8 +148,8 @@ public class ParserSharedPrefixPlanFactoryTests
         var result = factory.CreatePlans(
             [Candidate("ID", [0, 1])],
             [
-                new ParserContinuationDescriptor(new ParserContinuationKey("expr", 0, 1), 1, ParserContinuationCategory.SharedPrefixCandidate, ["ID"], true),
-                new ParserContinuationDescriptor(new ParserContinuationKey("expr", 1, 2), 2, ParserContinuationCategory.SharedPrefixCandidate, ["ID"], true)
+                new ParserContinuationDescriptor(new ParserContinuationKey("expr", 0, 1), ParserContinuationCategory.SharedPrefixCandidate, ["ID"], true),
+                new ParserContinuationDescriptor(new ParserContinuationKey("expr", 1, 2), ParserContinuationCategory.SharedPrefixCandidate, ["ID"], true)
             ]);
 
         Assert.AreEqual(1, result.Count);

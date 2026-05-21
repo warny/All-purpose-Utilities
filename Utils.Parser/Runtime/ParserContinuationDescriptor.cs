@@ -7,13 +7,11 @@ namespace Utils.Parser.Runtime;
 /// resumable parsing, frame restoration, rollback safety, or semantic-equivalence guarantees.
 /// </summary>
 /// <param name="Key">Stable continuation identity.</param>
-/// <param name="Depth">Conservative continuation depth from normalized sequence position.</param>
 /// <param name="Category">Descriptive continuation category.</param>
 /// <param name="ExpectedTokenNames">Optional shallow expected token names at this continuation point.</param>
 /// <param name="IsSharedPrefixCandidate">Indicates whether this continuation originated from a shared-prefix observation.</param>
 internal readonly record struct ParserContinuationDescriptor(
     ParserContinuationKey Key,
-    int Depth,
     ParserContinuationCategory Category,
     IReadOnlyList<string>? ExpectedTokenNames,
     bool IsSharedPrefixCandidate);

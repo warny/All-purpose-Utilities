@@ -65,7 +65,6 @@ internal sealed class ParserContinuationFactory
         var category = ClassifyContinuation(normalizedSequencePosition, expectedTokenNames, isSharedPrefixCandidate);
         return new ParserContinuationDescriptor(
             new ParserContinuationKey(rule.Name, alternativeIndex, normalizedSequencePosition),
-            normalizedSequencePosition,
             category,
             expectedTokenNames?.ToArray(),
             isSharedPrefixCandidate);
