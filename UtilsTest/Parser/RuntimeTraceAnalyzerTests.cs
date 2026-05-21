@@ -44,6 +44,33 @@ public class RuntimeTraceAnalyzerTests
         Assert.IsTrue(comparison.EventCountDelta.Values.All(static value => value == 0));
     }
 
+
+    /// <summary>
+    /// Ensures summary equivalence is independent from export identity indicators.
+    /// </summary>
+    [TestMethod]
+    public void Compare_ReorderedEquivalentObservations_KeepEquivalentSummaryWithDifferentExports()
+    {
+        AlternativeRuntimeObservation[] first =
+        [
+            CreateObservation(ParserRuntimeObservationKind.AlternativeStarted, ParserRuntimeObservationStatus.Active, "entry", 0),
+            CreateObservation(ParserRuntimeObservationKind.AlternativeCompleted, ParserRuntimeObservationStatus.Completed, "entry", 0),
+        ];
+
+        AlternativeRuntimeObservation[] second =
+        [
+            CreateObservation(ParserRuntimeObservationKind.AlternativeCompleted, ParserRuntimeObservationStatus.Completed, "entry", 0),
+            CreateObservation(ParserRuntimeObservationKind.AlternativeStarted, ParserRuntimeObservationStatus.Active, "entry", 0),
+        ];
+
+        var comparison = RuntimeTraceAnalyzer.Compare(first, second);
+
+        Assert.IsTrue(comparison.AreSummariesEquivalent);
+        Assert.IsFalse(comparison.AreTextExportsIdentical);
+        Assert.IsFalse(comparison.AreJsonExportsIdentical);
+        Assert.IsTrue(comparison.EventCountDelta.Values.All(static value => value == 0));
+    }
+
     /// <summary>
     /// Ensures comparison remains deterministic for different observation distributions.
     /// </summary>
