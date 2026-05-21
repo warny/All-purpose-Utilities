@@ -349,13 +349,24 @@ public class AlternativeSchedulerTests
     [TestMethod]
     public void AlternativeRuntimeObservation_NormalizesStatusAndKind()
     {
-        var completed = new AlternativeRuntimeObservation("r", 0, 1, 0, 2, "Completed");
-        var unknown = new AlternativeRuntimeObservation("r", 0, 1, 0, 2, "not-a-status");
+        var selectedCompleted = new AlternativeRuntimeObservation(
+            ParserRuntimeObservationKind.AlternativeSelected,
+            "r",
+            0,
+            1,
+            0,
+            2,
+            ParserRuntimeObservationStatus.Completed);
 
-        Assert.AreEqual(ParserRuntimeObservationStatus.Completed, completed.NormalizedStatus);
-        Assert.AreEqual(ParserRuntimeObservationKind.AlternativeCompleted, completed.Kind);
-        Assert.AreEqual(ParserRuntimeObservationStatus.Unknown, unknown.NormalizedStatus);
-        Assert.AreEqual(ParserRuntimeObservationKind.Unknown, unknown.Kind);
+        var legacyCompleted = new AlternativeRuntimeObservation("r", 0, 1, 0, 2, "Completed");
+        var legacyUnknown = new AlternativeRuntimeObservation("r", 0, 1, 0, 2, "not-a-status");
+
+        Assert.AreEqual(ParserRuntimeObservationKind.AlternativeSelected, selectedCompleted.Kind);
+        Assert.AreEqual(ParserRuntimeObservationStatus.Completed, selectedCompleted.Status);
+        Assert.AreEqual(ParserRuntimeObservationKind.AlternativeCompleted, legacyCompleted.Kind);
+        Assert.AreEqual(ParserRuntimeObservationStatus.Completed, legacyCompleted.Status);
+        Assert.AreEqual(ParserRuntimeObservationKind.Unknown, legacyUnknown.Kind);
+        Assert.AreEqual(ParserRuntimeObservationStatus.Unknown, legacyUnknown.Status);
     }
 
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()

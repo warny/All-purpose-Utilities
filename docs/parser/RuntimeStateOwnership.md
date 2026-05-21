@@ -171,5 +171,5 @@ The optional `IParserRuntimeObserver` infrastructure is passive and descriptive 
 Additional observation contract clarifications:
 
 - runtime observation ordering is deterministic for a given deterministic parser run;
-- event payloads are immutable descriptive snapshots, not execution handles;
+- event payloads are immutable descriptive snapshots with explicit event kind and status, not execution handles;
 - observer callback exceptions are isolated by the scheduler and do not alter parser runtime outcomes.
