@@ -8,9 +8,9 @@ public sealed class RuntimeObservationRecorder : IParserRuntimeObserver
     private readonly List<AlternativeRuntimeObservation> observations = new();
 
     /// <summary>
-    /// Gets a defensive immutable snapshot of recorded observations.
+    /// Gets a read-only view over recorded observations.
     /// </summary>
-    public IReadOnlyList<AlternativeRuntimeObservation> Observations => this.observations.ToArray();
+    public IReadOnlyList<AlternativeRuntimeObservation> Observations => this.observations.AsReadOnly();
 
     /// <summary>
     /// Clears all currently recorded observations.
