@@ -126,7 +126,6 @@ var definition = Antlr4GrammarConverter.Parse("""
 
 ```csharp
 using Utils.Parser.Runtime;
-using System.IO;
 
 var lexer  = new LexerEngine(definition);
 var tokens = lexer.Tokenize(new StringReader("1 + 2 * 3")).ToList();
@@ -273,13 +272,25 @@ Runtime observations are passive and non-authoritative. They describe scheduler 
 Example consumer usage:
 
 ```csharp
+using Utils.Parser.Bootstrap;
+using Utils.Parser.Runtime;
+
+var definition = Antlr4GrammarConverter.Parse("""
+    grammar Sample;
+    start : A ;
+    A     : 'a' ;
+    WS    : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+    """);
+
 var recorder = new RuntimeObservationRecorder();
-var parser = new ParserEngine(new ParserRuntimeFeaturePolicy
+var policy = ParserRuntimeFeaturePolicy.Default with
 {
     RuntimeObserver = recorder
-});
+};
+var parser = new ParserEngine(definition, policy);
+var tokens = new CompiledGrammar(definition).Tokenize("a");
 
-var result = parser.Parse("a", grammar);
+var result = parser.Parse(tokens);
 var textTrace = RuntimeObservationTextWriter.Write(recorder.Observations);
 var jsonTrace = RuntimeObservationJsonWriter.Write(recorder.Observations);
 ```

@@ -1,4 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Parser.Bootstrap;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -55,6 +57,36 @@ public class RuntimeObservationConsumersTests
         var first = RuntimeObservationTextWriter.Write(CreateTraceObservations());
         var second = RuntimeObservationTextWriter.Write(CreateTraceObservations());
         Assert.AreEqual(first, second);
+    }
+
+    [TestMethod]
+    public void RuntimeObservationRecorder_WorksWithRealParserPipeline()
+    {
+        const string grammar = """
+            grammar Sample;
+            start : A ;
+            A : 'a' ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+            """;
+        var definition = Antlr4GrammarConverter.Parse(grammar);
+        var recorder = new RuntimeObservationRecorder();
+        var parser = new ParserEngine(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                RuntimeObserver = recorder
+            });
+        var diagnostics = new DiagnosticBag();
+        var tokens = new CompiledGrammar(definition).Tokenize("a");
+
+        var parseResult = parser.Parse(tokens, diagnostics: diagnostics);
+        var textTrace = RuntimeObservationTextWriter.Write(recorder.Observations);
+        var jsonTrace = RuntimeObservationJsonWriter.Write(recorder.Observations);
+
+        Assert.IsFalse(parseResult is ErrorNode);
+        Assert.IsTrue(recorder.Observations.Count > 0);
+        Assert.IsTrue(textTrace.Length > 0);
+        Assert.IsTrue(jsonTrace.StartsWith("[", StringComparison.Ordinal));
     }
 
     private static AlternativeRuntimeObservation[] CreateTraceObservations()

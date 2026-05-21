@@ -33,8 +33,8 @@ public static class RuntimeObservationJsonWriter
     /// <param name="Status">Observation status.</param>
     /// <param name="Rule">Rule name.</param>
     /// <param name="Alternative">Alternative index.</param>
-    /// <param name="CurrentInputPosition">Token currentInputCurrentInputPosition.</param>
-    /// <param name="OriginInputPosition">Token originInputCurrentInputPosition.</param>
+    /// <param name="CurrentInputPosition">Observed current input position.</param>
+    /// <param name="OriginInputPosition">Observed origin input position.</param>
     /// <param name="Priority">Runtime priority.</param>
     private sealed record RuntimeObservationJsonRecord(
         string Kind,
