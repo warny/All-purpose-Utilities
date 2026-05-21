@@ -20,6 +20,9 @@ dotnet add package omy.Utils.Parser
 
 ANTLR4 `.g4` support is currently **partial**.
 
+ANTLR4 compatibility is intentionally conservative: unsupported constructs fail explicitly through diagnostics instead of being silently ignored.
+
+
 - ✅ Scenarios covered by the `UtilsTest.Parser` test suite are supported.
 - ⚠️ Full ANTLR4 compatibility is not guaranteed for every advanced syntax/rule.
 - ✅ If you need stricter build-time guarantees, also use `omy.Utils.Parser.Generators`.
@@ -39,6 +42,17 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 ### Detailed compatibility reference
 
 For a detailed, implementation-aligned compatibility status (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md).
+
+### `superClass` compatibility contract
+
+`superClass` is treated as compatibility metadata:
+
+- accepted by grammar ingestion,
+- preserved in grammar options,
+- normalized into `EffectiveGrammarOptions` (`ParserSuperClass` / `LexerSuperClass`),
+- exposed through extension metadata (`GrammarExtensionBinding`).
+
+It is not interpreted as automatic runtime inheritance execution for parser or lexer behavior.
 
 ## Key concepts
 

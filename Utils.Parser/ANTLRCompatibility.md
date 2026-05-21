@@ -29,14 +29,7 @@ These features work as in standard ANTLR4.
 | Lexer commands — `-> skip`, `-> more`, `-> channel(...)`, `-> type(...)` | All seven built-in lexer commands are supported. |
 | Maximal munch | Longest-match rule wins; ties are broken by declaration order. |
 | Panic mode | An unrecognised character emits an `ERROR` token and advances by one character. |
-| Direct left recursion | Detected at resolution time and handled with a seed-and-extend loop. |
-| Precedence predicates `precpred(_ctx, N)` | Extracted by pattern; alternative priority ordering is respected. |
-| Right-associativity `<assoc=right>` | Right-associative alternatives are applied during left-recursive extension. |
-| Labels `e=expr` | Supported on `RuleRef` elements within a rule. |
-| Accumulator labels `ids+=ID` | Supported on `RuleRef` elements. |
-| `options { tokenVocab = MyLexer; }` | Vocabulary dependency is loaded during project compilation. |
 | `options { caseInsensitive = true; }` | Honoured by the lexer engine. |
-| Grammar imports (project context) | Multi-file resolution, transitive imports, cycle detection. |
 | Diagnostic codes | Full set of `UP0xxx`–`UP9xxx` and `PARSER0xx` codes. |
 
 ---
@@ -51,23 +44,29 @@ These features are supported but work differently. Read the **Usage** section be
 
 **Standard ANTLR4**: `options { superClass = MyBase; }` sets the generated parser or lexer class's base class.
 
-**Utils.Parser**: `superClass` is parsed and stored in `EffectiveGrammarOptions.ParserSuperClass` / `LexerSuperClass`. It is not used for class inheritance. Instead, it is the key that links a grammar to a registered `ILexerExtension` implementation, which injects tokens at runtime.
+**Utils.Parser**: `superClass` is parsed and stored as metadata in `EffectiveGrammarOptions.ParserSuperClass` / `LexerSuperClass` and in `GrammarExtensionBinding`. It has no effect on class inheritance.
 
-**Usage** — register a lexer extension bound to the declared `superClass` name:
+At runtime, the lexer calls **all** registered `ILexerExtension` instances in sequence — there is no automatic dispatch by `superClass` name. The `superClass` value is readable by an extension via `context.Definition.ExtensionBindings`, which lets the extension decide whether to apply its logic to a given grammar. The runtime enforces one constraint: if `ExtensionBindings.Count > 0` (i.e. the grammar declared `superClass`) but no extensions are registered, a validation error is raised.
+
+**Usage** — implement and register a lexer extension; inspect `ExtensionBindings` to filter by grammar if needed:
 
 ```csharp
 // Grammar declares:  options { superClass = IndentTracker; }
 
 public class IndentTrackerExtension : ILexerExtension
 {
-    public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context) => [];
-
-    public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context)
+    public IReadOnlyList<Token> TryReadTokens(LexerExtensionContext context)
     {
-        // inject INDENT / DEDENT tokens based on indentation changes
+        // Optionally guard by superClass name:
+        bool applies = context.Definition.ExtensionBindings
+            .Any(b => b.SuperClassName == "IndentTracker");
+        if (!applies) return [];
+
+        // Custom token injection logic here.
         return [];
     }
 
+    public IReadOnlyList<Token> OnAfterToken(Token token, LexerExtensionContext context) => [];
     public IReadOnlyList<Token> OnEndOfInput(LexerExtensionContext context) => [];
 }
 
@@ -78,7 +77,7 @@ var options = new LexerEngineOptions
 var lexer = new LexerEngine(definition, options);
 ```
 
-The `GrammarExtensionBinding` record on `ParserDefinition` exposes the declared `SuperClassName`, the owning grammar's lexer rule names, and its declared tokens and channels, so the extension can make context-aware decisions.
+The `GrammarExtensionBinding` record exposes `SuperClassName`, the owning grammar's lexer rule names, declared tokens, and declared channels.
 
 ---
 
@@ -188,14 +187,16 @@ See `docs/parser/RuntimeObservationAndExportContract.md` for the full contract.
 
 | Feature | Limitation |
 |---|---|
-| Direct left recursion | Supported with guards. Not equivalent to all ANTLR4 left-recursive shapes. Emits `LeftRecursivePrecedencePartiallySupported` where applicable. |
-| `precpred` extraction | Regex-based pattern. Falls back to precedence `0` if the level cannot be parsed. |
-| Labels on `labeledElement` | Applied when the labelled item is a `RuleRef`. Ignored on literals and other non-reference items. |
+| Direct left recursion | Detected at resolution time and handled with a seed-and-extend loop, but not equivalent to all ANTLR4 left-recursive shapes. Emits `LeftRecursivePrecedencePartiallySupported` where applicable. |
+| Precedence predicates `precpred(_ctx, N)` | Regex-based extraction. Falls back to precedence `0` if the level cannot be parsed. Only recognised in direct left-recursive rules. |
+| Right-associativity `<assoc=right>` | Parsed and applied during left-recursive extension. Only meaningful within direct left-recursive rules; subject to the same partial-parity limits as left recursion. |
+| Labels — `e=expr` and `ids+=ID` | Applied when the labelled item is a `RuleRef`. Ignored on literals and other non-reference items. |
 | `import` | Fully resolved when grammars are compiled as a project set (`Antlr4GrammarProjectCompiler`). Single-file compilation emits `ImportParsedButNotResolved`. |
-| `tokenVocab` | Dependency loading depends on available resolver inputs at compilation time. |
+| `options { tokenVocab = MyLexer; }` | Dependency loading depends on available resolver inputs at compilation time. |
+| Unknown grammar options (`visitor`, `listener`, `contextSuperClass`, …) | Parsed and preserved as raw option metadata, but rejected with `UP1021 UnsupportedAntlrOptionIgnored`. Recognised options that do not trigger this diagnostic are: `tokenVocab`, `superClass`, `caseInsensitive`, and `language`. |
 | Lexer commands | Only the seven built-in commands are accepted. Any unknown command name is rejected with `UnsupportedLexerCommand`. |
-| `tokens { }` block | Recognised by the meta-grammar and stored in `GrammarExtensionBinding.DeclaredTokens`, but not mapped to runtime token definitions. |
-| `channels { }` block | Recognised and stored in `GrammarExtensionBinding.DeclaredChannels`, but not mapped to runtime channel semantics beyond `-> channel(...)` command support. |
+| `tokens { }` block | Recognised, stored in `GrammarExtensionBinding.DeclaredTokens`, and reported explicitly with `UP1002 TokensBlockIgnored`. Not mapped to runtime token definitions. |
+| `channels { }` block | Recognised, stored in `GrammarExtensionBinding.DeclaredChannels`, and reported explicitly with `UP1003 ChannelsBlockIgnored`. Not mapped to runtime channel semantics beyond `-> channel(...)` command support. |
 
 ---
 
@@ -237,7 +238,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | Prefix | Severity | Meaning |
 |---|---|---|
 | `UP0xxx` | Error | Blocking — unresolved rules, grammar violations, import failures |
-| `UP1xxx` | Warning | Unsupported / ignored / partial behaviour |
+| `UP1xxx` | Warning | Unsupported / ignored / partial behaviour (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1020` unsupported lexer command, `UP1021` unsupported grammar option) |
 | `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguity) |
 | `UP8xxx` | Info | Informational runtime events |
 | `UP9xxx` | Debug | Detailed execution traces |

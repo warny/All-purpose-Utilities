@@ -276,7 +276,7 @@ public sealed class Antlr4GrammarConverter
     /// Processes a single <c>prequelConstruct</c> node (options, imports, or top-level action)
     /// and populates the corresponding output collection.
     /// </summary>
-    private static void ProcessPrequelConstruct(
+    private void ProcessPrequelConstruct(
         ParserNode node,
         ref GrammarOptions? options,
         List<GrammarImport> imports,
@@ -291,23 +291,27 @@ public sealed class Antlr4GrammarConverter
         var delegGrammars = First(node, "delegateGrammars");
         if (delegGrammars != null) { imports.AddRange(ConvertDelegateGrammars(delegGrammars, diagnostics)); return; }
 
-        if (First(node, "tokensSpec") != null)
+        if (First(node, "tokensSpec") is { } tokensSpecNode)
         {
-            foreach (var tokenName in ExtractIdentifiers(First(node, "tokensSpec")!))
+            diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored);
+            var idListNode = First(tokensSpecNode, "idList");
+            if (idListNode != null)
             {
-                declaredTokens.Add(tokenName);
+                foreach (var tokenName in ExtractIdentifiers(idListNode))
+                    declaredTokens.Add(tokenName);
             }
-
             return;
         }
 
-        if (First(node, "channelsSpec") != null)
+        if (First(node, "channelsSpec") is { } channelsSpecNode)
         {
-            foreach (var channelName in ExtractIdentifiers(First(node, "channelsSpec")!))
+            diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored);
+            var idListNode = First(channelsSpecNode, "idList");
+            if (idListNode != null)
             {
-                declaredChannels.Add(channelName);
+                foreach (var channelName in ExtractIdentifiers(idListNode))
+                    declaredChannels.Add(channelName);
             }
-
             return;
         }
 
@@ -359,7 +363,7 @@ public sealed class Antlr4GrammarConverter
     }
 
     /// <summary>Converts an <c>optionsSpec</c> node into a <see cref="GrammarOptions"/> record.</summary>
-    private static GrammarOptions ConvertOptionsSpec(ParserNode node)
+    private GrammarOptions ConvertOptionsSpec(ParserNode node)
     {
         var values = new Dictionary<string, string>();
         foreach (var option in All(node, "option"))
@@ -369,8 +373,31 @@ public sealed class Antlr4GrammarConverter
             var valueNode = First(option, "optionValue");
             var value = valueNode != null ? GetOptionValueText(valueNode) : "";
             values[key] = value;
+
+            if (IsExplicitlyUnsupportedOption(key))
+            {
+                _diagnostics?.Add(ParserDiagnostics.UnsupportedAntlrOptionIgnored, key);
+            }
         }
         return new GrammarOptions(values);
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> when an ANTLR option is accepted as syntax but intentionally unsupported.
+    /// </summary>
+    /// <param name="optionName">ANTLR option name.</param>
+    /// <returns><c>true</c> when the option should emit an explicit compatibility diagnostic.</returns>
+    private static bool IsExplicitlyUnsupportedOption(string optionName)
+    {
+        if (string.IsNullOrWhiteSpace(optionName))
+        {
+            return false;
+        }
+
+        return !string.Equals(optionName, "language", StringComparison.Ordinal)
+            && !string.Equals(optionName, "superClass", StringComparison.Ordinal)
+            && !string.Equals(optionName, "caseInsensitive", StringComparison.Ordinal)
+            && !string.Equals(optionName, "tokenVocab", StringComparison.Ordinal);
     }
 
     /// <summary>Yields <see cref="GrammarImport"/> records from a <c>delegateGrammars</c> node.</summary>
