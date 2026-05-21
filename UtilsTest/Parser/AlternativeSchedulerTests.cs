@@ -171,6 +171,37 @@ public class AlternativeSchedulerTests
     }
 
     [TestMethod]
+    public void Run_ContinuationMetadataCategories_AreDeterministicAndDescriptive()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("r", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("id"), "A"),
+            new Alternative(0, Associativity.Left, new LiteralMatch("number"), "B")
+        ]));
+        var context = new ParseContext([]);
+
+        var withSharedPrefix = scheduler.Run(
+            rule,
+            rule.Content.Alternatives,
+            originInputPosition: context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 2 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
+
+        var continuationCategories = withSharedPrefix.Metadata.SharedPrefixPlans
+            .SelectMany(static p => p.Continuations)
+            .Select(static c => c.Category)
+            .Distinct()
+            .ToArray();
+
+        Assert.AreEqual(1, continuationCategories.Length);
+        Assert.AreEqual(ParserContinuationCategory.SharedPrefixCandidate, continuationCategories[0]);
+        Assert.IsTrue(withSharedPrefix.Metadata.SharedPrefixPlans.SelectMany(static p => p.Continuations).All(static c => c.Key.SequencePosition >= 0));
+    }
+
+    [TestMethod]
     public void Run_DeterministicSelection_UsesLengthThenPriorityThenAlternativeIndex()
     {
         var scheduler = new AlternativeScheduler();
