@@ -193,9 +193,10 @@ See `docs/parser/RuntimeObservationAndExportContract.md` for the full contract.
 | Labels on `labeledElement` | Applied when the labelled item is a `RuleRef`. Ignored on literals and other non-reference items. |
 | `import` | Fully resolved when grammars are compiled as a project set (`Antlr4GrammarProjectCompiler`). Single-file compilation emits `ImportParsedButNotResolved`. |
 | `tokenVocab` | Dependency loading depends on available resolver inputs at compilation time. |
+| Unknown grammar options (`visitor`, `listener`, `contextSuperClass`, …) | Parsed and preserved as raw option metadata, but rejected with `UP1021 UnsupportedAntlrOptionIgnored`. Recognised options that do not trigger this diagnostic are: `tokenVocab`, `superClass`, `caseInsensitive`, and `language`. |
 | Lexer commands | Only the seven built-in commands are accepted. Any unknown command name is rejected with `UnsupportedLexerCommand`. |
-| `tokens { }` block | Recognised by the meta-grammar and stored in `GrammarExtensionBinding.DeclaredTokens`, but not mapped to runtime token definitions. |
-| `channels { }` block | Recognised and stored in `GrammarExtensionBinding.DeclaredChannels`, but not mapped to runtime channel semantics beyond `-> channel(...)` command support. |
+| `tokens { }` block | Recognised, stored in `GrammarExtensionBinding.DeclaredTokens`, and reported explicitly with `UP1002 TokensBlockIgnored`. Not mapped to runtime token definitions. |
+| `channels { }` block | Recognised, stored in `GrammarExtensionBinding.DeclaredChannels`, and reported explicitly with `UP1003 ChannelsBlockIgnored`. Not mapped to runtime channel semantics beyond `-> channel(...)` command support. |
 
 ---
 
@@ -237,7 +238,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | Prefix | Severity | Meaning |
 |---|---|---|
 | `UP0xxx` | Error | Blocking — unresolved rules, grammar violations, import failures |
-| `UP1xxx` | Warning | Unsupported / ignored / partial behaviour |
+| `UP1xxx` | Warning | Unsupported / ignored / partial behaviour (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1020` unsupported lexer command, `UP1021` unsupported grammar option) |
 | `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguity) |
 | `UP8xxx` | Info | Informational runtime events |
 | `UP9xxx` | Debug | Detailed execution traces |
