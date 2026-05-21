@@ -123,7 +123,7 @@ RuntimeTraceComparison comparison = RuntimeTraceAnalyzer.Compare(baseline, candi
 
 Console.WriteLine($"Baseline events: {baselineSummary.TotalObservations}");
 Console.WriteLine($"Candidate events: {candidateSummary.TotalObservations}");
-Console.WriteLine($"Delta events: {comparison.FirstTotalObservations - comparison.SecondTotalObservations}");
+Console.WriteLine($"Delta events: {comparison.EventCountDelta}");
 Console.WriteLine($"Text export identical: {comparison.AreTextExportsIdentical}");
 Console.WriteLine($"Json export identical: {comparison.AreJsonExportsIdentical}");
 ```
