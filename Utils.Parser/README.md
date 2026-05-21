@@ -265,6 +265,27 @@ var compiler = new ParseTreeCompiler<int, int>()
 
 ---
 
+
+## Runtime observation consumers (tooling)
+
+Runtime observations are passive and non-authoritative. They describe scheduler events and must not drive parser execution.
+
+Example consumer usage:
+
+```csharp
+var recorder = new RuntimeObservationRecorder();
+var parser = new ParserEngine(new ParserRuntimeFeaturePolicy
+{
+    RuntimeObserver = recorder
+});
+
+var result = parser.Parse("a", grammar);
+var textTrace = RuntimeObservationTextWriter.Write(recorder.Observations);
+var jsonTrace = RuntimeObservationJsonWriter.Write(recorder.Observations);
+```
+
+Current observation exports are intentionally limited to the observation payload itself. They do not expose scheduler internals, active parser state internals, replay capabilities, or execution control hooks.
+
 ## Build a grammar programmatically
 
 Every grammar can also be constructed in pure C# using the model objects:
