@@ -88,11 +88,6 @@ internal sealed class ParserContinuationFactory
             return ParserContinuationCategory.SharedPrefixCandidate;
         }
 
-        if (normalizedSequencePosition < 0)
-        {
-            return ParserContinuationCategory.Deferred;
-        }
-
         if (expectedTokenNames is null || expectedTokenNames.Count == 0)
         {
             return ParserContinuationCategory.Terminal;

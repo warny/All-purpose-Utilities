@@ -21,8 +21,6 @@ internal enum ParserContinuationCategory
     /// </summary>
     SharedPrefixCandidate,
 
-    /// <summary>
-    /// Continuation remains conservative/deferred due to unsupported or ambiguous shape.
-    /// </summary>
-    Deferred
+    // Intentionally no deferred placeholder category: keep only categories that are
+    // currently produced by deterministic metadata classification.
 }

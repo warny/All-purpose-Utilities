@@ -36,8 +36,7 @@ Current categories are intentionally conservative:
 
 - `Terminal`;
 - `Sequential`;
-- `SharedPrefixCandidate`;
-- `Deferred`.
+- `SharedPrefixCandidate`.
 
 These categories are deterministic labels for metadata inspection and testing.
 They do not imply replay, resume, execute, or schedule semantics.
