@@ -146,6 +146,7 @@ Current clarification status:
 - local alternative comparison order is explicitly documented (longest match, then priority, then declaration order),
 - pruning is explicitly documented as orchestration-only and non-syntax-authoritative,
 - structural branch equivalence limits are explicitly documented as conservative and non-semantic-proof.
+- passive runtime observation is available for tooling/audit visibility and is explicitly non-authoritative (no control over scheduling, pruning, parse acceptance, parse-tree outcomes, or diagnostics authority).
 
 Allowed work:
 
