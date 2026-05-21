@@ -1,3 +1,5 @@
+using Utils.Parser.Model;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -16,7 +18,8 @@ internal sealed class ParserSharedPrefixPlanFactory
     /// </returns>
     public IReadOnlyList<ParserSharedPrefixPlan> CreatePlans(
         IReadOnlyList<ParserLookaheadSharedPrefixCandidate> candidates,
-        IReadOnlyList<ParserContinuationDescriptor> continuations)
+        IReadOnlyList<ParserContinuationDescriptor> continuations,
+        IReadOnlyDictionary<int, Alternative>? alternativesByIndex = null)
     {
         if (candidates.Count == 0 || continuations.Count == 0)
         {
@@ -34,7 +37,8 @@ internal sealed class ParserSharedPrefixPlanFactory
 
             var alternativeIndexes = matchingContinuations.Select(static continuation => continuation.Key.AlternativeIndex).ToArray();
             var boundary = BuildBoundary(matchingContinuations);
-            var segment = new ParserSharedPrefixSegment(candidate.TokenName, boundary);
+            var structuralTokens = BuildStructuralTokens(candidate, alternativesByIndex);
+            var segment = new ParserSharedPrefixSegment(candidate.TokenName, structuralTokens, boundary);
             plans.Add(new ParserSharedPrefixPlan(candidate.TokenName, alternativeIndexes, matchingContinuations, segment));
         }
 
@@ -128,5 +132,100 @@ internal sealed class ParserSharedPrefixPlanFactory
         }
 
         return new ParserSharedPrefixBoundary(expectedPosition, null);
+    }
+
+    private static IReadOnlyList<string> BuildStructuralTokens(
+        ParserLookaheadSharedPrefixCandidate candidate,
+        IReadOnlyDictionary<int, Alternative>? alternativesByIndex)
+    {
+        if (alternativesByIndex is null || alternativesByIndex.Count == 0)
+        {
+            return [candidate.TokenName];
+        }
+
+        var tokenSequences = new List<IReadOnlyList<string>>();
+        foreach (var alternativeIndex in candidate.AlternativeIndexes)
+        {
+            if (!alternativesByIndex.TryGetValue(alternativeIndex, out var alternative))
+            {
+                return [candidate.TokenName];
+            }
+
+            tokenSequences.Add(ExtractStructuralTokens(alternative.Content));
+        }
+
+        if (tokenSequences.Count < 2)
+        {
+            return [candidate.TokenName];
+        }
+
+        var sharedPrefix = ComputeSharedPrefix(tokenSequences);
+        return sharedPrefix.Count == 0 ? [candidate.TokenName] : sharedPrefix;
+    }
+
+    private static IReadOnlyList<string> ExtractStructuralTokens(RuleContent content)
+    {
+        if (content is Sequence sequence)
+        {
+            var tokens = new List<string>();
+            for (var index = 0; index < sequence.Items.Count; index++)
+            {
+                if (!TryGetStructuralToken(sequence.Items[index], out var token))
+                {
+                    break;
+                }
+
+                tokens.Add(token);
+            }
+
+            return tokens;
+        }
+
+        return TryGetStructuralToken(content, out var singleToken) ? [singleToken] : [];
+    }
+
+    private static bool TryGetStructuralToken(RuleContent content, out string tokenName)
+    {
+        switch (content)
+        {
+            case RuleRef reference:
+                tokenName = reference.RuleName;
+                return true;
+            case LiteralMatch literal:
+                tokenName = literal.Value;
+                return true;
+            default:
+                tokenName = string.Empty;
+                return false;
+        }
+    }
+
+    private static IReadOnlyList<string> ComputeSharedPrefix(IReadOnlyList<IReadOnlyList<string>> sequences)
+    {
+        var minimumLength = sequences.Min(static sequence => sequence.Count);
+        var prefix = new List<string>(minimumLength);
+
+        for (var index = 0; index < minimumLength; index++)
+        {
+            var expected = sequences[0][index];
+            var allMatch = true;
+            for (var sequenceIndex = 1; sequenceIndex < sequences.Count; sequenceIndex++)
+            {
+                if (!string.Equals(sequences[sequenceIndex][index], expected, StringComparison.Ordinal))
+                {
+                    allMatch = false;
+                    break;
+                }
+            }
+
+            if (!allMatch)
+            {
+                break;
+            }
+
+            prefix.Add(expected);
+        }
+
+        return prefix;
     }
 }

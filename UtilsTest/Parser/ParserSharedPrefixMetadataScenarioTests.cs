@@ -27,6 +27,7 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual(1, plans.Count);
         var plan = plans[0];
         Assert.AreEqual("ID", plan.Segment.SharedTokenName);
+        CollectionAssert.AreEqual(new[] { "ID" }, plan.Segment.StructuralTokens.ToArray());
         Assert.AreEqual(1, plan.Segment.Boundary.SequencePosition);
         CollectionAssert.AreEqual(new[] { 1, 1 }, plan.Continuations.Select(static c => c.Key.SequencePosition).ToArray());
 
@@ -63,6 +64,7 @@ public class ParserSharedPrefixMetadataScenarioTests
         Assert.AreEqual(1, plans.Count);
         var plan = plans[0];
         Assert.AreEqual("ID", plan.Segment.SharedTokenName);
+        CollectionAssert.AreEqual(new[] { "ID" }, plan.Segment.StructuralTokens.ToArray());
         Assert.AreEqual(1, plan.Segment.Boundary.SequencePosition);
         CollectionAssert.AreEqual(new[] { 1, 1 }, plan.Continuations.Select(static c => c.Key.SequencePosition).ToArray());
 
@@ -89,6 +91,36 @@ public class ParserSharedPrefixMetadataScenarioTests
         var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
 
         Assert.AreEqual(0, plans.Count);
+    }
+
+    [TestMethod]
+    public void Pipeline_SharedIdDotPrefix_ProducesTwoTokenStructuralPrefix()
+    {
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("A"))),
+            Alternative(1, Sequence(new RuleRef("ID"), new LiteralMatch("."), new RuleRef("B")))
+        };
+
+        var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID", "." }, plans[0].Segment.StructuralTokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Pipeline_NestedParenthesizedRuleRefs_ProducesSingleTokenStructuralPrefix()
+    {
+        var alternatives = new[]
+        {
+            Alternative(0, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("A"), 1, 1))),
+            Alternative(1, Sequence(new RuleRef("ID"), new Quantifier(new RuleRef("B"), 1, 1)))
+        };
+
+        var plans = CreatePlansFromAlternatives(alternatives, Token("ID", "x"));
+
+        Assert.AreEqual(1, plans.Count);
+        CollectionAssert.AreEqual(new[] { "ID" }, plans[0].Segment.StructuralTokens.ToArray());
     }
 
     /// <summary>
@@ -176,7 +208,10 @@ public class ParserSharedPrefixMetadataScenarioTests
             }))
             .ToArray();
 
-        return planFactory.CreatePlans(candidates, continuations);
+        var alternativesByIndex = alternatives
+            .Select((alternative, index) => new KeyValuePair<int, Alternative>(index, alternative))
+            .ToDictionary();
+        return planFactory.CreatePlans(candidates, continuations, alternativesByIndex);
     }
 
     /// <summary>
@@ -202,7 +237,7 @@ public class ParserSharedPrefixMetadataScenarioTests
             tokenName,
             alternativeIndexes,
             continuations,
-            new ParserSharedPrefixSegment(tokenName, new ParserSharedPrefixBoundary(boundaryPosition, null)));
+            new ParserSharedPrefixSegment(tokenName, [tokenName], new ParserSharedPrefixBoundary(boundaryPosition, null)));
     }
 
     /// <summary>

@@ -144,7 +144,10 @@ internal sealed class AlternativeScheduler
         // Shared-prefix plans remain observational scheduler metadata:
         // they expose deterministic grouping information, but never grant
         // replay/resume/merge authority and never replace real parser execution.
-        var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations);
+        var alternativesByIndex = orderedAlternatives
+            .Select((alternative, index) => new KeyValuePair<int, Alternative>(index, alternative))
+            .ToDictionary();
+        var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations, alternativesByIndex);
         return new AlternativeSchedulingMetadata { SharedPrefixPlans = plans };
     }
 
