@@ -64,6 +64,7 @@ Current capabilities and responsibilities:
 - Runtime invariant documentation exists.
 - Branch outcome documentation exists.
 - Parser tests are organized to reflect runtime contracts.
+- Runtime observation and export contract is documented (`docs/parser/RuntimeObservationAndExportContract.md`).
 
 Clarifications that must remain true:
 
@@ -113,7 +114,7 @@ The following must not be introduced prematurely:
 
 ### Phase 0 — Stabilization and invariant documentation
 
-Status: mostly complete, with ongoing maintenance required.
+**Status: mostly complete. Ongoing maintenance required.**
 
 Scope of completed/recently consolidated work:
 
@@ -128,6 +129,8 @@ Ongoing expectation:
 - keep documentation and tests synchronized with invariant changes.
 
 ### Phase 1 — Alternative selection contract hardening
+
+**Status: complete.**
 
 Goal: document and lock the current alternative selection model before changing it.
 
@@ -148,6 +151,7 @@ Current clarification status:
 - structural branch equivalence limits are explicitly documented as conservative and non-semantic-proof.
 - passive runtime observation is available for tooling/audit visibility and is explicitly non-authoritative (no control over scheduling, pruning, parse acceptance, parse-tree outcomes, or diagnostics authority).
 - observation contracts are normalized as immutable descriptive payloads; observer exceptions are isolated from parser execution semantics.
+- observation and export contract is formally documented in `docs/parser/RuntimeObservationAndExportContract.md`, covering runtime observation guarantees, export format stability, and non-authoritative boundaries.
 
 Allowed work:
 
@@ -164,6 +168,8 @@ Forbidden work:
 - introducing selection policies.
 
 ### Phase 2 — Diagnostics model consolidation
+
+**Status: complete.**
 
 Goal: make diagnostics ownership and propagation more explicit.
 
@@ -196,6 +202,8 @@ Current clarification status:
 - unsupported ANTLR4 lexer-command constructs are now surfaced via explicit deterministic compatibility diagnostics.
 
 ### Phase 3 — Lookahead contract consolidation
+
+**Status: complete.**
 
 Goal: keep lookahead shallow, conservative, and syntax-oriented while clarifying future options.
 
@@ -231,6 +239,8 @@ Current clarification status:
 
 ### Phase 4 — Shared-prefix metadata maturity
 
+**Status: complete.**
+
 Goal: improve shared-prefix metadata quality without activating execution.
 
 Scope:
@@ -264,6 +274,8 @@ Forbidden work:
 
 ### Phase 5 — Continuation metadata maturity
 
+**Status: not started.**
+
 Goal: clarify and mature continuation metadata as descriptive infrastructure only.
 
 Scope:
@@ -287,6 +299,8 @@ Forbidden work:
 - invocation frame model.
 
 ### Phase 6 — ANTLR4 compatibility expansion
+
+**Status: not started.**
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -323,6 +337,8 @@ Forbidden work:
 
 ### Phase 7 — Code generation and tooling
 
+**Status: not started.**
+
 Goal: move toward tooling capabilities once runtime behavior is stable.
 
 Scope:
@@ -346,6 +362,8 @@ Forbidden work:
 - tying IDE tooling to unstable runtime internals.
 
 ### Phase 8 — Future runtime research gates
+
+**Status: not started.**
 
 Goal: define prerequisites before any major runtime evolution.
 

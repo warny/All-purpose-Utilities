@@ -24,6 +24,18 @@ Every meaningful change must include a check of whether `ROADMAP.md` needs to be
 
 If no roadmap update is required, the PR description must explicitly explain why.
 
+## Roadmap phase status
+
+Each phase in `ROADMAP.md` must carry an explicit status line immediately after its heading:
+
+- `**Status: not started.**` — no work has begun.
+- `**Status: in progress.**` — work is ongoing; optionally note what has been done.
+- `**Status: complete.**` — all scope items are done and documented.
+- `**Status: mostly complete. Ongoing maintenance required.**` — for phases with open-ended maintenance obligations (e.g. Phase 0).
+
+When a PR completes the last remaining item of a phase, that PR must change the phase status to `complete`.
+When a PR begins work on a phase that was `not started`, that PR must change the status to `in progress`.
+
 ## Runtime safety rules
 
 Agents must not introduce:
