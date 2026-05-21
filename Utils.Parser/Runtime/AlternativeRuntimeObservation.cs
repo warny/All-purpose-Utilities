@@ -16,4 +16,26 @@ public sealed record AlternativeRuntimeObservation(
     int Priority,
     int OriginInputPosition,
     int CurrentInputPosition,
-    string Status);
+    string Status)
+{
+    /// <summary>
+    /// Gets a normalized status parsed from <see cref="Status"/>.
+    /// Unknown values are mapped to <see cref="ActiveParseStateStatus.Active"/>.
+    /// </summary>
+    public ParserRuntimeObservationStatus NormalizedStatus => Enum.TryParse<ParserRuntimeObservationStatus>(Status, ignoreCase: true, out var status)
+        ? status
+        : ParserRuntimeObservationStatus.Unknown;
+
+    /// <summary>
+    /// Gets a normalized observation kind inferred from <see cref="NormalizedStatus"/>.
+    /// This value is descriptive and not an execution contract.
+    /// </summary>
+    public ParserRuntimeObservationKind Kind => NormalizedStatus switch
+    {
+        ParserRuntimeObservationStatus.Active => ParserRuntimeObservationKind.AlternativeStarted,
+        ParserRuntimeObservationStatus.Completed => ParserRuntimeObservationKind.AlternativeCompleted,
+        ParserRuntimeObservationStatus.Failed => ParserRuntimeObservationKind.AlternativeFailed,
+        ParserRuntimeObservationStatus.Pruned => ParserRuntimeObservationKind.AlternativePruned,
+        _ => ParserRuntimeObservationKind.Unknown
+    };
+}
