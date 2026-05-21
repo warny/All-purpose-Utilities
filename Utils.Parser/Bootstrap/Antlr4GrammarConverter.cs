@@ -291,25 +291,27 @@ public sealed class Antlr4GrammarConverter
         var delegGrammars = First(node, "delegateGrammars");
         if (delegGrammars != null) { imports.AddRange(ConvertDelegateGrammars(delegGrammars, diagnostics)); return; }
 
-        if (First(node, "tokensSpec") != null)
+        if (First(node, "tokensSpec") is { } tokensSpecNode)
         {
             diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored);
-            foreach (var tokenName in ExtractIdentifiers(First(node, "tokensSpec")!))
+            var idListNode = First(tokensSpecNode, "idList");
+            if (idListNode != null)
             {
-                declaredTokens.Add(tokenName);
+                foreach (var tokenName in ExtractIdentifiers(idListNode))
+                    declaredTokens.Add(tokenName);
             }
-
             return;
         }
 
-        if (First(node, "channelsSpec") != null)
+        if (First(node, "channelsSpec") is { } channelsSpecNode)
         {
             diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored);
-            foreach (var channelName in ExtractIdentifiers(First(node, "channelsSpec")!))
+            var idListNode = First(channelsSpecNode, "idList");
+            if (idListNode != null)
             {
-                declaredChannels.Add(channelName);
+                foreach (var channelName in ExtractIdentifiers(idListNode))
+                    declaredChannels.Add(channelName);
             }
-
             return;
         }
 
