@@ -52,7 +52,7 @@ internal sealed class AlternativeStructuralPrefixExtractor
 
         return TryGetStructuralToken(content, out var singleToken)
             ? Array.AsReadOnly(new[] { singleToken })
-            : Array.AsReadOnly(Array.Empty<string>());
+            : [];
     }
 
     private static bool TryGetStructuralToken(RuleContent content, out string tokenName)

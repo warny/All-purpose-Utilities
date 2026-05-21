@@ -66,6 +66,11 @@ public sealed class ParserEngine
     /// </summary>
     private readonly AlternativeScheduler _alternativeScheduler;
     /// <summary>
+    /// Stateless extractor used to prepare structural descriptors from grammar alternatives
+    /// before scheduling begins. Extraction is grammar-level preparation; the scheduler only consumes results.
+    /// </summary>
+    private static readonly AlternativeStructuralPrefixExtractor _structuralPrefixExtractor = new();
+    /// <summary>
     /// Look-ahead cache scoped to a single parse execution.
     /// Stored entries are advisory probe metadata and do not alter engine-owned parse authority
     /// or trailing-token final validation.
@@ -834,12 +839,17 @@ public sealed class ParserEngine
     {
         var startPosition = context.Position;
         var startToken = context.Peek();
+        // Prepare structural descriptors from the grammar before scheduling begins.
+        // Extraction is grammar-level preparation; the scheduler receives ready-made descriptors.
+        var orderedAlternatives = alternatives.OrderBy(static a => a.Priority).ToList();
+        var structuralDescriptors = _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
         var scheduling = _alternativeScheduler.Run(
             rule,
-            alternatives,
+            orderedAlternatives,
             startPosition,
             precedence,
             diagnostics,
+            precomputedDescriptors: structuralDescriptors,
             parseAlternative: (alternative, alternativeIndex) => _scheduledAlternativeExecutor.Execute(
                 context,
                 rule,
