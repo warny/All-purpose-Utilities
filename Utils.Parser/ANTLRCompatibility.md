@@ -29,14 +29,7 @@ These features work as in standard ANTLR4.
 | Lexer commands — `-> skip`, `-> more`, `-> channel(...)`, `-> type(...)` | All seven built-in lexer commands are supported. |
 | Maximal munch | Longest-match rule wins; ties are broken by declaration order. |
 | Panic mode | An unrecognised character emits an `ERROR` token and advances by one character. |
-| Direct left recursion | Detected at resolution time and handled with a seed-and-extend loop. |
-| Precedence predicates `precpred(_ctx, N)` | Extracted by pattern; alternative priority ordering is respected. |
-| Right-associativity `<assoc=right>` | Right-associative alternatives are applied during left-recursive extension. |
-| Labels `e=expr` | Supported on `RuleRef` elements within a rule. |
-| Accumulator labels `ids+=ID` | Supported on `RuleRef` elements. |
-| `options { tokenVocab = MyLexer; }` | Vocabulary dependency is loaded during project compilation. |
 | `options { caseInsensitive = true; }` | Honoured by the lexer engine. |
-| Grammar imports (project context) | Multi-file resolution, transitive imports, cycle detection. |
 | Diagnostic codes | Full set of `UP0xxx`–`UP9xxx` and `PARSER0xx` codes. |
 
 ---
@@ -194,11 +187,12 @@ See `docs/parser/RuntimeObservationAndExportContract.md` for the full contract.
 
 | Feature | Limitation |
 |---|---|
-| Direct left recursion | Supported with guards. Not equivalent to all ANTLR4 left-recursive shapes. Emits `LeftRecursivePrecedencePartiallySupported` where applicable. |
-| `precpred` extraction | Regex-based pattern. Falls back to precedence `0` if the level cannot be parsed. |
-| Labels on `labeledElement` | Applied when the labelled item is a `RuleRef`. Ignored on literals and other non-reference items. |
+| Direct left recursion | Detected at resolution time and handled with a seed-and-extend loop, but not equivalent to all ANTLR4 left-recursive shapes. Emits `LeftRecursivePrecedencePartiallySupported` where applicable. |
+| Precedence predicates `precpred(_ctx, N)` | Regex-based extraction. Falls back to precedence `0` if the level cannot be parsed. Only recognised in direct left-recursive rules. |
+| Right-associativity `<assoc=right>` | Parsed and applied during left-recursive extension. Only meaningful within direct left-recursive rules; subject to the same partial-parity limits as left recursion. |
+| Labels — `e=expr` and `ids+=ID` | Applied when the labelled item is a `RuleRef`. Ignored on literals and other non-reference items. |
 | `import` | Fully resolved when grammars are compiled as a project set (`Antlr4GrammarProjectCompiler`). Single-file compilation emits `ImportParsedButNotResolved`. |
-| `tokenVocab` | Dependency loading depends on available resolver inputs at compilation time. |
+| `options { tokenVocab = MyLexer; }` | Dependency loading depends on available resolver inputs at compilation time. |
 | Unknown grammar options (`visitor`, `listener`, `contextSuperClass`, …) | Parsed and preserved as raw option metadata, but rejected with `UP1021 UnsupportedAntlrOptionIgnored`. Recognised options that do not trigger this diagnostic are: `tokenVocab`, `superClass`, `caseInsensitive`, and `language`. |
 | Lexer commands | Only the seven built-in commands are accepted. Any unknown command name is rejected with `UnsupportedLexerCommand`. |
 | `tokens { }` block | Recognised, stored in `GrammarExtensionBinding.DeclaredTokens`, and reported explicitly with `UP1002 TokensBlockIgnored`. Not mapped to runtime token definitions. |
