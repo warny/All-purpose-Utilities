@@ -1,9 +1,8 @@
-using Utils.Parser.Model;
-
 namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Creates structural shared-prefix plans from shallow shared-token candidates and continuation metadata.
+/// This factory aggregates pre-computed structural descriptors and does not inspect grammar model objects.
 /// </summary>
 internal sealed class ParserSharedPrefixPlanFactory
 {
@@ -12,6 +11,11 @@ internal sealed class ParserSharedPrefixPlanFactory
     /// </summary>
     /// <param name="candidates">Ordered shared-prefix candidates detected from shallow look-ahead observations.</param>
     /// <param name="continuations">Structural continuation descriptors available for grouping.</param>
+    /// <param name="structuralDescriptors">
+    /// Optional pre-computed per-alternative structural descriptors produced by
+    /// <see cref="AlternativeStructuralPrefixExtractor"/>. When absent the segment falls back to the
+    /// shallow shared token name as a single-element structural prefix.
+    /// </param>
     /// <returns>
     /// Shared-prefix plans with at least two matching continuations each. This metadata is informational only and
     /// does not execute shared prefixes or continuations.
@@ -19,7 +23,7 @@ internal sealed class ParserSharedPrefixPlanFactory
     public IReadOnlyList<ParserSharedPrefixPlan> CreatePlans(
         IReadOnlyList<ParserLookaheadSharedPrefixCandidate> candidates,
         IReadOnlyList<ParserContinuationDescriptor> continuations,
-        IReadOnlyDictionary<int, Alternative>? alternativesByIndex = null)
+        IReadOnlyList<AlternativeStructuralDescriptor>? structuralDescriptors = null)
     {
         if (candidates.Count == 0 || continuations.Count == 0)
         {
@@ -37,7 +41,7 @@ internal sealed class ParserSharedPrefixPlanFactory
 
             var alternativeIndexes = matchingContinuations.Select(static continuation => continuation.Key.AlternativeIndex).ToArray();
             var boundary = BuildBoundary(matchingContinuations);
-            var structuralTokens = BuildStructuralTokens(candidate, alternativesByIndex);
+            var structuralTokens = BuildStructuralTokens(candidate, structuralDescriptors);
             var segment = new ParserSharedPrefixSegment(candidate.TokenName, structuralTokens, boundary);
             plans.Add(new ParserSharedPrefixPlan(candidate.TokenName, alternativeIndexes, matchingContinuations, segment));
         }
@@ -87,9 +91,6 @@ internal sealed class ParserSharedPrefixPlanFactory
     /// <summary>
     /// Determines whether a continuation descriptor contains the candidate token in its shallow expected-token list.
     /// </summary>
-    /// <param name="expectedTokenNames">Shallow expected-token names on a continuation descriptor.</param>
-    /// <param name="tokenName">Candidate shared token.</param>
-    /// <returns><see langword="true"/> when the token name is present; otherwise <see langword="false"/>.</returns>
     private static bool ContainsExpectedToken(IReadOnlyList<string>? expectedTokenNames, string tokenName)
     {
         if (expectedTokenNames is null || expectedTokenNames.Count == 0)
@@ -134,24 +135,34 @@ internal sealed class ParserSharedPrefixPlanFactory
         return new ParserSharedPrefixBoundary(expectedPosition, null);
     }
 
+    /// <summary>
+    /// Aggregates pre-computed structural token sequences from descriptors to determine the shared prefix.
+    /// Falls back to the candidate's shallow token name when descriptors are absent or incomplete.
+    /// </summary>
     private static IReadOnlyList<string> BuildStructuralTokens(
         ParserLookaheadSharedPrefixCandidate candidate,
-        IReadOnlyDictionary<int, Alternative>? alternativesByIndex)
+        IReadOnlyList<AlternativeStructuralDescriptor>? structuralDescriptors)
     {
-        if (alternativesByIndex is null || alternativesByIndex.Count == 0)
+        if (structuralDescriptors is null || structuralDescriptors.Count == 0)
         {
             return [candidate.TokenName];
+        }
+
+        var tokensByIndex = new Dictionary<int, IReadOnlyList<string>>(structuralDescriptors.Count);
+        foreach (var descriptor in structuralDescriptors)
+        {
+            tokensByIndex[descriptor.AlternativeIndex] = descriptor.StructuralTokens;
         }
 
         var tokenSequences = new List<IReadOnlyList<string>>();
         foreach (var alternativeIndex in candidate.AlternativeIndexes)
         {
-            if (!alternativesByIndex.TryGetValue(alternativeIndex, out var alternative))
+            if (!tokensByIndex.TryGetValue(alternativeIndex, out var tokens))
             {
                 return [candidate.TokenName];
             }
 
-            tokenSequences.Add(ExtractStructuralTokens(alternative.Content));
+            tokenSequences.Add(tokens);
         }
 
         if (tokenSequences.Count < 2)
@@ -161,43 +172,6 @@ internal sealed class ParserSharedPrefixPlanFactory
 
         var sharedPrefix = ComputeSharedPrefix(tokenSequences);
         return sharedPrefix.Count == 0 ? [candidate.TokenName] : sharedPrefix;
-    }
-
-    private static IReadOnlyList<string> ExtractStructuralTokens(RuleContent content)
-    {
-        if (content is Sequence sequence)
-        {
-            var tokens = new List<string>();
-            for (var index = 0; index < sequence.Items.Count; index++)
-            {
-                if (!TryGetStructuralToken(sequence.Items[index], out var token))
-                {
-                    break;
-                }
-
-                tokens.Add(token);
-            }
-
-            return tokens;
-        }
-
-        return TryGetStructuralToken(content, out var singleToken) ? [singleToken] : [];
-    }
-
-    private static bool TryGetStructuralToken(RuleContent content, out string tokenName)
-    {
-        switch (content)
-        {
-            case RuleRef reference:
-                tokenName = reference.RuleName;
-                return true;
-            case LiteralMatch literal:
-                tokenName = literal.Value;
-                return true;
-            default:
-                tokenName = string.Empty;
-                return false;
-        }
     }
 
     private static IReadOnlyList<string> ComputeSharedPrefix(IReadOnlyList<IReadOnlyList<string>> sequences)
@@ -226,6 +200,6 @@ internal sealed class ParserSharedPrefixPlanFactory
             prefix.Add(expected);
         }
 
-        return prefix;
+        return prefix.AsReadOnly();
     }
 }

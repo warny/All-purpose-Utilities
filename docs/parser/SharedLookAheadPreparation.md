@@ -39,6 +39,19 @@ Shared-prefix metadata does **not** mean:
 - alternatives are interchangeable;
 - one alternative can be executed on behalf of another.
 
+## Structural token preparation
+
+Structural token sequences are computed by `AlternativeStructuralPrefixExtractor` during grammar-level preparation,
+**before** scheduling begins.
+
+The extractor inspects grammar model objects (`RuleContent`, `Sequence`, `RuleRef`, `LiteralMatch`) and produces
+lightweight `AlternativeStructuralDescriptor` records carrying only token name strings.
+These descriptors are forwarded to `ParserSharedPrefixPlanFactory`, which aggregates them without accessing
+grammar model objects.
+
+`AlternativeScheduler` receives pre-computed descriptors and forwards them; it does not inspect rule content,
+traverse grammar structures, or extract tokens itself.
+
 ## Conservative detection model
 
 Detection is intentionally under-approximated.

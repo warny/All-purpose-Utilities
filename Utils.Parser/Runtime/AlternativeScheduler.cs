@@ -19,6 +19,7 @@ internal sealed class AlternativeScheduler
     private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
     private readonly ParserContinuationFactory _continuationFactory = new();
     private readonly ParserSharedPrefixPlanFactory _sharedPrefixPlanFactory = new();
+    private readonly AlternativeStructuralPrefixExtractor _structuralPrefixExtractor = new();
 
     /// <summary>
     /// Initializes a scheduler with an optional passive runtime observer.
@@ -144,10 +145,10 @@ internal sealed class AlternativeScheduler
         // Shared-prefix plans remain observational scheduler metadata:
         // they expose deterministic grouping information, but never grant
         // replay/resume/merge authority and never replace real parser execution.
-        var alternativesByIndex = orderedAlternatives
-            .Select((alternative, index) => new KeyValuePair<int, Alternative>(index, alternative))
-            .ToDictionary();
-        var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations, alternativesByIndex);
+        // Structural descriptors are prepared outside the scheduler by AlternativeStructuralPrefixExtractor,
+        // keeping grammar traversal out of the scheduling path.
+        var structuralDescriptors = _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
+        var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations, structuralDescriptors);
         return new AlternativeSchedulingMetadata { SharedPrefixPlans = plans };
     }
 
