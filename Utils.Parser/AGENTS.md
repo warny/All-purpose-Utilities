@@ -66,6 +66,11 @@ Agents must:
 - **update `ANTLRCompatibility.md` after any change that adds, removes, or alters support for an ANTLR4 feature**, including moving a feature from "not supported" to "partially supported", or from "parsed but not executed" to "supported";
 - document, in the relevant section, **how the feature works when its behaviour differs from standard ANTLR4** (usage examples, API hooks, known constraints).
 
+
+## Parser documentation index
+
+Before editing parser documentation, agents must read `docs/parser/INDEX.md` and update it in the same PR when any document under `docs/parser/` is added, removed, or materially changed.
+
 ## Documentation requirements
 
 For runtime-affecting PRs, agents must update relevant documentation, including:

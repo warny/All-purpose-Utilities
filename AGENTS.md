@@ -42,6 +42,11 @@ This project targets **.NET 9**.
 
 ---
 
+
+## Parser documentation index
+
+When working on `Utils.Parser` documentation, agents must consult `docs/parser/INDEX.md` first and keep it updated whenever `docs/parser/*.md` files are added, removed, or materially changed.
+
 ## Codex Mission — Documentation & Discoverability (omy.Utils)
 
 This section **extends** the existing guidelines above.  
