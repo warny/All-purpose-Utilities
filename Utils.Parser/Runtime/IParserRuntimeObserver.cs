@@ -5,6 +5,7 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Defines a passive runtime observation contract for parser scheduling events.
 /// Implementations must remain non-authoritative and must not attempt to influence parser behavior.
+/// Observer callback exceptions are isolated by the runtime scheduler and do not alter execution semantics.
 /// </summary>
 public interface IParserRuntimeObserver
 {

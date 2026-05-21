@@ -323,6 +323,52 @@ public class AlternativeSchedulerTests
         Assert.AreEqual(withoutObserver.SelectedState.CurrentInputPosition, withThrowingObserver.SelectedState.CurrentInputPosition);
     }
 
+    [TestMethod]
+    public void Run_WithThrowingObserver_ContinuesToNotifyDeterministically()
+    {
+        var observer = new CountingThrowingRuntimeObserver();
+        var scheduler = new AlternativeScheduler(observer);
+        var (context, rule, alternatives) = CreateAlternatives();
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            context.Position,
+            minimumPrecedence: 0,
+            diagnostics: null,
+            parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
+                CreateState(rule, alternative, context.Position, 7 + index, index),
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
+
+        Assert.IsNotNull(result.SelectedState);
+        Assert.AreEqual(alternatives.Count, observer.StartedCount);
+        Assert.AreEqual(alternatives.Count, observer.CompletedCount);
+        Assert.AreEqual(1, observer.SelectedCount);
+    }
+
+    [TestMethod]
+    public void AlternativeRuntimeObservation_NormalizesStatusAndKind()
+    {
+        var selectedCompleted = new AlternativeRuntimeObservation(
+            ParserRuntimeObservationKind.AlternativeSelected,
+            "r",
+            0,
+            1,
+            0,
+            2,
+            ParserRuntimeObservationStatus.Completed);
+
+        var legacyCompleted = new AlternativeRuntimeObservation("r", 0, 1, 0, 2, "Completed");
+        var legacyUnknown = new AlternativeRuntimeObservation("r", 0, 1, 0, 2, "not-a-status");
+
+        Assert.AreEqual(ParserRuntimeObservationKind.AlternativeSelected, selectedCompleted.Kind);
+        Assert.AreEqual(ParserRuntimeObservationStatus.Completed, selectedCompleted.Status);
+        Assert.AreEqual(ParserRuntimeObservationKind.AlternativeCompleted, legacyCompleted.Kind);
+        Assert.AreEqual(ParserRuntimeObservationStatus.Completed, legacyCompleted.Status);
+        Assert.AreEqual(ParserRuntimeObservationKind.Unknown, legacyUnknown.Kind);
+        Assert.AreEqual(ParserRuntimeObservationStatus.Unknown, legacyUnknown.Status);
+    }
+
     private static (ParseContext Context, Rule Rule, IReadOnlyList<Alternative> Alternatives) CreateAlternatives()
     {
         var a = new Alternative(2, Associativity.Left, new LiteralMatch("a"), "A");
@@ -371,6 +417,49 @@ public class AlternativeSchedulerTests
         public void OnAlternativePruned(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
 
         public void OnAlternativeSelected(AlternativeRuntimeObservation observation) => throw new InvalidOperationException("observer exception");
+    }
+
+    private sealed class CountingThrowingRuntimeObserver : IParserRuntimeObserver
+    {
+        public int StartedCount { get; private set; }
+
+        public int CompletedCount { get; private set; }
+
+        public int FailedCount { get; private set; }
+
+        public int PrunedCount { get; private set; }
+
+        public int SelectedCount { get; private set; }
+
+        public void OnAlternativeStarted(AlternativeRuntimeObservation observation)
+        {
+            StartedCount++;
+            throw new InvalidOperationException("observer exception");
+        }
+
+        public void OnAlternativeCompleted(AlternativeRuntimeObservation observation)
+        {
+            CompletedCount++;
+            throw new InvalidOperationException("observer exception");
+        }
+
+        public void OnAlternativeFailed(AlternativeRuntimeObservation observation)
+        {
+            FailedCount++;
+            throw new InvalidOperationException("observer exception");
+        }
+
+        public void OnAlternativePruned(AlternativeRuntimeObservation observation)
+        {
+            PrunedCount++;
+            throw new InvalidOperationException("observer exception");
+        }
+
+        public void OnAlternativeSelected(AlternativeRuntimeObservation observation)
+        {
+            SelectedCount++;
+            throw new InvalidOperationException("observer exception");
+        }
     }
 
     private sealed class RecordingRuntimeObserver : IParserRuntimeObserver

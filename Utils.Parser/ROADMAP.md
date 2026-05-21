@@ -147,6 +147,7 @@ Current clarification status:
 - pruning is explicitly documented as orchestration-only and non-syntax-authoritative,
 - structural branch equivalence limits are explicitly documented as conservative and non-semantic-proof.
 - passive runtime observation is available for tooling/audit visibility and is explicitly non-authoritative (no control over scheduling, pruning, parse acceptance, parse-tree outcomes, or diagnostics authority).
+- observation contracts are normalized as immutable descriptive payloads; observer exceptions are isolated from parser execution semantics.
 
 Allowed work:
 

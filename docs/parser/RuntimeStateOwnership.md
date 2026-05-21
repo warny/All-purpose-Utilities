@@ -167,3 +167,9 @@ These boundaries are current-contract statements only.
 ## Runtime observation
 
 The optional `IParserRuntimeObserver` infrastructure is passive and descriptive only. Observer callbacks do not return control decisions and cannot influence scheduling, pruning, parse acceptance, parse-tree shape, or diagnostics authority.
+
+Additional observation contract clarifications:
+
+- runtime observation ordering is deterministic for a given deterministic parser run;
+- event payloads are immutable descriptive snapshots with explicit event kind and status, not execution handles;
+- observer callback exceptions are isolated by the scheduler and do not alter parser runtime outcomes.

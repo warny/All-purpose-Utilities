@@ -50,7 +50,7 @@ internal sealed class AlternativeScheduler
         {
             var alternative = ordered[index];
             var initial = CreateInitialState(rule, alternative, originInputPosition, index);
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativeStarted(observation), CreateObservation(initial));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeStarted(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeStarted, initial));
             var scheduled = parseAlternative(alternative, index);
             var parsed = scheduled.State;
             lookaheadProbesByAlternative[index] = scheduled.Probe;
@@ -58,13 +58,13 @@ internal sealed class AlternativeScheduler
             {
                 var failedState = initial.Fail();
                 failedStates.Add(failedState);
-                NotifyObserver(observation => _runtimeObserver?.OnAlternativeFailed(observation), CreateObservation(failedState));
+                NotifyObserver(observation => _runtimeObserver?.OnAlternativeFailed(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeFailed, failedState));
                 continue;
             }
 
             var completedState = EnsureInitialized(parsed);
             completedStates.Add(completedState);
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativeCompleted(observation), CreateObservation(completedState));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeCompleted(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeCompleted, completedState));
         }
 
         if (completedStates.Count == 0)
@@ -82,7 +82,7 @@ internal sealed class AlternativeScheduler
         var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
         foreach (var prunedState in prunedStates)
         {
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativePruned(observation), CreateObservation(prunedState));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativePruned(observation), CreateObservation(ParserRuntimeObservationKind.AlternativePruned, prunedState));
         }
 
         // The selected state is the scheduler's best local candidate after orchestration filters.
@@ -98,7 +98,7 @@ internal sealed class AlternativeScheduler
 
         if (winner is not null)
         {
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(winner));
+            NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeSelected, winner));
         }
 
         return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(rule, ordered, lookaheadProbesByAlternative));
@@ -170,15 +170,23 @@ internal sealed class AlternativeScheduler
     /// </summary>
     /// <param name="state">State to project to observation data.</param>
     /// <returns>Immutable observation payload.</returns>
-    private static AlternativeRuntimeObservation CreateObservation(ActiveParseState state)
+    private static AlternativeRuntimeObservation CreateObservation(ParserRuntimeObservationKind kind, ActiveParseState state)
     {
         return new AlternativeRuntimeObservation(
+            kind,
             state.Rule.Name,
             state.AlternativeIndex,
             state.Alternative.Priority,
             state.OriginInputPosition,
             state.CurrentInputPosition,
-            state.Status.ToString());
+            ParseObservationStatus(state.Status));
+    }
+
+    private static ParserRuntimeObservationStatus ParseObservationStatus(ActiveParseStateStatus status)
+    {
+        return Enum.TryParse<ParserRuntimeObservationStatus>(status.ToString(), ignoreCase: true, out var normalized)
+            ? normalized
+            : ParserRuntimeObservationStatus.Unknown;
     }
 
 
