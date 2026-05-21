@@ -109,7 +109,7 @@ public static class RuntimeTraceAnalyzer
         IReadOnlyDictionary<ParserRuntimeObservationKind, int> first,
         IReadOnlyDictionary<ParserRuntimeObservationKind, int> second)
     {
-        var combinedKeys = first.Keys.Concat(second.Keys).Distinct().OrderBy(static key => key.ToString());
+        var combinedKeys = first.Keys.Concat(second.Keys).Distinct().OrderBy(static key => (int)key);
         var delta = new Dictionary<ParserRuntimeObservationKind, int>();
 
         foreach (var key in combinedKeys)
