@@ -10,12 +10,11 @@ See also:
 
 ## Intent
 
-Runtime trace analysis validates that external tooling can extract useful descriptive information from passive observations and deterministic exports.
+Runtime trace analysis validates that external tooling can extract useful descriptive information from passive observations. Export identity can be reported as informational metadata only.
 
 The analysis layer consumes only:
 
-- `AlternativeRuntimeObservation` sequences, or
-- deterministic export strings (`RuntimeObservationTextWriter`, `RuntimeObservationJsonWriter`).
+- `AlternativeRuntimeObservation` sequences.
 
 The analysis layer produces only:
 
@@ -54,7 +53,7 @@ Examples of allowed descriptive outputs:
 - status distribution,
 - rule-name distribution,
 - alternative-index distribution,
-- deterministic export identity flags,
-- deterministic event count deltas.
+- deterministic event count deltas,
+- optional export identity indicators (`AreTextExportsIdentical`, `AreJsonExportsIdentical`) treated as informational only.
 
 These outputs are diagnostic aids for tooling only.

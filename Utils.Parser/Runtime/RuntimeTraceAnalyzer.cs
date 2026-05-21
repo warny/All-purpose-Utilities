@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -9,7 +11,7 @@ public static class RuntimeTraceAnalyzer
     /// Builds a descriptive summary from the provided observation sequence.
     /// </summary>
     /// <param name="observations">Observations to summarize in deterministic sequence order.</param>
-    /// <returns>A deterministic summary containing counts and distributions.</returns>
+    /// <returns>A deterministic summary containing counts and read-only distributions.</returns>
     public static RuntimeTraceSummary Summarize(IEnumerable<AlternativeRuntimeObservation> observations)
     {
         ArgumentNullException.ThrowIfNull(observations);
@@ -29,7 +31,7 @@ public static class RuntimeTraceAnalyzer
     /// </summary>
     /// <param name="first">First sequence to compare.</param>
     /// <param name="second">Second sequence to compare.</param>
-    /// <returns>Deterministic comparison values based only on passive observations and exports.</returns>
+    /// <returns>Deterministic comparison values based on passive observations, with optional export identity indicators.</returns>
     public static RuntimeTraceComparison Compare(
         IEnumerable<AlternativeRuntimeObservation> first,
         IEnumerable<AlternativeRuntimeObservation> second)
@@ -44,11 +46,40 @@ public static class RuntimeTraceAnalyzer
         var secondSummary = Summarize(secondMaterialized);
 
         return new RuntimeTraceComparison(
+            AreSummariesEquivalent(firstSummary, secondSummary),
             RuntimeObservationTextWriter.Write(firstMaterialized) == RuntimeObservationTextWriter.Write(secondMaterialized),
             RuntimeObservationJsonWriter.Write(firstMaterialized) == RuntimeObservationJsonWriter.Write(secondMaterialized),
             firstSummary.TotalObservations,
             secondSummary.TotalObservations,
             ComputeEventDelta(firstSummary.EventDistribution, secondSummary.EventDistribution));
+    }
+
+    private static bool AreSummariesEquivalent(RuntimeTraceSummary first, RuntimeTraceSummary second)
+    {
+        return first.TotalObservations == second.TotalObservations
+            && AreDictionariesEquivalent(first.EventDistribution, second.EventDistribution)
+            && AreDictionariesEquivalent(first.StatusDistribution, second.StatusDistribution)
+            && AreDictionariesEquivalent(first.RuleDistribution, second.RuleDistribution)
+            && AreDictionariesEquivalent(first.AlternativeDistribution, second.AlternativeDistribution);
+    }
+
+    private static bool AreDictionariesEquivalent<TKey>(IReadOnlyDictionary<TKey, int> first, IReadOnlyDictionary<TKey, int> second)
+        where TKey : notnull
+    {
+        if (first.Count != second.Count)
+        {
+            return false;
+        }
+
+        foreach (var entry in first)
+        {
+            if (!second.TryGetValue(entry.Key, out var value) || value != entry.Value)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static IReadOnlyDictionary<T, int> CountBy<T>(
@@ -71,7 +102,7 @@ public static class RuntimeTraceAnalyzer
             }
         }
 
-        return counts;
+        return new ReadOnlyDictionary<T, int>(counts);
     }
 
     private static IReadOnlyDictionary<ParserRuntimeObservationKind, int> ComputeEventDelta(
@@ -88,6 +119,6 @@ public static class RuntimeTraceAnalyzer
             delta[key] = firstCount - secondCount;
         }
 
-        return delta;
+        return new ReadOnlyDictionary<ParserRuntimeObservationKind, int>(delta);
     }
 }

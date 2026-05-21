@@ -26,16 +26,17 @@ public class RuntimeTraceAnalyzerTests
     }
 
     /// <summary>
-    /// Ensures deterministic exports of identical observations produce identical comparison results.
+    /// Ensures deterministic analysis equivalence is computed from observation-level summaries.
     /// </summary>
     [TestMethod]
-    public void Compare_IdenticalObservations_ProducesIdenticalExportFlags()
+    public void Compare_IdenticalObservations_ProducesEquivalentSummaries()
     {
         var first = CreateTrace();
         var second = CreateTrace();
 
         var comparison = RuntimeTraceAnalyzer.Compare(first, second);
 
+        Assert.IsTrue(comparison.AreSummariesEquivalent);
         Assert.IsTrue(comparison.AreTextExportsIdentical);
         Assert.IsTrue(comparison.AreJsonExportsIdentical);
         Assert.AreEqual(first.Length, comparison.FirstTotalObservations);
@@ -58,13 +59,37 @@ public class RuntimeTraceAnalyzerTests
 
         var comparison = RuntimeTraceAnalyzer.Compare(first, second);
 
-        Assert.IsFalse(comparison.AreTextExportsIdentical);
-        Assert.IsFalse(comparison.AreJsonExportsIdentical);
+        Assert.IsFalse(comparison.AreSummariesEquivalent);
         Assert.AreEqual(3, comparison.FirstTotalObservations);
         Assert.AreEqual(2, comparison.SecondTotalObservations);
         Assert.AreEqual(1, comparison.EventCountDelta[ParserRuntimeObservationKind.AlternativeCompleted]);
         Assert.AreEqual(1, comparison.EventCountDelta[ParserRuntimeObservationKind.AlternativeSelected]);
         Assert.AreEqual(-1, comparison.EventCountDelta[ParserRuntimeObservationKind.AlternativeFailed]);
+    }
+
+    /// <summary>
+    /// Ensures summary distributions are exposed as read-only wrappers.
+    /// </summary>
+    [TestMethod]
+    public void Summarize_Distributions_AreReadOnly()
+    {
+        var summary = RuntimeTraceAnalyzer.Summarize(CreateTrace());
+
+        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationKind, int>)summary.EventDistribution).Add(ParserRuntimeObservationKind.Unknown, 1));
+        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationStatus, int>)summary.StatusDistribution).Add(ParserRuntimeObservationStatus.Unknown, 1));
+        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<string, int>)summary.RuleDistribution).Add("other", 1));
+        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<int, int>)summary.AlternativeDistribution).Add(99, 1));
+    }
+
+    /// <summary>
+    /// Ensures comparison distributions are exposed as read-only wrappers.
+    /// </summary>
+    [TestMethod]
+    public void Compare_EventCountDelta_IsReadOnly()
+    {
+        var comparison = RuntimeTraceAnalyzer.Compare(CreateTrace(), CreateTrace());
+
+        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationKind, int>)comparison.EventCountDelta).Add(ParserRuntimeObservationKind.Unknown, 1));
     }
 
     private static AlternativeRuntimeObservation[] CreateTrace()
