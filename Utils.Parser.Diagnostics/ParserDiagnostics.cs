@@ -80,6 +80,13 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor RuleReturnsIgnored =
         new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
 
+    /// <summary>
+    /// Compatibility alias for the legacy descriptor name.
+    /// </summary>
+    [System.Obsolete("Use RuleReturnsIgnored. This alias is kept for compatibility.")]
+    public static readonly ParserDiagnosticDescriptor ReturnsPartiallyApplied =
+        RuleReturnsIgnored;
+
     /// <summary>locals/throws/exception metadata ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LocalsIgnored =
         new("UP1008", "Locals ignored", "locals/throws/exception metadata for rule '{0}' is parsed but ignored.", DefaultCategory);
