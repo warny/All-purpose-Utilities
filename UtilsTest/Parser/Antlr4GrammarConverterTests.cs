@@ -416,6 +416,14 @@ public class Antlr4GrammarConverterTests
         Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
     }
 
+
+    [TestMethod]
+    public void LocalsIgnoredAlias_PreservesLegacyCodeUp1008()
+    {
+        Assert.AreEqual("UP1008", ParserDiagnostics.LocalsIgnored.Code);
+        Assert.AreEqual(ParserDiagnostics.RuleLocalsIgnored.Code, ParserDiagnostics.LocalsIgnored.Code);
+    }
+
     // ─── 10. Fragment rule ────────────────────────────────────────────────────
 
     [TestMethod]

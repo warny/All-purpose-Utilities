@@ -98,9 +98,9 @@ public static class ParserDiagnostics
     /// <summary>
     /// Compatibility alias for the legacy descriptor name.
     /// </summary>
-    [System.Obsolete("Use RuleExceptionMetadataIgnored. This alias is kept for compatibility.")]
+    [System.Obsolete("Use RuleLocalsIgnored. This alias is kept for compatibility.")]
     public static readonly ParserDiagnosticDescriptor LocalsIgnored =
-        RuleExceptionMetadataIgnored;
+        RuleLocalsIgnored;
 
     /// <summary>Runtime and generator support mismatch.</summary>
     public static readonly ParserDiagnosticDescriptor RuntimeGeneratorMismatch =
