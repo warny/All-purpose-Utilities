@@ -12,12 +12,16 @@ Continuation metadata provides a deterministic, structural description of potent
 
 The current ownership flow is:
 
-ParserEngine preparation  
-→ continuation metadata production  
-→ scheduler/runtime transport
+Grammar  
+→ Preparation  
+→ Scheduler  
+→ Execution  
+→ Observation  
+→ Export  
+→ Analysis
 
-Continuation metadata is produced before scheduler execution and then transported during scheduling/runtime flow.  
-The scheduler does not gain continuation preparation or execution authority.
+Preparation owns continuation metadata production before scheduling starts.  
+The scheduler transports metadata and does not gain preparation or execution authority.
 
 ## Descriptor model
 

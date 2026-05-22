@@ -40,6 +40,7 @@ The following constructs are parsed and stored, but runtime semantic execution i
 
 | Construct | Parsed | Stored | Resolved | Executable | Runtime-supported | Diagnostics |
 |---|---|---|---|---|---|---|
+| Continuation metadata descriptors | Yes | Yes (structural metadata) | Yes (preparation-layer normalization) | No | Metadata-only | N/A (descriptive metadata, non-authoritative) |
 | Semantic predicates (`{ condition }?`) | Yes | Yes (predicate metadata) | Partially (policy-routed) | Policy-dependent only | Conservative by default (`NotEvaluated`) | `SemanticPredicateNotEnforced` when evaluator returns `NotEvaluated` |
 | Inline actions (`{ code }`) | Yes | Yes (embedded action metadata) | No target-language semantic resolution | No by default | Parsed-but-not-executed compatibility only | `InlineActionStoredNotExecuted` |
 | Rule actions (`@init`, `@after`, unsupported action slots) | Yes | Yes (rule/action metadata) | Limited to recognized metadata slots | No | Metadata-only/ignored compatibility path | `ActionIgnored` for ignored rule or grammar action entries; `InlineActionStoredNotExecuted` when an embedded action reaches runtime policy flow |
@@ -77,6 +78,7 @@ The following capabilities are currently unsupported by design:
 - adaptive LL prediction;
 - GLL parsing;
 - speculative parsing and continuation replay;
+- runtime continuation execution/resume;
 - parser graph execution;
 - parse-forest generation;
 - parallel parsing;
@@ -99,7 +101,7 @@ Compatibility diagnostics are intended to document capability boundaries, not to
 Current parser architecture includes explicit metadata infrastructure for future-safe analysis, while preserving deterministic execution boundaries.
 
 - Shared-prefix infrastructure is **metadata-only**.
-- Continuation descriptors are structural metadata, not runtime replay state.
+- Continuation metadata support is recognized/preserved/normalized as structural metadata; execution support is intentionally disabled.
 - No shared-prefix execution pipeline is active.
 - `AlternativeScheduler` provides explicit deterministic orchestration.
 - `ParserStateRegistry` centralizes parser state guards.

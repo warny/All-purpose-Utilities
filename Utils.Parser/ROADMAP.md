@@ -276,7 +276,7 @@ Forbidden work:
 
 ### Phase 5 — Continuation metadata maturity
 
-**Status: in progress.**
+**Status: complete.**
 
 Goal: clarify and mature continuation metadata as descriptive infrastructure only.
 
@@ -286,12 +286,22 @@ Scope:
 - continuation formatting,
 - ownership,
 - relation to `ActiveParseState`,
-- relation to registry metadata.
+- relation to registry metadata,
+- preparation-layer extraction outside scheduler,
+- scheduler transport-only boundaries.
+
+Current clarification status:
+
+- structural extraction moved to preparation layer,
+- scheduler consumes descriptors only,
+- `ParserContinuationFactory` no longer traverses grammar structures,
+- continuation metadata remains descriptive-only and non-authoritative,
+- ownership boundaries are documented and aligned with runtime behavior.
 
 Allowed work:
 
 - metadata tests,
-- documentation,
+- documentation consistency,
 - simplification.
 
 Forbidden work:
@@ -299,6 +309,12 @@ Forbidden work:
 - continuation replay,
 - runtime resume,
 - invocation frame model.
+
+Completed in PR #234:
+
+- move continuation creation out of scheduler,
+- extract continuation descriptors in preparation layer,
+- remove scheduler metadata generation responsibility.
 
 ### Phase 6 — ANTLR4 compatibility expansion
 

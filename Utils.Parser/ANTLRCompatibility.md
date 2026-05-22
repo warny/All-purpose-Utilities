@@ -209,6 +209,7 @@ These constructs are recognised without error but produce no runtime effect.
 
 | Construct | Stored where | Runtime behaviour |
 |---|---|---|
+| Continuation metadata descriptors | `ParserContinuationDescriptor` metadata (prepared before scheduling) | Recognized: yes; Preserved: yes; Normalized: yes; Executed: no. |
 | Rule parameters `rule[int x]` | `Rule.Parameters` as raw text | No argument passing, no typed binding, no invocation frame. |
 | Rule returns `returns [int x]` | `Rule.ReturnType` as raw text | No value extraction or propagation. |
 | `locals [...]` | Parsed, discarded | No runtime semantics. |
