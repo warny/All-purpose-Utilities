@@ -841,7 +841,14 @@ public sealed class ParserEngine
         var prepared = _schedulingPreparation.Prepare(
             rule,
             orderedAlternatives,
-            new SchedulingPreparationContext(context, startPosition, precedence, cursorKind, cursorIndex, _caseInsensitive));
+            new SchedulingPreparationContext(
+                context,
+                startPosition,
+                precedence,
+                cursorKind,
+                cursorIndex,
+                _caseInsensitive,
+                candidate => CheckPrecedence(candidate, precedence)));
         var scheduling = _alternativeScheduler.Run(
             rule,
             orderedAlternatives,

@@ -104,7 +104,7 @@ public class SchedulingPreparationTests
         return preparation.Prepare(
             rule,
             orderedAlternatives,
-            new SchedulingPreparationContext(parseContext, parseContext.Position, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1, false));
+            new SchedulingPreparationContext(parseContext, parseContext.Position, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1, false, static _ => true));
     }
 
     private static SchedulingPreparation CreatePreparation()

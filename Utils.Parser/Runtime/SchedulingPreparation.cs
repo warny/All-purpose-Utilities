@@ -69,7 +69,7 @@ internal sealed class SchedulingPreparation
         for (var index = 0; index < orderedAlternatives.Count; index++)
         {
             var alternative = orderedAlternatives[index];
-            if (!CheckPrecedence(alternative, context.Precedence))
+            if (!context.PrecedencePolicy(alternative))
             {
                 probes[index] = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null);
                 continue;
@@ -93,24 +93,4 @@ internal sealed class SchedulingPreparation
         return probes;
     }
 
-    private static bool CheckPrecedence(Alternative alt, int currentPrecedence)
-    {
-        var predLevel = FindPrecedenceLevel(alt.Content);
-        if (predLevel is null)
-        {
-            return true;
-        }
-
-        return predLevel.Value >= currentPrecedence;
-    }
-
-    private static int? FindPrecedenceLevel(RuleContent content)
-    {
-        return content switch
-        {
-            PrecedencePredicate p => p.Level,
-            Sequence s => s.Items.OfType<PrecedencePredicate>().Select(static p => (int?)p.Level).FirstOrDefault(),
-            _ => null
-        };
-    }
 }

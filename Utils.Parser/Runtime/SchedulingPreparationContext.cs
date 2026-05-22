@@ -1,3 +1,5 @@
+using Utils.Parser.Model;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -9,10 +11,12 @@ namespace Utils.Parser.Runtime;
 /// <param name="CursorKind">Scheduler cursor kind identifying the orchestration location.</param>
 /// <param name="CursorIndex">Scheduler cursor index used to disambiguate orchestration locations.</param>
 /// <param name="CaseInsensitive">Whether token matching should use case-insensitive comparison.</param>
+/// <param name="PrecedencePolicy">Policy determining whether an alternative is eligible for current precedence.</param>
 internal sealed record SchedulingPreparationContext(
     ParseContext ParseContext,
     int StartPosition,
     int Precedence,
     string CursorKind,
     int CursorIndex,
-    bool CaseInsensitive);
+    bool CaseInsensitive,
+    Func<Alternative, bool> PrecedencePolicy);
