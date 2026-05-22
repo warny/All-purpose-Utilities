@@ -51,6 +51,21 @@ public class ParserDiagnosticsTests
     }
 
     [TestMethod]
+    public void Converter_LabelOnNonRuleReference_EmitsExplicitDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : x='a' ;
+            """, diagnostics);
+
+        var diagnostic = diagnostics.FirstOrDefault(d => d.Code == ParserDiagnostics.LabelOnNonRuleReferenceIgnored.Code);
+        Assert.IsNotNull(diagnostic);
+        Assert.AreEqual("UP1022", diagnostic.Code);
+        StringAssert.Contains(diagnostic.Message, "Label 'x' is recognized but ignored");
+    }
+
+    [TestMethod]
     public void RuntimeEngine_InlineActionAndPredicate_EmitDiagnostics()
     {
         var diagnostics = new DiagnosticBag();

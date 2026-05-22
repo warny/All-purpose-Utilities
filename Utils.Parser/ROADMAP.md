@@ -324,6 +324,7 @@ Current clarification status:
 
 - converter now emits explicit diagnostics for unsupported grammar options instead of implicit acceptance,
 - `tokens` / `channels` prequel constructs now emit deterministic partial-support diagnostics during conversion,
+- labels targeting non-rule-reference elements now emit deterministic compatibility diagnostics instead of being accepted silently,
 - compatibility documentation is aligned with explicit parsed/normalized/rejected boundaries.
 
 Goal: progressively improve ANTLR4 grammar compatibility.

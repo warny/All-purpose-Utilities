@@ -849,7 +849,8 @@ public sealed class Antlr4GrammarConverter
             var content = ConvertAtom(atom);
             if (content is RuleRef ruleRef)
                 return ruleRef with { Label = new RuleLabel(labelName, ruleRef.RuleName, isAdditive) };
-            return content; // label on non-ref content: ignored
+            _diagnostics?.Add(ParserDiagnostics.LabelOnNonRuleReferenceIgnored, labelName);
+            return content;
         }
 
         var block = First(node, "block");
