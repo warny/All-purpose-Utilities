@@ -683,9 +683,16 @@ public sealed class Antlr4GrammarConverter
 
         EmbeddedAction? initAction = null, afterAction = null;
         bool hasIgnoredRuleMetadata = false;
+        bool hasRuleLocalsClause = false;
         foreach (var prequel in All(node, "rulePrequel"))
         {
-            if (First(prequel, "localsSpec") != null || First(prequel, "throwsSpec") != null)
+            if (First(prequel, "localsSpec") != null)
+            {
+                hasIgnoredRuleMetadata = true;
+                hasRuleLocalsClause = true;
+            }
+
+            if (First(prequel, "throwsSpec") != null)
                 hasIgnoredRuleMetadata = true;
 
             var ruleAction = First(prequel, "ruleAction");
@@ -705,10 +712,19 @@ public sealed class Antlr4GrammarConverter
             else _diagnostics?.AddWithContext(ParserDiagnostics.ActionIgnored, null, null, name, null, $"rule action @{actionName}");
         }
 
+        if (First(node, "localsSpec") != null)
+        {
+            hasIgnoredRuleMetadata = true;
+            hasRuleLocalsClause = true;
+        }
+
         if (First(node, "exceptionGroup") != null)
             hasIgnoredRuleMetadata = true;
 
-        if (hasIgnoredRuleMetadata)
+        if (hasRuleLocalsClause)
+            _diagnostics?.AddWithContext(ParserDiagnostics.RuleLocalsIgnored, null, null, name, null, name);
+
+        if (hasIgnoredRuleMetadata && !hasRuleLocalsClause)
             _diagnostics?.AddWithContext(ParserDiagnostics.LocalsIgnored, null, null, name, null, name);
 
         var ruleBlock = Require(First(node, "ruleBlock"), "Missing ruleBlock");

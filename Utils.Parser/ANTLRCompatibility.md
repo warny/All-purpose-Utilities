@@ -211,7 +211,7 @@ These constructs are recognised without error but produce no runtime effect.
 |---|---|---|
 | Rule parameters `rule[int x]` | `Rule.Parameters` as raw text | No argument passing, no typed binding, no invocation frame. |
 | Rule returns `returns [int x]` | `Rule.ReturnType` as raw text | Recognized, ignored by runtime semantics, and reported with `UP1007 RuleReturnsIgnored`. |
-| `locals [...]` | Parsed, discarded | No runtime semantics. |
+| `locals [...]` | Parsed at rule level and surfaced with `UP1008 RuleLocalsIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
 | `throws ExceptionType` | Parsed, discarded | No runtime semantics. |
 | `catch [...] {...}` / `finally {...}` | Parsed, discarded | No runtime semantics. |
 | Grammar-level actions `@header`, `@members`, etc. | `ParserDefinition.Actions` | Metadata only; not executed. |
