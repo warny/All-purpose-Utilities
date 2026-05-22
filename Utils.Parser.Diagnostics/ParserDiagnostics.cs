@@ -136,6 +136,10 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor UnsupportedAntlrOptionIgnored =
         new("UP1021", "ANTLR option ignored", "ANTLR option '{0}' is currently unsupported and will be ignored.", DefaultCategory);
 
+    /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
+    public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
+        new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
+
     // Warnings (UP5xxx)
     /// <summary>Best-effort recovery used.</summary>
     public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed =
@@ -237,6 +241,7 @@ public static class ParserDiagnostics
             [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [UnsupportedLexerCommand.Code] = UnsupportedLexerCommand,
             [UnsupportedAntlrOptionIgnored.Code] = UnsupportedAntlrOptionIgnored,
+            [LabelOnNonRuleReferenceIgnored.Code] = LabelOnNonRuleReferenceIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,
             [FallbackStrategyUsed.Code] = FallbackStrategyUsed,
