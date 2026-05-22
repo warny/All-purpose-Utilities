@@ -6,6 +6,9 @@ For each feature that behaves differently from standard ANTLR4, a **Usage** sect
 
 This document must be consulted before modifying any grammar-related component, and updated whenever a feature's support status changes.
 
+> Note: this reference is complementary to `docs/parser/Antlr4CompatibilityMatrix.md` (high-level matrix).
+> Use this file for implementation-oriented usage guidance when behavior differs from standard ANTLR4.
+
 ---
 
 ## Supported — full runtime support
