@@ -856,7 +856,7 @@ public sealed class ParserEngine
             diagnostics,
             precomputedDescriptors: structuralDescriptors,
             precomputedContinuationMetadata: continuationDescriptors,
-            precomputedLookaheadProbes,
+            precomputedLookaheadProbes: precomputedLookaheadProbes,
             parseAlternative: (alternative, alternativeIndex) => _scheduledAlternativeExecutor.Execute(
                 context,
                 rule,
