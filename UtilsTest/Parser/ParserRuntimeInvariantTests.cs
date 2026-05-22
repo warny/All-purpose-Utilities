@@ -222,7 +222,9 @@ public class ParserRuntimeInvariantTests
         var diagnostics = new DiagnosticBag();
 
         _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, diagnostics, (_, i) =>
-            new ScheduledAlternativeExecutionResult(state with { Alternative = rule.Content.Alternatives[i], AlternativeIndex = i }, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
+            new ScheduledAlternativeExecutionResult(state with { Alternative = rule.Content.Alternatives[i], AlternativeIndex = i }, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: []);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));

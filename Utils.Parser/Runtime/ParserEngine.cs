@@ -81,6 +81,8 @@ public sealed class ParserEngine
     /// Local alternative-execution coordinator used by scheduling flow.
     /// </summary>
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
+    private readonly ParserLookaheadProbe _lookaheadProbe = new();
+    private readonly ContinuationMetadataPreparation _continuationMetadataPreparation = new();
 
     /// <summary>
     /// Policy component used to evaluate semantic predicates under runtime feature constraints.
@@ -157,7 +159,7 @@ public sealed class ParserEngine
         _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
-        _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, new ParserLookaheadProbe());
+        _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
     }
 
     /// <summary>
@@ -843,6 +845,12 @@ public sealed class ParserEngine
         // Extraction is grammar-level preparation; the scheduler receives ready-made descriptors.
         var orderedAlternatives = alternatives.OrderBy(static a => a.Priority).ToList();
         var structuralDescriptors = _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
+        var lookaheadToken = context.Peek();
+        var precomputedLookaheadProbes = orderedAlternatives
+            .Select(alternative => _lookaheadProbe.Probe(alternative, lookaheadToken, ResolveRule, _caseInsensitive))
+            .ToArray();
+        var sharedPrefixCandidates = new ParserLookaheadSharedPrefixDetector().Detect(precomputedLookaheadProbes);
+        var continuationDescriptors = _continuationMetadataPreparation.Prepare(rule, orderedAlternatives, precomputedLookaheadProbes, sharedPrefixCandidates);
         var scheduling = _alternativeScheduler.Run(
             rule,
             orderedAlternatives,
@@ -850,6 +858,7 @@ public sealed class ParserEngine
             precedence,
             diagnostics,
             precomputedDescriptors: structuralDescriptors,
+            precomputedContinuationMetadata: continuationDescriptors,
             parseAlternative: (alternative, alternativeIndex) => _scheduledAlternativeExecutor.Execute(
                 context,
                 rule,

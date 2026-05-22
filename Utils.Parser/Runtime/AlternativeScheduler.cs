@@ -18,7 +18,6 @@ internal sealed class AlternativeScheduler
     private readonly IParserRuntimeObserver? _runtimeObserver;
     private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
     private readonly ParserSharedPrefixPlanFactory _sharedPrefixPlanFactory = new();
-    private readonly ContinuationMetadataPreparation _continuationMetadataPreparation = new();
 
     /// <summary>
     /// Initializes a scheduler with an optional passive runtime observer.
@@ -40,8 +39,8 @@ internal sealed class AlternativeScheduler
         int minimumPrecedence,
         DiagnosticBag? diagnostics,
         Func<Alternative, int, ScheduledAlternativeExecutionResult> parseAlternative,
-        IReadOnlyList<AlternativeStructuralDescriptor>? precomputedDescriptors = null,
-        IReadOnlyList<ParserContinuationDescriptor>? precomputedContinuationMetadata = null)
+        IReadOnlyList<AlternativeStructuralDescriptor>? precomputedDescriptors,
+        IReadOnlyList<ParserContinuationDescriptor> precomputedContinuationMetadata)
     {
         var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
         var lookaheadProbesByAlternative = new ParserLookaheadProbeResult[ordered.Count];
@@ -71,7 +70,7 @@ internal sealed class AlternativeScheduler
 
         if (completedStates.Count == 0)
         {
-            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(rule, ordered, lookaheadProbesByAlternative, precomputedDescriptors, precomputedContinuationMetadata));
+            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(lookaheadProbesByAlternative, precomputedDescriptors, precomputedContinuationMetadata));
         }
 
         // Deduplication uses scheduling identity (ActiveParseStateKey) and is intentionally
@@ -103,7 +102,7 @@ internal sealed class AlternativeScheduler
             NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeSelected, winner));
         }
 
-        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(rule, ordered, lookaheadProbesByAlternative, precomputedDescriptors, precomputedContinuationMetadata));
+        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(lookaheadProbesByAlternative, precomputedDescriptors, precomputedContinuationMetadata));
     }
 
 
@@ -113,19 +112,16 @@ internal sealed class AlternativeScheduler
     /// Produced metadata remains non-authoritative and does not change branch execution requirements.
     /// </summary>
     private AlternativeSchedulingMetadata BuildMetadata(
-        Rule rule,
-        IReadOnlyList<Alternative> orderedAlternatives,
         IReadOnlyList<ParserLookaheadProbeResult> lookaheadProbes,
         IReadOnlyList<AlternativeStructuralDescriptor>? precomputedDescriptors,
-        IReadOnlyList<ParserContinuationDescriptor>? precomputedContinuationMetadata)
+        IReadOnlyList<ParserContinuationDescriptor> precomputedContinuationMetadata)
     {
         // Metadata lifecycle boundary:
         // observations are produced from attempted alternatives, transported through scheduling,
         // and exposed for diagnostics/audit tooling. This metadata remains structural-only,
         // independent from parse acceptance, and discardable without semantic changes.
         var candidates = _sharedPrefixDetector.Detect(lookaheadProbes);
-        var continuations = precomputedContinuationMetadata
-            ?? _continuationMetadataPreparation.Prepare(rule, orderedAlternatives, lookaheadProbes, candidates);
+        var continuations = precomputedContinuationMetadata;
 
         // Shared-prefix plans remain observational scheduler metadata:
         // they expose deterministic grouping information, but never grant

@@ -198,6 +198,8 @@ public class ParserDiagnosticsTests
             originInputPosition: 0,
             minimumPrecedence: 0,
             diagnostics,
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 new ActiveParseState
                 {
