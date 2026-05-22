@@ -87,9 +87,20 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor ReturnsPartiallyApplied =
         RuleReturnsIgnored;
 
-    /// <summary>locals/throws/exception metadata ignored.</summary>
+    /// <summary>Rule locals clause recognized but ignored by runtime semantics.</summary>
+    public static readonly ParserDiagnosticDescriptor RuleLocalsIgnored =
+        new("UP1008", "Rule locals ignored", "Rule locals clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+
+    /// <summary>Rule throws/catch/finally metadata recognized but ignored by runtime semantics.</summary>
+    public static readonly ParserDiagnosticDescriptor RuleExceptionMetadataIgnored =
+        new("UP1023", "Rule exception metadata ignored", "Rule exception metadata (throws/catch/finally) for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+
+    /// <summary>
+    /// Compatibility alias for the legacy descriptor name.
+    /// </summary>
+    [System.Obsolete("Use RuleLocalsIgnored. This alias is kept for compatibility.")]
     public static readonly ParserDiagnosticDescriptor LocalsIgnored =
-        new("UP1008", "Locals ignored", "locals/throws/exception metadata for rule '{0}' is parsed but ignored.", DefaultCategory);
+        RuleLocalsIgnored;
 
     /// <summary>Runtime and generator support mismatch.</summary>
     public static readonly ParserDiagnosticDescriptor RuntimeGeneratorMismatch =
@@ -234,7 +245,8 @@ public static class ParserDiagnostics
             [InlineActionStoredNotExecuted.Code] = InlineActionStoredNotExecuted,
             [SemanticPredicateNotEnforced.Code] = SemanticPredicateNotEnforced,
             [RuleReturnsIgnored.Code] = RuleReturnsIgnored,
-            [LocalsIgnored.Code] = LocalsIgnored,
+            [RuleLocalsIgnored.Code] = RuleLocalsIgnored,
+            [RuleExceptionMetadataIgnored.Code] = RuleExceptionMetadataIgnored,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,

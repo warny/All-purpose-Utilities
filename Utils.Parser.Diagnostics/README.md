@@ -48,7 +48,8 @@ All named descriptors are defined in the `ParserDiagnostics` static class and ac
 | UP1005 | `InlineActionStoredNotExecuted` | An inline `@init` / `@after` action is stored but not executed at runtime |
 | UP1006 | `SemanticPredicateNotEnforced` | A `{...}?` predicate is recognized but not evaluated; it always succeeds |
 | UP1007 | `ReturnsPartiallyApplied` | A `returns [...]` clause is parsed but stored only as raw text |
-| UP1008 | `LocalsIgnored` | `locals`, `throws`, `catch`, `finally` metadata is parsed but not applied |
+| UP1008 | `RuleLocalsIgnored` | A rule `locals [...]` clause is recognized but ignored by the current runtime model |
+| UP1023 | `RuleExceptionMetadataIgnored` | Rule `throws` / `catch` / `finally` metadata is recognized but ignored by the current runtime model |
 | UP1009 | `RuntimeGeneratorMismatch` | A feature behaves differently between the runtime and the source generator |
 | UP1010 | `DirectLeftRecursionDetected` | Direct left recursion was detected and restructured during rule resolution |
 | UP1011 | `IndirectLeftRecursionNotSupported` | Indirect left recursion is not supported and raises `GrammarValidationException` |

@@ -683,10 +683,21 @@ public sealed class Antlr4GrammarConverter
 
         EmbeddedAction? initAction = null, afterAction = null;
         bool hasIgnoredRuleMetadata = false;
+        bool hasRuleLocalsClause = false;
+        bool hasRuleExceptionMetadata = false;
         foreach (var prequel in All(node, "rulePrequel"))
         {
-            if (First(prequel, "localsSpec") != null || First(prequel, "throwsSpec") != null)
+            if (First(prequel, "localsSpec") != null)
+            {
                 hasIgnoredRuleMetadata = true;
+                hasRuleLocalsClause = true;
+            }
+
+            if (First(prequel, "throwsSpec") != null)
+            {
+                hasIgnoredRuleMetadata = true;
+                hasRuleExceptionMetadata = true;
+            }
 
             var ruleAction = First(prequel, "ruleAction");
             if (ruleAction == null) continue;
@@ -705,11 +716,29 @@ public sealed class Antlr4GrammarConverter
             else _diagnostics?.AddWithContext(ParserDiagnostics.ActionIgnored, null, null, name, null, $"rule action @{actionName}");
         }
 
-        if (First(node, "exceptionGroup") != null)
+        if (First(node, "localsSpec") != null)
+        {
             hasIgnoredRuleMetadata = true;
+            hasRuleLocalsClause = true;
+        }
 
-        if (hasIgnoredRuleMetadata)
-            _diagnostics?.AddWithContext(ParserDiagnostics.LocalsIgnored, null, null, name, null, name);
+        if (First(node, "throwsSpec") != null)
+        {
+            hasIgnoredRuleMetadata = true;
+            hasRuleExceptionMetadata = true;
+        }
+
+        if (First(node, "exceptionGroup") != null)
+        {
+            hasIgnoredRuleMetadata = true;
+            hasRuleExceptionMetadata = true;
+        }
+
+        if (hasRuleLocalsClause)
+            _diagnostics?.AddWithContext(ParserDiagnostics.RuleLocalsIgnored, null, null, name, null, name);
+
+        if (hasRuleExceptionMetadata)
+            _diagnostics?.AddWithContext(ParserDiagnostics.RuleExceptionMetadataIgnored, null, null, name, null, name);
 
         var ruleBlock = Require(First(node, "ruleBlock"), "Missing ruleBlock");
         var ruleAltList = Require(First(ruleBlock, "ruleAltList"), "Missing ruleAltList");

@@ -366,6 +366,64 @@ public class Antlr4GrammarConverterTests
             """, diagnostics));
     }
 
+
+    [TestMethod]
+    public void Converter_LocalsClause_EmitsExplicitDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start returns [int value] locals [int x] : 'a' ;
+            """, diagnostics);
+
+        var matches = diagnostics
+            .Where(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code)
+            .ToList();
+
+        Assert.AreEqual(1, matches.Count);
+        Assert.AreEqual("UP1008", matches[0].Code);
+        StringAssert.Contains(matches[0].Message, "recognized but ignored");
+        StringAssert.Contains(matches[0].Message, "start");
+    }
+
+    [TestMethod]
+    public void Converter_ReturnsAndLocals_EmitIndependentDiagnostics()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start returns [int value] locals [int x] : 'a' ;
+            """, diagnostics);
+
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleReturnsIgnored.Code));
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+    }
+
+
+    [TestMethod]
+    public void Converter_ThrowsClause_DoesNotEmitRuleLocalsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start throws Exception : 'a' ;
+            """, diagnostics);
+
+        Assert.AreEqual(0, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
+    }
+
+
+    [TestMethod]
+    public void LocalsIgnoredAlias_PreservesLegacyCodeUp1008()
+    {
+        Assert.AreEqual("UP1008", ParserDiagnostics.LocalsIgnored.Code);
+        Assert.AreEqual(ParserDiagnostics.RuleLocalsIgnored.Code, ParserDiagnostics.LocalsIgnored.Code);
+    }
+
     // ─── 10. Fragment rule ────────────────────────────────────────────────────
 
     [TestMethod]
