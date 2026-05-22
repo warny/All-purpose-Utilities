@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 using Utils.Parser.Resolution;
@@ -48,6 +49,63 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         parser.Parse([], diagnostics: diagnostics);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
+    }
+
+    [TestMethod]
+    public void Parser_DefaultSemanticPredicatePolicy_EmitsUP1006()
+    {
+        var diagnostics = new DiagnosticBag();
+        var definition = Antlr4GrammarConverter.Parse(
+            """
+            grammar P;
+            start
+                : {allow()}? A
+                ;
+
+            A : 'a';
+            """,
+            diagnostics: diagnostics);
+        var grammar = new CompiledGrammar(definition);
+        var result = grammar.Parse("a");
+        var semanticPredicateDiagnostics = diagnostics
+            .Where(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code)
+            .ToList();
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, semanticPredicateDiagnostics.Count);
+    }
+
+    [TestMethod]
+    public void Parser_CustomPredicateEvaluator_CanRejectBranch()
+    {
+        var definition = Antlr4GrammarConverter.Parse(
+            """
+            grammar P;
+            start
+                : {allow()}? A
+                ;
+
+            A : 'a';
+            """,
+            diagnostics: null);
+
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+        var lexer = new LexerEngine(definition);
+        var result = parser.Parse(lexer.Tokenize(new StringReader("a")));
+
+        Assert.IsInstanceOfType<ErrorNode>(result);
+    }
+
+    [TestMethod]
+    public void Parser_Precpred_DoesNotEmitUP1006()
+    {
+        var diagnostics = new DiagnosticBag();
+        var startRule = CreateStartRuleWithPredicate(new PrecedencePredicate(2));
+        var definition = CreateDefinition(startRule);
+        var parser = new ParserEngine(definition);
+        parser.Parse([], diagnostics: diagnostics);
+
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
     }
 
     [TestMethod]

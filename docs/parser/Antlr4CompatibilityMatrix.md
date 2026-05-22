@@ -46,6 +46,14 @@ The following constructs are parsed and stored, but runtime semantic execution i
 
 Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior (not evaluated / not executed), while custom policies may alter branch acceptance and action handling within the documented runtime boundaries.
 
+### Semantic predicate and precedence predicate audit table
+
+| Construct | Parsed | Stored | Runtime evaluated | Default behavior | Diagnostic |
+|---|---|---|---|---|---|
+| `{ condition }?` | Yes | Yes (`ValidatingPredicate`) | Yes, via `ISemanticPredicateEvaluator` in `ParserRuntimeFeaturePolicy` | `NotEvaluated` is treated as accepted; parse continues conservatively | `UP1006` (`SemanticPredicateNotEnforced`) when result is `NotEvaluated` |
+| `{ condition }=>` (if recognized) | Yes | Yes (`GatingPredicate`) | Yes, via `ISemanticPredicateEvaluator` in `ParserRuntimeFeaturePolicy` | `NotEvaluated` is treated as accepted; parse continues conservatively | `UP1006` (`SemanticPredicateNotEnforced`) when result is `NotEvaluated` |
+| `precpred(_ctx, N)` | Yes | Yes (`PrecedencePredicate`) | No (not via semantic predicate evaluator) | Normalized into precedence checks (`CheckPrecedence`) | No `UP1006` emission for precedence predicates |
+
 ## Parsed but not fully resolved
 
 The following constructs are recognized but not fully resolved into executable runtime semantics.

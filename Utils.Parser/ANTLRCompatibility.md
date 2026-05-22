@@ -118,7 +118,23 @@ var policy = ParserRuntimeFeaturePolicy.Default with
 var parser = new ParserEngine(definition, policy);
 ```
 
+Recognized and represented as runtime predicate objects.
+Default runtime does not evaluate predicate source code.
+When predicates are not evaluated, runtime conservatively treats them as accepted and emits `UP1006` (`SemanticPredicateNotEnforced`).
+Custom predicate evaluators may satisfy or reject predicates.
+This behavior is runtime-policy-driven, not compatibility metadata.
+
 > **Important**: memoization is keyed by `(rule, input position, precedence)`. Evaluators must be deterministic for identical invocation contexts.
+
+### Gated semantic predicates `{ condition }=>`
+
+When recognized by grammar ingestion, gated predicates are represented as runtime predicate objects and follow the same runtime-policy behavior as `{ condition }?`.
+Default behavior remains conservative acceptance with `UP1006` when not evaluated.
+
+### Precedence predicates `{precpred(_ctx, N)}?`
+
+Recognized and normalized into precedence behavior.
+Not routed through semantic predicate evaluation.
 
 ---
 
@@ -191,7 +207,7 @@ See `docs/parser/RuntimeObservationAndExportContract.md` for the full contract.
 | Feature | Limitation |
 |---|---|
 | Direct left recursion | Detected at resolution time and handled with a seed-and-extend loop, but not equivalent to all ANTLR4 left-recursive shapes. Emits `LeftRecursivePrecedencePartiallySupported` where applicable. |
-| Precedence predicates `precpred(_ctx, N)` | Regex-based extraction. Falls back to precedence `0` if the level cannot be parsed. Only recognised in direct left-recursive rules. |
+| Precedence predicates `precpred(_ctx, N)` | Regex-based extraction. Falls back to precedence `0` if the level cannot be parsed. Only recognised in direct left-recursive rules. Not routed through semantic predicate evaluation and does not emit `UP1006`. |
 | Right-associativity `<assoc=right>` | Parsed and applied during left-recursive extension. Only meaningful within direct left-recursive rules; subject to the same partial-parity limits as left recursion. |
 | Labels — `e=expr` and `ids+=ID` | Applied when the labelled item is a `RuleRef`. Labels targeting literals and other non-reference items are recognized and ignored with explicit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. |
 | `import` | Fully resolved when grammars are compiled as a project set (`Antlr4GrammarProjectCompiler`). Single-file compilation emits `ImportParsedButNotResolved`. |
