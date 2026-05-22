@@ -70,7 +70,11 @@ public class ParserBranchOutcomeModelTests
         _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, schedulerDiagnostics, (_, index) =>
             new ScheduledAlternativeExecutionResult(
                 state with { Alternative = rule.Content.Alternatives[index], AlternativeIndex = index },
-                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: Enumerable.Range(0, rule.Content.Alternatives.Count).Select(i => new ParserContinuationDescriptor(new ParserContinuationKey(rule.Name, i, 0), ParserContinuationCategory.Sequential, null, false)).ToArray(),
+            precomputedLookaheadProbes: Enumerable.Range(0, rule.Content.Alternatives.Count).Select(static _ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)).ToArray(),
+            precomputedSharedPrefixCandidates: []);
 
         Assert.IsTrue(schedulerDiagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
 

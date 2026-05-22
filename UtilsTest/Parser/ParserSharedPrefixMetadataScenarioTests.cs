@@ -316,12 +316,13 @@ public class ParserSharedPrefixMetadataScenarioTests
             .Select(alternative => lookaheadProbe.Probe(alternative, token, ResolveRule, false))
             .ToArray();
         var candidates = detector.Detect(probes);
+        var positionExtractor = new ContinuationStructuralPositionExtractor();
         var continuations = candidates
             .SelectMany(candidate => candidate.AlternativeIndexes.Select(alternativeIndex =>
             {
                 var alternative = alternatives[alternativeIndex];
-                var rawPosition = continuationFactory.ComputeSharedPrefixSequencePosition(alternative, candidate.TokenName);
-                return continuationFactory.Create(rule, alternative, alternativeIndex, rawPosition, [candidate.TokenName], true);
+                var position = positionExtractor.ExtractSharedPrefixSequencePosition(alternative, candidate.TokenName);
+                return continuationFactory.Create(new ParserContinuationPreparationInput(rule.Name, alternativeIndex, position, [candidate.TokenName], true));
             }))
             .ToArray();
 

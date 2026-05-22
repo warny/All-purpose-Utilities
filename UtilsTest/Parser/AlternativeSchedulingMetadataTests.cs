@@ -40,6 +40,7 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
             new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X")
         ]));
+        var probes = DefaultProbes(rule.Content.Alternatives.Count);
 
         var result = scheduler.Run(
             rule,
@@ -47,7 +48,11 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             new DiagnosticBag(),
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: []);
 
         Assert.AreEqual(1, result.CompletedStates.Count);
         Assert.AreEqual(1, result.PrunedStates.Count);
@@ -62,6 +67,7 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
             new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X")
         ]));
+        var probes = DefaultProbes(rule.Content.Alternatives.Count);
 
         _ = scheduler.Run(
             rule,
@@ -69,7 +75,11 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             diagnostics,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: []);
 
         Assert.AreEqual(1, diagnostics.Count(static d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
     }
@@ -91,19 +101,27 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(1, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("-"), new RuleRef("expr")]), "b")
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = new[] { Probe("ID"), Probe("ID") };
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, candidates);
+
         var result = scheduler.Run(
             rule,
             alternatives,
             0,
             0,
             null,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe("ID")));
-        var continuations = result.Metadata.SharedPrefixPlans[0].Continuations;
-        Assert.AreEqual(2, continuations.Count);
-        Assert.IsTrue(continuations.All(static c => c.Key.SequencePosition == 1));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
+
+        var planContinuations = result.Metadata.SharedPrefixPlans[0].Continuations;
+        Assert.AreEqual(2, planContinuations.Count);
+        Assert.IsTrue(planContinuations.All(static c => c.Key.SequencePosition == 1));
         Assert.AreEqual(1, result.Metadata.SharedPrefixPlans[0].Segment.Boundary.SequencePosition);
     }
-
 
     [TestMethod]
     public void Scheduler_Metadata_ProducesReadableSharedPrefixDryRunOutput()
@@ -116,6 +134,9 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(1, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("-"), new RuleRef("expr")]), "b")
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = new[] { Probe("ID"), Probe("ID") };
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, candidates);
 
         var result = scheduler.Run(
             rule,
@@ -123,7 +144,11 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             null,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
 
         Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
         Assert.AreEqual("ID", result.Metadata.SharedPrefixPlans[0].SharedTokenName);
@@ -147,8 +172,6 @@ public class AlternativeSchedulingMetadataTests
         CollectionAssert.AreEqual(new[] { 0, 1 }, indexes);
     }
 
-
-
     [TestMethod]
     public void Scheduler_Metadata_DoesNotChangeSelection_WhenProbeMetadataDiffers()
     {
@@ -160,26 +183,29 @@ public class AlternativeSchedulingMetadataTests
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
 
-        ScheduledAlternativeExecutionResult ParseWithProbe(IReadOnlyList<string> expected, int index)
-        {
-            return new ScheduledAlternativeExecutionResult(CreateState(rule, alternatives[index], index, 1), Probe(expected));
-        }
+        var sharedProbes = new[] { Probe("ID"), Probe("ID") };
+        var sharedCandidates = new ParserLookaheadSharedPrefixDetector().Detect(sharedProbes);
+        var sharedContinuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, sharedProbes, sharedCandidates);
 
         var withSharedPrefix = scheduler.Run(
-            rule,
-            alternatives,
-            0,
-            0,
-            null,
-            (_, index) => ParseWithProbe(["ID"], index));
+            rule, alternatives, 0, 0, null,
+            (_, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternatives[index], index, 1), sharedProbes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: sharedContinuations,
+            precomputedLookaheadProbes: sharedProbes,
+            precomputedSharedPrefixCandidates: sharedCandidates);
+
+        var mixedProbes = new[] { Probe("ID"), Probe("NUMBER") };
+        var mixedCandidates = new ParserLookaheadSharedPrefixDetector().Detect(mixedProbes);
+        var mixedContinuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, mixedProbes, mixedCandidates);
 
         var withoutSharedPrefix = scheduler.Run(
-            rule,
-            alternatives,
-            0,
-            0,
-            null,
-            (_, index) => index == 0 ? ParseWithProbe(["ID"], index) : ParseWithProbe(["NUMBER"], index));
+            rule, alternatives, 0, 0, null,
+            (_, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternatives[index], index, 1), mixedProbes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: mixedContinuations,
+            precomputedLookaheadProbes: mixedProbes,
+            precomputedSharedPrefixCandidates: mixedCandidates);
 
         Assert.IsNotNull(withSharedPrefix.SelectedState);
         Assert.IsNotNull(withoutSharedPrefix.SelectedState);
@@ -197,16 +223,19 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = new[] { Probe("ID"), Probe("ID") };
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, candidates);
 
         var result = scheduler.Run(
-            rule,
-            alternatives,
-            0,
-            0,
-            null,
+            rule, alternatives, 0, 0, null,
             (alternative, index) => index == 0
-                ? new ScheduledAlternativeExecutionResult(null, Probe("ID"))
-                : new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe("ID")));
+                ? new ScheduledAlternativeExecutionResult(null, probes[index])
+                : new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
 
         Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
         Assert.AreEqual("ID", result.Metadata.SharedPrefixPlans[0].SharedTokenName);
@@ -235,6 +264,7 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
             new Alternative(1, Associativity.Left, new LiteralMatch("a"), "X")
         ]));
+        var probes = DefaultProbes(rule.Content.Alternatives.Count);
 
         _ = scheduler.Run(
             rule,
@@ -242,7 +272,11 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             diagnostics,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: []);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
     }
@@ -255,6 +289,7 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(0, Associativity.Left, new LiteralMatch("a"), "X"),
             new Alternative(1, Associativity.Left, new LiteralMatch("a"), "Y")
         ]));
+        var probes = DefaultProbes(rule.Content.Alternatives.Count);
 
         var result = scheduler.Run(
             rule,
@@ -262,7 +297,11 @@ public class AlternativeSchedulingMetadataTests
             0,
             0,
             null,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 2), Probe("ID")),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: []);
 
         Assert.AreEqual(2, result.CompletedStates.Count);
         Assert.AreEqual(0, result.PrunedStates.Count);
@@ -278,14 +317,17 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = new[] { Probe("ID"), Probe("ID") };
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, candidates);
 
         var result = scheduler.Run(
-            rule,
-            alternatives,
-            0,
-            0,
-            null,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, index == 0 ? 1 : 3), Probe("ID")));
+            rule, alternatives, 0, 0, null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, index == 0 ? 1 : 3), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
 
         Assert.IsNotNull(result.SelectedState);
         Assert.AreEqual(1, result.SelectedState.AlternativeIndex);
@@ -301,19 +343,23 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = new[] { Probe("ID"), Probe("ID") };
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, candidates);
 
         var result = scheduler.Run(
-            rule,
-            alternatives,
-            0,
-            0,
-            null,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(null, Probe("ID")));
+            rule, alternatives, 0, 0, null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(null, probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
 
         Assert.IsNull(result.SelectedState);
         Assert.AreEqual(0, result.CompletedStates.Count);
         Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
     }
+
     private static AlternativeSchedulingResult Run(IReadOnlyList<IReadOnlyList<string>> expected)
     {
         var scheduler = new AlternativeScheduler();
@@ -323,13 +369,38 @@ public class AlternativeSchedulingMetadataTests
             new Alternative(1, Associativity.Left, new RuleRef("ID"), "b")
         };
         var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = expected.Select(static e => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, null, null, e)).ToArray();
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, candidates);
         return scheduler.Run(
             rule,
             alternatives,
             0,
             0,
             null,
-            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), Probe(expected[index])));
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, index, 1), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
+    }
+
+    private static IReadOnlyList<ParserLookaheadProbeResult> DefaultProbes(int count)
+    {
+        return Enumerable.Range(0, count)
+            .Select(static _ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null))
+            .ToArray();
+    }
+
+    private static IReadOnlyList<ParserContinuationDescriptor> DefaultContinuations(Rule rule, int count)
+    {
+        return Enumerable.Range(0, count)
+            .Select(index => new ParserContinuationDescriptor(
+                new ParserContinuationKey(rule.Name, index, 0),
+                ParserContinuationCategory.Sequential,
+                null,
+                false))
+            .ToArray();
     }
 
     private static ParserLookaheadProbeResult Probe(IReadOnlyList<string> expected) =>
