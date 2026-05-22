@@ -327,6 +327,7 @@ Current clarification status:
 - labels targeting non-rule-reference elements now emit deterministic compatibility diagnostics instead of being accepted silently,
 - compatibility documentation is aligned with explicit parsed/normalized/rejected boundaries,
 - rule `locals [...]` clauses now emit deterministic explicit compatibility diagnostics (`UP1008 RuleLocalsIgnored`) instead of generic silent metadata discard.
+- semantic predicate default-policy behavior is explicitly documented as runtime-policy-driven (`ISemanticPredicateEvaluator`) with deterministic `UP1006` coverage, and precedence predicates are documented separately as non-generic predicate evaluation flow.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
