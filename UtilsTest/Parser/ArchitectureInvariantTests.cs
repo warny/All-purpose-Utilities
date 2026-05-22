@@ -79,6 +79,35 @@ public class ArchitectureInvariantTests
             precomputedSharedPrefixCandidates: []));
     }
 
+
+    [TestMethod]
+    public void Scheduler_DoesNotRequireGrammarTraversal()
+    {
+        var scheduler = new AlternativeScheduler();
+        var alternatives = new[]
+        {
+            new Alternative(0, Associativity.Left, new ThrowingRuleContent("alt0")),
+            new Alternative(1, Associativity.Left, new ThrowingRuleContent("alt1"))
+        };
+        var rule = new Rule("expr", 0, false, new Alternation(alternatives));
+        var probes = CreateProbes(alternatives.Length);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, []);
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateCompletedState(rule, alternative, index), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: []);
+
+        Assert.IsNotNull(result.SelectedState);
+    }
+
     [TestMethod]
     public void Preparation_IsDeterministic()
     {
@@ -261,6 +290,15 @@ public class ArchitectureInvariantTests
             Assert.AreEqual(expected[index].Category, actual[index].Category);
             CollectionAssert.AreEqual(expected[index].ExpectedTokenNames.ToArray(), actual[index].ExpectedTokenNames.ToArray());
             Assert.AreEqual(expected[index].IsSharedPrefixCandidate, actual[index].IsSharedPrefixCandidate);
+        }
+    }
+
+
+    private sealed record ThrowingRuleContent(string Name) : RuleContent
+    {
+        public override string ToString()
+        {
+            throw new InvalidOperationException($"Scheduler attempted to traverse grammar content: {Name}");
         }
     }
 
