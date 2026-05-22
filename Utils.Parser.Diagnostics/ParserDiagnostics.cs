@@ -76,9 +76,16 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor SemanticPredicateNotEnforced =
         new("UP1006", "Semantic predicate not enforced", "Semantic predicate is recognized but not enforced semantically.", DefaultCategory);
 
-    /// <summary>returns clause partially applied.</summary>
+    /// <summary>returns clause ignored by runtime semantics.</summary>
+    public static readonly ParserDiagnosticDescriptor RuleReturnsIgnored =
+        new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+
+    /// <summary>
+    /// Compatibility alias for the legacy descriptor name.
+    /// </summary>
+    [System.Obsolete("Use RuleReturnsIgnored. This alias is kept for compatibility.")]
     public static readonly ParserDiagnosticDescriptor ReturnsPartiallyApplied =
-        new("UP1007", "Returns partially applied", "returns clause for rule '{0}' is parsed but only stored as raw text.", DefaultCategory);
+        RuleReturnsIgnored;
 
     /// <summary>locals/throws/exception metadata ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LocalsIgnored =
@@ -226,7 +233,7 @@ public static class ParserDiagnostics
             [ActionIgnored.Code] = ActionIgnored,
             [InlineActionStoredNotExecuted.Code] = InlineActionStoredNotExecuted,
             [SemanticPredicateNotEnforced.Code] = SemanticPredicateNotEnforced,
-            [ReturnsPartiallyApplied.Code] = ReturnsPartiallyApplied,
+            [RuleReturnsIgnored.Code] = RuleReturnsIgnored,
             [LocalsIgnored.Code] = LocalsIgnored,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
