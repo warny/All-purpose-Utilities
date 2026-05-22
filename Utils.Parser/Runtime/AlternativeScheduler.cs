@@ -44,6 +44,16 @@ internal sealed class AlternativeScheduler
         IReadOnlyList<ParserLookaheadProbeResult> precomputedLookaheadProbes)
     {
         var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
+        if (precomputedLookaheadProbes.Count != ordered.Count)
+        {
+            throw new ArgumentException("Precomputed look-ahead probe count must match ordered alternatives count.", nameof(precomputedLookaheadProbes));
+        }
+
+        if (precomputedContinuationMetadata.Count != ordered.Count)
+        {
+            throw new ArgumentException("Precomputed continuation metadata count must match ordered alternatives count.", nameof(precomputedContinuationMetadata));
+        }
+
         var completedStates = new List<ActiveParseState>();
         var failedStates = new List<ActiveParseState>();
 
