@@ -401,6 +401,21 @@ public class Antlr4GrammarConverterTests
         Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
     }
 
+
+    [TestMethod]
+    public void Converter_ThrowsClause_DoesNotEmitRuleLocalsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start throws Exception : 'a' ;
+            """, diagnostics);
+
+        Assert.AreEqual(0, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
+    }
+
     // ─── 10. Fragment rule ────────────────────────────────────────────────────
 
     [TestMethod]
