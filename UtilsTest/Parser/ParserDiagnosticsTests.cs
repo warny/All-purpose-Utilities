@@ -268,11 +268,11 @@ public class ParserDiagnosticsTests
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.UnsupportedAntlrLanguageOptionIgnored.Code));
     }
 
-    [TestMethod]
     /// <summary>
     /// Verifies that <c>returns [...]</c> compatibility handling is explicit and deterministic:
     /// recognized by conversion, ignored by runtime semantics, and surfaced by a stable diagnostic.
     /// </summary>
+    [TestMethod]
     public void Converter_ReturnsClause_EmitsExplicitDiagnostic()
     {
         var diagnostics = new DiagnosticBag();
@@ -288,7 +288,7 @@ public class ParserDiagnosticsTests
             .ToList();
 
         Assert.AreEqual(1, returnsDiagnostics.Count);
-        Assert.AreEqual("UP1023", returnsDiagnostics[0].Code);
+        Assert.AreEqual("UP1007", returnsDiagnostics[0].Code);
         StringAssert.Contains(returnsDiagnostics[0].Message, "recognized but ignored");
     }
 

@@ -78,7 +78,7 @@ public static class ParserDiagnostics
 
     /// <summary>returns clause ignored by runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleReturnsIgnored =
-        new("UP1023", "Rule returns ignored", "Rule returns clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+        new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
 
     /// <summary>locals/throws/exception metadata ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LocalsIgnored =

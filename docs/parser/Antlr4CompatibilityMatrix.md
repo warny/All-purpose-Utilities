@@ -53,7 +53,7 @@ The following constructs are recognized but not fully resolved into executable r
 | Construct | Current behavior | Limitations |
 |---|---|---|
 | Rule parameters (`rule[int x]`) | Parsed with balanced-text preservation and stored as raw metadata text (including multiline and nested generic-like syntax). | No runtime invocation semantics exist (no argument passing, no typed binding, no invocation-frame model). |
-| Rule returns (`returns [int value]`) | Recognized with balanced-text preservation and stored as raw metadata text. | Ignored by runtime return propagation semantics (no value extraction or runtime binding) and emits `RuleReturnsIgnored` (`UP1023`). |
+| Rule returns (`returns [int value]`) | Recognized with balanced-text preservation and stored as raw metadata text. | Ignored by runtime return propagation semantics (no value extraction or runtime binding) and emits `RuleReturnsIgnored` (`UP1007`). |
 
 These constructs are treated as syntax/metadata compatibility points, not as fully executable semantics.
 
