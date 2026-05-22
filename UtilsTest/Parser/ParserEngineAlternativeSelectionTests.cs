@@ -141,6 +141,7 @@ public class ParserEngineAlternativeSelectionTests
             diagnostics,
             precomputedDescriptors: null,
             precomputedContinuationMetadata: [],
+            precomputedLookaheadProbes: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 new ActiveParseState
                 {

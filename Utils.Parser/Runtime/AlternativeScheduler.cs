@@ -40,10 +40,10 @@ internal sealed class AlternativeScheduler
         DiagnosticBag? diagnostics,
         Func<Alternative, int, ScheduledAlternativeExecutionResult> parseAlternative,
         IReadOnlyList<AlternativeStructuralDescriptor>? precomputedDescriptors,
-        IReadOnlyList<ParserContinuationDescriptor> precomputedContinuationMetadata)
+        IReadOnlyList<ParserContinuationDescriptor> precomputedContinuationMetadata,
+        IReadOnlyList<ParserLookaheadProbeResult> precomputedLookaheadProbes)
     {
         var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
-        var lookaheadProbesByAlternative = new ParserLookaheadProbeResult[ordered.Count];
         var completedStates = new List<ActiveParseState>();
         var failedStates = new List<ActiveParseState>();
 
@@ -54,7 +54,6 @@ internal sealed class AlternativeScheduler
             NotifyObserver(observation => _runtimeObserver?.OnAlternativeStarted(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeStarted, initial));
             var scheduled = parseAlternative(alternative, index);
             var parsed = scheduled.State;
-            lookaheadProbesByAlternative[index] = scheduled.Probe;
             if (parsed is null)
             {
                 var failedState = initial.Fail();
@@ -70,7 +69,7 @@ internal sealed class AlternativeScheduler
 
         if (completedStates.Count == 0)
         {
-            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(lookaheadProbesByAlternative, precomputedDescriptors, precomputedContinuationMetadata));
+            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(precomputedLookaheadProbes, precomputedDescriptors, precomputedContinuationMetadata));
         }
 
         // Deduplication uses scheduling identity (ActiveParseStateKey) and is intentionally
@@ -102,7 +101,7 @@ internal sealed class AlternativeScheduler
             NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeSelected, winner));
         }
 
-        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(lookaheadProbesByAlternative, precomputedDescriptors, precomputedContinuationMetadata));
+        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(precomputedLookaheadProbes, precomputedDescriptors, precomputedContinuationMetadata));
     }
 
 

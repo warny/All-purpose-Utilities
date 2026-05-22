@@ -200,6 +200,7 @@ public class ParserDiagnosticsTests
             diagnostics,
             precomputedDescriptors: null,
             precomputedContinuationMetadata: [],
+            precomputedLookaheadProbes: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 new ActiveParseState
                 {
