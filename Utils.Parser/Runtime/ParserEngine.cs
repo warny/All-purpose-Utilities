@@ -845,10 +845,7 @@ public sealed class ParserEngine
         // Extraction is grammar-level preparation; the scheduler receives ready-made descriptors.
         var orderedAlternatives = alternatives.OrderBy(static a => a.Priority).ToList();
         var structuralDescriptors = _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
-        var lookaheadToken = context.Peek();
-        var precomputedLookaheadProbes = orderedAlternatives
-            .Select(alternative => _lookaheadProbe.Probe(alternative, lookaheadToken, ResolveRule, _caseInsensitive))
-            .ToArray();
+        var precomputedLookaheadProbes = PrepareSchedulingLookaheadProbes(context, rule, orderedAlternatives, startPosition, precedence, cursorKind, cursorIndex);
         var sharedPrefixCandidates = new ParserLookaheadSharedPrefixDetector().Detect(precomputedLookaheadProbes);
         var continuationDescriptors = _continuationMetadataPreparation.Prepare(rule, orderedAlternatives, precomputedLookaheadProbes, sharedPrefixCandidates);
         var scheduling = _alternativeScheduler.Run(
@@ -891,6 +888,48 @@ public sealed class ParserEngine
 
         var span = ComputeSpan(startToken, context, startPosition);
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+    /// <summary>
+    /// Prepares look-ahead probes for scheduling metadata using the same precedence and cache policy as scheduled execution.
+    /// </summary>
+    private IReadOnlyList<ParserLookaheadProbeResult> PrepareSchedulingLookaheadProbes(
+        ParseContext context,
+        Rule rule,
+        IReadOnlyList<Alternative> orderedAlternatives,
+        int startPosition,
+        int precedence,
+        string cursorKind,
+        int cursorIndex)
+    {
+        var probes = new ParserLookaheadProbeResult[orderedAlternatives.Count];
+        var token = context.Peek();
+
+        for (var index = 0; index < orderedAlternatives.Count; index++)
+        {
+            var alternative = orderedAlternatives[index];
+            if (!CheckPrecedence(alternative, precedence))
+            {
+                probes[index] = new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null);
+                continue;
+            }
+
+            var lookaheadKey = new ParserLookaheadKey(rule.Name, startPosition, index, precedence, cursorKind, cursorIndex);
+            if (_lookaheadCache.TryGet(lookaheadKey, out var cachedProbe))
+            {
+                probes[index] = cachedProbe;
+                continue;
+            }
+
+            var probe = _lookaheadProbe.Probe(alternative, token, ResolveRule, _caseInsensitive);
+            probes[index] = probe;
+            if (probe.Kind != ParserLookaheadProbeKind.Unknown)
+            {
+                _lookaheadCache.TryAdd(lookaheadKey, probe);
+            }
+        }
+
+        return probes;
     }
 
     /// <summary>
