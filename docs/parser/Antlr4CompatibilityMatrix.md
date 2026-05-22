@@ -70,6 +70,14 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | Left-recursive precedence parity | Implemented for current runtime model, but not equivalent to all ANTLR4 precedence scenarios; the runtime can emit `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
 
+## Runtime metadata boundary
+
+Continuation metadata descriptors are internal runtime metadata.
+They are prepared after grammar resolution.
+They are not ANTLR grammar constructs.
+They are preserved/normalized as descriptive metadata only.
+They are never executed, replayed, or resumed.
+
 ## Unsupported
 
 The following capabilities are currently unsupported by design:
@@ -77,6 +85,7 @@ The following capabilities are currently unsupported by design:
 - adaptive LL prediction;
 - GLL parsing;
 - speculative parsing and continuation replay;
+- runtime continuation execution/resume;
 - parser graph execution;
 - parse-forest generation;
 - parallel parsing;
@@ -99,7 +108,7 @@ Compatibility diagnostics are intended to document capability boundaries, not to
 Current parser architecture includes explicit metadata infrastructure for future-safe analysis, while preserving deterministic execution boundaries.
 
 - Shared-prefix infrastructure is **metadata-only**.
-- Continuation descriptors are structural metadata, not runtime replay state.
+- Continuation metadata support is recognized/preserved/normalized as structural metadata; execution support is intentionally disabled.
 - No shared-prefix execution pipeline is active.
 - `AlternativeScheduler` provides explicit deterministic orchestration.
 - `ParserStateRegistry` centralizes parser state guards.

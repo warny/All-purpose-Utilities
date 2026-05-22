@@ -13,11 +13,12 @@ This index consolidates the parser documentation set and gives a short summary o
 
 - [`ContinuationMetadata.md`](./ContinuationMetadata.md): Describes continuation metadata lifecycle and explicitly states that metadata does not grant execution/resume authority.
 - [`SharedLookAheadPreparation.md`](./SharedLookAheadPreparation.md): Documents shared-prefix/look-ahead preparation as deterministic advisory metadata only.
+- [`RuntimeArchitecture.md`](./RuntimeArchitecture.md): Canonical pipeline and ownership map from preparation through analysis, including metadata authority boundaries.
 
 ## Compatibility and analysis
 
 - [`../Utils.Parser/ANTLRCompatibility.md`](../../Utils.Parser/ANTLRCompatibility.md): Practical compatibility reference with feature-by-feature behavior notes and usage guidance for ANTLR4 constructs that differ from standard runtime semantics.
-- [`Antlr4CompatibilityMatrix.md`](./Antlr4CompatibilityMatrix.md): Current ANTLR4 feature support matrix with explicit levels (supported, partial, parsed-only, unsupported).
+- [`Antlr4CompatibilityMatrix.md`](./Antlr4CompatibilityMatrix.md): Current ANTLR4 feature support matrix with explicit levels (supported, partial, parsed-only, unsupported), including continuation metadata support boundaries.
 - [`RuntimeTraceAnalysis.md`](./RuntimeTraceAnalysis.md): Tooling-oriented analysis model for runtime traces, focused on descriptive outputs rather than runtime control.
 
 ## Maintenance rule for contributors and agents

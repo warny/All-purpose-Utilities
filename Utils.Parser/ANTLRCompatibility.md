@@ -219,6 +219,16 @@ These constructs are recognised without error but produce no runtime effect.
 
 ---
 
+## Runtime metadata boundary
+
+Continuation metadata descriptors are internal runtime metadata.
+They are prepared after grammar resolution.
+They are not ANTLR grammar constructs.
+They are preserved/normalized as descriptive metadata only.
+They are never executed, replayed, or resumed.
+
+---
+
 ## Not supported — intentional exclusions
 
 These capabilities are outside the current runtime model by design. Attempting to use them produces explicit diagnostics or has no effect.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current **shared-prefix identification metadata** prepared during grammar/runtime metadata preparation.
+This document defines the current **shared-prefix identification metadata** produced by the preparation layer.
 
 The intent is to prepare future duplicated-work reduction research while preserving the current parser runtime contract.
 
@@ -41,8 +41,8 @@ Shared-prefix metadata does **not** mean:
 
 ## Structural token preparation
 
-Structural token sequences are computed by `AlternativeStructuralPrefixExtractor` during grammar-level preparation,
-**before** scheduling begins.
+Structural token sequences are computed by `AlternativeStructuralPrefixExtractor` during preparation,
+**before** scheduler orchestration begins.
 
 The extractor inspects grammar model objects (`RuleContent`, `Sequence`, `RuleRef`, `LiteralMatch`) and produces
 lightweight `AlternativeStructuralDescriptor` records carrying only token name strings.
