@@ -854,7 +854,11 @@ public sealed class Antlr4GrammarConverter
         }
 
         var block = First(node, "block");
-        if (block != null) return ConvertBlock(block);
+        if (block != null)
+        {
+            _diagnostics?.Add(ParserDiagnostics.LabelOnNonRuleReferenceIgnored, labelName);
+            return ConvertBlock(block);
+        }
 
         throw new GrammarParseException("Unknown labeledElement content");
     }
