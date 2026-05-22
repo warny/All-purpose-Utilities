@@ -82,6 +82,7 @@ public sealed class ParserEngine
     /// </summary>
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
     private readonly ParserLookaheadProbe _lookaheadProbe = new();
+    private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
     private readonly ContinuationMetadataPreparation _continuationMetadataPreparation = new();
 
     /// <summary>
@@ -846,7 +847,7 @@ public sealed class ParserEngine
         var orderedAlternatives = alternatives.OrderBy(static a => a.Priority).ToList();
         var structuralDescriptors = _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
         var precomputedLookaheadProbes = PrepareSchedulingLookaheadProbes(context, rule, orderedAlternatives, startPosition, precedence, cursorKind, cursorIndex);
-        var sharedPrefixCandidates = new ParserLookaheadSharedPrefixDetector().Detect(precomputedLookaheadProbes);
+        var sharedPrefixCandidates = _sharedPrefixDetector.Detect(precomputedLookaheadProbes);
         var continuationDescriptors = _continuationMetadataPreparation.Prepare(rule, orderedAlternatives, precomputedLookaheadProbes, sharedPrefixCandidates);
         var scheduling = _alternativeScheduler.Run(
             rule,
@@ -857,6 +858,7 @@ public sealed class ParserEngine
             precomputedDescriptors: structuralDescriptors,
             precomputedContinuationMetadata: continuationDescriptors,
             precomputedLookaheadProbes: precomputedLookaheadProbes,
+            precomputedSharedPrefixCandidates: sharedPrefixCandidates,
             parseAlternative: (alternative, alternativeIndex) => _scheduledAlternativeExecutor.Execute(
                 context,
                 rule,

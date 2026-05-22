@@ -23,6 +23,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (_, index) => index == 0 || index == 1
                 ? new ScheduledAlternativeExecutionResult(CreateState(rule, alternatives[index], context.Position, 2, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"]))
                 : new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -51,6 +52,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(rule.Content.Alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 4, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
 
         Assert.AreEqual(2, result.CompletedStates.Count);
@@ -74,6 +76,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, 0),
             precomputedLookaheadProbes: UnknownProbes(0),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (_, _) => new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
 
         Assert.IsNull(result.SelectedState);
@@ -96,6 +99,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (_, _) => new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
 
         Assert.IsNull(result.SelectedState);
@@ -117,6 +121,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => index == 0
                 ? new ScheduledAlternativeExecutionResult(null, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null))
                 : new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 5, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
@@ -144,6 +149,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(rule.Content.Alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) =>
             {
                 var state = CreateState(rule, alternative, context.Position, 4, index)
@@ -171,6 +177,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: SharedPrefixProbes(alternatives.Count, "ID"),
+            precomputedSharedPrefixCandidates: SharedPrefixCandidates(alternatives.Count, "ID"),
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 5 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
@@ -184,6 +191,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 5 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -213,6 +221,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: SharedPrefixContinuations(rule, rule.Content.Alternatives.Count),
             precomputedLookaheadProbes: SharedPrefixProbes(rule.Content.Alternatives.Count, "ID"),
+            precomputedSharedPrefixCandidates: SharedPrefixCandidates(rule.Content.Alternatives.Count, "ID"),
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 2 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
@@ -248,6 +257,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(rule.Content.Alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => index switch
             {
                 0 => new ScheduledAlternativeExecutionResult(CreateState(rule, alternative, context.Position, 10, index), new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)),
@@ -279,8 +289,9 @@ public class AlternativeSchedulerTests
             minimumPrecedence: 0,
             diagnostics: null,
             precomputedDescriptors: null,
-            precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
-            precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedContinuationMetadata: DefaultContinuations(rule, rule.Content.Alternatives.Count),
+            precomputedLookaheadProbes: UnknownProbes(rule.Content.Alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 8, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
@@ -307,6 +318,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 5 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
@@ -338,6 +350,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 7 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -351,6 +364,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 7 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -379,6 +393,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 7 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -392,6 +407,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 7 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -418,6 +434,7 @@ public class AlternativeSchedulerTests
             precomputedDescriptors: null,
             precomputedContinuationMetadata: DefaultContinuations(rule, alternatives.Count),
             precomputedLookaheadProbes: UnknownProbes(alternatives.Count),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, context.Position, 7 + index, index),
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)));
@@ -479,6 +496,11 @@ public class AlternativeSchedulerTests
         return Enumerable.Range(0, count)
             .Select(_ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, tokenName, tokenName.ToLowerInvariant(), [tokenName]))
             .ToArray();
+    }
+
+    private static IReadOnlyList<ParserLookaheadSharedPrefixCandidate> SharedPrefixCandidates(int count, string tokenName)
+    {
+        return [new ParserLookaheadSharedPrefixCandidate(tokenName, Enumerable.Range(0, count).ToArray())];
     }
 
     private static IReadOnlyList<ParserContinuationDescriptor> DefaultContinuations(Rule rule, int count)

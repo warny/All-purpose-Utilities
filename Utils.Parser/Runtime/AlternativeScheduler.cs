@@ -16,7 +16,6 @@ namespace Utils.Parser.Runtime;
 internal sealed class AlternativeScheduler
 {
     private readonly IParserRuntimeObserver? _runtimeObserver;
-    private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
     private readonly ParserSharedPrefixPlanFactory _sharedPrefixPlanFactory = new();
 
     /// <summary>
@@ -41,7 +40,8 @@ internal sealed class AlternativeScheduler
         Func<Alternative, int, ScheduledAlternativeExecutionResult> parseAlternative,
         IReadOnlyList<AlternativeStructuralDescriptor>? precomputedDescriptors,
         IReadOnlyList<ParserContinuationDescriptor> precomputedContinuationMetadata,
-        IReadOnlyList<ParserLookaheadProbeResult> precomputedLookaheadProbes)
+        IReadOnlyList<ParserLookaheadProbeResult> precomputedLookaheadProbes,
+        IReadOnlyList<ParserLookaheadSharedPrefixCandidate> precomputedSharedPrefixCandidates)
     {
         var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
         if (precomputedLookaheadProbes.Count != ordered.Count)
@@ -79,7 +79,7 @@ internal sealed class AlternativeScheduler
 
         if (completedStates.Count == 0)
         {
-            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(precomputedLookaheadProbes, precomputedDescriptors, precomputedContinuationMetadata));
+            return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(precomputedSharedPrefixCandidates, precomputedDescriptors, precomputedContinuationMetadata));
         }
 
         // Deduplication uses scheduling identity (ActiveParseStateKey) and is intentionally
@@ -111,7 +111,7 @@ internal sealed class AlternativeScheduler
             NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeSelected, winner));
         }
 
-        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(precomputedLookaheadProbes, precomputedDescriptors, precomputedContinuationMetadata));
+        return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(precomputedSharedPrefixCandidates, precomputedDescriptors, precomputedContinuationMetadata));
     }
 
 
@@ -121,7 +121,7 @@ internal sealed class AlternativeScheduler
     /// Produced metadata remains non-authoritative and does not change branch execution requirements.
     /// </summary>
     private AlternativeSchedulingMetadata BuildMetadata(
-        IReadOnlyList<ParserLookaheadProbeResult> lookaheadProbes,
+        IReadOnlyList<ParserLookaheadSharedPrefixCandidate> precomputedSharedPrefixCandidates,
         IReadOnlyList<AlternativeStructuralDescriptor>? precomputedDescriptors,
         IReadOnlyList<ParserContinuationDescriptor> precomputedContinuationMetadata)
     {
@@ -129,7 +129,6 @@ internal sealed class AlternativeScheduler
         // observations are produced from attempted alternatives, transported through scheduling,
         // and exposed for diagnostics/audit tooling. This metadata remains structural-only,
         // independent from parse acceptance, and discardable without semantic changes.
-        var candidates = _sharedPrefixDetector.Detect(lookaheadProbes);
         var continuations = precomputedContinuationMetadata;
 
         // Shared-prefix plans remain observational scheduler metadata:
@@ -137,7 +136,7 @@ internal sealed class AlternativeScheduler
         // replay/resume/merge authority and never replace real parser execution.
         // Structural descriptors are prepared by the caller (grammar preparation layer)
         // and forwarded here; the scheduler does not construct or inspect them.
-        var plans = _sharedPrefixPlanFactory.CreatePlans(candidates, continuations, precomputedDescriptors);
+        var plans = _sharedPrefixPlanFactory.CreatePlans(precomputedSharedPrefixCandidates, continuations, precomputedDescriptors);
         return new AlternativeSchedulingMetadata { SharedPrefixPlans = plans };
     }
 

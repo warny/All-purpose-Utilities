@@ -199,8 +199,9 @@ public class ParserDiagnosticsTests
             minimumPrecedence: 0,
             diagnostics,
             precomputedDescriptors: null,
-            precomputedContinuationMetadata: [],
-            precomputedLookaheadProbes: [],
+            precomputedContinuationMetadata: Enumerable.Range(0, rule.Content.Alternatives.Count).Select(i => new ParserContinuationDescriptor(new ParserContinuationKey(rule.Name, i, 0), ParserContinuationCategory.Sequential, null, false)).ToArray(),
+            precomputedLookaheadProbes: Enumerable.Range(0, rule.Content.Alternatives.Count).Select(static _ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)).ToArray(),
+            precomputedSharedPrefixCandidates: [],
             parseAlternative: (alternative, index) => new ScheduledAlternativeExecutionResult(
                 new ActiveParseState
                 {

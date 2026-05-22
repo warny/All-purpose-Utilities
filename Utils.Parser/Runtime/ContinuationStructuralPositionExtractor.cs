@@ -52,7 +52,7 @@ internal sealed class ContinuationStructuralPositionExtractor
         for (var index = 0; index < boundedPosition; index++)
         {
             var item = sequence.Items[index];
-            if (item is EmbeddedAction || item is LexerCommand)
+            if (item is EmbeddedAction or LexerCommand)
             {
                 continue;
             }

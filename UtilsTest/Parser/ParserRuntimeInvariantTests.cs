@@ -221,10 +221,13 @@ public class ParserRuntimeInvariantTests
         };
         var diagnostics = new DiagnosticBag();
 
+        var count = rule.Content.Alternatives.Count;
         _ = scheduler.Run(rule, rule.Content.Alternatives, 0, 0, diagnostics, (_, i) =>
             new ScheduledAlternativeExecutionResult(state with { Alternative = rule.Content.Alternatives[i], AlternativeIndex = i }, new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])),
             precomputedDescriptors: null,
-            precomputedContinuationMetadata: []);
+            precomputedContinuationMetadata: Enumerable.Range(0, count).Select(i => new ParserContinuationDescriptor(new ParserContinuationKey(rule.Name, i, 0), ParserContinuationCategory.Sequential, null, false)).ToArray(),
+            precomputedLookaheadProbes: Enumerable.Range(0, count).Select(static _ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.Unknown, null, null)).ToArray(),
+            precomputedSharedPrefixCandidates: []);
 
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
@@ -349,6 +352,12 @@ public class ParserRuntimeInvariantTests
             new Alternative(1, Associativity.Left, new RuleRef("A"), "right")
         ]));
 
+        var probes = rule.Content.Alternatives
+            .Select(static _ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"]))
+            .ToArray();
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var continuations = new ContinuationMetadataPreparation().Prepare(rule, rule.Content.Alternatives.ToList(), probes, candidates);
+
         var scheduleResult = scheduler.Run(
             rule,
             rule.Content.Alternatives,
@@ -357,7 +366,11 @@ public class ParserRuntimeInvariantTests
             diagnostics: null,
             (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, index, 1),
-                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: candidates);
 
         Assert.AreEqual(1, scheduleResult.Metadata.SharedPrefixPlans.Count);
         Assert.AreEqual(2, scheduleResult.CompletedStates.Count);
@@ -501,6 +514,12 @@ public class ParserRuntimeInvariantTests
             new Alternative(1, Associativity.Left, new RuleRef("ID"), "label-b")
         ]));
 
+        var probesId = rule.Content.Alternatives
+            .Select(static _ => new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"]))
+            .ToArray();
+        var candidatesId = new ParserLookaheadSharedPrefixDetector().Detect(probesId);
+        var continuationsId = new ContinuationMetadataPreparation().Prepare(rule, rule.Content.Alternatives.ToList(), probesId, candidatesId);
+
         var result = scheduler.Run(
             rule,
             rule.Content.Alternatives,
@@ -509,7 +528,11 @@ public class ParserRuntimeInvariantTests
             diagnostics: null,
             (alternative, index) => new ScheduledAlternativeExecutionResult(
                 CreateState(rule, alternative, index, 1),
-                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])));
+                new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "ID", "id", ["ID"])),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: continuationsId,
+            precomputedLookaheadProbes: probesId,
+            precomputedSharedPrefixCandidates: candidatesId);
 
         Assert.AreEqual(1, result.Metadata.SharedPrefixPlans.Count);
         CollectionAssert.AreEquivalent(new[] { 0, 1 }, result.Metadata.SharedPrefixPlans[0].AlternativeIndexes.ToArray());
