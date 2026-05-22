@@ -77,7 +77,7 @@ public sealed class ParserEngine
     /// </summary>
     private readonly ScheduledAlternativeExecutor _scheduledAlternativeExecutor;
     private readonly ParserLookaheadProbe _lookaheadProbe = new();
-    private readonly SchedulingPreparation _schedulingPreparation = new();
+    private readonly SchedulingPreparation _schedulingPreparation;
 
     /// <summary>
     /// Policy component used to evaluate semantic predicates under runtime feature constraints.
@@ -155,6 +155,7 @@ public sealed class ParserEngine
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
+        _schedulingPreparation = new SchedulingPreparation(_lookaheadProbe, _lookaheadCache, ResolveRule);
     }
 
     /// <summary>
@@ -840,12 +841,7 @@ public sealed class ParserEngine
         var prepared = _schedulingPreparation.Prepare(
             rule,
             orderedAlternatives,
-            new SchedulingPreparationContext(context, startPosition, precedence, cursorKind, cursorIndex),
-            candidate => CheckPrecedence(candidate, precedence),
-            _lookaheadCache,
-            _lookaheadProbe,
-            ResolveRule,
-            _caseInsensitive);
+            new SchedulingPreparationContext(context, startPosition, precedence, cursorKind, cursorIndex, _caseInsensitive));
         var scheduling = _alternativeScheduler.Run(
             rule,
             orderedAlternatives,
