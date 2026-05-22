@@ -193,7 +193,7 @@ See `docs/parser/RuntimeObservationAndExportContract.md` for the full contract.
 | Direct left recursion | Detected at resolution time and handled with a seed-and-extend loop, but not equivalent to all ANTLR4 left-recursive shapes. Emits `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Precedence predicates `precpred(_ctx, N)` | Regex-based extraction. Falls back to precedence `0` if the level cannot be parsed. Only recognised in direct left-recursive rules. |
 | Right-associativity `<assoc=right>` | Parsed and applied during left-recursive extension. Only meaningful within direct left-recursive rules; subject to the same partial-parity limits as left recursion. |
-| Labels — `e=expr` and `ids+=ID` | Applied when the labelled item is a `RuleRef`. Ignored on literals and other non-reference items. |
+| Labels — `e=expr` and `ids+=ID` | Applied when the labelled item is a `RuleRef`. Labels targeting literals and other non-reference items are recognized and ignored with explicit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. |
 | `import` | Fully resolved when grammars are compiled as a project set (`Antlr4GrammarProjectCompiler`). Single-file compilation emits `ImportParsedButNotResolved`. |
 | `options { tokenVocab = MyLexer; }` | Dependency loading depends on available resolver inputs at compilation time. |
 | Unknown grammar options (`visitor`, `listener`, `contextSuperClass`, …) | Parsed and preserved as raw option metadata, but rejected with `UP1021 UnsupportedAntlrOptionIgnored`. Recognised options that do not trigger this diagnostic are: `tokenVocab`, `superClass`, `caseInsensitive`, and `language`. |
@@ -251,7 +251,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | Prefix | Severity | Meaning |
 |---|---|---|
 | `UP0xxx` | Error | Blocking — unresolved rules, grammar violations, import failures |
-| `UP1xxx` | Warning | Compatibility behavior that is recognized and ignored / partially normalized (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1007` rule returns ignored, `UP1020` unsupported lexer command ignored, `UP1021` option ignored) |
+| `UP1xxx` | Warning | Compatibility behavior that is recognized and ignored / partially normalized (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1007` rule returns ignored, `UP1020` unsupported lexer command ignored, `UP1021` option ignored, `UP1022` label ignored on non-rule reference) |
 | `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguity) |
 | `UP8xxx` | Info | Informational runtime events |
 | `UP9xxx` | Debug | Detailed execution traces |

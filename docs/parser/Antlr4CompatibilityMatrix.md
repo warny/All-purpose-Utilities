@@ -66,6 +66,7 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | `import` usage | Fully resolved when grammars are compiled as a project input set; isolated single-file compilation may emit `ImportParsedButNotResolved` when no resolver context is provided. |
 | `tokenVocab` | Dependency loading is supported; effective behavior depends on available resolver inputs and vocabulary source availability in the compilation context. |
 | `superClass` | Parsed, preserved, normalized into `EffectiveGrammarOptions`, and exposed through `GrammarExtensionBinding` metadata. It is **not** interpreted as parser/lexer runtime inheritance execution. |
+| Labels on non-rule-reference elements | Parsed and recognized, then ignored with deterministic compatibility diagnostic UP1022. |
 | Other grammar `options` entries | Parsed and preserved as metadata; unsupported options are reported explicitly with `UnsupportedAntlrOptionIgnored`. |
 | Left-recursive precedence parity | Implemented for current runtime model, but not equivalent to all ANTLR4 precedence scenarios; the runtime can emit `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
