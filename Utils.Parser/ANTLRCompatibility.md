@@ -251,7 +251,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | Prefix | Severity | Meaning |
 |---|---|---|
 | `UP0xxx` | Error | Blocking — unresolved rules, grammar violations, import failures |
-| `UP1xxx` | Warning | Compatibility behavior that is recognized and ignored / partially normalized (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1007` rule returns ignored, `UP1020` lexer command rejected, `UP1021` option ignored) |
+| `UP1xxx` | Warning | Compatibility behavior that is recognized and ignored / partially normalized (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1007` rule returns ignored, `UP1020` unsupported lexer command ignored, `UP1021` option ignored) |
 | `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguity) |
 | `UP8xxx` | Info | Informational runtime events |
 | `UP9xxx` | Debug | Detailed execution traces |
