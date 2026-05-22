@@ -269,6 +269,30 @@ public class ParserDiagnosticsTests
     }
 
     [TestMethod]
+    /// <summary>
+    /// Verifies that <c>returns [...]</c> compatibility handling is explicit and deterministic:
+    /// recognized by conversion, ignored by runtime semantics, and surfaced by a stable diagnostic.
+    /// </summary>
+    public void Converter_ReturnsClause_EmitsExplicitDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+
+            start returns [int x]
+                : 'a';
+            """, diagnostics);
+
+        var returnsDiagnostics = diagnostics
+            .Where(d => d.Code == ParserDiagnostics.RuleReturnsIgnored.Code)
+            .ToList();
+
+        Assert.AreEqual(1, returnsDiagnostics.Count);
+        Assert.AreEqual("UP1023", returnsDiagnostics[0].Code);
+        StringAssert.Contains(returnsDiagnostics[0].Message, "recognized but ignored");
+    }
+
+    [TestMethod]
     public void ValidCase_EmitsNoErrorDiagnostics()
     {
         var diagnostics = new DiagnosticBag();

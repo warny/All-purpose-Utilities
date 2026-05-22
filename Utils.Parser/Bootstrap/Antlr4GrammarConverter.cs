@@ -676,7 +676,7 @@ public sealed class Antlr4GrammarConverter
                 if (raw.Length > 0)
                 {
                     returns = [new RuleReturn(raw, raw)];
-                    _diagnostics?.AddWithContext(ParserDiagnostics.ReturnsPartiallyApplied, null, null, name, null, name);
+                    _diagnostics?.AddWithContext(ParserDiagnostics.RuleReturnsIgnored, null, null, name, null, name);
                 }
             }
         }
