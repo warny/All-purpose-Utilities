@@ -209,7 +209,6 @@ These constructs are recognised without error but produce no runtime effect.
 
 | Construct | Stored where | Runtime behaviour |
 |---|---|---|
-| Continuation metadata descriptors | `ParserContinuationDescriptor` metadata (prepared before scheduling) | Recognized: yes; Preserved: yes; Normalized: yes; Executed: no. |
 | Rule parameters `rule[int x]` | `Rule.Parameters` as raw text | No argument passing, no typed binding, no invocation frame. |
 | Rule returns `returns [int x]` | `Rule.ReturnType` as raw text | No value extraction or propagation. |
 | `locals [...]` | Parsed, discarded | No runtime semantics. |
@@ -217,6 +216,16 @@ These constructs are recognised without error but produce no runtime effect.
 | `catch [...] {...}` / `finally {...}` | Parsed, discarded | No runtime semantics. |
 | Grammar-level actions `@header`, `@members`, etc. | `ParserDefinition.Actions` | Metadata only; not executed. |
 | Other rule actions (not `@init`/`@after`) | Parsed, discarded | `ActionIgnored` diagnostic emitted. |
+
+---
+
+## Runtime metadata boundary
+
+Continuation metadata descriptors are internal runtime metadata.
+They are prepared after grammar resolution.
+They are not ANTLR grammar constructs.
+They are preserved/normalized as descriptive metadata only.
+They are never executed, replayed, or resumed.
 
 ---
 

@@ -40,7 +40,6 @@ The following constructs are parsed and stored, but runtime semantic execution i
 
 | Construct | Parsed | Stored | Resolved | Executable | Runtime-supported | Diagnostics |
 |---|---|---|---|---|---|---|
-| Continuation metadata descriptors | Yes | Yes (structural metadata) | Yes (preparation-layer normalization) | No | Metadata-only | N/A (descriptive metadata, non-authoritative) |
 | Semantic predicates (`{ condition }?`) | Yes | Yes (predicate metadata) | Partially (policy-routed) | Policy-dependent only | Conservative by default (`NotEvaluated`) | `SemanticPredicateNotEnforced` when evaluator returns `NotEvaluated` |
 | Inline actions (`{ code }`) | Yes | Yes (embedded action metadata) | No target-language semantic resolution | No by default | Parsed-but-not-executed compatibility only | `InlineActionStoredNotExecuted` |
 | Rule actions (`@init`, `@after`, unsupported action slots) | Yes | Yes (rule/action metadata) | Limited to recognized metadata slots | No | Metadata-only/ignored compatibility path | `ActionIgnored` for ignored rule or grammar action entries; `InlineActionStoredNotExecuted` when an embedded action reaches runtime policy flow |
@@ -70,6 +69,14 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | Other grammar `options` entries | Parsed and preserved as metadata; unsupported options are reported explicitly with `UnsupportedAntlrOptionIgnored`. |
 | Left-recursive precedence parity | Implemented for current runtime model, but not equivalent to all ANTLR4 precedence scenarios; the runtime can emit `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
+
+## Runtime metadata boundary
+
+Continuation metadata descriptors are internal runtime metadata.
+They are prepared after grammar resolution.
+They are not ANTLR grammar constructs.
+They are preserved/normalized as descriptive metadata only.
+They are never executed, replayed, or resumed.
 
 ## Unsupported
 
