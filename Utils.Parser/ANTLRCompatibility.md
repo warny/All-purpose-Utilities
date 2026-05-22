@@ -128,8 +128,8 @@ This behavior is runtime-policy-driven, not compatibility metadata.
 
 ### Gated semantic predicates `{ condition }=>`
 
-When recognized by grammar ingestion, gated predicates are represented as runtime predicate objects and follow the same runtime-policy behavior as `{ condition }?`.
-Default behavior remains conservative acceptance with `UP1006` when not evaluated.
+ANTLR gated predicates remain a compatibility question unless explicitly proven by converter tests.
+If recognized by grammar ingestion, they follow the same runtime-policy path as semantic predicates (`ISemanticPredicateEvaluator`), including conservative acceptance with `UP1006` when not evaluated.
 
 ### Precedence predicates `{precpred(_ctx, N)}?`
 

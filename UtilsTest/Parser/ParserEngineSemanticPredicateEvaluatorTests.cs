@@ -54,7 +54,6 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     [TestMethod]
     public void Parser_DefaultSemanticPredicatePolicy_EmitsUP1006()
     {
-        var diagnostics = new DiagnosticBag();
         var definition = Antlr4GrammarConverter.Parse(
             """
             grammar P;
@@ -64,10 +63,12 @@ public class ParserEngineSemanticPredicateEvaluatorTests
 
             A : 'a';
             """,
-            diagnostics: diagnostics);
-        var grammar = new CompiledGrammar(definition);
-        var result = grammar.Parse("a");
-        var semanticPredicateDiagnostics = diagnostics
+            diagnostics: null);
+        var parser = new ParserEngine(definition);
+        var lexer = new LexerEngine(definition);
+        var runtimeDiagnostics = new DiagnosticBag();
+        var result = parser.Parse(lexer.Tokenize(new StringReader("a")), diagnostics: runtimeDiagnostics);
+        var semanticPredicateDiagnostics = runtimeDiagnostics
             .Where(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code)
             .ToList();
 
