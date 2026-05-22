@@ -16,6 +16,7 @@ public class ArchitectureInvariantTests
         var alternatives = rule.Content.Alternatives;
         var probes = CreateProbes(alternatives.Count);
         var prepared = new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, []);
+        var before = prepared.Select(static descriptor => descriptor with { }).ToArray();
 
         _ = scheduler.Run(
             rule,
@@ -29,8 +30,7 @@ public class ArchitectureInvariantTests
             precomputedLookaheadProbes: probes,
             precomputedSharedPrefixCandidates: []);
 
-        var preparedSnapshot = prepared.Select(static descriptor => descriptor with { }).ToArray();
-        CollectionAssert.AreEqual(preparedSnapshot, prepared.ToArray());
+        AssertContinuationSetsEqual(before, prepared.ToArray());
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public class ArchitectureInvariantTests
             precomputedLookaheadProbes: probes,
             precomputedSharedPrefixCandidates: []);
 
-        CollectionAssert.AreEqual(before, prepared.ToArray());
+        AssertContinuationSetsEqual(before, prepared.ToArray());
     }
 
     [TestMethod]
@@ -83,7 +83,7 @@ public class ArchitectureInvariantTests
     public void Preparation_IsDeterministic()
     {
         var rule = new Rule("expr", 0, false, new Alternation([
-            new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")])),
+            new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")])) ,
             new Alternative(1, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("-"), new RuleRef("expr")]))
         ]));
         var alternatives = rule.Content.Alternatives;
@@ -100,16 +100,98 @@ public class ArchitectureInvariantTests
     }
 
     [TestMethod]
-    public void ContinuationMetadata_DoesNotChangeParseResult()
+    public void Preparation_DoesNotModifyGrammar()
     {
-        var grammar = ExpGrammar.Build();
-        var compiled = new CompiledGrammar(grammar);
+        var rule = new Rule("expr", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+")])) ,
+            new Alternative(1, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("-")]))
+        ]));
+        var alternatives = rule.Content.Alternatives;
+        var grammarSnapshot = SnapshotRule(rule);
+        var probes = CreateProbes(alternatives.Count);
+        var candidates = new ParserLookaheadSharedPrefixDetector().Detect(probes);
+        var preparation = new ContinuationMetadataPreparation();
 
-        var withMetadata = compiled.Parse("1+2");
-        var withoutMetadata = compiled.Parse("1+2");
+        _ = preparation.Prepare(rule, alternatives, probes, candidates);
+        _ = preparation.Prepare(rule, alternatives, probes, candidates);
+        _ = preparation.Prepare(rule, alternatives, probes, candidates);
 
-        Assert.AreEqual(withMetadata.ToString(), withoutMetadata.ToString());
-        Assert.AreEqual(withMetadata is ErrorNode, withoutMetadata is ErrorNode);
+        Assert.AreEqual(grammarSnapshot, SnapshotRule(rule));
+    }
+
+    [TestMethod]
+    public void SharedPrefixMetadata_DoesNotChangeExecution()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = CreateRule();
+        var alternatives = rule.Content.Alternatives;
+        var probes = CreateProbes(alternatives.Count);
+
+        var withoutShared = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            new DiagnosticBag(),
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateCompletedState(rule, alternative, index), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, []),
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: []);
+
+        var shared = new[] { new ParserLookaheadSharedPrefixCandidate("ID", [0, 1]) };
+        var withShared = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            new DiagnosticBag(),
+            (alternative, index) => new ScheduledAlternativeExecutionResult(CreateCompletedState(rule, alternative, index), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: new ContinuationMetadataPreparation().Prepare(rule, alternatives, probes, shared),
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: shared);
+
+        Assert.IsNotNull(withoutShared.SelectedState);
+        Assert.IsNotNull(withShared.SelectedState);
+        Assert.AreEqual(withoutShared.SelectedState.AlternativeIndex, withShared.SelectedState.AlternativeIndex);
+        Assert.AreEqual(withoutShared.SelectedState.CurrentInputPosition, withShared.SelectedState.CurrentInputPosition);
+    }
+
+    [TestMethod]
+    public void Execution_RemainsDecisionOwner_WithContradictoryMetadata()
+    {
+        var scheduler = new AlternativeScheduler();
+        var rule = new Rule("expr", 0, false, new Alternation([
+            new Alternative(0, Associativity.Left, new RuleRef("ID")),
+            new Alternative(1, Associativity.Left, new RuleRef("NUMBER"))
+        ]));
+        var alternatives = rule.Content.Alternatives;
+        var probes = CreateProbes(alternatives.Count);
+        var contradictoryShared = new[] { new ParserLookaheadSharedPrefixCandidate("NUMBER", [0, 1]) };
+        var contradictoryContinuations = new[]
+        {
+            new ParserContinuationDescriptor(new ParserContinuationKey(rule.Name, 0, 99), ParserContinuationCategory.SharedPrefixCandidate, ["NUMBER"], true),
+            new ParserContinuationDescriptor(new ParserContinuationKey(rule.Name, 1, 99), ParserContinuationCategory.SharedPrefixCandidate, ["NUMBER"], true)
+        };
+
+        var result = scheduler.Run(
+            rule,
+            alternatives,
+            0,
+            0,
+            null,
+            (alternative, index) => index == 0
+                ? new ScheduledAlternativeExecutionResult(CreateCompletedState(rule, alternative, index, 3), probes[index])
+                : new ScheduledAlternativeExecutionResult(CreateCompletedState(rule, alternative, index, 1), probes[index]),
+            precomputedDescriptors: null,
+            precomputedContinuationMetadata: contradictoryContinuations,
+            precomputedLookaheadProbes: probes,
+            precomputedSharedPrefixCandidates: contradictoryShared);
+
+        Assert.IsNotNull(result.SelectedState);
+        Assert.AreEqual(0, result.SelectedState.AlternativeIndex);
+        Assert.AreEqual(3, result.SelectedState.CurrentInputPosition);
     }
 
     [TestMethod]
@@ -131,6 +213,11 @@ public class ArchitectureInvariantTests
         Assert.AreEqual(defaultResult is ErrorNode, observedResult is ErrorNode);
     }
 
+    private static string SnapshotRule(Rule rule)
+    {
+        return string.Join("|", rule.Content.Alternatives.Select(static alternative => $"{alternative.Priority}:{alternative.Content}"));
+    }
+
     private static Rule CreateRule()
     {
         return new Rule("expr", 0, false, new Alternation([
@@ -146,25 +233,24 @@ public class ArchitectureInvariantTests
             .ToArray();
     }
 
-    private static ActiveParseState CreateCompletedState(Rule rule, Alternative alternative, int index)
+    private static ActiveParseState CreateCompletedState(Rule rule, Alternative alternative, int index, int endPosition = 1)
     {
         return new ActiveParseState
         {
             Rule = rule,
             Alternative = alternative,
             OriginInputPosition = 0,
-            CurrentInputPosition = 1,
+            CurrentInputPosition = endPosition,
             AlternativeIndex = index,
             Cursor = new RuleContentCursor { Index = 0, Kind = ScheduledAlternativeCursorKinds.AlternativeRoot },
-            PartialNode = new ParserNode(new SourceSpan(0, 1), "DEFAULT_MODE", rule, []),
-            EndPosition = 1,
+            PartialNode = new ParserNode(new SourceSpan(0, endPosition), "DEFAULT_MODE", rule, []),
+            EndPosition = endPosition,
             Status = ActiveParseStateStatus.Completed,
             ParentStateKey = null,
             Depth = 0,
             Continuation = null
         };
     }
-
 
     private static void AssertContinuationSetsEqual(IReadOnlyList<ParserContinuationDescriptor> expected, IReadOnlyList<ParserContinuationDescriptor> actual)
     {
