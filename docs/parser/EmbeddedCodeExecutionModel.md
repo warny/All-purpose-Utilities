@@ -166,8 +166,8 @@ Non-goal boundary:
 Conceptual outcomes:
 
 - compiled boolean expression;
-- `true` -> `SemanticPredicateEvaluationResult.Satisfied`;
-- `false` -> `SemanticPredicateEvaluationResult.Rejected`;
+- `true` -> `SemanticPredicateEvaluationOutcome.Satisfied`;
+- `false` -> `SemanticPredicateEvaluationOutcome.Rejected`;
 - unsupported/failed -> `NotEvaluated` + diagnostic.
 
 ### Parser inline action `{ code }`
