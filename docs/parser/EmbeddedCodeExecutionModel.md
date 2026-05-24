@@ -106,7 +106,6 @@ Prototype status update:
 
 - A first optional runtime adapter now exists to map `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
 - Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable). Expression-backed semantic predicate evaluation now returns a structured outcome so compilation failures and delegate-shape adaptation failures can carry `UP1026` metadata, while `ParserEngine` remains the only component that emits diagnostics.
-- Runtime exceptions thrown during compiled predicate execution currently bubble to the caller and are not converted into structured `NotEvaluated` outcomes.
 - Current adapter scope is limited to parser semantic predicates only.
 - A first optional runtime parser action adapter now exists: `IExpressionCompiler` can be adapted to `IParserActionExecutor` for inline parser actions only.
 - Default parser runtime behavior is unchanged; inline actions still do not control parse acceptance, parse-tree shape, or branch rejection.
