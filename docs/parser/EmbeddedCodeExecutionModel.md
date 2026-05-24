@@ -237,7 +237,7 @@ The shared embedded-code diagnostic taxonomy is:
 - `UP1027 EmbeddedCodePreservedNotCompiled`
 - `UP1028 EmbeddedCodeExecutionDisabled`: reserved for explicit runtime policies that intentionally disable embedded-code execution. Current expression-backed adapters do not expose an `Enabled = false` policy and therefore do not emit this diagnostic.
 
-These diagnostics define future capability boundaries. They may be emitted by runtime ingestion, source generator reporting, or tooling adapters. This PR defines the taxonomy only and does not change behavior.
+These diagnostics define capability boundaries. They do not imply that every diagnostic is emitted by current adapters.
 
 ### `Utils.Parser.Generators`
 
