@@ -398,6 +398,7 @@ public class ParserDiagnosticsTests
         Assert.IsNotNull(grammar);
         Assert.AreEqual("G", grammar.Name);
     }
+
     [TestMethod]
     public void ParserDiagnostics_EmbeddedCodeDescriptors_HaveStableCodes()
     {
