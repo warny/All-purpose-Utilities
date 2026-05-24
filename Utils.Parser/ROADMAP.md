@@ -457,3 +457,8 @@ Future runtime PRs should include:
 ## Current safety summary
 
 The runtime currently remains conservative and deterministic. Metadata-rich infrastructure exists, but it is not execution authority. No replay, rollback, semantic-state-aware memoization, graph execution, async parsing, or parallel parsing exists today.
+
+
+### Phase 6 note — embedded code boundary
+
+Embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime expression-compilation paths, including multi-project responsibilities.

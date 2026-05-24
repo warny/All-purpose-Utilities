@@ -170,3 +170,8 @@ internal static partial class ExpGrammar
 ## License
 
 Apache 2.0 — see the repository root for details.
+
+
+## Embedded code note
+
+The generator currently preserves embedded ANTLR code as raw model strings. Future executable C# embedded-code support belongs to the generator path and must remain explicit. Runtime expression compilation is a separate path.

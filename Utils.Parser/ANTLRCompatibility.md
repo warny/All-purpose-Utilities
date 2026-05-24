@@ -86,6 +86,9 @@ The `GrammarExtensionBinding` record exposes `SuperClassName`, the owning gramma
 
 ### Semantic predicates `{ condition }?`
 
+See `docs/parser/EmbeddedCodeExecutionModel.md` for the two-path execution boundary (source generation C# vs runtime expression compilation) and project responsibility map.
+
+
 **Standard ANTLR4**: The predicate body is target-language code evaluated inline during parsing.
 
 **Utils.Parser**: Predicates are parsed and stored. Evaluation is delegated to an `ISemanticPredicateEvaluator` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotEvaluated`, which does **not** reject the branch — it acts as if the predicate passed.
@@ -140,6 +143,9 @@ Not routed through semantic predicate evaluation.
 
 ### Inline actions `{ code }`
 
+See `docs/parser/EmbeddedCodeExecutionModel.md` for explicit compiler/executor separation and non-goals.
+
+
 **Standard ANTLR4**: Action code is target-language code executed as a side effect during parsing.
 
 **Utils.Parser**: Actions are parsed and stored. Execution is delegated to an `IParserActionExecutor` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotExecuted`.
@@ -173,6 +179,9 @@ var parser = new ParserEngine(definition, policy);
 ---
 
 ### Rule actions `@init { }` and `@after { }`
+
+See `docs/parser/EmbeddedCodeExecutionModel.md` for future-safe boundaries between stored metadata and explicit execution paths.
+
 
 **Standard ANTLR4**: `@init` runs before the rule body; `@after` runs after.
 
@@ -230,7 +239,7 @@ These constructs are recognised without error but produce no runtime effect.
 | `locals [...]` | Parsed at rule level and surfaced with `UP1008 RuleLocalsIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
 | `throws ExceptionType` | Parsed at rule level and surfaced with `UP1023 RuleExceptionMetadataIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
 | `catch [...] {...}` / `finally {...}` | Parsed at rule level and surfaced with `UP1023 RuleExceptionMetadataIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
-| Grammar-level actions `@header`, `@members`, etc. | `ParserDefinition.Actions` | Metadata only; not executed. |
+| Grammar-level actions `@header`, `@members`, etc. | `ParserDefinition.Actions` | Metadata only; not executed. See `docs/parser/EmbeddedCodeExecutionModel.md`. |
 | Other rule actions (not `@init`/`@after`) | Parsed, discarded | `ActionIgnored` diagnostic emitted. |
 
 ---

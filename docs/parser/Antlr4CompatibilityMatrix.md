@@ -44,7 +44,7 @@ The following constructs are parsed and stored, but runtime semantic execution i
 | Inline actions (`{ code }`) | Yes | Yes (embedded action metadata) | No target-language semantic resolution | No by default | Parsed-but-not-executed compatibility only | `InlineActionStoredNotExecuted` |
 | Rule actions (`@init`, `@after`, unsupported action slots) | Yes | Yes (rule/action metadata) | Limited to recognized metadata slots | No | Metadata-only/ignored compatibility path | `ActionIgnored` for ignored rule or grammar action entries; `InlineActionStoredNotExecuted` when an embedded action reaches runtime policy flow |
 
-Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior (not evaluated / not executed), while custom policies may alter branch acceptance and action handling within the documented runtime boundaries.
+Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior (not evaluated / not executed), while custom policies may alter branch acceptance and action handling within the documented runtime boundaries. The architecture boundary and future two-path model are documented in `docs/parser/EmbeddedCodeExecutionModel.md`.
 
 ### Semantic predicate and precedence predicate audit table
 
