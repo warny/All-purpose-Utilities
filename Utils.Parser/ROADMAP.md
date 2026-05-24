@@ -334,6 +334,7 @@ Current clarification status:
 - embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime expression-compilation paths, including multi-project responsibilities.
 - shared embedded-code diagnostic taxonomy is defined for future runtime, generator, and tooling paths without enabling execution.
 - parser action execution now returns structured outcomes so `ParserEngine` can emit fallback `UP1005` or detailed embedded-code diagnostics without giving executors direct `DiagnosticBag` access.
+- generator/runtime parity characterization tests now document shared supported grammar facts and known metadata divergences without changing runtime, diagnostics, parse-tree shape, or scheduler behavior.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
