@@ -1,10 +1,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq.Expressions;
 using System.IO;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 using Utils.Parser.Resolution;
+using Utils.Expressions;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Bootstrap;
+using Utils.Parser.Expressions;
 
 namespace UtilsTest.Parser;
 
@@ -97,6 +100,37 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         Assert.IsInstanceOfType<ErrorNode>(result);
     }
 
+
+    [TestMethod]
+    public void Parser_ExpressionEvaluator_WhenCompilationThrows_EmitsUP1026WithoutUP1006()
+    {
+        var definition = CreateSemanticPredicateGrammarDefinition();
+        var parser = new ParserEngine(definition, new ExpressionSemanticPredicateEvaluator(new ThrowingExpressionCompiler()));
+        var lexer = new LexerEngine(definition);
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse(lexer.Tokenize(new StringReader("a")), diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.EmbeddedCodeCompilationFailed.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
+    }
+
+    [TestMethod]
+    public void Parser_ExpressionEvaluator_WhenExpressionIsNotBoolean_EmitsUP1026WithoutUP1006()
+    {
+        var definition = CreateSemanticPredicateGrammarDefinition();
+        var parser = new ParserEngine(definition, new ExpressionSemanticPredicateEvaluator(new NonBooleanExpressionCompiler()));
+        var lexer = new LexerEngine(definition);
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse(lexer.Tokenize(new StringReader("a")), diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.EmbeddedCodeCompilationFailed.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
+    }
+
     [TestMethod]
     public void Parser_Precpred_DoesNotEmitUP1006()
     {
@@ -172,6 +206,17 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         var result = grammar.Parse("a");
 
         Assert.IsInstanceOfType<ErrorNode>(result);
+    }
+
+    private static ParserDefinition CreateSemanticPredicateGrammarDefinition()
+    {
+        return Antlr4GrammarConverter.Parse(
+            """
+            grammar P;
+            start : {allow()}? A ;
+            A : 'a' ;
+            """,
+            diagnostics: null);
     }
 
     private static Rule CreateStartRuleWithPredicate(RuleContent predicate)
@@ -255,6 +300,22 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         {
             LastContext = context;
             return _result;
+        }
+    }
+
+    private sealed class ThrowingExpressionCompiler : IExpressionCompiler
+    {
+        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        {
+            throw new InvalidOperationException("boom");
+        }
+    }
+
+    private sealed class NonBooleanExpressionCompiler : IExpressionCompiler
+    {
+        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        {
+            return Expression.Constant(42);
         }
     }
 }

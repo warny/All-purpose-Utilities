@@ -26,26 +26,33 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
         };
 
     private readonly IExpressionCompiler _compiler;
-    private readonly ConcurrentDictionary<string, SemanticPredicateEvaluationOutcome> _compiledPredicateByCode = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, Func<SemanticPredicateEvaluationOutcome>> _compiledPredicateByCode = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Initializes a new evaluator that compiles semantic predicate source code with the provided compiler.
+    /// </summary>
+    /// <param name="compiler">Expression compiler used to compile predicate source code.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="compiler"/> is <c>null</c>.</exception>
     public ExpressionSemanticPredicateEvaluator(IExpressionCompiler compiler)
     {
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
     }
 
+    /// <inheritdoc />
     public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         if (UsesContextualSymbols(context.PredicateCode))
         {
-            return CompilePredicate(context.PredicateCode, context);
+            return CompilePredicate(context.PredicateCode, context)();
         }
 
-        return _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
+        var evaluator = _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
+        return evaluator();
     }
 
-    private SemanticPredicateEvaluationOutcome CompilePredicate(string predicateCode, SemanticPredicateEvaluationContext context)
+    private Func<SemanticPredicateEvaluationOutcome> CompilePredicate(string predicateCode, SemanticPredicateEvaluationContext context)
     {
         try
         {
@@ -53,20 +60,21 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
             var expression = _compiler.Compile(predicateCode, symbols);
             if (expression.Type != typeof(bool))
             {
-                return SemanticPredicateEvaluationOutcome.NotEvaluated(
+                return () => SemanticPredicateEvaluationOutcome.NotEvaluated(
                     ParserDiagnostics.EmbeddedCodeCompilationFailed,
                     null,
                     "semantic predicate",
                     $"Expected Boolean result, got {expression.Type.Name}.");
             }
 
-            return Expression.Lambda<Func<bool>>(expression).Compile()()
+            var compiledPredicate = Expression.Lambda<Func<bool>>(expression).Compile();
+            return () => compiledPredicate()
                 ? SemanticPredicateEvaluationOutcome.Satisfied
                 : SemanticPredicateEvaluationOutcome.Rejected;
         }
         catch (Exception exception)
         {
-            return SemanticPredicateEvaluationOutcome.NotEvaluated(
+            return () => SemanticPredicateEvaluationOutcome.NotEvaluated(
                 ParserDiagnostics.EmbeddedCodeCompilationFailed,
                 exception,
                 "semantic predicate",
