@@ -172,8 +172,8 @@ Conceptual outcomes:
 Conceptual outcomes:
 
 - compiled action/effect expression;
-- executable path -> `ParserActionExecutionResult.Executed`;
-- unavailable/disabled path -> `ParserActionExecutionResult.NotExecuted` + diagnostic.
+- executable path -> `ParserActionExecutionOutcome.Executed`;
+- unavailable/disabled path -> `ParserActionExecutionOutcome.NotExecuted` + diagnostic.
 
 ### Rule actions `@init` / `@after`
 
@@ -344,3 +344,13 @@ This model explicitly excludes:
 
 - separate design and implementation;
 - account for tokenization and lexer state impact.
+
+
+Runtime policy architecture rule:
+
+- Runtime policy contexts are immutable input snapshots.
+- Runtime policy outcomes carry the decision and optional diagnostic metadata.
+- Future outcomes may carry deterministic context transitions, but handlers must not mutate parser state directly.
+- ParserEngine remains responsible for applying effects and emitting diagnostics.
+
+Parser action execution now uses structured `ParserActionExecutionOutcome`, aligned with semantic predicate outcomes. Executors return a status plus optional diagnostic metadata. Inline parser actions still do not influence parse acceptance: `Executed` and `NotExecuted` both continue parsing.

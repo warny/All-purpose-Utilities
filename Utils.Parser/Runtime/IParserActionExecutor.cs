@@ -14,6 +14,6 @@ public interface IParserActionExecutor
     /// <param name="context">Immutable action execution context.</param>
     /// <returns>Execution decision for the action.
     /// For memoization safety, implementations should avoid invocation-count-dependent mutable external state.</returns>
-    ParserActionExecutionResult Execute(ParserActionExecutionContext context);
+    ParserActionExecutionOutcome Execute(ParserActionExecutionContext context);
 }
 
