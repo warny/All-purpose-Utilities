@@ -147,6 +147,7 @@ Scope:
 
 Current clarification status:
 
+- shared embedded-code diagnostic taxonomy is defined for future runtime, generator, and tooling paths without enabling execution.
 - local alternative comparison order is explicitly documented (longest match, then priority, then declaration order),
 - pruning is explicitly documented as orchestration-only and non-syntax-authoritative,
 - structural branch equivalence limits are explicitly documented as conservative and non-semantic-proof.

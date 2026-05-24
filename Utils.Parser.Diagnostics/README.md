@@ -103,6 +103,19 @@ These codes are emitted only when a `DiagnosticBag` is passed to the parse call;
 | UP9005 | `ParserStateRejected` | A parser state was rejected by a safety guard |
 | UP5006 | `DefaultBehaviorApplied` | A grammar construct fell back to a default behavior |
 
+
+## Embedded ANTLR code diagnostics
+
+Shared embedded-code diagnostics are available for runtime, generator, and tooling boundaries:
+
+- `UP1024 EmbeddedCodeLanguageUnsupported`
+- `UP1025 EmbeddedCodeCompilerNotConfigured`
+- `UP1026 EmbeddedCodeCompilationFailed`
+- `UP1027 EmbeddedCodePreservedNotCompiled`
+- `UP1028 EmbeddedCodeExecutionDisabled`
+
+These diagnostics describe language support, compilation, and execution boundaries for embedded ANTLR code. They do not imply embedded-code execution is implemented.
+
 ## Related packages
 
 - `omy.Utils.Parser`

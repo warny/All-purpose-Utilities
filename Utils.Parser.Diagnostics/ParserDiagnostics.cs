@@ -154,6 +154,25 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor UnsupportedAntlrOptionIgnored =
         new("UP1021", "ANTLR option ignored", "ANTLR option '{0}' is currently unsupported and will be ignored.", DefaultCategory);
 
+    /// <summary>Embedded ANTLR code language is not supported in the current execution path.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodeLanguageUnsupported =
+        new("UP1024", "Embedded code language unsupported", "Embedded ANTLR code language '{0}' is not supported in the current execution path.", DefaultCategory);
+
+    /// <summary>Embedded ANTLR code requires a compiler, but no compiler is configured.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodeCompilerNotConfigured =
+        new("UP1025", "Embedded code compiler not configured", "Embedded ANTLR code for '{0}' requires an explicit embedded-code compiler, but none was configured.", DefaultCategory);
+
+    /// <summary>Embedded ANTLR code compilation failed for the requested construct.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodeCompilationFailed =
+        new("UP1026", "Embedded code compilation failed", "Embedded ANTLR code for '{0}' could not be compiled: {1}", DefaultCategory);
+
+    /// <summary>Embedded ANTLR code is preserved as metadata and not compiled in the current execution path.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodePreservedNotCompiled =
+        new("UP1027", "Embedded code preserved and not compiled", "Embedded ANTLR code for '{0}' is preserved as metadata and is not compiled in the current execution path.", DefaultCategory);
+
+    /// <summary>Embedded ANTLR code execution is disabled by the current runtime policy.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodeExecutionDisabled =
+        new("UP1028", "Embedded code execution disabled", "Embedded ANTLR code execution for '{0}' is disabled by the current runtime policy.", DefaultCategory);
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
         new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
@@ -247,6 +266,11 @@ public static class ParserDiagnostics
             [RuleReturnsIgnored.Code] = RuleReturnsIgnored,
             [RuleLocalsIgnored.Code] = RuleLocalsIgnored,
             [RuleExceptionMetadataIgnored.Code] = RuleExceptionMetadataIgnored,
+            [EmbeddedCodeLanguageUnsupported.Code] = EmbeddedCodeLanguageUnsupported,
+            [EmbeddedCodeCompilerNotConfigured.Code] = EmbeddedCodeCompilerNotConfigured,
+            [EmbeddedCodeCompilationFailed.Code] = EmbeddedCodeCompilationFailed,
+            [EmbeddedCodePreservedNotCompiled.Code] = EmbeddedCodePreservedNotCompiled,
+            [EmbeddedCodeExecutionDisabled.Code] = EmbeddedCodeExecutionDisabled,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,

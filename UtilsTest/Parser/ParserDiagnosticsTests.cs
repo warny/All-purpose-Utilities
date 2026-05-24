@@ -398,4 +398,29 @@ public class ParserDiagnosticsTests
         Assert.IsNotNull(grammar);
         Assert.AreEqual("G", grammar.Name);
     }
+    [TestMethod]
+    public void ParserDiagnostics_EmbeddedCodeDescriptors_HaveStableCodes()
+    {
+        Assert.AreEqual("UP1024", ParserDiagnostics.EmbeddedCodeLanguageUnsupported.Code);
+        Assert.AreEqual("UP1025", ParserDiagnostics.EmbeddedCodeCompilerNotConfigured.Code);
+        Assert.AreEqual("UP1026", ParserDiagnostics.EmbeddedCodeCompilationFailed.Code);
+        Assert.AreEqual("UP1027", ParserDiagnostics.EmbeddedCodePreservedNotCompiled.Code);
+        Assert.AreEqual("UP1028", ParserDiagnostics.EmbeddedCodeExecutionDisabled.Code);
+    }
+
+    [TestMethod]
+    public void ParserDiagnostics_AllDescriptors_HaveUniqueCodesAndNonEmptyMetadata()
+    {
+        var descriptors = ParserDiagnostics.All.Values.ToList();
+
+        Assert.AreEqual(descriptors.Count, descriptors.Select(static descriptor => descriptor.Code).Distinct().Count());
+
+        foreach (var descriptor in descriptors)
+        {
+            Assert.IsFalse(string.IsNullOrWhiteSpace(descriptor.Code));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(descriptor.Title));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(descriptor.MessageFormat));
+        }
+    }
+
 }
