@@ -25,5 +25,6 @@ var parser = new ParserEngine(definition, policy);
 
 - Supports semantic predicates only.
 - Expects expression compilation to produce boolean-compatible expressions.
-- Uses a compilation cache keyed by predicate code.
+- Predicates that do not reference contextual symbols are cached by predicate source code.
+- Predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per evaluation to avoid capturing runtime context.
 - Does not evaluate lexer predicates or lexer actions.

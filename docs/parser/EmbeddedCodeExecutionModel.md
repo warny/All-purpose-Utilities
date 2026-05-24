@@ -109,7 +109,7 @@ Prototype status update:
 - Current adapter scope is limited to parser semantic predicates only.
 - Inline parser actions, lexer actions, lexer predicates, and grammar members remain outside this runtime adapter.
 - The symbol model is intentionally minimal and read-only (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`).
-- Caching is compilation-only (predicate-source keyed), not parse-result memoization.
+- Caching remains compilation-only and not parse-result memoization. Predicates that do not reference contextual symbols can be cached by predicate source; predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per evaluation to avoid context capture.
 
 ## 7. Interface boundary
 
