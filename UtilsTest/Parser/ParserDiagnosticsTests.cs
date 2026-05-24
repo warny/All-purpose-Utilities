@@ -9,6 +9,7 @@ using Utils.Parser.Runtime;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace UtilsTest.Parser;
 
@@ -412,15 +413,23 @@ public class ParserDiagnosticsTests
     [TestMethod]
     public void ParserDiagnostics_AllDescriptors_HaveUniqueCodesAndNonEmptyMetadata()
     {
-        var descriptors = ParserDiagnostics.All.Values.ToList();
+        var descriptors = typeof(ParserDiagnostics)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(static field => field.FieldType == typeof(ParserDiagnosticDescriptor))
+            .Select(static field => (ParserDiagnosticDescriptor)field.GetValue(null)!)
+            .Distinct()
+            .ToList();
 
-        Assert.AreEqual(descriptors.Count, descriptors.Select(static descriptor => descriptor.Code).Distinct().Count());
+        Assert.AreEqual(
+            descriptors.Count,
+            descriptors.Select(static descriptor => descriptor.Code).Distinct(StringComparer.Ordinal).Count());
 
         foreach (var descriptor in descriptors)
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(descriptor.Code));
             Assert.IsFalse(string.IsNullOrWhiteSpace(descriptor.Title));
             Assert.IsFalse(string.IsNullOrWhiteSpace(descriptor.MessageFormat));
+            Assert.IsTrue(ParserDiagnostics.All.ContainsKey(descriptor.Code));
         }
     }
 
