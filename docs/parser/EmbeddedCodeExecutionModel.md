@@ -107,7 +107,10 @@ Prototype status update:
 - A first optional runtime adapter now exists to map `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
 - Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable). Expression-backed semantic predicate evaluation now returns a structured outcome so compilation failures and non-boolean expression results can carry `UP1026` metadata, while `ParserEngine` remains the only component that emits diagnostics.
 - Current adapter scope is limited to parser semantic predicates only.
-- Inline parser actions, lexer actions, lexer predicates, and grammar members remain outside this runtime adapter.
+- A first optional runtime parser action adapter now exists: `IExpressionCompiler` can be adapted to `IParserActionExecutor` for inline parser actions only.
+- Default parser runtime behavior is unchanged; inline actions still do not control parse acceptance, parse-tree shape, or branch rejection.
+- `Executed` and `NotExecuted` outcomes both continue parsing; no context mutation, no `ContextDelta`, and no lexer action/predicate or grammar-members execution support are introduced.
+- Cache scope remains compilation-only; no parse-result caching is introduced.
 - The symbol model is intentionally minimal and read-only (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`).
 - Caching remains compilation-only and not parse-result memoization. Predicates that do not reference contextual symbols can be cached by predicate source; predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per evaluation to avoid context capture.
 

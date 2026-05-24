@@ -30,3 +30,14 @@ var parser = new ParserEngine(definition, policy);
 - Does not evaluate lexer predicates or lexer actions.
 
 - Compilation failures and non-boolean expression results are surfaced as structured `NotEvaluated` outcomes with `UP1026` metadata; `ParserEngine` emits diagnostics when a `DiagnosticBag` is provided.
+
+
+## ExpressionParserActionExecutor
+
+`ExpressionParserActionExecutor` adapts `IExpressionCompiler` to `IParserActionExecutor` for inline parser actions (`{ code }`).
+
+- Compiler injection is explicit via constructor; no default compiler is selected.
+- Scope is parser inline actions only (no lexer actions/predicates, no `@members`).
+- Non-void expressions are evaluated and their result is discarded.
+- Cache scope is compilation-only for non-contextual actions; contextual actions (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are recompiled per execution to avoid first-context capture.
+- Compilation failures, incompatible executable expressions, and runtime execution exceptions return `NotExecuted` with `UP1026` metadata; `ParserEngine` remains diagnostic owner.
