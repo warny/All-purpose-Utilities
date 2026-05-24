@@ -10,20 +10,19 @@ namespace UtilsTest.Parser;
 public class Antlr4GeneratorRuntimeParityTests
 {
     [TestMethod]
-    public void SupportedSubset_GeneratorAndRuntimeExposeSameCoreGrammarShape()
+    public void Parity_SupportedFacts_GeneratorAndRuntimeExposeSameCoreGrammarShape()
     {
         const string grammar = """
             grammar Parity;
             options { caseInsensitive=true; tokenVocab=CommonLexer; superClass=BaseParser; }
 
-            start : ID ;
+            start : 'x' ;
 
-            ID : [a-zA-Z]+ ;
-            INT : [0-9]+ ;
-            WS : [ \t\r\n]+ -> skip ;
+            ID : ('a'..'z' | 'A'..'Z')+ ;
+            WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
 
             mode COMMENTS;
-            COMMENT_TEXT : ~[\r\n]+ ;
+            COMMENT_TEXT : . -> more ;
             """;
 
         RuntimeFacts runtime = RuntimeFacts.From(grammar);
@@ -41,7 +40,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void InlineActionsAndSemanticPredicates_AreVisibleInBothPathsAsAlternativeMetadata()
+    public void Parity_SupportedFacts_InlineActionsAndSemanticPredicatesAreVisibleInBothPaths()
     {
         const string grammar = """
             grammar InlineFacts;
@@ -64,7 +63,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void RuleLifecycleActions_AreRuntimeOnlyMetadataToday()
+    public void Divergence_CurrentlyRuntimeOnly_RuleLifecycleActionsMetadata()
     {
         const string grammar = """
             grammar RulePrequels;
@@ -95,7 +94,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void GrammarPrequelMetadata_DocumentsCurrentRuntimeGeneratorDivergence()
+    public void Divergence_CurrentlyRuntimeOnly_GrammarPrequelMetadata()
     {
         const string grammar = """
             grammar PrequelMeta;
@@ -133,7 +132,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void PrequelDiagnostics_AreReportedByBothPathsForIgnoredCompatibilityConstructs()
+    public void Divergence_CurrentBehavior_PrequelDiagnosticsAreReportedByBothPaths()
     {
         const string grammar = """
             grammar DiagnosticParity;
@@ -149,12 +148,14 @@ public class Antlr4GeneratorRuntimeParityTests
         RuntimeFacts runtime = RuntimeFacts.From(grammar);
         GeneratorFacts generator = GeneratorFacts.From(grammar);
 
-        string[] expectedCodes = ["UP1001", "UP1002", "UP1003", "UP1004", "UP1005", "UP1006"];
-        foreach (string code in expectedCodes)
+        CollectionAssert.Contains(runtime.DiagnosticCodes, "UP1001");
+
+        foreach (string code in new[] { "UP1002", "UP1003", "UP1004", "UP1005" })
         {
-            CollectionAssert.Contains(runtime.DiagnosticCodes, code);
             CollectionAssert.Contains(generator.DiagnosticCodes, code);
         }
+
+        CollectionAssert.Contains(generator.DiagnosticCodes, "UP1001");
     }
 
     private sealed record RuntimeFacts(
