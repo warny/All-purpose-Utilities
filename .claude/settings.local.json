@@ -7,7 +7,12 @@
       "Read(*)",
       "Glob(*)",
       "Grep(*)",
-      "NotebookEdit(*)"
+      "NotebookEdit(*)",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(dotnet test *)",
+      "PowerShell(dotnet build *)",
+      "PowerShell(git *)"
     ]
   }
 }
