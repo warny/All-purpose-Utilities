@@ -182,7 +182,10 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed =
         new("UP5001", "Best-effort recovery used", "Best-effort recovery was used while parsing '{0}'.", DefaultCategory);
 
-    /// <summary>Expected token missing.</summary>
+    /// <summary>
+    /// Expected token missing.
+    /// Currently reserved for missing-token recovery diagnostics.
+    /// </summary>
     public static readonly ParserDiagnosticDescriptor ExpectedTokenMissing =
         new("UP5002", "Expected token missing", "Expected token '{0}' was not found.", DefaultCategory);
 
@@ -244,6 +247,10 @@ public static class ParserDiagnostics
     /// <summary>
     /// Gets all known parser diagnostics keyed by code.
     /// </summary>
+    /// <remarks>
+    /// Compatibility aliases such as ReturnsPartiallyApplied and LocalsIgnored are intentionally not
+    /// listed separately because <see cref="All"/> is keyed by diagnostic code and exposes canonical descriptors.
+    /// </remarks>
     public static IReadOnlyDictionary<string, ParserDiagnosticDescriptor> All { get; } =
         new Dictionary<string, ParserDiagnosticDescriptor>
         {

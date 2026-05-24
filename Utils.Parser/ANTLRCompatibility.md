@@ -101,7 +101,7 @@ An optional expression-backed evaluator can be configured explicitly (for exampl
 ```csharp
 public class MyPredicateEvaluator : ISemanticPredicateEvaluator
 {
-    public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+    public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
     {
         // context.PredicateCode  — raw predicate text from the .g4 file
         // context.Rule           — current Rule
@@ -110,10 +110,10 @@ public class MyPredicateEvaluator : ISemanticPredicateEvaluator
 
         if (context.PredicateCode == "IsKeyword()")
             return _keywords.Contains(CurrentToken) 
-                ? SemanticPredicateEvaluationResult.Satisfied 
-                : SemanticPredicateEvaluationResult.Rejected;
+                ? SemanticPredicateEvaluationOutcome.Satisfied 
+                : SemanticPredicateEvaluationOutcome.Rejected;
 
-        return SemanticPredicateEvaluationResult.NotEvaluated;
+        return SemanticPredicateEvaluationOutcome.NotEvaluated();
     }
 }
 
