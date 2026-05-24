@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using Utils.Expressions;
 using Utils.Parser.Runtime;
 
@@ -10,6 +11,10 @@ namespace Utils.Parser.Expressions;
 /// </summary>
 public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEvaluator
 {
+    private static readonly Regex ContextSymbolRegex = new(
+        @"\b(ruleName|inputPosition|alternativeIndex|elementIndex)\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private static readonly IReadOnlyDictionary<string, Func<SemanticPredicateEvaluationContext, Expression>> SymbolFactoryByName =
         new Dictionary<string, Func<SemanticPredicateEvaluationContext, Expression>>(StringComparer.Ordinal)
         {
@@ -37,7 +42,9 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var compiledPredicate = _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
+        var compiledPredicate = UsesContextualSymbols(context.PredicateCode)
+            ? CompilePredicate(context.PredicateCode, context)
+            : _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
 
         if (compiledPredicate is null)
         {
@@ -65,6 +72,11 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
         {
             return null;
         }
+    }
+
+    private static bool UsesContextualSymbols(string predicateCode)
+    {
+        return ContextSymbolRegex.IsMatch(predicateCode);
     }
 
     private static IReadOnlyDictionary<string, Expression> BuildSymbols(SemanticPredicateEvaluationContext context)

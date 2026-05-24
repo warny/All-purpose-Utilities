@@ -75,10 +75,22 @@ public class ExpressionSemanticPredicateEvaluatorTests
         Assert.AreEqual(1, compiler.CompileCount);
     }
 
-    private static SemanticPredicateEvaluationContext CreateContext(string predicateCode)
+    [TestMethod]
+    public void Evaluate_WhenSamePredicateCodeUsesDifferentRuleContext_DoesNotReuseCapturedSymbols()
+    {
+        var evaluator = new ExpressionSemanticPredicateEvaluator(new FakeExpressionCompiler());
+
+        var firstResult = evaluator.Evaluate(CreateContext("ruleName == \"start\"", "start"));
+        var secondResult = evaluator.Evaluate(CreateContext("ruleName == \"start\"", "other"));
+
+        Assert.AreEqual(SemanticPredicateEvaluationResult.Satisfied, firstResult);
+        Assert.AreEqual(SemanticPredicateEvaluationResult.Rejected, secondResult);
+    }
+
+    private static SemanticPredicateEvaluationContext CreateContext(string predicateCode, string ruleName = "start")
     {
         var rule = new Rule(
-            "start",
+            ruleName,
             0,
             false,
             new Alternation([
