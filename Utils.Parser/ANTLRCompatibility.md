@@ -88,6 +88,8 @@ The `GrammarExtensionBinding` record exposes `SuperClassName`, the owning gramma
 
 See [`EmbeddedCodeExecutionModel.md`](../docs/parser/EmbeddedCodeExecutionModel.md) for the two-path execution boundary (source generation C# vs runtime expression compilation) and project responsibility map.
 
+The shared embedded-code diagnostics taxonomy is documented in `EmbeddedCodeExecutionModel.md` and `ParserDiagnostics`.
+
 
 **Standard ANTLR4**: The predicate body is target-language code evaluated inline during parsing.
 

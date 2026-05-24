@@ -329,6 +329,7 @@ Current clarification status:
 - rule `locals [...]` clauses now emit deterministic explicit compatibility diagnostics (`UP1008 RuleLocalsIgnored`) instead of generic silent metadata discard.
 - semantic predicate default-policy behavior is explicitly documented as runtime-policy-driven (`ISemanticPredicateEvaluator`) with deterministic `UP1006` coverage, and precedence predicates are documented separately as non-generic predicate evaluation flow.
 - embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime expression-compilation paths, including multi-project responsibilities.
+- shared embedded-code diagnostic taxonomy is defined for future runtime, generator, and tooling paths without enabling execution.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 

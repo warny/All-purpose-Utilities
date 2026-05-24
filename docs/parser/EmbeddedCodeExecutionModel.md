@@ -216,13 +216,15 @@ Responsible for shared diagnostic descriptors across runtime and generator/tooli
 
 Future shared embedded-code diagnostics should live here when shared by runtime and generator paths.
 
-Examples (future, not implemented in this PR):
+The shared embedded-code diagnostic taxonomy is:
 
-- `EmbeddedCodeLanguageUnsupported`
-- `EmbeddedCodeCompilerNotConfigured`
-- `EmbeddedCodeCompilationFailed`
-- `EmbeddedCodePreservedNotCompiled`
-- `EmbeddedCodeExecutionDisabled`
+- `UP1024 EmbeddedCodeLanguageUnsupported`
+- `UP1025 EmbeddedCodeCompilerNotConfigured`
+- `UP1026 EmbeddedCodeCompilationFailed`
+- `UP1027 EmbeddedCodePreservedNotCompiled`
+- `UP1028 EmbeddedCodeExecutionDisabled`
+
+These diagnostics define future capability boundaries. They may be emitted by runtime ingestion, source generator reporting, or tooling adapters. This PR defines the taxonomy only and does not change behavior.
 
 ### `Utils.Parser.Generators`
 

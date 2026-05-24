@@ -153,3 +153,6 @@ However, invocation memoization remains keyed by `(rule, input position, precede
 Parser invocation reuse is currently keyed by rule, input position, and precedence.
 This model currently assumes policy handlers are deterministic for equivalent invocations and does not include evaluator/executor external state in the memoization key.
 Custom policies should therefore avoid invocation-count-dependent decisions and externally observable mutable semantic state.
+
+
+> Future embedded-code execution paths will use the shared diagnostics taxonomy documented in `EmbeddedCodeExecutionModel.md`.
