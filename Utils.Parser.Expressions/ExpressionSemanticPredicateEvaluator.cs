@@ -48,6 +48,9 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
             return CompilePredicate(context.PredicateCode, context)();
         }
 
+        // ConcurrentDictionary.GetOrAdd may invoke the value factory more than once under contention.
+        // This cache is therefore opportunistic: duplicate concurrent compilation is acceptable,
+        // but only the compiled delegate/failure is cached. Evaluation results are never cached.
         var evaluator = _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
         return evaluator();
     }
