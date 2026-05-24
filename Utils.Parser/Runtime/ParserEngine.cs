@@ -25,7 +25,7 @@ namespace Utils.Parser.Runtime;
 /// <see cref="ParserRuntimeFeaturePolicy"/>.
 /// The default policy preserves conservative behavior:
 /// semantic predicates return <see cref="SemanticPredicateEvaluationStatus.NotEvaluated"/>
-/// and parser actions return <see cref="ParserActionExecutionResult.NotExecuted"/>.
+/// and parser actions return <see cref="ParserActionExecutionOutcome.NotExecuted"/>.
 /// Custom injected policies may reject alternatives and may execute action handlers,
 /// which can influence parse outcomes.
 /// </para>
@@ -634,10 +634,23 @@ public sealed class ParserEngine
             alternativeIndex,
             elementIndex);
 
-        var executionResult = _parserActionExecutor.Execute(executionContext);
-        if (executionResult == ParserActionExecutionResult.NotExecuted)
+        var execution = _parserActionExecutor.Execute(executionContext);
+        if (execution.Status == ParserActionExecutionStatus.NotExecuted)
         {
-            diagnostics?.AddWithContext(ParserDiagnostics.InlineActionStoredNotExecuted, null, null, rule.Name, null);
+            if (execution.Diagnostic is null)
+            {
+                diagnostics?.AddWithContext(ParserDiagnostics.InlineActionStoredNotExecuted, null, null, rule.Name, null);
+            }
+            else
+            {
+                diagnostics?.AddWithContext(
+                    execution.Diagnostic,
+                    null,
+                    null,
+                    rule.Name,
+                    execution.Exception,
+                    execution.DiagnosticArguments.ToArray());
+            }
         }
 
         return CreateEmptyNode(context, rule);

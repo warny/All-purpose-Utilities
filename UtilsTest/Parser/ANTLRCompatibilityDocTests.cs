@@ -225,7 +225,7 @@ public class ANTLRCompatibilityDocTests
             capturedCode = ctx.ActionCode;
             capturedRule = ctx.Rule;
             capturedPosition = ctx.InputPosition;
-            return ParserActionExecutionResult.Executed;
+            return ParserActionExecutionOutcome.Executed;
         });
         var policy = ParserRuntimeFeaturePolicy.Default with
         {
@@ -253,7 +253,7 @@ public class ANTLRCompatibilityDocTests
         var executor = new CapturingActionExecutor(_ =>
         {
             executorCalled = true;
-            return ParserActionExecutionResult.Executed;
+            return ParserActionExecutionOutcome.Executed;
         });
 
         // default policy — executor not registered
@@ -602,10 +602,10 @@ public class ANTLRCompatibilityDocTests
     }
 
     private sealed class CapturingActionExecutor(
-        Func<ParserActionExecutionContext, ParserActionExecutionResult> execute)
+        Func<ParserActionExecutionContext, ParserActionExecutionOutcome> execute)
         : IParserActionExecutor
     {
-        public ParserActionExecutionResult Execute(ParserActionExecutionContext context)
+        public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)
             => execute(context);
     }
 }

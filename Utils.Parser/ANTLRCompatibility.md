@@ -158,7 +158,7 @@ See [`EmbeddedCodeExecutionModel.md`](../docs/parser/EmbeddedCodeExecutionModel.
 ```csharp
 public class MyActionExecutor : IParserActionExecutor
 {
-    public ParserActionExecutionResult Execute(ParserActionExecutionContext context)
+    public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)
     {
         // context.ActionCode     — raw action text from the .g4 file
         // context.Rule           — current Rule
@@ -166,7 +166,7 @@ public class MyActionExecutor : IParserActionExecutor
         // context.AlternativeIndex / ElementIndex — position within the rule
 
         Console.WriteLine($"Action in rule {context.Rule.Name}: {context.ActionCode}");
-        return ParserActionExecutionResult.Executed;
+        return ParserActionExecutionOutcome.Executed;
     }
 }
 

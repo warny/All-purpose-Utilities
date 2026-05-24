@@ -2,16 +2,16 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Conservative default action executor that does not run embedded action code and returns
-/// <see cref="ParserActionExecutionResult.NotExecuted"/> for every embedded action.
+/// <see cref="ParserActionExecutionOutcome.NotExecuted"/> for every embedded action.
 /// </summary>
 internal sealed class DefaultParserActionExecutor : IParserActionExecutor
 {
     /// <summary>
-    /// Returns <see cref="ParserActionExecutionResult.NotExecuted"/> for every action.
+    /// Returns <see cref="ParserActionExecutionOutcome.NotExecuted"/> for every action.
     /// </summary>
     /// <param name="context">Action context.</param>
-    /// <returns>Always <see cref="ParserActionExecutionResult.NotExecuted"/>.</returns>
-    public ParserActionExecutionResult Execute(ParserActionExecutionContext context)
-        => ParserActionExecutionResult.NotExecuted;
+    /// <returns>Always <see cref="ParserActionExecutionOutcome.NotExecuted"/>.</returns>
+    public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)
+        => ParserActionExecutionOutcome.NotExecuted();
 }
 

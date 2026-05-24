@@ -34,7 +34,7 @@ public class ParserEngineActionExecutorTests
         var startRule = CreateStartRuleWithInlineAction("log();");
         var tokenRuleA = CreateTokenRuleA();
         var definition = CreateDefinition(startRule, tokenRuleA);
-        var observer = new ObservingParserActionExecutor(ParserActionExecutionResult.NotExecuted);
+        var observer = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted());
         var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), observer);
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
@@ -52,18 +52,81 @@ public class ParserEngineActionExecutorTests
         var startRule = CreateStartRuleWithInlineAction("run();");
         var tokenRuleA = CreateTokenRuleA();
         var definition = CreateDefinition(startRule, tokenRuleA);
-        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionResult.Executed));
+        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionOutcome.Executed));
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
 
         Assert.IsInstanceOfType<ParserNode>(result);
     }
 
+    [TestMethod]
+    public void InlineAction_CustomExecutor_Executed_DoesNotEmitUp1005()
+    {
+        var definition = CreateDefinition(CreateStartRuleWithInlineAction("run();"), CreateTokenRuleA());
+        var diagnostics = new DiagnosticBag();
+        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionOutcome.Executed));
+
+        var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.InlineActionStoredNotExecuted.Code));
+    }
+
+    [TestMethod]
+    public void InlineAction_CustomExecutor_NotExecutedWithoutDiagnostic_EmitsUp1005()
+    {
+        var definition = CreateDefinition(CreateStartRuleWithInlineAction("skip();"), CreateTokenRuleA());
+        var diagnostics = new DiagnosticBag();
+        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted()));
+
+        var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.InlineActionStoredNotExecuted.Code));
+    }
+
+    [TestMethod]
+    public void InlineAction_CustomExecutor_NotExecutedWithDiagnostic_EmitsDetailedDiagnosticOnly()
+    {
+        var definition = CreateDefinition(CreateStartRuleWithInlineAction("skip();"), CreateTokenRuleA());
+        var diagnostics = new DiagnosticBag();
+        var parser = new ParserEngine(
+            definition,
+            new DefaultSemanticPredicateEvaluator(),
+            new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted(ParserDiagnostics.EmbeddedCodeExecutionDisabled, null, "parser action")));
+
+        var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.EmbeddedCodeExecutionDisabled.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.InlineActionStoredNotExecuted.Code));
+    }
+
+    [TestMethod]
+    public void InlineAction_CustomExecutor_NotExecutedWithException_PreservesException()
+    {
+        var definition = CreateDefinition(CreateStartRuleWithInlineAction("compile();"), CreateTokenRuleA());
+        var diagnostics = new DiagnosticBag();
+        var exception = new InvalidOperationException("compilation failed");
+        var parser = new ParserEngine(
+            definition,
+            new DefaultSemanticPredicateEvaluator(),
+            new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted(
+                ParserDiagnostics.EmbeddedCodeCompilationFailed,
+                exception,
+                "parser action",
+                exception.Message)));
+
+        _ = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.EmbeddedCodeCompilationFailed.Code && ReferenceEquals(d.Exception, exception)));
+    }
+
 
     [TestMethod]
     public void CompileAndParse_FromAntlrText_ActionOnlyOverload_UsesInjectedActionExecutor()
     {
-        var observer = new ObservingParserActionExecutor(ParserActionExecutionResult.NotExecuted);
+        var observer = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted());
         var grammar = Antlr4GrammarConverter.Compile(
             """
             grammar P;
@@ -81,7 +144,7 @@ public class ParserEngineActionExecutorTests
     [TestMethod]
     public void CompileAndParse_FromAntlrText_UsesInjectedActionExecutor()
     {
-        var observer = new ObservingParserActionExecutor(ParserActionExecutionResult.NotExecuted);
+        var observer = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted());
         var grammar = Antlr4GrammarConverter.Compile(
             """
             grammar P;
@@ -141,13 +204,13 @@ public class ParserEngineActionExecutorTests
     /// </summary>
     private sealed class ObservingParserActionExecutor : IParserActionExecutor
     {
-        private readonly ParserActionExecutionResult _result;
+        private readonly ParserActionExecutionOutcome _result;
 
         /// <summary>
         /// Initializes the executor.
         /// </summary>
         /// <param name="result">Result returned by <see cref="Execute"/>.</param>
-        public ObservingParserActionExecutor(ParserActionExecutionResult result)
+        public ObservingParserActionExecutor(ParserActionExecutionOutcome result)
         {
             _result = result;
         }
@@ -158,7 +221,7 @@ public class ParserEngineActionExecutorTests
         public ParserActionExecutionContext? LastContext { get; private set; }
 
         /// <inheritdoc />
-        public ParserActionExecutionResult Execute(ParserActionExecutionContext context)
+        public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)
         {
             LastContext = context;
             return _result;

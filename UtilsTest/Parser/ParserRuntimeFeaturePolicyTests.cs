@@ -31,7 +31,7 @@ public class ParserRuntimeFeaturePolicyTests
     {
         var definition = CreateMinimalDefinition();
         var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
-        var executor = new ConstantParserActionExecutor(ParserActionExecutionResult.Executed);
+        var executor = new ConstantParserActionExecutor(ParserActionExecutionOutcome.Executed);
 
         var evaluatorOnly = new ParserEngine(definition, evaluator);
         var executorOnly = new ParserEngine(definition, executor);
@@ -55,7 +55,7 @@ public class ParserRuntimeFeaturePolicyTests
     {
         var definition = CreateMinimalDefinition();
         var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
-        var executor = new ConstantParserActionExecutor(ParserActionExecutionResult.Executed);
+        var executor = new ConstantParserActionExecutor(ParserActionExecutionOutcome.Executed);
         var policy = ParserRuntimeFeaturePolicy.Default with
         {
             SemanticPredicateEvaluator = evaluator,
@@ -173,13 +173,13 @@ public class ParserRuntimeFeaturePolicyTests
     /// </summary>
     private sealed class ConstantParserActionExecutor : IParserActionExecutor
     {
-        private readonly ParserActionExecutionResult _result;
+        private readonly ParserActionExecutionOutcome _result;
 
         /// <summary>
         /// Initializes the executor with the configured action execution result.
         /// </summary>
         /// <param name="result">Result returned for all action executions.</param>
-        public ConstantParserActionExecutor(ParserActionExecutionResult result)
+        public ConstantParserActionExecutor(ParserActionExecutionOutcome result)
         {
             _result = result;
         }
@@ -189,7 +189,7 @@ public class ParserRuntimeFeaturePolicyTests
         /// </summary>
         /// <param name="context">Parser action execution context.</param>
         /// <returns>The configured result.</returns>
-        public ParserActionExecutionResult Execute(ParserActionExecutionContext context)
+        public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)
         {
             return _result;
         }
