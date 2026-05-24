@@ -50,5 +50,11 @@ jobs:
               uses: actions/setup-dotnet@v3
               with:
                   dotnet-version: '9.0.x'
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-outputs-${{ github.ref_name }}
+            - name: Restore packages
+              run: dotnet restore ${{ matrix.project }}
             - name: Test (${{ matrix.test-suite }})
-              run: dotnet test ${{ matrix.project }} --verbosity normal
+              run: dotnet test ${{ matrix.project }} --no-build --configuration GitHub --verbosity normal
