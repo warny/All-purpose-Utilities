@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <EnablePreviewFeatures>True</EnablePreviewFeatures>
+        <Copyright>Olivier MARTY 2025</Copyright>
+        <Authors>Olivier MARTY</Authors>
+        <Company>Olivier MARTY</Company>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>omy.Utils.Parser.Expressions</PackageId>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <Version>0.1.0</Version>
+        <Description>Optional expression-backed semantic predicate evaluator adapter for omy.Utils.Parser runtime policies.</Description>
+        <PackageTags>omy;utilities;parser;antlr4;semantic-predicate;expressions;runtime-policy</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
+        <ProjectReference Include="..\Utils\Utils.csproj" />
+    </ItemGroup>
+
+</Project>

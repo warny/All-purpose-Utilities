@@ -77,6 +77,7 @@
                 <ProjectReference Include="..\Utils.Parser.VisualStudio\Utils.Parser.VisualStudio.csproj" />
                 <ProjectReference Include="..\Utils.Expressions.CSyntax\Utils.Expressions.CSyntax.csproj" />
                 <ProjectReference Include="..\Utils.Expressions.VBSyntax\Utils.Expressions.VBSyntax.csproj" />
+                <ProjectReference Include="..\Utils.Parser.Expressions\Utils.Parser.Expressions.csproj" />
         </ItemGroup>
 
 	<ItemGroup>
