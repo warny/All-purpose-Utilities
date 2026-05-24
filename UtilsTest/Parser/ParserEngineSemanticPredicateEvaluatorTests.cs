@@ -1,10 +1,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq.Expressions;
 using System.IO;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 using Utils.Parser.Resolution;
+using Utils.Expressions;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Bootstrap;
+using Utils.Parser.Expressions;
 
 namespace UtilsTest.Parser;
 
@@ -19,7 +22,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new ValidatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
 
         var result = parser.Parse([]);
 
@@ -31,7 +34,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new GatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied));
 
         var result = parser.Parse([]);
 
@@ -43,7 +46,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new ValidatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.NotEvaluated));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.NotEvaluated()));
         var diagnostics = new DiagnosticBag();
 
         parser.Parse([], diagnostics: diagnostics);
@@ -90,11 +93,42 @@ public class ParserEngineSemanticPredicateEvaluatorTests
             """,
             diagnostics: null);
 
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
         var lexer = new LexerEngine(definition);
         var result = parser.Parse(lexer.Tokenize(new StringReader("a")));
 
         Assert.IsInstanceOfType<ErrorNode>(result);
+    }
+
+
+    [TestMethod]
+    public void Parser_ExpressionEvaluator_WhenCompilationThrows_EmitsUP1026WithoutUP1006()
+    {
+        var definition = CreateSemanticPredicateGrammarDefinition();
+        var parser = new ParserEngine(definition, new ExpressionSemanticPredicateEvaluator(new ThrowingExpressionCompiler()));
+        var lexer = new LexerEngine(definition);
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse(lexer.Tokenize(new StringReader("a")), diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.EmbeddedCodeCompilationFailed.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
+    }
+
+    [TestMethod]
+    public void Parser_ExpressionEvaluator_WhenExpressionIsNotBoolean_EmitsUP1026WithoutUP1006()
+    {
+        var definition = CreateSemanticPredicateGrammarDefinition();
+        var parser = new ParserEngine(definition, new ExpressionSemanticPredicateEvaluator(new NonBooleanExpressionCompiler()));
+        var lexer = new LexerEngine(definition);
+        var diagnostics = new DiagnosticBag();
+
+        var result = parser.Parse(lexer.Tokenize(new StringReader("a")), diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.EmbeddedCodeCompilationFailed.Code));
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.SemanticPredicateNotEnforced.Code));
     }
 
     [TestMethod]
@@ -139,7 +173,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
             ParserRules: [startRule],
             RootRule: startRule));
 
-        var observer = new ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var observer = new ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var tokens = new List<Token>
         {
             new(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")
@@ -167,11 +201,22 @@ public class ParserEngineSemanticPredicateEvaluatorTests
 
         var grammar = new CompiledGrammar(
             definition,
-            new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+            new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
 
         var result = grammar.Parse("a");
 
         Assert.IsInstanceOfType<ErrorNode>(result);
+    }
+
+    private static ParserDefinition CreateSemanticPredicateGrammarDefinition()
+    {
+        return Antlr4GrammarConverter.Parse(
+            """
+            grammar P;
+            start : {allow()}? A ;
+            A : 'a' ;
+            """,
+            diagnostics: null);
     }
 
     private static Rule CreateStartRuleWithPredicate(RuleContent predicate)
@@ -211,19 +256,19 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     /// </summary>
     private sealed class ConstantSemanticPredicateEvaluator : ISemanticPredicateEvaluator
     {
-        private readonly SemanticPredicateEvaluationResult _result;
+        private readonly SemanticPredicateEvaluationOutcome _result;
 
         /// <summary>
         /// Initializes the evaluator.
         /// </summary>
         /// <param name="result">Result returned by <see cref="Evaluate"/>.</param>
-        public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome result)
         {
             _result = result;
         }
 
         /// <inheritdoc />
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
         {
             return _result;
         }
@@ -234,13 +279,13 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     /// </summary>
     private sealed class ObservingSemanticPredicateEvaluator : ISemanticPredicateEvaluator
     {
-        private readonly SemanticPredicateEvaluationResult _result;
+        private readonly SemanticPredicateEvaluationOutcome _result;
 
         /// <summary>
         /// Initializes the evaluator.
         /// </summary>
         /// <param name="result">Result returned by <see cref="Evaluate"/>.</param>
-        public ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        public ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome result)
         {
             _result = result;
         }
@@ -251,10 +296,26 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         public SemanticPredicateEvaluationContext? LastContext { get; private set; }
 
         /// <inheritdoc />
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
         {
             LastContext = context;
             return _result;
+        }
+    }
+
+    private sealed class ThrowingExpressionCompiler : IExpressionCompiler
+    {
+        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        {
+            throw new InvalidOperationException("boom");
+        }
+    }
+
+    private sealed class NonBooleanExpressionCompiler : IExpressionCompiler
+    {
+        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        {
+            return Expression.Constant(42);
         }
     }
 }

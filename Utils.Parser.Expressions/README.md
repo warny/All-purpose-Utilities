@@ -28,3 +28,5 @@ var parser = new ParserEngine(definition, policy);
 - Predicates that do not reference contextual symbols are cached by predicate source code.
 - Predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per evaluation to avoid capturing runtime context.
 - Does not evaluate lexer predicates or lexer actions.
+
+- Compilation failures and non-boolean expression results are surfaced as structured `NotEvaluated` outcomes with `UP1026` metadata; `ParserEngine` emits diagnostics when a `DiagnosticBag` is provided.
