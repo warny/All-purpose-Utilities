@@ -71,7 +71,10 @@
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>UtilsTest</_Parameter1>
+            <_Parameter1>UtilsTest.Unit</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UtilsTest.Functional</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
 

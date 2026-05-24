@@ -483,7 +483,7 @@ public class Antlr4GrammarGeneratorTests
 
         while (!string.IsNullOrEmpty(currentDirectory))
         {
-            if (File.Exists(Path.Combine(currentDirectory, "UtilsTest.csproj")))
+            if (File.Exists(Path.Combine(currentDirectory, "UtilsTest.Unit.csproj")))
                 return currentDirectory;
 
             currentDirectory = Path.GetDirectoryName(currentDirectory);

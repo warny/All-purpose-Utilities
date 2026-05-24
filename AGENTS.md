@@ -22,6 +22,45 @@ This project targets **.NET 9**.
 - Every change must include a corresponding **test**.  
 - The only exception is when modifying **library metadata**.  
 
+### Test projects
+
+The test suite is split into two MSTest projects:
+
+| Project | Path | When to use |
+|---|---|---|
+| **UtilsTest.Unit** | `UtilsTest/UtilsTest.Unit.csproj` | Isolated tests — no file I/O, no network, no process spawning, no external resources |
+| **UtilsTest.Functional** | `UtilsTest.Functional/UtilsTest.Functional.csproj` | Integration/functional tests — network protocols, font file parsing, OData/HTTP, parser end-to-end, file system |
+
+**Default: add tests to `UtilsTest.Unit`.**  
+Only use `UtilsTest.Functional` when the test genuinely requires an external dependency (TCP stack, file system outside the project, HTTP calls, real font data loaded from disk).
+
+#### Criteria
+
+A test belongs in **UtilsTest.Unit** if it:
+- exercises a single class or method in isolation,
+- uses only in-memory data (literals, `MemoryStream`, synthetic objects),
+- has no `TcpClient`, `UdpClient`, `HttpClient` (real), `File.*`, `Directory.*` calls,
+- does not rely on `ExpGrammar` or other source-generator artifacts from another project.
+
+A test belongs in **UtilsTest.Functional** if it:
+- uses real network sockets (TCP/UDP/HTTP),
+- reads files from the file system at runtime (fonts, EDMX, grammar files),
+- tests multi-component integration across library boundaries,
+- uses `ExpGrammar` — no: `ExpGrammar` is generated only in `UtilsTest.Unit`; keep those tests there.
+
+#### Running tests
+
+```
+# Fast loop (no external dependencies):
+dotnet test UtilsTest/UtilsTest.Unit.csproj
+
+# Integration suite (requires network / file system):
+dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj
+```
+
+#### SpecFlow
+SpecFlow `.feature` files and their step bindings live exclusively in **UtilsTest.Unit** (the `Lists/` and `Mathematics/` BDD scenarios). Do not add SpecFlow infrastructure to `UtilsTest.Functional`.
+
 ---
 
 ## README  

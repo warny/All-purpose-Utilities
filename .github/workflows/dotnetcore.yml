@@ -11,7 +11,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                dotnet-version: ['9.0.x' ]
+                dotnet-version: ['9.0.x']
 
         steps:
             - uses: actions/checkout@v2
@@ -19,12 +19,8 @@ jobs:
               uses: actions/setup-dotnet@v3
               with:
                   dotnet-version: ${{ matrix.dotnet-version }}
-            #- name: Install dependencies
-            #  run: dotnet restore --ignore-failed-sources
             - name: Build
-              run: dotnet build --configuration GitHub # --no-restore
-            - name: Test
-              run: dotnet test --no-restore --verbosity normal
+              run: dotnet build --configuration GitHub
             - name: Scan vulnerable packages
               run: dotnet list Utils.sln package --vulnerable --include-transitive
             - name: Upload build artifacts
@@ -34,3 +30,25 @@ jobs:
                   path: |
                       **/bin/GitHub/**
                   if-no-files-found: warn
+
+    test:
+
+        needs: build
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    - test-suite: unit
+                      project: UtilsTest/UtilsTest.Unit.csproj
+                    - test-suite: functional
+                      project: UtilsTest.Functional/UtilsTest.Functional.csproj
+        name: Test (${{ matrix.test-suite }})
+
+        steps:
+            - uses: actions/checkout@v2
+            - name: Setup .NET 9.0.x
+              uses: actions/setup-dotnet@v3
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Test (${{ matrix.test-suite }})
+              run: dotnet test ${{ matrix.project }} --verbosity normal
