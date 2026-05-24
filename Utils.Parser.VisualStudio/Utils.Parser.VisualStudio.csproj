@@ -73,6 +73,15 @@
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>UtilsTest.Unit</_Parameter1>
         </AssemblyAttribute>
+        <!--
+            Exception: UtilsTest.Functional requires access to PluginAssemblyVerifier and
+            PluginWorkerProcess, which are internal security/containment components with no
+            public API surface. Functional tests validate OS-level isolation behaviour that
+            cannot be exercised through public interfaces alone.
+        -->
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UtilsTest.Functional</_Parameter1>
+        </AssemblyAttribute>
     </ItemGroup>
 
 </Project>

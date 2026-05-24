@@ -33,6 +33,14 @@
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
 			<_Parameter1>UtilsTest.Unit</_Parameter1>
 		</AssemblyAttribute>
+		<!--
+		    Exception: UtilsTest.Functional requires access to AppContainerSandbox, an internal
+		    OS-level isolation mechanism (Windows AppContainer). Its behaviour can only be verified
+		    with real process spawning, which requires the functional test project.
+		-->
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>UtilsTest.Functional</_Parameter1>
+		</AssemblyAttribute>
 	</ItemGroup>
 
 </Project>
