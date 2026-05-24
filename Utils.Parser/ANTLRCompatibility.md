@@ -152,7 +152,7 @@ See [`EmbeddedCodeExecutionModel.md`](../docs/parser/EmbeddedCodeExecutionModel.
 **Standard ANTLR4**: Action code is target-language code executed as a side effect during parsing.
 
 **Utils.Parser**: Actions are parsed and stored. Execution is delegated to an `IParserActionExecutor` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotExecuted`.
-An optional runtime expression-backed parser action executor can be configured explicitly; it is limited to the configured expression language and read-only contextual symbols, and surfaces compilation/execution failures as `UP1026` through `ParserEngine` diagnostics.
+An optional runtime expression-backed parser action executor can be configured explicitly; it is limited to the configured expression language and read-only contextual symbols, and currently surfaces compile/adaptation/compiled-execution failures as `UP1026` through `ParserEngine` diagnostics. `UP1028` remains reserved for explicit execution-disabled runtime policies, which the current expression-backed adapters do not expose.
 
 **Usage** — implement `IParserActionExecutor`:
 

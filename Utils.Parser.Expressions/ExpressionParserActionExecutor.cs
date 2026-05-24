@@ -48,6 +48,9 @@ public sealed class ExpressionParserActionExecutor : IParserActionExecutor
             return CompileAction(context.ActionCode, context)();
         }
 
+        // ConcurrentDictionary.GetOrAdd may invoke the value factory more than once under contention.
+        // This cache is therefore opportunistic: duplicate concurrent compilation is acceptable,
+        // but only the compiled delegate/failure is cached. Execution results are never cached.
         var executor = _compiledActionByCode.GetOrAdd(context.ActionCode, code => CompileAction(code, context));
         return executor();
     }

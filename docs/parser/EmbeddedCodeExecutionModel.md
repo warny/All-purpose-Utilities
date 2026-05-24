@@ -105,7 +105,7 @@ Strict rules:
 Prototype status update:
 
 - A first optional runtime adapter now exists to map `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
-- Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable). Expression-backed semantic predicate evaluation now returns a structured outcome so compilation failures and non-boolean expression results can carry `UP1026` metadata, while `ParserEngine` remains the only component that emits diagnostics.
+- Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable). Expression-backed semantic predicate evaluation now returns a structured outcome so compilation failures, delegate-shape adaptation failures, and runtime exceptions during compiled predicate execution can carry `UP1026` metadata, while `ParserEngine` remains the only component that emits diagnostics.
 - Current adapter scope is limited to parser semantic predicates only.
 - A first optional runtime parser action adapter now exists: `IExpressionCompiler` can be adapted to `IParserActionExecutor` for inline parser actions only.
 - Default parser runtime behavior is unchanged; inline actions still do not control parse acceptance, parse-tree shape, or branch rejection.
@@ -176,7 +176,7 @@ Conceptual outcomes:
 
 - compiled action/effect expression;
 - executable path -> `ParserActionExecutionOutcome.Executed`;
-- unavailable/disabled path -> `ParserActionExecutionOutcome.NotExecuted` + diagnostic.
+- unavailable path -> `ParserActionExecutionOutcome.NotExecuted` + diagnostic.
 
 ### Rule actions `@init` / `@after`
 
@@ -233,9 +233,9 @@ The shared embedded-code diagnostic taxonomy is:
 
 - `UP1024 EmbeddedCodeLanguageUnsupported`
 - `UP1025 EmbeddedCodeCompilerNotConfigured`
-- `UP1026 EmbeddedCodeCompilationFailed`
+- `UP1026 EmbeddedCodeCompilationFailed`: currently used by expression-backed adapters for compile, delegate adaptation, and compiled-execution failures.
 - `UP1027 EmbeddedCodePreservedNotCompiled`
-- `UP1028 EmbeddedCodeExecutionDisabled`
+- `UP1028 EmbeddedCodeExecutionDisabled`: reserved for explicit runtime policies that intentionally disable embedded-code execution. Current expression-backed adapters do not expose an `Enabled = false` policy and therefore do not emit this diagnostic.
 
 These diagnostics define future capability boundaries. They may be emitted by runtime ingestion, source generator reporting, or tooling adapters. This PR defines the taxonomy only and does not change behavior.
 
