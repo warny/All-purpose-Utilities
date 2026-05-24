@@ -30,7 +30,7 @@ public class ParserRuntimeFeaturePolicyTests
     public void ParserEngine_ExistingOverloads_ProduceEquivalentPolicies()
     {
         var definition = CreateMinimalDefinition();
-        var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var executor = new ConstantParserActionExecutor(ParserActionExecutionResult.Executed);
 
         var evaluatorOnly = new ParserEngine(definition, evaluator);
@@ -54,7 +54,7 @@ public class ParserRuntimeFeaturePolicyTests
     public void ParserRuntimeFeaturePolicy_CustomStrategies_ArePropagated()
     {
         var definition = CreateMinimalDefinition();
-        var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var executor = new ConstantParserActionExecutor(ParserActionExecutionResult.Executed);
         var policy = ParserRuntimeFeaturePolicy.Default with
         {
@@ -146,13 +146,13 @@ public class ParserRuntimeFeaturePolicyTests
     /// </summary>
     private sealed class ConstantSemanticPredicateEvaluator : ISemanticPredicateEvaluator
     {
-        private readonly SemanticPredicateEvaluationResult _result;
+        private readonly SemanticPredicateEvaluationOutcome _result;
 
         /// <summary>
         /// Initializes the evaluator with the configured evaluation result.
         /// </summary>
         /// <param name="result">Result returned for all predicate evaluations.</param>
-        public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome result)
         {
             _result = result;
         }
@@ -162,7 +162,7 @@ public class ParserRuntimeFeaturePolicyTests
         /// </summary>
         /// <param name="context">Semantic predicate evaluation context.</param>
         /// <returns>The configured result.</returns>
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
         {
             return _result;
         }

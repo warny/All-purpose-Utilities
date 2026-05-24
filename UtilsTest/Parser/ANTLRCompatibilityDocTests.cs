@@ -162,7 +162,7 @@ public class ANTLRCompatibilityDocTests
         var evaluator = new CapturingPredicateEvaluator(ctx =>
         {
             capturedCode = ctx.PredicateCode;
-            return SemanticPredicateEvaluationResult.NotEvaluated;
+            return SemanticPredicateEvaluationOutcome.NotEvaluated();
         });
         var policy = ParserRuntimeFeaturePolicy.Default with
         {
@@ -191,7 +191,7 @@ public class ANTLRCompatibilityDocTests
         {
             capturedRule = ctx.Rule;
             capturedPosition = ctx.InputPosition;
-            return SemanticPredicateEvaluationResult.Satisfied;
+            return SemanticPredicateEvaluationOutcome.Satisfied;
         });
         var policy = ParserRuntimeFeaturePolicy.Default with
         {
@@ -594,10 +594,10 @@ public class ANTLRCompatibilityDocTests
     }
 
     private sealed class CapturingPredicateEvaluator(
-        Func<SemanticPredicateEvaluationContext, SemanticPredicateEvaluationResult> evaluate)
+        Func<SemanticPredicateEvaluationContext, SemanticPredicateEvaluationOutcome> evaluate)
         : ISemanticPredicateEvaluator
     {
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
             => evaluate(context);
     }
 

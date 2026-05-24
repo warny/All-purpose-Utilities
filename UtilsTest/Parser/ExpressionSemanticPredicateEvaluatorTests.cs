@@ -20,7 +20,7 @@ public class ExpressionSemanticPredicateEvaluatorTests
 
         var result = evaluator.Evaluate(CreateContext("true"));
 
-        Assert.AreEqual(SemanticPredicateEvaluationResult.Satisfied, result);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.Satisfied, result.Status);
     }
 
     [TestMethod]
@@ -30,7 +30,7 @@ public class ExpressionSemanticPredicateEvaluatorTests
 
         var result = evaluator.Evaluate(CreateContext("false"));
 
-        Assert.AreEqual(SemanticPredicateEvaluationResult.Rejected, result);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.Rejected, result.Status);
     }
 
     [TestMethod]
@@ -40,7 +40,7 @@ public class ExpressionSemanticPredicateEvaluatorTests
 
         var result = evaluator.Evaluate(CreateContext("ruleName == \"start\""));
 
-        Assert.AreEqual(SemanticPredicateEvaluationResult.Satisfied, result);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.Satisfied, result.Status);
     }
 
     [TestMethod]
@@ -50,7 +50,7 @@ public class ExpressionSemanticPredicateEvaluatorTests
 
         var result = evaluator.Evaluate(CreateContext("throw"));
 
-        Assert.AreEqual(SemanticPredicateEvaluationResult.NotEvaluated, result);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.NotEvaluated, result.Status);
     }
 
     [TestMethod]
@@ -60,7 +60,7 @@ public class ExpressionSemanticPredicateEvaluatorTests
 
         var result = evaluator.Evaluate(CreateContext("42"));
 
-        Assert.AreEqual(SemanticPredicateEvaluationResult.NotEvaluated, result);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.NotEvaluated, result.Status);
     }
 
     [TestMethod]
@@ -83,8 +83,8 @@ public class ExpressionSemanticPredicateEvaluatorTests
         var firstResult = evaluator.Evaluate(CreateContext("ruleName == \"start\"", "start"));
         var secondResult = evaluator.Evaluate(CreateContext("ruleName == \"start\"", "other"));
 
-        Assert.AreEqual(SemanticPredicateEvaluationResult.Satisfied, firstResult);
-        Assert.AreEqual(SemanticPredicateEvaluationResult.Rejected, secondResult);
+        Assert.AreEqual(SemanticPredicateEvaluationOutcome.Satisfied, firstResult);
+        Assert.AreEqual(SemanticPredicateEvaluationOutcome.Rejected, secondResult);
     }
 
     private static SemanticPredicateEvaluationContext CreateContext(string predicateCode, string ruleName = "start")

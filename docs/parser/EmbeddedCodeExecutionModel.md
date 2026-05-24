@@ -105,7 +105,7 @@ Strict rules:
 Prototype status update:
 
 - A first optional runtime adapter now exists to map `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
-- Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable).
+- Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable). Expression-backed semantic predicate evaluation now returns a structured outcome so compilation failures and non-boolean expression results can carry `UP1026` metadata, while `ParserEngine` remains the only component that emits diagnostics.
 - Current adapter scope is limited to parser semantic predicates only.
 - Inline parser actions, lexer actions, lexer predicates, and grammar members remain outside this runtime adapter.
 - The symbol model is intentionally minimal and read-only (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`).

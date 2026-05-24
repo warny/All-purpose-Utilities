@@ -93,7 +93,7 @@ The shared embedded-code diagnostics taxonomy is documented in `EmbeddedCodeExec
 
 **Standard ANTLR4**: The predicate body is target-language code evaluated inline during parsing.
 
-**Utils.Parser**: Predicates are parsed and stored. Evaluation is delegated to an `ISemanticPredicateEvaluator` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotEvaluated`, which does **not** reject the branch — it acts as if the predicate passed.
+**Utils.Parser**: Predicates are parsed and stored. Evaluation is delegated to an `ISemanticPredicateEvaluator` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotEvaluated` without detailed diagnostic metadata, which does **not** reject the branch — it acts as if the predicate passed and `ParserEngine` emits `UP1006`.
 An optional expression-backed evaluator can be configured explicitly (for example through `omy.Utils.Parser.Expressions`) to enforce predicate outcomes when a consumer provides an `IExpressionCompiler`.
 
 **Usage** — implement `ISemanticPredicateEvaluator` and pass it via the policy:

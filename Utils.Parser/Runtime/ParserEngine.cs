@@ -24,7 +24,7 @@ namespace Utils.Parser.Runtime;
 /// and embedded actions (<see cref="EmbeddedAction"/>) are controlled by the configured
 /// <see cref="ParserRuntimeFeaturePolicy"/>.
 /// The default policy preserves conservative behavior:
-/// semantic predicates return <see cref="SemanticPredicateEvaluationResult.NotEvaluated"/>
+/// semantic predicates return <see cref="SemanticPredicateEvaluationStatus.NotEvaluated"/>
 /// and parser actions return <see cref="ParserActionExecutionResult.NotExecuted"/>.
 /// Custom injected policies may reject alternatives and may execute action handlers,
 /// which can influence parse outcomes.
@@ -664,17 +664,31 @@ public sealed class ParserEngine
             elementIndex);
 
         var evaluation = _semanticPredicateEvaluator.Evaluate(evaluationContext);
-        switch (evaluation)
+        switch (evaluation.Status)
         {
-            case SemanticPredicateEvaluationResult.Satisfied:
+            case SemanticPredicateEvaluationStatus.Satisfied:
                 return CreateEmptyNode(context, rule);
-            case SemanticPredicateEvaluationResult.Rejected:
+            case SemanticPredicateEvaluationStatus.Rejected:
                 return null;
-            case SemanticPredicateEvaluationResult.NotEvaluated:
-                diagnostics?.AddWithContext(ParserDiagnostics.SemanticPredicateNotEnforced, null, null, rule.Name, null);
+            case SemanticPredicateEvaluationStatus.NotEvaluated:
+                if (evaluation.Diagnostic is null)
+                {
+                    diagnostics?.AddWithContext(ParserDiagnostics.SemanticPredicateNotEnforced, null, null, rule.Name, null);
+                }
+                else
+                {
+                    diagnostics?.AddWithContext(
+                        evaluation.Diagnostic,
+                        null,
+                        null,
+                        rule.Name,
+                        evaluation.Exception,
+                        evaluation.DiagnosticArguments.ToArray());
+                }
+
                 return CreateEmptyNode(context, rule);
             default:
-                throw new InvalidOperationException($"Unsupported semantic predicate evaluation result: {evaluation}.");
+                throw new InvalidOperationException($"Unsupported semantic predicate evaluation status: {evaluation.Status}.");
         }
     }
 

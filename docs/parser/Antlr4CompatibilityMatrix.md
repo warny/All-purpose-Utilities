@@ -40,7 +40,7 @@ The following constructs are parsed and stored, but runtime semantic execution i
 
 | Construct | Parsed | Stored | Resolved | Executable | Runtime-supported | Diagnostics |
 |---|---|---|---|---|---|---|
-| Semantic predicates (`{ condition }?`) | Yes | Yes (predicate metadata) | Partially (policy-routed) | Policy-dependent only | Policy-routed: conservative by default (`NotEvaluated`), with optional expression-backed evaluator when explicitly configured | `SemanticPredicateNotEnforced` when evaluator returns `NotEvaluated` |
+| Semantic predicates (`{ condition }?`) | Yes | Yes (predicate metadata) | Partially (policy-routed) | Policy-dependent only | Policy-routed: conservative by default (`NotEvaluated`), with optional expression-backed evaluator when explicitly configured | `SemanticPredicateNotEnforced` (`UP1006`) when evaluator returns `NotEvaluated` without detailed metadata; `UP1026` when an expression-backed evaluator returns a detailed compile/type-failure outcome |
 | Inline actions (`{ code }`) | Yes | Yes (embedded action metadata) | No target-language semantic resolution | No by default | Parsed-but-not-executed compatibility only | `InlineActionStoredNotExecuted` |
 | Rule actions (`@init`, `@after`, unsupported action slots) | Yes | Yes (rule/action metadata) | Limited to recognized metadata slots | No | Metadata-only/ignored compatibility path | `ActionIgnored` for ignored rule or grammar action entries; `InlineActionStoredNotExecuted` when an embedded action reaches runtime policy flow |
 

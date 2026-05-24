@@ -37,7 +37,7 @@ public class ParserRuntimeInvariantTests
                 new Alternative(1, Associativity.Left, new RuleRef("sub"))
             ]));
         var definition = CreateDefinition(startRule, [subRule], LexerRule("A", "a"), LexerRule("B", "b"));
-        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionResult.NotExecuted));
 
         var result = parser.Parse([Token("A", "a")]);
@@ -87,7 +87,7 @@ public class ParserRuntimeInvariantTests
                 new Alternative(1, Associativity.Left, new RuleRef("A"))
             ]));
         var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
-        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionResult.NotExecuted));
         var diagnostics = new DiagnosticBag();
 
@@ -115,7 +115,7 @@ public class ParserRuntimeInvariantTests
                 new Alternative(1, Associativity.Left, new RuleRef("A"))
             ]));
         var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
-        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected);
+        var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected);
         var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionResult.NotExecuted));
         var diagnostics = new DiagnosticBag();
 
@@ -596,16 +596,16 @@ public class ParserRuntimeInvariantTests
 
     private sealed class CountingPredicateEvaluator : ISemanticPredicateEvaluator
     {
-        private readonly SemanticPredicateEvaluationResult _result;
+        private readonly SemanticPredicateEvaluationOutcome _result;
 
-        public CountingPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        public CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome result)
         {
             _result = result;
         }
 
         public int EvaluationCount { get; private set; }
 
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
         {
             EvaluationCount++;
             return _result;

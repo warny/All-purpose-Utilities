@@ -19,7 +19,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new ValidatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
 
         var result = parser.Parse([]);
 
@@ -31,7 +31,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new GatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied));
 
         var result = parser.Parse([]);
 
@@ -43,7 +43,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new ValidatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.NotEvaluated));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.NotEvaluated()));
         var diagnostics = new DiagnosticBag();
 
         parser.Parse([], diagnostics: diagnostics);
@@ -90,7 +90,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
             """,
             diagnostics: null);
 
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
         var lexer = new LexerEngine(definition);
         var result = parser.Parse(lexer.Tokenize(new StringReader("a")));
 
@@ -139,7 +139,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
             ParserRules: [startRule],
             RootRule: startRule));
 
-        var observer = new ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Satisfied);
+        var observer = new ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var tokens = new List<Token>
         {
             new(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")
@@ -167,7 +167,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
 
         var grammar = new CompiledGrammar(
             definition,
-            new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult.Rejected));
+            new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
 
         var result = grammar.Parse("a");
 
@@ -211,19 +211,19 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     /// </summary>
     private sealed class ConstantSemanticPredicateEvaluator : ISemanticPredicateEvaluator
     {
-        private readonly SemanticPredicateEvaluationResult _result;
+        private readonly SemanticPredicateEvaluationOutcome _result;
 
         /// <summary>
         /// Initializes the evaluator.
         /// </summary>
         /// <param name="result">Result returned by <see cref="Evaluate"/>.</param>
-        public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        public ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome result)
         {
             _result = result;
         }
 
         /// <inheritdoc />
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
         {
             return _result;
         }
@@ -234,13 +234,13 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     /// </summary>
     private sealed class ObservingSemanticPredicateEvaluator : ISemanticPredicateEvaluator
     {
-        private readonly SemanticPredicateEvaluationResult _result;
+        private readonly SemanticPredicateEvaluationOutcome _result;
 
         /// <summary>
         /// Initializes the evaluator.
         /// </summary>
         /// <param name="result">Result returned by <see cref="Evaluate"/>.</param>
-        public ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationResult result)
+        public ObservingSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome result)
         {
             _result = result;
         }
@@ -251,7 +251,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         public SemanticPredicateEvaluationContext? LastContext { get; private set; }
 
         /// <inheritdoc />
-        public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
         {
             LastContext = context;
             return _result;

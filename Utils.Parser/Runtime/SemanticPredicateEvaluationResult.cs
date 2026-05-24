@@ -1,9 +1,9 @@
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Represents the outcome of a semantic predicate evaluation.
+/// Represents the status of a semantic predicate evaluation.
 /// </summary>
-public enum SemanticPredicateEvaluationResult
+public enum SemanticPredicateEvaluationStatus
 {
     /// <summary>
     /// The predicate passed and the parser may continue.
@@ -16,7 +16,7 @@ public enum SemanticPredicateEvaluationResult
     Rejected,
 
     /// <summary>
-    /// The predicate was intentionally not evaluated by policy.
+    /// The predicate was not evaluated by runtime policy.
     /// </summary>
     NotEvaluated
 }

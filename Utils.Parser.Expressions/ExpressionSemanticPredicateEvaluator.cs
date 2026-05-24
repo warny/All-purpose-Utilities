@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using Utils.Expressions;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Runtime;
 
 namespace Utils.Parser.Expressions;
@@ -25,64 +26,59 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
         };
 
     private readonly IExpressionCompiler _compiler;
-    private readonly ConcurrentDictionary<string, Func<bool>?> _compiledPredicateByCode = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SemanticPredicateEvaluationOutcome> _compiledPredicateByCode = new(StringComparer.Ordinal);
 
-    /// <summary>
-    /// Initializes a new evaluator that compiles semantic predicate source code with the provided compiler.
-    /// </summary>
-    /// <param name="compiler">Expression compiler used to compile predicate source code.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="compiler"/> is <c>null</c>.</exception>
     public ExpressionSemanticPredicateEvaluator(IExpressionCompiler compiler)
     {
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
     }
 
-    /// <inheritdoc />
-    public SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context)
+    public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var compiledPredicate = UsesContextualSymbols(context.PredicateCode)
-            ? CompilePredicate(context.PredicateCode, context)
-            : _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
-
-        if (compiledPredicate is null)
+        if (UsesContextualSymbols(context.PredicateCode))
         {
-            return SemanticPredicateEvaluationResult.NotEvaluated;
+            return CompilePredicate(context.PredicateCode, context);
         }
 
-        return compiledPredicate() ? SemanticPredicateEvaluationResult.Satisfied : SemanticPredicateEvaluationResult.Rejected;
+        return _compiledPredicateByCode.GetOrAdd(context.PredicateCode, code => CompilePredicate(code, context));
     }
 
-    private Func<bool>? CompilePredicate(string predicateCode, SemanticPredicateEvaluationContext context)
+    private SemanticPredicateEvaluationOutcome CompilePredicate(string predicateCode, SemanticPredicateEvaluationContext context)
     {
         try
         {
             var symbols = BuildSymbols(context);
             var expression = _compiler.Compile(predicateCode, symbols);
-
             if (expression.Type != typeof(bool))
             {
-                return null;
+                return SemanticPredicateEvaluationOutcome.NotEvaluated(
+                    ParserDiagnostics.EmbeddedCodeCompilationFailed,
+                    null,
+                    "semantic predicate",
+                    $"Expected Boolean result, got {expression.Type.Name}.");
             }
 
-            return Expression.Lambda<Func<bool>>(expression).Compile();
+            return Expression.Lambda<Func<bool>>(expression).Compile()()
+                ? SemanticPredicateEvaluationOutcome.Satisfied
+                : SemanticPredicateEvaluationOutcome.Rejected;
         }
-        catch
+        catch (Exception exception)
         {
-            return null;
+            return SemanticPredicateEvaluationOutcome.NotEvaluated(
+                ParserDiagnostics.EmbeddedCodeCompilationFailed,
+                exception,
+                "semantic predicate",
+                exception.Message);
         }
     }
 
-    private static bool UsesContextualSymbols(string predicateCode)
-    {
-        return ContextSymbolRegex.IsMatch(predicateCode);
-    }
+    private static bool UsesContextualSymbols(string predicateCode) => ContextSymbolRegex.IsMatch(predicateCode);
 
     private static IReadOnlyDictionary<string, Expression> BuildSymbols(SemanticPredicateEvaluationContext context)
     {
         var symbols = new Dictionary<string, Expression>(SymbolFactoryByName.Count, StringComparer.Ordinal);
-
         foreach (var symbolEntry in SymbolFactoryByName)
         {
             symbols[symbolEntry.Key] = symbolEntry.Value(context);

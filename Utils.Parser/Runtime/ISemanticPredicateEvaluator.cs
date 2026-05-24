@@ -12,5 +12,5 @@ public interface ISemanticPredicateEvaluator
     /// <param name="context">Predicate metadata and parser location.</param>
     /// <returns>Evaluation outcome controlling branch acceptance.
     /// Implementations are expected to remain deterministic for identical invocation context when memoization is enabled.</returns>
-    SemanticPredicateEvaluationResult Evaluate(SemanticPredicateEvaluationContext context);
+    SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context);
 }
