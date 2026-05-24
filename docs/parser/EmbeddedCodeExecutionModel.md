@@ -110,9 +110,9 @@ Prototype status update:
 - A first optional runtime parser action adapter now exists: `IExpressionCompiler` can be adapted to `IParserActionExecutor` for inline parser actions only.
 - Default parser runtime behavior is unchanged; inline actions still do not control parse acceptance, parse-tree shape, or branch rejection.
 - `Executed` and `NotExecuted` outcomes both continue parsing; no context mutation, no `ContextDelta`, and no lexer action/predicate or grammar-members execution support are introduced.
-- Cache scope remains compilation-only; no parse-result caching is introduced.
 - The symbol model is intentionally minimal and read-only (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`).
-- Caching remains compilation-only and not parse-result memoization. Predicates that do not reference contextual symbols can be cached by predicate source; predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per evaluation to avoid context capture.
+- Predicate adapter cache: compilation-only and not parse-result memoization. Predicates that do not reference contextual symbols can be cached by predicate source; predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per evaluation to avoid context capture.
+- Action adapter cache: compilation-only and not parse-result memoization. Non-contextual actions can be cached by action source; actions referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are recompiled per execution to avoid context capture.
 
 ## 7. Interface boundary
 
