@@ -59,6 +59,7 @@ Current capabilities and responsibilities:
 - Runtime expression-backed semantic predicate evaluator is available as an explicit optional adapter without changing default parser behavior.
 - Semantic predicate evaluation now returns structured outcomes so `ParserEngine` can emit fallback `UP1006` or detailed embedded-code diagnostics such as `UP1026` without giving evaluators direct `DiagnosticBag` access.
 - Parser action executor abstraction is present.
+- Runtime expression-backed parser action executor is available as an explicit optional adapter without changing default parser behavior or granting actions parse-control authority.
 - Continuation metadata is present.
 - Shared-prefix metadata is present.
 - Parser feature capabilities metadata is present.
