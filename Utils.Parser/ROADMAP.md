@@ -56,6 +56,7 @@ Current capabilities and responsibilities:
 - Runtime feature policies are present.
 - Passive runtime observation hooks are available via policy configuration and remain non-authoritative.
 - Semantic predicate evaluator abstraction is present.
+- Runtime expression-backed semantic predicate evaluator is available as an explicit optional adapter without changing default parser behavior.
 - Parser action executor abstraction is present.
 - Continuation metadata is present.
 - Shared-prefix metadata is present.

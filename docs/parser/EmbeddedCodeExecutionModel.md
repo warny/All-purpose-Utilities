@@ -101,6 +101,16 @@ Strict rules:
 - `IExpressionCompiler` must be explicitly injected;
 - `Utils.Parser` core must not reference `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax` directly.
 
+
+Prototype status update:
+
+- A first optional runtime adapter now exists to map `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
+- Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable).
+- Current adapter scope is limited to parser semantic predicates only.
+- Inline parser actions, lexer actions, lexer predicates, and grammar members remain outside this runtime adapter.
+- The symbol model is intentionally minimal and read-only (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`).
+- Caching is compilation-only (predicate-source keyed), not parse-result memoization.
+
 ## 7. Interface boundary
 
 A future conceptual compiler boundary should be explicit and separated from runtime execution interfaces.

@@ -17,7 +17,7 @@ This index consolidates the parser documentation set and gives a short summary o
 
 ## Compatibility and analysis
 
-- [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md): Architecture boundary for ANTLR embedded code, including current behavior, future two-path model (source generation C# vs runtime expression compilation), cache limits, and multi-project responsibilities.
+- [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md): Architecture boundary for ANTLR embedded code, including current behavior, future two-path model (source generation C# vs runtime expression compilation), current semantic-predicate runtime adapter prototype, cache limits, and multi-project responsibilities.
 - [`../Utils.Parser/ANTLRCompatibility.md`](../../Utils.Parser/ANTLRCompatibility.md): Practical compatibility reference with feature-by-feature behavior notes and usage guidance for ANTLR4 constructs that differ from standard runtime semantics.
 - [`Antlr4CompatibilityMatrix.md`](./Antlr4CompatibilityMatrix.md): Current ANTLR4 feature support matrix with explicit levels (supported, partial, parsed-only, unsupported), including semantic-predicate vs precedence-predicate runtime-policy distinctions and continuation metadata support boundaries.
 - [`RuntimeTraceAnalysis.md`](./RuntimeTraceAnalysis.md): Tooling-oriented analysis model for runtime traces, focused on descriptive outputs rather than runtime control.
