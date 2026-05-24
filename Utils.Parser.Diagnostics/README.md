@@ -45,7 +45,7 @@ All named descriptors are defined in the `ParserDiagnostics` static class and ac
 | UP1002 | `TokensBlockIgnored` | A `tokens { ... }` block is recognized but not mapped into the model |
 | UP1003 | `ChannelsBlockIgnored` | A `channels { ... }` block is recognized but not mapped into the model |
 | UP1004 | `ActionIgnored` | A top-level `@...` action block is recognized but not executed |
-| UP1005 | `InlineActionStoredNotExecuted` | An inline `@init` / `@after` action is stored but not executed at runtime |
+| UP1005 | `InlineActionStoredNotExecuted` | An inline parser action is stored but not executed at runtime |
 | UP1006 | `SemanticPredicateNotEnforced` | A `{...}?` predicate is recognized but not evaluated; it always succeeds |
 | UP1007 | `RuleReturnsIgnored` | A `returns [...]` clause is parsed but stored only as raw text (`ReturnsPartiallyApplied` is a compatibility alias) |
 | UP1008 | `RuleLocalsIgnored` | A rule `locals [...]` clause is recognized but ignored by the current runtime model |
