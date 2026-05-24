@@ -26,7 +26,7 @@ jobs:
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
-                  name: build-outputs-${{ github.ref_name }}
+                  name: build-outputs-${{ github.run_id }}
                   path: |
                       **/bin/GitHub/**
                   if-no-files-found: warn
@@ -53,7 +53,7 @@ jobs:
             - name: Download build artifacts
               uses: actions/download-artifact@v4
               with:
-                  name: build-outputs-${{ github.ref_name }}
+                  name: build-outputs-${{ github.run_id }}
             - name: Restore packages
               run: dotnet restore ${{ matrix.project }}
             - name: Test (${{ matrix.test-suite }})
