@@ -75,6 +75,7 @@ internal sealed class G4Tokenizer
                     '#' => G4TokenKind.Hash,
                     '.' => G4TokenKind.Dot,
                     ',' => G4TokenKind.Comma,
+                    '=' => G4TokenKind.Equal,
                     '@' => G4TokenKind.At,
                     '}' => G4TokenKind.RBrace,
                     _   => (G4TokenKind)(-1)

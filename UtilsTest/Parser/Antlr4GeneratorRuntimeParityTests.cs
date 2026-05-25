@@ -94,7 +94,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void Divergence_CurrentlyRuntimeOnly_GrammarPrequelMetadata()
+    public void Parity_SupportedFacts_GrammarPrequelMetadata()
     {
         const string grammar = """
             grammar PrequelMeta;
@@ -121,14 +121,12 @@ public class Antlr4GeneratorRuntimeParityTests
         CollectionAssert.AreEqual(new[] { "header", "members", "members", "members" }, runtime.GrammarActionNames);
         CollectionAssert.AreEqual(new[] { string.Empty, string.Empty, "parser", "lexer" }, runtime.GrammarActionTargets);
 
-        Assert.AreEqual(0, generator.ImportGrammarNames.Length,
-            "Generator import metadata is diagnosed but not preserved today.");
-        Assert.AreEqual(0, generator.DeclaredTokens.Length,
-            "Generator tokens metadata is diagnosed but token names are not preserved today.");
-        Assert.AreEqual(0, generator.DeclaredChannels.Length,
-            "Generator channels metadata is diagnosed but channel names are not preserved today.");
-        Assert.AreEqual(0, generator.GrammarActionNames.Length,
-            "Generator grammar actions are diagnosed but action metadata is not preserved today.");
+        CollectionAssert.AreEqual(runtime.ImportGrammarNames, generator.ImportGrammarNames);
+        CollectionAssert.AreEqual(runtime.ImportAliases, generator.ImportAliases);
+        CollectionAssert.AreEquivalent(runtime.DeclaredTokens, generator.DeclaredTokens);
+        CollectionAssert.AreEquivalent(runtime.DeclaredChannels, generator.DeclaredChannels);
+        CollectionAssert.AreEqual(runtime.GrammarActionNames, generator.GrammarActionNames);
+        CollectionAssert.AreEqual(runtime.GrammarActionTargets, generator.GrammarActionTargets);
     }
 
     [TestMethod]
@@ -262,9 +260,11 @@ public class Antlr4GeneratorRuntimeParityTests
         string[] ExtraModeRuleNames,
         string RootRuleName,
         string[] ImportGrammarNames,
+        string[] ImportAliases,
         string[] DeclaredTokens,
         string[] DeclaredChannels,
         string[] GrammarActionNames,
+        string[] GrammarActionTargets,
         string[] InlineActions,
         string[] ValidatingPredicates,
         int RuleInitActionCount,
@@ -292,10 +292,12 @@ public class Antlr4GeneratorRuntimeParityTests
                 ExtraModeNames: grammar.ExtraModes.Select(m => m.Name).ToArray(),
                 ExtraModeRuleNames: grammar.ExtraModes.SelectMany(m => m.Rules.Select(r => $"{m.Name}:{r.Name}")).ToArray(),
                 RootRuleName: grammar.ParserRules.FirstOrDefault()?.Name ?? string.Empty,
-                ImportGrammarNames: [],
-                DeclaredTokens: [],
-                DeclaredChannels: [],
-                GrammarActionNames: [],
+                ImportGrammarNames: grammar.Imports.Select(i => i.GrammarName).ToArray(),
+                ImportAliases: grammar.Imports.Select(i => i.Alias ?? string.Empty).ToArray(),
+                DeclaredTokens: grammar.DeclaredTokens.OrderBy(x => x).ToArray(),
+                DeclaredChannels: grammar.DeclaredChannels.Concat(new[] { "DEFAULT_CHANNEL", "HIDDEN" }).Distinct().OrderBy(x => x).ToArray(),
+                GrammarActionNames: grammar.Actions.Select(a => a.Name).ToArray(),
+                GrammarActionTargets: grammar.Actions.Select(a => a.Target ?? string.Empty).ToArray(),
                 InlineActions: inlineActions.Select(TrimCode).ToArray(),
                 ValidatingPredicates: predicates.Select(TrimCode).ToArray(),
                 RuleInitActionCount: 0,

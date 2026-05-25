@@ -17,6 +17,27 @@ internal sealed class G4Grammar
     public List<G4Rule>            ParserRules { get; } = new List<G4Rule>();
     /// <summary>Extra lexer modes declared via <c>mode Name;</c>.</summary>
     public List<G4LexerMode>       ExtraModes  { get; } = new List<G4LexerMode>();
+    /// <summary>Grammar import directives declared with <c>import ...;</c>.</summary>
+    public List<G4GrammarImport>   Imports     { get; } = new List<G4GrammarImport>();
+    /// <summary>Token names declared in <c>tokens { ... }</c> blocks.</summary>
+    public List<string>            DeclaredTokens { get; } = new List<string>();
+    /// <summary>Channel names declared in <c>channels { ... }</c> blocks.</summary>
+    public List<string>            DeclaredChannels { get; } = new List<string>();
+    /// <summary>Grammar-level actions declared with <c>@...</c> constructs.</summary>
+    public List<G4GrammarAction>   Actions     { get; } = new List<G4GrammarAction>();
+}
+
+internal sealed class G4GrammarImport
+{
+    public string GrammarName { get; set; } = "";
+    public string? Alias { get; set; }
+}
+
+internal sealed class G4GrammarAction
+{
+    public string Name { get; set; } = "";
+    public string RawCode { get; set; } = "";
+    public string? Target { get; set; }
 }
 
 internal sealed class G4LexerMode
