@@ -89,6 +89,10 @@ public class Antlr4GeneratorRuntimeParityTests
 
         Assert.AreEqual(runtime.RuleInitActionCount, generator.RuleInitActionCount);
         Assert.AreEqual(runtime.RuleAfterActionCount, generator.RuleAfterActionCount);
+        CollectionAssert.AreEqual(runtime.RuleInitActionRawCodes, generator.RuleInitActionRawCodes);
+        CollectionAssert.AreEqual(runtime.RuleAfterActionRawCodes, generator.RuleAfterActionRawCodes);
+        CollectionAssert.AreEqual(new[] { "Init();" }, generator.RuleInitActionRawCodes);
+        CollectionAssert.AreEqual(new[] { "After();" }, generator.RuleAfterActionRawCodes);
     }
 
     [TestMethod]
@@ -218,6 +222,8 @@ public class Antlr4GeneratorRuntimeParityTests
         string[] ValidatingPredicates,
         int RuleInitActionCount,
         int RuleAfterActionCount,
+        string[] RuleInitActionRawCodes,
+        string[] RuleAfterActionRawCodes,
         int ParserRuleReferenceCount,
         string[] DiagnosticCodes)
     {
@@ -257,6 +263,14 @@ public class Antlr4GeneratorRuntimeParityTests
                 ValidatingPredicates: predicates.Select(TrimCode).ToArray(),
                 RuleInitActionCount: definition.ParserRules.Count(r => r.InitAction is not null),
                 RuleAfterActionCount: definition.ParserRules.Count(r => r.AfterAction is not null),
+                RuleInitActionRawCodes: definition.ParserRules
+                    .Where(r => r.InitAction is not null)
+                    .Select(r => TrimCode(r.InitAction!.RawCode))
+                    .ToArray(),
+                RuleAfterActionRawCodes: definition.ParserRules
+                    .Where(r => r.AfterAction is not null)
+                    .Select(r => TrimCode(r.AfterAction!.RawCode))
+                    .ToArray(),
                 ParserRuleReferenceCount: definition.ParserRules.Sum(r => CountParserRuleReferences(r.Content)),
                 DiagnosticCodes: diagnostics.Select(d => d.Code).Distinct().OrderBy(x => x).ToArray());
         }
@@ -330,6 +344,8 @@ public class Antlr4GeneratorRuntimeParityTests
         string[] ValidatingPredicates,
         int RuleInitActionCount,
         int RuleAfterActionCount,
+        string[] RuleInitActionRawCodes,
+        string[] RuleAfterActionRawCodes,
         int ParserRuleReferenceCount,
         string[] DiagnosticCodes)
     {
@@ -365,6 +381,14 @@ public class Antlr4GeneratorRuntimeParityTests
                 ValidatingPredicates: predicates.Select(TrimCode).ToArray(),
                 RuleInitActionCount: grammar.ParserRules.Count(r => r.InitAction is not null),
                 RuleAfterActionCount: grammar.ParserRules.Count(r => r.AfterAction is not null),
+                RuleInitActionRawCodes: grammar.ParserRules
+                    .Where(r => r.InitAction is not null)
+                    .Select(r => TrimCode(r.InitAction!.Code))
+                    .ToArray(),
+                RuleAfterActionRawCodes: grammar.ParserRules
+                    .Where(r => r.AfterAction is not null)
+                    .Select(r => TrimCode(r.AfterAction!.Code))
+                    .ToArray(),
                 ParserRuleReferenceCount: grammar.ParserRules.Sum(r => CountParserRuleReferences(r.Content)),
                 DiagnosticCodes: diagnostics.Select(d => d.Code).Distinct().OrderBy(x => x).ToArray());
         }

@@ -336,6 +336,7 @@ Current clarification status:
 - parser action execution now returns structured outcomes so `ParserEngine` can emit fallback `UP1005` or detailed embedded-code diagnostics without giving executors direct `DiagnosticBag` access.
 - generator/runtime parity characterization tests now document shared supported grammar facts and known metadata divergences without changing runtime, diagnostics, parse-tree shape, or scheduler behavior.
 - generator-side AST now preserves grammar prequel metadata (`import`, `tokens`, `channels`, and grammar-level actions including scoped targets) for parity/audit visibility while keeping runtime behavior and emitted C# unchanged.
+- generator-side AST now preserves rule lifecycle prequel metadata (`@init` / `@after`) for parity/audit visibility while keeping runtime behavior and emitted C# unchanged.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
