@@ -501,11 +501,11 @@ internal sealed class G4Parser
             return;
 
         var rawBlock = Consume().Value;
-        foreach (var rawEntry in rawBlock.Split(','))
+        var blockTokens = new G4Tokenizer(rawBlock).Tokenize();
+        foreach (var token in blockTokens)
         {
-            var name = rawEntry.Trim();
-            if (name.Length > 0)
-                names.Add(name);
+            if (token.Kind == G4TokenKind.Identifier)
+                names.Add(token.Value);
         }
     }
 

@@ -134,6 +134,30 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
+    public void Parity_SupportedFacts_PrequelNameListsIgnoreCommentsAndTrivia()
+    {
+        const string grammar = """
+            grammar PrequelComments;
+            tokens {
+                INDENT, // indentation start
+                DEDENT
+            }
+            channels {
+                COMMENT /* inline channel */
+            }
+
+            start : ID ;
+            ID : ('a'..'z')+ ;
+            """;
+
+        RuntimeFacts runtime = RuntimeFacts.From(grammar);
+        GeneratorFacts generator = GeneratorFacts.From(grammar);
+
+        CollectionAssert.AreEquivalent(runtime.DeclaredTokens, generator.DeclaredTokens);
+        CollectionAssert.AreEquivalent(runtime.DeclaredChannels, generator.DeclaredChannels);
+    }
+
+    [TestMethod]
     public void Parity_SupportedFacts_RuleLabelsDoNotBreakGeneratorAlternativeParsing()
     {
         const string grammar = """
