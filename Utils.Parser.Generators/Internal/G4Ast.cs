@@ -50,6 +50,8 @@ internal sealed class G4Rule
 {
     public string            Name       { get; set; } = "";
     public bool              IsFragment { get; set; }
+    public G4EmbeddedAction? InitAction { get; set; }
+    public G4EmbeddedAction? AfterAction { get; set; }
     public G4Alternation     Content    { get; set; } = new G4Alternation();
 }
 

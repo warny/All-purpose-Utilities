@@ -63,7 +63,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void Divergence_CurrentlyRuntimeOnly_RuleLifecycleActionsMetadata()
+    public void Parity_SupportedFacts_RuleLifecycleActionsMetadata()
     {
         const string grammar = """
             grammar RulePrequels;
@@ -87,10 +87,8 @@ public class Antlr4GeneratorRuntimeParityTests
         Assert.AreEqual(1, runtime.RuleInitActionCount);
         Assert.AreEqual(1, runtime.RuleAfterActionCount);
 
-        Assert.AreEqual(0, generator.RuleInitActionCount,
-            "G4Parser currently skips rule prequel metadata before ':' for @init actions.");
-        Assert.AreEqual(0, generator.RuleAfterActionCount,
-            "G4Parser currently skips rule prequel metadata before ':' for @after actions.");
+        Assert.AreEqual(runtime.RuleInitActionCount, generator.RuleInitActionCount);
+        Assert.AreEqual(runtime.RuleAfterActionCount, generator.RuleAfterActionCount);
     }
 
     [TestMethod]
@@ -365,8 +363,8 @@ public class Antlr4GeneratorRuntimeParityTests
                 GrammarActionRawCodes: grammar.Actions.Select(a => TrimCode(a.RawCode)).ToArray(),
                 InlineActions: inlineActions.Select(TrimCode).ToArray(),
                 ValidatingPredicates: predicates.Select(TrimCode).ToArray(),
-                RuleInitActionCount: 0,
-                RuleAfterActionCount: 0,
+                RuleInitActionCount: grammar.ParserRules.Count(r => r.InitAction is not null),
+                RuleAfterActionCount: grammar.ParserRules.Count(r => r.AfterAction is not null),
                 ParserRuleReferenceCount: grammar.ParserRules.Sum(r => CountParserRuleReferences(r.Content)),
                 DiagnosticCodes: diagnostics.Select(d => d.Code).Distinct().OrderBy(x => x).ToArray());
         }
