@@ -120,6 +120,9 @@ public class Antlr4GeneratorRuntimeParityTests
         CollectionAssert.AreEquivalent(new[] { "COMMENT", "DEFAULT_CHANNEL", "HIDDEN" }, runtime.DeclaredChannels);
         CollectionAssert.AreEqual(new[] { "header", "members", "members", "members" }, runtime.GrammarActionNames);
         CollectionAssert.AreEqual(new[] { string.Empty, string.Empty, "parser", "lexer" }, runtime.GrammarActionTargets);
+        CollectionAssert.AreEqual(
+            new[] { "using System;", "int _global;", "int _p;", "int _l;" },
+            runtime.GrammarActionRawCodes);
 
         CollectionAssert.AreEqual(runtime.ImportGrammarNames, generator.ImportGrammarNames);
         CollectionAssert.AreEqual(runtime.ImportAliases, generator.ImportAliases);
@@ -127,6 +130,23 @@ public class Antlr4GeneratorRuntimeParityTests
         CollectionAssert.AreEquivalent(runtime.DeclaredChannels, generator.DeclaredChannels);
         CollectionAssert.AreEqual(runtime.GrammarActionNames, generator.GrammarActionNames);
         CollectionAssert.AreEqual(runtime.GrammarActionTargets, generator.GrammarActionTargets);
+        CollectionAssert.AreEqual(runtime.GrammarActionRawCodes, generator.GrammarActionRawCodes);
+    }
+
+    [TestMethod]
+    public void Parity_SupportedFacts_RuleLabelsDoNotBreakGeneratorAlternativeParsing()
+    {
+        const string grammar = """
+            grammar G;
+            start : id=ID ids+=ID ;
+            ID : 'a' ;
+            """;
+
+        RuntimeFacts runtime = RuntimeFacts.From(grammar);
+        GeneratorFacts generator = GeneratorFacts.From(grammar);
+
+        Assert.AreEqual(2, runtime.ParserRuleReferenceCount);
+        Assert.AreEqual(runtime.ParserRuleReferenceCount, generator.ParserRuleReferenceCount);
     }
 
     [TestMethod]
@@ -171,10 +191,12 @@ public class Antlr4GeneratorRuntimeParityTests
         string[] DeclaredChannels,
         string[] GrammarActionNames,
         string[] GrammarActionTargets,
+        string[] GrammarActionRawCodes,
         string[] InlineActions,
         string[] ValidatingPredicates,
         int RuleInitActionCount,
         int RuleAfterActionCount,
+        int ParserRuleReferenceCount,
         string[] DiagnosticCodes)
     {
         public static RuntimeFacts From(string grammarText)
@@ -208,10 +230,12 @@ public class Antlr4GeneratorRuntimeParityTests
                 DeclaredChannels: definition.DeclaredChannels.OrderBy(x => x).ToArray(),
                 GrammarActionNames: definition.Actions.Select(a => a.Name).ToArray(),
                 GrammarActionTargets: definition.Actions.Select(a => a.Target ?? string.Empty).ToArray(),
+                GrammarActionRawCodes: definition.Actions.Select(a => TrimCode(a.RawCode)).ToArray(),
                 InlineActions: inlineActions.Select(TrimCode).ToArray(),
                 ValidatingPredicates: predicates.Select(TrimCode).ToArray(),
                 RuleInitActionCount: definition.ParserRules.Count(r => r.InitAction is not null),
                 RuleAfterActionCount: definition.ParserRules.Count(r => r.AfterAction is not null),
+                ParserRuleReferenceCount: definition.ParserRules.Sum(r => CountParserRuleReferences(r.Content)),
                 DiagnosticCodes: diagnostics.Select(d => d.Code).Distinct().OrderBy(x => x).ToArray());
         }
 
@@ -248,6 +272,20 @@ public class Antlr4GeneratorRuntimeParityTests
                     break;
             }
         }
+
+        private static int CountParserRuleReferences(RuleContent content)
+        {
+            return content switch
+            {
+                RuleRef => 1,
+                Alternation alternation => alternation.Alternatives.Sum(CountParserRuleReferences),
+                Alternative alternative => CountParserRuleReferences(alternative.Content),
+                Sequence sequence => sequence.Items.Sum(CountParserRuleReferences),
+                Quantifier quantifier => CountParserRuleReferences(quantifier.Inner),
+                Negation negation => CountParserRuleReferences(negation.Inner),
+                _ => 0,
+            };
+        }
     }
 
     private sealed record GeneratorFacts(
@@ -265,10 +303,12 @@ public class Antlr4GeneratorRuntimeParityTests
         string[] DeclaredChannels,
         string[] GrammarActionNames,
         string[] GrammarActionTargets,
+        string[] GrammarActionRawCodes,
         string[] InlineActions,
         string[] ValidatingPredicates,
         int RuleInitActionCount,
         int RuleAfterActionCount,
+        int ParserRuleReferenceCount,
         string[] DiagnosticCodes)
     {
         public static GeneratorFacts From(string grammarText)
@@ -298,10 +338,12 @@ public class Antlr4GeneratorRuntimeParityTests
                 DeclaredChannels: grammar.DeclaredChannels.Concat(new[] { "DEFAULT_CHANNEL", "HIDDEN" }).Distinct().OrderBy(x => x).ToArray(),
                 GrammarActionNames: grammar.Actions.Select(a => a.Name).ToArray(),
                 GrammarActionTargets: grammar.Actions.Select(a => a.Target ?? string.Empty).ToArray(),
+                GrammarActionRawCodes: grammar.Actions.Select(a => TrimCode(a.RawCode)).ToArray(),
                 InlineActions: inlineActions.Select(TrimCode).ToArray(),
                 ValidatingPredicates: predicates.Select(TrimCode).ToArray(),
                 RuleInitActionCount: 0,
                 RuleAfterActionCount: 0,
+                ParserRuleReferenceCount: grammar.ParserRules.Sum(r => CountParserRuleReferences(r.Content)),
                 DiagnosticCodes: diagnostics.Select(d => d.Code).Distinct().OrderBy(x => x).ToArray());
         }
 
@@ -349,6 +391,20 @@ public class Antlr4GeneratorRuntimeParityTests
                     CollectAlternativeMetadata(negation.Inner, inlineActions, predicates);
                     break;
             }
+        }
+
+        private static int CountParserRuleReferences(G4Content content)
+        {
+            return content switch
+            {
+                G4RuleRef => 1,
+                G4Alternation alternation => alternation.Alternatives.Sum(CountParserRuleReferences),
+                G4Alternative alternative => alternative.Items.Sum(CountParserRuleReferences),
+                G4Sequence sequence => sequence.Items.Sum(CountParserRuleReferences),
+                G4Quantifier quantifier => CountParserRuleReferences(quantifier.Inner),
+                G4Negation negation => CountParserRuleReferences(negation.Inner),
+                _ => 0,
+            };
         }
     }
 

@@ -213,6 +213,12 @@ internal sealed class G4Parser
             return ParseLexerCommand();
         }
 
+        if (TryConsumeRuleLabelPrefix())
+        {
+            // Label prefixes like x=... and xs+=... are currently metadata-only for the generator AST.
+            // They are intentionally ignored here while preserving deterministic element parsing.
+        }
+
         // Negation: ~
         G4Content atom;
         if (Peek().Kind == G4TokenKind.Tilde)
@@ -308,6 +314,34 @@ internal sealed class G4Parser
         }
 
         return atom;
+    }
+
+    /// <summary>
+    /// Consumes an optional rule label prefix (<c>id=</c> or <c>ids+=</c>) and returns whether one was consumed.
+    /// </summary>
+    private bool TryConsumeRuleLabelPrefix()
+    {
+        if (Peek().Kind != G4TokenKind.Identifier)
+            return false;
+
+        if (_pos + 1 < _tokens.Count && _tokens[_pos + 1].Kind == G4TokenKind.Equal)
+        {
+            Consume();
+            Consume();
+            return true;
+        }
+
+        if (_pos + 2 < _tokens.Count
+            && _tokens[_pos + 1].Kind == G4TokenKind.Plus
+            && _tokens[_pos + 2].Kind == G4TokenKind.Equal)
+        {
+            Consume();
+            Consume();
+            Consume();
+            return true;
+        }
+
+        return false;
     }
 
     // ── Char class ────────────────────────────────────────────────────
