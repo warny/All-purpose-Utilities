@@ -222,6 +222,61 @@ public class Antlr4GrammarGeneratorTests
     }
 
     [TestMethod]
+    public void Parser_RuleInitAction_IsPreserved()
+    {
+        var grammar = Parse("""
+            grammar G;
+            rule
+                @init { Init(); }
+                : ID
+                ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        Assert.AreEqual(1, grammar.ParserRules.Count);
+        Assert.IsNotNull(grammar.ParserRules[0].InitAction);
+        Assert.AreEqual("Init();", grammar.ParserRules[0].InitAction!.Code.Trim());
+    }
+
+    [TestMethod]
+    public void Parser_RuleAfterAction_IsPreserved()
+    {
+        var grammar = Parse("""
+            grammar G;
+            rule
+                @after { After(); }
+                : ID
+                ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        Assert.AreEqual(1, grammar.ParserRules.Count);
+        Assert.IsNotNull(grammar.ParserRules[0].AfterAction);
+        Assert.AreEqual("After();", grammar.ParserRules[0].AfterAction!.Code.Trim());
+    }
+
+    [TestMethod]
+    public void Parser_RuleLifecycleActions_DoNotChangeRuleContent()
+    {
+        var grammar = Parse("""
+            grammar G;
+            rule
+                @init { Init(); }
+                @after { After(); }
+                : ID
+                ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        var content = grammar.ParserRules[0].Content;
+        Assert.AreEqual(1, content.Alternatives.Count);
+        Assert.AreEqual(1, content.Alternatives[0].Items.Count);
+        var ruleRef = content.Alternatives[0].Items[0] as G4RuleRef;
+        Assert.IsNotNull(ruleRef);
+        Assert.AreEqual("ID", ruleRef.RuleName);
+    }
+
+    [TestMethod]
     public void Emitter_StringSyntaxName_RemovesTrailingGrammarSuffix()
     {
         var src = Emit("grammar SqlQueryGrammar; query : SELECT ; SELECT : 'SELECT' ;", "", "Cls", "g.g4");

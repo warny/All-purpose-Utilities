@@ -140,8 +140,14 @@ internal sealed class G4Parser
         rule.Name = ExpectIdentifier();
 
         // Skip optional rule options/returns/throws/locals before ':'
+        // while preserving rule lifecycle metadata (@init / @after).
         while (!AtEof() && Peek().Kind != G4TokenKind.Colon)
-            Consume();
+        {
+            if (!TryParseRuleLifecycleAction(rule))
+            {
+                Consume();
+            }
+        }
 
         Expect(G4TokenKind.Colon);
 
@@ -150,6 +156,59 @@ internal sealed class G4Parser
         Expect(G4TokenKind.Semi);
 
         return rule;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule lifecycle prequel action (<c>@init { ... }</c> or <c>@after { ... }</c>)
+    /// at the current token position and stores it on the provided <see cref="G4Rule"/>.
+    /// </summary>
+    /// <param name="rule">The rule receiving parsed lifecycle metadata.</param>
+    /// <returns>
+    /// <c>true</c> when a supported lifecycle action is recognized and consumed; otherwise, <c>false</c>.
+    /// </returns>
+    private bool TryParseRuleLifecycleAction(G4Rule rule)
+    {
+        if (Peek().Kind != G4TokenKind.At)
+        {
+            return false;
+        }
+
+        if (_pos + 2 >= _tokens.Count
+            || _tokens[_pos + 1].Kind != G4TokenKind.Identifier
+            || _tokens[_pos + 2].Kind != G4TokenKind.BraceBlock)
+        {
+            return false;
+        }
+
+        string actionName = _tokens[_pos + 1].Value;
+        string actionCode = _tokens[_pos + 2].Value;
+
+        if (!string.Equals(actionName, "init", StringComparison.Ordinal)
+            && !string.Equals(actionName, "after", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        Consume(); // @
+        Consume(); // init | after
+        Consume(); // { ... }
+
+        var action = new G4EmbeddedAction
+        {
+            Code = actionCode,
+            IsPredicate = false,
+        };
+
+        if (string.Equals(actionName, "init", StringComparison.Ordinal))
+        {
+            rule.InitAction = action;
+        }
+        else
+        {
+            rule.AfterAction = action;
+        }
+
+        return true;
     }
 
     // ── Alternation ──────────────────────────────────────────────────
