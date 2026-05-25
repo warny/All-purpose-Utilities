@@ -158,6 +158,14 @@ internal sealed class G4Parser
         return rule;
     }
 
+    /// <summary>
+    /// Attempts to parse a rule lifecycle prequel action (<c>@init { ... }</c> or <c>@after { ... }</c>)
+    /// at the current token position and stores it on the provided <see cref="G4Rule"/>.
+    /// </summary>
+    /// <param name="rule">The rule receiving parsed lifecycle metadata.</param>
+    /// <returns>
+    /// <c>true</c> when a supported lifecycle action is recognized and consumed; otherwise, <c>false</c>.
+    /// </returns>
     private bool TryParseRuleLifecycleAction(G4Rule rule)
     {
         if (Peek().Kind != G4TokenKind.At)
