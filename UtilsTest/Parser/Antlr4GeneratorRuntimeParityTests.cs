@@ -176,31 +176,177 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void Divergence_CurrentBehavior_PrequelDiagnosticsAreReportedByBothPaths()
+    public void RuntimeAndGenerator_Diagnostics_ImportParity()
     {
         const string grammar = """
             grammar DiagnosticParity;
             import CommonLexer;
-            tokens { INDENT }
-            channels { COMMENT }
-            @members { int _g; }
-
-            start : { Act(); } { Pred() }? ID ;
+            start : ID ;
             ID : ('a'..'z')+ ;
             """;
 
-        RuntimeFacts runtime = RuntimeFacts.From(grammar);
-        GeneratorFacts generator = GeneratorFacts.From(grammar);
-
-        CollectionAssert.Contains(runtime.DiagnosticCodes, "UP1001");
-
-        foreach (string code in new[] { "UP1002", "UP1003", "UP1004", "UP1005" })
-        {
-            CollectionAssert.Contains(generator.DiagnosticCodes, code);
-        }
-
-        CollectionAssert.Contains(generator.DiagnosticCodes, "UP1001");
+        AssertDiagnosticParity(grammar);
     }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_TokensParity()
+    {
+        const string grammar = """
+            grammar DiagnosticParity;
+            tokens { INDENT }
+            start : ID ;
+            ID : ('a'..'z')+ ;
+            """;
+
+        AssertDiagnosticParity(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_ChannelsParity()
+    {
+        const string grammar = """
+            grammar DiagnosticParity;
+            channels { COMMENT }
+            start : ID ;
+            ID : ('a'..'z')+ ;
+            """;
+
+        AssertDiagnosticParity(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_GrammarActionsParity()
+    {
+        const string grammar = """
+            grammar DiagnosticParity;
+            @members { int _g; }
+            start : ID ;
+            ID : ('a'..'z')+ ;
+            """;
+
+        var runtimeDiagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.ParseUnresolved(grammar, runtimeDiagnostics);
+        var generatorDiagnostics = new DiagnosticBag();
+        _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), generatorDiagnostics).Parse();
+        Assert.AreEqual(0, runtimeDiagnostics.Count(d => d.Code == "UP1004"));
+        Assert.AreEqual(1, generatorDiagnostics.Count(d => d.Code == "UP1004"));
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_InlineActionParity()
+    {
+        const string grammar = """
+            grammar DiagnosticParity;
+            start : { Act(); } ID ;
+            ID : ('a'..'z')+ ;
+            """;
+
+        AssertDiagnosticParity(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_PredicateParity()
+    {
+        const string grammar = """
+            grammar DiagnosticParity;
+            start : { Pred() }? ID ;
+            ID : ('a'..'z')+ ;
+            """;
+
+        AssertDiagnosticParity(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_MissingBraceParity()
+    {
+        const string grammar = "grammar G; start : { Act(); ID ; ID : ('a'..'z')+ ;";
+        AssertGeneratorRecoveryDiagnostics(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_MalformedImportParity()
+    {
+        const string grammar = "grammar G; import ; start : ID ; ID : ('a'..'z')+ ;";
+        AssertGeneratorRecoveryDiagnostics(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_MalformedChannelListParity()
+    {
+        const string grammar = "grammar G; channels ; start : ID ; ID : ('a'..'z')+ ;";
+        AssertGeneratorRecoveryDiagnostics(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_MalformedActionParity()
+    {
+        const string grammar = "grammar G; @ ; start : ID ; ID : ('a'..'z')+ ;";
+        AssertGeneratorRecoveryDiagnostics(grammar);
+    }
+
+    [TestMethod]
+    public void RuntimeAndGenerator_Diagnostics_MalformedLifecycleBlockParity()
+    {
+        const string grammar = "grammar G; start @init : ID ; ID : ('a'..'z')+ ;";
+        var diagnostics = new DiagnosticBag();
+        _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), diagnostics).Parse();
+    }
+
+    private static void AssertDiagnosticParity(string grammar)
+    {
+        var runtimeDiagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.ParseUnresolved(grammar, runtimeDiagnostics);
+
+        var generatorDiagnostics = new DiagnosticBag();
+        _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), generatorDiagnostics).Parse();
+
+        var runtime = runtimeDiagnostics
+            .Where(static d => IsCompatibilityParityDiagnostic(d.Code))
+            .Select(ToSnapshot)
+            .ToArray();
+        var generator = generatorDiagnostics
+            .Where(static d => IsCompatibilityParityDiagnostic(d.Code))
+            .Select(ToSnapshot)
+            .ToArray();
+        Assert.AreEqual(runtime.Length, generator.Length, "Diagnostic count mismatch.");
+
+        for (int i = 0; i < runtime.Length; i++)
+        {
+            Assert.AreEqual(runtime[i].Code, generator[i].Code, $"Diagnostic code mismatch at index {i}.");
+            Assert.AreEqual(runtime[i].Severity, generator[i].Severity, $"Diagnostic severity mismatch at index {i}.");
+            Assert.AreEqual(runtime[i].Line, generator[i].Line, $"Diagnostic line mismatch at index {i}.");
+            Assert.AreEqual(runtime[i].Column, generator[i].Column, $"Diagnostic column mismatch at index {i}.");
+            Assert.AreEqual(runtime[i].SpanStart, generator[i].SpanStart, $"Diagnostic span start mismatch at index {i}.");
+            Assert.AreEqual(runtime[i].SpanLength, generator[i].SpanLength, $"Diagnostic span length mismatch at index {i}.");
+        }
+    }
+
+    private static DiagnosticSnapshot ToSnapshot(ParserDiagnostic diagnostic)
+        => new(
+            diagnostic.Code,
+            diagnostic.Severity,
+            diagnostic.Line,
+            diagnostic.Column,
+            diagnostic.SpanStart,
+            diagnostic.SpanLength);
+
+    private static bool IsCompatibilityParityDiagnostic(string code)
+        => code is "UP1001" or "UP1002" or "UP1003" or "UP1004" or "UP1005" or "UP1006";
+
+    private static void AssertGeneratorRecoveryDiagnostics(string grammar)
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), diagnostics).Parse();
+        Assert.IsTrue(diagnostics.Count > 0);
+    }
+
+    private sealed record DiagnosticSnapshot(
+        string Code,
+        DiagnosticSeverity Severity,
+        int? Line,
+        int? Column,
+        int? SpanStart,
+        int? SpanLength);
 
     private sealed record RuntimeFacts(
         string Name,

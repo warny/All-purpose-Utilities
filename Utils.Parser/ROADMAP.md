@@ -205,6 +205,7 @@ Current clarification status:
 - orchestration diagnostics (pruning/backtracking) are explicitly separated from engine-authoritative parse diagnostics,
 - compatibility diagnostics are explicitly documented as independent from parse success/failure.
 - unsupported ANTLR4 lexer-command constructs are now surfaced via explicit deterministic compatibility diagnostics.
+- generator/runtime diagnostic parity for `UP1001`-`UP1006` was tightened with parity tests while preserving parsing semantics and recovery determinism.
 
 ### Phase 3 — Lookahead contract consolidation
 

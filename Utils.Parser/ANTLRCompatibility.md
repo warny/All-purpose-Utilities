@@ -275,6 +275,21 @@ These capabilities are outside the current runtime model by design. Attempting t
 
 ---
 
+## Runtime/Generator diagnostics parity inventory
+
+| Diagnostic | Runtime | Generator | Equivalent | Notes |
+|---|---|---|---|---|
+| `UP1001` ImportParsedButNotResolved | Emitted when `import` is parsed but unresolved. | Emitted when `import` is parsed but unresolved. | Yes | Deterministic recovery: keep parsing and preserve import metadata. |
+| `UP1002` TokensBlockIgnored | Emitted when `tokens { ... }` is parsed. | Emitted when `tokens { ... }` is parsed. | Yes | Deterministic recovery: keep parsing and preserve declared token names. |
+| `UP1003` ChannelsBlockIgnored | Emitted when `channels { ... }` is parsed. | Emitted when `channels { ... }` is parsed. | Yes | Deterministic recovery: keep parsing and preserve declared channel names. |
+| `UP1004` ActionIgnored | Emitted for ignored grammar/rule actions outside supported lifecycle slots. | Emitted for ignored grammar-level actions. | Partial | Runtime has broader rule-prequel coverage; this remains intentional and documented. |
+| `UP1005` InlineActionStoredNotExecuted | Emitted for inline `{ ... }` action nodes. | Emitted for inline `{ ... }` action nodes. | Yes | Deterministic recovery: metadata is preserved; action execution is not enabled. |
+| `UP1006` SemanticPredicateNotEnforced | Emitted for `{ ... }?` nodes in conservative runtime policy mode. | Emitted for `{ ... }?` nodes during generator parse. | Yes | Deterministic recovery: predicate metadata is preserved and parsing continues. |
+
+Intentional remaining difference: runtime diagnostics can include broader rule-context metadata for rule-prequel constructs (`returns`, `locals`, exception metadata) that are outside generator parser scope.
+
+---
+
 ## Diagnostics quick reference
 
 | Prefix | Severity | Meaning |
