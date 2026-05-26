@@ -60,6 +60,7 @@ internal sealed class G4Parser
             if (PeekValue("tokens"))
             {
                 _diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored);
+                grammar.HasTokensBlock = true;
                 ParseNameListBlock(grammar.DeclaredTokens);
                 continue;
             }
@@ -84,6 +85,7 @@ internal sealed class G4Parser
             if (PeekValue("channels"))
             {
                 _diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored);
+                grammar.HasChannelsBlock = true;
                 ParseNameListBlock(grammar.DeclaredChannels);
                 continue;
             }

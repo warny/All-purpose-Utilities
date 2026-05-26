@@ -1,3 +1,4 @@
+using System;
 using Utils.Parser.Model;
 
 namespace Utils.Parser.Antlr4.Common;
@@ -31,6 +32,22 @@ internal static class Antlr4RuntimePrequelMapper
             imports,
             actions,
             Antlr4NameSet.Create(definition.DeclaredTokens),
-            Antlr4NameSet.Create(definition.DeclaredChannels));
+            Antlr4NameSet.Create(definition.DeclaredChannels),
+            HasTokensBlock: definition.DeclaredTokens.Count > 0,
+            HasChannelsBlock: HasNonDefaultChannel(definition.DeclaredChannels));
+    }
+
+    private static bool HasNonDefaultChannel(IReadOnlySet<string> channels)
+    {
+        foreach (var channel in channels)
+        {
+            if (!string.Equals(channel, "DEFAULT_CHANNEL", StringComparison.Ordinal)
+                && !string.Equals(channel, "HIDDEN", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

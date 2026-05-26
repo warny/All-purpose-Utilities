@@ -36,6 +36,8 @@ internal static class Antlr4GeneratorPrequelMapper
             imports,
             actions,
             Antlr4NameSet.Create(grammar.DeclaredTokens),
-            Antlr4NameSet.Create(channels));
+            Antlr4NameSet.Create(channels),
+            HasTokensBlock: grammar.HasTokensBlock,
+            HasChannelsBlock: grammar.HasChannelsBlock);
     }
 }

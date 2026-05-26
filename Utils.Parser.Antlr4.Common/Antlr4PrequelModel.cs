@@ -8,9 +8,13 @@ namespace Utils.Parser.Antlr4.Common;
 /// <param name="Actions">Grammar actions in source order.</param>
 /// <param name="DeclaredTokens">Declared tokens from <c>tokens { ... }</c> blocks.</param>
 /// <param name="DeclaredChannels">Declared channels from <c>channels { ... }</c> blocks.</param>
+/// <param name="HasTokensBlock"><c>true</c> when a <c>tokens { ... }</c> block was parsed, including empty blocks.</param>
+/// <param name="HasChannelsBlock"><c>true</c> when a <c>channels { ... }</c> block was parsed, including default-only blocks.</param>
 public sealed record Antlr4PrequelModel(
     Antlr4OptionSet? Options,
     IReadOnlyList<Antlr4ImportInfo> Imports,
     IReadOnlyList<Antlr4ActionInfo> Actions,
     ISet<string> DeclaredTokens,
-    ISet<string> DeclaredChannels);
+    ISet<string> DeclaredChannels,
+    bool HasTokensBlock = false,
+    bool HasChannelsBlock = false);

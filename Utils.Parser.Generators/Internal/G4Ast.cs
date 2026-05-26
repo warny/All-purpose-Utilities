@@ -21,8 +21,12 @@ internal sealed class G4Grammar
     public List<G4GrammarImport>   Imports     { get; } = new List<G4GrammarImport>();
     /// <summary>Token names declared in <c>tokens { ... }</c> blocks.</summary>
     public List<string>            DeclaredTokens { get; } = new List<string>();
+    /// <summary>Whether at least one <c>tokens { ... }</c> block was parsed.</summary>
+    public bool HasTokensBlock { get; set; }
     /// <summary>Channel names declared in <c>channels { ... }</c> blocks.</summary>
     public List<string>            DeclaredChannels { get; } = new List<string>();
+    /// <summary>Whether at least one <c>channels { ... }</c> block was parsed.</summary>
+    public bool HasChannelsBlock { get; set; }
     /// <summary>Grammar-level actions declared with <c>@...</c> constructs.</summary>
     public List<G4GrammarAction>   Actions     { get; } = new List<G4GrammarAction>();
 }
