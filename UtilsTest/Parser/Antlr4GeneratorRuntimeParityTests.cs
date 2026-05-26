@@ -287,8 +287,8 @@ public class Antlr4GeneratorRuntimeParityTests
     [TestMethod]
     public void Divergence_RuntimeAndGenerator_Diagnostics_MalformedLifecycleBlockRecovery()
     {
-        const string grammar = "grammar G; start @init : ID ; ID : ('a'..'z')+ ;";
-        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 0);
+        const string grammar = "grammar G; start @init { Init(); : ID ; ID : ('a'..'z')+ ;";
+        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 1);
     }
 
     private static void AssertDiagnosticParity(string grammar)
