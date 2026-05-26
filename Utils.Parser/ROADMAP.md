@@ -206,6 +206,7 @@ Current clarification status:
 - compatibility diagnostics are explicitly documented as independent from parse success/failure.
 - unsupported ANTLR4 lexer-command constructs are now surfaced via explicit deterministic compatibility diagnostics.
 - generator/runtime diagnostic parity for `UP1001`-`UP1006` was tightened with parity tests while preserving parsing semantics and recovery determinism.
+- shared ANTLR4 prequel DTOs now include shared neutral prequel validation facts in `Utils.Parser.Antlr4.Common`; runtime and generator continue to own conversion into `ParserDiagnostics`, and parsing remains intentionally separate.
 
 ### Phase 3 — Lookahead contract consolidation
 
