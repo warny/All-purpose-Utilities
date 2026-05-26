@@ -63,6 +63,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.Diagnostics", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.Expressions", "Utils.Parser.Expressions\Utils.Parser.Expressions.csproj", "{4283445C-8919-4AEE-B70B-9F147E426A71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Parser.Antlr4.Common", "Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj", "{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -614,6 +616,24 @@ Global
 		{4283445C-8919-4AEE-B70B-9F147E426A71}.Release|x64.Build.0 = Release|Any CPU
 		{4283445C-8919-4AEE-B70B-9F147E426A71}.Release|x86.ActiveCfg = Release|Any CPU
 		{4283445C-8919-4AEE-B70B-9F147E426A71}.Release|x86.Build.0 = Release|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Debug|x64.Build.0 = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Debug|x86.Build.0 = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.GitHub|Any CPU.ActiveCfg = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.GitHub|Any CPU.Build.0 = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.GitHub|x64.ActiveCfg = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.GitHub|x64.Build.0 = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.GitHub|x86.ActiveCfg = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.GitHub|x86.Build.0 = Debug|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Release|x64.ActiveCfg = Release|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Release|x64.Build.0 = Release|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Release|x86.ActiveCfg = Release|Any CPU
+		{82AFC0D5-5D43-4AE3-B04C-AE7F38924476}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
