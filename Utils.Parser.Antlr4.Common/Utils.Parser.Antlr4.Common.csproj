@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <Authors>Olivier MARTY</Authors>
+        <Description>Shared ANTLR4 prequel DTOs used by runtime and generator mapping paths.</Description>
+    </PropertyGroup>
+
+</Project>

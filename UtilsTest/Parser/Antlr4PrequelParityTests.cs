@@ -110,18 +110,7 @@ public class Antlr4PrequelParityTests
     private static Antlr4PrequelModel ParseGenerator(string grammar)
     {
         var g4 = new G4Parser(new G4Tokenizer(grammar).Tokenize()).Parse();
-        return Antlr4GeneratorPrequelMapper.Map(
-            g4.Options,
-            g4.Imports,
-            g4.Actions,
-            g4.DeclaredTokens,
-            g4.DeclaredChannels,
-            includeDefaultChannels: true,
-            grammarNameSelector: static import => import.GrammarName,
-            aliasSelector: static import => import.Alias,
-            actionNameSelector: static action => action.Name,
-            actionCodeSelector: static action => action.RawCode,
-            actionTargetSelector: static action => action.Target);
+        return Antlr4GeneratorPrequelMapper.Map(g4);
     }
 
     private const string PrequelGrammar = """
