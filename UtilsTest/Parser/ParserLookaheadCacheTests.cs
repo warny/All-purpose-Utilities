@@ -151,8 +151,10 @@ public class ParserLookaheadCacheTests
             d.Code == ParserDiagnostics.ParseMemoHit.Code
             && d.RuleName == "failing");
 
-        Assert.AreEqual(1, failingMisses);
-        Assert.IsTrue(failingHits >= 1);
+        Assert.AreEqual(1, failingMisses,
+            "Exactly one memo-miss for 'failing': the first branch pays the full parse cost.");
+        Assert.AreEqual(1, failingHits,
+            "Exactly one memo-hit for 'failing': the second branch ('failing Y') reuses the cached rejection.");
     }
 
     private static ParseNode Parse(string grammarText, string input, out DiagnosticBag diagnostics)
