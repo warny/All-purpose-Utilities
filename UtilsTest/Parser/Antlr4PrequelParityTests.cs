@@ -110,7 +110,13 @@ public class Antlr4PrequelParityTests
     private static Antlr4PrequelModel ParseGenerator(string grammar)
     {
         var g4 = new G4Parser(new G4Tokenizer(grammar).Tokenize()).Parse();
-        return GeneratorPrequelMapper.Map(g4);
+        return Antlr4GeneratorPrequelMapper.Map(
+            g4.Options,
+            g4.Imports.Select(static import => new Antlr4ImportInfo(import.GrammarName, import.Alias)).ToList(),
+            g4.Actions.Select(static action => new Antlr4ActionInfo(action.Name, action.RawCode, action.Target)).ToList(),
+            g4.DeclaredTokens,
+            g4.DeclaredChannels,
+            includeDefaultChannels: true);
     }
 
     private const string PrequelGrammar = """
@@ -128,35 +134,4 @@ public class Antlr4PrequelParityTests
         start : ID ;
         ID : ('a'..'z')+ ;
         """;
-}
-
-internal static class GeneratorPrequelMapper
-{
-    public static Antlr4PrequelModel Map(G4Grammar grammar)
-    {
-        Antlr4OptionSet? options = grammar.Options.Count == 0
-            ? null
-            : new Antlr4OptionSet(grammar.Options);
-
-        var imports = grammar.Imports
-            .Select(static import => new Antlr4ImportInfo(import.GrammarName, import.Alias))
-            .ToList();
-
-        var actions = grammar.Actions
-            .Select(static action => new Antlr4ActionInfo(action.Name, action.RawCode, action.Target))
-            .ToList();
-
-        var declaredChannels = new HashSet<string>(grammar.DeclaredChannels, StringComparer.Ordinal)
-        {
-            "DEFAULT_CHANNEL",
-            "HIDDEN",
-        };
-
-        return new Antlr4PrequelModel(
-            options,
-            imports,
-            actions,
-            new HashSet<string>(grammar.DeclaredTokens, StringComparer.Ordinal),
-            declaredChannels);
-    }
 }
