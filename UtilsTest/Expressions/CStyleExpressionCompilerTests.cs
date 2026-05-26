@@ -280,7 +280,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         Expression expression = compiler.Compile("while (true) 1", new ExpressionCompilerContext());
-        Assert.AreEqual(ExpressionType.TryCatch, expression.NodeType,
+        Assert.AreEqual(ExpressionType.Try, expression.NodeType,
             "while loops are wrapped in a try-catch to support break statements.");
     }
 
@@ -409,7 +409,7 @@ public class CSyntaxExpressionCompilerTests
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
 
-        Expression expression = compiler.Compile("x => x + 1", context);
+        Expression expression = compiler.Compile("(double x) => x + 1", context);
         Assert.IsInstanceOfType<LambdaExpression>(expression);
         var lambda = (LambdaExpression)expression;
         Assert.AreEqual(1, lambda.Parameters.Count);
