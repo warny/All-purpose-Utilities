@@ -217,8 +217,11 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
-        Expression declaration = compiler.Compile("public double add(double a, double b) { a + b }", context);
-        Assert.IsNotNull(declaration);
+        compiler.Compile("public double add(double a, double b) { a + b }", context);
+
+        Assert.IsTrue(context.TryGet("add", out object? addSymbol));
+        Assert.IsInstanceOfType<Func<double, double, double>>(addSymbol);
+        Assert.AreEqual(5d, ((Func<double, double, double>)addSymbol!)(2d, 3d));
     }
 
     /// <summary>
@@ -272,29 +275,47 @@ public class CSyntaxExpressionCompilerTests
         Assert.AreEqual(42d, lambda());
     }
 
-    /// <summary>
-    /// Ensures core control-flow structures can be parsed into expression nodes.
-    /// </summary>
-    /// <param name="source">The source snippet containing a control-flow structure.</param>
-    [DataTestMethod]
-    [DataRow("while (true) 1")]
-    [DataRow("if (true) 1")]
-    [DataRow("if (true) 1 else 2")]
-    [DataRow("switch (1) { case 1: 2 default: 3 }")]
-    public void Compile_SupportedControlStructures_ProducesExpressionNode(string source)
+    [TestMethod]
+    public void Compile_WhileInstruction_ProducesTryCatchWrapper()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var context = new ExpressionCompilerContext();
+        Expression expression = compiler.Compile("while (true) 1", new ExpressionCompilerContext());
+        Assert.AreEqual(ExpressionType.TryCatch, expression.NodeType,
+            "while loops are wrapped in a try-catch to support break statements.");
+    }
 
-        Expression expression = compiler.Compile(source, context);
+    [TestMethod]
+    public void Compile_IfInstruction_WithoutElse_ProducesConditionalExpression()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("if (true) 1", new ExpressionCompilerContext());
+        Assert.IsInstanceOfType<ConditionalExpression>(expression);
+    }
+
+    [TestMethod]
+    public void Compile_IfInstruction_WithElse_EvaluatesTrueBranch()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("if (true) 1 else 2", new ExpressionCompilerContext());
+        Assert.IsInstanceOfType<ConditionalExpression>(expression);
+        Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
+        Assert.AreEqual(1, execute());
+    }
+
+    [TestMethod]
+    public void Compile_SwitchInstruction_CompilesToNonDefaultExpression()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("switch (1) { case 1: 2 default: 3 }", new ExpressionCompilerContext());
         Assert.IsNotNull(expression);
+        Assert.AreNotEqual(ExpressionType.Default, expression.NodeType);
     }
 
     /// <summary>
     /// Ensures a <c>for</c> loop compiles into an expression node through <see cref="ExpressionEx.For"/>.
     /// </summary>
     [TestMethod]
-    public void Compile_ForLoop_ProducesExpressionNode()
+    public void Compile_ForLoop_ExecutesAndAccumulatesCorrectly()
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
@@ -304,44 +325,58 @@ public class CSyntaxExpressionCompilerTests
         context.Set("sum", accumulator);
 
         Expression loop = compiler.Compile("for (i = 0; i < 4; i = i + 1) sum = sum + i", context);
-        Assert.IsNotNull(loop);
+
+        var executeBlock = Expression.Block(
+            [iterator, accumulator],
+            Expression.Assign(accumulator, Expression.Constant(0)),
+            loop,
+            accumulator);
+        Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(executeBlock, typeof(int))).Compile();
+        Assert.AreEqual(6, execute(), "for (i=0; i<4; i++) sum+=i → 0+1+2+3 = 6");
     }
 
     /// <summary>
     /// Ensures a <c>foreach</c> loop compiles into an expression node through <see cref="ExpressionEx.ForEach"/>.
     /// </summary>
     [TestMethod]
-    public void Compile_ForeachLoop_ProducesExpressionNode()
+    public void Compile_ForeachLoop_ExecutesAndAccumulatesCorrectly()
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
         ParameterExpression accumulator = Expression.Variable(typeof(int), "sum");
-        ParameterExpression iterator = Expression.Variable(typeof(int), "item");
         context.Set("sum", accumulator);
-        context.Set("item", iterator);
         context.Set("values", new[] { 1, 2, 3, 4 });
 
         Expression loop = compiler.Compile("foreach (int item in values) sum = sum + item", context);
-        Assert.IsNotNull(loop);
+
+        var executeBlock = Expression.Block(
+            [accumulator],
+            Expression.Assign(accumulator, Expression.Constant(0)),
+            loop,
+            accumulator);
+        Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(executeBlock, typeof(int))).Compile();
+        Assert.AreEqual(10, execute(), "foreach item in [1,2,3,4]: sum += item → 1+2+3+4 = 10");
     }
 
     /// <summary>
-    /// Ensures member and indexer access structures compile successfully.
+    /// Ensures member and indexer access expressions compile and return the expected values.
     /// </summary>
     /// <param name="source">The source snippet containing member/indexer access.</param>
+    /// <param name="expected">The expected integer result when the expression is executed.</param>
     [DataTestMethod]
-    [DataRow("sample.Field")]
-    [DataRow("sample.Property")]
-    [DataRow("sample.Method()")]
-    [DataRow("sample[0]")]
-    public void Compile_MemberAccess_CompilesSuccessfully(string source)
+    [DataRow("sample.Field", 1)]
+    [DataRow("sample.Property", 2)]
+    [DataRow("sample.Method()", 3)]
+    [DataRow("sample[0]", 10)]
+    public void Compile_MemberAccess_ReturnsExpectedValue(string source, int expected)
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
         context.Set("sample", new SampleContainer());
 
         Expression expression = compiler.Compile(source, context);
-        Assert.IsNotNull(expression);
+        Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
+        Assert.AreEqual(expected, execute());
     }
 
     /// <summary>
@@ -369,13 +404,18 @@ public class CSyntaxExpressionCompilerTests
     /// Ensures explicit lambda-expression syntax compiles to an expression node.
     /// </summary>
     [TestMethod]
-    public void Compile_LambdaExpressionSyntax_Compiles()
+    public void Compile_LambdaExpressionSyntax_ProducesInvocableLambda()
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
 
         Expression expression = compiler.Compile("x => x + 1", context);
-        Assert.IsNotNull(expression);
+        Assert.IsInstanceOfType<LambdaExpression>(expression);
+        var lambda = (LambdaExpression)expression;
+        Assert.AreEqual(1, lambda.Parameters.Count);
+        Func<double, double> compiled = Expression.Lambda<Func<double, double>>(
+            Expression.Convert(lambda.Body, typeof(double)), lambda.Parameters).Compile();
+        Assert.AreEqual(2d, compiled(1d));
     }
 
     /// <summary>
