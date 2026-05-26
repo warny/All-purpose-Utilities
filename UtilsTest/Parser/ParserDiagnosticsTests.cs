@@ -401,13 +401,22 @@ public class ParserDiagnosticsTests
     }
 
     [TestMethod]
-    public void ParserDiagnostics_EmbeddedCodeDescriptors_HaveStableCodes()
+    public void ParserDiagnostics_EmbeddedCodeDescriptors_AreRegisteredUnderStableCodes()
     {
-        Assert.AreEqual("UP1024", ParserDiagnostics.EmbeddedCodeLanguageUnsupported.Code);
-        Assert.AreEqual("UP1025", ParserDiagnostics.EmbeddedCodeCompilerNotConfigured.Code);
-        Assert.AreEqual("UP1026", ParserDiagnostics.EmbeddedCodeCompilationFailed.Code);
-        Assert.AreEqual("UP1027", ParserDiagnostics.EmbeddedCodePreservedNotCompiled.Code);
-        Assert.AreEqual("UP1028", ParserDiagnostics.EmbeddedCodeExecutionDisabled.Code);
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1024", out var langUnsupported));
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodeLanguageUnsupported, langUnsupported);
+
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1025", out var compilerNotConfigured));
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodeCompilerNotConfigured, compilerNotConfigured);
+
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1026", out var compilationFailed));
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodeCompilationFailed, compilationFailed);
+
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1027", out var preservedNotCompiled));
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodePreservedNotCompiled, preservedNotCompiled);
+
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1028", out var executionDisabled));
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodeExecutionDisabled, executionDisabled);
     }
 
     [TestMethod]
