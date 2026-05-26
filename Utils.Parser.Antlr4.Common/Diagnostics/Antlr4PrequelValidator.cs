@@ -29,14 +29,14 @@ public static class Antlr4PrequelValidator
                 import.GrammarName));
         }
 
-        if (model.DeclaredTokens.Count > 0)
+        if (model.HasTokensBlock)
         {
             diagnostics.Add(new Antlr4PrequelDiagnostic(
                 Antlr4PrequelDiagnosticCode.TokensBlockIgnored,
                 null));
         }
 
-        if (HasNonDefaultChannel(model.DeclaredChannels))
+        if (model.HasChannelsBlock)
         {
             diagnostics.Add(new Antlr4PrequelDiagnostic(
                 Antlr4PrequelDiagnosticCode.ChannelsBlockIgnored,
@@ -57,22 +57,4 @@ public static class Antlr4PrequelValidator
         return new Antlr4PrequelValidationResult(diagnostics);
     }
 
-    /// <summary>
-    /// Determines whether declared channels contain a non-default channel.
-    /// </summary>
-    /// <param name="channels">Declared channel names.</param>
-    /// <returns><c>true</c> when a non-default channel is found; otherwise <c>false</c>.</returns>
-    private static bool HasNonDefaultChannel(IEnumerable<string> channels)
-    {
-        foreach (var channel in channels)
-        {
-            if (!string.Equals(channel, "DEFAULT_CHANNEL", StringComparison.Ordinal)
-                && !string.Equals(channel, "HIDDEN", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

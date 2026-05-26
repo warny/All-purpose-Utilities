@@ -21,7 +21,9 @@ public class Antlr4PrequelValidatorTests
             },
             new List<Antlr4ActionInfo>(),
             Antlr4NameSet.Create([]),
-            Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]));
+            Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]),
+            HasTokensBlock: false,
+            HasChannelsBlock: false);
 
         var result = Antlr4PrequelValidator.Validate(model);
 
@@ -34,7 +36,9 @@ public class Antlr4PrequelValidatorTests
     [TestMethod]
     public void Validate_TokensBlock_EmitsSingleDiagnostic()
     {
-        var model = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create(["ID"]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]));
+        var model = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create(["ID"]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]),
+            HasTokensBlock: true,
+            HasChannelsBlock: false);
 
         var result = Antlr4PrequelValidator.Validate(model);
 
@@ -45,13 +49,15 @@ public class Antlr4PrequelValidatorTests
     [TestMethod]
     public void Validate_ChannelsBlock_EmitsSingleDiagnosticExcludingDefaults()
     {
-        var withDefaultsOnly = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]));
-        var withExtra = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN", "COMMENTS"]));
+        var withoutChannelsBlock = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]),
+            HasTokensBlock: false,
+            HasChannelsBlock: false);
+        var withExtra = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN", "COMMENTS"]), HasTokensBlock: false, HasChannelsBlock: true);
 
-        var defaultsResult = Antlr4PrequelValidator.Validate(withDefaultsOnly);
+        var noBlockResult = Antlr4PrequelValidator.Validate(withoutChannelsBlock);
         var extraResult = Antlr4PrequelValidator.Validate(withExtra);
 
-        Assert.AreEqual(0, defaultsResult.Diagnostics.Count);
+        Assert.AreEqual(0, noBlockResult.Diagnostics.Count);
         Assert.AreEqual(1, extraResult.Diagnostics.Count);
         Assert.AreEqual(Antlr4PrequelDiagnosticCode.ChannelsBlockIgnored, extraResult.Diagnostics[0].Code);
     }
@@ -67,7 +73,9 @@ public class Antlr4PrequelValidatorTests
                 new Antlr4ActionInfo("members", "int _p;", "parser"),
             ],
             Antlr4NameSet.Create([]),
-            Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]));
+            Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]),
+            HasTokensBlock: false,
+            HasChannelsBlock: false);
 
         var result = Antlr4PrequelValidator.Validate(model);
 
@@ -77,10 +85,23 @@ public class Antlr4PrequelValidatorTests
         CollectionAssert.AreEqual(new[] { "@header", "@parser::members" }, result.Diagnostics.Select(static d => d.Subject).ToArray());
     }
 
+
+    [TestMethod]
+    public void Validate_ChannelsBlockWithOnlyDefaults_EmitsDiagnostic()
+    {
+        var model = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]), HasTokensBlock: false, HasChannelsBlock: true);
+
+        var result = Antlr4PrequelValidator.Validate(model);
+
+        Assert.AreEqual(1, result.Diagnostics.Count);
+        Assert.AreEqual(Antlr4PrequelDiagnosticCode.ChannelsBlockIgnored, result.Diagnostics[0].Code);
+    }
     [TestMethod]
     public void Validate_EmptyPrequel_EmitsNoDiagnostics()
     {
-        var model = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]));
+        var model = new Antlr4PrequelModel(null, [], [], Antlr4NameSet.Create([]), Antlr4NameSet.Create(["DEFAULT_CHANNEL", "HIDDEN"]),
+            HasTokensBlock: false,
+            HasChannelsBlock: false);
 
         var result = Antlr4PrequelValidator.Validate(model);
 
