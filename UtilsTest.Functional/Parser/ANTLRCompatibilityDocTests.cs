@@ -390,6 +390,8 @@ public class ANTLRCompatibilityDocTests
 
         Assert.IsTrue(def.AllRules.ContainsKey("start"));
         Assert.IsFalse(diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code),
+            "Converter must emit exactly one RuleLocalsIgnored diagnostic for the locals clause.");
     }
 
     [TestMethod]
@@ -406,6 +408,8 @@ public class ANTLRCompatibilityDocTests
 
         Assert.IsTrue(def.AllRules.ContainsKey("start"));
         Assert.IsFalse(diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code),
+            "Converter must emit exactly one RuleExceptionMetadataIgnored diagnostic for the throws clause.");
     }
 
     [TestMethod]
@@ -423,6 +427,8 @@ public class ANTLRCompatibilityDocTests
 
         Assert.IsTrue(def.AllRules.ContainsKey("start"));
         Assert.IsFalse(diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code),
+            "Converter must emit exactly one RuleExceptionMetadataIgnored diagnostic for catch/finally blocks.");
     }
 
     // ─── Partially supported ──────────────────────────────────────────────────
