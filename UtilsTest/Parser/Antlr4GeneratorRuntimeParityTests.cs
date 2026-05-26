@@ -215,7 +215,7 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void RuntimeAndGenerator_Diagnostics_GrammarActionsParity()
+    public void Divergence_RuntimeAndGenerator_Diagnostics_GrammarActions()
     {
         const string grammar = """
             grammar DiagnosticParity;
@@ -257,39 +257,38 @@ public class Antlr4GeneratorRuntimeParityTests
     }
 
     [TestMethod]
-    public void RuntimeAndGenerator_Diagnostics_MissingBraceParity()
+    public void Divergence_RuntimeAndGenerator_Diagnostics_MissingBraceRecovery()
     {
         const string grammar = "grammar G; start : { Act(); ID ; ID : ('a'..'z')+ ;";
-        AssertGeneratorRecoveryDiagnostics(grammar);
+        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 1);
     }
 
     [TestMethod]
-    public void RuntimeAndGenerator_Diagnostics_MalformedImportParity()
+    public void Divergence_RuntimeAndGenerator_Diagnostics_MalformedImportRecovery()
     {
         const string grammar = "grammar G; import ; start : ID ; ID : ('a'..'z')+ ;";
-        AssertGeneratorRecoveryDiagnostics(grammar);
+        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 1);
     }
 
     [TestMethod]
-    public void RuntimeAndGenerator_Diagnostics_MalformedChannelListParity()
+    public void Divergence_RuntimeAndGenerator_Diagnostics_MalformedChannelListRecovery()
     {
         const string grammar = "grammar G; channels ; start : ID ; ID : ('a'..'z')+ ;";
-        AssertGeneratorRecoveryDiagnostics(grammar);
+        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 1);
     }
 
     [TestMethod]
-    public void RuntimeAndGenerator_Diagnostics_MalformedActionParity()
+    public void Divergence_RuntimeAndGenerator_Diagnostics_MalformedActionRecovery()
     {
         const string grammar = "grammar G; @ ; start : ID ; ID : ('a'..'z')+ ;";
-        AssertGeneratorRecoveryDiagnostics(grammar);
+        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 1);
     }
 
     [TestMethod]
-    public void RuntimeAndGenerator_Diagnostics_MalformedLifecycleBlockParity()
+    public void Divergence_RuntimeAndGenerator_Diagnostics_MalformedLifecycleBlockRecovery()
     {
         const string grammar = "grammar G; start @init : ID ; ID : ('a'..'z')+ ;";
-        var diagnostics = new DiagnosticBag();
-        _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), diagnostics).Parse();
+        AssertRuntimeFailsAndGeneratorRecovers(grammar, minimumGeneratorDiagnostics: 0);
     }
 
     private static void AssertDiagnosticParity(string grammar)
@@ -333,11 +332,14 @@ public class Antlr4GeneratorRuntimeParityTests
     private static bool IsCompatibilityParityDiagnostic(string code)
         => code is "UP1001" or "UP1002" or "UP1003" or "UP1004" or "UP1005" or "UP1006";
 
-    private static void AssertGeneratorRecoveryDiagnostics(string grammar)
+    private static void AssertRuntimeFailsAndGeneratorRecovers(string grammar, int minimumGeneratorDiagnostics)
     {
+        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
         var diagnostics = new DiagnosticBag();
         _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), diagnostics).Parse();
-        Assert.IsTrue(diagnostics.Count > 0);
+        Assert.IsTrue(
+            diagnostics.Count >= minimumGeneratorDiagnostics,
+            $"Generator diagnostics count {diagnostics.Count} is lower than expected minimum {minimumGeneratorDiagnostics}.");
     }
 
     private sealed record DiagnosticSnapshot(

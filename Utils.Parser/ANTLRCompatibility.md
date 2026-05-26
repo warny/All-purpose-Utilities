@@ -287,6 +287,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | `UP1006` SemanticPredicateNotEnforced | Emitted for `{ ... }?` nodes in conservative runtime policy mode. | Emitted for `{ ... }?` nodes during generator parse. | Yes | Deterministic recovery: predicate metadata is preserved and parsing continues. |
 
 Intentional remaining difference: runtime diagnostics can include broader rule-context metadata for rule-prequel constructs (`returns`, `locals`, exception metadata) that are outside generator parser scope.
+Additional intentional test-documented difference: malformed prequel inputs currently fail fast in runtime conversion (`GrammarParseException`) while generator parsing keeps best-effort recovery.
 
 ---
 
