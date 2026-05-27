@@ -58,12 +58,12 @@ Any exception requires a future roadmap phase to explicitly allow it and a dedic
 
 ## ANTLR4 compatibility reference
 
-`ANTLRCompatibility.md` is the authoritative reference for ANTLR4 feature support in Utils.Parser.
+`docs/parser/ANTLRCompatibility.md` is the authoritative reference for ANTLR4 feature support in Utils.Parser.
 
 Agents must:
 
-- **consult `ANTLRCompatibility.md` before modifying any grammar-related component** (grammar converter, lexer engine, parser engine, model, resolution, diagnostics);
-- **update `ANTLRCompatibility.md` after any change that adds, removes, or alters support for an ANTLR4 feature**, including moving a feature from "not supported" to "partially supported", or from "parsed but not executed" to "supported";
+- **consult `docs/parser/ANTLRCompatibility.md` before modifying any grammar-related component** (grammar converter, lexer engine, parser engine, model, resolution, diagnostics);
+- **update `docs/parser/ANTLRCompatibility.md` after any change that adds, removes, or alters support for an ANTLR4 feature**, including moving a feature from "not supported" to "partially supported", or from "parsed but not executed" to "supported";
 - document, in the relevant section, **how the feature works when its behaviour differs from standard ANTLR4** (usage examples, API hooks, known constraints).
 
 
@@ -76,7 +76,7 @@ Before editing parser documentation, agents must read `docs/parser/INDEX.md` and
 For runtime-affecting PRs, agents must update relevant documentation, including:
 
 - `ROADMAP.md`,
-- `ANTLRCompatibility.md`,
+- `docs/parser/ANTLRCompatibility.md`,
 - `docs/parser/RuntimeStateOwnership.md`,
 - `docs/parser/ParserMetadataAndRuntimeLimitations.md`,
 - `docs/parser/Antlr4CompatibilityMatrix.md`,
