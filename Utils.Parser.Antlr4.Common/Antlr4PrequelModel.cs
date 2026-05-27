@@ -14,7 +14,7 @@ public sealed record Antlr4PrequelModel(
     Antlr4OptionSet? Options,
     IReadOnlyList<Antlr4ImportInfo> Imports,
     IReadOnlyList<Antlr4ActionInfo> Actions,
-    ISet<string> DeclaredTokens,
-    ISet<string> DeclaredChannels,
+    IReadOnlyCollection<string> DeclaredTokens,
+    IReadOnlyCollection<string> DeclaredChannels,
     bool HasTokensBlock = false,
     bool HasChannelsBlock = false);

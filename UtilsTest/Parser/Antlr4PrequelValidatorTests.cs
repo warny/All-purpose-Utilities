@@ -86,6 +86,16 @@ public class Antlr4PrequelValidatorTests
     }
 
 
+
+    [TestMethod]
+    public void NameSetCreate_ReturnsReadOnlyCollectionContract()
+    {
+        IReadOnlyCollection<string> names = Antlr4NameSet.Create(["ID"]);
+
+        Assert.AreEqual(1, names.Count);
+        Assert.IsFalse(names is ISet<string>);
+    }
+
     [TestMethod]
     public void Validate_ChannelsBlockWithOnlyDefaults_EmitsDiagnostic()
     {
