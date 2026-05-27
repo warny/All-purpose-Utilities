@@ -23,6 +23,7 @@ public sealed class SyntaxColorisationSection
     public SyntaxColorisationSection(string classification)
     {
         Classification = classification;
+        Rules = rules.AsReadOnly();
     }
 
     /// <summary>
@@ -33,7 +34,7 @@ public sealed class SyntaxColorisationSection
     /// <summary>
     /// Gets descriptor rules associated with the classification.
     /// </summary>
-    public IReadOnlyList<string> Rules => rules;
+    public IReadOnlyList<string> Rules { get; }
 
     /// <summary>
     /// Adds one descriptor rule to the section.
@@ -55,19 +56,29 @@ public sealed class SyntaxColorisationDocument
     private readonly List<SyntaxColorisationSection> sections = new();
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="SyntaxColorisationDocument"/> class.
+    /// </summary>
+    public SyntaxColorisationDocument()
+    {
+        FileExtensions = fileExtensions.AsReadOnly();
+        StringSyntaxExtensions = stringSyntaxExtensions.AsReadOnly();
+        Sections = sections.AsReadOnly();
+    }
+
+    /// <summary>
     /// Gets declared file extensions.
     /// </summary>
-    public IReadOnlyList<string> FileExtensions => fileExtensions;
+    public IReadOnlyList<string> FileExtensions { get; }
 
     /// <summary>
     /// Gets declared StringSyntax extensions.
     /// </summary>
-    public IReadOnlyList<string> StringSyntaxExtensions => stringSyntaxExtensions;
+    public IReadOnlyList<string> StringSyntaxExtensions { get; }
 
     /// <summary>
     /// Gets declared classification sections.
     /// </summary>
-    public IReadOnlyList<SyntaxColorisationSection> Sections => sections;
+    public IReadOnlyList<SyntaxColorisationSection> Sections { get; }
 
     /// <summary>
     /// Adds one declared file extension.
