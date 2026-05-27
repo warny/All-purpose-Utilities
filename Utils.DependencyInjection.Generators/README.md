@@ -1,8 +1,6 @@
-# Utils.DependencyInjection.Generators
+# omy.Utils.DependencyInjection.Generators
 
-`Utils.DependencyInjection.Generators` provides a Roslyn source generator that implements `IServiceConfigurator` classes marked
-with the `[StaticAuto]` attribute. It targets **.NET 9** and complements the `Utils.DependencyInjection` runtime library by wiring
-attribute-based registrations at build time.
+`omy.Utils.DependencyInjection.Generators` provides a Roslyn source generator that implements `IServiceConfigurator` classes marked with `[StaticAuto]`. It complements `omy.Utils.DependencyInjection` by wiring attribute-based registrations at compile time.
 
 ## Install
 ```bash
@@ -15,27 +13,23 @@ dotnet add package omy.Utils.DependencyInjection.Generators
 ## Features
 
 - Scans the compilation for `IServiceConfigurator` implementations decorated with `[StaticAuto]`.
-- Detects types annotated with `[Singleton]`, `[Scoped]`, or `[Transient]` and generates the matching registration calls.
-- Supports keyed registrations when a domain is supplied to the lifetime attributes.
+- Detects types annotated with `[Singleton]`, `[Scoped]`, or `[Transient]` and generates matching `AddSingleton`/`AddScoped`/`AddTransient` calls.
+- Supports keyed registrations when a domain string is passed to the lifetime attribute.
 - Registers interfaces marked with `[Injectable]` against their attributed implementations.
-- Emits partial class implementations that remain editable alongside generated code.
+- Emits a `partial` class so generated code coexists with hand-written logic.
 
 ## Getting started
 
-1. Add a project reference to **Utils.DependencyInjection.Generators** (as an analyzer) and to **Utils.DependencyInjection** (as a library).
-2. Decorate your services with lifetime attributes and mark exposed interfaces with `[Injectable]`.
-3. Create an `IServiceConfigurator` implementation and mark it with `[StaticAuto]`.
+1. Add `omy.Utils.DependencyInjection.Generators` as an analyzer reference.
+2. Add `omy.Utils.DependencyInjection` as a library reference.
+3. Decorate services with lifetime attributes and expose interfaces with `[Injectable]`.
+4. Create a `partial` `IServiceConfigurator` implementation and mark it `[StaticAuto]`.
 
 ## Examples
 
-The following scenarios highlight the generator's capabilities. They can be mixed and
-matched inside the same project because the generated partial classes never overwrite
-hand-written logic.
-
-### Basic registration example
+### Basic registration
 
 ```csharp
-using System;
 using Microsoft.Extensions.DependencyInjection;
 using Utils.DependencyInjection;
 
@@ -57,37 +51,34 @@ public partial class FormatterConfigurator : IServiceConfigurator { }
 var services = new ServiceCollection();
 new FormatterConfigurator().ConfigureServices(services);
 var provider = services.BuildServiceProvider();
-var formatter = provider.GetRequiredService<IMessageFormatter>();
-string result = formatter.Format("hello");
+
+string result = provider.GetRequiredService<IMessageFormatter>().Format("hello");
+// → "HELLO"
 ```
 
-The generated `ConfigureServices` method automatically registers `UppercaseFormatter` as the
-implementation for `IMessageFormatter`.
+The generator emits a `ConfigureServices` implementation that calls `services.AddSingleton<IMessageFormatter, UppercaseFormatter>()`.
 
-### Multi-tenant keyed registrations
+### Keyed registrations
 
-You can scope services to tenants or domains by supplying a key when decorating the service with lifetime attributes.
+Supply a domain key to the lifetime attribute for keyed (multi-tenant) scenarios:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Utils.DependencyInjection;
 
 [Injectable]
-public interface ICalculator
-{
-    int Add(int left, int right);
-}
+public interface ICalculator { int Add(int a, int b); }
 
 [Singleton("europe")]
 public class VatCalculator : ICalculator
 {
-    public int Add(int left, int right) => (int)Math.Round((left + right) * 1.2, MidpointRounding.AwayFromZero);
+    public int Add(int a, int b) => (int)Math.Round((a + b) * 1.2);
 }
 
 [Singleton("us")]
 public class SalesTaxCalculator : ICalculator
 {
-    public int Add(int left, int right) => (int)Math.Round((left + right) * 1.07, MidpointRounding.AwayFromZero);
+    public int Add(int a, int b) => (int)Math.Round((a + b) * 1.07);
 }
 
 [StaticAuto]
@@ -96,126 +87,42 @@ public partial class CalculatorConfigurator : IServiceConfigurator { }
 var services = new ServiceCollection();
 new CalculatorConfigurator().ConfigureServices(services);
 var provider = services.BuildServiceProvider();
-var europeanCalculator = provider.GetRequiredKeyedService<ICalculator>("europe");
-var usCalculator = provider.GetRequiredKeyedService<ICalculator>("us");
+
+var eu = provider.GetRequiredKeyedService<ICalculator>("europe");
+var us = provider.GetRequiredKeyedService<ICalculator>("us");
 ```
 
-The generator emits `AddKeyedSingleton` calls so that each calculator is registered with its
-domain. Consumers resolve the correct implementation by providing the key.
+The generator emits `AddKeyedSingleton<ICalculator, VatCalculator>("europe")` and the corresponding call for `SalesTaxCalculator`.
 
-### Partial methods for fine-grained control
+### Open-generic registrations
 
-Because the generator emits partial classes, you can extend the configurator with custom logic without losing the automatic registrations.
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-
-[StaticAuto]
-public partial class AdvancedConfigurator : IServiceConfigurator
-{
-    partial void OnAfterConfigureServices(IServiceCollection services)
-    {
-        services.AddLogging();
-    }
-}
-```
-
-When the generator is executed it creates a matching partial class and invokes
-`OnAfterConfigureServices` after wiring the detected services, allowing manual tweaks.
-
-### Module-based composition
-
-Large solutions commonly split registrations into domain-specific modules. The generator can
-aggregate all of them without manual wiring.
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-using Utils.DependencyInjection;
-
-[StaticAuto]
-public partial class AccountingModule : IServiceConfigurator { }
-
-[StaticAuto]
-public partial class NotificationsModule : IServiceConfigurator { }
-
-[StaticAuto]
-public partial class ApplicationConfigurator : IServiceConfigurator
-{
-    partial void OnAfterConfigureServices(IServiceCollection services)
-    {
-        services.AddLogging();
-    }
-}
-
-var services = new ServiceCollection();
-new ApplicationConfigurator().ConfigureServices(services);
-```
-
-Each generated partial class invokes the others through `IServiceConfigurator` so the final
-`ApplicationConfigurator` can remain focused on cross-cutting concerns such as logging or
-metrics.
-
-### Open generics and interfaces
-
-The generator handles open-generic registrations when the implementation type declares a
-generic constraint.
+The generator handles open-generic implementations:
 
 ```csharp
 using Utils.DependencyInjection;
 
 [Injectable]
-public interface IRepository<T>
-    where T : class
+public interface IRepository<T> where T : class
 {
-    ValueTask<T?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+    ValueTask<T?> GetAsync(Guid id, CancellationToken ct = default);
 }
 
 [Scoped]
-public class SqlRepository<T> : IRepository<T>
-    where T : class
+public class SqlRepository<T> : IRepository<T> where T : class
 {
-    public ValueTask<T?> GetAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        // database lookup
-        return ValueTask.FromResult<T?>(default);
-    }
+    public ValueTask<T?> GetAsync(Guid id, CancellationToken ct = default)
+        => ValueTask.FromResult<T?>(default);
 }
 
 [StaticAuto]
 public partial class DataConfigurator : IServiceConfigurator { }
 ```
 
-At build time the generator emits `services.AddScoped(typeof(IRepository<>), typeof(SqlRepository<>));`
-while preserving the generic constraints.
+At build time the generator emits `services.AddScoped(typeof(IRepository<>), typeof(SqlRepository<>))`.
 
-### Conditional environments
+### Manual registrations alongside generated ones
 
-Partial methods are also ideal for environment-based tweaks. The generator still outputs the
-default registrations while giving developers an override point.
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-
-[StaticAuto]
-public partial class EnvironmentConfigurator : IServiceConfigurator
-{
-    partial void OnBeforeConfigureServices(IServiceCollection services)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            services.AddSingleton<IPathService, WindowsPathService>();
-        }
-    }
-}
-```
-
-`OnBeforeConfigureServices` is emitted alongside `ConfigureServices`. It executes before the
-automatic registrations which allows conditional replacements without disabling generation.
-
-### Mixing manual and generated registrations
-
-Source generation remains opt-in for each configurator. Manual entries can remain untouched
-while the generator handles the repetitive parts.
+Because the generator only emits the `ConfigureServices` method body, you can add other members to the `partial` class freely:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -223,13 +130,15 @@ using Microsoft.Extensions.DependencyInjection;
 [StaticAuto]
 public partial class MessagingConfigurator : IServiceConfigurator
 {
-    partial void OnAfterConfigureServices(IServiceCollection services)
+    public void RegisterExtraServices(IServiceCollection services)
     {
         services.AddSingleton<IMessageBus>(_ => new RabbitMqBus("amqp://localhost"));
     }
 }
 ```
 
-Because the generator never rewrites the partial file, developers can evolve their manual
-registrations at their own pace while still benefiting from automated discovery for routine
-services.
+Call both `ConfigureServices` (generated) and `RegisterExtraServices` (manual) during application startup.
+
+## Related packages
+- `omy.Utils.DependencyInjection` – runtime attributes, assembly scanning, and handler pipeline.
+- `omy.Utils` – shared helpers.
