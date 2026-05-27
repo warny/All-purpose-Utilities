@@ -30,6 +30,7 @@ Every meaningful change must include a check of whether `ROADMAP.md` needs to be
 - metadata semantics,
 - ANTLR4 compatibility,
 - parser capabilities,
+- public API shape,
 - runtime policies,
 - tooling direction,
 - test architecture.
@@ -79,6 +80,7 @@ Before implementation, identify whether the change alters:
 - ANTLR4 compatibility,
 - runtime metadata,
 - runtime policy,
+- public API shape,
 - test strategy,
 - roadmap sequencing.
 
@@ -96,11 +98,27 @@ Agents must not introduce:
 - semantic-state-aware memoization,
 - async parser runtime,
 - runtime parallelism,
-- public API breaks,
+- unreviewed or undocumented public API breaks,
 - parse-tree shape breaks,
 - diagnostic format breaks.
 
-Any exception requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
+Public API changes are allowed while `Utils.Parser` remains pre-release and has no committed external compatibility contract, provided they follow the public API change policy below.
+
+Any other exception requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
+
+## Public API change policy
+
+Public API changes are allowed when they improve architecture, remove misleading contracts, reduce pre-release API debt, or make ownership boundaries clearer.
+
+Public API changes must remain:
+
+- small,
+- single-purpose,
+- explicitly documented in the PR description,
+- covered by deterministic tests when behavior or public usage changes,
+- accompanied by migration notes when a caller-visible replacement exists.
+
+Public API changes must not be used as a reason to introduce unsupported runtime semantics, speculative execution, metadata execution authority, parse-tree shape breaks, or diagnostic format breaks.
 
 ## Metadata-only rule
 
@@ -125,11 +143,14 @@ Agents must add or update deterministic, audit-friendly tests when modifying:
 - parser action behavior,
 - ANTLR4 conversion,
 - diagnostics,
-- parse-tree shape.
+- parse-tree shape,
+- public API shape or usage contracts.
 
 ## PR discipline
 
-PRs must be small, single-purpose, auditable, and explicit about whether they are documentation-only, test-only, refactor-only, or behavior-changing.
+PRs must be small, single-purpose, auditable, and explicit about whether they are documentation-only, test-only, refactor-only, API-changing, or behavior-changing.
+
+API-changing PRs must explicitly document the public surface changed, the reason for the change, compatibility impact, migration guidance, and why the change should happen before API stabilization.
 
 Behavior-changing PRs must explicitly document observable behavior changes, compatibility risks, diagnostics impact, parse-tree impact, and roadmap impact.
 
@@ -146,4 +167,5 @@ Before completing any PR, verify:
 - `docs/parser/INDEX.md` is updated when parser documentation changed;
 - relevant parser docs were updated;
 - tests cover new or clarified invariants;
+- public API changes are documented when present;
 - no unsupported runtime feature was accidentally introduced.
