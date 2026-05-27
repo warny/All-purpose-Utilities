@@ -11,7 +11,7 @@ Use this file for **what is not runtime-authoritative today** and what requires 
 - Canonical here: metadata-only semantics, unsupported semantics, compatibility boundaries, execution-sharing constraints, and activation preconditions.
 - Canonical in companion file: parse authority, diagnostics authority, parse-tree authority, scheduling ownership, and registry authority boundaries.
 - Companion: [`RuntimeStateOwnership.md`](./RuntimeStateOwnership.md).
-- Process obligations remain in [`AGENT.md`](../../AGENT.md); roadmap direction remains in [`ROADMAP.md`](../../ROADMAP.md).
+- Process obligations remain in [`Utils.Parser/AGENTS.md`](../../Utils.Parser/AGENTS.md); roadmap direction remains in [`Utils.Parser/ROADMAP.md`](../../Utils.Parser/ROADMAP.md).
 
 ## Topic ownership map (canonical + companion)
 
