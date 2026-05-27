@@ -248,6 +248,21 @@ These constructs are recognised without error but produce no runtime effect.
 
 ---
 
+## Shared prequel metadata and diagnostics boundary
+
+ANTLR prequel metadata is normalized through `Utils.Parser.Antlr4.Common`.
+
+Runtime and generator parsing remain separate, but both paths map prequel metadata to `Antlr4PrequelModel` and can validate it through `Antlr4PrequelValidator`.
+
+`Antlr4PrequelValidator` emits neutral diagnostic facts only. Runtime and generator remain responsible for mapping those facts to `ParserDiagnostics`.
+
+Known intentional differences:
+
+- runtime does not currently emit `UP1004` for grammar-level actions, although neutral validation facts expose them;
+- generator import diagnostics may differ in granularity from neutral import facts.
+
+---
+
 ## Runtime metadata boundary
 
 Continuation metadata descriptors are internal runtime metadata.
