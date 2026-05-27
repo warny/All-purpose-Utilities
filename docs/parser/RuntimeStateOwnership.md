@@ -10,7 +10,7 @@ Use this file for **authority boundaries**: which component owns which decision.
 - Canonical here: parse authority, diagnostics authority, parse-tree authority, scheduling ownership, registry ownership, and lifecycle ownership boundaries.
 - Canonical in companion file: metadata-only limitations, unsupported semantics, duplicated-work/execution-sharing constraints, and future activation preconditions.
 - Companion: [`ParserMetadataAndRuntimeLimitations.md`](./ParserMetadataAndRuntimeLimitations.md).
-- Contribution/process rules remain in [`AGENT.md`](../../AGENT.md); roadmap direction remains in [`ROADMAP.md`](../../ROADMAP.md).
+- Contribution/process rules remain in [`Utils.Parser/AGENTS.md`](../../Utils.Parser/AGENTS.md); roadmap direction remains in [`Utils.Parser/ROADMAP.md`](../../Utils.Parser/ROADMAP.md).
 
 ## Topic ownership map (canonical + companion)
 

@@ -14,7 +14,7 @@ dotnet add package omy.Utils.Parser
 
 ## Supported frameworks
 
-- net9.0
+- net8.0
 
 ## `.g4` file support status
 
