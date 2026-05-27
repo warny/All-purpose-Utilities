@@ -29,10 +29,10 @@ public class VisualStudioSyntaxColorisationTests
             var parser = new SyntaxColorizationDescriptorFileParser();
             SyntaxColorizationDescriptor descriptor = parser.ParseFile(filePath);
 
-            CollectionAssert.AreEquivalent(new[] { ".demo" }, descriptor.FileExtensions);
-            CollectionAssert.AreEquivalent(new[] { "DEMO" }, descriptor.StringSyntaxExtensions);
+            CollectionAssert.AreEquivalent(new[] { ".demo" }, descriptor.FileExtensions.ToArray());
+            CollectionAssert.AreEquivalent(new[] { "DEMO" }, descriptor.StringSyntaxExtensions.ToArray());
             Assert.AreEqual("Keyword", descriptor.Entries[0].Classification);
-            CollectionAssert.AreEquivalent(new[] { "FOR", "IF" }, descriptor.Entries[0].Rules);
+            CollectionAssert.AreEquivalent(new[] { "FOR", "IF" }, descriptor.Entries[0].Rules.ToArray());
         }
         finally
         {

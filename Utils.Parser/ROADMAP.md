@@ -78,6 +78,7 @@ Current capabilities and responsibilities:
 - Parser feature capabilities metadata is present.
 - ANTLR4 grammar bootstrap/conversion support is present.
 - Syntax colorisation descriptor DTO public contracts are hardened to read-only collection exposure (`IReadOnlyList<T>`), with mutation remaining internal to parser conversion flow.
+- Visual Studio syntax colorization descriptor DTO public contracts are hardened to read-only collection exposure (`IReadOnlyList<T>`), with descriptor-population mutation remaining internal to conversion flow.
 - Runtime invariant documentation exists.
 - Branch outcome documentation exists.
 - Parser tests are organized to reflect runtime contracts.

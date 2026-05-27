@@ -45,14 +45,25 @@ public sealed class SyntaxColorizationDescriptorFileParser
         SyntaxColorisationDocument parsedDocument = SyntaxColorisationGrammar.Parse(content);
         var descriptor = new SyntaxColorizationDescriptor();
 
-        descriptor.FileExtensions.AddRange(parsedDocument.FileExtensions);
-        descriptor.StringSyntaxExtensions.AddRange(parsedDocument.StringSyntaxExtensions);
+        foreach (string fileExtension in parsedDocument.FileExtensions)
+        {
+            descriptor.AddFileExtension(fileExtension);
+        }
+
+        foreach (string stringSyntaxExtension in parsedDocument.StringSyntaxExtensions)
+        {
+            descriptor.AddStringSyntaxExtension(stringSyntaxExtension);
+        }
 
         foreach (SyntaxColorisationSection section in parsedDocument.Sections)
         {
             var entry = new SyntaxColorizationDescriptorEntry(section.Classification);
-            entry.Rules.AddRange(section.Rules);
-            descriptor.Entries.Add(entry);
+            foreach (string rule in section.Rules)
+            {
+                entry.AddRule(rule);
+            }
+
+            descriptor.AddEntry(entry);
         }
 
         return descriptor;
