@@ -35,6 +35,62 @@ var address = ((Utils.Net.DNS.RFC1035.Address)response.Responses[0].RData).IPAdd
 
 `DNSLookup` sends DNS queries over UDP and returns a `DNSHeader` whose `Responses` list contains typed `DNSResponseRecord` entries. Cast `RData` to the record-specific class to access its fields.
 
+### Supported record types
+
+| Type | Code | C# class | RFC | Description |
+|---|---:|---|---|---|
+| A | 1 | `RFC1035.Address` | RFC 1035 | IPv4 address |
+| NS | 2 | `RFC1035.NS` | RFC 1035 | Authoritative name server |
+| MD | 3 | `RFC1035.MD` | RFC 1035 | Mail destination *(obsolete)* |
+| MF | 4 | `RFC1035.MF` | RFC 1035 | Mail forwarder *(obsolete)* |
+| CNAME | 5 | `RFC1035.CNAME` | RFC 1035 | Canonical name alias |
+| SOA | 6 | `RFC1035.SOA` | RFC 1035 | Start of authority |
+| MB | 7 | `RFC1035.MB` | RFC 1035 | Mailbox domain name *(experimental)* |
+| MG | 8 | `RFC1035.MG` | RFC 1035 | Mail group member *(experimental)* |
+| MR | 9 | `RFC1035.MR` | RFC 1035 | Mail rename *(experimental)* |
+| NULL | 10 | `RFC1035.NULL` | RFC 1035 | Null record *(experimental)* |
+| WKS | 11 | `RFC1035.WKS` | RFC 1035 | Well-known services |
+| PTR | 12 | `RFC1035.PTR` | RFC 1035 | Domain name pointer (reverse lookup) |
+| HINFO | 13 | `RFC1035.HINFO` | RFC 1035 | Host information |
+| MINFO | 14 | `RFC1035.MINFO` | RFC 1035 | Mailbox or mail list information |
+| MX | 15 | `RFC1035.MX` | RFC 1035 | Mail exchange server |
+| TXT | 16 | `RFC1035.TXT` | RFC 1035 | Arbitrary text (SPF, DKIM, …) |
+| RP | 17 | `RFC1183.RP` | RFC 1183 | Responsible person |
+| AFSDB | 18 | `RFC1183.AFSDB` | RFC 1183 | AFS database location |
+| X25 | 19 | `RFC1183.X25` | RFC 1183 | X.25 PSDN address |
+| ISDN | 20 | `RFC1183.ISDN` | RFC 1183 | ISDN address |
+| RT | 21 | `RFC1183.RT` | RFC 1183 | Route through |
+| NSAP-PTR | 22 | `RFC1348.NSAP_PTR` | RFC 1348 | NSAP pointer |
+| NSAP | 23 | `RFC1035.Address` | RFC 1035 | OSI NSAP address |
+| SIG | 24 | `RFC2535.SIG` | RFC 2535 | Signature *(legacy DNSSEC)* |
+| KEY | 25 | `RFC2535.KEY` | RFC 2535 | Public key *(legacy DNSSEC)* |
+| PX | 26 | `RFC2163.PX` | RFC 2163 | X.400/RFC 822 address mapping |
+| GPOS | 27 | `RFC1712.GPOS` | RFC 1712 | Geographical position |
+| AAAA | 28 | `RFC1035.Address` | RFC 1886 | IPv6 address |
+| LOC | 29 | `RFC1876.LOC` | RFC 1876 | Geographic location |
+| NXT | 30 | `RFC2535.NXT` | RFC 2535 | Next secure record *(legacy DNSSEC)* |
+| SRV | 33 | `RFC2052.SRV` | RFC 2052 | Service locator |
+| NAPTR | 35 | `RFC2915.NAPTR` | RFC 2915 | Naming authority pointer |
+| KX | 36 | `RFC2230.KX` | RFC 2230 | Key exchanger |
+| CERT | 37 | `RFC4398.CERT` | RFC 4398 | Certificate record |
+| DNAME | 39 | `RFC2672.DNAME` | RFC 2672 | Delegation name |
+| OPT | 41 | `RFC2671.OPT` | RFC 2671 | EDNS options |
+| APL | 42 | `RFC3123.APL` | RFC 3123 | Address prefix list |
+| DS | 43 | `RFC4034.DS` | RFC 4034 | Delegation signer (DNSSEC) |
+| SSHFP | 44 | `RFC4255.SSHFP` | RFC 4255 | SSH public key fingerprint |
+| IPSECKEY | 45 | `RFC4025.IPSECKEY` | RFC 4025 | IPsec key |
+| RRSIG | 46 | `RFC4034.RRSIG` | RFC 4034 | RR signature (DNSSEC) |
+| NSEC | 47 | `RFC4034.NSEC` | RFC 4034 | Next secure record (DNSSEC) |
+| DNSKEY | 48 | `RFC4034.DNSKEY` | RFC 4034 | DNS public key (DNSSEC) |
+| DHCID | 49 | `RFC4701.DHCID` | RFC 4701 | DHCP identifier |
+| NSEC3 | 50 | `RFC5155.NSEC3` | RFC 5155 | Next secure v3 (DNSSEC) |
+| NSEC3PARAM | 51 | `RFC5155.NSEC3PARAM` | RFC 5155 | NSEC3 parameters (DNSSEC) |
+| HIP | 55 | `RFC5205.HIP` | RFC 5205 | Host identity protocol |
+| URI | 256 | `RFC7553.URI` | RFC 7553 | Uniform resource identifier |
+| CAA | 257 | `RFC6844.CAA` | RFC 6844 | Certification authority authorization |
+
+> All classes live under the `Utils.Net.DNS` namespace. `A`, `AAAA`, and `NSAP` share `RFC1035.Address`; the correct sub-type is selected automatically based on the address family returned by the server.
+
 ### A record — IPv4 address
 
 ```csharp
