@@ -14,6 +14,8 @@ namespace Utils.Parser.Bootstrap;
 /// </summary>
 public sealed class SyntaxColorisationSection
 {
+    private readonly List<string> rules = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SyntaxColorisationSection"/> class.
     /// </summary>
@@ -31,7 +33,16 @@ public sealed class SyntaxColorisationSection
     /// <summary>
     /// Gets descriptor rules associated with the classification.
     /// </summary>
-    public List<string> Rules { get; } = new();
+    public IReadOnlyList<string> Rules => rules;
+
+    /// <summary>
+    /// Adds one descriptor rule to the section.
+    /// </summary>
+    /// <param name="ruleName">Rule name to add.</param>
+    internal void AddRule(string ruleName)
+    {
+        rules.Add(ruleName);
+    }
 }
 
 /// <summary>
@@ -39,20 +50,51 @@ public sealed class SyntaxColorisationSection
 /// </summary>
 public sealed class SyntaxColorisationDocument
 {
+    private readonly List<string> fileExtensions = new();
+    private readonly List<string> stringSyntaxExtensions = new();
+    private readonly List<SyntaxColorisationSection> sections = new();
+
     /// <summary>
     /// Gets declared file extensions.
     /// </summary>
-    public List<string> FileExtensions { get; } = new();
+    public IReadOnlyList<string> FileExtensions => fileExtensions;
 
     /// <summary>
     /// Gets declared StringSyntax extensions.
     /// </summary>
-    public List<string> StringSyntaxExtensions { get; } = new();
+    public IReadOnlyList<string> StringSyntaxExtensions => stringSyntaxExtensions;
 
     /// <summary>
     /// Gets declared classification sections.
     /// </summary>
-    public List<SyntaxColorisationSection> Sections { get; } = new();
+    public IReadOnlyList<SyntaxColorisationSection> Sections => sections;
+
+    /// <summary>
+    /// Adds one declared file extension.
+    /// </summary>
+    /// <param name="fileExtension">File extension value.</param>
+    internal void AddFileExtension(string fileExtension)
+    {
+        fileExtensions.Add(fileExtension);
+    }
+
+    /// <summary>
+    /// Adds one declared StringSyntax extension.
+    /// </summary>
+    /// <param name="stringSyntaxExtension">StringSyntax extension value.</param>
+    internal void AddStringSyntaxExtension(string stringSyntaxExtension)
+    {
+        stringSyntaxExtensions.Add(stringSyntaxExtension);
+    }
+
+    /// <summary>
+    /// Adds one section to the parsed descriptor document.
+    /// </summary>
+    /// <param name="section">Section value.</param>
+    internal void AddSection(SyntaxColorisationSection section)
+    {
+        sections.Add(section);
+    }
 }
 
 /// <summary>
@@ -174,7 +216,7 @@ public static class SyntaxColorisationGrammar
             ParserNode? sectionNode = First(entry, "section");
             if (sectionNode != null)
             {
-                document.Sections.Add(ReadSection(sectionNode));
+                document.AddSection(ReadSection(sectionNode));
             }
         }
 
@@ -193,13 +235,13 @@ public static class SyntaxColorisationGrammar
 
         if (directiveName.Equals("FileExtension", StringComparison.OrdinalIgnoreCase))
         {
-            document.FileExtensions.Add(value);
+            document.AddFileExtension(value);
             return;
         }
 
         if (directiveName.Equals("StringSyntaxExtension", StringComparison.OrdinalIgnoreCase))
         {
-            document.StringSyntaxExtensions.Add(value);
+            document.AddStringSyntaxExtension(value);
             return;
         }
 
@@ -220,7 +262,7 @@ public static class SyntaxColorisationGrammar
         var section = new SyntaxColorisationSection(classification);
         foreach (ParserNode valueNode in Descendants(ruleList, "value"))
         {
-            section.Rules.Add(ReadValue(valueNode));
+            section.AddRule(ReadValue(valueNode));
         }
 
         return section;
