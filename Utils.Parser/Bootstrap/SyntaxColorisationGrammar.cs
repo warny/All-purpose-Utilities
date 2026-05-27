@@ -37,10 +37,13 @@ public sealed class SyntaxColorisationSection
     public IReadOnlyList<string> Rules { get; }
 
     /// <summary>
-    /// Adds one descriptor rule to this section.
+    /// Adds one descriptor rule to the section.
     /// </summary>
-    /// <param name="rule">Rule value to add.</param>
-    internal void AddRule(string rule) => rules.Add(rule);
+    /// <param name="ruleName">Rule name to add.</param>
+    internal void AddRule(string ruleName)
+    {
+        rules.Add(ruleName);
+    }
 }
 
 /// <summary>
@@ -68,21 +71,9 @@ public sealed class SyntaxColorisationDocument
     public IReadOnlyList<string> FileExtensions { get; }
 
     /// <summary>
-    /// Adds one declared file extension.
-    /// </summary>
-    /// <param name="extension">File extension to add.</param>
-    internal void AddFileExtension(string extension) => fileExtensions.Add(extension);
-
-    /// <summary>
     /// Gets declared StringSyntax extensions.
     /// </summary>
     public IReadOnlyList<string> StringSyntaxExtensions { get; }
-
-    /// <summary>
-    /// Adds one declared StringSyntax extension.
-    /// </summary>
-    /// <param name="extension">StringSyntax extension to add.</param>
-    internal void AddStringSyntaxExtension(string extension) => stringSyntaxExtensions.Add(extension);
 
     /// <summary>
     /// Gets declared classification sections.
@@ -90,10 +81,31 @@ public sealed class SyntaxColorisationDocument
     public IReadOnlyList<SyntaxColorisationSection> Sections { get; }
 
     /// <summary>
-    /// Adds one declared classification section.
+    /// Adds one declared file extension.
     /// </summary>
-    /// <param name="section">Section to add.</param>
-    internal void AddSection(SyntaxColorisationSection section) => sections.Add(section);
+    /// <param name="fileExtension">File extension value.</param>
+    internal void AddFileExtension(string fileExtension)
+    {
+        fileExtensions.Add(fileExtension);
+    }
+
+    /// <summary>
+    /// Adds one declared StringSyntax extension.
+    /// </summary>
+    /// <param name="stringSyntaxExtension">StringSyntax extension value.</param>
+    internal void AddStringSyntaxExtension(string stringSyntaxExtension)
+    {
+        stringSyntaxExtensions.Add(stringSyntaxExtension);
+    }
+
+    /// <summary>
+    /// Adds one section to the parsed descriptor document.
+    /// </summary>
+    /// <param name="section">Section value.</param>
+    internal void AddSection(SyntaxColorisationSection section)
+    {
+        sections.Add(section);
+    }
 }
 
 /// <summary>
