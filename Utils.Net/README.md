@@ -409,6 +409,158 @@ foreach (string group in newGroups)
 await nntp.QuitAsync();
 ```
 
+## SmtpServer example
+
+`SmtpServer` handles the SMTP protocol on an already-accepted stream. Implement `ISmtpMessageStore` to receive delivered messages, and optionally `ISmtpAuthenticator` to validate credentials.
+
+```csharp
+using System.Net;
+using System.Net.Sockets;
+using Utils.Net;
+
+// Minimal in-memory store
+class InboxStore : ISmtpMessageStore
+{
+    public List<SmtpMessage> Messages { get; } = new();
+    public Task StoreAsync(SmtpMessage message, CancellationToken ct = default)
+    {
+        Messages.Add(message);
+        return Task.CompletedTask;
+    }
+}
+
+// Accept one connection and handle it
+var store = new InboxStore();
+var listener = new TcpListener(IPAddress.Loopback, 2525);
+listener.Start();
+TcpClient tcp = await listener.AcceptTcpClientAsync();
+
+using SmtpServer smtp = new(store, isLocalDomain: domain => domain == "example.com");
+await smtp.StartAsync(tcp.GetStream());
+await smtp.Completion;
+
+Console.WriteLine($"Received {store.Messages.Count} message(s)");
+```
+
+To handle multiple clients, call `StartAsync` + `Completion` in a loop (one `SmtpServer` instance per accepted connection).
+
+### With authentication
+
+```csharp
+class StaticAuthenticator : ISmtpAuthenticator
+{
+    public Task<SmtpAuthenticationResult> AuthenticateAsync(string user, string password, CancellationToken ct = default)
+    {
+        bool ok = user == "alice" && password == "s3cr3t";
+        return Task.FromResult(new SmtpAuthenticationResult(ok, canRelay: ok));
+    }
+}
+
+using SmtpServer smtp = new(store, isLocalDomain: _ => true, authenticator: new StaticAuthenticator());
+await smtp.StartAsync(tcp.GetStream());
+await smtp.Completion;
+```
+
+## Pop3Server example
+
+Implement `IPop3Mailbox` to expose mailbox data. The server handles `USER`/`PASS`, `APOP`, `STAT`, `LIST`, `RETR`, `DELE`, and `QUIT`.
+
+```csharp
+using System.Net;
+using System.Net.Sockets;
+using Utils.Net;
+
+class MemoryMailbox : IPop3Mailbox
+{
+    private readonly Dictionary<int, string> _messages = new()
+    {
+        [1] = "From: sender@example.com\r\nSubject: Hello\r\n\r\nBody text."
+    };
+
+    public Task<bool> AuthenticateAsync(string user, string password, CancellationToken ct = default)
+        => Task.FromResult(user == "alice" && password == "s3cr3t");
+
+    public Task<bool> AuthenticateApopAsync(string user, string timestamp, string digest, CancellationToken ct = default)
+        => Task.FromResult(false); // APOP not supported in this example
+
+    public Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyDictionary<int, int>>(
+            _messages.ToDictionary(kv => kv.Key, kv => Encoding.UTF8.GetByteCount(kv.Value)));
+
+    public Task<IReadOnlyDictionary<int, string>> ListUidsAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyDictionary<int, string>>(
+            _messages.ToDictionary(kv => kv.Key, kv => $"uid-{kv.Key}"));
+
+    public Task<string> RetrieveAsync(int id, CancellationToken ct = default)
+        => Task.FromResult(_messages.TryGetValue(id, out var m) ? m : throw new KeyNotFoundException());
+
+    public Task DeleteAsync(int id, CancellationToken ct = default)
+    {
+        _messages.Remove(id);
+        return Task.CompletedTask;
+    }
+}
+
+var listener = new TcpListener(IPAddress.Loopback, 1100);
+listener.Start();
+TcpClient tcp = await listener.AcceptTcpClientAsync();
+
+using Pop3Server pop3 = new(new MemoryMailbox());
+await pop3.StartAsync(tcp.GetStream());
+await pop3.Completion;
+```
+
+## NntpServer example
+
+Implement `INntpArticleStore` to back the newsgroup data. The server handles `GROUP`, `LIST`, `ARTICLE`, `HEADER`, `BODY`, `POST`, `NEXT`, and `QUIT`.
+
+```csharp
+using System.Net;
+using System.Net.Sockets;
+using Utils.Net;
+
+class MemoryArticleStore : INntpArticleStore
+{
+    private readonly Dictionary<string, (DateTime Created, Dictionary<int, string> Articles)> _groups = new()
+    {
+        ["comp.test"] = (DateTime.UtcNow, new() { [1] = "From: a@b\r\nSubject: Test\r\n\r\nHello!" })
+    };
+    private int _nextId = 2;
+
+    public Task<IReadOnlyCollection<string>> ListGroupsAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyCollection<string>>(_groups.Keys.ToList());
+
+    public Task<DateTime?> GetGroupCreationDateAsync(string group, CancellationToken ct = default)
+        => Task.FromResult(_groups.TryGetValue(group, out var g) ? (DateTime?)g.Created : null);
+
+    public Task<IReadOnlyDictionary<int, string>> ListAsync(string group, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyDictionary<int, string>>(
+            _groups.TryGetValue(group, out var g) ? g.Articles : new Dictionary<int, string>());
+
+    public Task<IReadOnlyCollection<int>> ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyCollection<int>>(new List<int>());
+
+    public Task<string?> RetrieveAsync(string group, int id, CancellationToken ct = default)
+        => Task.FromResult(_groups.TryGetValue(group, out var g) && g.Articles.TryGetValue(id, out var a) ? a : (string?)null);
+
+    public Task<int> AddAsync(string group, string article, CancellationToken ct = default)
+    {
+        if (!_groups.TryGetValue(group, out var g)) throw new KeyNotFoundException();
+        int id = _nextId++;
+        g.Articles[id] = article;
+        return Task.FromResult(id);
+    }
+}
+
+var listener = new TcpListener(IPAddress.Loopback, 1190);
+listener.Start();
+TcpClient tcp = await listener.AcceptTcpClientAsync();
+
+using NntpServer nntp = new(new MemoryArticleStore());
+await nntp.StartAsync(tcp.GetStream());
+await nntp.Completion;
+```
+
 ## CommandResponseClient — custom text protocol
 
 `CommandResponseClient` provides the generic engine behind `SmtpClient`, `Pop3Client`, and `NntpClient`. Inherit from it to build a client for any line-oriented, numeric-code protocol.
@@ -432,6 +584,45 @@ await using FingerClient finger = new();
 await finger.ConnectAsync("example.com");
 string info = await finger.QueryAsync("alice");
 Console.WriteLine(info);
+```
+
+## CommandResponseServer — custom text protocol server
+
+`CommandResponseServer` is the server-side counterpart. Use `RegisterCommand` to map verbs to handlers. Contexts let you guard commands that require a prior step (e.g., authentication before data access).
+
+```csharp
+using System.Net;
+using System.Net.Sockets;
+using Utils.Net;
+
+var listener = new TcpListener(IPAddress.Loopback, 7979);
+listener.Start();
+TcpClient tcp = await listener.AcceptTcpClientAsync();
+
+using CommandResponseServer server = new();
+
+server.RegisterCommand("HELLO", (ctx, args) =>
+{
+    ctx.Add("GREETED");
+    string name = args.Length > 0 ? args[0] : "stranger";
+    return Task.FromResult<IEnumerable<ServerResponse>>(
+        [new ServerResponse("200", ResponseSeverity.Completion, $"Hi, {name}!")]);
+});
+
+server.RegisterCommand("SECRET", (ctx, args) =>
+{
+    return Task.FromResult<IEnumerable<ServerResponse>>(
+        [new ServerResponse("200", ResponseSeverity.Completion, "42")]);
+}, requiredContexts: "GREETED"); // only allowed after HELLO
+
+server.RegisterCommand("QUIT", (ctx, args) =>
+{
+    return Task.FromResult<IEnumerable<ServerResponse>>(
+        [new ServerResponse("221", ResponseSeverity.Completion, "Bye")]);
+});
+
+await server.StartAsync(tcp.GetStream());
+await server.Completion;
 ```
 
 ## Related packages
