@@ -676,13 +676,26 @@ public sealed class LexerEngine(ParserDefinition definition)
         string message)
     {
         string formatted = FormatError(filePath, line, column, code, message);
+        int? spanStart = IsValidDiagnosticSpan(span) ? span.Position : null;
+        int? spanLength = IsValidDiagnosticSpan(span) ? span.Length : null;
+
         diagnostics?.AddWithContext(
             ParserDiagnostics.ParseFailure,
-            span?.Position,
-            span?.Length,
+            spanStart,
+            spanLength,
             null,
             null,
             formatted);
         throw new LexerValidationException(formatted);
+    }
+
+    /// <summary>
+    /// Determines whether a lexer source span can be safely converted to a diagnostic span.
+    /// </summary>
+    /// <param name="span">Optional lexer source span to validate.</param>
+    /// <returns><see langword="true"/> when the span has non-negative offset and length values; otherwise, <see langword="false"/>.</returns>
+    private static bool IsValidDiagnosticSpan(SourceSpan? span)
+    {
+        return span is not null && span.Position >= 0 && span.Length >= 0;
     }
 }

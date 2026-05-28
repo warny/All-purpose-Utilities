@@ -565,8 +565,13 @@ public class LexerEngineTests
         };
         var lexer = new LexerEngine(grammar);
         var options = new LexerEngineOptions { Extensions = [new InvalidSpanExtension()] };
+        var diagnostics = new DiagnosticBag();
 
-        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options).ToList());
+        Assert.ThrowsExactly<LexerValidationException>(() => lexer.Tokenize(new StringReader("a"), options, diagnostics).ToList());
+        var diagnostic = diagnostics.Single();
+        Assert.AreEqual(ParserDiagnostics.ParseFailure.Code, diagnostic.Code);
+        Assert.IsNull(diagnostic.Span);
+        StringAssert.Contains(diagnostic.Message, "Invalid token span");
     }
 
     [TestMethod]
