@@ -97,6 +97,28 @@ public class ParserDiagnosticCompositionTests
     }
 
     [TestMethod]
+    public void ParserDiagnostic_LegacyConstructor_RejectsSpanStartWithoutSpanLength()
+    {
+        Assert.ThrowsException<ArgumentException>(() =>
+            new ParserDiagnostic(
+                ParserDiagnostics.SemanticPredicateNotEnforced,
+                "Message",
+                spanStart: 5,
+                spanLength: null));
+    }
+
+    [TestMethod]
+    public void ParserDiagnostic_LegacyConstructor_RejectsSpanLengthWithoutSpanStart()
+    {
+        Assert.ThrowsException<ArgumentException>(() =>
+            new ParserDiagnostic(
+                ParserDiagnostics.SemanticPredicateNotEnforced,
+                "Message",
+                spanStart: null,
+                spanLength: 2));
+    }
+
+    [TestMethod]
     public void DiagnosticBag_AddWithContext_WithLegacySpanParameters_BuildsDiagnosticSpan()
     {
         var bag = new DiagnosticBag();
@@ -110,5 +132,19 @@ public class ParserDiagnosticCompositionTests
         Assert.AreEqual(2, diagnostic.Span?.Length);
         Assert.IsNull(diagnostic.Location);
         Assert.AreEqual(descriptor.Code, diagnostic.Code);
+    }
+
+    [TestMethod]
+    public void DiagnosticBag_AddWithContext_RejectsPartialLegacySpan()
+    {
+        var bag = new DiagnosticBag();
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            bag.AddWithContext(
+                ParserDiagnostics.SemanticPredicateNotEnforced,
+                spanStart: 5,
+                spanLength: null,
+                ruleName: null,
+                exception: null));
     }
 }

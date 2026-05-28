@@ -30,9 +30,7 @@ public sealed class ParserDiagnostic
             message ?? throw new ArgumentNullException(nameof(message)),
             ruleName,
             exception);
-        Span = spanStart is null || spanLength is null
-            ? null
-            : new DiagnosticSpan(spanStart.Value, spanLength.Value);
+        Span = CreateSpan(spanStart, spanLength);
     }
 
     /// <summary>
@@ -126,5 +124,23 @@ public sealed class ParserDiagnostic
         }
 
         return $"{Location}: {Severity.ToString().ToLowerInvariant()} {Code}: {Message}";
+    }
+
+    /// <summary>
+    /// Creates a diagnostic span from legacy nullable start and length values.
+    /// </summary>
+    /// <param name="spanStart">Optional source span start position.</param>
+    /// <param name="spanLength">Optional source span length.</param>
+    /// <returns>The composed diagnostic span, or <see langword="null"/> when no span was provided.</returns>
+    private static DiagnosticSpan? CreateSpan(int? spanStart, int? spanLength)
+    {
+        if (spanStart.HasValue != spanLength.HasValue)
+        {
+            throw new ArgumentException("spanStart and spanLength must both be provided or both be null.");
+        }
+
+        return spanStart.HasValue
+            ? new DiagnosticSpan(spanStart.Value, spanLength!.Value)
+            : null;
     }
 }
