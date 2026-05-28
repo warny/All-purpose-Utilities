@@ -324,10 +324,10 @@ public class Antlr4GeneratorRuntimeParityTests
         => new(
             diagnostic.Code,
             diagnostic.Severity,
-            diagnostic.Line,
-            diagnostic.Column,
-            diagnostic.SpanStart,
-            diagnostic.SpanLength);
+            diagnostic.Location?.Line,
+            diagnostic.Location?.Column,
+            diagnostic.Span?.Start,
+            diagnostic.Span?.Length);
 
     private static bool IsCompatibilityParityDiagnostic(string code)
         => code is "UP1001" or "UP1002" or "UP1003" or "UP1004" or "UP1005" or "UP1006";
