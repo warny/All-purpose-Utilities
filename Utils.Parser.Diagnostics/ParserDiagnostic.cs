@@ -1,4 +1,5 @@
 using System;
+using Utils.Parser.Source;
 
 namespace Utils.Parser.Diagnostics;
 
@@ -24,18 +25,51 @@ public sealed class ParserDiagnostic
         string? ruleName = null,
         Exception? exception = null)
     {
-        Descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
-        Message = message ?? throw new ArgumentNullException(nameof(message));
-        SpanStart = spanStart;
-        SpanLength = spanLength;
-        RuleName = ruleName;
-        Exception = exception;
+        Details = new DiagnosticDetails(
+            descriptor ?? throw new ArgumentNullException(nameof(descriptor)),
+            message ?? throw new ArgumentNullException(nameof(message)),
+            ruleName,
+            exception);
+        Span = spanStart is null || spanLength is null
+            ? null
+            : new DiagnosticSpan(spanStart.Value, spanLength.Value);
+    }
+
+    /// <summary>
+    /// Initializes a new diagnostic instance.
+    /// </summary>
+    /// <param name="details">Diagnostic details.</param>
+    /// <param name="span">Optional source span.</param>
+    /// <param name="location">Optional source location.</param>
+    public ParserDiagnostic(
+        DiagnosticDetails details,
+        DiagnosticSpan? span = null,
+        SourceCodeLocation? location = null)
+    {
+        Details = details ?? throw new ArgumentNullException(nameof(details));
+        Span = span;
+        Location = location;
     }
 
     /// <summary>
     /// Gets the descriptor.
     /// </summary>
-    public ParserDiagnosticDescriptor Descriptor { get; }
+    public DiagnosticDetails Details { get; }
+
+    /// <summary>
+    /// Gets the optional source span.
+    /// </summary>
+    public DiagnosticSpan? Span { get; }
+
+    /// <summary>
+    /// Gets the optional human-readable source location.
+    /// </summary>
+    public SourceCodeLocation? Location { get; }
+
+    /// <summary>
+    /// Gets the descriptor.
+    /// </summary>
+    public ParserDiagnosticDescriptor Descriptor => Details.Descriptor;
 
     /// <summary>
     /// Gets the diagnostic code.
@@ -50,48 +84,47 @@ public sealed class ParserDiagnostic
     /// <summary>
     /// Gets the resolved message.
     /// </summary>
-    public string Message { get; }
+    public string Message => Details.Message;
 
     /// <summary>
     /// Gets the optional source span start position.
     /// </summary>
-    public int? SpanStart { get; }
+    public int? SpanStart => Span?.Start;
 
     /// <summary>
     /// Gets the optional source span length.
     /// </summary>
-    public int? SpanLength { get; }
+    public int? SpanLength => Span?.Length;
 
     /// <summary>Gets the optional source file path.</summary>
-    public string? FilePath { get; set; }
+    public string? FilePath => Location?.FilePath;
 
     /// <summary>Gets the optional 1-based line.</summary>
-    public int? Line { get; set; }
+    public int? Line => Location?.Line;
 
     /// <summary>Gets the optional 1-based column.</summary>
-    public int? Column { get; set; }
+    public int? Column => Location?.Column;
 
     /// <summary>
     /// Gets the optional rule name context.
     /// </summary>
-    public string? RuleName { get; }
+    public string? RuleName => Details.RuleName;
 
     /// <summary>
     /// Gets the optional related exception.
     /// </summary>
-    public Exception? Exception { get; }
+    public Exception? Exception => Details.Exception;
 
     /// <summary>
     /// Formats the diagnostic in file/line/column style.
     /// </summary>
     public string ToDisplayString()
     {
-        if (Line is null || Column is null)
+        if (Location is null)
         {
             return $"{Code}: {Message}";
         }
 
-        string path = string.IsNullOrWhiteSpace(FilePath) ? "<input>" : FilePath;
-        return $"{path}({Line},{Column}): {Severity.ToString().ToLowerInvariant()} {Code}: {Message}";
+        return $"{Location}: {Severity.ToString().ToLowerInvariant()} {Code}: {Message}";
     }
 }
