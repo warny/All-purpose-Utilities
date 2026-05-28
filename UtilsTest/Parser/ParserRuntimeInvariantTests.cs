@@ -38,7 +38,13 @@ public class ParserRuntimeInvariantTests
             ]));
         var definition = CreateDefinition(startRule, [subRule], LexerRule("A", "a"), LexerRule("B", "b"));
         var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
-        var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionOutcome.NotExecuted()));
+        var parser = new ParserEngine(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = evaluator,
+                ParserActionExecutor = new CountingActionExecutor(ParserActionExecutionOutcome.NotExecuted())
+            });
 
         var result = parser.Parse([Token("A", "a")]);
 
@@ -63,7 +69,7 @@ public class ParserRuntimeInvariantTests
             ]));
         var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
         var actions = new CountingActionExecutor(ParserActionExecutionOutcome.Executed);
-        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), actions);
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(), ParserActionExecutor = actions });
 
         var result = parser.Parse([Token("A", "a")]);
 
@@ -88,7 +94,13 @@ public class ParserRuntimeInvariantTests
             ]));
         var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
         var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
-        var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionOutcome.NotExecuted()));
+        var parser = new ParserEngine(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = evaluator,
+                ParserActionExecutor = new CountingActionExecutor(ParserActionExecutionOutcome.NotExecuted())
+            });
         var diagnostics = new DiagnosticBag();
 
         var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);
@@ -116,7 +128,13 @@ public class ParserRuntimeInvariantTests
             ]));
         var definition = CreateDefinition(startRule, LexerRule("A", "a"), LexerRule("B", "b"));
         var evaluator = new CountingPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected);
-        var parser = new ParserEngine(definition, evaluator, new CountingActionExecutor(ParserActionExecutionOutcome.NotExecuted()));
+        var parser = new ParserEngine(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = evaluator,
+                ParserActionExecutor = new CountingActionExecutor(ParserActionExecutionOutcome.NotExecuted())
+            });
         var diagnostics = new DiagnosticBag();
 
         var result = parser.Parse([Token("A", "a"), Token("B", "b")], diagnostics: diagnostics);

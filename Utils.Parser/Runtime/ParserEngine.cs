@@ -99,49 +99,6 @@ public sealed class ParserEngine
     }
 
     /// <summary>
-    /// Initializes a parser engine with an explicit semantic predicate evaluation policy.
-    /// </summary>
-    /// <param name="definition">Resolved parser definition.</param>
-    /// <param name="semanticPredicateEvaluator">
-    /// Strategy used to evaluate semantic predicates without executing arbitrary source code.
-    /// </param>
-    public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
-        : this(
-            definition,
-            ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = semanticPredicateEvaluator })
-    {
-    }
-
-    /// <summary>
-    /// Initializes a parser engine with an explicit parser action execution policy.
-    /// </summary>
-    /// <param name="definition">Resolved parser definition.</param>
-    /// <param name="parserActionExecutor">Policy used to handle parser embedded actions.</param>
-    public ParserEngine(ParserDefinition definition, IParserActionExecutor parserActionExecutor)
-        : this(
-            definition,
-            ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = parserActionExecutor })
-    {
-    }
-
-    /// <summary>
-    /// Initializes a parser engine with explicit semantic predicate and action execution policies.
-    /// </summary>
-    /// <param name="definition">Resolved parser definition.</param>
-    /// <param name="semanticPredicateEvaluator">Policy used to evaluate semantic predicates.</param>
-    /// <param name="parserActionExecutor">Policy used to handle parser embedded actions.</param>
-    public ParserEngine(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator, IParserActionExecutor parserActionExecutor)
-        : this(
-            definition,
-            ParserRuntimeFeaturePolicy.Default with
-            {
-                SemanticPredicateEvaluator = semanticPredicateEvaluator,
-                ParserActionExecutor = parserActionExecutor
-            })
-    {
-    }
-
-    /// <summary>
     /// Initializes a parser engine with an explicit runtime feature policy.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>

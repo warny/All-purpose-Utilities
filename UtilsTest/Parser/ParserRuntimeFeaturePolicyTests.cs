@@ -24,18 +24,18 @@ public class ParserRuntimeFeaturePolicyTests
     }
 
     /// <summary>
-    /// Verifies that existing constructor overloads map runtime strategies exactly as before.
+    /// Verifies that runtime feature policy configuration maps runtime strategies exactly as expected.
     /// </summary>
     [TestMethod]
-    public void ParserEngine_ExistingOverloads_ProduceEquivalentPolicies()
+    public void ParserEngine_RuntimeFeaturePolicy_ProducesEquivalentPolicies()
     {
         var definition = CreateMinimalDefinition();
         var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var executor = new ConstantParserActionExecutor(ParserActionExecutionOutcome.Executed);
 
-        var evaluatorOnly = new ParserEngine(definition, evaluator);
-        var executorOnly = new ParserEngine(definition, executor);
-        var combined = new ParserEngine(definition, evaluator, executor);
+        var evaluatorOnly = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = evaluator });
+        var executorOnly = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = executor });
+        var combined = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = evaluator, ParserActionExecutor = executor });
 
         Assert.AreSame(evaluator, GetSemanticPredicateEvaluator(evaluatorOnly));
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(GetParserActionExecutor(evaluatorOnly));
