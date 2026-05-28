@@ -84,24 +84,6 @@ public sealed class ParserDiagnostic
     /// </summary>
     public string Message => Details.Message;
 
-    /// <summary>
-    /// Gets the optional source span start position.
-    /// </summary>
-    public int? SpanStart => Span?.Start;
-
-    /// <summary>
-    /// Gets the optional source span length.
-    /// </summary>
-    public int? SpanLength => Span?.Length;
-
-    /// <summary>Gets the optional source file path.</summary>
-    public string? FilePath => Location?.FilePath;
-
-    /// <summary>Gets the optional 1-based line.</summary>
-    public int? Line => Location?.Line;
-
-    /// <summary>Gets the optional 1-based column.</summary>
-    public int? Column => Location?.Column;
 
     /// <summary>
     /// Gets the optional rule name context.

@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Reflection;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Source;
 
@@ -68,18 +67,20 @@ public class ParserDiagnosticCompositionTests
         Assert.AreEqual(descriptor.Code, diagnostic.Code);
         Assert.AreEqual(descriptor.Severity, diagnostic.Severity);
         Assert.AreEqual("Message", diagnostic.Message);
-        Assert.AreEqual(8, diagnostic.SpanStart);
-        Assert.AreEqual(2, diagnostic.SpanLength);
+        Assert.AreEqual(8, diagnostic.Span?.Start);
+        Assert.AreEqual(2, diagnostic.Span?.Length);
         Assert.AreEqual("rule", diagnostic.RuleName);
         Assert.IsInstanceOfType<InvalidOperationException>(diagnostic.Exception);
 
-        Assert.AreEqual("file.ext", diagnostic.FilePath);
-        Assert.AreEqual(3, diagnostic.Line);
-        Assert.AreEqual(9, diagnostic.Column);
+        Assert.AreEqual("file.ext", diagnostic.Location?.FilePath);
+        Assert.AreEqual(3, diagnostic.Location?.Line);
+        Assert.AreEqual(9, diagnostic.Location?.Column);
 
-        Assert.IsFalse(typeof(ParserDiagnostic).GetProperty(nameof(ParserDiagnostic.FilePath))?.CanWrite ?? true);
-        Assert.IsFalse(typeof(ParserDiagnostic).GetProperty(nameof(ParserDiagnostic.Line))?.CanWrite ?? true);
-        Assert.IsFalse(typeof(ParserDiagnostic).GetProperty(nameof(ParserDiagnostic.Column))?.CanWrite ?? true);
+        Assert.IsNull(typeof(ParserDiagnostic).GetProperty("SpanStart"));
+        Assert.IsNull(typeof(ParserDiagnostic).GetProperty("SpanLength"));
+        Assert.IsNull(typeof(ParserDiagnostic).GetProperty("FilePath"));
+        Assert.IsNull(typeof(ParserDiagnostic).GetProperty("Line"));
+        Assert.IsNull(typeof(ParserDiagnostic).GetProperty("Column"));
     }
 
     [TestMethod]
