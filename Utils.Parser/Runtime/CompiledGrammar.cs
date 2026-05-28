@@ -32,48 +32,6 @@ public sealed class CompiledGrammar
 
     /// <summary>
     /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
-    /// <see cref="ParserDefinition"/> and an explicit semantic predicate evaluation policy.
-    /// </summary>
-    /// <param name="definition">A resolved grammar definition.</param>
-    /// <param name="semanticPredicateEvaluator">
-    /// Evaluator used by the embedded <see cref="ParserEngine"/> for semantic predicates.
-    /// </param>
-    public CompiledGrammar(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator)
-        : this(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = semanticPredicateEvaluator })
-    {
-    }
-
-    /// <summary>
-    /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
-    /// <see cref="ParserDefinition"/> and an explicit parser action execution policy.
-    /// </summary>
-    /// <param name="definition">A resolved grammar definition.</param>
-    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
-    public CompiledGrammar(ParserDefinition definition, IParserActionExecutor parserActionExecutor)
-        : this(definition, ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = parserActionExecutor })
-    {
-    }
-
-    /// <summary>
-    /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
-    /// <see cref="ParserDefinition"/> with explicit predicate and action policies.
-    /// </summary>
-    /// <param name="definition">A resolved grammar definition.</param>
-    /// <param name="semanticPredicateEvaluator">Semantic predicate evaluator policy.</param>
-    /// <param name="parserActionExecutor">Parser embedded action execution policy.</param>
-    public CompiledGrammar(ParserDefinition definition, ISemanticPredicateEvaluator semanticPredicateEvaluator, IParserActionExecutor parserActionExecutor)
-        : this(
-            definition,
-            ParserRuntimeFeaturePolicy.Default with
-            {
-                SemanticPredicateEvaluator = semanticPredicateEvaluator,
-                ParserActionExecutor = parserActionExecutor
-            })
-    {
-    }
-
-    /// <summary>
-    /// Initialises a <see cref="CompiledGrammar"/> from a fully resolved
     /// <see cref="ParserDefinition"/> with an explicit runtime feature policy.
     /// </summary>
     /// <param name="definition">A resolved grammar definition.</param>

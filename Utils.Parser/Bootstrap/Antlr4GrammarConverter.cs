@@ -100,7 +100,13 @@ public sealed class Antlr4GrammarConverter
         ISemanticPredicateEvaluator semanticPredicateEvaluator,
         IParserActionExecutor parserActionExecutor,
         DiagnosticBag? diagnostics = null)
-        => new Runtime.CompiledGrammar(Parse(grammarText, diagnostics), semanticPredicateEvaluator, parserActionExecutor);
+        => new Runtime.CompiledGrammar(
+            Parse(grammarText, diagnostics),
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = semanticPredicateEvaluator,
+                ParserActionExecutor = parserActionExecutor
+            });
 
     /// <summary>
     /// Full pipeline: ANTLR4 grammar text → resolved <see cref="Utils.Parser.Model.ParserDefinition"/>.

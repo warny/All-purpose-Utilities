@@ -374,6 +374,7 @@ Current clarification status:
 - generator-side AST now preserves rule lifecycle prequel metadata (`@init` / `@after`) for parity/audit visibility while keeping runtime behavior and emitted C# unchanged.
 - shared ANTLR prequel metadata model extraction is complete for options/imports/actions/tokens/channels through mapper-only DTO sharing; runtime and generator parsing remain intentionally duplicated.
 - a shared netstandard2.0 ANTLR prequel DTO project was introduced, while runtime and generator parsing remain intentionally separate.
+- runtime advanced-configuration public API was consolidated so `ParserRuntimeFeaturePolicy` is the single explicit runtime feature-entry point for semantic predicates, parser actions, and runtime observers.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 

@@ -35,7 +35,7 @@ public class ParserEngineActionExecutorTests
         var tokenRuleA = CreateTokenRuleA();
         var definition = CreateDefinition(startRule, tokenRuleA);
         var observer = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted());
-        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), observer);
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(), ParserActionExecutor = observer });
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
 
@@ -52,7 +52,7 @@ public class ParserEngineActionExecutorTests
         var startRule = CreateStartRuleWithInlineAction("run();");
         var tokenRuleA = CreateTokenRuleA();
         var definition = CreateDefinition(startRule, tokenRuleA);
-        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionOutcome.Executed));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(), ParserActionExecutor = new ObservingParserActionExecutor(ParserActionExecutionOutcome.Executed) });
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
 
@@ -64,7 +64,7 @@ public class ParserEngineActionExecutorTests
     {
         var definition = CreateDefinition(CreateStartRuleWithInlineAction("run();"), CreateTokenRuleA());
         var diagnostics = new DiagnosticBag();
-        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionOutcome.Executed));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(), ParserActionExecutor = new ObservingParserActionExecutor(ParserActionExecutionOutcome.Executed) });
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
 
@@ -77,7 +77,7 @@ public class ParserEngineActionExecutorTests
     {
         var definition = CreateDefinition(CreateStartRuleWithInlineAction("skip();"), CreateTokenRuleA());
         var diagnostics = new DiagnosticBag();
-        var parser = new ParserEngine(definition, new DefaultSemanticPredicateEvaluator(), new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted()));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(), ParserActionExecutor = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted()) });
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
 
@@ -92,8 +92,11 @@ public class ParserEngineActionExecutorTests
         var diagnostics = new DiagnosticBag();
         var parser = new ParserEngine(
             definition,
-            new DefaultSemanticPredicateEvaluator(),
-            new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted(ParserDiagnostics.EmbeddedCodeExecutionDisabled, null, "parser action")));
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+                ParserActionExecutor = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted(ParserDiagnostics.EmbeddedCodeExecutionDisabled, null, "parser action"))
+            });
 
         var result = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
 
@@ -110,12 +113,15 @@ public class ParserEngineActionExecutorTests
         var exception = new InvalidOperationException("compilation failed");
         var parser = new ParserEngine(
             definition,
-            new DefaultSemanticPredicateEvaluator(),
-            new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted(
-                ParserDiagnostics.EmbeddedCodeCompilationFailed,
-                exception,
-                "parser action",
-                exception.Message)));
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+                ParserActionExecutor = new ObservingParserActionExecutor(ParserActionExecutionOutcome.NotExecuted(
+                    ParserDiagnostics.EmbeddedCodeCompilationFailed,
+                    exception,
+                    "parser action",
+                    exception.Message))
+            });
 
         _ = parser.Parse([new Token(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
 

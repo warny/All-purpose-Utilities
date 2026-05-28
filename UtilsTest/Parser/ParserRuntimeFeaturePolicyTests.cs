@@ -33,9 +33,9 @@ public class ParserRuntimeFeaturePolicyTests
         var evaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied);
         var executor = new ConstantParserActionExecutor(ParserActionExecutionOutcome.Executed);
 
-        var evaluatorOnly = new ParserEngine(definition, evaluator);
-        var executorOnly = new ParserEngine(definition, executor);
-        var combined = new ParserEngine(definition, evaluator, executor);
+        var evaluatorOnly = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = evaluator });
+        var executorOnly = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { ParserActionExecutor = executor });
+        var combined = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = evaluator, ParserActionExecutor = executor });
 
         Assert.AreSame(evaluator, GetSemanticPredicateEvaluator(evaluatorOnly));
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(GetParserActionExecutor(evaluatorOnly));
