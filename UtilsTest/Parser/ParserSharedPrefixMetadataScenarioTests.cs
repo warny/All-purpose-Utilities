@@ -337,10 +337,10 @@ public class ParserSharedPrefixMetadataScenarioTests
     {
         if (name is "ID" or "NUMBER")
         {
-            return new Rule(name, 0, false, new Alternation([])) { Kind = RuleKind.Lexer };
+            return new Rule(name, 0, false, new Alternation([]), Kind: RuleKind.Lexer);
         }
 
-        return new Rule(name, 0, false, new Alternation([])) { Kind = RuleKind.Parser };
+        return new Rule(name, 0, false, new Alternation([]), Kind: RuleKind.Parser);
     }
 
     /// <summary>
