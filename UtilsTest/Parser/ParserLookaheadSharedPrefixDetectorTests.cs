@@ -107,8 +107,8 @@ public class ParserLookaheadSharedPrefixDetectorTests
     [TestMethod]
     public void Detect_FromProbeResults_GroupsSharedFirstToken()
     {
-        var idRule = new Rule("ID", 0, false, new Alternation([])) { Kind = RuleKind.Lexer };
-        var exprRule = new Rule("expr", 1, false, new Alternation([])) { Kind = RuleKind.Parser };
+        var idRule = new Rule("ID", 0, false, new Alternation([]), Kind: RuleKind.Lexer);
+        var exprRule = new Rule("expr", 1, false, new Alternation([]), Kind: RuleKind.Parser);
         var alternatives = new[]
         {
             new Alternative(0, Associativity.Left, new Sequence([new RuleRef("ID"), new LiteralMatch("+"), new RuleRef("expr")]), null),

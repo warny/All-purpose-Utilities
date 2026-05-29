@@ -379,15 +379,23 @@ public static class SyntaxColorisationGrammar
     /// Creates a lexer rule.
     /// </summary>
     private static Rule L(string name, RuleContent content)
-        => new(name, 0, false, new Alternation(new[] { new Alternative(0, Associativity.Left, content) }))
-        { Kind = RuleKind.Lexer };
+        => new(
+            name,
+            0,
+            false,
+            new Alternation(new[] { new Alternative(0, Associativity.Left, content) }),
+            Kind: RuleKind.Lexer);
 
     /// <summary>
     /// Creates a parser rule.
     /// </summary>
     private static Rule P(string name, RuleContent content)
-        => new(name, 0, false, new Alternation(new[] { new Alternative(0, Associativity.Left, content) }))
-        { Kind = RuleKind.Parser };
+        => new(
+            name,
+            0,
+            false,
+            new Alternation(new[] { new Alternative(0, Associativity.Left, content) }),
+            Kind: RuleKind.Parser);
 
     /// <summary>
     /// Creates one literal tokenizer node.

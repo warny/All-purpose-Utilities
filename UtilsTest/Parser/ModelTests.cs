@@ -158,7 +158,7 @@ public class ModelTests
     }
 
     [TestMethod]
-    public void Rule_DefaultKindIsUnresolved()
+    public void Rule_DefaultKind_IsUnresolved()
     {
         var rule = new Rule("test", 0, false,
             new Alternation(new[] {
@@ -166,6 +166,23 @@ public class ModelTests
             }));
 
         Assert.AreEqual(RuleKind.Unresolved, rule.Kind);
+    }
+
+    [TestMethod]
+    public void Rule_WithExpression_PreservesKind()
+    {
+        var originalContent = new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("a"))
+        ]);
+        var newContent = new Alternation([
+            new Alternative(0, Associativity.Left, new LiteralMatch("b"))
+        ]);
+        var rule = new Rule("expr", 0, false, originalContent, Kind: RuleKind.Parser);
+
+        var updated = rule with { Content = newContent };
+
+        Assert.AreEqual(RuleKind.Parser, updated.Kind);
+        Assert.AreSame(newContent, updated.Content);
     }
 
     [TestMethod]
@@ -277,6 +294,108 @@ public class ModelTests
     }
 
     [TestMethod]
+    public void RuleResolver_ParserRules_AreFinalizedWithParserKind()
+    {
+        var definition = CreateProjectionTestDefinition();
+
+        var resolved = RuleResolver.Resolve(definition);
+
+        Assert.IsTrue(resolved.ParserRules.Count > 0);
+        Assert.IsTrue(resolved.ParserRules.All(rule => rule.Kind == RuleKind.Parser));
+    }
+
+    [TestMethod]
+    public void RuleResolver_ModeRules_AreFinalizedWithLexerKind()
+    {
+        var definition = CreateProjectionTestDefinition();
+
+        var resolved = RuleResolver.Resolve(definition);
+
+        Assert.IsTrue(resolved.Modes.SelectMany(mode => mode.Rules).Any());
+        Assert.IsTrue(resolved.Modes.SelectMany(mode => mode.Rules).All(rule => rule.Kind == RuleKind.Lexer));
+    }
+
+    [TestMethod]
+    public void RuleResolver_AllRules_UsesFinalizedRules()
+    {
+        var definition = CreateProjectionTestDefinition();
+
+        var resolved = RuleResolver.Resolve(definition);
+        var parserRule = resolved.ParserRules.Single(rule => rule.Name == "expr");
+        var lexerRule = resolved.Modes.Single().Rules.Single(rule => rule.Name == "TOKEN");
+
+        Assert.AreSame(parserRule, resolved.AllRules["expr"]);
+        Assert.AreSame(lexerRule, resolved.AllRules["TOKEN"]);
+        Assert.AreEqual(RuleKind.Parser, resolved.AllRules["expr"].Kind);
+        Assert.AreEqual(RuleKind.Lexer, resolved.AllRules["TOKEN"].Kind);
+    }
+
+    [TestMethod]
+    public void RuleResolver_RootRule_UsesFinalizedRule()
+    {
+        var definition = CreateProjectionTestDefinition();
+
+        var resolved = RuleResolver.Resolve(definition);
+
+        Assert.IsNotNull(resolved.RootRule);
+        Assert.AreEqual(RuleKind.Parser, resolved.RootRule!.Kind);
+        Assert.AreSame(resolved.AllRules[resolved.RootRule.Name], resolved.RootRule);
+    }
+
+    [TestMethod]
+    public void RuleResolver_NormalizedAlternatives_PreserveRuleKind()
+    {
+        var duplicateAlternativeRule = new Rule(
+            "expr",
+            0,
+            false,
+            new Alternation([
+                new Alternative(1, Associativity.Left, new RuleRef("TOKEN")),
+                new Alternative(0, Associativity.Left, new RuleRef("TOKEN"))
+            ]));
+        var tokenRule = new Rule(
+            "TOKEN",
+            1,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new LiteralMatch("a"))
+            ]));
+        var definition = new ParserDefinition(
+            "Test",
+            GrammarType.Combined,
+            null,
+            [],
+            [],
+            [new LexerMode("DEFAULT_MODE", [tokenRule])],
+            [duplicateAlternativeRule],
+            duplicateAlternativeRule);
+
+        var resolved = RuleResolver.Resolve(definition);
+        var normalizedRule = resolved.ParserRules.Single(rule => rule.Name == "expr");
+
+        Assert.AreEqual(RuleKind.Parser, normalizedRule.Kind);
+        Assert.AreEqual(1, normalizedRule.Content.Alternatives.Count);
+        Assert.AreSame(normalizedRule, resolved.AllRules["expr"]);
+        Assert.AreSame(normalizedRule, resolved.RootRule);
+    }
+
+    [TestMethod]
+    public void RuleResolutionBuilder_RejectsConflictingKind()
+    {
+        var rule = new Rule(
+            "expr",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("TOKEN"))
+            ]),
+            Kind: RuleKind.Parser);
+        var builder = new RuleResolutionBuilder(rule);
+
+        Assert.ThrowsException<GrammarValidationException>(() => builder.ResolveAs(RuleKind.Lexer));
+    }
+
+    [TestMethod]
     public void RuleResolver_DuplicateRuleThrows()
     {
         var rule1 = new Rule("SAME", 0, false,
@@ -341,4 +460,37 @@ public class ModelTests
         Assert.IsTrue(tokens.Count > 0, "Expected at least one ERROR token");
         Assert.IsTrue(tokens.All(t => t.RuleName == "ERROR"), "Expected all tokens to be ERROR");
     }
+
+    /// <summary>
+    /// Creates a minimal combined grammar used to verify finalized rule projections.
+    /// </summary>
+    /// <returns>A parser definition with one lexer rule and one parser rule.</returns>
+    private static ParserDefinition CreateProjectionTestDefinition()
+    {
+        var tokenRule = new Rule(
+            "TOKEN",
+            0,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new LiteralMatch("a"))
+            ]));
+        var parserRule = new Rule(
+            "expr",
+            1,
+            false,
+            new Alternation([
+                new Alternative(0, Associativity.Left, new RuleRef("TOKEN"))
+            ]));
+
+        return new ParserDefinition(
+            "Test",
+            GrammarType.Combined,
+            null,
+            [],
+            [],
+            [new LexerMode("DEFAULT_MODE", [tokenRule])],
+            [parserRule],
+            parserRule);
+    }
+
 }
