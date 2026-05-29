@@ -73,13 +73,10 @@ public record Rule(
     /// <summary>Code executed before the rule body (<c>@init { }</c>), or <c>null</c>.</summary>
     EmbeddedAction? InitAction = null,
     /// <summary>Code executed after the rule body (<c>@after { }</c>), or <c>null</c>.</summary>
-    EmbeddedAction? AfterAction = null
-)
-{
+    EmbeddedAction? AfterAction = null,
     /// <summary>
     /// Whether this is a lexer or parser rule.
-    /// Set by <c>RuleResolver.Resolve</c> during the resolution pass;
-    /// initially <see cref="RuleKind.Unresolved"/>.
+    /// The default <see cref="RuleKind.Unresolved"/> value is valid before resolution.
     /// </summary>
-    public RuleKind Kind { get; internal set; } = RuleKind.Unresolved;
-}
+    RuleKind Kind = RuleKind.Unresolved
+);
