@@ -10,6 +10,8 @@ Use this package when you need a common set of diagnostic primitives across pars
 - diagnostic severities,
 - diagnostic aggregation utilities.
 
+Source-location contracts such as `SourceCodeLocation` and `SourceCodeRange` are provided by `omy.Utils.Parser.Source` so non-diagnostic surfaces can share them without depending on diagnostics.
+
 ## Typical usage
 
 The package is typically consumed transitively by parser packages. Reference it directly when building custom tooling that needs to exchange diagnostics with `omy.Utils.Parser` or `omy.Utils.Parser.Generators`.

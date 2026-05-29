@@ -4,11 +4,11 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <PackageId>omy.Utils.Parser.Diagnostics</PackageId>
+        <PackageId>omy.Utils.Parser.Source</PackageId>
         <Version>0.1.0</Version>
         <Authors>Olivier MARTY</Authors>
-        <Description>Shared diagnostics model and descriptor catalog for Utils.Parser runtime and source generator.</Description>
-        <PackageTags>omy;utilities;parser;diagnostics;antlr4;generator</PackageTags>
+        <Description>Shared source-location contracts for Utils.Parser runtime, diagnostics, generators, and tooling.</Description>
+        <PackageTags>omy;utilities;parser;source;location;diagnostics;antlr4;tooling</PackageTags>
         <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
@@ -18,10 +18,6 @@
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Utils.Parser.Source\Utils.Parser.Source.csproj" />
     </ItemGroup>
 
 </Project>

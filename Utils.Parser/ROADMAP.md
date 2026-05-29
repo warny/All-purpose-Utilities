@@ -242,7 +242,7 @@ Current clarification status:
 - generator/runtime diagnostic parity for `UP1001`-`UP1006` was tightened with parity tests while preserving parsing semantics and recovery determinism.
 - shared ANTLR4 prequel DTOs now include shared neutral prequel validation facts in `Utils.Parser.Antlr4.Common`; runtime and generator continue to own conversion into `ParserDiagnostics`, and parsing remains intentionally separate.
 - parser diagnostics now use immutable composed value objects (`DiagnosticDetails`, `DiagnosticSpan`, `SourceCodeLocation`, and `SourceCodeRange`) to separate diagnostic content, source offsets, and human-readable source locations while preserving diagnostic ownership and emission semantics.
-- `SourceCodeLocation` is intended to become the shared source-location contract for every parser surface that needs to carry a location in parsed source code, including future rule results, without changing those surfaces in this diagnostics-focused PR.
+- `SourceCodeLocation` and `SourceCodeRange` are now hosted by a dedicated shared `Utils.Parser.Source` package so diagnostics, runtime, generators, and future tooling surfaces can share source-location contracts without depending on diagnostics.
 
 ### Phase 3 — Lookahead contract consolidation
 
