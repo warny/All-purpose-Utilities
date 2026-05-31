@@ -3,14 +3,14 @@ using System;
 namespace Utils.Parser.Source;
 
 /// <summary>
-/// Represents a human-readable location in source code.
+/// Represents a human-readable location in source code with a required file path, line, and column.
 /// </summary>
 public class SourceCodeLocation
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SourceCodeLocation"/> class.
     /// </summary>
-    /// <param name="filePath">Source file path.</param>
+    /// <param name="filePath">Required source file path.</param>
     /// <param name="line">1-based line number.</param>
     /// <param name="column">1-based column number.</param>
     public SourceCodeLocation(string filePath, int line, int column)
@@ -36,7 +36,7 @@ public class SourceCodeLocation
     }
 
     /// <summary>
-    /// Gets the source file path.
+    /// Gets the required source file path.
     /// </summary>
     public string FilePath { get; }
 

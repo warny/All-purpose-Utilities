@@ -28,6 +28,7 @@
 
 
     <ItemGroup>
+        <ProjectReference Include="..\Utils.Parser.Source\Utils.Parser.Source.csproj" />
         <ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" />
         <ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" />
     </ItemGroup>

@@ -2,6 +2,7 @@ using System.IO;
 using System.Text;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
+using Utils.Parser.Source;
 
 namespace Utils.Parser.Runtime;
 
