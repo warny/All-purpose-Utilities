@@ -85,6 +85,7 @@ Current capabilities and responsibilities:
 - Parser tests are organized to reflect runtime contracts.
 - Runtime observation and export contract is documented (`docs/parser/RuntimeObservationAndExportContract.md`).
 - Diagnostics/observation correlation boundaries are documented (`docs/parser/DiagnosticsObservationCorrelation.md`) as descriptive-only and non-authoritative.
+- Source-position contracts are centralized in the shared `Utils.Parser.Source` package: `SourceCodeLocation` / `SourceCodeRange` remain human-readable diagnostic/display locations, while `SourceLocation` / `SourceSpan` preserve runtime text offsets and spans for tokens and parse nodes.
 
 Clarifications that must remain true:
 
@@ -243,6 +244,7 @@ Current clarification status:
 - shared ANTLR4 prequel DTOs now include shared neutral prequel validation facts in `Utils.Parser.Antlr4.Common`; runtime and generator continue to own conversion into `ParserDiagnostics`, and parsing remains intentionally separate.
 - parser diagnostics now use immutable composed value objects (`DiagnosticDetails`, `DiagnosticSpan`, `SourceCodeLocation`, and `SourceCodeRange`) to separate diagnostic content, source offsets, and human-readable source locations while preserving diagnostic ownership and emission semantics.
 - `SourceCodeLocation` and `SourceCodeRange` are now hosted by a dedicated shared `Utils.Parser.Source` package so diagnostics, runtime, generators, and future tooling surfaces can share source-location contracts without depending on diagnostics.
+- `SourceLocation` and `SourceSpan` were moved into the shared `Utils.Parser.Source` package alongside `SourceCodeLocation` and `SourceCodeRange`, centralizing source-position contracts while keeping token/runtime behavior unchanged.
 
 ### Phase 3 — Lookahead contract consolidation
 

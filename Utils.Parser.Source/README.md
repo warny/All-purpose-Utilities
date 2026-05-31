@@ -6,8 +6,10 @@ The package is intentionally small and does not carry runtime parsing logic, dia
 
 ## Contracts
 
-- `SourceCodeLocation` represents a source file path with a 1-based line and 1-based column.
-- `SourceCodeRange` extends `SourceCodeLocation` with a length component for source ranges.
+- `SourceCodeLocation` represents a required source file path with a 1-based line and 1-based column for human-readable display.
+- `SourceCodeRange` extends `SourceCodeLocation` with a length component for human-readable source ranges.
+- `SourceLocation` represents a point in source text with an absolute offset plus optional file/display coordinates.
+- `SourceSpan` represents a runtime text span with an absolute offset and length, plus optional file/display coordinates for diagnostics formatting.
 
 ## Intended consumers
 
