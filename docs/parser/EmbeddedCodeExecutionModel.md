@@ -79,6 +79,18 @@ The prepared output is intentionally path-specific:
 
 Adapters may differ by path, but model semantics must stay aligned.
 
+## 4.1 Minimal preparation boundary
+
+The repository now contains an internal minimal preparation boundary in `Utils.Parser` for future embedded-code preparation work. It models:
+
+- raw embedded source text and construct kind (`EmbeddedCodeSource`, `EmbeddedCodeKind`);
+- explicit target path metadata (`EmbeddedCodePreparationContext`, `EmbeddedCodeTarget`);
+- the contextual symbol model (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`);
+- preparation outcomes (`EmbeddedCodePreparationResult<TArtifact>`, `EmbeddedCodePreparationStatus`);
+- one narrow preparation interface for semantic predicates and inline parser actions (`IEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact>`).
+
+This boundary is intentionally metadata/preparation-only in this step. It is not wired into `ParserEngine`, does not change scheduling or memoization, does not migrate the expression-backed adapters, and does not make `GrammarEmitter` generate executable embedded-code hooks. The neutral preserving preparer returns explicit preserved/unsupported metadata and never compiles or executes embedded source.
+
 ## 5. Source generator C# path
 
 Pipeline:
@@ -241,6 +253,7 @@ Responsible for:
 - embedded-code recognition/classification;
 - raw source preservation in model metadata;
 - routing via runtime policy abstractions;
+- internal preparation boundary contracts for future executable or generable artifacts;
 - deterministic diagnostics;
 - preserving `ParserEngine` authority.
 
@@ -336,7 +349,7 @@ This model explicitly excludes:
 - hidden semantic runtime state;
 - parse-tree shape changes;
 - direct `Utils.Parser` dependency on `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax`;
-- implementation changes in this PR.
+- runtime behavior changes from the current preparation-boundary contracts.
 
 ## 13. Future PR plan
 
@@ -346,10 +359,16 @@ This model explicitly excludes:
 - document current expression-backed adapters as an intermediate runtime integration step;
 - no behavior change.
 
-### Future PR — Explicit preparation boundary
+### PR 2 — Explicit preparation boundary (current implementation step)
 
-- move runtime-inline expression compilation to parser model preparation/generation, or introduce an explicit boundary that produces executable artifacts before parsing;
+- introduce an internal minimal boundary that represents embedded-code source, preparation context, target path, preparation status, and path-specific artifacts;
+- keep the boundary disconnected from `ParserEngine`, `GrammarEmitter`, and the current expression-backed adapters;
 - preserve `ParserEngine` as an execution coordinator rather than a language compiler.
+
+### Future PR — Runtime-inline preparation migration
+
+- move runtime-inline expression compilation to parser model preparation/generation through the explicit boundary;
+- execute prepared artifacts during parsing instead of compiling source text during predicate/action invocation.
 
 ### Future PR — Source generator C# path
 
