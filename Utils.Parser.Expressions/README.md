@@ -12,6 +12,10 @@ Available surfaces:
 - `ExpressionEmbeddedCodePreparer` prepares expression-backed artifacts for semantic predicates (`{ condition }?`) and inline parser actions (`{ code }`).
 - `PreparedExpressionSemanticPredicate` stores a compiled predicate delegate and can produce `SemanticPredicateEvaluationOutcome` values without recompiling source text.
 - `PreparedExpressionParserAction` stores a compiled action delegate and can produce `ParserActionExecutionOutcome` values without recompiling source text.
+- `PreparedExpressionEmbeddedCodeKey` identifies prepared artifacts by embedded-code kind, owning rule, source text, alternative index, and element index.
+- `PreparedExpressionEmbeddedCodeRegistry` stores prepared semantic predicates separately from prepared parser inline actions.
+- `PreparedExpressionSemanticPredicateEvaluator` executes registered `PreparedExpressionSemanticPredicate` artifacts through `ISemanticPredicateEvaluator` without compiling source text.
+- `PreparedExpressionParserActionExecutor` executes registered `PreparedExpressionParserAction` artifacts through `IParserActionExecutor` without compiling source text.
 - `ExpressionSemanticPredicateEvaluator` remains the current runtime adapter from `IExpressionCompiler` to `ISemanticPredicateEvaluator`.
 - `ExpressionParserActionExecutor` remains the current runtime adapter from `IExpressionCompiler` to `IParserActionExecutor`.
 
@@ -48,10 +52,27 @@ Contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementInd
 
 ## Runtime status
 
-The prepared artifacts are not wired automatically into `ParserEngine` or `ParserRuntimeFeaturePolicy` yet.
-Default parser behavior is unchanged.
+Prepared artifacts can now be consumed explicitly through a registry and runtime adapters.
+Default parser behavior is unchanged, and `ParserEngine` is not modified by this package.
+Callers that want the prepared-artifact path must build the registry outside the parser and pass the adapters through `ParserRuntimeFeaturePolicy`:
 
-The existing adapters remain available and remain the current runtime/intermediate path:
+```csharp
+var registry = new PreparedExpressionEmbeddedCodeRegistry();
+registry.TryAddSemanticPredicate(preparedPredicate);
+registry.TryAddParserAction(preparedAction);
+
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = new PreparedExpressionSemanticPredicateEvaluator(registry),
+    ParserActionExecutor = new PreparedExpressionParserActionExecutor(registry)
+};
+
+var parser = new ParserEngine(definition, policy);
+```
+
+The registry lookup key is intentionally audit-friendly: it includes the embedded-code kind, owning rule name, raw source text, alternative index, and element index. Runtime contexts use `-1` for unavailable indexes; registry keys normalize those unavailable values to `null`. This is the safest key currently available without changing `ParserEngine`, but it still depends on callers preparing artifacts with metadata that matches the runtime model.
+
+The existing adapters remain available as the opportunistic compilation path:
 
 ```csharp
 var policy = ParserRuntimeFeaturePolicy.Default with
@@ -77,9 +98,11 @@ Prepared artifact behavior:
 
 - `ExpressionEmbeddedCodePreparer` compiles before parsing when invoked explicitly by a caller.
 - `PreparedExpressionSemanticPredicate` and `PreparedExpressionParserAction` execute already-compiled delegates.
-- The preparer does not change parser scheduling, memoization, diagnostics emission, parse-tree shape, or default runtime policy.
+- `PreparedExpressionSemanticPredicateEvaluator` and `PreparedExpressionParserActionExecutor` look up those artifacts in `PreparedExpressionEmbeddedCodeRegistry` and execute them without depending on `IExpressionCompiler`.
+- A missing registry entry returns `NotEvaluated` or `NotExecuted`, allowing parsing to continue under the existing `ParserEngine` outcome handling.
+- The prepared-artifact path does not change parser scheduling, memoization, diagnostics emission, parse-tree shape, or default runtime policy.
 
-The target model remains to prepare executable artifacts before parsing and then execute only those artifacts while parsing. `ParserEngine` should remain language-neutral: it should execute policy outcomes and emit diagnostics, not select an expression language or compile embedded source code.
+The target model remains to prepare executable artifacts before parsing and then execute only those artifacts while parsing. This package now provides the explicit runtime adapters for that consumption step, but it still does not automatically prepare a parser model. `ParserEngine` should remain language-neutral: it should execute policy outcomes and emit diagnostics, not select an expression language or compile embedded source code.
 
 ## Scope and limitations
 

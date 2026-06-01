@@ -140,7 +140,7 @@ Conceptual mapping:
 - semantic predicates execute through `ISemanticPredicateEvaluator`;
 - parser inline actions execute through `IParserActionExecutor`.
 
-`ISemanticPredicateEvaluator` and `IParserActionExecutor` are runtime execution interfaces. They are not, by themselves, the complete generation/preparation boundary for embedded code. The explicit preparation boundary now exists separately and can produce path-specific artifacts before parsing, but those artifacts are not yet invoked automatically by `ParserEngine`.
+`ISemanticPredicateEvaluator` and `IParserActionExecutor` are runtime execution interfaces. They are not, by themselves, the complete generation/preparation boundary for embedded code. The explicit preparation boundary now exists separately and can produce path-specific artifacts before parsing. Optional runtime adapters can consume prepared expression artifacts through `ParserRuntimeFeaturePolicy`, but those artifacts are not prepared automatically and are not invoked by default by `ParserEngine`.
 
 Strict rules:
 
@@ -156,10 +156,15 @@ Current intermediate status:
 - `ExpressionEmbeddedCodePreparer` in `Utils.Parser.Expressions` can prepare runtime-inline semantic predicate and inline parser action artifacts through an explicitly supplied `IExpressionCompiler`.
 - Prepared expression artifacts only expose contextual symbols allowed by `EmbeddedCodePreparationContext.SupportedSymbols`. Exposed symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are resolved from the runtime context parameter at execution time, avoiding capture of preparation-time values.
 - The expression-backed preparer returns `PreservedNotCompiled` for the source-generator C# target because that path belongs to `Utils.Parser.Generators`, not to runtime-inline expression preparation.
-- The preparer is not connected to `ParserEngine` or `ParserRuntimeFeaturePolicy`; therefore it does not change default runtime behavior.
+- The preparer is not connected to `ParserEngine`; therefore it does not change default runtime behavior.
+- `PreparedExpressionEmbeddedCodeRegistry` in `Utils.Parser.Expressions` can store prepared semantic predicates separately from prepared parser inline actions. Its key uses the embedded-code kind, owning rule name, raw source text, alternative index, and element index, which is the safest audit-friendly identity currently available from preparation metadata and runtime contexts without modifying `ParserEngine`.
+- `PreparedExpressionSemanticPredicateEvaluator` maps registered `PreparedExpressionSemanticPredicate` artifacts to `ISemanticPredicateEvaluator` without depending on `IExpressionCompiler` or compiling source text during evaluation.
+- `PreparedExpressionParserActionExecutor` maps registered `PreparedExpressionParserAction` artifacts to `IParserActionExecutor` without depending on `IExpressionCompiler` or compiling source text during execution.
+- Missing prepared artifacts return conservative `NotEvaluated` / `NotExecuted` outcomes, so the existing parser fallback diagnostics and continuation behavior remain owned by `ParserEngine`.
+- Automatic model-wide preparation and registry population are not implemented yet; callers must prepare artifacts and configure the registry explicitly.
 - `ExpressionSemanticPredicateEvaluator` maps `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
 - `ExpressionParserActionExecutor` maps `IExpressionCompiler` to `IParserActionExecutor` for inline parser actions (`{ code }`).
-- These adapters are useful explicit runtime integration points, but they are an intermediate step rather than the final architectural boundary.
+- The expression-compiler adapters are useful explicit runtime integration points, but they are an intermediate step rather than the final architectural boundary because they may compile opportunistically during predicate/action invocation.
 - Default parser runtime behavior is unchanged (`NotEvaluated` with `UP1006` when applicable for predicates, `NotExecuted`/`UP1005` default behavior for actions).
 - Expression-backed semantic predicate evaluation returns a structured outcome so compilation failures and delegate-shape adaptation failures can carry `UP1026` metadata, while `ParserEngine` remains the only component that emits diagnostics.
 - Inline actions still do not control parse acceptance, parse-tree shape, or branch rejection.
@@ -168,7 +173,7 @@ Current intermediate status:
 - Predicate adapter cache: compilation-only and not parse-result memoization. Predicates that do not reference contextual symbols can be cached by predicate source; predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are currently recompiled per evaluation to avoid context capture.
 - Action adapter cache: compilation-only and not parse-result memoization. Non-contextual actions can be cached by action source; actions referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are currently recompiled per execution to avoid context capture.
 
-The last two bullets describe current behavior, not the target model. The target runtime-inline model is to prepare an executable artifact before parsing and execute that artifact during parsing without opportunistic source compilation on predicate/action invocation.
+The last two cache bullets describe the opportunistic-compilation adapters, not the prepared-artifact path. The target runtime-inline model remains to prepare executable artifacts before parsing and execute those artifacts during parsing without opportunistic source compilation on predicate/action invocation. The prepared expression adapters provide that explicit consumption step, while automatic model preparation and registry population remain future work.
 
 ## 7. Interface boundary
 
