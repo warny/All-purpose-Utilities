@@ -5,7 +5,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// </summary>
 /// <typeparam name="TPredicateArtifact">Prepared artifact type that would be used for semantic predicates.</typeparam>
 /// <typeparam name="TActionArtifact">Prepared artifact type that would be used for inline parser actions.</typeparam>
-internal sealed class PreservingEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact> : IEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact>
+public sealed class PreservingEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact> : IEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact>
 {
     /// <inheritdoc />
     public EmbeddedCodePreparationResult<TPredicateArtifact> PrepareSemanticPredicate(

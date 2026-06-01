@@ -3,7 +3,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// <summary>
 /// Identifies the outcome category returned by embedded-code preparation.
 /// </summary>
-internal enum EmbeddedCodePreparationStatus
+public enum EmbeddedCodePreparationStatus
 {
     /// <summary>Preparation succeeded and produced an artifact.</summary>
     Succeeded,

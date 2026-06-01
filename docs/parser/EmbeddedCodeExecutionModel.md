@@ -81,7 +81,7 @@ Adapters may differ by path, but model semantics must stay aligned.
 
 ## 4.1 Minimal preparation boundary
 
-The repository now contains an internal minimal preparation boundary in `Utils.Parser` for future embedded-code preparation work. It models:
+The repository now contains a minimal preparation boundary in `Utils.Parser` for embedded-code preparation work. These contracts are public so optional packages such as `Utils.Parser.Expressions` can produce artifacts without duplicating the embedded-code model. They model:
 
 - raw embedded source text and construct kind (`EmbeddedCodeSource`, `EmbeddedCodeKind`);
 - explicit target path metadata (`EmbeddedCodePreparationContext`, `EmbeddedCodeTarget`);
@@ -89,7 +89,7 @@ The repository now contains an internal minimal preparation boundary in `Utils.P
 - preparation outcomes (`EmbeddedCodePreparationResult<TArtifact>`, `EmbeddedCodePreparationStatus`);
 - one narrow preparation interface for semantic predicates and inline parser actions (`IEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact>`).
 
-This boundary is intentionally metadata/preparation-only in this step. It is not wired into `ParserEngine`, does not change scheduling or memoization, does not migrate the expression-backed adapters, and does not make `GrammarEmitter` generate executable embedded-code hooks. The neutral preserving preparer returns explicit preserved/unsupported metadata and never compiles or executes embedded source.
+This boundary is intentionally metadata/preparation-only. It is not wired into `ParserEngine`, does not change scheduling or memoization, does not migrate the expression-backed adapters, and does not make `GrammarEmitter` generate executable embedded-code hooks. The neutral preserving preparer returns explicit preserved/unsupported metadata and never compiles or executes embedded source. Making the boundary public is an API exposure for pre-release preparation/tooling integration only; it is not runtime activation.
 
 ## 5. Source generator C# path
 
@@ -140,7 +140,7 @@ Conceptual mapping:
 - semantic predicates execute through `ISemanticPredicateEvaluator`;
 - parser inline actions execute through `IParserActionExecutor`.
 
-`ISemanticPredicateEvaluator` and `IParserActionExecutor` are runtime execution interfaces. They are not, by themselves, the complete generation/preparation boundary for embedded code. A future correction should either move expression compilation into parser model preparation/generation or introduce an explicit preparation boundary that produces executable artifacts before parsing starts.
+`ISemanticPredicateEvaluator` and `IParserActionExecutor` are runtime execution interfaces. They are not, by themselves, the complete generation/preparation boundary for embedded code. The explicit preparation boundary now exists separately and can produce path-specific artifacts before parsing, but those artifacts are not yet invoked automatically by `ParserEngine`.
 
 Strict rules:
 
@@ -153,6 +153,10 @@ Strict rules:
 
 Current intermediate status:
 
+- `ExpressionEmbeddedCodePreparer` in `Utils.Parser.Expressions` can prepare runtime-inline semantic predicate and inline parser action artifacts through an explicitly supplied `IExpressionCompiler`.
+- Prepared expression artifacts only expose contextual symbols allowed by `EmbeddedCodePreparationContext.SupportedSymbols`. Exposed symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are resolved from the runtime context parameter at execution time, avoiding capture of preparation-time values.
+- The expression-backed preparer returns `PreservedNotCompiled` for the source-generator C# target because that path belongs to `Utils.Parser.Generators`, not to runtime-inline expression preparation.
+- The preparer is not connected to `ParserEngine` or `ParserRuntimeFeaturePolicy`; therefore it does not change default runtime behavior.
 - `ExpressionSemanticPredicateEvaluator` maps `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).
 - `ExpressionParserActionExecutor` maps `IExpressionCompiler` to `IParserActionExecutor` for inline parser actions (`{ code }`).
 - These adapters are useful explicit runtime integration points, but they are an intermediate step rather than the final architectural boundary.
@@ -168,7 +172,7 @@ The last two bullets describe current behavior, not the target model. The target
 
 ## 7. Interface boundary
 
-A future preparation boundary should be explicit and separated from runtime execution interfaces. This document does not introduce a new interface or prescribe its final name.
+The preparation boundary is explicit and separated from runtime execution interfaces. The current interface is `IEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact>`, with path-specific artifact types supplied by the implementation package.
 
 Separation of concerns:
 

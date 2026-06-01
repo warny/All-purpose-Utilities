@@ -3,7 +3,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// <summary>
 /// Describes the explicit preparation environment for ANTLR embedded-code source.
 /// </summary>
-internal sealed record EmbeddedCodePreparationContext
+public sealed record EmbeddedCodePreparationContext
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="EmbeddedCodePreparationContext"/> record.

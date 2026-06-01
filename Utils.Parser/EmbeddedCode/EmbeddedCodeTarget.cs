@@ -3,7 +3,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// <summary>
 /// Identifies the preparation path that will consume embedded ANTLR source code.
 /// </summary>
-internal enum EmbeddedCodeTarget
+public enum EmbeddedCodeTarget
 {
     /// <summary>Prepare embedded code as C# source that a Roslyn source generator can emit.</summary>
     SourceGeneratorCSharp,
