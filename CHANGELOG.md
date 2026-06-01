@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Clarified parser source-coordinate documentation across `omy.Utils.Parser.Source` and the parser roadmap, including the split between runtime offsets and human-readable diagnostic/tooling locations.
 - Updated the `omy.Utils` NuGet description to a concise consumer-facing summary aligned with the package README and discoverability goals.
 
 ### Added

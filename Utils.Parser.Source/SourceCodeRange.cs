@@ -3,8 +3,13 @@ using System;
 namespace Utils.Parser.Source;
 
 /// <summary>
-/// Represents a human-readable source location with a required file path and a length component.
+/// Represents a human-readable source-code range for diagnostics, display, and tooling.
 /// </summary>
+/// <remarks>
+/// This contract extends <see cref="SourceCodeLocation" /> with a display/diagnostic length,
+/// but intentionally carries no absolute source offset. It must not be treated as equivalent to
+/// <see cref="SourceSpan" />, which is a runtime/source-buffer range contract.
+/// </remarks>
 public sealed class SourceCodeRange : SourceCodeLocation
 {
     /// <summary>
@@ -13,7 +18,7 @@ public sealed class SourceCodeRange : SourceCodeLocation
     /// <param name="filePath">Required source file path.</param>
     /// <param name="line">1-based line number.</param>
     /// <param name="column">1-based column number.</param>
-    /// <param name="length">Number of display characters covered by the range.</param>
+    /// <param name="length">Length intended for display or diagnostics for the range.</param>
     public SourceCodeRange(string filePath, int line, int column, int length)
         : base(filePath, line, column)
     {
@@ -26,7 +31,7 @@ public sealed class SourceCodeRange : SourceCodeLocation
     }
 
     /// <summary>
-    /// Gets the number of display characters covered by the range.
+    /// Gets the length intended for display or diagnostics for the range.
     /// </summary>
     public int Length { get; }
 
