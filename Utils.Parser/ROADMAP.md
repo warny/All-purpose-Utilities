@@ -372,7 +372,7 @@ Current clarification status:
 - compatibility documentation is aligned with explicit parsed/normalized/rejected boundaries,
 - rule `locals [...]` clauses now emit deterministic explicit compatibility diagnostics (`UP1008 RuleLocalsIgnored`) instead of generic silent metadata discard.
 - semantic predicate default-policy behavior is explicitly documented as runtime-policy-driven (`ISemanticPredicateEvaluator`) with deterministic `UP1006` coverage, and precedence predicates are documented separately as non-generic predicate evaluation flow.
-- embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime expression-compilation paths, including multi-project responsibilities.
+- embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime-inline expression-compilation paths, including multi-project responsibilities and the shared target of preparing executable artifacts before parsing.
 - shared embedded-code diagnostic taxonomy is defined for future runtime, generator, and tooling paths without enabling execution.
 - parser action execution now returns structured outcomes so `ParserEngine` can emit fallback `UP1005` or detailed embedded-code diagnostics without giving executors direct `DiagnosticBag` access.
 - generator/runtime parity characterization tests now document shared supported grammar facts and known metadata divergences without changing runtime, diagnostics, parse-tree shape, or scheduler behavior.
@@ -381,6 +381,7 @@ Current clarification status:
 - shared ANTLR prequel metadata model extraction is complete for options/imports/actions/tokens/channels through mapper-only DTO sharing; runtime and generator parsing remain intentionally duplicated.
 - a shared netstandard2.0 ANTLR prequel DTO project was introduced, while runtime and generator parsing remain intentionally separate.
 - runtime advanced-configuration public API was consolidated so `ParserRuntimeFeaturePolicy` is the single explicit runtime feature-entry point for semantic predicates, parser actions, and runtime observers.
+- current expression-backed predicate/action adapters are documented as useful intermediate runtime adapters with opportunistic compilation, not as the final prepare-before-parse architecture.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -402,6 +403,7 @@ Scope may include:
 Important constraint:
 
 - runtime support must stay clearly separated from metadata preservation.
+- the C# source-generator path and runtime-inline `IExpressionCompiler` path must remain separate; the runtime core must stay conservative and language-neutral.
 
 Allowed work:
 
@@ -443,6 +445,7 @@ Forbidden work:
 
 Current clarification status:
 
+- tooling direction now explicitly distinguishes future C# source-generator embedded-code hooks from runtime-inline expression preparation; generator output must not be presented as current executable embedded-code support until implemented.
 - runtime trace analysis abstractions are available as tooling-only, read-only, deterministic consumers of passive observations/exports,
 - analysis outputs are explicitly descriptive and non-authoritative (no replay, no runtime ownership transfer, no parser/diagnostics authority transfer).
 - end-to-end runtime-observation/export/analysis usage guidance is documented as illustrative tooling only, with explicit non-framework/non-authoritative boundaries.

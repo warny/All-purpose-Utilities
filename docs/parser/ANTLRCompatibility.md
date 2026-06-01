@@ -94,7 +94,7 @@ The shared embedded-code diagnostics taxonomy is documented in `EmbeddedCodeExec
 **Standard ANTLR4**: The predicate body is target-language code evaluated inline during parsing.
 
 **Utils.Parser**: Predicates are parsed and stored. Evaluation is delegated to an `ISemanticPredicateEvaluator` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotEvaluated` without detailed diagnostic metadata, which does **not** reject the branch — it acts as if the predicate passed and `ParserEngine` emits `UP1006`.
-An optional expression-backed evaluator can be configured explicitly (for example through `omy.Utils.Parser.Expressions`) to enforce predicate outcomes when a consumer provides an `IExpressionCompiler`.
+An optional expression-backed evaluator can be configured explicitly (for example through `omy.Utils.Parser.Expressions`) to enforce predicate outcomes when a consumer provides an `IExpressionCompiler`. The current adapter may compile opportunistically during evaluation with compilation caching; this is documented as an intermediate implementation detail, not as the final prepare-before-parse target.
 
 **Usage** — implement `ISemanticPredicateEvaluator` and pass it via the policy:
 
@@ -152,7 +152,7 @@ See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md) for expli
 **Standard ANTLR4**: Action code is target-language code executed as a side effect during parsing.
 
 **Utils.Parser**: Actions are parsed and stored. Execution is delegated to an `IParserActionExecutor` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotExecuted`.
-An optional runtime expression-backed parser action executor can be configured explicitly; it is limited to the configured expression language and read-only contextual symbols, and currently surfaces compile/adaptation/compiled-execution failures as `UP1026` through `ParserEngine` diagnostics. `UP1028` remains reserved for explicit execution-disabled runtime policies, which the current expression-backed adapters do not expose.
+An optional runtime expression-backed parser action executor can be configured explicitly; it is limited to the configured expression language and read-only contextual symbols, and currently surfaces compile/adaptation/compiled-execution failures as `UP1026` through `ParserEngine` diagnostics. The current adapter may compile opportunistically during execution with compilation caching; this is documented as an intermediate implementation detail, not as the final prepare-before-parse target. `UP1028` remains reserved for explicit execution-disabled runtime policies, which the current expression-backed adapters do not expose.
 
 **Usage** — implement `IParserActionExecutor`:
 
