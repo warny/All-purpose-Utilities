@@ -6,7 +6,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// Represents the result of preparing ANTLR embedded-code source for a specific execution or generation path.
 /// </summary>
 /// <typeparam name="TArtifact">Type of the prepared artifact produced on success.</typeparam>
-internal sealed record EmbeddedCodePreparationResult<TArtifact>
+public sealed record EmbeddedCodePreparationResult<TArtifact>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="EmbeddedCodePreparationResult{TArtifact}"/> record.

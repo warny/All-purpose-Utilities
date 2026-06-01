@@ -3,7 +3,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// <summary>
 /// Identifies a contextual symbol that an embedded-code preparer may make available to source code.
 /// </summary>
-internal enum EmbeddedCodeContextSymbol
+public enum EmbeddedCodeContextSymbol
 {
     /// <summary>Name of the parser rule that owns the embedded source block.</summary>
     RuleName,

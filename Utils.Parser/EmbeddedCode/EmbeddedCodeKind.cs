@@ -3,7 +3,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// <summary>
 /// Identifies the ANTLR embedded-code construct that owns a raw source block.
 /// </summary>
-internal enum EmbeddedCodeKind
+public enum EmbeddedCodeKind
 {
     /// <summary>Semantic predicate source from a parser construct such as <c>{ condition }?</c>.</summary>
     SemanticPredicate,

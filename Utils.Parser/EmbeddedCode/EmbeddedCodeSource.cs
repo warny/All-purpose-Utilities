@@ -5,7 +5,7 @@ namespace Utils.Parser.EmbeddedCode;
 /// <summary>
 /// Describes a raw ANTLR embedded-code source block without assigning execution behavior to it.
 /// </summary>
-internal sealed record EmbeddedCodeSource
+public sealed record EmbeddedCodeSource
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="EmbeddedCodeSource"/> record.
