@@ -44,7 +44,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         try
         {
             var runtimeContext = Expression.Parameter(typeof(SemanticPredicateEvaluationContext), "context");
-            var expression = _compiler.Compile(source.SourceText, BuildSemanticPredicateSymbols(runtimeContext));
+            var expression = _compiler.Compile(source.SourceText, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
             if (expression.Type != typeof(bool))
             {
                 return EmbeddedCodePreparationResult<PreparedExpressionSemanticPredicate>.CompilationFailed(
@@ -85,7 +85,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         try
         {
             var runtimeContext = Expression.Parameter(typeof(ParserActionExecutionContext), "context");
-            var expression = _compiler.Compile(source.SourceText, BuildParserActionSymbols(runtimeContext));
+            var expression = _compiler.Compile(source.SourceText, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
             var executableExpression = expression.Type == typeof(void)
                 ? expression
                 : Expression.Block(expression, Expression.Empty());
@@ -105,29 +105,95 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     /// Builds symbol expressions that read semantic predicate values from the runtime context parameter.
     /// </summary>
     /// <param name="runtimeContext">Runtime context parameter used by the compiled predicate delegate.</param>
+    /// <param name="supportedSymbols">Contextual symbols that the preparation context allows this compiler invocation to expose.</param>
     /// <returns>Symbol expressions resolved by the expression compiler.</returns>
-    private static IReadOnlyDictionary<string, Expression> BuildSemanticPredicateSymbols(ParameterExpression runtimeContext) =>
-        new Dictionary<string, Expression>(StringComparer.Ordinal)
+    private static IReadOnlyDictionary<string, Expression> BuildSemanticPredicateSymbols(
+        ParameterExpression runtimeContext,
+        IReadOnlySet<EmbeddedCodeContextSymbol> supportedSymbols)
+    {
+        var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal);
+        foreach (var symbol in supportedSymbols)
         {
-            ["ruleName"] = BuildRuleName(runtimeContext),
-            ["inputPosition"] = Expression.Property(runtimeContext, nameof(SemanticPredicateEvaluationContext.InputPosition)),
-            ["alternativeIndex"] = Expression.Property(runtimeContext, nameof(SemanticPredicateEvaluationContext.AlternativeIndex)),
-            ["elementIndex"] = Expression.Property(runtimeContext, nameof(SemanticPredicateEvaluationContext.ElementIndex))
-        };
+            AddSemanticPredicateSymbol(symbols, symbol, runtimeContext);
+        }
+
+        return symbols;
+    }
 
     /// <summary>
     /// Builds symbol expressions that read parser action values from the runtime context parameter.
     /// </summary>
     /// <param name="runtimeContext">Runtime context parameter used by the compiled action delegate.</param>
+    /// <param name="supportedSymbols">Contextual symbols that the preparation context allows this compiler invocation to expose.</param>
     /// <returns>Symbol expressions resolved by the expression compiler.</returns>
-    private static IReadOnlyDictionary<string, Expression> BuildParserActionSymbols(ParameterExpression runtimeContext) =>
-        new Dictionary<string, Expression>(StringComparer.Ordinal)
+    private static IReadOnlyDictionary<string, Expression> BuildParserActionSymbols(
+        ParameterExpression runtimeContext,
+        IReadOnlySet<EmbeddedCodeContextSymbol> supportedSymbols)
+    {
+        var symbols = new Dictionary<string, Expression>(StringComparer.Ordinal);
+        foreach (var symbol in supportedSymbols)
         {
-            ["ruleName"] = BuildRuleName(runtimeContext),
-            ["inputPosition"] = Expression.Property(runtimeContext, nameof(ParserActionExecutionContext.InputPosition)),
-            ["alternativeIndex"] = Expression.Property(runtimeContext, nameof(ParserActionExecutionContext.AlternativeIndex)),
-            ["elementIndex"] = Expression.Property(runtimeContext, nameof(ParserActionExecutionContext.ElementIndex))
-        };
+            AddParserActionSymbol(symbols, symbol, runtimeContext);
+        }
+
+        return symbols;
+    }
+
+    /// <summary>
+    /// Adds a semantic predicate symbol when the preparation context exposes it.
+    /// </summary>
+    /// <param name="symbols">Mutable symbol dictionary to update.</param>
+    /// <param name="symbol">Context symbol selected by the preparation context.</param>
+    /// <param name="runtimeContext">Runtime context parameter used by the compiled predicate delegate.</param>
+    private static void AddSemanticPredicateSymbol(
+        Dictionary<string, Expression> symbols,
+        EmbeddedCodeContextSymbol symbol,
+        ParameterExpression runtimeContext)
+    {
+        switch (symbol)
+        {
+            case EmbeddedCodeContextSymbol.RuleName:
+                symbols["ruleName"] = BuildRuleName(runtimeContext);
+                break;
+            case EmbeddedCodeContextSymbol.InputPosition:
+                symbols["inputPosition"] = Expression.Property(runtimeContext, nameof(SemanticPredicateEvaluationContext.InputPosition));
+                break;
+            case EmbeddedCodeContextSymbol.AlternativeIndex:
+                symbols["alternativeIndex"] = Expression.Property(runtimeContext, nameof(SemanticPredicateEvaluationContext.AlternativeIndex));
+                break;
+            case EmbeddedCodeContextSymbol.ElementIndex:
+                symbols["elementIndex"] = Expression.Property(runtimeContext, nameof(SemanticPredicateEvaluationContext.ElementIndex));
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Adds a parser action symbol when the preparation context exposes it.
+    /// </summary>
+    /// <param name="symbols">Mutable symbol dictionary to update.</param>
+    /// <param name="symbol">Context symbol selected by the preparation context.</param>
+    /// <param name="runtimeContext">Runtime context parameter used by the compiled action delegate.</param>
+    private static void AddParserActionSymbol(
+        Dictionary<string, Expression> symbols,
+        EmbeddedCodeContextSymbol symbol,
+        ParameterExpression runtimeContext)
+    {
+        switch (symbol)
+        {
+            case EmbeddedCodeContextSymbol.RuleName:
+                symbols["ruleName"] = BuildRuleName(runtimeContext);
+                break;
+            case EmbeddedCodeContextSymbol.InputPosition:
+                symbols["inputPosition"] = Expression.Property(runtimeContext, nameof(ParserActionExecutionContext.InputPosition));
+                break;
+            case EmbeddedCodeContextSymbol.AlternativeIndex:
+                symbols["alternativeIndex"] = Expression.Property(runtimeContext, nameof(ParserActionExecutionContext.AlternativeIndex));
+                break;
+            case EmbeddedCodeContextSymbol.ElementIndex:
+                symbols["elementIndex"] = Expression.Property(runtimeContext, nameof(ParserActionExecutionContext.ElementIndex));
+                break;
+        }
+    }
 
     /// <summary>
     /// Builds an expression that reads the current rule name from a semantic predicate or parser action context.

@@ -154,7 +154,7 @@ Strict rules:
 Current intermediate status:
 
 - `ExpressionEmbeddedCodePreparer` in `Utils.Parser.Expressions` can prepare runtime-inline semantic predicate and inline parser action artifacts through an explicitly supplied `IExpressionCompiler`.
-- Prepared expression artifacts resolve contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) from the runtime context parameter at execution time, avoiding capture of preparation-time values.
+- Prepared expression artifacts only expose contextual symbols allowed by `EmbeddedCodePreparationContext.SupportedSymbols`. Exposed symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are resolved from the runtime context parameter at execution time, avoiding capture of preparation-time values.
 - The expression-backed preparer returns `PreservedNotCompiled` for the source-generator C# target because that path belongs to `Utils.Parser.Generators`, not to runtime-inline expression preparation.
 - The preparer is not connected to `ParserEngine` or `ParserRuntimeFeaturePolicy`; therefore it does not change default runtime behavior.
 - `ExpressionSemanticPredicateEvaluator` maps `IExpressionCompiler` to `ISemanticPredicateEvaluator` for semantic predicates (`{ condition }?`).

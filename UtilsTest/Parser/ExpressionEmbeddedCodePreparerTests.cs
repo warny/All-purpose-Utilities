@@ -180,6 +180,66 @@ public class ExpressionEmbeddedCodePreparerTests
         CollectionAssert.AreEqual(new List<string> { "start", "other" }, compiler.RecordedRules);
     }
 
+    [TestMethod]
+    public void PrepareSemanticPredicate_WhenOnlyInputPositionIsSupported_AllowsInputPositionExpression()
+    {
+        var preparer = new ExpressionEmbeddedCodePreparer(new FakeExpressionCompiler());
+
+        var result = preparer.PrepareSemanticPredicate(
+            CreateSource("inputPosition >= 0", EmbeddedCodeKind.SemanticPredicate),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, new HashSet<EmbeddedCodeContextSymbol> { EmbeddedCodeContextSymbol.InputPosition }));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.IsNotNull(result.Artifact);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.Satisfied, result.Artifact.Evaluate(CreatePredicateContext("inputPosition >= 0", inputPosition: 3)).Status);
+    }
+
+    [TestMethod]
+    public void PrepareSemanticPredicate_WhenRuleNameIsNotSupported_ReturnsCompilationFailed()
+    {
+        var preparer = new ExpressionEmbeddedCodePreparer(new FakeExpressionCompiler());
+
+        var result = preparer.PrepareSemanticPredicate(
+            CreateSource("ruleName == target", EmbeddedCodeKind.SemanticPredicate),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, new HashSet<EmbeddedCodeContextSymbol> { EmbeddedCodeContextSymbol.InputPosition }));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.CompilationFailed, result.Status);
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodeCompilationFailed, result.DiagnosticDescriptor);
+        Assert.IsNotNull(result.Exception);
+    }
+
+    [TestMethod]
+    public void PrepareParserAction_WhenOnlyInputPositionIsSupported_AllowsInputPositionAction()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("record-position inputPosition", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, new HashSet<EmbeddedCodeContextSymbol> { EmbeddedCodeContextSymbol.InputPosition }));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.IsNotNull(result.Artifact);
+
+        _ = result.Artifact.Execute(CreateActionContext("record-position inputPosition", inputPosition: 7));
+
+        CollectionAssert.AreEqual(new List<int> { 7 }, compiler.RecordedPositions);
+    }
+
+    [TestMethod]
+    public void PrepareParserAction_WhenRuleNameIsNotSupported_ReturnsCompilationFailed()
+    {
+        var preparer = new ExpressionEmbeddedCodePreparer(new FakeExpressionCompiler());
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("record-rule ruleName", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, new HashSet<EmbeddedCodeContextSymbol> { EmbeddedCodeContextSymbol.InputPosition }));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.CompilationFailed, result.Status);
+        Assert.AreSame(ParserDiagnostics.EmbeddedCodeCompilationFailed, result.DiagnosticDescriptor);
+        Assert.IsNotNull(result.Exception);
+    }
+
     /// <summary>
     /// Creates source metadata for a test embedded-code construct.
     /// </summary>
@@ -193,24 +253,31 @@ public class ExpressionEmbeddedCodePreparerTests
     /// Creates a preparation context for a test target.
     /// </summary>
     /// <param name="target">Preparation target under test.</param>
+    /// <param name="supportedSymbols">Optional limited symbol set to expose during preparation.</param>
     /// <returns>A preparation context instance.</returns>
-    private static EmbeddedCodePreparationContext CreateContext(EmbeddedCodeTarget target) =>
-        new("G", target, ruleName: "start", languageOrCompilerIdentity: "fake");
+    private static EmbeddedCodePreparationContext CreateContext(
+        EmbeddedCodeTarget target,
+        IReadOnlySet<EmbeddedCodeContextSymbol>? supportedSymbols = null) =>
+        new("G", target, ruleName: "start", languageOrCompilerIdentity: "fake", supportedSymbols: supportedSymbols);
 
     /// <summary>
     /// Creates a semantic predicate runtime context without invoking <see cref="ParserEngine"/>.
     /// </summary>
     /// <param name="predicateCode">Predicate source code stored in the context.</param>
     /// <param name="ruleName">Rule name exposed to contextual expressions.</param>
+    /// <param name="inputPosition">Input position exposed to contextual expressions.</param>
     /// <returns>A semantic predicate runtime context.</returns>
-    private static SemanticPredicateEvaluationContext CreatePredicateContext(string predicateCode, string ruleName = "start")
+    private static SemanticPredicateEvaluationContext CreatePredicateContext(
+        string predicateCode,
+        string ruleName = "start",
+        int inputPosition = 0)
     {
         var rule = CreateRule(ruleName);
         return new SemanticPredicateEvaluationContext(
             Rule: rule,
             Predicate: new ValidatingPredicate(predicateCode),
             PredicateCode: predicateCode,
-            InputPosition: 0,
+            InputPosition: inputPosition,
             AlternativeIndex: 0,
             ElementIndex: 0);
     }
@@ -220,15 +287,19 @@ public class ExpressionEmbeddedCodePreparerTests
     /// </summary>
     /// <param name="actionCode">Action source code stored in the context.</param>
     /// <param name="ruleName">Rule name exposed to contextual expressions.</param>
+    /// <param name="inputPosition">Input position exposed to contextual expressions.</param>
     /// <returns>A parser action runtime context.</returns>
-    private static ParserActionExecutionContext CreateActionContext(string actionCode, string ruleName = "start")
+    private static ParserActionExecutionContext CreateActionContext(
+        string actionCode,
+        string ruleName = "start",
+        int inputPosition = 0)
     {
         var rule = CreateRule(ruleName);
         return new ParserActionExecutionContext(
             Rule: rule,
             Action: new EmbeddedAction(actionCode, ActionContext.Alternative, ActionPosition.Inline, []),
             ActionCode: actionCode,
-            InputPosition: 0,
+            InputPosition: inputPosition,
             AlternativeIndex: 0,
             ElementIndex: 0);
     }
@@ -267,6 +338,11 @@ public class ExpressionEmbeddedCodePreparerTests
         /// </summary>
         public List<string> RecordedRules { get; } = [];
 
+        /// <summary>
+        /// Gets input positions recorded by generated action delegates.
+        /// </summary>
+        public List<int> RecordedPositions { get; } = [];
+
         /// <inheritdoc />
         public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
@@ -277,7 +353,9 @@ public class ExpressionEmbeddedCodePreparerTests
                 "42" => Expression.Constant(42),
                 "increment" => Expression.Call(Expression.Constant(this), nameof(Increment), Type.EmptyTypes),
                 "record-rule ruleName" => Expression.Call(Expression.Constant(this), nameof(RecordRule), Type.EmptyTypes, symbols!["ruleName"]),
+                "record-position inputPosition" => Expression.Call(Expression.Constant(this), nameof(RecordPosition), Type.EmptyTypes, symbols!["inputPosition"]),
                 "ruleName == target" => Expression.Equal(symbols!["ruleName"], Expression.Constant("start")),
+                "inputPosition >= 0" => Expression.GreaterThanOrEqual(symbols!["inputPosition"], Expression.Constant(0)),
                 "throw-compile" => throw new InvalidOperationException("boom"),
                 _ => Expression.Empty()
             };
@@ -293,5 +371,11 @@ public class ExpressionEmbeddedCodePreparerTests
         /// </summary>
         /// <param name="ruleName">Rule name to record.</param>
         public void RecordRule(string ruleName) => RecordedRules.Add(ruleName);
+
+        /// <summary>
+        /// Records an input position supplied through a runtime context symbol.
+        /// </summary>
+        /// <param name="inputPosition">Input position to record.</param>
+        public void RecordPosition(int inputPosition) => RecordedPositions.Add(inputPosition);
     }
 }

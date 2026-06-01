@@ -44,7 +44,7 @@ The preparer:
 - returns `PreservedNotCompiled` for `EmbeddedCodeTarget.SourceGeneratorCSharp`, because C# source-generation hooks belong to `Utils.Parser.Generators`;
 - never executes predicates or actions during preparation.
 
-Contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are represented as reads from the runtime context parameter when compiling prepared artifacts. They are not captured as fixed preparation-time constants.
+Contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are filtered through `EmbeddedCodePreparationContext.SupportedSymbols` before compilation. Supported symbols are represented as reads from the runtime context parameter when compiling prepared artifacts, so they are not captured as fixed preparation-time constants. Expressions that reference a symbol excluded from `SupportedSymbols` fail through the configured compiler and are returned as `CompilationFailed` results.
 
 ## Runtime status
 
