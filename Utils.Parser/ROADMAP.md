@@ -86,6 +86,7 @@ Current capabilities and responsibilities:
 - Runtime observation and export contract is documented (`docs/parser/RuntimeObservationAndExportContract.md`).
 - Diagnostics/observation correlation boundaries are documented (`docs/parser/DiagnosticsObservationCorrelation.md`) as descriptive-only and non-authoritative.
 - Source-position contracts are centralized in the shared `Utils.Parser.Source` package: `SourceCodeLocation` / `SourceCodeRange` remain human-readable diagnostic/display locations, while `SourceLocation` / `SourceSpan` preserve runtime text offsets and spans for tokens and parse nodes.
+- Source-position contracts are intentionally split between runtime coordinates (`SourceLocation`, `SourceSpan`) and human-readable source coordinates (`SourceCodeLocation`, `SourceCodeRange`). Runtime coordinates carry absolute text offsets for tokens/parser operations, while human-readable coordinates are used for diagnostics/tooling when no canonical source offset is available. These contracts must not be merged without a dedicated design review.
 
 Clarifications that must remain true:
 

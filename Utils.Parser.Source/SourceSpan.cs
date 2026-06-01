@@ -1,17 +1,18 @@
 namespace Utils.Parser.Source;
 
 /// <summary>
-/// Represents a span in a source text with an absolute offset and length.
+/// Represents a technical range in a source text for lexer, parser, and runtime operations.
 /// </summary>
 /// <param name="Position">Zero-based absolute offset from the start of the source text.</param>
-/// <param name="Length">Number of characters covered by this span.</param>
-/// <param name="Line">1-based line where the span starts, when display coordinates are available.</param>
-/// <param name="Column">1-based column where the span starts, when display coordinates are available.</param>
+/// <param name="Length">Length of the range in the runtime text units used by the source representation.</param>
+/// <param name="Line">1-based human-readable line where the range starts, when display coordinates are available.</param>
+/// <param name="Column">1-based human-readable column where the range starts, when display coordinates are available.</param>
 /// <param name="FilePath">Optional source file path used for display or diagnostics formatting.</param>
 /// <remarks>
-/// This type is used by runtime tokens and parse nodes to preserve text offsets. Unlike
-/// <see cref="SourceCodeRange"/>, it keeps the absolute source position and allows the file path
-/// to be omitted when the source text is anonymous or in-memory.
+/// This type is used by runtime tokens, parse nodes, and related runtime analysis surfaces to
+/// preserve absolute text offsets. Unlike <see cref="SourceCodeRange" />, it keeps the absolute
+/// source position and allows the file path to be omitted when the source text is anonymous or
+/// in-memory.
 /// </remarks>
 public sealed record SourceSpan(
     int Position,

@@ -10,7 +10,7 @@ Use this package when you need a common set of diagnostic primitives across pars
 - diagnostic severities,
 - diagnostic aggregation utilities.
 
-Source-location contracts such as `SourceCodeLocation` and `SourceCodeRange` are provided by `omy.Utils.Parser.Source` so non-diagnostic surfaces can share them without depending on diagnostics.
+Human-readable source-location contracts such as `SourceCodeLocation` and `SourceCodeRange` are provided by `omy.Utils.Parser.Source` so non-diagnostic surfaces can share them without depending on diagnostics. Runtime offset contracts such as `SourceLocation` and `SourceSpan` remain separate in that package for token and parser operations.
 
 ## Typical usage
 
