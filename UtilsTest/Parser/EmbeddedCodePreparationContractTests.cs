@@ -62,6 +62,50 @@ public class EmbeddedCodePreparationContractTests
         Assert.IsFalse(context.SupportedSymbols.Contains(EmbeddedCodeContextSymbol.AlternativeIndex));
     }
 
+
+    /// <summary>
+    /// Verifies that the default preparation context exposes the complete current parser symbol model.
+    /// </summary>
+    [TestMethod]
+    public void EmbeddedCodePreparationContext_WhenSymbolsAreOmitted_ExposesDefaultRuntimeSymbols()
+    {
+        var context = new EmbeddedCodePreparationContext("ExprGrammar", EmbeddedCodeTarget.RuntimeInlineExpression);
+
+        CollectionAssert.AreEquivalent(
+            new object[]
+            {
+                EmbeddedCodeContextSymbol.RuleName,
+                EmbeddedCodeContextSymbol.InputPosition,
+                EmbeddedCodeContextSymbol.AlternativeIndex,
+                EmbeddedCodeContextSymbol.ElementIndex
+            },
+            context.SupportedSymbols.Cast<object>().ToArray());
+    }
+
+    /// <summary>
+    /// Verifies that success results cannot silently omit the prepared artifact contract.
+    /// </summary>
+    [TestMethod]
+    public void EmbeddedCodePreparationResult_WhenSuccessHasNoArtifact_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(() => new EmbeddedCodePreparationResult<string>(EmbeddedCodePreparationStatus.Succeeded));
+    }
+
+    /// <summary>
+    /// Verifies that diagnostic arguments are materialized and preserved even if the caller mutates the original collection.
+    /// </summary>
+    [TestMethod]
+    public void EmbeddedCodePreparationResult_MaterializesDiagnosticArguments()
+    {
+        var arguments = new List<object?> { "predicate", "runtime" };
+        var result = EmbeddedCodePreparationResult<string>.Unsupported(arguments);
+
+        arguments[0] = "changed";
+
+        Assert.AreEqual("predicate", result.DiagnosticArguments[0]);
+        Assert.AreEqual("runtime", result.DiagnosticArguments[1]);
+    }
+
     /// <summary>
     /// Verifies that preparation results can represent a successful artifact-producing outcome.
     /// </summary>

@@ -156,6 +156,75 @@ public class PreparedExpressionEmbeddedCodeRegistryTests
         Assert.AreEqual(1, actionCalls);
     }
 
+
+    /// <summary>
+    /// Verifies that registry keys preserve source metadata, including unavailable alternative and element indexes.
+    /// </summary>
+    [TestMethod]
+    public void PreparedExpressionEmbeddedCodeKey_FromSource_PreservesNullableRuntimeIndexes()
+    {
+        var source = new EmbeddedCodeSource(
+            "single",
+            EmbeddedCodeKind.SemanticPredicate,
+            ruleName: "start",
+            alternativeIndex: null,
+            elementIndex: null);
+
+        var key = PreparedExpressionEmbeddedCodeKey.FromSource(source);
+
+        Assert.AreEqual(EmbeddedCodeKind.SemanticPredicate, key.Kind);
+        Assert.AreEqual("start", key.RuleName);
+        Assert.AreEqual("single", key.SourceText);
+        Assert.IsNull(key.AlternativeIndex);
+        Assert.IsNull(key.ElementIndex);
+    }
+
+    /// <summary>
+    /// Verifies that runtime contexts using unavailable indexes can resolve artifacts prepared with nullable indexes.
+    /// </summary>
+    [TestMethod]
+    public void TryGetSemanticPredicate_WhenSingleItemIndexesAreUnavailable_UsesNullableKey()
+    {
+        var registry = new PreparedExpressionEmbeddedCodeRegistry();
+        var artifact = new PreparedExpressionSemanticPredicate(
+            new EmbeddedCodeSource("single", EmbeddedCodeKind.SemanticPredicate, "start", null, null),
+            CreatePreparationContext("start"),
+            _ => true);
+
+        Assert.IsTrue(registry.TryAddSemanticPredicate(artifact));
+        var found = registry.TryGetSemanticPredicate(CreatePredicateContext("start", "single", -1, -1), out var resolved);
+
+        Assert.IsTrue(found);
+        Assert.AreSame(artifact, resolved);
+    }
+
+    /// <summary>
+    /// Verifies that prepared predicate lookup keys distinguish source text, alternative indexes, and element indexes independently.
+    /// </summary>
+    [TestMethod]
+    public void TryGetSemanticPredicate_WhenKeysDifferByTextAlternativeOrElement_DoesNotCollide()
+    {
+        var registry = new PreparedExpressionEmbeddedCodeRegistry();
+        var byText = CreatePredicateArtifact("start", "text-a", 0, 0, _ => true);
+        var byAlternative = CreatePredicateArtifact("start", "shared", 0, 0, _ => true);
+        var otherAlternative = CreatePredicateArtifact("start", "shared", 1, 0, _ => false);
+        var otherElement = CreatePredicateArtifact("start", "shared", 1, 2, _ => true);
+
+        Assert.IsTrue(registry.TryAddSemanticPredicate(byText));
+        Assert.IsTrue(registry.TryAddSemanticPredicate(byAlternative));
+        Assert.IsTrue(registry.TryAddSemanticPredicate(otherAlternative));
+        Assert.IsTrue(registry.TryAddSemanticPredicate(otherElement));
+
+        Assert.IsTrue(registry.TryGetSemanticPredicate(CreatePredicateContext("start", "text-a", 0, 0), out var resolvedByText));
+        Assert.IsTrue(registry.TryGetSemanticPredicate(CreatePredicateContext("start", "shared", 0, 0), out var resolvedByAlternative));
+        Assert.IsTrue(registry.TryGetSemanticPredicate(CreatePredicateContext("start", "shared", 1, 0), out var resolvedOtherAlternative));
+        Assert.IsTrue(registry.TryGetSemanticPredicate(CreatePredicateContext("start", "shared", 1, 2), out var resolvedOtherElement));
+        Assert.AreSame(byText, resolvedByText);
+        Assert.AreSame(byAlternative, resolvedByAlternative);
+        Assert.AreSame(otherAlternative, resolvedOtherAlternative);
+        Assert.AreSame(otherElement, resolvedOtherElement);
+    }
+
     /// <summary>
     /// Creates a prepared semantic predicate artifact around an already-available delegate.
     /// </summary>
