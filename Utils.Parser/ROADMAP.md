@@ -67,6 +67,7 @@ Current capabilities and responsibilities:
 - `ActiveParseState` provides local descriptive branch state.
 - `ParserLookaheadProbe` and `ParserLookaheadCache` provide conservative shallow lookahead.
 - Runtime feature policies are present.
+- Shared embedded-code runtime discovery metadata is present for parser semantic predicates and inline parser actions, including explicit unsupported reasons for out-of-scope embedded code.
 - Passive runtime observation hooks are available via policy configuration and remain non-authoritative.
 - Semantic predicate evaluator abstraction is present.
 - Runtime expression-backed semantic predicate evaluator is available as an explicit optional adapter without changing default parser behavior.

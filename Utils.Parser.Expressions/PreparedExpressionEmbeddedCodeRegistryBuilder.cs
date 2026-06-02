@@ -1,3 +1,4 @@
+using Utils.Parser.Diagnostics;
 using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Model;
 
@@ -26,209 +27,52 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         options ??= PreparedExpressionEmbeddedCodeRegistryBuilderOptions.Default;
 
         var state = new BuildState(definition, preparer, options);
+        var discovery = EmbeddedCodeRuntimeDiscovery.Discover(definition);
 
-        foreach (var action in definition.Actions)
+        foreach (var entry in discovery.Entries)
         {
-            state.RecordSkippedEntry(
-                CreateSource(action.RawCode, EmbeddedCodeKind.GrammarAction, null, null, null),
-                null,
-                "Grammar-level actions are not prepared by the expression registry builder.");
-        }
+            if (!entry.IsRuntimeExecutable)
+            {
+                state.RecordSkippedEntry(entry);
+                continue;
+            }
 
-        foreach (var rule in definition.ParserRules)
-        {
-            ScanRule(rule, state);
+            var rule = GetParserRule(definition, entry.RuleName!);
+            if (entry.Kind == EmbeddedCodeKind.SemanticPredicate)
+            {
+                PrepareSemanticPredicate(rule, entry.Source, state);
+                continue;
+            }
+
+            if (entry.Kind == EmbeddedCodeKind.ParserInlineAction)
+            {
+                PrepareParserAction(rule, entry.Source, state);
+                continue;
+            }
+
+            state.RecordSkippedEntry(entry);
         }
 
         return state.ToResult();
     }
 
     /// <summary>
-    /// Scans one parser rule and records any supported or intentionally skipped embedded-code items.
+    /// Finds a parser rule by name in the definition currently being scanned.
     /// </summary>
-    /// <param name="rule">Parser rule to scan.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanRule(Rule rule, BuildState state)
-    {
-        if (rule.InitAction is not null)
-        {
-            state.RecordSkippedEntry(
-                CreateSource(rule.InitAction.RawCode, EmbeddedCodeKind.RuleInitAction, rule.Name, null, null),
-                rule.Name,
-                "Rule initialization actions are not prepared by the expression registry builder.");
-        }
-
-        if (state.Definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
-        {
-            ScanLeftRecursiveRule(leftRecursiveInfo, state);
-        }
-        else
-        {
-            ScanContent(rule, rule.Content, null, null, state);
-        }
-
-        if (rule.AfterAction is not null)
-        {
-            state.RecordSkippedEntry(
-                CreateSource(rule.AfterAction.RawCode, EmbeddedCodeKind.RuleAfterAction, rule.Name, null, null),
-                rule.Name,
-                "Rule finalization actions are not prepared by the expression registry builder.");
-        }
-    }
+    /// <param name="definition">Parser definition that owns the rule.</param>
+    /// <param name="ruleName">Rule name to locate.</param>
+    /// <returns>The matching parser rule.</returns>
+    private static Rule GetParserRule(ParserDefinition definition, string ruleName) =>
+        definition.ParserRules.First(rule => string.Equals(rule.Name, ruleName, StringComparison.Ordinal));
 
     /// <summary>
-    /// Recursively scans rule content using the same local alternative and sequence indexes supplied by the parser runtime.
+    /// Prepares and registers one validating semantic predicate discovered by shared runtime metadata.
     /// </summary>
     /// <param name="rule">Owning parser rule.</param>
-    /// <param name="content">Content node to scan.</param>
-    /// <param name="alternativeIndex">Current local alternative index, or <c>null</c> when unavailable.</param>
-    /// <param name="elementIndex">Current sequence element index, or <c>null</c> when unavailable.</param>
+    /// <param name="source">Runtime-indexed source metadata.</param>
     /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanContent(Rule rule, RuleContent content, int? alternativeIndex, int? elementIndex, BuildState state)
+    private static void PrepareSemanticPredicate(Rule rule, EmbeddedCodeSource source, BuildState state)
     {
-        switch (content)
-        {
-            case Alternation alternation:
-                ScanAlternation(rule, alternation, state);
-                break;
-            case Alternative alternative:
-                ScanContent(rule, alternative.Content, alternativeIndex, elementIndex, state);
-                break;
-            case Sequence sequence:
-                ScanSequence(rule, sequence, alternativeIndex, state);
-                break;
-            case Quantifier quantifier:
-                ScanQuantifier(rule, quantifier, alternativeIndex, state);
-                break;
-            case Negation negation:
-                ScanNegation(rule, negation, alternativeIndex, state);
-                break;
-            case ValidatingPredicate predicate:
-                PrepareSemanticPredicate(rule, predicate, alternativeIndex, elementIndex, state);
-                break;
-            case EmbeddedAction action:
-                PrepareOrSkipParserAction(rule, action, alternativeIndex, elementIndex, state);
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Scans an alternation in runtime priority order so local indexes match scheduler contexts.
-    /// </summary>
-    /// <param name="rule">Owning parser rule.</param>
-    /// <param name="alternation">Alternation to scan.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanAlternation(Rule rule, Alternation alternation, BuildState state)
-    {
-        var ordered = alternation.Alternatives.OrderBy(static alternative => alternative.Priority).ToList();
-        for (var index = 0; index < ordered.Count; index++)
-        {
-            ScanContent(rule, ordered[index].Content, index, null, state);
-        }
-    }
-
-    /// <summary>
-    /// Scans a direct-left-recursive rule using the runtime seed and recursive-tail views.
-    /// </summary>
-    /// <param name="info">Left-recursive rule split metadata.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanLeftRecursiveRule(LeftRecursiveRuleInfo info, BuildState state)
-    {
-        var baseAlternatives = info.BaseAlternatives.OrderBy(static alternative => alternative.Priority).ToList();
-        for (var index = 0; index < baseAlternatives.Count; index++)
-        {
-            ScanContent(info.Rule, baseAlternatives[index].Content, index, null, state);
-        }
-
-        var recursiveAlternatives = info.RecursiveAlternatives.OrderBy(static alternative => alternative.Priority).ToList();
-        for (var index = 0; index < recursiveAlternatives.Count; index++)
-        {
-            var tailContent = RemoveLeadingSelfReference(info.Rule.Name, recursiveAlternatives[index].Content);
-            if (tailContent is not null)
-            {
-                ScanLeftRecursiveTail(info.Rule, tailContent, index, state);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Scans recursive-tail content after applying the same leading self-reference removal used by the runtime.
-    /// </summary>
-    /// <param name="rule">Owning left-recursive rule.</param>
-    /// <param name="tailContent">Effective tail content parsed by the runtime.</param>
-    /// <param name="alternativeIndex">Runtime recursive alternative index.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanLeftRecursiveTail(Rule rule, RuleContent tailContent, int alternativeIndex, BuildState state)
-    {
-        if (tailContent is Sequence sequence)
-        {
-            for (var index = 0; index < sequence.Items.Count; index++)
-            {
-                var item = sequence.Items[index];
-                if (item is RuleRef ruleRef && string.Equals(ruleRef.RuleName, rule.Name, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                ScanContent(rule, item, alternativeIndex, index, state);
-            }
-
-            return;
-        }
-
-        ScanContent(rule, tailContent, alternativeIndex, alternativeIndex, state);
-    }
-
-    /// <summary>
-    /// Scans sequence items with stable zero-based element indexes matching runtime contexts.
-    /// </summary>
-    /// <param name="rule">Owning parser rule.</param>
-    /// <param name="sequence">Sequence to scan.</param>
-    /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanSequence(Rule rule, Sequence sequence, int? alternativeIndex, BuildState state)
-    {
-        for (var index = 0; index < sequence.Items.Count; index++)
-        {
-            ScanContent(rule, sequence.Items[index], alternativeIndex, index, state);
-        }
-    }
-
-    /// <summary>
-    /// Scans quantified content with the runtime element-index strategy for quantifier inner parsing.
-    /// </summary>
-    /// <param name="rule">Owning parser rule.</param>
-    /// <param name="quantifier">Quantifier model node.</param>
-    /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanQuantifier(Rule rule, Quantifier quantifier, int? alternativeIndex, BuildState state)
-    {
-        ScanContent(rule, quantifier.Inner, alternativeIndex, alternativeIndex, state);
-    }
-
-    /// <summary>
-    /// Scans negated content with the runtime element-index strategy for negation inner probing.
-    /// </summary>
-    /// <param name="rule">Owning parser rule.</param>
-    /// <param name="negation">Negation model node.</param>
-    /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void ScanNegation(Rule rule, Negation negation, int? alternativeIndex, BuildState state)
-    {
-        ScanContent(rule, negation.Inner, alternativeIndex, alternativeIndex, state);
-    }
-
-    /// <summary>
-    /// Prepares and registers one validating semantic predicate.
-    /// </summary>
-    /// <param name="rule">Owning parser rule.</param>
-    /// <param name="predicate">Predicate model node.</param>
-    /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="elementIndex">Current sequence element index.</param>
-    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void PrepareSemanticPredicate(Rule rule, ValidatingPredicate predicate, int? alternativeIndex, int? elementIndex, BuildState state)
-    {
-        var source = CreateSource(predicate.Code, EmbeddedCodeKind.SemanticPredicate, rule.Name, alternativeIndex, elementIndex);
         var context = CreatePreparationContext(state.Definition, rule, state.Options);
         var result = state.Preparer.PrepareSemanticPredicate(source, context);
         var key = result.Artifact is null ? null : PreparedExpressionEmbeddedCodeKey.FromSource(result.Artifact.Source, result.Artifact.PreparationContext.RuleName);
@@ -239,25 +83,13 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
     }
 
     /// <summary>
-    /// Prepares and registers one inline parser action, or records unsupported action positions as skipped.
+    /// Prepares and registers one inline parser action discovered by shared runtime metadata.
     /// </summary>
     /// <param name="rule">Owning parser rule.</param>
-    /// <param name="action">Action model node.</param>
-    /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="elementIndex">Current sequence element index.</param>
+    /// <param name="source">Runtime-indexed source metadata.</param>
     /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
-    private static void PrepareOrSkipParserAction(Rule rule, EmbeddedAction action, int? alternativeIndex, int? elementIndex, BuildState state)
+    private static void PrepareParserAction(Rule rule, EmbeddedCodeSource source, BuildState state)
     {
-        var source = CreateSource(action.RawCode, EmbeddedCodeKind.ParserInlineAction, rule.Name, alternativeIndex, elementIndex);
-        if (action.Context != ActionContext.Alternative || action.Position != ActionPosition.Inline)
-        {
-            state.RecordSkippedEntry(
-                source,
-                rule.Name,
-                "Only inline parser actions declared inside alternatives are prepared by the expression registry builder.");
-            return;
-        }
-
         var context = CreatePreparationContext(state.Definition, rule, state.Options);
         var result = state.Preparer.PrepareParserAction(source, context);
         var key = result.Artifact is null ? null : PreparedExpressionEmbeddedCodeKey.FromSource(result.Artifact.Source, result.Artifact.PreparationContext.RuleName);
@@ -266,45 +98,6 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
 
         state.RecordParserActionEntry(entry, wasAdded);
     }
-
-    /// <summary>
-    /// Removes the leading direct self-reference exactly as the parser runtime does for left-recursive tails.
-    /// </summary>
-    /// <param name="ruleName">Name of the left-recursive rule.</param>
-    /// <param name="content">Recursive alternative content.</param>
-    /// <returns>The effective tail content parsed by the runtime, or <c>null</c> when no leading self-reference exists.</returns>
-    private static RuleContent? RemoveLeadingSelfReference(string ruleName, RuleContent content)
-    {
-        switch (content)
-        {
-            case RuleRef ruleRef when string.Equals(ruleRef.RuleName, ruleName, StringComparison.Ordinal):
-                return new Sequence([]);
-            case Sequence sequence when sequence.Items.Count > 0:
-            {
-                if (sequence.Items[0] is RuleRef leading &&
-                    string.Equals(leading.RuleName, ruleName, StringComparison.Ordinal))
-                {
-                    return new Sequence(sequence.Items.Skip(1).ToList());
-                }
-
-                return null;
-            }
-            default:
-                return null;
-        }
-    }
-
-    /// <summary>
-    /// Creates source metadata for a discovered embedded-code item.
-    /// </summary>
-    /// <param name="sourceText">Raw embedded-code source text.</param>
-    /// <param name="kind">Embedded-code kind.</param>
-    /// <param name="ruleName">Owning rule name.</param>
-    /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="elementIndex">Current sequence element index.</param>
-    /// <returns>Source metadata suitable for preparation and key creation.</returns>
-    private static EmbeddedCodeSource CreateSource(string sourceText, EmbeddedCodeKind kind, string? ruleName, int? alternativeIndex, int? elementIndex) =>
-        new(sourceText, kind, ruleName, alternativeIndex, elementIndex);
 
     /// <summary>
     /// Creates the preparation context supplied to the configured preparer.
@@ -342,7 +135,7 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         PreparedExpressionEmbeddedCodeKey? key,
         string? ruleName,
         EmbeddedCodePreparationStatus status,
-        Utils.Parser.Diagnostics.ParserDiagnosticDescriptor? diagnosticDescriptor,
+        ParserDiagnosticDescriptor? diagnosticDescriptor,
         Exception? exception,
         IReadOnlyList<object?> diagnosticArguments,
         bool wasAdded,
@@ -350,7 +143,26 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         new(source, key, ruleName, status, diagnosticDescriptor, exception, diagnosticArguments, wasAdded, isDuplicate);
 
     /// <summary>
-    /// Holds the mutable traversal state shared across all scan and prepare methods during a single <see cref="Build"/> call.
+    /// Converts a common unsupported reason into the legacy human-readable skip reason text.
+    /// </summary>
+    /// <param name="reason">Common unsupported reason.</param>
+    /// <returns>Human-readable skip reason.</returns>
+    private static string GetSkipReason(EmbeddedCodeUnsupportedReason reason) => reason switch
+    {
+        EmbeddedCodeUnsupportedReason.GrammarAction => "Grammar-level actions are not prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.RuleInitAction => "Rule initialization actions are not prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.RuleAfterAction => "Rule finalization actions are not prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.UnsupportedActionContext or EmbeddedCodeUnsupportedReason.UnsupportedActionPosition or EmbeddedCodeUnsupportedReason.NonInlineParserAction => "Only inline parser actions declared inside alternatives are prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.LexerAction => "Lexer actions are not prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.LexerPredicate => "Lexer predicates are not prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.UnsupportedEmbeddedCodeKind => "This embedded-code kind is not prepared by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.MissingRuntimeIndex => "The embedded code is missing runtime dispatch indexes required by the expression registry builder.",
+        EmbeddedCodeUnsupportedReason.UnsupportedRuntimeShape => "The embedded code appears in a runtime shape that is not prepared by the expression registry builder.",
+        _ => "The embedded code is not prepared by the expression registry builder."
+    };
+
+    /// <summary>
+    /// Holds the mutable traversal state shared across all prepare methods during a single <see cref="Build"/> call.
     /// </summary>
     private sealed class BuildState
     {
@@ -426,19 +238,18 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         /// <summary>
         /// Records an embedded-code item that is intentionally not prepared by this builder.
         /// </summary>
-        /// <param name="source">Embedded-code source metadata.</param>
-        /// <param name="ruleName">Owning rule name, or <c>null</c> for grammar-level items.</param>
-        /// <param name="reason">Reason why the item was skipped.</param>
-        public void RecordSkippedEntry(EmbeddedCodeSource source, string? ruleName, string reason)
+        /// <param name="runtimeEntry">Runtime discovery entry to record as skipped.</param>
+        public void RecordSkippedEntry(EmbeddedCodeRuntimeEntry runtimeEntry)
         {
             var entry = new PreparedExpressionEmbeddedCodeRegistryBuildEntry(
-                source,
+                runtimeEntry.Source,
                 null,
-                ruleName,
+                runtimeEntry.RuleName,
                 EmbeddedCodePreparationStatus.Unsupported,
                 wasAddedToRegistry: false,
                 isSkipped: true,
-                skipReason: reason);
+                skipReason: GetSkipReason(runtimeEntry.UnsupportedReason),
+                unsupportedReason: runtimeEntry.UnsupportedReason);
 
             SkippedEntries.Add(entry);
             AllEntries.Add(entry);

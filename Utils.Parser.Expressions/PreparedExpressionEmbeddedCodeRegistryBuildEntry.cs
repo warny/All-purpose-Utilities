@@ -22,6 +22,7 @@ public sealed record PreparedExpressionEmbeddedCodeRegistryBuildEntry
     /// <param name="isDuplicate">Whether a successful preparation collided with an existing registry key.</param>
     /// <param name="isSkipped">Whether the item was intentionally skipped without invoking the preparer.</param>
     /// <param name="skipReason">Human-readable reason for skipped items.</param>
+    /// <param name="unsupportedReason">Common unsupported reason for skipped items.</param>
     public PreparedExpressionEmbeddedCodeRegistryBuildEntry(
         EmbeddedCodeSource source,
         PreparedExpressionEmbeddedCodeKey? key,
@@ -33,7 +34,8 @@ public sealed record PreparedExpressionEmbeddedCodeRegistryBuildEntry
         bool wasAddedToRegistry = false,
         bool isDuplicate = false,
         bool isSkipped = false,
-        string? skipReason = null)
+        string? skipReason = null,
+        EmbeddedCodeUnsupportedReason? unsupportedReason = null)
     {
         Source = source ?? throw new ArgumentNullException(nameof(source));
         Key = key;
@@ -46,6 +48,7 @@ public sealed record PreparedExpressionEmbeddedCodeRegistryBuildEntry
         IsDuplicate = isDuplicate;
         IsSkipped = isSkipped;
         SkipReason = skipReason;
+        UnsupportedReason = unsupportedReason;
     }
 
     /// <summary>
@@ -102,4 +105,9 @@ public sealed record PreparedExpressionEmbeddedCodeRegistryBuildEntry
     /// Gets the human-readable reason for skipped items.
     /// </summary>
     public string? SkipReason { get; }
+
+    /// <summary>
+    /// Gets the common unsupported reason for skipped items.
+    /// </summary>
+    public EmbeddedCodeUnsupportedReason? UnsupportedReason { get; }
 }
