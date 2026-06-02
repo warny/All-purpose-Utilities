@@ -863,7 +863,7 @@ internal static class GrammarEmitter
         public static GeneratedEmbeddedCodeBody ForPredicate(string code)
         {
             string trimmedCode = code.Trim();
-            var kind = ContainsStatementReturnKeyword(trimmedCode)
+            var kind = ContainsReturnKeyword(trimmedCode)
                 ? GeneratedEmbeddedCodeBodyKind.Block
                 : GeneratedEmbeddedCodeBodyKind.Expression;
 
@@ -881,52 +881,21 @@ internal static class GrammarEmitter
         }
 
         /// <summary>
-        /// Detects likely C# <c>return</c> statements using lightweight line and statement-boundary checks only.
+        /// Detects a C# <c>return</c> keyword using lightweight token-boundary checks only.
         /// </summary>
         /// <param name="code">Trimmed user-authored C# body.</param>
-        /// <returns><see langword="true"/> when a likely return statement appears in the body.</returns>
-        private static bool ContainsStatementReturnKeyword(string code)
-        {
-            foreach (string line in SplitEmbeddedCodeLines(code))
-            {
-                string trimmedLine = line.TrimStart();
-                if (StartsWithReturnKeyword(trimmedLine) || ContainsDelimitedReturnKeyword(trimmedLine))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Determines whether a line starts with a C# <c>return</c> keyword.
-        /// </summary>
-        /// <param name="line">Trimmed line to inspect.</param>
-        /// <returns><see langword="true"/> when the line begins with a return keyword.</returns>
-        private static bool StartsWithReturnKeyword(string line)
-        {
-            const string keyword = "return";
-            return line.StartsWith(keyword, StringComparison.Ordinal)
-                && (line.Length == keyword.Length || !IsIdentifierCharacter(line[keyword.Length]));
-        }
-
-        /// <summary>
-        /// Determines whether a statement separator is followed by a C# <c>return</c> keyword.
-        /// </summary>
-        /// <param name="line">Line to inspect.</param>
-        /// <returns><see langword="true"/> when the line contains a separated return keyword.</returns>
-        private static bool ContainsDelimitedReturnKeyword(string line)
+        /// <returns><see langword="true"/> when a delimited return keyword appears in the body.</returns>
+        private static bool ContainsReturnKeyword(string code)
         {
             const string keyword = "return";
             int index = 0;
 
-            while ((index = line.IndexOf(keyword, index, StringComparison.Ordinal)) >= 0)
+            while ((index = code.IndexOf(keyword, index, StringComparison.Ordinal)) >= 0)
             {
                 int end = index + keyword.Length;
-                bool precededByStatementSeparator = index > 0 && line[index - 1] == ';';
-                bool endsAtBoundary = end == line.Length || !IsIdentifierCharacter(line[end]);
-                if (precededByStatementSeparator && endsAtBoundary)
+                bool startsAtBoundary = index == 0 || !IsIdentifierCharacter(code[index - 1]);
+                bool endsAtBoundary = end == code.Length || !IsIdentifierCharacter(code[end]);
+                if (startsAtBoundary && endsAtBoundary)
                 {
                     return true;
                 }
@@ -944,7 +913,7 @@ internal static class GrammarEmitter
         /// <returns><see langword="true"/> when the character is treated as identifier text.</returns>
         private static bool IsIdentifierCharacter(char value)
         {
-            return char.IsLetterOrDigit(value) || value == '_';
+            return char.IsLetterOrDigit(value) || value == '_' || value == '@';
         }
     }
 

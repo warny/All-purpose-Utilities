@@ -119,6 +119,52 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures one-line predicate statement blocks with conditional returns compile and parse through generated hooks.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateOneLineConditionalReturn_ParsesSuccessfully()
+    {
+        const string grammar = """
+            grammar P;
+            start : { if (inputPosition == 0) return true; return false; }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures predicate expressions containing return as part of an identifier stay expression-bodied.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateReturnIdentifier_DoesNotUseBlockBody()
+    {
+        const string grammar = """
+            grammar P;
+            start : { returnValue == true }? A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static bool returnValue = true;
+            }
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source, userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
     /// Ensures block-bodied predicate hooks can reject parsing through a generated runtime policy.
     /// </summary>
     [TestMethod]
