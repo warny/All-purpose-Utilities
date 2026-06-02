@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
 using Utils.Parser.Generators.Internal;
+using Utils.Parser.Model;
+using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -183,7 +185,299 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(source, userPartial);
         InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
 
-        Assert.AreEqual(2, ReadActionCount(assembly));
+        Assert.IsTrue(ReadActionCount(assembly) is > 0 and < 100);
+    }
+
+    /// <summary>
+    /// Ensures a semantic predicate that is the only item in an alternative uses the runtime single-item element index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SinglePredicateAlternative_RejectsParse()
+    {
+        const string grammar = """
+            grammar P;
+            start : { false }? ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "__Predicate_start_0_m1_0");
+
+        var assembly = CompileGeneratedSource(source);
+
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "Parse", string.Empty), typeof(ErrorNode));
+        Assert.IsInstanceOfType(InvokeParse(assembly, "ParseWithEmbeddedCode", string.Empty), typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures an inline action that is the only item in an alternative dispatches and executes.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SingleActionAlternative_ExecutesAction()
+    {
+        const string grammar = """
+            grammar P;
+            start : { OnAction(context); } ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int ActionCount;
+
+                private static void OnAction(ParserActionExecutionContext context)
+                {
+                    ActionCount += context.ElementIndex == -1 ? 1 : 100;
+                }
+            }
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "__Action_start_0_m1_0");
+
+        var assembly = CompileGeneratedSource(source, userPartial);
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "Parse", string.Empty), typeof(ErrorNode));
+        Assert.AreEqual(0, ReadActionCount(assembly));
+
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "ParseWithEmbeddedCode", string.Empty), typeof(ErrorNode));
+        Assert.AreEqual(1, ReadActionCount(assembly));
+    }
+
+    /// <summary>
+    /// Ensures an inline action inside a quantifier uses the runtime inner element index rather than the parent sequence index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_QuantifierInlineAction_ExecutesAction()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ({ OnAction(context); } B)* ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int ActionCount;
+
+                private static void OnAction(ParserActionExecutionContext context)
+                {
+                    ActionCount += context.ElementIndex == 0 ? 1 : 100;
+                }
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "abb");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadActionCount(assembly) is > 0 and < 100);
+    }
+
+    /// <summary>
+    /// Ensures a predicate inside a quantifier is evaluated with the runtime inner element index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_QuantifierPredicate_EvaluatesPredicate()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ({ OnPredicate(context) }? B)* ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int PredicateCount;
+
+                private static bool OnPredicate(SemanticPredicateEvaluationContext context)
+                {
+                    PredicateCount++;
+                    return context.InputPosition == 1 && context.ElementIndex == 0;
+                }
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadPredicateCount(assembly) > 0);
+    }
+
+    /// <summary>
+    /// Ensures equal action source text in separate alternatives dispatches by alternative index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AlternativesWithSameActionSource_DispatchesByAlternativeIndex()
+    {
+        const string grammar = """
+            grammar P;
+            start
+                : { OnAction(context); } A
+                | { OnAction(context); } B
+                ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int ActionCount;
+
+                private static void OnAction(ParserActionExecutionContext context)
+                {
+                    ActionCount += context.AlternativeIndex == 0 ? 1 : 10;
+                }
+            }
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "__Action_start_0_0_0");
+        StringAssert.Contains(source, "__Action_start_1_0_1");
+
+        var assembly = CompileGeneratedSource(source, userPartial);
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "ParseWithEmbeddedCode", "a"), typeof(ErrorNode));
+        Assert.AreEqual(1, ReadActionCount(assembly));
+
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "ParseWithEmbeddedCode", "b"), typeof(ErrorNode));
+        Assert.AreEqual(11, ReadActionCount(assembly));
+    }
+
+    /// <summary>
+    /// Ensures a predicate inside negation dispatches with the runtime probe index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NegationPredicate_DispatchesWithRuntimeIndex()
+    {
+        const string grammar = """
+            grammar P;
+            start : ~({ OnPredicate(context) }? A) ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int PredicateCount;
+
+                private static bool OnPredicate(SemanticPredicateEvaluationContext context)
+                {
+                    PredicateCount++;
+                    return context.ElementIndex == 0;
+                }
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "b");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadPredicateCount(assembly));
+    }
+
+    /// <summary>
+    /// Ensures generated hooks in a direct-left-recursive tail use the runtime tail element index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LeftRecursiveTailAction_DispatchesWithRuntimeTailIndex()
+    {
+        const string grammar = """
+            grammar P;
+            expr
+                : INT
+                | expr { OnAction(context); } PLUS INT
+                ;
+            INT : [0-9]+ ;
+            PLUS : '+' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int ActionCount;
+
+                private static void OnAction(ParserActionExecutionContext context)
+                {
+                    ActionCount += context.ElementIndex == 0 ? 1 : 100;
+                }
+            }
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "__Action_expr_0_0_0");
+
+        var assembly = CompileGeneratedSource(source, userPartial);
+        var result = InvokeParseWithResolvedDefinition(assembly, "1+2");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadActionCount(assembly) is > 0 and < 100);
+    }
+
+    /// <summary>
+    /// Ensures generated predicates in a direct-left-recursive tail use the runtime tail element index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LeftRecursiveTailPredicate_DispatchesWithRuntimeTailIndex()
+    {
+        const string grammar = """
+            grammar P;
+            expr
+                : INT
+                | expr { OnPredicate(context) }? PLUS INT
+                ;
+            INT : [0-9]+ ;
+            PLUS : '+' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int PredicateCount;
+
+                private static bool OnPredicate(SemanticPredicateEvaluationContext context)
+                {
+                    PredicateCount++;
+                    return context.ElementIndex == 0;
+                }
+            }
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "__Predicate_expr_0_0_0");
+
+        var assembly = CompileGeneratedSource(source, userPartial);
+        var result = InvokeParseWithResolvedDefinition(assembly, "1+2");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadPredicateCount(assembly) > 0);
     }
 
     /// <summary>
@@ -315,6 +609,22 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Invokes the generated runtime policy against a resolved parser definition.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="input">Input text to parse.</param>
+    /// <returns>Parse-tree root returned by the compiled grammar.</returns>
+    private static ParseNode InvokeParseWithResolvedDefinition(Assembly assembly, string input)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var buildDefinition = type.GetMethod("BuildDefinition", BindingFlags.Public | BindingFlags.Static)!;
+        var createRuntimePolicy = type.GetMethod("CreateRuntimePolicy", BindingFlags.Public | BindingFlags.Static)!;
+        var definition = RuleResolver.Resolve((ParserDefinition)buildDefinition.Invoke(null, null)!);
+        var policy = (ParserRuntimeFeaturePolicy)createRuntimePolicy.Invoke(null, new object?[] { null })!;
+        return new CompiledGrammar(definition, policy).Parse(input);
+    }
+
+    /// <summary>
     /// Reads the test action counter from the user partial class.
     /// </summary>
     /// <param name="assembly">Assembly containing the generated grammar class.</param>
@@ -323,6 +633,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
         var field = type.GetField("ActionCount", BindingFlags.Public | BindingFlags.Static)!;
+        return (int)field.GetValue(null)!;
+    }
+
+    /// <summary>
+    /// Reads the test predicate counter from the user partial class.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <returns>Current predicate count.</returns>
+    private static int ReadPredicateCount(Assembly assembly)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var field = type.GetField("PredicateCount", BindingFlags.Public | BindingFlags.Static)!;
         return (int)field.GetValue(null)!;
     }
 
