@@ -382,7 +382,7 @@ Current clarification status:
 - a shared netstandard2.0 ANTLR prequel DTO project was introduced, while runtime and generator parsing remain intentionally separate.
 - runtime advanced-configuration public API was consolidated so `ParserRuntimeFeaturePolicy` is the single explicit runtime feature-entry point for semantic predicates, parser actions, and runtime observers.
 - current expression-backed predicate/action adapters are documented as useful intermediate runtime adapters with opportunistic compilation, not as the final prepare-before-parse architecture.
-- public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer plus explicit registry-backed runtime adapters for prepared artifacts; automatic model preparation and default `ParserEngine` wiring remain unimplemented.
+- public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer, an explicit registry builder for parser-model validating predicates and inline parser actions, and registry-backed runtime adapters for prepared artifacts; automatic default `ParserEngine` wiring remains unimplemented.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -423,6 +423,8 @@ Forbidden work:
 **Status: in progress.**
 
 Goal: move toward tooling capabilities once runtime behavior is stable.
+
+Current status includes an explicit prepared expression registry builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. This improves manual tooling around prepared semantic predicates and inline parser actions without increasing ANTLR support by default.
 
 Scope:
 
