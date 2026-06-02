@@ -164,7 +164,7 @@ internal static class GrammarEmitter
 
         // ── Static Grammar property ──────────────────────────────────
         sb.AppendLine("    /// <summary>Compiled and cached grammar instance.</summary>");
-        sb.AppendLine("    public static CompiledGrammar Grammar { get; } = new CompiledGrammar(BuildDefinition());");
+        sb.AppendLine("    public static CompiledGrammar Grammar { get; } = new CompiledGrammar(Build());");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>Tokenizes input using the generated grammar and annotates literals with the custom grammar string syntax.</summary>");
         sb.AppendLine($"    public static IReadOnlyList<Token> Tokenize([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input) => Grammar.Tokenize(input);");
@@ -175,8 +175,8 @@ internal static class GrammarEmitter
         EmitEmbeddedCodeRuntime(sb, embeddedHooks, className);
 
         // ── Build() convenience method ───────────────────────────────
-        sb.AppendLine("    /// <summary>Returns the resolved <see cref=\"ParserDefinition\"/>. Equivalent to <see cref=\"BuildDefinition\"/>.</summary>");
-        sb.AppendLine("    public static ParserDefinition Build() => BuildDefinition();");
+        sb.AppendLine("    /// <summary>Builds and validates the resolved <see cref=\"ParserDefinition\"/>.</summary>");
+        sb.AppendLine("    public static ParserDefinition Build() => RuleResolver.Resolve(BuildDefinition());");
 
         sb.AppendLine("}");
 
@@ -439,7 +439,7 @@ internal static class GrammarEmitter
         sb.AppendLine("    /// <summary>Parses input using generated C# hooks for embedded parser predicates and inline parser actions.</summary>");
         sb.AppendLine($"    public static ParseNode ParseWithEmbeddedCode([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input)");
         sb.AppendLine("    {");
-        sb.AppendLine("        var grammar = new CompiledGrammar(BuildDefinition(), CreateRuntimePolicy());");
+        sb.AppendLine("        var grammar = new CompiledGrammar(Build(), CreateRuntimePolicy());");
         sb.AppendLine("        return grammar.Parse(input);");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -589,10 +589,38 @@ internal static class GrammarEmitter
         var hooks = new List<EmbeddedCodeHook>();
         foreach (var rule in grammar.ParserRules)
         {
-            CollectEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
+            CollectRuleEmbeddedCodeHooks(rule, hooks);
         }
 
         return hooks;
+    }
+
+    /// <summary>
+    /// Collects embedded-code hooks from a parser rule using the same alternative split that
+    /// <c>ParserEngine</c> applies to direct-left-recursive rules.
+    /// </summary>
+    /// <param name="rule">Parser rule to inspect.</param>
+    /// <param name="hooks">Destination hook collection.</param>
+    private static void CollectRuleEmbeddedCodeHooks(G4Rule rule, List<EmbeddedCodeHook> hooks)
+    {
+        var orderedAlternatives = rule.Content.Alternatives.OrderBy(static alternative => alternative.Priority).ToList();
+        var recursiveAlternatives = orderedAlternatives.Where(alternative => StartsWithRuleRef(alternative, rule.Name)).ToList();
+        if (recursiveAlternatives.Count == 0)
+        {
+            CollectEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
+            return;
+        }
+
+        var baseAlternatives = orderedAlternatives.Where(alternative => !StartsWithRuleRef(alternative, rule.Name)).ToList();
+        for (int index = 0; index < baseAlternatives.Count; index++)
+        {
+            CollectEmbeddedCodeHooks(rule.Name, baseAlternatives[index], hooks, index, -1);
+        }
+
+        for (int index = 0; index < recursiveAlternatives.Count; index++)
+        {
+            CollectLeftRecursiveTailEmbeddedCodeHooks(rule.Name, recursiveAlternatives[index], hooks, index);
+        }
     }
 
     /// <summary>
@@ -621,9 +649,15 @@ internal static class GrammarEmitter
                 CollectSequenceEmbeddedCodeHooks(ruleName, sequence.Items, hooks, alternativeIndex);
                 break;
             case G4Quantifier quantifier:
+                // ParserEngine reparses quantified content with the current alternative index
+                // as the inner element index, rather than with the quantifier parent's
+                // sequence position. The generated dispatcher must mirror that runtime key.
                 CollectEmbeddedCodeHooks(ruleName, quantifier.Inner, hooks, alternativeIndex, alternativeIndex);
                 break;
             case G4Negation negation:
+                // ParserEngine probes negated content with the current alternative index
+                // as the inner element index. This preserves dispatch for predicates that
+                // are evaluated during the negation probe.
                 CollectEmbeddedCodeHooks(ruleName, negation.Inner, hooks, alternativeIndex, alternativeIndex);
                 break;
             case G4EmbeddedAction action:
@@ -663,6 +697,54 @@ internal static class GrammarEmitter
         {
             CollectEmbeddedCodeHooks(ruleName, items[itemIndex], hooks, alternativeIndex, itemIndex);
         }
+    }
+
+
+    /// <summary>
+    /// Collects hooks from a direct-left-recursive alternative after removing the leading
+    /// self-reference, matching the runtime tail view used by <c>ParserEngine</c>.
+    /// </summary>
+    /// <param name="ruleName">Owning parser rule name.</param>
+    /// <param name="alternative">Direct-left-recursive source alternative.</param>
+    /// <param name="hooks">Destination hook collection.</param>
+    /// <param name="alternativeIndex">Runtime index inside the recursive-alternative set.</param>
+    private static void CollectLeftRecursiveTailEmbeddedCodeHooks(string ruleName, G4Alternative alternative, List<EmbeddedCodeHook> hooks, int alternativeIndex)
+    {
+        if (alternative.Items.Count == 0 || !IsRuleRef(alternative.Items[0], ruleName))
+        {
+            return;
+        }
+
+        var tailItems = alternative.Items.Skip(1).ToList();
+        if (tailItems.Count == 1 && tailItems[0] is not G4Sequence)
+        {
+            CollectEmbeddedCodeHooks(ruleName, tailItems[0], hooks, alternativeIndex, -1);
+            return;
+        }
+
+        CollectSequenceEmbeddedCodeHooks(ruleName, tailItems, hooks, alternativeIndex);
+    }
+
+    /// <summary>
+    /// Determines whether an alternative begins with a direct reference to the supplied rule.
+    /// </summary>
+    /// <param name="alternative">Alternative to inspect.</param>
+    /// <param name="ruleName">Rule name expected as the leading reference.</param>
+    /// <returns><see langword="true"/> when the first item is a direct self-reference.</returns>
+    private static bool StartsWithRuleRef(G4Alternative alternative, string ruleName)
+    {
+        return alternative.Items.Count > 0 && IsRuleRef(alternative.Items[0], ruleName);
+    }
+
+    /// <summary>
+    /// Determines whether a grammar content item is a rule reference to the supplied rule.
+    /// </summary>
+    /// <param name="content">Content item to inspect.</param>
+    /// <param name="ruleName">Expected rule name.</param>
+    /// <returns><see langword="true"/> when the content is a matching rule reference.</returns>
+    private static bool IsRuleRef(G4Content content, string ruleName)
+    {
+        return content is G4RuleRef ruleRef && string.Equals(ruleRef.RuleName, ruleName, StringComparison.Ordinal);
     }
 
     /// <summary>
