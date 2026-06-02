@@ -28,20 +28,21 @@ Standard ANTLR semantics:
 
 ## 3. Current `Utils.Parser` behavior
 
-Current behavior is intentionally conservative.
+Current behavior is intentionally conservative by default. The canonical compatibility status is maintained in [`ANTLRCompatibility.md`](./ANTLRCompatibility.md); this document focuses on execution architecture.
 
 - Semantic predicates are recognized and routed through `ISemanticPredicateEvaluator`.
 - Inline parser actions are recognized and routed through `IParserActionExecutor`.
-- `@init` and `@after` are recognized and stored on the rule model.
-- Grammar actions are preserved as metadata only.
+- `@init` and `@after` are recognized and stored on the rule model, but are not executed.
+- Grammar actions and `@members` are preserved as metadata only when visible to ingestion.
+- Lexer predicates and lexer actions are outside the current executable embedded-code scope.
 - No raw embedded ANTLR target-language code is executed automatically.
 
-Important distinction:
+Two explicit opt-in paths exist for parser semantic predicates and inline parser actions:
 
-- **source-generated model construction** is already implemented;
-- **source-generated executable embedded code** is not implemented.
+1. a runtime-inline prepared expression path assembled by callers through `Utils.Parser.Expressions`;
+2. a source-generator C# path emitted by `Utils.Parser.Generators` and activated through generated helpers.
 
-Current generator output preserves embedded code as model metadata strings (for example `ValidatingPredicate("...")` and `EmbeddedAction("...", ...)`) and does not compile those strings to executable delegates.
+Both paths install runtime policy handlers explicitly. `ParserEngine` remains language-neutral and default parsing remains conservative.
 
 ## 4. Two-path target architecture
 
@@ -74,10 +75,10 @@ Shared expectations across both paths:
 
 The prepared output is intentionally path-specific:
 
-- `Utils.Parser.Generators` should eventually produce C# source hooks compiled by Roslyn in the consuming project;
-- runtime inline ingestion should eventually produce a compiled expression, delegate, or equivalent executable function through the configured `IExpressionCompiler`.
+- `Utils.Parser.Generators` produces C# source hooks compiled by Roslyn in the consuming project for supported parser predicates/actions;
+- runtime-inline ingestion produces compiled expression artifacts through the configured `IExpressionCompiler` when callers run the prepared registry/policy builder.
 
-Adapters may differ by path, but model semantics must stay aligned.
+Adapters may differ by path, but model semantics and runtime dispatch indexes must stay aligned.
 
 ## 4.1 Minimal preparation boundary
 
@@ -89,7 +90,7 @@ The repository now contains a minimal preparation boundary in `Utils.Parser` for
 - preparation outcomes (`EmbeddedCodePreparationResult<TArtifact>`, `EmbeddedCodePreparationStatus`);
 - one narrow preparation interface for semantic predicates and inline parser actions (`IEmbeddedCodePreparer<TPredicateArtifact, TActionArtifact>`).
 
-This boundary is intentionally metadata/preparation-only. It is not wired into `ParserEngine`, does not change scheduling or memoization, does not migrate the expression-backed adapters, and does not make `GrammarEmitter` generate executable embedded-code hooks. The neutral preserving preparer returns explicit preserved/unsupported metadata and never compiles or executes embedded source. Making the boundary public is an API exposure for pre-release preparation/tooling integration only; it is not runtime activation.
+This boundary is intentionally metadata/preparation-only. It is not wired into `ParserEngine`, does not change scheduling or memoization, and does not activate embedded code by default. The neutral preserving preparer returns explicit preserved/unsupported metadata and never compiles or executes embedded source. Making the boundary public is an API exposure for pre-release preparation/tooling integration only; it is not runtime activation.
 
 ## 5. Source generator C# path
 
@@ -103,26 +104,26 @@ Pipeline:
 Current state:
 
 - generated model construction is implemented;
-- embedded predicates and actions are still emitted as metadata strings such as `ValidatingPredicate("...")` and `EmbeddedAction("...", ...)`;
-- specialized executable C# hooks for embedded ANTLR code are not generated yet.
+- embedded predicates and actions continue to be preserved as metadata strings such as `ValidatingPredicate("...")` and `EmbeddedAction("...", ...)`;
+- generated C# hooks are emitted for supported parser semantic predicates and inline parser actions;
+- generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor`;
+- generated `CreateRuntimePolicy(...)` and `ParseWithEmbeddedCode(...)` helpers provide the explicit opt-in path;
+- generated `Parse(...)` remains conservative and does not install generated embedded-code hooks.
 
-Target state:
+Execution boundary:
 
 - embedded ANTLR code selected for execution in this path is treated as C# source;
 - the generator emits explicit C# hook code;
 - Roslyn compiles that generated C# as part of the consuming project;
-- parsing invokes the already-generated hook rather than asking `ParserEngine` to compile source text.
+- parsing invokes the already-generated hook rather than asking `ParserEngine` to compile source text;
+- the generator performs light body normalization only and leaves C# validation to Roslyn.
 
 Boundary rules:
 
-- executable target-language support in this path is **C#-only** initially;
-- language choice must be explicit or safely defaulted;
-- non-C# embedded target code must be diagnosed or preserved as non-executable metadata;
-- generator diagnostics must be Roslyn-visible;
-- no implicit runtime interpretation of C# source;
-- no silent execution capability.
-
-Natural ownership: build-time C# embedded-code execution support belongs to `Utils.Parser.Generators`, not `ParserEngine`.
+- invalid embedded C# is a C# compilation problem, not a parser-runtime evaluation problem;
+- this path is C#-specific and belongs to `Utils.Parser.Generators`;
+- this path does not imply runtime support for arbitrary target-language code;
+- generated hook execution remains opt-in through generated policy helpers.
 
 ## 6. Runtime-inline expression compiler path
 
@@ -177,7 +178,7 @@ Current intermediate status:
 - Predicate adapter cache: compilation-only and not parse-result memoization. Predicates that do not reference contextual symbols can be cached by predicate source; predicates referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are currently recompiled per evaluation to avoid context capture.
 - Action adapter cache: compilation-only and not parse-result memoization. Non-contextual actions can be cached by action source; actions referencing `ruleName`, `inputPosition`, `alternativeIndex`, or `elementIndex` are currently recompiled per execution to avoid context capture.
 
-The last two cache bullets describe the opportunistic-compilation adapters, not the prepared-artifact path. The target runtime-inline model remains to prepare executable artifacts before parsing and execute those artifacts during parsing without opportunistic source compilation on predicate/action invocation. The prepared expression adapters provide that explicit consumption step, while automatic model preparation and registry population remain future work.
+The last two cache bullets describe the opportunistic-compilation adapters, not the prepared-artifact path. The prepared runtime-inline model prepares executable artifacts before parsing and executes those artifacts during parsing without opportunistic source compilation on predicate/action invocation. The prepared expression registry builder and runtime policy builder provide that explicit opt-in assembly step; automatic model preparation from `ParserEngine` remains out of scope.
 
 ## 7. Interface boundary
 
@@ -346,8 +347,9 @@ Future implementation PRs should define shared diagnostics in `Utils.Parser.Diag
 - source generator Roslyn reporting;
 - Visual Studio/tooling display.
 
-Candidate shared diagnostics include:
+Candidate future diagnostic improvements include:
 
+- generator diagnostics for visible unsupported embedded-code constructs;
 - embedded code language unsupported;
 - embedded code compiler not configured;
 - embedded code compilation failed;
@@ -371,22 +373,24 @@ This model explicitly excludes:
 
 ## 13. Future PR plan
 
-### PR 1 — Documentation/design realignment (current PR)
+### Completed — Documentation/design realignment
 
 - clarify the two execution paths and the prepare-before-parse target;
 - document current expression-backed adapters as an intermediate runtime integration step;
 - no behavior change.
 
-### PR 2 — Explicit preparation boundary (current implementation step)
+### Completed — Explicit preparation boundary
 
 - introduce an internal minimal boundary that represents embedded-code source, preparation context, target path, preparation status, and path-specific artifacts;
-- keep the boundary disconnected from `ParserEngine`, `GrammarEmitter`, and the current expression-backed adapters;
+- keep the boundary disconnected from automatic `ParserEngine` activation;
 - preserve `ParserEngine` as an execution coordinator rather than a language compiler.
 
-### Future PR — Runtime-inline preparation migration
+### Runtime-inline prepared expression path
 
-- move runtime-inline expression compilation to parser model preparation/generation through the explicit boundary;
-- execute prepared artifacts during parsing instead of compiling source text during predicate/action invocation.
+- preparation contracts, the expression-backed preparer, prepared registry, registry builder, registry-backed adapters, and prepared runtime policy builder are available;
+- callers opt in before parsing by building a policy with a supplied `IExpressionCompiler`;
+- prepared adapters execute artifacts during parsing without compiling source text during predicate/action invocation;
+- automatic activation from `ParserEngine` remains out of scope.
 
 ### Source generator C# path
 
@@ -397,7 +401,7 @@ This model explicitly excludes:
 - supported predicate bodies include C# boolean expressions and block-bodied predicate statements with `return`, using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`;
 - supported action bodies include single-statement, multi-statement, and multi-line C# statement bodies using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including local variables and calls to user members in another partial class declaration;
 - invalid embedded C# is intentionally reported by Roslyn as a compilation error; predicate blocks without a valid `bool` return and actions with invalid C# are not converted into custom parser diagnostics;
-- future work may define language option handling and broader C# shape support.
+- future work may add generator diagnostics for unsupported constructs, controlled `@members` handling, and broader C# shape support without changing default parsing.
 
 ### Future PR — Lexer actions/predicates
 

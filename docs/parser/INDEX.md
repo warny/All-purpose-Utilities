@@ -17,9 +17,9 @@ This index consolidates the parser documentation set and gives a short summary o
 
 ## Compatibility and analysis
 
-- [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md): Architecture boundary for ANTLR embedded code, including current behavior, the two-path model (C# source generation vs runtime-inline `IExpressionCompiler` preparation), generated C# parser predicate/action hooks including predicate expression/block bodies and multi-statement action bodies, tested runtime-index-aware generated hook dispatch, and generated policy helpers, current semantic-predicate and parser-action runtime adapters, the prepared expression artifact registry, the explicit runtime-index-aware registry builder, opt-in prepared runtime policy builder, and no-compile runtime adapters, opportunistic adapter cache limits (predicate vs action), the public minimal preparation boundary and the expression-backed runtime-inline preparer, and multi-project responsibilities.
-- [`ANTLRCompatibility.md`](./ANTLRCompatibility.md): Canonical ANTLR compatibility reference including feature behavior, shared prequel metadata/diagnostic boundaries, runtime-generator parity notes, and usage guidance.
-- [`Antlr4CompatibilityMatrix.md`](./Antlr4CompatibilityMatrix.md): Current ANTLR4 feature support matrix with explicit levels (supported, partial, parsed-only, unsupported), including semantic-predicate vs precedence-predicate runtime-policy distinctions, generated embedded C# hook body support, and continuation metadata support boundaries.
+- [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md): Architecture boundary for ANTLR embedded code, including the two opt-in execution paths (runtime-inline prepared expressions vs source-generated C# hooks), language-neutral runtime core, prepared registry/policy-builder responsibilities, generated policy helpers, runtime-index alignment, default conservative behavior, and execution limits.
+- [`ANTLRCompatibility.md`](./ANTLRCompatibility.md): Canonical ANTLR compatibility reference and primary embedded-code status note, including default runtime behavior, runtime-inline expression opt-in, generated C# opt-in, supported executable parser constructs, represented-only constructs, unsupported constructs, diagnostics, limitations, and next steps.
+- [`Antlr4CompatibilityMatrix.md`](./Antlr4CompatibilityMatrix.md): Current ANTLR4 feature support matrix with explicit levels and default/runtime-inline/generated-C# embedded-code columns aligned to the canonical compatibility note.
 - [`RuntimeTraceAnalysis.md`](./RuntimeTraceAnalysis.md): Tooling-oriented analysis model for runtime traces, focused on descriptive outputs rather than runtime control.
 
 ## Maintenance rule for contributors and agents
@@ -28,5 +28,5 @@ When adding, removing, or materially changing any file in `docs/parser/`, update
 
 ## Recent metadata note
 
-`EmbeddedCodeExecutionModel.md` and `ANTLRCompatibility.md` document the shared embedded-code runtime indexing metadata and explicit unsupported reasons used to keep runtime-inline preparation and source-generated hooks aligned.
+`ANTLRCompatibility.md` is the primary compatibility source for embedded code. `EmbeddedCodeExecutionModel.md` complements it with architecture and flow details, including shared runtime indexing metadata and explicit unsupported reasons used to keep runtime-inline preparation and source-generated hooks aligned.
 

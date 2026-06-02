@@ -84,6 +84,182 @@ The `GrammarExtensionBinding` record exposes `SuperClassName`, the owning gramma
 
 ---
 
+
+## Current embedded-code status
+
+Two executable embedded-code paths now exist for **parser semantic predicates** and **inline parser actions**, but neither path is activated automatically by `ParserEngine`. The runtime core remains language-neutral, and default policies remain conservative. `docs/parser/EmbeddedCodeExecutionModel.md` describes the architectural model; this section is the canonical ANTLR compatibility status.
+
+Current high-level state:
+
+- default runtime parsing preserves embedded-code metadata but does not execute target-language source;
+- the runtime-inline prepared expression path is available as an explicit opt-in for callers that provide an `IExpressionCompiler`;
+- the source-generator C# path is available as an explicit opt-in for generated grammars;
+- lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, rollback/buffering, and arbitrary parser state mutation remain unsupported for execution.
+
+### Execution paths
+
+#### Runtime-inline prepared expression path
+
+The prepared expression flow is explicit and model-driven:
+
+```text
+ParserDefinition
++ IExpressionCompiler
+-> ExpressionEmbeddedCodePreparer
+-> EmbeddedCodeRuntimeDiscovery
+-> PreparedExpressionEmbeddedCodeRegistryBuilder
+-> PreparedExpressionEmbeddedCodeRegistry
+-> PreparedExpressionRuntimePolicyBuilder
+-> ParserRuntimeFeaturePolicy
+-> ParserEngine
+```
+
+This path:
+
+- uses `IExpressionCompiler`;
+- supports the expression languages supplied by the consumer;
+- can use the existing expression compiler packages such as `Utils.Expressions.CSyntax` and `Utils.Expressions.VBSyntax`;
+- prepares artifacts before parsing when callers use the prepared registry/policy builder;
+- does **not** compile source during `Evaluate()` or `Execute()` in the prepared-registry path;
+- is opt-in through `PreparedExpressionRuntimePolicyBuilder` or equivalent manual registry/adapters wiring;
+- does not make `ParserEngine` prepare or execute embedded code by default.
+
+#### Source-generator C# path
+
+The generated C# flow is build-time source generation plus explicit runtime policy opt-in:
+
+```text
+.g4
+-> Utils.Parser.Generators
+-> generated C# hooks
+-> generated evaluator/executor
+-> CreateRuntimePolicy(...)
+-> ParseWithEmbeddedCode(...)
+-> ParserEngine
+```
+
+This path:
+
+- does **not** use `IExpressionCompiler`;
+- emits C# source hooks for supported parser embedded-code constructs;
+- lets Roslyn compile the generated hooks with the consuming project;
+- leaves invalid C# as normal C# compilation errors;
+- keeps generated `Parse(...)` conservative;
+- executes generated hooks only through `ParseWithEmbeddedCode(...)` or a policy returned by `CreateRuntimePolicy(...)`.
+
+### Supported executable parser constructs
+
+The only currently executable embedded-code constructs are parser semantic predicates and inline parser actions, and only through the explicit opt-in paths above.
+
+#### Runtime-inline prepared expression path
+
+Supported executable parser constructs are:
+
+- semantic predicates prepared from parser-model `ValidatingPredicate` nodes;
+- inline parser actions prepared from parser-model `EmbeddedAction` nodes.
+
+Support depends on the selected `IExpressionCompiler` and the expression language it implements. The shared preparation context exposes a minimal read-only symbol model: `ruleName`, `inputPosition`, `alternativeIndex`, and `elementIndex`. The prepared expression path does not expose a separate user `context` symbol; the compiler receives those symbols as reads derived from the runtime predicate/action context parameter.
+
+#### Source-generator C# path
+
+Supported executable parser constructs are:
+
+- expression-bodied parser predicates, for example `{ inputPosition == 0 }?`;
+- block-bodied parser predicates that include `return`, for example `{ return inputPosition == 0; }?`;
+- multi-line predicate blocks with local variables and a `return` statement;
+- inline parser actions containing a single statement;
+- inline parser actions containing multiple statements;
+- multi-line inline parser actions;
+- local variables in generated predicate/action hooks;
+- calls from inline parser actions to members supplied by another declaration of the generated partial class.
+
+Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`.
+
+### Runtime-compatible indexing
+
+`EmbeddedCodeRuntimeDiscovery` provides shared runtime metadata for parser embedded-code dispatch. Runtime keys include:
+
+- embedded-code kind;
+- owning rule name;
+- raw source text;
+- alternative index;
+- element index.
+
+The shared indexing model covers the sensitive shapes that currently have regression coverage:
+
+- single-item alternatives;
+- sequences;
+- quantifiers;
+- negation probes;
+- duplicate source text in different runtime positions;
+- direct-left-recursive base alternatives;
+- direct-left-recursive tails.
+
+`PreparedExpressionEmbeddedCodeRegistryBuilder` consumes the shared discovery result. `GrammarEmitter` still uses a generator-side collector over the `G4Grammar` AST, but generated hook dispatch is kept aligned with the shared runtime discovery on the sensitive cases above by parity and regression tests.
+
+### Unsupported / represented-only constructs
+
+The following constructs may be represented as metadata when visible to ingestion, but they are not executed by the current embedded-code paths:
+
+- lexer actions;
+- lexer predicates;
+- grammar actions;
+- `@members`;
+- `@init`;
+- `@after`;
+- parser actions that are not inline alternative elements;
+- action rollback or buffering;
+- controlled context mutation models;
+- arbitrary parser state mutation.
+
+When visible through runtime discovery, unsupported constructs must remain classified with explicit `EmbeddedCodeUnsupportedReason` values rather than being treated as executable metadata. The existence of stored source text is not execution authority.
+
+### Default behavior
+
+Default parsing remains conservative:
+
+- `ParserEngine` does not execute embedded code unless a caller supplies an explicit policy;
+- `ParserRuntimeFeaturePolicy.Default` does not evaluate predicate source or execute action source;
+- semantic predicates that are not evaluated are conservatively accepted, and `UP1006` is emitted when applicable;
+- parser actions whose executor returns `NotExecuted` remain non-executed, with existing runtime diagnostics when applicable;
+- generated `Parse(...)` uses the conservative default policy;
+- generated `ParseWithEmbeddedCode(...)` is the opt-in generated C# embedded-code path.
+
+### Diagnostics
+
+Current diagnostics boundaries are intentionally split by path:
+
+- invalid generated C# is reported by Roslyn as C# compilation diagnostics;
+- unsupported embedded-code constructs are classified with explicit unsupported reasons when visible to runtime discovery;
+- runtime non-evaluation/non-execution uses existing runtime diagnostics such as `UP1006` and `UP1005` when applicable;
+- rich source-generator diagnostics for every unsupported embedded-code construct are not yet implemented unless already covered by existing generator diagnostics.
+
+### Known limitations
+
+Known limitations include:
+
+- no rollback or action buffering;
+- actions in negation probes require caution and are not a general side-effect-safe model;
+- no controlled context mutation model;
+- no lexer embedded-code execution;
+- no `@members` injection;
+- no `@init` / `@after` execution;
+- the source-generator C# path does not parse C# semantically; it applies light body normalization and leaves validation to Roslyn;
+- the generator hook collector remains separate from `EmbeddedCodeRuntimeDiscovery`.
+
+### Recommended next steps
+
+Recommended next steps are:
+
+1. add generator diagnostics for visible unsupported embedded-code constructs;
+2. design controlled `@members` support if generated grammars need it;
+3. design lexer predicate/action semantics explicitly before enabling lexer embedded code;
+4. design action buffering/rollback before supporting side-effect-sensitive actions;
+5. evaluate deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`;
+6. expand the ANTLR grammar corpus used for compatibility and regression checks.
+
+---
+
 ### Semantic predicates `{ condition }?`
 
 See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md) for the two-path execution boundary (source generation C# vs runtime expression compilation) and project responsibility map.
@@ -289,7 +465,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | Speculative parsing / continuation replay | Not implemented. Continuation metadata exists but is descriptive only. |
 | Parse-forest generation | A single parse tree is produced. |
 | Async or parallel parsing | Not implemented. |
-| Target-language action execution engines | Actions are stored as raw text strings. Execution requires a custom `IParserActionExecutor`. |
+| Target-language action execution engines | No target-language engine is active by default. Inline parser actions can execute only through an explicit runtime policy or generated C# opt-in path; lexer actions, grammar actions, `@members`, `@init`, and `@after` remain non-executable. |
 | `superClass` class inheritance (generated code) | `superClass` is repurposed as an extension-binding key. See the **Usage** section above. |
 
 ---
