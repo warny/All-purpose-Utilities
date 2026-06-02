@@ -251,12 +251,11 @@ Known limitations include:
 
 Recommended next steps are:
 
-1. add generator diagnostics for visible unsupported embedded-code constructs;
-2. design controlled `@members` support if generated grammars need it;
-3. design lexer predicate/action semantics explicitly before enabling lexer embedded code;
-4. design action buffering/rollback before supporting side-effect-sensitive actions;
-5. evaluate deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`;
-6. expand the ANTLR grammar corpus used for compatibility and regression checks.
+1. design controlled `@members` support if generated grammars need it;
+2. design lexer predicate/action semantics explicitly before enabling lexer embedded code;
+3. design action buffering/rollback before supporting side-effect-sensitive actions;
+4. evaluate deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`;
+5. expand the ANTLR grammar corpus used for compatibility and regression checks.
 
 ---
 
@@ -478,8 +477,9 @@ These capabilities are outside the current runtime model by design. Attempting t
 | `UP1002` TokensBlockIgnored | Emitted when `tokens { ... }` is parsed. | Emitted when `tokens { ... }` is parsed. | Yes | Deterministic recovery: keep parsing and preserve declared token names. |
 | `UP1003` ChannelsBlockIgnored | Emitted when `channels { ... }` is parsed. | Emitted when `channels { ... }` is parsed. | Yes | Deterministic recovery: keep parsing and preserve declared channel names. |
 | `UP1004` ActionIgnored | Emitted for ignored grammar/rule actions outside supported lifecycle slots. | Emitted for ignored grammar-level actions. | Partial | Runtime has broader rule-prequel coverage; this remains intentional and documented. |
-| `UP1005` InlineActionStoredNotExecuted | Emitted for inline `{ ... }` action nodes. | Emitted for inline `{ ... }` action nodes. | Yes | Deterministic recovery: metadata is preserved; action execution is not enabled. |
-| `UP1006` SemanticPredicateNotEnforced | Emitted for `{ ... }?` nodes in conservative runtime policy mode. | Emitted for `{ ... }?` nodes during generator parse. | Yes | Deterministic recovery: predicate metadata is preserved and parsing continues. |
+| `UP1005` InlineActionStoredNotExecuted | Emitted for inline `{ ... }` action nodes when no action executor handles them. | Suppressed for parser inline actions because they are supported generated C# hooks in the source-generator path; lexer actions use `UP1029`. | Partial | Deterministic recovery remains metadata-preserving. The generator no longer reports supported parser inline actions as unsupported. |
+| `UP1006` SemanticPredicateNotEnforced | Emitted for `{ ... }?` nodes in conservative runtime policy mode. | Suppressed for parser semantic predicates because they are supported generated C# hooks in the source-generator path; lexer predicates use `UP1029`. | Partial | Invalid C# in a supported generated predicate remains a Roslyn compilation error. |
+| `UP1029` EmbeddedCodeConstructNotExecutedByGenerator | Not emitted by runtime. | Emitted as a source-generator warning for visible embedded-code constructs that are preserved or recognized but not executed by generated C# hooks, including lexer actions/predicates, grammar actions, `@members`, `@init`, and `@after`. | Generator-only | This diagnostic does not add execution and does not alter `ParserEngine`; only parser semantic predicates and inline parser actions are promoted to generated C# hooks. |
 
 Intentional remaining difference: runtime diagnostics can include broader rule-context metadata for rule-prequel constructs (`returns`, `locals`, exception metadata) that are outside generator parser scope.
 Additional intentional test-documented difference: malformed prequel inputs currently fail fast in runtime conversion (`GrammarParseException`) while generator parsing keeps best-effort recovery.
@@ -491,7 +491,7 @@ Additional intentional test-documented difference: malformed prequel inputs curr
 | Prefix | Severity | Meaning |
 |---|---|---|
 | `UP0xxx` | Error | Blocking — unresolved rules, grammar violations, import failures |
-| `UP1xxx` | Warning | Compatibility behavior that is recognized and ignored / partially normalized (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1007` rule returns ignored, `UP1020` unsupported lexer command ignored, `UP1021` option ignored, `UP1022` label ignored on non-rule reference) |
+| `UP1xxx` | Warning | Compatibility behavior that is recognized and ignored / partially normalized (e.g. `UP1002` tokens block ignored, `UP1003` channels block ignored, `UP1007` rule returns ignored, `UP1020` unsupported lexer command ignored, `UP1021` option ignored, `UP1022` label ignored on non-rule reference, `UP1029` embedded code construct not executed by generator) |
 | `UP5xxx` | Warning | Best-effort recovery warnings (trailing tokens, ambiguity) |
 | `UP8xxx` | Info | Informational runtime events |
 | `UP9xxx` | Debug | Detailed execution traces |
@@ -499,9 +499,10 @@ Additional intentional test-documented difference: malformed prequel inputs curr
 | `APU0xxx` | Error/Warning | Source-generator diagnostics (Roslyn pipeline) |
 
 Full descriptor table: `ParserDiagnostics.All`.
+
 ### Shared runtime indexing metadata
 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
 
-The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
+The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. The C# source-generator path additionally reports `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for unsupported embedded-code constructs that are visible in its `G4Grammar` model, such as lexer actions, lexer predicates, grammar actions, `@members`, `@init`, and `@after`. These diagnostics are warnings only: they do not execute the code, do not modify `ParserEngine`, and do not change generated `Parse(...)` behavior. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
 

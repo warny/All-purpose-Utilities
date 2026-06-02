@@ -306,7 +306,8 @@ Current responsibilities:
 - generated `ISemanticPredicateEvaluator`, `IParserActionExecutor`, and `ParserRuntimeFeaturePolicy` wiring;
 - generated `ParseWithEmbeddedCode(...)` helper for explicit opt-in execution while generated `Parse(...)` keeps the default conservative policy;
 - runtime-index-aware hook dispatch for tested parser hook positions: single-item alternatives, sequence positions, quantified content, negation predicate probes, same-source hooks in distinct alternatives, and direct-left-recursive tail views because generated helpers resolve the generated definition before parsing with the generated policy;
-- Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path.
+- Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path;
+- generator warning `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for visible embedded-code constructs that are not executable generated hooks, including lexer actions/predicates, grammar actions, `@members`, `@init`, and `@after`.
 
 Future responsibilities (source-generation path):
 
@@ -339,9 +340,9 @@ Usage rules:
 
 ## 11. Diagnostics strategy
 
-No new diagnostics are introduced in this documentation PR.
+Source-generator diagnostics now include `UP1029 EmbeddedCodeConstructNotExecutedByGenerator`, a warning for visible unsupported embedded-code constructs in `.g4` files. The diagnostic is emitted only for constructs that are not promoted to generated C# hooks; it must not be emitted for supported parser semantic predicates or supported inline parser actions, even when their C# is invalid. Invalid C# remains owned by Roslyn.
 
-Future implementation PRs should define shared diagnostics in `Utils.Parser.Diagnostics` so they can be used by:
+Diagnostics should continue to be defined in `Utils.Parser.Diagnostics` so they can be used by:
 
 - runtime ingestion;
 - source generator Roslyn reporting;
@@ -349,7 +350,6 @@ Future implementation PRs should define shared diagnostics in `Utils.Parser.Diag
 
 Candidate future diagnostic improvements include:
 
-- generator diagnostics for visible unsupported embedded-code constructs;
 - embedded code language unsupported;
 - embedded code compiler not configured;
 - embedded code compilation failed;
@@ -401,7 +401,8 @@ This model explicitly excludes:
 - supported predicate bodies include C# boolean expressions and block-bodied predicate statements with `return`, using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`;
 - supported action bodies include single-statement, multi-statement, and multi-line C# statement bodies using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including local variables and calls to user members in another partial class declaration;
 - invalid embedded C# is intentionally reported by Roslyn as a compilation error; predicate blocks without a valid `bool` return and actions with invalid C# are not converted into custom parser diagnostics;
-- future work may add generator diagnostics for unsupported constructs, controlled `@members` handling, and broader C# shape support without changing default parsing.
+- visible unsupported embedded-code constructs now produce generator warning `UP1029` without changing behavior: `@members` is not injected, `@init` / `@after` are not executed, lexer actions/predicates are not executed, and only parser semantic predicates plus inline parser actions are generated as executable hooks;
+- future work may add controlled `@members` handling and broader C# shape support without changing default parsing.
 
 ### Future PR — Lexer actions/predicates
 
@@ -421,5 +422,5 @@ Parser action execution now uses structured `ParserActionExecutionOutcome`, alig
 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
 
-The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
+The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. The source-generator path reports `UP1029` when these constructs are visible in its grammar model; this warning is metadata/conservative-only and does not add execution. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
 
