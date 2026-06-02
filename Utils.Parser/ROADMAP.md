@@ -384,7 +384,7 @@ Current clarification status:
 - runtime advanced-configuration public API was consolidated so `ParserRuntimeFeaturePolicy` is the single explicit runtime feature-entry point for semantic predicates, parser actions, and runtime observers.
 - current expression-backed predicate/action adapters are documented as useful intermediate runtime adapters with opportunistic compilation, not as the final prepare-before-parse architecture.
 - public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer, an explicit registry builder for parser-model validating predicates and inline parser actions, registry-backed runtime adapters for prepared artifacts, and an opt-in runtime policy builder that assembles those components; automatic default `ParserEngine` wiring remains unimplemented.
-- `Utils.Parser.Generators` now implements the separate source-generator C# path for parser semantic predicates and inline parser actions by emitting generated hook methods, generated runtime policy dispatchers, and an explicit `ParseWithEmbeddedCode(...)` helper; generated `Parse(...)` remains conservative by default, and hook dispatch is aligned with the runtime indexes covered by generated Roslyn + `ParserEngine` tests.
+- `Utils.Parser.Generators` now implements the separate source-generator C# path for parser semantic predicates and inline parser actions by emitting generated hook methods, generated runtime policy dispatchers, and an explicit `ParseWithEmbeddedCode(...)` helper; generated predicate hooks support expression bodies and statement blocks with `return`, generated action hooks support multi-statement and multi-line bodies, generated `Parse(...)` remains conservative by default, and hook dispatch is aligned with the runtime indexes covered by generated Roslyn + `ParserEngine` tests.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -450,7 +450,7 @@ Forbidden work:
 
 Current clarification status:
 
-- tooling direction now distinguishes implemented C# source-generator embedded-code hooks from runtime-inline expression preparation; generator hook execution is explicit through generated policy helpers and is not `IExpressionCompiler`-backed.
+- tooling direction now distinguishes implemented C# source-generator embedded-code hooks from runtime-inline expression preparation; generator hook execution is explicit through generated policy helpers, supports tested parser predicate expression/block bodies and parser action statement bodies, and is not `IExpressionCompiler`-backed.
 - embedded-code preparation contracts provide a source-generator/runtime-inline boundary; source-generator C# hooks for parser predicates/actions are implemented, while automatic runtime-inline model preparation from `ParserEngine` remains unimplemented. Explicit registry-backed prepared expression runtime adapters and an opt-in prepared runtime policy builder are available through `ParserRuntimeFeaturePolicy` without changing default runtime behavior.
 - runtime trace analysis abstractions are available as tooling-only, read-only, deterministic consumers of passive observations/exports,
 - analysis outputs are explicitly descriptive and non-authoritative (no replay, no runtime ownership transfer, no parser/diagnostics authority transfer).
