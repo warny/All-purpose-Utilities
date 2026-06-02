@@ -182,6 +182,7 @@ internal sealed class G4Parser
             return false;
         }
 
+        int actionLine = Peek().Line;
         string actionName = _tokens[_pos + 1].Value;
         string actionCode = _tokens[_pos + 2].Value;
 
@@ -199,6 +200,7 @@ internal sealed class G4Parser
         {
             Code = actionCode,
             IsPredicate = false,
+            Line = actionLine,
         };
 
         if (string.Equals(actionName, "init", StringComparison.Ordinal))
@@ -260,12 +262,13 @@ internal sealed class G4Parser
         // Embedded action or predicate: { ... } or { ... }?
         if (Peek().Kind == G4TokenKind.BraceBlock)
         {
-            var code = Consume().Value;
+            var codeToken = Consume();
+            var code = codeToken.Value;
             bool isPred = Peek().Kind == G4TokenKind.QMark;
             if (isPred) Consume();
             if (isPred) _diagnostics?.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
             else _diagnostics?.Add(ParserDiagnostics.InlineActionStoredNotExecuted);
-            return new G4EmbeddedAction { Code = code, IsPredicate = isPred };
+            return new G4EmbeddedAction { Code = code, IsPredicate = isPred, Line = codeToken.Line };
         }
 
         // Lexer command: ->
@@ -573,6 +576,7 @@ internal sealed class G4Parser
     /// <summary>Parses grammar-level actions including scoped actions like <c>@parser::members { ... }</c>.</summary>
     private void ParseGrammarAction(ICollection<G4GrammarAction> actions)
     {
+        int actionLine = Peek().Line;
         Consume(); // @
         var firstIdentifier = ExpectIdentifier();
         string? target = null;
@@ -587,7 +591,7 @@ internal sealed class G4Parser
         if (Peek().Kind == G4TokenKind.BraceBlock)
         {
             var rawCode = Consume().Value;
-            actions.Add(new G4GrammarAction { Name = name, RawCode = rawCode, Target = target });
+            actions.Add(new G4GrammarAction { Name = name, RawCode = rawCode, Target = target, Line = actionLine });
             return;
         }
 
@@ -596,7 +600,7 @@ internal sealed class G4Parser
 
         if (Peek().Kind == G4TokenKind.BraceBlock)
         {
-            actions.Add(new G4GrammarAction { Name = name, RawCode = Consume().Value, Target = target });
+            actions.Add(new G4GrammarAction { Name = name, RawCode = Consume().Value, Target = target, Line = actionLine });
         }
         else
         {

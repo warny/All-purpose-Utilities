@@ -173,6 +173,15 @@ public static class ParserDiagnostics
     /// <summary>Embedded ANTLR code execution is disabled by the current runtime policy.</summary>
     public static readonly ParserDiagnosticDescriptor EmbeddedCodeExecutionDisabled =
         new("UP1028", "Embedded code execution disabled", "Embedded ANTLR code execution for '{0}' is disabled by the current runtime policy.", DefaultCategory);
+
+    /// <summary>Embedded ANTLR code is visible to the source generator but is not promoted to executable hooks.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodeConstructNotExecutedByGenerator =
+        new(
+            "UP1029",
+            "Embedded code construct not executed by generator",
+            "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Only parser semantic predicates and inline parser actions can be emitted as generated C# hooks.",
+            DefaultCategory);
+
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
         new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
@@ -278,6 +287,7 @@ public static class ParserDiagnostics
             [EmbeddedCodeCompilationFailed.Code] = EmbeddedCodeCompilationFailed,
             [EmbeddedCodePreservedNotCompiled.Code] = EmbeddedCodePreservedNotCompiled,
             [EmbeddedCodeExecutionDisabled.Code] = EmbeddedCodeExecutionDisabled,
+            [EmbeddedCodeConstructNotExecutedByGenerator.Code] = EmbeddedCodeConstructNotExecutedByGenerator,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,
