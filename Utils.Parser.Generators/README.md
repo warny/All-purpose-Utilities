@@ -174,7 +174,7 @@ Apache 2.0 — see the repository root for details.
 
 ## Embedded C# parser code
 
-For parser semantic predicates and inline parser actions, the generator emits executable C# hooks in addition to preserving the raw model metadata strings. This is the source-generator C# opt-in path documented in [`docs/parser/ANTLRCompatibility.md`](../docs/parser/ANTLRCompatibility.md). It is intentionally separate from `Utils.Parser.Expressions` and does not use `IExpressionCompiler`: embedded C# is compiled by Roslyn together with the consuming project.
+For parser semantic predicates and inline parser actions, the generator emits executable C# hooks in addition to preserving the raw model metadata strings. This is the source-generator C# opt-in path documented in [`docs/parser/ANTLRCompatibility.md`](https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ANTLRCompatibility.md). It is intentionally separate from `Utils.Parser.Expressions` and does not use `IExpressionCompiler`: embedded C# is compiled by Roslyn together with the consuming project.
 
 Supported forms include expression-bodied parser predicates, block-bodied parser predicates with `return`, multi-line predicate blocks with local variables and `return`, and single- or multi-statement inline parser actions, for example:
 

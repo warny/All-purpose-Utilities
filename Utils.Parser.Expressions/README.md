@@ -5,7 +5,7 @@ It connects an explicit `IExpressionCompiler` to parser embedded-code surfaces w
 
 ## Purpose
 
-Use this package when you want to work with embedded parser code through a caller-selected expression compiler. It is the runtime-inline prepared expression path documented in [`docs/parser/ANTLRCompatibility.md`](../docs/parser/ANTLRCompatibility.md); it is not the generated C# path.
+Use this package when you want to work with embedded parser code through a caller-selected expression compiler. It is the runtime-inline prepared expression path documented in [`docs/parser/ANTLRCompatibility.md`](https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ANTLRCompatibility.md); it is not the generated C# path.
 
 Available surfaces:
 
@@ -164,7 +164,7 @@ The prepared path compiles executable artifacts before parsing and then executes
 - Preparation does not execute the action.
 - Runtime exceptions from a prepared action are converted to `ParserActionExecutionOutcome.NotExecuted` with `UP1026` metadata when the artifact is executed explicitly.
 
-Lexer actions, lexer predicates, grammar members/`@members`, `@init`, `@after`, non-inline parser actions, rollback/buffering, and parser-state mutation are not implemented by this package. See [`docs/parser/ANTLRCompatibility.md`](../docs/parser/ANTLRCompatibility.md) for the canonical compatibility status.
+Lexer actions, lexer predicates, grammar members/`@members`, `@init`, `@after`, non-inline parser actions, rollback/buffering, and parser-state mutation are not implemented by this package. See [`docs/parser/ANTLRCompatibility.md`](https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ANTLRCompatibility.md) for the canonical compatibility status.
 
 ### Shared runtime indexing metadata
 
