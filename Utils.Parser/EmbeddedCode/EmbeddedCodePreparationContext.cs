@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.EmbeddedCode;
 
 /// <summary>
@@ -37,7 +39,9 @@ public sealed record EmbeddedCodePreparationContext
         RuleName = ruleName;
         LanguageOrCompilerIdentity = languageOrCompilerIdentity;
         SymbolModelVersion = symbolModelVersion;
-        SupportedSymbols = supportedSymbols?.ToHashSet() ?? CreateDefaultSupportedSymbols();
+        SupportedSymbols = supportedSymbols is null
+            ? s_defaultSupportedSymbols
+            : supportedSymbols.ToImmutableHashSet();
     }
 
     /// <summary>
@@ -70,15 +74,10 @@ public sealed record EmbeddedCodePreparationContext
     /// </summary>
     public IReadOnlySet<EmbeddedCodeContextSymbol> SupportedSymbols { get; }
 
-    /// <summary>
-    /// Creates the default contextual symbol set shared by current parser embedded-code planning.
-    /// </summary>
-    /// <returns>The default immutable contextual symbol set.</returns>
-    private static IReadOnlySet<EmbeddedCodeContextSymbol> CreateDefaultSupportedSymbols() => new HashSet<EmbeddedCodeContextSymbol>
-    {
+    /// <summary>Default contextual symbol set shared across all contexts created without an explicit symbol set.</summary>
+    private static readonly ImmutableHashSet<EmbeddedCodeContextSymbol> s_defaultSupportedSymbols = ImmutableHashSet.Create(
         EmbeddedCodeContextSymbol.RuleName,
         EmbeddedCodeContextSymbol.InputPosition,
         EmbeddedCodeContextSymbol.AlternativeIndex,
-        EmbeddedCodeContextSymbol.ElementIndex
-    };
+        EmbeddedCodeContextSymbol.ElementIndex);
 }
