@@ -385,6 +385,11 @@ Current clarification status:
 - current expression-backed predicate/action adapters are documented as useful intermediate runtime adapters with opportunistic compilation, not as the final prepare-before-parse architecture.
 - public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer, an explicit registry builder for parser-model validating predicates and inline parser actions, registry-backed runtime adapters for prepared artifacts, and an opt-in runtime policy builder that assembles those components; automatic default `ParserEngine` wiring remains unimplemented.
 - `Utils.Parser.Generators` now implements the separate source-generator C# path for parser semantic predicates and inline parser actions by emitting generated hook methods, generated runtime policy dispatchers, and an explicit `ParseWithEmbeddedCode(...)` helper; generated predicate hooks support expression bodies and statement blocks with `return`, generated action hooks support multi-statement and multi-line bodies, generated `Parse(...)` remains conservative by default, and hook dispatch is aligned with the runtime indexes covered by generated Roslyn + `ParserEngine` tests.
+- embedded-code preparation/generation contracts are available.
+- expression-backed preparation, prepared artifact registry/adapters, parser-definition registry builder, and prepared runtime policy builder are available for the runtime-inline expression opt-in path.
+- generated C# hooks, generated hook dispatch hardening, shared runtime metadata alignment, cross-path regression coverage, and generated C# body support are available for parser semantic predicates and inline parser actions.
+- the remaining embedded-code work is explicit: generator diagnostics for visible unsupported constructs; optional controlled `@members` support if required; lexer predicate/action design; `@init` / `@after` design; action buffering/rollback design; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
+- lexer actions, lexer predicates, grammar actions, `@members`, `@init`, `@after`, and automatic default execution remain not done and must not be documented as complete.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -426,7 +431,7 @@ Forbidden work:
 
 Goal: move toward tooling capabilities once runtime behavior is stable.
 
-Current status includes an explicit prepared expression registry builder and runtime policy builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. The registry builder mirrors runtime indexing for nested executable structures and direct-left-recursive tails, and the policy builder assembles the preparer, registry builder, no-compile adapters, and `ParserRuntimeFeaturePolicy` without increasing ANTLR support by default.
+Current status includes an explicit prepared expression registry builder and runtime policy builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. The registry builder consumes shared runtime discovery metadata for parser predicates/actions, and the policy builder assembles the preparer, registry builder, no-compile adapters, and `ParserRuntimeFeaturePolicy` without increasing ANTLR support by default. `Utils.Parser.Generators` also has an explicit generated C# opt-in path for parser predicates/actions through generated hooks, generated dispatchers, `CreateRuntimePolicy(...)`, and `ParseWithEmbeddedCode(...)`; generated `Parse(...)` remains conservative.
 
 Scope:
 

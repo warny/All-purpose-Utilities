@@ -34,17 +34,20 @@ The features below are operational in current runtime and project-compilation fl
 | Import cycle detection | Supported in project compilation | Cycles are detected and surfaced with dedicated diagnostics. |
 | Deterministic conflict resolution | Supported | Entry grammar definitions win deterministically over imported duplicates, with diagnostic traceability. |
 
-## Parsed but not executed
+## Embedded-code execution status
 
-The following constructs are parsed and stored, but runtime semantic execution is intentionally disabled.
+`docs/parser/ANTLRCompatibility.md` is the canonical compatibility note. The matrix below summarizes default behavior versus the two opt-in paths.
 
-| Construct | Parsed | Stored | Resolved | Executable | Runtime-supported | Diagnostics |
-|---|---|---|---|---|---|---|
-| Semantic predicates (`{ condition }?`) | Yes | Yes (predicate metadata) | Partially (policy-routed); generated C# hooks available for generated parser grammars | Policy-dependent only | Policy-routed: conservative by default (`NotEvaluated`), with optional expression-backed evaluator when explicitly configured; generated grammars can opt into Roslyn-compiled expression-bodied or block-bodied C# predicate hooks through generated helpers with runtime-index-aware dispatch for tested parser positions | `SemanticPredicateNotEnforced` (`UP1006`) when evaluator returns `NotEvaluated` without detailed metadata; `UP1026` when an expression-backed evaluator returns detailed compile/adaptation failure metadata. Invalid generated C# hook code, including missing or non-boolean predicate returns, is a Roslyn compile error. `UP1028` is reserved for explicit execution-disabled policies and is not used by current expression-backed adapters |
-| Inline actions (`{ code }`) | Yes | Yes (embedded action metadata) | Policy-routed; optional expression-backed executor available; generated C# hooks available for generated parser grammars | No by default | Default remains conservative (`NotExecuted`); explicit runtime adapter can execute within configured expression language; generated grammars can opt into Roslyn-compiled single- or multi-statement C# action hooks through generated helpers with runtime-index-aware dispatch for tested parser positions | `InlineActionStoredNotExecuted` (`UP1005`) by default; expression-backed executor failures are surfaced as detailed `UP1026` outcomes through `ParserEngine` without `UP1005` duplication. Invalid generated C# hook code is a Roslyn compile error. `UP1028` is reserved for explicit execution-disabled policies and is not used by current expression-backed adapters |
-| Rule actions (`@init`, `@after`, unsupported action slots) | Yes | Yes (rule/action metadata) | Limited to recognized metadata slots | No | Metadata-only/ignored compatibility path | `ActionIgnored` for ignored rule or grammar action entries; `InlineActionStoredNotExecuted` when an embedded action reaches runtime policy flow |
+| Construct | Default runtime | Runtime-inline expression opt-in | Generated C# opt-in | Status / limitations |
+|---|---|---|---|---|
+| Parser semantic predicates (`{ condition }?`) | Parsed and stored as predicate metadata. Default evaluation returns `NotEvaluated`; parsing conservatively accepts the branch and emits `UP1006` when applicable. | Supported for parser-model `ValidatingPredicate` entries through `ExpressionEmbeddedCodePreparer`, `EmbeddedCodeRuntimeDiscovery`, `PreparedExpressionEmbeddedCodeRegistryBuilder`, registry-backed adapters, and `PreparedExpressionRuntimePolicyBuilder`. Depends on the caller-supplied `IExpressionCompiler`; prepared adapters do not compile during `Evaluate()`. | Supported for generated parser grammars through generated C# hooks. Supports expression-bodied predicates and block-bodied predicates with `return`; Roslyn validates C#. Activated by `CreateRuntimePolicy(...)` or `ParseWithEmbeddedCode(...)`, not by generated `Parse(...)`. | Executable only when opted in. Runtime-compatible dispatch indexes cover single-item alternatives, sequences, quantifiers, negation probes, duplicate source text, direct-left-recursive base alternatives, and direct-left-recursive tails. |
+| Inline parser actions (`{ code }`) | Parsed and stored as action metadata. Default execution returns `NotExecuted`; existing runtime diagnostics apply when applicable. | Supported for parser-model inline `EmbeddedAction` entries through the same prepared registry/policy path. Depends on the caller-supplied expression compiler and does not compile during `Execute()` in the prepared path. | Supported for generated parser grammars through generated C# hooks. Supports simple, multi-statement, and multi-line action bodies, local variables, and calls to members supplied by another generated partial class declaration. Activated by `CreateRuntimePolicy(...)` or `ParseWithEmbeddedCode(...)`, not by generated `Parse(...)`. | No rollback/buffering or controlled context mutation model. Side-effectful actions should be treated cautiously, especially around backtracking or negation probes. |
+| Rule actions (`@init`, `@after`) | Recognized/stored where supported by ingestion, but not executed. | Not supported; classified/skipped when visible to runtime discovery. | Not supported. | Represented-only; no lifecycle execution model. |
+| Grammar actions and `@members` | Preserved as metadata where visible, but not injected or executed. | Not supported; classified/skipped when visible to runtime discovery. | Not supported. | Represented-only; no member-injection model. |
+| Lexer predicates/actions | Not executed by parser runtime. | Not supported. | Not supported. | Requires a separate lexer-state design before execution. |
+| Parser actions outside inline alternative positions | Not executed. | Not supported; classified/skipped when visible to runtime discovery. | Not supported. | Represented-only/out of scope for current executable paths. |
 
-Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior (not evaluated / not executed), while custom policies may alter branch acceptance and action handling within the documented runtime boundaries. The architecture boundary and future two-path model are documented in `docs/parser/EmbeddedCodeExecutionModel.md`.
+Rationale: execution of user code and semantic predicates is policy-controlled. The default runtime keeps deterministic conservative behavior, while opt-in policies may alter predicate outcomes or execute parser actions within documented runtime boundaries. The execution model is documented in `docs/parser/EmbeddedCodeExecutionModel.md`.
 
 ### Semantic predicate and precedence predicate audit table
 
@@ -100,7 +103,7 @@ The following capabilities are currently unsupported by design:
 - parse-forest generation;
 - parallel parsing;
 - async parsing;
-- semantic action execution engines;
+- automatic or arbitrary target-language action execution engines beyond the explicit parser predicate/action opt-in paths summarized above;
 - contextual lexer dispatch beyond current deterministic lexer/mode behavior.
 
 These are intentionally outside the current runtime envelope.

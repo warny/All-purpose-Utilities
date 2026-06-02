@@ -5,7 +5,7 @@ It connects an explicit `IExpressionCompiler` to parser embedded-code surfaces w
 
 ## Purpose
 
-Use this package when you want to work with embedded parser code through a caller-selected expression compiler.
+Use this package when you want to work with embedded parser code through a caller-selected expression compiler. It is the runtime-inline prepared expression path documented in [`docs/parser/ANTLRCompatibility.md`](../docs/parser/ANTLRCompatibility.md); it is not the generated C# path.
 
 Available surfaces:
 
@@ -47,8 +47,9 @@ The preparer:
 
 - supports `EmbeddedCodeKind.SemanticPredicate` and `EmbeddedCodeKind.ParserInlineAction`;
 - uses only the supplied `IExpressionCompiler` contract;
-- does not reference `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax` directly;
-- returns `Unsupported` for `RuleInitAction`, `RuleAfterAction`, and `GrammarAction`;
+- can be paired by consumers with expression compiler packages such as `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax`;
+- does not reference those compiler packages directly;
+- returns `Unsupported` for `RuleInitAction`, `RuleAfterAction`, `GrammarAction`, lexer actions, lexer predicates, and non-inline parser actions;
 - returns `PreservedNotCompiled` for `EmbeddedCodeTarget.SourceGeneratorCSharp`, because C# source-generation hooks belong to `Utils.Parser.Generators`;
 - never executes predicates or actions during preparation.
 
@@ -56,8 +57,8 @@ Contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementInd
 
 ## Runtime status
 
-Prepared artifacts can now be prepared from a parser model, stored in a registry, and consumed through runtime adapters explicitly.
-Default parser behavior is unchanged, and `ParserEngine` is not modified by this package.
+Prepared artifacts can be prepared from a parser model, stored in a registry, and consumed through runtime adapters explicitly.
+Default parser behavior is unchanged, and `ParserEngine` is not modified by this package. The package does not execute lexer embedded code, grammar actions, `@members`, `@init`, `@after`, non-inline parser actions, action rollback/buffering, context mutation, or arbitrary parser state mutation.
 The recommended full prepared runtime flow is to build an opt-in policy outside the parser and pass that policy explicitly:
 
 ```csharp
@@ -146,7 +147,7 @@ Prepared artifact behavior:
 - A missing registry entry returns `NotEvaluated` or `NotExecuted`, allowing parsing to continue under the existing `ParserEngine` outcome handling.
 - The prepared-artifact path does not change parser scheduling, memoization, diagnostics emission, parse-tree shape, or default runtime policy.
 
-The target model remains to prepare executable artifacts before parsing and then execute only those artifacts while parsing. This package now provides the explicit runtime adapters, an explicit registry builder, and a convenience policy builder for that consumption step, but it still does not automatically prepare a parser model. `ParserEngine` should remain language-neutral: it should execute policy outcomes and emit diagnostics, not select an expression language or compile embedded source code.
+The prepared path compiles executable artifacts before parsing and then executes only those artifacts while parsing. This package provides the explicit runtime adapters, an explicit registry builder, and a convenience policy builder for that opt-in consumption step, but it still does not automatically prepare a parser model. `ParserEngine` remains language-neutral: it executes policy outcomes and emits diagnostics, but does not select an expression language or compile embedded source code.
 
 ## Scope and limitations
 
@@ -163,7 +164,8 @@ The target model remains to prepare executable artifacts before parsing and then
 - Preparation does not execute the action.
 - Runtime exceptions from a prepared action are converted to `ParserActionExecutionOutcome.NotExecuted` with `UP1026` metadata when the artifact is executed explicitly.
 
-Lexer actions, lexer predicates, grammar members, `@init`, and `@after` execution are not implemented by this package.
+Lexer actions, lexer predicates, grammar members/`@members`, `@init`, `@after`, non-inline parser actions, rollback/buffering, and parser-state mutation are not implemented by this package. See [`docs/parser/ANTLRCompatibility.md`](../docs/parser/ANTLRCompatibility.md) for the canonical compatibility status.
+
 ### Shared runtime indexing metadata
 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
