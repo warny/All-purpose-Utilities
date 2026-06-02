@@ -156,3 +156,8 @@ Custom policies should therefore avoid invocation-count-dependent decisions and 
 
 
 > Embedded-code execution paths use or document their diagnostics against the shared taxonomy in `EmbeddedCodeExecutionModel.md`; generated C# hook syntax errors surface as Roslyn compilation errors.
+
+## Embedded-code runtime indexing metadata
+
+Parser semantic predicates and inline parser actions use shared runtime-indexing metadata for `ParserDefinition` discovery. This improves parity between prepared runtime-inline expression registries and source-generated C# hook dispatch without adding support for grammar actions, lexer actions, lexer predicates, `@init`, or `@after` execution. Unsupported constructs remain out of scope and are classified with explicit reasons.
+

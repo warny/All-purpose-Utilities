@@ -218,10 +218,10 @@ public class PreparedExpressionEmbeddedCodeRegistryBuilderTests
         Assert.AreEqual(4, result.SkippedEntries.Count);
         Assert.AreEqual(0, preparer.SemanticPredicateCalls.Count);
         Assert.AreEqual(0, preparer.ParserActionCalls.Count);
-        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.GrammarAction));
-        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.RuleInitAction));
-        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.RuleAfterAction));
-        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.ParserInlineAction));
+        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.GrammarAction && entry.UnsupportedReason == EmbeddedCodeUnsupportedReason.GrammarAction));
+        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.RuleInitAction && entry.UnsupportedReason == EmbeddedCodeUnsupportedReason.RuleInitAction));
+        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.RuleAfterAction && entry.UnsupportedReason == EmbeddedCodeUnsupportedReason.RuleAfterAction));
+        Assert.IsTrue(result.SkippedEntries.Any(static entry => entry.Source.Kind == EmbeddedCodeKind.ParserInlineAction && entry.UnsupportedReason == EmbeddedCodeUnsupportedReason.UnsupportedActionPosition));
     }
 
     /// <summary>

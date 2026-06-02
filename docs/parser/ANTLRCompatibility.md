@@ -323,3 +323,9 @@ Additional intentional test-documented difference: malformed prequel inputs curr
 | `APU0xxx` | Error/Warning | Source-generator diagnostics (Roslyn pipeline) |
 
 Full descriptor table: `ParserDiagnostics.All`.
+### Shared runtime indexing metadata
+
+Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
+
+The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
+

@@ -17,6 +17,12 @@ public enum EmbeddedCodeKind
     /// <summary>Rule finalization action source from a rule prequel construct such as <c>@after { }</c>.</summary>
     RuleAfterAction,
 
-    /// <summary>Grammar-level action source from a prequel construct such as <c>@members { }</c>.</summary>
-    GrammarAction
+    /// <summary>Grammar-level action source from a prequel construct such as <c>@members</c>.</summary>
+    GrammarAction,
+
+    /// <summary>Opaque lexer action source from a lexer rule alternative.</summary>
+    LexerAction,
+
+    /// <summary>Lexer predicate source from a lexer rule alternative.</summary>
+    LexerPredicate
 }
