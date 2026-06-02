@@ -301,13 +301,16 @@ Current responsibilities:
 - compile-time `.g4` ingestion via `AdditionalFiles`;
 - internal G4 parsing and C# emission;
 - preservation of embedded code as raw model metadata strings;
-- Roslyn diagnostic reporting.
+- C#-only executable hooks for parser semantic predicates and inline parser actions in generated grammars;
+- generated `ISemanticPredicateEvaluator`, `IParserActionExecutor`, and `ParserRuntimeFeaturePolicy` wiring;
+- generated `ParseWithEmbeddedCode(...)` helper for explicit opt-in execution while generated `Parse(...)` keeps the default conservative policy;
+- Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path.
 
 Future responsibilities (source-generation path):
 
-- C#-only executable embedded-code hooks (explicit);
-- language compatibility diagnostics;
-- clear distinction between preserved raw metadata and executable generated hooks.
+- broader C# language-shape support and language compatibility diagnostics;
+- clear distinction between preserved raw metadata and executable generated hooks;
+- lexer embedded-code hooks only after dedicated design work.
 
 ### `Utils.Parser.VisualStudio`
 
@@ -383,13 +386,16 @@ This model explicitly excludes:
 - move runtime-inline expression compilation to parser model preparation/generation through the explicit boundary;
 - execute prepared artifacts during parsing instead of compiling source text during predicate/action invocation.
 
-### Future PR — Source generator C# path
+### Source generator C# path
 
-- add explicit C# embedded-code hook support in generator path;
-- define language option handling;
-- support C# only initially;
-- report Roslyn diagnostics for unsupported/invalid embedded code;
-- document generated hook shape.
+- initial explicit C# embedded-code hook support is implemented for parser semantic predicates and inline parser actions;
+- generated hooks are private C# methods compiled by Roslyn with the consuming project;
+- generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor` and are installed through `CreateRuntimePolicy(...)`;
+- generated `ParseWithEmbeddedCode(...)` opts into those hooks, while generated `Parse(...)` keeps default conservative runtime behavior;
+- supported predicate bodies are simple C# boolean expressions using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`;
+- supported action bodies are simple C# statements using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including calls to user members in another partial class declaration;
+- invalid embedded C# is intentionally reported by Roslyn as a compilation error;
+- future work may define language option handling and broader C# shape support.
 
 ### Future PR — Lexer actions/predicates
 

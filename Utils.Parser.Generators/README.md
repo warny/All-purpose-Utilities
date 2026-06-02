@@ -172,6 +172,16 @@ internal static partial class ExpGrammar
 Apache 2.0 — see the repository root for details.
 
 
-## Embedded code note
+## Embedded C# parser code
 
-The generator currently preserves embedded ANTLR code as raw model strings. Future executable C# embedded-code support belongs to the generator path and must remain explicit. Runtime expression compilation is a separate path.
+For parser semantic predicates and inline parser actions, the generator now emits executable C# hooks in addition to preserving the raw model metadata strings. This path is intentionally separate from `Utils.Parser.Expressions` and does not use `IExpressionCompiler`: embedded C# is compiled by Roslyn together with the consuming project.
+
+Supported initial forms are simple parser predicate expressions and inline parser action statements, for example:
+
+```antlr
+grammar P;
+start : { inputPosition == 0 && ruleName == "start" }? { OnAction(context); } A ;
+A : 'a' ;
+```
+
+The generated class exposes `CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)` and `ParseWithEmbeddedCode(string input)` for explicit opt-in execution. The existing generated `Parse(string input)` helper continues to use the default conservative runtime policy and does not execute generated embedded-code hooks. Action code can call members supplied by another declaration of the generated partial class. Invalid embedded C# is reported as a normal C# compilation error. Lexer actions, lexer predicates, grammar actions, `@members`, `@init`, and `@after` are not executed by this support.
