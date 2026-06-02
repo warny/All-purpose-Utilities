@@ -15,6 +15,9 @@ Available surfaces:
 - `PreparedExpressionEmbeddedCodeKey` identifies prepared artifacts by embedded-code kind, owning rule, source text, alternative index, and element index.
 - `PreparedExpressionEmbeddedCodeRegistry` stores prepared semantic predicates separately from prepared parser inline actions.
 - `PreparedExpressionEmbeddedCodeRegistryBuilder` explicitly scans `ParserDefinition` models and fills a registry from validating predicates and inline parser actions.
+- `PreparedExpressionRuntimePolicyBuilder` assembles the full opt-in prepared runtime path from a `ParserDefinition` and an `IExpressionCompiler`.
+- `PreparedExpressionRuntimePolicyBuildResult` exposes the configured `ParserRuntimeFeaturePolicy`, registry, registry build result, and failure summary.
+- `PreparedExpressionRuntimePolicyBuilderOptions` configures grammar/compiler identity, supported symbols, and an optional base runtime policy.
 - `PreparedExpressionSemanticPredicateEvaluator` executes registered `PreparedExpressionSemanticPredicate` artifacts through `ISemanticPredicateEvaluator` without compiling source text.
 - `PreparedExpressionParserActionExecutor` executes registered `PreparedExpressionParserAction` artifacts through `IParserActionExecutor` without compiling source text.
 - `ExpressionSemanticPredicateEvaluator` remains the current runtime adapter from `IExpressionCompiler` to `ISemanticPredicateEvaluator`.
@@ -55,7 +58,35 @@ Contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementInd
 
 Prepared artifacts can now be prepared from a parser model, stored in a registry, and consumed through runtime adapters explicitly.
 Default parser behavior is unchanged, and `ParserEngine` is not modified by this package.
-Callers that want the prepared-artifact path must create a preparer, build the registry outside the parser, and pass the adapters through `ParserRuntimeFeaturePolicy`:
+The recommended full prepared runtime flow is to build an opt-in policy outside the parser and pass that policy explicitly:
+
+```csharp
+IExpressionCompiler compiler = GetExpressionCompiler();
+
+var integration = PreparedExpressionRuntimePolicyBuilder.Build(
+    definition,
+    compiler,
+    new PreparedExpressionRuntimePolicyBuilderOptions
+    {
+        GrammarName = definition.Name,
+        LanguageOrCompilerIdentity = "custom-expression-language",
+        BasePolicy = existingPolicy
+    });
+
+if (integration.HasFailures)
+{
+    foreach (var entry in integration.RegistryBuildResult.NonSuccessEntries)
+    {
+        Console.WriteLine($"Embedded code preparation failed: {entry.Source.SourceText}");
+    }
+}
+
+var parser = new ParserEngine(definition, integration.Policy);
+```
+
+`PreparedExpressionRuntimePolicyBuilder.Build` creates the `ExpressionEmbeddedCodePreparer`, runs `PreparedExpressionEmbeddedCodeRegistryBuilder`, creates `PreparedExpressionSemanticPredicateEvaluator` and `PreparedExpressionParserActionExecutor`, and returns a policy configured with those adapters. When `BasePolicy` is supplied, only `SemanticPredicateEvaluator` and `ParserActionExecutor` are replaced; other policy features, such as the passive runtime observer, are preserved. Preparation failures remain visible through `RegistryBuildResult` and `HasFailures`; the builder does not throw for compiler failures unless the compiler itself fails outside the preparation result flow.
+
+Consumers that need lower-level control can still assemble the same components manually:
 
 ```csharp
 IExpressionCompiler compiler = GetExpressionCompiler();
@@ -109,12 +140,13 @@ Prepared artifact behavior:
 
 - `ExpressionEmbeddedCodePreparer` compiles before parsing when invoked explicitly by a caller.
 - `PreparedExpressionEmbeddedCodeRegistryBuilder` can invoke that preparer for validating predicates and inline parser actions found in an already-built `ParserDefinition`.
+- `PreparedExpressionRuntimePolicyBuilder` is the convenience integration API for building the registry and prepared runtime policy in one explicit opt-in call.
 - `PreparedExpressionSemanticPredicate` and `PreparedExpressionParserAction` execute already-compiled delegates.
 - `PreparedExpressionSemanticPredicateEvaluator` and `PreparedExpressionParserActionExecutor` look up those artifacts in `PreparedExpressionEmbeddedCodeRegistry` and execute them without depending on `IExpressionCompiler`.
 - A missing registry entry returns `NotEvaluated` or `NotExecuted`, allowing parsing to continue under the existing `ParserEngine` outcome handling.
 - The prepared-artifact path does not change parser scheduling, memoization, diagnostics emission, parse-tree shape, or default runtime policy.
 
-The target model remains to prepare executable artifacts before parsing and then execute only those artifacts while parsing. This package now provides the explicit runtime adapters and an explicit registry builder for that consumption step, but it still does not automatically prepare a parser model. `ParserEngine` should remain language-neutral: it should execute policy outcomes and emit diagnostics, not select an expression language or compile embedded source code.
+The target model remains to prepare executable artifacts before parsing and then execute only those artifacts while parsing. This package now provides the explicit runtime adapters, an explicit registry builder, and a convenience policy builder for that consumption step, but it still does not automatically prepare a parser model. `ParserEngine` should remain language-neutral: it should execute policy outcomes and emit diagnostics, not select an expression language or compile embedded source code.
 
 ## Scope and limitations
 

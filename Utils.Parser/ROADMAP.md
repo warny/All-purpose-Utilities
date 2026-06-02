@@ -382,7 +382,7 @@ Current clarification status:
 - a shared netstandard2.0 ANTLR prequel DTO project was introduced, while runtime and generator parsing remain intentionally separate.
 - runtime advanced-configuration public API was consolidated so `ParserRuntimeFeaturePolicy` is the single explicit runtime feature-entry point for semantic predicates, parser actions, and runtime observers.
 - current expression-backed predicate/action adapters are documented as useful intermediate runtime adapters with opportunistic compilation, not as the final prepare-before-parse architecture.
-- public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer, an explicit registry builder for parser-model validating predicates and inline parser actions, and registry-backed runtime adapters for prepared artifacts; automatic default `ParserEngine` wiring remains unimplemented.
+- public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer, an explicit registry builder for parser-model validating predicates and inline parser actions, registry-backed runtime adapters for prepared artifacts, and an opt-in runtime policy builder that assembles those components; automatic default `ParserEngine` wiring remains unimplemented.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -424,7 +424,7 @@ Forbidden work:
 
 Goal: move toward tooling capabilities once runtime behavior is stable.
 
-Current status includes an explicit prepared expression registry builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. The builder mirrors runtime indexing for nested executable structures and direct-left-recursive tails, improving manual tooling around prepared semantic predicates and inline parser actions without increasing ANTLR support by default.
+Current status includes an explicit prepared expression registry builder and runtime policy builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. The registry builder mirrors runtime indexing for nested executable structures and direct-left-recursive tails, and the policy builder assembles the preparer, registry builder, no-compile adapters, and `ParserRuntimeFeaturePolicy` without increasing ANTLR support by default.
 
 Scope:
 
@@ -449,7 +449,7 @@ Forbidden work:
 Current clarification status:
 
 - tooling direction now explicitly distinguishes future C# source-generator embedded-code hooks from runtime-inline expression preparation; generator output must not be presented as current executable embedded-code support until implemented.
-- embedded-code preparation contracts provide a source-generator/runtime-inline boundary; C# hooks plus automatic runtime-inline model preparation and registry population remain unimplemented. Explicit registry-backed prepared expression runtime adapters are available through `ParserRuntimeFeaturePolicy` without changing default runtime behavior.
+- embedded-code preparation contracts provide a source-generator/runtime-inline boundary; C# hooks plus automatic runtime-inline model preparation from `ParserEngine` remain unimplemented. Explicit registry-backed prepared expression runtime adapters and an opt-in prepared runtime policy builder are available through `ParserRuntimeFeaturePolicy` without changing default runtime behavior.
 - runtime trace analysis abstractions are available as tooling-only, read-only, deterministic consumers of passive observations/exports,
 - analysis outputs are explicitly descriptive and non-authoritative (no replay, no runtime ownership transfer, no parser/diagnostics authority transfer).
 - end-to-end runtime-observation/export/analysis usage guidance is documented as illustrative tooling only, with explicit non-framework/non-authoritative boundaries.
