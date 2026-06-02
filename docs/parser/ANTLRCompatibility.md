@@ -127,7 +127,7 @@ var parser = new ParserEngine(definition, policy);
 Recognized and represented as runtime predicate objects.
 Default runtime does not evaluate predicate source code.
 When predicates are not evaluated, runtime conservatively treats them as accepted and emits `UP1006` (`SemanticPredicateNotEnforced`).
-Custom predicate evaluators may satisfy or reject predicates. The optional prepared expression path can now build a registry from parser-model `ValidatingPredicate` nodes and wire it through `ParserRuntimeFeaturePolicy` explicitly; it is not enabled by default and does not change the compatibility level.
+Custom predicate evaluators may satisfy or reject predicates. The optional prepared expression path can build a registry from parser-model `ValidatingPredicate` nodes, including predicates nested in runtime-executable structures and direct-left-recursive tails, and wire it through `ParserRuntimeFeaturePolicy` explicitly; it is not enabled by default and does not change the compatibility level.
 This behavior is runtime-policy-driven, not compatibility metadata.
 
 > **Important**: memoization is keyed by `(rule, input position, precedence)`. Evaluators must be deterministic for identical invocation contexts.
@@ -152,7 +152,7 @@ See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md) for expli
 **Standard ANTLR4**: Action code is target-language code executed as a side effect during parsing.
 
 **Utils.Parser**: Actions are parsed and stored. Execution is delegated to an `IParserActionExecutor` registered in `ParserRuntimeFeaturePolicy`. The default policy returns `NotExecuted`.
-Optional runtime expression-backed parser action executors can be configured explicitly. Callers may use the prepared expression registry builder to prepare inline parser actions from the parser model before parsing, or use the older expression-backed executor that may compile opportunistically during execution with compilation caching. Both paths are limited to the configured expression language and read-only contextual symbols, are not enabled by default, and do not increase default ANTLR action support. `UP1028` remains reserved for explicit execution-disabled runtime policies, which the current expression-backed adapters do not expose.
+Optional runtime expression-backed parser action executors can be configured explicitly. Callers may use the prepared expression registry builder to prepare inline parser actions from the parser model before parsing, including inline actions nested in runtime-executable structures and direct-left-recursive tails, or use the older expression-backed executor that may compile opportunistically during execution with compilation caching. Both paths are limited to the configured expression language and read-only contextual symbols, are not enabled by default, and do not increase default ANTLR action support. `UP1028` remains reserved for explicit execution-disabled runtime policies, which the current expression-backed adapters do not expose.
 
 **Usage** — implement `IParserActionExecutor`:
 

@@ -106,21 +106,39 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
                 allEntries);
         }
 
-        ScanContent(
-            definition,
-            rule,
-            rule.Content,
-            null,
-            null,
-            preparer,
-            options,
-            registry,
-            successfulSemanticPredicates,
-            successfulParserActions,
-            nonSuccessEntries,
-            duplicateEntries,
-            skippedEntries,
-            allEntries);
+        if (definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+        {
+            ScanLeftRecursiveRule(
+                definition,
+                leftRecursiveInfo,
+                preparer,
+                options,
+                registry,
+                successfulSemanticPredicates,
+                successfulParserActions,
+                nonSuccessEntries,
+                duplicateEntries,
+                skippedEntries,
+                allEntries);
+        }
+        else
+        {
+            ScanContent(
+                definition,
+                rule,
+                rule.Content,
+                null,
+                null,
+                preparer,
+                options,
+                registry,
+                successfulSemanticPredicates,
+                successfulParserActions,
+                nonSuccessEntries,
+                duplicateEntries,
+                skippedEntries,
+                allEntries);
+        }
 
         if (rule.AfterAction is not null)
         {
@@ -178,10 +196,10 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
                 ScanSequence(definition, rule, sequence, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
                 break;
             case Quantifier quantifier:
-                ScanContent(definition, rule, quantifier.Inner, alternativeIndex, elementIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanQuantifier(definition, rule, quantifier, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
                 break;
             case Negation negation:
-                ScanContent(definition, rule, negation.Inner, alternativeIndex, elementIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanNegation(definition, rule, negation, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
                 break;
             case ValidatingPredicate predicate:
                 PrepareSemanticPredicate(definition, rule, predicate, alternativeIndex, elementIndex, preparer, options, registry, successfulSemanticPredicates, nonSuccessEntries, duplicateEntries, allEntries);
@@ -229,6 +247,100 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
     }
 
     /// <summary>
+    /// Scans a direct-left-recursive rule using the runtime seed and recursive-tail views.
+    /// </summary>
+    /// <param name="definition">Owning parser definition.</param>
+    /// <param name="info">Left-recursive rule split metadata.</param>
+    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
+    /// <param name="options">Builder options.</param>
+    /// <param name="registry">Registry being populated.</param>
+    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
+    /// <param name="successfulParserActions">Successful parser action entries.</param>
+    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
+    /// <param name="duplicateEntries">Duplicate key entries.</param>
+    /// <param name="skippedEntries">Skipped entries.</param>
+    /// <param name="allEntries">All entries in traversal order.</param>
+    private static void ScanLeftRecursiveRule(
+        ParserDefinition definition,
+        LeftRecursiveRuleInfo info,
+        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
+        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
+        PreparedExpressionEmbeddedCodeRegistry registry,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    {
+        var baseAlternatives = info.BaseAlternatives.OrderBy(static alternative => alternative.Priority).ToList();
+        for (var index = 0; index < baseAlternatives.Count; index++)
+        {
+            ScanContent(definition, info.Rule, baseAlternatives[index].Content, index, null, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+        }
+
+        var recursiveAlternatives = info.RecursiveAlternatives.OrderBy(static alternative => alternative.Priority).ToList();
+        for (var index = 0; index < recursiveAlternatives.Count; index++)
+        {
+            var tailContent = RemoveLeadingSelfReference(info.Rule.Name, recursiveAlternatives[index].Content);
+            if (tailContent is not null)
+            {
+                ScanLeftRecursiveTail(definition, info.Rule, tailContent, index, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Scans recursive-tail content after applying the same leading self-reference removal used by the runtime.
+    /// </summary>
+    /// <param name="definition">Owning parser definition.</param>
+    /// <param name="rule">Owning left-recursive rule.</param>
+    /// <param name="tailContent">Effective tail content parsed by the runtime.</param>
+    /// <param name="alternativeIndex">Runtime recursive alternative index.</param>
+    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
+    /// <param name="options">Builder options.</param>
+    /// <param name="registry">Registry being populated.</param>
+    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
+    /// <param name="successfulParserActions">Successful parser action entries.</param>
+    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
+    /// <param name="duplicateEntries">Duplicate key entries.</param>
+    /// <param name="skippedEntries">Skipped entries.</param>
+    /// <param name="allEntries">All entries in traversal order.</param>
+    private static void ScanLeftRecursiveTail(
+        ParserDefinition definition,
+        Rule rule,
+        RuleContent tailContent,
+        int alternativeIndex,
+        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
+        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
+        PreparedExpressionEmbeddedCodeRegistry registry,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    {
+        if (tailContent is Sequence sequence)
+        {
+            for (var index = 0; index < sequence.Items.Count; index++)
+            {
+                var item = sequence.Items[index];
+                if (item is RuleRef ruleRef && string.Equals(ruleRef.RuleName, rule.Name, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                ScanContent(definition, rule, item, alternativeIndex, index, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+            }
+
+            return;
+        }
+
+        ScanContent(definition, rule, tailContent, alternativeIndex, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+    }
+
+    /// <summary>
     /// Scans sequence items with stable zero-based element indexes matching runtime contexts.
     /// </summary>
     /// <param name="definition">Owning parser definition.</param>
@@ -263,6 +375,74 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         {
             ScanContent(definition, rule, sequence.Items[index], alternativeIndex, index, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
         }
+    }
+
+    /// <summary>
+    /// Scans quantified content with the runtime element-index strategy for quantifier inner parsing.
+    /// </summary>
+    /// <param name="definition">Owning parser definition.</param>
+    /// <param name="rule">Owning parser rule.</param>
+    /// <param name="quantifier">Quantifier model node.</param>
+    /// <param name="alternativeIndex">Current local alternative index.</param>
+    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
+    /// <param name="options">Builder options.</param>
+    /// <param name="registry">Registry being populated.</param>
+    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
+    /// <param name="successfulParserActions">Successful parser action entries.</param>
+    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
+    /// <param name="duplicateEntries">Duplicate key entries.</param>
+    /// <param name="skippedEntries">Skipped entries.</param>
+    /// <param name="allEntries">All entries in traversal order.</param>
+    private static void ScanQuantifier(
+        ParserDefinition definition,
+        Rule rule,
+        Quantifier quantifier,
+        int? alternativeIndex,
+        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
+        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
+        PreparedExpressionEmbeddedCodeRegistry registry,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    {
+        ScanContent(definition, rule, quantifier.Inner, alternativeIndex, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+    }
+
+    /// <summary>
+    /// Scans negated content with the runtime element-index strategy for negation inner probing.
+    /// </summary>
+    /// <param name="definition">Owning parser definition.</param>
+    /// <param name="rule">Owning parser rule.</param>
+    /// <param name="negation">Negation model node.</param>
+    /// <param name="alternativeIndex">Current local alternative index.</param>
+    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
+    /// <param name="options">Builder options.</param>
+    /// <param name="registry">Registry being populated.</param>
+    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
+    /// <param name="successfulParserActions">Successful parser action entries.</param>
+    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
+    /// <param name="duplicateEntries">Duplicate key entries.</param>
+    /// <param name="skippedEntries">Skipped entries.</param>
+    /// <param name="allEntries">All entries in traversal order.</param>
+    private static void ScanNegation(
+        ParserDefinition definition,
+        Rule rule,
+        Negation negation,
+        int? alternativeIndex,
+        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
+        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
+        PreparedExpressionEmbeddedCodeRegistry registry,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
+        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    {
+        ScanContent(definition, rule, negation.Inner, alternativeIndex, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
     }
 
     /// <summary>
@@ -354,6 +534,33 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         var entry = CreateEntry(source, key, rule.Name, result.Status, result.DiagnosticDescriptor, result.Exception, result.DiagnosticArguments, wasAdded, result.Artifact is not null && !wasAdded);
 
         AddPreparationEntry(entry, result.Artifact is not null && wasAdded, successfulEntries, nonSuccessEntries, duplicateEntries, allEntries);
+    }
+
+    /// <summary>
+    /// Removes the leading direct self-reference exactly as the parser runtime does for left-recursive tails.
+    /// </summary>
+    /// <param name="ruleName">Name of the left-recursive rule.</param>
+    /// <param name="content">Recursive alternative content.</param>
+    /// <returns>The effective tail content parsed by the runtime, or <c>null</c> when no leading self-reference exists.</returns>
+    private static RuleContent? RemoveLeadingSelfReference(string ruleName, RuleContent content)
+    {
+        switch (content)
+        {
+            case RuleRef ruleRef when string.Equals(ruleRef.RuleName, ruleName, StringComparison.Ordinal):
+                return new Sequence([]);
+            case Sequence sequence when sequence.Items.Count > 0:
+            {
+                if (sequence.Items[0] is RuleRef leading &&
+                    string.Equals(leading.RuleName, ruleName, StringComparison.Ordinal))
+                {
+                    return new Sequence(sequence.Items.Skip(1).ToList());
+                }
+
+                return null;
+            }
+            default:
+                return null;
+        }
     }
 
     /// <summary>

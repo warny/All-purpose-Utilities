@@ -271,14 +271,118 @@ public class PreparedExpressionEmbeddedCodeRegistryBuilderTests
         Assert.IsTrue(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, secondPriorityPredicate, 1, 0), out _));
     }
 
+
+    /// <summary>
+    /// Verifies that predicates directly inside quantifiers use the runtime quantifier element index.
+    /// </summary>
+    [TestMethod]
+    public void Build_WhenPredicateIsInsideQuantifier_UsesRuntimeQuantifierIndexes()
+    {
+        var predicate = new ValidatingPredicate("inside-quantifier");
+        var quantifier = new Quantifier(predicate, 0, 1);
+        var rule = CreateRule("start", new Sequence([new LiteralMatch("a"), new LiteralMatch("b"), quantifier]));
+
+        var result = PreparedExpressionEmbeddedCodeRegistryBuilder.Build(CreateDefinition(rule), new FakePreparer());
+
+        Assert.IsTrue(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, predicate, 0, 0), out _));
+        Assert.IsFalse(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, predicate, 0, 2), out _));
+    }
+
+    /// <summary>
+    /// Verifies that inline actions directly inside quantifiers use the runtime quantifier element index.
+    /// </summary>
+    [TestMethod]
+    public void Build_WhenActionIsInsideQuantifier_UsesRuntimeQuantifierIndexes()
+    {
+        var action = new EmbeddedAction("inside-quantifier-action", ActionContext.Alternative, ActionPosition.Inline, []);
+        var quantifier = new Quantifier(action, 0, 1);
+        var rule = CreateRule("start", new Sequence([new LiteralMatch("a"), new LiteralMatch("b"), quantifier]));
+
+        var result = PreparedExpressionEmbeddedCodeRegistryBuilder.Build(CreateDefinition(rule), new FakePreparer());
+
+        Assert.IsTrue(result.Registry.TryGetParserAction(CreateActionContext(rule, action, 0, 0), out _));
+        Assert.IsFalse(result.Registry.TryGetParserAction(CreateActionContext(rule, action, 0, 2), out _));
+    }
+
+    /// <summary>
+    /// Verifies that predicates inside negation use the runtime negation probe element index.
+    /// </summary>
+    [TestMethod]
+    public void Build_WhenPredicateIsInsideNegation_UsesRuntimeNegationIndexes()
+    {
+        var predicate = new ValidatingPredicate("inside-negation");
+        var negation = new Negation(predicate);
+        var rule = CreateRule("start", new Sequence([new LiteralMatch("a"), new LiteralMatch("b"), negation]));
+
+        var result = PreparedExpressionEmbeddedCodeRegistryBuilder.Build(CreateDefinition(rule), new FakePreparer());
+
+        Assert.IsTrue(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, predicate, 0, 0), out _));
+        Assert.IsFalse(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, predicate, 0, 2), out _));
+    }
+
+    /// <summary>
+    /// Verifies that inline actions inside negation use the runtime negation probe element index.
+    /// </summary>
+    [TestMethod]
+    public void Build_WhenActionIsInsideNegation_UsesRuntimeNegationIndexes()
+    {
+        var action = new EmbeddedAction("inside-negation-action", ActionContext.Alternative, ActionPosition.Inline, []);
+        var negation = new Negation(action);
+        var rule = CreateRule("start", new Sequence([new LiteralMatch("a"), new LiteralMatch("b"), negation]));
+
+        var result = PreparedExpressionEmbeddedCodeRegistryBuilder.Build(CreateDefinition(rule), new FakePreparer());
+
+        Assert.IsTrue(result.Registry.TryGetParserAction(CreateActionContext(rule, action, 0, 0), out _));
+        Assert.IsFalse(result.Registry.TryGetParserAction(CreateActionContext(rule, action, 0, 2), out _));
+    }
+
+    /// <summary>
+    /// Verifies that left-recursive tails are scanned after removing the leading self-reference.
+    /// </summary>
+    [TestMethod]
+    public void Build_WhenPredicateAndActionAreInLeftRecursiveTail_UsesRuntimeTailIndexes()
+    {
+        var action = new EmbeddedAction("tail-action", ActionContext.Alternative, ActionPosition.Inline, []);
+        var predicate = new ValidatingPredicate("tail-predicate");
+        var baseAlternative = new Alternative(0, Associativity.Left, new Sequence([new LiteralMatch("id")]));
+        var recursiveAlternative = new Alternative(1, Associativity.Left, new Sequence([
+            new RuleRef("expr"),
+            action,
+            new LiteralMatch("+"),
+            predicate,
+            new RuleRef("expr")
+        ]));
+        var rule = CreateRule("expr", new Alternation([baseAlternative, recursiveAlternative]));
+        var leftRecursiveInfo = new LeftRecursiveRuleInfo
+        {
+            Rule = rule,
+            BaseAlternatives = [baseAlternative],
+            RecursiveAlternatives = [recursiveAlternative]
+        };
+
+        var result = PreparedExpressionEmbeddedCodeRegistryBuilder.Build(CreateDefinition(rule, leftRecursiveRules: new Dictionary<string, LeftRecursiveRuleInfo>
+        {
+            [rule.Name] = leftRecursiveInfo
+        }), new FakePreparer());
+
+        Assert.IsTrue(result.Registry.TryGetParserAction(CreateActionContext(rule, action, 0, 0), out _));
+        Assert.IsTrue(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, predicate, 0, 2), out _));
+        Assert.IsFalse(result.Registry.TryGetParserAction(CreateActionContext(rule, action, 0, 1), out _));
+        Assert.IsFalse(result.Registry.TryGetSemanticPredicate(CreatePredicateContext(rule, predicate, 0, 3), out _));
+    }
+
     /// <summary>
     /// Creates a parser definition for tests.
     /// </summary>
     /// <param name="rule">Parser rule to include.</param>
     /// <param name="actions">Optional grammar-level actions.</param>
+    /// <param name="leftRecursiveRules">Optional left-recursive rule metadata.</param>
     /// <returns>A parser definition containing the supplied rule.</returns>
-    private static ParserDefinition CreateDefinition(Rule rule, IReadOnlyList<GrammarAction>? actions = null) =>
-        new(
+    private static ParserDefinition CreateDefinition(
+        Rule rule,
+        IReadOnlyList<GrammarAction>? actions = null,
+        IReadOnlyDictionary<string, LeftRecursiveRuleInfo>? leftRecursiveRules = null) =>
+        new ParserDefinition(
             "G",
             GrammarType.Combined,
             null,
@@ -286,7 +390,10 @@ public class PreparedExpressionEmbeddedCodeRegistryBuilderTests
             [],
             [],
             [rule],
-            rule);
+            rule)
+        {
+            LeftRecursiveRules = leftRecursiveRules ?? new Dictionary<string, LeftRecursiveRuleInfo>()
+        };
 
     /// <summary>
     /// Creates a parser rule around supplied content.

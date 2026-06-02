@@ -424,7 +424,7 @@ Forbidden work:
 
 Goal: move toward tooling capabilities once runtime behavior is stable.
 
-Current status includes an explicit prepared expression registry builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. This improves manual tooling around prepared semantic predicates and inline parser actions without increasing ANTLR support by default.
+Current status includes an explicit prepared expression registry builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. The builder mirrors runtime indexing for nested executable structures and direct-left-recursive tails, improving manual tooling around prepared semantic predicates and inline parser actions without increasing ANTLR support by default.
 
 Scope:
 
