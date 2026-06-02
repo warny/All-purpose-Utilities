@@ -8,7 +8,9 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ContinuationMetadataPreparation
 {
+    /// <summary>Factory used to create typed continuation descriptors.</summary>
     private readonly ParserContinuationFactory _continuationFactory = new();
+    /// <summary>Extractor used to compute structural sequence positions for shared-prefix candidates.</summary>
     private readonly ContinuationStructuralPositionExtractor _positionExtractor = new();
 
     /// <summary>
@@ -45,6 +47,7 @@ internal sealed class ContinuationMetadataPreparation
         return continuations;
     }
 
+    /// <summary>Returns the shared token name for the specified alternative index when it participates in a shared-prefix candidate; otherwise <see langword="null"/>.</summary>
     private static string? ResolveSharedTokenName(
         IReadOnlyList<ParserLookaheadSharedPrefixCandidate> candidates,
         int alternativeIndex)

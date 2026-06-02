@@ -13,8 +13,11 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ParserStateRegistry
 {
+    /// <summary>Set of state keys that have been entered during the current parse, used to prevent redundant re-entry.</summary>
     private readonly HashSet<ParserStateKey> _visitedStates = [];
+    /// <summary>Continuation keys grouped by rule invocation identity for post-completion replay metadata.</summary>
     private readonly Dictionary<RuleInvocationKey, HashSet<ContinuationKey>> _continuations = [];
+    /// <summary>Completed parse results grouped by rule invocation identity for local reuse.</summary>
     private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
 
     /// <summary>Resets all registry state for a new parse.</summary>

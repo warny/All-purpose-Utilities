@@ -9,8 +9,11 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 public sealed class ConventionSyntaxColorisation : ISyntaxColorisation
 {
+    /// <summary>Rule names classified as keywords.</summary>
     private readonly HashSet<string> keywords;
+    /// <summary>Rule names classified as numbers.</summary>
     private readonly HashSet<string> numbers;
+    /// <summary>Rule names classified as strings.</summary>
     private readonly HashSet<string> strings;
 
     /// <summary>

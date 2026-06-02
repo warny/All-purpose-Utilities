@@ -174,6 +174,7 @@ internal sealed class ParserSharedPrefixPlanFactory
         return sharedPrefix.Count == 0 ? [candidate.TokenName] : sharedPrefix;
     }
 
+    /// <summary>Returns the longest common leading subsequence shared by all token sequences.</summary>
     private static IReadOnlyList<string> ComputeSharedPrefix(IReadOnlyList<IReadOnlyList<string>> sequences)
     {
         var minimumLength = sequences.Min(static sequence => sequence.Count);

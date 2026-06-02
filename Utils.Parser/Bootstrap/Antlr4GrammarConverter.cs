@@ -29,6 +29,7 @@ public sealed class Antlr4GrammarConverter
 {
     /// <summary>Declaration-order counter incremented as rules are created during conversion.</summary>
     private int _order;
+    /// <summary>Optional diagnostics bag populated during conversion.</summary>
     private readonly DiagnosticBag? _diagnostics;
 
     /// <summary>Initialises a new converter instance. The <paramref name="sourceText"/> parameter is reserved for future use.</summary>

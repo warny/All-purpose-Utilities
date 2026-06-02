@@ -19,8 +19,11 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ScheduledAlternativeExecutor
 {
+    /// <summary>Registry for tracking visited states and invocation-local completion results.</summary>
     private readonly ParserStateRegistry _stateRegistry;
+    /// <summary>Cache of prior look-ahead probe outcomes reused to skip redundant probing.</summary>
     private readonly ParserLookaheadCache _lookaheadCache;
+    /// <summary>Probe used to evaluate shallow first-token look-ahead for an alternative.</summary>
     private readonly ParserLookaheadProbe _lookaheadProbe;
 
     /// <summary>

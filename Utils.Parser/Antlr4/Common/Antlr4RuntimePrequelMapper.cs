@@ -37,6 +37,7 @@ internal static class Antlr4RuntimePrequelMapper
             HasChannelsBlock: HasNonDefaultChannel(definition.DeclaredChannels));
     }
 
+    /// <summary>Returns <see langword="true"/> when <paramref name="channels"/> contains any channel other than <c>DEFAULT_CHANNEL</c> or <c>HIDDEN</c>.</summary>
     private static bool HasNonDefaultChannel(IReadOnlySet<string> channels)
     {
         foreach (var channel in channels)

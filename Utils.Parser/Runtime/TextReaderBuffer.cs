@@ -8,12 +8,19 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
 {
+    /// <summary>Characters read ahead from the underlying reader.</summary>
     private readonly List<char> _buffer = [];
+    /// <summary>Index into <see cref="_buffer"/> of the current lookahead window start.</summary>
     private int _startIndex;
+    /// <summary>Absolute character position in the source stream.</summary>
     private int _position;
+    /// <summary>Current one-based line number.</summary>
     private int _line = 1;
+    /// <summary>Current one-based column number.</summary>
     private int _column = 1;
+    /// <summary><see langword="true"/> when the underlying reader has been exhausted.</summary>
     private bool _isEnd;
+    /// <summary><see langword="true"/> when the last consumed character was a carriage return, used to suppress the extra line increment for CRLF sequences.</summary>
     private bool _previousWasCarriageReturn;
 
     /// <inheritdoc />
@@ -111,6 +118,7 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
         return builder.ToString();
     }
 
+    /// <summary>Reads from the underlying reader until at least <paramref name="count"/> characters are available in the buffer.</summary>
     private void EnsureBuffered(int count)
     {
         while (!_isEnd && _buffer.Count - _startIndex < count)
@@ -126,6 +134,7 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
         }
     }
 
+    /// <summary>Advances line and column tracking after consuming <paramref name="value"/>.</summary>
     private void UpdateLineAndColumn(char value)
     {
         if (value == '\r')
@@ -152,6 +161,7 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
         _previousWasCarriageReturn = false;
     }
 
+    /// <summary>Removes already-consumed characters from the front of the buffer when the consumed prefix is large enough.</summary>
     private void CompactBufferIfNeeded()
     {
         if (_startIndex == 0)

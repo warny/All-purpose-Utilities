@@ -9,6 +9,7 @@ namespace Utils.Parser.ProjectCompilation;
 /// </summary>
 public sealed class InMemoryGrammarSourceResolver : IGrammarSourceResolver
 {
+    /// <summary>Grammar sources indexed by name and by file base name for case-insensitive resolution.</summary>
     private readonly Dictionary<string, GrammarSource> _sources;
 
     /// <summary>

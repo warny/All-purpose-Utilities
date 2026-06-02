@@ -32,6 +32,7 @@ internal sealed class AlternativeStructuralPrefixExtractor
         return descriptors;
     }
 
+    /// <summary>Extracts the ordered leading structural token names from a single alternative's content.</summary>
     private static IReadOnlyList<string> ExtractStructuralTokens(RuleContent content)
     {
         if (content is Sequence sequence)
@@ -55,6 +56,7 @@ internal sealed class AlternativeStructuralPrefixExtractor
             : [];
     }
 
+    /// <summary>Extracts a single structural token name from a rule-content node that is a direct literal or rule reference; returns <see langword="false"/> for composite content.</summary>
     private static bool TryGetStructuralToken(RuleContent content, out string tokenName)
     {
         switch (content)

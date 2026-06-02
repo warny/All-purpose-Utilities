@@ -39,6 +39,7 @@ internal sealed class ContinuationStructuralPositionExtractor
         return NormalizeMeaningfulSequencePosition(sequence, firstMeaningfulItemIndex + 1);
     }
 
+    /// <summary>Converts a raw sequence index to a meaningful-item count by excluding embedded actions and lexer commands.</summary>
     private static int NormalizeMeaningfulSequencePosition(Sequence sequence, int sequencePosition)
     {
         if (sequencePosition <= 0)
@@ -63,6 +64,7 @@ internal sealed class ContinuationStructuralPositionExtractor
         return meaningfulIndex;
     }
 
+    /// <summary>Returns <see langword="true"/> when the content is a literal or rule-reference whose value equals <paramref name="sharedTokenName"/>.</summary>
     private static bool IsSharedTokenMatchFromProbeMetadata(RuleContent content, string sharedTokenName)
     {
         return content switch
