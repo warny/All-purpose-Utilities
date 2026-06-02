@@ -304,7 +304,7 @@ Current responsibilities:
 - C#-only executable hooks for parser semantic predicates and inline parser actions in generated grammars;
 - generated `ISemanticPredicateEvaluator`, `IParserActionExecutor`, and `ParserRuntimeFeaturePolicy` wiring;
 - generated `ParseWithEmbeddedCode(...)` helper for explicit opt-in execution while generated `Parse(...)` keeps the default conservative policy;
-- runtime-index-aware hook dispatch for tested parser hook positions: single-item alternatives, sequence positions, quantified content, negation predicate probes, same-source hooks in distinct alternatives, and direct-left-recursive tail views when a resolved generated definition is executed with the generated policy;
+- runtime-index-aware hook dispatch for tested parser hook positions: single-item alternatives, sequence positions, quantified content, negation predicate probes, same-source hooks in distinct alternatives, and direct-left-recursive tail views because generated helpers resolve the generated definition before parsing with the generated policy;
 - Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path.
 
 Future responsibilities (source-generation path):

@@ -164,7 +164,7 @@ internal static class GrammarEmitter
 
         // ── Static Grammar property ──────────────────────────────────
         sb.AppendLine("    /// <summary>Compiled and cached grammar instance.</summary>");
-        sb.AppendLine("    public static CompiledGrammar Grammar { get; } = new CompiledGrammar(BuildDefinition());");
+        sb.AppendLine("    public static CompiledGrammar Grammar { get; } = new CompiledGrammar(Build());");
         sb.AppendLine();
         sb.AppendLine("    /// <summary>Tokenizes input using the generated grammar and annotates literals with the custom grammar string syntax.</summary>");
         sb.AppendLine($"    public static IReadOnlyList<Token> Tokenize([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input) => Grammar.Tokenize(input);");
@@ -175,8 +175,8 @@ internal static class GrammarEmitter
         EmitEmbeddedCodeRuntime(sb, embeddedHooks, className);
 
         // ── Build() convenience method ───────────────────────────────
-        sb.AppendLine("    /// <summary>Returns the resolved <see cref=\"ParserDefinition\"/>. Equivalent to <see cref=\"BuildDefinition\"/>.</summary>");
-        sb.AppendLine("    public static ParserDefinition Build() => BuildDefinition();");
+        sb.AppendLine("    /// <summary>Builds and validates the resolved <see cref=\"ParserDefinition\"/>.</summary>");
+        sb.AppendLine("    public static ParserDefinition Build() => RuleResolver.Resolve(BuildDefinition());");
 
         sb.AppendLine("}");
 
@@ -439,7 +439,7 @@ internal static class GrammarEmitter
         sb.AppendLine("    /// <summary>Parses input using generated C# hooks for embedded parser predicates and inline parser actions.</summary>");
         sb.AppendLine($"    public static ParseNode ParseWithEmbeddedCode([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input)");
         sb.AppendLine("    {");
-        sb.AppendLine("        var grammar = new CompiledGrammar(BuildDefinition(), CreateRuntimePolicy());");
+        sb.AppendLine("        var grammar = new CompiledGrammar(Build(), CreateRuntimePolicy());");
         sb.AppendLine("        return grammar.Parse(input);");
         sb.AppendLine("    }");
         sb.AppendLine();

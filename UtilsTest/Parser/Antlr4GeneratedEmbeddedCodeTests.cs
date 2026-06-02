@@ -4,8 +4,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
 using Utils.Parser.Generators.Internal;
-using Utils.Parser.Model;
-using Utils.Parser.Resolution;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -432,7 +430,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "__Action_expr_0_0_0");
 
         var assembly = CompileGeneratedSource(source, userPartial);
-        var result = InvokeParseWithResolvedDefinition(assembly, "1+2");
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "1+2");
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.IsTrue(ReadActionCount(assembly) is > 0 and < 100);
@@ -474,10 +472,36 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "__Predicate_expr_0_0_0");
 
         var assembly = CompileGeneratedSource(source, userPartial);
-        var result = InvokeParseWithResolvedDefinition(assembly, "1+2");
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "1+2");
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.IsTrue(ReadPredicateCount(assembly) > 0);
+    }
+
+    /// <summary>
+    /// Ensures a generated helper resolves direct-left-recursive metadata before dispatching a base alternative after a recursive alternative.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LeftRecursiveBaseAfterRecursiveAlternative_UsesResolvedAlternativeIndex()
+    {
+        const string grammar = """
+            grammar P;
+            expr
+                : expr PLUS INT
+                | { false }? INT
+                ;
+            INT : [0-9]+ ;
+            PLUS : '+' ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "new CompiledGrammar(Build(), CreateRuntimePolicy())");
+        StringAssert.Contains(source, "__Predicate_expr_0_0_0");
+
+        var assembly = CompileGeneratedSource(source);
+
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "Parse", "1"), typeof(ErrorNode));
+        Assert.IsInstanceOfType(InvokeParse(assembly, "ParseWithEmbeddedCode", "1"), typeof(ErrorNode));
     }
 
     /// <summary>
@@ -606,22 +630,6 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
         var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)!;
         return (ParseNode)method.Invoke(null, new object[] { input })!;
-    }
-
-    /// <summary>
-    /// Invokes the generated runtime policy against a resolved parser definition.
-    /// </summary>
-    /// <param name="assembly">Assembly containing the generated grammar class.</param>
-    /// <param name="input">Input text to parse.</param>
-    /// <returns>Parse-tree root returned by the compiled grammar.</returns>
-    private static ParseNode InvokeParseWithResolvedDefinition(Assembly assembly, string input)
-    {
-        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
-        var buildDefinition = type.GetMethod("BuildDefinition", BindingFlags.Public | BindingFlags.Static)!;
-        var createRuntimePolicy = type.GetMethod("CreateRuntimePolicy", BindingFlags.Public | BindingFlags.Static)!;
-        var definition = RuleResolver.Resolve((ParserDefinition)buildDefinition.Invoke(null, null)!);
-        var policy = (ParserRuntimeFeaturePolicy)createRuntimePolicy.Invoke(null, new object?[] { null })!;
-        return new CompiledGrammar(definition, policy).Parse(input);
     }
 
     /// <summary>
