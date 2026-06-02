@@ -9,6 +9,7 @@ namespace Utils.Parser.ProjectCompilation;
 /// </summary>
 public sealed class FileSystemGrammarSourceResolver : IGrammarSourceResolver
 {
+    /// <summary>Absolute path of the root directory used to locate grammar files.</summary>
     private readonly string _rootDirectory;
 
     /// <summary>

@@ -186,6 +186,7 @@ public static class RuleResolver
         };
     }
 
+    /// <summary>Removes structurally identical duplicate alternatives from parser rules, keeping the lowest-priority copy and emitting a diagnostic for each removal.</summary>
     private static ParserDefinition NormalizeAlternatives(ParserDefinition definition, DiagnosticBag? diagnostics)
     {
         var updatedParserRules = new List<Rule>(definition.ParserRules.Count);
@@ -247,11 +248,13 @@ public static class RuleResolver
         };
     }
 
+    /// <summary>Returns a stable string fingerprint for an alternative including associativity, label, and structural content.</summary>
     private static string BuildAlternativeFingerprint(Alternative alternative)
     {
         return $"{alternative.Assoc}|{alternative.Label}|{BuildContentFingerprint(alternative.Content)}";
     }
 
+    /// <summary>Returns a stable recursive string fingerprint for a rule content node, used to detect structurally identical alternatives.</summary>
     private static string BuildContentFingerprint(RuleContent content)
     {
         return content switch

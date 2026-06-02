@@ -11,6 +11,7 @@ namespace Utils.Parser.Metadata;
 /// </summary>
 public static class ParserFeatureCapabilities
 {
+    /// <summary>Immutable lookup from feature enum value to capability descriptor, used by <see cref="Get"/> and <see cref="All"/>.</summary>
     private static readonly IReadOnlyDictionary<ParserFeature, ParserFeatureCapability> CapabilityByFeature =
         new ReadOnlyDictionary<ParserFeature, ParserFeatureCapability>(
             BuildCapabilities().ToDictionary(static capability => capability.Feature));

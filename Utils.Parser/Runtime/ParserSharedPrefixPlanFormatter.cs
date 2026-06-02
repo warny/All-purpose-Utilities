@@ -5,6 +5,7 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ParserSharedPrefixPlanFormatter
 {
+    /// <summary>Analyzer used to compute eligibility and blockers for each formatted plan.</summary>
     private readonly ParserSharedPrefixExecutionEligibilityAnalyzer eligibilityAnalyzer = new();
 
     /// <summary>

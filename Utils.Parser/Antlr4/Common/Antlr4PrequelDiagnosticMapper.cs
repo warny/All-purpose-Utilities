@@ -31,6 +31,7 @@ internal static class Antlr4PrequelDiagnosticMapper
         return result;
     }
 
+    /// <summary>Maps one <see cref="Antlr4PrequelDiagnostic"/> to the corresponding <see cref="ParserDiagnostic"/>.</summary>
     private static ParserDiagnostic MapSingle(Antlr4PrequelDiagnostic diagnostic)
     {
         return diagnostic.Code switch

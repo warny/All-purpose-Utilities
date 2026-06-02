@@ -54,6 +54,7 @@ public static class RuntimeTraceAnalyzer
             ComputeEventDelta(firstSummary.EventDistribution, secondSummary.EventDistribution));
     }
 
+    /// <summary>Returns <see langword="true"/> when two summaries have identical total counts and all distributions match.</summary>
     private static bool AreSummariesEquivalent(RuntimeTraceSummary first, RuntimeTraceSummary second)
     {
         return first.TotalObservations == second.TotalObservations
@@ -63,6 +64,7 @@ public static class RuntimeTraceAnalyzer
             && AreDictionariesEquivalent(first.AlternativeDistribution, second.AlternativeDistribution);
     }
 
+    /// <summary>Returns <see langword="true"/> when two count dictionaries have the same keys and identical values for every key.</summary>
     private static bool AreDictionariesEquivalent<TKey>(IReadOnlyDictionary<TKey, int> first, IReadOnlyDictionary<TKey, int> second)
         where TKey : notnull
     {
@@ -82,6 +84,7 @@ public static class RuntimeTraceAnalyzer
         return true;
     }
 
+    /// <summary>Groups observations by <paramref name="selector"/> and returns a dictionary of occurrence counts per key.</summary>
     private static IReadOnlyDictionary<T, int> CountBy<T>(
         IEnumerable<AlternativeRuntimeObservation> observations,
         Func<AlternativeRuntimeObservation, T> selector)
@@ -105,6 +108,7 @@ public static class RuntimeTraceAnalyzer
         return new ReadOnlyDictionary<T, int>(counts);
     }
 
+    /// <summary>Returns a per-kind signed delta showing how event counts differ between <paramref name="first"/> and <paramref name="second"/>.</summary>
     private static IReadOnlyDictionary<ParserRuntimeObservationKind, int> ComputeEventDelta(
         IReadOnlyDictionary<ParserRuntimeObservationKind, int> first,
         IReadOnlyDictionary<ParserRuntimeObservationKind, int> second)

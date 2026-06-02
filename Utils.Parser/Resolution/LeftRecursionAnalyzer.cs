@@ -81,6 +81,7 @@ internal static class LeftRecursionAnalyzer
         return map;
     }
 
+    /// <summary>Builds a first-reference graph and checks every non-directly-recursive rule for an indirect cycle back to itself.</summary>
     private static void DetectIndirectLeftRecursion(
         ParserDefinition definition,
         IReadOnlyDictionary<string, LeftRecursiveRuleInfo> directRules,
@@ -139,6 +140,7 @@ internal static class LeftRecursionAnalyzer
         }
     }
 
+    /// <summary>Performs a depth-first search in <paramref name="graph"/> and returns <see langword="true"/> when a path from <paramref name="start"/> to <paramref name="goal"/> exists.</summary>
     private static bool HasPath(
         IReadOnlyDictionary<string, HashSet<string>> graph,
         string start,
@@ -175,6 +177,7 @@ internal static class LeftRecursionAnalyzer
         return false;
     }
 
+    /// <summary>Returns the leading <see cref="RuleRef"/> from a content node when it directly or via sequence starts with one; otherwise <see langword="null"/>.</summary>
     private static RuleRef? GetLeadingRuleRef(RuleContent content)
     {
         return content switch

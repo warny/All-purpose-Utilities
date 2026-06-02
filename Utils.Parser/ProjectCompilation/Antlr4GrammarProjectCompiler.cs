@@ -307,9 +307,13 @@ public static class Antlr4GrammarProjectCompiler
     /// </summary>
     private sealed class CompilationState
     {
+        /// <summary>Source resolver used to locate grammar files by name.</summary>
         private readonly IGrammarSourceResolver _resolver;
+        /// <summary>Optional diagnostics bag populated during compilation.</summary>
         private readonly DiagnosticBag? _diagnostics;
+        /// <summary>Loaded grammar definitions keyed by grammar name, populated as dependencies are visited.</summary>
         private readonly Dictionary<string, LoadedGrammarDefinition> _definitionsByName = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>Recursion guard stack of grammar names currently being visited, used to detect import cycles.</summary>
         private readonly List<string> _stack = [];
 
         /// <summary>
