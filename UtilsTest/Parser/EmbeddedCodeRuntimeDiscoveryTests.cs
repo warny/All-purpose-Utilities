@@ -196,6 +196,47 @@ public class EmbeddedCodeRuntimeDiscoveryTests
             unsupported.Select(static entry => (object)entry.UnsupportedReason).ToArray());
     }
 
+
+    /// <summary>
+    /// Verifies that skipped embedded-code entries are non-executable and never expose runtime dispatch keys.
+    /// </summary>
+    [TestMethod]
+    public void Discover_WhenUnsupportedConstructsExist_MarksEntriesAsNonExecutableWithoutRuntimeKeys()
+    {
+        var init = new EmbeddedAction("init", ActionContext.Rule, ActionPosition.Before, []);
+        var after = new EmbeddedAction("after", ActionContext.Rule, ActionPosition.After, []);
+        var nonInline = new EmbeddedAction("before", ActionContext.Alternative, ActionPosition.Before, []);
+        var parserRule = CreateParserRule("start", new Sequence([nonInline]), init, after);
+        var lexerAction = new EmbeddedAction("lexer", ActionContext.Alternative, ActionPosition.Inline, []);
+        var lexerPredicate = new ValidatingPredicate("lexerPredicate");
+        var lexerRule = CreateLexerRule("A", new Sequence([lexerAction, lexerPredicate]));
+        var grammarAction = new GrammarAction("members", "int value;");
+
+        var unsupported = EmbeddedCodeRuntimeDiscovery.Discover(CreateDefinition(parserRule, [grammarAction], [lexerRule])).UnsupportedEntries;
+
+        Assert.AreEqual(6, unsupported.Count);
+        foreach (var entry in unsupported)
+        {
+            Assert.IsFalse(entry.IsRuntimeExecutable);
+            Assert.IsNull(entry.RuntimeKey);
+            Assert.AreNotEqual(EmbeddedCodeUnsupportedReason.None, entry.UnsupportedReason);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that parser actions inside negation probes use shared runtime probe indexes.
+    /// </summary>
+    [TestMethod]
+    public void Discover_WhenActionIsInsideNegation_UsesRuntimeProbeIndex()
+    {
+        var action = new EmbeddedAction("insideNegationAction", ActionContext.Alternative, ActionPosition.Inline, []);
+        var rule = CreateParserRule("start", new Sequence([new LiteralMatch("a"), new Negation(action)]));
+
+        var entry = DiscoverSingle(CreateDefinition(rule));
+
+        AssertExecutable(entry, EmbeddedCodeKind.ParserInlineAction, "start", "insideNegationAction", 0, 0);
+    }
+
     /// <summary>
     /// Returns the single discovered executable entry for a test definition.
     /// </summary>

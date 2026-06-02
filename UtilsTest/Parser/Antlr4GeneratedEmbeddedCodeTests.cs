@@ -524,6 +524,125 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.ToString().Contains("not", StringComparison.Ordinal)));
     }
 
+
+    /// <summary>
+    /// Ensures invalid inline action C# remains a Roslyn compilation error in the source-generator path.
+    /// </summary>
+    [TestMethod]
+    public void CompileGeneratedSource_InvalidActionCode_ReportsRoslynError()
+    {
+        const string grammar = """
+            grammar P;
+            start : { not valid ; } A ;
+            A : 'a' ;
+            """;
+
+        var result = CompileGeneratedSourceExpectingFailure(Emit(grammar));
+
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.ToString().Contains("not", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// Ensures generated hook names remain aligned with shared runtime discovery metadata for representative parser shapes.
+    /// </summary>
+    [TestMethod]
+    public void Emit_GeneratedHooks_MatchSharedRuntimeDiscoveryIndexes_ForParserShapes()
+    {
+        var singlePredicate = new ValidatingPredicate("true");
+        var singleAction = new EmbeddedAction("OnAction(context);", ActionContext.Alternative, ActionPosition.Inline, []);
+        var sequenceAction = new EmbeddedAction("OnAction(context);", ActionContext.Alternative, ActionPosition.Inline, []);
+        var quantifierPredicate = new ValidatingPredicate("OnPredicate(context)");
+        var negationPredicate = new ValidatingPredicate("OnPredicate(context)");
+        var duplicateFirst = new EmbeddedAction("OnAction(context);", ActionContext.Alternative, ActionPosition.Inline, []);
+        var duplicateSecond = new EmbeddedAction("OnAction(context);", ActionContext.Alternative, ActionPosition.Inline, []);
+        var leftRecursiveBasePredicate = new ValidatingPredicate("false");
+        var leftRecursiveTailAction = new EmbeddedAction("OnAction(context);", ActionContext.Alternative, ActionPosition.Inline, []);
+
+        var cases = new[]
+        {
+            (
+                Grammar: """
+                    grammar P;
+                    start : { true }? ;
+                    A : 'a' ;
+                    """,
+                Definition: CreateGeneratedParityDefinition(new Rule("start", 0, false, new Alternation([new Alternative(0, Associativity.Left, singlePredicate)]), Kind: RuleKind.Parser))),
+            (
+                Grammar: """
+                    grammar P;
+                    start : { OnAction(context); } ;
+                    A : 'a' ;
+                    """,
+                Definition: CreateGeneratedParityDefinition(new Rule("start", 0, false, new Alternation([new Alternative(0, Associativity.Left, singleAction)]), Kind: RuleKind.Parser))),
+            (
+                Grammar: """
+                    grammar P;
+                    start : A { OnAction(context); } B ;
+                    A : 'a' ;
+                    B : 'b' ;
+                    """,
+                Definition: CreateGeneratedParityDefinition(new Rule("start", 0, false, new Alternation([new Alternative(0, Associativity.Left, new Sequence([new RuleRef("A"), sequenceAction, new RuleRef("B")]))]), Kind: RuleKind.Parser))),
+            (
+                Grammar: """
+                    grammar P;
+                    start : A ({ OnPredicate(context) }? B)* ;
+                    A : 'a' ;
+                    B : 'b' ;
+                    """,
+                Definition: CreateGeneratedParityDefinition(new Rule("start", 0, false, new Alternation([new Alternative(0, Associativity.Left, new Sequence([new RuleRef("A"), new Quantifier(new Sequence([quantifierPredicate, new RuleRef("B")]), 0, null)]))]), Kind: RuleKind.Parser))),
+            (
+                Grammar: """
+                    grammar P;
+                    start : ~({ OnPredicate(context) }? A) ;
+                    A : 'a' ;
+                    B : 'b' ;
+                    """,
+                Definition: CreateGeneratedParityDefinition(new Rule("start", 0, false, new Alternation([new Alternative(0, Associativity.Left, new Negation(new Sequence([negationPredicate, new RuleRef("A")])))]), Kind: RuleKind.Parser))),
+            (
+                Grammar: """
+                    grammar P;
+                    start
+                        : { OnAction(context); } A
+                        | { OnAction(context); } B
+                        ;
+                    A : 'a' ;
+                    B : 'b' ;
+                    """,
+                Definition: CreateGeneratedParityDefinition(new Rule("start", 0, false, new Alternation([
+                    new Alternative(0, Associativity.Left, new Sequence([duplicateFirst, new RuleRef("A")])),
+                    new Alternative(1, Associativity.Left, new Sequence([duplicateSecond, new RuleRef("B")]))
+                ]), Kind: RuleKind.Parser))),
+            (
+                Grammar: """
+                    grammar P;
+                    expr
+                        : expr PLUS INT
+                        | { false }? INT
+                        ;
+                    INT : [0-9]+ ;
+                    PLUS : '+' ;
+                    """,
+                Definition: CreateGeneratedParityLeftRecursiveBaseDefinition(leftRecursiveBasePredicate)),
+            (
+                Grammar: """
+                    grammar P;
+                    expr
+                        : INT
+                        | expr { OnAction(context); } PLUS INT
+                        ;
+                    INT : [0-9]+ ;
+                    PLUS : '+' ;
+                    """,
+                Definition: CreateGeneratedParityLeftRecursiveTailDefinition(leftRecursiveTailAction))
+        };
+
+        foreach (var testCase in cases)
+        {
+            AssertGeneratedHooksMatchDiscovery(testCase.Grammar, testCase.Definition);
+        }
+    }
+
     /// <summary>
     /// Ensures generated hook dispatch metadata remains aligned with shared ParserDefinition runtime discovery metadata.
     /// </summary>
@@ -557,6 +676,88 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(0, entry.ElementIndex);
         StringAssert.Contains(generatedSource, expectedHookName);
     }
+
+
+    /// <summary>
+    /// Asserts generated hook names for all runtime-executable entries discovered from a hand-built parser definition.
+    /// </summary>
+    /// <param name="grammarText">ANTLR grammar text emitted by the production generator.</param>
+    /// <param name="definition">Equivalent parser definition inspected by shared runtime discovery.</param>
+    private static void AssertGeneratedHooksMatchDiscovery(string grammarText, ParserDefinition definition)
+    {
+        string generatedSource = Emit(grammarText);
+        var entries = EmbeddedCodeRuntimeDiscovery.Discover(definition).ExecutableEntries;
+        var ordinalsByKind = new Dictionary<EmbeddedCodeKind, int>();
+
+        foreach (var entry in entries)
+        {
+            int ordinal = ordinalsByKind.TryGetValue(entry.Kind, out int current) ? current : 0;
+            ordinalsByKind[entry.Kind] = ordinal + 1;
+            string prefix = entry.Kind == EmbeddedCodeKind.SemanticPredicate ? "__Predicate" : "__Action";
+            string elementIndex = entry.ElementIndex?.ToString() ?? "m1";
+            string expectedHookName = $"{prefix}_{entry.RuleName}_{entry.AlternativeIndex}_{elementIndex}_{ordinal}";
+
+            StringAssert.Contains(generatedSource, expectedHookName);
+        }
+    }
+
+    /// <summary>
+    /// Creates a parser definition used by generated-hook parity tests.
+    /// </summary>
+    /// <param name="rootRule">Root parser rule.</param>
+    /// <returns>A parser definition containing the supplied root rule.</returns>
+    private static ParserDefinition CreateGeneratedParityDefinition(Rule rootRule) =>
+        new("P", GrammarType.Combined, null, [], [], [], [rootRule], rootRule);
+
+    /// <summary>
+    /// Creates a direct-left-recursive parser definition whose base alternative follows a recursive alternative.
+    /// </summary>
+    /// <param name="predicate">Predicate contained in the base alternative.</param>
+    /// <returns>A parser definition with left-recursive metadata.</returns>
+    private static ParserDefinition CreateGeneratedParityLeftRecursiveBaseDefinition(ValidatingPredicate predicate)
+    {
+        var recursiveAlternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("expr"), new RuleRef("PLUS"), new RuleRef("INT")]));
+        var baseAlternative = new Alternative(1, Associativity.Left, new Sequence([predicate, new RuleRef("INT")]));
+        var rule = new Rule("expr", 0, false, new Alternation([recursiveAlternative, baseAlternative]), Kind: RuleKind.Parser);
+        return CreateGeneratedParityLeftRecursiveDefinition(rule, [baseAlternative], [recursiveAlternative]);
+    }
+
+    /// <summary>
+    /// Creates a direct-left-recursive parser definition with an executable tail action.
+    /// </summary>
+    /// <param name="action">Action contained in the recursive tail.</param>
+    /// <returns>A parser definition with left-recursive metadata.</returns>
+    private static ParserDefinition CreateGeneratedParityLeftRecursiveTailDefinition(EmbeddedAction action)
+    {
+        var baseAlternative = new Alternative(0, Associativity.Left, new Sequence([new RuleRef("INT")]));
+        var recursiveAlternative = new Alternative(1, Associativity.Left, new Sequence([new RuleRef("expr"), action, new RuleRef("PLUS"), new RuleRef("INT")]));
+        var rule = new Rule("expr", 0, false, new Alternation([baseAlternative, recursiveAlternative]), Kind: RuleKind.Parser);
+        return CreateGeneratedParityLeftRecursiveDefinition(rule, [baseAlternative], [recursiveAlternative]);
+    }
+
+    /// <summary>
+    /// Creates a parser definition with direct-left-recursive metadata populated.
+    /// </summary>
+    /// <param name="rule">Left-recursive parser rule.</param>
+    /// <param name="baseAlternatives">Resolved base alternatives.</param>
+    /// <param name="recursiveAlternatives">Resolved recursive alternatives.</param>
+    /// <returns>A parser definition with left-recursive metadata.</returns>
+    private static ParserDefinition CreateGeneratedParityLeftRecursiveDefinition(
+        Rule rule,
+        IReadOnlyList<Alternative> baseAlternatives,
+        IReadOnlyList<Alternative> recursiveAlternatives) =>
+        new ParserDefinition("P", GrammarType.Combined, null, [], [], [], [rule], rule)
+        {
+            LeftRecursiveRules = new Dictionary<string, LeftRecursiveRuleInfo>
+            {
+                [rule.Name] = new()
+                {
+                    Rule = rule,
+                    BaseAlternatives = baseAlternatives,
+                    RecursiveAlternatives = recursiveAlternatives
+                }
+            }
+        };
 
     /// <summary>
     /// Emits generated C# for the supplied grammar using the production grammar emitter.
