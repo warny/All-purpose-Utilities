@@ -220,6 +220,6 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
             ? source.Kind.ToString()
             : $"{source.RuleName}:{source.Kind}";
 
-        return new object?[] { constructName, context.Target.ToString() };
+        return [constructName, context.Target.ToString()];
     }
 }

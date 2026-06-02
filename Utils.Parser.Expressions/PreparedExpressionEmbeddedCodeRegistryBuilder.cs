@@ -25,187 +25,89 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
 
         options ??= PreparedExpressionEmbeddedCodeRegistryBuilderOptions.Default;
 
-        var registry = new PreparedExpressionEmbeddedCodeRegistry();
-        var successfulSemanticPredicates = new List<PreparedExpressionEmbeddedCodeRegistryBuildEntry>();
-        var successfulParserActions = new List<PreparedExpressionEmbeddedCodeRegistryBuildEntry>();
-        var nonSuccessEntries = new List<PreparedExpressionEmbeddedCodeRegistryBuildEntry>();
-        var duplicateEntries = new List<PreparedExpressionEmbeddedCodeRegistryBuildEntry>();
-        var skippedEntries = new List<PreparedExpressionEmbeddedCodeRegistryBuildEntry>();
-        var allEntries = new List<PreparedExpressionEmbeddedCodeRegistryBuildEntry>();
+        var state = new BuildState(definition, preparer, options);
 
         foreach (var action in definition.Actions)
         {
-            AddSkippedEntry(
+            state.RecordSkippedEntry(
                 CreateSource(action.RawCode, EmbeddedCodeKind.GrammarAction, null, null, null),
                 null,
-                "Grammar-level actions are not prepared by the expression registry builder.",
-                skippedEntries,
-                allEntries);
+                "Grammar-level actions are not prepared by the expression registry builder.");
         }
 
         foreach (var rule in definition.ParserRules)
         {
-            ScanRule(
-                definition,
-                rule,
-                preparer,
-                options,
-                registry,
-                successfulSemanticPredicates,
-                successfulParserActions,
-                nonSuccessEntries,
-                duplicateEntries,
-                skippedEntries,
-                allEntries);
+            ScanRule(rule, state);
         }
 
-        return new PreparedExpressionEmbeddedCodeRegistryBuildResult(
-            registry,
-            successfulSemanticPredicates,
-            successfulParserActions,
-            nonSuccessEntries,
-            duplicateEntries,
-            skippedEntries,
-            allEntries);
+        return state.ToResult();
     }
 
     /// <summary>
     /// Scans one parser rule and records any supported or intentionally skipped embedded-code items.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Parser rule to scan.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanRule(
-        ParserDefinition definition,
-        Rule rule,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanRule(Rule rule, BuildState state)
     {
         if (rule.InitAction is not null)
         {
-            AddSkippedEntry(
+            state.RecordSkippedEntry(
                 CreateSource(rule.InitAction.RawCode, EmbeddedCodeKind.RuleInitAction, rule.Name, null, null),
                 rule.Name,
-                "Rule initialization actions are not prepared by the expression registry builder.",
-                skippedEntries,
-                allEntries);
+                "Rule initialization actions are not prepared by the expression registry builder.");
         }
 
-        if (definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+        if (state.Definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
         {
-            ScanLeftRecursiveRule(
-                definition,
-                leftRecursiveInfo,
-                preparer,
-                options,
-                registry,
-                successfulSemanticPredicates,
-                successfulParserActions,
-                nonSuccessEntries,
-                duplicateEntries,
-                skippedEntries,
-                allEntries);
+            ScanLeftRecursiveRule(leftRecursiveInfo, state);
         }
         else
         {
-            ScanContent(
-                definition,
-                rule,
-                rule.Content,
-                null,
-                null,
-                preparer,
-                options,
-                registry,
-                successfulSemanticPredicates,
-                successfulParserActions,
-                nonSuccessEntries,
-                duplicateEntries,
-                skippedEntries,
-                allEntries);
+            ScanContent(rule, rule.Content, null, null, state);
         }
 
         if (rule.AfterAction is not null)
         {
-            AddSkippedEntry(
+            state.RecordSkippedEntry(
                 CreateSource(rule.AfterAction.RawCode, EmbeddedCodeKind.RuleAfterAction, rule.Name, null, null),
                 rule.Name,
-                "Rule finalization actions are not prepared by the expression registry builder.",
-                skippedEntries,
-                allEntries);
+                "Rule finalization actions are not prepared by the expression registry builder.");
         }
     }
 
     /// <summary>
     /// Recursively scans rule content using the same local alternative and sequence indexes supplied by the parser runtime.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="content">Content node to scan.</param>
     /// <param name="alternativeIndex">Current local alternative index, or <c>null</c> when unavailable.</param>
     /// <param name="elementIndex">Current sequence element index, or <c>null</c> when unavailable.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanContent(
-        ParserDefinition definition,
-        Rule rule,
-        RuleContent content,
-        int? alternativeIndex,
-        int? elementIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanContent(Rule rule, RuleContent content, int? alternativeIndex, int? elementIndex, BuildState state)
     {
         switch (content)
         {
             case Alternation alternation:
-                ScanAlternation(definition, rule, alternation, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanAlternation(rule, alternation, state);
                 break;
             case Alternative alternative:
-                ScanContent(definition, rule, alternative.Content, alternativeIndex, elementIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanContent(rule, alternative.Content, alternativeIndex, elementIndex, state);
                 break;
             case Sequence sequence:
-                ScanSequence(definition, rule, sequence, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanSequence(rule, sequence, alternativeIndex, state);
                 break;
             case Quantifier quantifier:
-                ScanQuantifier(definition, rule, quantifier, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanQuantifier(rule, quantifier, alternativeIndex, state);
                 break;
             case Negation negation:
-                ScanNegation(definition, rule, negation, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanNegation(rule, negation, alternativeIndex, state);
                 break;
             case ValidatingPredicate predicate:
-                PrepareSemanticPredicate(definition, rule, predicate, alternativeIndex, elementIndex, preparer, options, registry, successfulSemanticPredicates, nonSuccessEntries, duplicateEntries, allEntries);
+                PrepareSemanticPredicate(rule, predicate, alternativeIndex, elementIndex, state);
                 break;
             case EmbeddedAction action:
-                PrepareOrSkipParserAction(definition, rule, action, alternativeIndex, elementIndex, preparer, options, registry, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                PrepareOrSkipParserAction(rule, action, alternativeIndex, elementIndex, state);
                 break;
         }
     }
@@ -213,70 +115,29 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
     /// <summary>
     /// Scans an alternation in runtime priority order so local indexes match scheduler contexts.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="alternation">Alternation to scan.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanAlternation(
-        ParserDefinition definition,
-        Rule rule,
-        Alternation alternation,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanAlternation(Rule rule, Alternation alternation, BuildState state)
     {
         var ordered = alternation.Alternatives.OrderBy(static alternative => alternative.Priority).ToList();
         for (var index = 0; index < ordered.Count; index++)
         {
-            ScanContent(definition, rule, ordered[index].Content, index, null, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+            ScanContent(rule, ordered[index].Content, index, null, state);
         }
     }
 
     /// <summary>
     /// Scans a direct-left-recursive rule using the runtime seed and recursive-tail views.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="info">Left-recursive rule split metadata.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanLeftRecursiveRule(
-        ParserDefinition definition,
-        LeftRecursiveRuleInfo info,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanLeftRecursiveRule(LeftRecursiveRuleInfo info, BuildState state)
     {
         var baseAlternatives = info.BaseAlternatives.OrderBy(static alternative => alternative.Priority).ToList();
         for (var index = 0; index < baseAlternatives.Count; index++)
         {
-            ScanContent(definition, info.Rule, baseAlternatives[index].Content, index, null, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+            ScanContent(info.Rule, baseAlternatives[index].Content, index, null, state);
         }
 
         var recursiveAlternatives = info.RecursiveAlternatives.OrderBy(static alternative => alternative.Priority).ToList();
@@ -285,7 +146,7 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
             var tailContent = RemoveLeadingSelfReference(info.Rule.Name, recursiveAlternatives[index].Content);
             if (tailContent is not null)
             {
-                ScanLeftRecursiveTail(definition, info.Rule, tailContent, index, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanLeftRecursiveTail(info.Rule, tailContent, index, state);
             }
         }
     }
@@ -293,33 +154,11 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
     /// <summary>
     /// Scans recursive-tail content after applying the same leading self-reference removal used by the runtime.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning left-recursive rule.</param>
     /// <param name="tailContent">Effective tail content parsed by the runtime.</param>
     /// <param name="alternativeIndex">Runtime recursive alternative index.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanLeftRecursiveTail(
-        ParserDefinition definition,
-        Rule rule,
-        RuleContent tailContent,
-        int alternativeIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanLeftRecursiveTail(Rule rule, RuleContent tailContent, int alternativeIndex, BuildState state)
     {
         if (tailContent is Sequence sequence)
         {
@@ -331,209 +170,101 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
                     continue;
                 }
 
-                ScanContent(definition, rule, item, alternativeIndex, index, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+                ScanContent(rule, item, alternativeIndex, index, state);
             }
 
             return;
         }
 
-        ScanContent(definition, rule, tailContent, alternativeIndex, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+        ScanContent(rule, tailContent, alternativeIndex, alternativeIndex, state);
     }
 
     /// <summary>
     /// Scans sequence items with stable zero-based element indexes matching runtime contexts.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="sequence">Sequence to scan.</param>
     /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanSequence(
-        ParserDefinition definition,
-        Rule rule,
-        Sequence sequence,
-        int? alternativeIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanSequence(Rule rule, Sequence sequence, int? alternativeIndex, BuildState state)
     {
         for (var index = 0; index < sequence.Items.Count; index++)
         {
-            ScanContent(definition, rule, sequence.Items[index], alternativeIndex, index, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+            ScanContent(rule, sequence.Items[index], alternativeIndex, index, state);
         }
     }
 
     /// <summary>
     /// Scans quantified content with the runtime element-index strategy for quantifier inner parsing.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="quantifier">Quantifier model node.</param>
     /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanQuantifier(
-        ParserDefinition definition,
-        Rule rule,
-        Quantifier quantifier,
-        int? alternativeIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanQuantifier(Rule rule, Quantifier quantifier, int? alternativeIndex, BuildState state)
     {
-        ScanContent(definition, rule, quantifier.Inner, alternativeIndex, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+        ScanContent(rule, quantifier.Inner, alternativeIndex, alternativeIndex, state);
     }
 
     /// <summary>
     /// Scans negated content with the runtime element-index strategy for negation inner probing.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="negation">Negation model node.</param>
     /// <param name="alternativeIndex">Current local alternative index.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulSemanticPredicates">Successful semantic predicate entries.</param>
-    /// <param name="successfulParserActions">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void ScanNegation(
-        ParserDefinition definition,
-        Rule rule,
-        Negation negation,
-        int? alternativeIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulSemanticPredicates,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulParserActions,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void ScanNegation(Rule rule, Negation negation, int? alternativeIndex, BuildState state)
     {
-        ScanContent(definition, rule, negation.Inner, alternativeIndex, alternativeIndex, preparer, options, registry, successfulSemanticPredicates, successfulParserActions, nonSuccessEntries, duplicateEntries, skippedEntries, allEntries);
+        ScanContent(rule, negation.Inner, alternativeIndex, alternativeIndex, state);
     }
 
     /// <summary>
     /// Prepares and registers one validating semantic predicate.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="predicate">Predicate model node.</param>
     /// <param name="alternativeIndex">Current local alternative index.</param>
     /// <param name="elementIndex">Current sequence element index.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulEntries">Successful semantic predicate entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void PrepareSemanticPredicate(
-        ParserDefinition definition,
-        Rule rule,
-        ValidatingPredicate predicate,
-        int? alternativeIndex,
-        int? elementIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void PrepareSemanticPredicate(Rule rule, ValidatingPredicate predicate, int? alternativeIndex, int? elementIndex, BuildState state)
     {
         var source = CreateSource(predicate.Code, EmbeddedCodeKind.SemanticPredicate, rule.Name, alternativeIndex, elementIndex);
-        var context = CreatePreparationContext(definition, rule, options);
-        var result = preparer.PrepareSemanticPredicate(source, context);
+        var context = CreatePreparationContext(state.Definition, rule, state.Options);
+        var result = state.Preparer.PrepareSemanticPredicate(source, context);
         var key = result.Artifact is null ? null : PreparedExpressionEmbeddedCodeKey.FromSource(result.Artifact.Source, result.Artifact.PreparationContext.RuleName);
-        var wasAdded = result.Artifact is not null && registry.TryAddSemanticPredicate(result.Artifact);
+        var wasAdded = result.Artifact is not null && state.Registry.TryAddSemanticPredicate(result.Artifact);
         var entry = CreateEntry(source, key, rule.Name, result.Status, result.DiagnosticDescriptor, result.Exception, result.DiagnosticArguments, wasAdded, result.Artifact is not null && !wasAdded);
 
-        AddPreparationEntry(entry, result.Artifact is not null && wasAdded, successfulEntries, nonSuccessEntries, duplicateEntries, allEntries);
+        state.RecordSemanticPredicateEntry(entry, wasAdded);
     }
 
     /// <summary>
     /// Prepares and registers one inline parser action, or records unsupported action positions as skipped.
     /// </summary>
-    /// <param name="definition">Owning parser definition.</param>
     /// <param name="rule">Owning parser rule.</param>
     /// <param name="action">Action model node.</param>
     /// <param name="alternativeIndex">Current local alternative index.</param>
     /// <param name="elementIndex">Current sequence element index.</param>
-    /// <param name="preparer">Preparer used for supported embedded-code items.</param>
-    /// <param name="options">Builder options.</param>
-    /// <param name="registry">Registry being populated.</param>
-    /// <param name="successfulEntries">Successful parser action entries.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation entries.</param>
-    /// <param name="duplicateEntries">Duplicate key entries.</param>
-    /// <param name="skippedEntries">Skipped entries.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void PrepareOrSkipParserAction(
-        ParserDefinition definition,
-        Rule rule,
-        EmbeddedAction action,
-        int? alternativeIndex,
-        int? elementIndex,
-        IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
-        PreparedExpressionEmbeddedCodeRegistryBuilderOptions options,
-        PreparedExpressionEmbeddedCodeRegistry registry,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    /// <param name="state">Mutable build state accumulating registry entries and artifacts.</param>
+    private static void PrepareOrSkipParserAction(Rule rule, EmbeddedAction action, int? alternativeIndex, int? elementIndex, BuildState state)
     {
         var source = CreateSource(action.RawCode, EmbeddedCodeKind.ParserInlineAction, rule.Name, alternativeIndex, elementIndex);
         if (action.Context != ActionContext.Alternative || action.Position != ActionPosition.Inline)
         {
-            AddSkippedEntry(
+            state.RecordSkippedEntry(
                 source,
                 rule.Name,
-                "Only inline parser actions declared inside alternatives are prepared by the expression registry builder.",
-                skippedEntries,
-                allEntries);
+                "Only inline parser actions declared inside alternatives are prepared by the expression registry builder.");
             return;
         }
 
-        var context = CreatePreparationContext(definition, rule, options);
-        var result = preparer.PrepareParserAction(source, context);
+        var context = CreatePreparationContext(state.Definition, rule, state.Options);
+        var result = state.Preparer.PrepareParserAction(source, context);
         var key = result.Artifact is null ? null : PreparedExpressionEmbeddedCodeKey.FromSource(result.Artifact.Source, result.Artifact.PreparationContext.RuleName);
-        var wasAdded = result.Artifact is not null && registry.TryAddParserAction(result.Artifact);
+        var wasAdded = result.Artifact is not null && state.Registry.TryAddParserAction(result.Artifact);
         var entry = CreateEntry(source, key, rule.Name, result.Status, result.DiagnosticDescriptor, result.Exception, result.DiagnosticArguments, wasAdded, result.Artifact is not null && !wasAdded);
 
-        AddPreparationEntry(entry, result.Artifact is not null && wasAdded, successfulEntries, nonSuccessEntries, duplicateEntries, allEntries);
+        state.RecordParserActionEntry(entry, wasAdded);
     }
 
     /// <summary>
@@ -619,64 +350,126 @@ public static class PreparedExpressionEmbeddedCodeRegistryBuilder
         new(source, key, ruleName, status, diagnosticDescriptor, exception, diagnosticArguments, wasAdded, isDuplicate);
 
     /// <summary>
-    /// Adds a preparation entry to the appropriate result buckets.
+    /// Holds the mutable traversal state shared across all scan and prepare methods during a single <see cref="Build"/> call.
     /// </summary>
-    /// <param name="entry">Entry to add.</param>
-    /// <param name="isRegisteredSuccess">Whether the entry is a registered success.</param>
-    /// <param name="successfulEntries">Success bucket for this embedded-code kind.</param>
-    /// <param name="nonSuccessEntries">Non-success preparation bucket.</param>
-    /// <param name="duplicateEntries">Duplicate key bucket.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void AddPreparationEntry(
-        PreparedExpressionEmbeddedCodeRegistryBuildEntry entry,
-        bool isRegisteredSuccess,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> nonSuccessEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> duplicateEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
+    private sealed class BuildState
     {
-        allEntries.Add(entry);
-
-        if (entry.IsDuplicate)
+        /// <summary>
+        /// Initializes a new build state for the given parser definition, preparer, and options.
+        /// </summary>
+        /// <param name="definition">Parser definition being scanned.</param>
+        /// <param name="preparer">Embedded-code preparer configured for this build.</param>
+        /// <param name="options">Builder options configured for this build.</param>
+        public BuildState(
+            ParserDefinition definition,
+            IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> preparer,
+            PreparedExpressionEmbeddedCodeRegistryBuilderOptions options)
         {
-            duplicateEntries.Add(entry);
-            return;
+            Definition = definition;
+            Preparer = preparer;
+            Options = options;
         }
 
-        if (isRegisteredSuccess)
+        /// <summary>Gets the parser definition being scanned.</summary>
+        public ParserDefinition Definition { get; }
+
+        /// <summary>Gets the embedded-code preparer configured for this build.</summary>
+        public IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction> Preparer { get; }
+
+        /// <summary>Gets the builder options configured for this build.</summary>
+        public PreparedExpressionEmbeddedCodeRegistryBuilderOptions Options { get; }
+
+        /// <summary>Gets the registry being populated during this build.</summary>
+        public PreparedExpressionEmbeddedCodeRegistry Registry { get; } = new();
+
+        /// <summary>Gets the successful semantic predicate entries accumulated so far.</summary>
+        public List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> SuccessfulSemanticPredicates { get; } = [];
+
+        /// <summary>Gets the successful parser action entries accumulated so far.</summary>
+        public List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> SuccessfulParserActions { get; } = [];
+
+        /// <summary>Gets the non-success preparation entries accumulated so far.</summary>
+        public List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> NonSuccessEntries { get; } = [];
+
+        /// <summary>Gets the duplicate-key entries accumulated so far.</summary>
+        public List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> DuplicateEntries { get; } = [];
+
+        /// <summary>Gets the intentionally skipped entries accumulated so far.</summary>
+        public List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> SkippedEntries { get; } = [];
+
+        /// <summary>Gets all entries in traversal order accumulated so far.</summary>
+        public List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> AllEntries { get; } = [];
+
+        /// <summary>
+        /// Packages accumulated state into the final build result.
+        /// </summary>
+        /// <returns>The completed build result.</returns>
+        public PreparedExpressionEmbeddedCodeRegistryBuildResult ToResult() =>
+            new(Registry, SuccessfulSemanticPredicates, SuccessfulParserActions, NonSuccessEntries, DuplicateEntries, SkippedEntries, AllEntries);
+
+        /// <summary>
+        /// Records a semantic predicate preparation entry in the appropriate buckets.
+        /// </summary>
+        /// <param name="entry">Entry to record.</param>
+        /// <param name="wasAdded">Whether the artifact was successfully added to the registry.</param>
+        public void RecordSemanticPredicateEntry(PreparedExpressionEmbeddedCodeRegistryBuildEntry entry, bool wasAdded) =>
+            RecordPreparationEntry(entry, wasAdded, SuccessfulSemanticPredicates);
+
+        /// <summary>
+        /// Records a parser action preparation entry in the appropriate buckets.
+        /// </summary>
+        /// <param name="entry">Entry to record.</param>
+        /// <param name="wasAdded">Whether the artifact was successfully added to the registry.</param>
+        public void RecordParserActionEntry(PreparedExpressionEmbeddedCodeRegistryBuildEntry entry, bool wasAdded) =>
+            RecordPreparationEntry(entry, wasAdded, SuccessfulParserActions);
+
+        /// <summary>
+        /// Records an embedded-code item that is intentionally not prepared by this builder.
+        /// </summary>
+        /// <param name="source">Embedded-code source metadata.</param>
+        /// <param name="ruleName">Owning rule name, or <c>null</c> for grammar-level items.</param>
+        /// <param name="reason">Reason why the item was skipped.</param>
+        public void RecordSkippedEntry(EmbeddedCodeSource source, string? ruleName, string reason)
         {
-            successfulEntries.Add(entry);
-            return;
+            var entry = new PreparedExpressionEmbeddedCodeRegistryBuildEntry(
+                source,
+                null,
+                ruleName,
+                EmbeddedCodePreparationStatus.Unsupported,
+                wasAddedToRegistry: false,
+                isSkipped: true,
+                skipReason: reason);
+
+            SkippedEntries.Add(entry);
+            AllEntries.Add(entry);
         }
 
-        nonSuccessEntries.Add(entry);
-    }
+        /// <summary>
+        /// Routes a preparation entry to the correct success, non-success, or duplicate bucket.
+        /// </summary>
+        /// <param name="entry">Entry to route.</param>
+        /// <param name="isRegisteredSuccess">Whether the artifact was successfully added to the registry.</param>
+        /// <param name="successfulEntries">Success bucket for the artifact kind being recorded.</param>
+        private void RecordPreparationEntry(
+            PreparedExpressionEmbeddedCodeRegistryBuildEntry entry,
+            bool isRegisteredSuccess,
+            List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> successfulEntries)
+        {
+            AllEntries.Add(entry);
 
-    /// <summary>
-    /// Records an embedded-code item that is intentionally not prepared by this builder.
-    /// </summary>
-    /// <param name="source">Embedded-code source metadata.</param>
-    /// <param name="ruleName">Owning rule name, or <c>null</c> for grammar-level items.</param>
-    /// <param name="reason">Reason why the item was skipped.</param>
-    /// <param name="skippedEntries">Skipped entries bucket.</param>
-    /// <param name="allEntries">All entries in traversal order.</param>
-    private static void AddSkippedEntry(
-        EmbeddedCodeSource source,
-        string? ruleName,
-        string reason,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> skippedEntries,
-        List<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
-    {
-        var entry = new PreparedExpressionEmbeddedCodeRegistryBuildEntry(
-            source,
-            null,
-            ruleName,
-            EmbeddedCodePreparationStatus.Unsupported,
-            wasAddedToRegistry: false,
-            isSkipped: true,
-            skipReason: reason);
+            if (entry.IsDuplicate)
+            {
+                DuplicateEntries.Add(entry);
+                return;
+            }
 
-        skippedEntries.Add(entry);
-        allEntries.Add(entry);
+            if (isRegisteredSuccess)
+            {
+                successfulEntries.Add(entry);
+                return;
+            }
+
+            NonSuccessEntries.Add(entry);
+        }
     }
 }

@@ -32,7 +32,7 @@ public sealed record EmbeddedCodePreparationResult<TArtifact>
         Artifact = artifact;
         DiagnosticDescriptor = diagnosticDescriptor;
         Exception = exception;
-        DiagnosticArguments = diagnosticArguments?.ToArray() ?? Array.Empty<object?>();
+        DiagnosticArguments = diagnosticArguments is object?[] arr ? arr : diagnosticArguments?.ToArray() ?? [];
     }
 
     /// <summary>
@@ -107,5 +107,5 @@ public sealed record EmbeddedCodePreparationResult<TArtifact>
     /// <param name="diagnosticArguments">Optional diagnostic arguments to materialize.</param>
     /// <returns>A read-only list of diagnostic arguments.</returns>
     private static IReadOnlyList<object?> ToDiagnosticArgumentList(IEnumerable<object?>? diagnosticArguments) =>
-        diagnosticArguments?.ToArray() ?? Array.Empty<object?>();
+        diagnosticArguments?.ToArray() ?? [];
 }

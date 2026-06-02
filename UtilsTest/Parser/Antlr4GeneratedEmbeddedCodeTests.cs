@@ -629,7 +629,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
         var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)!;
-        return (ParseNode)method.Invoke(null, new object[] { input })!;
+        return (ParseNode)method.Invoke(null, [input])!;
     }
 
     /// <summary>
