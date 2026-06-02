@@ -3,7 +3,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
+using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Generators.Internal;
+using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 
 namespace UtilsTest.Parser;
@@ -520,6 +522,40 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
         Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.ToString().Contains("not", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// Ensures generated hook dispatch metadata remains aligned with shared ParserDefinition runtime discovery metadata.
+    /// </summary>
+    [TestMethod]
+    public void Emit_InlineActionHook_UsesSharedRuntimeDiscoveryIndexes()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ({ OnAction(context); } B)* ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var action = new EmbeddedAction("OnAction(context);", ActionContext.Alternative, ActionPosition.Inline, []);
+        var parserRule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([new Alternative(0, Associativity.Left, new Sequence([
+                new RuleRef("A"),
+                new Quantifier(new Sequence([action, new RuleRef("B")]), 0, null)
+            ]))]),
+            Kind: RuleKind.Parser);
+        var definition = new ParserDefinition("P", GrammarType.Combined, null, [], [], [], [parserRule], parserRule);
+
+        var entry = EmbeddedCodeRuntimeDiscovery.Discover(definition).ExecutableEntries.Single();
+        string generatedSource = Emit(grammar);
+        string expectedHookName = $"__Action_{entry.RuleName}_{entry.AlternativeIndex}_{entry.ElementIndex}_0";
+
+        Assert.AreEqual(EmbeddedCodeKind.ParserInlineAction, entry.Kind);
+        Assert.AreEqual(0, entry.AlternativeIndex);
+        Assert.AreEqual(0, entry.ElementIndex);
+        StringAssert.Contains(generatedSource, expectedHookName);
     }
 
     /// <summary>

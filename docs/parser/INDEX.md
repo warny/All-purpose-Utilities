@@ -25,3 +25,8 @@ This index consolidates the parser documentation set and gives a short summary o
 ## Maintenance rule for contributors and agents
 
 When adding, removing, or materially changing any file in `docs/parser/`, update this index in the same change so summaries stay accurate.
+
+## Recent metadata note
+
+`EmbeddedCodeExecutionModel.md` and `ANTLRCompatibility.md` document the shared embedded-code runtime indexing metadata and explicit unsupported reasons used to keep runtime-inline preparation and source-generated hooks aligned.
+

@@ -185,3 +185,10 @@ A : 'a' ;
 ```
 
 The generated class exposes `CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)` and `ParseWithEmbeddedCode(string input)` for explicit opt-in execution. The existing generated `Parse(string input)` helper continues to use the default conservative runtime policy and does not execute generated embedded-code hooks. Action code can call members supplied by another declaration of the generated partial class. Invalid embedded C# is reported as a normal C# compilation error. Hook dispatch keys are aligned with the runtime `ParserEngine` indexes for single-item alternatives, sequences, quantified content, negation predicate probes, equal source text in multiple alternatives, and direct-left-recursive tail views because generated helpers resolve the generated definition before parsing with the generated policy. Lexer actions, lexer predicates, grammar actions, `@members`, `@init`, and `@after` are not executed by this support.
+
+## Shared runtime metadata alignment
+
+Generated C# hooks for parser semantic predicates and inline parser actions continue to be collected from the generator's `G4Grammar` AST because the analyzer package targets `netstandard2.0` and does not reference the `net8.0` runtime model assembly. The hook collector is intentionally kept aligned with `Utils.Parser.EmbeddedCode.EmbeddedCodeRuntimeDiscovery`: it uses the same runtime index rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, duplicate source text, and direct-left-recursive base/tail alternatives. Unit tests compare generated hook names against shared `ParserDefinition` discovery metadata for sensitive dispatch cases.
+
+Unsupported constructs are not promoted to executable generated hooks. Invalid C# inside a supported hook remains a Roslyn compilation error. This alignment does not add new supported C# constructs and does not change `ParserEngine` or the default `Parse(...)` behavior.
+
