@@ -309,7 +309,7 @@ Current responsibilities:
 
 Future responsibilities (source-generation path):
 
-- broader C# language-shape support and language compatibility diagnostics;
+- additional source-generator C# hook shapes beyond parser predicate expressions, parser predicate blocks with `return`, and inline parser action statement bodies;
 - clear distinction between preserved raw metadata and executable generated hooks;
 - lexer embedded-code hooks only after dedicated design work;
 - deterministic semantics for parser actions inside negation probes only after dedicated design work and tests.
@@ -394,9 +394,9 @@ This model explicitly excludes:
 - generated hooks are private C# methods compiled by Roslyn with the consuming project;
 - generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor` and are installed through `CreateRuntimePolicy(...)`;
 - generated `ParseWithEmbeddedCode(...)` opts into those hooks, while generated `Parse(...)` keeps default conservative runtime behavior;
-- supported predicate bodies are simple C# boolean expressions using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`;
-- supported action bodies are simple C# statements using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including calls to user members in another partial class declaration;
-- invalid embedded C# is intentionally reported by Roslyn as a compilation error;
+- supported predicate bodies include C# boolean expressions and block-bodied predicate statements with `return`, using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`;
+- supported action bodies include single-statement, multi-statement, and multi-line C# statement bodies using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including local variables and calls to user members in another partial class declaration;
+- invalid embedded C# is intentionally reported by Roslyn as a compilation error; predicate blocks without a valid `bool` return and actions with invalid C# are not converted into custom parser diagnostics;
 - future work may define language option handling and broader C# shape support.
 
 ### Future PR — Lexer actions/predicates

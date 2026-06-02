@@ -78,6 +78,115 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures expression-bodied predicate hooks can use multiple contextual symbols and parse successfully.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateExpressionBody_ParsesSuccessfully()
+    {
+        const string grammar = """
+            grammar P;
+            start : { inputPosition == 0 && ruleName == "start" }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures block-bodied predicate hooks keep local variables and return statements as C# statements.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateBlockWithReturn_ParsesSuccessfully()
+    {
+        const string grammar = """
+            grammar P;
+            start : {
+                var isStart = inputPosition == 0;
+                return isStart && ruleName == "start";
+            }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures one-line predicate statement blocks with conditional returns compile and parse through generated hooks.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateOneLineConditionalReturn_ParsesSuccessfully()
+    {
+        const string grammar = """
+            grammar P;
+            start : { if (inputPosition == 0) return true; return false; }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures predicate expressions containing return as part of an identifier stay expression-bodied.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateReturnIdentifier_DoesNotUseBlockBody()
+    {
+        const string grammar = """
+            grammar P;
+            start : { returnValue == true }? A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static bool returnValue = true;
+            }
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source, userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures block-bodied predicate hooks can reject parsing through a generated runtime policy.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateBlockWithFalseReturn_RejectsParse()
+    {
+        const string grammar = """
+            grammar P;
+            start : {
+                var blocked = true;
+                return !blocked;
+            }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
     /// Ensures inline parser actions can call user code supplied in another partial class.
     /// </summary>
     [TestMethod]
@@ -148,6 +257,93 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
         Assert.AreEqual(1, ReadActionCount(assembly));
+    }
+
+    /// <summary>
+    /// Ensures multi-statement inline parser action hooks execute each generated C# statement.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_InlineActionMultiStatement_ExecutesAllStatements()
+    {
+        const string grammar = """
+            grammar P;
+            start : {
+                OnBefore(context);
+                OnAfter(context);
+            } A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static int BeforeCount;
+                public static int AfterCount;
+
+                private static void OnBefore(ParserActionExecutionContext context)
+                {
+                    BeforeCount++;
+                }
+
+                private static void OnAfter(ParserActionExecutionContext context)
+                {
+                    AfterCount++;
+                }
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var defaultResult = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(defaultResult, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "BeforeCount"));
+        Assert.AreEqual(0, ReadIntField(assembly, "AfterCount"));
+
+        var embeddedResult = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(embeddedResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "BeforeCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "AfterCount"));
+    }
+
+    /// <summary>
+    /// Ensures multi-line inline parser action hooks can declare local variables and pass them to user code.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_InlineActionWithLocalVariable_ExecutesWithGeneratedLocals()
+    {
+        const string grammar = """
+            grammar P;
+            start : {
+                var name = ruleName;
+                OnAction(context, name);
+            } A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            using Utils.Parser.Runtime;
+
+            namespace Generated.Tests;
+
+            internal static partial class P
+            {
+                public static string? ActionName;
+
+                private static void OnAction(ParserActionExecutionContext context, string name)
+                {
+                    ActionName = name;
+                }
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("start", ReadStringField(assembly, "ActionName"));
     }
 
     /// <summary>
@@ -526,6 +722,45 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
 
     /// <summary>
+    /// Ensures predicate statement blocks without a return remain Roslyn compilation errors.
+    /// </summary>
+    [TestMethod]
+    public void CompileGeneratedSource_PredicateBlockWithoutReturn_ReportsRoslynError()
+    {
+        const string grammar = """
+            grammar P;
+            start : {
+                var isStart = inputPosition == 0;
+            }? A ;
+            A : 'a' ;
+            """;
+
+        var result = CompileGeneratedSourceExpectingFailure(Emit(grammar));
+
+        Assert.IsFalse(result.Success);
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+    }
+
+    /// <summary>
+    /// Ensures predicate blocks that return a non-boolean value remain Roslyn compilation errors.
+    /// </summary>
+    [TestMethod]
+    public void CompileGeneratedSource_PredicateReturnWrongType_ReportsRoslynError()
+    {
+        const string grammar = """
+            grammar P;
+            start : { return "not bool"; }? A ;
+            A : 'a' ;
+            """;
+
+        var result = CompileGeneratedSourceExpectingFailure(Emit(grammar));
+
+        Assert.IsFalse(result.Success);
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.ToString().Contains("string", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
     /// Ensures invalid inline action C# remains a Roslyn compilation error in the source-generator path.
     /// </summary>
     [TestMethod]
@@ -891,6 +1126,32 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
         var field = type.GetField("PredicateCount", BindingFlags.Public | BindingFlags.Static)!;
         return (int)field.GetValue(null)!;
+    }
+
+    /// <summary>
+    /// Reads a named integer field from the generated test partial class.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="fieldName">Public static integer field name.</param>
+    /// <returns>Current integer field value.</returns>
+    private static int ReadIntField(Assembly assembly, string fieldName)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
+        return (int)field.GetValue(null)!;
+    }
+
+    /// <summary>
+    /// Reads a named string field from the generated test partial class.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="fieldName">Public static string field name.</param>
+    /// <returns>Current string field value.</returns>
+    private static string? ReadStringField(Assembly assembly, string fieldName)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
+        return (string?)field.GetValue(null);
     }
 
     /// <summary>

@@ -526,11 +526,13 @@ internal static class GrammarEmitter
     /// <param name="hook">Predicate hook metadata.</param>
     private static void EmitPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
+        var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.Code);
+
         sb.AppendLine($"    /// <summary>Executes semantic predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
         sb.AppendLine($"    private static bool {hook.MethodName}(SemanticPredicateEvaluationContext context)");
         sb.AppendLine("    {");
         EmitContextLocals(sb, predicate: true);
-        sb.AppendLine($"        return {hook.Code.Trim()};");
+        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
         sb.AppendLine("    }");
         sb.AppendLine();
     }
@@ -542,18 +544,13 @@ internal static class GrammarEmitter
     /// <param name="hook">Action hook metadata.</param>
     private static void EmitActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
+        var body = GeneratedEmbeddedCodeBody.ForAction(hook.Code);
+
         sb.AppendLine($"    /// <summary>Executes inline parser action hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
         sb.AppendLine($"    private static void {hook.MethodName}(ParserActionExecutionContext context)");
         sb.AppendLine("    {");
         EmitContextLocals(sb, predicate: false);
-        string code = hook.Code.Trim();
-        if (code.Length > 0)
-        {
-            foreach (string line in code.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
-            {
-                sb.AppendLine($"        {line}");
-            }
-        }
+        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
         sb.AppendLine("    }");
         sb.AppendLine();
     }
@@ -576,6 +573,44 @@ internal static class GrammarEmitter
         else
         {
             sb.AppendLine("        string actionCode = context.ActionCode;");
+        }
+    }
+
+    /// <summary>
+    /// Emits normalized user-authored embedded C# into a generated hook body.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="body">Normalized generated embedded-code body.</param>
+    /// <param name="indent">Indentation prefix applied to generated code lines.</param>
+    private static void EmitGeneratedEmbeddedCodeBody(StringBuilder sb, GeneratedEmbeddedCodeBody body, string indent)
+    {
+        if (body.Kind == GeneratedEmbeddedCodeBodyKind.Expression)
+        {
+            sb.AppendLine($"{indent}return {body.Code};");
+            return;
+        }
+
+        foreach (string line in SplitEmbeddedCodeLines(body.Code))
+        {
+            sb.AppendLine($"{indent}{line}");
+        }
+    }
+
+    /// <summary>
+    /// Splits user-authored embedded C# into lines after normalizing platform-specific newline forms.
+    /// </summary>
+    /// <param name="code">Embedded C# code to split.</param>
+    /// <returns>Lines that can be re-emitted into a generated hook body.</returns>
+    private static IEnumerable<string> SplitEmbeddedCodeLines(string code)
+    {
+        if (code.Length == 0)
+        {
+            yield break;
+        }
+
+        foreach (string line in code.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
+        {
+            yield return line;
         }
     }
 
@@ -784,6 +819,102 @@ internal static class GrammarEmitter
             .Replace("<", "&lt;")
             .Replace(">", "&gt;")
             .Replace("\"", "&quot;");
+    }
+
+    /// <summary>
+    /// Describes how user-authored embedded C# should be inserted into a generated hook.
+    /// </summary>
+    private enum GeneratedEmbeddedCodeBodyKind
+    {
+        /// <summary>The predicate body is emitted as a returned C# expression.</summary>
+        Expression,
+
+        /// <summary>The body is emitted as C# statements inside the hook method.</summary>
+        Block
+    }
+
+    /// <summary>
+    /// Normalized generated embedded-code body used by private generated hook emission.
+    /// </summary>
+    private sealed class GeneratedEmbeddedCodeBody
+    {
+        /// <summary>
+        /// Initializes a normalized generated embedded-code body.
+        /// </summary>
+        /// <param name="kind">Emission shape for the generated hook body.</param>
+        /// <param name="code">Trimmed user-authored C# body without ANTLR wrapper braces.</param>
+        private GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind kind, string code)
+        {
+            Kind = kind;
+            Code = code;
+        }
+
+        /// <summary>Gets the emission shape for the generated hook body.</summary>
+        public GeneratedEmbeddedCodeBodyKind Kind { get; }
+
+        /// <summary>Gets the trimmed user-authored C# body without ANTLR wrapper braces.</summary>
+        public string Code { get; }
+
+        /// <summary>
+        /// Classifies a parser semantic predicate body as an expression or statement block.
+        /// </summary>
+        /// <param name="code">Raw embedded predicate code without ANTLR braces.</param>
+        /// <returns>A normalized predicate body.</returns>
+        public static GeneratedEmbeddedCodeBody ForPredicate(string code)
+        {
+            string trimmedCode = code.Trim();
+            var kind = ContainsReturnKeyword(trimmedCode)
+                ? GeneratedEmbeddedCodeBodyKind.Block
+                : GeneratedEmbeddedCodeBodyKind.Expression;
+
+            return new GeneratedEmbeddedCodeBody(kind, trimmedCode);
+        }
+
+        /// <summary>
+        /// Classifies a parser inline action body as statements emitted into a void hook.
+        /// </summary>
+        /// <param name="code">Raw embedded action code without ANTLR braces.</param>
+        /// <returns>A normalized action body.</returns>
+        public static GeneratedEmbeddedCodeBody ForAction(string code)
+        {
+            return new GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind.Block, code.Trim());
+        }
+
+        /// <summary>
+        /// Detects a C# <c>return</c> keyword using lightweight token-boundary checks only.
+        /// </summary>
+        /// <param name="code">Trimmed user-authored C# body.</param>
+        /// <returns><see langword="true"/> when a delimited return keyword appears in the body.</returns>
+        private static bool ContainsReturnKeyword(string code)
+        {
+            const string keyword = "return";
+            int index = 0;
+
+            while ((index = code.IndexOf(keyword, index, StringComparison.Ordinal)) >= 0)
+            {
+                int end = index + keyword.Length;
+                bool startsAtBoundary = index == 0 || !IsIdentifierCharacter(code[index - 1]);
+                bool endsAtBoundary = end == code.Length || !IsIdentifierCharacter(code[end]);
+                if (startsAtBoundary && endsAtBoundary)
+                {
+                    return true;
+                }
+
+                index = end;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether a character can be part of a C# identifier for lightweight keyword boundary checks.
+        /// </summary>
+        /// <param name="value">Character to inspect.</param>
+        /// <returns><see langword="true"/> when the character is treated as identifier text.</returns>
+        private static bool IsIdentifierCharacter(char value)
+        {
+            return char.IsLetterOrDigit(value) || value == '_' || value == '@';
+        }
     }
 
     /// <summary>
