@@ -94,7 +94,8 @@ Current high-level state:
 - default runtime parsing preserves embedded-code metadata but does not execute target-language source;
 - the runtime-inline prepared expression path is available as an explicit opt-in for callers that provide an `IExpressionCompiler`;
 - the source-generator C# path is available as an explicit opt-in for generated grammars;
-- lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, rollback/buffering, and arbitrary parser state mutation remain unsupported for execution.
+- lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, rollback/buffering, and arbitrary parser state mutation remain unsupported for execution;
+- `ParserExecutionContextCopier<TContext>` exists as a preparatory runtime helper for future execution-context snapshot/fork/commit work, but it is not wired into `ParserEngine` and does not change parser behavior or ANTLR feature support.
 
 ### Execution paths
 
@@ -227,6 +228,14 @@ Default parsing remains conservative:
 - generated `Parse(...)` uses the conservative default policy;
 - generated `ParseWithEmbeddedCode(...)` is the opt-in generated C# embedded-code path.
 
+### Runtime execution-context copy helper
+
+`Utils.Parser.Runtime.ParserExecutionContextCopier<TContext>` is a public preparatory helper for future source-generator execution-context snapshot designs. `Copy(source, factory)` uses `source.Clone()` first when the source implements `ICloneable`; the clone result must be non-null and assignable to `TContext`, and the factory is used only for non-cloneable sources. `CopyTo(source, target)` intentionally does not use `ICloneable` because it must copy into the supplied target instance.
+
+When field copying is used, the helper copies context fields by reflection-backed inspection once per context type, emits a compiled field-copy delegate, and reuses the cached delegate for subsequent field-copy calls. Field-copy behavior is shallow structural copying. Arrays, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>` fields are recreated through explicit copy expressions when non-null, while contained elements are not deep-cloned. Unknown `IEnumerable<T>` collection fields can be recreated when they expose a compatible public copy constructor, a public parameterless constructor plus `AddRange(IEnumerable<T>)`, or a public parameterless constructor plus `Add(T)`. Unknown collections without a safe reconstruction strategy, and other unrecognized reference fields, are assigned by reference. Static fields are skipped. Field-like event backing fields are skipped. Readonly instance fields are rejected with an explicit configuration exception so context authors must choose mutable state or wait for a later custom context strategy. The semantics of `ICloneable.Clone()` belong to the user context type.
+
+This helper is not ANTLR construct support. It does not execute `@init` or `@after`, does not buffer or roll back actions, does not alter `Parse(...)` or `ParseWithEmbeddedCode(...)`, and is not called by `ParserEngine`.
+
 ### Diagnostics
 
 Current diagnostics boundaries are intentionally split by path:
@@ -240,7 +249,7 @@ Current diagnostics boundaries are intentionally split by path:
 
 Known limitations include:
 
-- no rollback or action buffering;
+- no rollback or action buffering, despite the preparatory execution-context copier;
 - actions in negation probes require caution and are not a general side-effect-safe model;
 - no controlled context mutation model;
 - no lexer embedded-code execution;
