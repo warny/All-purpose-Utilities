@@ -425,15 +425,7 @@ internal static class GrammarEmitter
     {
         string contextClassName = GetExecutionContextClassName(className);
 
-        sb.AppendLine("    /// <summary>Creates a new execution context and returns a runtime feature policy that executes generated C# hooks for parser semantic predicates and inline parser actions.</summary>");
-        sb.AppendLine("    /// <param name=\"basePolicy\">Optional policy whose non-embedded-code components are preserved.</param>");
-        sb.AppendLine("    /// <returns>A runtime policy using a new independent generated embedded-code execution context.</returns>");
-        sb.AppendLine("    public static ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        return new {contextClassName}().CreateRuntimePolicy(basePolicy);");
-        sb.AppendLine("    }");
-        sb.AppendLine();
-        sb.AppendLine("    /// <summary>Creates a runtime feature policy that executes generated C# hooks on the supplied execution context.</summary>");
+        sb.AppendLine("    /// <summary>Creates a runtime policy bound to the supplied execution context. Reusing the policy reuses that context state.</summary>");
         sb.AppendLine("    /// <param name=\"executionContext\">Execution context instance that owns generated hooks and injected parser members.</param>");
         sb.AppendLine("    /// <param name=\"basePolicy\">Optional policy whose non-embedded-code components are preserved.</param>");
         sb.AppendLine("    /// <returns>A runtime policy bound to <paramref name=\"executionContext\"/>.</returns>");
@@ -443,13 +435,13 @@ internal static class GrammarEmitter
         sb.AppendLine("        return executionContext.CreateRuntimePolicy(basePolicy);");
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine("    /// <summary>Parses input using a new per-parse execution context for generated C# hooks and injected parser members.</summary>");
+        sb.AppendLine("    /// <summary>Parses input using generated C# hooks and injected parser members. Creates a fresh execution context for this parse.</summary>");
         sb.AppendLine($"    public static ParseNode ParseWithEmbeddedCode([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input)");
         sb.AppendLine("    {");
         sb.AppendLine($"        return ParseWithEmbeddedCode(input, new {contextClassName}());");
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine("    /// <summary>Parses input using generated C# hooks bound to the supplied execution context.</summary>");
+        sb.AppendLine("    /// <summary>Parses input using generated C# hooks bound to the supplied execution context. Reusing the same context intentionally preserves its member state across parses.</summary>");
         sb.AppendLine("    /// <param name=\"input\">Input text to parse.</param>");
         sb.AppendLine("    /// <param name=\"executionContext\">Execution context instance that owns generated hooks and injected parser members.</param>");
         sb.AppendLine("    /// <returns>The parse tree produced by the generated grammar.</returns>");

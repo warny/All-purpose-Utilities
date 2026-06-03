@@ -364,6 +364,39 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures the generated facade does not expose a policy helper that creates and captures a hidden execution context.
+    /// </summary>
+    [TestMethod]
+    public void CreateRuntimePolicy_WithoutExecutionContext_IsNotGenerated()
+    {
+        const string grammar = """
+            grammar P;
+            start : { true }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "CreateRuntimePolicy(PExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)");
+        Assert.IsFalse(source.Contains("public static ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("new PExecutionContext().CreateRuntimePolicy(basePolicy)", StringComparison.Ordinal));
+
+        var assembly = CompileGeneratedSource(source);
+        var facadeType = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var contextType = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        var policyMethods = facadeType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(static method => method.Name == "CreateRuntimePolicy")
+            .ToArray();
+
+        Assert.AreEqual(1, policyMethods.Length);
+        var parameters = policyMethods[0].GetParameters();
+        Assert.AreEqual(2, parameters.Length);
+        Assert.AreEqual(contextType, parameters[0].ParameterType);
+        Assert.AreEqual(typeof(ParserRuntimeFeaturePolicy), policyMethods[0].ReturnType);
+        Assert.AreEqual(typeof(ParserRuntimeFeaturePolicy), parameters[1].ParameterType);
+        Assert.IsTrue(parameters[1].HasDefaultValue);
+    }
+
+    /// <summary>
     /// Ensures predicates can call instance members injected through <c>@members</c>.
     /// </summary>
     [TestMethod]
