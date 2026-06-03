@@ -37,7 +37,7 @@ public static class ParserExecutionContextCopier<TContext>
     {
         [typeof(string)] = static (f, _) => f,
         [typeof(List<>)] = BuildEnumerableConstructorCopyExpression,
-        [typeof(HashSet<>)] = BuildEnumerableConstructorCopyExpression,
+        [typeof(HashSet<>)] = BuildHashSetCopyExpression,
         [typeof(Dictionary<,>)] = BuildDictionaryCopyExpression,
     };
 
@@ -291,19 +291,43 @@ public static class ParserExecutionContextCopier<TContext>
     }
 
     /// <summary>
-    /// Builds an expression that recreates a <see cref="Dictionary{TKey,TValue}"/> using its dictionary copy constructor.
+    /// Builds an expression that recreates a <see cref="Dictionary{TKey,TValue}"/> preserving the source comparer.
     /// </summary>
     /// <param name="sourceField">The expression reading the source dictionary.</param>
     /// <param name="fieldType">The concrete dictionary field type.</param>
-    /// <returns>An expression that returns a copied dictionary or <see langword="null"/>.</returns>
+    /// <returns>An expression that returns a copied dictionary with the same comparer, or <see langword="null"/>.</returns>
     private static Expression BuildDictionaryCopyExpression(Expression sourceField, Type fieldType)
     {
         Type[] genericArguments = fieldType.GetGenericArguments();
         Type dictionaryType = typeof(IDictionary<,>).MakeGenericType(genericArguments);
-        ConstructorInfo constructor = fieldType.GetConstructor([dictionaryType])
-            ?? throw new InvalidOperationException($"The dictionary copy constructor could not be found for '{fieldType.FullName}'.");
+        Type comparerType = typeof(IEqualityComparer<>).MakeGenericType(genericArguments[0]);
+        ConstructorInfo constructor = fieldType.GetConstructor([dictionaryType, comparerType])
+            ?? throw new InvalidOperationException($"The dictionary(source, comparer) copy constructor could not be found for '{fieldType.FullName}'.");
+        PropertyInfo comparerProperty = fieldType.GetProperty(nameof(Dictionary<object, object>.Comparer))
+            ?? throw new InvalidOperationException($"The Comparer property could not be found for '{fieldType.FullName}'.");
+        Expression copy = Expression.New(constructor, sourceField, Expression.Property(sourceField, comparerProperty));
 
-        return BuildNullPreservingExpression(sourceField, Expression.New(constructor, sourceField), fieldType);
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+    }
+
+    /// <summary>
+    /// Builds an expression that recreates a <see cref="HashSet{T}"/> preserving the source comparer.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source hash set.</param>
+    /// <param name="fieldType">The concrete hash-set field type.</param>
+    /// <returns>An expression that returns a copied hash set with the same comparer, or <see langword="null"/>.</returns>
+    private static Expression BuildHashSetCopyExpression(Expression sourceField, Type fieldType)
+    {
+        Type elementType = fieldType.GetGenericArguments()[0];
+        Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+        Type comparerType = typeof(IEqualityComparer<>).MakeGenericType(elementType);
+        ConstructorInfo constructor = fieldType.GetConstructor([enumerableType, comparerType])
+            ?? throw new InvalidOperationException($"The hashset(source, comparer) copy constructor could not be found for '{fieldType.FullName}'.");
+        PropertyInfo comparerProperty = fieldType.GetProperty(nameof(HashSet<object>.Comparer))
+            ?? throw new InvalidOperationException($"The Comparer property could not be found for '{fieldType.FullName}'.");
+        Expression copy = Expression.New(constructor, sourceField, Expression.Property(sourceField, comparerProperty));
+
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
     }
 
     /// <summary>

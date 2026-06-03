@@ -144,6 +144,38 @@ public class ParserExecutionContextCopierTests
     }
 
     /// <summary>
+    /// Verifies that the comparer of a dictionary field is preserved after copying.
+    /// </summary>
+    [TestMethod]
+    public void CopyPreservesDictionaryComparer()
+    {
+        var sourceMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["key"] = 1 };
+        DictionaryContext source = new(sourceMap);
+
+        DictionaryContext copy = ParserExecutionContextCopier<DictionaryContext>.Copy(source, static () => new DictionaryContext());
+
+        Assert.IsTrue(copy.Map!.ContainsKey("KEY"));
+        Assert.IsTrue(copy.Map.ContainsKey("key"));
+        Assert.AreNotSame(source.Map, copy.Map);
+    }
+
+    /// <summary>
+    /// Verifies that the comparer of a hash-set field is preserved after copying.
+    /// </summary>
+    [TestMethod]
+    public void CopyPreservesHashSetComparer()
+    {
+        var sourceSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "value" };
+        HashSetContext source = new(sourceSet);
+
+        HashSetContext copy = ParserExecutionContextCopier<HashSetContext>.Copy(source, static () => new HashSetContext());
+
+        Assert.IsTrue(copy.Set!.Contains("VALUE"));
+        Assert.IsTrue(copy.Set.Contains("value"));
+        Assert.AreNotSame(source.Set, copy.Set);
+    }
+
+    /// <summary>
     /// Verifies that an unknown enumerable collection with a compatible copy constructor is recreated.
     /// </summary>
     [TestMethod]
