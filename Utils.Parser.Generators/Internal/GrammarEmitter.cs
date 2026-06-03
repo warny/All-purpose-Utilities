@@ -712,8 +712,7 @@ internal static class GrammarEmitter
     private static IReadOnlyList<G4GrammarAction> CollectParserMembers(G4Grammar grammar)
     {
         return grammar.Actions
-            .Where(static action => string.Equals(action.Name, "members", StringComparison.Ordinal)
-                && (action.Target is null || string.Equals(action.Target, "parser", StringComparison.Ordinal)))
+            .Where(action => EmbeddedMembersSupport.IsInjectableParserMembersAction(grammar, action))
             .ToArray();
     }
 

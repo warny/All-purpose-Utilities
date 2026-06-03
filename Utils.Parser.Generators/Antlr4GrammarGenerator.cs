@@ -167,7 +167,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         foreach (var action in grammar.Actions)
         {
             var constructKind = FormatGrammarActionKind(action);
-            if (IsInjectableParserMembersAction(action))
+            if (EmbeddedMembersSupport.IsInjectableParserMembersAction(grammar, action))
             {
                 ReportEmbeddedMembersInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
                 continue;
@@ -196,18 +196,6 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 ReportLexerEmbeddedCodeDiagnostics(context, file, text, rule);
             }
         }
-    }
-
-
-    /// <summary>
-    /// Determines whether a grammar-level action is a parser members block that the generator injects into the per-parse execution context.
-    /// </summary>
-    /// <param name="action">Grammar-level action metadata.</param>
-    /// <returns><c>true</c> when the action is unscoped <c>@members</c> or <c>@parser::members</c>.</returns>
-    private static bool IsInjectableParserMembersAction(G4GrammarAction action)
-    {
-        return string.Equals(action.Name, "members", StringComparison.Ordinal)
-            && (action.Target is null || string.Equals(action.Target, "parser", StringComparison.Ordinal));
     }
 
     /// <summary>
