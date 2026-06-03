@@ -298,6 +298,79 @@ public class ParserExecutionContextCopierTests
     }
 
     /// <summary>
+    /// Verifies that Copy delegates to ICloneable and does not call the supplied factory when cloning is available.
+    /// </summary>
+    [TestMethod]
+    public void CopyUsesICloneableWhenAvailable()
+    {
+        CloneableContext clone = new(7);
+        CloneableContext source = new(3);
+        source.SetCloneResult(clone);
+        bool factoryCalled = false;
+
+        CloneableContext copy = ParserExecutionContextCopier<CloneableContext>.Copy(
+            source,
+            () =>
+            {
+                factoryCalled = true;
+                return new CloneableContext(0);
+            });
+
+        Assert.AreSame(clone, copy);
+        Assert.AreEqual(1, source.CloneCallCount);
+        Assert.IsFalse(factoryCalled);
+    }
+
+    /// <summary>
+    /// Verifies that Copy rejects a null value returned from ICloneable.Clone.
+    /// </summary>
+    [TestMethod]
+    public void CopyRejectsICloneableReturningNull()
+    {
+        CloneableContext source = new(3);
+        source.SetCloneResult(null);
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+            () => ParserExecutionContextCopier<CloneableContext>.Copy(source, static () => new CloneableContext(0)));
+
+        StringAssert.Contains(exception.Message, "ICloneable.Clone()");
+        StringAssert.Contains(exception.Message, "returned null");
+    }
+
+    /// <summary>
+    /// Verifies that Copy rejects a value returned from ICloneable.Clone when it is not assignable to the context type.
+    /// </summary>
+    [TestMethod]
+    public void CopyRejectsICloneableReturningWrongType()
+    {
+        CloneableContext source = new(3);
+        source.SetCloneResult(new object());
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+            () => ParserExecutionContextCopier<CloneableContext>.Copy(source, static () => new CloneableContext(0)));
+
+        StringAssert.Contains(exception.Message, "ICloneable.Clone()");
+        StringAssert.Contains(exception.Message, "not assignable");
+    }
+
+    /// <summary>
+    /// Verifies that CopyTo does not use ICloneable because it must copy into the supplied target instance.
+    /// </summary>
+    [TestMethod]
+    public void CopyToDoesNotUseICloneable()
+    {
+        CloneableContext source = new(11);
+        CloneableContext target = new(2);
+        source.ThrowOnClone = true;
+
+        ParserExecutionContextCopier<CloneableContext>.CopyTo(source, target);
+
+        Assert.AreSame(target, target.Self);
+        Assert.AreEqual(11, target.Count);
+        Assert.AreEqual(0, source.CloneCallCount);
+    }
+
+    /// <summary>
     /// Verifies null argument validation for <see cref="ParserExecutionContextCopier{TContext}.Copy"/> and <see cref="ParserExecutionContextCopier{TContext}.CopyTo"/>.
     /// </summary>
     [TestMethod]
@@ -345,6 +418,75 @@ public class ParserExecutionContextCopierTests
         CollectionAssert.AreEqual(new[] { "first", "second", "copy" }, copy.Actions);
         Assert.AreNotSame(source.Actions, copy.Actions);
         Assert.AreSame(source.LastService, copy.LastService);
+    }
+
+    /// <summary>
+    /// Holds cloneable mutable state for ICloneable copy tests.
+    /// </summary>
+    private sealed class CloneableContext : ICloneable
+    {
+        /// <summary>
+        /// Stores the copied count value.
+        /// </summary>
+        private int _count;
+
+        /// <summary>
+        /// Stores the configured clone result.
+        /// </summary>
+        private object? _cloneResult;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloneableContext"/> class.
+        /// </summary>
+        /// <param name="count">The count value.</param>
+        public CloneableContext(int count)
+        {
+            _count = count;
+        }
+
+        /// <summary>
+        /// Gets the copied count value.
+        /// </summary>
+        public int Count => _count;
+
+        /// <summary>
+        /// Gets the number of Clone calls.
+        /// </summary>
+        public int CloneCallCount { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Clone should fail if called.
+        /// </summary>
+        public bool ThrowOnClone { get; set; }
+
+        /// <summary>
+        /// Gets this instance for target identity assertions.
+        /// </summary>
+        public CloneableContext Self => this;
+
+        /// <summary>
+        /// Configures the object returned by Clone.
+        /// </summary>
+        /// <param name="cloneResult">The clone result to return.</param>
+        public void SetCloneResult(object? cloneResult)
+        {
+            _cloneResult = cloneResult;
+        }
+
+        /// <summary>
+        /// Clones this context using the test-configured result.
+        /// </summary>
+        /// <returns>The configured clone result.</returns>
+        public object Clone()
+        {
+            if (ThrowOnClone)
+            {
+                throw new InvalidOperationException("Clone should not be called by CopyTo.");
+            }
+
+            CloneCallCount++;
+            return _cloneResult!;
+        }
     }
 
     /// <summary>

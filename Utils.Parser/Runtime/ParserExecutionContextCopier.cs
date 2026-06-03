@@ -13,9 +13,11 @@ namespace Utils.Parser.Runtime;
 /// such as arrays, <see cref="List{T}"/>, <see cref="Dictionary{TKey,TValue}"/>, and <see cref="HashSet{T}"/> with explicit copy expressions,
 /// and can recreate unknown <see cref="IEnumerable{T}"/> collections when they expose a safe copy constructor, parameterless constructor
 /// with <c>AddRange(IEnumerable&lt;T&gt;)</c>, or parameterless constructor with <c>Add(T)</c>. It does not deep-clone contained elements.
-/// Unknown references and collections without a safe reconstruction strategy are copied by reference. Static fields and field-like event
-/// backing fields are ignored. Readonly instance fields are rejected because they cannot be assigned safely during normal context copies.
-/// Reflection is used only while building the delegate cached by the closed generic type; subsequent copies invoke the compiled delegate.
+/// Unknown references and collections without a safe reconstruction strategy are copied by reference. When <see cref="Copy"/> receives a source
+/// context that implements <see cref="ICloneable"/>, that clone contract takes priority and the supplied factory is not invoked. Static fields
+/// and field-like event backing fields are ignored. Readonly instance fields are rejected because they cannot be assigned safely during normal
+/// field-copy operations. Reflection is used only while building the delegate cached by the closed generic type; subsequent field-copy
+/// operations invoke the compiled delegate.
 /// </remarks>
 public static class ParserExecutionContextCopier<TContext>
     where TContext : class
@@ -26,16 +28,22 @@ public static class ParserExecutionContextCopier<TContext>
     private static readonly Lazy<Action<TContext, TContext>> CopyToCore = new(BuildCopyToCore, LazyThreadSafetyMode.ExecutionAndPublication);
 
     /// <summary>
-    /// Creates a new context instance through <paramref name="factory"/> and copies <paramref name="source"/> into it.
+    /// Creates a new context instance by using <see cref="ICloneable.Clone"/> when available, or through <paramref name="factory"/> followed by field copying.
     /// </summary>
     /// <param name="source">The context instance whose state is copied.</param>
-    /// <param name="factory">The caller-provided factory used to create the target context instance.</param>
+    /// <param name="factory">The caller-provided factory used to create the target context instance when <paramref name="source"/> does not implement <see cref="ICloneable"/>.</param>
     /// <returns>A new context instance containing the copied state.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="factory"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The context type contains an unsupported readonly instance field.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>, or <paramref name="factory"/> is <see langword="null"/> when field copying is required.</exception>
+    /// <exception cref="InvalidOperationException"><see cref="ICloneable.Clone"/> returns <see langword="null"/>, returns a value that is not assignable to <typeparamref name="TContext"/>, or the context type contains an unsupported readonly instance field during field copying.</exception>
     public static TContext Copy(TContext source, Func<TContext> factory)
     {
         ArgumentNullException.ThrowIfNull(source);
+
+        if (source is ICloneable cloneableSource)
+        {
+            return CopyCloneable(cloneableSource);
+        }
+
         ArgumentNullException.ThrowIfNull(factory);
 
         TContext target = factory();
@@ -47,10 +55,38 @@ public static class ParserExecutionContextCopier<TContext>
     }
 
     /// <summary>
-    /// Copies the state of <paramref name="source"/> into an existing <paramref name="target"/> context instance.
+    /// Copies a cloneable source context by delegating ownership of clone semantics to the source type.
+    /// </summary>
+    /// <param name="cloneableSource">The source context exposed through <see cref="ICloneable"/>.</param>
+    /// <returns>The cloned context after validating the clone result.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="ICloneable.Clone"/> returns <see langword="null"/> or a value that is not assignable to <typeparamref name="TContext"/>.</exception>
+    private static TContext CopyCloneable(ICloneable cloneableSource)
+    {
+        object? clone = cloneableSource.Clone();
+
+        if (clone is null)
+        {
+            throw new InvalidOperationException(
+                $"ICloneable.Clone() on '{typeof(TContext).FullName ?? typeof(TContext).Name}' returned null. " +
+                $"ParserExecutionContextCopier<T> requires Clone() to return a non-null value assignable to '{typeof(TContext).FullName ?? typeof(TContext).Name}'.");
+        }
+
+        if (clone is not TContext typedClone)
+        {
+            throw new InvalidOperationException(
+                $"ICloneable.Clone() on '{typeof(TContext).FullName ?? typeof(TContext).Name}' returned '{clone.GetType().FullName ?? clone.GetType().Name}', " +
+                $"which is not assignable to '{typeof(TContext).FullName ?? typeof(TContext).Name}'.");
+        }
+
+        return typedClone;
+    }
+
+    /// <summary>
+    /// Copies the state of <paramref name="source"/> into an existing <paramref name="target"/> context instance through field copying.
     /// </summary>
     /// <param name="source">The context instance whose state is copied.</param>
     /// <param name="target">The context instance that receives the copied state.</param>
+    /// <remarks>This method intentionally does not use <see cref="ICloneable"/> because callers provide the target instance that must receive the copied fields.</remarks>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">The context type contains an unsupported readonly instance field.</exception>
     public static void CopyTo(TContext source, TContext target)

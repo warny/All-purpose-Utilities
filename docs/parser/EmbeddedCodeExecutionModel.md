@@ -116,9 +116,11 @@ Context-copy preparation:
 
 - `Utils.Parser.Runtime.ParserExecutionContextCopier<TContext>` is available as a public runtime helper for future generated-context snapshot/fork/commit designs;
 - the helper inspects each closed context type once, builds a compiled `Action<TContext, TContext>` field-copy delegate, and caches that delegate through the closed generic type;
-- `Copy(source, factory)` creates the target instance through a caller-supplied factory so generated code can copy internal or non-public-constructor contexts from the consuming assembly;
-- `CopyTo(source, target)` copies into an existing context and is suitable for future commit/restore experiments;
-- the copy is a shallow structural copy, not a universal deep copy: value fields, strings, nullable values, enums, and unrecognized references are assigned directly;
+- `Copy(source, factory)` first uses `source.Clone()` when `source` implements `ICloneable`; the clone result must be non-null and assignable to the context type;
+- the semantics of `ICloneable.Clone()` belong to the user context type, and the caller-provided factory is used only when the source does not implement `ICloneable`;
+- `Copy(source, factory)` creates the target instance through the caller-supplied factory for field-copy contexts so generated code can copy internal or non-public-constructor contexts from the consuming assembly;
+- `CopyTo(source, target)` copies into an existing context through the field-copy delegate and intentionally does not use `ICloneable`, making it suitable for future commit/restore experiments;
+- field-copy behavior is a shallow structural copy, not a universal deep copy: value fields, strings, nullable values, enums, and unrecognized references are assigned directly;
 - known containers are recreated with explicit copy expressions (`T[]`, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>`), but their elements remain shallow-copied references or values;
 - unknown `IEnumerable<T>` collection fields may also be recreated when they expose a compatible public copy constructor, or a public parameterless constructor plus `AddRange(IEnumerable<T>)`, or a public parameterless constructor plus `Add(T)`;
 - unknown collections without one of those safe reconstruction strategies are copied by reference instead of failing or producing a partial copy;
