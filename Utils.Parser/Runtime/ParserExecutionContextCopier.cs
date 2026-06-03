@@ -29,6 +29,19 @@ public static class ParserExecutionContextCopier<TContext>
     private static readonly Lazy<Action<TContext, TContext>> CopyToCore = new(BuildCopyToCore, LazyThreadSafetyMode.ExecutionAndPublication);
 
     /// <summary>
+    /// Maps known types and open generic type definitions to their dedicated copy-expression builders.
+    /// Lookup resolves <see cref="Type.GetGenericTypeDefinition"/> for generic types and the type itself otherwise.
+    /// Types not present in this map are handled by structural checks (arrays, <see cref="ICloneable"/>) or the unknown-collection fallback.
+    /// </summary>
+    private static readonly Dictionary<Type, Func<Expression, Type, Expression>> KnownCopyBuilders = new()
+    {
+        [typeof(string)] = static (f, _) => f,
+        [typeof(List<>)] = BuildEnumerableConstructorCopyExpression,
+        [typeof(HashSet<>)] = BuildEnumerableConstructorCopyExpression,
+        [typeof(Dictionary<,>)] = BuildDictionaryCopyExpression,
+    };
+
+    /// <summary>
     /// Creates a new context instance by using <see cref="ICloneable.Clone"/> when available, or through <paramref name="factory"/> followed by field copying.
     /// </summary>
     /// <param name="source">The context instance whose state is copied.</param>
@@ -220,29 +233,21 @@ public static class ParserExecutionContextCopier<TContext>
     /// <returns>An expression that produces the value to assign to the target field.</returns>
     private static Expression BuildCopiedValueExpression(Expression sourceField, Type fieldType)
     {
-        if (fieldType == typeof(string) || fieldType.IsValueType)
+        if (fieldType.IsValueType)
         {
             return sourceField;
+        }
+
+        Type lookupKey = fieldType.IsGenericType ? fieldType.GetGenericTypeDefinition() : fieldType;
+
+        if (KnownCopyBuilders.TryGetValue(lookupKey, out Func<Expression, Type, Expression>? builder))
+        {
+            return builder(sourceField, fieldType);
         }
 
         if (fieldType.IsArray)
         {
             return BuildArrayCopyExpression(sourceField, fieldType);
-        }
-
-        if (fieldType.IsGenericType)
-        {
-            Type genericDefinition = fieldType.GetGenericTypeDefinition();
-
-            if (genericDefinition == typeof(List<>) || genericDefinition == typeof(HashSet<>))
-            {
-                return BuildEnumerableConstructorCopyExpression(sourceField, fieldType);
-            }
-
-            if (genericDefinition == typeof(Dictionary<,>))
-            {
-                return BuildDictionaryCopyExpression(sourceField, fieldType);
-            }
         }
 
         if (typeof(ICloneable).IsAssignableFrom(fieldType))
