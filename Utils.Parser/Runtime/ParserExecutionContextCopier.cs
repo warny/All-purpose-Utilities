@@ -19,6 +19,12 @@ namespace Utils.Parser.Runtime;
 /// contract takes priority and the supplied factory is not invoked. Static fields and field-like event backing fields are ignored.
 /// Readonly instance fields are rejected because they cannot be assigned safely during normal field-copy operations. Reflection is used only
 /// while building the delegate cached by the closed generic type; subsequent field-copy operations invoke the compiled delegate.
+/// <para>
+/// Copy strategy is selected from the <b>declared field type</b>, not from the runtime type of the stored value. A field declared as
+/// <c>IList&lt;T&gt;</c> or <c>IReadOnlyDictionary&lt;TKey,TValue&gt;</c> is therefore copied by reference even when its runtime value
+/// is a <see cref="List{T}"/> or <see cref="Dictionary{TKey,TValue}"/> that the copier could otherwise clone. To benefit from structural
+/// copying, declare context fields with their concrete types rather than with interface types.
+/// </para>
 /// </remarks>
 public static class ParserExecutionContextCopier<TContext>
     where TContext : class
