@@ -182,6 +182,14 @@ public static class ParserDiagnostics
             "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Only parser semantic predicates and inline parser actions can be emitted as generated C# hooks.",
             DefaultCategory);
 
+    /// <summary>Parser members code is injected into the generated per-parse execution context by the source generator.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedMembersInjectedByGenerator =
+        new(
+            "UP1031",
+            "Embedded members injected by generator",
+            "{0} code in '{1}' was injected into the generated per-parse execution context as C# source. This is a source-generator C# compatibility bridge for imported grammars. Prefer a separate partial execution-context class for new code. Invalid C# or member-name collisions are reported by Roslyn.",
+            DefaultCategory);
+
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
         new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
@@ -288,6 +296,7 @@ public static class ParserDiagnostics
             [EmbeddedCodePreservedNotCompiled.Code] = EmbeddedCodePreservedNotCompiled,
             [EmbeddedCodeExecutionDisabled.Code] = EmbeddedCodeExecutionDisabled,
             [EmbeddedCodeConstructNotExecutedByGenerator.Code] = EmbeddedCodeConstructNotExecutedByGenerator,
+            [EmbeddedMembersInjectedByGenerator.Code] = EmbeddedMembersInjectedByGenerator,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,

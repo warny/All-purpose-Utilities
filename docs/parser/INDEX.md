@@ -28,5 +28,5 @@ When adding, removing, or materially changing any file in `docs/parser/`, update
 
 ## Recent metadata note
 
-`ANTLRCompatibility.md` is the primary compatibility source for embedded code. `EmbeddedCodeExecutionModel.md` complements it with architecture and flow details, including shared runtime indexing metadata, explicit unsupported reasons, and `UP1029` generator diagnostics for visible unsupported constructs used to keep runtime-inline preparation and source-generated hooks aligned without adding execution.
+`ANTLRCompatibility.md` is the primary compatibility source for embedded code. `EmbeddedCodeExecutionModel.md` complements it with architecture and flow details, including shared runtime indexing metadata, explicit unsupported reasons, per-parse generated execution contexts, `UP1031` parser-members injection diagnostics, and `UP1029` generator diagnostics for visible unsupported constructs used to keep runtime-inline preparation and source-generated hooks aligned without adding unsupported execution.
 

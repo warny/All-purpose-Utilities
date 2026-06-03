@@ -105,9 +105,11 @@ Current state:
 
 - generated model construction is implemented;
 - embedded predicates and actions continue to be preserved as metadata strings such as `ValidatingPredicate("...")` and `EmbeddedAction("...", ...)`;
-- generated C# hooks are emitted for supported parser semantic predicates and inline parser actions;
-- generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor`;
+- a generated per-parse execution context class (`{ClassName}ExecutionContext`) owns generated C# hooks and any injected parser `@members` blocks;
+- generated C# hooks are emitted as instance methods on that context for supported parser semantic predicates and inline parser actions;
+- generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor` and are bound to one execution-context instance;
 - generated `CreateRuntimePolicy(...)` and `ParseWithEmbeddedCode(...)` helpers provide the explicit opt-in path;
+- generated `ParseWithEmbeddedCode(string input)` creates a fresh execution context for that parse, while the overload accepting `{ClassName}ExecutionContext` lets advanced callers supply and observe a context explicitly;
 - generated `Parse(...)` remains conservative and does not install generated embedded-code hooks.
 
 Execution boundary:
@@ -247,7 +249,7 @@ Future possibilities (separate PRs):
 
 ### Grammar actions
 
-`@header`, `@members`, `@parser::members`, `@lexer::members` remain metadata-only by default.
+`@header` and `@lexer::members` remain metadata-only by default. In the source-generator C# path only, unscoped `@members` and `@parser::members` are injected into the generated per-parse execution context; the runtime-inline prepared expression path still treats them as non-executable metadata.
 
 Future source generator mapping may provide C#-specific explicit hooks. Runtime ingestion must not execute raw grammar members.
 
@@ -305,9 +307,11 @@ Current responsibilities:
 - C#-only executable hooks for parser semantic predicates and inline parser actions in generated grammars;
 - generated `ISemanticPredicateEvaluator`, `IParserActionExecutor`, and `ParserRuntimeFeaturePolicy` wiring;
 - generated `ParseWithEmbeddedCode(...)` helper for explicit opt-in execution while generated `Parse(...)` keeps the default conservative policy;
+- generated per-parse execution context classes that own instance hooks and injected unscoped `@members` / `@parser::members` C# members;
 - runtime-index-aware hook dispatch for tested parser hook positions: single-item alternatives, sequence positions, quantified content, negation predicate probes, same-source hooks in distinct alternatives, and direct-left-recursive tail views because generated helpers resolve the generated definition before parsing with the generated policy;
-- Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path;
-- generator warning `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for visible embedded-code constructs that are not executable generated hooks, including lexer actions/predicates, grammar actions, `@members`, `@init`, and `@after`.
+- Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path, including invalid injected members or member-name collisions;
+- generator warning `UP1031 EmbeddedMembersInjectedByGenerator` for unscoped `@members` and `@parser::members` injected into the generated execution context;
+- generator warning `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for visible embedded-code constructs that are not executable generated hooks, including lexer actions/predicates, unsupported grammar actions, `@lexer::members`, `@init`, and `@after`.
 
 Future responsibilities (source-generation path):
 
@@ -340,7 +344,7 @@ Usage rules:
 
 ## 11. Diagnostics strategy
 
-Source-generator diagnostics now include `UP1029 EmbeddedCodeConstructNotExecutedByGenerator`, a warning for visible unsupported embedded-code constructs in `.g4` files. The diagnostic is emitted only for constructs that are not promoted to generated C# hooks; it must not be emitted for supported parser semantic predicates or supported inline parser actions, even when their C# is invalid. Invalid C# remains owned by Roslyn.
+Source-generator diagnostics include `UP1029 EmbeddedCodeConstructNotExecutedByGenerator`, a warning for visible unsupported embedded-code constructs in `.g4` files. The diagnostic is emitted only for constructs that are not promoted to generated C# hooks or injected parser members; it must not be emitted for supported parser semantic predicates, supported inline parser actions, unscoped `@members`, or `@parser::members`, even when their C# is invalid. Invalid C# remains owned by Roslyn. Source-generator diagnostics also include `UP1031 EmbeddedMembersInjectedByGenerator`, a compatibility warning that states unscoped `@members` or `@parser::members` was injected into the generated per-parse execution context as C# source.
 
 Diagnostics should continue to be defined in `Utils.Parser.Diagnostics` so they can be used by:
 
@@ -396,13 +400,14 @@ This model explicitly excludes:
 
 - initial explicit C# embedded-code hook support is implemented for parser semantic predicates and inline parser actions;
 - generated hooks are private C# methods compiled by Roslyn with the consuming project;
-- generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor` and are installed through `CreateRuntimePolicy(...)`;
-- generated `ParseWithEmbeddedCode(...)` opts into those hooks, while generated `Parse(...)` keeps default conservative runtime behavior;
+- generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor`, are bound to one generated execution-context instance, and are installed through `CreateRuntimePolicy(...)`;
+- generated `ParseWithEmbeddedCode(...)` opts into those hooks with a fresh execution context by default or a caller-supplied context through the explicit overload, while generated `Parse(...)` keeps default conservative runtime behavior;
 - supported predicate bodies include C# boolean expressions and block-bodied predicate statements with `return`, using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`;
 - supported action bodies include single-statement, multi-statement, and multi-line C# statement bodies using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including local variables and calls to user members in another partial class declaration;
 - invalid embedded C# is intentionally reported by Roslyn as a compilation error; predicate blocks without a valid `bool` return and actions with invalid C# are not converted into custom parser diagnostics;
-- visible unsupported embedded-code constructs now produce generator warning `UP1029` without changing behavior: `@members` is not injected, `@init` / `@after` are not executed, lexer actions/predicates are not executed, and only parser semantic predicates plus inline parser actions are generated as executable hooks;
-- future work may add controlled `@members` handling and broader C# shape support without changing default parsing.
+- unscoped `@members` and `@parser::members` are injected into the generated per-parse execution context and produce generator warning `UP1031`;
+- visible unsupported embedded-code constructs produce generator warning `UP1029` without changing behavior: `@lexer::members`, `@init` / `@after`, lexer actions/predicates, and other unsupported grammar actions are not executed, and only parser semantic predicates plus inline parser actions are generated as executable hooks;
+- future work may add broader C# shape support without changing default parsing.
 
 ### Future PR — Lexer actions/predicates
 

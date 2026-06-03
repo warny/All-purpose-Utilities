@@ -76,10 +76,10 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     }
 
     /// <summary>
-    /// Ensures <c>@members</c> is reported as not injected and recommends the supported partial-class extension point.
+    /// Ensures unscoped <c>@members</c> reports the compatibility warning for execution-context injection.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_MembersAction_ReportsPartialClassGuidance()
+    public void GeneratorDiagnostics_MembersAction_ReportsExecutionContextInjection()
     {
         const string grammar = """
             grammar P;
@@ -92,10 +92,55 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             A : 'a' ;
             """;
 
-        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @members action");
+        var diagnostic = AssertSingleMembersInjectedDiagnostic(RunGenerator(grammar), "Grammar @members action");
 
-        StringAssert.Contains(diagnostic.GetMessage(), "not injected");
-        StringAssert.Contains(diagnostic.GetMessage(), "partial class");
+        StringAssert.Contains(diagnostic.GetMessage(), "per-parse execution context");
+        Assert.IsFalse(diagnostic.GetMessage().Contains("not injected", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Ensures <c>@parser::members</c> reports the compatibility warning for execution-context injection.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_ParserMembersAction_ReportsExecutionContextInjection()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                private int Value;
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostic = AssertSingleMembersInjectedDiagnostic(RunGenerator(grammar), "Grammar @parser::members action");
+
+        StringAssert.Contains(diagnostic.GetMessage(), "compatibility bridge");
+    }
+
+    /// <summary>
+    /// Ensures <c>@lexer::members</c> remains unsupported by the parser execution context.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_LexerMembersAction_ReportsUnsupportedEmbeddedCode()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                private int LexerState;
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @lexer::members action");
+
+        StringAssert.Contains(diagnostic.GetMessage(), "metadata-only");
+        Assert.IsFalse(RunGenerator(grammar).Any(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedMembersInjectedByGenerator.Code));
     }
 
     /// <summary>
@@ -201,6 +246,25 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         Assert.AreEqual(ParserDiagnostics.EmbeddedCodeConstructNotExecutedByGenerator.Code, matches[0].Id);
         StringAssert.Contains(matches[0].GetMessage(), expectedConstruct);
         StringAssert.Contains(matches[0].GetMessage(), "Only parser semantic predicates and inline parser actions");
+        return matches[0];
+    }
+
+    /// <summary>
+    /// Asserts that exactly one parser-members injection compatibility diagnostic exists and describes the expected construct.
+    /// </summary>
+    /// <param name="diagnostics">Diagnostics emitted by the source generator.</param>
+    /// <param name="expectedConstruct">Expected construct kind text.</param>
+    /// <returns>The matching diagnostic.</returns>
+    private static Diagnostic AssertSingleMembersInjectedDiagnostic(ImmutableArray<Diagnostic> diagnostics, string expectedConstruct)
+    {
+        var matches = diagnostics
+            .Where(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedMembersInjectedByGenerator.Code)
+            .ToArray();
+
+        Assert.AreEqual(1, matches.Length, string.Join(Environment.NewLine, diagnostics));
+        Assert.AreEqual(ParserDiagnostics.EmbeddedMembersInjectedByGenerator.Code, matches[0].Id);
+        Assert.AreEqual(Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, matches[0].Severity);
+        StringAssert.Contains(matches[0].GetMessage(), expectedConstruct);
         return matches[0];
     }
 

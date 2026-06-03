@@ -145,7 +145,9 @@ This path:
 - lets Roslyn compile the generated hooks with the consuming project;
 - leaves invalid C# as normal C# compilation errors;
 - keeps generated `Parse(...)` conservative;
-- executes generated hooks only through `ParseWithEmbeddedCode(...)` or a policy returned by `CreateRuntimePolicy(...)`.
+- executes generated hooks only through `ParseWithEmbeddedCode(...)` or a policy returned by `CreateRuntimePolicy(...)`;
+- binds generated dispatchers to a per-parse execution context rather than shared static state;
+- injects unscoped `@members` and `@parser::members` into that context, not into the static facade.
 
 ### Supported executable parser constructs
 
@@ -171,9 +173,10 @@ Supported executable parser constructs are:
 - inline parser actions containing multiple statements;
 - multi-line inline parser actions;
 - local variables in generated predicate/action hooks;
-- calls from inline parser actions to members supplied by another declaration of the generated partial class.
+- calls from inline parser actions to members injected into or supplied by another declaration of the generated execution-context partial class;
+- unscoped `@members` and `@parser::members` blocks injected verbatim into `{ClassName}ExecutionContext` as a C# compatibility bridge.
 
-Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`.
+Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`. Hooks are instance methods on the generated `{ClassName}ExecutionContext`, so injected parser members can hold per-parse instance state. `ParseWithEmbeddedCode(string input)` creates a new context per call; `ParseWithEmbeddedCode(string input, {ClassName}ExecutionContext executionContext)` lets advanced callers provide and inspect a context explicitly. Generated `Parse(...)` remains conservative and does not execute hooks or create an execution context.
 
 ### Runtime-compatible indexing
 
