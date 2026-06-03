@@ -119,8 +119,10 @@ Context-copy preparation:
 - `Copy(source, factory)` creates the target instance through a caller-supplied factory so generated code can copy internal or non-public-constructor contexts from the consuming assembly;
 - `CopyTo(source, target)` copies into an existing context and is suitable for future commit/restore experiments;
 - the copy is a shallow structural copy, not a universal deep copy: value fields, strings, nullable values, enums, and unrecognized references are assigned directly;
-- known containers are recreated (`T[]`, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>`), but their elements remain shallow-copied references or values;
-- null known containers remain null, static fields are not copied, field-like event backing fields are skipped, and readonly instance fields cause an explicit configuration exception instead of being ignored silently;
+- known containers are recreated with explicit copy expressions (`T[]`, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>`), but their elements remain shallow-copied references or values;
+- unknown `IEnumerable<T>` collection fields may also be recreated when they expose a compatible public copy constructor, or a public parameterless constructor plus `AddRange(IEnumerable<T>)`, or a public parameterless constructor plus `Add(T)`;
+- unknown collections without one of those safe reconstruction strategies are copied by reference instead of failing or producing a partial copy;
+- null known or reconstructable containers remain null, static fields are not copied, field-like event backing fields are skipped, and readonly instance fields cause an explicit configuration exception instead of being ignored silently;
 - compiler-generated auto-property backing fields are treated as context state and are copied unless they are readonly;
 - this helper is not wired into `ParserEngine`, generated policies, or parsing strategy in the current model, and it does not add rollback, action buffering, `@init`, or `@after` execution.
 

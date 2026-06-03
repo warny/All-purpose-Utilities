@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -9,8 +10,10 @@ namespace Utils.Parser.Runtime;
 /// <typeparam name="TContext">The parser execution-context type to copy.</typeparam>
 /// <remarks>
 /// The copier performs a shallow structural copy intended for parser execution contexts. It recreates known collection containers
-/// such as arrays, <see cref="List{T}"/>, <see cref="Dictionary{TKey,TValue}"/>, and <see cref="HashSet{T}"/>, but it does not deep-clone
-/// the elements stored in those containers. Unrecognized reference values are copied by reference. Static fields and field-like event
+/// such as arrays, <see cref="List{T}"/>, <see cref="Dictionary{TKey,TValue}"/>, and <see cref="HashSet{T}"/> with explicit copy expressions,
+/// and can recreate unknown <see cref="IEnumerable{T}"/> collections when they expose a safe copy constructor, parameterless constructor
+/// with <c>AddRange(IEnumerable&lt;T&gt;)</c>, or parameterless constructor with <c>Add(T)</c>. It does not deep-clone contained elements.
+/// Unknown references and collections without a safe reconstruction strategy are copied by reference. Static fields and field-like event
 /// backing fields are ignored. Readonly instance fields are rejected because they cannot be assigned safely during normal context copies.
 /// Reflection is used only while building the delegate cached by the closed generic type; subsequent copies invoke the compiled delegate.
 /// </remarks>
@@ -187,21 +190,21 @@ public static class ParserExecutionContextCopier<TContext>
 
             if (genericDefinition == typeof(List<>))
             {
-                return BuildKnownCollectionCopyExpression(sourceField, fieldType);
+                return BuildListCopyExpression(sourceField, fieldType);
             }
 
             if (genericDefinition == typeof(Dictionary<,>))
             {
-                return BuildKnownCollectionCopyExpression(sourceField, fieldType);
+                return BuildDictionaryCopyExpression(sourceField, fieldType);
             }
 
             if (genericDefinition == typeof(HashSet<>))
             {
-                return BuildKnownCollectionCopyExpression(sourceField, fieldType);
+                return BuildHashSetCopyExpression(sourceField, fieldType);
             }
         }
 
-        return sourceField;
+        return BuildUnknownCollectionCopyExpression(sourceField, fieldType);
     }
 
     /// <summary>
@@ -221,19 +224,282 @@ public static class ParserExecutionContextCopier<TContext>
     }
 
     /// <summary>
-    /// Builds an expression that recreates a supported collection when it is not null.
+    /// Builds an expression that recreates a <see cref="List{T}"/> using its enumerable copy constructor.
     /// </summary>
-    /// <param name="sourceField">The expression reading the source collection.</param>
-    /// <param name="fieldType">The concrete supported collection type.</param>
-    /// <returns>An expression that returns a copied collection or <see langword="null"/>.</returns>
-    private static Expression BuildKnownCollectionCopyExpression(Expression sourceField, Type fieldType)
+    /// <param name="sourceField">The expression reading the source list.</param>
+    /// <param name="fieldType">The concrete list field type.</param>
+    /// <returns>An expression that returns a copied list or <see langword="null"/>.</returns>
+    private static Expression BuildListCopyExpression(Expression sourceField, Type fieldType)
     {
-        ConstructorInfo constructor = fieldType.GetConstructor([fieldType])
-            ?? throw new InvalidOperationException($"A copy constructor could not be found for '{fieldType.FullName}'.");
+        Type elementType = fieldType.GetGenericArguments()[0];
+        Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+        ConstructorInfo constructor = fieldType.GetConstructor([enumerableType])
+            ?? throw new InvalidOperationException($"The enumerable copy constructor could not be found for '{fieldType.FullName}'.");
         Expression copy = Expression.New(constructor, sourceField);
 
         return BuildNullPreservingExpression(sourceField, copy, fieldType);
     }
+
+    /// <summary>
+    /// Builds an expression that recreates a <see cref="Dictionary{TKey,TValue}"/> using its dictionary copy constructor.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source dictionary.</param>
+    /// <param name="fieldType">The concrete dictionary field type.</param>
+    /// <returns>An expression that returns a copied dictionary or <see langword="null"/>.</returns>
+    private static Expression BuildDictionaryCopyExpression(Expression sourceField, Type fieldType)
+    {
+        Type[] genericArguments = fieldType.GetGenericArguments();
+        Type dictionaryType = typeof(IDictionary<,>).MakeGenericType(genericArguments);
+        ConstructorInfo constructor = fieldType.GetConstructor([dictionaryType])
+            ?? throw new InvalidOperationException($"The dictionary copy constructor could not be found for '{fieldType.FullName}'.");
+        Expression copy = Expression.New(constructor, sourceField);
+
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+    }
+
+    /// <summary>
+    /// Builds an expression that recreates a <see cref="HashSet{T}"/> using its enumerable copy constructor.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source hash set.</param>
+    /// <param name="fieldType">The concrete hash-set field type.</param>
+    /// <returns>An expression that returns a copied hash set or <see langword="null"/>.</returns>
+    private static Expression BuildHashSetCopyExpression(Expression sourceField, Type fieldType)
+    {
+        Type elementType = fieldType.GetGenericArguments()[0];
+        Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+        ConstructorInfo constructor = fieldType.GetConstructor([enumerableType])
+            ?? throw new InvalidOperationException($"The enumerable copy constructor could not be found for '{fieldType.FullName}'.");
+        Expression copy = Expression.New(constructor, sourceField);
+
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+    }
+
+    /// <summary>
+    /// Builds an expression that recreates an unknown generic enumerable collection when a safe strategy is available.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source field.</param>
+    /// <param name="fieldType">The field type being copied.</param>
+    /// <returns>A collection copy expression when supported; otherwise, the original source-field expression.</returns>
+    private static Expression BuildUnknownCollectionCopyExpression(Expression sourceField, Type fieldType)
+    {
+        if (fieldType == typeof(string))
+        {
+            return sourceField;
+        }
+
+        Type? enumerableType = FindGenericEnumerableType(fieldType);
+
+        if (enumerableType is null)
+        {
+            return sourceField;
+        }
+
+        if (TryFindCompatibleCopyConstructor(fieldType, enumerableType, out ConstructorInfo? copyConstructor))
+        {
+            ConstructorInfo verifiedCopyConstructor = copyConstructor ?? throw new InvalidOperationException("A compatible copy constructor was expected.");
+            Type constructorParameterType = verifiedCopyConstructor.GetParameters()[0].ParameterType;
+            Expression copy = Expression.New(verifiedCopyConstructor, Expression.Convert(sourceField, constructorParameterType));
+
+            return BuildNullPreservingExpression(sourceField, copy, fieldType);
+        }
+
+        ConstructorInfo? defaultConstructor = fieldType.GetConstructor(Type.EmptyTypes);
+
+        if (defaultConstructor is null)
+        {
+            return sourceField;
+        }
+
+        MethodInfo? addRangeMethod = FindAddRangeMethod(fieldType, enumerableType);
+
+        if (addRangeMethod is not null)
+        {
+            return BuildUnknownCollectionAddRangeCopyExpression(sourceField, fieldType, enumerableType, defaultConstructor, addRangeMethod);
+        }
+
+        MethodInfo? addMethod = FindAddMethod(fieldType, enumerableType);
+
+        if (addMethod is not null)
+        {
+            return BuildUnknownCollectionAddLoopCopyExpression(sourceField, fieldType, enumerableType, defaultConstructor, addMethod);
+        }
+
+        return sourceField;
+    }
+
+    /// <summary>
+    /// Locates the generic enumerable interface used to enumerate an unknown collection.
+    /// </summary>
+    /// <param name="fieldType">The collection field type being inspected.</param>
+    /// <returns>The matching <see cref="IEnumerable{T}"/> interface, or <see langword="null"/> when none is available.</returns>
+    private static Type? FindGenericEnumerableType(Type fieldType)
+    {
+        if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        {
+            return fieldType;
+        }
+
+        return fieldType.GetInterfaces()
+            .FirstOrDefault(interfaceType => interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+    }
+
+    /// <summary>
+    /// Attempts to find a public one-parameter constructor that can copy from the source collection or a compatible enumerable interface.
+    /// </summary>
+    /// <param name="fieldType">The collection field type being copied.</param>
+    /// <param name="enumerableType">The generic enumerable interface exposed by the source collection.</param>
+    /// <param name="constructor">The located constructor, or <see langword="null"/> when no compatible constructor exists.</param>
+    /// <returns><see langword="true"/> when a compatible copy constructor is available; otherwise, <see langword="false"/>.</returns>
+    private static bool TryFindCompatibleCopyConstructor(Type fieldType, Type enumerableType, out ConstructorInfo? constructor)
+    {
+        constructor = fieldType.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+            .Select(candidate => new
+            {
+                Constructor = candidate,
+                Parameters = candidate.GetParameters(),
+            })
+            .Where(candidate => candidate.Parameters.Length == 1)
+            .Select(candidate => new
+            {
+                candidate.Constructor,
+                ParameterType = candidate.Parameters[0].ParameterType,
+            })
+            .FirstOrDefault(candidate => IsSafeSourceParameter(fieldType, enumerableType, candidate.ParameterType))
+            ?.Constructor;
+
+        return constructor is not null;
+    }
+
+    /// <summary>
+    /// Locates an <c>AddRange(IEnumerable&lt;T&gt;)</c>-style method for an unknown collection.
+    /// </summary>
+    /// <param name="fieldType">The collection field type being copied.</param>
+    /// <param name="enumerableType">The generic enumerable interface exposed by the source collection.</param>
+    /// <returns>The matching method, or <see langword="null"/> when no safe method exists.</returns>
+    private static MethodInfo? FindAddRangeMethod(Type fieldType, Type enumerableType)
+    {
+        return fieldType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            .Select(method => new
+            {
+                Method = method,
+                Parameters = method.GetParameters(),
+            })
+            .Where(candidate => candidate.Method.Name == "AddRange" && candidate.Parameters.Length == 1)
+            .FirstOrDefault(candidate => IsSafeSourceParameter(fieldType, enumerableType, candidate.Parameters[0].ParameterType))
+            ?.Method;
+    }
+
+    /// <summary>
+    /// Determines whether a method or constructor parameter safely accepts the source collection.
+    /// </summary>
+    /// <param name="fieldType">The collection field type being copied.</param>
+    /// <param name="enumerableType">The generic enumerable interface exposed by the source collection.</param>
+    /// <param name="parameterType">The candidate parameter type.</param>
+    /// <returns><see langword="true"/> when the source can be passed safely; otherwise, <see langword="false"/>.</returns>
+    private static bool IsSafeSourceParameter(Type fieldType, Type enumerableType, Type parameterType)
+    {
+        return parameterType != typeof(object)
+            && (parameterType.IsAssignableFrom(fieldType) || parameterType.IsAssignableFrom(enumerableType));
+    }
+
+    /// <summary>
+    /// Locates an <c>Add(T)</c>-style method for an unknown sequential collection.
+    /// </summary>
+    /// <param name="fieldType">The collection field type being copied.</param>
+    /// <param name="enumerableType">The generic enumerable interface exposed by the source collection.</param>
+    /// <returns>The matching method, or <see langword="null"/> when no safe method exists.</returns>
+    private static MethodInfo? FindAddMethod(Type fieldType, Type enumerableType)
+    {
+        Type elementType = enumerableType.GetGenericArguments()[0];
+
+        return fieldType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            .Select(method => new
+            {
+                Method = method,
+                Parameters = method.GetParameters(),
+            })
+            .Where(candidate => candidate.Method.Name == "Add" && candidate.Parameters.Length == 1)
+            .FirstOrDefault(candidate => candidate.Parameters[0].ParameterType.IsAssignableFrom(elementType))
+            ?.Method;
+    }
+
+    /// <summary>
+    /// Builds a copy expression that initializes an unknown collection with <c>AddRange(IEnumerable&lt;T&gt;)</c>.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source collection.</param>
+    /// <param name="fieldType">The collection field type being copied.</param>
+    /// <param name="enumerableType">The generic enumerable interface exposed by the source collection.</param>
+    /// <param name="defaultConstructor">The public parameterless constructor used to create the target collection.</param>
+    /// <param name="addRangeMethod">The method used to add all source elements.</param>
+    /// <returns>An expression that returns a copied collection or <see langword="null"/>.</returns>
+    private static Expression BuildUnknownCollectionAddRangeCopyExpression(
+        Expression sourceField,
+        Type fieldType,
+        Type enumerableType,
+        ConstructorInfo defaultConstructor,
+        MethodInfo addRangeMethod)
+    {
+        ParameterExpression collection = Expression.Variable(fieldType, "collection");
+        Expression block = Expression.Block(
+            [collection],
+            Expression.Assign(collection, Expression.New(defaultConstructor)),
+            Expression.Call(collection, addRangeMethod, Expression.Convert(sourceField, addRangeMethod.GetParameters()[0].ParameterType)),
+            collection);
+
+        return BuildNullPreservingExpression(sourceField, block, fieldType);
+    }
+
+    /// <summary>
+    /// Builds a copy expression that initializes an unknown collection by enumerating the source and calling <c>Add(T)</c>.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source collection.</param>
+    /// <param name="fieldType">The collection field type being copied.</param>
+    /// <param name="enumerableType">The generic enumerable interface exposed by the source collection.</param>
+    /// <param name="defaultConstructor">The public parameterless constructor used to create the target collection.</param>
+    /// <param name="addMethod">The method used to add one source element at a time.</param>
+    /// <returns>An expression that returns a copied collection or <see langword="null"/>.</returns>
+    private static Expression BuildUnknownCollectionAddLoopCopyExpression(
+        Expression sourceField,
+        Type fieldType,
+        Type enumerableType,
+        ConstructorInfo defaultConstructor,
+        MethodInfo addMethod)
+    {
+        Type elementType = enumerableType.GetGenericArguments()[0];
+        Type enumeratorType = typeof(IEnumerator<>).MakeGenericType(elementType);
+        ParameterExpression collection = Expression.Variable(fieldType, "collection");
+        ParameterExpression enumerator = Expression.Variable(enumeratorType, "enumerator");
+        LabelTarget breakLabel = Expression.Label("break");
+        MethodInfo getEnumeratorMethod = enumerableType.GetMethod(nameof(IEnumerable<object>.GetEnumerator))
+            ?? throw new InvalidOperationException($"The generic enumerator method could not be found for '{enumerableType.FullName}'.");
+        MethodInfo moveNextMethod = typeof(System.Collections.IEnumerator).GetMethod(nameof(System.Collections.IEnumerator.MoveNext))
+            ?? throw new InvalidOperationException("IEnumerator.MoveNext could not be found.");
+        PropertyInfo currentProperty = enumeratorType.GetProperty(nameof(IEnumerator<object>.Current))
+            ?? throw new InvalidOperationException($"The generic current property could not be found for '{enumeratorType.FullName}'.");
+        MethodInfo disposeMethod = typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose))
+            ?? throw new InvalidOperationException("IDisposable.Dispose could not be found.");
+        Expression currentValue = Expression.Property(enumerator, currentProperty);
+        Expression convertedCurrentValue = addMethod.GetParameters()[0].ParameterType == elementType
+            ? currentValue
+            : Expression.Convert(currentValue, addMethod.GetParameters()[0].ParameterType);
+        Expression addCall = Expression.Call(collection, addMethod, convertedCurrentValue);
+        Expression addStatement = addCall.Type == typeof(void) ? addCall : Expression.Block(addCall, Expression.Empty());
+        Expression loop = Expression.Loop(
+            Expression.IfThenElse(
+                Expression.Call(enumerator, moveNextMethod),
+                addStatement,
+                Expression.Break(breakLabel)),
+            breakLabel);
+        Expression block = Expression.Block(
+            [collection, enumerator],
+            Expression.Assign(collection, Expression.New(defaultConstructor)),
+            Expression.Assign(enumerator, Expression.Call(Expression.Convert(sourceField, enumerableType), getEnumeratorMethod)),
+            Expression.TryFinally(loop, Expression.Call(enumerator, disposeMethod)),
+            collection);
+
+        return BuildNullPreservingExpression(sourceField, block, fieldType);
+    }
+
 
     /// <summary>
     /// Builds a conditional expression that preserves null source values for reference-typed copy operations.

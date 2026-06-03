@@ -1,3 +1,4 @@
+using System.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Runtime;
 
@@ -140,6 +141,78 @@ public class ParserExecutionContextCopierTests
         CollectionAssert.AreEquivalent(new[] { "a", "b" }, source.Set.ToArray());
         CollectionAssert.AreEquivalent(new[] { "a", "b", "c" }, copy.Set.ToArray());
         Assert.AreNotSame(source.Set, copy.Set);
+    }
+
+    /// <summary>
+    /// Verifies that an unknown enumerable collection with a compatible copy constructor is recreated.
+    /// </summary>
+    [TestMethod]
+    public void CopyClonesUnknownCollectionWithCopyConstructor()
+    {
+        CustomCopyConstructedCollectionContext source = new(["a", "b"]);
+
+        CustomCopyConstructedCollectionContext copy = ParserExecutionContextCopier<CustomCopyConstructedCollectionContext>.Copy(
+            source,
+            static () => new CustomCopyConstructedCollectionContext());
+        copy.Collection!.Add("c");
+
+        CollectionAssert.AreEqual(new[] { "a", "b" }, source.Collection);
+        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, copy.Collection);
+        Assert.AreNotSame(source.Collection, copy.Collection);
+    }
+
+    /// <summary>
+    /// Verifies that an unknown enumerable collection with a default constructor and AddRange is recreated.
+    /// </summary>
+    [TestMethod]
+    public void CopyClonesUnknownCollectionWithAddRange()
+    {
+        CustomAddRangeCollectionContext source = new(["a", "b"]);
+
+        CustomAddRangeCollectionContext copy = ParserExecutionContextCopier<CustomAddRangeCollectionContext>.Copy(
+            source,
+            static () => new CustomAddRangeCollectionContext());
+        copy.Collection!.AddRange(["c"]);
+
+        CollectionAssert.AreEqual(new[] { "a", "b" }, source.Collection.ToArray());
+        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, copy.Collection.ToArray());
+        Assert.AreNotSame(source.Collection, copy.Collection);
+    }
+
+    /// <summary>
+    /// Verifies that an unknown enumerable collection with a default constructor and Add is recreated by enumeration.
+    /// </summary>
+    [TestMethod]
+    public void CopyClonesUnknownCollectionWithAdd()
+    {
+        CustomAddCollectionContext source = new(["a", "b"]);
+
+        CustomAddCollectionContext copy = ParserExecutionContextCopier<CustomAddCollectionContext>.Copy(
+            source,
+            static () => new CustomAddCollectionContext());
+        copy.Collection!.Add("c");
+
+        CollectionAssert.AreEqual(new[] { "a", "b" }, source.Collection.ToArray());
+        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, copy.Collection.ToArray());
+        Assert.AreNotSame(source.Collection, copy.Collection);
+    }
+
+    /// <summary>
+    /// Verifies that an unknown enumerable collection without a safe copy strategy is copied by reference.
+    /// </summary>
+    [TestMethod]
+    public void CopyCopiesUnknownUncopyableCollectionByReference()
+    {
+        CustomUncopyableCollection<string> collection = new(1);
+        collection.AddForTest("a");
+        CustomUncopyableCollectionContext source = new(collection);
+
+        CustomUncopyableCollectionContext copy = ParserExecutionContextCopier<CustomUncopyableCollectionContext>.Copy(
+            source,
+            static () => new CustomUncopyableCollectionContext());
+
+        Assert.AreSame(source.Collection, copy.Collection);
+        Assert.AreSame(collection, copy.Collection);
     }
 
     /// <summary>
@@ -550,6 +623,296 @@ public class ParserExecutionContextCopierTests
         /// Gets the set values.
         /// </summary>
         public HashSet<string>? Set => _set;
+    }
+
+    /// <summary>
+    /// Holds a custom collection with a compatible copy constructor.
+    /// </summary>
+    private sealed class CustomCopyConstructedCollectionContext
+    {
+        /// <summary>
+        /// Stores custom collection values.
+        /// </summary>
+        private CustomCopyConstructedCollection<string>? _collection;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomCopyConstructedCollectionContext"/> class.
+        /// </summary>
+        public CustomCopyConstructedCollectionContext()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomCopyConstructedCollectionContext"/> class.
+        /// </summary>
+        /// <param name="values">The values used to initialize the custom collection.</param>
+        public CustomCopyConstructedCollectionContext(IEnumerable<string> values)
+        {
+            _collection = new CustomCopyConstructedCollection<string>(values);
+        }
+
+        /// <summary>
+        /// Gets the custom collection values.
+        /// </summary>
+        public CustomCopyConstructedCollection<string>? Collection => _collection;
+    }
+
+    /// <summary>
+    /// Holds a custom collection with an AddRange method.
+    /// </summary>
+    private sealed class CustomAddRangeCollectionContext
+    {
+        /// <summary>
+        /// Stores custom collection values.
+        /// </summary>
+        private CustomAddRangeCollection<string>? _collection;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomAddRangeCollectionContext"/> class.
+        /// </summary>
+        public CustomAddRangeCollectionContext()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomAddRangeCollectionContext"/> class.
+        /// </summary>
+        /// <param name="values">The values used to initialize the custom collection.</param>
+        public CustomAddRangeCollectionContext(IEnumerable<string> values)
+        {
+            _collection = new CustomAddRangeCollection<string>();
+            _collection.AddRange(values);
+        }
+
+        /// <summary>
+        /// Gets the custom collection values.
+        /// </summary>
+        public CustomAddRangeCollection<string>? Collection => _collection;
+    }
+
+    /// <summary>
+    /// Holds a custom collection with an Add method.
+    /// </summary>
+    private sealed class CustomAddCollectionContext
+    {
+        /// <summary>
+        /// Stores custom collection values.
+        /// </summary>
+        private CustomAddCollection<string>? _collection;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomAddCollectionContext"/> class.
+        /// </summary>
+        public CustomAddCollectionContext()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomAddCollectionContext"/> class.
+        /// </summary>
+        /// <param name="values">The values used to initialize the custom collection.</param>
+        public CustomAddCollectionContext(IEnumerable<string> values)
+        {
+            _collection = new CustomAddCollection<string>();
+
+            foreach (string value in values)
+            {
+                _collection.Add(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the custom collection values.
+        /// </summary>
+        public CustomAddCollection<string>? Collection => _collection;
+    }
+
+    /// <summary>
+    /// Holds a custom collection without a safe copy strategy.
+    /// </summary>
+    private sealed class CustomUncopyableCollectionContext
+    {
+        /// <summary>
+        /// Stores custom collection values.
+        /// </summary>
+        private CustomUncopyableCollection<string>? _collection;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomUncopyableCollectionContext"/> class.
+        /// </summary>
+        public CustomUncopyableCollectionContext()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomUncopyableCollectionContext"/> class.
+        /// </summary>
+        /// <param name="collection">The custom collection value.</param>
+        public CustomUncopyableCollectionContext(CustomUncopyableCollection<string> collection)
+        {
+            _collection = collection;
+        }
+
+        /// <summary>
+        /// Gets the custom collection values.
+        /// </summary>
+        public CustomUncopyableCollection<string>? Collection => _collection;
+    }
+
+    /// <summary>
+    /// Provides a custom collection that can be reconstructed from enumerable values.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    private sealed class CustomCopyConstructedCollection<T> : List<T>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomCopyConstructedCollection{T}"/> class.
+        /// </summary>
+        public CustomCopyConstructedCollection()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomCopyConstructedCollection{T}"/> class from enumerable values.
+        /// </summary>
+        /// <param name="values">The values copied into the collection.</param>
+        public CustomCopyConstructedCollection(IEnumerable<T> values)
+            : base(values)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Provides a custom collection that can be reconstructed through AddRange.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    private sealed class CustomAddRangeCollection<T> : IEnumerable<T>
+    {
+        /// <summary>
+        /// Stores the collection items.
+        /// </summary>
+        private List<T> _items = [];
+
+        /// <summary>
+        /// Adds all supplied values to the collection.
+        /// </summary>
+        /// <param name="values">The values to add.</param>
+        public void AddRange(IEnumerable<T> values)
+        {
+            _items.AddRange(values);
+        }
+
+        /// <summary>
+        /// Returns an enumerator for the collection items.
+        /// </summary>
+        /// <returns>An enumerator for the collection items.</returns>
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _items.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Returns an untyped enumerator for the collection items.
+        /// </summary>
+        /// <returns>An untyped enumerator for the collection items.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
+    /// <summary>
+    /// Provides a custom collection that can be reconstructed through Add.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    private sealed class CustomAddCollection<T> : IEnumerable<T>
+    {
+        /// <summary>
+        /// Stores the collection items.
+        /// </summary>
+        private List<T> _items = [];
+
+        /// <summary>
+        /// Adds one value to the collection.
+        /// </summary>
+        /// <param name="item">The value to add.</param>
+        public void Add(T item)
+        {
+            _items.Add(item);
+        }
+
+        /// <summary>
+        /// Returns an enumerator for the collection items.
+        /// </summary>
+        /// <returns>An enumerator for the collection items.</returns>
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _items.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Returns an untyped enumerator for the collection items.
+        /// </summary>
+        /// <returns>An untyped enumerator for the collection items.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
+    /// <summary>
+    /// Provides a custom collection that cannot be safely reconstructed by the copier.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    private sealed class CustomUncopyableCollection<T> : IEnumerable<T>
+    {
+        /// <summary>
+        /// Stores the collection items.
+        /// </summary>
+        private List<T> _items = [];
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomUncopyableCollection{T}"/> class.
+        /// </summary>
+        /// <param name="required">A required constructor parameter that prevents default construction.</param>
+        public CustomUncopyableCollection(int required)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomUncopyableCollection{T}"/> class with an unsafe broad parameter.
+        /// </summary>
+        /// <param name="ignored">The ignored broad parameter that must not be treated as a copy constructor.</param>
+        public CustomUncopyableCollection(object ignored)
+        {
+        }
+
+        /// <summary>
+        /// Adds one value for test setup.
+        /// </summary>
+        /// <param name="item">The value to add.</param>
+        public void AddForTest(T item)
+        {
+            _items.Add(item);
+        }
+
+        /// <summary>
+        /// Returns an enumerator for the collection items.
+        /// </summary>
+        /// <returns>An enumerator for the collection items.</returns>
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _items.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Returns an untyped enumerator for the collection items.
+        /// </summary>
+        /// <returns>An untyped enumerator for the collection items.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 
     /// <summary>
