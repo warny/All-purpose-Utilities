@@ -1290,4 +1290,106 @@ public class ParserExecutionContextCopierTests
             _actionCount++;
         }
     }
+
+    /// <summary>
+    /// Verifies that a field implementing <see cref="ICloneable"/> is copied by calling Clone rather than by reference.
+    /// </summary>
+    [TestMethod]
+    public void CopyClonesICloneableFields()
+    {
+        CloneableFieldContext source = new(new CloneableState(42));
+
+        CloneableFieldContext copy = ParserExecutionContextCopier<CloneableFieldContext>.Copy(source, static () => new CloneableFieldContext());
+
+        Assert.AreNotSame(source.State, copy.State);
+        Assert.AreEqual(42, copy.State!.Value);
+        Assert.AreEqual(1, source.State.CloneCallCount);
+    }
+
+    /// <summary>
+    /// Verifies that Copy throws <see cref="InvalidOperationException"/> when the factory returns null.
+    /// </summary>
+    [TestMethod]
+    public void CopyThrowsWhenFactoryReturnsNull()
+    {
+        SimpleContext source = new();
+        source.SetState(1, "x", true);
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+            () => ParserExecutionContextCopier<SimpleContext>.Copy(source, static () => null!));
+
+        StringAssert.Contains(exception.Message, "non-null");
+    }
+
+    /// <summary>
+    /// Holds a field whose declared type implements <see cref="ICloneable"/>.
+    /// </summary>
+    private sealed class CloneableFieldContext
+    {
+        /// <summary>
+        /// Stores the cloneable state object.
+        /// </summary>
+        private CloneableState? _state;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloneableFieldContext"/> class.
+        /// </summary>
+        public CloneableFieldContext()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloneableFieldContext"/> class.
+        /// </summary>
+        /// <param name="state">The initial cloneable state.</param>
+        public CloneableFieldContext(CloneableState state)
+        {
+            _state = state;
+        }
+
+        /// <summary>
+        /// Gets the cloneable state field.
+        /// </summary>
+        public CloneableState? State => _state;
+    }
+
+    /// <summary>
+    /// A state object implementing <see cref="ICloneable"/> to verify field-level Clone dispatch.
+    /// </summary>
+    private sealed class CloneableState : ICloneable
+    {
+        /// <summary>
+        /// Stores the state value.
+        /// </summary>
+        private readonly int _value;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloneableState"/> class.
+        /// </summary>
+        /// <param name="value">The state value.</param>
+        public CloneableState(int value)
+        {
+            _value = value;
+        }
+
+        /// <summary>
+        /// Gets the state value.
+        /// </summary>
+        public int Value => _value;
+
+        /// <summary>
+        /// Gets the number of Clone calls made on this instance.
+        /// </summary>
+        public int CloneCallCount { get; private set; }
+
+        /// <summary>
+        /// Returns a new instance with the same value.
+        /// </summary>
+        /// <returns>A cloned instance.</returns>
+        public object Clone()
+        {
+            CloneCallCount++;
+            return new CloneableState(_value);
+        }
+    }
 }

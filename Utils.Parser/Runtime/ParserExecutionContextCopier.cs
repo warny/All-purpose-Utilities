@@ -13,11 +13,12 @@ namespace Utils.Parser.Runtime;
 /// such as arrays, <see cref="List{T}"/>, <see cref="Dictionary{TKey,TValue}"/>, and <see cref="HashSet{T}"/> with explicit copy expressions,
 /// and can recreate unknown <see cref="IEnumerable{T}"/> collections when they expose a safe copy constructor, parameterless constructor
 /// with <c>AddRange(IEnumerable&lt;T&gt;)</c>, or parameterless constructor with <c>Add(T)</c>. It does not deep-clone contained elements.
-/// Unknown references and collections without a safe reconstruction strategy are copied by reference. When <see cref="Copy"/> receives a source
-/// context that implements <see cref="ICloneable"/>, that clone contract takes priority and the supplied factory is not invoked. Static fields
-/// and field-like event backing fields are ignored. Readonly instance fields are rejected because they cannot be assigned safely during normal
-/// field-copy operations. Reflection is used only while building the delegate cached by the closed generic type; subsequent field-copy
-/// operations invoke the compiled delegate.
+/// Fields whose declared type implements <see cref="ICloneable"/> are copied by calling <see cref="ICloneable.Clone"/> on the field value
+/// so that objects expressing their own state-copy contract are respected. Unknown references and collections without a safe reconstruction
+/// strategy are copied by reference. When <see cref="Copy"/> receives a source context that implements <see cref="ICloneable"/>, that clone
+/// contract takes priority and the supplied factory is not invoked. Static fields and field-like event backing fields are ignored.
+/// Readonly instance fields are rejected because they cannot be assigned safely during normal field-copy operations. Reflection is used only
+/// while building the delegate cached by the closed generic type; subsequent field-copy operations invoke the compiled delegate.
 /// </remarks>
 public static class ParserExecutionContextCopier<TContext>
     where TContext : class
@@ -34,7 +35,7 @@ public static class ParserExecutionContextCopier<TContext>
     /// <param name="factory">The caller-provided factory used to create the target context instance when <paramref name="source"/> does not implement <see cref="ICloneable"/>.</param>
     /// <returns>A new context instance containing the copied state.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>, or <paramref name="factory"/> is <see langword="null"/> when field copying is required.</exception>
-    /// <exception cref="InvalidOperationException"><see cref="ICloneable.Clone"/> returns <see langword="null"/>, returns a value that is not assignable to <typeparamref name="TContext"/>, or the context type contains an unsupported readonly instance field during field copying.</exception>
+    /// <exception cref="InvalidOperationException"><see cref="ICloneable.Clone"/> returns <see langword="null"/>, returns a value that is not assignable to <typeparamref name="TContext"/>, the factory returns <see langword="null"/>, or the context type contains an unsupported readonly instance field during field copying.</exception>
     public static TContext Copy(TContext source, Func<TContext> factory)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -48,7 +49,11 @@ public static class ParserExecutionContextCopier<TContext>
 
         TContext target = factory();
 
-        ArgumentNullException.ThrowIfNull(target, nameof(factory));
+        if (target is null)
+        {
+            throw new InvalidOperationException(
+                $"The factory must return a non-null {typeof(TContext).Name} instance.");
+        }
 
         CopyTo(source, target);
         return target;
@@ -215,6 +220,11 @@ public static class ParserExecutionContextCopier<TContext>
     /// <returns>An expression that produces the value to assign to the target field.</returns>
     private static Expression BuildCopiedValueExpression(Expression sourceField, Type fieldType)
     {
+        if (fieldType == typeof(string) || fieldType.IsValueType)
+        {
+            return sourceField;
+        }
+
         if (fieldType.IsArray)
         {
             return BuildArrayCopyExpression(sourceField, fieldType);
@@ -224,20 +234,20 @@ public static class ParserExecutionContextCopier<TContext>
         {
             Type genericDefinition = fieldType.GetGenericTypeDefinition();
 
-            if (genericDefinition == typeof(List<>))
+            if (genericDefinition == typeof(List<>) || genericDefinition == typeof(HashSet<>))
             {
-                return BuildListCopyExpression(sourceField, fieldType);
+                return BuildEnumerableConstructorCopyExpression(sourceField, fieldType);
             }
 
             if (genericDefinition == typeof(Dictionary<,>))
             {
                 return BuildDictionaryCopyExpression(sourceField, fieldType);
             }
+        }
 
-            if (genericDefinition == typeof(HashSet<>))
-            {
-                return BuildHashSetCopyExpression(sourceField, fieldType);
-            }
+        if (typeof(ICloneable).IsAssignableFrom(fieldType))
+        {
+            return BuildCloneableFieldCopyExpression(sourceField, fieldType);
         }
 
         return BuildUnknownCollectionCopyExpression(sourceField, fieldType);
@@ -260,20 +270,19 @@ public static class ParserExecutionContextCopier<TContext>
     }
 
     /// <summary>
-    /// Builds an expression that recreates a <see cref="List{T}"/> using its enumerable copy constructor.
+    /// Builds an expression that recreates a collection using its <see cref="IEnumerable{T}"/> copy constructor.
     /// </summary>
-    /// <param name="sourceField">The expression reading the source list.</param>
-    /// <param name="fieldType">The concrete list field type.</param>
-    /// <returns>An expression that returns a copied list or <see langword="null"/>.</returns>
-    private static Expression BuildListCopyExpression(Expression sourceField, Type fieldType)
+    /// <param name="sourceField">The expression reading the source collection.</param>
+    /// <param name="fieldType">The concrete collection field type.</param>
+    /// <returns>An expression that returns a copied collection or <see langword="null"/>.</returns>
+    private static Expression BuildEnumerableConstructorCopyExpression(Expression sourceField, Type fieldType)
     {
         Type elementType = fieldType.GetGenericArguments()[0];
         Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
         ConstructorInfo constructor = fieldType.GetConstructor([enumerableType])
             ?? throw new InvalidOperationException($"The enumerable copy constructor could not be found for '{fieldType.FullName}'.");
-        Expression copy = Expression.New(constructor, sourceField);
 
-        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+        return BuildNullPreservingExpression(sourceField, Expression.New(constructor, sourceField), fieldType);
     }
 
     /// <summary>
@@ -288,26 +297,23 @@ public static class ParserExecutionContextCopier<TContext>
         Type dictionaryType = typeof(IDictionary<,>).MakeGenericType(genericArguments);
         ConstructorInfo constructor = fieldType.GetConstructor([dictionaryType])
             ?? throw new InvalidOperationException($"The dictionary copy constructor could not be found for '{fieldType.FullName}'.");
-        Expression copy = Expression.New(constructor, sourceField);
 
-        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+        return BuildNullPreservingExpression(sourceField, Expression.New(constructor, sourceField), fieldType);
     }
 
     /// <summary>
-    /// Builds an expression that recreates a <see cref="HashSet{T}"/> using its enumerable copy constructor.
+    /// Builds an expression that copies an <see cref="ICloneable"/> field by calling <see cref="ICloneable.Clone"/> on the field value.
     /// </summary>
-    /// <param name="sourceField">The expression reading the source hash set.</param>
-    /// <param name="fieldType">The concrete hash-set field type.</param>
-    /// <returns>An expression that returns a copied hash set or <see langword="null"/>.</returns>
-    private static Expression BuildHashSetCopyExpression(Expression sourceField, Type fieldType)
+    /// <param name="sourceField">The expression reading the source field.</param>
+    /// <param name="fieldType">The field type implementing <see cref="ICloneable"/>.</param>
+    /// <returns>An expression that returns the cloned value or <see langword="null"/>.</returns>
+    private static Expression BuildCloneableFieldCopyExpression(Expression sourceField, Type fieldType)
     {
-        Type elementType = fieldType.GetGenericArguments()[0];
-        Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
-        ConstructorInfo constructor = fieldType.GetConstructor([enumerableType])
-            ?? throw new InvalidOperationException($"The enumerable copy constructor could not be found for '{fieldType.FullName}'.");
-        Expression copy = Expression.New(constructor, sourceField);
+        MethodInfo cloneMethod = typeof(ICloneable).GetMethod(nameof(ICloneable.Clone))
+            ?? throw new InvalidOperationException("ICloneable.Clone could not be found.");
+        Expression clone = Expression.Convert(Expression.Call(sourceField, cloneMethod), fieldType);
 
-        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+        return BuildNullPreservingExpression(sourceField, clone, fieldType);
     }
 
     /// <summary>
@@ -318,11 +324,6 @@ public static class ParserExecutionContextCopier<TContext>
     /// <returns>A collection copy expression when supported; otherwise, the original source-field expression.</returns>
     private static Expression BuildUnknownCollectionCopyExpression(Expression sourceField, Type fieldType)
     {
-        if (fieldType == typeof(string))
-        {
-            return sourceField;
-        }
-
         Type? enumerableType = FindGenericEnumerableType(fieldType);
 
         if (enumerableType is null)
@@ -455,7 +456,9 @@ public static class ParserExecutionContextCopier<TContext>
                 Parameters = method.GetParameters(),
             })
             .Where(candidate => candidate.Method.Name == "Add" && candidate.Parameters.Length == 1)
-            .FirstOrDefault(candidate => candidate.Parameters[0].ParameterType.IsAssignableFrom(elementType))
+            .FirstOrDefault(candidate =>
+                candidate.Parameters[0].ParameterType != typeof(object) &&
+                candidate.Parameters[0].ParameterType.IsAssignableFrom(elementType))
             ?.Method;
     }
 
