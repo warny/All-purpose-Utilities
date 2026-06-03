@@ -88,6 +88,7 @@ Current capabilities and responsibilities:
 - Diagnostics/observation correlation boundaries are documented (`docs/parser/DiagnosticsObservationCorrelation.md`) as descriptive-only and non-authoritative.
 - Source-position contracts are centralized in the shared `Utils.Parser.Source` package: `SourceCodeLocation` / `SourceCodeRange` remain human-readable diagnostic/display locations, while `SourceLocation` / `SourceSpan` preserve runtime text offsets and spans for tokens and parse nodes.
 - Source-position contracts are intentionally split between runtime coordinates (`SourceLocation`, `SourceSpan`) and human-readable source coordinates (`SourceCodeLocation`, `SourceCodeRange`). Runtime coordinates carry absolute text offsets for tokens/parser operations, while human-readable coordinates are used for diagnostics/tooling when no canonical source offset is available. These contracts must not be merged without a dedicated design review.
+- `ParserExecutionContextCopier<TContext>` is available as a preparatory public runtime helper for future parser execution-context snapshot/fork/commit designs. It builds a reflection-discovered, compiled, cached field-copy delegate per context type and performs shallow structural copies without changing parser behavior.
 
 Clarifications that must remain true:
 
@@ -388,7 +389,8 @@ Current clarification status:
 - embedded-code preparation/generation contracts are available.
 - expression-backed preparation, prepared artifact registry/adapters, parser-definition registry builder, and prepared runtime policy builder are available for the runtime-inline expression opt-in path.
 - generated C# hooks, generated hook dispatch hardening, shared runtime metadata alignment, cross-path regression coverage, generated C# body support, generated execution contexts with fresh default `ParseWithEmbeddedCode(string)` creation, limited parser `@members` injection, generator warning `UP1031` for injected parser members, and generator warning `UP1029` for visible unsupported embedded-code constructs are available for parser semantic predicates and inline parser actions.
-- the remaining embedded-code work is explicit: lexer predicate/action design; `@init` / `@after` design; action buffering/rollback design; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
+- `ParserExecutionContextCopier<TContext>` is available as a preparatory runtime copy primitive for generated execution-context snapshot/fork/commit work; it is not yet wired into `ParserEngine`, generated policies, rollback, action buffering, `@init`, or `@after`.
+- the remaining embedded-code work is explicit: lexer predicate/action design; `@init` / `@after` design; action buffering/rollback design that may consume the context copier; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
 - lexer actions, lexer predicates, unsupported grammar actions, `@lexer::members`, `@init`, `@after`, and automatic default execution remain not done and must not be documented as complete.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
@@ -525,4 +527,4 @@ Future runtime PRs should include:
 
 ## Current safety summary
 
-The runtime currently remains conservative and deterministic. Metadata-rich infrastructure exists, but it is not execution authority. No replay, rollback, semantic-state-aware memoization, graph execution, async parsing, or parallel parsing exists today. Public APIs may evolve while the project remains pre-release; runtime execution guarantees remain conservative.
+The runtime currently remains conservative and deterministic. Metadata-rich infrastructure and the execution-context copy helper exist, but they are not execution authority. No replay, rollback, semantic-state-aware memoization, graph execution, async parsing, or parallel parsing exists today. Public APIs may evolve while the project remains pre-release; runtime execution guarantees remain conservative.

@@ -112,6 +112,18 @@ Current state:
 - generated `ParseWithEmbeddedCode(string input)` creates a fresh execution context for that parse, while the overload accepting `{ClassName}ExecutionContext` lets advanced callers supply and observe a context explicitly;
 - generated `Parse(...)` remains conservative and does not install generated embedded-code hooks.
 
+Context-copy preparation:
+
+- `Utils.Parser.Runtime.ParserExecutionContextCopier<TContext>` is available as a public runtime helper for future generated-context snapshot/fork/commit designs;
+- the helper inspects each closed context type once, builds a compiled `Action<TContext, TContext>` field-copy delegate, and caches that delegate through the closed generic type;
+- `Copy(source, factory)` creates the target instance through a caller-supplied factory so generated code can copy internal or non-public-constructor contexts from the consuming assembly;
+- `CopyTo(source, target)` copies into an existing context and is suitable for future commit/restore experiments;
+- the copy is a shallow structural copy, not a universal deep copy: value fields, strings, nullable values, enums, and unrecognized references are assigned directly;
+- known containers are recreated (`T[]`, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>`), but their elements remain shallow-copied references or values;
+- null known containers remain null, static fields are not copied, field-like event backing fields are skipped, and readonly instance fields cause an explicit configuration exception instead of being ignored silently;
+- compiler-generated auto-property backing fields are treated as context state and are copied unless they are readonly;
+- this helper is not wired into `ParserEngine`, generated policies, or parsing strategy in the current model, and it does not add rollback, action buffering, `@init`, or `@after` execution.
+
 Execution boundary:
 
 - embedded ANTLR code selected for execution in this path is treated as C# source;
@@ -280,6 +292,10 @@ Not responsible for:
 - direct target-language compilation/execution;
 - hidden semantic state ownership.
 
+Current preparatory helper:
+
+- `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. It remains a helper only; `ParserEngine` does not invoke it automatically and no rollback behavior is active.
+
 ### `Utils.Parser.Diagnostics`
 
 Responsible for shared diagnostic descriptors across runtime and generator/tooling surfaces.
@@ -370,6 +386,7 @@ This model explicitly excludes:
 - parser scheduler changes;
 - `ParserEngine` authority transfer;
 - rollback/replay semantics;
+- automatic use of `ParserExecutionContextCopier<TContext>` as rollback or speculative-execution authority;
 - hidden semantic runtime state;
 - parse-tree shape changes;
 - direct `Utils.Parser` dependency on `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax`;
