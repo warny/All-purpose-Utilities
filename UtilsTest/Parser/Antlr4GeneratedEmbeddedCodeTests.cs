@@ -30,7 +30,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             """;
 
         string source = Emit(grammar);
-        StringAssert.Contains(source, "private static bool __Predicate_start_0_0_0");
+        StringAssert.Contains(source, "private bool __Predicate_start_0_0_0");
         StringAssert.Contains(source, "GeneratedSemanticPredicateEvaluator");
 
         var assembly = CompileGeneratedSource(source);
@@ -151,7 +151,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         const string userPartial = """
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static bool returnValue = true;
             }
@@ -202,11 +202,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount++;
                 }
@@ -214,7 +214,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             """;
 
         string source = Emit(grammar);
-        StringAssert.Contains(source, "private static void __Action_start_0_0_0");
+        StringAssert.Contains(source, "private void __Action_start_0_0_0");
         StringAssert.Contains(source, "GeneratedParserActionExecutor");
 
         var assembly = CompileGeneratedSource(source, userPartial);
@@ -239,11 +239,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount++;
                 }
@@ -257,6 +257,247 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
         Assert.AreEqual(1, ReadActionCount(assembly));
+    }
+
+    /// <summary>
+    /// Ensures <c>@members</c> is injected into the per-parse execution context and can be called by an inline action.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_MembersAction_InjectsMembersIntoExecutionContext()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+
+                private void OnAction(ParserActionExecutionContext context)
+                {
+                    Count++;
+                }
+
+                internal int CountValue => Count;
+            }
+
+            start : { OnAction(context); } A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "internal sealed partial class PExecutionContext");
+        StringAssert.Contains(source, "private int Count;");
+
+        var assembly = CompileGeneratedSource(source);
+        var context = CreateExecutionContext(assembly);
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadContextIntProperty(context, "CountValue"));
+    }
+
+    /// <summary>
+    /// Ensures explicit generated execution contexts keep instance state isolated across parses.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitExecutionContexts_IsolateMembersState()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+
+                private void OnAction(ParserActionExecutionContext context)
+                {
+                    Count++;
+                }
+
+                internal int CountValue => Count;
+            }
+
+            start : { OnAction(context); } A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var firstContext = CreateExecutionContext(assembly);
+        var secondContext = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", firstContext);
+        InvokeParseWithContext(assembly, "a", secondContext);
+        InvokeParseWithContext(assembly, "a", firstContext);
+
+        Assert.AreEqual(2, ReadContextIntProperty(firstContext, "CountValue"));
+        Assert.AreEqual(1, ReadContextIntProperty(secondContext, "CountValue"));
+    }
+
+    /// <summary>
+    /// Ensures the default embedded-code parse helper creates a fresh generated execution context for each call.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_DefaultOverload_CreatesFreshExecutionContextEachCall()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+                internal static readonly System.Collections.Generic.List<int> ObservedCounts = new();
+
+                private void OnAction(ParserActionExecutionContext context)
+                {
+                    Count++;
+                    ObservedCounts.Add(Count);
+                }
+            }
+
+            start : { OnAction(context); } A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        CollectionAssert.AreEqual(new[] { 1, 1 }, ReadContextObservedCounts(assembly));
+    }
+
+    /// <summary>
+    /// Ensures the generated facade does not expose a policy helper that creates and captures a hidden execution context.
+    /// </summary>
+    [TestMethod]
+    public void CreateRuntimePolicy_WithoutExecutionContext_IsNotGenerated()
+    {
+        const string grammar = """
+            grammar P;
+            start : { true }? A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "CreateRuntimePolicy(PExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)");
+        Assert.IsFalse(source.Contains("public static ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("new PExecutionContext().CreateRuntimePolicy(basePolicy)", StringComparison.Ordinal));
+
+        var assembly = CompileGeneratedSource(source);
+        var facadeType = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var contextType = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        var policyMethods = facadeType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(static method => method.Name == "CreateRuntimePolicy")
+            .ToArray();
+
+        Assert.AreEqual(1, policyMethods.Length);
+        var parameters = policyMethods[0].GetParameters();
+        Assert.AreEqual(2, parameters.Length);
+        Assert.AreEqual(contextType, parameters[0].ParameterType);
+        Assert.AreEqual(typeof(ParserRuntimeFeaturePolicy), policyMethods[0].ReturnType);
+        Assert.AreEqual(typeof(ParserRuntimeFeaturePolicy), parameters[1].ParameterType);
+        Assert.IsTrue(parameters[1].HasDefaultValue);
+    }
+
+    /// <summary>
+    /// Ensures predicates can call instance members injected through <c>@members</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_Predicate_CallsInjectedInstanceMember()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private bool Allow() => true;
+            }
+
+            start : { Allow() }? A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures predicate instance state belongs to the supplied generated execution context.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PredicateState_UsesSuppliedExecutionContext()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+                private bool Allow()
+                {
+                    Count++;
+                    return true;
+                }
+
+                internal int CountValue => Count;
+            }
+
+            start : { Allow() }? A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var firstContext = CreateExecutionContext(assembly);
+        var secondContext = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", firstContext);
+        InvokeParseWithContext(assembly, "a", secondContext);
+
+        Assert.IsTrue(ReadContextIntProperty(firstContext, "CountValue") > 0);
+        Assert.IsTrue(ReadContextIntProperty(secondContext, "CountValue") > 0);
+    }
+
+    /// <summary>
+    /// Ensures invalid C# injected through <c>@members</c> remains a Roslyn compilation error.
+    /// </summary>
+    [TestMethod]
+    public void CompileGeneratedSource_InvalidMembersCode_ReportsRoslynError()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                not valid csharp
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var result = CompileGeneratedSourceExpectingFailure(Emit(grammar));
+
+        Assert.IsFalse(result.Success);
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+    }
+
+    /// <summary>
+    /// Ensures member-name collisions in injected <c>@members</c> remain Roslyn compilation errors.
+    /// </summary>
+    [TestMethod]
+    public void CompileGeneratedSource_MembersHookNameCollision_ReportsRoslynError()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private void __Action_start_0_0_0(ParserActionExecutionContext context) { }
+            }
+
+            start : { } A ;
+            A : 'a' ;
+            """;
+
+        var result = CompileGeneratedSourceExpectingFailure(Emit(grammar));
+
+        Assert.IsFalse(result.Success);
+        Assert.IsTrue(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
     }
 
     /// <summary>
@@ -278,17 +519,17 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int BeforeCount;
                 public static int AfterCount;
 
-                private static void OnBefore(ParserActionExecutionContext context)
+                private void OnBefore(ParserActionExecutionContext context)
                 {
                     BeforeCount++;
                 }
 
-                private static void OnAfter(ParserActionExecutionContext context)
+                private void OnAfter(ParserActionExecutionContext context)
                 {
                     AfterCount++;
                 }
@@ -328,11 +569,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static string? ActionName;
 
-                private static void OnAction(ParserActionExecutionContext context, string name)
+                private void OnAction(ParserActionExecutionContext context, string name)
                 {
                     ActionName = name;
                 }
@@ -363,11 +604,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount += context.ElementIndex == 0 || context.ElementIndex == 2 ? 1 : 100;
                 }
@@ -421,11 +662,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount += context.ElementIndex == -1 ? 1 : 100;
                 }
@@ -460,11 +701,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount += context.ElementIndex == 0 ? 1 : 100;
                 }
@@ -495,11 +736,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int PredicateCount;
 
-                private static bool OnPredicate(SemanticPredicateEvaluationContext context)
+                private bool OnPredicate(SemanticPredicateEvaluationContext context)
                 {
                     PredicateCount++;
                     return context.InputPosition == 1 && context.ElementIndex == 0;
@@ -534,11 +775,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount += context.AlternativeIndex == 0 ? 1 : 10;
                 }
@@ -574,11 +815,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int PredicateCount;
 
-                private static bool OnPredicate(SemanticPredicateEvaluationContext context)
+                private bool OnPredicate(SemanticPredicateEvaluationContext context)
                 {
                     PredicateCount++;
                     return context.ElementIndex == 0;
@@ -613,11 +854,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int ActionCount;
 
-                private static void OnAction(ParserActionExecutionContext context)
+                private void OnAction(ParserActionExecutionContext context)
                 {
                     ActionCount += context.ElementIndex == 0 ? 1 : 100;
                 }
@@ -654,11 +895,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             namespace Generated.Tests;
 
-            internal static partial class P
+            internal sealed partial class PExecutionContext
             {
                 public static int PredicateCount;
 
-                private static bool OnPredicate(SemanticPredicateEvaluationContext context)
+                private bool OnPredicate(SemanticPredicateEvaluationContext context)
                 {
                     PredicateCount++;
                     return context.ElementIndex == 0;
@@ -693,7 +934,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             """;
 
         string source = Emit(grammar);
-        StringAssert.Contains(source, "new CompiledGrammar(Build(), CreateRuntimePolicy())");
+        StringAssert.Contains(source, "new CompiledGrammar(Build(), executionContext.CreateRuntimePolicy())");
         StringAssert.Contains(source, "__Predicate_expr_0_0_0");
 
         var assembly = CompileGeneratedSource(source);
@@ -1100,7 +1341,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
     private static ParseNode InvokeParse(Assembly assembly, string methodName, string input)
     {
         var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
-        var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)!;
+        var method = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == methodName
+                && method.GetParameters() is [{ ParameterType: var parameterType }]
+                && parameterType == typeof(string));
         return (ParseNode)method.Invoke(null, [input])!;
     }
 
@@ -1111,7 +1355,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <returns>Current action count.</returns>
     private static int ReadActionCount(Assembly assembly)
     {
-        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         var field = type.GetField("ActionCount", BindingFlags.Public | BindingFlags.Static)!;
         return (int)field.GetValue(null)!;
     }
@@ -1123,7 +1367,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <returns>Current predicate count.</returns>
     private static int ReadPredicateCount(Assembly assembly)
     {
-        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         var field = type.GetField("PredicateCount", BindingFlags.Public | BindingFlags.Static)!;
         return (int)field.GetValue(null)!;
     }
@@ -1136,7 +1380,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <returns>Current integer field value.</returns>
     private static int ReadIntField(Assembly assembly, string fieldName)
     {
-        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
         return (int)field.GetValue(null)!;
     }
@@ -1149,9 +1393,64 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <returns>Current string field value.</returns>
     private static string? ReadStringField(Assembly assembly, string fieldName)
     {
-        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
         return (string?)field.GetValue(null);
+    }
+
+    /// <summary>
+    /// Creates a generated execution context instance by reflection.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated execution context.</param>
+    /// <returns>A new generated execution context instance.</returns>
+    private static object CreateExecutionContext(Assembly assembly)
+    {
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        return Activator.CreateInstance(type)!;
+    }
+
+    /// <summary>
+    /// Invokes the generated embedded-code parse overload that accepts an explicit execution context.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="input">Input text to parse.</param>
+    /// <param name="executionContext">Execution context instance to pass to the generated overload.</param>
+    /// <returns>Parse-tree root returned by the generated helper.</returns>
+    private static ParseNode InvokeParseWithContext(Assembly assembly, string input, object executionContext)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var contextType = executionContext.GetType();
+        var method = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "ParseWithEmbeddedCode"
+                && method.GetParameters() is [{ ParameterType: var inputType }, { ParameterType: var executionContextType }]
+                && inputType == typeof(string)
+                && executionContextType == contextType);
+        return (ParseNode)method.Invoke(null, [input, executionContext])!;
+    }
+
+    /// <summary>
+    /// Reads a named integer property from a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Execution context instance to inspect.</param>
+    /// <param name="propertyName">Property name.</param>
+    /// <returns>The integer property value.</returns>
+    private static int ReadContextIntProperty(object executionContext, string propertyName)
+    {
+        var property = executionContext.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
+        return (int)property.GetValue(executionContext)!;
+    }
+
+    /// <summary>
+    /// Reads static observed action counts from the generated execution context type.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated execution context.</param>
+    /// <returns>Observed action counts.</returns>
+    private static int[] ReadContextObservedCounts(Assembly assembly)
+    {
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        var field = type.GetField("ObservedCounts", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!;
+        var counts = (System.Collections.Generic.IEnumerable<int>)field.GetValue(null)!;
+        return counts.ToArray();
     }
 
     /// <summary>

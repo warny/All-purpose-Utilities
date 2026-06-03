@@ -167,6 +167,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         foreach (var action in grammar.Actions)
         {
             var constructKind = FormatGrammarActionKind(action);
+            if (EmbeddedMembersSupport.IsInjectableParserMembersAction(grammar, action))
+            {
+                ReportEmbeddedMembersInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
+                continue;
+            }
+
             var reason = FormatGrammarActionReason(action);
             ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, grammar.Name, reason);
         }
@@ -190,6 +196,28 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 ReportLexerEmbeddedCodeDiagnostics(context, file, text, rule);
             }
         }
+    }
+
+    /// <summary>
+    /// Reports the compatibility warning used when parser members are injected into the generated execution context.
+    /// </summary>
+    /// <param name="context">Source production context receiving Roslyn diagnostics.</param>
+    /// <param name="file">Grammar additional file.</param>
+    /// <param name="text">Grammar source text used to create line-based locations.</param>
+    /// <param name="line">One-based line number associated with the construct.</param>
+    /// <param name="constructKind">Human-readable construct kind.</param>
+    /// <param name="ownerName">Grammar name associated with the construct.</param>
+    private static void ReportEmbeddedMembersInjectedDiagnostic(
+        SourceProductionContext context,
+        AdditionalText file,
+        SourceText text,
+        int line,
+        string constructKind,
+        string ownerName)
+    {
+        var descriptor = ToRoslynDescriptor(ParserDiagnostics.EmbeddedMembersInjectedByGenerator);
+        var location = CreateGrammarLocation(file, text, line);
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, location, constructKind, ownerName));
     }
 
     /// <summary>
@@ -341,7 +369,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     {
         if (string.Equals(action.Name, "members", StringComparison.Ordinal))
         {
-            return "Grammar @members code is not injected into the generated parser class. Use a separate partial class to provide user members called by generated inline parser actions.";
+            return "This members action is not a parser @members block supported by the generated execution context and remains metadata-only.";
         }
 
         return "Grammar-level actions are preserved as metadata only and are not injected into generated parser or lexer types.";

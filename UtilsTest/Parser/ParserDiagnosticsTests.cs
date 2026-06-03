@@ -420,6 +420,9 @@ public class ParserDiagnosticsTests
 
         Assert.IsTrue(ParserDiagnostics.TryGet("UP1029", out var notExecutedByGenerator));
         Assert.AreSame(ParserDiagnostics.EmbeddedCodeConstructNotExecutedByGenerator, notExecutedByGenerator);
+
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1031", out var membersInjectedByGenerator));
+        Assert.AreSame(ParserDiagnostics.EmbeddedMembersInjectedByGenerator, membersInjectedByGenerator);
     }
 
     [TestMethod]
