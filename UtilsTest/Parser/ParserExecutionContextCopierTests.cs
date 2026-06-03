@@ -1424,4 +1424,272 @@ public class ParserExecutionContextCopierTests
             return new CloneableState(_value);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Collection interface copy tests
+    // -------------------------------------------------------------------------
+
+    /// <summary>Verifies that an <see cref="IList{T}"/> field is copied into a new independent <see cref="List{T}"/>.</summary>
+    [TestMethod]
+    public void CopyClonesIListFields()
+    {
+        IListContext source = new(new List<string> { "a", "b" });
+
+        IListContext copy = ParserExecutionContextCopier<IListContext>.Copy(source, static () => new IListContext());
+        copy.Items!.Add("c");
+
+        CollectionAssert.AreEqual(new[] { "a", "b" }, source.Items!.ToArray());
+        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, copy.Items.ToArray());
+        Assert.AreNotSame(source.Items, copy.Items);
+    }
+
+    /// <summary>Verifies that an <see cref="IReadOnlyList{T}"/> field is copied into a new independent collection.</summary>
+    [TestMethod]
+    public void CopyClonesIReadOnlyListFields()
+    {
+        IReadOnlyListContext source = new(new List<string> { "a", "b" });
+
+        IReadOnlyListContext copy = ParserExecutionContextCopier<IReadOnlyListContext>.Copy(source, static () => new IReadOnlyListContext());
+
+        Assert.AreEqual(2, copy.Items!.Count);
+        Assert.AreEqual("a", copy.Items[0]);
+        Assert.AreEqual("b", copy.Items[1]);
+        Assert.AreNotSame(source.Items, copy.Items);
+    }
+
+    /// <summary>Verifies that an <see cref="ICollection{T}"/> field is copied into a new independent collection.</summary>
+    [TestMethod]
+    public void CopyClonesICollectionFields()
+    {
+        ICollectionContext source = new(new List<string> { "a", "b" });
+
+        ICollectionContext copy = ParserExecutionContextCopier<ICollectionContext>.Copy(source, static () => new ICollectionContext());
+        copy.Items!.Add("c");
+
+        Assert.AreEqual(2, source.Items!.Count);
+        Assert.AreEqual(3, copy.Items.Count);
+        Assert.AreNotSame(source.Items, copy.Items);
+    }
+
+    /// <summary>Verifies that an <see cref="IReadOnlyCollection{T}"/> field is copied into a new independent collection.</summary>
+    [TestMethod]
+    public void CopyClonesIReadOnlyCollectionFields()
+    {
+        IReadOnlyCollectionContext source = new(new List<string> { "a", "b" });
+
+        IReadOnlyCollectionContext copy = ParserExecutionContextCopier<IReadOnlyCollectionContext>.Copy(source, static () => new IReadOnlyCollectionContext());
+
+        Assert.AreEqual(2, copy.Items!.Count);
+        Assert.AreNotSame(source.Items, copy.Items);
+    }
+
+    /// <summary>Verifies that an <see cref="IEnumerable{T}"/> field is copied into a new independent <see cref="List{T}"/>.</summary>
+    [TestMethod]
+    public void CopyClonesIEnumerableFields()
+    {
+        IEnumerableContext source = new(new List<string> { "a", "b" });
+
+        IEnumerableContext copy = ParserExecutionContextCopier<IEnumerableContext>.Copy(source, static () => new IEnumerableContext());
+
+        CollectionAssert.AreEqual(new[] { "a", "b" }, copy.Items!.ToArray());
+        Assert.AreNotSame(source.Items, copy.Items);
+    }
+
+    /// <summary>Verifies that an <see cref="IDictionary{TKey,TValue}"/> field is copied into a new independent dictionary.</summary>
+    [TestMethod]
+    public void CopyClonesIDictionaryFields()
+    {
+        IDictionaryContext source = new(new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 });
+
+        IDictionaryContext copy = ParserExecutionContextCopier<IDictionaryContext>.Copy(source, static () => new IDictionaryContext());
+        copy.Map!["c"] = 3;
+
+        Assert.AreEqual(2, source.Map!.Count);
+        Assert.AreEqual(3, copy.Map.Count);
+        Assert.AreNotSame(source.Map, copy.Map);
+    }
+
+    /// <summary>Verifies that an <see cref="IDictionary{TKey,TValue}"/> field preserves the comparer of a runtime <see cref="Dictionary{TKey,TValue}"/>.</summary>
+    [TestMethod]
+    public void CopyPreservesIDictionaryRuntimeDictionaryComparer()
+    {
+        IDictionaryContext source = new(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["key"] = 1 });
+
+        IDictionaryContext copy = ParserExecutionContextCopier<IDictionaryContext>.Copy(source, static () => new IDictionaryContext());
+
+        Assert.IsTrue(copy.Map!.ContainsKey("KEY"));
+        Assert.AreNotSame(source.Map, copy.Map);
+    }
+
+    /// <summary>Verifies that an <see cref="IReadOnlyDictionary{TKey,TValue}"/> field is copied into a new independent dictionary.</summary>
+    [TestMethod]
+    public void CopyClonesIReadOnlyDictionaryFields()
+    {
+        IReadOnlyDictionaryContext source = new(new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 });
+
+        IReadOnlyDictionaryContext copy = ParserExecutionContextCopier<IReadOnlyDictionaryContext>.Copy(source, static () => new IReadOnlyDictionaryContext());
+
+        Assert.AreEqual(2, copy.Map!.Count);
+        Assert.AreNotSame(source.Map, copy.Map);
+    }
+
+    /// <summary>Verifies that an <see cref="IReadOnlyDictionary{TKey,TValue}"/> field preserves the comparer of a runtime <see cref="Dictionary{TKey,TValue}"/>.</summary>
+    [TestMethod]
+    public void CopyPreservesIReadOnlyDictionaryRuntimeDictionaryComparer()
+    {
+        IReadOnlyDictionaryContext source = new(new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["key"] = 1 });
+
+        IReadOnlyDictionaryContext copy = ParserExecutionContextCopier<IReadOnlyDictionaryContext>.Copy(source, static () => new IReadOnlyDictionaryContext());
+
+        Assert.IsTrue(copy.Map!.ContainsKey("KEY"));
+        Assert.AreNotSame(source.Map, copy.Map);
+    }
+
+    /// <summary>Verifies that an <see cref="ISet{T}"/> field is copied into a new independent <see cref="HashSet{T}"/>.</summary>
+    [TestMethod]
+    public void CopyClonesISetFields()
+    {
+        ISetContext source = new(new HashSet<string> { "a", "b" });
+
+        ISetContext copy = ParserExecutionContextCopier<ISetContext>.Copy(source, static () => new ISetContext());
+        copy.Set!.Add("c");
+
+        Assert.IsTrue(source.Set!.Contains("a"));
+        Assert.IsFalse(source.Set.Contains("c"));
+        Assert.IsTrue(copy.Set.Contains("c"));
+        Assert.AreNotSame(source.Set, copy.Set);
+    }
+
+    /// <summary>Verifies that an <see cref="ISet{T}"/> field preserves the comparer of a runtime <see cref="HashSet{T}"/>.</summary>
+    [TestMethod]
+    public void CopyPreservesISetRuntimeHashSetComparer()
+    {
+        ISetContext source = new(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "value" });
+
+        ISetContext copy = ParserExecutionContextCopier<ISetContext>.Copy(source, static () => new ISetContext());
+
+        Assert.IsTrue(copy.Set!.Contains("VALUE"));
+        Assert.AreNotSame(source.Set, copy.Set);
+    }
+
+    /// <summary>Verifies that an <see cref="IReadOnlySet{T}"/> field is copied into a new independent <see cref="HashSet{T}"/>.</summary>
+    [TestMethod]
+    public void CopyClonesIReadOnlySetFields()
+    {
+        IReadOnlySetContext source = new(new HashSet<string> { "a", "b" });
+
+        IReadOnlySetContext copy = ParserExecutionContextCopier<IReadOnlySetContext>.Copy(source, static () => new IReadOnlySetContext());
+
+        Assert.AreEqual(2, copy.Set!.Count);
+        Assert.AreNotSame(source.Set, copy.Set);
+    }
+
+    /// <summary>Verifies that an <see cref="IReadOnlySet{T}"/> field preserves the comparer of a runtime <see cref="HashSet{T}"/>.</summary>
+    [TestMethod]
+    public void CopyPreservesIReadOnlySetRuntimeHashSetComparer()
+    {
+        IReadOnlySetContext source = new(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "value" });
+
+        IReadOnlySetContext copy = ParserExecutionContextCopier<IReadOnlySetContext>.Copy(source, static () => new IReadOnlySetContext());
+
+        Assert.IsTrue(copy.Set!.Contains("VALUE"));
+        Assert.AreNotSame(source.Set, copy.Set);
+    }
+
+    /// <summary>Verifies that null interface collection fields remain null after copying.</summary>
+    [TestMethod]
+    public void CopyPreservesNullInterfaceCollections()
+    {
+        NullInterfaceCollectionsContext source = new();
+
+        NullInterfaceCollectionsContext copy = ParserExecutionContextCopier<NullInterfaceCollectionsContext>.Copy(source, static () => new NullInterfaceCollectionsContext());
+
+        Assert.IsNull(copy.Items);
+        Assert.IsNull(copy.Map);
+        Assert.IsNull(copy.Set);
+    }
+
+    // ---- context classes for interface collection tests ----
+
+    private sealed class IListContext
+    {
+        private IList<string>? _items;
+        public IListContext() { }
+        public IListContext(IList<string> items) => _items = items;
+        public IList<string>? Items => _items;
+    }
+
+    private sealed class IReadOnlyListContext
+    {
+        private IReadOnlyList<string>? _items;
+        public IReadOnlyListContext() { }
+        public IReadOnlyListContext(IReadOnlyList<string> items) => _items = items;
+        public IReadOnlyList<string>? Items => _items;
+    }
+
+    private sealed class ICollectionContext
+    {
+        private ICollection<string>? _items;
+        public ICollectionContext() { }
+        public ICollectionContext(ICollection<string> items) => _items = items;
+        public ICollection<string>? Items => _items;
+    }
+
+    private sealed class IReadOnlyCollectionContext
+    {
+        private IReadOnlyCollection<string>? _items;
+        public IReadOnlyCollectionContext() { }
+        public IReadOnlyCollectionContext(IReadOnlyCollection<string> items) => _items = items;
+        public IReadOnlyCollection<string>? Items => _items;
+    }
+
+    private sealed class IEnumerableContext
+    {
+        private IEnumerable<string>? _items;
+        public IEnumerableContext() { }
+        public IEnumerableContext(IEnumerable<string> items) => _items = items;
+        public IEnumerable<string>? Items => _items;
+    }
+
+    private sealed class IDictionaryContext
+    {
+        private IDictionary<string, int>? _map;
+        public IDictionaryContext() { }
+        public IDictionaryContext(IDictionary<string, int> map) => _map = map;
+        public IDictionary<string, int>? Map => _map;
+    }
+
+    private sealed class IReadOnlyDictionaryContext
+    {
+        private IReadOnlyDictionary<string, int>? _map;
+        public IReadOnlyDictionaryContext() { }
+        public IReadOnlyDictionaryContext(IReadOnlyDictionary<string, int> map) => _map = map;
+        public IReadOnlyDictionary<string, int>? Map => _map;
+    }
+
+    private sealed class ISetContext
+    {
+        private ISet<string>? _set;
+        public ISetContext() { }
+        public ISetContext(ISet<string> set) => _set = set;
+        public ISet<string>? Set => _set;
+    }
+
+    private sealed class IReadOnlySetContext
+    {
+        private IReadOnlySet<string>? _set;
+        public IReadOnlySetContext() { }
+        public IReadOnlySetContext(IReadOnlySet<string> set) => _set = set;
+        public IReadOnlySet<string>? Set => _set;
+    }
+
+    private sealed class NullInterfaceCollectionsContext
+    {
+        private IList<string>? _items;
+        private IDictionary<string, int>? _map;
+        private ISet<string>? _set;
+        public IList<string>? Items => _items;
+        public IDictionary<string, int>? Map => _map;
+        public ISet<string>? Set => _set;
+    }
 }

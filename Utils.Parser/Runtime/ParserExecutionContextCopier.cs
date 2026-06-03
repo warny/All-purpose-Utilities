@@ -20,10 +20,15 @@ namespace Utils.Parser.Runtime;
 /// Readonly instance fields are rejected because they cannot be assigned safely during normal field-copy operations. Reflection is used only
 /// while building the delegate cached by the closed generic type; subsequent field-copy operations invoke the compiled delegate.
 /// <para>
-/// Copy strategy is selected from the <b>declared field type</b>, not from the runtime type of the stored value. A field declared as
-/// <c>IList&lt;T&gt;</c> or <c>IReadOnlyDictionary&lt;TKey,TValue&gt;</c> is therefore copied by reference even when its runtime value
-/// is a <see cref="List{T}"/> or <see cref="Dictionary{TKey,TValue}"/> that the copier could otherwise clone. To benefit from structural
-/// copying, declare context fields with their concrete types rather than with interface types.
+/// Field-copy strategy is primarily selected from the <b>declared field type</b>. Concrete known collections and common collection
+/// interfaces are copied structurally. Sequential interfaces (<see cref="IEnumerable{T}"/>, <see cref="ICollection{T}"/>,
+/// <see cref="IList{T}"/>, <see cref="IReadOnlyCollection{T}"/>, <see cref="IReadOnlyList{T}"/>) are copied into a new
+/// <see cref="List{T}"/> assignable to the declared type. Dictionary interfaces (<see cref="IDictionary{TKey,TValue}"/>,
+/// <see cref="IReadOnlyDictionary{TKey,TValue}"/>) and set interfaces (<see cref="ISet{T}"/>, <see cref="IReadOnlySet{T}"/>)
+/// are copied into a new <see cref="Dictionary{TKey,TValue}"/> or <see cref="HashSet{T}"/>. For these interfaces, a runtime type
+/// check is used solely to preserve the source comparer when the stored value is the standard concrete container; otherwise a
+/// standard copy constructor is used. Fields whose declared type is not a recognized collection interface and does not implement
+/// <see cref="ICloneable"/> use the unknown-collection fallback or are copied by reference.
 /// </para>
 /// </remarks>
 public static class ParserExecutionContextCopier<TContext>
@@ -42,9 +47,22 @@ public static class ParserExecutionContextCopier<TContext>
     private static readonly Dictionary<Type, Func<Expression, Type, Expression>> KnownCopyBuilders = new()
     {
         [typeof(string)] = static (f, _) => f,
+        // concrete collections
         [typeof(List<>)] = BuildEnumerableConstructorCopyExpression,
         [typeof(HashSet<>)] = BuildHashSetCopyExpression,
         [typeof(Dictionary<,>)] = BuildDictionaryCopyExpression,
+        // sequential collection interfaces → new List<T>
+        [typeof(IEnumerable<>)] = BuildSequentialInterfaceCopyExpression,
+        [typeof(ICollection<>)] = BuildSequentialInterfaceCopyExpression,
+        [typeof(IList<>)] = BuildSequentialInterfaceCopyExpression,
+        [typeof(IReadOnlyCollection<>)] = BuildSequentialInterfaceCopyExpression,
+        [typeof(IReadOnlyList<>)] = BuildSequentialInterfaceCopyExpression,
+        // dictionary interfaces → new Dictionary<TKey,TValue>, comparer preserved when runtime is Dictionary
+        [typeof(IDictionary<,>)] = BuildDictionaryInterfaceCopyExpression,
+        [typeof(IReadOnlyDictionary<,>)] = BuildDictionaryInterfaceCopyExpression,
+        // set interfaces → new HashSet<T>, comparer preserved when runtime is HashSet
+        [typeof(ISet<>)] = BuildSetInterfaceCopyExpression,
+        [typeof(IReadOnlySet<>)] = BuildSetInterfaceCopyExpression,
     };
 
     /// <summary>
@@ -332,6 +350,93 @@ public static class ParserExecutionContextCopier<TContext>
         PropertyInfo comparerProperty = fieldType.GetProperty(nameof(HashSet<object>.Comparer))
             ?? throw new InvalidOperationException($"The Comparer property could not be found for '{fieldType.FullName}'.");
         Expression copy = Expression.New(constructor, sourceField, Expression.Property(sourceField, comparerProperty));
+
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+    }
+
+    /// <summary>
+    /// Builds an expression that copies a sequential collection interface field into a new <see cref="List{T}"/>.
+    /// Handles <see cref="IEnumerable{T}"/>, <see cref="ICollection{T}"/>, <see cref="IList{T}"/>,
+    /// <see cref="IReadOnlyCollection{T}"/>, and <see cref="IReadOnlyList{T}"/>.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source field.</param>
+    /// <param name="fieldType">The declared interface field type.</param>
+    /// <returns>An expression that returns a new <see cref="List{T}"/> cast to the declared interface, or <see langword="null"/>.</returns>
+    private static Expression BuildSequentialInterfaceCopyExpression(Expression sourceField, Type fieldType)
+    {
+        Type elementType = fieldType.GetGenericArguments()[0];
+        Type listType = typeof(List<>).MakeGenericType(elementType);
+        Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+        ConstructorInfo constructor = listType.GetConstructor([enumerableType])
+            ?? throw new InvalidOperationException($"List<T>(IEnumerable<T>) constructor could not be found for element type '{elementType.FullName}'.");
+        Expression copy = Expression.Convert(
+            Expression.New(constructor, Expression.Convert(sourceField, enumerableType)),
+            fieldType);
+
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+    }
+
+    /// <summary>
+    /// Builds an expression that copies a dictionary interface field into a new <see cref="Dictionary{TKey,TValue}"/>.
+    /// Handles <see cref="IDictionary{TKey,TValue}"/> and <see cref="IReadOnlyDictionary{TKey,TValue}"/>.
+    /// When the source value is a <see cref="Dictionary{TKey,TValue}"/> at runtime, the comparer is preserved.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source field.</param>
+    /// <param name="fieldType">The declared interface field type.</param>
+    /// <returns>An expression that returns a new <see cref="Dictionary{TKey,TValue}"/> cast to the declared interface, or <see langword="null"/>.</returns>
+    private static Expression BuildDictionaryInterfaceCopyExpression(Expression sourceField, Type fieldType)
+    {
+        Type[] genericArgs = fieldType.GetGenericArguments();
+        Type concreteDictType = typeof(Dictionary<,>).MakeGenericType(genericArgs);
+        Type iDictType = typeof(IDictionary<,>).MakeGenericType(genericArgs);
+        Type kvpEnumerableType = typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(genericArgs));
+        Type comparerType = typeof(IEqualityComparer<>).MakeGenericType(genericArgs[0]);
+        ConstructorInfo ctorWithComparer = concreteDictType.GetConstructor([iDictType, comparerType])
+            ?? throw new InvalidOperationException($"Dictionary(IDictionary, IEqualityComparer) constructor could not be found for '{concreteDictType.FullName}'.");
+        ConstructorInfo ctorFromEnumerable = concreteDictType.GetConstructor([kvpEnumerableType])
+            ?? throw new InvalidOperationException($"Dictionary(IEnumerable<KeyValuePair>) constructor could not be found for '{concreteDictType.FullName}'.");
+        PropertyInfo comparerProperty = concreteDictType.GetProperty(nameof(Dictionary<object, object>.Comparer))
+            ?? throw new InvalidOperationException($"Dictionary.Comparer property could not be found for '{concreteDictType.FullName}'.");
+        ParameterExpression typedSource = Expression.Variable(concreteDictType, "typedSource");
+        Expression copy = Expression.Block(
+            [typedSource],
+            Expression.Assign(typedSource, Expression.TypeAs(sourceField, concreteDictType)),
+            Expression.Condition(
+                Expression.NotEqual(typedSource, Expression.Constant(null, concreteDictType)),
+                Expression.Convert(Expression.New(ctorWithComparer, Expression.Convert(typedSource, iDictType), Expression.Property(typedSource, comparerProperty)), fieldType),
+                Expression.Convert(Expression.New(ctorFromEnumerable, Expression.Convert(sourceField, kvpEnumerableType)), fieldType)));
+
+        return BuildNullPreservingExpression(sourceField, copy, fieldType);
+    }
+
+    /// <summary>
+    /// Builds an expression that copies a set interface field into a new <see cref="HashSet{T}"/>.
+    /// Handles <see cref="ISet{T}"/> and <see cref="IReadOnlySet{T}"/>.
+    /// When the source value is a <see cref="HashSet{T}"/> at runtime, the comparer is preserved.
+    /// </summary>
+    /// <param name="sourceField">The expression reading the source field.</param>
+    /// <param name="fieldType">The declared interface field type.</param>
+    /// <returns>An expression that returns a new <see cref="HashSet{T}"/> cast to the declared interface, or <see langword="null"/>.</returns>
+    private static Expression BuildSetInterfaceCopyExpression(Expression sourceField, Type fieldType)
+    {
+        Type elementType = fieldType.GetGenericArguments()[0];
+        Type hashSetType = typeof(HashSet<>).MakeGenericType(elementType);
+        Type enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+        Type comparerType = typeof(IEqualityComparer<>).MakeGenericType(elementType);
+        ConstructorInfo ctorWithComparer = hashSetType.GetConstructor([enumerableType, comparerType])
+            ?? throw new InvalidOperationException($"HashSet(IEnumerable, IEqualityComparer) constructor could not be found for '{hashSetType.FullName}'.");
+        ConstructorInfo ctorFromEnumerable = hashSetType.GetConstructor([enumerableType])
+            ?? throw new InvalidOperationException($"HashSet(IEnumerable) constructor could not be found for '{hashSetType.FullName}'.");
+        PropertyInfo comparerProperty = hashSetType.GetProperty(nameof(HashSet<object>.Comparer))
+            ?? throw new InvalidOperationException($"HashSet.Comparer property could not be found for '{hashSetType.FullName}'.");
+        ParameterExpression typedSource = Expression.Variable(hashSetType, "typedSource");
+        Expression copy = Expression.Block(
+            [typedSource],
+            Expression.Assign(typedSource, Expression.TypeAs(sourceField, hashSetType)),
+            Expression.Condition(
+                Expression.NotEqual(typedSource, Expression.Constant(null, hashSetType)),
+                Expression.Convert(Expression.New(ctorWithComparer, Expression.Convert(typedSource, enumerableType), Expression.Property(typedSource, comparerProperty)), fieldType),
+                Expression.Convert(Expression.New(ctorFromEnumerable, Expression.Convert(sourceField, enumerableType)), fieldType)));
 
         return BuildNullPreservingExpression(sourceField, copy, fieldType);
     }
