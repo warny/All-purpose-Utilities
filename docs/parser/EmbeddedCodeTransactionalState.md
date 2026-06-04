@@ -2,7 +2,7 @@
 
 This document records the current audit and the required implementation sequence for transactional embedded-code state.
 
-It is intentionally a design note, not a feature announcement. The runtime does not currently provide rollback, replay, action buffering, semantic-state-aware memoization, or rule lifecycle execution.
+It is intentionally a design note, not a feature announcement. The runtime does not currently provide rollback, replay, action buffering, or rule lifecycle execution. Completed rule-result memoization is now semantic-state-aware through an opaque execution-state key, but that key is not rollback authority.
 
 ## Current state
 
@@ -18,9 +18,11 @@ Generated C# embedded-code execution now has the following preparatory pieces:
 - generated execution contexts expose internal `Fork()` and `CopyFrom(...)` helpers that delegate to that copier;
 - `IParserExecutionStateManager` is exposed through `ParserRuntimeFeaturePolicy`;
 - `ParserRuntimeFeaturePolicy.Default` uses `NullParserExecutionStateManager.Instance`;
-- generated runtime policies install a generated state manager whose manual `Capture()` calls `Fork()` and whose manual `Restore(...)` calls `CopyFrom(...)`.
+- generated runtime policies install a generated state manager whose manual `Capture()` calls `Fork()` and whose manual `Restore(...)` calls `CopyFrom(...)`;
+- `IParserExecutionStateManager.GetCurrentStateKey()` supplies the opaque semantic-state key used by completed-result memoization;
+- generated state managers delegate `GetCurrentStateKey()` to the generated execution context, which hashes supported context fields through `ParserExecutionContextHasher<TContext>`.
 
-These pieces are not yet runtime rollback authority. `ParserEngine` validates the policy state-manager contract but does not call `Capture()`, `Restore(...)`, `Fork()`, `CopyFrom(...)`, or `ParserExecutionContextCopier<TContext>` during branch attempts.
+These pieces are not yet runtime rollback authority. `ParserEngine` validates the policy state-manager contract and reads `GetCurrentStateKey()` for completed-rule memoization, but it does not call `Capture()`, `Restore(...)`, `Fork()`, `CopyFrom(...)`, or `ParserExecutionContextCopier<TContext>` during branch attempts.
 
 ## Problem being solved
 
@@ -93,16 +95,15 @@ A rule invocation may occur inside an alternative, quantifier, recursive extensi
 
 ## Memoization concern
 
-`ParseRule(...)` currently reuses completed rule results through `ParserStateRegistry` using rule name, input position, and precedence as the key.
+`ParseRule(...)` reuses completed rule results through `ParserStateRegistry` using rule name, input position, precedence, and `IParserExecutionStateManager.GetCurrentStateKey()` as the key. The no-op manager returns `ParserExecutionStateKey.Stateless`, so stateless/default policies keep the same effective cache behavior as the former `(rule, input position, precedence)` key.
 
-That key does not include semantic execution state. Once transactional embedded-code state becomes active, blindly reusing a memoized rule result can be incorrect if rule success or side effects depend on mutable context state.
+Stateful policies must obey the correction rule: if two semantic states can influence parsing differently, they must produce two different parser execution-state keys. This prevents a completed result observed under one semantic state from being reused under another state that could accept, reject, or consume differently. Equivalent states may conservatively produce different keys, but incompatible states must not share a key.
 
-Before enabling transactional embedded-code execution, one of the following must be done:
+Generated execution contexts compute keys with `ParserExecutionContextHasher<TContext>`. The hasher ignores static fields and field-like event backing fields, includes auto-property backing fields as state, supports deterministic scalar values and common ordered/unordered collections, and requires explicit `IParserExecutionStateHashable` support for complex user objects. Unsupported complex objects fail explicitly rather than falling back to reference identity or `object.GetHashCode()`.
 
-1. disable completed-result reuse when a non-null or non-default execution-state manager is active;
-2. or extend the memoization model with explicit semantic-state identity.
+Dictionary and set hashing is deterministic and independent from native enumeration order. Dictionary entries are sorted by canonical structural representations of their keys and then values; set elements are sorted by the canonical structural representation of the whole element. Enumeration index is never used as a tie-breaker. If distinct dictionary keys or set elements produce identical canonical representations and cannot be ordered safely, hashing fails explicitly instead of falling back to insertion order, `object.GetHashCode()`, or reference identity. `OrderedDictionary` or any business collection whose order is meaningful should be modeled as an ordered sequence rather than as an unordered dictionary/set state.
 
-The first option is the recommended first implementation because it is conservative and easier to audit.
+This state-aware memoization does not enable rollback, automatic capture/restore, action buffering, or transactional parser actions. It only narrows completed-result cache identity.
 
 ## Required runtime abstraction
 
@@ -115,6 +116,8 @@ public interface IParserExecutionStateManager
 {
     object Capture();
     void Restore(object snapshot);
+
+    ParserExecutionStateKey GetCurrentStateKey();
 }
 ```
 
@@ -181,7 +184,7 @@ Expected scope:
 - restore pre-attempt state after each attempt while scheduling continues;
 - carry post-attempt state on successful branch state;
 - restore the selected branch semantic state when the selected branch is committed;
-- disable or bypass completed-result reuse when transactional state is active unless a semantic-state-aware memoization design is added in the same PR;
+- keep completed-result reuse keyed by semantic execution state whenever transactional state is active;
 - add tests proving that actions in failed alternatives do not leak into the winning alternative state.
 
 ### Step 3 — Left-recursive extension transactions
@@ -248,7 +251,7 @@ This plan does not approve:
 - default execution of embedded code;
 - lexer embedded-code execution;
 - `@init` / `@after` before transactional state is in place;
-- semantic-state-aware memoization without a dedicated design.
+- additional semantic-state-aware cache dimensions without a dedicated design.
 
 ## Current safety summary
 
@@ -257,6 +260,7 @@ The safe current state is:
 - generated contexts can be copied manually;
 - runtime policies can execute generated parser predicates/actions in explicit opt-in paths;
 - parser backtracking restores token position only;
+- completed-result memoization is isolated by execution-state keys;
 - embedded-code state rollback is not active;
 - rule lifecycle embedded code remains unsupported;
 - lexer embedded code remains unsupported.

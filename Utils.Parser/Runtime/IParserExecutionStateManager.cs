@@ -16,4 +16,10 @@ public interface IParserExecutionStateManager
     /// </summary>
     /// <param name="snapshot">Opaque snapshot previously returned by <see cref="Capture"/>.</param>
     void Restore(object snapshot);
+
+    /// <summary>
+    /// Gets the opaque semantic state key used to isolate rule-result memoization entries.
+    /// </summary>
+    /// <returns>The current parser execution-state key.</returns>
+    ParserExecutionStateKey GetCurrentStateKey();
 }
