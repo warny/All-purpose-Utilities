@@ -370,7 +370,7 @@ public sealed class ParserEngine
                 continue;
             }
 
-            var saved = context.SavePosition();
+            var saved = CaptureAttempt(context);
             var candidate = TryParseRecursiveAlternative(
                 context,
                 info.Rule,
@@ -381,9 +381,11 @@ public sealed class ParserEngine
                 diagnostics);
             if (candidate is null)
             {
-                context.RestorePosition(saved);
+                RestoreAttempt(context, saved);
                 continue;
             }
+
+            var completedAttempt = CaptureAttempt(context);
 
             var branch = new ParseBranch
             {
@@ -393,7 +395,8 @@ public sealed class ParserEngine
                 Cursor = new RuleContentCursor { Index = 0, Kind = "recursive-extension" },
                 PartialNode = candidate,
                 EndPosition = context.Position,
-                IsComplete = true
+                IsComplete = true,
+                ExecutionStateSnapshot = completedAttempt.ExecutionStateSnapshot
             };
 
             if (bestBranch is null || IsBetterBranch(branch, bestBranch))
@@ -410,7 +413,7 @@ public sealed class ParserEngine
                 diagnostics?.AddWithContext(ParserDiagnostics.ParseBranchPruned, null, null, info.Rule.Name, null, info.Rule.Name);
             }
 
-            context.RestorePosition(saved);
+            RestoreAttempt(context, saved);
         }
 
         if (bestBranch is null)
@@ -419,7 +422,15 @@ public sealed class ParserEngine
             return null;
         }
 
-        context.RestorePosition(bestBranch.EndPosition);
+        if (bestBranch.ExecutionStateSnapshot is not null)
+        {
+            RestoreAttempt(context, new ParserAttemptSnapshot(bestBranch.EndPosition, bestBranch.ExecutionStateSnapshot));
+        }
+        else
+        {
+            context.RestorePosition(bestBranch.EndPosition);
+        }
+
         return bestBranch.PartialNode;
     }
 
@@ -901,9 +912,9 @@ public sealed class ParserEngine
 
 
     /// <summary>
-    /// Captures the token cursor and opaque parser execution state before or after an ordinary alternative attempt.
-    /// This helper deliberately covers only classic alternative attempts; quantifiers, left-recursive extensions,
-    /// negation probes, lifecycle hooks, continuation replay, and action buffering remain out of scope.
+    /// Captures the token cursor and opaque parser execution state before or after a parser attempt boundary.
+    /// This helper covers managed parser execution state only; lifecycle hooks, continuation replay,
+    /// action buffering, and external side-effect rollback remain out of scope.
     /// </summary>
     /// <param name="context">Mutable token-stream cursor whose position is part of the snapshot.</param>
     /// <returns>Captured parser attempt snapshot.</returns>
@@ -983,6 +994,7 @@ public sealed class ParserEngine
         DiagnosticBag? diagnostics = null)
     {
         var children = new List<ParseNode>();
+        var quantifierStartSnapshot = CaptureAttempt(context);
         var startPos = context.Position;
         var startToken = context.Peek();
 
@@ -990,18 +1002,18 @@ public sealed class ParserEngine
         int previousPosition = context.Position;
         while (quant.Max is null || count < quant.Max.Value)
         {
-            var savedPos = context.SavePosition();
+            var saved = CaptureAttempt(context);
             var node = TryParseContent(context, quant.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
             if (node is null)
             {
-                context.RestorePosition(savedPos);
+                RestoreAttempt(context, saved);
                 break;
             }
 
             // Guard against zero-length matches.
             if (context.Position <= previousPosition)
             {
-                context.RestorePosition(savedPos);
+                RestoreAttempt(context, saved);
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
                 diagnostics?.AddWithContext(
                     ParserDiagnostics.NonProgressiveQuantifierStopped,
@@ -1016,7 +1028,7 @@ public sealed class ParserEngine
                     rule.Name,
                     null,
                     rule.Name,
-                    $"quantifier inner matched without progress at position {savedPos}");
+                    $"quantifier inner matched without progress at position {saved.InputPosition}");
                 break;
             }
 
@@ -1029,7 +1041,10 @@ public sealed class ParserEngine
         }
 
         if (count < quant.Min)
+        {
+            RestoreAttempt(context, quantifierStartSnapshot);
             return null;
+        }
 
         var span = ComputeSpan(startToken, context, startPos);
         return new ParserNode(span, startToken?.ModeName ?? "DEFAULT_MODE", rule, children);
@@ -1080,9 +1095,9 @@ public sealed class ParserEngine
         var token = context.Peek();
         if (token is null) return null;
 
-        var savedPos = context.SavePosition();
+        var saved = CaptureAttempt(context);
         var matched = TryParseContent(context, neg.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
-        context.RestorePosition(savedPos);
+        RestoreAttempt(context, saved);
 
         if (matched is null)
         {

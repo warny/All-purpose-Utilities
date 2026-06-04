@@ -2,11 +2,11 @@
 
 This document records the current audit and the required implementation sequence for transactional embedded-code state.
 
-It is intentionally a design note, not a complete feature announcement. ParserEngine now captures and restores parser execution state around ordinary parser alternative attempts. This does not yet provide complete ANTLR transactional semantics. The runtime still does not provide replay, action buffering, or rule lifecycle execution. Completed rule-result memoization is semantic-state-aware through an opaque execution-state key, completed results carry opaque post-rule execution-state snapshots for memoization hits, and ordinary alternative rollback restores the key before later cache lookups.
+It is intentionally a design note, not a complete ANTLR feature announcement. ParserEngine now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. The runtime still does not provide replay, action buffering, external side-effect rollback, or rule lifecycle execution. Completed rule-result memoization is semantic-state-aware through an opaque execution-state key, completed results carry opaque post-rule execution-state snapshots for memoization hits, and rollback restores the key before later cache lookups.
 
 ## Current state
 
-The parser runtime already performs token-cursor backtracking. `ParserEngine` saves and restores `ParseContext.Position` around failed alternatives, recursive-extension candidates, quantifier attempts, and negation probes. For ordinary parser alternative attempts only, it now also captures and restores the configured parser execution state.
+The parser runtime already performs token-cursor backtracking. `ParserEngine` saves and restores `ParseContext.Position` around failed alternatives, recursive-extension candidates, quantifier attempts, and negation probes. It now also captures and restores the configured managed parser execution state at those parser backtracking attempt boundaries.
 
 Generated C# embedded-code execution now has the following preparatory pieces:
 
@@ -22,11 +22,11 @@ Generated C# embedded-code execution now has the following preparatory pieces:
 - `IParserExecutionStateManager.GetCurrentStateKey()` supplies the opaque semantic-state key used by completed-result memoization;
 - generated state managers delegate `GetCurrentStateKey()` to the generated execution context, which hashes supported context fields through `ParserExecutionContextHasher<TContext>`.
 
-These pieces are now runtime rollback authority only for ordinary parser alternative attempts and memoization-hit state restoration. `ParserEngine` validates the policy state-manager contract, reads `GetCurrentStateKey()` for completed-rule memoization, stores post-rule snapshots in reusable rule results, restores those snapshots on memoization hits, captures state before ordinary alternatives, restores failed alternatives, restores pre-attempt state while scheduling continues, and commits the selected successful alternative state. Quantifier attempts, left-recursive extensions, negation probes, lifecycle hooks and action buffering remain separate steps.
+These pieces are now runtime rollback authority for managed parser execution state at parser backtracking attempt boundaries and for memoization-hit state restoration. `ParserEngine` validates the policy state-manager contract, reads `GetCurrentStateKey()` for completed-rule memoization, stores post-rule snapshots in reusable rule results, restores those snapshots on memoization hits, captures state before ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes, restores discarded attempts, and commits only retained parser-attempt state. Lifecycle hooks, action buffering, replay, lexer embedded-code state, and rollback of external side effects remain separate unsupported work.
 
 ## Problem being solved
 
-Backtracking outside ordinary parser alternatives currently restores only the token cursor. Ordinary parser alternatives now restore mutable embedded-code state through the configured execution-state manager, but the remaining parser attempt kinds still need transactional coverage.
+Parser backtracking attempt boundaries now restore both the token cursor and mutable managed embedded-code state through the configured execution-state manager. The remaining gaps are outside managed parser execution state: lifecycle hooks, action buffering/replay, lexer embedded-code state, and external side effects.
 
 For example:
 
@@ -37,7 +37,7 @@ start
     ;
 ```
 
-For ordinary parser alternatives, if the first alternative executes the action and then fails, the token cursor and managed execution-context state are restored before the second alternative is tried. The same guarantee does not yet apply to the remaining attempt kinds listed below.
+For ordinary parser alternatives, if the first alternative executes the action and then fails, the token cursor and managed execution-context state are restored before the second alternative is tried. The same managed-state guarantee now applies to the parser attempt kinds listed below, while external side effects remain outside the rollback contract.
 
 The same issue applies to:
 
@@ -67,13 +67,13 @@ The same issue applies to:
 
 `TryExtendLeft(...)` tests recursive-extension candidates and keeps the best branch. It restores token position after each candidate attempt and later restores the selected branch position.
 
-The selected branch must also carry a semantic-state snapshot. Non-selected candidates must not leak embedded-code mutations.
+The selected branch now carries a semantic-state snapshot. Non-selected candidates do not leak managed embedded-code mutations.
 
 ### Quantifiers
 
 `TryParseQuantifier(...)` saves the token position before each iteration. If the inner element fails or produces no progress, the token position is restored.
 
-The semantic state must follow the same rule:
+The semantic state follows the same rule:
 
 - a successful retained iteration commits its state into the current context;
 - a failed iteration restores the state from before that iteration;
@@ -103,7 +103,7 @@ Generated execution contexts compute keys with `ParserExecutionContextHasher<TCo
 
 Dictionary and set hashing is deterministic and independent from native enumeration order. Dictionary entries are sorted by canonical structural representations of their keys and then values; set elements are sorted by the canonical structural representation of the whole element. Enumeration index is never used as a tie-breaker. If distinct dictionary keys or set elements produce identical canonical representations and cannot be ordered safely, hashing fails explicitly instead of falling back to insertion order, `object.GetHashCode()`, or reference identity. `OrderedDictionary` or any business collection whose order is meaningful should be modeled as an ordered sequence rather than as an unordered dictionary/set state.
 
-This state-aware memoization now works together with ordinary parser alternative rollback: after a failed ordinary alternative is restored, `GetCurrentStateKey()` reflects the restored state before later alternatives query completed-result cache entries. Successful and failed completed rule results also store the opaque execution-state snapshot captured when the result was recorded; on a memoization hit, `ParserEngine` restores that snapshot and the end position so cached rule reuse reflects the semantic state produced by the original invocation without replaying actions. It still does not enable action buffering, replay, lifecycle actions, quantifier rollback, left-recursive extension rollback, or negation probe isolation.
+This state-aware memoization now works together with parser attempt rollback: after a discarded ordinary alternative, left-recursive extension, quantifier attempt, or negation probe is restored, `GetCurrentStateKey()` reflects the restored state before later parser work queries completed-result cache entries. Successful and failed completed rule results also store the opaque execution-state snapshot captured when the result was recorded; on a memoization hit, `ParserEngine` restores that snapshot and the end position so cached rule reuse reflects the semantic state produced by the original invocation without replaying actions. It still does not enable action buffering, replay, lifecycle actions, lexer embedded-code state, or external side-effect rollback.
 
 ## Required runtime abstraction
 
@@ -150,7 +150,7 @@ var policy = new ParserRuntimeFeaturePolicy
 };
 ```
 
-This is now active for ordinary parser alternative attempts only: `ParserEngine` validates that the property is non-null and uses it to capture/restore those attempts. Automatic action buffering, replay, quantifier rollback, left-recursive extension rollback, negation probe isolation, and lifecycle hooks are not active.
+This is now active for ordinary parser alternatives, left-recursive extensions, quantifier attempts, and negation probes: `ParserEngine` validates that the property is non-null and uses it to capture/restore managed parser execution state at those boundaries. Automatic action buffering, replay, lifecycle hooks, lexer embedded-code state, and external side-effect rollback are not active.
 
 The exact type names may differ, but the ownership must remain the same:
 
@@ -171,13 +171,13 @@ Implemented scope:
 - `ParserRuntimeFeaturePolicy.ExecutionStateManager` exposes the manager;
 - `ParserRuntimeFeaturePolicy.Default` supplies the no-op manager;
 - generated policies supply a generated manager backed by `Fork()` / `CopyFrom(...)`;
-- `ParserEngine` validates the manager and invokes it for ordinary parser alternative attempts;
+- `ParserEngine` validates the manager and invokes it for parser backtracking attempt boundaries;
 - default parser behavior with `NullParserExecutionStateManager.Instance` remains no-op/stateless;
-- generated `Parse(...)` remains conservative for embedded-code execution, while `ParseWithEmbeddedCode(...)` can now benefit from ordinary alternative rollback when generated policies provide stateful managers.
+- generated `Parse(...)` remains conservative for embedded-code execution, while `ParseWithEmbeddedCode(...)` can now benefit from managed parser-attempt rollback when generated policies provide stateful managers.
 
 ### Step 2 — Alternative transaction transport
 
-Status: implemented for ordinary parser alternatives only.
+Status: implemented for ordinary parser alternatives.
 
 Implemented scope:
 
@@ -188,11 +188,13 @@ Implemented scope:
 - keep completed-result reuse keyed by semantic execution state whenever transactional state is active;
 - add tests proving that actions in failed alternatives do not leak into the winning alternative state.
 
-This step does not yet provide complete ANTLR transactional semantics. Quantifier attempts, left-recursive extensions, negation probes, lifecycle hooks and action buffering remain separate steps.
+This step does not by itself provide complete ANTLR transactional semantics. Lifecycle hooks, action buffering, replay, lexer embedded-code state, and external side-effect rollback remain separate steps.
 
 ### Step 3 — Left-recursive extension transactions
 
-Apply the same model to left-recursive extension candidates.
+Status: implemented for managed parser execution state.
+
+The same model now applies to left-recursive extension candidates.
 
 Expected scope:
 
@@ -203,7 +205,9 @@ Expected scope:
 
 ### Step 4 — Quantifier transactions
 
-Apply capture/restore around quantified inner attempts.
+Status: implemented for managed parser execution state.
+
+Capture/restore now wraps quantified inner attempts.
 
 Expected scope:
 
@@ -214,7 +218,9 @@ Expected scope:
 
 ### Step 5 — Negation probe isolation
 
-Ensure negation probes never commit semantic state.
+Status: implemented for managed parser execution state.
+
+Negation probes no longer commit managed semantic state.
 
 Expected scope:
 
@@ -253,7 +259,7 @@ This plan does not approve:
 - action replay;
 - default execution of embedded code;
 - lexer embedded-code execution;
-- `@init` / `@after` before transactional state is in place;
+- `@init` / `@after` execution as part of managed parser-attempt rollback;
 - additional semantic-state-aware cache dimensions without a dedicated design.
 
 ## Current safety summary
@@ -262,9 +268,9 @@ The safe current state is:
 
 - generated contexts can be copied through the execution-state manager;
 - runtime policies can execute generated parser predicates/actions in explicit opt-in paths;
-- ordinary parser alternative backtracking restores token position and parser execution state;
-- quantifier attempts, left-recursive extensions, and negation probes still restore token position only;
+- ordinary parser alternative backtracking restores token position and managed parser execution state;
+- left-recursive extensions, quantifier attempts, and negation probes also restore managed parser execution state for discarded attempts;
 - completed-result memoization is isolated by execution-state keys and memoization hits restore stored post-rule execution-state snapshots without replaying actions;
-- complete embedded-code transactional rollback is not active;
+- complete ANTLR embedded-code transactional semantics are not active because action buffering, lifecycle hooks, lexer embedded-code state, replay, and external side-effect rollback remain unsupported;
 - rule lifecycle embedded code remains unsupported;
 - lexer embedded code remains unsupported.

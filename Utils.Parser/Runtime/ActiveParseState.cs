@@ -149,8 +149,7 @@ internal sealed record ActiveParseState
     /// <summary>
     /// Opaque semantic state snapshot captured after a successful ordinary alternative attempt.
     /// The parser engine restores this snapshot only when the scheduler selects this completed state.
-    /// This value is not replay authority and is not used for quantifier attempts, left-recursive extensions,
-    /// negation probes, lifecycle hooks, or action buffering.
+    /// This value is not replay authority and is not used for lifecycle hooks or action buffering.
     /// </summary>
     public object? ExecutionStateSnapshot { get; init; }
 

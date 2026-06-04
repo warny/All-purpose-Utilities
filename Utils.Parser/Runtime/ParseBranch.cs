@@ -28,4 +28,10 @@ internal sealed record ParseBranch
 
     /// <summary>Whether all required elements of the alternative have been successfully matched.</summary>
     public bool IsComplete { get; init; }
+
+    /// <summary>
+    /// Opaque semantic state snapshot captured after this branch completed.
+    /// This snapshot is local commit data for selecting an already parsed branch; it is not replay authority.
+    /// </summary>
+    public object? ExecutionStateSnapshot { get; init; }
 }

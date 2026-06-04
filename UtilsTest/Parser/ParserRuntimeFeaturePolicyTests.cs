@@ -108,11 +108,19 @@ public class ParserRuntimeFeaturePolicyTests
             ParserActionExecutor = new StateBumpingActionExecutor(stateManager)
         };
         var parser = new ParserEngine(definition, policy);
+        var diagnostics = new DiagnosticBag();
 
-        var result = parser.Parse([new Token(new SourceSpan(0, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
+        var result = parser.Parse([new Token(new SourceSpan(0, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")], diagnostics: diagnostics);
 
         Assert.IsInstanceOfType<ParserNode>(result);
         Assert.AreEqual(1UL, stateManager.GetCurrentStateKey().Value);
+        Assert.AreEqual(
+            0,
+            diagnostics.Count(diagnostic => diagnostic.Code == ParserDiagnostics.ParseMemoHit.Code),
+            "The failed target invocation cached at state 0 must not be reused after the action changes the state key to 1.");
+        Assert.IsTrue(
+            diagnostics.Count(diagnostic => diagnostic.Code == ParserDiagnostics.ParseMemoMiss.Code) >= 2,
+            "The same target rule and input position must be looked up separately for state 0 and state 1.");
     }
 
     /// <summary>

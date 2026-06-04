@@ -227,6 +227,199 @@ public class ParserEngineAlternativeRollbackTests
         Assert.AreEqual(new ParserExecutionStateKey(1), manager.GetCurrentStateKey());
     }
 
+
+    /// <summary>
+    /// Verifies that a failed left-recursive extension restores managed execution state before another extension is attempted.
+    /// </summary>
+    [TestMethod]
+    public void LeftRecursiveExtension_FailedCandidate_RestoresExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var exprRule = ParserRule("expr", 1, [
+            Alternative(0, RuleRef("A")),
+            Alternative(1, Sequence([RuleRef("expr"), Action("bump"), RuleRef("B")])),
+            Alternative(2, Sequence([RuleRef("expr"), Predicate("stateIsZero"), RuleRef("C")]))
+        ]);
+        var startRule = CreateStartRule([Alternative(0, RuleRef("expr"))]);
+        var parser = CreateParser(startRule, manager, parserRules: [startRule, exprRule]);
+
+        var result = parser.Parse([Token("A", "a"), Token("C", "c")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(0, manager.Value);
+        CollectionAssert.Contains(manager.PredicateValues, 0);
+    }
+
+    /// <summary>
+    /// Verifies that a shorter rejected left-recursive candidate cannot pollute the state observed by the selected candidate.
+    /// </summary>
+    [TestMethod]
+    public void LeftRecursiveExtension_RejectedCandidate_DoesNotPolluteSelectedCandidate()
+    {
+        var manager = new CounterExecutionStateManager();
+        var exprRule = ParserRule("expr", 1, [
+            Alternative(0, RuleRef("A")),
+            Alternative(1, Sequence([RuleRef("expr"), Action("bump"), RuleRef("B")])),
+            Alternative(2, Sequence([RuleRef("expr"), Predicate("stateIsZero"), RuleRef("B"), RuleRef("C"), Action("bump")]))
+        ]);
+        var startRule = CreateStartRule([Alternative(0, RuleRef("expr"))]);
+        var parser = CreateParser(startRule, manager, parserRules: [startRule, exprRule]);
+
+        var result = parser.Parse([Token("A", "a"), Token("B", "b"), Token("C", "c")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, manager.Value);
+        CollectionAssert.Contains(manager.PredicateValues, 0);
+    }
+
+    /// <summary>
+    /// Verifies that the selected left-recursive extension commits its managed execution state snapshot.
+    /// </summary>
+    [TestMethod]
+    public void LeftRecursiveExtension_SelectedCandidate_CommitsExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var exprRule = ParserRule("expr", 1, [
+            Alternative(0, RuleRef("A")),
+            Alternative(1, Sequence([RuleRef("expr"), Action("bump"), RuleRef("B")]))
+        ]);
+        var startRule = CreateStartRule([Alternative(0, RuleRef("expr"))]);
+        var parser = CreateParser(startRule, manager, parserRules: [startRule, exprRule]);
+
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, manager.Value);
+        Assert.AreEqual(new ParserExecutionStateKey(1), manager.GetCurrentStateKey());
+    }
+
+    /// <summary>
+    /// Verifies that a failed extra quantifier iteration restores managed execution state while preserving prior successful iterations.
+    /// </summary>
+    [TestMethod]
+    public void Quantifier_FailedExtraIteration_RestoresExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var parser = CreateParser(
+            CreateStartRule([Alternative(0, Sequence([Quantifier(Sequence([Action("bump"), RuleRef("A")]), 0, null), RuleRef("B")]))]),
+            manager);
+
+        var result = parser.Parse([Token("A", "a"), Token("B", "b")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, manager.Value);
+    }
+
+    /// <summary>
+    /// Verifies that a non-progressive quantifier iteration restores managed execution state and keeps existing diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void Quantifier_NonProgressiveIteration_RestoresExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var diagnostics = new DiagnosticBag();
+        var parser = CreateParser(
+            CreateStartRule([Alternative(0, Sequence([Quantifier(Action("bump"), 0, null), RuleRef("A")]))]),
+            manager);
+
+        var result = parser.Parse([Token("A", "a")], diagnostics: diagnostics);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(0, manager.Value);
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.NonProgressiveQuantifierStopped.Code));
+    }
+
+    /// <summary>
+    /// Verifies that successful quantifier iterations keep their managed execution-state mutations.
+    /// </summary>
+    [TestMethod]
+    public void Quantifier_SuccessfulIterations_CommitExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var parser = CreateParser(
+            CreateStartRule([Alternative(0, Sequence([Quantifier(Sequence([Action("bump"), RuleRef("A")]), 0, null), RuleRef("B")]))]),
+            manager);
+
+        var result = parser.Parse([Token("A", "a"), Token("A", "a"), Token("B", "b")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(2, manager.Value);
+        Assert.AreEqual(new ParserExecutionStateKey(2), manager.GetCurrentStateKey());
+    }
+
+    /// <summary>
+    /// Verifies that a failed optional quantifier attempt restores managed execution state before following content parses.
+    /// </summary>
+    [TestMethod]
+    public void OptionalQuantifier_FailedOptionalAttempt_RestoresExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var parser = CreateParser(
+            CreateStartRule([Alternative(0, Sequence([Quantifier(Sequence([Action("bump"), RuleRef("B")]), 0, 1), RuleRef("A")]))]),
+            manager);
+
+        var result = parser.Parse([Token("A", "a")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(0, manager.Value);
+    }
+
+    /// <summary>
+    /// Verifies that a negation probe discards managed execution state when the probed inner content matches.
+    /// </summary>
+    [TestMethod]
+    public void NegationProbe_SuccessfulInnerMatch_DiscardsExecutionState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var parser = CreateParser(
+            CreateStartRule([
+                Alternative(0, Negation(Sequence([Action("bump"), RuleRef("A")]))),
+                Alternative(1, Sequence([Predicate("stateIsZero"), RuleRef("A")]))
+            ]),
+            manager);
+
+        var result = parser.Parse([Token("A", "a")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(0, manager.Value);
+        CollectionAssert.AreEqual(new List<int> { 0 }, manager.PredicateValues);
+    }
+
+    /// <summary>
+    /// Verifies that a failed negation probe discards managed execution state and then consumes one token.
+    /// </summary>
+    [TestMethod]
+    public void NegationProbe_FailedInnerMatch_DiscardsExecutionStateAndNegationConsumesToken()
+    {
+        var manager = new CounterExecutionStateManager();
+        var parser = CreateParser(
+            CreateStartRule([Alternative(0, Sequence([Negation(Sequence([Action("bump"), RuleRef("A")])), RuleRef("B")]))]),
+            manager);
+
+        var result = parser.Parse([Token("B", "b"), Token("B", "b")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(0, manager.Value);
+    }
+
+    /// <summary>
+    /// Verifies that actions inside a negation probe do not pollute managed state while outer actions still commit.
+    /// </summary>
+    [TestMethod]
+    public void NegationProbe_ActionInsideProbe_DoesNotPolluteOuterState()
+    {
+        var manager = new CounterExecutionStateManager();
+        var parser = CreateParser(
+            CreateStartRule([Alternative(0, Sequence([Negation(Sequence([Action("bump"), RuleRef("A")])), Action("bump")]))]),
+            manager);
+
+        var result = parser.Parse([Token("B", "b")]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual(1, manager.Value);
+        Assert.AreEqual(new ParserExecutionStateKey(1), manager.GetCurrentStateKey());
+    }
+
     /// <summary>
     /// Creates a parser engine with a counter-backed execution-state policy.
     /// </summary>
@@ -257,7 +450,7 @@ public class ParserEngineAlternativeRollbackTests
             Options: null,
             Actions: [],
             Imports: [],
-            Modes: [new LexerMode("DEFAULT_MODE", [LexerRule("A", "a"), LexerRule("B", "b")])],
+            Modes: [new LexerMode("DEFAULT_MODE", [LexerRule("A", "a"), LexerRule("B", "b"), LexerRule("C", "c")])],
             DeclaredTokens: new HashSet<string>(StringComparer.Ordinal),
             DeclaredChannels: new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" },
             ExtensionBindings: [],
@@ -327,6 +520,22 @@ public class ParserEngineAlternativeRollbackTests
     private static EmbeddedAction Action(string code)
     {
         return new EmbeddedAction(code, ActionContext.Alternative, ActionPosition.Inline, []);
+    }
+
+    /// <summary>
+    /// Creates a quantified parser content item.
+    /// </summary>
+    private static Quantifier Quantifier(RuleContent inner, int min, int? max)
+    {
+        return new Quantifier(inner, min, max);
+    }
+
+    /// <summary>
+    /// Creates a negated parser content item.
+    /// </summary>
+    private static Negation Negation(RuleContent inner)
+    {
+        return new Negation(inner);
     }
 
     /// <summary>
