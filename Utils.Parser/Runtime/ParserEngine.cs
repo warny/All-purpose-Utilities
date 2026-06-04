@@ -756,7 +756,6 @@ public sealed class ParserEngine
         DiagnosticBag? diagnostics = null)
     {
         var children = new List<ParseNode>();
-        var quantifierStartSnapshot = CaptureAttempt(context);
         var startPos = context.Position;
         var startToken = context.Peek();
         var visitedStates = new HashSet<ParserStateKey>();
