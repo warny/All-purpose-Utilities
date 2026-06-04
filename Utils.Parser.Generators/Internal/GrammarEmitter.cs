@@ -509,10 +509,12 @@ internal static class GrammarEmitter
         sb.AppendLine("        return effectiveBase with");
         sb.AppendLine("        {");
         sb.AppendLine("            SemanticPredicateEvaluator = new GeneratedSemanticPredicateEvaluator(this, effectiveBase.SemanticPredicateEvaluator),");
-        sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor)");
+        sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
+        sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(this)");
         sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
+        EmitExecutionStateManager(sb, contextClassName);
         EmitSemanticPredicateEvaluator(sb, predicates, contextClassName);
         EmitParserActionExecutor(sb, actions, contextClassName);
         foreach (var predicate in predicates)
@@ -526,6 +528,46 @@ internal static class GrammarEmitter
         }
 
         sb.AppendLine("}");
+    }
+
+    /// <summary>
+    /// Emits the grammar-specific execution-state manager.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="contextClassName">Generated execution context class name.</param>
+    private static void EmitExecutionStateManager(StringBuilder sb, string contextClassName)
+    {
+        sb.AppendLine("    /// <summary>Captures and restores generated parser execution-context state manually.</summary>");
+        sb.AppendLine("    private sealed class GeneratedExecutionStateManager : IParserExecutionStateManager");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Initializes a generated execution-state manager for one execution context.</summary>");
+        sb.AppendLine($"        public GeneratedExecutionStateManager({contextClassName} executionContext)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            _executionContext = executionContext ?? throw new global::System.ArgumentNullException(nameof(executionContext));");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Captures the current generated execution-context state.</summary>");
+        sb.AppendLine("        public object Capture()");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return _executionContext.Fork();");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Restores the generated execution context from a compatible snapshot.</summary>");
+        sb.AppendLine("        public void Restore(object snapshot)");
+        sb.AppendLine("        {");
+        sb.AppendLine($"            if (snapshot is not {contextClassName} contextSnapshot)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                throw new global::System.ArgumentException(");
+        sb.AppendLine($"                    \"Snapshot must be a {contextClassName} instance.\",");
+        sb.AppendLine("                    nameof(snapshot));");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            _executionContext.CopyFrom(contextSnapshot);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
     }
 
     /// <summary>

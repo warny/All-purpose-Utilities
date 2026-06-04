@@ -15,9 +15,12 @@ Generated C# embedded-code execution now has the following preparatory pieces:
 - `ParseWithEmbeddedCode(string, {ClassName}ExecutionContext)` lets callers provide a context explicitly;
 - `CreateRuntimePolicy({ClassName}ExecutionContext, ParserRuntimeFeaturePolicy?)` binds generated dispatchers to a supplied context;
 - `ParserExecutionContextCopier<TContext>` can shallow-copy execution contexts;
-- generated execution contexts expose internal `Fork()` and `CopyFrom(...)` helpers that delegate to that copier.
+- generated execution contexts expose internal `Fork()` and `CopyFrom(...)` helpers that delegate to that copier;
+- `IParserExecutionStateManager` is exposed through `ParserRuntimeFeaturePolicy`;
+- `ParserRuntimeFeaturePolicy.Default` uses `NullParserExecutionStateManager.Instance`;
+- generated runtime policies install a generated state manager whose manual `Capture()` calls `Fork()` and whose manual `Restore(...)` calls `CopyFrom(...)`.
 
-These pieces are not yet runtime authority. `ParserEngine` does not call `Fork()`, `CopyFrom(...)`, or `ParserExecutionContextCopier<TContext>`.
+These pieces are not yet runtime rollback authority. `ParserEngine` validates the policy state-manager contract but does not call `Capture()`, `Restore(...)`, `Fork()`, `CopyFrom(...)`, or `ParserExecutionContextCopier<TContext>` during branch attempts.
 
 ## Problem being solved
 
@@ -115,9 +118,9 @@ public interface IParserExecutionStateManager
 }
 ```
 
-The default policy should use a no-op implementation so the default parser remains conservative and behavior-compatible.
+The default policy uses `NullParserExecutionStateManager.Instance`, a singleton no-op implementation, so the default parser remains conservative and behavior-compatible.
 
-A generated policy can then provide an implementation backed by the generated execution context:
+A generated policy now provides an implementation backed by the generated execution context:
 
 ```text
 Capture() -> executionContext.Fork()
@@ -134,16 +137,17 @@ The exact type names may differ, but the ownership must remain the same:
 
 ### Step 1 — Execution-state manager contract
 
-Add a runtime contract for semantic-state capture/restore.
+Status: implemented as contract-only infrastructure.
 
-Expected scope:
+Implemented scope:
 
-- add `IParserExecutionStateManager` or equivalent;
-- add a no-op default implementation;
-- add it to `ParserRuntimeFeaturePolicy`;
-- keep the default behavior unchanged;
-- add unit tests for default policy behavior and null validation;
-- do not yet change branch execution.
+- `IParserExecutionStateManager` exists in `Utils.Parser.Runtime`;
+- `NullParserExecutionStateManager` provides the singleton no-op default implementation;
+- `ParserRuntimeFeaturePolicy.ExecutionStateManager` exposes the manager;
+- `ParserRuntimeFeaturePolicy.Default` supplies the no-op manager;
+- generated policies supply a generated manager backed by `Fork()` / `CopyFrom(...)`;
+- `ParserEngine` validates the manager but does not yet invoke it for branch execution;
+- default parser behavior, generated `Parse(...)`, and `ParseWithEmbeddedCode(...)` semantics remain unchanged.
 
 ### Step 2 — Alternative transaction transport
 

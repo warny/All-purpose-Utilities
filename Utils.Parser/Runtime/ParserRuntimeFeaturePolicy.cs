@@ -15,6 +15,7 @@ public sealed record ParserRuntimeFeaturePolicy
     {
         SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
         ParserActionExecutor = new DefaultParserActionExecutor(),
+        ExecutionStateManager = NullParserExecutionStateManager.Instance,
         RuntimeObserver = null
     };
 
@@ -27,6 +28,12 @@ public sealed record ParserRuntimeFeaturePolicy
     /// Gets the parser action execution strategy.
     /// </summary>
     public required IParserActionExecutor ParserActionExecutor { get; init; }
+
+    /// <summary>
+    /// Gets the parser execution-state manager used to capture and restore opaque semantic state.
+    /// ParserEngine validates this contract but does not invoke it for branch rollback yet.
+    /// </summary>
+    public required IParserExecutionStateManager ExecutionStateManager { get; init; }
 
     /// <summary>
     /// Gets the optional passive runtime observer for scheduling introspection.
