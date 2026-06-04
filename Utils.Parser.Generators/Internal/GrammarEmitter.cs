@@ -500,13 +500,6 @@ internal static class GrammarEmitter
         sb.AppendLine("            this);");
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine("    /// <summary>Gets the semantic state key for this execution context instance.</summary>");
-        sb.AppendLine("    /// <returns>A deterministic parser execution-state key for the current context state.</returns>");
-        sb.AppendLine("    internal global::Utils.Parser.Runtime.ParserExecutionStateKey GetExecutionStateKey()");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        return global::Utils.Parser.Runtime.ParserExecutionContextHasher<{contextClassName}>.GetKey(this);");
-        sb.AppendLine("    }");
-        sb.AppendLine();
         sb.AppendLine("    /// <summary>Creates a runtime feature policy bound to this execution context instance.</summary>");
         sb.AppendLine("    /// <param name=\"basePolicy\">Optional policy whose non-embedded-code components are preserved.</param>");
         sb.AppendLine("    /// <returns>A runtime policy whose generated dispatchers call this context instance.</returns>");
@@ -559,12 +552,6 @@ internal static class GrammarEmitter
         sb.AppendLine("        public object Capture()");
         sb.AppendLine("        {");
         sb.AppendLine("            return _executionContext.Fork();");
-        sb.AppendLine("        }");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Gets the current generated execution-context state key.</summary>");
-        sb.AppendLine("        public global::Utils.Parser.Runtime.ParserExecutionStateKey GetCurrentStateKey()");
-        sb.AppendLine("        {");
-        sb.AppendLine("            return _executionContext.GetExecutionStateKey();");
         sb.AppendLine("        }");
         sb.AppendLine();
         sb.AppendLine("        /// <summary>Restores the generated execution context from a compatible snapshot.</summary>");

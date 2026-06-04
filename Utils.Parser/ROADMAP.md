@@ -73,7 +73,7 @@ Current capabilities and responsibilities:
 - Runtime expression-backed semantic predicate evaluator is available as an explicit optional adapter without changing default parser behavior.
 - Semantic predicate evaluation now returns structured outcomes so `ParserEngine` can emit fallback `UP1006` or detailed embedded-code diagnostics such as `UP1026` without giving evaluators direct `DiagnosticBag` access.
 - Parser action executor abstraction is present.
-- Parser execution-state manager abstraction is present as a policy component; the default implementation is no-op, generated policies can expose `Fork()` / `CopyFrom(...)` capture/restore and semantic state keys, and `ParserEngine` uses those keys for completed-result memoization and for limited rollback around ordinary parser alternative attempts.
+- Parser execution-state manager abstraction is present as a contract-only policy component; the default implementation is no-op, generated policies can expose manual `Fork()` / `CopyFrom(...)` capture/restore, and `ParserEngine` does not use it for rollback yet.
 - Runtime expression-backed parser action executor is available as an explicit optional adapter without changing default parser behavior or granting actions parse-control authority.
 - Continuation metadata is present.
 - Shared-prefix metadata is present.
@@ -114,8 +114,8 @@ The following must not be introduced prematurely:
 - no parser graph execution,
 - no GLL or adaptive LL runtime,
 - no continuation replay,
-- no complete ANTLR transactional rollback,
-- no semantic-state rollback outside ordinary parser alternative attempts,
+- no rollback,
+- no semantic-state-aware memoization,
 - no async runtime,
 - no runtime parallelism,
 - no action buffering,
@@ -390,20 +390,20 @@ Current clarification status:
 - embedded-code preparation/generation contracts are available.
 - expression-backed preparation, prepared artifact registry/adapters, parser-definition registry builder, and prepared runtime policy builder are available for the runtime-inline expression opt-in path.
 - generated C# hooks, generated hook dispatch hardening, shared runtime metadata alignment, cross-path regression coverage, generated C# body support, generated execution contexts with fresh default `ParseWithEmbeddedCode(string)` creation, limited parser `@members` injection, generator warning `UP1031` for injected parser members, and generator warning `UP1029` for visible unsupported embedded-code constructs are available for parser semantic predicates and inline parser actions.
-- `ParserExecutionContextCopier<TContext>` is available as a preparatory runtime copy primitive for generated execution-context snapshot/fork/commit work, and generated execution contexts now expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `IParserExecutionStateManager` is available through required `ParserRuntimeFeaturePolicy.ExecutionStateManager`; the default manager is no-op and returns `ParserExecutionStateKey.Stateless`, generated policies install a manager backed by `Fork()` / `CopyFrom(...)` and generated state hashing, and callers that directly instantiate `ParserRuntimeFeaturePolicy` must provide the required manager explicitly. `ParserEngine` uses current state keys for completed-result memoization, stores post-rule snapshots in completed results for memoization-hit restoration, and captures/restores parser execution state around ordinary parser alternative attempts. This is not complete ANTLR transactional semantics and is not wired into action buffering, quantifier attempts, left-recursive extensions, negation probes, `@init`, or `@after`.
+- `ParserExecutionContextCopier<TContext>` is available as a preparatory runtime copy primitive for generated execution-context snapshot/fork/commit work, and generated execution contexts now expose internal `Fork()` and `CopyFrom(...)` helpers that delegate to it. `IParserExecutionStateManager` is available through `ParserRuntimeFeaturePolicy`; the default manager is no-op, and generated policies install a manual manager backed by `Fork()` / `CopyFrom(...)`. It is not yet wired into `ParserEngine` rollback, action buffering, `@init`, or `@after`.
 - the remaining embedded-code work is explicit: lexer predicate/action design; `@init` / `@after` design; transactional action rollback/buffering design that may consume the execution-state manager; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
 
 Embedded-code transactional-state sequence (reference architecture: `docs/parser/EmbeddedCodeTransactionalState.md`):
 
-1. Add parser execution-state manager contract and semantic memoization key. **Complete.**
-2. Carry semantic-state snapshots through ordinary scheduled alternatives. **Current PR: limited ordinary parser alternative rollback available.**
+1. Add parser execution-state manager contract. **Current PR: contract available only.**
+2. Carry semantic-state snapshots through scheduled alternatives.
 3. Apply transactional state to left-recursive extensions.
 4. Apply transactional state to quantifier attempts.
 5. Isolate negation probes.
 6. Add parser rule lifecycle hooks for `@init` / `@after`.
 7. Design lexer embedded-code state separately.
 
-- Limited ordinary parser alternative rollback is active. Complete ANTLR transactional semantics and action buffering are not active. `@init` / `@after` remain unsupported. Lexer actions and predicates remain unsupported. Completed-result memoization is semantic-state-aware, memoization hits restore stored post-rule state snapshots, and restored alternatives restore the state key before later cache lookups.
+- Rollback and action buffering are not active after the contract-only step. `@init` / `@after` remain unsupported. Lexer actions and predicates remain unsupported. Before enabling real transactional rollback, completed-result memoization must be disabled for stateful policies or made semantic-state-aware.
 - lexer actions, lexer predicates, unsupported grammar actions, `@lexer::members`, `@init`, `@after`, and automatic default execution remain not done and must not be documented as complete.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
@@ -540,4 +540,4 @@ Future runtime PRs should include:
 
 ## Current safety summary
 
-The runtime currently remains conservative and deterministic. Metadata-rich infrastructure, the execution-context copy helper, and generated context copy helpers exist, but they are not replay authority. Limited semantic-state rollback exists only for ordinary parser alternative attempts. No replay, complete ANTLR transactional rollback, graph execution, async parsing, or parallel parsing exists today. Public APIs may evolve while the project remains pre-release; runtime execution guarantees remain conservative.
+The runtime currently remains conservative and deterministic. Metadata-rich infrastructure, the execution-context copy helper, and generated context copy helpers exist, but they are not execution authority. No replay, rollback, semantic-state-aware memoization, graph execution, async parsing, or parallel parsing exists today. Public APIs may evolve while the project remains pre-release; runtime execution guarantees remain conservative.

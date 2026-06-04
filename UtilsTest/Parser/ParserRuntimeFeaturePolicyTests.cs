@@ -84,49 +84,6 @@ public class ParserRuntimeFeaturePolicyTests
         var snapshot = manager.Capture();
         Assert.IsNotNull(snapshot);
         manager.Restore(snapshot);
-        Assert.AreEqual(ParserExecutionStateKey.Stateless, manager.GetCurrentStateKey());
-    }
-
-    /// <summary>
-    /// Verifies that parser completed-result memoization distinguishes the same invocation by semantic execution-state key.
-    /// </summary>
-    [TestMethod]
-    public void ParserEngine_CompletedResultCache_DistinguishesExecutionStateKeys()
-    {
-        var stateManager = new MutableParserExecutionStateManager();
-        const string grammar = """
-            grammar P;
-            start : target | { bump } target ;
-            target : { stateIsOne }? A ;
-            A : 'a' ;
-            """;
-        var definition = Antlr4GrammarConverter.Parse(grammar);
-        var policy = ParserRuntimeFeaturePolicy.Default with
-        {
-            ExecutionStateManager = stateManager,
-            SemanticPredicateEvaluator = new StateKeyPredicateEvaluator(stateManager),
-            ParserActionExecutor = new StateBumpingActionExecutor(stateManager)
-        };
-        var parser = new ParserEngine(definition, policy);
-
-        var result = parser.Parse([new Token(new SourceSpan(0, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")]);
-
-        Assert.IsInstanceOfType<ParserNode>(result);
-        Assert.AreEqual(1UL, stateManager.GetCurrentStateKey().Value);
-    }
-
-    /// <summary>
-    /// Verifies that stateless invocation keys retain the old rule-position-precedence equality behavior.
-    /// </summary>
-    [TestMethod]
-    public void RuleInvocationKey_DefaultConstructor_UsesStatelessExecutionStateKey()
-    {
-        var oldShape = new RuleInvocationKey("rule", 3, 0);
-        var explicitStateless = new RuleInvocationKey("rule", 3, 0, ParserExecutionStateKey.Stateless);
-        var stateful = new RuleInvocationKey("rule", 3, 0, new ParserExecutionStateKey(1));
-
-        Assert.AreEqual(explicitStateless, oldShape);
-        Assert.AreNotEqual(oldShape, stateful);
     }
 
     /// <summary>
@@ -202,75 +159,6 @@ public class ParserRuntimeFeaturePolicyTests
     {
         var field = typeof(ParserEngine).GetField("_executionStateManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         return (IParserExecutionStateManager)field.GetValue(parser)!;
-    }
-
-    /// <summary>
-    /// Mutable test execution-state manager exposing a manually controlled state key.
-    /// </summary>
-    private sealed class MutableParserExecutionStateManager : IParserExecutionStateManager
-    {
-        /// <summary>Current mutable state value.</summary>
-        private ulong _value;
-
-        /// <summary>Captures the current numeric state value.</summary>
-        /// <returns>The current state value boxed as an opaque snapshot.</returns>
-        public object Capture()
-        {
-            return _value;
-        }
-
-        /// <summary>Restores the numeric state value from a snapshot.</summary>
-        /// <param name="snapshot">Snapshot produced by <see cref="Capture"/>.</param>
-        public void Restore(object snapshot)
-        {
-            _value = (ulong)snapshot;
-        }
-
-        /// <summary>Gets the current parser execution-state key.</summary>
-        /// <returns>The current state key.</returns>
-        public ParserExecutionStateKey GetCurrentStateKey()
-        {
-            return new ParserExecutionStateKey(_value);
-        }
-
-        /// <summary>Advances the mutable semantic state value.</summary>
-        public void Bump()
-        {
-            _value++;
-        }
-    }
-
-    /// <summary>
-    /// Predicate evaluator that accepts only after the test state key changes.
-    /// </summary>
-    /// <param name="stateManager">State manager read by the evaluator.</param>
-    private sealed class StateKeyPredicateEvaluator(MutableParserExecutionStateManager stateManager) : ISemanticPredicateEvaluator
-    {
-        /// <summary>Evaluates the predicate from the current state key.</summary>
-        /// <param name="context">Predicate evaluation context.</param>
-        /// <returns>Satisfied when the state key is one; otherwise rejected.</returns>
-        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)
-        {
-            return stateManager.GetCurrentStateKey().Value == 1
-                ? SemanticPredicateEvaluationOutcome.Satisfied
-                : SemanticPredicateEvaluationOutcome.Rejected;
-        }
-    }
-
-    /// <summary>
-    /// Action executor that mutates the test state key.
-    /// </summary>
-    /// <param name="stateManager">State manager mutated by the executor.</param>
-    private sealed class StateBumpingActionExecutor(MutableParserExecutionStateManager stateManager) : IParserActionExecutor
-    {
-        /// <summary>Executes a parser action by bumping semantic state.</summary>
-        /// <param name="context">Action execution context.</param>
-        /// <returns>An executed action outcome.</returns>
-        public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)
-        {
-            stateManager.Bump();
-            return ParserActionExecutionOutcome.Executed;
-        }
     }
 
     /// <summary>

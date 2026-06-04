@@ -2,7 +2,7 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Identifies a complete rule invocation for memoization lookup.
-/// Two invocations with the same rule name, origin position, minimum precedence, and semantic execution-state key
+/// Two invocations with the same rule name, origin position, and minimum precedence
 /// share a memoized result in <see cref="ParserStateRegistry"/>.
 /// </summary>
 internal readonly record struct RuleInvocationKey(
@@ -11,21 +11,7 @@ internal readonly record struct RuleInvocationKey(
     /// <summary>The input position at which the invocation begins.</summary>
     int OriginPosition,
     /// <summary>The minimum precedence level required for this invocation.</summary>
-    int MinimumPrecedence,
-    /// <summary>The semantic execution-state key active when the invocation begins.</summary>
-    ParserExecutionStateKey ExecutionStateKey)
-{
-    /// <summary>
-    /// Creates a stateless invocation key for tests and no-op execution-state managers.
-    /// </summary>
-    /// <param name="ruleName">The name of the grammar rule being invoked.</param>
-    /// <param name="originPosition">The input position at which the invocation begins.</param>
-    /// <param name="minimumPrecedence">The minimum precedence level required for this invocation.</param>
-    public RuleInvocationKey(string ruleName, int originPosition, int minimumPrecedence)
-        : this(ruleName, originPosition, minimumPrecedence, ParserExecutionStateKey.Stateless)
-    {
-    }
-}
+    int MinimumPrecedence);
 
 /// <summary>
 /// Identifies a continuation point within a caller rule for metadata purposes.

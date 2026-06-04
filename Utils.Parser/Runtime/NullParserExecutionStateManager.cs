@@ -34,13 +34,4 @@ public sealed class NullParserExecutionStateManager : IParserExecutionStateManag
     {
         ArgumentNullException.ThrowIfNull(snapshot);
     }
-
-    /// <summary>
-    /// Gets the stable stateless memoization key for the no-op manager.
-    /// </summary>
-    /// <returns><see cref="ParserExecutionStateKey.Stateless"/>.</returns>
-    public ParserExecutionStateKey GetCurrentStateKey()
-    {
-        return ParserExecutionStateKey.Stateless;
-    }
 }

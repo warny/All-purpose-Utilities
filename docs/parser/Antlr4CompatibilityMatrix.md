@@ -55,7 +55,6 @@ Rationale: execution of user code and semantic predicates is policy-controlled. 
 |---|---|---|---|---|---|
 | `{ condition }?` | Yes | Yes (`ValidatingPredicate`) | Yes, via `ISemanticPredicateEvaluator` in `ParserRuntimeFeaturePolicy` | `NotEvaluated` is treated as accepted; parse continues conservatively | `UP1006` (`SemanticPredicateNotEnforced`) when result is `NotEvaluated` |
 | `{ condition }=>` (if recognized) | Yes | Yes (`GatingPredicate`) | Yes, via `ISemanticPredicateEvaluator` in `ParserRuntimeFeaturePolicy` | `NotEvaluated` is treated as accepted; parse continues conservatively | `UP1006` (`SemanticPredicateNotEnforced`) when result is `NotEvaluated` |
-| Predicate options (`{ condition }?<fail=...>`) | Yes | No — predicate options content is recognized but dropped | No | Predicate is converted normally as `ValidatingPredicate`; options content is not stored or executed | `UP1030` (`PredicateOptionsIgnored`) emitted when options are present |
 | `precpred(_ctx, N)` | Yes | Yes (`PrecedencePredicate`) | No (not via semantic predicate evaluator) | Normalized into precedence checks (`CheckPrecedence`) | No `UP1006` emission for precedence predicates |
 
 ## Parsed but not fully resolved
@@ -83,9 +82,6 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | Other grammar `options` entries | Parsed and preserved as metadata; unsupported options are reported explicitly with `UnsupportedAntlrOptionIgnored`. |
 | Left-recursive precedence parity | Implemented for current runtime model, but not equivalent to all ANTLR4 precedence scenarios; the runtime can emit `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
-| Element options other than `assoc` (`<type=...>`, etc.) | Parsed; `assoc=right` applied; all other options emitted as `UP1032` (`ElementOptionIgnored`) and ignored. |
-| Lexer rule options block (`TOKEN options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1033` (`LexerRuleOptionsIgnored`); not applied to runtime behavior. |
-| Parser rule options block (`rule options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1034` (`ParserRuleOptionsIgnored`); not applied to runtime behavior. |
 
 ## Runtime metadata boundary
 
@@ -155,12 +151,11 @@ This model is **descriptive only** and does not change parser behavior, diagnost
 
 
 Custom predicate/action policies can influence branch acceptance and therefore parse outcomes.
-Invocation memoization is keyed by `(rule, input position, precedence, execution-state key)`.
+However, invocation memoization remains keyed by `(rule, input position, precedence)` and does not model semantic runtime state.
 
-Parser invocation reuse includes the current `IParserExecutionStateManager.GetCurrentStateKey()` value.
-The no-op manager returns `ParserExecutionStateKey.Stateless`, so stateless policies keep the same effective behavior as the older rule/position/precedence key.
-Stateful managers must return different keys when two semantic states can make parsing differ.
-Custom policies should therefore avoid invocation-count-dependent decisions unless those decisions are represented in the execution-state key.
+Parser invocation reuse is currently keyed by rule, input position, and precedence.
+This model currently assumes policy handlers are deterministic for equivalent invocations and does not include evaluator/executor external state in the memoization key.
+Custom policies should therefore avoid invocation-count-dependent decisions and externally observable mutable semantic state.
 
 
 > Embedded-code execution paths use or document their diagnostics against the shared taxonomy in `EmbeddedCodeExecutionModel.md`; generated C# hook syntax errors surface as Roslyn compilation errors.
