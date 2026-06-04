@@ -7,7 +7,7 @@ namespace Utils.Parser.Runtime;
 /// Executes a single scheduled alternative attempt while keeping parser semantics
 /// in runtime components owned by <see cref="ParserEngine"/>.
 /// This executor is local and non-authoritative: it does not provide global parse authority,
-/// rollback safety, transactional isolation, or replay semantics.
+/// replay semantics beyond ordinary alternative-attempt state transport.
 /// Look-ahead data (live probe or cached result) is advisory orchestration metadata:
 /// it can only support conservative shortcut rejection paths and never directly accept a branch.
 /// It may propagate branch-local diagnostics through callback outputs, but final diagnostic authority
@@ -40,7 +40,8 @@ internal sealed class ScheduledAlternativeExecutor
     /// Executes one alternative from the scheduler and returns a completed parse state when successful.
     /// Returned completion/failure is local branch outcome transport, not global parse authority.
     /// Embedded parser actions may run during this attempt even when the branch is later rejected.
-    /// The runtime does not provide rollback, exactly-once, or transactional isolation guarantees for external side effects.
+    /// Failed ordinary alternative attempts restore parser execution state through the configured state manager.
+    /// Successful attempts carry their resulting state for later winner commit, without action replay or buffering.
     /// </summary>
     public ScheduledAlternativeExecutionResult Execute(
         ParseContext context,
@@ -57,6 +58,8 @@ internal sealed class ScheduledAlternativeExecutor
         bool caseInsensitive,
         Func<RuleContent, bool> containsPredicateOrAction,
         Func<ParseContext, (int? Start, int? Length)> resolveDiagnosticSpan,
+        Func<ParseContext, ParserAttemptSnapshot> captureAttempt,
+        Action<ParseContext, ParserAttemptSnapshot> restoreAttempt,
         Func<Alternative, ParseNode?> parseAlternative)
     {
         var stateKey = new ParserStateKey(rule.Name, startPosition, alternativeIndex, alternativeIndex, precedence);
@@ -98,11 +101,11 @@ internal sealed class ScheduledAlternativeExecutor
             return new ScheduledAlternativeExecutionResult(null, effectiveLookahead);
         }
 
-        var savedPosition = context.SavePosition();
+        var attemptSnapshot = captureAttempt(context);
         var result = parseAlternative(alternative);
         if (result is null)
         {
-            var consumed = context.Position > savedPosition;
+            var consumed = context.Position > attemptSnapshot.InputPosition;
             if (allowNegativeShortcut
                 && !consumed
                 && !containsPredicateOrAction(alternative.Content))
@@ -117,9 +120,11 @@ internal sealed class ScheduledAlternativeExecutor
 
             var diagnosticSpan = resolveDiagnosticSpan(context);
             diagnostics?.AddWithContext(ParserDiagnostics.BacktrackingUsed, diagnosticSpan.Start, diagnosticSpan.Length, rule.Name, null, rule.Name);
-            context.RestorePosition(savedPosition);
+            restoreAttempt(context, attemptSnapshot);
             return new ScheduledAlternativeExecutionResult(null, effectiveLookahead);
         }
+
+        var completedAttemptSnapshot = captureAttempt(context);
 
         _lookaheadCache.TryAdd(
             lookaheadKey,
@@ -141,10 +146,11 @@ internal sealed class ScheduledAlternativeExecutor
             Status = ActiveParseStateStatus.Completed,
             ParentStateKey = null,
             Depth = 0,
-            Continuation = null
+            Continuation = null,
+            ExecutionStateSnapshot = completedAttemptSnapshot.ExecutionStateSnapshot
         };
 
-        context.RestorePosition(savedPosition);
+        restoreAttempt(context, attemptSnapshot);
         return new ScheduledAlternativeExecutionResult(state, effectiveLookahead);
     }
 }

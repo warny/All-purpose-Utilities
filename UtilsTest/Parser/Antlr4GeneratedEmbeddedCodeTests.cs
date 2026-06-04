@@ -506,7 +506,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
-    /// Ensures generated <c>Fork</c> delegates to <c>ParserExecutionContextCopier&lt;TContext&gt;.Copy</c>, preserving <see cref="ICloneable"/> precedence.
+    /// Ensures generated <c>Fork</c> delegates to <c>ParserExecutionContextCopier&lt;TContext&gt;.Copy</c>, preserving <see cref="ICloneable"/> precedence after parser rollback snapshots have also used the same path.
     /// </summary>
     [TestMethod]
     public void ExecutionContext_Fork_UsesCloneableContextWhenAvailable()
@@ -533,9 +533,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var context = CreateExecutionContext(assembly);
 
         InvokeParseWithContext(assembly, "a", context);
+        var cloneCallCountBeforeManualFork = ReadContextIntProperty(context, "CloneCallCount");
         var fork = InvokeFork(context);
 
-        Assert.AreEqual(1, ReadContextIntProperty(context, "CloneCallCount"));
+        Assert.AreEqual(cloneCallCountBeforeManualFork + 1, ReadContextIntProperty(context, "CloneCallCount"));
         Assert.AreEqual(ReadContextIntProperty(context, "CountValue"), ReadContextIntProperty(fork, "CountValue"));
         CollectionAssert.AreEqual(ReadContextStringItems(context, "ItemValues"), ReadContextStringItems(fork, "ItemValues"));
     }

@@ -11,9 +11,10 @@ namespace Utils.Parser.Runtime;
 /// construction, and final parse outcomes.
 /// <para>
 /// The engine is a recursive-descent parser with full backtracking.
-/// It tries each alternative in priority order and rolls back the token position on
-/// failure. Left-recursive rules are handled by a cycle-detection stack that returns
-/// <c>null</c> when the same rule is re-entered at the same token position.
+/// It tries each alternative in priority order and rolls back the token position plus
+/// configured parser execution state on ordinary alternative-attempt failure.
+/// Left-recursive rules are handled by a cycle-detection stack that returns <c>null</c>
+/// when the same rule is re-entered at the same token position.
 /// </para>
 /// <para>
 /// Additional runtime guards stop repeated parser-state exploration and non-progressive
@@ -91,7 +92,7 @@ public sealed class ParserEngine
     private readonly IParserActionExecutor _parserActionExecutor;
 
     /// <summary>
-    /// Policy component that can capture and restore opaque parser execution state for future transactional paths.
+    /// Policy component that captures and restores opaque parser execution state around ordinary parser alternatives.
     /// </summary>
     private readonly IParserExecutionStateManager _executionStateManager;
 
@@ -194,8 +195,10 @@ public sealed class ParserEngine
         // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
         // Safety depends on RuleInvocationKey identity:
         //   (rule name, input position, minimum precedence, semantic execution-state key).
-        // The semantic execution-state key isolates completed-result reuse for stateful generated contexts
-        // without enabling branch rollback, action buffering, or semantic-state restoration.
+        // The semantic execution-state key isolates completed-result reuse for stateful generated contexts.
+        // Ordinary alternative rollback restores this key before later alternatives probe the cache;
+        // action buffering, lifecycle hooks, quantifier rollback, left-recursive extension rollback,
+        // and negation-probe isolation remain separate unsupported steps.
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence, _executionStateManager.GetCurrentStateKey());
         if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
         {
@@ -861,6 +864,8 @@ public sealed class ParserEngine
                 caseInsensitive: _caseInsensitive,
                 containsPredicateOrAction: ContainsPredicateOrAction,
                 resolveDiagnosticSpan: ResolveDiagnosticSpan,
+                captureAttempt: CaptureAttempt,
+                restoreAttempt: RestoreAttempt,
                 parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, -1, diagnostics)));
 
         if (scheduling.SelectedState is null)
@@ -869,7 +874,15 @@ public sealed class ParserEngine
         }
 
         var winner = scheduling.SelectedState;
-        context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
+        if (winner.ExecutionStateSnapshot is not null)
+        {
+            RestoreAttempt(context, new ParserAttemptSnapshot(winner.EndPosition ?? winner.CurrentInputPosition, winner.ExecutionStateSnapshot));
+        }
+        else
+        {
+            context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
+        }
+
         if (winner.PartialNode is ParserNode parserNode && ReferenceEquals(parserNode.Rule, rule))
         {
             return parserNode;
@@ -877,6 +890,32 @@ public sealed class ParserEngine
 
         var span = ComputeSpan(startToken, context, startPosition);
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+
+    /// <summary>
+    /// Captures the token cursor and opaque parser execution state before or after an ordinary alternative attempt.
+    /// This helper deliberately covers only classic alternative attempts; quantifiers, left-recursive extensions,
+    /// negation probes, lifecycle hooks, continuation replay, and action buffering remain out of scope.
+    /// </summary>
+    /// <param name="context">Mutable token-stream cursor whose position is part of the snapshot.</param>
+    /// <returns>Captured parser attempt snapshot.</returns>
+    private ParserAttemptSnapshot CaptureAttempt(ParseContext context)
+    {
+        return new ParserAttemptSnapshot(context.Position, _executionStateManager.Capture());
+    }
+
+    /// <summary>
+    /// Restores the token cursor and opaque parser execution state for an ordinary alternative attempt boundary.
+    /// After this method returns, <see cref="IParserExecutionStateManager.GetCurrentStateKey"/> must reflect the restored state
+    /// so completed-result memoization uses the restored semantic key.
+    /// </summary>
+    /// <param name="context">Mutable token-stream cursor to restore.</param>
+    /// <param name="snapshot">Snapshot previously captured by <see cref="CaptureAttempt"/>.</param>
+    private void RestoreAttempt(ParseContext context, ParserAttemptSnapshot snapshot)
+    {
+        context.RestorePosition(snapshot.InputPosition);
+        _executionStateManager.Restore(snapshot.ExecutionStateSnapshot);
     }
 
     /// <summary>
