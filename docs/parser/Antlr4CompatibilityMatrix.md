@@ -55,7 +55,7 @@ Rationale: execution of user code and semantic predicates is policy-controlled. 
 |---|---|---|---|---|---|
 | `{ condition }?` | Yes | Yes (`ValidatingPredicate`) | Yes, via `ISemanticPredicateEvaluator` in `ParserRuntimeFeaturePolicy` | `NotEvaluated` is treated as accepted; parse continues conservatively | `UP1006` (`SemanticPredicateNotEnforced`) when result is `NotEvaluated` |
 | `{ condition }=>` (if recognized) | Yes | Yes (`GatingPredicate`) | Yes, via `ISemanticPredicateEvaluator` in `ParserRuntimeFeaturePolicy` | `NotEvaluated` is treated as accepted; parse continues conservatively | `UP1006` (`SemanticPredicateNotEnforced`) when result is `NotEvaluated` |
-| Predicate options (`{ condition }?<fail=...>`) | No — causes parse failure | No | No | Grammar text fails to parse at meta-grammar level; `{ condition }?` without options is supported | None emitted (parse fails before converter) |
+| Predicate options (`{ condition }?<fail=...>`) | Yes | No — predicate options content is recognized but dropped | No | Predicate is converted normally as `ValidatingPredicate`; options content is not stored or executed | `UP1030` (`PredicateOptionsIgnored`) emitted when options are present |
 | `precpred(_ctx, N)` | Yes | Yes (`PrecedencePredicate`) | No (not via semantic predicate evaluator) | Normalized into precedence checks (`CheckPrecedence`) | No `UP1006` emission for precedence predicates |
 
 ## Parsed but not fully resolved
@@ -84,8 +84,8 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | Left-recursive precedence parity | Implemented for current runtime model, but not equivalent to all ANTLR4 precedence scenarios; the runtime can emit `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
 | Element options other than `assoc` (`<type=...>`, etc.) | Parsed; `assoc=right` applied; all other options emitted as `UP1032` (`ElementOptionIgnored`) and ignored. |
-| Lexer rule options block (`TOKEN options { ... } : ...`) | Parsed; recognized and emitted as `UP1033` (`LexerRuleOptionsIgnored`); not applied. |
-| Parser rule options block (`rule options { ... } : ...`) | Parsed; recognized and emitted as `UP1034` (`ParserRuleOptionsIgnored`); not applied. |
+| Lexer rule options block (`TOKEN options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1033` (`LexerRuleOptionsIgnored`); not applied to runtime behavior. |
+| Parser rule options block (`rule options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1034` (`ParserRuleOptionsIgnored`); not applied to runtime behavior. |
 
 ## Runtime metadata boundary
 
