@@ -84,8 +84,8 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | Left-recursive precedence parity | Implemented for current runtime model, but not equivalent to all ANTLR4 precedence scenarios; the runtime can emit `LeftRecursivePrecedencePartiallySupported` where applicable. |
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
 | Element options other than `assoc` (`<type=...>`, etc.) | Parsed; `assoc=right` applied; all other options emitted as `UP1032` (`ElementOptionIgnored`) and ignored. |
-| Lexer rule options block (`TOKEN options { ... } : ...`) | Parsed; recognized and emitted as `UP1033` (`LexerRuleOptionsIgnored`); not applied. |
-| Parser rule options block (`rule options { ... } : ...`) | Parsed; recognized and emitted as `UP1034` (`ParserRuleOptionsIgnored`); not applied. |
+| Lexer rule options block (`TOKEN options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1033` (`LexerRuleOptionsIgnored`); not applied to runtime behavior. |
+| Parser rule options block (`rule options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1034` (`ParserRuleOptionsIgnored`); not applied to runtime behavior. |
 
 ## Runtime metadata boundary
 
