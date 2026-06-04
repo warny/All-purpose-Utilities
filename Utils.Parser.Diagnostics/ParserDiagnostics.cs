@@ -194,6 +194,18 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
         new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
 
+    /// <summary>Element option on an alternative recognized but not applied by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor ElementOptionIgnored =
+        new("UP1032", "Element option ignored", "Element option '{0}' is recognized but not applied by the current runtime model.", DefaultCategory);
+
+    /// <summary>Options block on a lexer rule recognized but ignored by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor LexerRuleOptionsIgnored =
+        new("UP1033", "Lexer rule options ignored", "Options block on lexer rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+
+    /// <summary>Options block on a parser rule recognized but ignored by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor ParserRuleOptionsIgnored =
+        new("UP1034", "Parser rule options ignored", "Options block on parser rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+
     // Warnings (UP5xxx)
     /// <summary>Best-effort recovery used.</summary>
     public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed =
@@ -311,6 +323,9 @@ public static class ParserDiagnostics
             [UnsupportedLexerCommand.Code] = UnsupportedLexerCommand,
             [UnsupportedAntlrOptionIgnored.Code] = UnsupportedAntlrOptionIgnored,
             [LabelOnNonRuleReferenceIgnored.Code] = LabelOnNonRuleReferenceIgnored,
+            [ElementOptionIgnored.Code] = ElementOptionIgnored,
+            [LexerRuleOptionsIgnored.Code] = LexerRuleOptionsIgnored,
+            [ParserRuleOptionsIgnored.Code] = ParserRuleOptionsIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,
             [FallbackStrategyUsed.Code] = FallbackStrategyUsed,
