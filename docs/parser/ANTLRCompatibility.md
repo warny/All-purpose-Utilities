@@ -224,6 +224,10 @@ The shared indexing model covers the sensitive shapes that currently have regres
 
 `PreparedExpressionEmbeddedCodeRegistryBuilder` consumes the shared discovery result. `GrammarEmitter` still uses a generator-side collector over the `G4Grammar` AST, but generated hook dispatch is kept aligned with the shared runtime discovery on the sensitive cases above by parity and regression tests.
 
+### Predicate options
+
+Predicate options (`{ condition }?<fail=...>`) are parsed by the meta-grammar and produce a `ValidatingPredicate` from the condition text. The options content (`<fail=...>`) is recognized but not stored or executed. `UP1030` (`PredicateOptionsIgnored`) is emitted when options are present. This is a compatibility-oriented diagnostic only; the predicate itself is still created and evaluated through the standard semantic-predicate path.
+
 ### Unsupported / represented-only constructs
 
 The following constructs may be represented as metadata when visible to ingestion, but they are not executed by the current embedded-code paths:
