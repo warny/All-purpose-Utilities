@@ -442,7 +442,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 public int CountValue => Count;
             }
 
-            start : A { Count++; } ;
+            start @init { Count++; } : A ;
             A : 'a' ;
             """;
 
@@ -479,7 +479,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         const string grammar = """
             grammar P;
-            start : A { } ;
+            start @init { } : A ;
             A : 'a' ;
             """;
 

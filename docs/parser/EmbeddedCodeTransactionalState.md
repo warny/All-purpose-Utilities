@@ -2,7 +2,7 @@
 
 This document records the current audit and the required implementation sequence for transactional embedded-code state.
 
-It is intentionally a design note, not a complete ANTLR feature announcement. ParserEngine now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. The runtime still does not provide replay, action buffering, external side-effect rollback, or rule lifecycle execution. Completed rule-result memoization is semantic-state-aware through an opaque execution-state key, completed results carry opaque post-rule execution-state snapshots for memoization hits, and rollback restores the key before later cache lookups.
+It is intentionally a design note, not a complete ANTLR feature announcement. `ParserEngine` now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. Rule lifecycle hooks (`@init`/`@after`) are now supported in the source-generator C# opt-in path; when lifecycle hooks are present, the generated state manager makes rollback meaningful for grammars that declare them. The runtime still does not provide replay, action buffering, or external side-effect rollback. Completed rule-result memoization is semantic-state-aware through an opaque execution-state key, completed results carry opaque post-rule execution-state snapshots for memoization hits, and rollback restores the key before later cache lookups.
 
 ## Current state
 
@@ -22,7 +22,7 @@ Generated C# embedded-code execution now has the following preparatory pieces:
 - `IParserExecutionStateManager.GetCurrentStateKey()` supplies the opaque semantic-state key used by completed-result memoization;
 - generated state managers delegate `GetCurrentStateKey()` to the generated execution context, which hashes supported context fields through `ParserExecutionContextHasher<TContext>`.
 
-These pieces are now runtime rollback authority for managed parser execution state at parser backtracking attempt boundaries and for memoization-hit state restoration. `ParserEngine` validates the policy state-manager contract, reads `GetCurrentStateKey()` for completed-rule memoization, stores post-rule snapshots in reusable rule results, restores those snapshots on memoization hits, captures state before ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes, restores discarded attempts, and commits only retained parser-attempt state. Lifecycle hooks, action buffering, replay, lexer embedded-code state, and rollback of external side effects remain separate unsupported work.
+These pieces are now runtime rollback authority for managed parser execution state at parser backtracking attempt boundaries and for memoization-hit state restoration. `ParserEngine` validates the policy state-manager contract, reads `GetCurrentStateKey()` for completed-rule memoization, stores post-rule snapshots in reusable rule results, restores those snapshots on memoization hits, captures state before ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes, restores discarded attempts, and commits only retained parser-attempt state. Rule lifecycle hooks (`@init`/`@after`) are now supported; they fire through `IParserRuleLifecycleExecutor` in `ParserRuntimeFeaturePolicy.RuleLifecycleExecutor`. When lifecycle hooks are present the generated policy installs a `GeneratedExecutionStateManager` that makes rollback meaningful; grammars without hooks use the no-op manager. Action buffering, replay, lexer embedded-code state, and rollback of external side effects remain unsupported.
 
 ## Problem being solved
 
@@ -230,16 +230,17 @@ Expected scope:
 
 ### Step 6 — Parser rule lifecycle hooks
 
-Only after branch-level transactional state exists, add `@init` / `@after` execution.
+Status: **complete for the source-generator C# opt-in path**.
 
-Expected scope:
+Implemented scope:
 
-- introduce rule enter/exit lifecycle hooks;
-- map `@init` to rule entry;
-- map `@after` to rule exit according to an explicitly documented success/failure policy;
-- execute lifecycle hooks only in the opt-in embedded-code paths;
-- keep `Parse(...)` conservative;
-- add tests for successful rules, failed rule attempts, alternatives, quantifiers, and nested rules.
+- `IParserRuleLifecycleExecutor` interface and `NullParserRuleLifecycleExecutor` singleton added;
+- `ParserRuntimeFeaturePolicy.RuleLifecycleExecutor` property added;
+- `ParserEngine` fires `@init` at rule entry before any alternative is tried, and `@after` after a successful rule result;
+- lifecycle hook state mutations are automatically rolled back for failed alternatives, quantifier iterations, and negation probes via the generated `IParserExecutionStateManager`;
+- generated `Parse(...)` remains conservative; lifecycle hooks execute only through `ParseWithEmbeddedCode(...)` or an explicit-context `CreateRuntimePolicy(executionContext, basePolicy)` result;
+- lifecycle hooks are generated only when the grammar declares `@init` or `@after` on at least one rule; grammars without hooks continue using the no-op manager;
+- tests cover successful rules, failed rule attempts, alternatives, quantifiers, negation probes, memoization hits, and nested rules.
 
 ### Step 7 — Lexer embedded-code design
 
@@ -259,7 +260,6 @@ This plan does not approve:
 - action replay;
 - default execution of embedded code;
 - lexer embedded-code execution;
-- `@init` / `@after` execution as part of managed parser-attempt rollback;
 - additional semantic-state-aware cache dimensions without a dedicated design.
 
 ## Current safety summary
@@ -268,9 +268,9 @@ The safe current state is:
 
 - generated contexts can be copied through the execution-state manager;
 - runtime policies can execute generated parser predicates/actions in explicit opt-in paths;
-- ordinary parser alternative backtracking restores token position and managed parser execution state;
+- all parser backtracking boundaries restore token position and managed parser execution state;
 - left-recursive extensions, quantifier attempts, and negation probes also restore managed parser execution state for discarded attempts;
 - completed-result memoization is isolated by execution-state keys and memoization hits restore stored post-rule execution-state snapshots without replaying actions;
-- complete ANTLR embedded-code transactional semantics are not active because action buffering, lifecycle hooks, lexer embedded-code state, replay, and external side-effect rollback remain unsupported;
-- rule lifecycle embedded code remains unsupported;
+- rule lifecycle hooks (`@init`/`@after`) are supported in the source-generator C# path, activated only through `ParseWithEmbeddedCode(...)` or an explicit `CreateRuntimePolicy(executionContext, basePolicy)` result; grammars without lifecycle hooks use the no-op executor;
+- complete ANTLR embedded-code transactional semantics are not active because action buffering, lexer embedded-code state, replay, and external side-effect rollback remain unsupported;
 - lexer embedded code remains unsupported.

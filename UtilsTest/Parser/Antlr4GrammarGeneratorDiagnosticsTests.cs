@@ -195,10 +195,10 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     }
 
     /// <summary>
-    /// Ensures rule <c>@init</c> lifecycle actions are reported as recognized but not executed.
+    /// Ensures rule <c>@init</c> lifecycle actions are not reported as unsupported embedded code now that they are generated.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_RuleInitAction_ReportsUnsupportedEmbeddedCode()
+    public void GeneratorDiagnostics_RuleInitAction_DoesNotReportUnsupportedEmbeddedCode()
     {
         const string grammar = """
             grammar P;
@@ -210,16 +210,14 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             A : 'a' ;
             """;
 
-        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Rule @init action");
-
-        StringAssert.Contains(diagnostic.GetMessage(), "lifecycle actions require a dedicated execution model");
+        AssertNoUnsupportedDiagnostics(RunGenerator(grammar));
     }
 
     /// <summary>
-    /// Ensures rule <c>@after</c> lifecycle actions are reported as recognized but not executed.
+    /// Ensures rule <c>@after</c> lifecycle actions are not reported as unsupported embedded code now that they are generated.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_RuleAfterAction_ReportsUnsupportedEmbeddedCode()
+    public void GeneratorDiagnostics_RuleAfterAction_DoesNotReportUnsupportedEmbeddedCode()
     {
         const string grammar = """
             grammar P;
@@ -231,9 +229,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             A : 'a' ;
             """;
 
-        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Rule @after action");
-
-        StringAssert.Contains(diagnostic.GetMessage(), "metadata-only");
+        AssertNoUnsupportedDiagnostics(RunGenerator(grammar));
     }
 
     /// <summary>

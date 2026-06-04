@@ -177,11 +177,6 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, grammar.Name, reason);
         }
 
-        foreach (var rule in grammar.ParserRules)
-        {
-            ReportRuleLifecycleDiagnostics(context, file, text, rule);
-        }
-
         foreach (var rule in grammar.LexerRules)
         {
             ReportRuleLifecycleDiagnostics(context, file, text, rule);

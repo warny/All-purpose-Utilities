@@ -34,6 +34,7 @@ internal static class GrammarEmitter
         string[] stringSyntaxNumberRules = GetStringSyntaxRulesByName(grammar, "NUMBER");
         string[] stringSyntaxStringRules = GetStringSyntaxRulesByName(grammar, "STRING");
         var embeddedHooks = CollectEmbeddedCodeHooks(grammar);
+        var lifecycleHooks = CollectLifecycleHooks(grammar);
         var parserMembers = CollectParserMembers(grammar);
 
         // ── File header ──────────────────────────────────────────────
@@ -181,7 +182,7 @@ internal static class GrammarEmitter
 
         sb.AppendLine("}");
         sb.AppendLine();
-        EmitExecutionContext(sb, embeddedHooks, parserMembers, className, sourceFileName);
+        EmitExecutionContext(sb, embeddedHooks, lifecycleHooks, parserMembers, className, sourceFileName);
 
         return sb.ToString();
     }
@@ -459,12 +460,14 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="hooks">Collected parser embedded-code hooks.</param>
+    /// <param name="lifecycleHooks">Collected rule lifecycle (@init / @after) hooks.</param>
     /// <param name="parserMembers">Parser members blocks to inject verbatim.</param>
     /// <param name="className">Generated grammar class name.</param>
     /// <param name="sourceFileName">Original .g4 file name, used in generated XML documentation.</param>
     private static void EmitExecutionContext(
         StringBuilder sb,
         IReadOnlyList<EmbeddedCodeHook> hooks,
+        IReadOnlyList<LifecycleHook> lifecycleHooks,
         IReadOnlyList<G4GrammarAction> parserMembers,
         string className,
         string sourceFileName)
@@ -517,13 +520,22 @@ internal static class GrammarEmitter
         sb.AppendLine("        {");
         sb.AppendLine("            SemanticPredicateEvaluator = new GeneratedSemanticPredicateEvaluator(this, effectiveBase.SemanticPredicateEvaluator),");
         sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
-        sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(this)");
+        if (lifecycleHooks.Count > 0)
+        {
+            sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(this),");
+            sb.AppendLine("            RuleLifecycleExecutor = new GeneratedRuleLifecycleExecutor(this)");
+        }
         sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
         EmitExecutionStateManager(sb, contextClassName);
         EmitSemanticPredicateEvaluator(sb, predicates, contextClassName);
         EmitParserActionExecutor(sb, actions, contextClassName);
+        if (lifecycleHooks.Count > 0)
+        {
+            EmitRuleLifecycleExecutor(sb, lifecycleHooks, contextClassName);
+        }
+
         foreach (var predicate in predicates)
         {
             EmitPredicateHook(sb, predicate);
@@ -532,6 +544,11 @@ internal static class GrammarEmitter
         foreach (var action in actions)
         {
             EmitActionHook(sb, action);
+        }
+
+        foreach (var lifecycleHook in lifecycleHooks)
+        {
+            EmitLifecycleHookMethod(sb, lifecycleHook);
         }
 
         sb.AppendLine("}");
@@ -705,6 +722,82 @@ internal static class GrammarEmitter
     }
 
     /// <summary>
+    /// Emits the grammar-specific rule lifecycle executor dispatcher.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="lifecycleHooks">Lifecycle hooks to dispatch.</param>
+    /// <param name="contextClassName">Generated execution context class name.</param>
+    private static void EmitRuleLifecycleExecutor(StringBuilder sb, IReadOnlyList<LifecycleHook> lifecycleHooks, string contextClassName)
+    {
+        var initHooks = lifecycleHooks.Where(static hook => hook.IsInit).ToList();
+        var afterHooks = lifecycleHooks.Where(static hook => !hook.IsInit).ToList();
+
+        sb.AppendLine("    /// <summary>Dispatches rule lifecycle hooks to generated C# <c>@init</c> and <c>@after</c> methods.</summary>");
+        sb.AppendLine("    private sealed class GeneratedRuleLifecycleExecutor : IParserRuleLifecycleExecutor");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Initializes a generated rule lifecycle executor for one execution context.</summary>");
+        sb.AppendLine($"        public GeneratedRuleLifecycleExecutor({contextClassName} executionContext)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            _executionContext = executionContext ?? throw new global::System.ArgumentNullException(nameof(executionContext));");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Executes the matching lifecycle hook when the phase and rule name are recognized.</summary>");
+        sb.AppendLine("        public void Execute(ParserRuleLifecyclePhase phase, string ruleName, ParserRuleLifecycleContext context)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            global::System.ArgumentNullException.ThrowIfNull(ruleName);");
+        sb.AppendLine("            global::System.ArgumentNullException.ThrowIfNull(context);");
+
+        if (initHooks.Count > 0)
+        {
+            sb.AppendLine("            if (phase == ParserRuleLifecyclePhase.Init)");
+            sb.AppendLine("            {");
+            foreach (var hook in initHooks)
+            {
+                sb.AppendLine($"                if (string.Equals(ruleName, \"{Escape(hook.RuleName)}\", global::System.StringComparison.Ordinal)) {{ _executionContext.{hook.MethodName}(context); return; }}");
+            }
+            sb.AppendLine("            }");
+        }
+
+        if (afterHooks.Count > 0)
+        {
+            string elseClause = initHooks.Count > 0 ? "else if" : "if";
+            sb.AppendLine($"            {elseClause} (phase == ParserRuleLifecyclePhase.After)");
+            sb.AppendLine("            {");
+            foreach (var hook in afterHooks)
+            {
+                sb.AppendLine($"                if (string.Equals(ruleName, \"{Escape(hook.RuleName)}\", global::System.StringComparison.Ordinal)) {{ _executionContext.{hook.MethodName}(context); return; }}");
+            }
+            sb.AppendLine("            }");
+        }
+
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Emits a generated C# method for a rule lifecycle hook body.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="hook">Lifecycle hook metadata.</param>
+    private static void EmitLifecycleHookMethod(StringBuilder sb, LifecycleHook hook)
+    {
+        string phase = hook.IsInit ? "@init" : "@after";
+        var body = GeneratedEmbeddedCodeBody.ForAction(hook.Code);
+
+        sb.AppendLine($"    /// <summary>Executes rule lifecycle <c>{phase}</c> hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
+        sb.AppendLine($"    internal void {hook.MethodName}(ParserRuleLifecycleContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        string ruleName = context.RuleName;");
+        sb.AppendLine("        int inputPosition = context.InputPosition;");
+        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    /// <summary>
     /// Emits local variables that expose runtime context metadata to user-authored embedded C#.
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
@@ -771,6 +864,31 @@ internal static class GrammarEmitter
     private static string GetExecutionContextClassName(string className)
     {
         return className + "ExecutionContext";
+    }
+
+    /// <summary>
+    /// Collects rule lifecycle (<c>@init</c> and <c>@after</c>) hooks from parser rules.
+    /// Only parser rules are considered; lexer rule lifecycle hooks are not generated.
+    /// </summary>
+    /// <param name="grammar">Parsed grammar AST.</param>
+    /// <returns>Deterministic lifecycle hook metadata for parser rules.</returns>
+    private static IReadOnlyList<LifecycleHook> CollectLifecycleHooks(G4Grammar grammar)
+    {
+        var hooks = new List<LifecycleHook>();
+        foreach (var rule in grammar.ParserRules)
+        {
+            if (rule.InitAction is not null)
+            {
+                hooks.Add(new LifecycleHook(rule.Name, rule.InitAction.Code, isInit: true, $"__Init_{Sanitize(rule.Name)}"));
+            }
+
+            if (rule.AfterAction is not null)
+            {
+                hooks.Add(new LifecycleHook(rule.Name, rule.AfterAction.Code, isInit: false, $"__After_{Sanitize(rule.Name)}"));
+            }
+        }
+
+        return hooks;
     }
 
     /// <summary>
@@ -1145,6 +1263,39 @@ internal static class GrammarEmitter
 
         /// <summary>Gets the runtime element index used for dispatch.</summary>
         public int ElementIndex { get; }
+
+        /// <summary>Gets the generated C# hook method name.</summary>
+        public string MethodName { get; }
+    }
+
+    /// <summary>
+    /// Metadata for one generated rule lifecycle hook (<c>@init</c> or <c>@after</c>).
+    /// </summary>
+    private sealed class LifecycleHook
+    {
+        /// <summary>
+        /// Initializes lifecycle hook metadata.
+        /// </summary>
+        /// <param name="ruleName">Owning parser rule name.</param>
+        /// <param name="code">Raw lifecycle action body without ANTLR braces.</param>
+        /// <param name="isInit"><see langword="true"/> for <c>@init</c>; <see langword="false"/> for <c>@after</c>.</param>
+        /// <param name="methodName">Generated C# hook method name.</param>
+        public LifecycleHook(string ruleName, string code, bool isInit, string methodName)
+        {
+            RuleName = ruleName;
+            Code = code;
+            IsInit = isInit;
+            MethodName = methodName;
+        }
+
+        /// <summary>Gets the owning parser rule name.</summary>
+        public string RuleName { get; }
+
+        /// <summary>Gets the raw lifecycle action body without ANTLR braces.</summary>
+        public string Code { get; }
+
+        /// <summary>Gets a value indicating whether this is an <c>@init</c> hook (<see langword="false"/> means <c>@after</c>).</summary>
+        public bool IsInit { get; }
 
         /// <summary>Gets the generated C# hook method name.</summary>
         public string MethodName { get; }

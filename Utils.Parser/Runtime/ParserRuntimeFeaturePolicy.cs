@@ -9,13 +9,14 @@ public sealed record ParserRuntimeFeaturePolicy
 {
     /// <summary>
     /// Gets the conservative default runtime policy.
-    /// Semantic predicates are not evaluated and parser actions are not executed.
+    /// Semantic predicates are not evaluated, parser actions are not executed, and rule lifecycle hooks are not invoked.
     /// </summary>
     public static ParserRuntimeFeaturePolicy Default { get; } = new()
     {
         SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
         ParserActionExecutor = new DefaultParserActionExecutor(),
         ExecutionStateManager = NullParserExecutionStateManager.Instance,
+        RuleLifecycleExecutor = NullParserRuleLifecycleExecutor.Instance,
         RuntimeObserver = null
     };
 
@@ -34,6 +35,12 @@ public sealed record ParserRuntimeFeaturePolicy
     /// ParserEngine reads state keys for completed-result memoization and invokes capture/restore around managed parser attempt boundaries.
     /// </summary>
     public required IParserExecutionStateManager ExecutionStateManager { get; init; }
+
+    /// <summary>
+    /// Gets the parser rule lifecycle executor that handles <c>@init</c> and <c>@after</c> hooks.
+    /// The default no-op executor skips lifecycle hooks and preserves conservative behavior.
+    /// </summary>
+    public required IParserRuleLifecycleExecutor RuleLifecycleExecutor { get; init; }
 
     /// <summary>
     /// Gets the optional passive runtime observer for scheduling introspection.
