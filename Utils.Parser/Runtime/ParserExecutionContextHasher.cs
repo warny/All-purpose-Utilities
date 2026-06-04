@@ -104,7 +104,7 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="value">Runtime value to hash.</param>
     /// <param name="declaredType">Declared field or element type.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
-    private static void AddValue(StableHashBuilder builder, object? value, Type declaredType, string path)
+    private static void AddValue(IStableHashSink builder, object? value, Type declaredType, string path)
     {
         builder.AddText(declaredType.AssemblyQualifiedName ?? declaredType.FullName ?? declaredType.Name);
         if (value is null)
@@ -164,7 +164,7 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="value">Value to hash.</param>
     /// <param name="type">Non-nullable runtime value type.</param>
     /// <returns><see langword="true"/> when the value was handled.</returns>
-    private static bool TryAddSimpleValue(StableHashBuilder builder, object value, Type type)
+    private static bool TryAddSimpleValue(IStableHashSink builder, object value, Type type)
     {
         TypeCode code = Type.GetTypeCode(type);
         switch (code)
@@ -255,7 +255,7 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="builder">Hash builder receiving sequence values.</param>
     /// <param name="enumerable">Enumerable sequence whose order is significant.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
-    private static void AddSequence(StableHashBuilder builder, IEnumerable enumerable, string path)
+    private static void AddSequence(IStableHashSink builder, IEnumerable enumerable, string path)
     {
         builder.AddText("sequence");
         ulong count = 0;
@@ -274,7 +274,7 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="builder">Hash builder receiving dictionary values.</param>
     /// <param name="dictionary">Dictionary whose entries are hashed.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
-    private static void AddDictionary(StableHashBuilder builder, IDictionary dictionary, string path)
+    private static void AddDictionary(IStableHashSink builder, IDictionary dictionary, string path)
     {
         List<DictionaryEntry> entries = [];
         foreach (DictionaryEntry entry in dictionary)
@@ -291,7 +291,7 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="builder">Hash builder receiving dictionary values.</param>
     /// <param name="dictionary">Dictionary-like object whose entries are hashed.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
-    private static void AddDictionaryLike(StableHashBuilder builder, object dictionary, string path)
+    private static void AddDictionaryLike(IStableHashSink builder, object dictionary, string path)
     {
         List<(object? Key, object? Value)> entries = [];
         foreach (object? entry in (IEnumerable)dictionary)
@@ -321,20 +321,22 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="builder">Hash builder receiving dictionary values.</param>
     /// <param name="entries">Entries to hash.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
-    private static void AddOrderedDictionaryEntries(StableHashBuilder builder, IEnumerable<(object? Key, object? Value)> entries, string path)
+    private static void AddOrderedDictionaryEntries(IStableHashSink builder, IEnumerable<(object? Key, object? Value)> entries, string path)
     {
         builder.AddText("dictionary");
         var orderedEntries = entries
-            .Select((entry, index) => new OrderedEntry(CreateSortKey(entry.Key, $"{path}.Key"), index, entry))
-            .OrderBy(static entry => entry.SortKey, StringComparer.Ordinal)
-            .ThenBy(static entry => entry.OriginalIndex)
+            .Select((entry, index) => new OrderedEntry(CreateCanonicalSortKey(entry.Key, $"{path}.Key"), CreateCanonicalSortKey(entry.Value, $"{path}.Value"), entry))
+            .OrderBy(static entry => entry.KeyCanonical, StringComparer.Ordinal)
+            .ThenBy(static entry => entry.ValueCanonical, StringComparer.Ordinal)
             .ToList();
+
+        ValidateDictionaryCanonicalOrdering(orderedEntries, path);
 
         builder.AddUInt64((ulong)orderedEntries.Count);
         foreach (OrderedEntry orderedEntry in orderedEntries)
         {
             AddValue(builder, orderedEntry.Entry.Key, orderedEntry.Entry.Key?.GetType() ?? typeof(object), $"{path}.Key");
-            AddValue(builder, orderedEntry.Entry.Value, orderedEntry.Entry.Value?.GetType() ?? typeof(object), $"{path}[{orderedEntry.SortKey}]");
+            AddValue(builder, orderedEntry.Entry.Value, orderedEntry.Entry.Value?.GetType() ?? typeof(object), $"{path}[{orderedEntry.KeyCanonical}]");
         }
     }
 
@@ -344,15 +346,16 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="builder">Hash builder receiving set values.</param>
     /// <param name="set">Set whose values are hashed.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
-    private static void AddSet(StableHashBuilder builder, IEnumerable set, string path)
+    private static void AddSet(IStableHashSink builder, IEnumerable set, string path)
     {
         builder.AddText("set");
         var orderedItems = set
             .Cast<object?>()
-            .Select((item, index) => new OrderedValue(CreateSortKey(item, path), index, item))
-            .OrderBy(static item => item.SortKey, StringComparer.Ordinal)
-            .ThenBy(static item => item.OriginalIndex)
+            .Select((item, index) => new OrderedValue(CreateCanonicalSortKey(item, path), item))
+            .OrderBy(static item => item.Canonical, StringComparer.Ordinal)
             .ToList();
+
+        ValidateSetCanonicalOrdering(orderedItems, path);
 
         builder.AddUInt64((ulong)orderedItems.Count);
         foreach (OrderedValue item in orderedItems)
@@ -367,37 +370,53 @@ public static class ParserExecutionContextHasher<TContext>
     /// <param name="value">Value to sort.</param>
     /// <param name="path">Human-readable field path for exception messages.</param>
     /// <returns>A deterministic string sort key.</returns>
-    private static string CreateSortKey(object? value, string path)
+    private static string CreateCanonicalSortKey(object? value, string path)
     {
-        if (value is null)
-        {
-            return "0:null";
-        }
-
-        Type valueType = value.GetType();
-        if (value is IComparable)
-        {
-            return $"1:{valueType.AssemblyQualifiedName}:{Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)}";
-        }
-
-        if (ImplementsGenericComparable(valueType))
-        {
-            return $"1:{valueType.AssemblyQualifiedName}:{Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)}";
-        }
-
-        var builder = new StableHashBuilder();
-        AddValue(builder, value, valueType, path);
-        return $"2:{valueType.AssemblyQualifiedName}:{builder.Value:X16}";
+        var builder = new CanonicalByteBuilder();
+        AddValue(builder, value, value?.GetType() ?? typeof(object), path);
+        return Convert.ToHexString(builder.ToArray());
     }
 
     /// <summary>
-    /// Determines whether a type implements a closed generic <see cref="IComparable{T}"/> interface.
+    /// Ensures dictionary keys with the same canonical bytes are not distinct values that cannot be ordered safely.
     /// </summary>
-    /// <param name="type">Type to inspect.</param>
-    /// <returns><see langword="true"/> when the type is generically comparable.</returns>
-    private static bool ImplementsGenericComparable(Type type)
+    /// <param name="orderedEntries">Entries sorted by canonical key and value.</param>
+    /// <param name="path">Human-readable field path for exception messages.</param>
+    private static void ValidateDictionaryCanonicalOrdering(IReadOnlyList<OrderedEntry> orderedEntries, string path)
     {
-        return type.GetInterfaces().Any(static interfaceType => interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IComparable<>));
+        for (int index = 1; index < orderedEntries.Count; index++)
+        {
+            OrderedEntry previous = orderedEntries[index - 1];
+            OrderedEntry current = orderedEntries[index];
+            if (previous.KeyCanonical == current.KeyCanonical && !Equals(previous.Entry.Key, current.Entry.Key))
+            {
+                throw new InvalidOperationException(
+                    $"Parser execution-state hashing cannot order dictionary entries at '{path}' deterministically because distinct keys " +
+                    "produce the same canonical representation. Provide comparable keys or a collision-free " +
+                    $"{nameof(IParserExecutionStateHashable)} implementation for dictionary keys.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Ensures set elements with the same canonical bytes are not distinct values that cannot be ordered safely.
+    /// </summary>
+    /// <param name="orderedItems">Set items sorted by canonical value.</param>
+    /// <param name="path">Human-readable field path for exception messages.</param>
+    private static void ValidateSetCanonicalOrdering(IReadOnlyList<OrderedValue> orderedItems, string path)
+    {
+        for (int index = 1; index < orderedItems.Count; index++)
+        {
+            OrderedValue previous = orderedItems[index - 1];
+            OrderedValue current = orderedItems[index];
+            if (previous.Canonical == current.Canonical && !Equals(previous.Value, current.Value))
+            {
+                throw new InvalidOperationException(
+                    $"Parser execution-state hashing cannot order set elements at '{path}' deterministically because distinct elements " +
+                    "produce the same canonical representation. Provide comparable elements or a collision-free " +
+                    $"{nameof(IParserExecutionStateHashable)} implementation for set elements.");
+            }
+        }
     }
 
     /// <summary>
@@ -437,22 +456,51 @@ public static class ParserExecutionContextHasher<TContext>
             $"Implement {nameof(IParserExecutionStateHashable)} to provide an explicit structural parser execution-state hash.");
     }
 
-    /// <summary>Dictionary entry paired with its deterministic sort key.</summary>
-    /// <param name="SortKey">Deterministic sort key.</param>
-    /// <param name="OriginalIndex">Original enumeration index used only as a final tie-breaker.</param>
+    /// <summary>Dictionary entry paired with deterministic canonical sort keys.</summary>
+    /// <param name="KeyCanonical">Canonical key bytes encoded as hexadecimal text.</param>
+    /// <param name="ValueCanonical">Canonical value bytes encoded as hexadecimal text.</param>
     /// <param name="Entry">Dictionary entry being sorted.</param>
-    private readonly record struct OrderedEntry(string SortKey, int OriginalIndex, (object? Key, object? Value) Entry);
+    private readonly record struct OrderedEntry(string KeyCanonical, string ValueCanonical, (object? Key, object? Value) Entry);
 
-    /// <summary>Set entry paired with its deterministic sort key.</summary>
-    /// <param name="SortKey">Deterministic sort key.</param>
-    /// <param name="OriginalIndex">Original enumeration index used only as a final tie-breaker.</param>
+    /// <summary>Set entry paired with deterministic canonical sort bytes.</summary>
+    /// <param name="Canonical">Canonical element bytes encoded as hexadecimal text.</param>
     /// <param name="Value">Set value being sorted.</param>
-    private readonly record struct OrderedValue(string SortKey, int OriginalIndex, object? Value);
+    private readonly record struct OrderedValue(string Canonical, object? Value);
+
+    /// <summary>
+    /// Receives typed structural hash components.
+    /// </summary>
+    private interface IStableHashSink
+    {
+        /// <summary>Adds a byte marker to the stream.</summary>
+        /// <param name="value">Byte value to add.</param>
+        void AddByte(byte value);
+
+        /// <summary>Adds a byte sequence with no implicit length prefix.</summary>
+        /// <param name="bytes">Bytes to add.</param>
+        void AddBytes(IEnumerable<byte> bytes);
+
+        /// <summary>Adds a 32-bit unsigned integer in little-endian byte order.</summary>
+        /// <param name="value">Value to add.</param>
+        void AddUInt32(uint value);
+
+        /// <summary>Adds a 64-bit signed integer in little-endian byte order.</summary>
+        /// <param name="value">Value to add.</param>
+        void AddInt64(long value);
+
+        /// <summary>Adds a 64-bit unsigned integer in little-endian byte order.</summary>
+        /// <param name="value">Value to add.</param>
+        void AddUInt64(ulong value);
+
+        /// <summary>Adds a UTF-8 string with a length prefix.</summary>
+        /// <param name="value">String to add.</param>
+        void AddText(string value);
+    }
 
     /// <summary>
     /// Incremental FNV-1a hash builder with explicit type and length markers.
     /// </summary>
-    private sealed class StableHashBuilder
+    private sealed class StableHashBuilder : IStableHashSink
     {
         /// <summary>FNV offset basis.</summary>
         private const ulong OffsetBasis = 14695981039346656037UL;
@@ -480,6 +528,66 @@ public static class ParserExecutionContextHasher<TContext>
             {
                 AddByte(value);
             }
+        }
+
+        /// <summary>Adds a 32-bit unsigned integer in little-endian byte order.</summary>
+        /// <param name="value">Value to add.</param>
+        public void AddUInt32(uint value)
+        {
+            AddBytes(BitConverter.GetBytes(value));
+        }
+
+        /// <summary>Adds a 64-bit signed integer in little-endian byte order.</summary>
+        /// <param name="value">Value to add.</param>
+        public void AddInt64(long value)
+        {
+            AddBytes(BitConverter.GetBytes(value));
+        }
+
+        /// <summary>Adds a 64-bit unsigned integer in little-endian byte order.</summary>
+        /// <param name="value">Value to add.</param>
+        public void AddUInt64(ulong value)
+        {
+            AddBytes(BitConverter.GetBytes(value));
+        }
+
+        /// <summary>Adds a UTF-8 string with a length prefix.</summary>
+        /// <param name="value">String to add.</param>
+        public void AddText(string value)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            AddUInt64((ulong)bytes.Length);
+            AddBytes(bytes);
+        }
+    }
+
+    /// <summary>
+    /// Captures the full structural byte stream used as a canonical collection sort representation.
+    /// </summary>
+    private sealed class CanonicalByteBuilder : IStableHashSink
+    {
+        /// <summary>Captured structural bytes.</summary>
+        private readonly List<byte> _bytes = [];
+
+        /// <summary>Returns the captured canonical structural bytes.</summary>
+        /// <returns>A canonical byte array.</returns>
+        public byte[] ToArray()
+        {
+            return [.. _bytes];
+        }
+
+        /// <summary>Adds a byte marker to the canonical stream.</summary>
+        /// <param name="value">Byte value to add.</param>
+        public void AddByte(byte value)
+        {
+            _bytes.Add(value);
+        }
+
+        /// <summary>Adds a byte sequence with no implicit length prefix.</summary>
+        /// <param name="bytes">Bytes to add.</param>
+        public void AddBytes(IEnumerable<byte> bytes)
+        {
+            _bytes.AddRange(bytes);
         }
 
         /// <summary>Adds a 32-bit unsigned integer in little-endian byte order.</summary>
