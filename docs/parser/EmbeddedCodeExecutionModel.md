@@ -128,7 +128,7 @@ Context-copy preparation:
 - unknown collections without one of those safe reconstruction strategies are copied by reference instead of failing or producing a partial copy;
 - null known or reconstructable containers remain null, static fields are not copied, field-like event backing fields are skipped, and readonly instance fields cause an explicit configuration exception instead of being ignored silently;
 - compiler-generated auto-property backing fields are treated as context state and are copied unless they are readonly;
-- generated `Fork()` and `CopyFrom(...)` are preparatory helpers for future snapshot/fork/commit work; they are not called automatically by `ParserEngine`, generated policies, or parsing strategy in the current model, and they do not add rollback, action buffering, `@init`, `@after`, lexer actions, or lexer predicates.
+- generated `Fork()` and `CopyFrom(...)` are preparatory helpers for future snapshot/fork/commit work; generated policies expose them through a manual `IParserExecutionStateManager`, but neither `ParserEngine` nor parsing strategy calls the manager automatically in the current model, and it does not add rollback, action buffering, `@init`, `@after`, lexer actions, or lexer predicates.
 
 Execution boundary:
 
@@ -300,7 +300,23 @@ Not responsible for:
 
 Current preparatory helper:
 
-- `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. Generated execution contexts expose this primitive through `Fork()` and `CopyFrom(...)`, but those methods remain helpers only; `ParserEngine` does not invoke them automatically and no rollback behavior is active.
+- `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. Generated execution contexts expose this primitive through `Fork()` and `CopyFrom(...)`. Generated runtime policies also expose an `IParserExecutionStateManager` through `ParserRuntimeFeaturePolicy.ExecutionStateManager`; the generated manager captures with `Fork()` and restores with `CopyFrom(...)`. The default runtime policy uses `NullParserExecutionStateManager.Instance`. These methods and managers remain helpers only: `ParserEngine` validates the policy contract but does not invoke capture/restore automatically, and no rollback behavior is active.
+
+API compatibility note: `ParserRuntimeFeaturePolicy.ExecutionStateManager` is required. Prefer `ParserRuntimeFeaturePolicy.Default with { ... }` when customizing a policy so the no-op default manager is preserved automatically. Direct `new ParserRuntimeFeaturePolicy { ... }` initializers must now set `ExecutionStateManager = NullParserExecutionStateManager.Instance` to keep conservative no-op behavior. This requirement does not enable rollback or action buffering; it only makes the future capture/restore contract explicit and non-null.
+
+```csharp
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = customEvaluator
+};
+
+var directPolicy = new ParserRuntimeFeaturePolicy
+{
+    SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+    ParserActionExecutor = new DefaultParserActionExecutor(),
+    ExecutionStateManager = NullParserExecutionStateManager.Instance
+};
+```
 
 ### `Utils.Parser.Diagnostics`
 
@@ -392,7 +408,7 @@ This model explicitly excludes:
 - parser scheduler changes;
 - `ParserEngine` authority transfer;
 - rollback/replay semantics;
-- automatic use of generated execution-context `Fork()` / `CopyFrom(...)` or `ParserExecutionContextCopier<TContext>` as rollback or speculative-execution authority;
+- automatic use of `IParserExecutionStateManager`, generated execution-context `Fork()` / `CopyFrom(...)`, or `ParserExecutionContextCopier<TContext>` as rollback or speculative-execution authority;
 - hidden semantic runtime state;
 - parse-tree shape changes;
 - direct `Utils.Parser` dependency on `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax`;

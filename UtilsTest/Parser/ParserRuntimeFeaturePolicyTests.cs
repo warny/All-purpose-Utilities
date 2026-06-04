@@ -21,6 +21,7 @@ public class ParserRuntimeFeaturePolicyTests
     {
         Assert.IsInstanceOfType<DefaultSemanticPredicateEvaluator>(ParserRuntimeFeaturePolicy.Default.SemanticPredicateEvaluator);
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(ParserRuntimeFeaturePolicy.Default.ParserActionExecutor);
+        Assert.AreSame(NullParserExecutionStateManager.Instance, ParserRuntimeFeaturePolicy.Default.ExecutionStateManager);
     }
 
     /// <summary>
@@ -39,6 +40,7 @@ public class ParserRuntimeFeaturePolicyTests
 
         Assert.AreSame(evaluator, GetSemanticPredicateEvaluator(evaluatorOnly));
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(GetParserActionExecutor(evaluatorOnly));
+        Assert.AreSame(NullParserExecutionStateManager.Instance, GetExecutionStateManager(evaluatorOnly));
 
         Assert.IsInstanceOfType<DefaultSemanticPredicateEvaluator>(GetSemanticPredicateEvaluator(executorOnly));
         Assert.AreSame(executor, GetParserActionExecutor(executorOnly));
@@ -66,6 +68,34 @@ public class ParserRuntimeFeaturePolicyTests
 
         Assert.AreSame(evaluator, GetSemanticPredicateEvaluator(parser));
         Assert.AreSame(executor, GetParserActionExecutor(parser));
+        Assert.AreSame(NullParserExecutionStateManager.Instance, GetExecutionStateManager(parser));
+    }
+
+    /// <summary>
+    /// Verifies that the default policy exposes the singleton no-op execution-state manager.
+    /// </summary>
+    [TestMethod]
+    public void DefaultPolicy_UsesNullExecutionStateManager()
+    {
+        var manager = ParserRuntimeFeaturePolicy.Default.ExecutionStateManager;
+
+        Assert.IsNotNull(manager);
+        Assert.AreSame(NullParserExecutionStateManager.Instance, manager);
+        var snapshot = manager.Capture();
+        Assert.IsNotNull(snapshot);
+        manager.Restore(snapshot);
+    }
+
+    /// <summary>
+    /// Verifies that parser construction rejects a policy whose execution-state manager was explicitly nulled.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_RejectsNullExecutionStateManager()
+    {
+        var definition = CreateMinimalDefinition();
+        var invalidPolicy = ParserRuntimeFeaturePolicy.Default with { ExecutionStateManager = null! };
+
+        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
     }
 
     /// <summary>
@@ -118,6 +148,17 @@ public class ParserRuntimeFeaturePolicyTests
     {
         var field = typeof(ParserEngine).GetField("_parserActionExecutor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         return (IParserActionExecutor)field.GetValue(parser)!;
+    }
+
+    /// <summary>
+    /// Gets the parser execution-state manager instance currently held by the parser engine.
+    /// </summary>
+    /// <param name="parser">Parser engine to inspect.</param>
+    /// <returns>Configured parser execution-state manager.</returns>
+    private static IParserExecutionStateManager GetExecutionStateManager(ParserEngine parser)
+    {
+        var field = typeof(ParserEngine).GetField("_executionStateManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (IParserExecutionStateManager)field.GetValue(parser)!;
     }
 
     /// <summary>

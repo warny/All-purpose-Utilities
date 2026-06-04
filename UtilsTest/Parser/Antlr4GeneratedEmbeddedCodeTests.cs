@@ -429,6 +429,61 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures generated runtime policies install an execution-state manager that can manually capture and restore context state.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_CreateRuntimePolicy_InstallsExecutionStateManager()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+                public int CountValue => Count;
+            }
+
+            start : A { Count++; } ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", context);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+        Assert.IsNotNull(policy.ExecutionStateManager);
+
+        var snapshot = policy.ExecutionStateManager.Capture();
+        Assert.IsNotNull(snapshot);
+        Assert.AreEqual(context.GetType(), snapshot.GetType());
+
+        InvokeParseWithContext(assembly, "a", context);
+        Assert.AreEqual(2, ReadContextIntProperty(context, "CountValue"));
+
+        policy.ExecutionStateManager.Restore(snapshot);
+        Assert.AreEqual(1, ReadContextIntProperty(context, "CountValue"));
+    }
+
+    /// <summary>
+    /// Ensures generated execution-state managers reject snapshots from another type.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedExecutionStateManager_RestoreRejectsWrongSnapshotType()
+    {
+        const string grammar = """
+            grammar P;
+            start : A { } ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+
+        Assert.ThrowsException<ArgumentException>(() => policy.ExecutionStateManager.Restore(new object()));
+    }
+
+    /// <summary>
     /// Ensures generated <c>CopyFrom</c> validates the supplied source context.
     /// </summary>
     [TestMethod]
@@ -1579,6 +1634,25 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         return Activator.CreateInstance(type)!;
+    }
+
+
+    /// <summary>
+    /// Invokes the generated facade helper that creates a runtime policy for an explicit execution context.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="executionContext">Execution context instance to bind to the policy.</param>
+    /// <returns>The generated runtime policy bound to the supplied execution context.</returns>
+    private static ParserRuntimeFeaturePolicy InvokeCreateRuntimePolicy(Assembly assembly, object executionContext)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var contextType = executionContext.GetType();
+        var method = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "CreateRuntimePolicy"
+                && method.GetParameters() is [{ ParameterType: var executionContextType }, { ParameterType: var basePolicyType }]
+                && executionContextType == contextType
+                && basePolicyType == typeof(ParserRuntimeFeaturePolicy));
+        return (ParserRuntimeFeaturePolicy)method.Invoke(null, [executionContext, null])!;
     }
 
     /// <summary>

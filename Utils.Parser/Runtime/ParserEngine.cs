@@ -91,6 +91,11 @@ public sealed class ParserEngine
     private readonly IParserActionExecutor _parserActionExecutor;
 
     /// <summary>
+    /// Policy component that can capture and restore opaque parser execution state for future transactional paths.
+    /// </summary>
+    private readonly IParserExecutionStateManager _executionStateManager;
+
+    /// <summary>
     /// Initializes a parser engine with the conservative default runtime feature policy.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>
@@ -110,6 +115,7 @@ public sealed class ParserEngine
         var effectivePolicy = runtimeFeaturePolicy ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _semanticPredicateEvaluator = effectivePolicy.SemanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
+        _executionStateManager = effectivePolicy.ExecutionStateManager ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);

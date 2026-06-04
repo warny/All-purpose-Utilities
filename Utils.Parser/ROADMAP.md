@@ -73,6 +73,7 @@ Current capabilities and responsibilities:
 - Runtime expression-backed semantic predicate evaluator is available as an explicit optional adapter without changing default parser behavior.
 - Semantic predicate evaluation now returns structured outcomes so `ParserEngine` can emit fallback `UP1006` or detailed embedded-code diagnostics such as `UP1026` without giving evaluators direct `DiagnosticBag` access.
 - Parser action executor abstraction is present.
+- Parser execution-state manager abstraction is present as a contract-only policy component; the default implementation is no-op, generated policies can expose manual `Fork()` / `CopyFrom(...)` capture/restore, and `ParserEngine` does not use it for rollback yet.
 - Runtime expression-backed parser action executor is available as an explicit optional adapter without changing default parser behavior or granting actions parse-control authority.
 - Continuation metadata is present.
 - Shared-prefix metadata is present.
@@ -88,7 +89,7 @@ Current capabilities and responsibilities:
 - Diagnostics/observation correlation boundaries are documented (`docs/parser/DiagnosticsObservationCorrelation.md`) as descriptive-only and non-authoritative.
 - Source-position contracts are centralized in the shared `Utils.Parser.Source` package: `SourceCodeLocation` / `SourceCodeRange` remain human-readable diagnostic/display locations, while `SourceLocation` / `SourceSpan` preserve runtime text offsets and spans for tokens and parse nodes.
 - Source-position contracts are intentionally split between runtime coordinates (`SourceLocation`, `SourceSpan`) and human-readable source coordinates (`SourceCodeLocation`, `SourceCodeRange`). Runtime coordinates carry absolute text offsets for tokens/parser operations, while human-readable coordinates are used for diagnostics/tooling when no canonical source offset is available. These contracts must not be merged without a dedicated design review.
-- `ParserExecutionContextCopier<TContext>` is available as a preparatory public runtime helper for future parser execution-context snapshot/fork/commit designs. Generated execution contexts expose it through internal `Fork()` and `CopyFrom(...)` helpers. `Copy` honors user-owned `ICloneable` semantics first, while field-copy paths build a reflection-discovered, compiled, cached delegate per context type and perform shallow structural copies, including explicit known-collection recreation and conservative unknown-collection fallbacks, without changing parser behavior.
+- `ParserExecutionContextCopier<TContext>` is available as a preparatory public runtime helper for future parser execution-context snapshot/fork/commit designs. Generated execution contexts expose it through internal `Fork()` and `CopyFrom(...)` helpers, and generated `ParserRuntimeFeaturePolicy` instances now expose a manual `IParserExecutionStateManager` backed by those helpers. `Copy` honors user-owned `ICloneable` semantics first, while field-copy paths build a reflection-discovered, compiled, cached delegate per context type and perform shallow structural copies, including explicit known-collection recreation and conservative unknown-collection fallbacks, without changing parser behavior.
 
 Clarifications that must remain true:
 
@@ -389,8 +390,20 @@ Current clarification status:
 - embedded-code preparation/generation contracts are available.
 - expression-backed preparation, prepared artifact registry/adapters, parser-definition registry builder, and prepared runtime policy builder are available for the runtime-inline expression opt-in path.
 - generated C# hooks, generated hook dispatch hardening, shared runtime metadata alignment, cross-path regression coverage, generated C# body support, generated execution contexts with fresh default `ParseWithEmbeddedCode(string)` creation, limited parser `@members` injection, generator warning `UP1031` for injected parser members, and generator warning `UP1029` for visible unsupported embedded-code constructs are available for parser semantic predicates and inline parser actions.
-- `ParserExecutionContextCopier<TContext>` is available as a preparatory runtime copy primitive for generated execution-context snapshot/fork/commit work, and generated execution contexts now expose internal `Fork()` and `CopyFrom(...)` helpers that delegate to it; it is not yet wired into `ParserEngine`, generated policies, rollback, action buffering, `@init`, or `@after`.
-- the remaining embedded-code work is explicit: lexer predicate/action design; `@init` / `@after` design; action buffering/rollback design that may consume the context copier; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
+- `ParserExecutionContextCopier<TContext>` is available as a preparatory runtime copy primitive for generated execution-context snapshot/fork/commit work, and generated execution contexts now expose internal `Fork()` and `CopyFrom(...)` helpers that delegate to it. `IParserExecutionStateManager` is available through required `ParserRuntimeFeaturePolicy.ExecutionStateManager`; the default manager is no-op, generated policies install a manual manager backed by `Fork()` / `CopyFrom(...)`, and callers that directly instantiate `ParserRuntimeFeaturePolicy` must now provide the required manager explicitly. It is not yet wired into `ParserEngine` rollback, action buffering, `@init`, or `@after`.
+- the remaining embedded-code work is explicit: lexer predicate/action design; `@init` / `@after` design; transactional action rollback/buffering design that may consume the execution-state manager; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
+
+Embedded-code transactional-state sequence (reference architecture: `docs/parser/EmbeddedCodeTransactionalState.md`):
+
+1. Add parser execution-state manager contract. **Current PR: contract available only.**
+2. Carry semantic-state snapshots through scheduled alternatives.
+3. Apply transactional state to left-recursive extensions.
+4. Apply transactional state to quantifier attempts.
+5. Isolate negation probes.
+6. Add parser rule lifecycle hooks for `@init` / `@after`.
+7. Design lexer embedded-code state separately.
+
+- Rollback and action buffering are not active after the contract-only step. `@init` / `@after` remain unsupported. Lexer actions and predicates remain unsupported. Before enabling real transactional rollback, completed-result memoization must be disabled for stateful policies or made semantic-state-aware.
 - lexer actions, lexer predicates, unsupported grammar actions, `@lexer::members`, `@init`, `@after`, and automatic default execution remain not done and must not be documented as complete.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
