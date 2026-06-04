@@ -493,6 +493,9 @@ public sealed class Antlr4GrammarConverter
         bool isFragment = HasToken(node, "FRAGMENT");
         var nameToken = Require(FirstToken(node, "TOKEN_REF"), "Missing TOKEN_REF in lexerRuleSpec");
 
+        if (First(node, "optionsSpec") != null)
+            _diagnostics?.AddWithContext(ParserDiagnostics.LexerRuleOptionsIgnored, null, null, nameToken.Text, null, nameToken.Text);
+
         var ruleBlock = Require(First(node, "lexerRuleBlock"), "Missing lexerRuleBlock");
         var content = ConvertLexerRuleBlock(ruleBlock);
 
@@ -695,6 +698,12 @@ public sealed class Antlr4GrammarConverter
         bool hasRuleExceptionMetadata = false;
         foreach (var prequel in All(node, "rulePrequel"))
         {
+            if (First(prequel, "optionsSpec") != null)
+            {
+                _diagnostics?.AddWithContext(ParserDiagnostics.ParserRuleOptionsIgnored, null, null, name, null, name);
+                continue;
+            }
+
             if (First(prequel, "localsSpec") != null)
             {
                 hasIgnoredRuleMetadata = true;
@@ -787,31 +796,43 @@ public sealed class Antlr4GrammarConverter
     /// Resolves associativity from the <c>&lt;assoc=right&gt;</c> option that may appear at the
     /// start of an ANTLR4 <c>alternative</c> node as an <c>elementOptions</c> child.
     /// Navigates the parse tree: <c>alternative → elementOptions → elementOption → identifier / qualifiedIdentifier</c>.
+    /// Emits <see cref="ParserDiagnostics.ElementOptionIgnored"/> for any option other than <c>assoc</c>.
     /// </summary>
-    private static Associativity ResolveAlternativeAssociativity(ParserNode alternativeNode)
+    private Associativity ResolveAlternativeAssociativity(ParserNode alternativeNode)
     {
         var elementOptions = First(alternativeNode, "elementOptions");
         if (elementOptions is null)
             return Associativity.Left;
 
+        var result = Associativity.Left;
         foreach (var elementOption in All(elementOptions, "elementOption"))
         {
-            // Only the key=value form carries assoc: identifier ASSIGN qualifiedIdentifier
             if (!HasToken(elementOption, "ASSIGN"))
+            {
+                // Simple bare-identifier option — not assoc, emit diagnostic
+                var bareIdent = First(elementOption, "identifier");
+                _diagnostics?.Add(ParserDiagnostics.ElementOptionIgnored, TryGetIdentifierText(bareIdent!) ?? "?");
                 continue;
+            }
 
             var keyNode = First(elementOption, "identifier");
-            if (!string.Equals(TryGetIdentifierText(keyNode!), "assoc", StringComparison.Ordinal))
-                continue;
+            var keyText = TryGetIdentifierText(keyNode!);
 
-            // Value is a qualifiedIdentifier node whose first identifier child holds the text
-            var qualifiedId = First(elementOption, "qualifiedIdentifier");
-            var valueIdent = qualifiedId is not null ? First(qualifiedId, "identifier") : null;
-            if (string.Equals(TryGetIdentifierText(valueIdent!), "right", StringComparison.Ordinal))
-                return Associativity.Right;
+            if (string.Equals(keyText, "assoc", StringComparison.Ordinal))
+            {
+                // Value is a qualifiedIdentifier node whose first identifier child holds the text
+                var qualifiedId = First(elementOption, "qualifiedIdentifier");
+                var valueIdent = qualifiedId is not null ? First(qualifiedId, "identifier") : null;
+                if (string.Equals(TryGetIdentifierText(valueIdent!), "right", StringComparison.Ordinal))
+                    result = Associativity.Right;
+            }
+            else
+            {
+                _diagnostics?.Add(ParserDiagnostics.ElementOptionIgnored, keyText ?? "?");
+            }
         }
 
-        return Associativity.Left;
+        return result;
     }
 
     /// <summary>Converts an <c>alternative</c> node into a <see cref="RuleContent"/> (sequence or single element).</summary>

@@ -785,6 +785,70 @@ public class Antlr4GrammarConverterTests
         Assert.IsTrue(def.AllRules.ContainsKey("start"));
     }
 
+    // ─── Silent-drop diagnostics ─────────────────────────────────────────────
+
+    [TestMethod]
+    public void Alternative_WithUnknownElementOption_EmitsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            expr : <myOption=someValue> 'x' 'y' | 'z' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ElementOptionIgnored.Code),
+            "Expected UP1032 for unknown element option <myOption=...>");
+        var diag = diagnostics.First(d => d.Code == ParserDiagnostics.ElementOptionIgnored.Code);
+        StringAssert.Contains(diag.Message, "myOption");
+    }
+
+    [TestMethod]
+    public void Alternative_WithAssocRight_DoesNotEmitElementOptionDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            expr : <assoc=right> expr '^' expr | INT ;
+            INT : ('0'..'9')+ ;
+            """, diagnostics);
+
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ElementOptionIgnored.Code),
+            "assoc=right must not emit UP1032");
+    }
+
+    [TestMethod]
+    public void LexerRule_WithOptionsBlock_EmitsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID options { caseInsensitive=true; } : ('a'..'z')+ ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.LexerRuleOptionsIgnored.Code),
+            "Expected UP1033 for options block on lexer rule");
+        var diag = diagnostics.First(d => d.Code == ParserDiagnostics.LexerRuleOptionsIgnored.Code);
+        StringAssert.Contains(diag.Message, "ID");
+    }
+
+    [TestMethod]
+    public void ParserRule_WithOptionsBlock_EmitsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start
+              options { caseInsensitive=true; }
+              : 'x' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code),
+            "Expected UP1034 for options block on parser rule");
+        var diag = diagnostics.First(d => d.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code);
+        StringAssert.Contains(diag.Message, "start");
+    }
+
     // ─── Utilitaires ─────────────────────────────────────────────────────────
 
     private static bool ContainsLexerCommand(RuleContent content, LexerCommandType type)
