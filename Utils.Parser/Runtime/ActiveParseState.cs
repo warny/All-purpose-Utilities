@@ -203,7 +203,7 @@ internal sealed record ActiveParseState
     /// Projects this state into invocation-reuse identity.
     /// Invocation reuse identity is not execution-replay identity.
     /// </summary>
-    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence) => new(Rule.Name, OriginInputPosition, minimumPrecedence);
+    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence) => new(Rule.Name, OriginInputPosition, minimumPrecedence, ParserExecutionStateKey.Stateless);
     /// <summary>
     /// Builds continuation transport metadata from the current descriptive state.
     /// Returned key is metadata-only and not executable continuation state.

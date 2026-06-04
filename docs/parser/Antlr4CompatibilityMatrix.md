@@ -155,11 +155,12 @@ This model is **descriptive only** and does not change parser behavior, diagnost
 
 
 Custom predicate/action policies can influence branch acceptance and therefore parse outcomes.
-However, invocation memoization remains keyed by `(rule, input position, precedence)` and does not model semantic runtime state.
+Invocation memoization is keyed by `(rule, input position, precedence, execution-state key)`.
 
-Parser invocation reuse is currently keyed by rule, input position, and precedence.
-This model currently assumes policy handlers are deterministic for equivalent invocations and does not include evaluator/executor external state in the memoization key.
-Custom policies should therefore avoid invocation-count-dependent decisions and externally observable mutable semantic state.
+Parser invocation reuse includes the current `IParserExecutionStateManager.GetCurrentStateKey()` value.
+The no-op manager returns `ParserExecutionStateKey.Stateless`, so stateless policies keep the same effective behavior as the older rule/position/precedence key.
+Stateful managers must return different keys when two semantic states can make parsing differ.
+Custom policies should therefore avoid invocation-count-dependent decisions unless those decisions are represented in the execution-state key.
 
 
 > Embedded-code execution paths use or document their diagnostics against the shared taxonomy in `EmbeddedCodeExecutionModel.md`; generated C# hook syntax errors surface as Roslyn compilation errors.

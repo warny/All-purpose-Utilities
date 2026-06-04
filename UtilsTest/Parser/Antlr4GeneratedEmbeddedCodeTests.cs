@@ -446,12 +446,17 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : 'a' ;
             """;
 
-        var assembly = CompileGeneratedSource(Emit(grammar));
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "internal global::Utils.Parser.Runtime.ParserExecutionStateKey GetExecutionStateKey()");
+        StringAssert.Contains(source, "return _executionContext.GetExecutionStateKey();");
+
+        var assembly = CompileGeneratedSource(source);
         var context = CreateExecutionContext(assembly);
 
         InvokeParseWithContext(assembly, "a", context);
         var policy = InvokeCreateRuntimePolicy(assembly, context);
         Assert.IsNotNull(policy.ExecutionStateManager);
+        var firstKey = policy.ExecutionStateManager.GetCurrentStateKey();
 
         var snapshot = policy.ExecutionStateManager.Capture();
         Assert.IsNotNull(snapshot);
@@ -459,9 +464,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         InvokeParseWithContext(assembly, "a", context);
         Assert.AreEqual(2, ReadContextIntProperty(context, "CountValue"));
+        Assert.AreNotEqual(firstKey, policy.ExecutionStateManager.GetCurrentStateKey());
 
         policy.ExecutionStateManager.Restore(snapshot);
         Assert.AreEqual(1, ReadContextIntProperty(context, "CountValue"));
+        Assert.AreEqual(firstKey, policy.ExecutionStateManager.GetCurrentStateKey());
     }
 
     /// <summary>
