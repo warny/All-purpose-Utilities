@@ -105,16 +105,18 @@ Current state:
 
 - generated model construction is implemented;
 - embedded predicates and actions continue to be preserved as metadata strings such as `ValidatingPredicate("...")` and `EmbeddedAction("...", ...)`;
-- a generated execution context class (`{ClassName}ExecutionContext`) owns generated C# hooks and any injected parser `@members` blocks;
+- a generated execution context class (`{ClassName}ExecutionContext`) owns generated C# hooks, any injected parser `@members` blocks, and generated `Fork()` / `CopyFrom(...)` copy helpers;
 - generated C# hooks are emitted as instance methods on that context for supported parser semantic predicates and inline parser actions;
 - generated dispatchers implement `ISemanticPredicateEvaluator` and `IParserActionExecutor` and are bound to one execution-context instance;
 - generated `ParseWithEmbeddedCode(...)` helpers provide the fresh-context opt-in path, and generated `CreateRuntimePolicy(executionContext, basePolicy)` binds a policy to a caller-supplied execution context;
 - generated `ParseWithEmbeddedCode(string input)` creates a fresh execution context for that parse, while the overload accepting `{ClassName}ExecutionContext` lets advanced callers supply and observe a context explicitly;
+- generated `Fork()` returns a copied execution context through `ParserExecutionContextCopier<TContext>.Copy(...)`, preserving `ICloneable` precedence when a user partial context implements it;
+- generated `CopyFrom(source)` validates `source` and copies source state into the current context through `ParserExecutionContextCopier<TContext>.CopyTo(source, this)`;
 - generated `Parse(...)` remains conservative and does not install generated embedded-code hooks.
 
 Context-copy preparation:
 
-- `Utils.Parser.Runtime.ParserExecutionContextCopier<TContext>` is available as a public runtime helper for future generated-context snapshot/fork/commit designs;
+- `Utils.Parser.Runtime.ParserExecutionContextCopier<TContext>` is available as a public runtime helper for future generated-context snapshot/fork/commit designs and is exposed by generated execution contexts through `Fork()` and `CopyFrom(...)`;
 - the helper inspects each closed context type once, builds a compiled `Action<TContext, TContext>` field-copy delegate, and caches that delegate through the closed generic type;
 - `Copy(source, factory)` first uses `source.Clone()` when `source` implements `ICloneable`; the clone result must be non-null and assignable to the context type;
 - the semantics of `ICloneable.Clone()` belong to the user context type, and the caller-provided factory is used only when the source does not implement `ICloneable`;
@@ -126,7 +128,7 @@ Context-copy preparation:
 - unknown collections without one of those safe reconstruction strategies are copied by reference instead of failing or producing a partial copy;
 - null known or reconstructable containers remain null, static fields are not copied, field-like event backing fields are skipped, and readonly instance fields cause an explicit configuration exception instead of being ignored silently;
 - compiler-generated auto-property backing fields are treated as context state and are copied unless they are readonly;
-- this helper is not wired into `ParserEngine`, generated policies, or parsing strategy in the current model, and it does not add rollback, action buffering, `@init`, or `@after` execution.
+- generated `Fork()` and `CopyFrom(...)` are preparatory helpers for future snapshot/fork/commit work; they are not called automatically by `ParserEngine`, generated policies, or parsing strategy in the current model, and they do not add rollback, action buffering, `@init`, `@after`, lexer actions, or lexer predicates.
 
 Execution boundary:
 
@@ -298,7 +300,7 @@ Not responsible for:
 
 Current preparatory helper:
 
-- `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. It remains a helper only; `ParserEngine` does not invoke it automatically and no rollback behavior is active.
+- `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. Generated execution contexts expose this primitive through `Fork()` and `CopyFrom(...)`, but those methods remain helpers only; `ParserEngine` does not invoke them automatically and no rollback behavior is active.
 
 ### `Utils.Parser.Diagnostics`
 
@@ -390,7 +392,7 @@ This model explicitly excludes:
 - parser scheduler changes;
 - `ParserEngine` authority transfer;
 - rollback/replay semantics;
-- automatic use of `ParserExecutionContextCopier<TContext>` as rollback or speculative-execution authority;
+- automatic use of generated execution-context `Fork()` / `CopyFrom(...)` or `ParserExecutionContextCopier<TContext>` as rollback or speculative-execution authority;
 - hidden semantic runtime state;
 - parse-tree shape changes;
 - direct `Utils.Parser` dependency on `Utils.Expressions.CSyntax` or `Utils.Expressions.VBSyntax`;
