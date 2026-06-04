@@ -11,9 +11,10 @@ namespace Utils.Parser.Runtime;
 /// construction, and final parse outcomes.
 /// <para>
 /// The engine is a recursive-descent parser with full backtracking.
-/// It tries each alternative in priority order and rolls back the token position on
-/// failure. Left-recursive rules are handled by a cycle-detection stack that returns
-/// <c>null</c> when the same rule is re-entered at the same token position.
+/// It tries each alternative in priority order and rolls back the token position plus
+/// configured parser execution state on ordinary alternative-attempt failure.
+/// Left-recursive rules are handled by a cycle-detection stack that returns <c>null</c>
+/// when the same rule is re-entered at the same token position.
 /// </para>
 /// <para>
 /// Additional runtime guards stop repeated parser-state exploration and non-progressive
@@ -91,7 +92,7 @@ public sealed class ParserEngine
     private readonly IParserActionExecutor _parserActionExecutor;
 
     /// <summary>
-    /// Policy component that can capture and restore opaque parser execution state for future transactional paths.
+    /// Policy component that captures and restores opaque parser execution state around ordinary parser alternatives.
     /// </summary>
     private readonly IParserExecutionStateManager _executionStateManager;
 
@@ -192,18 +193,22 @@ public sealed class ParserEngine
         var initialPosition = context.Position;
         // Registry-backed completion cache:
         // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
-        // Safety currently depends on RuleInvocationKey identity:
-        //   (rule name, input position, minimum precedence).
-        // Runtime reuse currently assumes predicate/action policies are deterministic for a given invocation key.
-        // The memoization key does not currently include runtime policy state, evaluator external state,
-        // or side-effect state. Custom policies should therefore avoid invocation-count-dependent behavior
-        // and externally observable mutable semantic state.
-        // Future runtime work may require a wider key shape when semantic runtime state or rollback-aware
-        // action semantics are modeled explicitly.
-        var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
+        // Safety depends on RuleInvocationKey identity:
+        //   (rule name, input position, minimum precedence, semantic execution-state key).
+        // The semantic execution-state key isolates completed-result reuse for stateful generated contexts.
+        // Ordinary alternative rollback restores this key before later alternatives probe the cache.
+        // Completed rule results also carry post-rule snapshots so memoization hits can restore the state
+        // produced by the original invocation without replaying actions. Action buffering, lifecycle hooks,
+        // quantifier rollback, left-recursive extension rollback, and negation-probe isolation remain separate unsupported steps.
+        var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence, _executionStateManager.GetCurrentStateKey());
         if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
         {
             context.RestorePosition(reusableResult.EndPosition);
+            if (reusableResult.ExecutionStateSnapshot is not null)
+            {
+                _executionStateManager.Restore(reusableResult.ExecutionStateSnapshot);
+            }
+
             diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
             return reusableResult.IsFailure ? null : reusableResult.Node;
         }
@@ -233,7 +238,8 @@ public sealed class ParserEngine
                 parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
             }
 
-            _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null));
+            var resultExecutionStateSnapshot = _executionStateManager.Capture();
+            _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null, resultExecutionStateSnapshot));
 
             return parsed;
         }
@@ -364,7 +370,7 @@ public sealed class ParserEngine
                 continue;
             }
 
-            var saved = context.SavePosition();
+            var saved = CaptureAttempt(context);
             var candidate = TryParseRecursiveAlternative(
                 context,
                 info.Rule,
@@ -375,9 +381,11 @@ public sealed class ParserEngine
                 diagnostics);
             if (candidate is null)
             {
-                context.RestorePosition(saved);
+                RestoreAttempt(context, saved);
                 continue;
             }
+
+            var completedAttempt = CaptureAttempt(context);
 
             var branch = new ParseBranch
             {
@@ -387,7 +395,8 @@ public sealed class ParserEngine
                 Cursor = new RuleContentCursor { Index = 0, Kind = "recursive-extension" },
                 PartialNode = candidate,
                 EndPosition = context.Position,
-                IsComplete = true
+                IsComplete = true,
+                ExecutionStateSnapshot = completedAttempt.ExecutionStateSnapshot
             };
 
             if (bestBranch is null || IsBetterBranch(branch, bestBranch))
@@ -404,7 +413,7 @@ public sealed class ParserEngine
                 diagnostics?.AddWithContext(ParserDiagnostics.ParseBranchPruned, null, null, info.Rule.Name, null, info.Rule.Name);
             }
 
-            context.RestorePosition(saved);
+            RestoreAttempt(context, saved);
         }
 
         if (bestBranch is null)
@@ -413,7 +422,15 @@ public sealed class ParserEngine
             return null;
         }
 
-        context.RestorePosition(bestBranch.EndPosition);
+        if (bestBranch.ExecutionStateSnapshot is not null)
+        {
+            RestoreAttempt(context, new ParserAttemptSnapshot(bestBranch.EndPosition, bestBranch.ExecutionStateSnapshot));
+        }
+        else
+        {
+            context.RestorePosition(bestBranch.EndPosition);
+        }
+
         return bestBranch.PartialNode;
     }
 
@@ -692,7 +709,7 @@ public sealed class ParserEngine
         // different callers can legitimately invoke the same rule at the same input position.
         // We therefore keep lightweight continuation metadata for future state-based parsing.
         _stateRegistry.AddContinuation(
-            new RuleInvocationKey(ruleRef.RuleName, context.Position, minimumPrecedence),
+            new RuleInvocationKey(ruleRef.RuleName, context.Position, minimumPrecedence, _executionStateManager.GetCurrentStateKey()),
             new ContinuationKey(parentRule.Name, alternativeIndex, elementIndex, context.Position, minimumPrecedence));
 
         if (referencedRule.Kind == RuleKind.Lexer)
@@ -739,6 +756,7 @@ public sealed class ParserEngine
         DiagnosticBag? diagnostics = null)
     {
         var children = new List<ParseNode>();
+        var quantifierStartSnapshot = CaptureAttempt(context);
         var startPos = context.Position;
         var startToken = context.Peek();
         var visitedStates = new HashSet<ParserStateKey>();
@@ -865,6 +883,8 @@ public sealed class ParserEngine
                 caseInsensitive: _caseInsensitive,
                 containsPredicateOrAction: ContainsPredicateOrAction,
                 resolveDiagnosticSpan: ResolveDiagnosticSpan,
+                captureAttempt: CaptureAttempt,
+                restoreAttempt: RestoreAttempt,
                 parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, -1, diagnostics)));
 
         if (scheduling.SelectedState is null)
@@ -873,7 +893,15 @@ public sealed class ParserEngine
         }
 
         var winner = scheduling.SelectedState;
-        context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
+        if (winner.ExecutionStateSnapshot is not null)
+        {
+            RestoreAttempt(context, new ParserAttemptSnapshot(winner.EndPosition ?? winner.CurrentInputPosition, winner.ExecutionStateSnapshot));
+        }
+        else
+        {
+            context.RestorePosition(winner.EndPosition ?? winner.CurrentInputPosition);
+        }
+
         if (winner.PartialNode is ParserNode parserNode && ReferenceEquals(parserNode.Rule, rule))
         {
             return parserNode;
@@ -881,6 +909,32 @@ public sealed class ParserEngine
 
         var span = ComputeSpan(startToken, context, startPosition);
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
+    }
+
+
+    /// <summary>
+    /// Captures the token cursor and opaque parser execution state before or after a parser attempt boundary.
+    /// This helper covers managed parser execution state only; lifecycle hooks, continuation replay,
+    /// action buffering, and external side-effect rollback remain out of scope.
+    /// </summary>
+    /// <param name="context">Mutable token-stream cursor whose position is part of the snapshot.</param>
+    /// <returns>Captured parser attempt snapshot.</returns>
+    private ParserAttemptSnapshot CaptureAttempt(ParseContext context)
+    {
+        return new ParserAttemptSnapshot(context.Position, _executionStateManager.Capture());
+    }
+
+    /// <summary>
+    /// Restores the token cursor and opaque parser execution state for an ordinary alternative attempt boundary.
+    /// After this method returns, <see cref="IParserExecutionStateManager.GetCurrentStateKey"/> must reflect the restored state
+    /// so completed-result memoization uses the restored semantic key.
+    /// </summary>
+    /// <param name="context">Mutable token-stream cursor to restore.</param>
+    /// <param name="snapshot">Snapshot previously captured by <see cref="CaptureAttempt"/>.</param>
+    private void RestoreAttempt(ParseContext context, ParserAttemptSnapshot snapshot)
+    {
+        context.RestorePosition(snapshot.InputPosition);
+        _executionStateManager.Restore(snapshot.ExecutionStateSnapshot);
     }
 
     /// <summary>
@@ -941,6 +995,7 @@ public sealed class ParserEngine
         DiagnosticBag? diagnostics = null)
     {
         var children = new List<ParseNode>();
+        var quantifierStartSnapshot = CaptureAttempt(context);
         var startPos = context.Position;
         var startToken = context.Peek();
 
@@ -948,18 +1003,18 @@ public sealed class ParserEngine
         int previousPosition = context.Position;
         while (quant.Max is null || count < quant.Max.Value)
         {
-            var savedPos = context.SavePosition();
+            var saved = CaptureAttempt(context);
             var node = TryParseContent(context, quant.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
             if (node is null)
             {
-                context.RestorePosition(savedPos);
+                RestoreAttempt(context, saved);
                 break;
             }
 
             // Guard against zero-length matches.
             if (context.Position <= previousPosition)
             {
-                context.RestorePosition(savedPos);
+                RestoreAttempt(context, saved);
                 var diagnosticSpan = ResolveDiagnosticSpan(context);
                 diagnostics?.AddWithContext(
                     ParserDiagnostics.NonProgressiveQuantifierStopped,
@@ -974,7 +1029,7 @@ public sealed class ParserEngine
                     rule.Name,
                     null,
                     rule.Name,
-                    $"quantifier inner matched without progress at position {savedPos}");
+                    $"quantifier inner matched without progress at position {saved.InputPosition}");
                 break;
             }
 
@@ -987,7 +1042,10 @@ public sealed class ParserEngine
         }
 
         if (count < quant.Min)
+        {
+            RestoreAttempt(context, quantifierStartSnapshot);
             return null;
+        }
 
         var span = ComputeSpan(startToken, context, startPos);
         return new ParserNode(span, startToken?.ModeName ?? "DEFAULT_MODE", rule, children);
@@ -1038,9 +1096,9 @@ public sealed class ParserEngine
         var token = context.Peek();
         if (token is null) return null;
 
-        var savedPos = context.SavePosition();
+        var saved = CaptureAttempt(context);
         var matched = TryParseContent(context, neg.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
-        context.RestorePosition(savedPos);
+        RestoreAttempt(context, saved);
 
         if (matched is null)
         {
