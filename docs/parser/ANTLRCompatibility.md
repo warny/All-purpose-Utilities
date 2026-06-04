@@ -94,8 +94,8 @@ Current high-level state:
 - default runtime parsing preserves embedded-code metadata but does not execute target-language source;
 - the runtime-inline prepared expression path is available as an explicit opt-in for callers that provide an `IExpressionCompiler`;
 - the source-generator C# path is available as an explicit opt-in for generated grammars;
-- lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, rollback/buffering, and arbitrary parser state mutation remain unsupported for execution;
-- `ParserExecutionContextCopier<TContext>` exists as a preparatory runtime helper for future execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies install a manager that manually captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. These helpers are not wired into `ParserEngine` branch rollback and do not enable rollback or action buffering.
+- lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, action buffering, complete rollback, and arbitrary external parser state mutation remain unsupported for execution;
+- `ParserExecutionContextCopier<TContext>` exists as a runtime helper for execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies install a manager that captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. ParserEngine now captures and restores parser execution state around ordinary parser alternative attempts. This does not yet provide complete ANTLR transactional semantics and does not enable action buffering.
 
 ### Runtime policy API compatibility note
 
@@ -119,7 +119,7 @@ var policy = new ParserRuntimeFeaturePolicy
 };
 ```
 
-`ParserEngine` validates that the manager is non-null and uses `GetCurrentStateKey()` to isolate completed-rule memoization entries. It is still not wired into branch rollback, automatic capture/restore, or action buffering.
+`ParserEngine` validates that the manager is non-null, uses `GetCurrentStateKey()` to isolate completed-rule memoization entries, stores post-rule execution-state snapshots in reusable completed results, restores those snapshots on memoization hits without replaying actions, and captures/restores the manager around ordinary parser alternative attempts. Quantifier attempts, left-recursive extensions, negation probes, lifecycle hooks and action buffering remain separate steps.
 
 ### Execution paths
 
@@ -235,9 +235,10 @@ The following constructs may be represented as metadata when visible to ingestio
 - `@init`;
 - `@after`;
 - parser actions that are not inline alternative elements;
-- action rollback or buffering;
-- controlled context mutation models;
-- arbitrary parser state mutation.
+- action buffering;
+- complete rollback outside ordinary parser alternatives;
+- controlled context mutation models beyond the configured execution-state manager;
+- arbitrary parser state mutation outside the managed execution state.
 
 When visible through runtime discovery, unsupported constructs must remain classified with explicit `EmbeddedCodeUnsupportedReason` values rather than being treated as executable metadata. The existence of stored source text is not execution authority.
 
@@ -258,7 +259,7 @@ Default parsing remains conservative:
 
 When field copying is used, the helper copies context fields by reflection-backed inspection once per context type, emits a compiled field-copy delegate, and reuses the cached delegate for subsequent field-copy calls. Field-copy behavior is shallow structural copying. Arrays, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>` fields are recreated through explicit copy expressions when non-null, while contained elements are not deep-cloned. Unknown `IEnumerable<T>` collection fields can be recreated when they expose a compatible public copy constructor, a public parameterless constructor plus `AddRange(IEnumerable<T>)`, or a public parameterless constructor plus `Add(T)`. Unknown collections without a safe reconstruction strategy, and other unrecognized reference fields, are assigned by reference. Static fields are skipped. Field-like event backing fields are skipped. Readonly instance fields are rejected with an explicit configuration exception so context authors must choose mutable state or wait for a later custom context strategy. The semantics of `ICloneable.Clone()` belong to the user context type.
 
-These helpers and `IParserExecutionStateManager` are not ANTLR construct support. They do not execute `@init` or `@after`, do not execute lexer actions or predicates, do not buffer or roll back actions, do not alter `Parse(...)` or `ParseWithEmbeddedCode(...)`, and are not called by `ParserEngine` branch attempts.
+These helpers and `IParserExecutionStateManager` are not ANTLR construct support. They do not execute `@init` or `@after`, do not execute lexer actions or predicates, do not buffer actions, and do not alter generated `Parse(...)` conservative embedded-code behavior. `ParserEngine` calls the manager only around ordinary parser alternative attempts.
 
 ### Diagnostics
 
@@ -273,7 +274,7 @@ Current diagnostics boundaries are intentionally split by path:
 
 Known limitations include:
 
-- no automatic rollback or action buffering, despite the preparatory execution-context copier, generated `Fork()` / `CopyFrom(...)` helpers, generated execution-state keys, and generated manual execution-state manager;
+- no complete automatic rollback or action buffering beyond ordinary parser alternative execution-state capture/restore;
 - actions in negation probes require caution and are not a general side-effect-safe model;
 - no controlled context mutation model;
 - no lexer embedded-code execution;
@@ -342,7 +343,7 @@ When predicates are not evaluated, runtime conservatively treats them as accepte
 Custom predicate evaluators may satisfy or reject predicates. The optional prepared expression path can build a registry from parser-model `ValidatingPredicate` nodes, including predicates nested in runtime-executable structures and direct-left-recursive tails, and wire it through `ParserRuntimeFeaturePolicy` explicitly; it is not enabled by default and does not change the compatibility level. Generated grammars can instead use generated C# hooks through `ParseWithEmbeddedCode(...)` or a policy returned by `CreateRuntimePolicy(executionContext, basePolicy)`; this source-generation path supports predicate expressions and predicate blocks with `return`, and it is source generation, not `IExpressionCompiler` usage. Roslyn remains responsible for validating whether the generated hook body is valid C# and returns `bool`.
 This behavior is runtime-policy-driven or generated-policy-driven, not compatibility metadata.
 
-> **Important**: completed-rule memoization is keyed by `(rule, input position, precedence, execution-state key)`. If semantic state can make a rule parse differently, the configured `IParserExecutionStateManager` must return a different `ParserExecutionStateKey` for those states. The no-op manager returns `ParserExecutionStateKey.Stateless`, preserving the former effective key shape for stateless parsing.
+> **Important**: completed-rule memoization is keyed by `(rule, input position, precedence, execution-state key)`. If semantic state can make a rule parse differently, the configured `IParserExecutionStateManager` must return a different `ParserExecutionStateKey` for those states. The no-op manager returns `ParserExecutionStateKey.Stateless`, preserving the former effective key shape for stateless parsing. Completed memoized results carry a post-rule execution-state snapshot that is restored on cache hits without replaying actions. After an ordinary alternative rollback, the restored manager state must produce the restored key so later cache lookups use the correct state-aware entry.
 
 ### Gated semantic predicates `{ condition }=>`
 
@@ -392,7 +393,7 @@ var policy = ParserRuntimeFeaturePolicy.Default with
 var parser = new ParserEngine(definition, policy);
 ```
 
-> **Important**: actions may fire in branches that are later rejected by backtracking. There is no rollback mechanism. Keep executors side-effect-free or idempotent where possible.
+> **Important**: ParserEngine now captures and restores parser execution state around ordinary parser alternative attempts when a stateful `IParserExecutionStateManager` is configured. This does not yet provide complete ANTLR transactional semantics. Quantifier attempts, left-recursive extensions, negation probes, lifecycle hooks and action buffering remain separate steps. External side effects outside the managed execution state are not rolled back; keep executors side-effect-free or idempotent where possible.
 
 ---
 
