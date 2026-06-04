@@ -332,6 +332,153 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures generated execution contexts expose an internal <c>Fork</c> helper that returns the context type.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_Fork_IsGeneratedWithContextReturnType()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+                internal int CountValue => Count;
+            }
+
+            start : A { Count++; } ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "internal PExecutionContext Fork()");
+        StringAssert.Contains(source, "global::Utils.Parser.Runtime.ParserExecutionContextCopier<PExecutionContext>.Copy(");
+
+        var assembly = CompileGeneratedSource(source);
+        var contextType = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        var fork = contextType.GetMethod("Fork", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        Assert.IsNotNull(fork);
+        Assert.AreEqual(contextType, fork.ReturnType);
+    }
+
+    /// <summary>
+    /// Ensures generated <c>Fork</c> copies scalar and mutable collection state from the source context.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_Fork_CopiesCurrentState()
+    {
+        var assembly = CompileGeneratedSource(EmitCopyGrammar());
+        var context = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", context);
+        var fork = InvokeFork(context);
+
+        Assert.AreNotSame(context, fork);
+        Assert.AreEqual(ReadContextIntProperty(context, "CountValue"), ReadContextIntProperty(fork, "CountValue"));
+        CollectionAssert.AreEqual(ReadContextStringItems(context, "ItemValues"), ReadContextStringItems(fork, "ItemValues"));
+    }
+
+    /// <summary>
+    /// Ensures generated <c>Fork</c> structurally copies mutable collections instead of sharing collection instances.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_Fork_IsolatesMutableCollections()
+    {
+        var assembly = CompileGeneratedSource(EmitCopyGrammar());
+        var context = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", context);
+        var fork = InvokeFork(context);
+
+        Assert.AreNotSame(ReadContextObjectProperty(context, "MutableItems"), ReadContextObjectProperty(fork, "MutableItems"));
+
+        InvokeParseWithContext(assembly, "a", fork);
+
+        Assert.AreEqual(1, ReadContextIntProperty(context, "CountValue"));
+        Assert.AreEqual(2, ReadContextIntProperty(fork, "CountValue"));
+        CollectionAssert.AreEqual(new[] { "a" }, ReadContextStringItems(context, "ItemValues"));
+        CollectionAssert.AreEqual(new[] { "a", "a" }, ReadContextStringItems(fork, "ItemValues"));
+    }
+
+    /// <summary>
+    /// Ensures generated <c>CopyFrom</c> replaces target state with a structural copy of source state.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_CopyFrom_ReplacesStateAndIsolatesCollections()
+    {
+        var assembly = CompileGeneratedSource(EmitCopyGrammar());
+        var source = CreateExecutionContext(assembly);
+        var target = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", source);
+        InvokeParseWithContext(assembly, "a", source);
+        InvokeParseWithContext(assembly, "a", target);
+
+        InvokeCopyFrom(target, source);
+
+        Assert.AreEqual(ReadContextIntProperty(source, "CountValue"), ReadContextIntProperty(target, "CountValue"));
+        CollectionAssert.AreEqual(ReadContextStringItems(source, "ItemValues"), ReadContextStringItems(target, "ItemValues"));
+        Assert.AreNotSame(ReadContextObjectProperty(source, "MutableItems"), ReadContextObjectProperty(target, "MutableItems"));
+
+        InvokeParseWithContext(assembly, "a", target);
+
+        Assert.AreEqual(2, ReadContextIntProperty(source, "CountValue"));
+        Assert.AreEqual(3, ReadContextIntProperty(target, "CountValue"));
+        CollectionAssert.AreEqual(new[] { "a", "a" }, ReadContextStringItems(source, "ItemValues"));
+        CollectionAssert.AreEqual(new[] { "a", "a", "a" }, ReadContextStringItems(target, "ItemValues"));
+    }
+
+    /// <summary>
+    /// Ensures generated <c>CopyFrom</c> validates the supplied source context.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_CopyFrom_RejectsNullSource()
+    {
+        var assembly = CompileGeneratedSource(EmitCopyGrammar());
+        var context = CreateExecutionContext(assembly);
+        var copyFrom = context.GetType().GetMethod("CopyFrom", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var exception = Assert.ThrowsException<TargetInvocationException>(() => copyFrom.Invoke(context, [null]));
+
+        Assert.IsInstanceOfType(exception.InnerException, typeof(ArgumentNullException));
+    }
+
+    /// <summary>
+    /// Ensures generated <c>Fork</c> delegates to <c>ParserExecutionContextCopier&lt;TContext&gt;.Copy</c>, preserving <see cref="ICloneable"/> precedence.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_Fork_UsesCloneableContextWhenAvailable()
+    {
+        const string userPartial = """
+            using System;
+
+            namespace Generated.Tests;
+
+            internal sealed partial class PExecutionContext : ICloneable
+            {
+                public int CloneCallCount { get; private set; }
+
+                public object Clone()
+                {
+                    CloneCallCount++;
+                    var clone = new PExecutionContext();
+                    clone.CopyFrom(this);
+                    return clone;
+                }
+            }
+            """;
+        var assembly = CompileGeneratedSource(EmitCopyGrammar(), userPartial);
+        var context = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", context);
+        var fork = InvokeFork(context);
+
+        Assert.AreEqual(1, ReadContextIntProperty(context, "CloneCallCount"));
+        Assert.AreEqual(ReadContextIntProperty(context, "CountValue"), ReadContextIntProperty(fork, "CountValue"));
+        CollectionAssert.AreEqual(ReadContextStringItems(context, "ItemValues"), ReadContextStringItems(fork, "ItemValues"));
+    }
+
+    /// <summary>
     /// Ensures the default embedded-code parse helper creates a fresh generated execution context for each call.
     /// </summary>
     [TestMethod]
@@ -1247,6 +1394,31 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Emits the shared grammar used to verify generated execution-context copy helpers.
+    /// </summary>
+    /// <returns>Generated C# source for a grammar with scalar and mutable collection context state.</returns>
+    private static string EmitCopyGrammar()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+                public int CountValue => Count;
+
+                private List<string> Items = new();
+                public IReadOnlyList<string> ItemValues => Items;
+                public List<string> MutableItems => Items;
+            }
+
+            start : A { Count++; Items.Add("a"); } ;
+            A : 'a' ;
+            """;
+
+        return Emit(grammar);
+    }
+
+    /// <summary>
     /// Compiles generated C# and optional user partial source, then loads the resulting in-memory assembly.
     /// </summary>
     /// <param name="generatedSource">Generated grammar source.</param>
@@ -1429,6 +1601,28 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Invokes the generated internal <c>Fork</c> helper on an execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Execution context instance to fork.</param>
+    /// <returns>The copied execution context returned by <c>Fork</c>.</returns>
+    private static object InvokeFork(object executionContext)
+    {
+        var method = executionContext.GetType().GetMethod("Fork", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return method.Invoke(executionContext, [])!;
+    }
+
+    /// <summary>
+    /// Invokes the generated internal <c>CopyFrom</c> helper on an execution context instance.
+    /// </summary>
+    /// <param name="target">Execution context instance that receives copied state.</param>
+    /// <param name="source">Execution context instance that provides copied state.</param>
+    private static void InvokeCopyFrom(object target, object source)
+    {
+        var method = target.GetType().GetMethod("CopyFrom", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        method.Invoke(target, [source]);
+    }
+
+    /// <summary>
     /// Reads a named integer property from a generated execution context instance.
     /// </summary>
     /// <param name="executionContext">Execution context instance to inspect.</param>
@@ -1438,6 +1632,31 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var property = executionContext.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
         return (int)property.GetValue(executionContext)!;
+    }
+
+    /// <summary>
+    /// Reads a named object property from a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Execution context instance to inspect.</param>
+    /// <param name="propertyName">Property name.</param>
+    /// <returns>The property value.</returns>
+    private static object ReadContextObjectProperty(object executionContext, string propertyName)
+    {
+        var property = executionContext.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
+        return property.GetValue(executionContext)!;
+    }
+
+    /// <summary>
+    /// Reads a named string collection property from a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Execution context instance to inspect.</param>
+    /// <param name="propertyName">Property name.</param>
+    /// <returns>The string collection values as an array.</returns>
+    private static string[] ReadContextStringItems(object executionContext, string propertyName)
+    {
+        var property = executionContext.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
+        var values = (System.Collections.Generic.IEnumerable<string>)property.GetValue(executionContext)!;
+        return values.ToArray();
     }
 
     /// <summary>
