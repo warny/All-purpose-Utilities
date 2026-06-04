@@ -391,6 +391,24 @@ public sealed class Antlr4GrammarConverter
     }
 
     /// <summary>
+    /// Extracts key/value pairs from an <c>optionsSpec</c> node and returns them as a <see cref="RuleOptions"/>.
+    /// Does not emit per-option diagnostics; the caller is responsible for rule-level diagnostics.
+    /// </summary>
+    private RuleOptions ConvertRuleOptionsSpec(ParserNode node)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var option in All(node, "option"))
+        {
+            var identNode = First(option, "identifier");
+            var key = identNode != null ? GetIdentifierText(identNode) : "";
+            var valueNode = First(option, "optionValue");
+            var value = valueNode != null ? GetOptionValueText(valueNode) : "";
+            values[key] = value;
+        }
+        return new RuleOptions(values);
+    }
+
+    /// <summary>
     /// Returns <c>true</c> when an ANTLR option is accepted as syntax but intentionally unsupported.
     /// </summary>
     /// <param name="optionName">ANTLR option name.</param>
@@ -493,13 +511,18 @@ public sealed class Antlr4GrammarConverter
         bool isFragment = HasToken(node, "FRAGMENT");
         var nameToken = Require(FirstToken(node, "TOKEN_REF"), "Missing TOKEN_REF in lexerRuleSpec");
 
-        if (First(node, "optionsSpec") != null)
+        RuleOptions? ruleOptions = null;
+        var optionsSpecNode = First(node, "optionsSpec");
+        if (optionsSpecNode != null)
+        {
             _diagnostics?.AddWithContext(ParserDiagnostics.LexerRuleOptionsIgnored, null, null, nameToken.Text, null, nameToken.Text);
+            ruleOptions = ConvertRuleOptionsSpec(optionsSpecNode);
+        }
 
         var ruleBlock = Require(First(node, "lexerRuleBlock"), "Missing lexerRuleBlock");
         var content = ConvertLexerRuleBlock(ruleBlock);
 
-        return new Rule(nameToken.Text, _order++, isFragment, content);
+        return new Rule(nameToken.Text, _order++, isFragment, content, ruleOptions);
     }
 
     /// <summary>Extracts the <see cref="Alternation"/> from a <c>lexerRuleBlock</c> node.</summary>
@@ -693,14 +716,17 @@ public sealed class Antlr4GrammarConverter
         }
 
         EmbeddedAction? initAction = null, afterAction = null;
+        RuleOptions? ruleOptions = null;
         bool hasIgnoredRuleMetadata = false;
         bool hasRuleLocalsClause = false;
         bool hasRuleExceptionMetadata = false;
         foreach (var prequel in All(node, "rulePrequel"))
         {
-            if (First(prequel, "optionsSpec") != null)
+            var optionsSpecNode = First(prequel, "optionsSpec");
+            if (optionsSpecNode != null)
             {
                 _diagnostics?.AddWithContext(ParserDiagnostics.ParserRuleOptionsIgnored, null, null, name, null, name);
+                ruleOptions = ConvertRuleOptionsSpec(optionsSpecNode);
                 continue;
             }
 
@@ -761,7 +787,7 @@ public sealed class Antlr4GrammarConverter
         var ruleAltList = Require(First(ruleBlock, "ruleAltList"), "Missing ruleAltList");
         var content = ConvertRuleAltList(ruleAltList);
 
-        return new Rule(name, _order++, false, content, null, parameters, returns, initAction, afterAction);
+        return new Rule(name, _order++, false, content, ruleOptions, parameters, returns, initAction, afterAction);
     }
 
     // ─── ruleAltList / labeledAlt / alternative ───────────────────────────────

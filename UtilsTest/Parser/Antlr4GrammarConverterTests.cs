@@ -833,6 +833,33 @@ public class Antlr4GrammarConverterTests
     }
 
     [TestMethod]
+    public void LexerRule_WithOptionsBlock_StoresOptionsAsMetadata()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID options { caseInsensitive=true; } : ('a'..'z')+ ;
+            """);
+
+        var rule = def.AllRules["ID"];
+        Assert.IsNotNull(rule.Options, "Rule.Options should be populated");
+        Assert.IsTrue(rule.Options!.Values.TryGetValue("caseInsensitive", out var v));
+        Assert.AreEqual("true", v);
+    }
+
+    [TestMethod]
+    public void LexerRule_WithoutOptionsBlock_HasNullOptions()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        Assert.IsNull(def.AllRules["ID"].Options);
+    }
+
+    [TestMethod]
     public void ParserRule_WithOptionsBlock_EmitsDiagnostic()
     {
         var diagnostics = new DiagnosticBag();
@@ -847,6 +874,33 @@ public class Antlr4GrammarConverterTests
             "Expected UP1034 for options block on parser rule");
         var diag = diagnostics.First(d => d.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code);
         StringAssert.Contains(diag.Message, "start");
+    }
+
+    [TestMethod]
+    public void ParserRule_WithOptionsBlock_StoresOptionsAsMetadata()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start
+              options { caseInsensitive=true; }
+              : 'x' ;
+            """);
+
+        var rule = def.AllRules["start"];
+        Assert.IsNotNull(rule.Options, "Rule.Options should be populated");
+        Assert.IsTrue(rule.Options!.Values.TryGetValue("caseInsensitive", out var v));
+        Assert.AreEqual("true", v);
+    }
+
+    [TestMethod]
+    public void ParserRule_WithoutOptionsBlock_HasNullOptions()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : 'x' ;
+            """);
+
+        Assert.IsNull(def.AllRules["start"].Options);
     }
 
     // ─── Utilitaires ─────────────────────────────────────────────────────────
