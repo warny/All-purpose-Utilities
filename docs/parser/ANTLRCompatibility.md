@@ -95,7 +95,7 @@ Current high-level state:
 - the runtime-inline prepared expression path is available as an explicit opt-in for callers that provide an `IExpressionCompiler`;
 - the source-generator C# path is available as an explicit opt-in for generated grammars;
 - lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, rollback/buffering, and arbitrary parser state mutation remain unsupported for execution;
-- `ParserExecutionContextCopier<TContext>` exists as a preparatory runtime helper for future execution-context snapshot/fork/commit work. Generated execution contexts expose it through internal `Fork()` and `CopyFrom(...)` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies install a manager that manually captures/restores with `Fork()` / `CopyFrom(...)`. These helpers are not wired into `ParserEngine` branch rollback and do not change parser behavior or ANTLR feature support.
+- `ParserExecutionContextCopier<TContext>` exists as a preparatory runtime helper for future execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies install a manager that manually captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. These helpers are not wired into `ParserEngine` branch rollback and do not enable rollback or action buffering.
 
 ### Runtime policy API compatibility note
 
@@ -119,7 +119,7 @@ var policy = new ParserRuntimeFeaturePolicy
 };
 ```
 
-This is a contract-only compatibility change. `ParserEngine` validates that the manager is non-null, but it is not wired into branch rollback, automatic capture/restore, or action buffering.
+`ParserEngine` validates that the manager is non-null and uses `GetCurrentStateKey()` to isolate completed-rule memoization entries. It is still not wired into branch rollback, automatic capture/restore, or action buffering.
 
 ### Execution paths
 
@@ -277,7 +277,7 @@ Current diagnostics boundaries are intentionally split by path:
 
 Known limitations include:
 
-- no automatic rollback or action buffering, despite the preparatory execution-context copier, generated `Fork()` / `CopyFrom(...)` helpers, and generated manual execution-state manager;
+- no automatic rollback or action buffering, despite the preparatory execution-context copier, generated `Fork()` / `CopyFrom(...)` helpers, generated execution-state keys, and generated manual execution-state manager;
 - actions in negation probes require caution and are not a general side-effect-safe model;
 - no controlled context mutation model;
 - no lexer embedded-code execution;
@@ -346,7 +346,7 @@ When predicates are not evaluated, runtime conservatively treats them as accepte
 Custom predicate evaluators may satisfy or reject predicates. The optional prepared expression path can build a registry from parser-model `ValidatingPredicate` nodes, including predicates nested in runtime-executable structures and direct-left-recursive tails, and wire it through `ParserRuntimeFeaturePolicy` explicitly; it is not enabled by default and does not change the compatibility level. Generated grammars can instead use generated C# hooks through `ParseWithEmbeddedCode(...)` or a policy returned by `CreateRuntimePolicy(executionContext, basePolicy)`; this source-generation path supports predicate expressions and predicate blocks with `return`, and it is source generation, not `IExpressionCompiler` usage. Roslyn remains responsible for validating whether the generated hook body is valid C# and returns `bool`.
 This behavior is runtime-policy-driven or generated-policy-driven, not compatibility metadata.
 
-> **Important**: memoization is keyed by `(rule, input position, precedence)`. Evaluators must be deterministic for identical invocation contexts.
+> **Important**: completed-rule memoization is keyed by `(rule, input position, precedence, execution-state key)`. If semantic state can make a rule parse differently, the configured `IParserExecutionStateManager` must return a different `ParserExecutionStateKey` for those states. The no-op manager returns `ParserExecutionStateKey.Stateless`, preserving the former effective key shape for stateless parsing.
 
 ### Gated semantic predicates `{ condition }=>`
 

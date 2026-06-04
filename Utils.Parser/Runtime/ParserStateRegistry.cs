@@ -17,7 +17,7 @@ internal sealed class ParserStateRegistry
     private readonly HashSet<ParserStateKey> _visitedStates = [];
     /// <summary>Continuation keys grouped by rule invocation identity for post-completion replay metadata.</summary>
     private readonly Dictionary<RuleInvocationKey, HashSet<ContinuationKey>> _continuations = [];
-    /// <summary>Completed parse results grouped by rule invocation identity for local reuse.</summary>
+    /// <summary>Completed parse results grouped by state-aware rule invocation identity for local reuse.</summary>
     private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
 
     /// <summary>Resets all registry state for a new parse.</summary>
@@ -97,8 +97,7 @@ internal sealed class ParserStateRegistry
     /// Determines whether an invocation has any reusable completion result (success or failure).
     /// Current deterministic preference is: first reusable success, otherwise first reusable failure.
     /// This is invocation-local completion reuse, not final branch-selection authority.
-    /// Reuse currently assumes deterministic evaluator/executor behavior for the same invocation key
-    /// and does not model external semantic/action state.
+    /// Reuse is isolated by the semantic execution-state key carried by the invocation key.
     /// </summary>
     public bool TryGetReusableResult(RuleInvocationKey invocation, out ParserRuleResult result)
     {

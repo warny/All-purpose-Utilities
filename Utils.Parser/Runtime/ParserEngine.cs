@@ -192,15 +192,11 @@ public sealed class ParserEngine
         var initialPosition = context.Position;
         // Registry-backed completion cache:
         // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
-        // Safety currently depends on RuleInvocationKey identity:
-        //   (rule name, input position, minimum precedence).
-        // Runtime reuse currently assumes predicate/action policies are deterministic for a given invocation key.
-        // The memoization key does not currently include runtime policy state, evaluator external state,
-        // or side-effect state. Custom policies should therefore avoid invocation-count-dependent behavior
-        // and externally observable mutable semantic state.
-        // Future runtime work may require a wider key shape when semantic runtime state or rollback-aware
-        // action semantics are modeled explicitly.
-        var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence);
+        // Safety depends on RuleInvocationKey identity:
+        //   (rule name, input position, minimum precedence, semantic execution-state key).
+        // The semantic execution-state key isolates completed-result reuse for stateful generated contexts
+        // without enabling branch rollback, action buffering, or semantic-state restoration.
+        var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence, _executionStateManager.GetCurrentStateKey());
         if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
         {
             context.RestorePosition(reusableResult.EndPosition);
@@ -692,7 +688,7 @@ public sealed class ParserEngine
         // different callers can legitimately invoke the same rule at the same input position.
         // We therefore keep lightweight continuation metadata for future state-based parsing.
         _stateRegistry.AddContinuation(
-            new RuleInvocationKey(ruleRef.RuleName, context.Position, minimumPrecedence),
+            new RuleInvocationKey(ruleRef.RuleName, context.Position, minimumPrecedence, _executionStateManager.GetCurrentStateKey()),
             new ContinuationKey(parentRule.Name, alternativeIndex, elementIndex, context.Position, minimumPrecedence));
 
         if (referencedRule.Kind == RuleKind.Lexer)
