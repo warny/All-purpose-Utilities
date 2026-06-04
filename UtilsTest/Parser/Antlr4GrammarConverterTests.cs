@@ -917,4 +917,57 @@ public class Antlr4GrammarConverterTests
             _                    => false
         };
     }
+
+    // ─── Predicate options (UP1030) ───────────────────────────────────────────
+
+    [TestMethod]
+    public void PredicateOptions_IntValue_ParseSucceeds()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { true }?<fail=42> 'x' ;
+            """);
+
+        Assert.IsTrue(def.AllRules.ContainsKey("start"));
+    }
+
+    [TestMethod]
+    public void PredicateOptions_IntValue_ProducesValidatingPredicate()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { myPred }?<fail=42> 'x' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var seq = (Sequence)startRule.Content.Alternatives[0].Content;
+        var predicate = seq.Items.OfType<ValidatingPredicate>().First();
+        Assert.AreEqual("myPred", predicate.Code);
+    }
+
+    [TestMethod]
+    public void PredicateOptions_IntValue_EmitsPredicateOptionsIgnoredDiagnostic()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { myPred }?<fail=42> 'x' ;
+            """, diag);
+
+        Assert.IsTrue(diag.Any(d => d.Code == "UP1030"),
+            "Expected UP1030 (PredicateOptionsIgnored) diagnostic");
+    }
+
+    [TestMethod]
+    public void PredicateOptions_Absent_NoPredicateOptionsIgnoredDiagnostic()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { myPred }? 'x' ;
+            """, diag);
+
+        Assert.IsFalse(diag.Any(d => d.Code == "UP1030"),
+            "Did not expect UP1030 when no predicate options are present");
+    }
 }
