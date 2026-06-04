@@ -97,6 +97,30 @@ Current high-level state:
 - lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, rollback/buffering, and arbitrary parser state mutation remain unsupported for execution;
 - `ParserExecutionContextCopier<TContext>` exists as a preparatory runtime helper for future execution-context snapshot/fork/commit work. Generated execution contexts expose it through internal `Fork()` and `CopyFrom(...)` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies install a manager that manually captures/restores with `Fork()` / `CopyFrom(...)`. These helpers are not wired into `ParserEngine` branch rollback and do not change parser behavior or ANTLR feature support.
 
+### Runtime policy API compatibility note
+
+`ParserRuntimeFeaturePolicy.ExecutionStateManager` is a required policy property. Existing code that derives a policy from `ParserRuntimeFeaturePolicy.Default` remains compatible because the default policy already supplies `NullParserExecutionStateManager.Instance`:
+
+```csharp
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = customEvaluator
+};
+```
+
+External callers that construct a policy directly must now provide an execution-state manager explicitly. To preserve the current conservative/no-op behavior, use `NullParserExecutionStateManager.Instance`:
+
+```csharp
+var policy = new ParserRuntimeFeaturePolicy
+{
+    SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+    ParserActionExecutor = new DefaultParserActionExecutor(),
+    ExecutionStateManager = NullParserExecutionStateManager.Instance
+};
+```
+
+This is a contract-only compatibility change. `ParserEngine` validates that the manager is non-null, but it is not wired into branch rollback, automatic capture/restore, or action buffering.
+
 ### Execution paths
 
 #### Runtime-inline prepared expression path

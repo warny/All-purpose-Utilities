@@ -302,6 +302,22 @@ Current preparatory helper:
 
 - `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. Generated execution contexts expose this primitive through `Fork()` and `CopyFrom(...)`. Generated runtime policies also expose an `IParserExecutionStateManager` through `ParserRuntimeFeaturePolicy.ExecutionStateManager`; the generated manager captures with `Fork()` and restores with `CopyFrom(...)`. The default runtime policy uses `NullParserExecutionStateManager.Instance`. These methods and managers remain helpers only: `ParserEngine` validates the policy contract but does not invoke capture/restore automatically, and no rollback behavior is active.
 
+API compatibility note: `ParserRuntimeFeaturePolicy.ExecutionStateManager` is required. Prefer `ParserRuntimeFeaturePolicy.Default with { ... }` when customizing a policy so the no-op default manager is preserved automatically. Direct `new ParserRuntimeFeaturePolicy { ... }` initializers must now set `ExecutionStateManager = NullParserExecutionStateManager.Instance` to keep conservative no-op behavior. This requirement does not enable rollback or action buffering; it only makes the future capture/restore contract explicit and non-null.
+
+```csharp
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = customEvaluator
+};
+
+var directPolicy = new ParserRuntimeFeaturePolicy
+{
+    SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+    ParserActionExecutor = new DefaultParserActionExecutor(),
+    ExecutionStateManager = NullParserExecutionStateManager.Instance
+};
+```
+
 ### `Utils.Parser.Diagnostics`
 
 Responsible for shared diagnostic descriptors across runtime and generator/tooling surfaces.

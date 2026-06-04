@@ -127,6 +127,28 @@ Capture() -> executionContext.Fork()
 Restore(snapshot) -> executionContext.CopyFrom((PExecutionContext)snapshot)
 ```
 
+The addition of `ParserRuntimeFeaturePolicy.ExecutionStateManager` is an API compatibility concern for callers that instantiate policies directly. Code based on `ParserRuntimeFeaturePolicy.Default with { ... }` remains compatible because the default policy already carries the no-op manager:
+
+```csharp
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = customEvaluator
+};
+```
+
+Direct policy construction must now provide the required manager. Use `NullParserExecutionStateManager.Instance` to keep the same conservative/no-op behavior:
+
+```csharp
+var policy = new ParserRuntimeFeaturePolicy
+{
+    SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+    ParserActionExecutor = new DefaultParserActionExecutor(),
+    ExecutionStateManager = NullParserExecutionStateManager.Instance
+};
+```
+
+This remains contract-only: `ParserEngine` validates that the property is non-null, but automatic rollback, branch-level capture/restore, and action buffering are not active.
+
 The exact type names may differ, but the ownership must remain the same:
 
 - `ParserEngine` captures and restores opaque snapshots;
