@@ -33,6 +33,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -54,6 +56,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -89,6 +93,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -110,6 +116,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -147,6 +155,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -184,6 +194,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -220,6 +232,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -255,6 +269,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -290,6 +306,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -335,6 +353,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -375,6 +395,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: _ =>
             {
                 attemptCount++;
@@ -416,6 +438,8 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: Parse);
 
         _ = executor.Execute(
@@ -433,9 +457,28 @@ public class ScheduledAlternativeExecutorTests
             caseInsensitive: false,
             containsPredicateOrAction: static _ => false,
             resolveDiagnosticSpan: static _ => (0, 0),
+            captureAttempt: CaptureAttempt,
+            restoreAttempt: RestoreAttempt,
             parseAlternative: Parse);
 
         Assert.AreEqual(2, parseCalls);
+    }
+
+    /// <summary>
+    /// Captures a no-op attempt snapshot for scheduled-executor unit tests.
+    /// </summary>
+    private static ParserAttemptSnapshot CaptureAttempt(ParseContext context)
+    {
+        return new ParserAttemptSnapshot(context.Position, NullParserExecutionStateManager.Instance.Capture());
+    }
+
+    /// <summary>
+    /// Restores a no-op attempt snapshot for scheduled-executor unit tests.
+    /// </summary>
+    private static void RestoreAttempt(ParseContext context, ParserAttemptSnapshot snapshot)
+    {
+        context.RestorePosition(snapshot.InputPosition);
+        NullParserExecutionStateManager.Instance.Restore(snapshot.ExecutionStateSnapshot);
     }
 
     private static Rule CreateRule()

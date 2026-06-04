@@ -203,7 +203,8 @@ internal sealed class AlternativeScheduler
             Status = ActiveParseStateStatus.Active,
             ParentStateKey = null,
             Depth = 0,
-            Continuation = null
+            Continuation = null,
+            ExecutionStateSnapshot = null
         };
     }
 

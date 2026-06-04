@@ -5,7 +5,8 @@ namespace Utils.Parser.Runtime;
 /// Reusable results in this registry are invocation-local transport artifacts; they do not
 /// independently decide final parse acceptance, rejection, or final diagnostic selection.
 /// Runtime-authoritative state in this registry is limited to visited states, invocation completion tracking,
-/// and reusable parse outcomes keyed by invocation identity.
+/// and reusable parse outcomes keyed by invocation identity. Reusable outcomes may carry opaque post-rule
+/// execution-state snapshots for memoization-hit restoration only; those snapshots are not replay frames.
 /// Continuation descriptors and shared-prefix scheduling metadata are non-authoritative descriptive data.
 /// Shared-prefix metadata in this registry is descriptive-only and does not authorize replay,
 /// continuation execution, branch merging, semantic equivalence, or rollback safety assumptions.
@@ -54,6 +55,7 @@ internal sealed class ParserStateRegistry
     /// Adds a completed result for a shared rule invocation.
     /// Stored outcomes are invocation-local reuse artifacts and do not transfer global parse-authority ownership.
     /// Reuse identity (<see cref="RuleInvocationKey"/>) is intentionally independent from pruning/scheduling identities.
+    /// Result execution-state snapshots are opaque post-rule restoration data for memoization hits, not action replay authority.
     /// </summary>
     public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result)
     {
@@ -97,7 +99,8 @@ internal sealed class ParserStateRegistry
     /// Determines whether an invocation has any reusable completion result (success or failure).
     /// Current deterministic preference is: first reusable success, otherwise first reusable failure.
     /// This is invocation-local completion reuse, not final branch-selection authority.
-    /// Reuse is isolated by the semantic execution-state key carried by the invocation key.
+    /// Reuse is isolated by the semantic execution-state key carried by the invocation key, and the returned result
+    /// may carry a post-rule execution-state snapshot that the parser engine restores without replaying actions.
     /// </summary>
     public bool TryGetReusableResult(RuleInvocationKey invocation, out ParserRuleResult result)
     {

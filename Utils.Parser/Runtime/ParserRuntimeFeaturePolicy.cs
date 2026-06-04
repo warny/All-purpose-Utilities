@@ -31,7 +31,7 @@ public sealed record ParserRuntimeFeaturePolicy
 
     /// <summary>
     /// Gets the parser execution-state manager used to expose opaque semantic state snapshots and memoization keys.
-    /// ParserEngine reads state keys for completed-result memoization but does not invoke capture/restore for branch rollback yet.
+    /// ParserEngine reads state keys for completed-result memoization and invokes capture/restore around ordinary parser alternative attempts.
     /// </summary>
     public required IParserExecutionStateManager ExecutionStateManager { get; init; }
 
