@@ -182,6 +182,10 @@ public static class ParserDiagnostics
             "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Only parser semantic predicates and inline parser actions can be emitted as generated C# hooks.",
             DefaultCategory);
 
+    /// <summary>Semantic predicate options block (<c>&lt;fail=...&gt;</c>) recognized but not applied by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor PredicateOptionsIgnored =
+        new("UP1030", "Predicate options ignored", "Predicate options on predicate '{0}' are recognized but ignored by the current runtime model.", DefaultCategory);
+
     /// <summary>Parser members code is injected into the generated per-parse execution context by the source generator.</summary>
     public static readonly ParserDiagnosticDescriptor EmbeddedMembersInjectedByGenerator =
         new(
@@ -323,6 +327,7 @@ public static class ParserDiagnostics
             [UnsupportedLexerCommand.Code] = UnsupportedLexerCommand,
             [UnsupportedAntlrOptionIgnored.Code] = UnsupportedAntlrOptionIgnored,
             [LabelOnNonRuleReferenceIgnored.Code] = LabelOnNonRuleReferenceIgnored,
+            [PredicateOptionsIgnored.Code] = PredicateOptionsIgnored,
             [ElementOptionIgnored.Code] = ElementOptionIgnored,
             [LexerRuleOptionsIgnored.Code] = LexerRuleOptionsIgnored,
             [ParserRuleOptionsIgnored.Code] = ParserRuleOptionsIgnored,

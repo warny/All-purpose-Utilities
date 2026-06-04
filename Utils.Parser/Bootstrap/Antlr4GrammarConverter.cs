@@ -890,6 +890,8 @@ public sealed class Antlr4GrammarConverter
             var code = UnquoteAction(FirstToken(actionBlock, "ACTION")?.Text ?? "");
             if (HasToken(node, "QUESTION"))
             {
+                if (First(node, "predicateOptions") is not null)
+                    _diagnostics?.Add(ParserDiagnostics.PredicateOptionsIgnored, code);
                 if (IsPrecpred(code)) return new PrecedencePredicate(ParsePrecpredLevel(code));
                 _diagnostics?.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
                 return new ValidatingPredicate(code);
