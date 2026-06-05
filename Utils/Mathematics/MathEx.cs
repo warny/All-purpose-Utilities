@@ -90,11 +90,7 @@ public static class MathEx
     public static T Round<T>(T value, int exponent = 0)
         where T : struct, INumber<T>, IPowerFunctions<T>
     {
-        // base = 10^exponent
-        T @base = T.Pow(
-            (T)Convert.ChangeType(10, typeof(T)),
-            (T)Convert.ChangeType(exponent, typeof(T))
-        );
+        T @base = T.Pow(T.CreateChecked(10), T.CreateChecked(exponent));
 
         return Round(value, @base);
     }
@@ -336,8 +332,8 @@ public static class MathEx
             return pascalTriangleLine;
         }
 
-        // Compute from the highest known line up to the requested line
-        int maxLine = pascalTriangleCache.Keys.Max();
+        // Keys are always 0..n consecutive; Count-1 is the highest without scanning all keys.
+        int maxLine = pascalTriangleCache.Count - 1;
         int[] lastLine = pascalTriangleCache[maxLine];
 
         for (int i = maxLine + 1; i <= lineNumber; i++)
