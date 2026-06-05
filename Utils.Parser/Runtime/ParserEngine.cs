@@ -97,6 +97,11 @@ public sealed class ParserEngine
     private readonly IParserExecutionStateManager _executionStateManager;
 
     /// <summary>
+    /// Policy component that executes rule lifecycle hooks (<c>@init</c> and <c>@after</c>) for parser rules.
+    /// </summary>
+    private readonly IParserRuleLifecycleExecutor _ruleLifecycleExecutor;
+
+    /// <summary>
     /// Initializes a parser engine with the conservative default runtime feature policy.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>
@@ -117,6 +122,7 @@ public sealed class ParserEngine
         _semanticPredicateEvaluator = effectivePolicy.SemanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _executionStateManager = effectivePolicy.ExecutionStateManager ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
+        _ruleLifecycleExecutor = effectivePolicy.RuleLifecycleExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
@@ -198,8 +204,9 @@ public sealed class ParserEngine
         // The semantic execution-state key isolates completed-result reuse for stateful generated contexts.
         // Ordinary alternative rollback restores this key before later alternatives probe the cache.
         // Completed rule results also carry post-rule snapshots so memoization hits can restore the state
-        // produced by the original invocation without replaying actions. Action buffering, lifecycle hooks,
-        // quantifier rollback, left-recursive extension rollback, and negation-probe isolation remain separate unsupported steps.
+        // produced by the original invocation without replaying actions. Action buffering, quantifier rollback,
+        // left-recursive extension rollback, and negation-probe isolation are all active. Lifecycle hooks fire
+        // at rule entry (@init) and after a successful result (@after) through the configured RuleLifecycleExecutor.
         var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence, _executionStateManager.GetCurrentStateKey());
         if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
         {
@@ -221,6 +228,9 @@ public sealed class ParserEngine
 
         try
         {
+            var lifecycleContext = new ParserRuleLifecycleContext(rule.Name, initialPosition);
+            _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, rule.Name, lifecycleContext);
+
             ParseNode? parsed;
             if (_definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
             {
@@ -236,6 +246,11 @@ public sealed class ParserEngine
             else
             {
                 parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+            }
+
+            if (parsed is not null)
+            {
+                _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.After, rule.Name, lifecycleContext);
             }
 
             var resultExecutionStateSnapshot = _executionStateManager.Capture();

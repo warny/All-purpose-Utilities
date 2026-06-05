@@ -94,8 +94,8 @@ Current high-level state:
 - default runtime parsing preserves embedded-code metadata but does not execute target-language source;
 - the runtime-inline prepared expression path is available as an explicit opt-in for callers that provide an `IExpressionCompiler`;
 - the source-generator C# path is available as an explicit opt-in for generated grammars;
-- lexer embedded code, grammar-level actions, rule lifecycle actions, non-inline parser actions, action buffering, complete ANTLR transactional semantics, and arbitrary external parser state mutation remain unsupported for execution;
-- `ParserExecutionContextCopier<TContext>` exists as a runtime helper for execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies install a manager that captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. ParserEngine now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. This does not provide complete ANTLR transactional semantics and does not enable action buffering or external side-effect rollback.
+- lexer embedded code, grammar-level actions, non-inline parser actions, action buffering, complete ANTLR transactional semantics, and arbitrary external parser state mutation remain unsupported for execution;
+- `ParserExecutionContextCopier<TContext>` exists as a runtime helper for execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies always install a `GeneratedExecutionStateManager` that captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. `ParserEngine` now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. This does not provide complete ANTLR transactional semantics and does not enable action buffering or external side-effect rollback.
 
 ### Runtime policy API compatibility note
 
@@ -198,9 +198,11 @@ Supported executable parser constructs are:
 - multi-line inline parser actions;
 - local variables in generated predicate/action hooks;
 - calls from inline parser actions to members injected into or supplied by another declaration of the generated execution-context partial class;
-- unscoped `@members` and `@parser::members` blocks injected verbatim into `{ClassName}ExecutionContext` as a C# compatibility bridge.
+- unscoped `@members` and `@parser::members` blocks injected verbatim into `{ClassName}ExecutionContext` as a C# compatibility bridge;
+- rule `@init` lifecycle hooks executed at rule entry before any alternative is tried;
+- rule `@after` lifecycle hooks executed after a successful rule result.
 
-Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`. Hooks are instance methods on the generated `{ClassName}ExecutionContext`, so injected parser members can hold isolated instance state. `ParseWithEmbeddedCode(string input)` creates a new context per call; `ParseWithEmbeddedCode(string input, {ClassName}ExecutionContext executionContext)` lets advanced callers provide and inspect a context explicitly; and `CreateRuntimePolicy({ClassName}ExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)` binds a policy to the supplied context. Reusing that context or a policy bound to it intentionally reuses the same member state. No generated `CreateRuntimePolicy()` overload creates a hidden context. This context is a generated parser execution context, not a lexer mode or lexer-state context. Generated `Parse(...)` remains conservative and does not execute hooks or create an execution context.
+Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`. Generated lifecycle hooks expose `context` (a `ParserRuleLifecycleContext`) and the rule name. Hooks are instance methods on the generated `{ClassName}ExecutionContext`, so injected parser members can hold isolated instance state. `ParseWithEmbeddedCode(string input)` creates a new context per call; `ParseWithEmbeddedCode(string input, {ClassName}ExecutionContext executionContext)` lets advanced callers provide and inspect a context explicitly; and `CreateRuntimePolicy({ClassName}ExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)` binds a policy to the supplied context. Generated policies always install a `GeneratedExecutionStateManager`, enabling `ParserEngine` to roll back context mutations from failed alternatives, quantifier iterations, and negation probes for all generated execution contexts. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor. Reusing a context or a policy bound to it intentionally reuses the same member state. No generated `CreateRuntimePolicy()` overload creates a hidden context. This context is a generated parser execution context, not a lexer mode or lexer-state context. Generated `Parse(...)` remains conservative and does not execute hooks or create an execution context.
 
 ### Runtime-compatible indexing
 
@@ -235,14 +237,14 @@ The following constructs may be represented as metadata when visible to ingestio
 - lexer actions;
 - lexer predicates;
 - grammar actions;
-- `@members`;
-- `@init`;
-- `@after`;
+- `@members` (supported as a C# compatibility bridge in the source-generator path only; executed through Roslyn compilation of the generated context class);
 - parser actions that are not inline alternative elements;
 - action buffering;
 - complete ANTLR transactional semantics;
 - controlled context mutation models beyond the configured execution-state manager;
 - arbitrary parser state mutation outside the managed execution state.
+
+Rule lifecycle hooks (`@init`/`@after`) are supported in the source-generator C# path; see the **Rule actions** section above. They are not part of the runtime-inline expression path.
 
 When visible through runtime discovery, unsupported constructs must remain classified with explicit `EmbeddedCodeUnsupportedReason` values rather than being treated as executable metadata. The existence of stored source text is not execution authority.
 
@@ -263,7 +265,7 @@ Default parsing remains conservative:
 
 When field copying is used, the helper copies context fields by reflection-backed inspection once per context type, emits a compiled field-copy delegate, and reuses the cached delegate for subsequent field-copy calls. Field-copy behavior is shallow structural copying. Arrays, `List<T>`, `Dictionary<TKey,TValue>`, and `HashSet<T>` fields are recreated through explicit copy expressions when non-null, while contained elements are not deep-cloned. Unknown `IEnumerable<T>` collection fields can be recreated when they expose a compatible public copy constructor, a public parameterless constructor plus `AddRange(IEnumerable<T>)`, or a public parameterless constructor plus `Add(T)`. Unknown collections without a safe reconstruction strategy, and other unrecognized reference fields, are assigned by reference. Static fields are skipped. Field-like event backing fields are skipped. Readonly instance fields are rejected with an explicit configuration exception so context authors must choose mutable state or wait for a later custom context strategy. The semantics of `ICloneable.Clone()` belong to the user context type.
 
-These helpers and `IParserExecutionStateManager` are not ANTLR construct support. They do not execute `@init` or `@after`, do not execute lexer actions or predicates, do not buffer actions, and do not alter generated `Parse(...)` conservative embedded-code behavior. `ParserEngine` calls the manager around parser backtracking attempt boundaries for managed execution-state rollback only.
+These helpers and `IParserExecutionStateManager` are infrastructure, not direct ANTLR construct support. They do not execute lexer actions or predicates, do not buffer actions, and do not alter generated `Parse(...)` conservative embedded-code behavior. `ParserEngine` calls the manager around parser backtracking attempt boundaries for managed execution-state rollback. Rule lifecycle hooks (`@init`/`@after`) are now supported in the source-generator C# path. Generated policies always install a `GeneratedExecutionStateManager`, making rollback active for all generated execution contexts. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor.
 
 ### Diagnostics
 
@@ -279,11 +281,11 @@ Current diagnostics boundaries are intentionally split by path:
 Known limitations include:
 
 - no complete automatic rollback or action buffering beyond ordinary parser alternative execution-state capture/restore;
-- actions in negation probes require caution and are not a general side-effect-safe model;
-- no controlled context mutation model;
+- execution-context rollback through the generated state manager is active for all parser backtracking attempt boundaries for all generated execution contexts (predicates, inline actions, and lifecycle hooks share the same state-aware infrastructure);
+- inline actions (not lifecycle hooks) in negation probes require caution and are not a general side-effect-safe model;
+- no controlled context mutation model for non-lifecycle embedded code;
 - no lexer embedded-code execution;
 - generated C# parser contexts support limited parser `@members` / `@parser::members` injection only; grammar-level metadata remains non-executable outside that generated context path;
-- no `@init` / `@after` execution;
 - the source-generator C# path does not parse C# semantically; it applies light body normalization and leaves validation to Roslyn;
 - the generator hook collector remains separate from `EmbeddedCodeRuntimeDiscovery`.
 
@@ -403,12 +405,14 @@ var parser = new ParserEngine(definition, policy);
 
 ### Rule actions `@init { }` and `@after { }`
 
-See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md) for future-safe boundaries between stored metadata and explicit execution paths.
+See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md) for the two-path execution boundary.
 
 
-**Standard ANTLR4**: `@init` runs before the rule body; `@after` runs after.
+**Standard ANTLR4**: `@init` runs before the rule body; `@after` runs after a successful rule exit.
 
-**Utils.Parser**: Both are parsed and stored in `Rule.InitAction` / `Rule.AfterAction` as raw text. They are not executed automatically. To act on them, inspect the `Rule` model and invoke custom logic at the appropriate parse-tree traversal step using `ParseTreeCompiler<TContext, TResult>`.
+**Utils.Parser (default runtime)**: Both are parsed and stored in `Rule.InitAction` / `Rule.AfterAction` as raw text. They are not executed by default. To act on them without the source-generator path, inspect the `Rule` model and invoke custom logic at the appropriate parse-tree traversal step using `ParseTreeCompiler<TContext, TResult>`.
+
+**Utils.Parser (source-generator C# path)**: `@init` and `@after` are now supported as generated C# lifecycle hook methods executed through `ParseWithEmbeddedCode(...)` or an explicit-context `CreateRuntimePolicy(executionContext, basePolicy)`. `@init` fires at rule entry before any alternative is tried. `@after` fires after a successful rule result, before the result is committed. Generated policies always install a `GeneratedExecutionStateManager` that allows `ParserEngine` to capture and restore execution-context state around failed alternatives, quantifier iterations, and negation probes, so all context mutations (from predicates, inline actions, or lifecycle hooks) are rolled back on failure and committed only on success. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor. Generated `Parse(...)` remains conservative and does not execute lifecycle hooks.
 
 ---
 
@@ -506,7 +510,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | Speculative parsing / continuation replay | Not implemented. Continuation metadata exists but is descriptive only. |
 | Parse-forest generation | A single parse tree is produced. |
 | Async or parallel parsing | Not implemented. |
-| Target-language action execution engines | No target-language engine is active by default. Inline parser actions can execute only through an explicit runtime policy or generated C# opt-in path; lexer actions, grammar actions, `@members`, `@init`, and `@after` remain non-executable. |
+| Target-language action execution engines | No target-language engine is active by default. Inline parser actions and rule lifecycle hooks (`@init`/`@after`) can execute only through an explicit runtime policy or generated C# opt-in path; lexer actions and grammar actions remain non-executable. |
 | `superClass` class inheritance (generated code) | `superClass` is repurposed as an extension-binding key. See the **Usage** section above. |
 
 ---
@@ -521,7 +525,7 @@ These capabilities are outside the current runtime model by design. Attempting t
 | `UP1004` ActionIgnored | Emitted for ignored grammar/rule actions outside supported lifecycle slots. | Emitted for ignored grammar-level actions. | Partial | Runtime has broader rule-prequel coverage; this remains intentional and documented. |
 | `UP1005` InlineActionStoredNotExecuted | Emitted for inline `{ ... }` action nodes when no action executor handles them. | Suppressed for parser inline actions because they are supported generated C# hooks in the source-generator path; lexer actions use `UP1029`. | Partial | Deterministic recovery remains metadata-preserving. The generator no longer reports supported parser inline actions as unsupported. |
 | `UP1006` SemanticPredicateNotEnforced | Emitted for `{ ... }?` nodes in conservative runtime policy mode. | Suppressed for parser semantic predicates because they are supported generated C# hooks in the source-generator path; lexer predicates use `UP1029`. | Partial | Invalid C# in a supported generated predicate remains a Roslyn compilation error. |
-| `UP1029` EmbeddedCodeConstructNotExecutedByGenerator | Not emitted by runtime. | Emitted as a source-generator warning for visible embedded-code constructs that are preserved or recognized but not executed by generated C# hooks, including lexer actions/predicates, grammar actions, `@members`, `@init`, and `@after`. | Generator-only | This diagnostic does not add execution and does not alter `ParserEngine`; only parser semantic predicates and inline parser actions are promoted to generated C# hooks. |
+| `UP1029` EmbeddedCodeConstructNotExecutedByGenerator | Not emitted by runtime. | Emitted as a source-generator warning for visible embedded-code constructs that are preserved or recognized but not executed by generated C# hooks, including lexer actions/predicates, grammar actions, and `@members` (beyond the `@parser::members` bridge). `@init` and `@after` are no longer in this list since they are now generated as C# lifecycle hook methods. | Generator-only | This diagnostic does not add execution and does not alter `ParserEngine`; parser semantic predicates, inline parser actions, and rule lifecycle hooks (`@init`/`@after`) are promoted to generated C# hooks. |
 
 Intentional remaining difference: runtime diagnostics can include broader rule-context metadata for rule-prequel constructs (`returns`, `locals`, exception metadata) that are outside generator parser scope.
 Additional intentional test-documented difference: malformed prequel inputs currently fail fast in runtime conversion (`GrammarParseException`) while generator parsing keeps best-effort recovery.
@@ -546,5 +550,5 @@ Full descriptor table: `ParserDiagnostics.All`.
 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
 
-The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. The C# source-generator path additionally reports `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for unsupported embedded-code constructs that are visible in its `G4Grammar` model, such as lexer actions, lexer predicates, grammar actions, `@members`, `@init`, and `@after`. These diagnostics are warnings only: they do not execute the code, do not modify `ParserEngine`, and do not change generated `Parse(...)` behavior. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
+The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Rule lifecycle hooks (`@init`/`@after`) are now supported in the source-generator C# path and are no longer classified as unsupported. The C# source-generator path reports `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for embedded-code constructs that are visible in its `G4Grammar` model but not executed, such as lexer actions, lexer predicates, grammar actions, and non-`@parser::members` grammar-level members. These diagnostics are warnings only: they do not execute the code, do not modify `ParserEngine`, and do not change generated `Parse(...)` behavior. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
 

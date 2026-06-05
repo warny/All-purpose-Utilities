@@ -22,6 +22,55 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.IsInstanceOfType<DefaultSemanticPredicateEvaluator>(ParserRuntimeFeaturePolicy.Default.SemanticPredicateEvaluator);
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(ParserRuntimeFeaturePolicy.Default.ParserActionExecutor);
         Assert.AreSame(NullParserExecutionStateManager.Instance, ParserRuntimeFeaturePolicy.Default.ExecutionStateManager);
+        Assert.AreSame(NullParserRuleLifecycleExecutor.Instance, ParserRuntimeFeaturePolicy.Default.RuleLifecycleExecutor);
+    }
+
+    /// <summary>
+    /// Verifies that the null lifecycle executor singleton is valid and accepts calls without throwing.
+    /// </summary>
+    [TestMethod]
+    public void NullParserRuleLifecycleExecutor_Execute_DoesNotThrow()
+    {
+        var executor = NullParserRuleLifecycleExecutor.Instance;
+        var context = new ParserRuleLifecycleContext("start", 0);
+
+        executor.Execute(ParserRuleLifecyclePhase.Init, "start", context);
+        executor.Execute(ParserRuleLifecyclePhase.After, "start", context);
+    }
+
+    /// <summary>
+    /// Verifies that the null lifecycle executor rejects a null rule name.
+    /// </summary>
+    [TestMethod]
+    public void NullParserRuleLifecycleExecutor_Execute_RejectsNullRuleName()
+    {
+        var executor = NullParserRuleLifecycleExecutor.Instance;
+        var context = new ParserRuleLifecycleContext("start", 0);
+
+        Assert.ThrowsException<ArgumentNullException>(() => executor.Execute(ParserRuleLifecyclePhase.Init, null!, context));
+    }
+
+    /// <summary>
+    /// Verifies that the null lifecycle executor rejects a null context.
+    /// </summary>
+    [TestMethod]
+    public void NullParserRuleLifecycleExecutor_Execute_RejectsNullContext()
+    {
+        var executor = NullParserRuleLifecycleExecutor.Instance;
+
+        Assert.ThrowsException<ArgumentNullException>(() => executor.Execute(ParserRuleLifecyclePhase.Init, "start", null!));
+    }
+
+    /// <summary>
+    /// Verifies that the parser engine accepts a custom rule lifecycle executor through the runtime feature policy.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_RejectsNullRuleLifecycleExecutor()
+    {
+        var definition = CreateMinimalDefinition();
+        var invalidPolicy = ParserRuntimeFeaturePolicy.Default with { RuleLifecycleExecutor = null! };
+
+        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
     }
 
     /// <summary>

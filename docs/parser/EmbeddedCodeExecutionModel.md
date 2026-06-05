@@ -32,7 +32,7 @@ Current behavior is intentionally conservative by default. The canonical compati
 
 - Semantic predicates are recognized and routed through `ISemanticPredicateEvaluator`.
 - Inline parser actions are recognized and routed through `IParserActionExecutor`.
-- `@init` and `@after` are recognized and stored on the rule model, but are not executed.
+- `@init` and `@after` are recognized and stored on the rule model; they are not executed by default, but the source-generator C# path now generates and executes lifecycle hook methods for them through `ParseWithEmbeddedCode(...)` or an explicit-context `CreateRuntimePolicy(executionContext, basePolicy)` result.
 - Grammar actions and `@members` are preserved as metadata only when visible to ingestion.
 - Lexer predicates and lexer actions are outside the current executable embedded-code scope.
 - No raw embedded ANTLR target-language code is executed automatically.

@@ -17,7 +17,8 @@ internal readonly record struct ParserRuleResult(
     /// <summary>Whether the rule invocation failed to produce a match.</summary>
     bool IsFailure,
     /// <summary>
-    /// Opaque parser execution-state snapshot captured after the rule invocation produced this result.
-    /// On memoization hits, successful and failed reusable results restore this snapshot so the caller sees the same semantic state shape as the original invocation.
+    /// Opaque parser execution-state snapshot captured after the rule invocation completed, including any <c>@after</c> lifecycle hook effects.
+    /// On memoization hits, the stored snapshot is restored so that lifecycle hooks are not replayed and the caller sees the same semantic state as the original invocation.
+    /// <see langword="null"/> when state management is not active.
     /// </summary>
     object? ExecutionStateSnapshot = null);
