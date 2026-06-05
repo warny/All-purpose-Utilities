@@ -472,6 +472,56 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures a grammar with only inline actions and no lifecycle hooks wires a generated execution-state manager into the runtime policy.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_CreateRuntimePolicy_InlineActionWithoutLifecycleHook_InstallsExecutionStateManager()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Count;
+                public int CountValue => Count;
+            }
+
+            start : { Count++; } A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+
+        Assert.IsNotInstanceOfType<NullParserExecutionStateManager>(policy.ExecutionStateManager);
+    }
+
+    /// <summary>
+    /// Ensures a grammar with only semantic predicates (no inline actions, no lifecycle hooks) also wires a generated execution-state manager into the runtime policy.
+    /// </summary>
+    [TestMethod]
+    public void ExecutionContext_CreateRuntimePolicy_PredicateOnlyGrammar_InstallsExecutionStateManager()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                private int Guard;
+                public void Allow() => Guard = 1;
+            }
+
+            start : { Guard != 0 }? A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+
+        Assert.IsNotInstanceOfType<NullParserExecutionStateManager>(policy.ExecutionStateManager);
+    }
+
+    /// <summary>
     /// Ensures generated execution-state managers reject snapshots from another type.
     /// </summary>
     [TestMethod]
