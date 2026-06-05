@@ -420,6 +420,37 @@ public class Antlr4GeneratedRuleLifecycleTests
     }
 
     /// <summary>
+    /// Verifies that generated rule-local descriptors preserve array-type declarations verbatim.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleLocalDescriptors_PreserveArrayTypeDeclarations()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int[] counters]
+            @init {
+                DescriptorLocalDeclaration = GetRuleLocalDescriptors(context)[0].RawDeclaration;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? DescriptorLocalDeclaration;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("int[] counters", ReadStringField(assembly, "DescriptorLocalDeclaration"));
+    }
+
+    /// <summary>
     /// Verifies that rule-local descriptor metadata does not pre-populate the frame locals store.
     /// </summary>
     [TestMethod]
