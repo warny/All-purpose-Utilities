@@ -120,6 +120,9 @@ internal sealed class G4Rule
     /// <summary>Gets or sets the optional rule <c>@after</c> lifecycle action.</summary>
     public G4EmbeddedAction? AfterAction { get; set; }
 
+    /// <summary>Gets raw rule-local declarations preserved from a <c>locals [...]</c> clause.</summary>
+    public List<string> Locals { get; } = new List<string>();
+
     /// <summary>Gets or sets the rule content as an alternation.</summary>
     public G4Alternation Content { get; set; } = new G4Alternation();
 }

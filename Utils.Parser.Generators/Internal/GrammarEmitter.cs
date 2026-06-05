@@ -224,6 +224,13 @@ internal static class GrammarEmitter
         sb.Append($"        var {varName} = new Rule(");
         sb.Append($"\"{Escape(rule.Name)}\", _order++, {(rule.IsFragment ? "true" : "false")}, ");
         EmitContent(sb, rule.Content, 2);
+        if (rule.Locals.Count > 0)
+        {
+            sb.Append(", Locals: new RuleLocal[] { ");
+            sb.Append(string.Join(", ", rule.Locals.Select(static local => $"new RuleLocal(\"{Escape(local)}\")")));
+            sb.Append(" }");
+        }
+
         sb.AppendLine(");");
     }
 
@@ -515,6 +522,7 @@ internal static class GrammarEmitter
         sb.AppendLine($"        return global::Utils.Parser.Runtime.ParserExecutionContextHasher<{contextClassName}>.GetKey(this);");
         sb.AppendLine("    }");
         sb.AppendLine();
+        EmitRuleLocalHelpers(sb);
         sb.AppendLine("    /// <summary>Creates a runtime feature policy bound to this execution context instance.</summary>");
         sb.AppendLine("    /// <param name=\"basePolicy\">Optional policy whose non-embedded-code components are preserved.</param>");
         sb.AppendLine("    /// <returns>A runtime policy whose generated dispatchers call this context instance.</returns>");
@@ -557,6 +565,71 @@ internal static class GrammarEmitter
         }
 
         sb.AppendLine("}");
+    }
+
+    /// <summary>
+    /// Emits explicit rule-local helper methods on the generated execution context.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    private static void EmitRuleLocalHelpers(StringBuilder sb)
+    {
+        sb.AppendLine("    /// <summary>Gets a passive rule-local value from the active lifecycle invocation frame.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to inspect.</param>");
+        sb.AppendLine("    /// <param name=\"name\">Rule-local metadata name.</param>");
+        sb.AppendLine("    /// <returns>The stored local value, or <c>null</c> when no invocation frame or local value is present.</returns>");
+        sb.AppendLine("    /// <remarks>This helper never allocates locals from <c>locals [...]</c> metadata.</remarks>");
+        sb.AppendLine("    private static object? GetRuleLocal(ParserRuleLifecycleContext context, string name)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(name);");
+        sb.AppendLine();
+        sb.AppendLine("        return TryGetRuleLocal(context, name, out object? value) ? value : null;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Attempts to get a passive rule-local value from the active lifecycle invocation frame.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to inspect.</param>");
+        sb.AppendLine("    /// <param name=\"name\">Rule-local metadata name.</param>");
+        sb.AppendLine("    /// <param name=\"value\">Receives the stored local value when one has been explicitly set.</param>");
+        sb.AppendLine("    /// <returns><c>true</c> when the invocation frame contains the named local; otherwise, <c>false</c>.</returns>");
+        sb.AppendLine("    /// <remarks>This helper observes only <c>context.InvocationFrame</c> and never initializes descriptor locals.</remarks>");
+        sb.AppendLine("    private static bool TryGetRuleLocal(ParserRuleLifecycleContext context, string name, out object? value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(name);");
+        sb.AppendLine();
+        sb.AppendLine("        if (context.InvocationFrame is null)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            value = null;");
+        sb.AppendLine("            return false;");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        return context.InvocationFrame.TryGetLocal(name, out value);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Stores a passive rule-local value on the active lifecycle invocation frame.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to update.</param>");
+        sb.AppendLine("    /// <param name=\"name\">Rule-local metadata name.</param>");
+        sb.AppendLine("    /// <param name=\"value\">Value to store in the invocation-frame locals dictionary.</param>");
+        sb.AppendLine("    /// <remarks>If no invocation frame is available, this helper performs no work and does not allocate a frame.</remarks>");
+        sb.AppendLine("    private static void SetRuleLocal(ParserRuleLifecycleContext context, string name, object? value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(name);");
+        sb.AppendLine();
+        sb.AppendLine("        context.InvocationFrame?.SetLocal(name, value);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Gets passive rule-local declaration descriptors from the active lifecycle invocation frame.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying descriptor metadata.</param>");
+        sb.AppendLine("    /// <returns>Rule-local declaration descriptors, or an empty list when no descriptor metadata is available.</returns>");
+        sb.AppendLine("    /// <remarks>The descriptors contain raw declarations only; generated code does not infer C# types or create typed locals.</remarks>");
+        sb.AppendLine("    private static IReadOnlyList<ParserRuleLocalDescriptor> GetRuleLocalDescriptors(ParserRuleLifecycleContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine();
+        sb.AppendLine("        return context.InvocationFrame?.Descriptor?.Locals ?? global::System.Array.Empty<ParserRuleLocalDescriptor>();");
+        sb.AppendLine("    }");
+        sb.AppendLine();
     }
 
     /// <summary>
