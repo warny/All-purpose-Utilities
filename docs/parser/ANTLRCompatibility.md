@@ -303,7 +303,7 @@ Recommended next steps are:
 1. design lexer predicate/action semantics explicitly before enabling lexer embedded code;
 2. design action buffering/replay rules before supporting side-effect-sensitive external actions;
 3. evaluate deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`;
-5. expand the ANTLR grammar corpus used for compatibility and regression checks.
+4. expand the ANTLR grammar corpus used for compatibility and regression checks.
 
 ---
 
