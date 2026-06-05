@@ -7,7 +7,7 @@ namespace Utils.Parser.Runtime;
 /// Executes a single scheduled alternative attempt while keeping parser semantics
 /// in runtime components owned by <see cref="ParserEngine"/>.
 /// This executor is local and non-authoritative: it does not provide global parse authority,
-/// replay semantics beyond ordinary alternative-attempt state transport.
+/// replay semantics beyond parser attempt-boundary state transport.
 /// Look-ahead data (live probe or cached result) is advisory orchestration metadata:
 /// it can only support conservative shortcut rejection paths and never directly accept a branch.
 /// It may propagate branch-local diagnostics through callback outputs, but final diagnostic authority
@@ -40,7 +40,7 @@ internal sealed class ScheduledAlternativeExecutor
     /// Executes one alternative from the scheduler and returns a completed parse state when successful.
     /// Returned completion/failure is local branch outcome transport, not global parse authority.
     /// Embedded parser actions may run during this attempt even when the branch is later rejected.
-    /// Failed ordinary alternative attempts restore parser execution state through the configured state manager.
+    /// Failed parser attempt-boundarys restore parser execution state through the configured state manager.
     /// Successful attempts carry their resulting state for later winner commit, without action replay or buffering.
     /// </summary>
     public ScheduledAlternativeExecutionResult Execute(

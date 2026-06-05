@@ -95,7 +95,7 @@ Current high-level state:
 - the runtime-inline prepared expression path is available as an explicit opt-in for callers that provide an `IExpressionCompiler`;
 - the source-generator C# path is available as an explicit opt-in for generated grammars;
 - lexer embedded code, grammar-level actions, non-inline parser actions, action buffering, complete ANTLR transactional semantics, and arbitrary external parser state mutation remain unsupported for execution;
-- `ParserExecutionContextCopier<TContext>` exists as a runtime helper for execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies always install a `GeneratedExecutionStateManager` that captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. `ParserEngine` now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. This does not provide complete ANTLR transactional semantics and does not enable action buffering or external side-effect rollback.
+- `ParserExecutionContextCopier<TContext>` exists as a runtime helper for execution-context snapshot/fork/commit work. Generated execution contexts expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `ParserRuntimeFeaturePolicy` also exposes `IParserExecutionStateManager`; the default policy uses the no-op `NullParserExecutionStateManager`, and generated policies always install a `GeneratedExecutionStateManager` that captures/restores with `Fork()` / `CopyFrom(...)` and supplies semantic memoization keys with `GetExecutionStateKey()`. `ParserEngine` now captures and restores managed parser execution state around parser backtracking attempt boundaries: ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. This does not provide complete ANTLR transactional semantics and does not enable action buffering or external side-effect rollback.
 
 ### Runtime policy API compatibility note
 
@@ -119,7 +119,7 @@ var policy = new ParserRuntimeFeaturePolicy
 };
 ```
 
-`ParserEngine` validates that the manager is non-null, uses `GetCurrentStateKey()` to isolate completed-rule memoization entries, stores post-rule execution-state snapshots in reusable completed results, restores those snapshots on memoization hits without replaying actions, and captures/restores the manager around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. Lifecycle hooks and action buffering remain separate steps.
+`ParserEngine` validates that the manager is non-null, uses `GetCurrentStateKey()` to isolate completed-rule memoization entries, stores post-rule execution-state snapshots in reusable completed results, restores those snapshots on memoization hits without replaying actions, and captures/restores the manager around parser backtracking attempt boundaries. Parser lifecycle hooks participate in that managed rollback through generated C# opt-in policies, while action buffering remains unsupported.
 
 ### Execution paths
 
@@ -202,7 +202,7 @@ Supported executable parser constructs are:
 - rule `@init` lifecycle hooks executed at rule entry before any alternative is tried;
 - rule `@after` lifecycle hooks executed after a successful rule result.
 
-Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`. Generated lifecycle hooks expose `context` (a `ParserRuleLifecycleContext`) and the rule name. Hooks are instance methods on the generated `{ClassName}ExecutionContext`, so injected parser members can hold isolated instance state. `ParseWithEmbeddedCode(string input)` creates a new context per call; `ParseWithEmbeddedCode(string input, {ClassName}ExecutionContext executionContext)` lets advanced callers provide and inspect a context explicitly; and `CreateRuntimePolicy({ClassName}ExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)` binds a policy to the supplied context. Generated policies always install a `GeneratedExecutionStateManager`, enabling `ParserEngine` to roll back context mutations from failed alternatives, quantifier iterations, and negation probes for all generated execution contexts. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor. Reusing a context or a policy bound to it intentionally reuses the same member state. No generated `CreateRuntimePolicy()` overload creates a hidden context. This context is a generated parser execution context, not a lexer mode or lexer-state context. Generated `Parse(...)` remains conservative and does not execute hooks or create an execution context.
+Generated predicate hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `predicateCode`. Generated action hooks expose `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`. Generated lifecycle hooks expose `context` (a `ParserRuleLifecycleContext`) and the rule name. Hooks are instance methods on the generated `{ClassName}ExecutionContext`, so injected parser members can hold isolated instance state. `ParseWithEmbeddedCode(string input)` creates a new context per call; `ParseWithEmbeddedCode(string input, {ClassName}ExecutionContext executionContext)` lets advanced callers provide and inspect a context explicitly; and `CreateRuntimePolicy({ClassName}ExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)` binds a policy to the supplied context. Generated policies always install a `GeneratedExecutionStateManager`, enabling `ParserEngine` to roll back context mutations from parser backtracking attempt boundaries for all generated execution contexts. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor. Reusing a context or a policy bound to it intentionally reuses the same member state. No generated `CreateRuntimePolicy()` overload creates a hidden context. This context is a generated parser execution context, not a lexer mode or lexer-state context. Generated `Parse(...)` remains conservative and does not execute hooks or create an execution context.
 
 ### Runtime-compatible indexing
 
@@ -246,6 +246,8 @@ The following constructs may be represented as metadata when visible to ingestio
 
 Rule lifecycle hooks (`@init`/`@after`) are supported in the source-generator C# path; see the **Rule actions** section above. They are not part of the runtime-inline expression path.
 
+Managed execution-state rollback covers parser backtracking attempt boundaries. It does not imply automatic rollback of a caller-supplied execution context after a top-level parse is rejected for trailing tokens or other final validation failures.
+
 When visible through runtime discovery, unsupported constructs must remain classified with explicit `EmbeddedCodeUnsupportedReason` values rather than being treated as executable metadata. The existence of stored source text is not execution authority.
 
 ### Default behavior
@@ -280,10 +282,10 @@ Current diagnostics boundaries are intentionally split by path:
 
 Known limitations include:
 
-- no complete automatic rollback or action buffering beyond ordinary parser alternative execution-state capture/restore;
+- no complete automatic rollback or action buffering beyond managed execution-state capture/restore at parser backtracking attempt boundaries;
 - execution-context rollback through the generated state manager is active for all parser backtracking attempt boundaries for all generated execution contexts (predicates, inline actions, and lifecycle hooks share the same state-aware infrastructure);
-- inline actions (not lifecycle hooks) in negation probes require caution and are not a general side-effect-safe model;
-- no controlled context mutation model for non-lifecycle embedded code;
+- inline actions in negation probes require caution and are not a general side-effect-safe model;
+- no rollback of external side effects or top-level final parse rejection for caller-supplied execution contexts;
 - no lexer embedded-code execution;
 - generated C# parser contexts support limited parser `@members` / `@parser::members` injection only; grammar-level metadata remains non-executable outside that generated context path;
 - the source-generator C# path does not parse C# semantically; it applies light body normalization and leaves validation to Roslyn;
@@ -349,7 +351,7 @@ When predicates are not evaluated, runtime conservatively treats them as accepte
 Custom predicate evaluators may satisfy or reject predicates. The optional prepared expression path can build a registry from parser-model `ValidatingPredicate` nodes, including predicates nested in runtime-executable structures and direct-left-recursive tails, and wire it through `ParserRuntimeFeaturePolicy` explicitly; it is not enabled by default and does not change the compatibility level. Generated grammars can instead use generated C# hooks through `ParseWithEmbeddedCode(...)` or a policy returned by `CreateRuntimePolicy(executionContext, basePolicy)`; this source-generation path supports predicate expressions and predicate blocks with `return`, and it is source generation, not `IExpressionCompiler` usage. Roslyn remains responsible for validating whether the generated hook body is valid C# and returns `bool`.
 This behavior is runtime-policy-driven or generated-policy-driven, not compatibility metadata.
 
-> **Important**: completed-rule memoization is keyed by `(rule, input position, precedence, execution-state key)`. If semantic state can make a rule parse differently, the configured `IParserExecutionStateManager` must return a different `ParserExecutionStateKey` for those states. The no-op manager returns `ParserExecutionStateKey.Stateless`, preserving the former effective key shape for stateless parsing. Completed memoized results carry a post-rule execution-state snapshot that is restored on cache hits without replaying actions. After an ordinary alternative rollback, the restored manager state must produce the restored key so later cache lookups use the correct state-aware entry.
+> **Important**: completed-rule memoization is keyed by `(rule, input position, precedence, execution-state key)`. If semantic state can make a rule parse differently, the configured `IParserExecutionStateManager` must return a different `ParserExecutionStateKey` for those states. The no-op manager returns `ParserExecutionStateKey.Stateless`, preserving the former effective key shape for stateless parsing. Completed memoized results carry a post-rule execution-state snapshot that is restored on cache hits without replaying actions. After parser attempt-boundary rollback, the restored manager state must produce the restored key so later cache lookups use the correct state-aware entry.
 
 ### Gated semantic predicates `{ condition }=>`
 
@@ -399,7 +401,7 @@ var policy = ParserRuntimeFeaturePolicy.Default with
 var parser = new ParserEngine(definition, policy);
 ```
 
-> **Important**: ParserEngine now captures and restores managed parser execution state around ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes when a stateful `IParserExecutionStateManager` is configured. This does not provide complete ANTLR transactional semantics. Lifecycle hooks and action buffering remain separate steps. External side effects outside the managed execution state are not rolled back; keep executors side-effect-free or idempotent where possible.
+> **Important**: ParserEngine now captures and restores managed parser execution state around parser backtracking attempt boundaries when a stateful `IParserExecutionStateManager` is configured. This does not provide complete ANTLR transactional semantics. Parser lifecycle hooks participate in that managed rollback through generated C# opt-in policies, while action buffering remains unsupported. External side effects outside the managed execution state are not rolled back; keep executors side-effect-free or idempotent where possible.
 
 ---
 
@@ -412,7 +414,7 @@ See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md) for the t
 
 **Utils.Parser (default runtime)**: Both are parsed and stored in `Rule.InitAction` / `Rule.AfterAction` as raw text. They are not executed by default. To act on them without the source-generator path, inspect the `Rule` model and invoke custom logic at the appropriate parse-tree traversal step using `ParseTreeCompiler<TContext, TResult>`.
 
-**Utils.Parser (source-generator C# path)**: `@init` and `@after` are now supported as generated C# lifecycle hook methods executed through `ParseWithEmbeddedCode(...)` or an explicit-context `CreateRuntimePolicy(executionContext, basePolicy)`. `@init` fires at rule entry before any alternative is tried. `@after` fires after a successful rule result, before the result is committed. Generated policies always install a `GeneratedExecutionStateManager` that allows `ParserEngine` to capture and restore execution-context state around failed alternatives, quantifier iterations, and negation probes, so all context mutations (from predicates, inline actions, or lifecycle hooks) are rolled back on failure and committed only on success. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor. Generated `Parse(...)` remains conservative and does not execute lifecycle hooks.
+**Utils.Parser (source-generator C# path)**: `@init` and `@after` are now supported as generated C# lifecycle hook methods executed through `ParseWithEmbeddedCode(...)` or an explicit-context `CreateRuntimePolicy(executionContext, basePolicy)`. `@init` fires at rule entry before any alternative is tried. `@after` fires after a successful rule result, before the result is committed. Generated policies always install a `GeneratedExecutionStateManager` that allows `ParserEngine` to capture and restore execution-context state around parser backtracking attempt boundaries, so context mutations from predicates, inline actions, or lifecycle hooks are rolled back when those parser attempts are discarded. `GeneratedRuleLifecycleExecutor` is installed only when the grammar declares `@init` or `@after` hooks; otherwise `RuleLifecycleExecutor` remains the base no-op executor. Generated `Parse(...)` remains conservative and does not execute lifecycle hooks.
 
 ---
 
