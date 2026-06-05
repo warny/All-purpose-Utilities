@@ -426,6 +426,9 @@ public class ParserDiagnosticsTests
 
         Assert.IsTrue(ParserDiagnostics.TryGet("UP1035", out var headerInjectedByGenerator));
         Assert.AreSame(ParserDiagnostics.EmbeddedHeaderInjectedByGenerator, headerInjectedByGenerator);
+
+        Assert.IsTrue(ParserDiagnostics.TryGet("UP1036", out var footerInjectedByGenerator));
+        Assert.AreSame(ParserDiagnostics.EmbeddedFooterInjectedByGenerator, footerInjectedByGenerator);
     }
 
     [TestMethod]

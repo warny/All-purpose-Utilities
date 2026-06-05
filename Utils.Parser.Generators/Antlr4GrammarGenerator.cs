@@ -179,6 +179,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 continue;
             }
 
+            if (EmbeddedMembersSupport.IsInjectableParserFooterAction(grammar, action))
+            {
+                ReportEmbeddedFooterInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
+                continue;
+            }
+
             var reason = FormatGrammarActionReason(action);
             ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, grammar.Name, reason);
         }
@@ -239,6 +245,28 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         string ownerName)
     {
         var descriptor = ToRoslynDescriptor(ParserDiagnostics.EmbeddedMembersInjectedByGenerator);
+        var location = CreateGrammarLocation(file, text, line);
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, location, constructKind, ownerName));
+    }
+
+    /// <summary>
+    /// Reports the compatibility warning used when parser footers are injected near the end of generated C# source.
+    /// </summary>
+    /// <param name="context">Source production context receiving Roslyn diagnostics.</param>
+    /// <param name="file">Grammar additional file.</param>
+    /// <param name="text">Grammar source text used to create line-based locations.</param>
+    /// <param name="line">One-based line number associated with the construct.</param>
+    /// <param name="constructKind">Human-readable construct kind.</param>
+    /// <param name="ownerName">Grammar name associated with the construct.</param>
+    private static void ReportEmbeddedFooterInjectedDiagnostic(
+        SourceProductionContext context,
+        AdditionalText file,
+        SourceText text,
+        int line,
+        string constructKind,
+        string ownerName)
+    {
+        var descriptor = ToRoslynDescriptor(ParserDiagnostics.EmbeddedFooterInjectedByGenerator);
         var location = CreateGrammarLocation(file, text, line);
         context.ReportDiagnostic(Diagnostic.Create(descriptor, location, constructKind, ownerName));
     }
@@ -398,6 +426,11 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         if (string.Equals(action.Name, "members", StringComparison.Ordinal))
         {
             return "This members action is not a parser @members block supported by the generated execution context and remains metadata-only.";
+        }
+
+        if (string.Equals(action.Name, "footer", StringComparison.Ordinal))
+        {
+            return "This footer action is not a parser @footer block supported by generated trailing C# source injection and remains metadata-only.";
         }
 
         return "Grammar-level actions are preserved as metadata only and are not injected into generated parser or lexer types.";

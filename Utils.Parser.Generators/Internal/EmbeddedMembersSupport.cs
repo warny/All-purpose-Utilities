@@ -39,6 +39,21 @@ internal static class EmbeddedMembersSupport
     }
 
     /// <summary>
+    /// Determines whether a grammar-level action is a parser footer block supported
+    /// by the generated C# trailing source-file compatibility bridge.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
+    /// <param name="action">Grammar-level action metadata to classify.</param>
+    /// <returns>
+    /// <c>true</c> for unscoped <c>@footer</c> in parser or combined grammars, and
+    /// for <c>@parser::footer</c> outside lexer grammars; otherwise <c>false</c>.
+    /// </returns>
+    public static bool IsInjectableParserFooterAction(G4Grammar grammar, G4GrammarAction action)
+    {
+        return IsInjectableParserAction(grammar, action, "footer");
+    }
+
+    /// <summary>
     /// Determines whether a grammar-level action with the supplied name targets generated parser C# output.
     /// </summary>
     /// <param name="grammar">Grammar that owns the action.</param>

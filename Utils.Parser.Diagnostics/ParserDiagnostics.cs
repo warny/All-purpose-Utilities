@@ -179,7 +179,7 @@ public static class ParserDiagnostics
         new(
             "UP1029",
             "Embedded code construct not executed by generator",
-            "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Supported generated C# embedded constructs are limited to parser semantic predicates, inline parser actions, rule lifecycle actions, parser headers, and parser members.",
+            "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Supported generated C# embedded constructs are limited to parser semantic predicates, inline parser actions, rule lifecycle actions, parser headers, parser members, and parser footers.",
             DefaultCategory);
 
     /// <summary>Semantic predicate options block (<c>&lt;fail=...&gt;</c>) recognized but not applied by the current runtime model.</summary>
@@ -200,6 +200,14 @@ public static class ParserDiagnostics
             "UP1035",
             "Embedded header injected by generator",
             "{0} code in '{1}' was injected as generated C# source near the top of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
+            DefaultCategory);
+
+    /// <summary>Parser footer code is injected near the end of generated C# source by the source generator.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedFooterInjectedByGenerator =
+        new(
+            "UP1036",
+            "Embedded footer injected by generator",
+            "{0} code in '{1}' was injected as trailing generated C# source near the end of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
             DefaultCategory);
 
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
@@ -322,6 +330,7 @@ public static class ParserDiagnostics
             [EmbeddedCodeConstructNotExecutedByGenerator.Code] = EmbeddedCodeConstructNotExecutedByGenerator,
             [EmbeddedMembersInjectedByGenerator.Code] = EmbeddedMembersInjectedByGenerator,
             [EmbeddedHeaderInjectedByGenerator.Code] = EmbeddedHeaderInjectedByGenerator,
+            [EmbeddedFooterInjectedByGenerator.Code] = EmbeddedFooterInjectedByGenerator,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,
