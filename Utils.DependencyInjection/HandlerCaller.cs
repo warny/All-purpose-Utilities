@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Utils.DependencyInjection;
 
@@ -25,6 +27,9 @@ public interface IHandlerCaller : IInjectable
 [Singleton]
 public class HandlerCaller : IHandlerCaller
 {
+    // Cached per (message runtime type, error type E) — types and their methods never change.
+    private static readonly ConcurrentDictionary<(Type MessageType, Type ErrorType), ReflectionEntry> _cache = new();
+
     private readonly IServiceProvider serviceProvider;
 
     /// <summary>
@@ -39,58 +44,57 @@ public class HandlerCaller : IHandlerCaller
     /// <inheritdoc />
     public bool Handle<E>(object message, List<CheckError<E>> errors)
     {
-        if (message is null)
-        {
-            throw new ArgumentNullException(nameof(message));
-        }
-
-        if (errors is null)
-        {
-            throw new ArgumentNullException(nameof(errors));
-        }
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(errors);
 
         errors.Clear();
         var messageType = message.GetType();
 
-        var checkType = typeof(ICheck<,>).MakeGenericType(messageType, typeof(E));
-        var checksType = typeof(IEnumerable<>).MakeGenericType(checkType);
-        var checks = (IEnumerable<object>?)this.serviceProvider.GetService(checksType) ?? [];
-        var checkMethod = checkType.GetMethod("Check");
+        var entry = _cache.GetOrAdd((messageType, typeof(E)), static key =>
+        {
+            var (msgType, errType) = key;
+            var checkType = typeof(ICheck<,>).MakeGenericType(msgType, errType);
+            var handlerType = typeof(IHandler<>).MakeGenericType(msgType);
+            return new ReflectionEntry(
+                ChecksType: typeof(IEnumerable<>).MakeGenericType(checkType),
+                CheckMethod: checkType.GetMethod("Check"),
+                HandlersType: typeof(IEnumerable<>).MakeGenericType(handlerType),
+                HandleMethod: handlerType.GetMethod("Handle")
+            );
+        });
+
+        var checks = (IEnumerable<object>?)this.serviceProvider.GetService(entry.ChecksType) ?? [];
         var isValid = true;
         foreach (var check in checks)
         {
             var checkErrors = new List<E>();
             object?[] parameters = [message, checkErrors];
-            if (!(bool)(checkMethod?.Invoke(check, parameters) ?? false))
+            if (!(bool)(entry.CheckMethod?.Invoke(check, parameters) ?? false))
             {
                 foreach (var error in checkErrors)
-                {
                     errors.Add(new CheckError<E>(check.GetType(), error));
-                }
                 isValid = false;
             }
         }
-        if (!isValid)
-        {
-            return false;
-        }
+        if (!isValid) return false;
 
-        var handlerType = typeof(IHandler<>).MakeGenericType(messageType);
-        var handlerCollectionType = typeof(IEnumerable<>).MakeGenericType(handlerType);
-        var handlers = (IEnumerable<object>?)this.serviceProvider.GetService(handlerCollectionType) ?? [];
-        var handleMethod = handlerType.GetMethod("Handle");
+        var handlers = (IEnumerable<object>?)this.serviceProvider.GetService(entry.HandlersType) ?? [];
         var invoked = false;
         foreach (var handler in handlers)
         {
-            handleMethod?.Invoke(handler, [message]);
+            entry.HandleMethod?.Invoke(handler, [message]);
             invoked = true;
         }
         if (!invoked)
-        {
             throw new InvalidOperationException($"No handler registered for type {messageType}");
-        }
 
         return true;
     }
+
+    private sealed record ReflectionEntry(
+        Type ChecksType,
+        MethodInfo? CheckMethod,
+        Type HandlersType,
+        MethodInfo? HandleMethod);
 }
 

@@ -160,7 +160,7 @@ public abstract class ODataContext
 
         client.Timeout = MetadataDownloadTimeout;
 
-        using var response = client.GetAsync(uri).GetAwaiter().GetResult();
+        using var response = client.GetAsync(uri).ConfigureAwait(false).GetAwaiter().GetResult();
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException($"Failed to download EDMX metadata from '{uri}'. Status code: {response.StatusCode}.");
@@ -172,7 +172,7 @@ public abstract class ODataContext
             throw new InvalidOperationException($"EDMX metadata from '{uri}' exceeds the maximum allowed size of {MaxMetadataBytes} bytes.");
         }
 
-        using var responseStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+        using var responseStream = response.Content.ReadAsStreamAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         return CopyToMemory(responseStream, MaxMetadataBytes);
     }
 

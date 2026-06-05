@@ -71,9 +71,8 @@ namespace Utils.VirtualMachine
 
             foreach (var method in methods)
             {
+                if (!method.IsDefined(typeof(InstructionAttribute), true)) continue;
                 var instructionAttributes = method.GetCustomAttributes(typeof(InstructionAttribute), true);
-                if (instructionAttributes.IsNullOrEmptyCollection())
-                    continue;
 
                 var parameters = method.GetParameters();
                 if (parameters[0].ParameterType != typeof(T)) continue;
