@@ -13,6 +13,8 @@ namespace Utils.Collections
     public class MappedDictionary<K, V> : ReadOnlyMappedDictionary<K, V>, IDictionary<K, V>
     {
         private readonly IDictionaryMap<K, V> map;
+        private readonly MappedKeyCollection _keysView;
+        private readonly MappedValueCollection _valuesView;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MappedDictionary{K, V}"/> class using a custom dictionary map.
@@ -21,6 +23,8 @@ namespace Utils.Collections
         public MappedDictionary(IDictionaryMap<K, V> map) : base(map)
         {
             this.map = map ?? throw new ArgumentNullException(nameof(map));
+            _keysView = new MappedKeyCollection(this);
+            _valuesView = new MappedValueCollection(this);
         }
 
         /// <summary>
@@ -43,7 +47,7 @@ namespace Utils.Collections
             Func<IEnumerable<KeyValuePair<K, V>>> getValues,
             Func<int> getCount,
             Action clear) :
-            base(new DictionaryMap<K, V>(containsKeyValue, addValue, getValue, setValue, removeValue, getValues, getCount, clear))
+            this(new DictionaryMap<K, V>(containsKeyValue, addValue, getValue, setValue, removeValue, getValues, getCount, clear))
         {
         }
 
@@ -61,7 +65,7 @@ namespace Utils.Collections
             Action<K, V> setValue,
             Func<K, bool> removeValue,
             Action clear) :
-            base(new DictionaryMap<K, V>(baseDictionary, addValue, setValue, removeValue, clear))
+            this(new DictionaryMap<K, V>(baseDictionary, addValue, setValue, removeValue, clear))
         {
         }
 
@@ -70,11 +74,9 @@ namespace Utils.Collections
         /// </summary>
         public bool IsReadOnly => false;
 
-        // Explicit interface implementation for IDictionary.Keys
-        ICollection<K> IDictionary<K, V>.Keys => map.GetValues().Select(kv => kv.Key).ToList();
-
-        // Explicit interface implementation for IDictionary.Values
-        ICollection<V> IDictionary<K, V>.Values => map.GetValues().Select(kv => kv.Value).ToList();
+        // Explicit interface implementation for IDictionary.Keys/Values — live views, no allocation per access.
+        ICollection<K> IDictionary<K, V>.Keys => _keysView;
+        ICollection<V> IDictionary<K, V>.Values => _valuesView;
 
         /// <summary>
         /// Gets or sets the value associated with the specified key.
@@ -127,6 +129,36 @@ namespace Utils.Collections
         /// Removes the value with the specified key from the dictionary.
         /// </summary>
         public bool Remove(K key) => map.Remove(key);
+
+        private sealed class MappedKeyCollection : ICollection<K>
+        {
+            private readonly MappedDictionary<K, V> _dict;
+            internal MappedKeyCollection(MappedDictionary<K, V> dict) => _dict = dict;
+            public int Count => _dict.Count;
+            public bool IsReadOnly => true;
+            public bool Contains(K item) { foreach (var kv in _dict) if (EqualityComparer<K>.Default.Equals(kv.Key, item)) return true; return false; }
+            public void CopyTo(K[] array, int arrayIndex) { foreach (var kv in _dict) array[arrayIndex++] = kv.Key; }
+            public IEnumerator<K> GetEnumerator() { foreach (var kv in _dict) yield return kv.Key; }
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+            public void Add(K item) => throw new NotSupportedException();
+            public void Clear() => throw new NotSupportedException();
+            public bool Remove(K item) => throw new NotSupportedException();
+        }
+
+        private sealed class MappedValueCollection : ICollection<V>
+        {
+            private readonly MappedDictionary<K, V> _dict;
+            internal MappedValueCollection(MappedDictionary<K, V> dict) => _dict = dict;
+            public int Count => _dict.Count;
+            public bool IsReadOnly => true;
+            public bool Contains(V item) { foreach (var kv in _dict) if (EqualityComparer<V>.Default.Equals(kv.Value, item)) return true; return false; }
+            public void CopyTo(V[] array, int arrayIndex) { foreach (var kv in _dict) array[arrayIndex++] = kv.Value; }
+            public IEnumerator<V> GetEnumerator() { foreach (var kv in _dict) yield return kv.Value; }
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+            public void Add(V item) => throw new NotSupportedException();
+            public void Clear() => throw new NotSupportedException();
+            public bool Remove(V item) => throw new NotSupportedException();
+        }
     }
 
     /// <summary>

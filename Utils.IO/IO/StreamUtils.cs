@@ -214,35 +214,30 @@ public static class StreamUtils
         // We'll store the data in a MemoryStream as we read it.
         // We'll also keep track of the last bytes read to detect the separator.
         using var ms = new MemoryStream();
-        var separatorQueue = new Queue<byte>(blockSeparator.Length);
+        // Circular buffer: avoids Queue enumerator allocation on every byte read.
+        int sepLen = blockSeparator.Length;
+        byte[] window = new byte[sepLen];
+        int writePos = 0;   // next slot to write into
+        int filled   = 0;   // number of valid bytes currently in window
 
         while (true)
         {
             int readByte = s.ReadByte();
             if (readByte == -1)
-            {
-                // Reached end of stream => return whatever we have so far
                 return ms.ToArray();
-            }
 
-            // Write the current byte to the memory stream
             ms.WriteByte((byte)readByte);
 
-            // Keep track of up to the last 'blockSeparator.Length' bytes
-            separatorQueue.Enqueue((byte)readByte);
-            if (separatorQueue.Count > blockSeparator.Length)
-            {
-                separatorQueue.Dequeue();
-            }
+            window[writePos] = (byte)readByte;
+            writePos = (writePos + 1) % sepLen;
+            if (filled < sepLen) filled++;
 
-            // If the queue holds exactly the separator length, check for match
-            if (separatorQueue.Count == blockSeparator.Length)
+            if (filled == sepLen)
             {
                 bool matched = true;
-                int i = 0;
-                foreach (byte b in separatorQueue)
+                for (int i = 0; i < sepLen; i++)
                 {
-                    if (blockSeparator[i++] != b)
+                    if (window[(writePos + i) % sepLen] != blockSeparator[i])
                     {
                         matched = false;
                         break;
@@ -251,11 +246,8 @@ public static class StreamUtils
 
                 if (matched)
                 {
-                    // The block ends right before the block separator
-                    // => remove the separator from the MemoryStream content
-                    long newLength = ms.Length - blockSeparator.Length;
-                    if (newLength < 0) newLength = 0; // Safety check
-
+                    long newLength = ms.Length - sepLen;
+                    if (newLength < 0) newLength = 0;
                     ms.SetLength(newLength);
                     return ms.ToArray();
                 }
