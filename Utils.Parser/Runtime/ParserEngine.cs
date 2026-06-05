@@ -234,7 +234,8 @@ public sealed class ParserEngine
 
         try
         {
-            var invocationFrame = _ruleInvocationFrameManager.Enter(rule.Name, initialPosition);
+            var invocationDescriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+            var invocationFrame = _ruleInvocationFrameManager.Enter(rule.Name, initialPosition, invocationDescriptor);
             var lifecycleContext = new ParserRuleLifecycleContext(rule.Name, initialPosition, invocationFrame);
             var succeeded = false;
 
