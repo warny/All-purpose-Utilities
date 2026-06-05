@@ -66,7 +66,7 @@ public class ReadOnlyRange<T> : IReadOnlyList<T>, IReadOnlyCollection<T>
         if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
 
         // Validate and adjust the end index.
-        if (endIndex >= a.Count) throw new ArgumentOutOfRangeException(nameof(startIndex));
+        if (endIndex >= a.Count) throw new ArgumentOutOfRangeException(nameof(endIndex));
         if (endIndex < 0) endIndex = a.Count + endIndex;
         if (endIndex < 0) throw new ArgumentOutOfRangeException(nameof(endIndex));
 

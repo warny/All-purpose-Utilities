@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Utils.Collections;
@@ -16,6 +15,8 @@ public class LRUCache<K, V> : IDictionary<K, V>
     private readonly int capacity;
     private readonly Dictionary<K, LinkedListNode<KeyValuePair<K, V>>> cacheMap;
     private readonly LinkedList<KeyValuePair<K, V>> lruList;
+    private readonly KeyCollection _keysView;
+    private readonly ValueCollection _valuesView;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LRUCache{K, V}"/> class with the specified capacity.
@@ -26,17 +27,19 @@ public class LRUCache<K, V> : IDictionary<K, V>
         this.capacity = capacity;
         this.cacheMap = new Dictionary<K, LinkedListNode<KeyValuePair<K, V>>>(capacity);
         this.lruList = new LinkedList<KeyValuePair<K, V>>();
+        this._keysView = new KeyCollection(lruList);
+        this._valuesView = new ValueCollection(lruList);
     }
 
     /// <summary>
-    /// Gets the keys of the cache as a collection.
+    /// Gets the keys of the cache as a live read-only view — no allocation on each access.
     /// </summary>
-    public ICollection<K> Keys => lruList.Select(i => i.Key).ToList();
+    public ICollection<K> Keys => _keysView;
 
     /// <summary>
-    /// Gets the values of the cache as a collection.
+    /// Gets the values of the cache as a live read-only view — no allocation on each access.
     /// </summary>
-    public ICollection<V> Values => lruList.Select(i => i.Value).ToList();
+    public ICollection<V> Values => _valuesView;
 
     /// <summary>
     /// Gets the number of elements contained in the cache.
@@ -199,4 +202,34 @@ public class LRUCache<K, V> : IDictionary<K, V>
     public IEnumerator<KeyValuePair<K, V>> GetEnumerator() => lruList.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    private sealed class KeyCollection : ICollection<K>
+    {
+        private readonly LinkedList<KeyValuePair<K, V>> _list;
+        internal KeyCollection(LinkedList<KeyValuePair<K, V>> list) => _list = list;
+        public int Count => _list.Count;
+        public bool IsReadOnly => true;
+        public bool Contains(K item) { foreach (var kvp in _list) if (EqualityComparer<K>.Default.Equals(kvp.Key, item)) return true; return false; }
+        public void CopyTo(K[] array, int arrayIndex) { foreach (var kvp in _list) array[arrayIndex++] = kvp.Key; }
+        public IEnumerator<K> GetEnumerator() { foreach (var kvp in _list) yield return kvp.Key; }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public void Add(K item) => throw new NotSupportedException();
+        public void Clear() => throw new NotSupportedException();
+        public bool Remove(K item) => throw new NotSupportedException();
+    }
+
+    private sealed class ValueCollection : ICollection<V>
+    {
+        private readonly LinkedList<KeyValuePair<K, V>> _list;
+        internal ValueCollection(LinkedList<KeyValuePair<K, V>> list) => _list = list;
+        public int Count => _list.Count;
+        public bool IsReadOnly => true;
+        public bool Contains(V item) { foreach (var kvp in _list) if (EqualityComparer<V>.Default.Equals(kvp.Value, item)) return true; return false; }
+        public void CopyTo(V[] array, int arrayIndex) { foreach (var kvp in _list) array[arrayIndex++] = kvp.Value; }
+        public IEnumerator<V> GetEnumerator() { foreach (var kvp in _list) yield return kvp.Value; }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public void Add(V item) => throw new NotSupportedException();
+        public void Clear() => throw new NotSupportedException();
+        public bool Remove(V item) => throw new NotSupportedException();
+    }
 }
