@@ -20,7 +20,6 @@ public static class DictionaryExtensions
     /// <param name="key">Key of the element to retrieve.</param>
     /// <param name="value">Value to add if the key is not present.</param>
     /// <returns>The existing or newly added value.</returns>
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public static TValue GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value)
         where TKey : notnull
     {
@@ -46,7 +45,6 @@ public static class DictionaryExtensions
     /// <param name="key">Key of the element to retrieve.</param>
     /// <param name="func">Factory used to create the value when absent.</param>
     /// <returns>The existing or newly added value.</returns>
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public static TValue GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<TValue> func)
         where TKey : notnull
     {
@@ -73,7 +71,6 @@ public static class DictionaryExtensions
     /// <param name="key">Key of the element to update.</param>
     /// <param name="value">The new value.</param>
     /// <returns><see langword="true"/> if the key was present and the value updated.</returns>
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value)
         where TKey : notnull
     {
