@@ -40,7 +40,7 @@ internal sealed class ScheduledAlternativeExecutor
     /// Executes one alternative from the scheduler and returns a completed parse state when successful.
     /// Returned completion/failure is local branch outcome transport, not global parse authority.
     /// Embedded parser actions may run during this attempt even when the branch is later rejected.
-    /// Failed parser attempt-boundarys restore parser execution state through the configured state manager.
+    /// Failed parser backtracking attempt boundaries restore parser execution state through the configured state manager.
     /// Successful attempts carry their resulting state for later winner commit, without action replay or buffering.
     /// </summary>
     public ScheduledAlternativeExecutionResult Execute(
