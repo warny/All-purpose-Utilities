@@ -142,7 +142,14 @@ public class LOC : DNSResponseDetail
     /// </summary>
     /// <param name="value">The byte to convert.</param>
     /// <returns>The computed value.</returns>
-    private double ExponentialValueConvert(byte value) => (value >> 4) * Math.Pow(10, value & 0xF);
+    // The exponent nibble is 0–15; precomputing avoids Math.Pow on every property access.
+    private static readonly double[] PowersOf10 =
+    [
+        1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,
+        1e8,  1e9,  1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
+    ];
+
+    private double ExponentialValueConvert(byte value) => (value >> 4) * PowersOf10[value & 0xF];
 
     /// <summary>
     /// Converts a double into its exponential representation in one byte.
@@ -153,7 +160,7 @@ public class LOC : DNSResponseDetail
     private byte InverseExponentialValueConvert(double value)
     {
         int exponent = (int)Math.Floor(Math.Log10(value));
-        int mantissa = (int)Math.Round(value / Math.Pow(10, exponent));
+        int mantissa = (int)Math.Round(value / PowersOf10[Math.Clamp(exponent, 0, 15)]);
         return (byte)((mantissa << 4) + exponent);
     }
 
