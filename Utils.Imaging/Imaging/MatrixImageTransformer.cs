@@ -16,6 +16,9 @@ namespace Utils.Imaging
         private readonly double[,] weights;
         private readonly Point offset;
         private readonly Func<T, T, T, T, A> creator;
+        private static readonly double _componentMax = ComponentMax();
+        // true when T is an integer type; used to apply rounding before truncation.
+        private static readonly bool _isIntegral = T.CreateChecked(0.5) == T.Zero;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MatrixImageTransformer{A, T}"/> class.
@@ -42,18 +45,13 @@ namespace Utils.Imaging
             if (accessor is null) throw new ArgumentNullException(nameof(accessor));
             int width = accessor.Width;
             int height = accessor.Height;
-            A[,] copy = new A[width, height];
+            A[] copy = new A[width * height];
             for (int y = 0; y < height; y++)
-            {
                 for (int x = 0; x < width; x++)
-                {
-                    copy[x, y] = accessor[x, y];
-                }
-            }
+                    copy[y * width + x] = accessor[x, y];
 
             int mw = weights.GetLength(0);
             int mh = weights.GetLength(1);
-            double max = ComponentMax();
 
             for (int y = 0; y < height; y++)
             {
@@ -71,11 +69,11 @@ namespace Utils.Imaging
                             if (sx < 0 || sx >= width) continue;
                             double w = weights[i, j];
                             if (w == 0) continue;
-                            A c = copy[sx, sy];
-                            sumA += w * Convert.ToDouble(c.Alpha);
-                            sumR += w * Convert.ToDouble(c.Red);
-                            sumG += w * Convert.ToDouble(c.Green);
-                            sumB += w * Convert.ToDouble(c.Blue);
+                            A c = copy[sy * width + sx];
+                            sumA += w * double.CreateChecked(c.Alpha);
+                            sumR += w * double.CreateChecked(c.Red);
+                            sumG += w * double.CreateChecked(c.Green);
+                            sumB += w * double.CreateChecked(c.Blue);
                             sumW += w;
                         }
                     }
@@ -83,10 +81,10 @@ namespace Utils.Imaging
                     if (sumW > 0)
                     {
                         A newColor = creator(
-                            (T)Convert.ChangeType(sumA / sumW, typeof(T)),
-                            (T)Convert.ChangeType(sumR / sumW, typeof(T)),
-                            (T)Convert.ChangeType(sumG / sumW, typeof(T)),
-                            (T)Convert.ChangeType(sumB / sumW, typeof(T)));
+                            ToComponent(sumA / sumW),
+                            ToComponent(sumR / sumW),
+                            ToComponent(sumG / sumW),
+                            ToComponent(sumB / sumW));
 
                         if (mask is null)
                         {
@@ -96,26 +94,30 @@ namespace Utils.Imaging
                         {
                             A orig = accessor[x, y];
                             A maskColor = mask[x, y];
-                            double wa = Convert.ToDouble(maskColor.Alpha) / max;
-                            double wr = Convert.ToDouble(maskColor.Red) / max;
-                            double wg = Convert.ToDouble(maskColor.Green) / max;
-                            double wb = Convert.ToDouble(maskColor.Blue) / max;
+                            double wa = double.CreateChecked(maskColor.Alpha) / _componentMax;
+                            double wr = double.CreateChecked(maskColor.Red) / _componentMax;
+                            double wg = double.CreateChecked(maskColor.Green) / _componentMax;
+                            double wb = double.CreateChecked(maskColor.Blue) / _componentMax;
 
-                            double fa = Convert.ToDouble(orig.Alpha) * (1 - wa) + Convert.ToDouble(newColor.Alpha) * wa;
-                            double fr = Convert.ToDouble(orig.Red) * (1 - wr) + Convert.ToDouble(newColor.Red) * wr;
-                            double fg = Convert.ToDouble(orig.Green) * (1 - wg) + Convert.ToDouble(newColor.Green) * wg;
-                            double fb = Convert.ToDouble(orig.Blue) * (1 - wb) + Convert.ToDouble(newColor.Blue) * wb;
+                            double fa = double.CreateChecked(orig.Alpha) * (1 - wa) + double.CreateChecked(newColor.Alpha) * wa;
+                            double fr = double.CreateChecked(orig.Red) * (1 - wr) + double.CreateChecked(newColor.Red) * wr;
+                            double fg = double.CreateChecked(orig.Green) * (1 - wg) + double.CreateChecked(newColor.Green) * wg;
+                            double fb = double.CreateChecked(orig.Blue) * (1 - wb) + double.CreateChecked(newColor.Blue) * wb;
 
                             accessor[x, y] = creator(
-                                (T)Convert.ChangeType(fa, typeof(T)),
-                                (T)Convert.ChangeType(fr, typeof(T)),
-                                (T)Convert.ChangeType(fg, typeof(T)),
-                                (T)Convert.ChangeType(fb, typeof(T)));
+                                ToComponent(fa),
+                                ToComponent(fr),
+                                ToComponent(fg),
+                                ToComponent(fb));
                         }
                     }
                 }
             }
         }
+
+        // Converts a double accumulator back to T, rounding for integer types.
+        private static T ToComponent(double value) =>
+            _isIntegral ? T.CreateChecked(Math.Round(value)) : T.CreateChecked(value);
 
         private static double ComponentMax()
         {
