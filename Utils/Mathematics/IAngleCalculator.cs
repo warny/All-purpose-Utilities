@@ -296,10 +296,13 @@ public class Trigonometry<T> : IAngleCalculator<T>
 
     #endregion
 
+    // Precomputed once per T; avoids calling T.Pow on every inverse-trig call.
+    private static readonly T _invTrigPrecision = T.Pow(T.CreateChecked(10), T.CreateChecked(-10));
+
     #region Constructors
 
     /// <summary>
-    /// Creates a new <see cref="Trigonometry{T}"/> with the specified number of "units" 
+    /// Creates a new <see cref="Trigonometry{T}"/> with the specified number of "units"
     /// representing a full revolution (perigon).
     /// </summary>
     /// <param name="numberOfGraduation">
@@ -351,15 +354,15 @@ public class Trigonometry<T> : IAngleCalculator<T>
 
     /// <inheritdoc />
     public virtual T Asin(T value)
-        => MathEx.Round(T.Asin(value) / Graduation, -10);
+        => MathEx.Round(T.Asin(value) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Acos(T value)
-        => MathEx.Round(T.Acos(value) / Graduation, -10);
+        => MathEx.Round(T.Acos(value) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Atan(T value)
-        => MathEx.Round(T.Atan(value) / Graduation, -10);
+        => MathEx.Round(T.Atan(value) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Acot(T value)
@@ -401,15 +404,15 @@ public class Trigonometry<T> : IAngleCalculator<T>
 
     /// <inheritdoc />
     public virtual T Asinh(T value)
-        => MathEx.Round(T.Asinh(value) / Graduation, -10);
+        => MathEx.Round(T.Asinh(value) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Acosh(T value)
-        => MathEx.Round(T.Acosh(value) / Graduation, -10);
+        => MathEx.Round(T.Acosh(value) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Atanh(T value)
-        => MathEx.Round(T.Atanh(value) / Graduation, -10);
+        => MathEx.Round(T.Atanh(value) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Acoth(T value)
@@ -429,11 +432,11 @@ public class Trigonometry<T> : IAngleCalculator<T>
 
     /// <inheritdoc />
     public virtual T Atan2(T x, T y)
-        => MathEx.Round(T.Atan2(x, y) / Graduation, -10);
+        => MathEx.Round(T.Atan2(x, y) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T Acot2(T x, T y)
-        => MathEx.Round(T.Atan2(y, x) / Graduation, -10);
+        => MathEx.Round(T.Atan2(y, x) / Graduation, _invTrigPrecision);
 
     /// <inheritdoc />
     public virtual T NormalizeMinToMax(T angle)
@@ -468,17 +471,17 @@ public class Trigonometry<T> : IAngleCalculator<T>
     /// <summary>
     /// A built-in calculator for Radians (Perigon = 2π).
     /// </summary>
-    public static IAngleCalculator<T> Radian => new RadianCalculator();
+    public static IAngleCalculator<T> Radian { get; } = new RadianCalculator();
 
     /// <summary>
     /// A built-in calculator for Degrees (Perigon = 360).
     /// </summary>
-    public static IAngleCalculator<T> Degree { get; } = new Trigonometry<T>((T)Convert.ChangeType(360, typeof(T)));
+    public static IAngleCalculator<T> Degree { get; } = new Trigonometry<T>(T.CreateChecked(360));
 
     /// <summary>
     /// A built-in calculator for Grads (Perigon = 400).
     /// </summary>
-    public static IAngleCalculator<T> Grade { get; } = new Trigonometry<T>((T)Convert.ChangeType(400, typeof(T)));
+    public static IAngleCalculator<T> Grade { get; } = new Trigonometry<T>(T.CreateChecked(400));
 
     private readonly static Dictionary<T, IAngleCalculator<T>> _angleCalculators = new() {
         {  Radian.Perigon, Radian },

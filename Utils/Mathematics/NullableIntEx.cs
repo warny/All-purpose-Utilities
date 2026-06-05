@@ -16,12 +16,11 @@ public static class NullableIntEx
     public static T? Min<T>(T? a, T? b, bool isMin)
         where T : struct, IBinaryInteger<T>
     {
-        // If isMin => null => -∞ => that is definitely "less" than any finite number
-        // so min(-∞, x) => -∞.
-        // If both are null => -∞
-        if (!a.HasValue && !b.HasValue) return null; // -∞ or +∞ ???
-        if (!a.HasValue) return a; // -∞
-        if (!b.HasValue) return b; // -∞
+        // isMin=true  => null means -∞: min(-∞, x) = -∞ → return null
+        // isMin=false => null means +∞: min(+∞, x) = x  → return the finite side
+        if (!a.HasValue && !b.HasValue) return null;
+        if (!a.HasValue) return isMin ? a : b;
+        if (!b.HasValue) return isMin ? b : a;
         return T.Min(a.Value, b.Value);
     }
 
@@ -31,12 +30,11 @@ public static class NullableIntEx
     public static T? Max<T>(T? a, T? b, bool isMax)
         where T : struct, IBinaryInteger<T>
     {
-        // If isMax => null => +∞ => that is definitely "greater" than any finite number
-        // so max(+∞, x) => +∞.
-        // If both are null => +∞
+        // isMax=true  => null means +∞: max(+∞, x) = +∞ → return null
+        // isMax=false => null means -∞: max(-∞, x) = x  → return the finite side
         if (!a.HasValue && !b.HasValue) return null;
-        if (!a.HasValue) return a; // +∞
-        if (!b.HasValue) return b; // +∞
+        if (!a.HasValue) return isMax ? a : b;
+        if (!b.HasValue) return isMax ? b : a;
         return T.Max(a.Value, b.Value);
     }
 

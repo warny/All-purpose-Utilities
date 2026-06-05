@@ -114,6 +114,33 @@ namespace UtilsTest.Objects
 
 
         [TestMethod]
+        public void IntRangeIntersectUnboundedTest()
+        {
+            // Verifies that intersection with null (∞) endpoints is handled correctly.
+            // Before the NullableIntEx.Min/Max isMin/isMax fix, these returned "∞-∞".
+            var culture = CultureInfo.GetCultureInfo("fr-FR");
+            var tests = new (string test1, string test2, string result)[]
+            {
+                // (-∞,10] ∩ [5,+∞) = [5,10]
+                ("∞-10", "5-∞", "5-10"),
+                // (-∞,+∞) ∩ [3,7] = [3,7]
+                ("∞-∞", "3-7", "3-7"),
+                // (-∞,5] ∩ (-∞,10] = (-∞,5]
+                ("∞-5", "∞-10", "∞-5"),
+                // [3,+∞) ∩ [7,+∞) = [7,+∞)
+                ("3-∞", "7-∞", "7-∞"),
+            };
+
+            foreach (var test in tests)
+            {
+                var r1 = new IntRange<int>(test.test1, culture);
+                var r2 = new IntRange<int>(test.test2, culture);
+                Assert.AreEqual(test.result, (r1 & r2).ToString(culture), $"({test.test1}) & ({test.test2})");
+                Assert.AreEqual(test.result, (r2 & r1).ToString(culture), $"({test.test2}) & ({test.test1}) (commuted)");
+            }
+        }
+
+        [TestMethod]
         public void IntRangeExceptTest()
         {
             var tests = new (string test1, string test2, string result)[] {
