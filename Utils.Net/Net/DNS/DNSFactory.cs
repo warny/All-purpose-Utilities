@@ -220,7 +220,7 @@ public sealed class DNSFactory : IAdditionOperators<DNSFactory, DNSFactory, DNSF
     private static IReadOnlyList<Type> GetDNSClasses(IEnumerable<Type> types)
         => types
             .Where(t => typeof(DNSResponseDetail).IsAssignableFrom(t))
-            .Where(t => t.GetCustomAttributes<DNSRecordAttribute>().Any())
+            .Where(t => t.IsDefined(typeof(DNSRecordAttribute)))
             .ToImmutableList();
 
     /// <summary>
