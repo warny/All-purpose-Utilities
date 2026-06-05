@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using Utils.IO.Serialization;
 using Utils.Objects;
@@ -236,27 +237,14 @@ public class CMapFormat4 : CMapFormatBase
     /// <summary>
     /// Gets the search range used in the CMap header.
     /// </summary>
-    public virtual short SearchRange
-    {
-        get
-        {
-            double pow = Math.Floor(Math.Log(SegmentCount, 2));
-            double pow2 = Math.Pow(2, pow);
-            return (short)(2 * pow2);
-        }
-    }
+    public virtual short SearchRange =>
+        (short)(2 * (1 << BitOperations.Log2((uint)SegmentCount)));
 
     /// <summary>
     /// Gets the entry selector used in the CMap header.
     /// </summary>
-    public virtual short EntrySelector
-    {
-        get
-        {
-            int sr2 = SearchRange / 2;
-            return (short)Math.Log(sr2, 2);
-        }
-    }
+    public virtual short EntrySelector =>
+        (short)BitOperations.Log2((uint)SegmentCount);
 
     /// <summary>
     /// Gets the range shift used in the CMap header.
@@ -324,7 +312,7 @@ public class CMapFormat4 : CMapFormatBase
         for (int i = 0; i < segCount; i++)
         {
             idRangeOffsets[i] = data.Read<Int16>();
-            if (idRangeOffsets[i] <= 0)
+            if (idRangeOffsets[i] == 0)
             {
                 AddSegment((char)startCodes[i], (char)endCodes[i], idDeltas[i]);
                 continue;

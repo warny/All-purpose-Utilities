@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables;
@@ -343,8 +344,9 @@ public class BslnTable : TrueTypeTable
         const ushort unitSize = 4;
 
         // Binary-search header parameters (same formula as KernTable)
-        ushort searchRange   = (ushort)(Math.Pow(2, Math.Floor(Math.Log2(nUnits))) * unitSize);
-        ushort entrySelector = (ushort)Math.Floor(Math.Log2(nUnits));
+        int    log2          = BitOperations.Log2((uint)nUnits);
+        ushort searchRange   = (ushort)((1 << log2) * unitSize);
+        ushort entrySelector = (ushort)log2;
         ushort rangeShift    = (ushort)(nUnits * unitSize - searchRange);
 
         // binSrchHeader (12 bytes)
