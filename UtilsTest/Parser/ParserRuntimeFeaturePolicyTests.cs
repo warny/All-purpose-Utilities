@@ -233,9 +233,13 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreEqual(1, descriptor.Parameters.Count);
         Assert.AreEqual(1, descriptor.Returns.Count);
         Assert.AreEqual("true", descriptor.Options["memoize"]);
-        Assert.IsNull(descriptor.RawLocals, "Rule locals are not currently represented in the runtime model and must not be invented.");
-        Assert.AreEqual(0, descriptor.Locals.Count);
-        Assert.AreEqual(0, descriptor.Exceptions.Count, "Exception metadata is not currently represented in the runtime model and must not be invented.");
+        StringAssert.Contains(descriptor.RawLocals!, "int scratch");
+        Assert.AreEqual(1, descriptor.Locals.Count);
+        StringAssert.Contains(descriptor.Locals[0].RawDeclaration, "int scratch");
+        Assert.AreEqual(3, descriptor.Exceptions.Count);
+        Assert.IsTrue(descriptor.Exceptions.Any(exception => exception.Kind == "throws" && exception.RawDeclaration == "ParserException"));
+        Assert.IsTrue(descriptor.Exceptions.Any(exception => exception.Kind == "catch" && exception.RawDeclaration.Contains("System.Exception ex", StringComparison.Ordinal)));
+        Assert.IsTrue(descriptor.Exceptions.Any(exception => exception.Kind == "finally"));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleReturnsIgnored.Code));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
@@ -267,6 +271,30 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreEqual(0, frame.Parameters.Count, "Grammar parameters must not be bound as runtime values.");
         Assert.AreEqual(0, frame.Locals.Count, "Grammar locals must not be allocated as runtime values.");
         Assert.AreEqual(0, frame.Returns.Count, "Grammar returns must not be propagated as runtime values.");
+    }
+
+    /// <summary>
+    /// Verifies that exception metadata is exposed passively and does not change parse results or execute handlers.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_ExceptionMetadata_RemainsNonExecutable()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start throws ParserException : A ;
+              catch [System.Exception ex] { throw new System.InvalidOperationException(); }
+              finally { throw new System.InvalidOperationException(); }
+            A : 'a' ;
+            """);
+        var manager = new RecordingRuleInvocationFrameManager();
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { RuleInvocationFrameManager = manager });
+        var tokens = new CompiledGrammar(definition).Tokenize("b");
+
+        var result = parser.Parse(tokens);
+
+        Assert.IsInstanceOfType<ErrorNode>(result);
+        var descriptor = manager.EnteredDescriptors.Single(descriptor => descriptor?.RuleName == "start");
+        Assert.AreEqual(3, descriptor!.Exceptions.Count);
     }
 
     /// <summary>

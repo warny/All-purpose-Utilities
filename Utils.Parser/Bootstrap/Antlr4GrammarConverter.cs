@@ -717,7 +717,8 @@ public sealed class Antlr4GrammarConverter
 
         EmbeddedAction? initAction = null, afterAction = null;
         RuleOptions? ruleOptions = null;
-        bool hasIgnoredRuleMetadata = false;
+        List<RuleLocal>? locals = null;
+        RuleExceptionMetadata? exceptionMetadata = null;
         bool hasRuleLocalsClause = false;
         bool hasRuleExceptionMetadata = false;
         foreach (var prequel in All(node, "rulePrequel"))
@@ -730,16 +731,18 @@ public sealed class Antlr4GrammarConverter
                 continue;
             }
 
-            if (First(prequel, "localsSpec") != null)
+            var prequelLocalsSpecNode = First(prequel, "localsSpec");
+            if (prequelLocalsSpecNode != null)
             {
-                hasIgnoredRuleMetadata = true;
                 hasRuleLocalsClause = true;
+                locals = MergeLocals(locals, ConvertLocalsSpec(prequelLocalsSpecNode));
             }
 
-            if (First(prequel, "throwsSpec") != null)
+            var prequelThrowsSpecNode = First(prequel, "throwsSpec");
+            if (prequelThrowsSpecNode != null)
             {
-                hasIgnoredRuleMetadata = true;
                 hasRuleExceptionMetadata = true;
+                exceptionMetadata = MergeExceptionMetadata(exceptionMetadata, ConvertThrowsSpec(prequelThrowsSpecNode), null, null);
             }
 
             var ruleAction = First(prequel, "ruleAction");
@@ -759,22 +762,30 @@ public sealed class Antlr4GrammarConverter
             else _diagnostics?.AddWithContext(ParserDiagnostics.ActionIgnored, null, null, name, null, $"rule action @{actionName}");
         }
 
-        if (First(node, "localsSpec") != null)
+        var localsSpecNode = First(node, "localsSpec");
+        if (localsSpecNode != null)
         {
-            hasIgnoredRuleMetadata = true;
             hasRuleLocalsClause = true;
+            locals = MergeLocals(locals, ConvertLocalsSpec(localsSpecNode));
         }
 
-        if (First(node, "throwsSpec") != null)
+        var throwsSpecNode = First(node, "throwsSpec");
+        if (throwsSpecNode != null)
         {
-            hasIgnoredRuleMetadata = true;
             hasRuleExceptionMetadata = true;
+            exceptionMetadata = MergeExceptionMetadata(exceptionMetadata, ConvertThrowsSpec(throwsSpecNode), null, null);
         }
 
-        if (First(node, "exceptionGroup") != null)
+        var exceptionGroupNode = First(node, "exceptionGroup");
+        if (exceptionGroupNode != null)
         {
-            hasIgnoredRuleMetadata = true;
-            hasRuleExceptionMetadata = true;
+            var catchClauses = ConvertExceptionHandlers(exceptionGroupNode);
+            var finallyAction = ConvertFinallyClause(exceptionGroupNode);
+            if (catchClauses.Count > 0 || finallyAction is not null)
+            {
+                hasRuleExceptionMetadata = true;
+                exceptionMetadata = MergeExceptionMetadata(exceptionMetadata, [], catchClauses, finallyAction);
+            }
         }
 
         if (hasRuleLocalsClause)
@@ -787,7 +798,139 @@ public sealed class Antlr4GrammarConverter
         var ruleAltList = Require(First(ruleBlock, "ruleAltList"), "Missing ruleAltList");
         var content = ConvertRuleAltList(ruleAltList);
 
-        return new Rule(name, _order++, false, content, ruleOptions, parameters, returns, initAction, afterAction);
+        return new Rule(
+            name,
+            _order++,
+            false,
+            content,
+            ruleOptions,
+            parameters,
+            returns,
+            initAction,
+            afterAction,
+            Locals: locals,
+            ExceptionMetadata: exceptionMetadata);
+    }
+
+    /// <summary>
+    /// Converts a rule <c>locals</c> clause into passive raw local metadata.
+    /// </summary>
+    /// <param name="node">The <c>localsSpec</c> parse node to convert.</param>
+    /// <returns>Local metadata entries preserving raw declaration text only.</returns>
+    private static List<RuleLocal> ConvertLocalsSpec(ParserNode node)
+    {
+        var argBlock = First(node, "argActionBlock");
+        if (argBlock is null)
+        {
+            return [];
+        }
+
+        var raw = GetArgActionBlockText(argBlock);
+        return raw.Length == 0 ? [] : [new RuleLocal(raw)];
+    }
+
+    /// <summary>
+    /// Converts a rule <c>throws</c> clause into passive raw exception-name metadata.
+    /// </summary>
+    /// <param name="node">The <c>throwsSpec</c> parse node to convert.</param>
+    /// <returns>Raw exception names declared by the grammar.</returns>
+    private static List<string> ConvertThrowsSpec(ParserNode node)
+        => All(node, "qualifiedIdentifier")
+            .Select(GetQualifiedIdentifierText)
+            .Where(static text => text.Length > 0)
+            .ToList();
+
+    /// <summary>
+    /// Converts rule <c>catch</c> clauses into passive raw metadata.
+    /// </summary>
+    /// <param name="node">The <c>exceptionGroup</c> parse node to inspect.</param>
+    /// <returns>Catch clause metadata preserving raw argument and action text only.</returns>
+    private static List<RuleCatchClause> ConvertExceptionHandlers(ParserNode node)
+        => All(node, "exceptionHandler")
+            .Select(ConvertExceptionHandler)
+            .ToList();
+
+    /// <summary>
+    /// Converts one rule <c>catch</c> clause into passive raw metadata.
+    /// </summary>
+    /// <param name="node">The <c>exceptionHandler</c> parse node to convert.</param>
+    /// <returns>Catch clause metadata preserving raw argument and action text only.</returns>
+    private static RuleCatchClause ConvertExceptionHandler(ParserNode node)
+    {
+        var argument = First(node, "argActionBlock") is { } argBlock
+            ? GetArgActionBlockText(argBlock)
+            : string.Empty;
+        var action = First(node, "actionBlock") is { } actionBlock
+            ? UnquoteAction(FirstToken(actionBlock, "ACTION")?.Text ?? string.Empty)
+            : string.Empty;
+
+        return new RuleCatchClause(argument, action);
+    }
+
+    /// <summary>
+    /// Converts a rule <c>finally</c> clause into passive raw action metadata.
+    /// </summary>
+    /// <param name="node">The <c>exceptionGroup</c> parse node to inspect.</param>
+    /// <returns>The raw finally action body, or <c>null</c> when absent.</returns>
+    private static string? ConvertFinallyClause(ParserNode node)
+    {
+        var finallyClause = First(node, "finallyClause");
+        var actionBlock = finallyClause is null ? null : First(finallyClause, "actionBlock");
+        if (actionBlock is null)
+        {
+            return null;
+        }
+
+        return UnquoteAction(FirstToken(actionBlock, "ACTION")?.Text ?? string.Empty);
+    }
+
+    /// <summary>
+    /// Appends converted local metadata while preserving an absent collection as <c>null</c>.
+    /// </summary>
+    /// <param name="current">Existing local metadata, or <c>null</c>.</param>
+    /// <param name="additional">Additional local metadata to append.</param>
+    /// <returns>Merged local metadata, or <c>null</c> when nothing is represented.</returns>
+    private static List<RuleLocal>? MergeLocals(List<RuleLocal>? current, List<RuleLocal> additional)
+    {
+        if (additional.Count == 0)
+        {
+            return current;
+        }
+
+        current ??= [];
+        current.AddRange(additional);
+        return current;
+    }
+
+    /// <summary>
+    /// Merges rule exception metadata while preserving only passive raw text.
+    /// </summary>
+    /// <param name="current">Existing exception metadata, or <c>null</c>.</param>
+    /// <param name="throwsDeclarations">Additional raw <c>throws</c> declarations.</param>
+    /// <param name="catchClauses">Additional raw <c>catch</c> clauses, or <c>null</c>.</param>
+    /// <param name="finallyAction">Additional raw <c>finally</c> action, or <c>null</c>.</param>
+    /// <returns>Merged exception metadata, or <c>null</c> when nothing is represented.</returns>
+    private static RuleExceptionMetadata? MergeExceptionMetadata(
+        RuleExceptionMetadata? current,
+        IReadOnlyList<string> throwsDeclarations,
+        IReadOnlyList<RuleCatchClause>? catchClauses,
+        string? finallyAction)
+    {
+        var throwsList = current?.Throws.ToList() ?? [];
+        var catchList = current?.CatchClauses.ToList() ?? [];
+        throwsList.AddRange(throwsDeclarations);
+        if (catchClauses is not null)
+        {
+            catchList.AddRange(catchClauses);
+        }
+
+        var mergedFinallyAction = finallyAction ?? current?.FinallyAction;
+        if (throwsList.Count == 0 && catchList.Count == 0 && mergedFinallyAction is null)
+        {
+            return null;
+        }
+
+        return new RuleExceptionMetadata(throwsList, catchList, mergedFinallyAction);
     }
 
     // ─── ruleAltList / labeledAlt / alternative ───────────────────────────────
@@ -1105,6 +1248,10 @@ public sealed class Antlr4GrammarConverter
     /// <summary>Returns the first token text inside an <c>identifier</c> node, or <c>null</c> if none.</summary>
     private static string? TryGetIdentifierText(ParserNode node) =>
         FlatChildren(node).OfType<LexerNode>().FirstOrDefault()?.Token.Text;
+
+    /// <summary>Returns the dotted text represented by a <c>qualifiedIdentifier</c> node.</summary>
+    private static string GetQualifiedIdentifierText(ParserNode node) =>
+        string.Join(".", All(node, "identifier").Select(GetIdentifierText));
 
     /// <summary>Returns the lexer command name string from a <c>lexerCommandName</c> node.</summary>
     private static string GetLexerCommandName(ParserNode node)

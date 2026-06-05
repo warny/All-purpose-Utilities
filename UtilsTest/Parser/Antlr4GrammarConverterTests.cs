@@ -401,6 +401,67 @@ public class Antlr4GrammarConverterTests
         Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
     }
 
+    [TestMethod]
+    public void Converter_LocalsClause_PreservesRawMetadata()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start locals [int x, string name] : 'a' ;
+            """, diagnostics);
+
+        var rule = definition.AllRules["start"];
+        Assert.IsNotNull(rule.Locals);
+        Assert.AreEqual(1, rule.Locals!.Count);
+        StringAssert.Contains(rule.Locals[0].RawDeclaration, "int x");
+        StringAssert.Contains(rule.Locals[0].RawDeclaration, "string name");
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+    }
+
+    [TestMethod]
+    public void Converter_ExceptionMetadata_PreservesThrowsCatchAndFinally()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start throws System.Exception, CustomError : 'a' ;
+              catch [System.Exception ex] { ignoredCatch(); }
+              finally { ignoredFinally(); }
+            """, diagnostics);
+
+        var metadata = definition.AllRules["start"].ExceptionMetadata;
+        Assert.IsNotNull(metadata);
+        CollectionAssert.AreEqual(new[] { "System.Exception", "CustomError" }, metadata!.Throws.ToArray());
+        Assert.AreEqual(1, metadata.CatchClauses.Count);
+        Assert.AreEqual("System.Exception ex", metadata.CatchClauses[0].RawArgument);
+        Assert.AreEqual("ignoredCatch();", metadata.CatchClauses[0].RawAction);
+        Assert.AreEqual("ignoredFinally();", metadata.FinallyAction);
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
+    }
+
+    [TestMethod]
+    public void Converter_CatchAndFinallyWithoutThrows_PreserveExceptionMetadata()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : 'a' ;
+              catch [RecognitionException ex] { recover(ex); }
+              finally { cleanup(); }
+            """, diagnostics);
+
+        var metadata = definition.AllRules["start"].ExceptionMetadata;
+        Assert.IsNotNull(metadata);
+        Assert.AreEqual(0, metadata!.Throws.Count);
+        Assert.AreEqual("RecognitionException ex", metadata.CatchClauses.Single().RawArgument);
+        Assert.AreEqual("recover(ex);", metadata.CatchClauses.Single().RawAction);
+        Assert.AreEqual("cleanup();", metadata.FinallyAction);
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
+    }
+
 
     [TestMethod]
     public void Converter_ThrowsClause_DoesNotEmitRuleLocalsDiagnostic()
