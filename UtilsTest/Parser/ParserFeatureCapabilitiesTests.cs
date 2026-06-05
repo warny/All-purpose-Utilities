@@ -26,9 +26,21 @@ public class ParserFeatureCapabilitiesTests
     {
         Assert.AreEqual(ParserFeatureSupportLevel.RuntimeOptional, ParserFeatureCapabilities.Get(ParserFeature.SemanticPredicates).SupportLevel);
         Assert.AreEqual(ParserFeatureSupportLevel.RuntimeOptional, ParserFeatureCapabilities.Get(ParserFeature.InlineActions).SupportLevel);
+        Assert.AreEqual(ParserFeatureSupportLevel.RuntimeOptional, ParserFeatureCapabilities.Get(ParserFeature.RuleActions).SupportLevel);
         Assert.AreEqual(ParserFeatureSupportLevel.MetadataOnly, ParserFeatureCapabilities.Get(ParserFeature.RuleParameters).SupportLevel);
         Assert.AreEqual(ParserFeatureSupportLevel.Unsupported, ParserFeatureCapabilities.Get(ParserFeature.SharedPrefixExecution).SupportLevel);
         Assert.AreEqual(ParserFeatureSupportLevel.Supported, ParserFeatureCapabilities.Get(ParserFeature.AssocRight).SupportLevel);
+    }
+
+    [TestMethod]
+    public void ParserFeatureCapabilities_RuleActions_AreRuntimeOptional()
+    {
+        var capability = ParserFeatureCapabilities.Get(ParserFeature.RuleActions);
+
+        Assert.AreEqual(ParserFeatureSupportLevel.RuntimeOptional, capability.SupportLevel);
+        StringAssert.Contains(capability.Summary, "generated C# opt-in path");
+        StringAssert.Contains(capability.Limitation, "Default parsing does not execute them");
+        Assert.IsFalse(capability.Limitation!.Contains("No runtime execution hook", StringComparison.Ordinal));
     }
 
     [TestMethod]

@@ -12,7 +12,7 @@ namespace Utils.Parser.Runtime;
 /// <para>
 /// The engine is a recursive-descent parser with full backtracking.
 /// It tries each alternative in priority order and rolls back the token position plus
-/// configured parser execution state on ordinary alternative-attempt failure.
+/// configured parser execution state on parser attempt-boundary failure.
 /// Left-recursive rules are handled by a cycle-detection stack that returns <c>null</c>
 /// when the same rule is re-entered at the same token position.
 /// </para>
@@ -92,7 +92,7 @@ public sealed class ParserEngine
     private readonly IParserActionExecutor _parserActionExecutor;
 
     /// <summary>
-    /// Policy component that captures and restores opaque parser execution state around ordinary parser alternatives.
+    /// Policy component that captures and restores opaque parser execution state around parser backtracking attempt boundaries.
     /// </summary>
     private readonly IParserExecutionStateManager _executionStateManager;
 
@@ -202,7 +202,7 @@ public sealed class ParserEngine
         // Safety depends on RuleInvocationKey identity:
         //   (rule name, input position, minimum precedence, semantic execution-state key).
         // The semantic execution-state key isolates completed-result reuse for stateful generated contexts.
-        // Ordinary alternative rollback restores this key before later alternatives probe the cache.
+        // Parser attempt-boundary rollback restores this key before later parser work probes the cache.
         // Completed rule results also carry post-rule snapshots so memoization hits can restore the state
         // produced by the original invocation without replaying actions. Action buffering, quantifier rollback,
         // left-recursive extension rollback, and negation-probe isolation are all active. Lifecycle hooks fire
@@ -928,8 +928,8 @@ public sealed class ParserEngine
 
     /// <summary>
     /// Captures the token cursor and opaque parser execution state before or after a parser attempt boundary.
-    /// This helper covers managed parser execution state only; lifecycle hooks, continuation replay,
-    /// action buffering, and external side-effect rollback remain out of scope.
+    /// This helper covers managed parser execution state only; continuation replay, action buffering,
+    /// lexer embedded code, and external side-effect rollback remain out of scope.
     /// </summary>
     /// <param name="context">Mutable token-stream cursor whose position is part of the snapshot.</param>
     /// <returns>Captured parser attempt snapshot.</returns>
@@ -939,7 +939,7 @@ public sealed class ParserEngine
     }
 
     /// <summary>
-    /// Restores the token cursor and opaque parser execution state for an ordinary alternative attempt boundary.
+    /// Restores the token cursor and opaque parser execution state for a parser backtracking attempt boundary.
     /// After this method returns, <see cref="IParserExecutionStateManager.GetCurrentStateKey"/> must reflect the restored state
     /// so completed-result memoization uses the restored semantic key.
     /// </summary>

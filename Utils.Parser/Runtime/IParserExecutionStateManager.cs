@@ -1,7 +1,7 @@
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Captures and restores opaque parser execution state for future transactional parser attempts.
+/// Captures and restores opaque parser execution state for managed parser backtracking attempt boundaries.
 /// </summary>
 public interface IParserExecutionStateManager
 {

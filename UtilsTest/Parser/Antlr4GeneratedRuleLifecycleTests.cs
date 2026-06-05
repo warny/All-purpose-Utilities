@@ -311,6 +311,55 @@ public class Antlr4GeneratedRuleLifecycleTests
         StringAssert.Contains(source, "RuleLifecycleExecutor = new GeneratedRuleLifecycleExecutor(this)");
     }
 
+    /// <summary>
+    /// Verifies that top-level trailing-token rejection does not roll back a completed root rule's managed state.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrailingTokensDoesNotRollbackCompletedRootRuleState()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                private int Count;
+                internal int CountValue => Count;
+            }
+            start @after { Count++; }
+                : A
+                ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+
+        // This documents the current boundary: rollback covers parser attempts,
+        // not top-level rejection after a locally successful root rule.
+        var result = InvokeParseWithContext(assembly, "a b", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadContextIntProperty(context, "CountValue"));
+    }
+
+    /// <summary>
+    /// Verifies that generated policies keep the no-op lifecycle executor when no parser lifecycle hooks exist.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedPolicy_NoEmbeddedCode_CanUseNoOpLifecycleExecutor()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+
+        Assert.AreSame(NullParserRuleLifecycleExecutor.Instance, policy.RuleLifecycleExecutor);
+    }
+
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
 
     /// <summary>Emits generated C# for the supplied grammar.</summary>
