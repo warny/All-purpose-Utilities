@@ -203,9 +203,11 @@ namespace Utils.Range
                 var start = NullableIntEx.Max(r1.Value.Minimum, r2.Value.Minimum, isMax: false);
                 var end = NullableIntEx.Min(r1.Value.Maximum, r2.Value.Maximum, isMin: false);
 
-                // If start > end => no intersection
-                int compare = NullableIntEx.Compare(start, end, isMinForComparison: true);
-                if (compare > 0)
+                // If start > end => no intersection.
+                // start-null = -∞ (always ≤ anything); end-null = +∞ (always ≥ anything).
+                // The generic NullableIntEx.Compare treats null uniformly, so use a direct
+                // check: invalid only when both bounds are finite and start > end.
+                if (start.HasValue && end.HasValue && start.Value.CompareTo(end.Value) > 0)
                     return null;
 
                 return new SimpleRange(start, end);
