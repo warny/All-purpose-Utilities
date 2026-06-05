@@ -312,6 +312,184 @@ public class Antlr4GeneratedRuleLifecycleTests
     }
 
     /// <summary>
+    /// Verifies that generated execution contexts expose explicit rule-local helper methods without typed local members.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedExecutionContext_ContainsRuleLocalHelpersWithoutTypedLocals()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int localCounter]
+            @init { SetRuleLocal(context, "localCounter", 1); }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private static object? GetRuleLocal(ParserRuleLifecycleContext context, string name)");
+        StringAssert.Contains(source, "private static bool TryGetRuleLocal(ParserRuleLifecycleContext context, string name, out object? value)");
+        StringAssert.Contains(source, "private static void SetRuleLocal(ParserRuleLifecycleContext context, string name, object? value)");
+        StringAssert.Contains(source, "private static IReadOnlyList<ParserRuleLocalDescriptor> GetRuleLocalDescriptors(ParserRuleLifecycleContext context)");
+        Assert.IsFalse(source.Contains("int localCounter;", StringComparison.Ordinal), source);
+        Assert.IsFalse(source.Contains("int localCounter {", StringComparison.Ordinal), source);
+        Assert.IsFalse(source.Contains("object? localCounter", StringComparison.Ordinal), source);
+    }
+
+    /// <summary>
+    /// Verifies that <c>@init</c> and <c>@after</c> can explicitly use rule-local frame helpers in the opt-in path.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LifecycleHooks_CanExplicitlyUseRuleLocalHelpers()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int count]
+            @init {
+                MissingBeforeInitSet = TryGetRuleLocal(context, "count", out _);
+                SetRuleLocal(context, "count", 1);
+                InitValue = (int?)GetRuleLocal(context, "count") ?? -1;
+            }
+            @after {
+                SetRuleLocal(context, "count", ((int?)GetRuleLocal(context, "count") ?? 0) + 1);
+                AfterValue = (int?)GetRuleLocal(context, "count") ?? -1;
+                AfterLocalCount = context.InvocationFrame!.Locals.Count;
+                DescriptorLocalCount = GetRuleLocalDescriptors(context).Count;
+                DescriptorLocalDeclaration = GetRuleLocalDescriptors(context)[0].RawDeclaration;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool MissingBeforeInitSet = true;
+                public static int InitValue;
+                public static int AfterValue;
+                public static int AfterLocalCount;
+                public static int DescriptorLocalCount;
+                public static string? DescriptorLocalDeclaration;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "MissingBeforeInitSet"));
+        Assert.AreEqual(1, ReadIntField(assembly, "InitValue"));
+        Assert.AreEqual(2, ReadIntField(assembly, "AfterValue"));
+        Assert.AreEqual(1, ReadIntField(assembly, "AfterLocalCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "DescriptorLocalCount"));
+        StringAssert.Contains(ReadStringField(assembly, "DescriptorLocalDeclaration")!, "int count");
+    }
+
+    /// <summary>
+    /// Verifies that conservative <c>Parse</c> does not execute lifecycle hooks that would set rule locals.
+    /// </summary>
+    [TestMethod]
+    public void Parse_DoesNotExecuteRuleLocalLifecycleHelperCalls()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int count]
+            @init { SetRuleLocal(context, "count", 1); InitValue = 1; }
+            @after { SetRuleLocal(context, "count", 2); AfterValue = 2; }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int InitValue;
+                public static int AfterValue;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "InitValue"));
+        Assert.AreEqual(0, ReadIntField(assembly, "AfterValue"));
+    }
+
+    /// <summary>
+    /// Verifies that generated rule-local descriptors preserve array-type declarations verbatim.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleLocalDescriptors_PreserveArrayTypeDeclarations()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int[] counters]
+            @init {
+                DescriptorLocalDeclaration = GetRuleLocalDescriptors(context)[0].RawDeclaration;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? DescriptorLocalDeclaration;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("int[] counters", ReadStringField(assembly, "DescriptorLocalDeclaration"));
+    }
+
+    /// <summary>
+    /// Verifies that rule-local descriptor metadata does not pre-populate the frame locals store.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleLocalDescriptors_DoNotAutoAllocateFrameLocals()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int scratch]
+            @init {
+                InitLocalCount = context.InvocationFrame!.Locals.Count;
+                DescriptorLocalCount = GetRuleLocalDescriptors(context).Count;
+            }
+            @after {
+                AfterLocalCount = context.InvocationFrame!.Locals.Count;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int InitLocalCount = -1;
+                public static int AfterLocalCount = -1;
+                public static int DescriptorLocalCount = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "InitLocalCount"));
+        Assert.AreEqual(0, ReadIntField(assembly, "AfterLocalCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "DescriptorLocalCount"));
+    }
+
+    /// <summary>
     /// Verifies that top-level trailing-token rejection does not roll back a completed root rule's managed state.
     /// </summary>
     [TestMethod]
@@ -481,6 +659,20 @@ public class Antlr4GeneratedRuleLifecycleTests
         var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
         return (int)field.GetValue(null)!;
+    }
+
+    private static bool ReadBoolField(Assembly assembly, string fieldName)
+    {
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
+        return (bool)field.GetValue(null)!;
+    }
+
+    private static string? ReadStringField(Assembly assembly, string fieldName)
+    {
+        var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
+        var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
+        return (string?)field.GetValue(null);
     }
 
     private static int ReadContextIntProperty(object executionContext, string propertyName)

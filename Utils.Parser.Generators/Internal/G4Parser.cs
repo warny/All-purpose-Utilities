@@ -142,13 +142,15 @@ internal sealed class G4Parser
         rule.Name = ExpectIdentifier();
 
         // Skip optional rule options/returns/throws/locals before ':'
-        // while preserving rule lifecycle metadata (@init / @after).
+        // while preserving rule lifecycle metadata (@init / @after) and raw locals metadata.
         while (!AtEof() && Peek().Kind != G4TokenKind.Colon)
         {
-            if (!TryParseRuleLifecycleAction(rule))
+            if (TryParseRuleLifecycleAction(rule) || TryParseRuleLocals(rule))
             {
-                Consume();
+                continue;
             }
+
+            Consume();
         }
 
         Expect(G4TokenKind.Colon);
@@ -158,6 +160,30 @@ internal sealed class G4Parser
         Expect(G4TokenKind.Semi);
 
         return rule;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule-local metadata clause (<c>locals [...]</c>) at the current token position.
+    /// </summary>
+    /// <param name="rule">The rule receiving raw local metadata.</param>
+    /// <returns><c>true</c> when a locals clause is recognized and consumed; otherwise, <c>false</c>.</returns>
+    private bool TryParseRuleLocals(G4Rule rule)
+    {
+        if (!PeekValue("locals")
+            || _pos + 1 >= _tokens.Count
+            || _tokens[_pos + 1].Kind != G4TokenKind.CharClass)
+        {
+            return false;
+        }
+
+        Consume(); // locals
+        string rawLocals = Consume().Value;
+        if (rawLocals.Length > 0)
+        {
+            rule.Locals.Add(rawLocals);
+        }
+
+        return true;
     }
 
     /// <summary>

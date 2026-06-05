@@ -52,6 +52,21 @@ public class Antlr4GrammarGeneratorTests
         Assert.AreEqual("a-z0-9", tokens[0].Value);
     }
 
+    /// <summary>
+    /// Verifies that rule-local metadata brackets are balanced so array declarations remain intact.
+    /// </summary>
+    [TestMethod]
+    public void Tokenizer_RuleLocals_PreservesArrayDeclarationBrackets()
+    {
+        var tokens = Tokenize("locals [int[] counters] :");
+
+        Assert.AreEqual(G4TokenKind.Identifier, tokens[0].Kind);
+        Assert.AreEqual("locals", tokens[0].Value);
+        Assert.AreEqual(G4TokenKind.CharClass, tokens[1].Kind);
+        Assert.AreEqual("int[] counters", tokens[1].Value);
+        Assert.AreEqual(G4TokenKind.Colon, tokens[2].Kind);
+    }
+
     [TestMethod]
     public void Tokenizer_Arrow_Recognized()
     {

@@ -39,7 +39,10 @@ internal sealed class G4Tokenizer
             }
             else if (c == '[')
             {
-                tokens.Add(ReadCharClass());
+                bool isRuleLocalsClause = tokens.Count > 0
+                    && tokens[tokens.Count - 1].Kind == G4TokenKind.Identifier
+                    && string.Equals(tokens[tokens.Count - 1].Value, "locals", System.StringComparison.Ordinal);
+                tokens.Add(ReadBracketBlock(isRuleLocalsClause));
             }
             else if (c == '.' && Peek(1) == '.')
             {
@@ -162,31 +165,52 @@ internal sealed class G4Tokenizer
     }
 
     /// <summary>
-    /// Reads a character class <c>[...]</c>, preserving the raw inner content
-    /// so the parser can interpret ranges and escaped chars.
+    /// Reads a bracket-delimited block, preserving the raw inner content so the parser can interpret character
+    /// ranges or rule-local declarations without losing nested array brackets.
     /// </summary>
-    private G4Token ReadCharClass()
+    /// <param name="balanced">Whether nested brackets should be balanced before closing the block.</param>
+    /// <returns>A token containing the raw bracket-block content without the outer brackets.</returns>
+    private G4Token ReadBracketBlock(bool balanced)
     {
         int startLine = _line;
         _pos++; // skip [
+        int depth = 1;
         var sb = new StringBuilder();
 
-        while (_pos < _text.Length && _text[_pos] != ']')
+        while (_pos < _text.Length && depth > 0)
         {
-            if (_text[_pos] == '\\' && _pos + 1 < _text.Length)
+            char current = _text[_pos];
+            if (current == '\\' && _pos + 1 < _text.Length)
             {
                 sb.Append('\\');
                 _pos++;
                 sb.Append(_text[_pos++]);
+                continue;
             }
-            else
-            {
-                if (_text[_pos] == '\n') _line++;
-                sb.Append(_text[_pos++]);
-            }
-        }
 
-        if (_pos < _text.Length) _pos++; // skip ]
+            if (balanced && current == '[')
+            {
+                depth++;
+                sb.Append(_text[_pos++]);
+                continue;
+            }
+
+            if (current == ']')
+            {
+                depth--;
+                _pos++;
+                if (depth == 0)
+                {
+                    break;
+                }
+
+                sb.Append(current);
+                continue;
+            }
+
+            if (current == '\n') _line++;
+            sb.Append(_text[_pos++]);
+        }
 
         return new G4Token(G4TokenKind.CharClass, sb.ToString(), startLine);
     }
