@@ -88,7 +88,12 @@ public static partial class EnumerableEx
     /// <param name="enumerations"><see cref="IEnumerable"/> to be read</param>
     /// <returns>Array of objects</returns>
     public static IEnumerable<object[]> Zip(bool continueAfterShortestListEnds, params (IEnumerable enumeration, object defaultValue)[] enumerations)
-        => Zip(continueAfterShortestListEnds, enumerations.Select(e => e.enumeration).ToArray(), enumerations.Select((e) => e.defaultValue).ToArray());
+    {
+        var enums     = new IEnumerable[enumerations.Length];
+        var defaults  = new object[enumerations.Length];
+        for (int i = 0; i < enumerations.Length; i++) { enums[i] = enumerations[i].enumeration; defaults[i] = enumerations[i].defaultValue; }
+        return Zip(continueAfterShortestListEnds, enums, defaults);
+    }
 
     /// <summary>
     /// Read several <see cref="IEnumerable"/> in parallel and returns an array of object of elments from the same indexes
@@ -98,7 +103,12 @@ public static partial class EnumerableEx
     /// <param name="transform">transformation function of input object to output object</param>
     /// <returns>Array of objects</returns>
     public static IEnumerable<TResult> Zip<TResult>(bool continueAfterShortestListEnds, Func<object[], TResult> transform, params (IEnumerable enumeration, object defaultValue)[] enumerations)
-        => Zip(continueAfterShortestListEnds, enumerations.Select(e => e.enumeration).ToArray(), enumerations.Select((e) => e.defaultValue)).Select(o => transform(o));
+    {
+        var enums    = new IEnumerable[enumerations.Length];
+        var defaults = new object[enumerations.Length];
+        for (int i = 0; i < enumerations.Length; i++) { enums[i] = enumerations[i].enumeration; defaults[i] = enumerations[i].defaultValue; }
+        return Zip(continueAfterShortestListEnds, enums, defaults).Select(o => transform(o));
+    }
 
     private static IEnumerable<object[]> Zip(bool continueAfterShortestListEnds, IEnumerable[] enumerations, object[] defaultValues)
     {

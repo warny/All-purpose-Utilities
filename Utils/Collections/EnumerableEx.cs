@@ -123,7 +123,50 @@ public static partial class EnumerableEx
     }
 
     /// <summary>
-    /// Enumerates all elements in <paramref name="enumerable"/> followed by 
+    /// Returns a slice of <paramref name="source"/> starting at <paramref name="skip"/> and
+    /// yielding at most <paramref name="take"/> elements, using a single enumerator.
+    /// This is equivalent to <c>Skip(skip).Take(take)</c> but avoids the two LINQ
+    /// enumerator allocations that the chained form incurs.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the sequence.</typeparam>
+    /// <param name="source">The sequence to slice.</param>
+    /// <param name="skip">Number of elements to skip from the start.</param>
+    /// <param name="take">Maximum number of elements to return.</param>
+    /// <returns>The requested slice of <paramref name="source"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="source"/> is <see langword="null"/>.</exception>
+    public static IEnumerable<T> SkipTake<T>(this IEnumerable<T> source, int skip, int take)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (take <= 0) yield break;
+
+        // Fast path for arrays — avoid the enumerator entirely.
+        if (source is T[] array)
+        {
+            int end = Math.Min(skip + take, array.Length);
+            for (int i = skip; i < end; i++) yield return array[i];
+            yield break;
+        }
+
+        // Fast path for IList<T> — direct index access, no enumerator overhead.
+        if (source is IList<T> list)
+        {
+            int end = Math.Min(skip + take, list.Count);
+            for (int i = skip; i < end; i++) yield return list[i];
+            yield break;
+        }
+
+        // General case: advance past the skipped elements with a single enumerator.
+        using var e = source.GetEnumerator();
+        for (int i = 0; i < skip; i++)
+            if (!e.MoveNext()) yield break;
+
+        int remaining = take;
+        while (remaining-- > 0 && e.MoveNext())
+            yield return e.Current;
+    }
+
+    /// <summary>
+    /// Enumerates all elements in <paramref name="enumerable"/> followed by
     /// additional <paramref name="elements"/>.
     /// </summary>
     /// <typeparam name="T">The type of elements in the sequences.</typeparam>

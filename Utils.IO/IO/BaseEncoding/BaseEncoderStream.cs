@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Utils.IO.BaseEncoding;
 
@@ -112,8 +111,10 @@ public class BaseEncoderStream : Stream
     /// <param name="count">Number of bytes to read.</param>
     public override void Write(byte[] buffer, int offset, int count)
     {
-        foreach (var b in buffer.Skip(offset).Take(count))
+        int end = offset + count;
+        for (int idx = offset; idx < end; idx++)
         {
+            byte b = buffer[idx];
             position++;
             value = (value << 8) | b;
             shift += 8;
