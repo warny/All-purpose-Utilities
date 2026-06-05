@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using Utils.Fonts.TTF.Tables;
@@ -215,7 +216,7 @@ public class TrueTypeFont : IFont
             var checkSum = ComputeChecksum(td.Tag, new ReaderWriter(td.Data));
             if (checkSum != td.CheckSum)
             {
-                Console.WriteLine($"Declared Checksum {td.CheckSum:X4} is different from {checkSum:X4}");
+                System.Diagnostics.Debug.WriteLine($"Declared Checksum {td.CheckSum:X4} is different from {checkSum:X4}");
             }
         }
 
@@ -273,41 +274,21 @@ public class TrueTypeFont : IFont
     /// <summary>
     /// Gets the search range used in the font header.
     /// </summary>
-    public virtual short SearchRange
-    {
-        get
-        {
-            double num = Math.Floor(Math.Log(TablesCount, 2));
-            double num2 = Math.Pow(2.0, num);
-            return (short)(TableDirectoryEntrySize * num2);
-        }
-    }
+    public virtual short SearchRange =>
+        (short)(TableDirectoryEntrySize * (1 << BitOperations.Log2((uint)TablesCount)));
 
     /// <summary>
     /// Gets the entry selector used in the font header.
     /// </summary>
-    public virtual short EntrySelector
-    {
-        get
-        {
-            double num = Math.Floor(Math.Log(TablesCount, 2));
-            double num2 = Math.Pow(2.0, num);
-            return (short)Math.Log(num2, 2);
-        }
-    }
+    public virtual short EntrySelector =>
+        (short)BitOperations.Log2((uint)TablesCount);
 
     /// <summary>
     /// Gets the range shift used in the font header.
     /// </summary>
-    public virtual short RangeShift
-    {
-        get
-        {
-            double num = Math.Floor(Math.Log(TablesCount, 2));
-            short num2 = (short)Math.Pow(2.0, num);
-            return (short)(num2 * TableDirectoryEntrySize - SearchRange);
-        }
-    }
+    public virtual short RangeShift =>
+        // TTF spec: rangeShift = numTables * 16 - searchRange
+        (short)(TablesCount * TableDirectoryEntrySize - SearchRange);
 
     /// <summary>
     /// Computes the checksum for the data associated with the specified table tag.
