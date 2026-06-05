@@ -64,7 +64,7 @@ The following constructs are recognized but not fully resolved into executable r
 
 | Construct | Current behavior | Limitations |
 |---|---|---|
-| Rule parameters (`rule[int x]`) | Parsed with balanced-text preservation and stored as raw metadata text (including multiline and nested generic-like syntax). | A passive runtime invocation-frame infrastructure exists, but no ANTLR-compatible invocation semantics exist (no argument passing or typed binding). |
+| Rule parameters (`rule[int x]`) | Parsed with balanced-text preservation and stored as raw metadata text where exposed by the parser model. | Passive invocation-frame descriptors can surface represented parameter metadata, but no ANTLR-compatible invocation semantics exist (no argument passing, typed binding, or generated parser signature changes). |
 | Rule locals (`locals [int x]`) | Recognized at rule prequel parsing stage and emitted as explicit compatibility diagnostic `RuleLocalsIgnored` (`UP1008`). | Not executed and not allocated from grammar metadata; passive invocation frames do not populate locals automatically. |
 | Rule returns (`returns [int value]`) | Recognized with balanced-text preservation and stored as raw metadata text. | Ignored by runtime return propagation semantics (no value extraction, propagation, or runtime binding) and emits `RuleReturnsIgnored` (`UP1007`); passive invocation frames do not populate returns automatically. |
 
@@ -85,7 +85,7 @@ Additional architectural context and explicit non-goals are documented in `docs/
 | Lexer command set | Supported commands are `skip`, `more`, `channel`, `type`, `pushMode`, `popMode`, `mode`. Any other command is rejected deterministically with `UnsupportedLexerCommand`. |
 | Element options other than `assoc` (`<type=...>`, etc.) | Parsed; `assoc=right` applied; all other options emitted as `UP1032` (`ElementOptionIgnored`) and ignored. |
 | Lexer rule options block (`TOKEN options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1033` (`LexerRuleOptionsIgnored`); not applied to runtime behavior. |
-| Parser rule options block (`rule options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1034` (`ParserRuleOptionsIgnored`); not applied to runtime behavior. |
+| Parser rule options block (`rule options { ... } : ...`) | Parsed; options stored as `Rule.Options` metadata (`RuleOptions`); emits `UP1034` (`ParserRuleOptionsIgnored`); not applied to runtime behavior. Passive invocation-frame descriptors can surface represented options as metadata only. |
 
 ## Runtime metadata boundary
 
@@ -169,3 +169,7 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 
 Parser semantic predicates and inline parser actions use shared runtime-indexing metadata for `ParserDefinition` discovery. This improves parity between prepared runtime-inline expression registries and source-generated C# hook dispatch. Parser `@header` / `@parser::header` are supported only as generated C# parser-header injection, parser `@members` / `@parser::members` are injected only into the generated execution context, and parser `@footer` / `@parser::footer` are injected only as trailing generated C# parser-footer source. Unsupported grammar actions, lexer actions, lexer predicates, `@lexer::header`, `@lexer::members`, and `@lexer::footer` remain out of scope, are classified with explicit reasons, and visible unsupported constructs in the source-generator model can produce `UP1029` warnings without changing behavior. Rule lifecycle actions (`@init`/`@after`) are now supported in the source-generator C# path and no longer emit `UP1029`; they do not add execution support to the runtime-inline expression path.
 
+
+## Rule invocation descriptors
+
+Parser rule invocation frames can carry passive `ParserRuleInvocationDescriptor` instances populated from metadata already exposed by the parser model. The descriptors are preparatory infrastructure only: rule parameters, returns, locals, throws/catch/finally metadata, and rule options remain metadata-only; ignored-metadata diagnostics such as `UP1007`, `UP1008`, `UP1023`, `UP1033`, and `UP1034` still apply; no ANTLR-compatible typed invocation semantics or generated parser method signature changes are implemented. `Parse(...)` remains conservative, and `ParseWithEmbeddedCode(...)` remains the opt-in path for currently supported generated C# hooks.

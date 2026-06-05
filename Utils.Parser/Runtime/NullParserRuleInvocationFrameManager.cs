@@ -28,10 +28,11 @@ public sealed class NullParserRuleInvocationFrameManager : IParserRuleInvocation
     /// </summary>
     /// <param name="ruleName">Name of the parser rule being entered.</param>
     /// <param name="inputPosition">Token-stream position at the time of rule entry.</param>
-    /// <returns>An empty passive invocation frame.</returns>
-    public ParserRuleInvocationFrame Enter(string ruleName, int inputPosition)
+    /// <param name="descriptor">Passive rule metadata descriptor for the invocation, when available.</param>
+    /// <returns>An empty passive invocation frame carrying the supplied descriptor.</returns>
+    public ParserRuleInvocationFrame Enter(string ruleName, int inputPosition, ParserRuleInvocationDescriptor? descriptor = null)
     {
-        return new ParserRuleInvocationFrame(ruleName, inputPosition);
+        return new ParserRuleInvocationFrame(ruleName, inputPosition, new Dictionary<string, object?>(), descriptor);
     }
 
     /// <summary>

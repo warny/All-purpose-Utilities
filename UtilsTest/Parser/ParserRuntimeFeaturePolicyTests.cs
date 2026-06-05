@@ -165,6 +165,111 @@ public class ParserRuntimeFeaturePolicyTests
     }
 
     /// <summary>
+    /// Verifies that parser rule invocation frames can carry a passive descriptor without changing value stores.
+    /// </summary>
+    [TestMethod]
+    public void ParserRuleInvocationFrame_CanCarryPassiveDescriptor()
+    {
+        var descriptor = new ParserRuleInvocationDescriptor
+        {
+            RuleName = "start",
+            RawParameters = "int value",
+            Parameters = [new ParserRuleParameterDescriptor { Name = "value", RawDeclaration = "int value" }]
+        };
+
+        var frame = new ParserRuleInvocationFrame("start", 2, new Dictionary<string, object?>(), descriptor);
+
+        Assert.AreSame(descriptor, frame.Descriptor);
+        Assert.AreEqual(0, frame.Parameters.Count);
+        Assert.AreEqual(0, frame.Locals.Count);
+        Assert.AreEqual(0, frame.Returns.Count);
+    }
+
+    /// <summary>
+    /// Verifies that the null invocation-frame manager preserves descriptors without retaining state.
+    /// </summary>
+    [TestMethod]
+    public void NullParserRuleInvocationFrameManager_Enter_PreservesDescriptor()
+    {
+        var descriptor = new ParserRuleInvocationDescriptor { RuleName = "start" };
+
+        var frame = NullParserRuleInvocationFrameManager.Instance.Enter("start", 0, descriptor);
+
+        Assert.AreSame(descriptor, frame.Descriptor);
+        Assert.IsNull(NullParserRuleInvocationFrameManager.Instance.Current);
+    }
+
+    /// <summary>
+    /// Verifies that a custom invocation-frame manager can observe passive rule descriptors on rule entry.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_CustomRuleInvocationFrameManager_ObservesRuleDescriptors()
+    {
+        var diagnostics = new DiagnosticBag();
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start[int value] returns [int result]
+              throws ParserException
+              locals [int scratch]
+              options { memoize=true; }
+              : A ;
+              catch [System.Exception ex] { }
+              finally { }
+            A : 'a' ;
+            """, diagnostics);
+        var manager = new RecordingRuleInvocationFrameManager();
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { RuleInvocationFrameManager = manager });
+        var tokens = new CompiledGrammar(definition).Tokenize("a");
+
+        var result = parser.Parse(tokens);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        var descriptor = manager.EnteredDescriptors.Single(descriptor => descriptor?.RuleName == "start");
+        Assert.IsNotNull(descriptor);
+        StringAssert.Contains(descriptor!.RawParameters!, "int");
+        StringAssert.Contains(descriptor.RawParameters!, "value");
+        StringAssert.Contains(descriptor.RawReturnType!, "int");
+        StringAssert.Contains(descriptor.RawReturnType!, "result");
+        Assert.AreEqual(1, descriptor.Parameters.Count);
+        Assert.AreEqual(1, descriptor.Returns.Count);
+        Assert.AreEqual("true", descriptor.Options["memoize"]);
+        Assert.IsNull(descriptor.RawLocals, "Rule locals are not currently represented in the runtime model and must not be invented.");
+        Assert.AreEqual(0, descriptor.Locals.Count);
+        Assert.AreEqual(0, descriptor.Exceptions.Count, "Exception metadata is not currently represented in the runtime model and must not be invented.");
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleReturnsIgnored.Code));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code));
+    }
+
+    /// <summary>
+    /// Verifies that descriptor metadata does not bind parameters, allocate locals, or propagate returns.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_RuleDescriptors_RemainNonExecutable()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start[int value] returns [int result]
+              locals [int scratch]
+              : A ;
+            A : 'a' ;
+            """);
+        var manager = new RecordingRuleInvocationFrameManager();
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { RuleInvocationFrameManager = manager });
+        var tokens = new CompiledGrammar(definition).Tokenize("a");
+
+        var result = parser.Parse(tokens);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        var frame = manager.EnteredFrames.Single(frame => frame.RuleName == "start");
+        Assert.IsNotNull(frame.Descriptor);
+        Assert.AreEqual(0, frame.Parameters.Count, "Grammar parameters must not be bound as runtime values.");
+        Assert.AreEqual(0, frame.Locals.Count, "Grammar locals must not be allocated as runtime values.");
+        Assert.AreEqual(0, frame.Returns.Count, "Grammar returns must not be propagated as runtime values.");
+    }
+
+    /// <summary>
     /// Verifies that runtime feature policy configuration maps runtime strategies exactly as expected.
     /// </summary>
     [TestMethod]
@@ -446,17 +551,26 @@ public class ParserRuntimeFeaturePolicyTests
         /// <summary>Gets recorded enter and exit event descriptions.</summary>
         public List<string> Events { get; } = [];
 
+        /// <summary>Gets frames returned for rule entry.</summary>
+        public List<ParserRuleInvocationFrame> EnteredFrames { get; } = [];
+
+        /// <summary>Gets descriptors observed on rule entry.</summary>
+        public List<ParserRuleInvocationDescriptor?> EnteredDescriptors { get; } = [];
+
         /// <summary>Gets the current frame when one is active.</summary>
         public ParserRuleInvocationFrame? Current => _frames.Count == 0 ? null : _frames.Peek();
 
         /// <summary>Records parser rule entry and returns a passive invocation frame.</summary>
         /// <param name="ruleName">Name of the rule being entered.</param>
         /// <param name="inputPosition">Input position at rule entry.</param>
+        /// <param name="descriptor">Passive descriptor observed for the rule invocation.</param>
         /// <returns>The frame associated with the entered rule.</returns>
-        public ParserRuleInvocationFrame Enter(string ruleName, int inputPosition)
+        public ParserRuleInvocationFrame Enter(string ruleName, int inputPosition, ParserRuleInvocationDescriptor? descriptor = null)
         {
-            var frame = new ParserRuleInvocationFrame(ruleName, inputPosition);
+            var frame = new ParserRuleInvocationFrame(ruleName, inputPosition, new Dictionary<string, object?>(), descriptor);
             _frames.Push(frame);
+            EnteredFrames.Add(frame);
+            EnteredDescriptors.Add(descriptor);
             Events.Add($"enter:{ruleName}:{inputPosition}");
             return frame;
         }

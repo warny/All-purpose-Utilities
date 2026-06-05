@@ -23,12 +23,17 @@ public sealed class ParserRuleInvocationFrame
     private readonly Dictionary<string, object?> _returns = new(StringComparer.Ordinal);
 
     /// <summary>
+    /// Passive rule-level metadata descriptor associated with this invocation, when available.
+    /// </summary>
+    private readonly ParserRuleInvocationDescriptor? _descriptor;
+
+    /// <summary>
     /// Initializes an empty parser rule invocation frame.
     /// </summary>
     /// <param name="ruleName">Name of the parser rule being invoked.</param>
     /// <param name="inputPosition">Token-stream position at the time of rule entry.</param>
     public ParserRuleInvocationFrame(string ruleName, int inputPosition)
-        : this(ruleName, inputPosition, new Dictionary<string, object?>())
+        : this(ruleName, inputPosition, new Dictionary<string, object?>(), null)
     {
     }
 
@@ -39,12 +44,29 @@ public sealed class ParserRuleInvocationFrame
     /// <param name="inputPosition">Token-stream position at the time of rule entry.</param>
     /// <param name="parameters">Passive parameter values to expose through the frame.</param>
     public ParserRuleInvocationFrame(string ruleName, int inputPosition, IReadOnlyDictionary<string, object?> parameters)
+        : this(ruleName, inputPosition, parameters, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a parser rule invocation frame with passive parameter values and rule metadata.
+    /// </summary>
+    /// <param name="ruleName">Name of the parser rule being invoked.</param>
+    /// <param name="inputPosition">Token-stream position at the time of rule entry.</param>
+    /// <param name="parameters">Passive parameter values to expose through the frame.</param>
+    /// <param name="descriptor">Passive rule metadata descriptor to expose through the frame.</param>
+    public ParserRuleInvocationFrame(
+        string ruleName,
+        int inputPosition,
+        IReadOnlyDictionary<string, object?> parameters,
+        ParserRuleInvocationDescriptor? descriptor)
     {
         RuleName = ruleName ?? throw new ArgumentNullException(nameof(ruleName));
         InputPosition = inputPosition;
         _parameters = parameters is null
             ? throw new ArgumentNullException(nameof(parameters))
             : new Dictionary<string, object?>(parameters, StringComparer.Ordinal);
+        _descriptor = descriptor;
     }
 
     /// <summary>
@@ -71,6 +93,11 @@ public sealed class ParserRuleInvocationFrame
     /// Gets passive return values associated with this invocation frame.
     /// </summary>
     public IReadOnlyDictionary<string, object?> Returns => _returns;
+
+    /// <summary>
+    /// Gets passive rule-level metadata associated with this invocation frame, when supplied by the runtime.
+    /// </summary>
+    public ParserRuleInvocationDescriptor? Descriptor => _descriptor;
 
     /// <summary>
     /// Gets a parameter value by name.

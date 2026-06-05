@@ -11,8 +11,9 @@ public interface IParserRuleInvocationFrameManager
     /// </summary>
     /// <param name="ruleName">Name of the parser rule being entered.</param>
     /// <param name="inputPosition">Token-stream position at the time of rule entry.</param>
+    /// <param name="descriptor">Passive rule metadata descriptor for the invocation, when available.</param>
     /// <returns>The invocation frame associated with this parser rule attempt.</returns>
-    ParserRuleInvocationFrame Enter(string ruleName, int inputPosition);
+    ParserRuleInvocationFrame Enter(string ruleName, int inputPosition, ParserRuleInvocationDescriptor? descriptor = null);
 
     /// <summary>
     /// Leaves a parser rule invocation that was previously entered.
