@@ -167,6 +167,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         foreach (var action in grammar.Actions)
         {
             var constructKind = FormatGrammarActionKind(action);
+            if (EmbeddedMembersSupport.IsInjectableParserHeaderAction(grammar, action))
+            {
+                ReportEmbeddedHeaderInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
+                continue;
+            }
+
             if (EmbeddedMembersSupport.IsInjectableParserMembersAction(grammar, action))
             {
                 ReportEmbeddedMembersInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
@@ -191,6 +197,28 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 ReportLexerEmbeddedCodeDiagnostics(context, file, text, rule);
             }
         }
+    }
+
+    /// <summary>
+    /// Reports the compatibility warning used when parser headers are injected into generated C# source.
+    /// </summary>
+    /// <param name="context">Source production context receiving Roslyn diagnostics.</param>
+    /// <param name="file">Grammar additional file.</param>
+    /// <param name="text">Grammar source text used to create line-based locations.</param>
+    /// <param name="line">One-based line number associated with the construct.</param>
+    /// <param name="constructKind">Human-readable construct kind.</param>
+    /// <param name="ownerName">Grammar name associated with the construct.</param>
+    private static void ReportEmbeddedHeaderInjectedDiagnostic(
+        SourceProductionContext context,
+        AdditionalText file,
+        SourceText text,
+        int line,
+        string constructKind,
+        string ownerName)
+    {
+        var descriptor = ToRoslynDescriptor(ParserDiagnostics.EmbeddedHeaderInjectedByGenerator);
+        var location = CreateGrammarLocation(file, text, line);
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, location, constructKind, ownerName));
     }
 
     /// <summary>
@@ -362,6 +390,11 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <returns>Construct-specific diagnostic reason.</returns>
     private static string FormatGrammarActionReason(G4GrammarAction action)
     {
+        if (string.Equals(action.Name, "header", StringComparison.Ordinal))
+        {
+            return "This header action is not a parser @header block supported by generated C# source-file injection and remains metadata-only.";
+        }
+
         if (string.Equals(action.Name, "members", StringComparison.Ordinal))
         {
             return "This members action is not a parser @members block supported by the generated execution context and remains metadata-only.";

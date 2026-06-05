@@ -179,7 +179,7 @@ public static class ParserDiagnostics
         new(
             "UP1029",
             "Embedded code construct not executed by generator",
-            "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Only parser semantic predicates and inline parser actions can be emitted as generated C# hooks.",
+            "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Supported generated C# embedded constructs are limited to parser semantic predicates, inline parser actions, rule lifecycle actions, parser headers, and parser members.",
             DefaultCategory);
 
     /// <summary>Semantic predicate options block (<c>&lt;fail=...&gt;</c>) recognized but not applied by the current runtime model.</summary>
@@ -192,6 +192,14 @@ public static class ParserDiagnostics
             "UP1031",
             "Embedded members injected by generator",
             "{0} code in '{1}' was injected into the generated per-parse execution context as C# source. This is a source-generator C# compatibility bridge for imported grammars. Prefer a separate partial execution-context class for new code. Invalid C# or member-name collisions are reported by Roslyn.",
+            DefaultCategory);
+
+    /// <summary>Parser header code is injected near the top of generated C# source by the source generator.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedHeaderInjectedByGenerator =
+        new(
+            "UP1035",
+            "Embedded header injected by generator",
+            "{0} code in '{1}' was injected as generated C# source near the top of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
             DefaultCategory);
 
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
@@ -313,6 +321,7 @@ public static class ParserDiagnostics
             [EmbeddedCodeExecutionDisabled.Code] = EmbeddedCodeExecutionDisabled,
             [EmbeddedCodeConstructNotExecutedByGenerator.Code] = EmbeddedCodeConstructNotExecutedByGenerator,
             [EmbeddedMembersInjectedByGenerator.Code] = EmbeddedMembersInjectedByGenerator,
+            [EmbeddedHeaderInjectedByGenerator.Code] = EmbeddedHeaderInjectedByGenerator,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,
