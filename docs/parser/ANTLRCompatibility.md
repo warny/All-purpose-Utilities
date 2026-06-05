@@ -99,7 +99,7 @@ Current high-level state:
 
 ### Runtime policy API compatibility note
 
-`ParserRuntimeFeaturePolicy.ExecutionStateManager` is a required policy property. Existing code that derives a policy from `ParserRuntimeFeaturePolicy.Default` remains compatible because the default policy already supplies `NullParserExecutionStateManager.Instance`:
+`ParserRuntimeFeaturePolicy.ExecutionStateManager` and `ParserRuntimeFeaturePolicy.RuleInvocationFrameManager` are required policy properties. Existing code that derives a policy from `ParserRuntimeFeaturePolicy.Default` remains compatible because the default policy already supplies `NullParserExecutionStateManager.Instance` and `NullParserRuleInvocationFrameManager.Instance`:
 
 ```csharp
 var policy = ParserRuntimeFeaturePolicy.Default with
@@ -108,18 +108,19 @@ var policy = ParserRuntimeFeaturePolicy.Default with
 };
 ```
 
-External callers that construct a policy directly must now provide an execution-state manager explicitly. To preserve the current conservative/no-op behavior, use `NullParserExecutionStateManager.Instance`:
+External callers that construct a policy directly must now provide an execution-state manager and rule invocation-frame manager explicitly. To preserve the current conservative/no-op behavior, use `NullParserExecutionStateManager.Instance` and `NullParserRuleInvocationFrameManager.Instance`:
 
 ```csharp
 var policy = new ParserRuntimeFeaturePolicy
 {
     SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
     ParserActionExecutor = new DefaultParserActionExecutor(),
-    ExecutionStateManager = NullParserExecutionStateManager.Instance
+    ExecutionStateManager = NullParserExecutionStateManager.Instance,
+    RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance
 };
 ```
 
-`ParserEngine` validates that the manager is non-null, uses `GetCurrentStateKey()` to isolate completed-rule memoization entries, stores post-rule execution-state snapshots in reusable completed results, restores those snapshots on memoization hits without replaying actions, and captures/restores the manager around parser backtracking attempt boundaries. Parser lifecycle hooks participate in that managed rollback through generated C# opt-in policies, while action buffering remains unsupported.
+`ParserEngine` validates that both managers are non-null, uses `GetCurrentStateKey()` to isolate completed-rule memoization entries, stores post-rule execution-state snapshots in reusable completed results, restores those snapshots on memoization hits without replaying actions, and captures/restores the manager around parser backtracking attempt boundaries. Parser lifecycle hooks participate in that managed rollback through generated C# opt-in policies. Lifecycle contexts now also expose an optional passive `ParserRuleInvocationFrame`, but rule parameters, locals, returns, throws/catch/finally metadata, and rule options remain metadata-only and are not executed or typed. Action buffering remains unsupported.
 
 ### Execution paths
 
@@ -407,7 +408,7 @@ var policy = ParserRuntimeFeaturePolicy.Default with
 var parser = new ParserEngine(definition, policy);
 ```
 
-> **Important**: ParserEngine now captures and restores managed parser execution state around parser backtracking attempt boundaries when a stateful `IParserExecutionStateManager` is configured. This does not provide complete ANTLR transactional semantics. Parser lifecycle hooks participate in that managed rollback through generated C# opt-in policies, while action buffering remains unsupported. External side effects outside the managed execution state are not rolled back; keep executors side-effect-free or idempotent where possible.
+> **Important**: ParserEngine now captures and restores managed parser execution state around parser backtracking attempt boundaries when a stateful `IParserExecutionStateManager` is configured. This does not provide complete ANTLR transactional semantics. Parser lifecycle hooks participate in that managed rollback through generated C# opt-in policies. Lifecycle contexts now also expose an optional passive `ParserRuleInvocationFrame`, but rule parameters, locals, returns, throws/catch/finally metadata, and rule options remain metadata-only and are not executed or typed. Action buffering remains unsupported. External side effects outside the managed execution state are not rolled back; keep executors side-effect-free or idempotent where possible.
 
 ---
 
@@ -469,11 +470,11 @@ These constructs are recognised without error but produce no runtime effect.
 
 | Construct | Stored where | Runtime behaviour |
 |---|---|---|
-| Rule parameters `rule[int x]` | `Rule.Parameters` as raw text | No argument passing, no typed binding, no invocation frame. |
-| Rule returns `returns [int x]` | `Rule.ReturnType` as raw text | Recognized, ignored by runtime semantics, and reported with `UP1007 RuleReturnsIgnored`. |
-| `locals [...]` | Parsed at rule level and surfaced with `UP1008 RuleLocalsIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
-| `throws ExceptionType` | Parsed at rule level and surfaced with `UP1023 RuleExceptionMetadataIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
-| `catch [...] {...}` / `finally {...}` | Parsed at rule level and surfaced with `UP1023 RuleExceptionMetadataIgnored` | Recognized, ignored, not executed, and no runtime invocation frame is created. |
+| Rule parameters `rule[int x]` | `Rule.Parameters` as raw text | No argument passing or typed binding; passive invocation frames exist but are not populated from parameter metadata. |
+| Rule returns `returns [int x]` | `Rule.ReturnType` as raw text | Recognized, ignored by runtime semantics, and reported with `UP1007 RuleReturnsIgnored`; passive invocation frames do not propagate return values. |
+| `locals [...]` | Parsed at rule level and surfaced with `UP1008 RuleLocalsIgnored` | Recognized, ignored, and not executed; passive invocation frames are not populated from this metadata. |
+| `throws ExceptionType` | Parsed at rule level and surfaced with `UP1023 RuleExceptionMetadataIgnored` | Recognized, ignored, and not executed; passive invocation frames are not populated from this metadata. |
+| `catch [...] {...}` / `finally {...}` | Parsed at rule level and surfaced with `UP1023 RuleExceptionMetadataIgnored` | Recognized, ignored, and not executed; passive invocation frames are not populated from this metadata. |
 | Grammar-level actions `@header`, `@members`, etc. | `ParserDefinition.Actions` | Metadata only in the default runtime and runtime-inline path. In the source-generator C# path only, parser `@header` / `@parser::header` are injected near the top of the generated file, and parser `@members` / `@parser::members` are injected into `{ClassName}ExecutionContext`. Lexer-scoped variants remain unsupported. See [`EmbeddedCodeExecutionModel.md`](./EmbeddedCodeExecutionModel.md). |
 | Lexer rule options block `TOKEN options { ... }` | `Rule.Options` as `RuleOptions` key/value map | Recognized and reported with `UP1033 LexerRuleOptionsIgnored`; not applied to runtime lexer behavior. |
 | Parser rule options block `rule options { ... }` | `Rule.Options` as `RuleOptions` key/value map | Recognized and reported with `UP1034 ParserRuleOptionsIgnored`; not applied to runtime parser behavior. |

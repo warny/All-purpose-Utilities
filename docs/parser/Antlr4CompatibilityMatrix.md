@@ -64,9 +64,9 @@ The following constructs are recognized but not fully resolved into executable r
 
 | Construct | Current behavior | Limitations |
 |---|---|---|
-| Rule parameters (`rule[int x]`) | Parsed with balanced-text preservation and stored as raw metadata text (including multiline and nested generic-like syntax). | No runtime invocation semantics exist (no argument passing, no typed binding, no invocation-frame model). |
-| Rule locals (`locals [int x]`) | Recognized at rule prequel parsing stage and emitted as explicit compatibility diagnostic `RuleLocalsIgnored` (`UP1008`). | Not executed, not preserved as runtime state, and no invocation frame is created. |
-| Rule returns (`returns [int value]`) | Recognized with balanced-text preservation and stored as raw metadata text. | Ignored by runtime return propagation semantics (no value extraction or runtime binding) and emits `RuleReturnsIgnored` (`UP1007`). |
+| Rule parameters (`rule[int x]`) | Parsed with balanced-text preservation and stored as raw metadata text (including multiline and nested generic-like syntax). | A passive runtime invocation-frame infrastructure exists, but no ANTLR-compatible invocation semantics exist (no argument passing or typed binding). |
+| Rule locals (`locals [int x]`) | Recognized at rule prequel parsing stage and emitted as explicit compatibility diagnostic `RuleLocalsIgnored` (`UP1008`). | Not executed and not allocated from grammar metadata; passive invocation frames do not populate locals automatically. |
+| Rule returns (`returns [int value]`) | Recognized with balanced-text preservation and stored as raw metadata text. | Ignored by runtime return propagation semantics (no value extraction, propagation, or runtime binding) and emits `RuleReturnsIgnored` (`UP1007`); passive invocation frames do not populate returns automatically. |
 
 These constructs are treated as syntax/metadata compatibility points, not as fully executable semantics.
 

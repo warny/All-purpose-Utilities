@@ -102,6 +102,11 @@ public sealed class ParserEngine
     private readonly IParserRuleLifecycleExecutor _ruleLifecycleExecutor;
 
     /// <summary>
+    /// Policy component that creates passive parser rule invocation frames for future metadata execution support.
+    /// </summary>
+    private readonly IParserRuleInvocationFrameManager _ruleInvocationFrameManager;
+
+    /// <summary>
     /// Initializes a parser engine with the conservative default runtime feature policy.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>
@@ -123,6 +128,7 @@ public sealed class ParserEngine
         _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _executionStateManager = effectivePolicy.ExecutionStateManager ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _ruleLifecycleExecutor = effectivePolicy.RuleLifecycleExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
+        _ruleInvocationFrameManager = effectivePolicy.RuleInvocationFrameManager ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
@@ -228,35 +234,46 @@ public sealed class ParserEngine
 
         try
         {
-            var lifecycleContext = new ParserRuleLifecycleContext(rule.Name, initialPosition);
-            _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, rule.Name, lifecycleContext);
+            var invocationFrame = _ruleInvocationFrameManager.Enter(rule.Name, initialPosition);
+            var lifecycleContext = new ParserRuleLifecycleContext(rule.Name, initialPosition, invocationFrame);
+            var succeeded = false;
 
-            ParseNode? parsed;
-            if (_definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+            try
             {
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.LeftRecursivePrecedencePartiallySupported,
-                    null,
-                    null,
-                    rule.Name,
-                    null,
-                    rule.Name);
-                parsed = ParseLeftRecursiveRule(context, leftRecursiveInfo, precedence, diagnostics);
+                _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, rule.Name, lifecycleContext);
+
+                ParseNode? parsed;
+                if (_definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+                {
+                    diagnostics?.AddWithContext(
+                        ParserDiagnostics.LeftRecursivePrecedencePartiallySupported,
+                        null,
+                        null,
+                        rule.Name,
+                        null,
+                        rule.Name);
+                    parsed = ParseLeftRecursiveRule(context, leftRecursiveInfo, precedence, diagnostics);
+                }
+                else
+                {
+                    parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+                }
+
+                if (parsed is not null)
+                {
+                    _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.After, rule.Name, lifecycleContext);
+                    succeeded = true;
+                }
+
+                var resultExecutionStateSnapshot = _executionStateManager.Capture();
+                _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null, resultExecutionStateSnapshot));
+
+                return parsed;
             }
-            else
+            finally
             {
-                parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+                _ruleInvocationFrameManager.Exit(invocationFrame, succeeded);
             }
-
-            if (parsed is not null)
-            {
-                _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.After, rule.Name, lifecycleContext);
-            }
-
-            var resultExecutionStateSnapshot = _executionStateManager.Capture();
-            _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null, resultExecutionStateSnapshot));
-
-            return parsed;
         }
         finally
         {
