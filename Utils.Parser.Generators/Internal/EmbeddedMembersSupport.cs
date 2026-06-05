@@ -46,7 +46,7 @@ internal static class EmbeddedMembersSupport
     /// <param name="action">Grammar-level action metadata to classify.</param>
     /// <returns>
     /// <c>true</c> for unscoped <c>@footer</c> in parser or combined grammars, and
-    /// for <c>@parser::footer</c> outside lexer grammars; otherwise <c>false</c>.
+    /// for <c>@parser::footer</c> in parser or combined grammars; otherwise <c>false</c>.
     /// </returns>
     public static bool IsInjectableParserFooterAction(G4Grammar grammar, G4GrammarAction action)
     {
