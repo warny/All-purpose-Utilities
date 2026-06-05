@@ -133,19 +133,62 @@ public sealed class ParserRuleInvocationDescriptor
                 RawDeclaration = GetRawDeclaration(ruleReturn.Type, ruleReturn.Name)
             })
             .ToArray() ?? [];
+        var localDescriptors = rule.Locals?
+            .Select(static local => new ParserRuleLocalDescriptor
+            {
+                RawDeclaration = local.RawDeclaration
+            })
+            .ToArray() ?? [];
+        var exceptionDescriptors = BuildExceptionDescriptors(rule.ExceptionMetadata);
 
         return new ParserRuleInvocationDescriptor
         {
             RuleName = rule.Name,
             RawParameters = JoinRawDeclarations(parameterDescriptors.Select(static descriptor => descriptor.RawDeclaration)),
             RawReturnType = JoinRawDeclarations(returnDescriptors.Select(static descriptor => descriptor.RawDeclaration)),
-            RawLocals = null,
+            RawLocals = JoinRawDeclarations(localDescriptors.Select(static descriptor => descriptor.RawDeclaration)),
             Parameters = parameterDescriptors,
             Returns = returnDescriptors,
-            Locals = [],
+            Locals = localDescriptors,
             Options = rule.Options?.Values ?? new Dictionary<string, string>(StringComparer.Ordinal),
-            Exceptions = []
+            Exceptions = exceptionDescriptors
         };
+    }
+
+    /// <summary>
+    /// Builds passive exception descriptors from metadata preserved by the parser rule model.
+    /// </summary>
+    /// <param name="metadata">Rule exception metadata, or <c>null</c> when none is represented.</param>
+    /// <returns>Passive exception descriptors preserving only available raw text.</returns>
+    private static ParserRuleExceptionDescriptor[] BuildExceptionDescriptors(RuleExceptionMetadata? metadata)
+    {
+        if (metadata is null)
+        {
+            return [];
+        }
+
+        var descriptors = new List<ParserRuleExceptionDescriptor>();
+        descriptors.AddRange(metadata.Throws.Select(static declaration => new ParserRuleExceptionDescriptor
+        {
+            Kind = "throws",
+            RawDeclaration = declaration
+        }));
+        descriptors.AddRange(metadata.CatchClauses.Select(static clause => new ParserRuleExceptionDescriptor
+        {
+            Kind = "catch",
+            RawDeclaration = $"[{clause.RawArgument}] {{ {clause.RawAction} }}"
+        }));
+
+        if (metadata.FinallyAction is not null)
+        {
+            descriptors.Add(new ParserRuleExceptionDescriptor
+            {
+                Kind = "finally",
+                RawDeclaration = $"{{ {metadata.FinallyAction} }}"
+            });
+        }
+
+        return descriptors.ToArray();
     }
 
     /// <summary>
