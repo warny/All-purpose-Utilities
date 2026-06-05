@@ -143,18 +143,19 @@ var policy = ParserRuntimeFeaturePolicy.Default with
 };
 ```
 
-Direct policy construction must now provide the required manager. Use `NullParserExecutionStateManager.Instance` to keep the same conservative/no-op behavior:
+Direct policy construction must now provide the required execution-state manager and invocation-frame manager. Use `NullParserExecutionStateManager.Instance` and `NullParserRuleInvocationFrameManager.Instance` to keep the same conservative/no-op behavior:
 
 ```csharp
 var policy = new ParserRuntimeFeaturePolicy
 {
     SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
     ParserActionExecutor = new DefaultParserActionExecutor(),
-    ExecutionStateManager = NullParserExecutionStateManager.Instance
+    ExecutionStateManager = NullParserExecutionStateManager.Instance,
+    RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance
 };
 ```
 
-This is now active for parser backtracking attempt boundaries: ordinary parser alternatives, left-recursive extensions, quantifier attempts, and negation probes. `ParserEngine` validates that the property is non-null and uses it to capture/restore managed parser execution state at those boundaries. Parser lifecycle hooks can participate in that managed rollback through generated C# opt-in policies, but automatic action buffering, replay, lexer embedded-code state, and external side-effect rollback are not active.
+This is now active for parser backtracking attempt boundaries: ordinary parser alternatives, left-recursive extensions, quantifier attempts, and negation probes. `ParserEngine` validates that the property is non-null and uses it to capture/restore managed parser execution state at those boundaries. Parser lifecycle hooks can participate in that managed rollback through generated C# opt-in policies, and lifecycle contexts can carry passive parser rule invocation frames. Those frames do not execute or bind rule parameters, returns, locals, throws/catch/finally metadata, or rule options. Automatic action buffering, replay, lexer embedded-code state, and external side-effect rollback are not active.
 
 The exact type names may differ, but the ownership must remain the same:
 

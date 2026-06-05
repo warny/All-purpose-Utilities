@@ -298,11 +298,12 @@ Not responsible for:
 - direct target-language compilation/execution;
 - hidden semantic state ownership.
 
-Current preparatory helper:
+Current preparatory helpers:
 
+- `ParserRuleInvocationFrame`, `IParserRuleInvocationFrameManager`, and `NullParserRuleInvocationFrameManager` provide passive per-rule invocation-frame infrastructure. `ParserEngine` enters a frame for actual rule execution and exits it with a success flag, and `ParserRuleLifecycleContext` can expose that frame to lifecycle hooks. This is preparatory only: rule parameters, returns, locals, throws/catch/finally metadata, and rule options remain metadata-only and are not bound, typed, allocated from grammar metadata, propagated, or executed.
 - `ParserExecutionContextCopier<TContext>` provides a reusable runtime copy primitive for parser execution contexts. Generated execution contexts expose this primitive through `Fork()` and `CopyFrom(...)`. Generated runtime policies also expose an `IParserExecutionStateManager` through `ParserRuntimeFeaturePolicy.ExecutionStateManager`; the generated manager captures with `Fork()` and restores with `CopyFrom(...)`. The default runtime policy uses `NullParserExecutionStateManager.Instance`. ParserEngine now captures and restores managed parser execution state around parser backtracking attempt boundaries, and memoized rule results carry post-rule execution-state snapshots that are restored on memoization hits without replaying actions. This does not provide complete ANTLR transactional semantics.
 
-API compatibility note: `ParserRuntimeFeaturePolicy.ExecutionStateManager` is required. Prefer `ParserRuntimeFeaturePolicy.Default with { ... }` when customizing a policy so the no-op default manager is preserved automatically. Direct `new ParserRuntimeFeaturePolicy { ... }` initializers must now set `ExecutionStateManager = NullParserExecutionStateManager.Instance` to keep conservative no-op behavior. This requirement enables managed parser execution-state rollback for parser backtracking attempt boundaries when a stateful manager is supplied, but it does not enable action buffering, replay, lifecycle hooks, external side-effect rollback, or lexer embedded-code execution.
+API compatibility note: `ParserRuntimeFeaturePolicy.ExecutionStateManager` and `ParserRuntimeFeaturePolicy.RuleInvocationFrameManager` are required. Prefer `ParserRuntimeFeaturePolicy.Default with { ... }` when customizing a policy so the no-op default manager is preserved automatically. Direct `new ParserRuntimeFeaturePolicy { ... }` initializers must now set `ExecutionStateManager = NullParserExecutionStateManager.Instance` and `RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance` to keep conservative no-op behavior. This requirement enables managed parser execution-state rollback for parser backtracking attempt boundaries when a stateful manager is supplied, but it does not enable action buffering, replay, lifecycle hooks, external side-effect rollback, lexer embedded-code execution, typed rule invocation semantics, return propagation, local allocation, or exception metadata execution.
 
 ```csharp
 var policy = ParserRuntimeFeaturePolicy.Default with
@@ -314,7 +315,8 @@ var directPolicy = new ParserRuntimeFeaturePolicy
 {
     SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
     ParserActionExecutor = new DefaultParserActionExecutor(),
-    ExecutionStateManager = NullParserExecutionStateManager.Instance
+    ExecutionStateManager = NullParserExecutionStateManager.Instance,
+    RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance
 };
 ```
 

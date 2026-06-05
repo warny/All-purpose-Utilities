@@ -23,6 +23,7 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(ParserRuntimeFeaturePolicy.Default.ParserActionExecutor);
         Assert.AreSame(NullParserExecutionStateManager.Instance, ParserRuntimeFeaturePolicy.Default.ExecutionStateManager);
         Assert.AreSame(NullParserRuleLifecycleExecutor.Instance, ParserRuntimeFeaturePolicy.Default.RuleLifecycleExecutor);
+        Assert.AreSame(NullParserRuleInvocationFrameManager.Instance, ParserRuntimeFeaturePolicy.Default.RuleInvocationFrameManager);
     }
 
     /// <summary>
@@ -73,6 +74,96 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
     }
 
+
+    /// <summary>
+    /// Verifies that the default rule invocation-frame manager creates inert frames and retains no current state.
+    /// </summary>
+    [TestMethod]
+    public void NullParserRuleInvocationFrameManager_EnterExit_DoesNotRetainCurrentFrame()
+    {
+        var manager = NullParserRuleInvocationFrameManager.Instance;
+
+        var frame = manager.Enter("start", 0);
+        manager.Exit(frame, succeeded: true);
+
+        Assert.AreEqual("start", frame.RuleName);
+        Assert.AreEqual(0, frame.InputPosition);
+        Assert.AreEqual(0, frame.Parameters.Count);
+        Assert.AreEqual(0, frame.Locals.Count);
+        Assert.AreEqual(0, frame.Returns.Count);
+        Assert.IsNull(manager.Current);
+    }
+
+    /// <summary>
+    /// Verifies that parser construction rejects a policy whose invocation-frame manager was explicitly nulled.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_RejectsNullRuleInvocationFrameManager()
+    {
+        var definition = CreateMinimalDefinition();
+        var invalidPolicy = ParserRuntimeFeaturePolicy.Default with { RuleInvocationFrameManager = null! };
+
+        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
+    }
+
+    /// <summary>
+    /// Verifies that parser rule invocation frames provide deterministic passive value accessors.
+    /// </summary>
+    [TestMethod]
+    public void ParserRuleInvocationFrame_StoresPassiveMetadataValues()
+    {
+        var frame = new ParserRuleInvocationFrame("start", 2, new Dictionary<string, object?> { ["value"] = 42 });
+
+        frame.SetLocal("counter", 3);
+        frame.SetReturnValue("result", "ok");
+
+        Assert.AreEqual(42, frame.GetParameter("value"));
+        Assert.IsTrue(frame.TryGetParameter("value", out var parameter));
+        Assert.AreEqual(42, parameter);
+        Assert.IsTrue(frame.TryGetLocal("counter", out var local));
+        Assert.AreEqual(3, local);
+        Assert.IsTrue(frame.TryGetReturnValue("result", out var returnValue));
+        Assert.AreEqual("ok", returnValue);
+        Assert.IsFalse(frame.TryGetParameter("missing", out _));
+    }
+
+    /// <summary>
+    /// Verifies that a custom invocation-frame manager can passively observe rule entry and exit.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_CustomRuleInvocationFrameManager_ObservesRuleEnterAndExit()
+    {
+        var definition = CreateMinimalDefinition();
+        var manager = new RecordingRuleInvocationFrameManager();
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { RuleInvocationFrameManager = manager });
+
+        var result = parser.Parse([]);
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.IsNull(manager.Current);
+        CollectionAssert.AreEqual(
+            new[] { "enter:start:0", "exit:start:0:True" },
+            manager.Events.ToArray());
+    }
+
+    /// <summary>
+    /// Verifies that lifecycle contexts receive the passive invocation frame for the active rule.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_LifecycleContext_ExposesInvocationFrame()
+    {
+        var definition = CreateMinimalDefinition();
+        var lifecycleExecutor = new RecordingRuleLifecycleExecutor();
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { RuleLifecycleExecutor = lifecycleExecutor });
+
+        parser.Parse([]);
+
+        Assert.AreEqual(2, lifecycleExecutor.Contexts.Count);
+        Assert.IsNotNull(lifecycleExecutor.Contexts[0].InvocationFrame);
+        Assert.AreSame(lifecycleExecutor.Contexts[0].InvocationFrame, lifecycleExecutor.Contexts[1].InvocationFrame);
+        Assert.AreEqual("start", lifecycleExecutor.Contexts[0].InvocationFrame!.RuleName);
+    }
+
     /// <summary>
     /// Verifies that runtime feature policy configuration maps runtime strategies exactly as expected.
     /// </summary>
@@ -90,6 +181,7 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreSame(evaluator, GetSemanticPredicateEvaluator(evaluatorOnly));
         Assert.IsInstanceOfType<DefaultParserActionExecutor>(GetParserActionExecutor(evaluatorOnly));
         Assert.AreSame(NullParserExecutionStateManager.Instance, GetExecutionStateManager(evaluatorOnly));
+        Assert.AreSame(NullParserRuleInvocationFrameManager.Instance, GetRuleInvocationFrameManager(evaluatorOnly));
 
         Assert.IsInstanceOfType<DefaultSemanticPredicateEvaluator>(GetSemanticPredicateEvaluator(executorOnly));
         Assert.AreSame(executor, GetParserActionExecutor(executorOnly));
@@ -118,6 +210,7 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreSame(evaluator, GetSemanticPredicateEvaluator(parser));
         Assert.AreSame(executor, GetParserActionExecutor(parser));
         Assert.AreSame(NullParserExecutionStateManager.Instance, GetExecutionStateManager(parser));
+        Assert.AreSame(NullParserRuleInvocationFrameManager.Instance, GetRuleInvocationFrameManager(parser));
     }
 
     /// <summary>
@@ -262,6 +355,17 @@ public class ParserRuntimeFeaturePolicyTests
     }
 
     /// <summary>
+    /// Gets the parser rule invocation-frame manager instance currently held by the parser engine.
+    /// </summary>
+    /// <param name="parser">Parser engine to inspect.</param>
+    /// <returns>Configured parser rule invocation-frame manager.</returns>
+    private static IParserRuleInvocationFrameManager GetRuleInvocationFrameManager(ParserEngine parser)
+    {
+        var field = typeof(ParserEngine).GetField("_ruleInvocationFrameManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (IParserRuleInvocationFrameManager)field.GetValue(parser)!;
+    }
+
+    /// <summary>
     /// Mutable test execution-state manager exposing a manually controlled state key.
     /// </summary>
     private sealed class MutableParserExecutionStateManager : IParserExecutionStateManager
@@ -329,6 +433,62 @@ public class ParserRuntimeFeaturePolicyTests
             return ParserActionExecutionOutcome.Executed;
         }
     }
+
+
+    /// <summary>
+    /// Test invocation-frame manager that records enter and exit calls while maintaining a current-frame stack.
+    /// </summary>
+    private sealed class RecordingRuleInvocationFrameManager : IParserRuleInvocationFrameManager
+    {
+        /// <summary>Current invocation-frame stack.</summary>
+        private readonly Stack<ParserRuleInvocationFrame> _frames = new();
+
+        /// <summary>Gets recorded enter and exit event descriptions.</summary>
+        public List<string> Events { get; } = [];
+
+        /// <summary>Gets the current frame when one is active.</summary>
+        public ParserRuleInvocationFrame? Current => _frames.Count == 0 ? null : _frames.Peek();
+
+        /// <summary>Records parser rule entry and returns a passive invocation frame.</summary>
+        /// <param name="ruleName">Name of the rule being entered.</param>
+        /// <param name="inputPosition">Input position at rule entry.</param>
+        /// <returns>The frame associated with the entered rule.</returns>
+        public ParserRuleInvocationFrame Enter(string ruleName, int inputPosition)
+        {
+            var frame = new ParserRuleInvocationFrame(ruleName, inputPosition);
+            _frames.Push(frame);
+            Events.Add($"enter:{ruleName}:{inputPosition}");
+            return frame;
+        }
+
+        /// <summary>Records parser rule exit and removes the matching active frame.</summary>
+        /// <param name="frame">Frame leaving the rule invocation.</param>
+        /// <param name="succeeded">Whether the rule invocation succeeded.</param>
+        public void Exit(ParserRuleInvocationFrame frame, bool succeeded)
+        {
+            Assert.AreSame(frame, _frames.Pop());
+            Events.Add($"exit:{frame.RuleName}:{frame.InputPosition}:{succeeded}");
+        }
+    }
+
+    /// <summary>
+    /// Test lifecycle executor that records contexts passed by the parser engine.
+    /// </summary>
+    private sealed class RecordingRuleLifecycleExecutor : IParserRuleLifecycleExecutor
+    {
+        /// <summary>Gets lifecycle contexts observed by the executor.</summary>
+        public List<ParserRuleLifecycleContext> Contexts { get; } = [];
+
+        /// <summary>Records a lifecycle context without executing embedded code.</summary>
+        /// <param name="phase">Lifecycle phase being executed.</param>
+        /// <param name="ruleName">Rule name being executed.</param>
+        /// <param name="context">Lifecycle context to record.</param>
+        public void Execute(ParserRuleLifecyclePhase phase, string ruleName, ParserRuleLifecycleContext context)
+        {
+            Contexts.Add(context);
+        }
+    }
+
 
     /// <summary>
     /// Creates a minimal resolved parser definition suitable for constructor wiring tests.
