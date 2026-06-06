@@ -50,7 +50,7 @@ All named descriptors are defined in the `ParserDiagnostics` static class and ac
 | UP1005 | `InlineActionStoredNotExecuted` | An inline parser action is stored but not executed at runtime |
 | UP1006 | `SemanticPredicateNotEnforced` | A `{...}?` predicate is recognized but not evaluated; it always succeeds |
 | UP1007 | `RuleReturnsIgnored` | A `returns [...]` clause is parsed but stored only as raw text (`ReturnsPartiallyApplied` is a compatibility alias) |
-| UP1008 | `RuleLocalsIgnored` | A rule `locals [...]` clause is recognized but ignored by the current runtime model |
+| UP1008 | `RuleLocalsIgnored` | A rule `locals [...]` clause is not given typed or implicit runtime semantics; generated C# opt-in lifecycle execution only allocates untyped `null` frame entries |
 | UP1023 | `RuleExceptionMetadataIgnored` | Rule `throws` / `catch` / `finally` metadata is recognized but ignored by the current runtime model |
 | UP1009 | `RuntimeGeneratorMismatch` | A feature behaves differently between the runtime and the source generator |
 | UP1010 | `DirectLeftRecursionDetected` | Direct left recursion was detected and restructured during rule resolution |

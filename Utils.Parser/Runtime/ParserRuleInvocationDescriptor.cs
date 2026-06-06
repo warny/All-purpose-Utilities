@@ -134,10 +134,7 @@ public sealed class ParserRuleInvocationDescriptor
             })
             .ToArray() ?? [];
         var localDescriptors = rule.Locals?
-            .Select(static local => new ParserRuleLocalDescriptor
-            {
-                RawDeclaration = local.RawDeclaration
-            })
+            .SelectMany(static local => BuildLocalDescriptors(local.RawDeclaration))
             .ToArray() ?? [];
         var exceptionDescriptors = BuildExceptionDescriptors(rule.ExceptionMetadata);
 
@@ -153,6 +150,95 @@ public sealed class ParserRuleInvocationDescriptor
             Options = rule.Options?.Values ?? new Dictionary<string, string>(StringComparer.Ordinal),
             Exceptions = exceptionDescriptors
         };
+    }
+
+    /// <summary>
+    /// Builds passive local descriptors by separating top-level declarations and capturing only their names.
+    /// </summary>
+    /// <param name="rawLocals">Raw contents of a rule <c>locals [...]</c> clause.</param>
+    /// <returns>Untyped local descriptors preserving each raw declaration and its lexical name.</returns>
+    private static IEnumerable<ParserRuleLocalDescriptor> BuildLocalDescriptors(string rawLocals)
+    {
+        foreach (string declaration in SplitTopLevelLocalDeclarations(rawLocals))
+        {
+            yield return new ParserRuleLocalDescriptor
+            {
+                Name = GetLocalDeclarationName(declaration),
+                RawDeclaration = declaration
+            };
+        }
+    }
+
+    /// <summary>
+    /// Splits raw local metadata at top-level commas without interpreting target-language types.
+    /// </summary>
+    /// <param name="rawLocals">Raw local declaration list to split.</param>
+    /// <returns>Trimmed declarations in source order.</returns>
+    private static IEnumerable<string> SplitTopLevelLocalDeclarations(string rawLocals)
+    {
+        int start = 0;
+        int squareDepth = 0;
+        int roundDepth = 0;
+        int braceDepth = 0;
+        int angleDepth = 0;
+
+        for (int index = 0; index < rawLocals.Length; index++)
+        {
+            switch (rawLocals[index])
+            {
+                case '[': squareDepth++; break;
+                case ']': squareDepth = int.Max(0, squareDepth - 1); break;
+                case '(': roundDepth++; break;
+                case ')': roundDepth = int.Max(0, roundDepth - 1); break;
+                case '{': braceDepth++; break;
+                case '}': braceDepth = int.Max(0, braceDepth - 1); break;
+                case '<': angleDepth++; break;
+                case '>': angleDepth = int.Max(0, angleDepth - 1); break;
+                case ',' when squareDepth == 0 && roundDepth == 0 && braceDepth == 0 && angleDepth == 0:
+                    string declaration = rawLocals[start..index].Trim();
+                    if (declaration.Length > 0)
+                    {
+                        yield return declaration;
+                    }
+
+                    start = index + 1;
+                    break;
+            }
+        }
+
+        string finalDeclaration = rawLocals[start..].Trim();
+        if (finalDeclaration.Length > 0)
+        {
+            yield return finalDeclaration;
+        }
+    }
+
+    /// <summary>
+    /// Gets the final identifier from a raw local declaration without binding or validating its type.
+    /// </summary>
+    /// <param name="declaration">One raw local declaration.</param>
+    /// <returns>The lexical local name, or <c>null</c> when no identifier is available.</returns>
+    private static string? GetLocalDeclarationName(string declaration)
+    {
+        int assignmentIndex = declaration.IndexOf('=');
+        int index = (assignmentIndex >= 0 ? assignmentIndex : declaration.Length) - 1;
+        while (index >= 0 && char.IsWhiteSpace(declaration[index]))
+        {
+            index--;
+        }
+
+        int end = index + 1;
+        while (index >= 0 && (char.IsLetterOrDigit(declaration[index]) || declaration[index] == '_'))
+        {
+            index--;
+        }
+
+        if (end == index + 1 || (!char.IsLetter(declaration[index + 1]) && declaration[index + 1] != '_'))
+        {
+            return null;
+        }
+
+        return declaration[(index + 1)..end];
     }
 
     /// <summary>

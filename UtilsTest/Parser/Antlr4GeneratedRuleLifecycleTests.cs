@@ -332,6 +332,8 @@ public class Antlr4GeneratedRuleLifecycleTests
         StringAssert.Contains(source, "private static bool TryGetRuleLocal(ParserRuleLifecycleContext context, string name, out object? value)");
         StringAssert.Contains(source, "private static void SetRuleLocal(ParserRuleLifecycleContext context, string name, object? value)");
         StringAssert.Contains(source, "private static IReadOnlyList<ParserRuleLocalDescriptor> GetRuleLocalDescriptors(ParserRuleLifecycleContext context)");
+        StringAssert.Contains(source, "private static void AllocateDeclaredRuleLocals(ParserRuleLifecycleContext context)");
+        StringAssert.Contains(source, "AllocateDeclaredRuleLocals(context);");
         Assert.IsFalse(source.Contains("int localCounter;", StringComparison.Ordinal), source);
         Assert.IsFalse(source.Contains("int localCounter {", StringComparison.Ordinal), source);
         Assert.IsFalse(source.Contains("object? localCounter", StringComparison.Ordinal), source);
@@ -348,7 +350,8 @@ public class Antlr4GeneratedRuleLifecycleTests
             start
             locals [int count]
             @init {
-                MissingBeforeInitSet = TryGetRuleLocal(context, "count", out _);
+                PresentBeforeInitSet = TryGetRuleLocal(context, "count", out object? initialValue);
+                NullBeforeInitSet = initialValue is null;
                 SetRuleLocal(context, "count", 1);
                 InitValue = (int?)GetRuleLocal(context, "count") ?? -1;
             }
@@ -366,7 +369,8 @@ public class Antlr4GeneratedRuleLifecycleTests
             namespace Generated.Tests;
             internal sealed partial class PExecutionContext
             {
-                public static bool MissingBeforeInitSet = true;
+                public static bool PresentBeforeInitSet;
+                public static bool NullBeforeInitSet;
                 public static int InitValue;
                 public static int AfterValue;
                 public static int AfterLocalCount;
@@ -379,7 +383,8 @@ public class Antlr4GeneratedRuleLifecycleTests
         var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.IsFalse(ReadBoolField(assembly, "MissingBeforeInitSet"));
+        Assert.IsTrue(ReadBoolField(assembly, "PresentBeforeInitSet"));
+        Assert.IsTrue(ReadBoolField(assembly, "NullBeforeInitSet"));
         Assert.AreEqual(1, ReadIntField(assembly, "InitValue"));
         Assert.AreEqual(2, ReadIntField(assembly, "AfterValue"));
         Assert.AreEqual(1, ReadIntField(assembly, "AfterLocalCount"));
@@ -451,17 +456,20 @@ public class Antlr4GeneratedRuleLifecycleTests
     }
 
     /// <summary>
-    /// Verifies that rule-local descriptor metadata does not pre-populate the frame locals store.
+    /// Verifies that generated opt-in execution allocates multiple declared locals by name as untyped null values.
     /// </summary>
     [TestMethod]
-    public void ParseWithEmbeddedCode_RuleLocalDescriptors_DoNotAutoAllocateFrameLocals()
+    public void ParseWithEmbeddedCode_RuleLocalDescriptors_AutoAllocateUntypedFrameLocals()
     {
         const string grammar = """
             grammar P;
             start
-            locals [int scratch]
+            locals [int count, string text, int[] counters]
             @init {
                 InitLocalCount = context.InvocationFrame!.Locals.Count;
+                CountIsNull = TryGetRuleLocal(context, "count", out object? count) && count is null;
+                TextIsNull = TryGetRuleLocal(context, "text", out object? text) && text is null;
+                CountersAreNull = TryGetRuleLocal(context, "counters", out object? counters) && counters is null;
                 DescriptorLocalCount = GetRuleLocalDescriptors(context).Count;
             }
             @after {
@@ -477,6 +485,9 @@ public class Antlr4GeneratedRuleLifecycleTests
                 public static int InitLocalCount = -1;
                 public static int AfterLocalCount = -1;
                 public static int DescriptorLocalCount = -1;
+                public static bool CountIsNull;
+                public static bool TextIsNull;
+                public static bool CountersAreNull;
             }
             """;
 
@@ -484,9 +495,79 @@ public class Antlr4GeneratedRuleLifecycleTests
         var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual(0, ReadIntField(assembly, "InitLocalCount"));
-        Assert.AreEqual(0, ReadIntField(assembly, "AfterLocalCount"));
-        Assert.AreEqual(1, ReadIntField(assembly, "DescriptorLocalCount"));
+        Assert.AreEqual(3, ReadIntField(assembly, "InitLocalCount"));
+        Assert.AreEqual(3, ReadIntField(assembly, "AfterLocalCount"));
+        Assert.AreEqual(3, ReadIntField(assembly, "DescriptorLocalCount"));
+        Assert.IsTrue(ReadBoolField(assembly, "CountIsNull"));
+        Assert.IsTrue(ReadBoolField(assembly, "TextIsNull"));
+        Assert.IsTrue(ReadBoolField(assembly, "CountersAreNull"));
+    }
+
+    /// <summary>
+    /// Verifies that generated declared-local allocation preserves values pre-seeded on a custom frame.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedLifecycleAllocation_DoesNotOverwriteExistingLocalValues()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int count]
+            @init { ObservedValue = (int?)GetRuleLocal(context, "count") ?? -1; }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ObservedValue;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var context = CreateExecutionContext(assembly);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+        var descriptor = new ParserRuleInvocationDescriptor
+        {
+            RuleName = "start",
+            Locals =
+            [
+                new ParserRuleLocalDescriptor { Name = "count", RawDeclaration = "int count" }
+            ]
+        };
+        var frame = new ParserRuleInvocationFrame("start", 0, new Dictionary<string, object?>(), descriptor);
+        frame.SetLocal("count", 42);
+
+        policy.RuleLifecycleExecutor.Execute(
+            ParserRuleLifecyclePhase.Init,
+            "start",
+            new ParserRuleLifecycleContext("start", 0, frame));
+
+        Assert.AreEqual(42, ReadIntField(assembly, "ObservedValue"));
+        Assert.IsTrue(frame.TryGetLocal("count", out object? value));
+        Assert.AreEqual(42, value);
+    }
+
+    /// <summary>
+    /// Verifies that declared locals are not emitted as implicit variables in lifecycle action bodies.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedLifecycleHooks_DoNotExposeRuleLocalsAsImplicitVariables()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int count]
+            @init { count = 1; }
+                : A ;
+            A : 'a' ;
+            """;
+
+        var result = CompileGeneratedSourceExpectingFailure(Emit(grammar));
+
+        Assert.IsFalse(result.Success);
+        Assert.IsTrue(result.Diagnostics.Any(diagnostic => diagnostic.Id == "CS0103"));
     }
 
     /// <summary>

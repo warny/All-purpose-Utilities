@@ -87,9 +87,9 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor ReturnsPartiallyApplied =
         RuleReturnsIgnored;
 
-    /// <summary>Rule locals clause recognized but ignored by runtime semantics.</summary>
+    /// <summary>Rule locals clause lacks typed and implicit runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleLocalsIgnored =
-        new("UP1008", "Rule locals ignored", "Rule locals clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+        new("UP1008", "Rule locals ignored", "Rule locals clause for rule '{0}' has no typed or implicit runtime semantics; only generated C# opt-in lifecycle execution allocates untyped frame entries.", DefaultCategory);
 
     /// <summary>Rule throws/catch/finally metadata recognized but ignored by runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleExceptionMetadataIgnored =

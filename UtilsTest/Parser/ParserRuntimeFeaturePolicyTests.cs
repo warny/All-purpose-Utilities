@@ -235,6 +235,7 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreEqual("true", descriptor.Options["memoize"]);
         StringAssert.Contains(descriptor.RawLocals!, "int scratch");
         Assert.AreEqual(1, descriptor.Locals.Count);
+        Assert.AreEqual("scratch", descriptor.Locals[0].Name);
         StringAssert.Contains(descriptor.Locals[0].RawDeclaration, "int scratch");
         Assert.AreEqual(3, descriptor.Exceptions.Count);
         Assert.IsTrue(descriptor.Exceptions.Any(exception => exception.Kind == "throws" && exception.RawDeclaration == "ParserException"));
