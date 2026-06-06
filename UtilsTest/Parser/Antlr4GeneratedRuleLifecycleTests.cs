@@ -464,12 +464,15 @@ public class Antlr4GeneratedRuleLifecycleTests
         const string grammar = """
             grammar P;
             start
-            locals [int count, string text, int[] counters]
+            locals [bool less = a < b, bool greater = x > (y), Dictionary<string, int> values, string text = "a,b", int[] counters, int /* ignored , < > */ count]
             @init {
                 InitLocalCount = context.InvocationFrame!.Locals.Count;
-                CountIsNull = TryGetRuleLocal(context, "count", out object? count) && count is null;
+                LessIsNull = TryGetRuleLocal(context, "less", out object? less) && less is null;
+                GreaterIsNull = TryGetRuleLocal(context, "greater", out object? greater) && greater is null;
+                ValuesAreNull = TryGetRuleLocal(context, "values", out object? values) && values is null;
                 TextIsNull = TryGetRuleLocal(context, "text", out object? text) && text is null;
                 CountersAreNull = TryGetRuleLocal(context, "counters", out object? counters) && counters is null;
+                CountIsNull = TryGetRuleLocal(context, "count", out object? count) && count is null;
                 DescriptorLocalCount = GetRuleLocalDescriptors(context).Count;
             }
             @after {
@@ -485,9 +488,12 @@ public class Antlr4GeneratedRuleLifecycleTests
                 public static int InitLocalCount = -1;
                 public static int AfterLocalCount = -1;
                 public static int DescriptorLocalCount = -1;
-                public static bool CountIsNull;
+                public static bool LessIsNull;
+                public static bool GreaterIsNull;
+                public static bool ValuesAreNull;
                 public static bool TextIsNull;
                 public static bool CountersAreNull;
+                public static bool CountIsNull;
             }
             """;
 
@@ -495,12 +501,15 @@ public class Antlr4GeneratedRuleLifecycleTests
         var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual(3, ReadIntField(assembly, "InitLocalCount"));
-        Assert.AreEqual(3, ReadIntField(assembly, "AfterLocalCount"));
-        Assert.AreEqual(3, ReadIntField(assembly, "DescriptorLocalCount"));
-        Assert.IsTrue(ReadBoolField(assembly, "CountIsNull"));
+        Assert.AreEqual(6, ReadIntField(assembly, "InitLocalCount"));
+        Assert.AreEqual(6, ReadIntField(assembly, "AfterLocalCount"));
+        Assert.AreEqual(6, ReadIntField(assembly, "DescriptorLocalCount"));
+        Assert.IsTrue(ReadBoolField(assembly, "LessIsNull"));
+        Assert.IsTrue(ReadBoolField(assembly, "GreaterIsNull"));
+        Assert.IsTrue(ReadBoolField(assembly, "ValuesAreNull"));
         Assert.IsTrue(ReadBoolField(assembly, "TextIsNull"));
         Assert.IsTrue(ReadBoolField(assembly, "CountersAreNull"));
+        Assert.IsTrue(ReadBoolField(assembly, "CountIsNull"));
     }
 
     /// <summary>

@@ -248,6 +248,29 @@ public class ParserRuntimeFeaturePolicyTests
     }
 
     /// <summary>
+    /// Verifies that local descriptor splitting distinguishes generic delimiters from operators and ignores non-code text.
+    /// </summary>
+    [TestMethod]
+    public void ParserRuleInvocationDescriptor_LocalSplitting_IgnoresOperatorsLiteralsAndComments()
+    {
+        var rule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([]),
+            Locals:
+            [
+                new RuleLocal("bool less = a < b, bool greater = x > (y), Dictionary<string, int> values, string text = \"a,b\", int /* ignored , < > */ count")
+            ]);
+
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        CollectionAssert.AreEqual(
+            new[] { "less", "greater", "values", "text", "count" },
+            descriptor.Locals.Select(local => local.Name).ToArray());
+    }
+
+    /// <summary>
     /// Verifies that descriptor metadata does not bind parameters, allocate locals, or propagate returns.
     /// </summary>
     [TestMethod]
