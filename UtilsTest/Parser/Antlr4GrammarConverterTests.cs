@@ -383,7 +383,8 @@ public class Antlr4GrammarConverterTests
 
         Assert.AreEqual(1, matches.Count);
         Assert.AreEqual("UP1008", matches[0].Code);
-        StringAssert.Contains(matches[0].Message, "recognized but ignored");
+        StringAssert.Contains(matches[0].Message, "no typed or implicit runtime semantics");
+        StringAssert.Contains(matches[0].Message, "generated C# opt-in");
         StringAssert.Contains(matches[0].Message, "start");
     }
 

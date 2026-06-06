@@ -235,6 +235,7 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.AreEqual("true", descriptor.Options["memoize"]);
         StringAssert.Contains(descriptor.RawLocals!, "int scratch");
         Assert.AreEqual(1, descriptor.Locals.Count);
+        Assert.AreEqual("scratch", descriptor.Locals[0].Name);
         StringAssert.Contains(descriptor.Locals[0].RawDeclaration, "int scratch");
         Assert.AreEqual(3, descriptor.Exceptions.Count);
         Assert.IsTrue(descriptor.Exceptions.Any(exception => exception.Kind == "throws" && exception.RawDeclaration == "ParserException"));
@@ -244,6 +245,29 @@ public class ParserRuntimeFeaturePolicyTests
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
         Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code));
+    }
+
+    /// <summary>
+    /// Verifies that local descriptor splitting distinguishes generic delimiters from operators and ignores non-code text.
+    /// </summary>
+    [TestMethod]
+    public void ParserRuleInvocationDescriptor_LocalSplitting_IgnoresOperatorsLiteralsAndComments()
+    {
+        var rule = new Rule(
+            "start",
+            0,
+            false,
+            new Alternation([]),
+            Locals:
+            [
+                new RuleLocal("bool less = a < b, bool greater = x > (y), Dictionary<string, int> values, string text = \"a,b\", int /* ignored , < > */ count")
+            ]);
+
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        CollectionAssert.AreEqual(
+            new[] { "less", "greater", "values", "text", "count" },
+            descriptor.Locals.Select(local => local.Name).ToArray());
     }
 
     /// <summary>
