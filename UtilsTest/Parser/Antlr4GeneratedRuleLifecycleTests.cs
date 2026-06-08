@@ -628,6 +628,150 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreSame(NullParserRuleLifecycleExecutor.Instance, policy.RuleLifecycleExecutor);
     }
 
+    /// <summary>
+    /// Verifies that generated CreateRuntimePolicy installs a StackParserRuleInvocationFrameManager.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedPolicy_InstallsStackParserRuleInvocationFrameManager()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var context = CreateExecutionContext(assembly);
+        var policy = InvokeCreateRuntimePolicy(assembly, context);
+
+        Assert.IsInstanceOfType<StackParserRuleInvocationFrameManager>(policy.RuleInvocationFrameManager);
+    }
+
+    /// <summary>
+    /// Verifies that the @init hook of a root rule observes depth 0 and no parent frame.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RootRuleInit_ObservesDepthZeroAndNoParent()
+    {
+        const string grammar = """
+            grammar P;
+            start @init {
+                RootDepth = context.InvocationFrame!.Depth;
+                HasParent = context.InvocationFrame!.Parent != null;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int RootDepth = -1;
+                public static bool HasParent = true;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "RootDepth"));
+        Assert.IsFalse(ReadBoolField(assembly, "HasParent"));
+    }
+
+    /// <summary>
+    /// Verifies that the @init hook of a nested rule observes the correct depth and parent rule name.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NestedRuleInit_ObservesDepthOneAndParentRuleName()
+    {
+        const string grammar = """
+            grammar P;
+            start : child ;
+            child @init {
+                ChildDepth = context.InvocationFrame!.Depth;
+                ParentRuleName = context.InvocationFrame!.Parent?.RuleName;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ChildDepth = -1;
+                public static string? ParentRuleName;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "ChildDepth"));
+        Assert.AreEqual("start", ReadStringField(assembly, "ParentRuleName"));
+    }
+
+    /// <summary>
+    /// Verifies that rule-local allocation before @init still works with the stack manager active.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleLocalAllocationBeforeInit_WorksWithStackManager()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            locals [int count]
+            @init {
+                SetRuleLocal(context, "count", 42);
+                LocalValue = (int?)GetRuleLocal(context, "count") ?? -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int LocalValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadIntField(assembly, "LocalValue"));
+    }
+
+    /// <summary>
+    /// Verifies that conservative Parse() does not install a StackParserRuleInvocationFrameManager.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedPolicy_ConservativeParse_DoesNotUseStackManager()
+    {
+        const string grammar = """
+            grammar P;
+            start @init { InitCount++; }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int InitCount;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        // Conservative Parse() uses the default policy which has NullParserRuleInvocationFrameManager.
+        // No hook executes, so InitCount stays 0.
+        Assert.AreEqual(0, ReadIntField(assembly, "InitCount"));
+    }
+
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
 
     /// <summary>Emits generated C# for the supplied grammar.</summary>

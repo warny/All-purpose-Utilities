@@ -534,9 +534,10 @@ internal static class GrammarEmitter
         sb.AppendLine("            SemanticPredicateEvaluator = new GeneratedSemanticPredicateEvaluator(this, effectiveBase.SemanticPredicateEvaluator),");
         sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
         sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(this),");
+        sb.AppendLine("            RuleInvocationFrameManager = new global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager(),");
         if (lifecycleHooks.Count > 0)
         {
-            sb.AppendLine("            RuleLifecycleExecutor = new GeneratedRuleLifecycleExecutor(this)");
+            sb.AppendLine("            RuleLifecycleExecutor = new GeneratedRuleLifecycleExecutor(this),");
         }
         sb.AppendLine("        };");
         sb.AppendLine("    }");
