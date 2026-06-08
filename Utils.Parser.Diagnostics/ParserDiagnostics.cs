@@ -76,9 +76,9 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor SemanticPredicateNotEnforced =
         new("UP1006", "Semantic predicate not enforced", "Semantic predicate is recognized but not enforced semantically.", DefaultCategory);
 
-    /// <summary>returns clause ignored by runtime semantics.</summary>
+    /// <summary>returns clause has no typed or implicit runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleReturnsIgnored =
-        new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+        new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' has no typed or implicit runtime semantics; generated C# opt-in lifecycle execution can explicitly read/write untyped return entries on the active frame, but returns are not propagated to callers.", DefaultCategory);
 
     /// <summary>
     /// Compatibility alias for the legacy descriptor name.
