@@ -774,6 +774,210 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(0, ReadIntField(assembly, "InitCount"));
     }
 
+    // ── Call-result bridge ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that the generated execution context exposes call-result helper methods.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsCallResultHelperMethods()
+    {
+        const string grammar = """
+            grammar P;
+            start : child ;
+            child returns [int value] @after { SetRuleReturn(context, "value", 1); }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private static global::Utils.Parser.Runtime.ParserRuleCallResult? GetLastRuleCallResult(ParserRuleLifecycleContext context)");
+        StringAssert.Contains(source, "private static bool TryGetLastRuleCallReturn(ParserRuleLifecycleContext context, string returnName, out object? value)");
+        Assert.IsFalse(source.Contains("$child.value", StringComparison.Ordinal), "Implicit $rule.value must not be generated.");
+        Assert.IsFalse(source.Contains("int value;", StringComparison.Ordinal), "No typed return field must be generated.");
+    }
+
+    /// <summary>
+    /// Verifies that a parent <c>@after</c> hook can observe the child rule's return via GetLastRuleCallResult.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ParentAfter_CanObserveChildCallResult()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                ChildRuleName = r?.RuleName;
+                ChildReturnValue = (int?)r?.Returns?.GetValueOrDefault("value") ?? -1;
+            }
+                : child ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 42); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? ChildRuleName;
+                public static int ChildReturnValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("child", ReadStringField(assembly, "ChildRuleName"));
+        Assert.AreEqual(42, ReadIntField(assembly, "ChildReturnValue"));
+    }
+
+    /// <summary>
+    /// Verifies that TryGetLastRuleCallReturn reads a return value by lexical name.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TryGetLastRuleCallReturn_ReadsReturnByLexicalName()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Found = TryGetLastRuleCallReturn(context, "value", out object? v);
+                FoundValue = (int?)v ?? -1;
+            }
+                : child ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 7); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int FoundValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.AreEqual(7, ReadIntField(assembly, "FoundValue"));
+    }
+
+    /// <summary>
+    /// Verifies that a failed alternative that calls a child does not leak its call result into the next alternative.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_FailedAlternative_DoesNotLeakChildCallResult()
+    {
+        // alt 0: child B — fails (only 'a' in input)
+        // alt 1: child   — succeeds; @after reads LastRuleCallResult
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                ChildCallCount = r != null ? 1 : 0;
+                SeenValue = (int?)r?.Returns?.GetValueOrDefault("value") ?? -1;
+            }
+                : child B | child ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 99); }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ChildCallCount;
+                public static int SeenValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        // After rollback+retry, the call result from the successful alt 1 is visible.
+        Assert.AreEqual(1, ReadIntField(assembly, "ChildCallCount"));
+        Assert.AreEqual(99, ReadIntField(assembly, "SeenValue"));
+    }
+
+    /// <summary>
+    /// Verifies that a failed alternative with a child DOES NOT leave a stale result
+    /// when the successful alternative makes NO child call.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_FailedAlternativeWithChild_SuccessfulAlternativeNoChild_ResultIsNull()
+    {
+        // alt 0: child B — fails; child sets value=5
+        // alt 1: A       — succeeds; NO child call; @after must see null call result (rolled back)
+        const string grammar = """
+            grammar P;
+            start @after {
+                CallResultIsNull = GetLastRuleCallResult(context) is null;
+            }
+                : child B | A ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 5); }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool CallResultIsNull;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "CallResultIsNull"),
+            "Call result from failed alternative must be rolled back when successful alternative has no child call.");
+    }
+
+    /// <summary>
+    /// Verifies that conservative Parse() does not execute call-result hook calls.
+    /// </summary>
+    [TestMethod]
+    public void Parse_DoesNotExecuteCallResultHelperCalls()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                CallResultObserved = GetLastRuleCallResult(context) != null;
+            }
+                : child ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 1); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool CallResultObserved;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "CallResultObserved"),
+            "Conservative Parse() must not execute @after hooks.");
+    }
+
     // ── Rule-return frame bridge ─────────────────────────────────────────────────────────
 
     /// <summary>

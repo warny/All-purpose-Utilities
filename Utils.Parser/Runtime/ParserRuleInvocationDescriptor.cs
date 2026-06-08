@@ -127,11 +127,7 @@ public sealed class ParserRuleInvocationDescriptor
             })
             .ToArray() ?? [];
         var returnDescriptors = rule.Returns?
-            .Select(static ruleReturn => new ParserRuleReturnDescriptor
-            {
-                Name = ruleReturn.Name,
-                RawDeclaration = GetRawDeclaration(ruleReturn.Type, ruleReturn.Name)
-            })
+            .SelectMany(static ruleReturn => BuildReturnDescriptors(ruleReturn.Name))
             .ToArray() ?? [];
         var localDescriptors = rule.Locals?
             .SelectMany(static local => BuildLocalDescriptors(local.RawDeclaration))
@@ -150,6 +146,24 @@ public sealed class ParserRuleInvocationDescriptor
             Options = rule.Options?.Values ?? new Dictionary<string, string>(StringComparer.Ordinal),
             Exceptions = exceptionDescriptors
         };
+    }
+
+    /// <summary>
+    /// Builds passive return descriptors by separating top-level declarations and extracting lexical names.
+    /// Uses the same top-level split strategy as local descriptors: no C# parsing, no type inference.
+    /// </summary>
+    /// <param name="rawReturns">Raw contents of a rule <c>returns [...]</c> clause.</param>
+    /// <returns>Untyped return descriptors preserving each raw declaration and its lexical name.</returns>
+    private static IEnumerable<ParserRuleReturnDescriptor> BuildReturnDescriptors(string rawReturns)
+    {
+        foreach (string declaration in SplitTopLevelLocalDeclarations(rawReturns))
+        {
+            yield return new ParserRuleReturnDescriptor
+            {
+                Name = GetLocalDeclarationName(declaration) ?? declaration,
+                RawDeclaration = declaration
+            };
+        }
     }
 
     /// <summary>

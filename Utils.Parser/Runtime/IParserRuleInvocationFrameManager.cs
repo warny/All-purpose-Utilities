@@ -26,4 +26,17 @@ public interface IParserRuleInvocationFrameManager
     /// Gets the current invocation frame when the implementation tracks one.
     /// </summary>
     ParserRuleInvocationFrame? Current { get; }
+
+    /// <summary>
+    /// Called by <c>ParserEngine</c> just before the post-rule execution-state snapshot is captured,
+    /// while the rule's invocation frame is still current.
+    /// Implementations that support call results must finalize them here so that the snapshot
+    /// reflects the post-rule call-result state and memoization hits can restore it correctly.
+    /// The default implementation performs no action.
+    /// </summary>
+    /// <param name="frame">The current invocation frame about to be snapshotted.</param>
+    /// <param name="succeeded">Whether the parser rule produced a parse node.</param>
+    void PrepareCallResultForSnapshot(ParserRuleInvocationFrame frame, bool succeeded)
+    {
+    }
 }

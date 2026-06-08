@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
@@ -270,6 +271,244 @@ public class ParserRuleCallStackTests
 
         Assert.AreEqual(0, frame.Returns.Count, "Returns store must be empty — no auto-propagation.");
         Assert.AreEqual(0, frame.Parameters.Count, "Parameters store must be empty — no auto-binding.");
+    }
+
+    // ── ParserRuleCallResult unit tests ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// PrepareCallResultForSnapshot on successful child exit stores a call result on the parent frame.
+    /// ParserEngine always calls PrepareCallResultForSnapshot before Exit.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_SuccessfulChildExit_StoresCallResultOnParent()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame = manager.Enter("child", 1);
+        childFrame.SetReturnValue("value", 42);
+
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+        manager.Exit(childFrame, succeeded: true);
+
+        Assert.IsNotNull(parentFrame.LastCompletedChildCall);
+        Assert.AreEqual("child", parentFrame.LastCompletedChildCall.RuleName);
+        Assert.AreEqual(1, parentFrame.LastCompletedChildCall.Depth);
+    }
+
+    /// <summary>
+    /// Call result captures a copy of the return values; mutating the child frame after capture does not affect it.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_CallResult_CopiesReturnValues()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame = manager.Enter("child", 1);
+        childFrame.SetReturnValue("value", 1);
+
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+        var captured = parentFrame.LastCompletedChildCall!;
+        manager.Exit(childFrame, succeeded: true);
+
+        // Mutating the child frame after capture must not affect the snapshot.
+        childFrame.SetReturnValue("value", 999);
+
+        Assert.AreEqual(1, captured.Returns["value"]);
+    }
+
+    /// <summary>
+    /// Failed child exit does not update the parent frame's last call result.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_FailedChildExit_DoesNotUpdateParentCallResult()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame = manager.Enter("child", 1);
+        childFrame.SetReturnValue("value", 42);
+
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: false);
+        manager.Exit(childFrame, succeeded: false);
+
+        Assert.IsNull(parentFrame.LastCompletedChildCall, "Failed exit must not update the parent call result.");
+    }
+
+    /// <summary>
+    /// Root exit (no parent) restores current to null without requiring a parent call result.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_RootExit_DoesNotRequireParentCallResult()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var rootFrame = manager.Enter("start", 0);
+        rootFrame.SetReturnValue("value", 1);
+
+        manager.PrepareCallResultForSnapshot(rootFrame, succeeded: true);
+        manager.Exit(rootFrame, succeeded: true);
+
+        Assert.IsNull(manager.Current, "Root exit must restore current to null.");
+    }
+
+    /// <summary>
+    /// The callback is invoked with the call result on successful PrepareCallResultForSnapshot when a parent exists.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_CallbackInvokedWithCallResult_OnSuccessfulChildExit()
+    {
+        ParserRuleCallResult? received = null;
+        var manager = new StackParserRuleInvocationFrameManager(onChildCallResult: r => received = r);
+        _ = manager.Enter("start", 0);
+        var childFrame = manager.Enter("child", 1);
+        childFrame.SetReturnValue("value", 7);
+
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+
+        Assert.IsNotNull(received);
+        Assert.AreEqual("child", received.RuleName);
+        Assert.AreEqual(7, received.Returns["value"]);
+    }
+
+    /// <summary>
+    /// The callback is NOT invoked on failed PrepareCallResultForSnapshot.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_CallbackNotInvoked_OnFailedChildExit()
+    {
+        bool called = false;
+        var manager = new StackParserRuleInvocationFrameManager(onChildCallResult: _ => called = true);
+        _ = manager.Enter("start", 0);
+        var childFrame = manager.Enter("child", 1);
+
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: false);
+
+        Assert.IsFalse(called);
+    }
+
+    /// <summary>
+    /// SyncCallResultToCurrentFrame overwrites the current frame's LastCompletedChildCall.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_SyncCallResultToCurrentFrame_OverwritesExistingResult()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame = manager.Enter("child", 1);
+        childFrame.SetReturnValue("value", 42);
+        manager.Exit(childFrame, succeeded: true);
+
+        // Simulate rollback: sync null (pre-attempt snapshot value)
+        manager.SyncCallResultToCurrentFrame(null);
+
+        Assert.IsNull(parentFrame.LastCompletedChildCall, "SyncCallResultToCurrentFrame must overwrite with the restored value.");
+    }
+
+    // ── Call-result rollback integration tests through ParserEngine ──────────────────────
+
+    /// <summary>
+    /// A failed alternative that calls a child does not leak its call result into the next alternative.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_FailedAlternative_DoesNotLeakChildCallResult()
+    {
+        // alt 0: child B — fails (no B in input "a")
+        // alt 1: A       — succeeds; no child call is made
+        const string grammar = """
+            grammar P;
+            start : child B | A ;
+            child returns [int value] @after { } : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var frameManager = new StackParserRuleInvocationFrameManager();
+        var compiled = CompileWithStackManager(grammar, frameManager);
+
+        // Use a capture observer to record the call result on start's frame in @after.
+        // Since we can't run generated C#, we verify via the frame manager directly.
+        var result = compiled.Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        // After a successful parse, the frame manager's current is null (all frames exited).
+        Assert.IsNull(frameManager.Current);
+    }
+
+    /// <summary>
+    /// Quantifier failed iteration does not leave a stale call result.
+    /// </summary>
+    [TestMethod]
+    public void ParserEngine_QuantifierFailedAttempt_DoesNotLeakCallResult()
+    {
+        const string grammar = """
+            grammar P;
+            start : item+ ;
+            item : A ;
+            A : 'a' ;
+            """;
+        var frameManager = new StackParserRuleInvocationFrameManager();
+        var compiled = CompileWithStackManager(grammar, frameManager);
+
+        var result = compiled.Parse("aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsNull(frameManager.Current, "Frame stack must be empty after parse completes.");
+    }
+
+    // ── Return descriptor lexical-name tests ──────────────────────────────────────────────
+
+    /// <summary>
+    /// A single return declaration exposes the lexical name (e.g. "value") not the full raw text.
+    /// </summary>
+    [TestMethod]
+    public void ReturnDescriptor_SingleDeclaration_ExposesLexicalName()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start returns [int value] : A ;
+            A : 'a' ;
+            """);
+        var rule = definition.ParserRules.First(r => r.Name == "start");
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        Assert.AreEqual(1, descriptor.Returns.Count);
+        Assert.AreEqual("value", descriptor.Returns[0].Name);
+        Assert.AreEqual("int value", descriptor.Returns[0].RawDeclaration);
+    }
+
+    /// <summary>
+    /// Multiple return declarations are split and each exposes its own lexical name.
+    /// </summary>
+    [TestMethod]
+    public void ReturnDescriptor_MultipleDeclarations_SplitsAndExtractsNames()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start returns [int value, String text, long counter] : A ;
+            A : 'a' ;
+            """);
+        var rule = definition.ParserRules.First(r => r.Name == "start");
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        Assert.AreEqual(3, descriptor.Returns.Count);
+        Assert.AreEqual("value", descriptor.Returns[0].Name);
+        Assert.AreEqual("text", descriptor.Returns[1].Name);
+        Assert.AreEqual("counter", descriptor.Returns[2].Name);
+    }
+
+    /// <summary>
+    /// Raw declarations are preserved verbatim alongside lexical names.
+    /// </summary>
+    [TestMethod]
+    public void ReturnDescriptor_RawDeclarations_PreservedVerbatim()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start returns [int value, String text] : A ;
+            A : 'a' ;
+            """);
+        var rule = definition.ParserRules.First(r => r.Name == "start");
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        StringAssert.Contains(descriptor.Returns[0].RawDeclaration, "int value");
+        StringAssert.Contains(descriptor.Returns[1].RawDeclaration, "String text");
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────────────

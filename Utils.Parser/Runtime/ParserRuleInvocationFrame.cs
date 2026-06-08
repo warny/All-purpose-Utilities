@@ -131,6 +131,16 @@ public sealed class ParserRuleInvocationFrame
     public int Depth { get; }
 
     /// <summary>
+    /// Gets the call result from the most recently completed successful direct child rule invocation,
+    /// or <c>null</c> when no child rule has yet completed successfully in the current rule context.
+    /// This value is set by the invocation-frame manager on successful child exit and is synchronized
+    /// with the managed execution-state snapshot during parser backtracking restoration.
+    /// It must not be stored in static or global fields; its rollback safety relies on the
+    /// managed execution-state snapshot mechanism being active.
+    /// </summary>
+    public ParserRuleCallResult? LastCompletedChildCall { get; internal set; }
+
+    /// <summary>
     /// Gets a parameter value by name.
     /// </summary>
     /// <param name="name">Parameter metadata name.</param>
