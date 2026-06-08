@@ -266,6 +266,7 @@ public sealed class ParserEngine
                     succeeded = true;
                 }
 
+                _ruleInvocationFrameManager.PrepareCallResultForSnapshot(invocationFrame, succeeded);
                 var resultExecutionStateSnapshot = _executionStateManager.Capture();
                 _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null, resultExecutionStateSnapshot));
 

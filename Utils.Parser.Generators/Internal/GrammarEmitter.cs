@@ -527,20 +527,26 @@ internal static class GrammarEmitter
         sb.AppendLine($"        return global::Utils.Parser.Runtime.ParserExecutionContextHasher<{contextClassName}>.GetKey(this);");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Last completed child call result captured from a successful child-rule exit; included in managed execution-state snapshots for rollback safety.</summary>");
+        sb.AppendLine($"    internal global::Utils.Parser.Runtime.ParserRuleCallResult? _lastChildCallResult;");
+        sb.AppendLine();
         EmitRuleLocalHelpers(sb);
         EmitRuleReturnHelpers(sb);
+        EmitRuleCallResultHelpers(sb);
         sb.AppendLine("    /// <summary>Creates a runtime feature policy bound to this execution context instance.</summary>");
         sb.AppendLine("    /// <param name=\"basePolicy\">Optional policy whose non-embedded-code components are preserved.</param>");
         sb.AppendLine("    /// <returns>A runtime policy whose generated dispatchers call this context instance.</returns>");
         sb.AppendLine("    internal ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)");
         sb.AppendLine("    {");
         sb.AppendLine("        var effectiveBase = basePolicy ?? ParserRuntimeFeaturePolicy.Default;");
+        sb.AppendLine("        var frameManager = new global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager(");
+        sb.AppendLine("            onChildCallResult: result => this._lastChildCallResult = result);");
         sb.AppendLine("        return effectiveBase with");
         sb.AppendLine("        {");
         sb.AppendLine("            SemanticPredicateEvaluator = new GeneratedSemanticPredicateEvaluator(this, effectiveBase.SemanticPredicateEvaluator),");
         sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
-        sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(this),");
-        sb.AppendLine("            RuleInvocationFrameManager = new global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager(),");
+        sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(this, result => frameManager.SyncCallResultToCurrentFrame(result)),");
+        sb.AppendLine("            RuleInvocationFrameManager = frameManager,");
         if (lifecycleHooks.Count > 0)
         {
             sb.AppendLine("            RuleLifecycleExecutor = new GeneratedRuleLifecycleExecutor(this),");
@@ -727,6 +733,46 @@ internal static class GrammarEmitter
     }
 
     /// <summary>
+    /// Emits explicit rule call-result helper methods on the generated execution context.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    private static void EmitRuleCallResultHelpers(StringBuilder sb)
+    {
+        sb.AppendLine("    /// <summary>Gets the most recent completed child rule call result from the active lifecycle invocation frame.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to inspect.</param>");
+        sb.AppendLine("    /// <returns>The last completed child call result, or <c>null</c> when no child rule has yet completed successfully or no frame is available.</returns>");
+        sb.AppendLine("    /// <remarks>Returns are not propagated automatically. <c>$rule.value</c> and labeled rule-reference access are not supported. Call results are rollback-safe when the managed execution-state mechanism is active.</remarks>");
+        sb.AppendLine("    private static global::Utils.Parser.Runtime.ParserRuleCallResult? GetLastRuleCallResult(ParserRuleLifecycleContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine();
+        sb.AppendLine("        return context.InvocationFrame?.LastCompletedChildCall;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Attempts to get an untyped return value by name from the most recent completed child rule call result.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to inspect.</param>");
+        sb.AppendLine("    /// <param name=\"returnName\">The lexical return name as declared in the child rule (e.g. <c>\"value\"</c> for <c>returns [int value]</c>).</param>");
+        sb.AppendLine("    /// <param name=\"value\">Receives the return value when present.</param>");
+        sb.AppendLine("    /// <returns><c>true</c> when a call result exists and contains the named return; otherwise, <c>false</c>.</returns>");
+        sb.AppendLine("    /// <remarks><c>$rule.value</c>, labeled rule references, typed returns, and automatic return propagation are not supported.</remarks>");
+        sb.AppendLine("    private static bool TryGetLastRuleCallReturn(ParserRuleLifecycleContext context, string returnName, out object? value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(returnName);");
+        sb.AppendLine();
+        sb.AppendLine("        var result = context.InvocationFrame?.LastCompletedChildCall;");
+        sb.AppendLine("        if (result is null)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            value = null;");
+        sb.AppendLine("            return false;");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        return result.Returns.TryGetValue(returnName, out value);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    /// <summary>
     /// Emits the grammar-specific execution-state manager.
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
@@ -737,11 +783,13 @@ internal static class GrammarEmitter
         sb.AppendLine("    private sealed class GeneratedExecutionStateManager : IParserExecutionStateManager");
         sb.AppendLine("    {");
         sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
+        sb.AppendLine("        private readonly global::System.Action<global::Utils.Parser.Runtime.ParserRuleCallResult?> _syncCallResult;");
         sb.AppendLine();
         sb.AppendLine("        /// <summary>Initializes a generated execution-state manager for one execution context.</summary>");
-        sb.AppendLine($"        public GeneratedExecutionStateManager({contextClassName} executionContext)");
+        sb.AppendLine($"        public GeneratedExecutionStateManager({contextClassName} executionContext, global::System.Action<global::Utils.Parser.Runtime.ParserRuleCallResult?> syncCallResult)");
         sb.AppendLine("        {");
         sb.AppendLine("            _executionContext = executionContext ?? throw new global::System.ArgumentNullException(nameof(executionContext));");
+        sb.AppendLine("            _syncCallResult = syncCallResult ?? throw new global::System.ArgumentNullException(nameof(syncCallResult));");
         sb.AppendLine("        }");
         sb.AppendLine();
         sb.AppendLine("        /// <summary>Captures the current generated execution-context state.</summary>");
@@ -756,7 +804,7 @@ internal static class GrammarEmitter
         sb.AppendLine("            return _executionContext.GetExecutionStateKey();");
         sb.AppendLine("        }");
         sb.AppendLine();
-        sb.AppendLine("        /// <summary>Restores the generated execution context from a compatible snapshot.</summary>");
+        sb.AppendLine("        /// <summary>Restores the generated execution context from a compatible snapshot, then syncs the restored call result to the current invocation frame so stale results do not leak across failed parser attempts.</summary>");
         sb.AppendLine("        public void Restore(object snapshot)");
         sb.AppendLine("        {");
         sb.AppendLine($"            if (snapshot is not {contextClassName} contextSnapshot)");
@@ -767,6 +815,7 @@ internal static class GrammarEmitter
         sb.AppendLine("            }");
         sb.AppendLine();
         sb.AppendLine("            _executionContext.CopyFrom(contextSnapshot);");
+        sb.AppendLine("            _syncCallResult(_executionContext._lastChildCallResult);");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
