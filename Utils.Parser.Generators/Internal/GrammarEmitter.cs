@@ -538,6 +538,10 @@ internal static class GrammarEmitter
         sb.AppendLine("    /// <summary>Pending child-parameter seeds for the next named child rule invocation; included in managed execution-state snapshots so seeds do not leak across failed parser alternatives.</summary>");
         sb.AppendLine($"    internal global::Utils.Parser.Runtime.ParserRuleParameterSeedStore? _pendingChildSeeds;");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Active frame manager bound by <see cref=\"CreateRuntimePolicy\"/>; excluded from execution-state hashing and copying because it is runtime infrastructure, not logical parser state.</summary>");
+        sb.AppendLine("    [global::Utils.Parser.Runtime.ParserExecutionStateIgnored]");
+        sb.AppendLine($"    private global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager? _frameManager;");
+        sb.AppendLine();
         EmitRuleLocalHelpers(sb);
         EmitRuleReturnHelpers(sb);
         EmitRuleParameterHelpers(sb);
@@ -549,7 +553,7 @@ internal static class GrammarEmitter
         sb.AppendLine("    internal ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)");
         sb.AppendLine("    {");
         sb.AppendLine("        var effectiveBase = basePolicy ?? ParserRuntimeFeaturePolicy.Default;");
-        sb.AppendLine("        var frameManager = new global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager(");
+        sb.AppendLine("        this._frameManager = new global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager(");
         sb.AppendLine("            onChildCallResult: result => this._lastChildCallResult = result);");
         sb.AppendLine("        return effectiveBase with");
         sb.AppendLine("        {");
@@ -557,10 +561,10 @@ internal static class GrammarEmitter
         sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
         sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(");
         sb.AppendLine("                this,");
-        sb.AppendLine("                result => frameManager.SyncCallResultToCurrentFrame(result),");
-        sb.AppendLine("                () => frameManager.GetCurrentPendingSeeds(),");
-        sb.AppendLine("                seeds => frameManager.SyncPendingSeedsToCurrentFrame(seeds)),");
-        sb.AppendLine("            RuleInvocationFrameManager = frameManager,");
+        sb.AppendLine("                result => this._frameManager!.SyncCallResultToCurrentFrame(result),");
+        sb.AppendLine("                () => this._frameManager!.GetCurrentPendingSeeds(),");
+        sb.AppendLine("                seeds => this._frameManager!.SyncPendingSeedsToCurrentFrame(seeds)),");
+        sb.AppendLine("            RuleInvocationFrameManager = this._frameManager,");
         if (lifecycleHooks.Count > 0)
         {
             sb.AppendLine("            RuleLifecycleExecutor = new GeneratedRuleLifecycleExecutor(this),");
@@ -869,6 +873,33 @@ internal static class GrammarEmitter
         sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(ruleName);");
         sb.AppendLine();
         sb.AppendLine("        context.InvocationFrame?.ClearPendingChildParameters(ruleName);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Seeds an untyped parameter value for the next invocation of the named child rule; inline-action overload that routes through the active frame manager.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Inline-action context identifying the current parser action.</param>");
+        sb.AppendLine("    /// <param name=\"ruleName\">Name of the child rule that will receive the seed when next entered.</param>");
+        sb.AppendLine("    /// <param name=\"parameterName\">Parameter metadata name as declared in the child rule.</param>");
+        sb.AppendLine("    /// <param name=\"value\">Untyped value to seed.</param>");
+        sb.AppendLine("    /// <remarks>This is not ANTLR-compatible argument passing. Seeds are rollback-safe when the managed execution-state mechanism is active.</remarks>");
+        sb.AppendLine("    private void SetNextRuleParameter(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string ruleName, string parameterName, object? value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(ruleName);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(parameterName);");
+        sb.AppendLine();
+        sb.AppendLine("        _frameManager?.SetPendingChildParameter(ruleName, parameterName, value);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Removes all pending parameter seeds for the named child rule; inline-action overload that routes through the active frame manager.</summary>");
+        sb.AppendLine("    /// <param name=\"context\">Inline-action context identifying the current parser action.</param>");
+        sb.AppendLine("    /// <param name=\"ruleName\">Name of the child rule whose seeds to clear.</param>");
+        sb.AppendLine("    /// <remarks>If no seeds are pending for <paramref name=\"ruleName\"/>, this helper performs no work.</remarks>");
+        sb.AppendLine("    private void ClearNextRuleParameters(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string ruleName)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(ruleName);");
+        sb.AppendLine();
+        sb.AppendLine("        _frameManager?.ClearPendingChildParameters(ruleName);");
         sb.AppendLine("    }");
         sb.AppendLine();
     }

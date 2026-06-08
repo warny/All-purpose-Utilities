@@ -1078,15 +1078,13 @@ public class Antlr4GeneratedRuleLifecycleTests
     }
 
     /// <summary>
-    /// Failed alternative with seed and successful alternative without seed results in unbound parameter.
+    /// @after hook executes on the successful second alternative when the first alternative fails.
     /// </summary>
     [TestMethod]
-    public void ParseWithEmbeddedCode_FailedAlt_WithSeed_SuccessAlt_WithoutSeed_ParameterUnbound()
+    public void ParseWithEmbeddedCode_FailedFirstAlt_AfterHookExecutesOnSecondAlt()
     {
-        // Seed set in inline action inside alt 0 only (not in @init), so pre-alt-0 snapshot has no seeds.
-        // alt 0: { SetNextRuleParameter } child B — fails; seed consumed by child, B not found
-        // alt 1: A — succeeds; no seed in this alt; start @after observes child's frame had no seed
-        // Since alt 1 doesn't call child at all, we verify that the alt 0 seeding doesn't leak.
+        // alt 0: A B — fails (no B in "a")
+        // alt 1: A — succeeds; @after must execute
         const string grammar = """
             grammar P;
             start @after { AfterSentinel = 1; }
@@ -1107,6 +1105,86 @@ public class Antlr4GeneratedRuleLifecycleTests
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual(1, ReadIntField(assembly, "AfterSentinel"));
+    }
+
+    /// <summary>
+    /// A seed set inside a failed alternative's inline action is rolled back; the next alternative
+    /// calls the same child rule and must not receive the stale seed.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SeedInFailedAltInlineAction_NextAltCallsChildUnseeded()
+    {
+        // alt 0: inline action sets seed → child consumes it (Found=true) → B fails → rollback
+        // The pre-alt-0 snapshot has no seeds (seed was set inside alt 0, after the snapshot).
+        // alt 1: child is called without any seed; state key differs → no memoization hit → @init
+        //        runs fresh → Found must be false.
+        const string grammar = """
+            grammar P;
+            start
+                : { SetNextRuleParameter(context, "child", "value", 5); } child B
+                | child
+                ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                SeenValue = (int?)v ?? -1;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int SeenValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Found"), "Stale seed from failed alt 0 must not reach alt 1's child call.");
+        Assert.AreEqual(-1, ReadIntField(assembly, "SeenValue"));
+    }
+
+    /// <summary>
+    /// A seed set inside a failed alternative is rolled back even when the successful alternative
+    /// does not call the seeded child rule.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SeedInFailedAlt_SuccessAltSkipsChild_ParseSucceeds()
+    {
+        // alt 0: inline action seeds "child", then calls child (ChildInitRan=1), then B fails → rollback
+        // alt 1: just A — succeeds; child is never called; stale seed must not corrupt the engine
+        const string grammar = """
+            grammar P;
+            start
+                : { SetNextRuleParameter(context, "child", "value", 5); } child B
+                | A
+                ;
+            child[int value]
+            @init { ChildInitRan = 1; }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ChildInitRan;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        // ChildInitRan may be 1 (child ran during alt 0 before rollback), but the parse must succeed
+        // and alt 1's path (A) must not be affected by the rolled-back seed.
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
     }
 
     /// <summary>
