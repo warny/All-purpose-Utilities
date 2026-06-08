@@ -120,6 +120,9 @@ internal sealed class G4Rule
     /// <summary>Gets or sets the optional rule <c>@after</c> lifecycle action.</summary>
     public G4EmbeddedAction? AfterAction { get; set; }
 
+    /// <summary>Gets or sets raw rule-parameter metadata text preserved from the parameter clause (<c>[...]</c> before <c>returns</c>), or <c>null</c> when absent.</summary>
+    public string? Parameters { get; set; }
+
     /// <summary>Gets or sets raw rule-return metadata text preserved from a <c>returns [...]</c> clause, or <c>null</c> when absent.</summary>
     public string? Returns { get; set; }
 

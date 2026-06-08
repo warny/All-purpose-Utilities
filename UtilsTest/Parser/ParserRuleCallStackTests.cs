@@ -511,6 +511,65 @@ public class ParserRuleCallStackTests
         StringAssert.Contains(descriptor.Returns[1].RawDeclaration, "String text");
     }
 
+    // ── Parameter descriptor tests ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A single parameter declaration exposes the lexical name (e.g. "value") not the full raw text.
+    /// </summary>
+    [TestMethod]
+    public void ParameterDescriptor_SingleDeclaration_ExposesLexicalName()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start[int value] : A ;
+            A : 'a' ;
+            """);
+        var rule = definition.ParserRules.First(r => r.Name == "start");
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        Assert.AreEqual(1, descriptor.Parameters.Count);
+        Assert.AreEqual("value", descriptor.Parameters[0].Name);
+        Assert.AreEqual("int value", descriptor.Parameters[0].RawDeclaration);
+    }
+
+    /// <summary>
+    /// Multiple parameter declarations are split and each exposes its own lexical name.
+    /// </summary>
+    [TestMethod]
+    public void ParameterDescriptor_MultipleDeclarations_SplitsAndExtractsNames()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start[int value, String text, long counter] : A ;
+            A : 'a' ;
+            """);
+        var rule = definition.ParserRules.First(r => r.Name == "start");
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        Assert.AreEqual(3, descriptor.Parameters.Count);
+        Assert.AreEqual("value", descriptor.Parameters[0].Name);
+        Assert.AreEqual("text", descriptor.Parameters[1].Name);
+        Assert.AreEqual("counter", descriptor.Parameters[2].Name);
+    }
+
+    /// <summary>
+    /// Raw parameter declarations are preserved verbatim alongside lexical names.
+    /// </summary>
+    [TestMethod]
+    public void ParameterDescriptor_RawDeclarations_PreservedVerbatim()
+    {
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start[int value, String text] : A ;
+            A : 'a' ;
+            """);
+        var rule = definition.ParserRules.First(r => r.Name == "start");
+        var descriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+
+        StringAssert.Contains(descriptor.Parameters[0].RawDeclaration, "int value");
+        StringAssert.Contains(descriptor.Parameters[1].RawDeclaration, "String text");
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────────────
 
     private static CompiledGrammar CompileWithStackManager(string grammarText, StackParserRuleInvocationFrameManager frameManager)
