@@ -774,6 +774,173 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(0, ReadIntField(assembly, "InitCount"));
     }
 
+    // ── Rule-parameter frame bridge ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that the generated execution context exposes parameter helper methods.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsParameterHelperMethods()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] @init { }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private static object? GetRuleParameter(ParserRuleLifecycleContext context, string name)");
+        StringAssert.Contains(source, "private static bool TryGetRuleParameter(ParserRuleLifecycleContext context, string name, out object? value)");
+        StringAssert.Contains(source, "private static IReadOnlyList<ParserRuleParameterDescriptor> GetRuleParameterDescriptors(ParserRuleLifecycleContext context)");
+        Assert.IsFalse(source.Contains("int value;", StringComparison.Ordinal), "No typed parameter field must be generated.");
+        Assert.IsFalse(source.Contains("public int value", StringComparison.Ordinal), "No typed parameter property must be generated.");
+    }
+
+    /// <summary>
+    /// Verifies that parameter metadata is preserved in the generated Rule definition.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_PreservesParameterMetadataInRule()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] @init { }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "Parameters:", "Generated Rule must include Parameters metadata.");
+        StringAssert.Contains(source, "RuleParameter", "Generated Rule must include RuleParameter instances.");
+    }
+
+    /// <summary>
+    /// Verifies that GetRuleParameterDescriptors returns descriptors observable from @init.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ParameterDescriptors_ObservableFromInit()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] @init {
+                DescriptorCount = GetRuleParameterDescriptors(context).Count;
+                DescriptorName = GetRuleParameterDescriptors(context).Count > 0
+                    ? GetRuleParameterDescriptors(context)[0].Name
+                    : null;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int DescriptorCount = -1;
+                public static string? DescriptorName;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "DescriptorCount"));
+        Assert.AreEqual("value", ReadStringField(assembly, "DescriptorName"));
+    }
+
+    /// <summary>
+    /// Verifies that TryGetRuleParameter returns false when no argument was explicitly supplied.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TryGetRuleParameter_ReturnsFalseWhenNoArgumentSupplied()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                FoundValue = (int?)v ?? -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int FoundValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Found"), "Parameters are not auto-bound; frame must have no parameter entry without explicit supply.");
+        Assert.AreEqual(-1, ReadIntField(assembly, "FoundValue"));
+    }
+
+    /// <summary>
+    /// Verifies that GetRuleParameter returns null when no argument was explicitly supplied.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_GetRuleParameter_ReturnsNullWhenNoArgumentSupplied()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] @init {
+                ParameterValue = GetRuleParameter(context, "value");
+                WasNull = GetRuleParameter(context, "value") is null;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static object? ParameterValue = new object();
+                public static bool WasNull;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "WasNull"), "Parameters are not auto-bound; GetRuleParameter must return null without explicit supply.");
+    }
+
+    /// <summary>
+    /// Verifies that conservative Parse() does not execute parameter helper calls.
+    /// </summary>
+    [TestMethod]
+    public void Parse_DoesNotExecuteParameterHelperCalls()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] @init { DescriptorCount = GetRuleParameterDescriptors(context).Count; }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int DescriptorCount;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        Assert.AreEqual(0, ReadIntField(assembly, "DescriptorCount"),
+            "Conservative Parse() must not execute @init hooks.");
+    }
+
     // ── Call-result bridge ───────────────────────────────────────────────────────────────
 
     /// <summary>

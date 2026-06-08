@@ -142,10 +142,10 @@ internal sealed class G4Parser
         rule.Name = ExpectIdentifier();
 
         // Skip optional rule options/returns/throws/locals before ':'
-        // while preserving rule lifecycle metadata (@init / @after), raw locals metadata, and raw returns metadata.
+        // while preserving rule lifecycle metadata (@init / @after), raw parameter, locals, and returns metadata.
         while (!AtEof() && Peek().Kind != G4TokenKind.Colon)
         {
-            if (TryParseRuleLifecycleAction(rule) || TryParseRuleLocals(rule) || TryParseRuleReturns(rule))
+            if (TryParseRuleLifecycleAction(rule) || TryParseRuleParameters(rule) || TryParseRuleLocals(rule) || TryParseRuleReturns(rule))
             {
                 continue;
             }
@@ -160,6 +160,29 @@ internal sealed class G4Parser
         Expect(G4TokenKind.Semi);
 
         return rule;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule-parameter metadata clause (<c>[...]</c> directly after the rule name, before
+    /// <c>returns</c>, <c>locals</c>, or lifecycle actions) at the current token position.
+    /// Rule parameters are captured as raw text only; no argument evaluation or typed binding is performed.
+    /// </summary>
+    /// <param name="rule">The rule receiving raw parameter metadata.</param>
+    /// <returns><c>true</c> when a parameter clause is recognized and consumed; otherwise, <c>false</c>.</returns>
+    private bool TryParseRuleParameters(G4Rule rule)
+    {
+        if (Peek().Kind != G4TokenKind.CharClass || rule.Parameters != null)
+        {
+            return false;
+        }
+
+        string rawParameters = Consume().Value;
+        if (rawParameters.Length > 0)
+        {
+            rule.Parameters = rawParameters;
+        }
+
+        return true;
     }
 
     /// <summary>

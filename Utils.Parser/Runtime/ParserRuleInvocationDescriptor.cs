@@ -120,11 +120,7 @@ public sealed class ParserRuleInvocationDescriptor
         ArgumentNullException.ThrowIfNull(rule);
 
         var parameterDescriptors = rule.Parameters?
-            .Select(static parameter => new ParserRuleParameterDescriptor
-            {
-                Name = parameter.Name,
-                RawDeclaration = GetRawDeclaration(parameter.Type, parameter.Name)
-            })
+            .SelectMany(static parameter => BuildParameterDescriptors(parameter.Name))
             .ToArray() ?? [];
         var returnDescriptors = rule.Returns?
             .SelectMany(static ruleReturn => BuildReturnDescriptors(ruleReturn.Name))
@@ -146,6 +142,24 @@ public sealed class ParserRuleInvocationDescriptor
             Options = rule.Options?.Values ?? new Dictionary<string, string>(StringComparer.Ordinal),
             Exceptions = exceptionDescriptors
         };
+    }
+
+    /// <summary>
+    /// Builds passive parameter descriptors by separating top-level declarations and extracting lexical names.
+    /// Uses the same top-level split strategy as local and return descriptors: no C# parsing, no type inference.
+    /// </summary>
+    /// <param name="rawParameters">Raw contents of a rule parameter clause (<c>[...]</c>).</param>
+    /// <returns>Untyped parameter descriptors preserving each raw declaration and its lexical name.</returns>
+    private static IEnumerable<ParserRuleParameterDescriptor> BuildParameterDescriptors(string rawParameters)
+    {
+        foreach (string declaration in SplitTopLevelLocalDeclarations(rawParameters))
+        {
+            yield return new ParserRuleParameterDescriptor
+            {
+                Name = GetLocalDeclarationName(declaration) ?? declaration,
+                RawDeclaration = declaration
+            };
+        }
     }
 
     /// <summary>
