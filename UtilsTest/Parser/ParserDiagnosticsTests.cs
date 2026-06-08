@@ -320,7 +320,7 @@ public class ParserDiagnosticsTests
 
         Assert.AreEqual(1, returnsDiagnostics.Count);
         Assert.AreEqual("UP1007", returnsDiagnostics[0].Code);
-        StringAssert.Contains(returnsDiagnostics[0].Message, "recognized but ignored");
+        StringAssert.Contains(returnsDiagnostics[0].Message, "has no typed or implicit runtime semantics");
     }
 
     [TestMethod]

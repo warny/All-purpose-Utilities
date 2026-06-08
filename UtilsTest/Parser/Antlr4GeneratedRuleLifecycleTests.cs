@@ -3,6 +3,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
+using Utils.Parser.Bootstrap;
+using Utils.Parser.Diagnostics;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
@@ -770,6 +772,236 @@ public class Antlr4GeneratedRuleLifecycleTests
         // Conservative Parse() uses the default policy which has NullParserRuleInvocationFrameManager.
         // No hook executes, so InitCount stays 0.
         Assert.AreEqual(0, ReadIntField(assembly, "InitCount"));
+    }
+
+    // ── Rule-return frame bridge ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that the generated execution context exposes return helper methods.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsRuleReturnHelperMethods()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value] @init { SetRuleReturn(context, "value", 0); }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private static object? GetRuleReturn(ParserRuleLifecycleContext context, string name)");
+        StringAssert.Contains(source, "private static bool TryGetRuleReturn(ParserRuleLifecycleContext context, string name, out object? value)");
+        StringAssert.Contains(source, "private static void SetRuleReturn(ParserRuleLifecycleContext context, string name, object? value)");
+        StringAssert.Contains(source, "private static IReadOnlyList<ParserRuleReturnDescriptor> GetRuleReturnDescriptors(ParserRuleLifecycleContext context)");
+        Assert.IsFalse(source.Contains("int value;", StringComparison.Ordinal), "No typed return field should be generated");
+        Assert.IsFalse(source.Contains("public int value", StringComparison.Ordinal), "No typed return property should be generated");
+    }
+
+    /// <summary>
+    /// Verifies that <c>@init</c> can explicitly set a return value and <c>@after</c> can read and update it.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_InitAndAfterCanExplicitlyUseRuleReturnHelpers()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value]
+            @init {
+                PresentBeforeInitSet = TryGetRuleReturn(context, "value", out object? initialValue);
+                NullBeforeInitSet = initialValue is null;
+                SetRuleReturn(context, "value", 1);
+                InitValue = (int?)GetRuleReturn(context, "value") ?? -1;
+            }
+            @after {
+                SetRuleReturn(context, "value", ((int?)GetRuleReturn(context, "value") ?? 0) + 1);
+                AfterValue = (int?)GetRuleReturn(context, "value") ?? -1;
+                AfterReturnCount = context.InvocationFrame!.Returns.Count;
+                DescriptorReturnCount = GetRuleReturnDescriptors(context).Count;
+                DescriptorReturnDeclaration = GetRuleReturnDescriptors(context)[0].RawDeclaration;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool PresentBeforeInitSet;
+                public static bool NullBeforeInitSet;
+                public static int InitValue;
+                public static int AfterValue;
+                public static int AfterReturnCount;
+                public static int DescriptorReturnCount;
+                public static string? DescriptorReturnDeclaration;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "PresentBeforeInitSet"), "Returns are not auto-allocated; frame should be empty before explicit SetRuleReturn.");
+        Assert.IsTrue(ReadBoolField(assembly, "NullBeforeInitSet"), "TryGetRuleReturn out-value is null when key absent.");
+        Assert.AreEqual(1, ReadIntField(assembly, "InitValue"));
+        Assert.AreEqual(2, ReadIntField(assembly, "AfterValue"));
+        Assert.AreEqual(1, ReadIntField(assembly, "AfterReturnCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "DescriptorReturnCount"));
+        StringAssert.Contains(ReadStringField(assembly, "DescriptorReturnDeclaration")!, "int value");
+    }
+
+    /// <summary>
+    /// Verifies that <c>InvocationFrame.Returns</c> is empty unless <c>SetRuleReturn</c> is called explicitly.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ReturnStore_IsEmptyUnlessExplicitlyWritten()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value]
+            @after {
+                ReturnCount = context.InvocationFrame!.Returns.Count;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ReturnCount = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "ReturnCount"), "Returns are not auto-allocated; store must be empty.");
+    }
+
+    /// <summary>
+    /// Verifies that return values written on a child frame are not propagated to the parent frame.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ChildReturnValue_IsNotPropagatedToParentFrame()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                ParentReturnCount = context.InvocationFrame!.Returns.Count;
+            }
+                : child ;
+            child returns [int value]
+            @after {
+                SetRuleReturn(context, "value", 99);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ParentReturnCount = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "ParentReturnCount"), "Child returns must not propagate to the parent frame.");
+    }
+
+    /// <summary>
+    /// Verifies that return descriptors are observable even without explicit <c>SetRuleReturn</c> calls.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ReturnDescriptors_ObservableWithoutAllocation()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value]
+            @init {
+                DescriptorCount = GetRuleReturnDescriptors(context).Count;
+                ReturnCount = context.InvocationFrame!.Returns.Count;
+                DescriptorName = GetRuleReturnDescriptors(context)[0].Name;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int DescriptorCount = -1;
+                public static int ReturnCount = -1;
+                public static string? DescriptorName;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "DescriptorCount"), "Descriptor must be observable from metadata.");
+        Assert.AreEqual(0, ReadIntField(assembly, "ReturnCount"), "Frame returns must remain empty without explicit SetRuleReturn.");
+        StringAssert.Contains(ReadStringField(assembly, "DescriptorName")!, "value", "Descriptor name must expose the raw returns metadata text.");
+    }
+
+    /// <summary>
+    /// Verifies that conservative <c>Parse()</c> does not execute return helper calls.
+    /// </summary>
+    [TestMethod]
+    public void Parse_DoesNotExecuteRuleReturnHelperCalls()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value]
+            @init { SetRuleReturn(context, "value", 42); InitSentinel = 1; }
+            @after { AfterSentinel = 1; }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int InitSentinel;
+                public static int AfterSentinel;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        Assert.AreEqual(0, ReadIntField(assembly, "InitSentinel"), "Conservative Parse() must not execute @init hooks.");
+        Assert.AreEqual(0, ReadIntField(assembly, "AfterSentinel"), "Conservative Parse() must not execute @after hooks.");
+    }
+
+    /// <summary>
+    /// Verifies that UP1007 still fires for rule returns clauses, with updated wording.
+    /// </summary>
+    [TestMethod]
+    public void Converter_RuleReturns_StillEmitsUp1007()
+    {
+        var diagnostics = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar P;
+            start returns [int value] : A ;
+            A : 'a' ;
+            """, diagnostics);
+
+        var returnsDiags = diagnostics
+            .Where(d => d.Code == ParserDiagnostics.RuleReturnsIgnored.Code)
+            .ToList();
+
+        Assert.AreEqual(1, returnsDiags.Count);
+        Assert.AreEqual("UP1007", returnsDiags[0].Code);
+        StringAssert.Contains(returnsDiags[0].Message, "has no typed or implicit runtime semantics");
+        StringAssert.Contains(returnsDiags[0].Message, "not propagated to callers");
     }
 
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
