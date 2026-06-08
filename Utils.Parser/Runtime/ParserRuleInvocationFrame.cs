@@ -60,6 +60,24 @@ public sealed class ParserRuleInvocationFrame
         int inputPosition,
         IReadOnlyDictionary<string, object?> parameters,
         ParserRuleInvocationDescriptor? descriptor)
+        : this(ruleName, inputPosition, parameters, descriptor, parent: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a parser rule invocation frame with passive parameter values, rule metadata, and a parent frame.
+    /// </summary>
+    /// <param name="ruleName">Name of the parser rule being invoked.</param>
+    /// <param name="inputPosition">Token-stream position at the time of rule entry.</param>
+    /// <param name="parameters">Passive parameter values to expose through the frame.</param>
+    /// <param name="descriptor">Passive rule metadata descriptor to expose through the frame.</param>
+    /// <param name="parent">Parent invocation frame in the current call stack, or <c>null</c> for root-level rules.</param>
+    public ParserRuleInvocationFrame(
+        string ruleName,
+        int inputPosition,
+        IReadOnlyDictionary<string, object?> parameters,
+        ParserRuleInvocationDescriptor? descriptor,
+        ParserRuleInvocationFrame? parent)
     {
         RuleName = ruleName ?? throw new ArgumentNullException(nameof(ruleName));
         InputPosition = inputPosition;
@@ -67,6 +85,8 @@ public sealed class ParserRuleInvocationFrame
             ? throw new ArgumentNullException(nameof(parameters))
             : new Dictionary<string, object?>(parameters, StringComparer.Ordinal);
         _descriptor = descriptor;
+        Parent = parent;
+        Depth = parent is null ? 0 : parent.Depth + 1;
     }
 
     /// <summary>
@@ -98,6 +118,17 @@ public sealed class ParserRuleInvocationFrame
     /// Gets passive rule-level metadata associated with this invocation frame, when supplied by the runtime.
     /// </summary>
     public ParserRuleInvocationDescriptor? Descriptor => _descriptor;
+
+    /// <summary>
+    /// Gets the parent invocation frame in the current parser rule call stack, or <c>null</c> when this is a root-level rule.
+    /// </summary>
+    public ParserRuleInvocationFrame? Parent { get; }
+
+    /// <summary>
+    /// Gets the zero-based call-stack depth of this invocation frame.
+    /// Root-level rule frames have depth 0; each nested rule invocation increments the depth by 1.
+    /// </summary>
+    public int Depth { get; }
 
     /// <summary>
     /// Gets a parameter value by name.
