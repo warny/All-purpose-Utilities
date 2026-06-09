@@ -211,6 +211,19 @@ start @after {
 
 This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
 
+To split raw argument text into individual top-level slices and then seed explicitly:
+
+```csharp
+// In an inline action between child[42, "hello"] and child2:
+if (TrySplitLastRuleCallRawArguments(context, "child", out var args))
+{
+    SetNextRuleParameterFromRawArguments(context, "child2", "value", args[0], s => int.Parse(s));
+    SetNextRuleParameterFromRawArguments(context, "child2", "text",  args[1], s => s.Trim('"'));
+}
+```
+
+Splitting respects nested `()`, `[]`, `{}`, and quoted strings. Syntactic only — no argument is evaluated. Backed by `Utils.Parser.Runtime.ParserRawArgumentSplitter.SplitTopLevel`.
+
 To map raw argument text into a future child seed explicitly, use the helper:
 
 ```csharp
