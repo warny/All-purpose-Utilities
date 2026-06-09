@@ -1932,6 +1932,291 @@ public class Antlr4GeneratedRuleLifecycleTests
             "Seed from failed alt 0 (value=1) must not leak; alt 1 must provide value=2.");
     }
 
+    // ── TrySplitLastRuleCallRawArguments helper ───────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that the generated source includes the split helper methods.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsSplitHelperMethods()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private static global::System.Collections.Generic.IReadOnlyList<string> SplitRawArgumentsTopLevel(string? rawArguments)");
+        StringAssert.Contains(source, "private static bool TrySplitLastRuleCallRawArguments(ParserRuleLifecycleContext context, string ruleName, out global::System.Collections.Generic.IReadOnlyList<string> arguments)");
+        StringAssert.Contains(source, "private bool TrySplitLastRuleCallRawArguments(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string ruleName, out global::System.Collections.Generic.IReadOnlyList<string> arguments)");
+    }
+
+    /// <summary>
+    /// Verifies that TrySplitLastRuleCallRawArguments returns true and two slices for child[42, "hello"].
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallRawArguments_ReturnsTwoSlices()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotArgs = TrySplitLastRuleCallRawArguments(context, "child", out var args);
+                Arg0 = args.Count > 0 ? args[0] : null;
+                Arg1 = args.Count > 1 ? args[1] : null;
+                ArgCount = args.Count;
+            }
+                : child[42, "hello"] ;
+            child[int value, string text] : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotArgs;
+                public static string? Arg0;
+                public static string? Arg1;
+                public static int ArgCount;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "GotArgs"));
+        Assert.AreEqual(2, ReadIntField(assembly, "ArgCount"));
+        Assert.AreEqual("42", ReadStringField(assembly, "Arg0"));
+        Assert.AreEqual("\"hello\"", ReadStringField(assembly, "Arg1"));
+    }
+
+    /// <summary>
+    /// Verifies that a mismatched rule name returns false and an empty list.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallRawArguments_Mismatch_ReturnsFalse()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotArgs = TrySplitLastRuleCallRawArguments(context, "wrong", out var args);
+                ArgCount = args.Count;
+            }
+                : child[42] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotArgs = true;
+                public static int ArgCount = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "GotArgs"));
+        Assert.AreEqual(0, ReadIntField(assembly, "ArgCount"));
+    }
+
+    /// <summary>
+    /// Verifies that no raw arguments returns false and an empty list.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallRawArguments_NoRawArgs_ReturnsFalse()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotArgs = TrySplitLastRuleCallRawArguments(context, "child", out var args);
+                ArgCount = args.Count;
+            }
+                : child ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotArgs = true;
+                public static int ArgCount = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "GotArgs"));
+        Assert.AreEqual(0, ReadIntField(assembly, "ArgCount"));
+    }
+
+    /// <summary>
+    /// Verifies end-to-end: inline action splits child[42, "hello"] and seeds child2 with both slices.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SplitAndSeed_TwoArgumentsSeededIntoLaterChild()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42, "hello"]
+                    {
+                        if (TrySplitLastRuleCallRawArguments(context, "child", out var args))
+                        {
+                            SetNextRuleParameterFromRawArguments(context, "child2", "value", args[0], s => int.Parse(s));
+                            SetNextRuleParameterFromRawArguments(context, "child2", "text", args[1], s => s.Trim('"'));
+                        }
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value, string text]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out object? v);
+                FoundText = TryGetRuleParameter(context, "text", out object? t);
+                SeenValue = v is int i ? i : -1;
+                SeenText = t as string;
+            }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundText;
+                public static int SeenValue = -1;
+                public static string? SeenText;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundValue"), "value must be seeded.");
+        Assert.AreEqual(42, ReadIntField(assembly, "SeenValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundText"), "text must be seeded.");
+        Assert.AreEqual("hello", ReadStringField(assembly, "SeenText"));
+    }
+
+    /// <summary>
+    /// Verifies that child[42, "hello"] alone still does not populate child parameters.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SplitHelper_ChildArgsAloneDoNotPopulateParameters()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42, "hello"] ;
+            child[int value, string text]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out _);
+                FoundText = TryGetRuleParameter(context, "text", out _);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundText;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "FoundValue"), "No explicit split+seed: value must not be populated.");
+        Assert.IsFalse(ReadBoolField(assembly, "FoundText"), "No explicit split+seed: text must not be populated.");
+    }
+
+    /// <summary>
+    /// Verifies that conservative Parse() does not execute hooks and cannot observe split arguments.
+    /// </summary>
+    [TestMethod]
+    public void Parse_SplitHelper_RemainsConservative()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotArgs = TrySplitLastRuleCallRawArguments(context, "child", out var args);
+                ArgCount = args.Count;
+            }
+                : child[42, "x"] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotArgs;
+                public static int ArgCount;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "GotArgs"), "Conservative Parse() must not execute @after hooks.");
+        Assert.AreEqual(0, ReadIntField(assembly, "ArgCount"));
+    }
+
+    /// <summary>
+    /// Verifies rollback safety: a mapped seed from a failed alternative does not leak.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SplitAndSeed_FailedAlternative_SeedDoesNotLeak()
+    {
+        const string grammar = """
+            grammar P;
+            start
+                : child[1] { if (TrySplitLastRuleCallRawArguments(context, "child", out var a1)) SetNextRuleParameterFromRawArguments(context, "child2", "value", a1[0], s => int.Parse(s)); } child2 X
+                | child[2] { if (TrySplitLastRuleCallRawArguments(context, "child", out var a2)) SetNextRuleParameterFromRawArguments(context, "child2", "value", a2[0], s => int.Parse(s)); } child2
+                ;
+            child : A ;
+            child2[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : C ;
+            A : 'a' ;
+            C : 'c' ;
+            X : 'x' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ac");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"), "child2 must receive seed from alt 1.");
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"),
+            "Seed from failed alt 0 (value=1) must not leak; alt 1 must provide value=2.");
+    }
+
     // ── Rule-return frame bridge ─────────────────────────────────────────────────────────
 
     /// <summary>
