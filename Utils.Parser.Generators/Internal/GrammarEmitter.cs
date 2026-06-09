@@ -285,7 +285,10 @@ internal static class GrammarEmitter
                 break;
 
             case G4RuleRef rr:
-                sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\")");
+                if (rr.RawArguments != null)
+                    sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\", RawArguments: \"{Escape(rr.RawArguments)}\")");
+                else
+                    sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\")");
                 break;
 
             case G4Negation neg:

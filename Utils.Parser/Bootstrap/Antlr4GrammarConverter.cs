@@ -1134,11 +1134,16 @@ public sealed class Antlr4GrammarConverter
         throw new GrammarParseException("Unknown atom structure");
     }
 
-    /// <summary>Converts a <c>ruleref</c> node into a <see cref="RuleRef"/>.</summary>
-    private static RuleRef ConvertRuleRef(ParserNode node)
+    /// <summary>Converts a <c>ruleref</c> node into a <see cref="RuleRef"/>, preserving any <c>argActionBlock</c> as raw metadata.</summary>
+    private RuleRef ConvertRuleRef(ParserNode node)
     {
         var name = Require(FirstToken(node, "RULE_REF"), "Missing RULE_REF in ruleref").Text;
-        return new RuleRef(name);
+        var argNode = First(node, "argActionBlock");
+        if (argNode == null) return new RuleRef(name);
+
+        var rawArguments = GetArgActionBlockText(argNode);
+        _diagnostics?.Add(ParserDiagnostics.RuleCallArgumentsPreservedAsMetadata, rawArguments, name);
+        return new RuleRef(name, RawArguments: rawArguments);
     }
 
     /// <summary>Converts a <c>terminalDef</c> node into a <see cref="RuleRef"/> (token reference) or <see cref="LiteralMatch"/>.</summary>

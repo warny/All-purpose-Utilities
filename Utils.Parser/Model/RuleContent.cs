@@ -54,13 +54,22 @@ public record AnyChar : TokenizerContent;
 
 /// <summary>
 /// A reference to another rule, either lexer or parser depending on context.
-/// Optionally carries a label: <c>e=expr</c> or <c>ids+=ID</c>.
+/// Optionally carries a label (<c>e=expr</c> or <c>ids+=ID</c>) and raw call-site argument text
+/// preserved from <c>callee[...]</c> syntax.
+/// Raw arguments are metadata only: they are not evaluated, not bound to child rule parameters,
+/// and do not populate invocation-frame parameters.
 /// </summary>
 public record RuleRef(
     /// <summary>Name of the referenced rule.</summary>
     string RuleName,
     /// <summary>Optional label assignment, or <c>null</c> when unlabeled.</summary>
-    RuleLabel? Label = null
+    RuleLabel? Label = null,
+    /// <summary>
+    /// Raw argument text preserved from a <c>callee[...]</c> call-site argument clause, or <c>null</c> when absent.
+    /// The outer brackets are excluded. This text is not evaluated and is not passed to child rule frames.
+    /// Use <c>SetNextRuleParameter(...)</c> for explicit parameter seeding.
+    /// </summary>
+    string? RawArguments = null
 ) : RuleContent;
 
 /// <summary>

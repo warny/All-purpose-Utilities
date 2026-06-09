@@ -210,6 +210,17 @@ public static class ParserDiagnostics
             "{0} code in '{1}' was injected as trailing generated C# source near the end of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
             DefaultCategory);
 
+    /// <summary>Rule-call arguments preserved as raw metadata; not evaluated and not bound to child parameters.</summary>
+    public static readonly ParserDiagnosticDescriptor RuleCallArgumentsPreservedAsMetadata =
+        new(
+            "UP1037",
+            "Rule-call arguments preserved as metadata only",
+            "Rule-call arguments '{0}' on rule reference '{1}' are preserved as raw metadata only. " +
+            "They are not evaluated, not bound to child rule parameters, and do not populate invocation-frame parameters. " +
+            "Use SetNextRuleParameter(...) for explicit parameter seeding. " +
+            "$param is not supported. Generated Parse(...) remains conservative.",
+            DefaultCategory);
+
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
         new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
@@ -344,6 +355,7 @@ public static class ParserDiagnostics
             [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [UnsupportedLexerCommand.Code] = UnsupportedLexerCommand,
             [UnsupportedAntlrOptionIgnored.Code] = UnsupportedAntlrOptionIgnored,
+            [RuleCallArgumentsPreservedAsMetadata.Code] = RuleCallArgumentsPreservedAsMetadata,
             [LabelOnNonRuleReferenceIgnored.Code] = LabelOnNonRuleReferenceIgnored,
             [PredicateOptionsIgnored.Code] = PredicateOptionsIgnored,
             [ElementOptionIgnored.Code] = ElementOptionIgnored,

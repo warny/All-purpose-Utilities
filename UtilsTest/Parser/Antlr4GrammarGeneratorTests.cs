@@ -458,6 +458,77 @@ public class Antlr4GrammarGeneratorTests
         StringAssert.Contains(src, "[\"caseInsensitive\"] = \"true\"");
     }
 
+    // ── Rule-call arguments callee[...] ──────────────────────────────────────
+
+    [TestMethod]
+    public void G4Parser_RuleCallArgs_Simple_RawArgumentsPreserved()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : child[42] ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("42", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void G4Parser_RuleCallArgs_Absent_IsNull()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.IsNull(ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void Emitter_RuleCallArgs_IncludesRawArgumentsMetadata()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child[42] ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\", RawArguments: \"42\")");
+    }
+
+    [TestMethod]
+    public void Emitter_RuleCallArgs_Absent_EmitsSimpleRuleRef()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\")");
+        Assert.IsFalse(src.Contains("RawArguments:"), "Must not emit RawArguments when absent");
+    }
+
+    [TestMethod]
+    public void Emitter_RuleCallArgs_DoesNotAutoInvokeSetNextRuleParameter()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child[42] ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        // The emitter may define SetNextRuleParameter as a helper method.
+        // It must NOT auto-generate an invocation that seeds child[42] into child's parameters.
+        Assert.IsFalse(src.Contains("SetNextRuleParameter(context, \"child\""),
+            "Must not auto-call SetNextRuleParameter(context, \"child\", ...) for rule-call arguments");
+    }
+
     // ── Generated ExpGrammar (integration) ───────────────────────────────────
 
     [TestMethod]
