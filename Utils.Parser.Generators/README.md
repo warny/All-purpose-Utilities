@@ -211,6 +211,18 @@ start @after {
 
 This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
 
+For named argument forms (`value: 42`, `value = 42`), use the named helpers:
+
+```csharp
+// In an inline action between child[value: 42, text: "hello"] and child2:
+if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+    SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+        new ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) },
+        new ParserRawNamedArgumentParameterMapping { ParameterName = "text",  ArgumentName = "text",  Map = s => s.Trim('"') });
+```
+
+Missing argument name returns false; no partial seeding. Duplicate `ParameterName`: last wins.
+
 To map multiple positional slices in one call, use `SetNextRuleParametersFromRawArguments`:
 
 ```csharp

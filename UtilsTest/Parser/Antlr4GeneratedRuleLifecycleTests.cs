@@ -2217,6 +2217,490 @@ public class Antlr4GeneratedRuleLifecycleTests
             "Seed from failed alt 0 (value=1) must not leak; alt 1 must provide value=2.");
     }
 
+    // ── Named raw argument helpers ────────────────────────────────────────────────────────
+
+    /// <summary>Verifies the generated source includes named split and mapping helpers.</summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsNamedRawArgumentHelpers()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "private static global::System.Collections.Generic.IReadOnlyDictionary<string, string> SplitNamedRawArgumentsTopLevel(");
+        StringAssert.Contains(source, "private static bool TrySplitLastRuleCallNamedRawArguments(ParserRuleLifecycleContext context, string ruleName,");
+        StringAssert.Contains(source, "private bool TrySplitLastRuleCallNamedRawArguments(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string ruleName,");
+        StringAssert.Contains(source, "private static bool SetNextRuleParametersFromNamedRawArguments(ParserRuleLifecycleContext context, string ruleName,");
+        StringAssert.Contains(source, "private bool SetNextRuleParametersFromNamedRawArguments(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string ruleName,");
+    }
+
+    /// <summary>TrySplitLastRuleCallNamedRawArguments returns true and two entries for child[value: 42, text: "hello"].</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallNamedRawArguments_ReturnsDictionary()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotNamed = TrySplitLastRuleCallNamedRawArguments(context, "child", out var named);
+                HasValue = named.ContainsKey("value");
+                HasText  = named.ContainsKey("text");
+                RawValue = named.TryGetValue("value", out var v) ? v : null;
+                RawText  = named.TryGetValue("text",  out var t) ? t : null;
+            }
+                : child[value: 42, text: "hello"] ;
+            child[int value, string text] : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotNamed;
+                public static bool HasValue;
+                public static bool HasText;
+                public static string? RawValue;
+                public static string? RawText;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "GotNamed"));
+        Assert.IsTrue(ReadBoolField(assembly, "HasValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "HasText"));
+        Assert.AreEqual("42", ReadStringField(assembly, "RawValue"));
+        Assert.AreEqual("\"hello\"", ReadStringField(assembly, "RawText"));
+    }
+
+    /// <summary>Rule-name mismatch returns false and empty dictionary.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallNamedRawArguments_Mismatch_ReturnsFalse()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotNamed = TrySplitLastRuleCallNamedRawArguments(context, "wrong", out var named);
+                Count = named.Count;
+            }
+                : child[value: 42] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotNamed = true;
+                public static int Count = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "GotNamed"));
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>No raw arguments returns false and empty dictionary.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallNamedRawArguments_NoArgs_ReturnsFalse()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotNamed = TrySplitLastRuleCallNamedRawArguments(context, "child", out var named);
+                Count = named.Count;
+            }
+                : child ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotNamed = true;
+                public static int Count = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "GotNamed"));
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>Positional (no separator) raw args return false from named helper.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TrySplitLastRuleCallNamedRawArguments_PositionalArgs_ReturnsFalse()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                GotNamed = TrySplitLastRuleCallNamedRawArguments(context, "child", out var named);
+                Count = named.Count;
+            }
+                : child[42] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool GotNamed = true;
+                public static int Count = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "GotNamed"),
+            "Positional args without separator must return false from named helper.");
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>End-to-end: named split + named mapping seeds child2 correctly.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedSplitAndMap_SeedsLaterChild()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42, text: "hello"]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) },
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "text",  ArgumentName = "text",  Map = s => s.Trim('"') });
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value, string text]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out object? v);
+                FoundText  = TryGetRuleParameter(context, "text",  out object? t);
+                SeenValue  = v is int i ? i : -1;
+                SeenText   = t as string;
+            }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundText;
+                public static int SeenValue = -1;
+                public static string? SeenText;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundValue"));
+        Assert.AreEqual(42, ReadIntField(assembly, "SeenValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundText"));
+        Assert.AreEqual("hello", ReadStringField(assembly, "SeenText"));
+    }
+
+    /// <summary>child[value: 42, text: "hello"] alone still does not populate parameters.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedArgs_AloneDoNotPopulateParameters()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42, text: "hello"] ;
+            child[int value, string text]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out _);
+                FoundText  = TryGetRuleParameter(context, "text",  out _);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundText;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsFalse(ReadBoolField(assembly, "FoundValue"));
+        Assert.IsFalse(ReadBoolField(assembly, "FoundText"));
+    }
+
+    /// <summary>Empty mapping list returns true and sets no seed.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParametersFromNamedRawArguments_EmptyMappings_TrueNoSeed()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            Seeded = SetNextRuleParametersFromNamedRawArguments(context, "child2", named);
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value]
+            @init { ChildFound = TryGetRuleParameter(context, "value", out _); }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Seeded;
+                public static bool ChildFound;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Seeded"), "Empty mappings must return true.");
+        Assert.IsFalse(ReadBoolField(assembly, "ChildFound"), "No seed was set.");
+    }
+
+    /// <summary>Missing argument name returns false and sets no seed.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParametersFromNamedRawArguments_MissingArg_NoSeed()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            Seeded = SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "missing", Map = s => int.Parse(s) });
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value]
+            @init { ChildFound = TryGetRuleParameter(context, "value", out _); }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Seeded = true;
+                public static bool ChildFound;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Seeded"), "Missing argument must return false.");
+        Assert.IsFalse(ReadBoolField(assembly, "ChildFound"), "No seed must be set.");
+    }
+
+    /// <summary>Missing argument on one of multiple mappings prevents all seeds (no partial seeding).</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParametersFromNamedRawArguments_PartialMissing_NoPartialSeed()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            Seeded = SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value",   ArgumentName = "value",   Map = s => int.Parse(s) },
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "second", ArgumentName = "missing", Map = s => s });
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value, string second]
+            @init {
+                FoundValue  = TryGetRuleParameter(context, "value",  out _);
+                FoundSecond = TryGetRuleParameter(context, "second", out _);
+            }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Seeded = true;
+                public static bool FoundValue;
+                public static bool FoundSecond;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Seeded"), "Missing arg must return false.");
+        Assert.IsFalse(ReadBoolField(assembly, "FoundValue"),  "No partial seeding: value must not be set.");
+        Assert.IsFalse(ReadBoolField(assembly, "FoundSecond"), "No partial seeding: second must not be set.");
+    }
+
+    /// <summary>Duplicate ParameterName: last mapping wins.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParametersFromNamedRawArguments_DuplicateParam_LastWins()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[v1: 10, v2: 99]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "v1", Map = s => int.Parse(s) },
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "v2", Map = s => int.Parse(s) });
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen  = v is int i ? i : -1;
+            }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.AreEqual(99, ReadIntField(assembly, "Seen"),
+            "Duplicate ParameterName: last mapping (v2=99) must win.");
+    }
+
+    /// <summary>Mapper exception propagates naturally.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParametersFromNamedRawArguments_MapperException_Propagates()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: not-int]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) });
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value] : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var ex = Assert.ThrowsException<System.Reflection.TargetInvocationException>(
+            () => InvokeParse(assembly, "ParseWithEmbeddedCode", "ab"));
+        Assert.IsInstanceOfType<System.FormatException>(ex.InnerException);
+    }
+
+    /// <summary>Rollback: failed alternative seed does not leak.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedMapAndSeed_FailedAlternative_NoLeak()
+    {
+        const string grammar = """
+            grammar P;
+            start
+                : child[value: 1] { if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var n1)) SetNextRuleParametersFromNamedRawArguments(context, "child2", n1, new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) }); } child2 X
+                | child[value: 2] { if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var n2)) SetNextRuleParametersFromNamedRawArguments(context, "child2", n2, new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) }); } child2
+                ;
+            child : A ;
+            child2[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen  = v is int i ? i : -1;
+            }
+                : C ;
+            A : 'a' ;
+            C : 'c' ;
+            X : 'x' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ac");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"),
+            "Seed from failed alt 0 (value:1) must not leak; alt 1 must provide value:2.");
+    }
+
+    /// <summary>Conservative Parse() remains conservative.</summary>
+    [TestMethod]
+    public void Parse_NamedMapAndSeed_RemainsConservative()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 42]
+                    {
+                        if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+                            Seeded = SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+                                new global::Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) });
+                    }
+                    child2 ;
+            child : A ;
+            child2[int value] : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool Seeded; }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "ab");
+
+        Assert.IsFalse(ReadBoolField(assembly, "Seeded"), "Conservative Parse() must not execute inline actions.");
+    }
+
     // ── SetNextRuleParametersFromRawArguments helper ──────────────────────────────────────
 
     /// <summary>Verifies the generated source contains both overloads.</summary>
