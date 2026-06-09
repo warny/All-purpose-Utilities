@@ -1651,6 +1651,46 @@ public class Antlr4GeneratedRuleLifecycleTests
         StringAssert.Contains(returnsDiags[0].Message, "not propagated to callers");
     }
 
+    // ── Rule-call argument metadata — non-binding ─────────────────────────────
+
+    /// <summary>
+    /// Verifies that <c>callee[...]</c> call-site arguments are metadata-only and do not populate child rule
+    /// invocation-frame parameters. <c>TryGetRuleParameter</c> must return <c>false</c> inside the child
+    /// <c>@init</c> when the caller used <c>child[42]</c> without explicit <c>SetNextRuleParameter</c> seeding.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgs_DoNotPopulateChildParameters()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                SeenValue = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int SeenValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode), "Parse must succeed.");
+        Assert.IsFalse(ReadBoolField(assembly, "Found"),
+            "child[42] is metadata-only: TryGetRuleParameter must return false because callee[...] does not populate child frame parameters.");
+        Assert.AreEqual(-1, ReadIntField(assembly, "SeenValue"),
+            "No parameter was explicitly seeded, so v must be null and SeenValue must remain -1.");
+    }
+
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
 
     /// <summary>Emits generated C# for the supplied grammar.</summary>

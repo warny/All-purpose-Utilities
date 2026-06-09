@@ -450,6 +450,16 @@ This model explicitly excludes:
 - visible unsupported embedded-code constructs produce generator warning `UP1029` without changing behavior: `@lexer::members`, lexer actions/predicates, and other unsupported grammar actions are not executed; parser semantic predicates, inline parser actions, and parser `@init` / `@after` hooks are generated as executable opt-in hooks;
 - future work may add broader C# shape support without changing default parsing.
 
+### Rule-call argument syntax `callee[...]`
+
+- `callee[...]` argument clauses are **metadata-only**: parsed and preserved as `RuleRef.RawArguments` (raw text, outer brackets excluded);
+- reported with `UP1037 RuleCallArgumentsPreservedAsMetadata`;
+- raw argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters;
+- `PendingChildSeeds`, `InvocationFrame.Parameters`, and frame behavior are unchanged;
+- generated `Parse(...)` and generated rule method signatures are unchanged;
+- use `SetNextRuleParameter(...)` for explicit parameter seeding from lifecycle hook code;
+- `$param` is not supported.
+
 ### Future PR — Lexer actions/predicates
 
 - separate design and implementation;

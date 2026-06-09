@@ -1032,4 +1032,94 @@ public class Antlr4GrammarConverterTests
         Assert.IsFalse(diag.Any(d => d.Code == "UP1030"),
             "Did not expect UP1030 when no predicate options are present");
     }
+
+    // ─── Rule-call arguments callee[...] ─────────────────────────────────────
+
+    [TestMethod]
+    public void RuleCallArgs_Simple_RawArgumentsPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child[42] ;
+            child[int value] : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("42", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_Multiple_RawTextPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child[1, "x", foo()] ;
+            child[int a, string b, int c] : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.AreEqual("1, \"x\", foo()", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_Absent_RawArgumentsIsNull()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.IsNull(ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_EmitsDiagnosticUP1037()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child[42] ;
+            child[int value] : 'a' ;
+            """, diag);
+
+        Assert.IsTrue(diag.Any(d => d.Code == "UP1037"),
+            "Expected UP1037 (RuleCallArgumentsPreservedAsMetadata) diagnostic");
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_Absent_NoUP1037Diagnostic()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """, diag);
+
+        Assert.IsFalse(diag.Any(d => d.Code == "UP1037"),
+            "Did not expect UP1037 when no rule-call arguments are present");
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_WithLabel_BothPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : e=child[42] ;
+            child[int value] : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.IsNotNull(ruleRef.Label);
+        Assert.AreEqual("e", ruleRef.Label!.Label);
+        Assert.AreEqual("42", ruleRef.RawArguments);
+    }
 }

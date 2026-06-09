@@ -234,6 +234,12 @@ internal sealed class G4RuleRef : G4Content
 {
     /// <summary>Gets or sets the referenced rule name.</summary>
     public string RuleName { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets raw argument text preserved from a <c>callee[...]</c> call-site argument clause, or <c>null</c> when absent.
+    /// The outer brackets are excluded. This text is not evaluated and is not passed to child rule frames.
+    /// </summary>
+    public string? RawArguments { get; set; }
 }
 
 /// <summary>

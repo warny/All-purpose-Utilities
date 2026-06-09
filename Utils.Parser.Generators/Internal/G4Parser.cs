@@ -429,7 +429,10 @@ internal sealed class G4Parser
         if (tok.Kind == G4TokenKind.Identifier && !IsKeyword(tok.Value))
         {
             Consume();
-            return new G4RuleRef { RuleName = tok.Value };
+            string? rawArguments = null;
+            if (Peek().Kind == G4TokenKind.CharClass)
+                rawArguments = Consume().Value;
+            return new G4RuleRef { RuleName = tok.Value, RawArguments = rawArguments };
         }
 
         return null;
