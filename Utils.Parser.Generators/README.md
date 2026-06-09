@@ -211,6 +211,17 @@ start @after {
 
 This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
 
+To map multiple positional slices in one call, use `SetNextRuleParametersFromRawArguments`:
+
+```csharp
+if (TrySplitLastRuleCallRawArguments(context, "child", out var args))
+    SetNextRuleParametersFromRawArguments(context, "child2", args,
+        new ParserRawArgumentParameterMapping { ParameterName = "value", Index = 0, Map = s => int.Parse(s) },
+        new ParserRawArgumentParameterMapping { ParameterName = "text",  Index = 1, Map = s => s.Trim('"') });
+```
+
+Validates all indices before applying any seed. Last mapping wins for duplicate names. Mapper exceptions propagate.
+
 To split raw argument text into individual top-level slices and then seed explicitly:
 
 ```csharp
