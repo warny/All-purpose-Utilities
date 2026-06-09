@@ -789,6 +789,79 @@ public class ParserRuleCallStackTests
         Assert.IsNull(parentFrame.LastCompletedChildCall!.RawArguments);
     }
 
+    /// <summary>
+    /// AnnotateLastChildCallLabel updates LastCompletedChildCall on the current frame
+    /// and invokes the callback so the execution context is also updated.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_AnnotateLastChildCallLabel_UpdatesFrameAndInvokesCallback()
+    {
+        ParserRuleCallResult? captured = null;
+        var manager = new StackParserRuleInvocationFrameManager(onChildCallResult: r => captured = r);
+
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame  = manager.Enter("child", 0);
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+        manager.Exit(childFrame, succeeded: true);
+
+        Assert.IsNotNull(parentFrame.LastCompletedChildCall);
+        Assert.AreEqual(ParserRuleReferenceLabelKind.None, parentFrame.LastCompletedChildCall!.LabelKind);
+        Assert.IsNull(parentFrame.LastCompletedChildCall!.LabelName);
+
+        manager.AnnotateLastChildCallLabel("x", ParserRuleReferenceLabelKind.Assignment);
+
+        Assert.AreEqual("x", parentFrame.LastCompletedChildCall!.LabelName);
+        Assert.AreEqual(ParserRuleReferenceLabelKind.Assignment, parentFrame.LastCompletedChildCall!.LabelKind);
+        Assert.AreEqual("x", captured?.LabelName,
+            "Callback must be invoked so execution context _lastChildCallResult is updated.");
+        Assert.AreEqual(ParserRuleReferenceLabelKind.Assignment, captured?.LabelKind,
+            "Callback must be invoked so execution context _lastChildCallResult is updated.");
+    }
+
+    /// <summary>
+    /// AnnotateLastChildCallLabel is a no-op when the current frame has no completed child call.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_AnnotateLastChildCallLabel_NoOpWhenNoChildCall()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        manager.Enter("start", 0);
+
+        // No child call has completed — must not throw.
+        manager.AnnotateLastChildCallLabel("x", ParserRuleReferenceLabelKind.Assignment);
+
+        Assert.IsNull(manager.Current!.LastCompletedChildCall);
+    }
+
+    /// <summary>
+    /// AnnotateLastChildCallLabel preserves existing RawArguments on the call result,
+    /// and AnnotateLastChildCallRawArguments preserves existing label metadata.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_AnnotateLastChildCallLabel_PreservesRawArguments()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame  = manager.Enter("child", 0);
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+        manager.Exit(childFrame, succeeded: true);
+
+        manager.AnnotateLastChildCallRawArguments("42");
+        manager.AnnotateLastChildCallLabel("xs", ParserRuleReferenceLabelKind.List);
+
+        Assert.AreEqual("42", parentFrame.LastCompletedChildCall!.RawArguments,
+            "RawArguments must be preserved after AnnotateLastChildCallLabel.");
+        Assert.AreEqual("xs", parentFrame.LastCompletedChildCall!.LabelName);
+        Assert.AreEqual(ParserRuleReferenceLabelKind.List, parentFrame.LastCompletedChildCall!.LabelKind);
+
+        manager.AnnotateLastChildCallRawArguments(null);
+
+        Assert.AreEqual("xs", parentFrame.LastCompletedChildCall!.LabelName,
+            "Label metadata must be preserved after AnnotateLastChildCallRawArguments.");
+        Assert.AreEqual(ParserRuleReferenceLabelKind.List, parentFrame.LastCompletedChildCall!.LabelKind,
+            "Label metadata must be preserved after AnnotateLastChildCallRawArguments.");
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────────────
 
     private static CompiledGrammar CompileWithStackManager(string grammarText, StackParserRuleInvocationFrameManager frameManager)

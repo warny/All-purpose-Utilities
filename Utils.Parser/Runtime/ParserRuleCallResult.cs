@@ -47,6 +47,20 @@ public sealed class ParserRuleCallResult : IParserExecutionStateHashable
     public string? RawArguments { get; init; }
 
     /// <summary>
+    /// Gets the label name from the call-site rule reference (<c>x=child</c>, <c>xs+=child</c>),
+    /// or <c>null</c> when the call site carried no label.
+    /// Metadata only: no implicit variable, typed field, or ANTLR-compatible label access is generated.
+    /// </summary>
+    public string? LabelName { get; init; }
+
+    /// <summary>
+    /// Gets the label kind from the call-site rule reference, or
+    /// <see cref="ParserRuleReferenceLabelKind.None"/> when the call site carried no label.
+    /// Metadata only.
+    /// </summary>
+    public ParserRuleReferenceLabelKind LabelKind { get; init; }
+
+    /// <summary>
     /// Computes a deterministic hash reflecting this call result's rule name, depth, and return values,
     /// so it can participate in managed parser execution-state keys stored in generated execution contexts.
     /// </summary>
@@ -78,6 +92,16 @@ public sealed class ParserRuleCallResult : IParserExecutionStateHashable
         if (RawArguments is not null)
         {
             foreach (char c in RawArguments)
+            {
+                hash = (hash ^ (ulong)c) * 1099511628211UL;
+            }
+        }
+
+        hash = (hash ^ (ulong)(int)LabelKind) * 1099511628211UL;
+
+        if (LabelName is not null)
+        {
+            foreach (char c in LabelName)
             {
                 hash = (hash ^ (ulong)c) * 1099511628211UL;
             }
