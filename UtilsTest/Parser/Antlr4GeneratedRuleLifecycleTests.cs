@@ -1664,6 +1664,274 @@ public class Antlr4GeneratedRuleLifecycleTests
             "Conservative Parse() must not execute @after hooks.");
     }
 
+    // ── SetNextRuleParameterFromRawArguments helper ───────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that the generated source includes the SetNextRuleParameterFromRawArguments helper.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsSetNextRuleParameterFromRawArgumentsHelper()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source,
+            "private static bool SetNextRuleParameterFromRawArguments(ParserRuleLifecycleContext context, string ruleName, string parameterName, string? rawArguments, global::System.Func<string, object?> map)");
+    }
+
+    /// <summary>
+    /// Verifies that manual mapping from raw call-site metadata to a later child parameter works.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParameterFromRawArguments_MapsRawTextToChildParameter()
+    {
+        // Inline action runs between child[42] and child2 — uses ParserActionExecutionContext overloads.
+        const string grammar = """
+            grammar P;
+            start : child[42] { if (TryGetLastRuleCallRawArguments(context, "child", out string? raw)) SetNextRuleParameterFromRawArguments(context, "child2", "value", raw, s => int.Parse(s)); } child2 ;
+            child : A ;
+            child2[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"),
+            "SetNextRuleParameterFromRawArguments must have seeded the value.");
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"),
+            "Mapped value must equal the integer parsed from the raw argument text.");
+    }
+
+    /// <summary>
+    /// Verifies that child[42] alone still does not populate child parameters.
+    /// The helper must be called explicitly to trigger seeding.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgsAlone_DoNotPopulateChildParameters()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value]
+            @init { Found = TryGetRuleParameter(context, "value", out _); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool Found; }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Found"),
+            "Without explicit helper call, child[42] must not populate child parameters.");
+    }
+
+    /// <summary>
+    /// Verifies that explicit SetNextRuleParameter seeding and raw metadata remain independent.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitSeedingAndRawMetadataRemainIndependent()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @init { SetNextRuleParameter(context, "child", "value", 7); }
+            @after { Raw = GetLastRuleCallResult(context)?.RawArguments; }
+                : child[42] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+                public static string? Raw;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"), "Explicit seeding must still work.");
+        Assert.AreEqual(7, ReadIntField(assembly, "Seen"), "Seeded value must be 7, not the raw argument.");
+        Assert.AreEqual("42", ReadStringField(assembly, "Raw"), "Raw metadata must still be '42'.");
+    }
+
+    /// <summary>
+    /// Verifies that null rawArguments causes the helper to return false without seeding.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParameterFromRawArguments_NullRawArguments_ReturnsFalse()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                Seeded = SetNextRuleParameterFromRawArguments(context, "child2", "value", null, s => int.Parse(s));
+            }
+                : child child2 ;
+            child : A ;
+            child2[int value]
+            @init { ChildFound = TryGetRuleParameter(context, "value", out _); }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Seeded = true;
+                public static bool ChildFound;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Seeded"), "Null rawArguments must return false.");
+        Assert.IsFalse(ReadBoolField(assembly, "ChildFound"), "No seed was set, so child parameter must be absent.");
+    }
+
+    /// <summary>
+    /// Verifies that a mismatched ruleName in TryGetLastRuleCallRawArguments returns false,
+    /// so no seed is set when combined with the helper.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParameterFromRawArguments_MismatchedRuleName_NoSeed()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                if (TryGetLastRuleCallRawArguments(context, "wrong", out string? raw))
+                    SetNextRuleParameterFromRawArguments(context, "child2", "value", raw, s => int.Parse(s));
+            }
+                : child[42] child2 ;
+            child : A ;
+            child2[int value]
+            @init { Found = TryGetRuleParameter(context, "value", out _); }
+                : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool Found; }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ab");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Found"),
+            "Mismatched rule name in TryGetLastRuleCallRawArguments must prevent seeding.");
+    }
+
+    /// <summary>
+    /// Verifies that mapper exceptions propagate naturally without being swallowed.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParameterFromRawArguments_MapperException_Propagates()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @after {
+                SetNextRuleParameterFromRawArguments(context, "child2", "value", "not-an-int", s => int.Parse(s));
+            }
+                : child child2 ;
+            child : A ;
+            child2[int value] : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var ex = Assert.ThrowsException<System.Reflection.TargetInvocationException>(
+            () => InvokeParse(assembly, "ParseWithEmbeddedCode", "ab"));
+        Assert.IsInstanceOfType<System.FormatException>(ex.InnerException,
+            "FormatException from int.Parse must propagate through the helper.");
+    }
+
+    /// <summary>
+    /// Verifies that a mapped seed from a failed alternative does not leak into the successful alternative.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SetNextRuleParameterFromRawArguments_FailedAlternative_NoSeedLeak()
+    {
+        const string grammar = """
+            grammar P;
+            start
+                : child[1] { if (TryGetLastRuleCallRawArguments(context, "child", out string? raw1)) SetNextRuleParameterFromRawArguments(context, "child2", "value", raw1, s => int.Parse(s)); } child2 X
+                | child[2] { if (TryGetLastRuleCallRawArguments(context, "child", out string? raw2)) SetNextRuleParameterFromRawArguments(context, "child2", "value", raw2, s => int.Parse(s)); } child2
+                ;
+            child : A ;
+            child2[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : C ;
+            A : 'a' ;
+            C : 'c' ;
+            X : 'x' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+
+        // Input "ac": child matches 'a', alt 0 tries child2 ('c') then X (absent) → fails.
+        // Alt 1: child matches 'a' (memoized), inline action maps raw "2" into child2 seed → child2 sees value=2.
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "ac");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"), "child2 must receive the seed from alt 1.");
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"),
+            "Seed from failed alt 0 (value=1) must not leak; alt 1 must provide value=2.");
+    }
+
     // ── Rule-return frame bridge ─────────────────────────────────────────────────────────
 
     /// <summary>

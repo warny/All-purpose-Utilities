@@ -455,7 +455,8 @@ This model explicitly excludes:
 - `callee[...]` argument clauses are **metadata-only**: parsed and preserved as `RuleRef.RawArguments` (raw text, outer brackets excluded);
 - reported with `UP1037 RuleCallArgumentsPreservedAsMetadata`;
 - at runtime, the raw argument text is also carried into `ParserRuleCallResult.RawArguments` on the parent frame's last completed child call result (via `StackParserRuleInvocationFrameManager.AnnotateLastChildCallRawArguments`, called by `ParserEngine.TryParseRuleRef` after each successful child rule parse, whether fresh or memoized);
-- generated C# opt-in code can inspect it explicitly via `GetLastRuleCallResult(context)?.RawArguments` or the new `TryGetLastRuleCallRawArguments(context, ruleName, out rawArgs)` helper in parent lifecycle hooks;
+- generated C# opt-in code can inspect it explicitly via `GetLastRuleCallResult(context)?.RawArguments` or `TryGetLastRuleCallRawArguments(context, ruleName, out rawArgs)` in parent lifecycle and inline-action hooks;
+- `SetNextRuleParameterFromRawArguments(context, ruleName, parameterName, rawArguments, map)` allows explicit user-controlled mapping of raw text into a future child seed via a caller-supplied delegate; requires an explicit mapper; null `rawArguments` returns `false`; mapper exceptions propagate; seeds the **next** invocation of the named rule;
 - call-site metadata is rollback-safe (execution-state snapshots include `_lastChildCallResult.RawArguments`) and memoization-safe (annotation always reflects the current call site, not the cached snapshot);
 - raw argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters;
 - `PendingChildSeeds`, `InvocationFrame.Parameters`, and frame behavior are unchanged;
