@@ -38,6 +38,15 @@ public sealed class ParserRuleCallResult : IParserExecutionStateHashable
     public ParserRuleInvocationDescriptor? Descriptor { get; init; }
 
     /// <summary>
+    /// Gets the raw call-site argument text preserved from a <c>callee[...]</c> argument clause at the call site,
+    /// or <c>null</c> when the call site carried no argument clause.
+    /// The outer brackets are excluded. This text is not evaluated, not bound to child rule parameters,
+    /// and does not populate invocation-frame parameters.
+    /// Use <c>SetNextRuleParameter(...)</c> for explicit parameter seeding.
+    /// </summary>
+    public string? RawArguments { get; init; }
+
+    /// <summary>
     /// Computes a deterministic hash reflecting this call result's rule name, depth, and return values,
     /// so it can participate in managed parser execution-state keys stored in generated execution contexts.
     /// </summary>
@@ -63,6 +72,14 @@ public sealed class ParserRuleCallResult : IParserExecutionStateHashable
             if (kvp.Value is not null)
             {
                 hash = (hash ^ (ulong)(uint)kvp.Value.GetHashCode()) * 1099511628211UL;
+            }
+        }
+
+        if (RawArguments is not null)
+        {
+            foreach (char c in RawArguments)
+            {
+                hash = (hash ^ (ulong)c) * 1099511628211UL;
             }
         }
 

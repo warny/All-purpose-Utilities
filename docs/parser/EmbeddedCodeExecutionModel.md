@@ -454,6 +454,9 @@ This model explicitly excludes:
 
 - `callee[...]` argument clauses are **metadata-only**: parsed and preserved as `RuleRef.RawArguments` (raw text, outer brackets excluded);
 - reported with `UP1037 RuleCallArgumentsPreservedAsMetadata`;
+- at runtime, the raw argument text is also carried into `ParserRuleCallResult.RawArguments` on the parent frame's last completed child call result (via `StackParserRuleInvocationFrameManager.AnnotateLastChildCallRawArguments`, called by `ParserEngine.TryParseRuleRef` after each successful child rule parse, whether fresh or memoized);
+- generated C# opt-in code can inspect it explicitly via `GetLastRuleCallResult(context)?.RawArguments` or the new `TryGetLastRuleCallRawArguments(context, ruleName, out rawArgs)` helper in parent lifecycle hooks;
+- call-site metadata is rollback-safe (execution-state snapshots include `_lastChildCallResult.RawArguments`) and memoization-safe (annotation always reflects the current call site, not the cached snapshot);
 - raw argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters;
 - `PendingChildSeeds`, `InvocationFrame.Parameters`, and frame behavior are unchanged;
 - generated `Parse(...)` and generated rule method signatures are unchanged;

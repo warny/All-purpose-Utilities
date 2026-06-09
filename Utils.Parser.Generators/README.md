@@ -198,7 +198,18 @@ The generated static facade exposes `ParseWithEmbeddedCode(string input)` for de
 
 Rule-call argument clauses such as `child[42]` are recognized by the generator's G4 parser and preserved as raw metadata text on the emitted `RuleRef` (`RawArguments` property, outer brackets excluded). Reported with `UP1037 RuleCallArgumentsPreservedAsMetadata`.
 
-This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged. Use `SetNextRuleParameter(...)` in a lifecycle hook for explicit parameter seeding. `$param` is not supported.
+At runtime, the raw argument text is also carried into `ParserRuleCallResult.RawArguments` on the parent frame's last completed child call result. Generated C# opt-in code can inspect it explicitly:
+
+```csharp
+start @after {
+    Raw = GetLastRuleCallResult(context)?.RawArguments;
+    // or:
+    TryGetLastRuleCallRawArguments(context, "child", out string? rawArgs);
+}
+    : child[42] ;
+```
+
+This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged. Use `SetNextRuleParameter(...)` in a lifecycle hook for explicit parameter seeding. `$param` is not supported.
 
 ## Shared runtime metadata alignment
 

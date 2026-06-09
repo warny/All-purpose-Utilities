@@ -178,4 +178,32 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
             _current.LastCompletedChildCall = result;
         }
     }
+
+    /// <summary>
+    /// Annotates the current frame's <see cref="ParserRuleInvocationFrame.LastCompletedChildCall"/> with
+    /// the raw argument text from the current call site, replacing any stale <see cref="ParserRuleCallResult.RawArguments"/>
+    /// that may have been restored from a memoized execution-state snapshot.
+    /// Invokes the optional callback so the managed execution-state mechanism reflects the updated metadata.
+    /// No-op when the current frame has no completed child call.
+    /// </summary>
+    /// <param name="rawArguments">
+    /// Raw call-site argument text from <c>RuleRef.RawArguments</c>, or <c>null</c> when the call site
+    /// carries no argument clause. Not evaluated, not bound to child parameters.
+    /// </param>
+    public void AnnotateLastChildCallRawArguments(string? rawArguments)
+    {
+        if (_current?.LastCompletedChildCall is not { } existing) return;
+
+        var updated = new ParserRuleCallResult
+        {
+            RuleName = existing.RuleName,
+            InputPosition = existing.InputPosition,
+            Depth = existing.Depth,
+            Returns = existing.Returns,
+            Descriptor = existing.Descriptor,
+            RawArguments = rawArguments,
+        };
+        _current.LastCompletedChildCall = updated;
+        _onChildCallResult?.Invoke(updated);
+    }
 }
