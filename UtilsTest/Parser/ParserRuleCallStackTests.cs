@@ -701,6 +701,94 @@ public class ParserRuleCallStackTests
         StringAssert.Contains(descriptor.Parameters[1].RawDeclaration, "String text");
     }
 
+    // ── RawArguments metadata bridge ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// ParserRuleCallResult preserves RawArguments and includes it in the hash.
+    /// </summary>
+    [TestMethod]
+    public void CallResult_RawArguments_PreservedAndHashedDistinctly()
+    {
+        var resultWithout = new ParserRuleCallResult
+        {
+            RuleName = "child",
+            InputPosition = 0,
+            Depth = 1,
+            Returns = new Dictionary<string, object?>(),
+        };
+        var resultWith = new ParserRuleCallResult
+        {
+            RuleName = "child",
+            InputPosition = 0,
+            Depth = 1,
+            Returns = new Dictionary<string, object?>(),
+            RawArguments = "42",
+        };
+
+        Assert.IsNull(resultWithout.RawArguments);
+        Assert.AreEqual("42", resultWith.RawArguments);
+        Assert.AreNotEqual(resultWithout.GetParserExecutionStateHash(), resultWith.GetParserExecutionStateHash());
+    }
+
+    /// <summary>
+    /// AnnotateLastChildCallRawArguments updates LastCompletedChildCall on the current frame
+    /// and invokes the callback so the execution context is also updated.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_AnnotateLastChildCallRawArguments_UpdatesFrameAndInvokesCallback()
+    {
+        ParserRuleCallResult? captured = null;
+        var manager = new StackParserRuleInvocationFrameManager(onChildCallResult: r => captured = r);
+
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame  = manager.Enter("child", 0);
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+        manager.Exit(childFrame, succeeded: true);
+
+        Assert.IsNotNull(parentFrame.LastCompletedChildCall);
+        Assert.IsNull(parentFrame.LastCompletedChildCall!.RawArguments);
+
+        manager.AnnotateLastChildCallRawArguments("42");
+
+        Assert.AreEqual("42", parentFrame.LastCompletedChildCall!.RawArguments);
+        Assert.AreEqual("42", captured?.RawArguments,
+            "Callback must be invoked so execution context _lastChildCallResult is updated.");
+    }
+
+    /// <summary>
+    /// AnnotateLastChildCallRawArguments is a no-op when the current frame has no completed child call.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_AnnotateLastChildCallRawArguments_NoOpWhenNoChildCall()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        manager.Enter("start", 0);
+
+        // No child call has completed — must not throw.
+        manager.AnnotateLastChildCallRawArguments("42");
+
+        Assert.IsNull(manager.Current!.LastCompletedChildCall);
+    }
+
+    /// <summary>
+    /// AnnotateLastChildCallRawArguments accepts null to clear call-site metadata.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_AnnotateLastChildCallRawArguments_AcceptsNullToClear()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        var childFrame  = manager.Enter("child", 0);
+        manager.PrepareCallResultForSnapshot(childFrame, succeeded: true);
+        manager.Exit(childFrame, succeeded: true);
+
+        manager.AnnotateLastChildCallRawArguments("42");
+        Assert.AreEqual("42", parentFrame.LastCompletedChildCall!.RawArguments);
+
+        manager.AnnotateLastChildCallRawArguments(null);
+        Assert.IsNull(parentFrame.LastCompletedChildCall!.RawArguments);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────────────
 
     private static CompiledGrammar CompileWithStackManager(string grammarText, StackParserRuleInvocationFrameManager frameManager)

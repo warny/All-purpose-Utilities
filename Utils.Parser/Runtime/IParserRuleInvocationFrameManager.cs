@@ -39,4 +39,20 @@ public interface IParserRuleInvocationFrameManager
     void PrepareCallResultForSnapshot(ParserRuleInvocationFrame frame, bool succeeded)
     {
     }
+
+    /// <summary>
+    /// Called by <c>ParserEngine</c> after a direct child parser-rule call completes successfully
+    /// (whether from a fresh parse or a memoized hit) to annotate the current frame's last completed
+    /// child call result with the raw argument text from the call site.
+    /// This ensures that the parent-visible call result carries the current call site's
+    /// <c>callee[...]</c> metadata rather than stale metadata from a memoized execution-state snapshot.
+    /// The default implementation performs no action.
+    /// </summary>
+    /// <param name="rawArguments">
+    /// Raw call-site argument text from the current <c>RuleRef.RawArguments</c>, or <c>null</c> when
+    /// the call site carries no argument clause. Not evaluated, not bound to child parameters.
+    /// </param>
+    void AnnotateLastChildCallRawArguments(string? rawArguments)
+    {
+    }
 }

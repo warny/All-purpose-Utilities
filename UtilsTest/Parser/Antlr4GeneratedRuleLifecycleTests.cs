@@ -1237,6 +1237,7 @@ public class Antlr4GeneratedRuleLifecycleTests
 
         StringAssert.Contains(source, "private static global::Utils.Parser.Runtime.ParserRuleCallResult? GetLastRuleCallResult(ParserRuleLifecycleContext context)");
         StringAssert.Contains(source, "private static bool TryGetLastRuleCallReturn(ParserRuleLifecycleContext context, string returnName, out object? value)");
+        StringAssert.Contains(source, "private static bool TryGetLastRuleCallRawArguments(ParserRuleLifecycleContext context, string ruleName, out string? rawArguments)");
         Assert.IsFalse(source.Contains("$child.value", StringComparison.Ordinal), "Implicit $rule.value must not be generated.");
         Assert.IsFalse(source.Contains("int value;", StringComparison.Ordinal), "No typed return field must be generated.");
     }
@@ -1418,6 +1419,248 @@ public class Antlr4GeneratedRuleLifecycleTests
         InvokeParse(assembly, "Parse", "a");
 
         Assert.IsFalse(ReadBoolField(assembly, "CallResultObserved"),
+            "Conservative Parse() must not execute @after hooks.");
+    }
+
+    // ── Rule-call raw-argument metadata bridge ────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that the generated source includes the TryGetLastRuleCallRawArguments helper.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsTryGetLastRuleCallRawArgumentsHelper()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private static bool TryGetLastRuleCallRawArguments(ParserRuleLifecycleContext context, string ruleName, out string? rawArguments)");
+    }
+
+    /// <summary>
+    /// Verifies that a parent <c>@after</c> hook can observe raw call-site arguments from <c>child[42]</c>
+    /// via <c>GetLastRuleCallResult(context)?.RawArguments</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgs_RawArgumentsObservableAfterChildCall()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Raw = GetLastRuleCallResult(context)?.RawArguments;
+                TryFoundRaw = TryGetLastRuleCallRawArguments(context, "child", out string? rawOut);
+                RawFromTry = rawOut;
+            }
+                : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Raw;
+                public static bool TryFoundRaw;
+                public static string? RawFromTry;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("42", ReadStringField(assembly, "Raw"),
+            "GetLastRuleCallResult(context)?.RawArguments must equal the call-site text.");
+        Assert.IsTrue(ReadBoolField(assembly, "TryFoundRaw"),
+            "TryGetLastRuleCallRawArguments must return true for a matching rule with arguments.");
+        Assert.AreEqual("42", ReadStringField(assembly, "RawFromTry"),
+            "TryGetLastRuleCallRawArguments out parameter must equal the call-site text.");
+    }
+
+    /// <summary>
+    /// Verifies that raw call-site arguments remain metadata-only: child parameters are not populated.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgs_StillDoNotPopulateChildParameters()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                SeenValue = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int SeenValue = -1;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Found"),
+            "child[42] is metadata-only: TryGetRuleParameter must return false.");
+        Assert.AreEqual(-1, ReadIntField(assembly, "SeenValue"));
+    }
+
+    /// <summary>
+    /// Verifies that explicit <c>SetNextRuleParameter</c> seeding and raw call-site metadata are separate mechanisms.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgs_ExplicitSeedingAndRawMetadataAreSeparate()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @init { SetNextRuleParameter(context, "child", "value", 42); }
+            @after {
+                Raw = GetLastRuleCallResult(context)?.RawArguments;
+            }
+                : child[999] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+                public static string? Raw;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"),
+            "Explicit SetNextRuleParameter seeding must still work.");
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"),
+            "Seeded value must be visible via TryGetRuleParameter.");
+        Assert.AreEqual("999", ReadStringField(assembly, "Raw"),
+            "Raw call-site metadata must reflect child[999], independent of explicit seeding.");
+    }
+
+    /// <summary>
+    /// Verifies that a failed alternative with <c>child[1] B</c> does not leak raw arguments to the
+    /// successful alternative <c>child[2]</c>. The parent <c>@after</c> must observe <c>"2"</c>, not <c>"1"</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgs_FailedAlternative_DoesNotLeakRawArguments()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Raw = GetLastRuleCallResult(context)?.RawArguments;
+            }
+                : child[1] B
+                | child[2]
+                ;
+            child : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Raw;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("2", ReadStringField(assembly, "Raw"),
+            "After rollback, raw arguments must reflect the successful alternative's call site.");
+    }
+
+    /// <summary>
+    /// Verifies that when a memoized child parse result is reused, the parent-visible
+    /// <c>RawArguments</c> reflects the current call site, not the memoized execution-state snapshot.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RuleCallArgs_MemoizedResult_UsesCurrentCallSiteRawArguments()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Raw = GetLastRuleCallResult(context)?.RawArguments;
+            }
+                : child[1] B
+                | child[2]
+                ;
+            child : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Raw;
+            }
+            """;
+
+        // Same grammar/input as the rollback test. On input "a", child[1] succeeds (memoized) and
+        // alt 0 fails at B. Alt 1 reuses the memoized child result but must show RawArguments = "2".
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("2", ReadStringField(assembly, "Raw"),
+            "Memoized child result must expose the current call site's RawArguments, not the cached one.");
+    }
+
+    /// <summary>
+    /// Verifies that conservative <c>Parse()</c> does not expose raw call-site arguments to hooks
+    /// (since hooks do not execute in conservative mode).
+    /// </summary>
+    [TestMethod]
+    public void Parse_RuleCallArgs_DoNotExposeRawArgumentsInConservativeMode()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Raw = GetLastRuleCallResult(context)?.RawArguments;
+            }
+                : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Raw;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNull(ReadStringField(assembly, "Raw"),
             "Conservative Parse() must not execute @after hooks.");
     }
 
