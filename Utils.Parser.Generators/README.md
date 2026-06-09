@@ -209,7 +209,19 @@ start @after {
     : child[42] ;
 ```
 
-This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged. Use `SetNextRuleParameter(...)` in a lifecycle hook for explicit parameter seeding. `$param` is not supported.
+This is **metadata only**: the argument text is not evaluated, not parsed as C# expressions, and not bound to child rule parameters. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
+
+To map raw argument text into a future child seed explicitly, use the helper:
+
+```csharp
+// In an inline action between child[42] and child2:
+if (TryGetLastRuleCallRawArguments(context, "child", out string? raw))
+    SetNextRuleParameterFromRawArguments(context, "child2", "value", raw, s => int.Parse(s));
+```
+
+This helper requires an explicit mapper delegate and never evaluates arguments automatically. Null `rawArguments` returns `false`. Mapper exceptions propagate. Seeds the **next** invocation of the named rule.
+
+Use `SetNextRuleParameter(...)` for direct explicit seeding. `$param` is not supported.
 
 ## Shared runtime metadata alignment
 
