@@ -511,6 +511,137 @@ public class ParserRuleCallStackTests
         StringAssert.Contains(descriptor.Returns[1].RawDeclaration, "String text");
     }
 
+    // ── Parameter seeding unit tests ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Pending seed is stored on the parent frame and delivered to the matching child frame.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_MatchingChildRule_ReceivesSeed()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 42);
+
+        var childFrame = manager.Enter("child", 1);
+
+        Assert.IsTrue(childFrame.TryGetParameter("value", out object? v));
+        Assert.AreEqual(42, v);
+    }
+
+    /// <summary>
+    /// Non-matching child rule does not consume seeds intended for another rule.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_NonMatchingChildRule_DoesNotConsumeSeed()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 42);
+
+        var otherFrame = manager.Enter("other", 1);
+
+        Assert.IsFalse(otherFrame.TryGetParameter("value", out _), "Non-matching rule must not consume the seed.");
+        Assert.IsNotNull(parentFrame.PendingChildSeeds, "Seed must remain on parent for the intended rule.");
+    }
+
+    /// <summary>
+    /// Consuming a seed removes it from the parent frame.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_SeedIsRemovedFromParentAfterConsumption()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 1);
+
+        manager.Enter("child", 1);
+
+        Assert.IsNull(parentFrame.PendingChildSeeds, "Consumed seed must be removed from the parent frame.");
+    }
+
+    /// <summary>
+    /// Child frame receives a copied parameter dictionary; mutating the seed input after seeding does not affect child.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_ChildFrame_ReceivesCopiedDictionary()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 1);
+
+        var childFrame = manager.Enter("child", 1);
+
+        // Seeding again (new value) after the child was entered must not affect child's existing params.
+        parentFrame.SetPendingChildParameter("child", "value", 999);
+
+        Assert.IsTrue(childFrame.TryGetParameter("value", out object? v));
+        Assert.AreEqual(1, v, "Child frame must have the copied snapshot, not the updated seed.");
+    }
+
+    /// <summary>
+    /// ClearPendingChildParameters removes seeds for the specified rule.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_ClearNextRuleParameters_RemovesSeeds()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 42);
+
+        parentFrame.ClearPendingChildParameters("child");
+
+        var childFrame = manager.Enter("child", 1);
+        Assert.IsFalse(childFrame.TryGetParameter("value", out _), "Cleared seed must not reach child.");
+        Assert.IsNull(parentFrame.PendingChildSeeds, "Parent seeds must be null after clearing.");
+    }
+
+    /// <summary>
+    /// Root frame enters without any pending seeds even if none exist.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_RootFrame_DoesNotReceivePendingParameters()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+
+        var rootFrame = manager.Enter("start", 0);
+
+        Assert.AreEqual(0, rootFrame.Parameters.Count, "Root frame must have no parameters.");
+    }
+
+    /// <summary>
+    /// GetCurrentPendingSeeds returns the current frame's seed store.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_GetCurrentPendingSeeds_ReturnsFrameSeeds()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 7);
+
+        var seeds = manager.GetCurrentPendingSeeds();
+
+        Assert.IsNotNull(seeds);
+        Assert.IsTrue(seeds.TryGet("child", out var p));
+        Assert.AreEqual(7, p["value"]);
+    }
+
+    /// <summary>
+    /// SyncPendingSeedsToCurrentFrame updates the current frame's seed store from the restored context.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeeding_SyncPendingSeedsToCurrentFrame_OverwritesExistingSeeds()
+    {
+        var manager = new StackParserRuleInvocationFrameManager();
+        var parentFrame = manager.Enter("start", 0);
+        parentFrame.SetPendingChildParameter("child", "value", 99);
+
+        // Simulate rollback: sync null (pre-attempt snapshot value)
+        manager.SyncPendingSeedsToCurrentFrame(null);
+
+        Assert.IsNull(parentFrame.PendingChildSeeds, "SyncPendingSeedsToCurrentFrame must overwrite with the restored value.");
+    }
+
     // ── Parameter descriptor tests ───────────────────────────────────────────────────────
 
     /// <summary>

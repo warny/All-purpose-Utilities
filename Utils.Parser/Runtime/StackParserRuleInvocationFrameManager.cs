@@ -54,9 +54,64 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     /// <returns>The new invocation frame, which is now <see cref="Current"/>.</returns>
     public ParserRuleInvocationFrame Enter(string ruleName, int inputPosition, ParserRuleInvocationDescriptor? descriptor = null)
     {
-        var frame = new ParserRuleInvocationFrame(ruleName, inputPosition, new Dictionary<string, object?>(), descriptor, _current);
+        IReadOnlyDictionary<string, object?> parameters;
+        if (_current is not null)
+        {
+            _current.TryConsumePendingChildParameters(ruleName, out parameters);
+        }
+        else
+        {
+            parameters = new Dictionary<string, object?>(StringComparer.Ordinal);
+        }
+
+        var frame = new ParserRuleInvocationFrame(ruleName, inputPosition, parameters, descriptor, _current);
         _current = frame;
         return frame;
+    }
+
+    /// <summary>
+    /// Gets the pending child-parameter seed store from the current frame, or <c>null</c> when no frame is active or no seeds are pending.
+    /// Used by the managed execution-state mechanism to capture seed state in backtracking snapshots.
+    /// </summary>
+    public ParserRuleParameterSeedStore? GetCurrentPendingSeeds() => _current?.PendingChildSeeds;
+
+    /// <summary>
+    /// Sets a pending child-rule parameter seed on the current frame.
+    /// Delegates to <see cref="ParserRuleInvocationFrame.SetPendingChildParameter"/> on the current frame.
+    /// No-op when no frame is active.
+    /// </summary>
+    /// <param name="ruleName">Name of the child rule that will receive the seed when next entered.</param>
+    /// <param name="parameterName">Parameter metadata name as declared in the child rule.</param>
+    /// <param name="value">Untyped value to seed.</param>
+    public void SetPendingChildParameter(string ruleName, string parameterName, object? value)
+    {
+        _current?.SetPendingChildParameter(ruleName, parameterName, value);
+    }
+
+    /// <summary>
+    /// Clears pending child-rule parameter seeds from the current frame.
+    /// Delegates to <see cref="ParserRuleInvocationFrame.ClearPendingChildParameters"/> on the current frame.
+    /// No-op when no frame is active.
+    /// </summary>
+    /// <param name="ruleName">
+    /// Name of the child rule whose seeds to clear, or <c>null</c> to clear all pending seeds.
+    /// </param>
+    public void ClearPendingChildParameters(string? ruleName = null)
+    {
+        _current?.ClearPendingChildParameters(ruleName);
+    }
+
+    /// <summary>
+    /// Syncs <paramref name="seeds"/> to the current frame's <see cref="ParserRuleInvocationFrame.PendingChildSeeds"/>.
+    /// Called by the managed execution-state restore mechanism after restoring a snapshot, so stale seeds do not
+    /// leak across failed parser alternatives.
+    /// </summary>
+    public void SyncPendingSeedsToCurrentFrame(ParserRuleParameterSeedStore? seeds)
+    {
+        if (_current is not null)
+        {
+            _current.PendingChildSeeds = seeds;
+        }
     }
 
     /// <summary>

@@ -82,7 +82,9 @@ public static class ParserExecutionContextHasher<TContext>
     /// <returns><see langword="true"/> when the field should not be hashed; otherwise, <see langword="false"/>.</returns>
     private static bool ShouldSkipField(FieldInfo field)
     {
-        return field.IsStatic || IsEventBackingField(field);
+        return field.IsStatic
+            || IsEventBackingField(field)
+            || field.IsDefined(typeof(ParserExecutionStateIgnoredAttribute), inherit: false);
     }
 
     /// <summary>

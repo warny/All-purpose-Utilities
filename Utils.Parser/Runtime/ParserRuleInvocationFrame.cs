@@ -131,6 +131,14 @@ public sealed class ParserRuleInvocationFrame
     public int Depth { get; }
 
     /// <summary>
+    /// Gets or sets the store of pending child-rule parameter seeds on this frame.
+    /// Seeds are consumed by <see cref="StackParserRuleInvocationFrameManager"/> when the matching child rule is entered.
+    /// This value is synced to the managed execution-state snapshot before each capture so that backtracking
+    /// restores the seed state correctly and seeds do not leak across failed parser alternatives.
+    /// </summary>
+    internal ParserRuleParameterSeedStore? PendingChildSeeds { get; set; }
+
+    /// <summary>
     /// Gets the call result from the most recently completed successful direct child rule invocation,
     /// or <c>null</c> when no child rule has yet completed successfully in the current rule context.
     /// This value is set by the invocation-frame manager on successful child exit and is synchronized
@@ -208,5 +216,66 @@ public sealed class ParserRuleInvocationFrame
     {
         ArgumentNullException.ThrowIfNull(name);
         return _returns.TryGetValue(name, out value);
+    }
+
+    /// <summary>
+    /// Seeds an untyped parameter value for the next invocation of <paramref name="ruleName"/> as a direct child of this frame.
+    /// Seeds are consumed and copied into the matching child frame when that rule is entered through the stack frame manager.
+    /// Parameters are not auto-bound; rule call arguments are not evaluated.
+    /// </summary>
+    /// <param name="ruleName">Name of the child rule that will receive the seed.</param>
+    /// <param name="parameterName">Parameter metadata name.</param>
+    /// <param name="value">Untyped parameter value to seed.</param>
+    public void SetPendingChildParameter(string ruleName, string parameterName, object? value)
+    {
+        PendingChildSeeds = (PendingChildSeeds ?? new ParserRuleParameterSeedStore()).With(ruleName, parameterName, value);
+    }
+
+    /// <summary>
+    /// Attempts to consume and remove the pending parameter seed for <paramref name="ruleName"/>.
+    /// On success, the seeds are removed from this frame and returned as a read-only snapshot.
+    /// </summary>
+    /// <param name="ruleName">Name of the child rule whose seeds to consume.</param>
+    /// <param name="parameters">Receives the pending parameter snapshot when present.</param>
+    /// <returns><c>true</c> when seeds for <paramref name="ruleName"/> were present; otherwise, <c>false</c>.</returns>
+    public bool TryConsumePendingChildParameters(string ruleName, out IReadOnlyDictionary<string, object?> parameters)
+    {
+        if (PendingChildSeeds is null || !PendingChildSeeds.TryGet(ruleName, out parameters!))
+        {
+            parameters = new Dictionary<string, object?>(StringComparer.Ordinal);
+            return false;
+        }
+
+        PendingChildSeeds = PendingChildSeeds.Without(ruleName);
+        if (PendingChildSeeds.IsEmpty)
+        {
+            PendingChildSeeds = null;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Removes all pending child-parameter seeds for <paramref name="ruleName"/>, or all seeds when <paramref name="ruleName"/> is <c>null</c>.
+    /// </summary>
+    public void ClearPendingChildParameters(string? ruleName = null)
+    {
+        if (PendingChildSeeds is null)
+        {
+            return;
+        }
+
+        if (ruleName is null)
+        {
+            PendingChildSeeds = null;
+        }
+        else
+        {
+            PendingChildSeeds = PendingChildSeeds.Without(ruleName);
+            if (PendingChildSeeds.IsEmpty)
+            {
+                PendingChildSeeds = null;
+            }
+        }
     }
 }
