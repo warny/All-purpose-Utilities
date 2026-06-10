@@ -771,13 +771,14 @@ public sealed class ParserEngine
         // Parser rule: recurse.
         var parserResult = ParseRule(context, referencedRule, precedence: 0, diagnostics);
 
-        // Annotate the parent frame's last child call result with the current call-site raw arguments.
+        // Annotate the parent frame's last child call result with current call-site metadata.
         // This must happen after ParseRule returns (whether from a fresh parse or a memoized hit),
-        // so that the parent always sees the current call site's RawArguments rather than stale
-        // metadata from a memoized execution-state snapshot. Metadata-only: not evaluated, not bound.
+        // so that the parent always sees the current call site's metadata rather than stale
+        // values from a memoized execution-state snapshot. Metadata-only: not evaluated, not bound.
         if (parserResult is not null)
         {
             _ruleInvocationFrameManager.AnnotateLastChildCallRawArguments(ruleRef.RawArguments);
+            _ruleInvocationFrameManager.AnnotateLastChildCallLabel(ruleRef.LabelName, ruleRef.LabelKind);
         }
 
         return parserResult;

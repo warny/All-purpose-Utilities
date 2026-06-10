@@ -202,6 +202,35 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
             Returns = existing.Returns,
             Descriptor = existing.Descriptor,
             RawArguments = rawArguments,
+            LabelName = existing.LabelName,
+            LabelKind = existing.LabelKind,
+        };
+        _current.LastCompletedChildCall = updated;
+        _onChildCallResult?.Invoke(updated);
+    }
+
+    /// <summary>
+    /// Annotates the current frame's <see cref="ParserRuleInvocationFrame.LastCompletedChildCall"/> with
+    /// label metadata from the current call site, replacing any stale label data from a memoized snapshot.
+    /// Invokes the optional callback so the managed execution-state mechanism reflects the updated metadata.
+    /// No-op when the current frame has no completed child call.
+    /// </summary>
+    /// <param name="labelName">Label name from the current call site, or <c>null</c>.</param>
+    /// <param name="labelKind">Label kind from the current call site.</param>
+    public void AnnotateLastChildCallLabel(string? labelName, ParserRuleReferenceLabelKind labelKind)
+    {
+        if (_current?.LastCompletedChildCall is not { } existing) return;
+
+        var updated = new ParserRuleCallResult
+        {
+            RuleName = existing.RuleName,
+            InputPosition = existing.InputPosition,
+            Depth = existing.Depth,
+            Returns = existing.Returns,
+            Descriptor = existing.Descriptor,
+            RawArguments = existing.RawArguments,
+            LabelName = labelName,
+            LabelKind = labelKind,
         };
         _current.LastCompletedChildCall = updated;
         _onChildCallResult?.Invoke(updated);

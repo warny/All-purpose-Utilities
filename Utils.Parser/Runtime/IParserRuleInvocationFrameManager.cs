@@ -55,4 +55,19 @@ public interface IParserRuleInvocationFrameManager
     void AnnotateLastChildCallRawArguments(string? rawArguments)
     {
     }
+
+    /// <summary>
+    /// Called by <c>ParserEngine</c> after a direct child parser-rule call completes successfully
+    /// to annotate the current frame's last completed child call result with label metadata from the call site.
+    /// This ensures parent-visible label metadata reflects the current call site rather than any stale snapshot.
+    /// The default implementation performs no action.
+    /// </summary>
+    /// <param name="labelName">
+    /// Label name from the current <c>RuleRef.LabelName</c>, or <c>null</c> when the call site carries no label.
+    /// Metadata only: no implicit variable or automatic binding.
+    /// </param>
+    /// <param name="labelKind">Label kind from the current <c>RuleRef.LabelKind</c>.</param>
+    void AnnotateLastChildCallLabel(string? labelName, ParserRuleReferenceLabelKind labelKind)
+    {
+    }
 }

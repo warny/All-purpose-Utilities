@@ -350,11 +350,7 @@ internal sealed class G4Parser
             return ParseLexerCommand();
         }
 
-        if (TryConsumeRuleLabelPrefix())
-        {
-            // Label prefixes like x=... and xs+=... are currently metadata-only for the generator AST.
-            // They are intentionally ignored here while preserving deterministic element parsing.
-        }
+        var (labelName, labelIsAdditive) = TryConsumeRuleLabelPrefix();
 
         // Negation: ~
         G4Content atom;
@@ -369,6 +365,13 @@ internal sealed class G4Parser
         {
             atom = ParseAtom()!;
             if (atom == null) return null;
+        }
+
+        // Apply label metadata when the labeled element is a direct rule reference.
+        if (labelName != null && atom is G4RuleRef labeledRef)
+        {
+            labeledRef.LabelName = labelName;
+            labeledRef.LabelIsAdditive = labelIsAdditive;
         }
 
         // Optional quantifier: * + ? *? +? ??
@@ -457,31 +460,32 @@ internal sealed class G4Parser
     }
 
     /// <summary>
-    /// Consumes an optional rule label prefix (<c>id=</c> or <c>ids+=</c>) and returns whether one was consumed.
+    /// Consumes an optional rule label prefix (<c>id=</c> or <c>ids+=</c>) and returns the label name
+    /// and whether it is additive, or <c>(null, false)</c> when no label prefix is present.
     /// </summary>
-    private bool TryConsumeRuleLabelPrefix()
+    private (string? LabelName, bool IsAdditive) TryConsumeRuleLabelPrefix()
     {
         if (Peek().Kind != G4TokenKind.Identifier)
-            return false;
+            return (null, false);
 
         if (_pos + 1 < _tokens.Count && _tokens[_pos + 1].Kind == G4TokenKind.Equal)
         {
-            Consume();
-            Consume();
-            return true;
+            string name = Consume().Value;
+            Consume(); // =
+            return (name, false);
         }
 
         if (_pos + 2 < _tokens.Count
             && _tokens[_pos + 1].Kind == G4TokenKind.Plus
             && _tokens[_pos + 2].Kind == G4TokenKind.Equal)
         {
-            Consume();
-            Consume();
-            Consume();
-            return true;
+            string name = Consume().Value;
+            Consume(); // +
+            Consume(); // =
+            return (name, true);
         }
 
-        return false;
+        return (null, false);
     }
 
     // ── Char class ────────────────────────────────────────────────────

@@ -467,6 +467,21 @@ This model explicitly excludes:
 - use `SetNextRuleParameter(...)` for explicit parameter seeding from lifecycle hook code;
 - `$param` is not supported.
 
+### Rule-reference label metadata (`x=child`, `xs+=child`)
+
+Rule-reference labels are preserved as passive metadata end-to-end:
+
+- `x=child` and `xs+=child` are parsed by both the ANTLR converter and the source-generator G4 parser;
+- label metadata is stored on `RuleRef.Label` (`RuleLabel` record: label name, rule name, additive flag), with `RuleRef.LabelName` and `RuleRef.LabelKind` (`ParserRuleReferenceLabelKind`: `None`, `Assignment`, `List`) as computed properties;
+- `GrammarEmitter` emits `Label: new RuleLabel(...)` in generated `BuildDefinition()` when a label is present;
+- at runtime, `ParserEngine.TryParseRuleRef` calls `IParserRuleInvocationFrameManager.AnnotateLastChildCallLabel(labelName, labelKind)` after each successful child rule completion so the call-site label is visible in `ParserRuleCallResult.LabelName` and `ParserRuleCallResult.LabelKind` on the parent frame;
+- labels compose with `callee[...]` raw arguments: both metadata fields are set independently and can coexist;
+- label metadata is rollback-safe (included in `ParserRuleCallResult.GetParserExecutionStateHash()`, tracked alongside raw arguments in execution-state snapshots) and memoization-safe (annotation always reflects the current call site, not the cached snapshot);
+- generated C# opt-in code can inspect label metadata explicitly via `GetLastRuleCallResult(context)?.LabelName` and `GetLastRuleCallResult(context)?.LabelKind` in parent lifecycle and inline-action hooks;
+- labels on non-rule-reference elements (literals, character classes, groups) are recognized and ignored with diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`;
+- labels are metadata-only: no `$x`, `$x.value`, `$xs`, implicit label variables, typed label fields/properties, automatic parse-node storage, automatic return access, automatic binding, automatic argument evaluation, automatic parameter seeding, or generated parser method signatures are added;
+- conservative `Parse(...)` remains conservative; lifecycle hooks do not execute and label metadata is not exposed to code.
+
 ### Future PR — Lexer actions/predicates
 
 - separate design and implementation;
