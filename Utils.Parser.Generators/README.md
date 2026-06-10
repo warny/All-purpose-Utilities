@@ -259,6 +259,28 @@ This helper requires an explicit mapper delegate and never evaluates arguments a
 
 Use `SetNextRuleParameter(...)` for direct explicit seeding. `$param` is not supported.
 
+## Rule-reference label metadata (`x=child`, `xs+=child`)
+
+Rule-reference labels are recognized and preserved as passive metadata by both the ANTLR converter path and the source-generator G4 parser path:
+
+- `x=child` sets `LabelKind = Assignment`; `xs+=child` sets `LabelKind = List`; unlabeled references have `LabelKind = None`.
+- Label metadata is stored on `RuleRef.Label` / `RuleRef.LabelName` / `RuleRef.LabelKind` in the model; `GrammarEmitter` emits `Label: new RuleLabel(...)` in generated `BuildDefinition()`.
+- At runtime, `ParserEngine` calls `AnnotateLastChildCallLabel` after each successful child rule completion so the call-site label is visible via `ParserRuleCallResult.LabelName` and `ParserRuleCallResult.LabelKind` on the parent frame.
+- Labels compose with `callee[...]` raw arguments: both can coexist on the same rule reference.
+- Label metadata is rollback-safe and memoization-safe.
+- Generated C# opt-in code can inspect label metadata explicitly:
+
+```csharp
+start @after {
+    var r = GetLastRuleCallResult(context);
+    string? label = r?.LabelName;          // "x", "xs", or null
+    string? kind  = r?.LabelKind.ToString(); // "Assignment", "List", or "None"
+}
+    : x=child ;
+```
+
+Labels are **metadata only**: no `$x`, `$x.value`, `$xs`, implicit label variables, typed label fields/properties, automatic parse-node storage, automatic return access, automatic binding, automatic argument evaluation, automatic parameter seeding, or generated parser method signatures are added. Labels on non-rule-reference elements (literals, groups, etc.) emit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. Conservative `Parse(...)` remains conservative; hooks do not execute and label metadata is not exposed. No lexer label support is added.
+
 ## Shared runtime metadata alignment
 
 Generated C# hooks for parser semantic predicates and inline parser actions continue to be collected from the generator's `G4Grammar` AST because the analyzer package targets `netstandard2.0` and does not reference the `net8.0` runtime model assembly. The hook collector is intentionally kept aligned with `Utils.Parser.EmbeddedCode.EmbeddedCodeRuntimeDiscovery`: it uses the same runtime index rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, duplicate source text, and direct-left-recursive base/tail alternatives. Unit tests compare generated hook names against shared `ParserDefinition` discovery metadata for sensitive dispatch cases.

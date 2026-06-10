@@ -285,7 +285,15 @@ internal static class GrammarEmitter
                 break;
 
             case G4RuleRef rr:
-                if (rr.RawArguments != null)
+                if (rr.LabelName != null)
+                {
+                    string labelArg = $"new RuleLabel(\"{Escape(rr.LabelName)}\", \"{Escape(rr.RuleName)}\", {(rr.LabelIsAdditive ? "true" : "false")})";
+                    if (rr.RawArguments != null)
+                        sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\", Label: {labelArg}, RawArguments: \"{Escape(rr.RawArguments)}\")");
+                    else
+                        sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\", Label: {labelArg})");
+                }
+                else if (rr.RawArguments != null)
                     sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\", RawArguments: \"{Escape(rr.RawArguments)}\")");
                 else
                     sb.Append($"new RuleRef(\"{Escape(rr.RuleName)}\")");

@@ -3357,6 +3357,325 @@ public class Antlr4GeneratedRuleLifecycleTests
             "No parameter was explicitly seeded, so v must be null and SeenValue must remain -1.");
     }
 
+    // ── Rule-call label metadata ─────────────────────────────────────────────
+
+    /// <summary>
+    /// A. Assignment label is visible in the parent @after hook via GetLastRuleCallResult.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_AssignmentLabelVisibleInParentAfter()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                Label = r?.LabelName;
+                Kind = r?.LabelKind.ToString();
+            }
+                : x=child ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+                public static string? Kind;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("x", ReadStringField(assembly, "Label"));
+        Assert.AreEqual("Assignment", ReadStringField(assembly, "Kind"));
+    }
+
+    /// <summary>
+    /// B. List label is visible in the parent @after hook via GetLastRuleCallResult.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_ListLabelVisibleInParentAfter()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                Label = r?.LabelName;
+                Kind = r?.LabelKind.ToString();
+            }
+                : xs+=child ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+                public static string? Kind;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("xs", ReadStringField(assembly, "Label"));
+        Assert.AreEqual("List", ReadStringField(assembly, "Kind"));
+    }
+
+    /// <summary>
+    /// C. Unlabeled rule ref yields null LabelName and Kind == "None".
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_UnlabeledRefYieldsNullNameAndNoneKind()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                Label = r?.LabelName;
+                Kind = r?.LabelKind.ToString();
+            }
+                : child ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+                public static string? Kind;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsNull(ReadStringField(assembly, "Label"));
+        Assert.AreEqual("None", ReadStringField(assembly, "Kind"));
+    }
+
+    /// <summary>
+    /// D. Assignment label and raw positional arguments compose correctly.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_AssignmentLabelAndRawArgumentsCompose()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                Label = r?.LabelName;
+                Kind = r?.LabelKind.ToString();
+                Raw = r?.RawArguments;
+            }
+                : x=child[42] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+                public static string? Kind;
+                public static string? Raw;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("x", ReadStringField(assembly, "Label"));
+        Assert.AreEqual("Assignment", ReadStringField(assembly, "Kind"));
+        Assert.AreEqual("42", ReadStringField(assembly, "Raw"));
+    }
+
+    /// <summary>
+    /// E. List label and named raw arguments compose correctly.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_ListLabelAndNamedRawArgumentsCompose()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                Label = r?.LabelName;
+                Kind = r?.LabelKind.ToString();
+                Raw = r?.RawArguments;
+            }
+                : xs+=child[value: 42] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+                public static string? Kind;
+                public static string? Raw;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("xs", ReadStringField(assembly, "Label"));
+        Assert.AreEqual("List", ReadStringField(assembly, "Kind"));
+        Assert.AreEqual("value: 42", ReadStringField(assembly, "Raw"));
+    }
+
+    /// <summary>
+    /// F. Generated source for a grammar with labels does not contain implicit label variables or typed fields.
+    /// </summary>
+    [TestMethod]
+    public void Emit_LabelMetadata_DoesNotGenerateImplicitLabelVariables()
+    {
+        const string grammar = """
+            grammar P;
+            start : x=child xs+=child ;
+            child : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        // No $x / $xs implicit variables.
+        Assert.IsFalse(source.Contains("\"$x\"", StringComparison.Ordinal),
+            "Must not generate $x implicit label variable.");
+        Assert.IsFalse(source.Contains("\"$xs\"", StringComparison.Ordinal),
+            "Must not generate $xs implicit label variable.");
+        // No x.value / xs.value label-backed access.
+        Assert.IsFalse(source.Contains("x.value", StringComparison.Ordinal),
+            "Must not generate x.value label-backed access.");
+        Assert.IsFalse(source.Contains("xs.value", StringComparison.Ordinal),
+            "Must not generate xs.value label-backed access.");
+        // No typed public field/property named x or xs.
+        Assert.IsFalse(source.Contains("public object x", StringComparison.Ordinal)
+            || source.Contains("public object? x", StringComparison.Ordinal)
+            || source.Contains("public ParseNode x", StringComparison.Ordinal),
+            "Must not generate typed field/property for label x.");
+        Assert.IsFalse(source.Contains("public object xs", StringComparison.Ordinal)
+            || source.Contains("public object? xs", StringComparison.Ordinal)
+            || source.Contains("public ParseNode xs", StringComparison.Ordinal),
+            "Must not generate typed field/property for label xs.");
+    }
+
+    /// <summary>
+    /// G. Failed alternative label does not leak into the successful alternative.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_FailedAlternativeLabelDoesNotLeak()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var r = GetLastRuleCallResult(context);
+                Label = r?.LabelName;
+                Kind = r?.LabelKind.ToString();
+            }
+                : a=child B
+                | b=child
+                ;
+            child : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+                public static string? Kind;
+            }
+            """;
+
+        // Input "a": alt 0 (a=child B) fails on B; alt 1 (b=child) succeeds.
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("b", ReadStringField(assembly, "Label"),
+            "Label from the successful alternative must be visible; failed alt label must not leak.");
+        Assert.AreEqual("Assignment", ReadStringField(assembly, "Kind"));
+    }
+
+    /// <summary>
+    /// H. When a memoized child result is reused, the current call-site label wins over the cached one.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelMetadata_MemoizedResult_UsesCurrentCallSiteLabel()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Label = GetLastRuleCallResult(context)?.LabelName;
+            }
+                : x=child B
+                | y=child
+                ;
+            child : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+            }
+            """;
+
+        // Input "a": child[1] is parsed and memoized by alt 0, which then fails on B.
+        // Alt 1 gets the memoized result but must show the current call-site label "y".
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("y", ReadStringField(assembly, "Label"),
+            "Memoized result must expose the current call-site label, not the cached one.");
+    }
+
+    /// <summary>
+    /// I. Conservative Parse() does not execute hooks; label metadata remains default/null.
+    /// </summary>
+    [TestMethod]
+    public void Parse_LabelMetadata_ConservativeParse_DoesNotExposeLabel()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Label = GetLastRuleCallResult(context)?.LabelName;
+            }
+                : x=child ;
+            child : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static string? Label;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNull(ReadStringField(assembly, "Label"),
+            "Conservative Parse() must not execute @after hooks; Label must remain null.");
+    }
+
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
 
     /// <summary>Emits generated C# for the supplied grammar.</summary>

@@ -240,6 +240,19 @@ internal sealed class G4RuleRef : G4Content
     /// The outer brackets are excluded. This text is not evaluated and is not passed to child rule frames.
     /// </summary>
     public string? RawArguments { get; set; }
+
+    /// <summary>
+    /// Gets or sets the label identifier from a call-site label prefix (<c>x=child</c> or <c>xs+=child</c>),
+    /// or <c>null</c> when the reference is unlabeled.
+    /// Metadata only: no implicit variable, typed field, or automatic binding is generated.
+    /// </summary>
+    public string? LabelName { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the label is additive (<c>xs+=child</c>).
+    /// Only relevant when <see cref="LabelName"/> is non-<c>null</c>.
+    /// </summary>
+    public bool LabelIsAdditive { get; set; }
 }
 
 /// <summary>
