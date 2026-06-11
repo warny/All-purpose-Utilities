@@ -3357,6 +3357,107 @@ public class Antlr4GeneratedRuleLifecycleTests
             "No parameter was explicitly seeded, so v must be null and SeenValue must remain -1.");
     }
 
+    /// <summary>
+    /// Verifies generated C# binds multiple simple literals only when the concrete policy is supplied through <c>basePolicy</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PositionalLiteralPolicy_BindsOnlyWhenExplicitlyInstalled()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42, "hello", true, null] ;
+            child[int value, string text, bool enabled, object empty]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out object? v);
+                FoundText = TryGetRuleParameter(context, "text", out object? t);
+                FoundEnabled = TryGetRuleParameter(context, "enabled", out object? e);
+                FoundNull = TryGetRuleParameter(context, "empty", out object? n) && n is null;
+                SeenValue = v is int i ? i : -1;
+                SeenText = t as string;
+                SeenEnabled = e is true;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundText;
+                public static bool FoundEnabled;
+                public static bool FoundNull;
+                public static int SeenValue = -1;
+                public static string? SeenText;
+                public static bool SeenEnabled;
+            }
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundText"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundEnabled"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundNull"));
+        Assert.AreEqual(42, ReadIntField(assembly, "SeenValue"));
+        Assert.AreEqual("hello", ReadStringField(assembly, "SeenText"));
+        Assert.IsTrue(ReadBoolField(assembly, "SeenEnabled"));
+
+        var conservativeAssembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        Assert.IsNotInstanceOfType(InvokeParse(conservativeAssembly, "ParseWithEmbeddedCode", "a"), typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(conservativeAssembly, "FoundValue"));
+        Assert.IsNotInstanceOfType(InvokeParse(conservativeAssembly, "Parse", "a"), typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(conservativeAssembly, "FoundValue"));
+    }
+
+    /// <summary>
+    /// Verifies rollback and memoization distinguish positional literal values at otherwise identical child invocations.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_PositionalLiteralPolicy_RollbackAndMemoizationUseCurrentValue()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[1] B | child[2] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"),
+            "The failed child[1] state and its memoized result must not be reused for child[2].");
+    }
+
     // ── Rule-call label metadata ─────────────────────────────────────────────
 
     /// <summary>
@@ -3772,6 +3873,36 @@ public class Antlr4GeneratedRuleLifecycleTests
                 && inputType == typeof(string)
                 && executionContextType == contextType);
         return (ParseNode)method.Invoke(null, [input, executionContext])!;
+    }
+
+    /// <summary>
+    /// Invokes generated embedded-code parsing with an explicit execution context and caller-supplied base policy.
+    /// </summary>
+    /// <param name="assembly">Generated parser assembly.</param>
+    /// <param name="input">Input text.</param>
+    /// <param name="executionContext">Generated execution context instance.</param>
+    /// <param name="basePolicy">Caller-supplied base policy.</param>
+    /// <returns>The generated parse result.</returns>
+    private static ParseNode InvokeParseWithContextAndPolicy(
+        Assembly assembly,
+        string input,
+        object executionContext,
+        ParserRuntimeFeaturePolicy basePolicy)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        Type contextType = executionContext.GetType();
+        var method = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "ParseWithEmbeddedCode"
+                && method.GetParameters() is
+                [
+                    { ParameterType: var inputType },
+                    { ParameterType: var executionContextType },
+                    { ParameterType: var policyType }
+                ]
+                && inputType == typeof(string)
+                && executionContextType == contextType
+                && policyType == typeof(ParserRuntimeFeaturePolicy));
+        return (ParseNode)method.Invoke(null, [input, executionContext, basePolicy])!;
     }
 
     private static ParserRuntimeFeaturePolicy InvokeCreateRuntimePolicy(Assembly assembly, object executionContext)

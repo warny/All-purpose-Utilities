@@ -2,8 +2,9 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Defines explicit opt-in callbacks around parser rule calls.
-/// Implementations may observe call-site metadata but do not receive automatic argument evaluation,
-/// parameter binding, or parameter seeding.
+/// Implementations may observe call-site metadata and can explicitly request managed parameter seeds
+/// through the narrow current-target API on <see cref="ParserRuleCallExecutionContext"/>.
+/// The parser does not evaluate or bind arguments automatically.
 /// </summary>
 public interface IParserRuleCallExecutionPolicy
 {

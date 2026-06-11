@@ -250,6 +250,235 @@ public class ParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Verifies exact positional binding, declaration order, null presence, and overwrite behavior.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_ValidCall_SeedsDeclaredParameters()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42, "hello", true, null] ;
+            child[int value, string text, bool enabled, object missing] : A ;
+            A : 'a' ;
+            """;
+        var frameManager = new StackParserRuleInvocationFrameManager();
+        var observed = new Dictionary<string, object?>();
+        var lifecycle = new ParameterRecordingLifecycleExecutor(observed);
+
+        var result = Compile(
+            grammar,
+            new PositionalLiteralRuleCallExecutionPolicy(),
+            frameManager,
+            lifecycle).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, observed["value"]);
+        Assert.AreEqual("hello", observed["text"]);
+        Assert.AreEqual(true, observed["enabled"]);
+        Assert.IsTrue(observed.ContainsKey("missing"));
+        Assert.IsNull(observed["missing"]);
+    }
+
+    /// <summary>
+    /// Verifies call-site policy values overwrite same-parameter seeds without clearing unrelated pending seeds.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_OverwritesMatchingSeedAndPreservesUnrelatedSeed()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+        var lifecycle = new DirectParameterRecordingLifecycleExecutor(observed, ["value", "unrelated"]);
+        var policy = new PreseedingRuleCallPolicy(new PositionalLiteralRuleCallExecutionPolicy());
+
+        var result = Compile(grammar, policy, lifecycleExecutor: lifecycle).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, observed["value"]);
+        Assert.AreEqual("keep", observed["unrelated"]);
+    }
+
+    /// <summary>
+    /// Verifies ignored invalid calls apply no partial seeds while strict mode reports rule and argument metadata.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_InvalidCall_IsAtomicAndConfigurable()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[1, foo()] ;
+            child[int first, int second] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+        var ignoredResult = Compile(
+            grammar,
+            new PositionalLiteralRuleCallExecutionPolicy(),
+            lifecycleExecutor: new ParameterRecordingLifecycleExecutor(observed)).Parse("a");
+
+        Assert.IsNotInstanceOfType(ignoredResult, typeof(ErrorNode));
+        Assert.AreEqual(0, observed.Count, "Validation must finish before any seed is written.");
+
+        var exception = Assert.ThrowsException<ParserRuleCallBindingException>(() => Compile(
+            grammar,
+            new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw)).Parse("a"));
+        Assert.AreEqual("child", exception.RuleName);
+        Assert.AreEqual("1, foo()", exception.RawArguments);
+        Assert.AreEqual(1, exception.ArgumentIndex);
+    }
+
+    /// <summary>
+    /// Verifies exact arity and descriptor-name validation reject a complete call without writing seeds.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_InvalidArityOrDescriptorNames_WritesNoSeeds()
+    {
+        var policy = new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        var arityContext = CreatePolicyContext(["1"], ["first", "second"]);
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(arityContext));
+
+        var duplicateContext = CreatePolicyContext(["1", "2"], ["value", "value"]);
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(duplicateContext));
+
+        var missingContext = CreatePolicyContext(["1"], [" "]);
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(missingContext));
+    }
+
+    /// <summary>
+    /// Verifies a call without an argument clause remains metadata-only and post-call handling is a no-op.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_NoArgumentsAndAfterCall_AreNoOp()
+    {
+        var policy = new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        var context = new ParserRuleCallExecutionContext
+        {
+            CallerFrame = null,
+            RuleName = "child",
+            PositionalRawArguments = null,
+        };
+
+        policy.BeforeRuleCall(context);
+        policy.AfterRuleCall(context);
+    }
+
+    /// <summary>
+    /// Creates direct policy metadata for descriptor-validation tests.
+    /// </summary>
+    /// <param name="arguments">Positional raw arguments.</param>
+    /// <param name="parameterNames">Target descriptor parameter names.</param>
+    /// <returns>A rule-call execution context without a managed seed writer.</returns>
+    private static ParserRuleCallExecutionContext CreatePolicyContext(
+        IReadOnlyList<string> arguments,
+        IReadOnlyList<string> parameterNames)
+    {
+        return new ParserRuleCallExecutionContext
+        {
+            CallerFrame = null,
+            RuleName = "child",
+            RawArguments = string.Join(", ", arguments),
+            PositionalRawArguments = arguments,
+            TargetRuleDescriptor = new ParserRuleInvocationDescriptor
+            {
+                RuleName = "child",
+                Parameters = parameterNames.Select(static name => new ParserRuleParameterDescriptor
+                {
+                    Name = name,
+                    RawDeclaration = name,
+                }).ToArray(),
+            },
+        };
+    }
+
+    /// <summary>
+    /// Seeds existing values before delegating to the concrete positional literal policy.
+    /// </summary>
+    private sealed class PreseedingRuleCallPolicy(IParserRuleCallExecutionPolicy inner) : IParserRuleCallExecutionPolicy
+    {
+        /// <summary>
+        /// Seeds matching and unrelated parameters before the concrete call-site policy runs.
+        /// </summary>
+        /// <param name="context">Current call context.</param>
+        public void BeforeRuleCall(ParserRuleCallExecutionContext context)
+        {
+            Assert.IsTrue(context.TrySetParameterSeed("value", 999));
+            Assert.IsTrue(context.TrySetParameterSeed("unrelated", "keep"));
+            inner.BeforeRuleCall(context);
+        }
+
+        /// <summary>
+        /// Delegates post-call notification without changing the result.
+        /// </summary>
+        /// <param name="context">Completed call context.</param>
+        public void AfterRuleCall(ParserRuleCallExecutionContext context)
+        {
+            inner.AfterRuleCall(context);
+        }
+    }
+
+    /// <summary>
+    /// Records explicitly requested parameter names from the child frame.
+    /// </summary>
+    private sealed class DirectParameterRecordingLifecycleExecutor(
+        Dictionary<string, object?> observed,
+        IReadOnlyList<string> parameterNames) : IParserRuleLifecycleExecutor
+    {
+        /// <summary>
+        /// Reads requested values during child initialization.
+        /// </summary>
+        /// <param name="phase">Current lifecycle phase.</param>
+        /// <param name="ruleName">Current rule name.</param>
+        /// <param name="context">Current lifecycle context.</param>
+        public void Execute(ParserRuleLifecyclePhase phase, string ruleName, ParserRuleLifecycleContext context)
+        {
+            if (phase != ParserRuleLifecyclePhase.Init || ruleName != "child" || context.InvocationFrame is null)
+            {
+                return;
+            }
+
+            foreach (string parameterName in parameterNames)
+            {
+                if (context.InvocationFrame.TryGetParameter(parameterName, out object? value))
+                {
+                    observed[parameterName] = value;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Records all parameters visible during the child initialization phase.
+    /// </summary>
+    private sealed class ParameterRecordingLifecycleExecutor(Dictionary<string, object?> observed) : IParserRuleLifecycleExecutor
+    {
+        /// <summary>
+        /// Records declared child parameters that are present in the invocation frame.
+        /// </summary>
+        /// <param name="phase">Current lifecycle phase.</param>
+        /// <param name="ruleName">Current rule name.</param>
+        /// <param name="context">Current lifecycle context.</param>
+        public void Execute(ParserRuleLifecyclePhase phase, string ruleName, ParserRuleLifecycleContext context)
+        {
+            if (phase != ParserRuleLifecyclePhase.Init || ruleName != "child" || context.InvocationFrame?.Descriptor is null)
+            {
+                return;
+            }
+
+            foreach (ParserRuleParameterDescriptor parameter in context.InvocationFrame.Descriptor.Parameters)
+            {
+                if (context.InvocationFrame.TryGetParameter(parameter.Name, out object? value))
+                {
+                    observed[parameter.Name] = value;
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Compiles a grammar with an explicit call policy and rollback-aware stack manager.
     /// </summary>
     /// <param name="grammar">ANTLR grammar source.</param>

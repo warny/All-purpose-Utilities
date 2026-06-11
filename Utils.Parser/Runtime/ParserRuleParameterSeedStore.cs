@@ -91,29 +91,106 @@ public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionS
     public ulong GetParserExecutionStateHash()
     {
         ulong hash = 14695981039346656037UL;
-        foreach (var (ruleName, parameters) in _seeds)
+        foreach ((string ruleName, IReadOnlyDictionary<string, object?> parameters) in
+            _seeds.OrderBy(static item => item.Key, StringComparer.Ordinal))
         {
-            foreach (char c in ruleName)
+            AddText(ref hash, ruleName);
+            AddUInt64(ref hash, (ulong)parameters.Count);
+            foreach (KeyValuePair<string, object?> parameter in
+                parameters.OrderBy(static item => item.Key, StringComparer.Ordinal))
             {
-                hash = (hash ^ (ulong)c) * 1099511628211UL;
-            }
-
-            hash = (hash ^ (ulong)(uint)parameters.Count) * 1099511628211UL;
-            foreach (var kvp in parameters)
-            {
-                foreach (char c in kvp.Key)
-                {
-                    hash = (hash ^ (ulong)c) * 1099511628211UL;
-                }
-
-                if (kvp.Value is not null)
-                {
-                    hash = (hash ^ (ulong)(uint)kvp.Value.GetHashCode()) * 1099511628211UL;
-                }
+                AddText(ref hash, parameter.Key);
+                AddSupportedValue(ref hash, parameter.Value);
             }
         }
 
         return hash;
+    }
+
+    /// <summary>
+    /// Adds one supported deterministic seed value to the hash stream.
+    /// </summary>
+    /// <param name="hash">Current FNV-1a hash.</param>
+    /// <param name="value">Seed value to hash.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when a seed value is outside the deterministic scalar set supported by managed memoization.
+    /// </exception>
+    private static void AddSupportedValue(ref ulong hash, object? value)
+    {
+        if (value is null)
+        {
+            AddByte(ref hash, 0);
+            return;
+        }
+
+        AddByte(ref hash, 1);
+        switch (value)
+        {
+            case bool boolean:
+                AddByte(ref hash, 1);
+                AddByte(ref hash, boolean ? (byte)1 : (byte)0);
+                return;
+            case int integer:
+                AddByte(ref hash, 2);
+                AddUInt64(ref hash, unchecked((ulong)(long)integer));
+                return;
+            case long longInteger:
+                AddByte(ref hash, 3);
+                AddUInt64(ref hash, unchecked((ulong)longInteger));
+                return;
+            case double floatingPoint:
+                AddByte(ref hash, 4);
+                AddUInt64(ref hash, BitConverter.DoubleToUInt64Bits(floatingPoint));
+                return;
+            case string text:
+                AddByte(ref hash, 5);
+                AddText(ref hash, text);
+                return;
+            case char character:
+                AddByte(ref hash, 6);
+                AddUInt64(ref hash, character);
+                return;
+            default:
+                throw new InvalidOperationException(
+                    $"Pending parser rule parameter seed type '{value.GetType().FullName}' is not supported by deterministic memoization hashing.");
+        }
+    }
+
+    /// <summary>
+    /// Adds text to the deterministic hash stream.
+    /// </summary>
+    /// <param name="hash">Current FNV-1a hash.</param>
+    /// <param name="text">Text to add.</param>
+    private static void AddText(ref ulong hash, string text)
+    {
+        AddUInt64(ref hash, (ulong)text.Length);
+        foreach (char character in text)
+        {
+            AddUInt64(ref hash, character);
+        }
+    }
+
+    /// <summary>
+    /// Adds an unsigned integer to the deterministic hash stream in little-endian order.
+    /// </summary>
+    /// <param name="hash">Current FNV-1a hash.</param>
+    /// <param name="value">Value to add.</param>
+    private static void AddUInt64(ref ulong hash, ulong value)
+    {
+        for (int shift = 0; shift < 64; shift += 8)
+        {
+            AddByte(ref hash, (byte)(value >> shift));
+        }
+    }
+
+    /// <summary>
+    /// Adds one byte to the deterministic FNV-1a hash stream.
+    /// </summary>
+    /// <param name="hash">Current FNV-1a hash.</param>
+    /// <param name="value">Byte to add.</param>
+    private static void AddByte(ref ulong hash, byte value)
+    {
+        hash = (hash ^ value) * 1099511628211UL;
     }
 
     private Dictionary<string, IReadOnlyDictionary<string, object?>> CloneSeeds()

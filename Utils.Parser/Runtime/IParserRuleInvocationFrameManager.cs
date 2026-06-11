@@ -28,6 +28,17 @@ public interface IParserRuleInvocationFrameManager
     ParserRuleInvocationFrame? Current { get; }
 
     /// <summary>
+    /// Sets a rollback-managed parameter seed for the next invocation of the named child rule.
+    /// The default implementation performs no action.
+    /// </summary>
+    /// <param name="ruleName">Target child parser rule name.</param>
+    /// <param name="parameterName">Declared target parameter name.</param>
+    /// <param name="value">Untyped seed value, including <c>null</c>.</param>
+    void SetPendingChildParameter(string ruleName, string parameterName, object? value)
+    {
+    }
+
+    /// <summary>
     /// Called by <c>ParserEngine</c> just before the post-rule execution-state snapshot is captured,
     /// while the rule's invocation frame is still current.
     /// Implementations that support call results must finalize them here so that the snapshot

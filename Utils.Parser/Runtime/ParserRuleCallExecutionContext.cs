@@ -4,10 +4,13 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Carries passive metadata for an explicit parser rule-call execution policy invocation.
-/// Raw arguments are split syntactically only; they are not evaluated, bound, or seeded automatically.
+/// Raw arguments are split syntactically only. The parser does not evaluate or bind them automatically;
+/// an explicitly installed policy may request managed seeds through <see cref="TrySetParameterSeed"/>.
 /// </summary>
 public sealed class ParserRuleCallExecutionContext
 {
+    private Action<string, object?>? _setParameterSeed;
+
     /// <summary>
     /// Gets the caller invocation frame that was current when the rule call began, when frame tracking is enabled.
     /// Policies must not treat the mutable frame as rollback-managed external state or retain it beyond the callback.
@@ -50,6 +53,34 @@ public sealed class ParserRuleCallExecutionContext
     /// Gets passive metadata for the target parser rule.
     /// </summary>
     public ParserRuleInvocationDescriptor? TargetRuleDescriptor { get; init; }
+
+    /// <summary>
+    /// Installs the internal rollback-managed seed writer used by <see cref="TrySetParameterSeed"/>.
+    /// This delegate is intentionally not exposed to policy implementations.
+    /// </summary>
+    internal Action<string, object?>? ParameterSeedWriter
+    {
+        init => _setParameterSeed = value;
+    }
+
+    /// <summary>
+    /// Attempts to seed one parameter for the current target rule through managed pending-child state.
+    /// The caller cannot select a different target rule through this API.
+    /// </summary>
+    /// <param name="parameterName">Declared target parameter name.</param>
+    /// <param name="value">Untyped value to seed, including <c>null</c>.</param>
+    /// <returns><c>true</c> when managed seeding is available; otherwise, <c>false</c>.</returns>
+    public bool TrySetParameterSeed(string parameterName, object? value)
+    {
+        ArgumentNullException.ThrowIfNull(parameterName);
+        if (_setParameterSeed is null)
+        {
+            return false;
+        }
+
+        _setParameterSeed(parameterName, value);
+        return true;
+    }
 
     /// <summary>
     /// Gets the annotated completed child-call result after a successful call when invocation-frame tracking is enabled.

@@ -597,6 +597,35 @@ public class ParserRuleCallStackTests
     }
 
     /// <summary>
+    /// Verifies supported literal seed values contribute deterministic, type-sensitive memoization hashes.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeedStore_SupportedLiteralValues_ProduceDistinctStableHashes()
+    {
+        var first = new ParserRuleParameterSeedStore().With("child", "value", 1);
+        var same = new ParserRuleParameterSeedStore().With("child", "value", 1);
+        var second = new ParserRuleParameterSeedStore().With("child", "value", 2);
+        var longValue = new ParserRuleParameterSeedStore().With("child", "value", 1L);
+        var nullValue = new ParserRuleParameterSeedStore().With("child", "value", null);
+
+        Assert.AreEqual(first.GetParserExecutionStateHash(), same.GetParserExecutionStateHash());
+        Assert.AreNotEqual(first.GetParserExecutionStateHash(), second.GetParserExecutionStateHash());
+        Assert.AreNotEqual(first.GetParserExecutionStateHash(), longValue.GetParserExecutionStateHash());
+        Assert.AreNotEqual(first.GetParserExecutionStateHash(), nullValue.GetParserExecutionStateHash());
+    }
+
+    /// <summary>
+    /// Verifies arbitrary seed objects are not silently represented by unstable object hash codes.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeedStore_UnsupportedValue_RejectsMemoizationHashing()
+    {
+        var store = new ParserRuleParameterSeedStore().With("child", "value", new object());
+
+        Assert.ThrowsException<InvalidOperationException>(() => store.GetParserExecutionStateHash());
+    }
+
+    /// <summary>
     /// Root frame enters without any pending seeds even if none exist.
     /// </summary>
     [TestMethod]
