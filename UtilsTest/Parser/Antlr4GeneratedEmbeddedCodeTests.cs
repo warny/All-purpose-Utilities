@@ -811,6 +811,47 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures the generated opt-in parse overload preserves a custom rule-call execution policy
+    /// and exposes current raw argument and label metadata without changing conservative Parse behavior.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_BasePolicy_ObservesRuleCallMetadata()
+    {
+        const string grammar = """
+            grammar P;
+            start : item=child[42] ;
+            child : A ;
+            A : 'a' ;
+            """;
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "ParseWithEmbeddedCode([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof(P))] string input, PExecutionContext executionContext, ParserRuntimeFeaturePolicy basePolicy)");
+        var assembly = CompileGeneratedSource(source);
+        var executionContext = CreateExecutionContext(assembly);
+        var callPolicy = new GeneratedRecordingRuleCallPolicy();
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = callPolicy,
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        var before = callPolicy.Events.Single(item => item.Phase == "before" && item.Context.RuleName == "child").Context;
+        var after = callPolicy.Events.Single(item => item.Phase == "after" && item.Context.RuleName == "child").Context;
+        Assert.AreEqual("42", before.RawArguments);
+        Assert.AreEqual("item", before.LabelName);
+        Assert.AreEqual(ParserRuleReferenceLabelKind.Assignment, before.LabelKind);
+        Assert.IsTrue(after.Succeeded);
+        Assert.IsNotNull(after.CompletedCallResult);
+        Assert.AreEqual("42", after.CompletedCallResult.RawArguments);
+        Assert.AreEqual("item", after.CompletedCallResult.LabelName);
+
+        callPolicy.Events.Clear();
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "Parse", "a"), typeof(ErrorNode));
+        Assert.AreEqual(0, callPolicy.Events.Count, "Conservative Parse() must not use the opt-in custom policy.");
+    }
+
+    /// <summary>
     /// Ensures predicates can call instance members injected through <c>@members</c>.
     /// </summary>
     [TestMethod]
@@ -1887,6 +1928,36 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Invokes the generated embedded-code parse overload that accepts an execution context and base policy.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="input">Input text to parse.</param>
+    /// <param name="executionContext">Execution context instance to pass to the generated overload.</param>
+    /// <param name="basePolicy">Base runtime policy whose custom rule-call policy should be preserved.</param>
+    /// <returns>Parse-tree root returned by the generated helper.</returns>
+    private static ParseNode InvokeParseWithContextAndPolicy(
+        Assembly assembly,
+        string input,
+        object executionContext,
+        ParserRuntimeFeaturePolicy basePolicy)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var contextType = executionContext.GetType();
+        var method = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "ParseWithEmbeddedCode"
+                && method.GetParameters() is
+                [
+                    { ParameterType: var inputType },
+                    { ParameterType: var executionContextType },
+                    { ParameterType: var policyType },
+                ]
+                && inputType == typeof(string)
+                && executionContextType == contextType
+                && policyType == typeof(ParserRuntimeFeaturePolicy));
+        return (ParseNode)method.Invoke(null, [input, executionContext, basePolicy])!;
+    }
+
+    /// <summary>
     /// Invokes the generated internal <c>Fork</c> helper on an execution context instance.
     /// </summary>
     /// <param name="executionContext">Execution context instance to fork.</param>
@@ -1968,6 +2039,35 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var field = type.GetField("ObservedCounts", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!;
         var counts = (System.Collections.Generic.IEnumerable<int>)field.GetValue(null)!;
         return counts.ToArray();
+    }
+
+    /// <summary>
+    /// Records rule-call callbacks observed through a generated opt-in runtime policy.
+    /// </summary>
+    private sealed class GeneratedRecordingRuleCallPolicy : IParserRuleCallExecutionPolicy
+    {
+        /// <summary>
+        /// Gets callback events in invocation order.
+        /// </summary>
+        public List<(string Phase, ParserRuleCallExecutionContext Context)> Events { get; } = [];
+
+        /// <summary>
+        /// Records a before-call callback.
+        /// </summary>
+        /// <param name="context">Current rule-call context.</param>
+        public void BeforeRuleCall(ParserRuleCallExecutionContext context)
+        {
+            Events.Add(("before", context));
+        }
+
+        /// <summary>
+        /// Records an after-call callback.
+        /// </summary>
+        /// <param name="context">Completed rule-call context.</param>
+        public void AfterRuleCall(ParserRuleCallExecutionContext context)
+        {
+            Events.Add(("after", context));
+        }
     }
 
     /// <summary>
