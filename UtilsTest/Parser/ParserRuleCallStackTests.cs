@@ -615,14 +615,48 @@ public class ParserRuleCallStackTests
     }
 
     /// <summary>
-    /// Verifies arbitrary seed objects are not silently represented by unstable object hash codes.
+    /// Verifies additional scalar values accepted by explicit seeding retain stable deterministic hashes.
     /// </summary>
     [TestMethod]
-    public void ParameterSeedStore_UnsupportedValue_RejectsMemoizationHashing()
+    public void ParameterSeedStore_ExplicitScalarValues_ProduceStableHashes()
+    {
+        var decimalValue = new ParserRuleParameterSeedStore().With("child", "value", 1.25m);
+        var sameDecimal = new ParserRuleParameterSeedStore().With("child", "value", 1.25m);
+        var enumValue = new ParserRuleParameterSeedStore().With("child", "value", SeedKind.Second);
+        var sameEnum = new ParserRuleParameterSeedStore().With("child", "value", SeedKind.Second);
+
+        Assert.AreEqual(decimalValue.GetParserExecutionStateHash(), sameDecimal.GetParserExecutionStateHash());
+        Assert.AreEqual(enumValue.GetParserExecutionStateHash(), sameEnum.GetParserExecutionStateHash());
+    }
+
+    /// <summary>
+    /// Verifies arbitrary explicit seed objects remain accepted while receiving volatile keys that prevent unsafe reuse.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeedStore_ArbitraryValue_ProducesVolatileMemoizationHashes()
     {
         var store = new ParserRuleParameterSeedStore().With("child", "value", new object());
 
-        Assert.ThrowsException<InvalidOperationException>(() => store.GetParserExecutionStateHash());
+        ulong first = store.GetParserExecutionStateHash();
+        ulong second = store.GetParserExecutionStateHash();
+
+        Assert.AreNotEqual(first, second);
+    }
+
+    /// <summary>
+    /// Defines deterministic enum values used by explicit seed hashing tests.
+    /// </summary>
+    private enum SeedKind
+    {
+        /// <summary>
+        /// First test value.
+        /// </summary>
+        First,
+
+        /// <summary>
+        /// Second test value.
+        /// </summary>
+        Second
     }
 
     /// <summary>

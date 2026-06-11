@@ -280,6 +280,39 @@ public class ParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Verifies the no-op frame manager reports unavailable seeding instead of claiming that binding succeeded.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_NoOpFrameManager_ReportsUnavailableSeeding()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+        var ignoredPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(),
+            RuleLifecycleExecutor = new ParameterRecordingLifecycleExecutor(observed),
+        };
+
+        var ignoredResult = new CompiledGrammar(Antlr4GrammarConverter.Parse(grammar), ignoredPolicy).Parse("a");
+
+        Assert.IsNotInstanceOfType(ignoredResult, typeof(ErrorNode));
+        Assert.AreEqual(0, observed.Count);
+
+        var strictPolicy = ignoredPolicy with
+        {
+            RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw),
+        };
+        var exception = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+            new CompiledGrammar(Antlr4GrammarConverter.Parse(grammar), strictPolicy).Parse("a"));
+        StringAssert.Contains(exception.Message, "Managed parameter seeding is unavailable");
+    }
+
+    /// <summary>
     /// Verifies call-site policy values overwrite same-parameter seeds without clearing unrelated pending seeds.
     /// </summary>
     [TestMethod]

@@ -14,6 +14,11 @@ namespace Utils.Parser.Runtime;
 public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionStateHashable
 {
     /// <summary>
+    /// Monotonically increasing nonce used to prevent memoization reuse for non-hashable explicit seed values.
+    /// </summary>
+    private static long _volatileHashNonce;
+
+    /// <summary>
     /// Maps rule names to their pending parameter snapshots.
     /// </summary>
     private readonly Dictionary<string, IReadOnlyDictionary<string, object?>> _seeds;
@@ -86,7 +91,9 @@ public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionS
     }
 
     /// <summary>
-    /// Computes a deterministic hash of the current seed state for managed execution-state key participation.
+    /// Computes a managed execution-state hash for the current seed state.
+    /// Deterministically hashable values produce stable keys. Arbitrary explicit values remain accepted but
+    /// contribute a fresh volatile nonce so completed-result memoization is conservatively bypassed.
     /// </summary>
     public ulong GetParserExecutionStateHash()
     {
@@ -100,7 +107,7 @@ public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionS
                 parameters.OrderBy(static item => item.Key, StringComparer.Ordinal))
             {
                 AddText(ref hash, parameter.Key);
-                AddSupportedValue(ref hash, parameter.Value);
+                AddValue(ref hash, parameter.Value);
             }
         }
 
@@ -108,14 +115,11 @@ public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionS
     }
 
     /// <summary>
-    /// Adds one supported deterministic seed value to the hash stream.
+    /// Adds one seed value to the hash stream or a volatile nonce when deterministic hashing is unavailable.
     /// </summary>
     /// <param name="hash">Current FNV-1a hash.</param>
     /// <param name="value">Seed value to hash.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when a seed value is outside the deterministic scalar set supported by managed memoization.
-    /// </exception>
-    private static void AddSupportedValue(ref ulong hash, object? value)
+    private static void AddValue(ref ulong hash, object? value)
     {
         if (value is null)
         {
@@ -124,36 +128,155 @@ public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionS
         }
 
         AddByte(ref hash, 1);
-        switch (value)
+        Type valueType = value.GetType();
+        AddText(ref hash, valueType.AssemblyQualifiedName ?? valueType.FullName ?? valueType.Name);
+        if (TryAddDeterministicValue(ref hash, value, valueType))
         {
-            case bool boolean:
-                AddByte(ref hash, 1);
-                AddByte(ref hash, boolean ? (byte)1 : (byte)0);
-                return;
-            case int integer:
-                AddByte(ref hash, 2);
-                AddUInt64(ref hash, unchecked((ulong)(long)integer));
-                return;
-            case long longInteger:
-                AddByte(ref hash, 3);
-                AddUInt64(ref hash, unchecked((ulong)longInteger));
-                return;
-            case double floatingPoint:
-                AddByte(ref hash, 4);
-                AddUInt64(ref hash, BitConverter.DoubleToUInt64Bits(floatingPoint));
-                return;
-            case string text:
-                AddByte(ref hash, 5);
-                AddText(ref hash, text);
-                return;
-            case char character:
-                AddByte(ref hash, 6);
-                AddUInt64(ref hash, character);
-                return;
-            default:
-                throw new InvalidOperationException(
-                    $"Pending parser rule parameter seed type '{value.GetType().FullName}' is not supported by deterministic memoization hashing.");
+            return;
         }
+
+        AddByte(ref hash, byte.MaxValue);
+        AddUInt64(ref hash, unchecked((ulong)Interlocked.Increment(ref _volatileHashNonce)));
+    }
+
+    /// <summary>
+    /// Attempts to add a deterministic scalar or explicitly hashable value to the hash stream.
+    /// </summary>
+    /// <param name="hash">Current FNV-1a hash.</param>
+    /// <param name="value">Non-null seed value.</param>
+    /// <param name="valueType">Runtime seed value type.</param>
+    /// <returns><c>true</c> when the value has a deterministic representation; otherwise, <c>false</c>.</returns>
+    private static bool TryAddDeterministicValue(ref ulong hash, object value, Type valueType)
+    {
+        if (value is IParserExecutionStateHashable hashable)
+        {
+            AddUInt64(ref hash, hashable.GetParserExecutionStateHash());
+            return true;
+        }
+
+        if (valueType.IsEnum)
+        {
+            Type underlyingType = Enum.GetUnderlyingType(valueType);
+            object underlyingValue = Convert.ChangeType(value, underlyingType, System.Globalization.CultureInfo.InvariantCulture);
+            return TryAddDeterministicValue(ref hash, underlyingValue, underlyingType);
+        }
+
+        if (value is bool boolean)
+        {
+            AddByte(ref hash, boolean ? (byte)1 : (byte)0);
+            return true;
+        }
+
+        if (value is char character)
+        {
+            AddUInt64(ref hash, character);
+            return true;
+        }
+
+        if (value is sbyte signedByte)
+        {
+            AddUInt64(ref hash, unchecked((ulong)(long)signedByte));
+            return true;
+        }
+
+        if (value is byte unsignedByte)
+        {
+            AddUInt64(ref hash, unsignedByte);
+            return true;
+        }
+
+        if (value is short signedShort)
+        {
+            AddUInt64(ref hash, unchecked((ulong)(long)signedShort));
+            return true;
+        }
+
+        if (value is ushort unsignedShort)
+        {
+            AddUInt64(ref hash, unsignedShort);
+            return true;
+        }
+
+        if (value is int signedInteger)
+        {
+            AddUInt64(ref hash, unchecked((ulong)(long)signedInteger));
+            return true;
+        }
+
+        if (value is uint unsignedInteger)
+        {
+            AddUInt64(ref hash, unsignedInteger);
+            return true;
+        }
+
+        if (value is long signedLong)
+        {
+            AddUInt64(ref hash, unchecked((ulong)signedLong));
+            return true;
+        }
+
+        if (value is ulong unsignedLong)
+        {
+            AddUInt64(ref hash, unsignedLong);
+            return true;
+        }
+
+        if (value is float singlePrecision)
+        {
+            AddUInt64(ref hash, BitConverter.SingleToUInt32Bits(singlePrecision));
+            return true;
+        }
+
+        if (value is double doublePrecision)
+        {
+            AddUInt64(ref hash, BitConverter.DoubleToUInt64Bits(doublePrecision));
+            return true;
+        }
+
+        if (value is decimal decimalValue)
+        {
+            foreach (int part in decimal.GetBits(decimalValue))
+            {
+                AddUInt64(ref hash, unchecked((ulong)(long)part));
+            }
+            return true;
+        }
+
+        if (value is string text)
+        {
+            AddText(ref hash, text);
+            return true;
+        }
+
+        if (value is DateTime dateTime)
+        {
+            AddUInt64(ref hash, unchecked((ulong)dateTime.ToBinary()));
+            return true;
+        }
+
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            AddUInt64(ref hash, unchecked((ulong)dateTimeOffset.Ticks));
+            AddUInt64(ref hash, unchecked((ulong)dateTimeOffset.Offset.Ticks));
+            return true;
+        }
+
+        if (value is TimeSpan timeSpan)
+        {
+            AddUInt64(ref hash, unchecked((ulong)timeSpan.Ticks));
+            return true;
+        }
+
+        if (value is Guid guid)
+        {
+            foreach (byte part in guid.ToByteArray())
+            {
+                AddByte(ref hash, part);
+            }
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

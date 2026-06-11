@@ -28,14 +28,16 @@ public interface IParserRuleInvocationFrameManager
     ParserRuleInvocationFrame? Current { get; }
 
     /// <summary>
-    /// Sets a rollback-managed parameter seed for the next invocation of the named child rule.
-    /// The default implementation performs no action.
+    /// Attempts to set a rollback-managed parameter seed for the next invocation of the named child rule.
+    /// The default implementation reports that managed seeding is unavailable.
     /// </summary>
     /// <param name="ruleName">Target child parser rule name.</param>
     /// <param name="parameterName">Declared target parameter name.</param>
     /// <param name="value">Untyped seed value, including <c>null</c>.</param>
-    void SetPendingChildParameter(string ruleName, string parameterName, object? value)
+    /// <returns><c>true</c> when the seed was retained; otherwise, <c>false</c>.</returns>
+    bool TrySetPendingChildParameter(string ruleName, string parameterName, object? value)
     {
+        return false;
     }
 
     /// <summary>

@@ -1562,6 +1562,37 @@ public class Antlr4GeneratedRuleLifecycleTests
     }
 
     /// <summary>
+    /// Verifies historical explicit seeding still accepts an arbitrary object without aborting state-key calculation.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitArbitraryObjectSeed_RemainsSupported()
+    {
+        const string grammar = """
+            grammar P;
+            start
+            @init { SetNextRuleParameter(context, "child", "value", new object()); }
+                : child ;
+            child[object value]
+            @init { Found = TryGetRuleParameter(context, "value", out object? v) && v is not null; }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+            }
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+    }
+
+    /// <summary>
     /// Verifies that a failed alternative with <c>child[1] B</c> does not leak raw arguments to the
     /// successful alternative <c>child[2]</c>. The parent <c>@after</c> must observe <c>"2"</c>, not <c>"1"</c>.
     /// </summary>

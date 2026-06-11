@@ -845,7 +845,7 @@ public sealed class ParserEngine
             NamedRawArguments = TrySplitNamedRawArguments(ruleRef.RawArguments),
             TargetRuleDescriptor = ParserRuleInvocationDescriptor.FromRule(referencedRule),
             ParameterSeedWriter = (parameterName, value) =>
-                _ruleInvocationFrameManager.SetPendingChildParameter(ruleRef.RuleName, parameterName, value),
+                _ruleInvocationFrameManager.TrySetPendingChildParameter(ruleRef.RuleName, parameterName, value),
         };
     }
 

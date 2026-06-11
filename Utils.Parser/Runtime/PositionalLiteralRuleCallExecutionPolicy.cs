@@ -80,7 +80,8 @@ public sealed class PositionalLiteralRuleCallExecutionPolicy : IParserRuleCallEx
         {
             if (!context.TrySetParameterSeed(name, value))
             {
-                throw new InvalidOperationException("The parser rule-call context does not provide managed parameter seeding.");
+                Fail(context, "Managed parameter seeding is unavailable for the current parser invocation.");
+                return;
             }
         }
     }

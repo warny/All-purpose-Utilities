@@ -9,7 +9,7 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 public sealed class ParserRuleCallExecutionContext
 {
-    private Action<string, object?>? _setParameterSeed;
+    private Func<string, object?, bool>? _setParameterSeed;
 
     /// <summary>
     /// Gets the caller invocation frame that was current when the rule call began, when frame tracking is enabled.
@@ -58,7 +58,7 @@ public sealed class ParserRuleCallExecutionContext
     /// Installs the internal rollback-managed seed writer used by <see cref="TrySetParameterSeed"/>.
     /// This delegate is intentionally not exposed to policy implementations.
     /// </summary>
-    internal Action<string, object?>? ParameterSeedWriter
+    internal Func<string, object?, bool>? ParameterSeedWriter
     {
         init => _setParameterSeed = value;
     }
@@ -78,8 +78,7 @@ public sealed class ParserRuleCallExecutionContext
             return false;
         }
 
-        _setParameterSeed(parameterName, value);
-        return true;
+        return _setParameterSeed(parameterName, value);
     }
 
     /// <summary>

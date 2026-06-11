@@ -76,9 +76,28 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     public ParserRuleParameterSeedStore? GetCurrentPendingSeeds() => _current?.PendingChildSeeds;
 
     /// <summary>
-    /// Sets a pending child-rule parameter seed on the current frame.
-    /// Delegates to <see cref="ParserRuleInvocationFrame.SetPendingChildParameter"/> on the current frame.
-    /// No-op when no frame is active.
+    /// Attempts to set a pending child-rule parameter seed on the current frame.
+    /// Delegates to <see cref="ParserRuleInvocationFrame.SetPendingChildParameter"/> when a frame is active.
+    /// </summary>
+    /// <param name="ruleName">Name of the child rule that will receive the seed when next entered.</param>
+    /// <param name="parameterName">Parameter metadata name as declared in the child rule.</param>
+    /// <param name="value">Untyped value to seed.</param>
+    /// <returns><c>true</c> when an active frame retained the seed; otherwise, <c>false</c>.</returns>
+    public bool TrySetPendingChildParameter(string ruleName, string parameterName, object? value)
+    {
+        if (_current is null)
+        {
+            return false;
+        }
+
+        SetPendingChildParameter(ruleName, parameterName, value);
+        return true;
+    }
+
+    /// <summary>
+    /// Sets a pending child-rule parameter seed on the current frame when one is active.
+    /// This compatibility helper is used by generated explicit-seeding APIs; callers that need
+    /// availability reporting should use <see cref="TrySetPendingChildParameter"/>.
     /// </summary>
     /// <param name="ruleName">Name of the child rule that will receive the seed when next entered.</param>
     /// <param name="parameterName">Parameter metadata name as declared in the child rule.</param>
