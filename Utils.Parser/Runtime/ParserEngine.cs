@@ -774,7 +774,25 @@ public sealed class ParserEngine
             return null;
         }
 
-        // Parser rule: invoke the explicit opt-in policy around the recursive call.
+        return ParseParserRuleReference(context, ruleRef, referencedRule, precedence: 0, diagnostics);
+    }
+
+    /// <summary>
+    /// Parses a parser rule reference while invoking the configured policy and annotating the completed call.
+    /// </summary>
+    /// <param name="context">Current parser context.</param>
+    /// <param name="ruleRef">Current parser rule reference.</param>
+    /// <param name="referencedRule">Resolved target parser rule.</param>
+    /// <param name="precedence">Minimum precedence required for the target invocation.</param>
+    /// <param name="diagnostics">Optional diagnostic sink.</param>
+    /// <returns>The parsed node, or <c>null</c> when the referenced rule does not match.</returns>
+    private ParseNode? ParseParserRuleReference(
+        ParseContext context,
+        RuleRef ruleRef,
+        Rule referencedRule,
+        int precedence,
+        DiagnosticBag? diagnostics)
+    {
         // Raw arguments and labels remain passive metadata and are never evaluated, bound, or seeded here.
         var callContext = CreateRuleCallExecutionContext(ruleRef, referencedRule);
         _ruleCallExecutionPolicy.BeforeRuleCall(callContext);
@@ -782,7 +800,7 @@ public sealed class ParserEngine
         ParseNode? parserResult = null;
         try
         {
-            parserResult = ParseRule(context, referencedRule, precedence: 0, diagnostics);
+            parserResult = ParseRule(context, referencedRule, precedence, diagnostics);
 
             // Annotate the parent frame's last child call result with current call-site metadata.
             // This must happen after ParseRule returns (whether from a fresh parse or a memoized hit),
@@ -1264,7 +1282,12 @@ public sealed class ParserEngine
                     _definition.AllRules.TryGetValue(rr.RuleName, out var recursiveRule))
                 {
                     var minimumRightPrecedence = GetRightPrecedenceThreshold(associativity, precedenceLevel);
-                    node = ParseRule(context, recursiveRule, minimumRightPrecedence, diagnostics);
+                    node = ParseParserRuleReference(
+                        context,
+                        rr,
+                        recursiveRule,
+                        minimumRightPrecedence,
+                        diagnostics);
                 }
                 else
                 {

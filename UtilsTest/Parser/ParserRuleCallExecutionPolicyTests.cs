@@ -128,6 +128,43 @@ public class ParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Verifies that a direct-left-recursive right-hand self-reference receives policy callbacks and call-site annotations.
+    /// </summary>
+    [TestMethod]
+    public void LeftRecursiveRightHandRuleCall_UsesPolicyHooksAndCurrentCallSiteMetadata()
+    {
+        const string grammar = """
+            grammar P;
+            start : expr ;
+            expr : atom | expr PLUS right=expr[minimum: 2] ;
+            atom : INT ;
+            PLUS : '+' ;
+            INT : '1' | '2' ;
+            """;
+        var callPolicy = new RecordingRuleCallPolicy();
+
+        var result = Compile(grammar, callPolicy).Parse("1+2");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        var recursiveBefore = callPolicy.Events.Single(item =>
+            item.Phase == "before" &&
+            item.Context.RuleName == "expr" &&
+            item.Context.LabelName == "right");
+        var recursiveAfter = callPolicy.Events.Single(item =>
+            item.Phase == "after" &&
+            item.Context.RuleName == "expr" &&
+            item.Context.LabelName == "right");
+        Assert.AreSame(recursiveBefore.Context, recursiveAfter.Context);
+        Assert.AreEqual("minimum: 2", recursiveAfter.Context.RawArguments);
+        Assert.AreEqual(ParserRuleReferenceLabelKind.Assignment, recursiveAfter.Context.LabelKind);
+        Assert.IsTrue(recursiveAfter.Context.Succeeded);
+        Assert.IsNotNull(recursiveAfter.Context.CompletedCallResult);
+        Assert.AreEqual("minimum: 2", recursiveAfter.Context.CompletedCallResult.RawArguments);
+        Assert.AreEqual("right", recursiveAfter.Context.CompletedCallResult.LabelName);
+        Assert.AreEqual(ParserRuleReferenceLabelKind.Assignment, recursiveAfter.Context.CompletedCallResult.LabelKind);
+    }
+
+    /// <summary>
     /// Verifies that a failed parser rule call still receives both callbacks without a completed call result.
     /// </summary>
     [TestMethod]
