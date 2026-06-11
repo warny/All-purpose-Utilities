@@ -591,3 +591,28 @@ The complete call is validated and parsed before any pending child seed is writt
 `NamedLiteralRuleCallExecutionPolicy` is a separate, explicitly installed policy; it is not the default and is not automatically combined with `PositionalLiteralRuleCallExecutionPolicy`. It consumes only `ParserRuleCallExecutionContext.NamedRawArguments`, supporting `name: literal` and `name = literal` according to `ParserRawNamedArgumentSplitter`. Matching uses exact ordinal names, so argument order is irrelevant but casing must match. The named-argument set must exactly equal the declared parameter-name set: missing, extra, blank, or duplicate declared names fail the complete call. Optional/default parameters, partial binding, and mixed positional/named calls are unsupported. Duplicate raw argument names inherit the splitter's documented last-wins behavior before the policy receives the dictionary.
 
 Every named value is parsed only by `ParserSimpleLiteralParser`, with the same limited literals and escapes as the positional policy. Declared C# parameter types remain metadata and are neither validated nor used for conversion. Identifiers, calls, member access, arithmetic, enums, casts, interpolation, verbatim strings, Roslyn, and arbitrary expressions remain unsupported. After complete validation, one atomic `TrySetParameterSeeds(...)` batch overwrites matching seeds and preserves unrelated pending seeds. The batch is rollback-aware, a present `null` remains distinguishable from absence, and generated memoization distinguishes supported bound values. `AfterRuleCall(...)` does not bind returns or labels. Generated `Parse(...)` remains conservative, and neither policy adds `$param`, `$x`, `$x.value`, `$rule.value`, return/label binding, or lexer support.
+
+## Explicit typed literal rule-call binding
+
+Declared parser-rule parameter types remain passive metadata by default. The existing `PositionalLiteralRuleCallExecutionPolicy` and `NamedLiteralRuleCallExecutionPolicy` also remain deliberately **untyped**: for example, they continue to bind the string literal `"hello"` to a parameter declared as `int value`. Type validation is available only by explicitly installing `TypedPositionalLiteralRuleCallExecutionPolicy` or `TypedNamedLiteralRuleCallExecutionPolicy` through `ParserRuntimeFeaturePolicy.RuleCallExecutionPolicy`. The policies are not selected automatically, are not composed automatically, and generated `Parse(...)` remains conservative.
+
+The descriptor preserves the supported declaration shape `type name` as `RawType`, `Name`, and the unchanged `RawDeclaration`. This is a narrow lexical extraction, not general C# parsing. Typed binding accepts only the exact aliases `bool`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, `char`, `string`, and `object`, or the exact canonical names `System.Boolean`, `System.Byte`, `System.SByte`, `System.Int16`, `System.UInt16`, `System.Int32`, `System.UInt32`, `System.Int64`, `System.UInt64`, `System.Single`, `System.Double`, `System.Decimal`, `System.Char`, `System.String`, and `System.Object`. Surrounding whitespace and one `?` suffix are accepted. `string?` and `object?` behave like their non-annotated reference forms; reference nullability annotations are not enforced. `System.Nullable<T>` is not supported.
+
+Conversion is deterministic and culture invariant:
+
+- exact source/target matches are retained;
+- `object` accepts every supported simple literal, including `null`;
+- `null` is accepted for `string`, `object`, and nullable value types, and rejected for non-nullable value types;
+- checked integral-to-integral conversion is accepted only in range;
+- `int`/`long` to `float`/`double` is accepted only when conversion back preserves the integer exactly;
+- exact `double` to `float` is accepted only when finite and exactly representable;
+- floating-point-to-integral conversion is rejected;
+- `int`/`long` to `decimal` is exact; `double` to `decimal` is rejected;
+- `char` to `string` and a one-character `string` to `char` are accepted;
+- strings are never parsed as numbers or Booleans, and Boolean/numeric interchange is rejected.
+
+Unsupported declarations—including user-defined types, enums, arrays, generics, collections, tuples, delegates, records, classes, and interfaces—fail conservatively. No `Type.GetType`, assembly loading, namespace/import resolution, reflection construction, Roslyn conversion, or expression evaluation is performed. In `IgnoreCall` mode no typed seeds are written; in `Throw` mode `ParserRuleCallBindingException` identifies the rule, parameter, declared type, reason, and positional argument index when applicable.
+
+Both typed policies validate the complete syntax, descriptor coverage, parameter names and types, all literals, and all conversions before calling `TrySetParameterSeeds(...)` exactly once. Converted seeds therefore retain the existing all-or-none managed rollback behavior. Generated state-aware memoization hashes the converted runtime values, including their runtime types: for example, `byte(1)` differs from `int(1)`, and `float(1)` differs from `double(1)`. Different source text or source literal runtime types may intentionally share a memoized child result when conversion produces the same effective target value, such as `1` and `1.0` both becoming `double(1)`.
+
+This feature does not add `$param`, `$x`, `$x.value`, `$rule.value`, generated typed variables, generated parser signatures, optional/default parameters, mixed positional/named binding, return binding, label binding, lexer argument/action/predicate execution, or arbitrary C# expression semantics.

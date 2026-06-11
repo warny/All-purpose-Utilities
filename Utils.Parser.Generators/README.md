@@ -325,3 +325,22 @@ P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
 This policy is not the default and is not automatically combined with positional binding. It consumes the generated runtime's existing `NamedRawArguments` metadata for both `name: literal` and `name = literal`. Names match declared parser-rule parameters with `StringComparer.Ordinal`; argument order does not matter, but exact coverage is required. Missing, extra, case-mismatched, blank, or duplicate declared names fail the whole call. Optional/default parameters, partial binding, and mixed positional/named syntax are unsupported. Duplicate raw names inherit the splitter's documented last-wins result.
 
 All values must be accepted by `ParserSimpleLiteralParser`. Declared C# types are not checked or converted, and arbitrary expressions are not evaluated. One complete atomic pending-seed batch is applied only after validation, preserving rollback and deterministic memoization behavior for supported values. Generated `Parse(...)` remains conservative. No `$param`, `$x`, `$x.value`, `$rule.value`, return/label binding, or lexer support is added.
+
+## Explicit typed literal rule-call binding
+
+Generated opt-in parsing can preserve a caller-supplied typed call policy through `basePolicy`:
+
+```csharp
+var basePolicy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy()
+};
+
+var result = GeneratedGrammar.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+Use `TypedNamedLiteralRuleCallExecutionPolicy` separately for exact-name `name: literal` or `name = literal` calls. Neither typed policy is installed automatically, they are not combined, and generated `Parse(...)` remains conservative. The existing `PositionalLiteralRuleCallExecutionPolicy` and `NamedLiteralRuleCallExecutionPolicy` remain untyped.
+
+Typed policies recognize only the C# aliases `bool`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, `char`, `string`, `object`, their exact canonical `System.*` names, and a single nullable suffix. They use checked integral conversion, exact-preserving integral-to-floating and double-to-float conversion, integral-to-decimal conversion, and limited string/character conversion. Null is accepted only for reference targets and nullable value targets. Strings are not parsed into numbers or Booleans; floating-point-to-integral conversion is rejected.
+
+All conversions finish before one rollback-managed atomic seed batch. Memoization keys use converted effective runtime values and preserve runtime type distinctions. No arbitrary type resolution, arrays, generics, enums, user-defined types, Roslyn conversion, expression evaluation, `$param` forms, return/label binding, or lexer argument/action/predicate execution is provided.

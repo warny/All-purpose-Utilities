@@ -198,3 +198,18 @@ This is partial compatibility, not full ANTLR argument semantics: declared C# ty
 `NamedLiteralRuleCallExecutionPolicy` is a second, separate opt-in policy. The default remains represented-only, generated `Parse(...)` remains conservative, and positional binding is not combined automatically. The policy consumes the existing syntactic `NamedRawArguments` dictionary for both `name: literal` and `name = literal`, matches exact ordinal declared names independent of argument order, and requires exact parameter-name coverage. Missing, extra, case-mismatched, blank, or duplicate declared names reject the whole binding; optional/default parameters, partial binding, and mixed syntax are unsupported. Duplicate raw names retain `ParserRawNamedArgumentSplitter` last-wins behavior.
 
 Values are limited to `ParserSimpleLiteralParser`; declared C# types are not validated or converted. The complete call is parsed before one all-or-none rollback-managed seed batch. Matching existing seeds are overwritten, unrelated seeds are preserved, `null` stays present, and state-aware memoization distinguishes supported values. Arbitrary expressions, `$param`, `$x`, `$x.value`, `$rule.value`, returns, labels, and lexer rule arguments remain unsupported.
+
+## Typed literal call-policy detail
+
+| Capability | Default / existing untyped policies | Explicit typed policies |
+|---|---|---|
+| Declared type enforcement | No; metadata only | Yes, for the closed built-in allowlist |
+| Installation | Default is no-op; positional/named untyped policies are explicit | `TypedPositionalLiteralRuleCallExecutionPolicy` or `TypedNamedLiteralRuleCallExecutionPolicy` must be installed explicitly |
+| Target types | Not inspected | `bool`, integer aliases, `float`, `double`, `decimal`, `char`, `string`, `object`, their exact `System.*` names, and one nullable suffix |
+| Numeric conversion | None; parsed literal runtime value is retained | Checked integral range conversion; exact-preserving integral-to-floating and double-to-float; no floating-to-integral; integral-to-decimal only |
+| Text conversion | None | Exact string/char, `char` to `string`, one-character `string` to `char`; never string-to-number or string-to-Boolean |
+| Null | Retained without declared-type checks | Reference types and nullable value types only |
+| Mutation | One complete seed batch | All type checks and conversions complete before one seed batch |
+| Rollback/memoization | Managed generated state | Same managed state; keys contain converted runtime values and runtime types |
+
+The typed policies do not resolve arbitrary C# types and do not support user-defined types, enums, arrays, generics, collections, tuples, delegates, return/label binding, `$param` forms, or lexer execution. Generated `Parse(...)` remains conservative; only an explicit base policy used by generated opt-in APIs enables typed binding.

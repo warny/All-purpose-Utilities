@@ -120,7 +120,7 @@ public sealed class ParserRuleInvocationDescriptor
         ArgumentNullException.ThrowIfNull(rule);
 
         var parameterDescriptors = rule.Parameters?
-            .SelectMany(static parameter => BuildParameterDescriptors(parameter.Name))
+            .SelectMany(static parameter => BuildParameterDescriptors(GetRawDeclaration(parameter.Type, parameter.Name)))
             .ToArray() ?? [];
         var returnDescriptors = rule.Returns?
             .SelectMany(static ruleReturn => BuildReturnDescriptors(ruleReturn.Name))
@@ -154,12 +154,40 @@ public sealed class ParserRuleInvocationDescriptor
     {
         foreach (string declaration in SplitTopLevelLocalDeclarations(rawParameters))
         {
+            string name = GetLocalDeclarationName(declaration) ?? declaration;
             yield return new ParserRuleParameterDescriptor
             {
-                Name = GetLocalDeclarationName(declaration) ?? declaration,
+                Name = name,
+                RawType = GetParameterDeclarationType(declaration, name),
                 RawDeclaration = declaration
             };
         }
+    }
+
+    /// <summary>
+    /// Extracts the type prefix from the conservative parameter declaration shape <c>type name</c>.
+    /// No general C# declaration parsing or type resolution is performed.
+    /// </summary>
+    /// <param name="declaration">Raw parameter declaration.</param>
+    /// <param name="name">Lexically extracted final parameter name.</param>
+    /// <returns>The trimmed type prefix, or <c>null</c> when the declaration does not have the supported shape.</returns>
+    private static string? GetParameterDeclarationType(string declaration, string name)
+    {
+        string trimmed = declaration.Trim();
+        if (name.Length == 0 || trimmed.Length <= name.Length
+            || !trimmed.EndsWith(name, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        int nameStart = trimmed.Length - name.Length;
+        if (!char.IsWhiteSpace(trimmed[nameStart - 1]))
+        {
+            return null;
+        }
+
+        string rawType = trimmed[..nameStart].TrimEnd();
+        return rawType.Length == 0 ? null : rawType;
     }
 
     /// <summary>
@@ -721,6 +749,12 @@ public sealed class ParserRuleParameterDescriptor
     /// Gets the parameter name text currently exposed by the parser model.
     /// </summary>
     public required string Name { get; init; }
+
+    /// <summary>
+    /// Gets the conservatively extracted raw type prefix, or <c>null</c> when the declaration shape is unsupported.
+    /// This metadata is never resolved as an arbitrary C# type.
+    /// </summary>
+    public string? RawType { get; init; }
 
     /// <summary>
     /// Gets the raw parameter declaration text without semantic type binding.
