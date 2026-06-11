@@ -279,3 +279,9 @@ The safe current state is:
 - rule lifecycle hooks (`@init`/`@after`) are supported in the source-generator C# path, activated only through `ParseWithEmbeddedCode(...)` or an explicit `CreateRuntimePolicy(executionContext, basePolicy)` result; grammars without lifecycle hooks use the no-op executor;
 - complete ANTLR embedded-code transactional semantics are not active because action buffering, lexer embedded-code state, replay, and external side-effect rollback remain unsupported;
 - lexer embedded code remains unsupported.
+
+## Rule-call policy transaction boundary
+
+The optional `IParserRuleCallExecutionPolicy` receives `BeforeRuleCall(...)` before a parser child rule is invoked and `AfterRuleCall(...)` after that invocation succeeds, fails, or exits exceptionally. Its context is observational: raw argument text and labels are metadata, and no automatic evaluation, binding, or parameter seeding occurs. On success, the engine annotates the current `ParserRuleCallResult` with the current call site's raw arguments and label before the after callback, preserving the existing rollback- and memoization-safe metadata ordering.
+
+Policy callbacks themselves are not transactional. Mutations of external objects, logging sinks, files, services, or other side effects performed by a policy are not automatically rolled back when a parser alternative fails. A future policy that intentionally uses managed pending-child seeds or another rollback-aware parser-state contract must rely on that contract's capture/restore semantics; this PR does not expose broad mutable managers or add automatic seeding. Policies must not retain mutable caller frames across alternatives. The default `NullParserRuleCallExecutionPolicy` has no side effects and preserves current behavior.

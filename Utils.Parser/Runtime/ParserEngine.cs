@@ -107,6 +107,11 @@ public sealed class ParserEngine
     private readonly IParserRuleInvocationFrameManager _ruleInvocationFrameManager;
 
     /// <summary>
+    /// Policy component invoked explicitly before and after parser rule calls.
+    /// </summary>
+    private readonly IParserRuleCallExecutionPolicy _ruleCallExecutionPolicy;
+
+    /// <summary>
     /// Initializes a parser engine with the conservative default runtime feature policy.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>
@@ -129,6 +134,7 @@ public sealed class ParserEngine
         _executionStateManager = effectivePolicy.ExecutionStateManager ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _ruleLifecycleExecutor = effectivePolicy.RuleLifecycleExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _ruleInvocationFrameManager = effectivePolicy.RuleInvocationFrameManager ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
+        _ruleCallExecutionPolicy = effectivePolicy.RuleCallExecutionPolicy ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
@@ -768,20 +774,99 @@ public sealed class ParserEngine
             return null;
         }
 
-        // Parser rule: recurse.
-        var parserResult = ParseRule(context, referencedRule, precedence: 0, diagnostics);
+        return ParseParserRuleReference(context, ruleRef, referencedRule, precedence: 0, diagnostics);
+    }
 
-        // Annotate the parent frame's last child call result with current call-site metadata.
-        // This must happen after ParseRule returns (whether from a fresh parse or a memoized hit),
-        // so that the parent always sees the current call site's metadata rather than stale
-        // values from a memoized execution-state snapshot. Metadata-only: not evaluated, not bound.
-        if (parserResult is not null)
+    /// <summary>
+    /// Parses a parser rule reference while invoking the configured policy and annotating the completed call.
+    /// </summary>
+    /// <param name="context">Current parser context.</param>
+    /// <param name="ruleRef">Current parser rule reference.</param>
+    /// <param name="referencedRule">Resolved target parser rule.</param>
+    /// <param name="precedence">Minimum precedence required for the target invocation.</param>
+    /// <param name="diagnostics">Optional diagnostic sink.</param>
+    /// <returns>The parsed node, or <c>null</c> when the referenced rule does not match.</returns>
+    private ParseNode? ParseParserRuleReference(
+        ParseContext context,
+        RuleRef ruleRef,
+        Rule referencedRule,
+        int precedence,
+        DiagnosticBag? diagnostics)
+    {
+        // Raw arguments and labels remain passive metadata and are never evaluated, bound, or seeded here.
+        var callContext = CreateRuleCallExecutionContext(ruleRef, referencedRule);
+        _ruleCallExecutionPolicy.BeforeRuleCall(callContext);
+
+        ParseNode? parserResult = null;
+        try
         {
-            _ruleInvocationFrameManager.AnnotateLastChildCallRawArguments(ruleRef.RawArguments);
-            _ruleInvocationFrameManager.AnnotateLastChildCallLabel(ruleRef.LabelName, ruleRef.LabelKind);
+            parserResult = ParseRule(context, referencedRule, precedence, diagnostics);
+
+            // Annotate the parent frame's last child call result with current call-site metadata.
+            // This must happen after ParseRule returns (whether from a fresh parse or a memoized hit),
+            // so that the parent always sees the current call site's metadata rather than stale
+            // values from a memoized execution-state snapshot. Metadata-only: not evaluated, not bound.
+            if (parserResult is not null)
+            {
+                _ruleInvocationFrameManager.AnnotateLastChildCallRawArguments(ruleRef.RawArguments);
+                _ruleInvocationFrameManager.AnnotateLastChildCallLabel(ruleRef.LabelName, ruleRef.LabelKind);
+                callContext.CompletedCallResult = _ruleInvocationFrameManager.Current?.LastCompletedChildCall;
+                callContext.Succeeded = true;
+            }
+
+            return parserResult;
+        }
+        finally
+        {
+            _ruleCallExecutionPolicy.AfterRuleCall(callContext);
+        }
+    }
+
+    /// <summary>
+    /// Creates passive policy metadata for a parser rule reference without evaluating its raw arguments.
+    /// </summary>
+    /// <param name="ruleRef">Current parser rule reference.</param>
+    /// <param name="referencedRule">Resolved target parser rule.</param>
+    /// <returns>A passive execution context for the configured rule-call policy.</returns>
+    private ParserRuleCallExecutionContext CreateRuleCallExecutionContext(RuleRef ruleRef, Rule referencedRule)
+    {
+        IReadOnlyList<string>? positionalRawArguments = ruleRef.RawArguments is null
+            ? null
+            : ParserRawArgumentSplitter.SplitTopLevel(ruleRef.RawArguments);
+
+        return new ParserRuleCallExecutionContext
+        {
+            CallerFrame = _ruleInvocationFrameManager.Current,
+            RuleName = ruleRef.RuleName,
+            RawArguments = ruleRef.RawArguments,
+            LabelName = ruleRef.LabelName,
+            LabelKind = ruleRef.LabelKind,
+            PositionalRawArguments = positionalRawArguments,
+            NamedRawArguments = TrySplitNamedRawArguments(ruleRef.RawArguments),
+            TargetRuleDescriptor = ParserRuleInvocationDescriptor.FromRule(referencedRule),
+        };
+    }
+
+    /// <summary>
+    /// Attempts to split raw arguments as named metadata without making malformed or positional text affect parsing.
+    /// </summary>
+    /// <param name="rawArguments">Uninterpreted raw argument text, or <c>null</c>.</param>
+    /// <returns>Named raw arguments when all slices are named; otherwise, <c>null</c>.</returns>
+    private static IReadOnlyDictionary<string, string>? TrySplitNamedRawArguments(string? rawArguments)
+    {
+        if (rawArguments is null)
+        {
+            return null;
         }
 
-        return parserResult;
+        try
+        {
+            return ParserRawNamedArgumentSplitter.SplitNamedTopLevel(rawArguments);
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -1197,7 +1282,12 @@ public sealed class ParserEngine
                     _definition.AllRules.TryGetValue(rr.RuleName, out var recursiveRule))
                 {
                     var minimumRightPrecedence = GetRightPrecedenceThreshold(associativity, precedenceLevel);
-                    node = ParseRule(context, recursiveRule, minimumRightPrecedence, diagnostics);
+                    node = ParseParserRuleReference(
+                        context,
+                        rr,
+                        recursiveRule,
+                        minimumRightPrecedence,
+                        diagnostics);
                 }
                 else
                 {

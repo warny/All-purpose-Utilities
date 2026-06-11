@@ -486,6 +486,19 @@ internal static class GrammarEmitter
         sb.AppendLine("        return grammar.Parse(input);");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Parses input using generated C# hooks plus an explicit base runtime policy. Existing embedded-code components are replaced while other base-policy components, including rule-call execution, are preserved.</summary>");
+        sb.AppendLine("    /// <param name=\"input\">Input text to parse.</param>");
+        sb.AppendLine("    /// <param name=\"executionContext\">Execution context instance that owns generated hooks and injected parser members.</param>");
+        sb.AppendLine("    /// <param name=\"basePolicy\">Base runtime policy whose non-embedded-code components are preserved.</param>");
+        sb.AppendLine("    /// <returns>The parse tree produced by the generated grammar.</returns>");
+        sb.AppendLine($"    public static ParseNode ParseWithEmbeddedCode([global::System.Diagnostics.CodeAnalysis.StringSyntax(StringSyntaxName, typeof({className}))] string input, {contextClassName} executionContext, ParserRuntimeFeaturePolicy basePolicy)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(executionContext);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(basePolicy);");
+        sb.AppendLine("        var grammar = new CompiledGrammar(Build(), executionContext.CreateRuntimePolicy(basePolicy));");
+        sb.AppendLine("        return grammar.Parse(input);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
     }
 
     /// <summary>

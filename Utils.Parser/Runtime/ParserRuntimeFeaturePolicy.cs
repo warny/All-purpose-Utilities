@@ -18,6 +18,7 @@ public sealed record ParserRuntimeFeaturePolicy
         ExecutionStateManager = NullParserExecutionStateManager.Instance,
         RuleLifecycleExecutor = NullParserRuleLifecycleExecutor.Instance,
         RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance,
+        RuleCallExecutionPolicy = NullParserRuleCallExecutionPolicy.Instance,
         RuntimeObserver = null
     };
 
@@ -48,6 +49,12 @@ public sealed record ParserRuntimeFeaturePolicy
     /// The default no-op manager does not execute parameters, locals, returns, or exception metadata.
     /// </summary>
     public required IParserRuleInvocationFrameManager RuleInvocationFrameManager { get; init; }
+
+    /// <summary>
+    /// Gets the explicit parser rule-call execution policy invoked around parser rule references.
+    /// The default no-op policy preserves metadata-only call arguments and labels.
+    /// </summary>
+    public IParserRuleCallExecutionPolicy RuleCallExecutionPolicy { get; init; } = NullParserRuleCallExecutionPolicy.Instance;
 
     /// <summary>
     /// Gets the optional passive runtime observer for scheduling introspection.
