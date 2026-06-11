@@ -76,28 +76,30 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     public ParserRuleParameterSeedStore? GetCurrentPendingSeeds() => _current?.PendingChildSeeds;
 
     /// <summary>
-    /// Attempts to set a pending child-rule parameter seed on the current frame.
-    /// Delegates to <see cref="ParserRuleInvocationFrame.SetPendingChildParameter"/> when a frame is active.
+    /// Attempts to atomically merge pending child-rule parameter seeds on the current frame.
     /// </summary>
-    /// <param name="ruleName">Name of the child rule that will receive the seed when next entered.</param>
-    /// <param name="parameterName">Parameter metadata name as declared in the child rule.</param>
-    /// <param name="value">Untyped value to seed.</param>
-    /// <returns><c>true</c> when an active frame retained the seed; otherwise, <c>false</c>.</returns>
-    public bool TrySetPendingChildParameter(string ruleName, string parameterName, object? value)
+    /// <param name="ruleName">Name of the child rule that will receive the seeds when next entered.</param>
+    /// <param name="values">Parameter metadata names and untyped values to seed.</param>
+    /// <returns><c>true</c> when an active frame retained every seed; otherwise, <c>false</c>.</returns>
+    public bool TrySetPendingChildParameters(
+        string ruleName,
+        IReadOnlyDictionary<string, object?> values)
     {
+        ArgumentNullException.ThrowIfNull(ruleName);
+        ArgumentNullException.ThrowIfNull(values);
         if (_current is null)
         {
             return false;
         }
 
-        SetPendingChildParameter(ruleName, parameterName, value);
+        _current.SetPendingChildParameters(ruleName, values);
         return true;
     }
 
     /// <summary>
     /// Sets a pending child-rule parameter seed on the current frame when one is active.
     /// This compatibility helper is used by generated explicit-seeding APIs; callers that need
-    /// availability reporting should use <see cref="TrySetPendingChildParameter"/>.
+    /// availability reporting should use <see cref="TrySetPendingChildParameters"/>.
     /// </summary>
     /// <param name="ruleName">Name of the child rule that will receive the seed when next entered.</param>
     /// <param name="parameterName">Parameter metadata name as declared in the child rule.</param>

@@ -313,6 +313,35 @@ public class ParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Verifies policy binding is offered to custom frame managers as one all-or-none batch.
+    /// </summary>
+    [TestMethod]
+    public void PositionalLiteralPolicy_CustomManagerRejectsWholeBatchWithoutPartialSeeds()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[1, 2] ;
+            child[int first, int second] : A ;
+            A : 'a' ;
+            """;
+        var manager = new RejectingBatchFrameManager();
+        var observed = new Dictionary<string, object?>();
+
+        var result = Compile(
+            grammar,
+            new PositionalLiteralRuleCallExecutionPolicy(),
+            manager,
+            new ParameterRecordingLifecycleExecutor(observed)).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, manager.BatchAttempts);
+        Assert.AreEqual(2, manager.LastValues!.Count);
+        Assert.AreEqual(1, manager.LastValues["first"]);
+        Assert.AreEqual(2, manager.LastValues["second"]);
+        Assert.AreEqual(0, observed.Count, "A rejected batch must not expose any partial child parameter state.");
+    }
+
+    /// <summary>
     /// Verifies call-site policy values overwrite same-parameter seeds without clearing unrelated pending seeds.
     /// </summary>
     [TestMethod]
@@ -428,6 +457,69 @@ public class ParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Delegates frame tracking while rejecting every atomic seed batch without mutating the frame.
+    /// </summary>
+    private sealed class RejectingBatchFrameManager : IParserRuleInvocationFrameManager
+    {
+        private readonly StackParserRuleInvocationFrameManager _inner = new();
+
+        /// <summary>
+        /// Gets the number of atomic seed batches offered to this manager.
+        /// </summary>
+        public int BatchAttempts { get; private set; }
+
+        /// <summary>
+        /// Gets the last complete seed batch offered to this manager.
+        /// </summary>
+        public IReadOnlyDictionary<string, object?>? LastValues { get; private set; }
+
+        /// <summary>
+        /// Gets the current delegated invocation frame.
+        /// </summary>
+        public ParserRuleInvocationFrame? Current => _inner.Current;
+
+        /// <summary>
+        /// Enters a delegated invocation frame.
+        /// </summary>
+        /// <param name="ruleName">Parser rule name.</param>
+        /// <param name="inputPosition">Input position.</param>
+        /// <param name="descriptor">Optional rule descriptor.</param>
+        /// <returns>The delegated invocation frame.</returns>
+        public ParserRuleInvocationFrame Enter(
+            string ruleName,
+            int inputPosition,
+            ParserRuleInvocationDescriptor? descriptor = null)
+        {
+            return _inner.Enter(ruleName, inputPosition, descriptor);
+        }
+
+        /// <summary>
+        /// Exits a delegated invocation frame.
+        /// </summary>
+        /// <param name="frame">Invocation frame to exit.</param>
+        /// <param name="succeeded">Whether rule parsing succeeded.</param>
+        public void Exit(ParserRuleInvocationFrame frame, bool succeeded)
+        {
+            _inner.Exit(frame, succeeded);
+        }
+
+        /// <summary>
+        /// Records and rejects one complete seed batch without mutating pending frame state.
+        /// </summary>
+        /// <param name="ruleName">Target child rule name.</param>
+        /// <param name="values">Complete seed batch.</param>
+        /// <returns>Always <c>false</c>.</returns>
+        public bool TrySetPendingChildParameters(
+            string ruleName,
+            IReadOnlyDictionary<string, object?> values)
+        {
+            BatchAttempts++;
+            LastValues = new Dictionary<string, object?>(values, StringComparer.Ordinal);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Seeds existing values before delegating to the concrete positional literal policy.
     /// </summary>
     private sealed class PreseedingRuleCallPolicy(IParserRuleCallExecutionPolicy inner) : IParserRuleCallExecutionPolicy
@@ -516,13 +608,13 @@ public class ParserRuleCallExecutionPolicyTests
     /// </summary>
     /// <param name="grammar">ANTLR grammar source.</param>
     /// <param name="callPolicy">Rule-call policy under test.</param>
-    /// <param name="frameManager">Optional stack manager supplied by the caller.</param>
+    /// <param name="frameManager">Optional invocation-frame manager supplied by the caller.</param>
     /// <param name="lifecycleExecutor">Optional lifecycle executor supplied by the caller.</param>
     /// <returns>A compiled grammar using the supplied policies.</returns>
     private static CompiledGrammar Compile(
         string grammar,
         IParserRuleCallExecutionPolicy callPolicy,
-        StackParserRuleInvocationFrameManager? frameManager = null,
+        IParserRuleInvocationFrameManager? frameManager = null,
         IParserRuleLifecycleExecutor? lifecycleExecutor = null)
     {
         var policy = ParserRuntimeFeaturePolicy.Default with

@@ -5,11 +5,11 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Carries passive metadata for an explicit parser rule-call execution policy invocation.
 /// Raw arguments are split syntactically only. The parser does not evaluate or bind them automatically;
-/// an explicitly installed policy may request managed seeds through <see cref="TrySetParameterSeed"/>.
+/// an explicitly installed policy may request an atomic managed seed batch through <see cref="TrySetParameterSeeds"/>.
 /// </summary>
 public sealed class ParserRuleCallExecutionContext
 {
-    private Func<string, object?, bool>? _setParameterSeed;
+    private Func<IReadOnlyDictionary<string, object?>, bool>? _setParameterSeeds;
 
     /// <summary>
     /// Gets the caller invocation frame that was current when the rule call began, when frame tracking is enabled.
@@ -55,12 +55,12 @@ public sealed class ParserRuleCallExecutionContext
     public ParserRuleInvocationDescriptor? TargetRuleDescriptor { get; init; }
 
     /// <summary>
-    /// Installs the internal rollback-managed seed writer used by <see cref="TrySetParameterSeed"/>.
+    /// Installs the internal rollback-managed batch seed writer used by <see cref="TrySetParameterSeeds"/>.
     /// This delegate is intentionally not exposed to policy implementations.
     /// </summary>
-    internal Func<string, object?, bool>? ParameterSeedWriter
+    internal Func<IReadOnlyDictionary<string, object?>, bool>? ParameterSeedWriter
     {
-        init => _setParameterSeed = value;
+        init => _setParameterSeeds = value;
     }
 
     /// <summary>
@@ -73,12 +73,27 @@ public sealed class ParserRuleCallExecutionContext
     public bool TrySetParameterSeed(string parameterName, object? value)
     {
         ArgumentNullException.ThrowIfNull(parameterName);
-        if (_setParameterSeed is null)
+        return TrySetParameterSeeds(new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            [parameterName] = value
+        });
+    }
+
+    /// <summary>
+    /// Attempts to atomically seed multiple parameters for the current target rule through managed pending-child state.
+    /// The caller cannot select a different target rule through this API, and implementations must retain all values or none.
+    /// </summary>
+    /// <param name="values">Declared target parameter names and their untyped values, including <c>null</c>.</param>
+    /// <returns><c>true</c> when every seed was retained atomically; otherwise, <c>false</c>.</returns>
+    public bool TrySetParameterSeeds(IReadOnlyDictionary<string, object?> values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        if (_setParameterSeeds is null)
         {
             return false;
         }
 
-        return _setParameterSeed(parameterName, value);
+        return _setParameterSeeds(values);
     }
 
     /// <summary>

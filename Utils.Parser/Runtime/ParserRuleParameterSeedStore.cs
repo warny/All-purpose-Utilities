@@ -46,18 +46,36 @@ public sealed class ParserRuleParameterSeedStore : ICloneable, IParserExecutionS
     /// </summary>
     internal ParserRuleParameterSeedStore With(string ruleName, string parameterName, object? value)
     {
-        var copy = CloneSeeds();
-        if (!copy.TryGetValue(ruleName, out var existing))
-        {
-            existing = new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(StringComparer.Ordinal));
-            copy[ruleName] = existing;
-        }
-
-        var inner = new Dictionary<string, object?>(existing, StringComparer.Ordinal)
+        return With(ruleName, new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             [parameterName] = value
-        };
-        copy[ruleName] = new ReadOnlyDictionary<string, object?>(inner);
+        });
+    }
+
+    /// <summary>
+    /// Returns a new store with every supplied parameter seed merged atomically for the given rule.
+    /// Existing values with matching names are overwritten and unrelated values are preserved.
+    /// </summary>
+    /// <param name="ruleName">Target child parser rule name.</param>
+    /// <param name="values">Parameter names and values to merge.</param>
+    /// <returns>A new immutable seed-store snapshot containing the complete merge.</returns>
+    internal ParserRuleParameterSeedStore With(
+        string ruleName,
+        IReadOnlyDictionary<string, object?> values)
+    {
+        ArgumentNullException.ThrowIfNull(ruleName);
+        ArgumentNullException.ThrowIfNull(values);
+
+        var copy = CloneSeeds();
+        var merged = copy.TryGetValue(ruleName, out IReadOnlyDictionary<string, object?>? existing)
+            ? new Dictionary<string, object?>(existing, StringComparer.Ordinal)
+            : new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (KeyValuePair<string, object?> value in values)
+        {
+            merged[value.Key] = value.Value;
+        }
+
+        copy[ruleName] = new ReadOnlyDictionary<string, object?>(merged);
         return new ParserRuleParameterSeedStore(copy);
     }
 

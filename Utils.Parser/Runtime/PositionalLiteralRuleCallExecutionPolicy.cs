@@ -76,13 +76,13 @@ public sealed class PositionalLiteralRuleCallExecutionPolicy : IParserRuleCallEx
             bindings[index] = (name, value);
         }
 
-        foreach ((string name, object? value) in bindings)
+        var seeds = bindings.ToDictionary(
+            static binding => binding.Name,
+            static binding => binding.Value,
+            StringComparer.Ordinal);
+        if (!context.TrySetParameterSeeds(seeds))
         {
-            if (!context.TrySetParameterSeed(name, value))
-            {
-                Fail(context, "Managed parameter seeding is unavailable for the current parser invocation.");
-                return;
-            }
+            Fail(context, "Managed parameter seeding is unavailable for the current parser invocation.");
         }
     }
 

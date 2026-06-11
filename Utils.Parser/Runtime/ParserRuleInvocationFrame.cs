@@ -228,7 +228,20 @@ public sealed class ParserRuleInvocationFrame
     /// <param name="value">Untyped parameter value to seed.</param>
     public void SetPendingChildParameter(string ruleName, string parameterName, object? value)
     {
-        PendingChildSeeds = (PendingChildSeeds ?? new ParserRuleParameterSeedStore()).With(ruleName, parameterName, value);
+        SetPendingChildParameters(ruleName, new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            [parameterName] = value
+        });
+    }
+
+    /// <summary>
+    /// Atomically merges untyped parameter values for the next invocation of a named child rule.
+    /// </summary>
+    /// <param name="ruleName">Name of the child rule that will receive the seeds.</param>
+    /// <param name="values">Parameter metadata names and untyped values to seed.</param>
+    public void SetPendingChildParameters(string ruleName, IReadOnlyDictionary<string, object?> values)
+    {
+        PendingChildSeeds = (PendingChildSeeds ?? new ParserRuleParameterSeedStore()).With(ruleName, values);
     }
 
     /// <summary>
