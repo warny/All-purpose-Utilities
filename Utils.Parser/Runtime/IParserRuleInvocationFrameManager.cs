@@ -28,6 +28,19 @@ public interface IParserRuleInvocationFrameManager
     ParserRuleInvocationFrame? Current { get; }
 
     /// <summary>
+    /// Attempts to atomically merge rollback-managed parameter seeds for the next invocation of the named child rule.
+    /// Implementations must retain either every supplied seed or none of them. The default implementation reports
+    /// that managed seeding is unavailable.
+    /// </summary>
+    /// <param name="ruleName">Target child parser rule name.</param>
+    /// <param name="values">Declared target parameter names and their untyped seed values.</param>
+    /// <returns><c>true</c> when every seed was retained atomically; otherwise, <c>false</c>.</returns>
+    bool TrySetPendingChildParameters(string ruleName, IReadOnlyDictionary<string, object?> values)
+    {
+        return false;
+    }
+
+    /// <summary>
     /// Called by <c>ParserEngine</c> just before the post-rule execution-state snapshot is captured,
     /// while the rule's invocation frame is still current.
     /// Implementations that support call results must finalize them here so that the snapshot

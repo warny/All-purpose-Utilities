@@ -793,7 +793,7 @@ public sealed class ParserEngine
         int precedence,
         DiagnosticBag? diagnostics)
     {
-        // Raw arguments and labels remain passive metadata and are never evaluated, bound, or seeded here.
+        // Raw arguments and labels remain passive metadata unless the explicitly installed call policy requests managed seeds.
         var callContext = CreateRuleCallExecutionContext(ruleRef, referencedRule);
         _ruleCallExecutionPolicy.BeforeRuleCall(callContext);
 
@@ -844,6 +844,8 @@ public sealed class ParserEngine
             PositionalRawArguments = positionalRawArguments,
             NamedRawArguments = TrySplitNamedRawArguments(ruleRef.RawArguments),
             TargetRuleDescriptor = ParserRuleInvocationDescriptor.FromRule(referencedRule),
+            ParameterSeedWriter = values =>
+                _ruleInvocationFrameManager.TrySetPendingChildParameters(ruleRef.RuleName, values),
         };
     }
 

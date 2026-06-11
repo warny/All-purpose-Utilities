@@ -597,6 +597,69 @@ public class ParserRuleCallStackTests
     }
 
     /// <summary>
+    /// Verifies supported literal seed values contribute deterministic, type-sensitive memoization hashes.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeedStore_SupportedLiteralValues_ProduceDistinctStableHashes()
+    {
+        var first = new ParserRuleParameterSeedStore().With("child", "value", 1);
+        var same = new ParserRuleParameterSeedStore().With("child", "value", 1);
+        var second = new ParserRuleParameterSeedStore().With("child", "value", 2);
+        var longValue = new ParserRuleParameterSeedStore().With("child", "value", 1L);
+        var nullValue = new ParserRuleParameterSeedStore().With("child", "value", null);
+
+        Assert.AreEqual(first.GetParserExecutionStateHash(), same.GetParserExecutionStateHash());
+        Assert.AreNotEqual(first.GetParserExecutionStateHash(), second.GetParserExecutionStateHash());
+        Assert.AreNotEqual(first.GetParserExecutionStateHash(), longValue.GetParserExecutionStateHash());
+        Assert.AreNotEqual(first.GetParserExecutionStateHash(), nullValue.GetParserExecutionStateHash());
+    }
+
+    /// <summary>
+    /// Verifies additional scalar values accepted by explicit seeding retain stable deterministic hashes.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeedStore_ExplicitScalarValues_ProduceStableHashes()
+    {
+        var decimalValue = new ParserRuleParameterSeedStore().With("child", "value", 1.25m);
+        var sameDecimal = new ParserRuleParameterSeedStore().With("child", "value", 1.25m);
+        var enumValue = new ParserRuleParameterSeedStore().With("child", "value", SeedKind.Second);
+        var sameEnum = new ParserRuleParameterSeedStore().With("child", "value", SeedKind.Second);
+
+        Assert.AreEqual(decimalValue.GetParserExecutionStateHash(), sameDecimal.GetParserExecutionStateHash());
+        Assert.AreEqual(enumValue.GetParserExecutionStateHash(), sameEnum.GetParserExecutionStateHash());
+    }
+
+    /// <summary>
+    /// Verifies arbitrary explicit seed objects remain accepted while receiving volatile keys that prevent unsafe reuse.
+    /// </summary>
+    [TestMethod]
+    public void ParameterSeedStore_ArbitraryValue_ProducesVolatileMemoizationHashes()
+    {
+        var store = new ParserRuleParameterSeedStore().With("child", "value", new object());
+
+        ulong first = store.GetParserExecutionStateHash();
+        ulong second = store.GetParserExecutionStateHash();
+
+        Assert.AreNotEqual(first, second);
+    }
+
+    /// <summary>
+    /// Defines deterministic enum values used by explicit seed hashing tests.
+    /// </summary>
+    private enum SeedKind
+    {
+        /// <summary>
+        /// First test value.
+        /// </summary>
+        First,
+
+        /// <summary>
+        /// Second test value.
+        /// </summary>
+        Second
+    }
+
+    /// <summary>
     /// Root frame enters without any pending seeds even if none exist.
     /// </summary>
     [TestMethod]
