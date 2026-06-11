@@ -852,6 +852,249 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures generated embedded-code parsing accepts an explicitly installed typed positional policy through <c>basePolicy</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedPositionalPolicy_BindsConvertedValue()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public object? Seen { get; private set; }
+            }
+            start : child[42] ;
+            child[byte value]
+            @init {
+                TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual((byte)42, ReadContextObjectProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated embedded-code parsing accepts an explicitly installed typed named policy through <c>basePolicy</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedNamedPolicy_BindsConvertedValue()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public object? Seen { get; private set; }
+            }
+            start : child[value: 42] ;
+            child[long value]
+            @init {
+                TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedNamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42L, ReadContextObjectProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures typed IgnoreCall leaves an incompatible value absent while typed Throw reports the conversion failure.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedPolicy_IncompatibleValueHonorsFailureBehavior()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public bool Found { get; private set; }
+            }
+            start : child["hello"] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? value);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var ignoredContext = CreateExecutionContext(assembly);
+        var ignoredPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode ignoredResult = InvokeParseWithContextAndPolicy(assembly, "a", ignoredContext, ignoredPolicy);
+
+        Assert.IsNotInstanceOfType(ignoredResult, typeof(ErrorNode));
+        Assert.AreEqual(false, ReadContextObjectProperty(ignoredContext, "Found"));
+
+        var throwingContext = CreateExecutionContext(assembly);
+        var throwingPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw),
+        };
+        TargetInvocationException invocationException = Assert.ThrowsException<TargetInvocationException>(() =>
+            InvokeParseWithContextAndPolicy(assembly, "a", throwingContext, throwingPolicy));
+        Assert.IsInstanceOfType<ParserRuleCallBindingException>(invocationException.InnerException);
+    }
+
+    /// <summary>
+    /// Ensures nullable null is retained as a present seed in generated execution state.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedPolicy_NullableNullIsPresent()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public bool Found { get; private set; }
+                public object? Seen { get; private set; } = 1;
+            }
+            start : child[null] ;
+            child[int? value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(true, ReadContextObjectProperty(executionContext, "Found"));
+        Assert.IsNull(ReadContextObjectProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated rollback and memoization use converted positional seed values from the current call site.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedPositionalPolicy_RollbackUsesSuccessfulConvertedValue()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public object? Seen { get; private set; }
+            }
+            start : child[1] B | child[2] ;
+            child[byte value]
+            @init {
+                TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual((byte)2, ReadContextObjectProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures memoization keys use the converted effective value rather than the original literal source form.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedPolicy_EquivalentConvertedValuesShareMemoizedResult()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public static int InitCount;
+            }
+            start : child[1] B | child[1.0] ;
+            child[double value]
+            @init {
+                InitCount++;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "InitCount"));
+    }
+
+    /// <summary>
+    /// Ensures generated rollback and memoization use converted named seed values from the current call site.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedNamedPolicy_RollbackUsesSuccessfulConvertedValue()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public object? Seen { get; private set; }
+            }
+            start : child[value: 1] B | child[value: 2] ;
+            child[byte value]
+            @init {
+                TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedNamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual((byte)2, ReadContextObjectProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
     /// Ensures predicates can call instance members injected through <c>@members</c>.
     /// </summary>
     [TestMethod]
