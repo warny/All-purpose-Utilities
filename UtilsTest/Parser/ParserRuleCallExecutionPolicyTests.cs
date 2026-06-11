@@ -429,6 +429,287 @@ public class ParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Verifies the default runtime policy remains metadata-only and does not install named literal binding.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_IsNotTheDefault()
+    {
+        Assert.IsNotInstanceOfType(
+            ParserRuntimeFeaturePolicy.Default.RuleCallExecutionPolicy,
+            typeof(NamedLiteralRuleCallExecutionPolicy));
+    }
+
+    /// <summary>
+    /// Verifies colon syntax, order-independent ordinal matching, supported literals, and present-null binding.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_ColonSyntax_BindsByExactNameRegardlessOfOrder()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[text: "hello", value: 42, enabled: true, empty: null] ;
+            child[int value, string text, bool enabled, object empty] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+
+        var result = Compile(
+            grammar,
+            new NamedLiteralRuleCallExecutionPolicy(),
+            lifecycleExecutor: new ParameterRecordingLifecycleExecutor(observed)).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, observed["value"]);
+        Assert.AreEqual("hello", observed["text"]);
+        Assert.AreEqual(true, observed["enabled"]);
+        Assert.IsTrue(observed.ContainsKey("empty"));
+        Assert.IsNull(observed["empty"]);
+    }
+
+    /// <summary>
+    /// Verifies equals syntax binds values while declared parameter types remain passive metadata.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_EqualsSyntax_BindsWithoutTypeValidation()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value = "hello", count = 2147483648, ratio = -1.5] ;
+            child[int value, long count, double ratio] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+
+        var result = Compile(
+            grammar,
+            new NamedLiteralRuleCallExecutionPolicy(),
+            lifecycleExecutor: new ParameterRecordingLifecycleExecutor(observed)).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("hello", observed["value"]);
+        Assert.AreEqual(2147483648L, observed["count"]);
+        Assert.AreEqual(-1.5, observed["ratio"]);
+    }
+
+    /// <summary>
+    /// Verifies absent raw arguments are ignored while positional or malformed arguments fail only in strict mode.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_NonNamedCalls_AreConservativeAndConfigurable()
+    {
+        var ignored = new NamedLiteralRuleCallExecutionPolicy();
+        ignored.BeforeRuleCall(new ParserRuleCallExecutionContext
+        {
+            CallerFrame = null,
+            RuleName = "child",
+        });
+        ignored.BeforeRuleCall(CreateNamedPolicyContext("42", null, ["value"]));
+        ignored.AfterRuleCall(CreateNamedPolicyContext(null, null, ["value"]));
+
+        var strict = new NamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        var exception = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+            strict.BeforeRuleCall(CreateNamedPolicyContext("42", null, ["value"])));
+
+        Assert.AreEqual("child", exception.RuleName);
+        Assert.AreEqual("42", exception.RawArguments);
+        Assert.IsNull(exception.ArgumentIndex);
+        Assert.ThrowsException<ArgumentNullException>(() => strict.AfterRuleCall(null!));
+    }
+
+    /// <summary>
+    /// Verifies missing, extra, case-mismatched, and unsupported named arguments apply no partial seeds.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_InvalidCoverageOrLiteral_IsAtomicAndConfigurable()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[first: 1, second: foo()] ;
+            child[int first, int second] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+        var result = Compile(
+            grammar,
+            new NamedLiteralRuleCallExecutionPolicy(),
+            lifecycleExecutor: new ParameterRecordingLifecycleExecutor(observed)).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, observed.Count, "Every literal must be parsed before the atomic seed batch is submitted.");
+
+        var strict = new NamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        var unsupported = Assert.ThrowsException<ParserRuleCallBindingException>(() => Compile(grammar, strict).Parse("a"));
+        StringAssert.Contains(unsupported.Message, "second");
+        StringAssert.Contains(unsupported.Message, "supported simple literal");
+
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("first: 1", Named("first", "1"), ["first", "second"])));
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("first: 1, extra: 2", Named(("first", "1"), ("extra", "2")), ["first"])));
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("Value: 1", Named("Value", "1"), ["value"])));
+
+        const string missingGrammar = """
+            grammar P;
+            start : child[first: 1] ;
+            child[int first, int second] : A ;
+            A : 'a' ;
+            """;
+        const string extraGrammar = """
+            grammar P;
+            start : child[first: 1, extra: 2] ;
+            child[int first] : A ;
+            A : 'a' ;
+            """;
+        var missingObserved = new Dictionary<string, object?>();
+        var extraObserved = new Dictionary<string, object?>();
+        Assert.IsNotInstanceOfType(Compile(
+            missingGrammar,
+            new NamedLiteralRuleCallExecutionPolicy(),
+            lifecycleExecutor: new ParameterRecordingLifecycleExecutor(missingObserved)).Parse("a"), typeof(ErrorNode));
+        Assert.IsNotInstanceOfType(Compile(
+            extraGrammar,
+            new NamedLiteralRuleCallExecutionPolicy(),
+            lifecycleExecutor: new ParameterRecordingLifecycleExecutor(extraObserved)).Parse("a"), typeof(ErrorNode));
+        Assert.AreEqual(0, missingObserved.Count);
+        Assert.AreEqual(0, extraObserved.Count);
+    }
+
+    /// <summary>
+    /// Verifies unavailable or invalid target descriptors are rejected before any seed writer can be used.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_InvalidDescriptorNamesOrWriter_ThrowsInStrictMode()
+    {
+        var strict = new NamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("value: 1", Named("value", "1"), null)));
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("value: 1", Named("value", "1"), [" "])));
+        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("value: 1", Named("value", "1"), ["value", "value"])));
+
+        var unavailable = Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+            CreateNamedPolicyContext("value: 1", Named("value", "1"), ["value"])));
+        StringAssert.Contains(unavailable.Message, "Managed parameter seeding is unavailable");
+    }
+
+    /// <summary>
+    /// Verifies a custom frame manager receives one complete batch and can reject it without exposing partial state.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_CustomManagerRejectsWholeBatchWithoutPartialSeeds()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[second: 2, first: 1] ;
+            child[int first, int second] : A ;
+            A : 'a' ;
+            """;
+        var manager = new RejectingBatchFrameManager();
+        var observed = new Dictionary<string, object?>();
+
+        var result = Compile(
+            grammar,
+            new NamedLiteralRuleCallExecutionPolicy(),
+            manager,
+            new ParameterRecordingLifecycleExecutor(observed)).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, manager.BatchAttempts);
+        Assert.AreEqual(2, manager.LastValues!.Count);
+        Assert.AreEqual(1, manager.LastValues["first"]);
+        Assert.AreEqual(2, manager.LastValues["second"]);
+        Assert.AreEqual(0, observed.Count);
+    }
+
+    /// <summary>
+    /// Verifies matching seeds are overwritten, unrelated seeds survive, and duplicate raw names inherit last-wins splitting.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_SeedInteractionAndDuplicateArguments_UseDocumentedSemantics()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 1, value = 42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        var observed = new Dictionary<string, object?>();
+        var lifecycle = new DirectParameterRecordingLifecycleExecutor(observed, ["value", "unrelated"]);
+        var policy = new PreseedingRuleCallPolicy(new NamedLiteralRuleCallExecutionPolicy());
+
+        var result = Compile(grammar, policy, lifecycleExecutor: lifecycle).Parse("a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, observed["value"]);
+        Assert.AreEqual("keep", observed["unrelated"]);
+    }
+
+    /// <summary>
+    /// Verifies the constructor rejects undefined failure behavior values.
+    /// </summary>
+    [TestMethod]
+    public void NamedLiteralPolicy_InvalidFailureBehavior_IsRejected()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            new NamedLiteralRuleCallExecutionPolicy((ParserRuleCallBindingFailureBehavior)int.MaxValue));
+    }
+
+    /// <summary>
+    /// Creates direct named-policy metadata for validation tests.
+    /// </summary>
+    /// <param name="rawArguments">Raw argument clause without brackets.</param>
+    /// <param name="namedArguments">Syntactically split named arguments, or <c>null</c>.</param>
+    /// <param name="parameterNames">Target descriptor parameter names, or <c>null</c>.</param>
+    /// <returns>A rule-call execution context without a managed seed writer.</returns>
+    private static ParserRuleCallExecutionContext CreateNamedPolicyContext(
+        string? rawArguments,
+        IReadOnlyDictionary<string, string>? namedArguments,
+        IReadOnlyList<string>? parameterNames)
+    {
+        return new ParserRuleCallExecutionContext
+        {
+            CallerFrame = null,
+            RuleName = "child",
+            RawArguments = rawArguments,
+            NamedRawArguments = namedArguments,
+            TargetRuleDescriptor = parameterNames is null
+                ? null
+                : new ParserRuleInvocationDescriptor
+                {
+                    RuleName = "child",
+                    Parameters = parameterNames.Select(static name => new ParserRuleParameterDescriptor
+                    {
+                        Name = name,
+                        RawDeclaration = name,
+                    }).ToArray(),
+                },
+        };
+    }
+
+    /// <summary>
+    /// Creates an ordinal named raw-argument dictionary.
+    /// </summary>
+    /// <param name="entries">Argument name and raw value pairs.</param>
+    /// <returns>An ordinal dictionary containing the supplied entries.</returns>
+    private static IReadOnlyDictionary<string, string> Named(params IEnumerable<(string Name, string Value)> entries)
+    {
+        return entries.ToDictionary(static entry => entry.Name, static entry => entry.Value, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Creates a one-entry ordinal named raw-argument dictionary.
+    /// </summary>
+    /// <param name="name">Argument name.</param>
+    /// <param name="value">Raw argument value.</param>
+    /// <returns>An ordinal dictionary containing the supplied entry.</returns>
+    private static IReadOnlyDictionary<string, string> Named(string name, string value)
+    {
+        return Named([(name, value)]);
+    }
+
+    /// <summary>
     /// Creates direct policy metadata for descriptor-validation tests.
     /// </summary>
     /// <param name="arguments">Positional raw arguments.</param>

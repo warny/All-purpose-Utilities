@@ -3489,6 +3489,172 @@ public class Antlr4GeneratedRuleLifecycleTests
             "The failed child[1] state and its memoized result must not be reused for child[2].");
     }
 
+    /// <summary>
+    /// Verifies generated C# binds named literals by ordinal name only when the named policy is explicitly installed.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedLiteralPolicy_BindsOnlyWhenExplicitlyInstalled()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[text: "hello", value: 42] ;
+            child[int value, string text]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out object? v);
+                FoundText = TryGetRuleParameter(context, "text", out object? t);
+                SeenValue = v is int i ? i : -1;
+                SeenText = t as string;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundText;
+                public static int SeenValue = -1;
+                public static string? SeenText;
+            }
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new NamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", CreateExecutionContext(assembly), basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundText"));
+        Assert.AreEqual(42, ReadIntField(assembly, "SeenValue"));
+        Assert.AreEqual("hello", ReadStringField(assembly, "SeenText"));
+
+        var conservativeAssembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        Assert.IsNotInstanceOfType(InvokeParse(conservativeAssembly, "ParseWithEmbeddedCode", "a"), typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(conservativeAssembly, "FoundValue"));
+        Assert.IsNotInstanceOfType(InvokeParse(conservativeAssembly, "Parse", "a"), typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(conservativeAssembly, "FoundValue"));
+    }
+
+    /// <summary>
+    /// Verifies generated equals syntax binds and preserves the distinction between present null and absence.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedLiteralPolicy_EqualsSyntaxAndNullBind()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value = 42, empty = null] ;
+            child[int value, object empty]
+            @init {
+                FoundValue = TryGetRuleParameter(context, "value", out object? v);
+                FoundNull = TryGetRuleParameter(context, "empty", out object? n) && n is null;
+                SeenValue = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundValue;
+                public static bool FoundNull;
+                public static int SeenValue = -1;
+            }
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new NamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", CreateExecutionContext(assembly), basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundNull"));
+        Assert.AreEqual(42, ReadIntField(assembly, "SeenValue"));
+    }
+
+    /// <summary>
+    /// Verifies a positional call remains unbound when only the named literal policy is installed.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedLiteralPolicy_DoesNotBindPositionalCall()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+            }
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new NamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", CreateExecutionContext(assembly), basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "Found"));
+    }
+
+    /// <summary>
+    /// Verifies rollback and memoization distinguish named literal values at otherwise identical child invocations.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NamedLiteralPolicy_RollbackAndMemoizationUseCurrentValue()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value: 1] B | child[value: 2] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? v);
+                Seen = v is int i ? i : -1;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static int Seen = -1;
+            }
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new NamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        var result = InvokeParseWithContextAndPolicy(assembly, "a", CreateExecutionContext(assembly), basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"),
+            "The failed value: 1 state and its memoized result must not be reused for value: 2.");
+    }
+
     // ── Rule-call label metadata ─────────────────────────────────────────────
 
     /// <summary>

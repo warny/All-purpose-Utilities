@@ -209,7 +209,7 @@ start @after {
     : child[42] ;
 ```
 
-This is **metadata only by default**: the argument text is not evaluated, parsed as C# expressions, or bound to child rule parameters unless the caller explicitly installs the limited positional literal policy described below. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
+This is **metadata only by default**: the argument text is not evaluated, parsed as C# expressions, or bound to child rule parameters unless the caller explicitly installs one of the limited positional or named literal policies described below. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
 
 For named argument forms (`value: 42`, `value = 42`), use the named helpers:
 
@@ -308,3 +308,20 @@ P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
 ```
 
 The default and generated `Parse(...)` remain metadata-only/conservative. The policy requires exact positional arity and binds declared parser-rule parameter names without enforcing their C# declaration types. It supports only `null`, lowercase Booleans, signed decimal `int`/`long`, finite invariant `double`, quoted strings, and character literals with a small escape set. Named binding, arbitrary expressions, Roslyn evaluation, `$param`, labels/returns, and lexer execution are not supported. Managed pending seeds are applied as one all-or-none batch, are rollback-aware, and generated memoization distinguishes the supported literal values deterministically. Existing explicit helpers continue to accept arbitrary values: deterministic scalars and `IParserExecutionStateHashable` values receive stable keys, while other objects force volatile keys that bypass completed-result reuse while pending.
+
+## Opt-in named literal rule-call binding
+
+Generated parsers can separately install `NamedLiteralRuleCallExecutionPolicy` through the same caller-supplied `basePolicy` path:
+
+```csharp
+var basePolicy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuleCallExecutionPolicy = new NamedLiteralRuleCallExecutionPolicy()
+};
+
+P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+This policy is not the default and is not automatically combined with positional binding. It consumes the generated runtime's existing `NamedRawArguments` metadata for both `name: literal` and `name = literal`. Names match declared parser-rule parameters with `StringComparer.Ordinal`; argument order does not matter, but exact coverage is required. Missing, extra, case-mismatched, blank, or duplicate declared names fail the whole call. Optional/default parameters, partial binding, and mixed positional/named syntax are unsupported. Duplicate raw names inherit the splitter's documented last-wins result.
+
+All values must be accepted by `ParserSimpleLiteralParser`. Declared C# types are not checked or converted, and arbitrary expressions are not evaluated. One complete atomic pending-seed batch is applied only after validation, preserving rollback and deterministic memoization behavior for supported values. Generated `Parse(...)` remains conservative. No `$param`, `$x`, `$x.value`, `$rule.value`, return/label binding, or lexer support is added.
