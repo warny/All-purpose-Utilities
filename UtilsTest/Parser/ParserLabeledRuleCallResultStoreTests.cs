@@ -114,6 +114,25 @@ public sealed class ParserLabeledRuleCallResultStoreTests
     }
 
     /// <summary>
+    /// Verifies entering a child frame immediately mirrors that child's empty labeled store instead of retaining the parent's store.
+    /// </summary>
+    [TestMethod]
+    public void StackManager_EnterChild_SynchronizesChildLabeledStore()
+    {
+        var observed = new List<ParserLabeledRuleCallResultStore>();
+        var manager = new StackParserRuleInvocationFrameManager(onLabeledCallResults: observed.Add);
+        ParserRuleInvocationFrame parent = manager.Enter("start", 0);
+        parent.LastCompletedChildCall = CreateResult("seed", labelName: "parent", labelKind: ParserRuleReferenceLabelKind.Assignment);
+        Assert.IsTrue(manager.TryBindLastCompletedChildCallToCurrentLabel());
+
+        ParserRuleInvocationFrame child = manager.Enter("child", 1);
+
+        Assert.AreSame(ParserLabeledRuleCallResultStore.Empty, child.LabeledCallResults);
+        Assert.AreSame(child.LabeledCallResults, observed[^1]);
+        Assert.IsFalse(observed[^1].TryGetAssignment("parent", out _));
+    }
+
+    /// <summary>
     /// Verifies deterministic store hashing includes assignment values, list order, list length, and present-null keys.
     /// </summary>
     [TestMethod]

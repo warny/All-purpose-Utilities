@@ -74,6 +74,7 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
 
         var frame = new ParserRuleInvocationFrame(ruleName, inputPosition, parameters, descriptor, _current);
         _current = frame;
+        _onLabeledCallResults?.Invoke(frame.LabeledCallResults);
         return frame;
     }
 
