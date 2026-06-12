@@ -47,10 +47,29 @@ public class ParserRuleParameterSeedStoreTypedHashTests
     }
 
     /// <summary>
+    /// Verifies default-derived and explicit values hash by their final converted value, including present null.
+    /// </summary>
+    [TestMethod]
+    public void DefaultAndExplicitEffectiveValues_HashByConvertedState()
+    {
+        ParserLiteralConversionResult defaultInt = ParserLiteralTypeConverter.Convert(42, "int");
+        ParserLiteralConversionResult explicitInt = ParserLiteralTypeConverter.Convert(42, "int");
+        ParserLiteralConversionResult differentInt = ParserLiteralTypeConverter.Convert(43, "int");
+        ParserLiteralConversionResult defaultByte = ParserLiteralTypeConverter.Convert(42, "byte");
+        ParserLiteralConversionResult explicitByte = ParserLiteralTypeConverter.Convert(42, "byte");
+
+        Assert.AreEqual(Hash(defaultInt.Value), Hash(explicitInt.Value));
+        Assert.AreEqual(Hash(defaultByte.Value), Hash(explicitByte.Value));
+        Assert.AreNotEqual(Hash(defaultInt.Value), Hash(differentInt.Value));
+        Assert.AreNotEqual(Hash(defaultInt.Value), Hash(defaultByte.Value));
+        Assert.AreEqual(Hash(null), Hash(null));
+    }
+
+    /// <summary>
     /// Computes a seed-store state hash containing one value.
     /// </summary>
     /// <param name="value">Seed value.</param>
     /// <returns>The deterministic managed state hash.</returns>
-    private static ulong Hash(object value)
+    private static ulong Hash(object? value)
         => new ParserRuleParameterSeedStore().With("child", "value", value).GetParserExecutionStateHash();
 }

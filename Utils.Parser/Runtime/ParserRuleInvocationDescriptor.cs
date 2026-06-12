@@ -154,11 +154,17 @@ public sealed class ParserRuleInvocationDescriptor
     {
         foreach (string declaration in SplitTopLevelLocalDeclarations(rawParameters))
         {
-            string name = GetLocalDeclarationName(declaration) ?? declaration;
+            int assignmentIndex = FindTopLevelAssignment(declaration);
+            string declarationPrefix = declaration[..assignmentIndex].Trim();
+            string name = GetLocalDeclarationName(declarationPrefix) ?? declaration;
+            string? rawType = GetParameterDeclarationType(declarationPrefix, name);
             yield return new ParserRuleParameterDescriptor
             {
                 Name = name,
-                RawType = GetParameterDeclarationType(declaration, name),
+                RawType = rawType,
+                RawDefaultValue = assignmentIndex < declaration.Length && rawType is not null
+                    ? declaration[(assignmentIndex + 1)..].Trim()
+                    : null,
                 RawDeclaration = declaration
             };
         }
@@ -755,6 +761,12 @@ public sealed class ParserRuleParameterDescriptor
     /// This metadata is never resolved as an arbitrary C# type.
     /// </summary>
     public string? RawType { get; init; }
+
+    /// <summary>
+    /// Gets the raw default-value text after a supported top-level assignment separator, or <c>null</c> when absent.
+    /// This passive metadata is evaluated only by explicitly installed typed literal rule-call policies.
+    /// </summary>
+    public string? RawDefaultValue { get; init; }
 
     /// <summary>
     /// Gets the raw parameter declaration text without semantic type binding.
