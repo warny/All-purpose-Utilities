@@ -4,6 +4,11 @@ namespace Utils.Parser.Runtime;
 /// Explicitly binds named simple literals and omitted literal defaults after validating and safely converting every value against the target
 /// rule's allowlisted declared parameter types.
 /// </summary>
+/// <remarks>
+/// This policy intentionally changes binding behavior only when a caller installs it explicitly: omitted named
+/// parameters may use declared simple-literal defaults. The conservative default policy and the untyped literal policies
+/// do not consume defaults and retain their existing behavior.
+/// </remarks>
 public sealed class TypedNamedLiteralRuleCallExecutionPolicy : IParserRuleCallExecutionPolicy
 {
     private readonly ParserRuleCallBindingFailureBehavior _failureBehavior;

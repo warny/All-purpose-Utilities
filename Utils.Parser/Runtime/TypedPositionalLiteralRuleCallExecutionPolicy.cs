@@ -4,6 +4,11 @@ namespace Utils.Parser.Runtime;
 /// Explicitly binds positional simple literals and omitted trailing literal defaults after validating and safely converting every value
 /// against the target rule's allowlisted declared parameter types.
 /// </summary>
+/// <remarks>
+/// This policy intentionally changes binding behavior only when a caller installs it explicitly: omitted trailing positional
+/// parameters may use declared simple-literal defaults. The conservative default policy and the untyped literal policies
+/// do not consume defaults and retain their existing behavior.
+/// </remarks>
 public sealed class TypedPositionalLiteralRuleCallExecutionPolicy : IParserRuleCallExecutionPolicy
 {
     private readonly ParserRuleCallBindingFailureBehavior _failureBehavior;
