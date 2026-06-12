@@ -83,4 +83,15 @@ public interface IParserRuleInvocationFrameManager
     void AnnotateLastChildCallLabel(string? labelName, ParserRuleReferenceLabelKind labelKind)
     {
     }
+
+    /// <summary>
+    /// Binds the current frame's final completed child call result into its current call-site label store.
+    /// The default implementation reports that no active managed frame retained the result.
+    /// </summary>
+    /// <returns><c>true</c> when a labeled assignment or list result was retained; otherwise, <c>false</c>.</returns>
+    bool TryBindLastCompletedChildCallToCurrentLabel()
+    {
+        return false;
+    }
+
 }

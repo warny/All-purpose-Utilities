@@ -810,6 +810,7 @@ public sealed class ParserEngine
             {
                 _ruleInvocationFrameManager.AnnotateLastChildCallRawArguments(ruleRef.RawArguments);
                 _ruleInvocationFrameManager.AnnotateLastChildCallLabel(ruleRef.LabelName, ruleRef.LabelKind);
+                _ruleInvocationFrameManager.TryBindLastCompletedChildCallToCurrentLabel();
                 callContext.CompletedCallResult = _ruleInvocationFrameManager.Current?.LastCompletedChildCall;
                 callContext.Succeeded = true;
             }

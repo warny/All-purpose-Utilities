@@ -2,8 +2,8 @@ namespace Utils.Parser.Runtime;
 
 /// <summary>
 /// Represents passive per-invocation parser rule metadata state.
-/// This frame is preparatory infrastructure for future rule parameters, locals, and return values;
-/// it does not bind ANTLR type syntax or execute rule metadata by itself.
+/// Parameters, locals, returns, and labeled completed child calls remain untyped managed metadata;
+/// the frame does not bind ANTLR type syntax or expose implicit grammar variables.
 /// </summary>
 public sealed class ParserRuleInvocationFrame
 {
@@ -147,6 +147,12 @@ public sealed class ParserRuleInvocationFrame
     /// managed execution-state snapshot mechanism being active.
     /// </summary>
     public ParserRuleCallResult? LastCompletedChildCall { get; internal set; }
+
+    /// <summary>
+    /// Gets the immutable assignment and list label results produced by successful direct child calls in this frame.
+    /// Store replacement is synchronized with managed execution-state snapshots so failed parser attempts roll back changes.
+    /// </summary>
+    public ParserLabeledRuleCallResultStore LabeledCallResults { get; internal set; } = ParserLabeledRuleCallResultStore.Empty;
 
     /// <summary>
     /// Gets a parameter value by name.

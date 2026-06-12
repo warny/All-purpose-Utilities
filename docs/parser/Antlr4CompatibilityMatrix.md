@@ -215,3 +215,14 @@ Values are limited to `ParserSimpleLiteralParser`; declared C# types are not val
 | Rollback/memoization | Managed generated state | Same managed state; keys contain converted runtime values and runtime types |
 
 Explicit arguments override defaults, and an invalid default is not parsed or converted when its parameter is supplied explicitly. Default text is never treated as general C#: parameter references, constants, enum members, member access, calls, arithmetic, casts, `default`, `default(T)`, `nameof`, interpolation, arrays, and collections remain unsupported. The typed policies do not resolve arbitrary C# types and do not support user-defined types, enums, arrays, generics, collections, tuples, delegates, return/label binding, `$param` forms, or lexer execution. Generated `Parse(...)` remains conservative; only an explicit base policy used by generated opt-in APIs enables typed binding.
+
+## Labeled parser-rule result matrix
+
+| Capability | Default runtime | Generated C# opt-in | Limits |
+|---|---|---|---|
+| Child return snapshot in `ParserRuleCallResult` | Available when a managed stack frame manager is installed | Available | Captured after successful child `@after`; immutable; absent and present-null differ |
+| `x=child` retention | Managed parent-frame state | `TryGetLabeledRuleCallResult` / `TryGetLabeledRuleCallReturn` | Last successful result wins; failures do not overwrite |
+| `xs+=child` retention | Managed parent-frame state | `GetLabeledRuleCallResults` / `GetLabeledRuleCallReturns` | Successful results append in order; missing requested returns are skipped |
+| Backtracking/memoization | Rollback-aware with managed execution state | Rollback-aware | Memoized returns may be reused, but current call-site label metadata is reapplied |
+| ANTLR attribute syntax | Unsupported | Unsupported | No `$x`, `$x.value`, `$xs`, `$rule.value`, implicit fields, or automatic binding |
+| Lexer labels/returns | Unsupported | Unsupported | No lexer invocation frames are added |
