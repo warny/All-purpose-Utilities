@@ -3977,6 +3977,386 @@ public class Antlr4GeneratedRuleLifecycleTests
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
 
     /// <summary>Emits generated C# for the supplied grammar.</summary>
+    /// <summary>
+    /// Verifies generated source exposes only generic metadata-driven labeled-result helpers.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ContainsGenericLabeledRuleCallHelpers()
+    {
+        string source = Emit("grammar P; start : x=child | xs+=child ; child : A ; A : 'a' ;");
+
+        StringAssert.Contains(source, "TryGetLabeledRuleCallResult");
+        StringAssert.Contains(source, "GetLabeledRuleCallResults");
+        StringAssert.Contains(source, "TryGetLabeledRuleCallReturn");
+        StringAssert.Contains(source, "GetLabeledRuleCallReturns");
+        Assert.IsFalse(source.Contains("GetX(", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("GetXs(", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("$x.value", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Verifies assignment-labeled child returns, multiple returns, present-null values, and absent returns.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AssignmentLabel_ExposesResultAndReturnPresence()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                FoundResult = TryGetLabeledRuleCallResult(context, "x", out var result);
+                FoundValue = TryGetLabeledRuleCallReturn(context, "x", "value", out object? value);
+                FoundNull = TryGetLabeledRuleCallReturn(context, "x", "nullable", out object? nullable) && nullable == null;
+                Missing = TryGetLabeledRuleCallReturn(context, "x", "missing", out _);
+                Seen = value is int i ? i : -1;
+                Other = (int?)result.Returns.GetValueOrDefault("other") ?? -1;
+            }
+                : x=child ;
+            child returns [int value, int other, object nullable]
+            @after {
+                SetRuleReturn(context, "value", 42);
+                SetRuleReturn(context, "other", 7);
+                SetRuleReturn(context, "nullable", null);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool FoundResult;
+                public static bool FoundValue;
+                public static bool FoundNull;
+                public static bool Missing;
+                public static int Seen = -1;
+                public static int Other = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundResult"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundValue"));
+        Assert.IsTrue(ReadBoolField(assembly, "FoundNull"));
+        Assert.IsFalse(ReadBoolField(assembly, "Missing"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+        Assert.AreEqual(7, ReadIntField(assembly, "Other"));
+    }
+
+    /// <summary>
+    /// Verifies list labels append successful calls in order and skip absent named returns while retaining present-null values.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabel_AppendsInOrderAndProjectsPresentReturns()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                ResultCount = GetLabeledRuleCallResults(context, "xs").Count;
+                var values = GetLabeledRuleCallReturns(context, "xs", "value");
+                ValueCount = values.Count;
+                First = values[0] is int first ? first : -1;
+                Last = values[2] is int last ? last : -1;
+            }
+                : (xs+=child)+ ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", context.InputPosition); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int ResultCount;
+                public static int ValueCount;
+                public static int First = -1;
+                public static int Last = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aaa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(3, ReadIntField(assembly, "ResultCount"));
+        Assert.AreEqual(3, ReadIntField(assembly, "ValueCount"));
+        Assert.AreEqual(0, ReadIntField(assembly, "First"));
+        Assert.AreEqual(2, ReadIntField(assembly, "Last"));
+    }
+
+    /// <summary>
+    /// Verifies failed alternative assignment state is rolled back and a memoized child result binds to the current label.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_FailedAlternativeAndMemoHit_UseCurrentAssignmentLabel()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                HasX = TryGetLabeledRuleCallResult(context, "x", out _);
+                HasY = TryGetLabeledRuleCallReturn(context, "y", "value", out object? value);
+                Seen = value is int i ? i : -1;
+            }
+                : x=child B | y=child ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 42); }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool HasX;
+                public static bool HasY;
+                public static int Seen = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "HasX"));
+        Assert.IsTrue(ReadBoolField(assembly, "HasY"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>
+    /// Verifies repeated assignment labels retain the last successful child result.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RepeatedAssignmentLabel_LastSuccessfulResultWins()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                TryGetLabeledRuleCallReturn(context, "x", "value", out object? value);
+                Seen = value is int i ? i : -1;
+            }
+                : (x=child)+ ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", context.InputPosition); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int Seen = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aaa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>
+    /// Verifies failed alternative list appends are rolled back before the successful current-site list binding.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_FailedAlternative_ListAppendDoesNotLeak()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                XCount = GetLabeledRuleCallResults(context, "xs").Count;
+                YCount = GetLabeledRuleCallResults(context, "ys").Count;
+            }
+                : xs+=child B | ys+=child ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 1); }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int XCount = -1;
+                public static int YCount = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "XCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "YCount"));
+    }
+
+    /// <summary>
+    /// Verifies nested labeled calls remain owned by the frame that executed them.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NestedLabels_DoNotLeakIntoParentFrame()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                ParentHasX = TryGetLabeledRuleCallResult(context, "x", out _);
+                ParentHasZ = TryGetLabeledRuleCallResult(context, "z", out _);
+            }
+                : x=child ;
+            child @after { ChildHasZ = TryGetLabeledRuleCallResult(context, "z", out _); }
+                : z=grandchild ;
+            grandchild : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool ParentHasX;
+                public static bool ParentHasZ;
+                public static bool ChildHasZ;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "ParentHasX"));
+        Assert.IsFalse(ReadBoolField(assembly, "ParentHasZ"));
+        Assert.IsTrue(ReadBoolField(assembly, "ChildHasZ"));
+    }
+
+    /// <summary>
+    /// Verifies generated state capture and hashing synchronize the labeled-result store from the active frame.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_SynchronizesActiveFrameLabeledResultsBeforeCaptureAndHashing()
+    {
+        string source = Emit("grammar P; start : child ; child : A ; A : 'a' ;");
+
+        StringAssert.Contains(source, "() => this._frameManager!.GetCurrentLabeledCallResults()");
+        Assert.AreEqual(
+            2,
+            source.Split("_executionContext._labeledChildCallResults = _getLabeledResultsFromFrame();", StringSplitOptions.None).Length - 1,
+            "Both Capture() and GetCurrentStateKey() must synchronize the active frame's labeled store.");
+    }
+
+    /// <summary>
+    /// Verifies child backtracking snapshots cannot restore a parent-owned labeled result into the child frame.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ChildBacktracking_DoesNotRestoreParentLabelsIntoChildFrame()
+    {
+        const string grammar = """
+            grammar P;
+            start : parent=seed child ;
+            seed : A ;
+            child @after {
+                ChildSeesParent = TryGetLabeledRuleCallResult(context, "parent", out _);
+                ChildSeesFailedOwn = TryGetLabeledRuleCallResult(context, "own", out _);
+            }
+                : own=leaf B
+                | leaf
+                ;
+            leaf : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool ChildSeesParent;
+                public static bool ChildSeesFailedOwn;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "ChildSeesParent"));
+        Assert.IsFalse(ReadBoolField(assembly, "ChildSeesFailedOwn"));
+    }
+
+    /// <summary>
+    /// Verifies a labeled right-hand reference in a direct-left-recursive rule uses the central result-binding path.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_DirectLeftRecursiveRightHandLabel_BindsCompletedResult()
+    {
+        const string grammar = """
+            grammar P;
+            start : expr ;
+            expr @after {
+                if (TryGetLabeledRuleCallResult(context, "right", out var result))
+                {
+                    SawRight = true;
+                    RightRuleName = result.RuleName;
+                    RightLabelName = result.LabelName;
+                }
+            }
+                : atom
+                | expr PLUS right=expr
+                ;
+            atom : INT ;
+            PLUS : '+' ;
+            INT : '1' | '2' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool SawRight;
+                public static string? RightRuleName;
+                public static string? RightLabelName;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "1+2");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "SawRight"));
+        Assert.AreEqual("expr", ReadStringField(assembly, "RightRuleName"));
+        Assert.AreEqual("right", ReadStringField(assembly, "RightLabelName"));
+    }
+
+    /// <summary>
+    /// Verifies a labeled optional rule reference that fails without consuming input does not bind a result.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_FailedNonConsumingOptionalLabel_RemainsAbsent()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { HasOptional = TryGetLabeledRuleCallResult(context, "x", out _); }
+                : (x=child)? B ;
+            child : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool HasOptional;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "b");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadBoolField(assembly, "HasOptional"));
+    }
+
     private static string Emit(string grammarText)
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();

@@ -9,7 +9,8 @@ namespace Utils.Parser.Runtime;
 /// On successful child exit, a <see cref="ParserRuleCallResult"/> snapshot is captured from the child frame
 /// and stored on the parent frame's <see cref="ParserRuleInvocationFrame.LastCompletedChildCall"/>; an optional
 /// callback is also invoked so the managed execution-state mechanism can include the call result in rollback snapshots.
-/// Returns and parameters remain metadata-only and are not propagated or executed automatically.
+/// Returns and parameters remain untyped metadata and are not assigned automatically; labeled completed results
+/// are retained only in the parent frame's explicit managed store.
 /// </summary>
 public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocationFrameManager
 {
@@ -18,6 +19,9 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     /// Used by the managed execution-state mechanism to include the result in rollback snapshots.
     /// </summary>
     private readonly Action<ParserRuleCallResult?>? _onChildCallResult;
+
+    /// <summary>Optional callback that mirrors the current frame's immutable labeled-result store into managed state.</summary>
+    private readonly Action<ParserLabeledRuleCallResultStore>? _onLabeledCallResults;
 
     /// <summary>
     /// Top frame of the active call stack, or <c>null</c> when no rule is being parsed.
@@ -33,9 +37,13 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     /// for rollback-safe call-result propagation. When <c>null</c>, call results are stored on the
     /// parent frame but are not included in managed execution-state snapshots.
     /// </param>
-    public StackParserRuleInvocationFrameManager(Action<ParserRuleCallResult?>? onChildCallResult = null)
+    /// <param name="onLabeledCallResults">Optional callback that mirrors immutable labeled-result snapshots into managed execution state.</param>
+    public StackParserRuleInvocationFrameManager(
+        Action<ParserRuleCallResult?>? onChildCallResult = null,
+        Action<ParserLabeledRuleCallResultStore>? onLabeledCallResults = null)
     {
         _onChildCallResult = onChildCallResult;
+        _onLabeledCallResults = onLabeledCallResults;
     }
 
     /// <summary>
@@ -66,6 +74,7 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
 
         var frame = new ParserRuleInvocationFrame(ruleName, inputPosition, parameters, descriptor, _current);
         _current = frame;
+        _onLabeledCallResults?.Invoke(frame.LabeledCallResults);
         return frame;
     }
 
@@ -177,12 +186,21 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     public void PrepareCallResultForSnapshot(ParserRuleInvocationFrame frame, bool succeeded)
     {
         ArgumentNullException.ThrowIfNull(frame);
-        if (succeeded && frame.Parent is not null)
+        if (frame.Parent is null)
+        {
+            return;
+        }
+
+        if (succeeded)
         {
             var result = ParserRuleCallResult.FromFrame(frame);
             frame.Parent.LastCompletedChildCall = result;
             _onChildCallResult?.Invoke(result);
         }
+
+        // The generated managed-state mirror must represent the parent that will become current after exit,
+        // not labeled calls internal to the child frame being completed. This also clears failed-child state.
+        _onLabeledCallResults?.Invoke(frame.Parent.LabeledCallResults);
     }
 
     /// <summary>
@@ -215,17 +233,7 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     {
         if (_current?.LastCompletedChildCall is not { } existing) return;
 
-        var updated = new ParserRuleCallResult
-        {
-            RuleName = existing.RuleName,
-            InputPosition = existing.InputPosition,
-            Depth = existing.Depth,
-            Returns = existing.Returns,
-            Descriptor = existing.Descriptor,
-            RawArguments = rawArguments,
-            LabelName = existing.LabelName,
-            LabelKind = existing.LabelKind,
-        };
+        ParserRuleCallResult updated = existing.WithRawArguments(rawArguments);
         _current.LastCompletedChildCall = updated;
         _onChildCallResult?.Invoke(updated);
     }
@@ -242,18 +250,59 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     {
         if (_current?.LastCompletedChildCall is not { } existing) return;
 
-        var updated = new ParserRuleCallResult
-        {
-            RuleName = existing.RuleName,
-            InputPosition = existing.InputPosition,
-            Depth = existing.Depth,
-            Returns = existing.Returns,
-            Descriptor = existing.Descriptor,
-            RawArguments = existing.RawArguments,
-            LabelName = labelName,
-            LabelKind = labelKind,
-        };
+        ParserRuleCallResult updated = existing.WithLabel(labelName, labelKind);
         _current.LastCompletedChildCall = updated;
         _onChildCallResult?.Invoke(updated);
     }
+
+    /// <summary>
+    /// Gets the current frame's immutable labeled-result store, or the shared empty store when no frame is active.
+    /// </summary>
+    /// <returns>The current labeled-result snapshot.</returns>
+    public ParserLabeledRuleCallResultStore GetCurrentLabeledCallResults()
+        => _current?.LabeledCallResults ?? ParserLabeledRuleCallResultStore.Empty;
+
+    /// <summary>
+    /// Synchronizes a restored labeled-result snapshot to the active frame.
+    /// </summary>
+    /// <param name="results">Restored immutable labeled-result store.</param>
+    public void SyncLabeledCallResultsToCurrentFrame(ParserLabeledRuleCallResultStore? results)
+    {
+        if (_current is not null)
+        {
+            _current.LabeledCallResults = results ?? ParserLabeledRuleCallResultStore.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Binds the final completed child call result into the active parent frame's assignment or list label store.
+    /// Unlabeled results and calls without an active frame are not retained.
+    /// </summary>
+    /// <returns><c>true</c> when a labeled result was retained; otherwise, <c>false</c>.</returns>
+    public bool TryBindLastCompletedChildCallToCurrentLabel()
+    {
+        if (_current?.LastCompletedChildCall is not { LabelName: { } labelName } result)
+        {
+            return false;
+        }
+
+        ParserLabeledRuleCallResultStore updated;
+        if (result.LabelKind == ParserRuleReferenceLabelKind.Assignment)
+        {
+            updated = _current.LabeledCallResults.SetAssignment(labelName, result);
+        }
+        else if (result.LabelKind == ParserRuleReferenceLabelKind.List)
+        {
+            updated = _current.LabeledCallResults.AppendList(labelName, result);
+        }
+        else
+        {
+            return false;
+        }
+
+        _current.LabeledCallResults = updated;
+        _onLabeledCallResults?.Invoke(updated);
+        return true;
+    }
+
 }

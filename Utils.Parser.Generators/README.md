@@ -346,3 +346,17 @@ Typed policies recognize only the C# aliases `bool`, `byte`, `sbyte`, `short`, `
 Parser-rule parameter descriptors preserve top-level default text as passive `RawDefaultValue` metadata. Only the typed policies consume it. Typed positional calls may omit trailing parameters when each omitted declaration has a supported simple-literal default; typed named calls may omit parameters in any order under the same condition. Explicit arguments override defaults, and unused invalid defaults are not evaluated. Existing untyped policies continue to require exact arity or exact name coverage and ignore defaults.
 
 All explicit values and required defaults finish parsing and conversion before one rollback-managed atomic seed batch. Memoization keys use the final converted effective runtime values and preserve runtime type distinctions; explicit and default forms producing identical state may share memoized results. No arbitrary type resolution, arrays, generics, enums, user-defined types, Roslyn conversion, general default-expression evaluation, parameter references, constants, member access, calls, `default`, `nameof`, interpolation, `$param` forms, return/local/label binding, or lexer argument/action/predicate execution is provided. Generated `Parse(...)` remains conservative.
+
+## Explicit labeled child-call results
+
+Generated embedded-code opt-in contexts provide generic lifecycle and inline-action helpers for parser rule-reference labels:
+
+```csharp
+bool found = TryGetLabeledRuleCallReturn(context, "x", "value", out object? value);
+IReadOnlyList<ParserRuleCallResult> calls = GetLabeledRuleCallResults(context, "xs");
+IReadOnlyList<object?> values = GetLabeledRuleCallReturns(context, "xs", "value");
+```
+
+`x=child` retains the last successful immutable `ParserRuleCallResult`; `xs+=child` appends successful results in execution order. Child returns are captured after child `@after`. Missing return keys and present-null values remain distinct. List return projection includes present-null entries and skips calls where the key is absent. Managed snapshots make retention rollback-safe, and memoized child results receive the current call site's label before binding. Assignment and list namespaces are separate if a grammar reuses one lexical label with both operators.
+
+This is explicit metadata-driven access only. The generator does not emit `$x`, `$x.value`, `$xs`, `$rule.value`, implicit variables, typed label fields, typed return accessors, automatic return assignment, or lexer label/return support. Positional, named, typed, and default-aware argument policies are unchanged, and generated `Parse(...)` remains conservative.
