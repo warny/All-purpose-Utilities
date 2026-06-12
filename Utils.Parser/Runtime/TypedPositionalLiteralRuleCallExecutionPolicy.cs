@@ -1,9 +1,14 @@
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Explicitly binds exact-arity positional simple literals after validating and safely converting every value
+/// Explicitly binds positional simple literals and omitted trailing literal defaults after validating and safely converting every value
 /// against the target rule's allowlisted declared parameter types.
 /// </summary>
+/// <remarks>
+/// This policy intentionally changes binding behavior only when a caller installs it explicitly: omitted trailing positional
+/// parameters may use declared simple-literal defaults. The conservative default policy and the untyped literal policies
+/// do not consume defaults and retain their existing behavior.
+/// </remarks>
 public sealed class TypedPositionalLiteralRuleCallExecutionPolicy : IParserRuleCallExecutionPolicy
 {
     private readonly ParserRuleCallBindingFailureBehavior _failureBehavior;
@@ -24,7 +29,7 @@ public sealed class TypedPositionalLiteralRuleCallExecutionPolicy : IParserRuleC
     }
 
     /// <summary>
-    /// Validates syntax, exact arity, names, declared types, literals, and conversions before submitting one atomic seed batch.
+    /// Validates syntax, trailing omission, names, declared types, literals, defaults, and conversions before submitting one atomic seed batch.
     /// </summary>
     /// <param name="context">Metadata and managed seed access for the current parser rule call.</param>
     public void BeforeRuleCall(ParserRuleCallExecutionContext context)
@@ -42,9 +47,9 @@ public sealed class TypedPositionalLiteralRuleCallExecutionPolicy : IParserRuleC
             return;
         }
 
-        if (context.PositionalRawArguments.Count != parameters.Count)
+        if (context.PositionalRawArguments.Count > parameters.Count)
         {
-            Fail(context, $"Expected {parameters.Count} argument(s), but received {context.PositionalRawArguments.Count}.");
+            Fail(context, $"Expected at most {parameters.Count} argument(s), but received {context.PositionalRawArguments.Count}.");
             return;
         }
 
@@ -71,16 +76,32 @@ public sealed class TypedPositionalLiteralRuleCallExecutionPolicy : IParserRuleC
                 return;
             }
 
-            if (!ParserSimpleLiteralParser.TryParse(context.PositionalRawArguments[index], out object? literalValue))
+            bool hasExplicitArgument = index < context.PositionalRawArguments.Count;
+            string? rawValue = hasExplicitArgument
+                ? context.PositionalRawArguments[index]
+                : parameter.RawDefaultValue;
+            if (rawValue is null)
             {
-                Fail(context, "The argument is not a supported simple literal.", index, parameter);
+                Fail(context, $"Required parameter '{parameter.Name}' has no explicit argument or default value.", parameter: parameter);
+                return;
+            }
+
+            if (!ParserSimpleLiteralParser.TryParse(rawValue, out object? literalValue))
+            {
+                string reason = hasExplicitArgument
+                    ? "The argument is not a supported simple literal."
+                    : $"Default value for parameter '{parameter.Name}' is not a supported simple literal.";
+                Fail(context, reason, hasExplicitArgument ? index : null, parameter);
                 return;
             }
 
             ParserLiteralConversionResult conversion = ParserLiteralTypeConverter.Convert(literalValue, parameter.RawType);
             if (!conversion.Success)
             {
-                Fail(context, conversion.Error!, index, parameter);
+                string reason = hasExplicitArgument
+                    ? conversion.Error!
+                    : $"Default value for parameter '{parameter.Name}' cannot bind to declared type '{parameter.RawType}'.";
+                Fail(context, reason, hasExplicitArgument ? index : null, parameter);
                 return;
             }
 

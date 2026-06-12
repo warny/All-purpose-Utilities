@@ -209,7 +209,9 @@ Values are limited to `ParserSimpleLiteralParser`; declared C# types are not val
 | Numeric conversion | None; parsed literal runtime value is retained | Checked integral range conversion; exact-preserving integral-to-floating and double-to-float; no floating-to-integral; integral-to-decimal only |
 | Text conversion | None | Exact string/char, `char` to `string`, one-character `string` to `char`; never string-to-number or string-to-Boolean |
 | Null | Retained without declared-type checks | Reference types and nullable value types only |
-| Mutation | One complete seed batch | All type checks and conversions complete before one seed batch |
+| Defaults | Ignored; exact arity/coverage remains required | Passive `RawDefaultValue` metadata may satisfy omitted parameters only when the default is a supported simple literal convertible to the declared type |
+| Omission | Unsupported | Positional omission is trailing-only; named omission is order-independent when every omitted parameter has a valid default |
+| Mutation | One complete seed batch | All explicit values and required defaults are resolved before one seed batch |
 | Rollback/memoization | Managed generated state | Same managed state; keys contain converted runtime values and runtime types |
 
-The typed policies do not resolve arbitrary C# types and do not support user-defined types, enums, arrays, generics, collections, tuples, delegates, return/label binding, `$param` forms, or lexer execution. Generated `Parse(...)` remains conservative; only an explicit base policy used by generated opt-in APIs enables typed binding.
+Explicit arguments override defaults, and an invalid default is not parsed or converted when its parameter is supplied explicitly. Default text is never treated as general C#: parameter references, constants, enum members, member access, calls, arithmetic, casts, `default`, `default(T)`, `nameof`, interpolation, arrays, and collections remain unsupported. The typed policies do not resolve arbitrary C# types and do not support user-defined types, enums, arrays, generics, collections, tuples, delegates, return/label binding, `$param` forms, or lexer execution. Generated `Parse(...)` remains conservative; only an explicit base policy used by generated opt-in APIs enables typed binding.

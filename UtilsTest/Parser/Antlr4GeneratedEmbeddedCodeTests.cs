@@ -1095,6 +1095,250 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures generated typed positional and named policies bind omitted defaults while explicit arguments override them.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedPolicies_BindOmittedDefaultsAndExplicitOverrides()
+    {
+        const string positionalGrammar = """
+            grammar P;
+            @members {
+                public object? First { get; private set; }
+                public object? Second { get; private set; }
+            }
+            start : child[7] ;
+            child[int first = invalidExpression, byte second = 42]
+            @init {
+                TryGetRuleParameter(context, "first", out object? first);
+                TryGetRuleParameter(context, "second", out object? second);
+                First = first;
+                Second = second;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var positionalAssembly = CompileGeneratedSource(Emit(positionalGrammar));
+        var positionalContext = CreateExecutionContext(positionalAssembly);
+        var positionalPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode positionalResult = InvokeParseWithContextAndPolicy(positionalAssembly, "a", positionalContext, positionalPolicy);
+
+        Assert.IsNotInstanceOfType(positionalResult, typeof(ErrorNode));
+        Assert.AreEqual(7, ReadContextObjectProperty(positionalContext, "First"));
+        Assert.AreEqual((byte)42, ReadContextObjectProperty(positionalContext, "Second"));
+
+        const string namedGrammar = """
+            grammar N;
+            @members {
+                public object? First { get; private set; }
+                public object? Second { get; private set; }
+            }
+            start : child[second: 7] ;
+            child[int first = 42, byte second = invalidExpression]
+            @init {
+                TryGetRuleParameter(context, "first", out object? first);
+                TryGetRuleParameter(context, "second", out object? second);
+                First = first;
+                Second = second;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var namedAssembly = CompileGeneratedSource(Emit(namedGrammar));
+        var namedContext = CreateExecutionContext(namedAssembly);
+        var namedPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedNamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode namedResult = InvokeParseWithContextAndPolicy(namedAssembly, "a", namedContext, namedPolicy);
+
+        Assert.IsNotInstanceOfType(namedResult, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadContextObjectProperty(namedContext, "First"));
+        Assert.AreEqual((byte)7, ReadContextObjectProperty(namedContext, "Second"));
+    }
+
+    /// <summary>
+    /// Ensures generated default-derived nullable seeds remain present and missing required defaults honor failure behavior.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedDefaultFailuresAndNullableNull_HonorPolicyBehavior()
+    {
+        const string nullableGrammar = """
+            grammar P;
+            @members {
+                public bool Found { get; private set; }
+                public object? Seen { get; private set; } = 1;
+            }
+            start : child[] ;
+            child[int? value = null]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var nullableAssembly = CompileGeneratedSource(Emit(nullableGrammar));
+        var nullableContext = CreateExecutionContext(nullableAssembly);
+        var nullablePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode nullableResult = InvokeParseWithContextAndPolicy(nullableAssembly, "a", nullableContext, nullablePolicy);
+
+        Assert.IsNotInstanceOfType(nullableResult, typeof(ErrorNode));
+        Assert.AreEqual(true, ReadContextObjectProperty(nullableContext, "Found"));
+        Assert.IsNull(ReadContextObjectProperty(nullableContext, "Seen"));
+
+        const string requiredGrammar = """
+            grammar R;
+            @members {
+                public bool Found { get; private set; }
+            }
+            start : child[] ;
+            child[int value]
+            @init {
+                Found = TryGetRuleParameter(context, "value", out object? value);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var requiredAssembly = CompileGeneratedSource(Emit(requiredGrammar));
+        var ignoredContext = CreateExecutionContext(requiredAssembly);
+        var ignoredPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode ignoredResult = InvokeParseWithContextAndPolicy(requiredAssembly, "a", ignoredContext, ignoredPolicy);
+
+        Assert.IsNotInstanceOfType(ignoredResult, typeof(ErrorNode));
+        Assert.AreEqual(false, ReadContextObjectProperty(ignoredContext, "Found"));
+
+        var throwingContext = CreateExecutionContext(requiredAssembly);
+        var throwingPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw),
+        };
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+            InvokeParseWithContextAndPolicy(requiredAssembly, "a", throwingContext, throwingPolicy));
+        Assert.IsInstanceOfType<ParserRuleCallBindingException>(exception.InnerException);
+    }
+
+    /// <summary>
+    /// Ensures rollback replaces failed explicit seeds with successful positional and named default-derived seeds.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedDefaultSeeds_RollBackWithFailedAlternatives()
+    {
+        const string positionalGrammar = """
+            grammar P;
+            @members {
+                public object? Seen { get; private set; }
+            }
+            start : child[1] B | child[] ;
+            child[byte value = 2]
+            @init {
+                TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var positionalAssembly = CompileGeneratedSource(Emit(positionalGrammar));
+        var positionalContext = CreateExecutionContext(positionalAssembly);
+        var positionalPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode positionalResult = InvokeParseWithContextAndPolicy(positionalAssembly, "a", positionalContext, positionalPolicy);
+
+        Assert.IsNotInstanceOfType(positionalResult, typeof(ErrorNode));
+        Assert.AreEqual((byte)2, ReadContextObjectProperty(positionalContext, "Seen"));
+
+        const string namedGrammar = """
+            grammar N;
+            @members {
+                public object? Seen { get; private set; }
+            }
+            start : child[value: 1] B | child[] ;
+            child[byte value = 2]
+            @init {
+                TryGetRuleParameter(context, "value", out object? value);
+                Seen = value;
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var namedAssembly = CompileGeneratedSource(Emit(namedGrammar));
+        var namedContext = CreateExecutionContext(namedAssembly);
+        var namedPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedNamedLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode namedResult = InvokeParseWithContextAndPolicy(namedAssembly, "a", namedContext, namedPolicy);
+
+        Assert.IsNotInstanceOfType(namedResult, typeof(ErrorNode));
+        Assert.AreEqual((byte)2, ReadContextObjectProperty(namedContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures memoization keys use final converted default state and conservative parsing leaves defaults metadata-only.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedDefaults_MemoizeByEffectiveStateOnly()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public static int InitCount;
+                public bool Found { get; private set; }
+            }
+            start : child[] B | child[42] ;
+            child[int value = 42]
+            @init {
+                InitCount++;
+                Found = TryGetRuleParameter(context, "value", out object? value);
+            }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var typedPolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode typedResult = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, typedPolicy);
+
+        Assert.IsNotInstanceOfType(typedResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "InitCount"));
+        Assert.AreEqual(true, ReadContextObjectProperty(executionContext, "Found"));
+
+        var conservativeContext = CreateExecutionContext(assembly);
+        ParseNode conservativeResult = InvokeParseWithContextAndPolicy(
+            assembly,
+            "a",
+            conservativeContext,
+            ParserRuntimeFeaturePolicy.Default);
+
+        Assert.IsNotInstanceOfType(conservativeResult, typeof(ErrorNode));
+        Assert.AreEqual(false, ReadContextObjectProperty(conservativeContext, "Found"));
+        Assert.IsNotInstanceOfType(InvokeParse(assembly, "Parse", "a"), typeof(ErrorNode));
+    }
+
+    /// <summary>
     /// Ensures predicates can call instance members injected through <c>@members</c>.
     /// </summary>
     [TestMethod]

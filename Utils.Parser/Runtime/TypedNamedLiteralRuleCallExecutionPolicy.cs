@@ -1,9 +1,14 @@
 namespace Utils.Parser.Runtime;
 
 /// <summary>
-/// Explicitly binds named simple literals after validating and safely converting every value against the target
+/// Explicitly binds named simple literals and omitted literal defaults after validating and safely converting every value against the target
 /// rule's allowlisted declared parameter types.
 /// </summary>
+/// <remarks>
+/// This policy intentionally changes binding behavior only when a caller installs it explicitly: omitted named
+/// parameters may use declared simple-literal defaults. The conservative default policy and the untyped literal policies
+/// do not consume defaults and retain their existing behavior.
+/// </remarks>
 public sealed class TypedNamedLiteralRuleCallExecutionPolicy : IParserRuleCallExecutionPolicy
 {
     private readonly ParserRuleCallBindingFailureBehavior _failureBehavior;
@@ -24,7 +29,7 @@ public sealed class TypedNamedLiteralRuleCallExecutionPolicy : IParserRuleCallEx
     }
 
     /// <summary>
-    /// Validates named syntax, exact coverage, names, declared types, literals, and conversions before one atomic seed batch.
+    /// Validates named syntax, names, declared types, explicit literals, required defaults, and conversions before one atomic seed batch.
     /// </summary>
     /// <param name="context">Metadata and managed seed access for the current parser rule call.</param>
     public void BeforeRuleCall(ParserRuleCallExecutionContext context)
@@ -70,12 +75,6 @@ public sealed class TypedNamedLiteralRuleCallExecutionPolicy : IParserRuleCallEx
             }
         }
 
-        if (arguments.Count != descriptors.Count)
-        {
-            Fail(context, $"Expected exactly {descriptors.Count} named argument(s), but received {arguments.Count}.");
-            return;
-        }
-
         foreach (string argumentName in arguments.Keys)
         {
             if (!descriptors.ContainsKey(argumentName))
@@ -88,16 +87,30 @@ public sealed class TypedNamedLiteralRuleCallExecutionPolicy : IParserRuleCallEx
         var seeds = new Dictionary<string, object?>(descriptors.Count, StringComparer.Ordinal);
         foreach (ParserRuleParameterDescriptor parameter in parameters)
         {
-            if (!ParserSimpleLiteralParser.TryParse(arguments[parameter.Name], out object? literalValue))
+            bool hasExplicitArgument = arguments.TryGetValue(parameter.Name, out string? rawValue);
+            rawValue ??= parameter.RawDefaultValue;
+            if (rawValue is null)
             {
-                Fail(context, $"Named argument '{parameter.Name}' is not a supported simple literal.", parameter);
+                Fail(context, $"Required parameter '{parameter.Name}' has no explicit argument or default value.", parameter);
+                return;
+            }
+
+            if (!ParserSimpleLiteralParser.TryParse(rawValue, out object? literalValue))
+            {
+                string reason = hasExplicitArgument
+                    ? $"Named argument '{parameter.Name}' is not a supported simple literal."
+                    : $"Default value for parameter '{parameter.Name}' is not a supported simple literal.";
+                Fail(context, reason, parameter);
                 return;
             }
 
             ParserLiteralConversionResult conversion = ParserLiteralTypeConverter.Convert(literalValue, parameter.RawType!);
             if (!conversion.Success)
             {
-                Fail(context, conversion.Error!, parameter);
+                string reason = hasExplicitArgument
+                    ? conversion.Error!
+                    : $"Default value for parameter '{parameter.Name}' cannot bind to declared type '{parameter.RawType}'.";
+                Fail(context, reason, parameter);
                 return;
             }
 

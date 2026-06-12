@@ -223,6 +223,179 @@ public class TypedParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Verifies positional omission is trailing-only, explicit values override defaults, and all values use one batch.
+    /// </summary>
+    [TestMethod]
+    public void TypedPositionalPolicy_OmittedTrailingDefaultsAndOverrides_SubmitOneCompleteBatch()
+    {
+        IReadOnlyDictionary<string, object?>? defaultBatch = null;
+        IReadOnlyDictionary<string, object?>? overrideBatch = null;
+        ParserRuleInvocationDescriptor descriptor = Descriptor(
+            Parameter("first", "int"),
+            Parameter("second", "byte", "2"),
+            Parameter("text", "string", "'x'"));
+
+        new TypedPositionalLiteralRuleCallExecutionPolicy().BeforeRuleCall(
+            PositionalContext(["1"], descriptor, values => { defaultBatch = Copy(values); return true; }));
+        new TypedPositionalLiteralRuleCallExecutionPolicy().BeforeRuleCall(
+            PositionalContext(["1", "7", "\"explicit\""], descriptor, values => { overrideBatch = Copy(values); return true; }));
+
+        Assert.AreEqual(1, defaultBatch!["first"]);
+        Assert.AreEqual((byte)2, defaultBatch["second"]);
+        Assert.AreEqual("x", defaultBatch["text"]);
+        Assert.AreEqual((byte)7, overrideBatch!["second"]);
+        Assert.AreEqual("explicit", overrideBatch["text"]);
+    }
+
+    /// <summary>
+    /// Verifies required, malformed, unsupported, incompatible, overflowing, and empty positional values fail atomically.
+    /// </summary>
+    [TestMethod]
+    public void TypedPositionalPolicy_DefaultFailures_AreAtomic()
+    {
+        int attempts = 0;
+        var policy = new TypedPositionalLiteralRuleCallExecutionPolicy();
+        bool Write(IReadOnlyDictionary<string, object?> values) { attempts++; return true; }
+
+        policy.BeforeRuleCall(PositionalContext([], Descriptor(Parameter("value", "int")), Write));
+        policy.BeforeRuleCall(PositionalContext([""], Descriptor(Parameter("value", "int", "42")), Write));
+        policy.BeforeRuleCall(PositionalContext([], Descriptor(Parameter("value", "int", "otherParameter")), Write));
+        policy.BeforeRuleCall(PositionalContext([], Descriptor(Parameter("value", "int", "\"42\"")), Write));
+        policy.BeforeRuleCall(PositionalContext([], Descriptor(Parameter("value", "byte", "300")), Write));
+        policy.BeforeRuleCall(PositionalContext(["1", "2"], Descriptor(Parameter("value", "int", "3")), Write));
+        policy.BeforeRuleCall(PositionalContext(["1"], Descriptor(Parameter("first", "int", "9"), Parameter("second", "int")), Write));
+
+        Assert.AreEqual(0, attempts);
+    }
+
+    /// <summary>
+    /// Verifies invalid defaults are skipped when explicit positional values cover their parameters.
+    /// </summary>
+    [TestMethod]
+    public void TypedPositionalPolicy_ExplicitValue_SkipsInvalidDefault()
+    {
+        IReadOnlyDictionary<string, object?>? batch = null;
+
+        new TypedPositionalLiteralRuleCallExecutionPolicy().BeforeRuleCall(PositionalContext(
+            ["7"],
+            Descriptor(Parameter("value", "int", "invalidExpression")),
+            values => { batch = Copy(values); return true; }));
+
+        Assert.AreEqual(7, batch!["value"]);
+    }
+
+    /// <summary>
+    /// Verifies positional defaults preserve nullable null and checked numeric target conversion.
+    /// </summary>
+    [TestMethod]
+    public void TypedPositionalPolicy_DefaultConversions_PreserveNullAndRuntimeTypes()
+    {
+        IReadOnlyDictionary<string, object?>? batch = null;
+
+        new TypedPositionalLiteralRuleCallExecutionPolicy().BeforeRuleCall(PositionalContext(
+            [],
+            Descriptor(Parameter("nullable", "int?", "null"), Parameter("small", "byte", "42")),
+            values => { batch = Copy(values); return true; }));
+
+        Assert.IsTrue(batch!.ContainsKey("nullable"));
+        Assert.IsNull(batch["nullable"]);
+        Assert.IsInstanceOfType<byte>(batch["small"]);
+        Assert.AreEqual((byte)42, batch["small"]);
+    }
+
+    /// <summary>
+    /// Verifies named omission can occur in declaration order independently while required names still fail.
+    /// </summary>
+    [TestMethod]
+    public void TypedNamedPolicy_OmittedDefaultsAndExplicitOverrides_SubmitOneCompleteBatch()
+    {
+        ParserRuleInvocationDescriptor descriptor = Descriptor(
+            Parameter("first", "int", "1"),
+            Parameter("required", "long"),
+            Parameter("text", "string", "\"default\""));
+        IReadOnlyDictionary<string, object?>? batch = null;
+        int failedAttempts = 0;
+
+        new TypedNamedLiteralRuleCallExecutionPolicy().BeforeRuleCall(NamedContext(
+            "text: \"explicit\", required: 6",
+            Named(("text", "\"explicit\""), ("required", "6")),
+            descriptor,
+            values => { batch = Copy(values); return true; }));
+        new TypedNamedLiteralRuleCallExecutionPolicy().BeforeRuleCall(NamedContext(
+            "text: \"x\"",
+            Named(("text", "\"x\"")),
+            descriptor,
+            values => { failedAttempts++; return true; }));
+
+        Assert.AreEqual(1, batch!["first"]);
+        Assert.AreEqual(6L, batch["required"]);
+        Assert.AreEqual("explicit", batch["text"]);
+        Assert.AreEqual(0, failedAttempts);
+    }
+
+    /// <summary>
+    /// Verifies invalid named defaults are required only for omitted parameters and nullable defaults remain present.
+    /// </summary>
+    [TestMethod]
+    public void TypedNamedPolicy_DefaultValidation_IsLazyAndAtomic()
+    {
+        int invalidAttempts = 0;
+        IReadOnlyDictionary<string, object?>? overrideBatch = null;
+        IReadOnlyDictionary<string, object?>? nullBatch = null;
+        ParserRuleInvocationDescriptor invalidDescriptor = Descriptor(Parameter("value", "int", "invalidExpression"));
+        var policy = new TypedNamedLiteralRuleCallExecutionPolicy();
+
+        policy.BeforeRuleCall(NamedContext("", Named(), invalidDescriptor, values => { invalidAttempts++; return true; }));
+        policy.BeforeRuleCall(NamedContext("value: 7", Named(("value", "7")), invalidDescriptor,
+            values => { overrideBatch = Copy(values); return true; }));
+        policy.BeforeRuleCall(NamedContext("", Named(), Descriptor(Parameter("value", "int?", "null")),
+            values => { nullBatch = Copy(values); return true; }));
+
+        Assert.AreEqual(0, invalidAttempts);
+        Assert.AreEqual(7, overrideBatch!["value"]);
+        Assert.IsTrue(nullBatch!.ContainsKey("value"));
+        Assert.IsNull(nullBatch["value"]);
+    }
+
+    /// <summary>
+    /// Verifies default-related throw failures report deterministic parameter metadata without an argument index.
+    /// </summary>
+    [TestMethod]
+    public void TypedPolicies_DefaultThrowMode_ReportsOmittedParameterMetadata()
+    {
+        var positional = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        ParserRuleCallBindingException positionalException = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+            positional.BeforeRuleCall(PositionalContext([], Descriptor(Parameter("value", "byte", "300")))));
+        var named = new TypedNamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
+        ParserRuleCallBindingException namedException = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+            named.BeforeRuleCall(NamedContext("", Named(), Descriptor(Parameter("value", "int")))));
+
+        Assert.IsNull(positionalException.ArgumentIndex);
+        Assert.AreEqual("value", positionalException.ParameterName);
+        Assert.AreEqual("byte", positionalException.DeclaredType);
+        StringAssert.Contains(positionalException.Message, "Default value");
+        Assert.IsNull(namedException.ArgumentIndex);
+        Assert.AreEqual("value", namedException.ParameterName);
+        StringAssert.Contains(namedException.Message, "no explicit argument or default value");
+    }
+
+    /// <summary>
+    /// Verifies legacy untyped policies retain exact coverage and do not consume descriptor defaults.
+    /// </summary>
+    [TestMethod]
+    public void UntypedPolicies_DefaultMetadata_DoesNotChangeExactCoverage()
+    {
+        int attempts = 0;
+        ParserRuleInvocationDescriptor descriptor = Descriptor(Parameter("value", "int", "42"));
+        bool Write(IReadOnlyDictionary<string, object?> values) { attempts++; return true; }
+
+        new PositionalLiteralRuleCallExecutionPolicy().BeforeRuleCall(PositionalContext([], descriptor, Write));
+        new NamedLiteralRuleCallExecutionPolicy().BeforeRuleCall(NamedContext("", Named(), descriptor, Write));
+
+        Assert.AreEqual(0, attempts);
+    }
+
+    /// <summary>
     /// Verifies after-call callbacks are no-ops apart from null validation and constructors reject undefined behavior values.
     /// </summary>
     [TestMethod]
@@ -262,6 +435,29 @@ public class TypedParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Creates direct positional policy metadata from a prepared target descriptor.
+    /// </summary>
+    /// <param name="arguments">Raw positional arguments.</param>
+    /// <param name="descriptor">Prepared target descriptor.</param>
+    /// <param name="writer">Optional atomic seed writer.</param>
+    /// <returns>A direct rule-call context.</returns>
+    private static ParserRuleCallExecutionContext PositionalContext(
+        IReadOnlyList<string> arguments,
+        ParserRuleInvocationDescriptor descriptor,
+        Func<IReadOnlyDictionary<string, object?>, bool>? writer = null)
+    {
+        return new ParserRuleCallExecutionContext
+        {
+            CallerFrame = null,
+            RuleName = "child",
+            RawArguments = string.Join(", ", arguments),
+            PositionalRawArguments = arguments,
+            TargetRuleDescriptor = descriptor,
+            ParameterSeedWriter = writer,
+        };
+    }
+
+    /// <summary>
     /// Creates direct named policy metadata with an optional atomic batch writer.
     /// </summary>
     /// <param name="rawArguments">Raw named arguments.</param>
@@ -287,6 +483,31 @@ public class TypedParserRuleCallExecutionPolicyTests
     }
 
     /// <summary>
+    /// Creates direct named policy metadata from a prepared target descriptor.
+    /// </summary>
+    /// <param name="rawArguments">Raw named arguments.</param>
+    /// <param name="arguments">Split named arguments.</param>
+    /// <param name="descriptor">Prepared target descriptor.</param>
+    /// <param name="writer">Optional atomic seed writer.</param>
+    /// <returns>A direct rule-call context.</returns>
+    private static ParserRuleCallExecutionContext NamedContext(
+        string rawArguments,
+        IReadOnlyDictionary<string, string> arguments,
+        ParserRuleInvocationDescriptor descriptor,
+        Func<IReadOnlyDictionary<string, object?>, bool>? writer = null)
+    {
+        return new ParserRuleCallExecutionContext
+        {
+            CallerFrame = null,
+            RuleName = "child",
+            RawArguments = rawArguments,
+            NamedRawArguments = arguments,
+            TargetRuleDescriptor = descriptor,
+            ParameterSeedWriter = writer,
+        };
+    }
+
+    /// <summary>
     /// Creates a target rule descriptor from explicit parameter metadata.
     /// </summary>
     /// <param name="parameters">Parameter name and raw type pairs.</param>
@@ -304,6 +525,46 @@ public class TypedParserRuleCallExecutionPolicyTests
             }).ToArray(),
         };
     }
+
+    /// <summary>
+    /// Creates a target rule descriptor from prepared parameter descriptors.
+    /// </summary>
+    /// <param name="parameters">Prepared parameter descriptors.</param>
+    /// <returns>A target descriptor.</returns>
+    private static ParserRuleInvocationDescriptor Descriptor(params IEnumerable<ParserRuleParameterDescriptor> parameters)
+    {
+        return new ParserRuleInvocationDescriptor
+        {
+            RuleName = "child",
+            Parameters = parameters.ToArray(),
+        };
+    }
+
+    /// <summary>
+    /// Creates passive typed parameter metadata with an optional raw default.
+    /// </summary>
+    /// <param name="name">Parameter name.</param>
+    /// <param name="type">Raw declared type.</param>
+    /// <param name="defaultValue">Optional raw default text.</param>
+    /// <returns>A parameter descriptor.</returns>
+    private static ParserRuleParameterDescriptor Parameter(string name, string type, string? defaultValue = null)
+    {
+        return new ParserRuleParameterDescriptor
+        {
+            Name = name,
+            RawType = type,
+            RawDefaultValue = defaultValue,
+            RawDeclaration = defaultValue is null ? $"{type} {name}" : $"{type} {name} = {defaultValue}",
+        };
+    }
+
+    /// <summary>
+    /// Copies one submitted seed batch for assertions after policy execution.
+    /// </summary>
+    /// <param name="values">Submitted values.</param>
+    /// <returns>An ordinal copy.</returns>
+    private static IReadOnlyDictionary<string, object?> Copy(IReadOnlyDictionary<string, object?> values)
+        => new Dictionary<string, object?>(values, StringComparer.Ordinal);
 
     /// <summary>
     /// Creates an ordinal named argument dictionary.
