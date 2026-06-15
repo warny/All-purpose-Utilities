@@ -142,6 +142,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
             }
             ReportUnsupportedEmbeddedCodeDiagnostics(context, file, text, grammar);
+            if (ReportEmbeddedParserAttributeDiagnostics(context, file, text, grammar))
+            {
+                ReportParserDiagnostics(context, diagnostics, fileName);
+                return;
+            }
+
             var generated = GrammarEmitter.Emit(grammar, namespaceName!, className!, fileName);
             ReportParserDiagnostics(context, diagnostics, fileName);
 
@@ -154,6 +160,31 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         }
     }
 
+
+    /// <summary>
+    /// Reports deterministic validation errors for the limited embedded parser attribute rewrite.
+    /// </summary>
+    /// <param name="context">Source production context receiving diagnostics.</param>
+    /// <param name="file">Grammar additional file.</param>
+    /// <param name="text">Grammar source text.</param>
+    /// <param name="grammar">Parsed grammar AST.</param>
+    /// <returns><see langword="true"/> when generation must stop because at least one attribute error was found.</returns>
+    private static bool ReportEmbeddedParserAttributeDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar)
+    {
+        bool hasErrors = false;
+        DiagnosticDescriptor descriptor = ToRoslynDescriptor(ParserDiagnostics.InvalidEmbeddedParserAttribute);
+        foreach (EmbeddedParserAttributeDiagnostic diagnostic in EmbeddedParserAttributeRewriter.ValidateGrammar(grammar))
+        {
+            hasErrors = true;
+            context.ReportDiagnostic(Diagnostic.Create(
+                descriptor,
+                CreateGrammarLocation(file, text, diagnostic.Line),
+                grammar.Name,
+                diagnostic.Message));
+        }
+
+        return hasErrors;
+    }
 
     /// <summary>
     /// Reports source-generator diagnostics for embedded-code constructs that are visible in the grammar AST but are not executable generated C# hooks.

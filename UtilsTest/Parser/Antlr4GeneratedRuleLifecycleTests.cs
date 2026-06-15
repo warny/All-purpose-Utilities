@@ -3974,6 +3974,98 @@ public class Antlr4GeneratedRuleLifecycleTests
             "Conservative Parse() must not execute @after hooks; Label must remain null.");
     }
 
+    /// <summary>Verifies assignment-labeled and current-rule return attributes execute through generic required helpers.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LimitedParserAttributes_ReadReturns()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Found = $x.value is int;
+                Seen = $x.value is int i ? i : -1;
+                IsNull = $x.nullable == null;
+            } : x=child ;
+            child returns [int value, object nullable]
+            @after {
+                SetRuleReturn(context, "value", 42);
+                SetRuleReturn(context, "nullable", null);
+                Current = $child.value is int i ? i : -1;
+            } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static bool Found;
+                public static bool IsNull;
+                public static int Seen = -1;
+                public static int Current = -1;
+            }
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")");
+        StringAssert.Contains(source, "GetRequiredRuleReturn(context, \"value\")");
+        Assert.IsFalse(source.Contains("$x.value", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("$child.value", StringComparison.Ordinal));
+
+        Assembly assembly = CompileGeneratedSource(source, userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.IsTrue(ReadBoolField(assembly, "IsNull"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Current"));
+    }
+
+    /// <summary>Verifies a rule-wide visible label that is absent on the selected alternative fails deterministically.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AbsentAttributeLabel_ThrowsParserAttributeAccessException()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = $x.value; } : x=child B | y=child ;
+            child returns [int value] @after { SetRuleReturn(context, "value", 42); } : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static object? Seen; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
+
+        Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
+        Assert.AreEqual("Assignment label 'x' is not available in the current rule invocation.", exception.InnerException!.Message);
+    }
+
+    /// <summary>Verifies failed-alternative rollback and memoized child reuse expose the successful call-site label.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AttributeRead_UsesSuccessfulMemoizedLabelState()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = $y.value is int i ? i : -1; } : x=child B | y=child ;
+            child returns [int value] @after { SetRuleReturn(context, "value", 2); } : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadIntField(assembly, "Seen"));
+    }
+
     // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
 
     /// <summary>Emits generated C# for the supplied grammar.</summary>
