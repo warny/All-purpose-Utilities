@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Numerics;
 using Utils.Collections;
 
@@ -6,7 +7,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// <summary>
 /// Represents a mathematical vector.
 /// </summary>
-public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable
+public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, ICloneable, IEnumerable<T>
     where T : struct, IFloatingPoint<T>, IRootFunctions<T>
 {
     /// <summary>
@@ -161,16 +162,16 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// Returns the cross product of (n-1) vectors of dimension n.
     /// </summary>
     /// <param name="vectors">Vectors of dimension n.</param>
-    /// <returns>A normal vector.</returns>
+    /// <returns>A vector perpendicular to all input vectors.</returns>
     /// <exception cref="ArgumentException">Thrown if vectors are not all of dimension n.</exception>
-    public static Vector<T> Product(params Vector<T>[] vectors)
+    public static Vector<T> CrossProduct(params Vector<T>[] vectors)
     {
         int dimensions = vectors.Length + 1;
         foreach (var vector in vectors)
         {
             if (vector.components.Length != dimensions)
             {
-                throw new ArgumentException(string.Format("All vectors are not of dimension {0}", dimensions), "vectors");
+                throw new ArgumentException(string.Format("All vectors are not of dimension {0}", dimensions), nameof(vectors));
             }
         }
 
@@ -186,6 +187,10 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
 
         return new Vector<T>(result);
     }
+
+    /// <inheritdoc cref="CrossProduct(Vector{T}[])"/>
+    [Obsolete("Use CrossProduct instead.")]
+    public static Vector<T> Product(params Vector<T>[] vectors) => CrossProduct(vectors);
 
     /// <summary>
     /// Recursive computation of the cross product of n-1 vectors in an n-dimensional space.
@@ -238,5 +243,11 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// </summary>
     /// <returns>A new vector with the same components.</returns>
     public object Clone() => new Vector<T>(this);
+
+    /// <inheritdoc/>
+    public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)components).GetEnumerator();
+
+    /// <inheritdoc/>
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
