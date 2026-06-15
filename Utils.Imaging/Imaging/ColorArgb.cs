@@ -208,15 +208,16 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
     );
 
     /// <summary>
-    /// Produces a color using the component-wise minimum of the operands.
+    /// Subtracts each channel of <paramref name="other"/> from the corresponding channel of this
+    /// color, clamping results to [0, 1].
     /// </summary>
-    /// <param name="other">The color compared with the current instance.</param>
-    /// <returns>The resulting color.</returns>
-    public IColorArgb<double> Substract(IColorArgb<double> other) => new ColorArgb(
-                    MathEx.Min(this.Alpha, other.Alpha),
-                    MathEx.Min(this.Red, other.Red),
-                    MathEx.Min(this.Green, other.Green),
-                    MathEx.Min(this.Blue, other.Blue)
+    /// <param name="other">The color to subtract.</param>
+    /// <returns>The channel-wise clamped difference.</returns>
+    public IColorArgb<double> Subtract(IColorArgb<double> other) => new ColorArgb(
+                    Math.Max(0.0, this.Alpha - other.Alpha),
+                    Math.Max(0.0, this.Red   - other.Red),
+                    Math.Max(0.0, this.Green - other.Green),
+                    Math.Max(0.0, this.Blue  - other.Blue)
     );
 
     /// <inheritdoc/>

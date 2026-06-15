@@ -120,34 +120,31 @@ namespace Utils.Mathematics
                 confScale.FirstLetterUpperCase
             );
 
-            INumberToStringLanguageSpecifics languageSpecifics = ResolveLanguageSpecifics(language.LanguageSpecificsTypeName);
-            var fractions = language.Fractions?.Fractions?.ToDictionary(f => f.Digits, f => f.StringValue) ?? new Dictionary<int, string>();
-
-            BigInteger? maxNumber = null;
-            if (!string.IsNullOrWhiteSpace(language.MaxNumber))
+            var options = new NumberToStringConverterOptions
             {
-                maxNumber = BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture);
-            }
-
-            return new NumberToStringConverter(
-                language.GroupSize,
-                language.Separator,
-                language.GroupSeparator,
-                language.Zero,
-                language.Minus,
-                language.DecimalSeparator,
-                language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
-                language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
-                language.Replacements?.Replacements
+                Group = language.GroupSize,
+                Separator = language.Separator,
+                GroupSeparator = language.GroupSeparator,
+                Zero = language.Zero,
+                Minus = language.Minus,
+                DecimalSeparator = language.DecimalSeparator,
+                Groups = language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
+                Exceptions = language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue)
+                    ?? new Dictionary<long, string>(),
+                Replacements = language.Replacements?.Replacements
                     .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope)),
-                scale,
-                adjustFunction: null,
-                languageSpecifics,
-                languageIdentifier,
-                fractions,
-                maxNumber,
-                language.FractionSeparator
-            );
+                Scale = scale,
+                LanguageSpecifics = ResolveLanguageSpecifics(language.LanguageSpecificsTypeName),
+                LanguageIdentifier = languageIdentifier,
+                Fractions = language.Fractions?.Fractions?.ToDictionary(f => f.Digits, f => f.StringValue)
+                    ?? new Dictionary<int, string>(),
+                MaxNumber = string.IsNullOrWhiteSpace(language.MaxNumber)
+                    ? null
+                    : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture),
+                FractionSeparator = language.FractionSeparator,
+            };
+
+            return new NumberToStringConverter(options);
         }
 
         /// <summary>

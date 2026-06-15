@@ -412,6 +412,65 @@ namespace Utils.Geography.Model
 
         #endregion
 
+        #region Parse / TryParse
+
+        /// <summary>
+        /// Attempts to parse a combined coordinate string (e.g. <c>"48.8566, 2.3522"</c>) using the
+        /// current culture then the invariant culture.
+        /// </summary>
+        /// <param name="coordinates">The string to parse.</param>
+        /// <param name="result">The parsed point, or <see langword="null"/> on failure.</param>
+        /// <returns><see langword="true"/> if parsing succeeded; otherwise <see langword="false"/>.</returns>
+        public static bool TryParse(string coordinates, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+            => TryParse(coordinates, [], out result);
+
+        /// <summary>
+        /// Attempts to parse a combined coordinate string using the specified cultures.
+        /// </summary>
+        public static bool TryParse(string coordinates, CultureInfo[] cultureInfos, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+        {
+            try
+            {
+                result = new GeoPoint<T>(coordinates, cultureInfos);
+                return true;
+            }
+            catch
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to parse separate latitude and longitude strings using the current culture then
+        /// the invariant culture.
+        /// </summary>
+        /// <param name="latitudeString">Latitude string (e.g. <c>"N48°51'"</c> or <c>"48.8566"</c>).</param>
+        /// <param name="longitudeString">Longitude string (e.g. <c>"E2°21'"</c> or <c>"2.3522"</c>).</param>
+        /// <param name="result">The parsed point, or <see langword="null"/> on failure.</param>
+        /// <returns><see langword="true"/> if parsing succeeded; otherwise <see langword="false"/>.</returns>
+        public static bool TryParse(string latitudeString, string longitudeString, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+            => TryParse(latitudeString, longitudeString, [], out result);
+
+        /// <summary>
+        /// Attempts to parse separate latitude and longitude strings using the specified cultures.
+        /// </summary>
+        public static bool TryParse(string latitudeString, string longitudeString, CultureInfo[] cultureInfos, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+        {
+            try
+            {
+                result = new GeoPoint<T>(latitudeString, longitudeString, cultureInfos);
+                return true;
+            }
+            catch
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        #endregion
+
         #region Operators
 
         /// <summary>

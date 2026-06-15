@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using Utils.Mathematics.LinearAlgebra;
 
 namespace UtilsTest.Mathematics.LinearAlgebra;
@@ -29,7 +30,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0, 0);
         var p2 = new Vector<double>(2, 0);
-        var (weight, barycenter) = p1.ComputeBarycenter((1d, p1), (3d, p2));
+        var (weight, barycenter) = Vector<double>.ComputeBarycenter((1d, p1), (3d, p2));
         Assert.AreEqual(4d, weight, 1e-9);
         Assert.AreEqual(1.5d, barycenter[0], 1e-9);
         Assert.AreEqual(0d, barycenter[1], 1e-9);
@@ -87,6 +88,31 @@ public class VectorTests
         Assert.AreEqual(0d, vector[2], 1e-12);
 
         Assert.AreEqual(1d, normalized.Norm, 1e-12);
+    }
+
+    [TestMethod]
+    public void Zero_ReturnsAllZeroComponents()
+    {
+        var v = Vector<double>.Zero(3);
+        Assert.AreEqual(3, v.Dimension);
+        Assert.IsTrue(v.All(c => c == 0d));
+    }
+
+    [TestMethod]
+    public void Unit_ReturnsCorrectBasisVector()
+    {
+        var v = Vector<double>.Unit(1, 3);
+        Assert.AreEqual(0d, v[0], 1e-12);
+        Assert.AreEqual(1d, v[1], 1e-12);
+        Assert.AreEqual(0d, v[2], 1e-12);
+    }
+
+    [TestMethod]
+    public void Enumeration_YieldsAllComponents()
+    {
+        var v = new Vector<double>(1d, 2d, 3d);
+        double[] items = v.ToArray();
+        CollectionAssert.AreEqual(new[] { 1d, 2d, 3d }, items);
     }
 }
 

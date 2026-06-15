@@ -47,17 +47,17 @@ public class ColorArgb64Tests
     }
 
     [TestMethod]
-    public void SubstractReturnsComponentWiseMinimum()
+    public void SubtractReturnsComponentWiseDifference()
     {
         ColorArgb64 first = new(4000, 3000, 2000, 1000);
         ColorArgb64 second = new(1000, 4000, 1500, 6000);
 
-        ColorArgb64 result = (ColorArgb64)first.Substract(second);
+        ColorArgb64 result = (ColorArgb64)first.Subtract(second);
 
-        Assert.AreEqual((ushort)1000, result.Alpha);
-        Assert.AreEqual((ushort)3000, result.Red);
-        Assert.AreEqual((ushort)1500, result.Green);
-        Assert.AreEqual((ushort)1000, result.Blue);
+        Assert.AreEqual((ushort)3000, result.Alpha);  // 4000 - 1000
+        Assert.AreEqual((ushort)0,    result.Red);    // max(0, 3000 - 4000)
+        Assert.AreEqual((ushort)500,  result.Green);  // 2000 - 1500
+        Assert.AreEqual((ushort)0,    result.Blue);   // max(0, 1000 - 6000)
     }
 
     [TestMethod]

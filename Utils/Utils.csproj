@@ -21,6 +21,7 @@
 
 	<ItemGroup>
 		<Compile Remove="Globalization\**" />
+		<Compile Remove="Mathematics\NumberToStringConverterOptions.cs" />
 		<EmbeddedResource Remove="Globalization\**" />
 		<None Remove="Globalization\**" />
 	</ItemGroup>

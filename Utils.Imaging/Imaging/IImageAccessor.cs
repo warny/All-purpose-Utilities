@@ -100,11 +100,12 @@ public interface IColorArgb<T>
     IColorArgb<T> Add(IColorArgb<T> other);
 
     /// <summary>
-    /// Subtracts the channels of <paramref name="other"/> from this color and returns the result.
+    /// Subtracts the channels of <paramref name="other"/> from this color, clamping each result
+    /// to the valid component range.
     /// </summary>
     /// <param name="other">Color providing channel values to subtract.</param>
-    /// <returns>The channel-wise difference.</returns>
-    IColorArgb<T> Substract(IColorArgb<T> other);
+    /// <returns>The channel-wise clamped difference.</returns>
+    IColorArgb<T> Subtract(IColorArgb<T> other);
 
     /// <summary>
     /// Deconstructs the color into its alpha and RGB components.

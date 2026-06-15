@@ -273,18 +273,19 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     }
 
     /// <summary>
-    /// Produces a color using the component-wise minimum of the operands.
+    /// Subtracts each channel of <paramref name="other"/> from the corresponding channel of this
+    /// color, clamping results to [0, 255].
     /// </summary>
-    /// <param name="other">The color compared with the current instance.</param>
-    /// <returns>The resulting color.</returns>
-    public IColorArgb<byte> Substract(IColorArgb<byte> other)
+    /// <param name="other">The color to subtract.</param>
+    /// <returns>The channel-wise clamped difference.</returns>
+    public IColorArgb<byte> Subtract(IColorArgb<byte> other)
     {
         return new ColorArgb32(
-                                        MathEx.Min(this.Alpha, other.Alpha),
-                                        MathEx.Min(this.Red, other.Red),
-                                        MathEx.Min(this.Green, other.Green),
-                                        MathEx.Min(this.Blue, other.Blue)
-                        );
+            (byte)Math.Max(0, this.Alpha - other.Alpha),
+            (byte)Math.Max(0, this.Red   - other.Red),
+            (byte)Math.Max(0, this.Green - other.Green),
+            (byte)Math.Max(0, this.Blue  - other.Blue)
+        );
     }
 
     /// <summary>
@@ -294,7 +295,7 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     /// <param name="color2">The ending color.</param>
     /// <param name="position">Interpolation factor between 0 and 1.</param>
     /// <returns>The interpolated color.</returns>
-    public static ColorArgb32 LinearGrandient(ColorArgb32 color1, ColorArgb32 color2, float position)
+    public static ColorArgb32 LinearGradient(ColorArgb32 color1, ColorArgb32 color2, float position)
     {
         return new ColorArgb32(
                 (byte)(color1.alpha * (1 - position) + color2.alpha * position),

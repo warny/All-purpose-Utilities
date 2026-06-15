@@ -56,5 +56,26 @@ namespace UtilsTest.Geography
                 Assert.AreEqual(point.dcoordinates, geoPoint.ToString("d"));
             }
         }
+
+        [TestMethod]
+        public void TryParse_ValidCoordinates_ReturnsTrue()
+        {
+            foreach (var point in points)
+            {
+                bool ok = GeoPoint<double>.TryParse(point.coordinates, out GeoPoint<double>? result);
+                Assert.IsTrue(ok);
+                Assert.IsNotNull(result);
+                Assert.AreEqual(point.latitude, result.Latitude, 1e-9);
+                Assert.AreEqual(point.longitude, result.Longitude, 1e-9);
+            }
+        }
+
+        [TestMethod]
+        public void TryParse_InvalidCoordinates_ReturnsFalse()
+        {
+            bool ok = GeoPoint<double>.TryParse("not a coordinate", out GeoPoint<double>? result);
+            Assert.IsFalse(ok);
+            Assert.IsNull(result);
+        }
     }
 }

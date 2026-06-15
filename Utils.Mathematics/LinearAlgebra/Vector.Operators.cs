@@ -21,7 +21,7 @@ public partial class Vector<T> :
     /// </summary>
     /// <param name="points">Points to compute the barycenter of.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
-    public (T weight, Vector<T> vector) ComputeBarycenter(params Vector<T>[] points)
+    public static (T weight, Vector<T> vector) ComputeBarycenter(params Vector<T>[] points)
         => ComputeBarycenter((IEnumerable<Vector<T>>)points);
 
     /// <summary>
@@ -29,7 +29,7 @@ public partial class Vector<T> :
     /// </summary>
     /// <param name="vectors">Points to compute the barycenter of.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
-    public (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<Vector<T>> vectors)
+    public static (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<Vector<T>> vectors)
         => ComputeBarycenter(wp => T.One, vector => vector, vectors);
 
     /// <summary>
@@ -37,7 +37,7 @@ public partial class Vector<T> :
     /// </summary>
     /// <param name="weightedPoints">Weighted points.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
-    public (T weight, Vector<T> vector) ComputeBarycenter(params (T weight, Vector<T> point)[] weightedPoints)
+    public static (T weight, Vector<T> vector) ComputeBarycenter(params (T weight, Vector<T> point)[] weightedPoints)
         => ComputeBarycenter((IEnumerable<(T weight, Vector<T> vector)>)weightedPoints);
 
     /// <summary>
@@ -45,7 +45,7 @@ public partial class Vector<T> :
     /// </summary>
     /// <param name="weightedPoints">Weighted points.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
-    public (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<(T weight, Vector<T> vector)> weightedPoints)
+    public static (T weight, Vector<T> vector) ComputeBarycenter(IEnumerable<(T weight, Vector<T> vector)> weightedPoints)
         => ComputeBarycenter(wp => wp.weight, wp => wp.vector, weightedPoints);
 
     /// <summary>

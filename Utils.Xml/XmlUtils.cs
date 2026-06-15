@@ -81,39 +81,44 @@ public static class XmlUtils
     }
 
     /// <summary>
-    /// Gets the XPath for the given XmlElement, including indexes for repeated elements at the same level.
+    /// Gets the XPath for the given XML node, including indexes for repeated elements at the same level.
+    /// Attributes are represented as <c>/@name</c> appended to their owner element path.
     /// </summary>
-    /// <param name="element">The XmlElement for which to generate the XPath.</param>
-    /// <returns>The XPath string for the given XmlElement.</returns>
-    public static string GetXPath(this XmlElement element)
+    /// <param name="node">The XML node for which to generate the XPath.</param>
+    /// <returns>The XPath string for the given node.</returns>
+    public static string GetXPath(this XmlNode node)
     {
-        if (element == null) throw new ArgumentNullException(nameof(element));
+        if (node == null) throw new ArgumentNullException(nameof(node));
 
+        if (node is XmlDocument) return "/";
+        if (node is XmlAttribute attr)
+            return GetElementXPath(attr.OwnerElement) + "/@" + attr.Name;
+
+        return GetElementXPath(node as XmlElement ?? node.ParentNode as XmlElement);
+    }
+
+    private static string GetElementXPath(XmlElement? element)
+    {
         var xpath = string.Empty;
         var current = element;
 
-        // Traverse up to the root to build the XPath expression
         while (current != null)
         {
             var elementName = current.Name;
-
-            // Determine the index of this element among its siblings
             var index = GetElementIndex(current);
-            if (index > 1)
-            {
-                xpath = $"/{elementName}[{index}]" + xpath;
-            }
-            else
-            {
-                xpath = $"/{elementName}" + xpath;
-            }
-
-            // Move to the parent element
+            xpath = (index > 1 ? $"/{elementName}[{index}]" : $"/{elementName}") + xpath;
             current = current.ParentNode as XmlElement;
         }
 
         return xpath;
     }
+
+    /// <summary>
+    /// Gets the XPath for the given XmlElement, including indexes for repeated elements at the same level.
+    /// </summary>
+    /// <param name="element">The XmlElement for which to generate the XPath.</param>
+    /// <returns>The XPath string for the given XmlElement.</returns>
+    public static string GetXPath(this XmlElement element) => GetElementXPath(element);
 
     /// <summary>
     /// Gets the index of the current element among its siblings with the same name.

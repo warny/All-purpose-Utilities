@@ -36,7 +36,7 @@ public static class DbCommandExtensions
     /// <param name="dbType">Type of the parameter.</param>
     /// <param name="value">Value assigned to the parameter.</param>
     /// <returns>The parameter that was added to the command.</returns>
-    public static IDbDataParameter AddNewParameter(this IDbCommand dbCommand, string name, DbType dbType, object value)
+    public static IDbDataParameter AddParameter(this IDbCommand dbCommand, string name, DbType dbType, object value)
     {
         var parameter = CreateParameter(dbCommand, name, dbType, value.ToDbValue());
         dbCommand.Parameters.Add(parameter);
@@ -50,8 +50,8 @@ public static class DbCommandExtensions
     /// <param name="name">Name of the parameter.</param>
     /// <param name="value">Value assigned to the parameter.</param>
     /// <returns>The parameter that was added to the command.</returns>
-    public static IDbDataParameter AddNewParameter(this IDbCommand dbCommand, string name, object value)
-        => dbCommand.AddNewParameter(name, DataUtils.GetDbType(value), value);
+    public static IDbDataParameter AddParameter(this IDbCommand dbCommand, string name, object value)
+        => dbCommand.AddParameter(name, DataUtils.GetDbType(value), value);
 
     /// <summary>
     /// Sets the CommandText using an interpolated SQL builder.

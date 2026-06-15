@@ -21,6 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\Utils\Mathematics\NumberToStringConverterOptions.cs" Link="Mathematics\NumberToStringConverterOptions.cs" />
         <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
             <DesignTime>true</DesignTime>
             <AutoGen>true</AutoGen>

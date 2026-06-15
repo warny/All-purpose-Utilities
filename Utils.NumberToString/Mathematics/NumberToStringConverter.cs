@@ -40,46 +40,41 @@ namespace Utils.Mathematics
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NumberToStringConverter"/> class with the specified configuration.
+        /// Initializes a new instance of the <see cref="NumberToStringConverter"/> class from
+        /// a <see cref="NumberToStringConverterOptions"/> object.
         /// </summary>
-        public NumberToStringConverter(
-            int group,
-            string separator,
-                        string groupSeparator,
-                        string zero,
-                        string minus,
-                        string decimalSeparator,
-                        IReadOnlyDictionary<int, DigitListType> groups,
-                        IReadOnlyDictionary<long, string> exceptions,
-                        IEnumerable<ReplacementRule> replacements,
-                        NumberScale scale,
-                        Func<string, string> adjustFunction = null,
-                        INumberToStringLanguageSpecifics languageSpecifics = null,
-                        string languageIdentifier = null,
-                        IReadOnlyDictionary<int, string> fractions = null,
-                        BigInteger? maxNumber = null,
-                        string fractionSeparator = null)
+        /// <param name="options">All configuration parameters.</param>
+        public NumberToStringConverter(NumberToStringConverterOptions options)
         {
-            Group = group;
-            Separator = separator ?? " ";
-            GroupSeparator = groupSeparator ?? "";
-            Zero = zero.Arg().MustNotBeNull();
-            Minus = minus.Arg().MustNotBeNull();
-            DecimalSeparator = decimalSeparator ?? ",";
-            Groups = groups.Arg().MustNotBeNull().Value.ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
-            Exceptions = exceptions.Arg().MustNotBeNull().Value.ToImmutableDictionary();
-            Replacements = (replacements ?? Array.Empty<ReplacementRule>())
-                .Select(r => r ?? throw new ArgumentNullException(nameof(replacements), "Replacement entries must not be null."))
+            ArgumentNullException.ThrowIfNull(options);
+            options.Zero.Arg().MustNotBeNull();
+            options.Minus.Arg().MustNotBeNull();
+            options.Groups.Arg().MustNotBeNull();
+            options.Scale.Arg().MustNotBeNull();
+
+            Group = options.Group;
+            Separator = options.Separator ?? " ";
+            GroupSeparator = options.GroupSeparator ?? "";
+            Zero = options.Zero;
+            Minus = options.Minus;
+            DecimalSeparator = options.DecimalSeparator ?? ",";
+            Groups = options.Groups.ToImmutableDictionary(
+                kv => kv.Key,
+                kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
+            Exceptions = (options.Exceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
+            Replacements = (options.Replacements ?? Array.Empty<ReplacementRule>())
+                .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
                 .ToImmutableArray();
             _replacementLookup = Replacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
             _substringReplacements = Replacements.Where(r => r.Scope == ReplacementScope.Anywhere).ToImmutableArray();
-            Scale = scale;
-            LanguageSpecifics = languageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
-            LanguageIdentifier = languageIdentifier ?? string.Empty;
-            AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (adjustFunction ?? (s => s))(input));
-            Fractions = fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
-            MaxNumber = maxNumber;
-            FractionSeparator = string.IsNullOrWhiteSpace(fractionSeparator) ? "/" : fractionSeparator;
+            Scale = options.Scale;
+            LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
+            LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
+            _rawAdjustFunction = options.AdjustFunction;
+            AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (_rawAdjustFunction ?? (s => s))(input));
+            Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
+            MaxNumber = options.MaxNumber;
+            FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
         }
 
         /// <summary>
@@ -149,6 +144,13 @@ namespace Utils.Mathematics
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
+        private readonly Func<string, string>? _rawAdjustFunction;
+
+        /// <summary>
+        /// The raw adjust function before composition with <see cref="LanguageSpecifics"/>.
+        /// Used by <see cref="NumberToStringConverterOptions"/> for round-trip cloning.
+        /// </summary>
+        internal Func<string, string>? RawAdjustFunction => _rawAdjustFunction;
 
         /// <summary>
         /// Converts an integer to its string representation.
