@@ -61,7 +61,7 @@ public class EmbeddedParserAttributeRewriterTests
     [DataRow("$unknown.value", "not the current rule name")]
     [DataRow("$t.value", "Token label 't'")]
     [DataRow("$x.missing", "not declared by parser rule 'child'")]
-    [DataRow("$xs.missing", "referenced by list label 'xs'")]
+    [DataRow("$xs.missing", "not declared by any parser rule referenced by list label 'xs'")]
     [DataRow("$start.missing", "not declared by current parser rule 'start'")]
     [DataRow("$x", "Bare parser attribute '$x'")]
     [DataRow("$xs", "Bare parser attribute '$xs'")]
@@ -145,6 +145,28 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "used as both assignment and list label");
+    }
+
+    /// <summary>Verifies repeated list labels validate all targets without depending on alternative order.</summary>
+    [DataTestMethod]
+    [DataRow("xs+=withValue | xs+=withoutValue")]
+    [DataRow("xs+=withoutValue | xs+=withValue")]
+    public void Rewrite_RepeatedListLabelTargets_AcceptsReturnDeclaredByAnyTarget(string alternatives)
+    {
+        string grammarText = $$"""
+            grammar P;
+            start : {{alternatives}} ;
+            withValue returns [int value] : A ;
+            withoutValue : A ;
+            A : 'a' ;
+            """;
+        G4Grammar grammar = Parse(grammarText);
+        G4Rule rule = grammar.ParserRules.Single(candidate => candidate.Name == "start");
+
+        EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Values = $xs.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
+
+        Assert.AreEqual("Values = GetLabeledRuleCallReturns(context, \"xs\", \"value\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
     /// <summary>Verifies current-rule name resolution takes precedence over a same-named assignment label.</summary>

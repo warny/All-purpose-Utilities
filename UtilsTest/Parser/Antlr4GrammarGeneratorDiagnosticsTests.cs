@@ -506,7 +506,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
 
     /// <summary>Verifies invalid list-label returns, lifecycle locations, writes, and ambiguity are diagnosed.</summary>
     [DataTestMethod]
-    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "referenced by list label 'xs'")]
+    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "not declared by any parser rule referenced by list label 'xs'")]
     [DataRow("@after { $xs.value = 1; }", "xs+=child", "writes are not supported")]
     [DataRow("@init { Seen = $xs.value; }", "xs+=child", "not available in @init")]
     [DataRow(": { return $xs.value.Count > 0; }? xs+=child", null, "not supported in semantic predicates")]

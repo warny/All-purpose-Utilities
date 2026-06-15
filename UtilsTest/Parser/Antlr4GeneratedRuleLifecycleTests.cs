@@ -4223,6 +4223,43 @@ public class Antlr4GeneratedRuleLifecycleTests
     }
 
     /// <summary>
+    /// Verifies a repeated list label may target different rules and skips calls whose rule lacks the projected return.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RepeatedListLabelTargets_ProjectsDeclaredReturns()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var values = $xs.value;
+                Count = values.Count;
+                Seen = values[0] is int value ? value : -1;
+            }
+                : xs+=withoutValue xs+=withValue ;
+            withoutValue : A ;
+            withValue returns [int value]
+            @after { SetRuleReturn(context, "value", 42); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int Count;
+                public static int Seen = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "Count"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>
     /// Verifies absent and rolled-back list labels project as empty while a memoized child binds to the successful label.
     /// </summary>
     [TestMethod]
