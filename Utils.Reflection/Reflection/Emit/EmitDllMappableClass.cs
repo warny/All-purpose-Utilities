@@ -20,48 +20,46 @@ namespace Utils.Reflection.Reflection.Emit;
 /// </summary>
 public static class EmitDllMappableClass
 {
-    // Cache to store emitted types to avoid repeated generation for the same interface.
-    private static readonly Dictionary<Type, Type> emittedLibraries = new Dictionary<Type, Type>();
+    // Cache keyed by (interface type, calling convention) — the generated delegate attributes differ per convention.
+    private static readonly Dictionary<(Type, CallingConvention), Type> emittedLibraries = new();
 
     /// <summary>
     /// Emits a class that implements the specified interface and maps the interface methods to DLL functions.
+    /// Each delegate gets an <see cref="UnmanagedFunctionPointerAttribute"/> carrying the requested convention.
     /// </summary>
     /// <typeparam name="T">Interface type</typeparam>
-    /// <param name="callingConvention">The calling convention of the methods</param>
+    /// <param name="callingConvention">The calling convention of the unmanaged functions.</param>
     /// <returns>An instance of the dynamically generated class</returns>
-    public static T Emit<T>(CallingConvention callingConvention) where T : class => (T)Emit(typeof(T));
+    public static T Emit<T>(CallingConvention callingConvention) where T : class
+        => (T)Emit(typeof(T), callingConvention);
 
     /// <summary>
     /// Emits a class that implements the specified interface and maps the interface methods to DLL functions.
     /// </summary>
     /// <param name="type">Interface type</param>
+    /// <param name="callingConvention">The calling convention of the unmanaged functions.</param>
     /// <returns>An instance of the dynamically generated class</returns>
-    public static object Emit(Type type)
+    public static object Emit(Type type, CallingConvention callingConvention = CallingConvention.Winapi)
     {
         if (!type.IsInterface)
-        {
             throw new NotSupportedException($"{type.Name} is not an interface. Only interfaces are supported.");
-        }
 
-        // Check if the type was already generated and cached
-        if (!emittedLibraries.TryGetValue(type, out Type emittedType))
+        var cacheKey = (type, callingConvention);
+        if (!emittedLibraries.TryGetValue(cacheKey, out Type emittedType))
         {
-            // Generate the class name based on the interface
             string className = type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase)
-                ? type.Name.Substring(1) // Remove 'I' prefix
-                : "C" + type.Name; // Prefix with 'C' if no 'I'
+                ? type.Name.Substring(1)
+                : "C" + type.Name;
 
-            // Build the C# source code for the class
             StringBuilder csCode = new StringBuilder();
             csCode.AppendLine("namespace DllMapperClasses {");
             csCode.AppendLine("[System.Runtime.CompilerServices.CompilerGenerated]");
             csCode.AppendLine($"\tpublic class {className} : {typeof(LibraryMapper).FullName}, {type.FullName}");
             csCode.AppendLine("\t{");
 
-            // Generate methods and delegate fields for each interface method
             foreach (var method in type.GetMethods())
             {
-                string delegateClassName = csCode.WriteDelegateClass(method);
+                string delegateClassName = csCode.WriteDelegateClass(method, callingConvention);
                 string delegateFieldName = csCode.WriteDelegateField(method, delegateClassName);
                 csCode.WriteFunctionCall(method, delegateFieldName);
             }
@@ -69,13 +67,12 @@ public static class EmitDllMappableClass
             csCode.AppendLine("\t}");
             csCode.AppendLine("}");
 
-            // Compile the generated code into an assembly
             Assembly assembly = Compile(type, csCode);
             emittedType = assembly.GetTypes().FirstOrDefault(t => t.Name == className);
-            emittedLibraries.Add(type, emittedType); // Cache the generated type
+            emittedLibraries.Add(cacheKey, emittedType);
         }
 
-        return Activator.CreateInstance(emittedType); // Create an instance of the generated type
+        return Activator.CreateInstance(emittedType);
     }
 
     /// <summary>
@@ -84,9 +81,11 @@ public static class EmitDllMappableClass
     /// <param name="csCode">StringBuilder to append generated code</param>
     /// <param name="methodInfo">MethodInfo of the interface method</param>
     /// <returns>The name of the generated delegate class</returns>
-    private static string WriteDelegateClass(this StringBuilder csCode, MethodInfo methodInfo)
+    private static string WriteDelegateClass(this StringBuilder csCode, MethodInfo methodInfo, CallingConvention callingConvention)
     {
         string delegateName = methodInfo.Name + "Delegate";
+        // Emit [UnmanagedFunctionPointer] so the P/Invoke marshaller uses the correct calling convention.
+        csCode.AppendLine($"\t\t[{typeof(UnmanagedFunctionPointerAttribute).FullName}({typeof(CallingConvention).FullName}.{callingConvention})]");
         csCode.Append($"\t\tprivate delegate {methodInfo.ReturnType.FullName} {delegateName} ");
         csCode.WriteFunctionParameters(methodInfo, true);
         csCode.AppendLine(";");

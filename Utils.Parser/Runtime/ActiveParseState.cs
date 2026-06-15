@@ -77,7 +77,7 @@ internal enum ActiveParseStateStatus
 /// This data container is intentionally immutable and infrastructure-only.
 /// It prepares explicit scheduling of parser work without changing current execution semantics.
 /// The model is descriptive scheduling/runtime-local state only: it is non-replayable,
-/// non-resumable, and not rollback-aware.
+/// non-resumable, and only carries opaque state snapshots for parser attempt-boundary commit.
 /// Shared-prefix-related fields in this state are observational metadata boundaries only;
 /// they do not grant branch-selection authority, parse acceptance authority, or semantic equivalence guarantees.
 /// <para>
@@ -146,6 +146,12 @@ internal sealed record ActiveParseState
     /// without changing parse-authoritative correctness.
     /// </summary>
     public ContinuationKey? Continuation { get; init; }
+    /// <summary>
+    /// Opaque semantic state snapshot captured after a successful parser attempt-boundary.
+    /// The parser engine restores this snapshot only when the scheduler selects this completed state.
+    /// This value is not replay authority and is not used for lifecycle hooks or action buffering.
+    /// </summary>
+    public object? ExecutionStateSnapshot { get; init; }
 
     public ActiveParseStateKey ToStateKey(int minimumPrecedence) => new(
         Rule.Name,
@@ -203,7 +209,7 @@ internal sealed record ActiveParseState
     /// Projects this state into invocation-reuse identity.
     /// Invocation reuse identity is not execution-replay identity.
     /// </summary>
-    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence) => new(Rule.Name, OriginInputPosition, minimumPrecedence);
+    public RuleInvocationKey ToRuleInvocationKey(int minimumPrecedence) => new(Rule.Name, OriginInputPosition, minimumPrecedence, ParserExecutionStateKey.Stateless);
     /// <summary>
     /// Builds continuation transport metadata from the current descriptive state.
     /// Returned key is metadata-only and not executable continuation state.
@@ -227,7 +233,8 @@ internal sealed record ActiveParseState
         Status = branch.IsComplete ? ActiveParseStateStatus.Completed : ActiveParseStateStatus.Failed,
         ParentStateKey = null,
         Depth = 0,
-        Continuation = null
+        Continuation = null,
+        ExecutionStateSnapshot = null
     };
 
     public ParseBranch ToBranch() => new()

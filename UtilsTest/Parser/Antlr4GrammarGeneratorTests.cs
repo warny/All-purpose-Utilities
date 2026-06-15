@@ -52,6 +52,21 @@ public class Antlr4GrammarGeneratorTests
         Assert.AreEqual("a-z0-9", tokens[0].Value);
     }
 
+    /// <summary>
+    /// Verifies that rule-local metadata brackets are balanced so array declarations remain intact.
+    /// </summary>
+    [TestMethod]
+    public void Tokenizer_RuleLocals_PreservesArrayDeclarationBrackets()
+    {
+        var tokens = Tokenize("locals [int[] counters] :");
+
+        Assert.AreEqual(G4TokenKind.Identifier, tokens[0].Kind);
+        Assert.AreEqual("locals", tokens[0].Value);
+        Assert.AreEqual(G4TokenKind.CharClass, tokens[1].Kind);
+        Assert.AreEqual("int[] counters", tokens[1].Value);
+        Assert.AreEqual(G4TokenKind.Colon, tokens[2].Kind);
+    }
+
     [TestMethod]
     public void Tokenizer_Arrow_Recognized()
     {
@@ -222,6 +237,61 @@ public class Antlr4GrammarGeneratorTests
     }
 
     [TestMethod]
+    public void Parser_RuleInitAction_IsPreserved()
+    {
+        var grammar = Parse("""
+            grammar G;
+            rule
+                @init { Init(); }
+                : ID
+                ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        Assert.AreEqual(1, grammar.ParserRules.Count);
+        Assert.IsNotNull(grammar.ParserRules[0].InitAction);
+        Assert.AreEqual("Init();", grammar.ParserRules[0].InitAction!.Code.Trim());
+    }
+
+    [TestMethod]
+    public void Parser_RuleAfterAction_IsPreserved()
+    {
+        var grammar = Parse("""
+            grammar G;
+            rule
+                @after { After(); }
+                : ID
+                ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        Assert.AreEqual(1, grammar.ParserRules.Count);
+        Assert.IsNotNull(grammar.ParserRules[0].AfterAction);
+        Assert.AreEqual("After();", grammar.ParserRules[0].AfterAction!.Code.Trim());
+    }
+
+    [TestMethod]
+    public void Parser_RuleLifecycleActions_DoNotChangeRuleContent()
+    {
+        var grammar = Parse("""
+            grammar G;
+            rule
+                @init { Init(); }
+                @after { After(); }
+                : ID
+                ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        var content = grammar.ParserRules[0].Content;
+        Assert.AreEqual(1, content.Alternatives.Count);
+        Assert.AreEqual(1, content.Alternatives[0].Items.Count);
+        var ruleRef = content.Alternatives[0].Items[0] as G4RuleRef;
+        Assert.IsNotNull(ruleRef);
+        Assert.AreEqual("ID", ruleRef.RuleName);
+    }
+
+    [TestMethod]
     public void Emitter_StringSyntaxName_RemovesTrailingGrammarSuffix()
     {
         var src = Emit("grammar SqlQueryGrammar; query : SELECT ; SELECT : 'SELECT' ;", "", "Cls", "g.g4");
@@ -388,6 +458,221 @@ public class Antlr4GrammarGeneratorTests
         StringAssert.Contains(src, "[\"caseInsensitive\"] = \"true\"");
     }
 
+    // ── Rule-call arguments callee[...] ──────────────────────────────────────
+
+    [TestMethod]
+    public void G4Parser_RuleCallArgs_Simple_RawArgumentsPreserved()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : child[42] ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("42", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void G4Parser_RuleCallArgs_Absent_IsNull()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.IsNull(ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void Emitter_RuleCallArgs_IncludesRawArgumentsMetadata()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child[42] ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\", RawArguments: \"42\")");
+    }
+
+    [TestMethod]
+    public void Emitter_RuleCallArgs_Absent_EmitsSimpleRuleRef()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\")");
+        Assert.IsFalse(src.Contains("RawArguments:"), "Must not emit RawArguments when absent");
+    }
+
+    [TestMethod]
+    public void Emitter_RuleCallArgs_DoesNotAutoInvokeSetNextRuleParameter()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child[42] ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        // The emitter may define SetNextRuleParameter as a helper method.
+        // It must NOT auto-generate an invocation that seeds child[42] into child's parameters.
+        Assert.IsFalse(src.Contains("SetNextRuleParameter(context, \"child\""),
+            "Must not auto-call SetNextRuleParameter(context, \"child\", ...) for rule-call arguments");
+    }
+
+    // ── Rule-reference labels x=child / xs+=child ────────────────────────────
+
+    [TestMethod]
+    public void G4Parser_Label_Assignment_PreservesLabelNameAndKind()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : x=child ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("x", ruleRef.LabelName);
+        Assert.IsFalse(ruleRef.LabelIsAdditive);
+    }
+
+    [TestMethod]
+    public void G4Parser_Label_List_PreservesLabelNameAndKind()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : xs+=child ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("xs", ruleRef.LabelName);
+        Assert.IsTrue(ruleRef.LabelIsAdditive);
+    }
+
+    [TestMethod]
+    public void G4Parser_Label_Unlabeled_IsNull()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.IsNull(ruleRef.LabelName);
+        Assert.IsFalse(ruleRef.LabelIsAdditive);
+    }
+
+    [TestMethod]
+    public void G4Parser_Label_Assignment_WithRawArguments_PreservesBoth()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : x=child[42] ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("x", ruleRef.LabelName);
+        Assert.IsFalse(ruleRef.LabelIsAdditive);
+        Assert.AreEqual("42", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void G4Parser_Label_List_WithNamedRawArguments_PreservesBoth()
+    {
+        var grammar = Parse("""
+            grammar G;
+            start : xs+=child[value: 42] ;
+            child : 'a' ;
+            """);
+
+        var startRule = grammar.ParserRules.First(r => r.Name == "start");
+        var ruleRef = (G4RuleRef)startRule.Content.Alternatives[0].Items[0];
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("xs", ruleRef.LabelName);
+        Assert.IsTrue(ruleRef.LabelIsAdditive);
+        Assert.AreEqual("value: 42", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void Emitter_Label_Assignment_EmitsRuleLabelParameter()
+    {
+        var src = Emit("""
+            grammar G;
+            start : x=child ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\", Label: new RuleLabel(\"x\", \"child\", false))");
+    }
+
+    [TestMethod]
+    public void Emitter_Label_List_EmitsRuleLabelParameter()
+    {
+        var src = Emit("""
+            grammar G;
+            start : xs+=child ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\", Label: new RuleLabel(\"xs\", \"child\", true))");
+    }
+
+    [TestMethod]
+    public void Emitter_Label_Assignment_WithRawArguments_EmitsBothParameters()
+    {
+        var src = Emit("""
+            grammar G;
+            start : x=child[42] ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\", Label: new RuleLabel(\"x\", \"child\", false), RawArguments: \"42\")");
+    }
+
+    [TestMethod]
+    public void Emitter_Label_List_WithNamedRawArguments_EmitsBothParameters()
+    {
+        var src = Emit("""
+            grammar G;
+            start : xs+=child[value: 42] ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\", Label: new RuleLabel(\"xs\", \"child\", true), RawArguments: \"value: 42\")");
+    }
+
+    [TestMethod]
+    public void Emitter_Unlabeled_DoesNotEmitLabelParameter()
+    {
+        var src = Emit("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """, "NS", "Cls", "g.g4");
+
+        StringAssert.Contains(src, "new RuleRef(\"child\")");
+        Assert.IsFalse(src.Contains("Label:"), "Must not emit Label when reference is unlabeled.");
+    }
+
     // ── Generated ExpGrammar (integration) ───────────────────────────────────
 
     [TestMethod]
@@ -483,7 +768,7 @@ public class Antlr4GrammarGeneratorTests
 
         while (!string.IsNullOrEmpty(currentDirectory))
         {
-            if (File.Exists(Path.Combine(currentDirectory, "UtilsTest.csproj")))
+            if (File.Exists(Path.Combine(currentDirectory, "UtilsTest.Unit.csproj")))
                 return currentDirectory;
 
             currentDirectory = Path.GetDirectoryName(currentDirectory);

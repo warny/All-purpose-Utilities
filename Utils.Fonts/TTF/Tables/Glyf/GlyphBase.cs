@@ -86,14 +86,9 @@ public class GlyphBase
         {
             glyf = new GlyphCompound();
         }
-        else if (numContours <= 0)
-        {
-            var message = $"Unknown glyf type: {numContours}";
-            throw new ArgumentException(message);
-        }
         else
         {
-            return null;
+            throw new ArgumentException($"Unknown glyf type: {numContours}");
         }
         glyf.GlyfTable = glyfTable;
         glyf.NumContours = numContours;

@@ -5,7 +5,7 @@ namespace Utils.VirtualMachine
     /// <summary>
     /// Identifies a method as a virtual machine instruction and stores its metadata.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class InstructionAttribute : Attribute
     {
         /// <summary>

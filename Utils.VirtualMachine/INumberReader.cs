@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 
 namespace Utils.VirtualMachine
 {
@@ -86,12 +87,8 @@ namespace Utils.VirtualMachine
         /// <returns>An <see cref="INumberReader"/> that reads values using the desired byte order.</returns>
         public static INumberReader GetReader(bool littleEndian)
         {
-            if (!littleEndian ^ BitConverter.IsLittleEndian)
-            {
-                return NormalReader;
-            }
-
-            return InvertedReader;
+            // NormalReader when requested endianness matches the system's endianness (no byte-swap needed).
+            return littleEndian == BitConverter.IsLittleEndian ? NormalReader : InvertedReader;
         }
     }
 
@@ -173,90 +170,77 @@ namespace Utils.VirtualMachine
 
     /// <summary>
     /// Reader implementation that swaps endianness when reading values.
+    /// Uses <see cref="BinaryPrimitives.ReverseEndianness"/> to avoid heap allocation.
     /// </summary>
     internal class InvertedReader : INumberReader
     {
-        /// <summary>
-        /// Copies bytes from the context into <paramref name="target"/> in reversed order.
-        /// </summary>
-        /// <param name="context">The execution context containing the instruction stream.</param>
-        /// <param name="target">The buffer receiving the bytes in reversed order.</param>
-        private static void ReadDatas(Context context, byte[] target)
-        {
-            for (int i = target.Length - 1; i >= 0; i--)
-            {
-                target[i] = context.Data[context.InstructionPointer++];
-            }
-        }
-
         /// <inheritdoc />
-        public byte ReadByte(Context context)
-        {
-            return context.Data[context.InstructionPointer++];
-        }
+        public byte ReadByte(Context context) => context.Data[context.InstructionPointer++];
 
         /// <inheritdoc />
         public short ReadInt16(Context context)
         {
-            var temp = new byte[sizeof(short)];
-            ReadDatas(context, temp);
-            return BitConverter.ToInt16(temp, 0);
+            var result = BitConverter.ToInt16(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(short);
+            return BinaryPrimitives.ReverseEndianness(result);
         }
 
         /// <inheritdoc />
         public int ReadInt32(Context context)
         {
-            var temp = new byte[sizeof(int)];
-            ReadDatas(context, temp);
-            return BitConverter.ToInt32(temp, 0);
+            var result = BitConverter.ToInt32(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(int);
+            return BinaryPrimitives.ReverseEndianness(result);
         }
 
         /// <inheritdoc />
         public long ReadInt64(Context context)
         {
-            var temp = new byte[sizeof(long)];
-            ReadDatas(context, temp);
-            return BitConverter.ToInt64(temp, 0);
+            var result = BitConverter.ToInt64(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(long);
+            return BinaryPrimitives.ReverseEndianness(result);
         }
 
         /// <inheritdoc />
         public ushort ReadUInt16(Context context)
         {
-            var temp = new byte[sizeof(ushort)];
-            ReadDatas(context, temp);
-            return BitConverter.ToUInt16(temp, 0);
+            var result = BitConverter.ToUInt16(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(ushort);
+            return BinaryPrimitives.ReverseEndianness(result);
         }
 
         /// <inheritdoc />
         public uint ReadUInt32(Context context)
         {
-            var temp = new byte[sizeof(uint)];
-            ReadDatas(context, temp);
-            return BitConverter.ToUInt32(temp, 0);
+            var result = BitConverter.ToUInt32(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(uint);
+            return BinaryPrimitives.ReverseEndianness(result);
         }
 
         /// <inheritdoc />
         public ulong ReadUInt64(Context context)
         {
-            var temp = new byte[sizeof(ulong)];
-            ReadDatas(context, temp);
-            return BitConverter.ToUInt64(temp, 0);
+            var result = BitConverter.ToUInt64(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(ulong);
+            return BinaryPrimitives.ReverseEndianness(result);
         }
 
         /// <inheritdoc />
         public float ReadSingle(Context context)
         {
-            var temp = new byte[sizeof(float)];
-            ReadDatas(context, temp);
-            return BitConverter.ToSingle(temp, 0);
+            // Reverse the 4 bytes via the uint representation.
+            var bits = BitConverter.ToUInt32(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(float);
+            return BitConverter.UInt32BitsToSingle(BinaryPrimitives.ReverseEndianness(bits));
         }
 
         /// <inheritdoc />
         public double ReadDouble(Context context)
         {
-            var temp = new byte[sizeof(double)];
-            ReadDatas(context, temp);
-            return BitConverter.ToDouble(temp, 0);
+            // Reverse the 8 bytes via the ulong representation.
+            var bits = BitConverter.ToUInt64(context.Data, context.InstructionPointer);
+            context.InstructionPointer += sizeof(double);
+            return BitConverter.UInt64BitsToDouble(BinaryPrimitives.ReverseEndianness(bits));
         }
     }
 }

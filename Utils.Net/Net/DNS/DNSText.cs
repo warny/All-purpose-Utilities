@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,22 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
     private static readonly Regex FormatRegex = CreateFormatRegex();
     private static readonly Regex TokenRegex = CreateTokenRegex();
 
+    // Caches per-type member maps to avoid repeated GetMembers() reflection calls.
+    private static readonly ConcurrentDictionary<Type, MemberInfo[]> _memberCache = new();
+    private static readonly ConcurrentDictionary<Type, Dictionary<string, MemberInfo>> _memberDictCache = new();
+
+    private static MemberInfo[] GetAnnotatedMembers(Type type) =>
+        _memberCache.GetOrAdd(type, static t =>
+            t.GetMembers()
+             .Where(m => m.GetCustomAttribute<DNSFieldAttribute>() != null)
+             .ToArray());
+
+    private static Dictionary<string, MemberInfo> GetAllMembersDict(Type type) =>
+        _memberDictCache.GetOrAdd(type, static t =>
+            t.GetMembers()
+             .Where(m => m is PropertyInfo || m is FieldInfo)
+             .ToDictionary(m => m.Name));
+
     /// <summary>
     /// Gets a default instance of <see cref="DNSText"/> for convenience.
     /// </summary>
@@ -38,26 +55,18 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
         string rdataText = "";
         if (attr is null)
         {
-            var fields = rdata.GetType().GetMembers()
-                .Where(m => m.GetCustomAttribute<DNSFieldAttribute>() != null)
-                .Select(m =>
+            var rdataText2 = GetAnnotatedMembers(rdata.GetType())
+                .Select(m => m switch
                 {
-                    var member = rdata.GetType().GetMember(m.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault();
-                    return member switch
-                    {
-                        PropertyInfo pi => FormatValue(pi.GetValue(rdata)),
-                        FieldInfo fi => FormatValue(fi.GetValue(rdata)),
-                        _ => null
-                    };
+                    PropertyInfo pi => FormatValue(pi.GetValue(rdata)),
+                    FieldInfo fi => FormatValue(fi.GetValue(rdata)),
+                    _ => null
                 });
-
-            rdataText = string.Join(' ', fields);
+            rdataText = string.Join(' ', rdataText2);
         }
         else
         {
-            var fields = rdata.GetType().GetMembers()
-                .Where(m => m is PropertyInfo || m is FieldInfo)
-                .ToDictionary(m => m.Name);
+            var fields = GetAllMembersDict(rdata.GetType());
             rdataText = FormatRegex.Replace(attr.Format, m =>
                 fields[m.Groups["name"].Value] switch
                 {
@@ -103,7 +112,7 @@ public partial class DNSText : IDNSWriter<string>, IDNSReader<string>, IDNSReade
         var attr = rdataType.GetCustomAttribute<DNSTextRecordAttribute>();
         string[] fieldNames = attr != null
             ? FormatRegex.Matches(attr.Format).Select(m => m.Groups["name"].Value).ToArray()
-            : rdataType.GetMembers().Where(m => m.GetCustomAttribute<DNSFieldAttribute>() != null).Select(m => m.Name).ToArray();
+            : GetAnnotatedMembers(rdataType).Select(m => m.Name).ToArray();
         for (int i = 0; i < fieldNames.Length && i < rdataTokens.Length; i++)
         {
             SetValue(rdata, fieldNames[i], rdataTokens[i]);

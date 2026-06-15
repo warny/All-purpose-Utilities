@@ -31,9 +31,9 @@ namespace Utils.Randomization
         /// <param name="length">Length of the string to create.</param>
         /// <param name="characters">Optional alphabet to pick characters from.</param>
         /// <returns>A random string composed of the requested number of characters.</returns>
-        public static string RandomString(this Random r, int length, char[] characters) 
+        public static string RandomString(this Random r, int length, char[] characters)
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(nameof(characters));
+            ArgumentNullException.ThrowIfNull(characters);
             return RandomString(r, length, length, characters.AsSpan());
         }
 
@@ -58,7 +58,7 @@ namespace Utils.Randomization
         /// <returns>A random string composed of characters sampled from <paramref name="characters"/>.</returns>
         public static string RandomString(this Random r, int minLength, int maxLength, char[] characters)
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(nameof(characters));
+            ArgumentNullException.ThrowIfNull(characters);
             return RandomString(r, minLength, maxLength, characters.AsSpan());
         }
 
@@ -72,13 +72,13 @@ namespace Utils.Randomization
         /// <returns>A random string composed of characters sampled from <paramref name="characters"/>.</returns>
         public static string RandomString(this Random r, int minLength, int maxLength, ReadOnlySpan<char> characters)
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(nameof(r));
+            ArgumentNullException.ThrowIfNull(r);
             var length = r.Next(minLength, maxLength);
 
             char[] result = new char[length];
             for (int i = 0; i < length; i++)
             {
-                result[i] = characters[r.Next(0, characters.Length - 1)];
+                result[i] = characters[r.Next(characters.Length)];
             }
             return new string(result);
         }

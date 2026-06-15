@@ -25,6 +25,7 @@ public static class RuleResolver
     /// <see cref="ParserDefinition.AllRules"/> dictionary.
     /// </summary>
     /// <param name="definition">The grammar definition to resolve.</param>
+    /// <param name="diagnostics">Optional diagnostics sink populated during validation.</param>
     /// <returns>The same definition with <see cref="ParserDefinition.AllRules"/> populated.</returns>
     /// <exception cref="GrammarValidationException">
     /// Thrown when duplicate rule names are detected, a rule references an unknown rule,
@@ -37,57 +38,46 @@ public static class RuleResolver
 
         ValidateGrammarTypeConstraints(definition, diagnostics);
 
-        // 1. Build AllRules, assigning known kinds at registration time.
-        var allRules = new Dictionary<string, Rule>();
+        // 1. Build mutable internal resolution builders, assigning known kinds at registration time.
+        var ruleBuilders = new Dictionary<string, RuleResolutionBuilder>(StringComparer.Ordinal);
 
         foreach (var mode in definition.Modes)
         {
             foreach (var rule in mode.Rules)
             {
-                if (!allRules.TryAdd(rule.Name, rule))
-                {
-                    diagnostics?.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
-                    throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
-                }
-                rule.Kind = RuleKind.Lexer;
+                var builder = RegisterRuleBuilder(ruleBuilders, rule, diagnostics);
+                builder.ResolveAs(RuleKind.Lexer);
             }
         }
 
         foreach (var rule in definition.ParserRules)
         {
-            if (!allRules.TryAdd(rule.Name, rule))
-            {
-                diagnostics?.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
-                throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
-            }
-            rule.Kind = RuleKind.Parser;
+            var builder = RegisterRuleBuilder(ruleBuilders, rule, diagnostics);
+            builder.ResolveAs(RuleKind.Parser);
         }
 
-        // Update AllRules on the definition.
-        definition = definition with { AllRules = allRules };
-
         // 2. Verify that all RuleRefs point to existing rules.
-        foreach (var rule in allRules.Values)
+        foreach (var builder in ruleBuilders.Values)
         {
-            ValidateRuleRefs(rule.Content, allRules, rule.Name, diagnostics);
+            ValidateRuleRefs(builder.Source.Content, ruleBuilders, builder.Name, diagnostics);
         }
 
         // 3. Infer RuleKind for any rules still marked Unresolved.
         //    Iterative resolution handles circular dependencies.
         bool changed = true;
-        int maxIterations = allRules.Count + 1;
+        int maxIterations = ruleBuilders.Count + 1;
         while (changed && maxIterations-- > 0)
         {
             changed = false;
-            foreach (var rule in allRules.Values)
+            foreach (var builder in ruleBuilders.Values)
             {
-                if (rule.Kind != RuleKind.Unresolved)
+                if (builder.Kind != RuleKind.Unresolved)
                     continue;
 
-                var inferred = InferKind(rule.Content, allRules);
+                var inferred = InferKindFromBuilders(builder.Source.Content, ruleBuilders);
                 if (inferred != RuleKind.Unresolved)
                 {
-                    rule.Kind = inferred;
+                    builder.ResolveAs(inferred);
                     changed = true;
                 }
             }
@@ -95,13 +85,16 @@ public static class RuleResolver
 
         // Apply the ANTLR4 naming convention to any remaining Unresolved rules:
         // upper-case start → lexer; lower-case start → parser.
-        foreach (var rule in allRules.Values)
+        foreach (var builder in ruleBuilders.Values)
         {
-            if (rule.Kind == RuleKind.Unresolved)
+            if (builder.Kind == RuleKind.Unresolved)
             {
-                rule.Kind = char.IsUpper(rule.Name[0]) ? RuleKind.Lexer : RuleKind.Parser;
+                builder.ResolveAs(char.IsUpper(builder.Name[0]) ? RuleKind.Lexer : RuleKind.Parser);
             }
         }
+
+        definition = BuildFinalDefinition(definition, ruleBuilders);
+        var allRules = definition.AllRules;
 
         // 4. Validate that lexer rules do not reference parser content.
         foreach (var rule in allRules.Values)
@@ -135,6 +128,65 @@ public static class RuleResolver
         return definition;
     }
 
+    /// <summary>
+    /// Registers a rule in the resolution builder map.
+    /// </summary>
+    /// <param name="ruleBuilders">Mutable builder lookup keyed by rule name.</param>
+    /// <param name="rule">Rule to register.</param>
+    /// <param name="diagnostics">Optional diagnostics sink.</param>
+    /// <returns>The builder created for <paramref name="rule"/>.</returns>
+    /// <exception cref="GrammarValidationException">Thrown when a duplicate rule name is detected.</exception>
+    private static RuleResolutionBuilder RegisterRuleBuilder(
+        IDictionary<string, RuleResolutionBuilder> ruleBuilders,
+        Rule rule,
+        DiagnosticBag? diagnostics)
+    {
+        var builder = new RuleResolutionBuilder(rule);
+        if (!ruleBuilders.TryAdd(rule.Name, builder))
+        {
+            diagnostics?.Add(ParserDiagnostics.InternalInconsistency, $"Duplicate rule name: {rule.Name}");
+            throw new GrammarValidationException($"Duplicate rule name: {rule.Name}");
+        }
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Builds a parser definition whose projections all point to finalized immutable rules.
+    /// </summary>
+    /// <param name="definition">Definition that provided the source rule projections.</param>
+    /// <param name="ruleBuilders">Resolution builders containing final rule kinds.</param>
+    /// <returns>A definition with finalized modes, parser rules, root rule, and all-rules lookup.</returns>
+    private static ParserDefinition BuildFinalDefinition(
+        ParserDefinition definition,
+        IReadOnlyDictionary<string, RuleResolutionBuilder> ruleBuilders)
+    {
+        var allRules = ruleBuilders.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value.Build(),
+            StringComparer.Ordinal);
+
+        var updatedModes = definition.Modes
+            .Select(mode => mode with
+            {
+                Rules = mode.Rules.Select(rule => allRules[rule.Name]).ToList()
+            })
+            .ToList();
+
+        var updatedParserRules = definition.ParserRules
+            .Select(rule => allRules[rule.Name])
+            .ToList();
+
+        return definition with
+        {
+            Modes = updatedModes,
+            ParserRules = updatedParserRules,
+            RootRule = definition.RootRule is null ? null : allRules[definition.RootRule.Name],
+            AllRules = allRules
+        };
+    }
+
+    /// <summary>Removes structurally identical duplicate alternatives from parser rules, keeping the lowest-priority copy and emitting a diagnostic for each removal.</summary>
     private static ParserDefinition NormalizeAlternatives(ParserDefinition definition, DiagnosticBag? diagnostics)
     {
         var updatedParserRules = new List<Rule>(definition.ParserRules.Count);
@@ -173,7 +225,6 @@ public static class RuleResolver
             {
                 Content = new Alternation(normalized.OrderBy(a => a.Priority).ToList())
             };
-            updatedRule.Kind = rule.Kind;
             updatedParserRules.Add(updatedRule);
             changedAny = true;
         }
@@ -197,11 +248,13 @@ public static class RuleResolver
         };
     }
 
+    /// <summary>Returns a stable string fingerprint for an alternative including associativity, label, and structural content.</summary>
     private static string BuildAlternativeFingerprint(Alternative alternative)
     {
         return $"{alternative.Assoc}|{alternative.Label}|{BuildContentFingerprint(alternative.Content)}";
     }
 
+    /// <summary>Returns a stable recursive string fingerprint for a rule content node, used to detect structurally identical alternatives.</summary>
     private static string BuildContentFingerprint(RuleContent content)
     {
         return content switch
@@ -327,9 +380,10 @@ public static class RuleResolver
     /// <param name="content">Grammar element to inspect.</param>
     /// <param name="rules">All known rules, keyed by name.</param>
     /// <param name="contextRuleName">Owning rule name, used in exception messages.</param>
-    private static void ValidateRuleRefs(
+    /// <param name="diagnostics">Optional diagnostics sink populated when a reference is missing.</param>
+    private static void ValidateRuleRefs<TRuleState>(
         RuleContent content,
-        IDictionary<string, Rule> rules,
+        IReadOnlyDictionary<string, TRuleState> rules,
         string contextRuleName,
         DiagnosticBag? diagnostics)
     {
@@ -370,9 +424,10 @@ public static class RuleResolver
     /// <param name="content">Grammar element to inspect.</param>
     /// <param name="rules">All known rules, keyed by name.</param>
     /// <param name="contextRuleName">Owning rule name, used in exception messages.</param>
+    /// <param name="diagnostics">Optional diagnostics sink populated when a label target is missing.</param>
     private static void ValidateLabels(
         RuleContent content,
-        IDictionary<string, Rule> rules,
+        IReadOnlyDictionary<string, Rule> rules,
         string contextRuleName,
         DiagnosticBag? diagnostics)
     {
@@ -414,7 +469,7 @@ public static class RuleResolver
     /// </summary>
     /// <param name="rule">Rule to validate.</param>
     /// <param name="rules">All known rules, used to resolve references.</param>
-    private static void ValidateKindConsistency(Rule rule, IDictionary<string, Rule> rules)
+    private static void ValidateKindConsistency(Rule rule, IReadOnlyDictionary<string, Rule> rules)
     {
         // Only lexer rules are checked; parser rules may legitimately mix references.
         if (rule.Kind != RuleKind.Lexer)
@@ -470,6 +525,33 @@ public static class RuleResolver
     }
 
     /// <summary>
+    /// Infers the <see cref="RuleKind"/> of a grammar element using mutable resolution builders.
+    /// </summary>
+    /// <param name="content">Grammar element to analyse.</param>
+    /// <param name="rules">All known rule builders, used to look up reference kinds.</param>
+    /// <returns>The inferred kind, or <see cref="RuleKind.Unresolved"/>.</returns>
+    /// <exception cref="GrammarValidationException">Thrown when a rule element mixes lexer and parser content.</exception>
+    private static RuleKind InferKindFromBuilders(RuleContent content, IReadOnlyDictionary<string, RuleResolutionBuilder> rules)
+        => content switch
+        {
+            TokenizerContent          => RuleKind.Lexer,
+            ModeSwitch                => RuleKind.Lexer,
+            LexerCommand              => RuleKind.Lexer,
+            RuleRef r                 => rules.TryGetValue(r.RuleName, out var rule)
+                                         ? rule.Kind : RuleKind.Unresolved,
+            Sequence s                => ResolveUniform(s.Items.Select(i => InferKindFromBuilders(i, rules))),
+            Alternation a             => ResolveUniform(a.Alternatives.Select(alt => InferKindFromBuilders(alt.Content, rules))),
+            Quantifier q              => InferKindFromBuilders(q.Inner, rules),
+            Negation n                => InferKindFromBuilders(n.Inner, rules),
+            Alternative alt           => InferKindFromBuilders(alt.Content, rules),
+            ValidatingPredicate       => RuleKind.Parser,
+            PrecedencePredicate       => RuleKind.Parser,
+            GatingPredicate           => RuleKind.Parser,
+            EmbeddedAction            => RuleKind.Unresolved, // Neutral; inherits from context.
+            _ => throw new GrammarValidationException($"Unknown RuleContent: {content.GetType()}")
+        };
+
+    /// <summary>
     /// Infers the <see cref="RuleKind"/> of a grammar element based on the kinds of
     /// its constituent parts.
     /// Returns <see cref="RuleKind.Unresolved"/> when not enough information is
@@ -481,7 +563,7 @@ public static class RuleResolver
     /// <exception cref="GrammarValidationException">
     /// Thrown when a rule element mixes lexer and parser content.
     /// </exception>
-    internal static RuleKind InferKind(RuleContent content, IDictionary<string, Rule> rules)
+    internal static RuleKind InferKind(RuleContent content, IReadOnlyDictionary<string, Rule> rules)
         => content switch
         {
             TokenizerContent          => RuleKind.Lexer,

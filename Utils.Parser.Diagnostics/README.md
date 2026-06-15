@@ -10,6 +10,8 @@ Use this package when you need a common set of diagnostic primitives across pars
 - diagnostic severities,
 - diagnostic aggregation utilities.
 
+Human-readable source-location contracts such as `SourceCodeLocation` and `SourceCodeRange` are provided by `omy.Utils.Parser.Source` so non-diagnostic surfaces can share them without depending on diagnostics. Runtime offset contracts such as `SourceLocation` and `SourceSpan` remain separate in that package for token and parser operations.
+
 ## Typical usage
 
 The package is typically consumed transitively by parser packages. Reference it directly when building custom tooling that needs to exchange diagnostics with `omy.Utils.Parser` or `omy.Utils.Parser.Generators`.
@@ -45,10 +47,10 @@ All named descriptors are defined in the `ParserDiagnostics` static class and ac
 | UP1002 | `TokensBlockIgnored` | A `tokens { ... }` block is recognized but not mapped into the model |
 | UP1003 | `ChannelsBlockIgnored` | A `channels { ... }` block is recognized but not mapped into the model |
 | UP1004 | `ActionIgnored` | A top-level `@...` action block is recognized but not executed |
-| UP1005 | `InlineActionStoredNotExecuted` | An inline `@init` / `@after` action is stored but not executed at runtime |
+| UP1005 | `InlineActionStoredNotExecuted` | An inline parser action is stored but not executed at runtime |
 | UP1006 | `SemanticPredicateNotEnforced` | A `{...}?` predicate is recognized but not evaluated; it always succeeds |
-| UP1007 | `ReturnsPartiallyApplied` | A `returns [...]` clause is parsed but stored only as raw text |
-| UP1008 | `RuleLocalsIgnored` | A rule `locals [...]` clause is recognized but ignored by the current runtime model |
+| UP1007 | `RuleReturnsIgnored` | A `returns [...]` clause is parsed but stored only as raw text (`ReturnsPartiallyApplied` is a compatibility alias) |
+| UP1008 | `RuleLocalsIgnored` | A rule `locals [...]` clause is not given typed or implicit runtime semantics; generated C# opt-in lifecycle execution only allocates untyped `null` frame entries |
 | UP1023 | `RuleExceptionMetadataIgnored` | Rule `throws` / `catch` / `finally` metadata is recognized but ignored by the current runtime model |
 | UP1009 | `RuntimeGeneratorMismatch` | A feature behaves differently between the runtime and the source generator |
 | UP1010 | `DirectLeftRecursionDetected` | Direct left recursion was detected and restructured during rule resolution |
@@ -68,7 +70,7 @@ All named descriptors are defined in the `ParserDiagnostics` static class and ac
 | Code | Name | Trigger |
 |---|---|---|
 | UP5001 | `BestEffortRecoveryUsed` | Best-effort recovery was applied during parsing |
-| UP5002 | `ExpectedTokenMissing` | An expected token was absent |
+| UP5002 | `ExpectedTokenMissing` | Reserved for missing-token recovery diagnostics when an expected token is absent |
 | UP5003 | `FallbackStrategyUsed` | A fallback parsing strategy was activated |
 | UP5004 | `TrailingTokensAfterParse` | Unconsumed tokens remain after the root rule matched; `Parse()` returns an `ErrorNode` |
 | UP5005 | `AmbiguousConstructResolvedHeuristically` | An ambiguous construct was resolved by heuristic rather than by grammar priority |

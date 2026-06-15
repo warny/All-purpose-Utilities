@@ -1,0 +1,54 @@
+using System;
+using Utils.Parser.Model;
+
+namespace Utils.Parser.Antlr4.Common;
+
+/// <summary>
+/// Maps runtime-side ANTLR4 conversion metadata to the shared prequel model.
+/// </summary>
+internal static class Antlr4RuntimePrequelMapper
+{
+    /// <summary>
+    /// Converts runtime parser definition prequel metadata into the shared model.
+    /// </summary>
+    /// <param name="definition">Runtime parser definition.</param>
+    /// <returns>Shared ANTLR4 prequel metadata model.</returns>
+    public static Antlr4PrequelModel Map(ParserDefinition definition)
+    {
+        Antlr4OptionSet? options = definition.Options is null
+            ? null
+            : new Antlr4OptionSet(definition.Options.Values);
+
+        var imports = definition.Imports
+            .Select(static import => new Antlr4ImportInfo(import.GrammarName, import.Alias))
+            .ToList();
+
+        var actions = definition.Actions
+            .Select(static action => new Antlr4ActionInfo(action.Name, action.RawCode, action.Target))
+            .ToList();
+
+        return new Antlr4PrequelModel(
+            options,
+            imports,
+            actions,
+            Antlr4NameSet.Create(definition.DeclaredTokens),
+            Antlr4NameSet.Create(definition.DeclaredChannels),
+            HasTokensBlock: definition.DeclaredTokens.Count > 0,
+            HasChannelsBlock: HasNonDefaultChannel(definition.DeclaredChannels));
+    }
+
+    /// <summary>Returns <see langword="true"/> when <paramref name="channels"/> contains any channel other than <c>DEFAULT_CHANNEL</c> or <c>HIDDEN</c>.</summary>
+    private static bool HasNonDefaultChannel(IReadOnlySet<string> channels)
+    {
+        foreach (var channel in channels)
+        {
+            if (!string.Equals(channel, "DEFAULT_CHANNEL", StringComparison.Ordinal)
+                && !string.Equals(channel, "HIDDEN", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

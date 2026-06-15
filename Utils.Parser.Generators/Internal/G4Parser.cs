@@ -56,17 +56,39 @@ internal sealed class G4Parser
             // options { ... }
             if (PeekValue("options")) { ParseOptionsBlock(grammar.Options); continue; }
 
-            // tokens { ... } — skip
-            if (PeekValue("tokens")) { _diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored); SkipBlock(); continue; }
+            // tokens { ... }
+            if (PeekValue("tokens"))
+            {
+                _diagnostics?.Add(ParserDiagnostics.TokensBlockIgnored);
+                grammar.HasTokensBlock = true;
+                ParseNameListBlock(grammar.DeclaredTokens);
+                continue;
+            }
 
-            // @ action — skip
-            if (Peek().Kind == G4TokenKind.At) { _diagnostics?.Add(ParserDiagnostics.ActionIgnored, "@action"); SkipAction(); continue; }
+            // @ action
+            if (Peek().Kind == G4TokenKind.At)
+            {
+                _diagnostics?.Add(ParserDiagnostics.ActionIgnored, "@action");
+                ParseGrammarAction(grammar.Actions);
+                continue;
+            }
 
-            // import — skip line
-            if (PeekValue("import")) { _diagnostics?.Add(ParserDiagnostics.ImportParsedButNotResolved, "import"); while (!AtEof() && Peek().Kind != G4TokenKind.Semi) Consume(); TryConsume(G4TokenKind.Semi); continue; }
+            // import
+            if (PeekValue("import"))
+            {
+                _diagnostics?.Add(ParserDiagnostics.ImportParsedButNotResolved, "import");
+                ParseImportStatement(grammar.Imports);
+                continue;
+            }
 
-            // channels { ... } — skip
-            if (PeekValue("channels")) { _diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored); SkipBlock(); continue; }
+            // channels { ... }
+            if (PeekValue("channels"))
+            {
+                _diagnostics?.Add(ParserDiagnostics.ChannelsBlockIgnored);
+                grammar.HasChannelsBlock = true;
+                ParseNameListBlock(grammar.DeclaredChannels);
+                continue;
+            }
 
             // mode Name; — starts a new lexer mode
             if (PeekValue("mode"))
@@ -120,8 +142,16 @@ internal sealed class G4Parser
         rule.Name = ExpectIdentifier();
 
         // Skip optional rule options/returns/throws/locals before ':'
+        // while preserving rule lifecycle metadata (@init / @after), raw parameter, locals, and returns metadata.
         while (!AtEof() && Peek().Kind != G4TokenKind.Colon)
+        {
+            if (TryParseRuleLifecycleAction(rule) || TryParseRuleParameters(rule) || TryParseRuleLocals(rule) || TryParseRuleReturns(rule))
+            {
+                continue;
+            }
+
             Consume();
+        }
 
         Expect(G4TokenKind.Colon);
 
@@ -130,6 +160,132 @@ internal sealed class G4Parser
         Expect(G4TokenKind.Semi);
 
         return rule;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule-parameter metadata clause (<c>[...]</c> directly after the rule name, before
+    /// <c>returns</c>, <c>locals</c>, or lifecycle actions) at the current token position.
+    /// Rule parameters are captured as raw text only; no argument evaluation or typed binding is performed.
+    /// </summary>
+    /// <param name="rule">The rule receiving raw parameter metadata.</param>
+    /// <returns><c>true</c> when a parameter clause is recognized and consumed; otherwise, <c>false</c>.</returns>
+    private bool TryParseRuleParameters(G4Rule rule)
+    {
+        if (Peek().Kind != G4TokenKind.CharClass || rule.Parameters != null)
+        {
+            return false;
+        }
+
+        string rawParameters = Consume().Value;
+        if (rawParameters.Length > 0)
+        {
+            rule.Parameters = rawParameters;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule-return metadata clause (<c>returns [...]</c>) at the current token position.
+    /// </summary>
+    /// <param name="rule">The rule receiving raw return metadata.</param>
+    /// <returns><c>true</c> when a returns clause is recognized and consumed; otherwise, <c>false</c>.</returns>
+    private bool TryParseRuleReturns(G4Rule rule)
+    {
+        if (!PeekValue("returns")
+            || _pos + 1 >= _tokens.Count
+            || _tokens[_pos + 1].Kind != G4TokenKind.CharClass)
+        {
+            return false;
+        }
+
+        Consume(); // returns
+        string rawReturns = Consume().Value;
+        if (rawReturns.Length > 0)
+        {
+            rule.Returns = rawReturns;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule-local metadata clause (<c>locals [...]</c>) at the current token position.
+    /// </summary>
+    /// <param name="rule">The rule receiving raw local metadata.</param>
+    /// <returns><c>true</c> when a locals clause is recognized and consumed; otherwise, <c>false</c>.</returns>
+    private bool TryParseRuleLocals(G4Rule rule)
+    {
+        if (!PeekValue("locals")
+            || _pos + 1 >= _tokens.Count
+            || _tokens[_pos + 1].Kind != G4TokenKind.CharClass)
+        {
+            return false;
+        }
+
+        Consume(); // locals
+        string rawLocals = Consume().Value;
+        if (rawLocals.Length > 0)
+        {
+            rule.Locals.Add(rawLocals);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Attempts to parse a rule lifecycle prequel action (<c>@init { ... }</c> or <c>@after { ... }</c>)
+    /// at the current token position and stores it on the provided <see cref="G4Rule"/>.
+    /// </summary>
+    /// <param name="rule">The rule receiving parsed lifecycle metadata.</param>
+    /// <returns>
+    /// <c>true</c> when a supported lifecycle action is recognized and consumed; otherwise, <c>false</c>.
+    /// </returns>
+    private bool TryParseRuleLifecycleAction(G4Rule rule)
+    {
+        if (Peek().Kind != G4TokenKind.At)
+        {
+            return false;
+        }
+
+        if (_pos + 2 >= _tokens.Count
+            || _tokens[_pos + 1].Kind != G4TokenKind.Identifier
+            || _tokens[_pos + 2].Kind != G4TokenKind.BraceBlock)
+        {
+            return false;
+        }
+
+        int actionLine = Peek().Line;
+        string actionName = _tokens[_pos + 1].Value;
+        string actionCode = _tokens[_pos + 2].Value;
+
+        if (!string.Equals(actionName, "init", StringComparison.Ordinal)
+            && !string.Equals(actionName, "after", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        Consume(); // @
+        Consume(); // init | after
+        Consume(); // { ... }
+
+        var action = new G4EmbeddedAction
+        {
+            Code = actionCode,
+            IsPredicate = false,
+            Line = actionLine,
+        };
+
+        if (string.Equals(actionName, "init", StringComparison.Ordinal))
+        {
+            rule.InitAction = action;
+        }
+        else
+        {
+            rule.AfterAction = action;
+        }
+
+        return true;
     }
 
     // ── Alternation ──────────────────────────────────────────────────
@@ -179,12 +335,13 @@ internal sealed class G4Parser
         // Embedded action or predicate: { ... } or { ... }?
         if (Peek().Kind == G4TokenKind.BraceBlock)
         {
-            var code = Consume().Value;
+            var codeToken = Consume();
+            var code = codeToken.Value;
             bool isPred = Peek().Kind == G4TokenKind.QMark;
             if (isPred) Consume();
             if (isPred) _diagnostics?.Add(ParserDiagnostics.SemanticPredicateNotEnforced);
             else _diagnostics?.Add(ParserDiagnostics.InlineActionStoredNotExecuted);
-            return new G4EmbeddedAction { Code = code, IsPredicate = isPred };
+            return new G4EmbeddedAction { Code = code, IsPredicate = isPred, Line = codeToken.Line };
         }
 
         // Lexer command: ->
@@ -192,6 +349,8 @@ internal sealed class G4Parser
         {
             return ParseLexerCommand();
         }
+
+        var (labelName, labelIsAdditive) = TryConsumeRuleLabelPrefix();
 
         // Negation: ~
         G4Content atom;
@@ -206,6 +365,13 @@ internal sealed class G4Parser
         {
             atom = ParseAtom()!;
             if (atom == null) return null;
+        }
+
+        // Apply label metadata when the labeled element is a direct rule reference.
+        if (labelName != null && atom is G4RuleRef labeledRef)
+        {
+            labeledRef.LabelName = labelName;
+            labeledRef.LabelIsAdditive = labelIsAdditive;
         }
 
         // Optional quantifier: * + ? *? +? ??
@@ -266,7 +432,10 @@ internal sealed class G4Parser
         if (tok.Kind == G4TokenKind.Identifier && !IsKeyword(tok.Value))
         {
             Consume();
-            return new G4RuleRef { RuleName = tok.Value };
+            string? rawArguments = null;
+            if (Peek().Kind == G4TokenKind.CharClass)
+                rawArguments = Consume().Value;
+            return new G4RuleRef { RuleName = tok.Value, RawArguments = rawArguments };
         }
 
         return null;
@@ -288,6 +457,35 @@ internal sealed class G4Parser
         }
 
         return atom;
+    }
+
+    /// <summary>
+    /// Consumes an optional rule label prefix (<c>id=</c> or <c>ids+=</c>) and returns the label name
+    /// and whether it is additive, or <c>(null, false)</c> when no label prefix is present.
+    /// </summary>
+    private (string? LabelName, bool IsAdditive) TryConsumeRuleLabelPrefix()
+    {
+        if (Peek().Kind != G4TokenKind.Identifier)
+            return (null, false);
+
+        if (_pos + 1 < _tokens.Count && _tokens[_pos + 1].Kind == G4TokenKind.Equal)
+        {
+            string name = Consume().Value;
+            Consume(); // =
+            return (name, false);
+        }
+
+        if (_pos + 2 < _tokens.Count
+            && _tokens[_pos + 1].Kind == G4TokenKind.Plus
+            && _tokens[_pos + 2].Kind == G4TokenKind.Equal)
+        {
+            string name = Consume().Value;
+            Consume(); // +
+            Consume(); // =
+            return (name, true);
+        }
+
+        return (null, false);
     }
 
     // ── Char class ────────────────────────────────────────────────────
@@ -370,14 +568,6 @@ internal sealed class G4Parser
 
     // ── Skip helpers ─────────────────────────────────────────────────
 
-    /// <summary>Skips <c>keyword { ... }</c>.</summary>
-    private void SkipBlock()
-    {
-        Consume(); // keyword
-        if (Peek().Kind == G4TokenKind.BraceBlock)
-            Consume();
-    }
-
     /// <summary>Parses <c>options { key=value; }</c> into the provided dictionary.</summary>
     private void ParseOptionsBlock(IDictionary<string, string> options)
     {
@@ -385,7 +575,9 @@ internal sealed class G4Parser
 
         if (Peek().Kind != G4TokenKind.BraceBlock)
         {
-            SkipBlock();
+            while (!AtEof() && Peek().Kind != G4TokenKind.Semi)
+                Consume();
+            TryConsume(G4TokenKind.Semi);
             return;
         }
 
@@ -413,14 +605,87 @@ internal sealed class G4Parser
         }
     }
 
-    /// <summary>Skips <c>@ name { ... }</c>.</summary>
-    private void SkipAction()
+    /// <summary>Parses <c>import A, B=C;</c> and preserves grammar names and aliases.</summary>
+    private void ParseImportStatement(ICollection<G4GrammarImport> imports)
     {
+        Consume(); // import
+        while (!AtEof() && Peek().Kind != G4TokenKind.Semi)
+        {
+            if (Peek().Kind != G4TokenKind.Identifier)
+            {
+                Consume();
+                continue;
+            }
+
+            var first = Consume().Value;
+            string grammarName = first;
+            string? alias = null;
+            if (TryConsume(G4TokenKind.Equal))
+            {
+                grammarName = ExpectIdentifier();
+                alias = first;
+            }
+
+            imports.Add(new G4GrammarImport { GrammarName = grammarName, Alias = alias });
+
+            if (Peek().Kind == G4TokenKind.Comma)
+            {
+                Consume();
+            }
+        }
+
+        TryConsume(G4TokenKind.Semi);
+    }
+
+    /// <summary>Parses <c>tokens { ... }</c> and <c>channels { ... }</c> name lists.</summary>
+    private void ParseNameListBlock(ICollection<string> names)
+    {
+        Consume(); // keyword
+        if (Peek().Kind != G4TokenKind.BraceBlock)
+            return;
+
+        var rawBlock = Consume().Value;
+        var blockTokens = new G4Tokenizer(rawBlock).Tokenize();
+        foreach (var token in blockTokens)
+        {
+            if (token.Kind == G4TokenKind.Identifier)
+                names.Add(token.Value);
+        }
+    }
+
+    /// <summary>Parses grammar-level actions including scoped actions like <c>@parser::members { ... }</c>.</summary>
+    private void ParseGrammarAction(ICollection<G4GrammarAction> actions)
+    {
+        int actionLine = Peek().Line;
         Consume(); // @
-        while (!AtEof() && Peek().Kind != G4TokenKind.BraceBlock && Peek().Kind != G4TokenKind.LBrace)
+        var firstIdentifier = ExpectIdentifier();
+        string? target = null;
+        string name = firstIdentifier;
+
+        if (TryConsume(G4TokenKind.Colon) && TryConsume(G4TokenKind.Colon))
+        {
+            target = firstIdentifier;
+            name = ExpectIdentifier();
+        }
+
+        if (Peek().Kind == G4TokenKind.BraceBlock)
+        {
+            var rawCode = Consume().Value;
+            actions.Add(new G4GrammarAction { Name = name, RawCode = rawCode, Target = target, Line = actionLine });
+            return;
+        }
+
+        while (!AtEof() && Peek().Kind != G4TokenKind.BraceBlock && Peek().Kind != G4TokenKind.Semi)
             Consume();
-        if (!AtEof())
-            Consume(); // the block
+
+        if (Peek().Kind == G4TokenKind.BraceBlock)
+        {
+            actions.Add(new G4GrammarAction { Name = name, RawCode = Consume().Value, Target = target, Line = actionLine });
+        }
+        else
+        {
+            TryConsume(G4TokenKind.Semi);
+        }
     }
 
     // ── Token helpers ────────────────────────────────────────────────

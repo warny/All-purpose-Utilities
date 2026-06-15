@@ -172,6 +172,214 @@ internal static partial class ExpGrammar
 Apache 2.0 — see the repository root for details.
 
 
-## Embedded code note
+## Embedded C# parser code
 
-The generator currently preserves embedded ANTLR code as raw model strings. Future executable C# embedded-code support belongs to the generator path and must remain explicit. Runtime expression compilation is a separate path.
+For parser semantic predicates and inline parser actions, the generator emits executable C# hooks in addition to preserving the raw model metadata strings. This is the source-generator C# opt-in path documented in [`docs/parser/ANTLRCompatibility.md`](https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ANTLRCompatibility.md). It is intentionally separate from `Utils.Parser.Expressions` and does not use `IExpressionCompiler`: embedded C# is compiled by Roslyn together with the consuming project.
+
+Supported forms include expression-bodied parser predicates, block-bodied parser predicates with `return`, multi-line predicate blocks with local variables and `return`, single- or multi-statement inline parser actions, rule `@init` / `@after` lifecycle hooks, parser `@header` / `@parser::header` C# source-file injection, parser `@members` / `@parser::members` execution-context injection, and parser `@footer` / `@parser::footer` trailing source injection, for example:
+
+```antlr
+grammar P;
+start : {
+    var isStart = inputPosition == 0;
+    return isStart && ruleName == "start";
+}? {
+    OnBefore(context);
+    OnAfter(context);
+} A ;
+A : 'a' ;
+```
+
+Parser `@header` and `@parser::header` blocks are emitted verbatim near the top of the generated C# file before generated type declarations, allowing ordinary C# header content such as `using` directives to compile. Parser `@members` and `@parser::members` blocks are emitted verbatim into `{ClassName}ExecutionContext`. Parser `@footer` and `@parser::footer` blocks are emitted verbatim near the end of the generated file after generated type declarations as trailing generated C# source; this footer location is not a second header region and should not be documented or used as a place where `using` directives are valid. These are source-generator C# compatibility bridges only; invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.
+
+The generated static facade exposes `ParseWithEmbeddedCode(string input)` for default opt-in execution and `CreateRuntimePolicy({ClassName}ExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)` for explicit policy binding. The existing generated `Parse(string input)` helper continues to use the default conservative runtime policy and does not execute generated embedded-code hooks. `ParseWithEmbeddedCode(string input)` creates a new `{ClassName}ExecutionContext` instance for that call, and `ParseWithEmbeddedCode(string input, {ClassName}ExecutionContext executionContext)` lets advanced callers provide an explicit context. `CreateRuntimePolicy({ClassName}ExecutionContext executionContext, ParserRuntimeFeaturePolicy? basePolicy = null)` binds the returned policy to the supplied context; reusing that policy intentionally reuses that context state, and no generated `CreateRuntimePolicy()` overload creates a hidden context. The context is a generated parser execution context, not a lexer mode or lexer-state context. Generated predicate/action hooks are instance methods on that context. Generated execution contexts also expose internal `Fork()`, `CopyFrom({ClassName}ExecutionContext source)`, and `GetExecutionStateKey()` helpers, plus explicit private rule-local frame helpers (`GetRuleLocal`, `TryGetRuleLocal`, `SetRuleLocal`, and `GetRuleLocalDescriptors`) and rule-return frame helpers (`GetRuleReturn`, `TryGetRuleReturn`, `SetRuleReturn`, and `GetRuleReturnDescriptors`) that generated lifecycle hook bodies can call through their `ParserRuleLifecycleContext`. Before a generated `@init` hook runs, the generated lifecycle executor allocates every named declaration from `locals [...]` as a missing-only `context.InvocationFrame.Locals` entry whose value is `null`; existing frame values are preserved. The rule-local helpers read and write only `context.InvocationFrame`; allocation does not infer C# types, instantiate arrays or value-type defaults, generate typed local fields/properties, or expose locals as implicit action variables. The rule-return helpers also read and write only the active `context.InvocationFrame`; return entries are not auto-allocated, not typed, not exposed as implicit variables, and not propagated automatically; the limited read-only `$rule.value` and assignment-label `$x.value` forms described below project the same frame state as `object?`. `Fork()` delegates to `Utils.Parser.Runtime.ParserExecutionContextCopier<TContext>.Copy(...)`, including `ICloneable` precedence when a user partial context implements it; `CopyFrom(...)` validates `source` and delegates to `ParserExecutionContextCopier<TContext>.CopyTo(source, this)`. `ParserEngine` uses the generated execution-state manager for managed execution-context rollback around parser backtracking attempt boundaries in generated C# opt-in paths; no action buffering or replay is active, and the copy semantics remain the copier's shallow structural semantics (collection interfaces and known concrete collections are copied, dictionary/set comparers are preserved, and no deep clone is attempted). Predicate code without a `return` keyword is emitted as `return <expression>;`; predicate code that contains `return` is emitted as statements inside the generated `bool` hook. Action code is emitted as statements inside a generated `void` hook, so multi-instruction and multi-line actions can use generated locals such as `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`. Predicate hooks similarly expose `predicateCode`. Action code can call members injected into or supplied by another declaration of the generated execution-context partial class, including member declarations that rely on parser-header `using` directives. Invalid embedded C# is reported as a normal C# compilation error by Roslyn; the generator does not parse C# semantically. Hook dispatch keys are aligned with the runtime `ParserEngine` indexes for single-item alternatives, sequences, quantified content, negation predicate probes, equal source text in multiple alternatives, and direct-left-recursive tail views because generated helpers resolve the generated definition before parsing with the generated policy. Lexer actions, lexer predicates, `@lexer::header`, `@lexer::members`, `@lexer::footer`, unsupported grammar actions, parser actions outside inline alternative positions, rule parameters/returns/exceptions execution, action buffering/replay, and arbitrary parser state mutation are not executed by this support. No lexer action or predicate execution is added.
+
+## Rule-call argument syntax `callee[...]`
+
+Rule-call argument clauses such as `child[42]` are recognized by the generator's G4 parser and preserved as raw metadata text on the emitted `RuleRef` (`RawArguments` property, outer brackets excluded). Reported with `UP1037 RuleCallArgumentsPreservedAsMetadata`.
+
+At runtime, the raw argument text is also carried into `ParserRuleCallResult.RawArguments` on the parent frame's last completed child call result. Generated C# opt-in code can inspect it explicitly:
+
+```csharp
+start @after {
+    Raw = GetLastRuleCallResult(context)?.RawArguments;
+    // or:
+    TryGetLastRuleCallRawArguments(context, "child", out string? rawArgs);
+}
+    : child[42] ;
+```
+
+This is **metadata only by default**: the argument text is not evaluated, parsed as C# expressions, or bound to child rule parameters unless the caller explicitly installs one of the limited positional or named literal policies described below. Call-site metadata is rollback-safe and memoization-safe. `PendingChildSeeds`, `InvocationFrame.Parameters`, generated `Parse(...)`, and generated rule method signatures are unchanged.
+
+For named argument forms (`value: 42`, `value = 42`), use the named helpers:
+
+```csharp
+// In an inline action between child[value: 42, text: "hello"] and child2:
+if (TrySplitLastRuleCallNamedRawArguments(context, "child", out var named))
+    SetNextRuleParametersFromNamedRawArguments(context, "child2", named,
+        new ParserRawNamedArgumentParameterMapping { ParameterName = "value", ArgumentName = "value", Map = s => int.Parse(s) },
+        new ParserRawNamedArgumentParameterMapping { ParameterName = "text",  ArgumentName = "text",  Map = s => s.Trim('"') });
+```
+
+Missing argument name returns false; no partial seeding. Duplicate `ParameterName`: last wins.
+
+To map multiple positional slices in one call, use `SetNextRuleParametersFromRawArguments`:
+
+```csharp
+if (TrySplitLastRuleCallRawArguments(context, "child", out var args))
+    SetNextRuleParametersFromRawArguments(context, "child2", args,
+        new ParserRawArgumentParameterMapping { ParameterName = "value", Index = 0, Map = s => int.Parse(s) },
+        new ParserRawArgumentParameterMapping { ParameterName = "text",  Index = 1, Map = s => s.Trim('"') });
+```
+
+Validates all indices before applying any seed. Last mapping wins for duplicate names. Mapper exceptions propagate.
+
+To split raw argument text into individual top-level slices and then seed explicitly:
+
+```csharp
+// In an inline action between child[42, "hello"] and child2:
+if (TrySplitLastRuleCallRawArguments(context, "child", out var args))
+{
+    SetNextRuleParameterFromRawArguments(context, "child2", "value", args[0], s => int.Parse(s));
+    SetNextRuleParameterFromRawArguments(context, "child2", "text",  args[1], s => s.Trim('"'));
+}
+```
+
+Splitting respects nested `()`, `[]`, `{}`, and quoted strings. Syntactic only — no argument is evaluated. Backed by `Utils.Parser.Runtime.ParserRawArgumentSplitter.SplitTopLevel`.
+
+To map raw argument text into a future child seed explicitly, use the helper:
+
+```csharp
+// In an inline action between child[42] and child2:
+if (TryGetLastRuleCallRawArguments(context, "child", out string? raw))
+    SetNextRuleParameterFromRawArguments(context, "child2", "value", raw, s => int.Parse(s));
+```
+
+This helper requires an explicit mapper delegate and never evaluates arguments automatically. Null `rawArguments` returns `false`. Mapper exceptions propagate. Seeds the **next** invocation of the named rule.
+
+Use `SetNextRuleParameter(...)` for direct explicit seeding. `$param` is not supported.
+
+## Rule-reference label metadata (`x=child`, `xs+=child`)
+
+Rule-reference labels are recognized and preserved as passive metadata by both the ANTLR converter path and the source-generator G4 parser path:
+
+- `x=child` sets `LabelKind = Assignment`; `xs+=child` sets `LabelKind = List`; unlabeled references have `LabelKind = None`.
+- Label metadata is stored on `RuleRef.Label` / `RuleRef.LabelName` / `RuleRef.LabelKind` in the model; `GrammarEmitter` emits `Label: new RuleLabel(...)` in generated `BuildDefinition()`.
+- At runtime, `ParserEngine` calls `AnnotateLastChildCallLabel` after each successful child rule completion so the call-site label is visible via `ParserRuleCallResult.LabelName` and `ParserRuleCallResult.LabelKind` on the parent frame.
+- Labels compose with `callee[...]` raw arguments: both can coexist on the same rule reference.
+- Label metadata is rollback-safe and memoization-safe.
+- Generated C# opt-in code can inspect label metadata explicitly:
+
+```csharp
+start @after {
+    var r = GetLastRuleCallResult(context);
+    string? label = r?.LabelName;          // "x", "xs", or null
+    string? kind  = r?.LabelKind.ToString(); // "Assignment", "List", or "None"
+}
+    : x=child ;
+```
+
+Labels remain explicit managed metadata: no bare `$x`, `$xs`, implicit label variables, typed label fields/properties, automatic parse-node storage, automatic binding, automatic argument evaluation, automatic parameter seeding, or generated parser method signatures are added. The narrow read-only `$x.value` return projection described below is the only attribute exception. Labels on non-rule-reference elements (literals, groups, etc.) emit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. Conservative `Parse(...)` remains conservative; hooks do not execute and label metadata is not exposed. No lexer label support is added.
+
+## Shared runtime metadata alignment
+
+Generated C# hooks for parser semantic predicates and inline parser actions continue to be collected from the generator's `G4Grammar` AST because the analyzer package targets `netstandard2.0` and does not reference the `net8.0` runtime model assembly. The hook collector is intentionally kept aligned with `Utils.Parser.EmbeddedCode.EmbeddedCodeRuntimeDiscovery`: it uses the same runtime index rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, duplicate source text, and direct-left-recursive base/tail alternatives. Unit tests compare generated hook names against shared `ParserDefinition` discovery metadata for sensitive dispatch cases.
+
+Unscoped `@header` and `@parser::header` blocks are injected verbatim near the top of the generated C# source and report warning `UP1035 EmbeddedHeaderInjectedByGenerator`; Roslyn reports invalid C#. Unscoped `@members` and `@parser::members` blocks are injected verbatim into the generated execution context and report warning `UP1031 EmbeddedMembersInjectedByGenerator`; Roslyn reports invalid C# and member-name collisions. Unscoped `@footer` and `@parser::footer` blocks are injected verbatim as trailing generated C# source near the end of the generated parser file and report warning `UP1036 EmbeddedFooterInjectedByGenerator`; Roslyn reports invalid C#. The footer injection point is not a second header region, so the documentation does not claim `using` directives are valid there. Unsupported constructs are not promoted to executable generated hooks or injected parser compatibility blocks. Visible unsupported embedded-code constructs in the generator AST report warning `UP1029 EmbeddedCodeConstructNotExecutedByGenerator`, including lexer actions, lexer predicates, unsupported grammar actions, `@lexer::header`, `@lexer::members`, and `@lexer::footer`. Invalid C# inside a supported parser predicate/action/lifecycle hook or injected parser header/member/footer block remains a Roslyn compilation error rather than a custom unsupported-construct diagnostic. This alignment does not add lexer action/predicate execution, does not claim full ANTLR target-language compatibility, and does not change `ParserEngine` or the default `Parse(...)` behavior.
+
+
+## Explicit parser rule-call execution policy
+
+Generated C# preserves `ParserRuntimeFeaturePolicy.RuleCallExecutionPolicy` from the caller-supplied `basePolicy`. A custom `IParserRuleCallExecutionPolicy` can therefore observe `BeforeRuleCall(...)` and `AfterRuleCall(...)` through either `CreateRuntimePolicy(executionContext, basePolicy)` or the generated `ParseWithEmbeddedCode(input, executionContext, basePolicy)` overload. Existing `CreateRuntimePolicy(...)` and `ParseWithEmbeddedCode(...)` overloads remain available, and generated `Parse(...)` remains conservative.
+
+The default policy is `NullParserRuleCallExecutionPolicy.Instance`. The callback context exposes passive current-call-site metadata, including raw arguments and label name/kind, and exposes the annotated completed result after a successful tracked child call. This does not execute `callee[...]`, evaluate arguments, bind parameters, set pending seeds automatically, generate typed parameters/returns or label variables, or support `$param`, `$x`, `$x.value`, or `$rule.value`. External side effects performed by a custom policy are not automatically rolled back; only separately managed rollback-aware parser state participates in capture/restore. Raw argument and label annotations remain current-call-site safe after rollback and memoization.
+
+## Opt-in positional literal rule-call binding
+
+Generated parsers can use `PositionalLiteralRuleCallExecutionPolicy` only through the existing caller-supplied `basePolicy` path:
+
+```csharp
+var basePolicy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy()
+};
+
+P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+The default and generated `Parse(...)` remain metadata-only/conservative. The policy requires exact positional arity and binds declared parser-rule parameter names without enforcing their C# declaration types. It supports only `null`, lowercase Booleans, signed decimal `int`/`long`, finite invariant `double`, quoted strings, and character literals with a small escape set. Named binding, arbitrary expressions, Roslyn evaluation, `$param`, labels/returns, and lexer execution are not supported. Managed pending seeds are applied as one all-or-none batch, are rollback-aware, and generated memoization distinguishes the supported literal values deterministically. Existing explicit helpers continue to accept arbitrary values: deterministic scalars and `IParserExecutionStateHashable` values receive stable keys, while other objects force volatile keys that bypass completed-result reuse while pending.
+
+## Opt-in named literal rule-call binding
+
+Generated parsers can separately install `NamedLiteralRuleCallExecutionPolicy` through the same caller-supplied `basePolicy` path:
+
+```csharp
+var basePolicy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuleCallExecutionPolicy = new NamedLiteralRuleCallExecutionPolicy()
+};
+
+P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+This policy is not the default and is not automatically combined with positional binding. It consumes the generated runtime's existing `NamedRawArguments` metadata for both `name: literal` and `name = literal`. Names match declared parser-rule parameters with `StringComparer.Ordinal`; argument order does not matter, but exact coverage is required. Missing, extra, case-mismatched, blank, or duplicate declared names fail the whole call. Optional/default parameters, partial binding, and mixed positional/named syntax are unsupported. Duplicate raw names inherit the splitter's documented last-wins result.
+
+All values must be accepted by `ParserSimpleLiteralParser`. Declared C# types are not checked or converted, and arbitrary expressions are not evaluated. One complete atomic pending-seed batch is applied only after validation, preserving rollback and deterministic memoization behavior for supported values. Generated `Parse(...)` remains conservative. No `$param`, `$x`, `$x.value`, `$rule.value`, return/label binding, or lexer support is added.
+
+## Explicit typed literal rule-call binding
+
+Generated opt-in parsing can preserve a caller-supplied typed call policy through `basePolicy`:
+
+```csharp
+var basePolicy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy()
+};
+
+var result = GeneratedGrammar.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+Use `TypedNamedLiteralRuleCallExecutionPolicy` separately for ordinal-name `name: literal` or `name = literal` calls. Neither typed policy is installed automatically, they are not combined, and generated `Parse(...)` remains conservative. The existing `PositionalLiteralRuleCallExecutionPolicy` and `NamedLiteralRuleCallExecutionPolicy` remain untyped.
+
+Typed policies recognize only the C# aliases `bool`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, `char`, `string`, `object`, their exact canonical `System.*` names, and a single nullable suffix. They use checked integral conversion, exact-preserving integral-to-floating and double-to-float conversion, integral-to-decimal conversion, and limited string/character conversion. Null is accepted only for reference targets and nullable value targets. Strings are not parsed into numbers or Booleans; floating-point-to-integral conversion is rejected.
+
+Parser-rule parameter descriptors preserve top-level default text as passive `RawDefaultValue` metadata. Only the typed policies consume it. Typed positional calls may omit trailing parameters when each omitted declaration has a supported simple-literal default; typed named calls may omit parameters in any order under the same condition. Explicit arguments override defaults, and unused invalid defaults are not evaluated. Existing untyped policies continue to require exact arity or exact name coverage and ignore defaults.
+
+All explicit values and required defaults finish parsing and conversion before one rollback-managed atomic seed batch. Memoization keys use the final converted effective runtime values and preserve runtime type distinctions; explicit and default forms producing identical state may share memoized results. No arbitrary type resolution, arrays, generics, enums, user-defined types, Roslyn conversion, general default-expression evaluation, parameter references, constants, member access, calls, `default`, `nameof`, interpolation, `$param` forms, return/local/label binding, or lexer argument/action/predicate execution is provided. Generated `Parse(...)` remains conservative.
+
+## Explicit labeled child-call results
+
+Generated embedded-code opt-in contexts provide generic lifecycle and inline-action helpers for parser rule-reference labels:
+
+```csharp
+bool found = TryGetLabeledRuleCallReturn(context, "x", "value", out object? value);
+IReadOnlyList<ParserRuleCallResult> calls = GetLabeledRuleCallResults(context, "xs");
+IReadOnlyList<object?> values = GetLabeledRuleCallReturns(context, "xs", "value");
+```
+
+`x=child` retains the last successful immutable `ParserRuleCallResult`; `xs+=child` appends successful results in execution order. Child returns are captured after child `@after`. Missing return keys and present-null values remain distinct. List return projection includes present-null entries and skips calls where the key is absent. Managed snapshots make retention rollback-safe, and memoized child results receive the current call site's label before binding. Assignment and list namespaces are separate if a grammar reuses one lexical label with both operators.
+
+This remains metadata-driven access. The generator does not emit bare `$x`/`$xs`, implicit variables, typed label fields, typed return accessors, automatic return assignment, or lexer label/return support. Positional, named, typed, and default-aware argument policies are unchanged, and generated `Parse(...)` remains conservative.
+
+## Limited parser return attributes
+
+Generated parser C# accepts three read-only forms in inline parser actions and `@after` hooks:
+
+```antlr
+start
+@after {
+    Seen = $x.value is int i ? i : -1;
+}
+    : x=child
+    ;
+
+child returns [int value]
+@after {
+    SetRuleReturn(context, "value", 42);
+    Current = $child.value;
+}
+    : A
+    ;
+```
+
+`$x.value` reads an assignment-labeled child return as `object?`, `$xs.value` projects a list-labeled child return as `IReadOnlyList<object?>`, and `$child.value` reads the current `child` frame return as `object?`. List projection preserves successful execution order, includes present-null entries, skips missing returns, and returns an empty list when the label has no successful results; assignment-label absence still throws. There is no automatic conversion or generated typed variable. Invalid roots, token labels, undeclared returns, assignment/list name ambiguity, writes, chains, bare attributes, label reads in `@init`, and all predicate attribute references produce `UP0014`. No special `$xs[i]` or `$xs.value[i]` syntax is added; ordinary C# operations may be applied to the rewritten list expression. Existing explicit helpers remain available, lexer attributes are unsupported, and this feature does not imply general ANTLR attribute compatibility. Generated `Parse(...)` remains conservative.

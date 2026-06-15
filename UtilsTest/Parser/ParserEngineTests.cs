@@ -69,6 +69,8 @@ public class ParserEngineTests
 
         var numbers = FindAllLexerNodes(tree, "Number");
         Assert.AreEqual(2, numbers.Count);
+        Assert.IsTrue(FindAllLexerNodesAny(tree).Any(n => n.Token.Text == "*"),
+            "Tree must contain a '*' operator token");
     }
 
     [TestMethod]
@@ -79,6 +81,8 @@ public class ParserEngineTests
 
         var numbers = FindAllLexerNodes(tree, "Number");
         Assert.AreEqual(2, numbers.Count);
+        Assert.IsTrue(FindAllLexerNodesAny(tree).Any(n => n.Token.Text == "/"),
+            "Tree must contain a '/' operator token");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -124,6 +128,9 @@ public class ParserEngineTests
 
         var numbers = FindAllLexerNodes(tree, "Number");
         Assert.AreEqual(3, numbers.Count);
+        var opTexts = FindAllLexerNodesAny(tree).Select(n => n.Token.Text).ToList();
+        CollectionAssert.Contains(opTexts, "-");
+        CollectionAssert.Contains(opTexts, "/");
     }
 
     [TestMethod]
@@ -134,6 +141,8 @@ public class ParserEngineTests
 
         var numbers = FindAllLexerNodes(tree, "Number");
         Assert.AreEqual(4, numbers.Count);
+        Assert.AreEqual(3, FindAllLexerNodesAny(tree).Count(n => n.Token.Text == "+"),
+            "Three '+' operators expected for 1+2+3+4");
     }
 
     [TestMethod]
@@ -144,6 +153,8 @@ public class ParserEngineTests
 
         var numbers = FindAllLexerNodes(tree, "Number");
         Assert.AreEqual(4, numbers.Count);
+        Assert.AreEqual(3, FindAllLexerNodesAny(tree).Count(n => n.Token.Text == "*"),
+            "Three '*' operators expected for 2*3*4*5");
     }
 
     // ═══════════════════════════════════════════════════════════════

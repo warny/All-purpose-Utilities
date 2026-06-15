@@ -82,13 +82,7 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     /// Initializes a color from a packed 32-bit ARGB value.
     /// </summary>
     /// <param name="color">The packed ARGB value.</param>
-    public ColorArgb32(uint color) : this()
-    {
-        this.alpha = (byte)(0xFF & color >> 24);
-        this.red = (byte)(0xFF & color >> 16);
-        this.green = (byte)(0xFF & color >> 8);
-        this.blue = (byte)(0xFF & color);
-    }
+    public ColorArgb32(uint color) : this() => this.value = color;
 
     /// <summary>
     /// Initializes an opaque color from explicit RGB components.

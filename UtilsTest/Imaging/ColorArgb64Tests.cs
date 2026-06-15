@@ -104,4 +104,37 @@ public class ColorArgb64Tests
         StringAssert.Contains(result, "G:");
         StringAssert.Contains(result, "B:");
     }
+
+    [TestMethod]
+    public void Value_IncludesAlphaChannel()
+    {
+        // Two colors with same RGB but different alpha must have different Value.
+        ColorArgb64 c1 = new(1000, 500, 300, 200);
+        ColorArgb64 c2 = new(2000, 500, 300, 200);
+        Assert.AreNotEqual(c1.Value, c2.Value);
+    }
+
+    [TestMethod]
+    public void UlongConstructor_SetsAllFourChannels()
+    {
+        // little-endian layout: blue[0-1] green[2-3] red[4-5] alpha[6-7]
+        // ulong 0xAAAABBBBCCCCDDDD → alpha=AAAA red=BBBB green=CCCC blue=DDDD
+        ulong packed = 0xAAAABBBBCCCCDDDDUL;
+        ColorArgb64 color = new(packed);
+
+        Assert.AreEqual((ushort)0xAAAA, color.Alpha);
+        Assert.AreEqual((ushort)0xBBBB, color.Red);
+        Assert.AreEqual((ushort)0xCCCC, color.Green);
+        Assert.AreEqual((ushort)0xDDDD, color.Blue);
+    }
+
+    [TestMethod]
+    public void Equality_DifferingOnlyInAlpha_AreNotEqual()
+    {
+        ColorArgb64 c1 = new(1000, 500, 300, 200);
+        ColorArgb64 c2 = new(9999, 500, 300, 200);
+        Assert.AreNotEqual(c1, c2);
+        Assert.IsFalse(c1 == c2);
+        Assert.AreNotEqual(c1.GetHashCode(), c2.GetHashCode());
+    }
 }

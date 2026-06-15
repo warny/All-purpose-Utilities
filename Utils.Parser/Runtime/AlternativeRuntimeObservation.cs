@@ -41,6 +41,7 @@ public sealed record AlternativeRuntimeObservation(
     {
     }
 
+    /// <summary>Maps a legacy status string to the corresponding <see cref="ParserRuntimeObservationStatus"/> enum value, defaulting to <see cref="ParserRuntimeObservationStatus.Unknown"/> when unrecognized.</summary>
     private static ParserRuntimeObservationStatus ParseLegacyStatus(string status)
     {
         return Enum.TryParse<ParserRuntimeObservationStatus>(status, ignoreCase: true, out var normalized)
@@ -48,6 +49,7 @@ public sealed record AlternativeRuntimeObservation(
             : ParserRuntimeObservationStatus.Unknown;
     }
 
+    /// <summary>Infers the observation kind from a parsed legacy status value.</summary>
     private static ParserRuntimeObservationKind InferKindFromLegacyStatus(string status)
     {
         return ParseLegacyStatus(status) switch

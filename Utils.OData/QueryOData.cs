@@ -1,4 +1,5 @@
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Net;
@@ -166,7 +167,7 @@ public class QueryOData : IDisposable
             }
         }
 
-        Console.WriteLine($"Requesting : {url}");
+        Debug.WriteLine($"Requesting : {url}");
         var response = await _httpClient.SendAsync(
                 request,
                 HttpCompletionOption.ResponseHeadersRead,
@@ -782,11 +783,7 @@ public class QueryOData : IDisposable
         }
 
         object[] values = new object[fieldCount];
-        for (int index = 0; index < fieldCount; index++)
-        {
-            values[index] = DBNull.Value;
-        }
-
+        Array.Fill(values, DBNull.Value);
         return values;
     }
 

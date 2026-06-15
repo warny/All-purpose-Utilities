@@ -2,7 +2,19 @@
 
 ## Scope
 
-This file applies to all automated or assisted coding agents working on this repository, with special attention to `Utils.Parser` and its runtime-related documentation and tests.
+This file applies to all automated or assisted coding agents working on `Utils.Parser`, including runtime code, ANTLR grammar ingestion, diagnostics, tests, and parser documentation.
+
+## Mandatory reading order
+
+Before making any `Utils.Parser` change, read these documents in order:
+
+1. `Utils.Parser/AGENTS.md`
+2. `Utils.Parser/ROADMAP.md`
+3. `docs/parser/INDEX.md`
+4. `docs/parser/ANTLRCompatibility.md`
+5. any document referenced by `docs/parser/INDEX.md` that is relevant to the change
+
+Documentation is authoritative. Do not infer support status from code alone when the roadmap or compatibility reference states a boundary.
 
 ## Mandatory roadmap maintenance
 
@@ -18,23 +30,59 @@ Every meaningful change must include a check of whether `ROADMAP.md` needs to be
 - metadata semantics,
 - ANTLR4 compatibility,
 - parser capabilities,
+- public API shape,
 - runtime policies,
 - tooling direction,
 - test architecture.
 
 If no roadmap update is required, the PR description must explicitly explain why.
 
-## Roadmap phase status
+Each roadmap phase must carry an explicit status line immediately after its heading:
 
-Each phase in `ROADMAP.md` must carry an explicit status line immediately after its heading:
+- `**Status: not started.**`
+- `**Status: in progress.**`
+- `**Status: complete.**`
+- `**Status: mostly complete. Ongoing maintenance required.**`
 
-- `**Status: not started.**` — no work has begun.
-- `**Status: in progress.**` — work is ongoing; optionally note what has been done.
-- `**Status: complete.**` — all scope items are done and documented.
-- `**Status: mostly complete. Ongoing maintenance required.**` — for phases with open-ended maintenance obligations (e.g. Phase 0).
+When a PR completes the last remaining item of a phase, update the phase status to `complete`. When a PR begins work on a phase that was `not started`, update it to `in progress`.
 
-When a PR completes the last remaining item of a phase, that PR must change the phase status to `complete`.
-When a PR begins work on a phase that was `not started`, that PR must change the status to `in progress`.
+## ANTLR4 compatibility reference
+
+`docs/parser/ANTLRCompatibility.md` is the authoritative reference for ANTLR4 feature support in `Utils.Parser`.
+
+Agents must:
+
+- consult `docs/parser/ANTLRCompatibility.md` before modifying grammar-related components: grammar converter, lexer engine, parser engine, model, resolution, diagnostics, generator metadata, or grammar tests;
+- update it after any change that adds, removes, or alters support for an ANTLR4 feature;
+- update it after any change that affects compatibility diagnostics, metadata semantics, runtime/generator parity, or intentional divergences;
+- document how the feature works when behavior differs from standard ANTLR4.
+
+If no compatibility-reference update is required, the PR description must explicitly explain why.
+
+## Parser documentation index
+
+Before editing parser documentation, read `docs/parser/INDEX.md`.
+
+Update `docs/parser/INDEX.md` in the same PR when any document under `docs/parser/` is added, removed, moved, renamed, or materially changed.
+
+## Documentation impact statement
+
+Every PR description must include a documentation impact statement covering:
+
+- `ROADMAP.md` updated, or why no update was required;
+- `docs/parser/ANTLRCompatibility.md` updated, or why no update was required;
+- `docs/parser/INDEX.md` updated when parser docs were added, moved, removed, renamed, or materially changed.
+
+Before implementation, identify whether the change alters:
+
+- parser behavior,
+- diagnostics,
+- ANTLR4 compatibility,
+- runtime metadata,
+- runtime policy,
+- public API shape,
+- test strategy,
+- roadmap sequencing.
 
 ## Runtime safety rules
 
@@ -50,41 +98,39 @@ Agents must not introduce:
 - semantic-state-aware memoization,
 - async parser runtime,
 - runtime parallelism,
-- public API breaks,
+- unreviewed or undocumented public API breaks,
 - parse-tree shape breaks,
 - diagnostic format breaks.
 
-Any exception requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
+Public API changes are allowed while `Utils.Parser` remains pre-release and has no committed external compatibility contract, provided they follow the public API change policy below.
 
-## ANTLR4 compatibility reference
+Any other exception requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
 
-`ANTLRCompatibility.md` is the authoritative reference for ANTLR4 feature support in Utils.Parser.
+## Public API change policy
 
-Agents must:
+Public API changes are allowed when they improve architecture, remove misleading contracts, reduce pre-release API debt, or make ownership boundaries clearer.
 
-- **consult `ANTLRCompatibility.md` before modifying any grammar-related component** (grammar converter, lexer engine, parser engine, model, resolution, diagnostics);
-- **update `ANTLRCompatibility.md` after any change that adds, removes, or alters support for an ANTLR4 feature**, including moving a feature from "not supported" to "partially supported", or from "parsed but not executed" to "supported";
-- document, in the relevant section, **how the feature works when its behaviour differs from standard ANTLR4** (usage examples, API hooks, known constraints).
+Public API changes must remain:
 
+- small,
+- single-purpose,
+- explicitly documented in the PR description,
+- covered by deterministic tests when behavior or public usage changes,
+- accompanied by migration notes when a caller-visible replacement exists.
 
-## Parser documentation index
+Public API changes must not be used as a reason to introduce unsupported runtime semantics, speculative execution, metadata execution authority, parse-tree shape breaks, or diagnostic format breaks.
 
-Before editing parser documentation, agents must read `docs/parser/INDEX.md` and update it in the same PR when any document under `docs/parser/` is added, removed, or materially changed.
+## Metadata-only rule
 
-## Documentation requirements
+The existence of metadata does not imply runtime support.
 
-For runtime-affecting PRs, agents must update relevant documentation, including:
+Continuation metadata, shared-prefix metadata, lookahead metadata, feature capabilities, ANTLR prequel metadata, and neutral validation facts must not be interpreted as execution authority.
 
-- `ROADMAP.md`,
-- `ANTLRCompatibility.md`,
-- `docs/parser/RuntimeStateOwnership.md`,
-- `docs/parser/ParserMetadataAndRuntimeLimitations.md`,
-- `docs/parser/Antlr4CompatibilityMatrix.md`,
-- relevant test documentation/comments.
+Agents must not activate metadata execution paths accidentally.
 
 ## Testing requirements
 
-Agents must add or update tests when modifying:
+Agents must add or update deterministic, audit-friendly tests when modifying:
 
 - `ParserEngine`,
 - `AlternativeScheduler`,
@@ -97,62 +143,29 @@ Agents must add or update tests when modifying:
 - parser action behavior,
 - ANTLR4 conversion,
 - diagnostics,
-- parse-tree shape.
-
-Tests should be:
-
-- focused,
-- deterministic,
-- audit-friendly,
-- minimally coupled to internals unless explicitly shape-locking behavior.
+- parse-tree shape,
+- public API shape or usage contracts.
 
 ## PR discipline
 
-PRs must be:
+PRs must be small, single-purpose, auditable, and explicit about whether they are documentation-only, test-only, refactor-only, API-changing, or behavior-changing.
 
-- small,
-- single-purpose,
-- auditable,
-- explicit about whether they are:
-  - documentation-only,
-  - test-only,
-  - refactor-only,
-  - behavior-changing.
+API-changing PRs must explicitly document the public surface changed, the reason for the change, compatibility impact, migration guidance, and why the change should happen before API stabilization.
 
-Behavior-changing PRs must explicitly document:
-
-- observable behavior changes,
-- compatibility risks,
-- diagnostics impact,
-- parse-tree impact,
-- roadmap impact.
-
-## Metadata-only rule
-
-The existence of metadata does not imply runtime support.
-
-Continuation metadata, shared-prefix metadata, lookahead metadata, and feature capabilities must not be interpreted as execution authority.
-
-Agents must not activate metadata execution paths accidentally.
+Behavior-changing PRs must explicitly document observable behavior changes, compatibility risks, diagnostics impact, parse-tree impact, and roadmap impact.
 
 ## Conservative default
 
-When uncertain, agents must prefer:
+When uncertain, prefer documentation, tests, comments, small refactors, and explicit invariants over new runtime behavior.
 
-- documentation,
-- tests,
-- comments,
-- small refactors,
-- explicit invariants,
-
-over introducing new runtime behavior.
-
-## Final instruction
+## Final checklist
 
 Before completing any PR, verify:
 
-- `ROADMAP.md` is still accurate,
-- `AGENT.md` rules were followed,
-- relevant parser docs were updated,
-- tests cover new or clarified invariants,
+- `ROADMAP.md` is still accurate and updated or explicitly justified;
+- `docs/parser/ANTLRCompatibility.md` is still accurate and updated or explicitly justified;
+- `docs/parser/INDEX.md` is updated when parser documentation changed;
+- relevant parser docs were updated;
+- tests cover new or clarified invariants;
+- public API changes are documented when present;
 - no unsupported runtime feature was accidentally introduced.

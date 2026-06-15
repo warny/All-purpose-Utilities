@@ -49,6 +49,7 @@ internal readonly record struct ParserSharedPrefixExecutionEligibilityResult(
 /// </summary>
 internal sealed class ParserSharedPrefixExecutionEligibilityAnalyzer
 {
+    /// <summary>Validator used to detect structural integrity issues before classifying eligibility.</summary>
     private readonly ParserSharedPrefixPlanValidator validator = new();
 
     /// <summary>

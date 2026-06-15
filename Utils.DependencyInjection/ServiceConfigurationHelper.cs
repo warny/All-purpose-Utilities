@@ -71,7 +71,7 @@ public static class ServiceConfigurationHelper
             }
         }
 
-        ConfigureServices(assemblyTypes.Where(t => t.GetCustomAttributes(true).OfType<Attribute>().Any(a => a is InjectableClassAttribute)), serviceCollection);
+        ConfigureServices(assemblyTypes.Where(t => t.IsDefined(typeof(InjectableClassAttribute), inherit: true)), serviceCollection);
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public static class ServiceConfigurationHelper
     public static void ConfigureServices(this IServiceConfigurator serviceConfiguration, IServiceCollection serviceCollection)
     {
         Assembly assembly = serviceCollection.GetType().Assembly;
-        var types = assembly.GetTypes(t => t.GetCustomAttributes(true).OfType<Attribute>().Any(a => a is InjectableClassAttribute));
+        var types = assembly.GetTypes(t => t.IsDefined(typeof(InjectableClassAttribute), inherit: true));
         ConfigureServices(types, serviceCollection);
     }
 

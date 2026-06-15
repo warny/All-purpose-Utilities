@@ -15,15 +15,7 @@ namespace Utils.Imaging
         private BitmapData bmpdata = null;
         private readonly PixelFormat pixelformat;
         private byte* bytedata;
-        /// <summary>
-        /// Cached offsets for the start of each line.
-        /// </summary>
-        private readonly ImmutableArray<int> lineOffsets;
-
-        /// <summary>
-        /// Cached offsets for the start of each column.
-        /// </summary>
-        private readonly ImmutableArray<int> columnOffsets;
+        private readonly int stride;
 
         /// <summary>
         /// Gets the bitmap width in pixels.
@@ -75,21 +67,7 @@ namespace Utils.Imaging
             this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, this.pixelformat);
             this.ColorDepth = GetColorDepth(this.pixelformat);
             this.bytedata = (byte*)(void*)bmpdata.Scan0;
-
-            var lineBuilder = ImmutableArray.CreateBuilder<int>(bmpdata.Height);
-            int index = 0;
-            for (int i = 0; i < bmpdata.Height; i++, index += bmpdata.Stride)
-            {
-                lineBuilder.Add(index);
-            }
-            lineOffsets = lineBuilder.ToImmutable();
-
-            var columnBuilder = ImmutableArray.CreateBuilder<int>(bmpdata.Width);
-            for (int i = 0; i < bmpdata.Width; i++)
-            {
-                columnBuilder.Add(i * ColorDepth);
-            }
-            columnOffsets = columnBuilder.ToImmutable();
+            this.stride = bmpdata.Stride;
         }
 
         /// <summary>
@@ -101,8 +79,8 @@ namespace Utils.Imaging
         /// <returns>The byte at the specified location.</returns>
         public byte this[int x, int y, int c]
         {
-            get => bytedata[lineOffsets[y] + columnOffsets[x] + c];
-            set => bytedata[lineOffsets[y] + columnOffsets[x] + c] = value;
+            get => bytedata[y * stride + x * ColorDepth + c];
+            set => bytedata[y * stride + x * ColorDepth + c] = value;
         }
 
         /// <summary>

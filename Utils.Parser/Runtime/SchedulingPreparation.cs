@@ -8,11 +8,17 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class SchedulingPreparation
 {
+    /// <summary>Extracts per-alternative structural token prefixes from grammar definitions.</summary>
     private readonly AlternativeStructuralPrefixExtractor _structuralPrefixExtractor = new();
+    /// <summary>Detects shared-prefix candidates from look-ahead probe results.</summary>
     private readonly ParserLookaheadSharedPrefixDetector _sharedPrefixDetector = new();
+    /// <summary>Prepares continuation descriptors for scheduling orchestration.</summary>
     private readonly ContinuationMetadataPreparation _continuationMetadataPreparation = new();
+    /// <summary>Look-ahead probe used for shallow first-token analysis.</summary>
     private readonly ParserLookaheadProbe _lookaheadProbe;
+    /// <summary>Cache for look-ahead probe results to avoid redundant probing.</summary>
     private readonly ParserLookaheadCache _lookaheadCache;
+    /// <summary>Delegate used to resolve rule names to grammar rule objects.</summary>
     private readonly Func<string, Rule?> _resolveRule;
 
     /// <summary>

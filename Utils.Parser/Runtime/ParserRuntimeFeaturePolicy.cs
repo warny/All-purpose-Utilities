@@ -9,12 +9,16 @@ public sealed record ParserRuntimeFeaturePolicy
 {
     /// <summary>
     /// Gets the conservative default runtime policy.
-    /// Semantic predicates are not evaluated and parser actions are not executed.
+    /// Semantic predicates are not evaluated, parser actions are not executed, and rule lifecycle hooks are not invoked.
     /// </summary>
     public static ParserRuntimeFeaturePolicy Default { get; } = new()
     {
         SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
         ParserActionExecutor = new DefaultParserActionExecutor(),
+        ExecutionStateManager = NullParserExecutionStateManager.Instance,
+        RuleLifecycleExecutor = NullParserRuleLifecycleExecutor.Instance,
+        RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance,
+        RuleCallExecutionPolicy = NullParserRuleCallExecutionPolicy.Instance,
         RuntimeObserver = null
     };
 
@@ -27,6 +31,30 @@ public sealed record ParserRuntimeFeaturePolicy
     /// Gets the parser action execution strategy.
     /// </summary>
     public required IParserActionExecutor ParserActionExecutor { get; init; }
+
+    /// <summary>
+    /// Gets the parser execution-state manager used to expose opaque semantic state snapshots and memoization keys.
+    /// ParserEngine reads state keys for completed-result memoization and invokes capture/restore around managed parser attempt boundaries.
+    /// </summary>
+    public required IParserExecutionStateManager ExecutionStateManager { get; init; }
+
+    /// <summary>
+    /// Gets the parser rule lifecycle executor that handles <c>@init</c> and <c>@after</c> hooks.
+    /// The default no-op executor skips lifecycle hooks and preserves conservative behavior.
+    /// </summary>
+    public required IParserRuleLifecycleExecutor RuleLifecycleExecutor { get; init; }
+
+    /// <summary>
+    /// Gets the parser rule invocation-frame manager used to create passive per-rule metadata frames.
+    /// The default no-op manager does not execute parameters, locals, returns, or exception metadata.
+    /// </summary>
+    public required IParserRuleInvocationFrameManager RuleInvocationFrameManager { get; init; }
+
+    /// <summary>
+    /// Gets the explicit parser rule-call execution policy invoked around parser rule references.
+    /// The default no-op policy preserves metadata-only call arguments and labels.
+    /// </summary>
+    public IParserRuleCallExecutionPolicy RuleCallExecutionPolicy { get; init; } = NullParserRuleCallExecutionPolicy.Instance;
 
     /// <summary>
     /// Gets the optional passive runtime observer for scheduling introspection.

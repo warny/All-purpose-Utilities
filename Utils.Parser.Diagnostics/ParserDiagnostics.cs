@@ -76,9 +76,9 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor SemanticPredicateNotEnforced =
         new("UP1006", "Semantic predicate not enforced", "Semantic predicate is recognized but not enforced semantically.", DefaultCategory);
 
-    /// <summary>returns clause ignored by runtime semantics.</summary>
+    /// <summary>returns clause has no typed or implicit runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleReturnsIgnored =
-        new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+        new("UP1007", "Rule returns ignored", "Rule returns clause for rule '{0}' has no typed or implicit runtime semantics; generated C# opt-in lifecycle execution can explicitly read/write untyped return entries on the active frame, but returns are not propagated to callers.", DefaultCategory);
 
     /// <summary>
     /// Compatibility alias for the legacy descriptor name.
@@ -87,9 +87,9 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor ReturnsPartiallyApplied =
         RuleReturnsIgnored;
 
-    /// <summary>Rule locals clause recognized but ignored by runtime semantics.</summary>
+    /// <summary>Rule locals clause lacks typed and implicit runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleLocalsIgnored =
-        new("UP1008", "Rule locals ignored", "Rule locals clause for rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+        new("UP1008", "Rule locals ignored", "Rule locals clause for rule '{0}' has no typed or implicit runtime semantics; only generated C# opt-in lifecycle execution allocates untyped frame entries.", DefaultCategory);
 
     /// <summary>Rule throws/catch/finally metadata recognized but ignored by runtime semantics.</summary>
     public static readonly ParserDiagnosticDescriptor RuleExceptionMetadataIgnored =
@@ -173,16 +173,87 @@ public static class ParserDiagnostics
     /// <summary>Embedded ANTLR code execution is disabled by the current runtime policy.</summary>
     public static readonly ParserDiagnosticDescriptor EmbeddedCodeExecutionDisabled =
         new("UP1028", "Embedded code execution disabled", "Embedded ANTLR code execution for '{0}' is disabled by the current runtime policy.", DefaultCategory);
+
+    /// <summary>Embedded ANTLR code is visible to the source generator but is not promoted to executable hooks.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedCodeConstructNotExecutedByGenerator =
+        new(
+            "UP1029",
+            "Embedded code construct not executed by generator",
+            "{0} embedded code in '{1}' is visible to Utils.Parser.Generators but is not executed by the generated parser. {2} Supported generated C# embedded constructs are limited to parser semantic predicates, inline parser actions, rule lifecycle actions, parser headers, parser members, and parser footers.",
+            DefaultCategory);
+
+    /// <summary>Semantic predicate options block (<c>&lt;fail=...&gt;</c>) recognized but not applied by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor PredicateOptionsIgnored =
+        new("UP1030", "Predicate options ignored", "Predicate options on predicate '{0}' are recognized but ignored by the current runtime model.", DefaultCategory);
+
+    /// <summary>Parser members code is injected into the generated per-parse execution context by the source generator.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedMembersInjectedByGenerator =
+        new(
+            "UP1031",
+            "Embedded members injected by generator",
+            "{0} code in '{1}' was injected into the generated per-parse execution context as C# source. This is a source-generator C# compatibility bridge for imported grammars. Prefer a separate partial execution-context class for new code. Invalid C# or member-name collisions are reported by Roslyn.",
+            DefaultCategory);
+
+    /// <summary>Parser header code is injected near the top of generated C# source by the source generator.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedHeaderInjectedByGenerator =
+        new(
+            "UP1035",
+            "Embedded header injected by generator",
+            "{0} code in '{1}' was injected as generated C# source near the top of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
+            DefaultCategory);
+
+    /// <summary>An embedded parser attribute reference is invalid for the deliberately limited generated-C# compatibility subset.</summary>
+    public static readonly ParserDiagnosticDescriptor InvalidEmbeddedParserAttribute =
+        new(
+            "UP0014",
+            "Invalid embedded parser attribute",
+            "Invalid embedded parser attribute in '{0}': {1}",
+            DefaultCategory);
+
+    /// <summary>Parser footer code is injected near the end of generated C# source by the source generator.</summary>
+    public static readonly ParserDiagnosticDescriptor EmbeddedFooterInjectedByGenerator =
+        new(
+            "UP1036",
+            "Embedded footer injected by generator",
+            "{0} code in '{1}' was injected as trailing generated C# source near the end of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
+            DefaultCategory);
+
+    /// <summary>Rule-call arguments preserved as raw metadata; not evaluated and not bound to child parameters.</summary>
+    public static readonly ParserDiagnosticDescriptor RuleCallArgumentsPreservedAsMetadata =
+        new(
+            "UP1037",
+            "Rule-call arguments preserved as metadata only",
+            "Rule-call arguments '{0}' on rule reference '{1}' are preserved as raw metadata only. " +
+            "They are not evaluated, not bound to child rule parameters, and do not populate invocation-frame parameters. " +
+            "Use SetNextRuleParameter(...) for explicit parameter seeding. " +
+            "$param is not supported. Generated Parse(...) remains conservative.",
+            DefaultCategory);
+
     /// <summary>Label parsed on a non-rule-ref element and ignored.</summary>
     public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored =
         new("UP1022", "Label ignored on non-rule reference", "Label '{0}' is recognized but ignored because it targets a non-rule-reference element.", DefaultCategory);
+
+    /// <summary>Element option on an alternative recognized but not applied by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor ElementOptionIgnored =
+        new("UP1032", "Element option ignored", "Element option '{0}' is recognized but not applied by the current runtime model.", DefaultCategory);
+
+    /// <summary>Options block on a lexer rule recognized but ignored by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor LexerRuleOptionsIgnored =
+        new("UP1033", "Lexer rule options ignored", "Options block on lexer rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
+
+    /// <summary>Options block on a parser rule recognized but ignored by the current runtime model.</summary>
+    public static readonly ParserDiagnosticDescriptor ParserRuleOptionsIgnored =
+        new("UP1034", "Parser rule options ignored", "Options block on parser rule '{0}' is recognized but ignored by the current runtime model.", DefaultCategory);
 
     // Warnings (UP5xxx)
     /// <summary>Best-effort recovery used.</summary>
     public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed =
         new("UP5001", "Best-effort recovery used", "Best-effort recovery was used while parsing '{0}'.", DefaultCategory);
 
-    /// <summary>Expected token missing.</summary>
+    /// <summary>
+    /// Expected token missing.
+    /// Currently reserved for missing-token recovery diagnostics.
+    /// </summary>
     public static readonly ParserDiagnosticDescriptor ExpectedTokenMissing =
         new("UP5002", "Expected token missing", "Expected token '{0}' was not found.", DefaultCategory);
 
@@ -244,6 +315,10 @@ public static class ParserDiagnostics
     /// <summary>
     /// Gets all known parser diagnostics keyed by code.
     /// </summary>
+    /// <remarks>
+    /// Compatibility aliases such as ReturnsPartiallyApplied and LocalsIgnored are intentionally not
+    /// listed separately because <see cref="All"/> is keyed by diagnostic code and exposes canonical descriptors.
+    /// </remarks>
     public static IReadOnlyDictionary<string, ParserDiagnosticDescriptor> All { get; } =
         new Dictionary<string, ParserDiagnosticDescriptor>
         {
@@ -253,6 +328,7 @@ public static class ParserDiagnostics
             [UnknownLexerMode.Code] = UnknownLexerMode,
             [ParseFailure.Code] = ParseFailure,
             [InternalInconsistency.Code] = InternalInconsistency,
+            [InvalidEmbeddedParserAttribute.Code] = InvalidEmbeddedParserAttribute,
             [ImportedGrammarNotFound.Code] = ImportedGrammarNotFound,
             [ImportCycleDetected.Code] = ImportCycleDetected,
             [ParserRuleNotAllowedInLexerGrammar.Code] = ParserRuleNotAllowedInLexerGrammar,
@@ -271,6 +347,10 @@ public static class ParserDiagnostics
             [EmbeddedCodeCompilationFailed.Code] = EmbeddedCodeCompilationFailed,
             [EmbeddedCodePreservedNotCompiled.Code] = EmbeddedCodePreservedNotCompiled,
             [EmbeddedCodeExecutionDisabled.Code] = EmbeddedCodeExecutionDisabled,
+            [EmbeddedCodeConstructNotExecutedByGenerator.Code] = EmbeddedCodeConstructNotExecutedByGenerator,
+            [EmbeddedMembersInjectedByGenerator.Code] = EmbeddedMembersInjectedByGenerator,
+            [EmbeddedHeaderInjectedByGenerator.Code] = EmbeddedHeaderInjectedByGenerator,
+            [EmbeddedFooterInjectedByGenerator.Code] = EmbeddedFooterInjectedByGenerator,
             [RuntimeGeneratorMismatch.Code] = RuntimeGeneratorMismatch,
             [DirectLeftRecursionDetected.Code] = DirectLeftRecursionDetected,
             [IndirectLeftRecursionNotSupported.Code] = IndirectLeftRecursionNotSupported,
@@ -284,7 +364,12 @@ public static class ParserDiagnostics
             [UnsupportedAntlrLanguageOptionIgnored.Code] = UnsupportedAntlrLanguageOptionIgnored,
             [UnsupportedLexerCommand.Code] = UnsupportedLexerCommand,
             [UnsupportedAntlrOptionIgnored.Code] = UnsupportedAntlrOptionIgnored,
+            [RuleCallArgumentsPreservedAsMetadata.Code] = RuleCallArgumentsPreservedAsMetadata,
             [LabelOnNonRuleReferenceIgnored.Code] = LabelOnNonRuleReferenceIgnored,
+            [PredicateOptionsIgnored.Code] = PredicateOptionsIgnored,
+            [ElementOptionIgnored.Code] = ElementOptionIgnored,
+            [LexerRuleOptionsIgnored.Code] = LexerRuleOptionsIgnored,
+            [ParserRuleOptionsIgnored.Code] = ParserRuleOptionsIgnored,
             [BestEffortRecoveryUsed.Code] = BestEffortRecoveryUsed,
             [ExpectedTokenMissing.Code] = ExpectedTokenMissing,
             [FallbackStrategyUsed.Code] = FallbackStrategyUsed,

@@ -31,7 +31,8 @@ public class Antlr4GrammarTests
         var definition = Antlr4Grammar.Build();
         var defaultMode = definition.Modes.FirstOrDefault(m => m.Name == "DEFAULT_MODE");
         Assert.IsNotNull(defaultMode);
-        Assert.IsTrue(defaultMode!.Rules.Count > 0);
+        Assert.AreEqual(62, defaultMode!.Rules.Count,
+            "DEFAULT_MODE must contain exactly 62 lexer rules (10 fragments + 52 non-fragments).");
     }
 
     [TestMethod]
@@ -40,7 +41,8 @@ public class Antlr4GrammarTests
         var definition = Antlr4Grammar.Build();
         var argMode = definition.Modes.FirstOrDefault(m => m.Name == "Argument");
         Assert.IsNotNull(argMode);
-        Assert.IsTrue(argMode!.Rules.Count > 0);
+        Assert.AreEqual(7, argMode!.Rules.Count,
+            "Argument mode must contain exactly 7 rules.");
     }
 
     [TestMethod]
@@ -49,14 +51,16 @@ public class Antlr4GrammarTests
         var definition = Antlr4Grammar.Build();
         var charSetMode = definition.Modes.FirstOrDefault(m => m.Name == "LexerCharSet");
         Assert.IsNotNull(charSetMode);
-        Assert.IsTrue(charSetMode!.Rules.Count > 0);
+        Assert.AreEqual(3, charSetMode!.Rules.Count,
+            "LexerCharSet mode must contain exactly 3 rules.");
     }
 
     [TestMethod]
     public void Antlr4Grammar_HasParserRules()
     {
         var definition = Antlr4Grammar.Build();
-        Assert.IsTrue(definition.ParserRules.Count > 0);
+        Assert.AreEqual(68, definition.ParserRules.Count,
+            "Grammar must contain exactly 68 parser rules.");
     }
 
     [TestMethod]
@@ -237,7 +241,8 @@ public class Antlr4GrammarTests
         var resolved = RuleResolver.Resolve(definition);
 
         Assert.IsNotNull(resolved);
-        Assert.IsTrue(resolved.AllRules.Count > 0);
+        Assert.AreEqual(140, resolved.AllRules.Count,
+            "Resolved grammar must contain exactly 140 rules (62 DEFAULT_MODE + 7 Argument + 3 LexerCharSet + 68 parser).");
     }
 
     [TestMethod]
@@ -271,14 +276,12 @@ public class Antlr4GrammarTests
     {
         var definition = Antlr4Grammar.Build();
 
-        // We expect a large number of rules covering the full ANTLR4 grammar
         var totalLexerRules = definition.Modes.Sum(m => m.Rules.Count);
         var totalParserRules = definition.ParserRules.Count;
 
-        // At least 40 lexer rules (including fragments) and 50+ parser rules
-        Assert.IsTrue(totalLexerRules >= 40,
-            $"Expected at least 40 lexer rules, got {totalLexerRules}");
-        Assert.IsTrue(totalParserRules >= 50,
-            $"Expected at least 50 parser rules, got {totalParserRules}");
+        Assert.AreEqual(72, totalLexerRules,
+            "Grammar must contain exactly 72 lexer rules across all modes (62 DEFAULT_MODE + 7 Argument + 3 LexerCharSet).");
+        Assert.AreEqual(68, totalParserRules,
+            "Grammar must contain exactly 68 parser rules.");
     }
 }

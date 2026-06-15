@@ -274,7 +274,6 @@ public class SkipList<T> : ICollection<T>
 
     private void CreateNewSkipNode(Element startElement, Element endElement, Element currentElement)
     {
-        Debug.Print($"CreateNewSkipNode({startElement}, {endElement}, {currentElement})");
         Element previousUp, nextUp;
 
         if (startElement.Up is null)

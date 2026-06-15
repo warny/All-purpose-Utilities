@@ -162,7 +162,8 @@ public class ParserEngineAlternativeSelectionTests
                 new ParserLookaheadProbeResult(ParserLookaheadProbeKind.RequiresParse, "A", "a", ["A"])));
 
         Assert.IsNotNull(result.SelectedState);
-        Assert.IsTrue(result.PrunedStates.Count > 0);
+        Assert.AreEqual(1, result.PrunedStates.Count,
+            "Exactly one state pruned: 'Same'(1) is ambiguous with 'Same'(0); 'Different'(2) is kept as semantically distinct.");
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.AmbiguousAlternativesPruned.Code));
         Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ParseFailure.Code));
     }

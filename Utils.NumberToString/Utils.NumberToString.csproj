@@ -21,12 +21,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\Utils\Mathematics\INumberToStringConverter.cs" Link="Mathematics\INumberToStringConverter.cs" />
-        <Compile Include="..\Utils\Mathematics\NumberConverterConfiguration.cs" Link="Mathematics\NumberConverterConfiguration.cs" />
-        <Compile Include="..\Utils\Mathematics\NumberToStringConverter.cs" Link="Mathematics\NumberToStringConverter.cs" />
-        <Compile Include="..\Utils\Mathematics\NumberToStringConverter.Globalization.cs" Link="Mathematics\NumberToStringConverter.Globalization.cs" />
         <Compile Include="..\Utils\Mathematics\NumberToStringConverterOptions.cs" Link="Mathematics\NumberToStringConverterOptions.cs" />
-        <Compile Include="..\Utils\Mathematics\NumberConverterResources.Designer.cs" Link="Mathematics\NumberConverterResources.Designer.cs">
+        <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
             <DesignTime>true</DesignTime>
             <AutoGen>true</AutoGen>
             <DependentUpon>NumberConverterResources.resx</DependentUpon>
@@ -34,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="..\Utils\Mathematics\NumberConverterResources.resx" Link="Mathematics\NumberConverterResources.resx">
+        <EmbeddedResource Update="Mathematics\NumberConverterResources.resx">
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
         </EmbeddedResource>

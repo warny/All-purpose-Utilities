@@ -1,5 +1,6 @@
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Model;
+using Utils.Parser.Source;
 
 namespace Utils.Parser.Runtime;
 
@@ -202,7 +203,8 @@ internal sealed class AlternativeScheduler
             Status = ActiveParseStateStatus.Active,
             ParentStateKey = null,
             Depth = 0,
-            Continuation = null
+            Continuation = null,
+            ExecutionStateSnapshot = null
         };
     }
 

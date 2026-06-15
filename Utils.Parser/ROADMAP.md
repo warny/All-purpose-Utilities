@@ -4,7 +4,20 @@
 
 Utils.Parser is evolving toward a modern, ANTLR4-like parsing framework and tooling platform through conservative, incremental, and auditable steps.
 
-This roadmap is authoritative for project direction and must be updated whenever meaningful architectural, runtime, metadata, or tooling changes are introduced.
+This roadmap is authoritative for project direction and must be updated whenever meaningful architectural, runtime, metadata, tooling, or public API changes are introduced.
+
+## Public API maturity policy
+
+`Utils.Parser` is currently considered pre-release.
+
+Until an explicit API stabilization milestone is declared:
+
+- public API changes are allowed;
+- compatibility preservation is preferred but not mandatory;
+- reducing API debt is preferred over preserving accidental contracts;
+- API changes must remain explicit, documented, and reviewable.
+
+Public API evolution must not be used to justify changes to runtime authority, parse-tree compatibility, diagnostics format, or unsupported execution semantics.
 
 ## Long-term vision
 
@@ -54,21 +67,38 @@ Current capabilities and responsibilities:
 - `ActiveParseState` provides local descriptive branch state.
 - `ParserLookaheadProbe` and `ParserLookaheadCache` provide conservative shallow lookahead.
 - Runtime feature policies are present.
+- Shared embedded-code runtime discovery metadata is present for parser semantic predicates and inline parser actions, including explicit unsupported reasons for out-of-scope embedded code.
 - Passive runtime observation hooks are available via policy configuration and remain non-authoritative.
 - Semantic predicate evaluator abstraction is present.
 - Runtime expression-backed semantic predicate evaluator is available as an explicit optional adapter without changing default parser behavior.
 - Semantic predicate evaluation now returns structured outcomes so `ParserEngine` can emit fallback `UP1006` or detailed embedded-code diagnostics such as `UP1026` without giving evaluators direct `DiagnosticBag` access.
 - Parser action executor abstraction is present.
+- Parser execution-state manager abstraction is present as a policy component; the default implementation is no-op, generated policies can expose `Fork()` / `CopyFrom(...)` capture/restore and semantic state keys, and `ParserEngine` uses those keys for completed-result memoization and managed execution-state rollback around parser backtracking attempt boundaries.
 - Runtime expression-backed parser action executor is available as an explicit optional adapter without changing default parser behavior or granting actions parse-control authority.
 - Continuation metadata is present.
 - Shared-prefix metadata is present.
 - Parser feature capabilities metadata is present.
 - ANTLR4 grammar bootstrap/conversion support is present.
+- Syntax colorisation descriptor DTO public contracts are hardened to read-only collection exposure (`IReadOnlyList<T>`), with mutation remaining internal to parser conversion flow.
+- Visual Studio syntax colorization descriptor DTO public contracts are hardened to read-only collection exposure (`IReadOnlyList<T>`), with descriptor-population mutation remaining internal to conversion flow.
+- `Rule.Kind` is now an immutable part of the public `Rule` record; mutable resolution state is kept inside internal `RuleResolutionBuilder` instances so `RuleResolver` produces final resolved rule projections without mutating public rule objects in place.
 - Runtime invariant documentation exists.
 - Branch outcome documentation exists.
 - Parser tests are organized to reflect runtime contracts.
 - Runtime observation and export contract is documented (`docs/parser/RuntimeObservationAndExportContract.md`).
 - Diagnostics/observation correlation boundaries are documented (`docs/parser/DiagnosticsObservationCorrelation.md`) as descriptive-only and non-authoritative.
+- Source-position contracts are centralized in the shared `Utils.Parser.Source` package: `SourceCodeLocation` / `SourceCodeRange` remain human-readable diagnostic/display locations, while `SourceLocation` / `SourceSpan` preserve runtime text offsets and spans for tokens and parse nodes.
+- Source-position contracts are intentionally split between runtime coordinates (`SourceLocation`, `SourceSpan`) and human-readable source coordinates (`SourceCodeLocation`, `SourceCodeRange`). Runtime coordinates carry absolute text offsets for tokens/parser operations, while human-readable coordinates are used for diagnostics/tooling when no canonical source offset is available. These contracts must not be merged without a dedicated design review.
+- `ParserRuleInvocationFrame`, `ParserRuleInvocationDescriptor`, `IParserRuleInvocationFrameManager`, and `NullParserRuleInvocationFrameManager` are available as passive rule invocation-frame infrastructure for future rule metadata execution; `ParserEngine` enters and exits frames for actual rule execution, can attach descriptors built from currently represented rule metadata, including preserved raw locals and raw throws/catch/finally metadata, and lifecycle contexts can expose the current frame. Generated C# lifecycle hooks can explicitly use helper methods to read or write that frame's locals store in opt-in paths, but rule parameters, returns, locals, throws/catch/finally metadata, and rule options remain metadata-only unless hook code explicitly stores frame-local values, and no automatic allocation or typed rule-local generation is active.
+- `ParserExecutionContextCopier<TContext>` is available as a public runtime helper for parser execution-context snapshot/fork/commit. Generated execution contexts expose it through internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. Generated policies install the generated execution-state manager for generated parser execution contexts, so parser predicates, inline parser actions, and lifecycle hooks share the same state-aware memoization and rollback infrastructure. `ParserEngine` calls `Capture()` and `Restore()` on the state manager during parser backtracking attempt boundaries. Generated policies install a generated rule lifecycle executor only when parser `@init` or `@after` hooks are present; otherwise the base/no-op lifecycle executor is preserved.
+- Rule-call argument clauses (`callee[...]`) are preserved as raw metadata on `RuleRef.RawArguments` (outer brackets excluded). Both the runtime ANTLR converter and the source-generator G4 parser preserve the raw text. Reported with `UP1037 RuleCallArgumentsPreservedAsMetadata`. Arguments are not evaluated or bound by default and do not populate invocation-frame parameters unless an explicit rule-call policy requests managed seeds. Generated `Parse(...)` and rule signatures are unchanged. Explicit parameter seeding via helpers or the separate opt-in positional/named literal call policies are the supported mechanisms.
+- Rule-call argument text is additionally carried into `ParserRuleCallResult.RawArguments` on the parent frame's last completed child call result via `StackParserRuleInvocationFrameManager.AnnotateLastChildCallRawArguments` (called by `ParserEngine.TryParseRuleRef` after every successful parser-rule call). Generated C# opt-in helpers `TryGetLastRuleCallRawArguments` and `GetLastRuleCallResult(context)?.RawArguments` expose the metadata to parent lifecycle hooks. Call-site metadata is rollback-safe and memoization-safe.
+
+- Successful child parser-rule calls now capture immutable return snapshots after child `@after` and can be retained in the parent invocation frame by rule-reference label. Assignment labels use last-successful-result-wins; list labels append successful results in order. The generated C# opt-in path exposes generic assignment/list result and return helpers, including present-null versus absent semantics and ordered missing-key-skipping list projection. Labeled state participates in managed rollback, memoization restoration, and conservative volatile hashing for unsupported return objects; current call-site labels are reapplied after memoized calls. This supports only the later-documented narrow generated-C# read forms; it does not add bare `$x`/`$xs`, implicit variables, automatic return binding, or lexer returns, and conservative `Parse(...)` is unchanged.
+- `SetNextRuleParameterFromRawArguments(context, ruleName, parameterName, rawArguments, map)` is a generated C# opt-in helper for explicit user-controlled mapping of raw call-site text into a future child seed; requires a caller-supplied delegate; does not evaluate automatically; null `rawArguments` returns `false`; mapper exceptions propagate; both lifecycle and inline-action overloads are available.
+- `ParserRawArgumentSplitter.SplitTopLevel(rawArguments)` is a runtime utility for top-level comma splitting of raw argument text; respects nested `()`, `[]`, `{}` and quoted strings; syntactic only; no evaluation. Exposed through generated C# opt-in helpers `SplitRawArgumentsTopLevel` and `TrySplitLastRuleCallRawArguments` (lifecycle + inline-action overloads).
+- `ParserRawArgumentParameterMapping` is a runtime record struct (ParameterName, Index, Map) used with `SetNextRuleParametersFromRawArguments(context, ruleName, rawArgs, params mappings)` for explicit positional multi-argument seeding; validates all indices before seeding; last mapping wins for duplicates; both lifecycle and inline-action overloads generated.
+- `ParserRawNamedArgumentSeparatorMode` enum + `ParserRawNamedArgumentSplitter.SplitNamedTopLevel` parse named key–value raw argument forms (`value: 42` / `value = 42`); throws `FormatException` on missing separator or empty key; duplicate keys: last wins. `TrySplitLastRuleCallNamedRawArguments` wraps this. `ParserRawNamedArgumentParameterMapping` record struct (ParameterName, ArgumentName, Map) + `SetNextRuleParametersFromNamedRawArguments` generated helper maps named entries to child seeds; validates all before seeding; missing ArgumentName returns false with no partial seed; lifecycle + inline-action overloads.
 
 Clarifications that must remain true:
 
@@ -86,28 +116,46 @@ Clarifications that must remain true:
 The following must not be introduced prematurely:
 
 - no `ParserEngine2`,
-- no public API break,
+- no undocumented public API break,
 - no parse-tree shape break,
 - no diagnostic format break,
 - no speculative execution,
 - no parser graph execution,
 - no GLL or adaptive LL runtime,
 - no continuation replay,
-- no rollback,
-- no semantic-state-aware memoization,
+- no complete ANTLR transactional rollback,
+- no semantic-state rollback outside ordinary parser alternative attempts,
 - no async runtime,
 - no runtime parallelism,
 - no action buffering,
 - no hidden semantic state,
 - no large unreviewable refactors.
 
+## Public API change rules
+
+Public API changes are allowed only when at least one of the following applies:
+
+- remove architectural debt;
+- clarify ownership or responsibility boundaries;
+- simplify usage patterns;
+- eliminate temporary abstractions;
+- prepare future stabilized APIs.
+
+Every API-changing PR must include:
+
+- explicit API surface summary;
+- migration notes when applicable;
+- compatibility impact assessment;
+- documentation impact statement;
+- tests for public behavior.
+
 ## Architectural principles
 
-- Preserve observable behavior.
+- Preserve observable behavior unless an API-changing or behavior-changing PR explicitly documents the change.
 - Document every new invariant.
 - Add invariant tests for runtime changes.
 - Prefer small, reviewable PRs.
-- Separate documentation-only, test-only, refactor-only, and functional PRs.
+- Separate documentation-only, test-only, refactor-only, API-changing, and functional PRs.
 - Never activate prepared metadata accidentally.
 - Keep metadata-only infrastructure visibly metadata-only.
 - Avoid wrappers and abstractions unless they remove real ambiguity.
@@ -205,6 +253,11 @@ Current clarification status:
 - orchestration diagnostics (pruning/backtracking) are explicitly separated from engine-authoritative parse diagnostics,
 - compatibility diagnostics are explicitly documented as independent from parse success/failure.
 - unsupported ANTLR4 lexer-command constructs are now surfaced via explicit deterministic compatibility diagnostics.
+- generator/runtime diagnostic parity for `UP1001`-`UP1006` was tightened with parity tests while preserving parsing semantics and recovery determinism.
+- shared ANTLR4 prequel DTOs now include shared neutral prequel validation facts in `Utils.Parser.Antlr4.Common`; runtime and generator continue to own conversion into `ParserDiagnostics`, and parsing remains intentionally separate.
+- parser diagnostics now use immutable composed value objects (`DiagnosticDetails`, `DiagnosticSpan`, `SourceCodeLocation`, and `SourceCodeRange`) to separate diagnostic content, source offsets, and human-readable source locations while preserving diagnostic ownership and emission semantics.
+- `SourceCodeLocation` and `SourceCodeRange` are now hosted by a dedicated shared `Utils.Parser.Source` package so diagnostics, runtime, generators, and future tooling surfaces can share source-location contracts without depending on diagnostics.
+- `SourceLocation` and `SourceSpan` were moved into the shared `Utils.Parser.Source` package alongside `SourceCodeLocation` and `SourceCodeRange`, centralizing source-position contracts while keeping token/runtime behavior unchanged.
 
 ### Phase 3 — Lookahead contract consolidation
 
@@ -329,11 +382,47 @@ Current clarification status:
 - `tokens` / `channels` prequel constructs now emit deterministic partial-support diagnostics during conversion,
 - labels targeting non-rule-reference elements now emit deterministic compatibility diagnostics instead of being accepted silently,
 - compatibility documentation is aligned with explicit parsed/normalized/rejected boundaries,
-- rule `locals [...]` clauses now emit deterministic explicit compatibility diagnostics (`UP1008 RuleLocalsIgnored`) instead of generic silent metadata discard.
+- rule `locals [...]` clauses now emit deterministic explicit compatibility diagnostics (`UP1008 RuleLocalsIgnored`) instead of generic silent metadata discard; their raw declarations and lexical names are preserved as passive runtime metadata, and the generated C# opt-in lifecycle path allocates missing declared names as untyped `null` entries before `@init`. Explicit `context.InvocationFrame` helper access remains required; typed local generation, implicit action variables, and conservative `Parse(...)` allocation remain unsupported.
+- rule `throws`, `catch`, and `finally` exception metadata now emits deterministic explicit compatibility diagnostics (`UP1023 RuleExceptionMetadataIgnored`) while preserving raw passive runtime metadata without changing parser exception behavior or executing handlers.
 - semantic predicate default-policy behavior is explicitly documented as runtime-policy-driven (`ISemanticPredicateEvaluator`) with deterministic `UP1006` coverage, and precedence predicates are documented separately as non-generic predicate evaluation flow.
-- embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime expression-compilation paths, including multi-project responsibilities.
+- embedded ANTLR code execution model is documented as a future-safe boundary between source-generation C# and runtime-inline expression-compilation paths, including multi-project responsibilities and the shared target of preparing executable artifacts before parsing.
 - shared embedded-code diagnostic taxonomy is defined for future runtime, generator, and tooling paths without enabling execution.
 - parser action execution now returns structured outcomes so `ParserEngine` can emit fallback `UP1005` or detailed embedded-code diagnostics without giving executors direct `DiagnosticBag` access.
+- generator/runtime parity characterization tests now document shared supported grammar facts and known metadata divergences without changing runtime, diagnostics, parse-tree shape, or scheduler behavior.
+- generator-side AST now preserves grammar prequel metadata (`import`, `tokens`, `channels`, and grammar-level actions including scoped targets) for parity/audit visibility while keeping runtime behavior and emitted C# unchanged.
+- generator-side AST now preserves rule lifecycle prequel metadata (`@init` / `@after`) for parity/audit visibility while keeping runtime behavior and emitted C# unchanged.
+- shared ANTLR prequel metadata model extraction is complete for options/imports/actions/tokens/channels through mapper-only DTO sharing; runtime and generator parsing remain intentionally duplicated.
+- a shared netstandard2.0 ANTLR prequel DTO project was introduced, while runtime and generator parsing remain intentionally separate.
+- runtime advanced-configuration public API was consolidated so `ParserRuntimeFeaturePolicy` is the single explicit runtime feature-entry point for semantic predicates, parser actions, and runtime observers.
+- current expression-backed predicate/action adapters are documented as useful intermediate runtime adapters with opportunistic compilation, not as the final prepare-before-parse architecture.
+- public embedded-code preparation boundary contracts now model raw source, target path, contextual symbols, preparation status, diagnostics metadata, and path-specific artifacts without changing default runtime behavior. `Utils.Parser.Expressions` now provides an expression-backed preparer, an explicit registry builder for parser-model validating predicates and inline parser actions, registry-backed runtime adapters for prepared artifacts, and an opt-in runtime policy builder that assembles those components; automatic default `ParserEngine` wiring remains unimplemented.
+- `Utils.Parser.Generators` now implements the separate source-generator C# path for parser semantic predicates and inline parser actions by emitting generated hook methods, generated runtime policy dispatchers, and an explicit `ParseWithEmbeddedCode(...)` helper; generated predicate hooks support expression bodies and statement blocks with `return`, generated action hooks support multi-statement and multi-line bodies, generated parser headers can inject ordinary C# header content such as `using` directives, generated parser footers can inject trailing C# source near the end of the generated file, generated `Parse(...)` remains conservative by default, and hook dispatch is aligned with the runtime indexes covered by generated Roslyn + `ParserEngine` tests.
+- embedded-code preparation/generation contracts are available.
+- expression-backed preparation, prepared artifact registry/adapters, parser-definition registry builder, and prepared runtime policy builder are available for the runtime-inline expression opt-in path.
+- generated C# hooks, generated hook dispatch hardening, shared runtime metadata alignment, cross-path regression coverage, generated C# body support, generated execution contexts with fresh default `ParseWithEmbeddedCode(string)` creation, limited parser `@header` / `@parser::header` source-file injection with generator warning `UP1035`, limited parser `@members` / `@parser::members` execution-context injection with generator warning `UP1031`, limited parser `@footer` / `@parser::footer` trailing source injection with generator warning `UP1036`, and generator warning `UP1029` for visible unsupported embedded-code constructs are available for parser semantic predicates and inline parser actions.
+- `ParserExecutionContextCopier<TContext>` is available as a preparatory runtime copy primitive for generated execution-context snapshot/fork/commit work, and generated execution contexts now expose internal `Fork()`, `CopyFrom(...)`, and `GetExecutionStateKey()` helpers. `[ParserExecutionStateIgnored]` is available to mark instance fields that must be excluded from copying and hashing (e.g. infrastructure fields such as `_frameManager` on generated contexts). `IParserExecutionStateManager` is available through required `ParserRuntimeFeaturePolicy.ExecutionStateManager`; the default manager is no-op and returns `ParserExecutionStateKey.Stateless`, generated policies install a manager backed by `Fork()` / `CopyFrom(...)` and generated state hashing, and callers that directly instantiate `ParserRuntimeFeaturePolicy` must provide the required manager explicitly. `ParserEngine` uses current state keys for completed-result memoization, stores post-rule snapshots in completed results for memoization-hit restoration, and captures/restores managed parser execution state around parser backtracking attempt boundaries. `IParserRuleLifecycleExecutor` is now available through required `ParserRuntimeFeaturePolicy.RuleLifecycleExecutor`; generated policies install a lifecycle executor for grammars that declare `@init` or `@after`; the no-op executor is used for grammars without lifecycle hooks. `IParserRuleInvocationFrameManager` is also available through required `ParserRuntimeFeaturePolicy.RuleInvocationFrameManager`; the default manager is no-op/passive, invocation frames can carry passive descriptors for represented rule metadata, and descriptors do not activate rule parameter, return, local, rule option, or exception metadata execution. This is not complete ANTLR transactional semantics and is not wired into action buffering or external side-effect rollback.
+- Parser rule invocation frames now expose explicit `Parent` and `Depth` properties, and `StackParserRuleInvocationFrameManager` is available as a stack-aware manager that tracks the active call chain. Generated C# opt-in runtime policies (`CreateRuntimePolicy`) now install `StackParserRuleInvocationFrameManager` automatically; lifecycle hooks in `ParseWithEmbeddedCode(...)` can observe `context.InvocationFrame.Parent` and `context.InvocationFrame.Depth`. The frame stack is implicitly rollback-aware: the engine's `try/finally` structure ensures every `ParseRule` call's frame is exited regardless of success, so failed alternatives, quantifier iterations, negation probes, and memoization hits cannot leave stale frames. The conservative `Parse(...)` policy continues to use `NullParserRuleInvocationFrameManager.Instance`. Rule parameters remain metadata-only; `StackParserRuleInvocationFrameManager` is preparatory infrastructure only for future return propagation and argument support.
+- Generated C# execution contexts now expose explicit rule-return frame helpers (`GetRuleReturn`, `TryGetRuleReturn`, `SetRuleReturn`, `GetRuleReturnDescriptors`) alongside the existing rule-local helpers. Generated `@init` and `@after` lifecycle hooks can explicitly read and write untyped return entries on the active invocation frame. Returns are not auto-allocated, not typed, not exposed as implicit variables, not propagated to caller frames, and `$rule.value` is not supported. `UP1007 RuleReturnsIgnored` continues to fire with updated wording. Generated `Parse(...)` remains conservative; `ParseWithEmbeddedCode(...)` is the opt-in path. Rule parameters and exception metadata remain non-executable.
+- Explicit child-rule parameter seeding infrastructure is available. `ParserRuleParameterSeedStore` captures pending parameter seeds per rule name; seeds are stored on the caller frame, consumed and copied into the matching child frame when `StackParserRuleInvocationFrameManager.Enter` is called, and are rollback-safe — the managed execution-state snapshot includes seed state (synced via `GetCurrentPendingSeeds`/`SyncPendingSeedsToCurrentFrame` before each `Capture()`/`GetCurrentStateKey()` call and after `Restore()`). Generated C# execution contexts expose `SetNextRuleParameter(context, ruleName, parameterName, value)` and `ClearNextRuleParameters(context, ruleName)` helpers in both lifecycle-hook form (accepting `ParserRuleLifecycleContext`) and inline-action form (accepting `ParserActionExecutionContext`, routing through the instance `_frameManager` field). Both overloads are rollback-safe. This is not ANTLR-compatible argument passing; `callee[expr]` is not evaluated; `$param` is not supported; generated parser signatures are unchanged.
+- `ParserRuleParameterDescriptor.Name` now contains the lexical parameter name (e.g. `value` for `rule[int value]`) extracted using the same top-level comma split and final-identifier strategy as local and return descriptors. Raw declarations are preserved verbatim. Generated C# execution contexts expose `GetRuleParameter(context, name)`, `TryGetRuleParameter(context, name, out value)`, and `GetRuleParameterDescriptors(context)` helpers. The source-generator's internal G4 parser now preserves raw rule parameter metadata and emits it in the generated `Rule(...)` definition. Parameters are not auto-bound; rule call arguments are not evaluated or passed; generated parser signatures are unchanged; `$param` is not supported.
+- `ParserRuleReturnDescriptor.Name` now contains the lexical return name (e.g. `value` for `returns [int value]`) extracted without C# parsing or type inference, using the same top-level comma split strategy as local descriptors. Multiple returns in a single `returns [...]` clause are split into individual descriptors. Raw declarations are preserved verbatim.
+- `ParserRuleCallResult` is available as an immutable passive snapshot of return values from a successfully completed child rule invocation. `StackParserRuleInvocationFrameManager` captures the snapshot before the post-rule execution-state snapshot is taken (via `PrepareCallResultForSnapshot`, called by `ParserEngine` before `Capture()`) so that memoization hits correctly restore the call result alongside the rest of the execution context. The call result is stored on the parent frame's `LastCompletedChildCall` and propagated to the managed execution-state snapshot via a callback, enabling rollback-safe behavior: failed alternatives clear stale results on the parent frame, and memoization hits restore the correct child result. Generated C# execution contexts expose `GetLastRuleCallResult(context)` and `TryGetLastRuleCallReturn(context, returnName, out value)` helpers for explicit access. `$rule.value`, labeled rule-reference return access, typed returns, and automatic assignment to parent return dictionaries are not supported.
+- Parser rule-reference label metadata is now preserved and exposed end-to-end. `RuleRef.Label` (type `RuleLabel`) carries the label name and additive flag; `RuleRef.LabelName` and `RuleRef.LabelKind` (type `ParserRuleReferenceLabelKind`: `None`, `Assignment`, `List`) derive from it. `ParserRuleCallResult.LabelName` and `ParserRuleCallResult.LabelKind` expose the call-site label after `ParserEngine.TryParseRuleRef` calls `IParserRuleInvocationFrameManager.AnnotateLastChildCallLabel` on every successful child rule completion. The source-generator's internal G4 parser now captures `x=child` and `xs+=child` label prefixes and stores them on `G4RuleRef.LabelName` / `G4RuleRef.LabelIsAdditive`; `GrammarEmitter` emits `Label: new RuleLabel(...)` when a label is present so that generated `BuildDefinition()` definitions include label metadata. Label metadata composes with `callee[...]` raw argument metadata: both can coexist on the same `RuleRef`. Labels are metadata-only: no `$x`, `$x.value`, `$xs`, implicit variables, typed label fields/properties, automatic parse-node storage, automatic return access, automatic binding, automatic argument evaluation, automatic parameter seeding, or generated parser method signatures are added. Labels on non-rule-reference elements continue to emit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. Label metadata is included in `ParserRuleCallResult.GetParserExecutionStateHash()` for correct rollback-safe memoization. Generated C# opt-in code can inspect labels explicitly via `GetLastRuleCallResult(context)?.LabelName` and `?.LabelKind`. Conservative `Parse(...)` remains conservative; hooks do not execute and label metadata is not exposed.
+- Explicit parser rule-call execution policy infrastructure is available through `IParserRuleCallExecutionPolicy`, `NullParserRuleCallExecutionPolicy`, and `ParserRuleCallExecutionContext`. `ParserEngine` invokes `BeforeRuleCall(...)`, parses the child, applies current-call-site raw argument and label annotations, and then invokes `AfterRuleCall(...)` with success/failure and the completed tracked call result when available, including right-hand self-references dispatched through direct-left-recursive tails. `ParserRuntimeFeaturePolicy.Default` installs the no-op policy. Generated C# preserves a custom rule-call policy from `basePolicy` through `CreateRuntimePolicy(executionContext, basePolicy)` and the new backward-compatible `ParseWithEmbeddedCode(input, executionContext, basePolicy)` overload. This remains an explicit extension point only: no `callee[...]` evaluation, automatic positional/named binding, automatic seed, `$param`, `$x`, `$x.value`, `$rule.value`, typed generated variables, or label-backed parse-node storage is implemented. Policy external side effects are not automatically rolled back; current-call-site result metadata remains rollback/memoization safe.
+- the remaining embedded-code work is explicit: lexer predicate/action design; transactional action rollback/buffering design; deeper alignment between the generator `G4Grammar` collector and `EmbeddedCodeRuntimeDiscovery`; and a broader ANTLR corpus.
+
+Embedded-code transactional-state sequence (reference architecture: `docs/parser/EmbeddedCodeTransactionalState.md`):
+
+1. Add parser execution-state manager contract and semantic memoization key. **Complete.**
+2. Carry semantic-state snapshots through ordinary scheduled alternatives. **Complete.**
+3. Apply transactional state to left-recursive extensions. **Complete.**
+4. Apply transactional state to quantifier attempts. **Complete.**
+5. Isolate negation probes. **Complete.**
+6. Add parser rule lifecycle hooks for `@init` / `@after`. **Complete for source-generator C# opt-in.**
+7. Design lexer embedded-code state separately.
+
+- Steps 1–6 are complete for the source-generator C# opt-in path. Managed execution-state rollback is active for all parser backtracking attempt boundaries. Lifecycle hooks fire through the configured `RuleLifecycleExecutor`; grammars without hooks use the no-op executor. Generated policies install the generated execution-state manager for generated parser execution contexts, while the generated rule lifecycle executor is installed only for grammars that declare `@init` or `@after`. Action buffering, replay, top-level parse-rejection rollback for caller-supplied contexts, and external side-effect rollback are not implemented. Completed-result memoization is semantic-state-aware, memoization hits restore stored post-rule state snapshots, and restored parser attempts restore the state key before later cache lookups.
+- Lexer actions, lexer predicates, unsupported grammar actions, `@lexer::header`, `@lexer::members`, `@lexer::footer`, and automatic default execution remain not done and must not be documented as complete.
 
 Goal: progressively improve ANTLR4 grammar compatibility.
 
@@ -355,6 +444,7 @@ Scope may include:
 Important constraint:
 
 - runtime support must stay clearly separated from metadata preservation.
+- the C# source-generator path and runtime-inline `IExpressionCompiler` path must remain separate; the runtime core must stay conservative and language-neutral.
 
 Allowed work:
 
@@ -373,6 +463,8 @@ Forbidden work:
 **Status: in progress.**
 
 Goal: move toward tooling capabilities once runtime behavior is stable.
+
+Current status includes an explicit prepared expression registry builder and runtime policy builder in `Utils.Parser.Expressions` for callers that opt into the runtime-inline preparation path. The registry builder consumes shared runtime discovery metadata for parser predicates/actions, and the policy builder assembles the preparer, registry builder, no-compile adapters, and `ParserRuntimeFeaturePolicy` without increasing ANTLR support by default. `Utils.Parser.Generators` also has an explicit generated C# opt-in path for parser predicates/actions through generated execution contexts, generated instance hooks, generated dispatchers, explicit-context `CreateRuntimePolicy(executionContext, basePolicy)`, and `ParseWithEmbeddedCode(...)`; generated `Parse(...)` remains conservative, and only `ParseWithEmbeddedCode(string)` creates a fresh context implicitly.
 
 Scope:
 
@@ -396,6 +488,8 @@ Forbidden work:
 
 Current clarification status:
 
+- tooling direction now distinguishes implemented C# source-generator embedded-code hooks from runtime-inline expression preparation; generator hook execution is explicit through generated policy helpers, supports tested parser predicate expression/block bodies and parser action statement bodies, and is not `IExpressionCompiler`-backed.
+- embedded-code preparation contracts provide a source-generator/runtime-inline boundary; source-generator C# hooks for parser predicates/actions are implemented, while automatic runtime-inline model preparation from `ParserEngine` remains unimplemented. Explicit registry-backed prepared expression runtime adapters and an opt-in prepared runtime policy builder are available through `ParserRuntimeFeaturePolicy` without changing default runtime behavior.
 - runtime trace analysis abstractions are available as tooling-only, read-only, deterministic consumers of passive observations/exports,
 - analysis outputs are explicitly descriptive and non-authoritative (no replay, no runtime ownership transfer, no parser/diagnostics authority transfer).
 - end-to-end runtime-observation/export/analysis usage guidance is documented as illustrative tooling only, with explicit non-framework/non-authoritative boundaries.
@@ -441,6 +535,7 @@ This roadmap must be updated when any PR changes:
 - metadata semantics,
 - ANTLR4 compatibility,
 - parser feature capabilities,
+- public API shape,
 - runtime policies,
 - test coverage strategy,
 - tooling direction.
@@ -456,10 +551,38 @@ Future runtime PRs should include:
 - compatibility impact,
 - diagnostics impact,
 - parse-tree impact,
+- public API impact,
 - tests,
 - documentation updates,
 - roadmap update when direction changes.
 
 ## Current safety summary
 
-The runtime currently remains conservative and deterministic. Metadata-rich infrastructure exists, but it is not execution authority. No replay, rollback, semantic-state-aware memoization, graph execution, async parsing, or parallel parsing exists today.
+The runtime currently remains conservative and deterministic. Metadata-rich infrastructure, the execution-context copy helper, and generated context copy helpers exist, but they are not replay authority. Managed semantic-state rollback exists for parser backtracking attempt boundaries, but not for top-level parse rejection after final validation failures. No replay, complete ANTLR transactional rollback, graph execution, async parsing, or parallel parsing exists today. Public APIs may evolve while the project remains pre-release; runtime execution guarantees remain conservative.
+
+### Incremental parser rule-call execution policy
+
+**Status: in progress.**
+
+- `PositionalLiteralRuleCallExecutionPolicy` and the separate `NamedLiteralRuleCallExecutionPolicy` are available as explicit opt-ins while the default remains metadata-only; they are not combined automatically.
+- The positional policy binds exact-arity values by declaration order. The named policy consumes the existing `NamedRawArguments` split for `name: literal` and `name = literal`, matches exact ordinal names independently of order, and requires exact declared-name coverage. Duplicate raw names inherit splitter last-wins semantics. The untyped policies continue to ignore defaults and require exact arity/coverage. Partial untyped binding, mixed syntax, declared-type validation/conversion in untyped policies, and arbitrary expressions remain unsupported.
+- Binding validates the full call and applies all values through one rollback-managed, all-or-none pending child seed batch; the frame-manager contract forbids partial acceptance and reports when the complete batch cannot be retained. Generated state-aware memoization deterministically includes the supported literal values (`null`, `bool`, `int`, `long`, `double`, `string`, and `char`) so different bound values cannot reuse stale child state. Historical arbitrary explicit seeds remain accepted; non-hashable objects conservatively force volatile state keys instead of aborting parsing or claiming safe reuse.
+- Typed validation is available only through the separate `TypedPositionalLiteralRuleCallExecutionPolicy` and `TypedNamedLiteralRuleCallExecutionPolicy`. They may consume conservatively preserved simple-literal parameter defaults: positional omission is trailing-only, named omission may occur in any order, explicit values override defaults, and complete effective values precede one atomic seed batch. General optional/default expressions, return/label semantics, policy composition, and broader expression semantics remain future separately reviewed phases. Lexer execution and ANTLR-complete argument semantics remain out of scope.
+
+
+### Explicit typed literal rule-call binding
+
+- Separate typed positional and named policies are available as explicit opt-ins; the default and existing untyped policies are unchanged.
+- `ParserRuleParameterDescriptor.RawType` preserves the conservative `type name` declaration prefix without arbitrary C# type resolution; `RawDefaultValue` passively preserves a top-level `= defaultText` suffix.
+- The closed allowlist covers built-in Boolean, integral, floating, decimal, character, string, and object aliases plus exact canonical `System.*` names and one nullable suffix.
+- Conversion is checked and culture invariant: integral ranges are enforced, integral-to-floating and double-to-float require exact preservation, floating-to-integral and double-to-decimal are rejected, and text conversion is limited to exact string/char forms.
+- Explicit arguments and only the defaults required for omitted parameters pass through the simple-literal parser and typed converter; complete validation and conversion precede one atomic managed seed batch. Positional omission is trailing-only, named omission may occur in any order, and explicit values override defaults. Generated rollback and memoization use converted effective values; runtime numeric types remain distinct, while different source forms may share a key after conversion to the same target value.
+- Arbitrary type resolution, user-defined types, arrays, generics, enums, general/default expression evaluation, parameter references, constants, Roslyn conversion, mixed binding, policy composition, generated typed signatures, `$param` forms, returns, labels, and lexer execution remain out of scope.
+
+## Incremental generated-C# parser return attribute compatibility
+
+**Status: complete.**
+
+- Generated parser inline actions and `@after` hooks support narrow read-only `$x.value` assignment-label return access, `$xs.value` list-label return projection, and exact-current-rule `$rule.value` access; current-rule reads are also permitted in `@init`.
+- The lexical rewrite ignores strings, characters, and comments, resolves assignment/list label kinds with ordinal matching, validates declared returns, and emits blocking `UP0014` diagnostics for unsupported or unsafe forms. Assignment/current-rule reads return `object?`; list reads return `IReadOnlyList<object?>`, preserve successful order, include present-null, skip missing returns, and yield an empty list when absent.
+- Assignment required helpers still throw deterministic `ParserAttributeAccessException` failures for runtime absence. Predicate, lexer, token, write, chain, bare attribute, ambiguous assignment/list names, special indexing, typed list, and conversion semantics remain unsupported. Reads use current rollback-aware frame state, including memoized call-site label rebinding. Existing explicit helpers and conservative `Parse(...)` remain unchanged.

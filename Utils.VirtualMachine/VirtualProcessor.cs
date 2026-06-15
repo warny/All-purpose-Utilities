@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
+using System.Threading;
 using Utils.Arrays;
 using Utils.Collections;
 
@@ -20,6 +19,11 @@ namespace Utils.VirtualMachine
     /// </typeparam>
     public abstract class VirtualProcessor<T> where T : Context
     {
+        // INumberReader methods never change; cache per-type avoids rebuilding on every instantiation.
+        private static readonly Dictionary<Type, MethodInfo> _numberReaderMethods =
+            typeof(INumberReader).GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                 .ToDictionary(m => m.ReturnType, m => m);
+
         private readonly INumberReader _numberReader;
         private int _maxInstructionSize;
 
@@ -63,17 +67,12 @@ namespace Utils.VirtualMachine
                 ArrayEqualityComparers.Byte
             );
 
-            var numberReaderType = typeof(INumberReader);
-            var numberReaderTypeMethods = numberReaderType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .ToDictionary(m => m.ReturnType, m => m);
-
             var methods = GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             foreach (var method in methods)
             {
+                if (!method.IsDefined(typeof(InstructionAttribute), true)) continue;
                 var instructionAttributes = method.GetCustomAttributes(typeof(InstructionAttribute), true);
-                if (instructionAttributes.IsNullOrEmptyCollection())
-                    continue;
 
                 var parameters = method.GetParameters();
                 if (parameters[0].ParameterType != typeof(T)) continue;
@@ -93,7 +92,7 @@ namespace Utils.VirtualMachine
 
                     foreach (var parameter in parameters.Skip(1))
                     {
-                        var readerMethod = numberReaderTypeMethods[parameter.ParameterType];
+                        var readerMethod = _numberReaderMethods[parameter.ParameterType];
                         var methodCallExpression = Expression.Call(numberReaderExpression, readerMethod, [contextParameter]);
                         methodParameters.Add(methodCallExpression);
                     }
@@ -182,45 +181,75 @@ namespace Utils.VirtualMachine
         #endregion
 
         /// <summary>
-        /// Executes instructions by reading the context's data byte-by-byte, matching against known instructions,
-        /// and invoking the corresponding handler delegate.
+        /// Executes all instructions until the end of the data stream or until
+        /// <paramref name="cancellationToken"/> is cancelled.
         /// </summary>
-        /// <param name="context">The execution context containing the data and instruction pointer.</param>
-        /// <exception cref="VirtualProcessorException">
-        /// Thrown when an unknown instruction byte sequence is encountered.
-        /// </exception>
-        public void Execute(T context)
+        /// <param name="context">The execution context.</param>
+        /// <param name="cancellationToken">Token that can stop execution between instructions.</param>
+        /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+        public void Execute(T context, CancellationToken cancellationToken = default)
         {
-            // Buffer for building up the current instruction byte sequence
-            var currentInstruction = new List<byte>(_maxInstructionSize);
-
+            var buffer = new List<byte>(_maxInstructionSize);
             while (context.InstructionPointer < context.Data.Length)
             {
-                bool instructionFound = false;
-                currentInstruction.Clear();
+                cancellationToken.ThrowIfCancellationRequested();
+                TryDispatch(context, buffer);
+            }
+        }
 
-                // Read up to the max instruction size (or until data is exhausted)
-                for (int i = 0; i < _maxInstructionSize && context.InstructionPointer < context.Data.Length; i++)
+        /// <summary>
+        /// Executes exactly one instruction at the current instruction pointer.
+        /// </summary>
+        /// <param name="context">The execution context.</param>
+        /// <returns>
+        /// <see langword="true"/> if an instruction was dispatched;
+        /// <see langword="false"/> if the end of the data stream was already reached.
+        /// </returns>
+        /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
+        public bool ExecuteStep(T context)
+        {
+            if (context.InstructionPointer >= context.Data.Length) return false;
+            var buffer = new List<byte>(_maxInstructionSize);
+            TryDispatch(context, buffer);
+            return true;
+        }
+
+        /// <summary>
+        /// Registers an instruction handler at runtime, supplementing or overriding
+        /// the methods discovered via <see cref="InstructionAttribute"/>.
+        /// </summary>
+        /// <param name="opcode">Byte sequence identifying the instruction.</param>
+        /// <param name="name">Human-readable name used in diagnostics.</param>
+        /// <param name="handler">Delegate invoked when the opcode is matched.</param>
+        public void RegisterInstruction(byte[] opcode, string name, Action<T> handler)
+        {
+            ArgumentNullException.ThrowIfNull(opcode);
+            ArgumentNullException.ThrowIfNull(handler);
+            if (opcode.Length == 0) throw new ArgumentException("Opcode cannot be empty.", nameof(opcode));
+
+            InstructionsSet[opcode] = (name ?? string.Empty, ctx => handler(ctx));
+            _maxInstructionSize = Math.Max(_maxInstructionSize, opcode.Length);
+        }
+
+        /// <summary>
+        /// Shared dispatch core: reads bytes one at a time and invokes the matching handler.
+        /// Reuses <paramref name="buffer"/> across iterations (caller must call Clear before each call).
+        /// </summary>
+        private void TryDispatch(T context, List<byte> buffer)
+        {
+            buffer.Clear();
+            for (int i = 0; i < _maxInstructionSize && context.InstructionPointer < context.Data.Length; i++)
+            {
+                buffer.Add(ReadByte(context));
+                if (InstructionsSet.TryGetValue(buffer, out var entry))
                 {
-                    currentInstruction.Add(ReadByte(context));
-
-                    if (InstructionsSet.TryGetValue(currentInstruction, out var entry))
-                    {
-                        // Optionally log or trace the instruction name:
-                        // Console.WriteLine($"Executing instruction: {entry.Name}");
-                        entry.Handler(context);
-                        instructionFound = true;
-                        break;
-                    }
-                }
-
-                if (!instructionFound)
-                {
-                    throw new VirtualProcessorException(
-                        $"Unknown instruction encountered at InstructionPointer={context.InstructionPointer}."
-                    );
+                    entry.Handler(context);
+                    return;
                 }
             }
+            throw new VirtualProcessorException(
+                $"Unknown instruction at InstructionPointer={context.InstructionPointer - buffer.Count}.");
         }
     }
 

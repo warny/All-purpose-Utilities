@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables
@@ -94,9 +95,10 @@ namespace Utils.Fonts.TTF.Tables
 
             data.Write<UInt16>(nPairs);         // number of pairs
                                                 // For simplicity, compute searchRange, entrySelector, and rangeShift as follows:
-            ushort searchRange = (ushort)(Math.Pow(2, Math.Floor(Math.Log(nPairs, 2))) * KernPairSize);
-            ushort entrySelector = (ushort)Math.Log(Math.Pow(2, Math.Floor(Math.Log(nPairs, 2))), 2);
-            ushort rangeShift = (ushort)(nPairs * KernPairSize - searchRange);
+            int    log2         = BitOperations.Log2((uint)nPairs);
+            ushort searchRange  = (ushort)((1 << log2) * KernPairSize);
+            ushort entrySelector = (ushort)log2;
+            ushort rangeShift   = (ushort)(nPairs * KernPairSize - searchRange);
             data.Write<UInt16>(searchRange);
             data.Write<UInt16>(entrySelector);
             data.Write<UInt16>(rangeShift);

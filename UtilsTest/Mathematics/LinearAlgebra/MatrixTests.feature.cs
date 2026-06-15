@@ -10,7 +10,7 @@
 // ------------------------------------------------------------------------------
 #region Designer generated code
 #pragma warning disable
-namespace UtilsTest.Mathematics.LinearAlgebra
+namespace UtilsTest.Unit.Mathematics.LinearAlgebra
 {
     using TechTalk.SpecFlow;
     using System;
@@ -65,7 +65,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             if (((testRunner.FeatureContext != null) 
                         && (testRunner.FeatureContext.FeatureInfo.Title != "MatrixTests")))
             {
-                global::UtilsTest.Mathematics.LinearAlgebra.MatrixTestsFeature.FeatureSetup(null);
+                global::UtilsTest.Unit.Mathematics.LinearAlgebra.MatrixTestsFeature.FeatureSetup(null);
             }
         }
         

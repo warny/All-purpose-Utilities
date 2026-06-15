@@ -14,7 +14,7 @@ dotnet add package omy.Utils.Parser
 
 ## Supported frameworks
 
-- net9.0
+- net8.0
 
 ## `.g4` file support status
 
@@ -588,4 +588,27 @@ By default, behavior remains conservative:
 Custom `ISemanticPredicateEvaluator` and `IParserActionExecutor` implementations may influence branch acceptance and may execute action logic.
 Memoization currently reuses rule results by `(rule, input position, precedence)` and does not model external semantic/action state, so custom runtime policies should remain deterministic for equivalent invocations.
 
-Current runtime still does not provide invocation frames, rollback-safe mutable semantic state, speculative action replay, continuation replay, or shared-prefix execution.
+`ParserRuntimeFeaturePolicy.ExecutionStateManager` and `ParserRuntimeFeaturePolicy.RuleInvocationFrameManager` are required. Prefer deriving policies from `ParserRuntimeFeaturePolicy.Default` so the no-op `NullParserExecutionStateManager.Instance` and `NullParserRuleInvocationFrameManager.Instance` are preserved automatically:
+
+```csharp
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = customEvaluator
+};
+```
+
+Direct policy construction must provide both managers explicitly to keep conservative behavior:
+
+```csharp
+var policy = new ParserRuntimeFeaturePolicy
+{
+    SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+    ParserActionExecutor = new DefaultParserActionExecutor(),
+    ExecutionStateManager = NullParserExecutionStateManager.Instance,
+    RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance
+};
+```
+
+The invocation-frame manager is passive infrastructure for future rule metadata execution; it does not bind typed rule parameters, returns, locals, throws/catch/finally metadata, or rule options. The execution-state manager is used for managed parser attempt-boundary rollback, but action buffering remains unsupported.
+
+Current runtime still does not provide ANTLR-compatible typed rule invocation semantics, rollback-safe external mutable semantic state, speculative action replay, continuation replay, or shared-prefix execution.

@@ -101,11 +101,9 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
     /// <exception cref="ArgumentException">Thrown if the specified type is not annotated with <see cref="DNSRecordAttribute"/>.</exception>
     private void CreateReader(Type dnsElementType)
     {
-        var dnsClasses = dnsElementType.GetCustomAttributes<DNSRecordAttribute>();
-        if (!dnsClasses.Any())
-        {
+        var dnsClasses = dnsElementType.GetCustomAttributes<DNSRecordAttribute>().ToArray();
+        if (dnsClasses.Length == 0)
             throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType));
-        }
 
         // Build an expression-based writer for the user-defined DNS detail type (e.g., A-record, AAAA-record, etc.).
         var writer = CreateReader<DNSResponseDetail>(dnsElementType);

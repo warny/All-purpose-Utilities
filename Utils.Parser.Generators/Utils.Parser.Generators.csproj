@@ -28,7 +28,16 @@
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>UtilsTest</_Parameter1>
+            <_Parameter1>UtilsTest.Unit</_Parameter1>
+        </AssemblyAttribute>
+        <!--
+            Exception: UtilsTest.Functional requires access to SyntaxColorizationDescriptorParser,
+            SyntaxColorizationEmitter, SyntaxColorizationValidation, SyntaxColorizationDescriptor
+            and SyntaxColorizationEntry, which are internal generator pipeline stages. These types
+            are intentionally not public API; functional tests verify their end-to-end behaviour.
+        -->
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UtilsTest.Functional</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
 
@@ -40,6 +49,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" />
+        <ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" />
     </ItemGroup>
 
 </Project>

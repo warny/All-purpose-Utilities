@@ -1,6 +1,6 @@
 # omy.Utils.NumberToString
 
-`omy.Utils.NumberToString` provides localized number-to-text conversion APIs extracted from the broader `omy.Utils` library.
+`omy.Utils.NumberToString` provides pluggable language-specific finalization hooks consumed by `NumberToStringConverter` in `omy.Utils`.
 
 ## Install
 
@@ -8,53 +8,54 @@
 dotnet add package omy.Utils.NumberToString
 ```
 
-## Usage
+## Supported frameworks
+- net8.0
+
+## Features
+- `INumberToStringLanguageSpecifics` — interface for post-processing converted number text.
+- `DefaultNumberToStringLanguageSpecifics` — no-op implementation; returns the text unchanged.
+- `GermanNumberToStringLanguageSpecifics` — applies German grammar rules (e.g. `"eine Million"` instead of `"ein Million"`).
+
+## Using language specifics with NumberToStringConverter
+
+Language specifics are injected into `NumberToStringConverter` (from `omy.Utils`) to apply locale-aware text adjustments after number conversion. The built-in culture configurations in `omy.Utils` already wire them automatically:
 
 ```csharp
 using Utils.Mathematics;
 
-NumberToStringConverter converter = NumberToStringConverter.Default;
-string text = converter.Convert(12345);
-Console.WriteLine(text);
-```
-
-### Use a specific culture
-
-```csharp
-using Utils.Mathematics;
-
-NumberToStringConverter english = NumberToStringConverter.GetConverter("EN");
-string value = english.Convert(21001);
-Console.WriteLine(value);
-```
-
-### Convert decimal and fractional values
-
-```csharp
-using Utils.Mathematics;
-using Utils.Numerics;
-
-NumberToStringConverter french = NumberToStringConverter.GetConverter("FR-fr");
-
-string decimalText = french.Convert(12.34m);
-string fractionText = french.Convert(new Number(3, 2));
-
-Console.WriteLine(decimalText);
-Console.WriteLine(fractionText);
-```
-
-### Use language-specific finalization
-
-```csharp
-using Utils.Mathematics;
-
+// The "DE" converter uses GermanNumberToStringLanguageSpecifics internally
 NumberToStringConverter german = NumberToStringConverter.GetConverter("DE");
-string million = german.Convert(1_000_000);
-Console.WriteLine(million); // "eine Million" with German specifics
+string text = german.Convert(1_000_000);
+Console.WriteLine(text); // "eine Million"
 ```
 
-## Notes
+## Implementing a custom finalization
 
-- Targets stable frameworks for package consumers.
-- Versioning follows the `omy.Utils` package family.
-- For broader utility features, see the root package: `omy.Utils`.
+Implement `INumberToStringLanguageSpecifics` to apply your own post-processing step:
+
+```csharp
+using Utils.Mathematics;
+
+public class UpperCaseSpecifics : INumberToStringLanguageSpecifics
+{
+    public string FinalizeWriting(string languageIdentifier, string text)
+        => text.ToUpperInvariant();
+}
+```
+
+Pass an instance to the `NumberToStringConverter` constructor (declared in `omy.Utils`) via the `languageSpecifics` parameter.
+
+## DefaultNumberToStringLanguageSpecifics
+
+Used automatically when no language specifics are provided — it returns the input text unchanged:
+
+```csharp
+using Utils.Mathematics;
+
+var specifics = new DefaultNumberToStringLanguageSpecifics();
+string result = specifics.FinalizeWriting("EN", "twenty-one");
+// → "twenty-one" (no change)
+```
+
+## Related packages
+- `omy.Utils` — contains `NumberToStringConverter` and all built-in culture configurations.

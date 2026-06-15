@@ -47,14 +47,22 @@ public readonly record struct RuntimeTokenizerPosition(int Index, int Length);
 /// </summary>
 public sealed class TokenizerRuntime
 {
+    /// <summary>Source content being tokenized.</summary>
     private readonly string _content;
+    /// <summary>Characters treated as whitespace and skipped when requested.</summary>
     private readonly HashSet<char> _whiteSpaces;
+    /// <summary>Symbol strings tried when no custom reader matches, ordered longest-first.</summary>
     private readonly IReadOnlyList<string> _symbols;
+    /// <summary>Custom token readers applied before symbol matching.</summary>
     private readonly IReadOnlyList<RuntimeTryReadToken> _tokenReaders;
+    /// <summary>Transformers that map raw token text to a defined string value.</summary>
     private readonly IReadOnlyList<RuntimeStringTransformer> _stringTransformers;
+    /// <summary>Stack of saved positions for push/pop support.</summary>
     private readonly Stack<RuntimeTokenizerState> _savedStates = new();
 
+    /// <summary>Start index of the current token in <see cref="_content"/>.</summary>
     private int _index;
+    /// <summary>Length of the current token in <see cref="_content"/>.</summary>
     private int _length;
 
     /// <summary>
@@ -223,6 +231,7 @@ public sealed class TokenizerRuntime
         DefineString = string.Empty;
     }
 
+    /// <summary>Advances past the current token and positions the tokenizer on the next one, optionally skipping whitespace.</summary>
     private bool Read(bool ignoreWhiteSpace)
     {
         _index += _length;
@@ -271,5 +280,6 @@ public sealed class TokenizerRuntime
         throw new TokenizerRuntimeException(_content[_index].ToString(), _index);
     }
 
+    /// <summary>Snapshot of tokenizer cursor state used by push/pop operations.</summary>
     private readonly record struct RuntimeTokenizerState(int Index, int Length, string DefineString);
 }

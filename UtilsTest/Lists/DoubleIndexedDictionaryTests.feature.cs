@@ -10,7 +10,7 @@
 // ------------------------------------------------------------------------------
 #region Designer generated code
 #pragma warning disable
-namespace UtilsTest.Lists
+namespace UtilsTest.Unit.Lists
 {
     using TechTalk.SpecFlow;
     using System;
@@ -65,7 +65,7 @@ namespace UtilsTest.Lists
             if (((testRunner.FeatureContext != null) 
                         && (testRunner.FeatureContext.FeatureInfo.Title != "DoubleIndexedDictionaryTests")))
             {
-                global::UtilsTest.Lists.DoubleIndexedDictionaryTestsFeature.FeatureSetup(null);
+                global::UtilsTest.Unit.Lists.DoubleIndexedDictionaryTestsFeature.FeatureSetup(null);
             }
         }
         

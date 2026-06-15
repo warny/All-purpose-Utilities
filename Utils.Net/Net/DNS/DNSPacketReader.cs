@@ -52,8 +52,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
     private void CreateReader(Type dnsElementType)
     {
-        var dnsClasses = dnsElementType.GetCustomAttributes<DNSRecordAttribute>();
-        if (!dnsClasses.Any()) { throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType)); }
+        var dnsClasses = dnsElementType.GetCustomAttributes<DNSRecordAttribute>().ToArray();
+        if (dnsClasses.Length == 0) throw new ArgumentException($"{dnsElementType.FullName} is not a DNS element", nameof(dnsElementType));
         var reader = CreateReader<DNSResponseDetail>(dnsElementType);
         foreach (var dnsClass in dnsClasses)
         {

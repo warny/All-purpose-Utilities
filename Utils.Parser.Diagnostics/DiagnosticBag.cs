@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Utils.Parser.Source;
 
 namespace Utils.Parser.Diagnostics;
 
@@ -76,6 +77,40 @@ public sealed class DiagnosticBag : IReadOnlyCollection<ParserDiagnostic>
             ruleName,
             exception);
 
+        _items.Add(diagnostic);
+        return diagnostic;
+    }
+
+    /// <summary>
+    /// Creates and adds a diagnostic from a descriptor with composed context objects.
+    /// </summary>
+    /// <param name="descriptor">Diagnostic descriptor.</param>
+    /// <param name="span">Optional source span.</param>
+    /// <param name="location">Optional source location.</param>
+    /// <param name="ruleName">Optional rule context.</param>
+    /// <param name="exception">Optional related exception.</param>
+    /// <param name="arguments">Message format arguments.</param>
+    /// <returns>The added diagnostic.</returns>
+    public ParserDiagnostic AddWithStructuredContext(
+        ParserDiagnosticDescriptor descriptor,
+        DiagnosticSpan? span,
+        SourceCodeLocation? location,
+        string? ruleName,
+        Exception? exception,
+        params object?[] arguments)
+    {
+        if (descriptor is null)
+        {
+            throw new ArgumentNullException(nameof(descriptor));
+        }
+
+        var details = new DiagnosticDetails(
+            descriptor,
+            descriptor.FormatMessage(arguments),
+            ruleName,
+            exception);
+
+        var diagnostic = new ParserDiagnostic(details, span, location);
         _items.Add(diagnostic);
         return diagnostic;
     }

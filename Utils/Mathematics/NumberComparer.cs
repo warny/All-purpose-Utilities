@@ -23,12 +23,7 @@ public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
     /// </summary>
     /// <param name="precision">The number of decimal places that must match.</param>
     public FloatingPointComparer(int precision)
-        : this(
-            T.Pow(
-                (T)Convert.ChangeType(10, typeof(T)),
-                (T)Convert.ChangeType(-precision, typeof(T))
-            )
-        )
+        : this(T.Pow(T.CreateChecked(10), T.CreateChecked(-precision)))
     {
     }
 
@@ -42,11 +37,14 @@ public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
     }
 
     /// <inheritdoc />
-    public int Compare(T x, T y) => x.Equals(y) ? 0 : x.CompareTo(y);
+    public int Compare(T x, T y) => x.CompareTo(y);
 
     /// <inheritdoc />
     public bool Equals(T x, T y) => x.Between(y - Interval, y + Interval);
 
     /// <inheritdoc />
-    public int GetHashCode([DisallowNull] T obj) => obj.GetHashCode();
+    // Fuzzy equality makes a collision-free hash impossible; returning a constant satisfies
+    // the IEqualityComparer contract (equal objects must share a hash code) at the cost of
+    // degrading hash-based collections to O(n) lookup.
+    public int GetHashCode([DisallowNull] T obj) => 0;
 }

@@ -54,14 +54,42 @@ public record AnyChar : TokenizerContent;
 
 /// <summary>
 /// A reference to another rule, either lexer or parser depending on context.
-/// Optionally carries a label: <c>e=expr</c> or <c>ids+=ID</c>.
+/// Optionally carries a label (<c>x=child</c> or <c>xs+=child</c>) and raw call-site argument text
+/// preserved from <c>callee[...]</c> syntax.
+/// Labels and raw arguments are metadata only: they are not evaluated, not bound automatically,
+/// and do not populate invocation-frame parameters.
 /// </summary>
 public record RuleRef(
     /// <summary>Name of the referenced rule.</summary>
     string RuleName,
     /// <summary>Optional label assignment, or <c>null</c> when unlabeled.</summary>
-    RuleLabel? Label = null
-) : RuleContent;
+    RuleLabel? Label = null,
+    /// <summary>
+    /// Raw argument text preserved from a <c>callee[...]</c> call-site argument clause, or <c>null</c> when absent.
+    /// The outer brackets are excluded. This text is not evaluated and is not passed to child rule frames.
+    /// Use <c>SetNextRuleParameter(...)</c> for explicit parameter seeding.
+    /// </summary>
+    string? RawArguments = null
+) : RuleContent
+{
+    /// <summary>
+    /// Gets the label name from the optional <see cref="Label"/>, or <c>null</c> when unlabeled.
+    /// Metadata only: no implicit variable, typed field, or automatic binding is generated.
+    /// </summary>
+    public string? LabelName => Label?.Label;
+
+    /// <summary>
+    /// Gets the label kind derived from the optional <see cref="Label"/>.
+    /// Returns <see cref="Runtime.ParserRuleReferenceLabelKind.None"/> when the reference is unlabeled.
+    /// Metadata only: no ANTLR-compatible label access is implemented.
+    /// </summary>
+    public Runtime.ParserRuleReferenceLabelKind LabelKind =>
+        Label is null
+            ? Runtime.ParserRuleReferenceLabelKind.None
+            : Label.IsAdditive
+                ? Runtime.ParserRuleReferenceLabelKind.List
+                : Runtime.ParserRuleReferenceLabelKind.Assignment;
+}
 
 /// <summary>
 /// A label attached to a rule reference inside a parser alternative.

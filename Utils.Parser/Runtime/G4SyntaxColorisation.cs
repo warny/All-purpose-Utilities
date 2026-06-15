@@ -9,6 +9,7 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 public sealed class G4SyntaxColorisation : ISyntaxColorisation
 {
+    /// <summary>ANTLR4 grammar keywords that receive keyword colorization.</summary>
     private static readonly HashSet<string> s_keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "grammar",
@@ -27,6 +28,7 @@ public sealed class G4SyntaxColorisation : ISyntaxColorisation
         "finally"
     };
 
+    /// <summary>Conventional ANTLR4 lexer rule names associated with numeric tokens.</summary>
     private static readonly HashSet<string> s_numberRules = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "NUMBER",

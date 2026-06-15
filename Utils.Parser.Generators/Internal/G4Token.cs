@@ -19,6 +19,7 @@ internal enum G4TokenKind
     Hash,           // #
     Dot,            // .
     Comma,          // ,
+    Equal,          // =
     At,             // @
     LBrace,         // {
     RBrace,         // }

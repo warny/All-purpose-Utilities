@@ -45,6 +45,36 @@ public record RuleReturn(
 );
 
 /// <summary>
+/// A parser rule local declaration preserved as passive metadata only.
+/// </summary>
+public record RuleLocal(
+    /// <summary>Raw local declaration text from the grammar, without semantic type binding.</summary>
+    string RawDeclaration
+);
+
+/// <summary>
+/// A parser rule catch clause preserved as passive metadata only.
+/// </summary>
+public record RuleCatchClause(
+    /// <summary>Raw catch argument text from the grammar, without semantic type binding.</summary>
+    string RawArgument,
+    /// <summary>Raw catch action body from the grammar, without execution semantics.</summary>
+    string RawAction
+);
+
+/// <summary>
+/// Parser rule exception metadata preserved without runtime exception semantics.
+/// </summary>
+public record RuleExceptionMetadata(
+    /// <summary>Raw exception names declared by a <c>throws</c> clause.</summary>
+    IReadOnlyList<string> Throws,
+    /// <summary>Raw catch clauses declared after the parser rule body.</summary>
+    IReadOnlyList<RuleCatchClause> CatchClauses,
+    /// <summary>Raw finally action body, or <c>null</c> when absent.</summary>
+    string? FinallyAction
+);
+
+/// <summary>
 /// A single grammar rule — either a lexer rule (upper-case name by convention)
 /// or a parser rule (lower-case name by convention).
 /// </summary>
@@ -73,13 +103,14 @@ public record Rule(
     /// <summary>Code executed before the rule body (<c>@init { }</c>), or <c>null</c>.</summary>
     EmbeddedAction? InitAction = null,
     /// <summary>Code executed after the rule body (<c>@after { }</c>), or <c>null</c>.</summary>
-    EmbeddedAction? AfterAction = null
-)
-{
+    EmbeddedAction? AfterAction = null,
     /// <summary>
     /// Whether this is a lexer or parser rule.
-    /// Set by <c>RuleResolver.Resolve</c> during the resolution pass;
-    /// initially <see cref="RuleKind.Unresolved"/>.
+    /// The default <see cref="RuleKind.Unresolved"/> value is valid before resolution.
     /// </summary>
-    public RuleKind Kind { get; internal set; } = RuleKind.Unresolved;
-}
+    RuleKind Kind = RuleKind.Unresolved,
+    /// <summary>Rule-level local declarations preserved as passive metadata, or <c>null</c> when absent.</summary>
+    IReadOnlyList<RuleLocal>? Locals = null,
+    /// <summary>Rule-level exception metadata preserved as passive metadata, or <c>null</c> when absent.</summary>
+    RuleExceptionMetadata? ExceptionMetadata = null
+);

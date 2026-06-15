@@ -7,6 +7,7 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 public sealed class LexerExtensionContext
 {
+    /// <summary>Token names declared in <c>tokens { ... }</c> blocks or backed by lexer rules, used by <see cref="IsTokenKnown"/>.</summary>
     private readonly HashSet<string> _knownTokenNames;
 
     /// <summary>

@@ -70,7 +70,9 @@ public class CSyntaxBuilderTests
     }
 
     /// <summary>
-    /// Ensures raw strings are emitted as string literals.
+    /// Ensures triple-quoted input does not crash tokenization.
+    /// The grammar has no raw-string rule, so <c>"""raw"""</c> falls back to
+    /// three consecutive STRING_LITERAL tokens rather than raising an error.
     /// </summary>
     [TestMethod]
     public void RawQuoteSequenceIsTokenizedWithoutFailure()
@@ -78,8 +80,10 @@ public class CSyntaxBuilderTests
         var parser = new CSyntaxTokenParser();
         var tokens = parser.Tokenize("\"\"\"raw\"\"\"");
 
-        Assert.IsTrue(tokens.Count > 0);
-        Assert.IsTrue(tokens.Any(token => token.Text.Contains("raw") || token.Text == "\"\""));
+        Assert.AreEqual(3, tokens.Count, "Triple-quoted input must fall back to exactly 3 string literal tokens.");
+        CollectionAssert.AreEqual(
+            new[] { "STRING_LITERAL", "STRING_LITERAL", "STRING_LITERAL" },
+            tokens.Select(t => t.RuleName).ToArray());
     }
 
     /// <summary>

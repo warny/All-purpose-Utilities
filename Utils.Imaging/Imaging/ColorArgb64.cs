@@ -25,7 +25,8 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     [FieldOffset(0)]
     ulong value;
 
-    [FieldOffset(8)]
+    // little-endian layout: blue[0-1] green[2-3] red[4-5] alpha[6-7]
+    [FieldOffset(6)]
     ushort alpha;
     [FieldOffset(4)]
     ushort red;

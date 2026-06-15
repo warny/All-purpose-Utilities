@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -486,21 +487,29 @@ namespace Utils.Geography.Model
 
         #region Utility
 
+        // Regex instances are expensive to compile; cache one per unique (nativeDigits, decimalSeparator) pair.
+        private static readonly ConcurrentDictionary<string, Regex> _regexCache = new();
+
         /// <summary>
-        /// Builds the regex used to parse coordinate values from strings.
+        /// Builds or retrieves from cache the regex used to parse coordinate values from strings.
         /// </summary>
         protected static Regex BuildRegexCoordinates(CultureInfo culture)
         {
-            // Build a pattern that accommodates the culture's digits and decimal separator
-            // This pattern picks up optional modifiers (W/E/N/S/+/-), degrees, optional minutes, optional seconds.
-            string digits = $"[{string.Join("", culture.NumberFormat.NativeDigits)}]+";
+            string nativeDigits = string.Join("", culture.NumberFormat.NativeDigits);
             string decimalSeparator = culture.NumberFormat.NumberDecimalSeparator;
-            string number = $"{digits}({Regex.Escape(decimalSeparator)}{digits})?";
+            string cacheKey = $"{nativeDigits}|{decimalSeparator}";
 
-            return new Regex(
-                @$"(?<modifier>W|E|N|S|\-|\+)?(?<degrees>{number})(°(?<minutes>{number}))?('(?<seconds>{number}))?",
-                RegexOptions.Compiled | RegexOptions.IgnoreCase
-            );
+            return _regexCache.GetOrAdd(cacheKey, static key =>
+            {
+                int sep = key.IndexOf('|');
+                string digits = $"[{key[..sep]}]+";
+                string dec = key[(sep + 1)..];
+                string number = $"{digits}({Regex.Escape(dec)}{digits})?";
+                return new Regex(
+                    @$"(?<modifier>W|E|N|S|\-|\+)?(?<degrees>{number})(°(?<minutes>{number}))?('(?<seconds>{number}))?",
+                    RegexOptions.Compiled | RegexOptions.IgnoreCase
+                );
+            });
         }
 
         #endregion

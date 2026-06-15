@@ -8,6 +8,7 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class ParseContext(IReadOnlyList<Token> tokens)
 {
+    /// <summary>Zero-based index of the next token to be consumed.</summary>
     private int _position;
 
     /// <summary>Current zero-based index into the token list.</summary>

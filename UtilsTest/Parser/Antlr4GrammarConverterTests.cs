@@ -383,7 +383,8 @@ public class Antlr4GrammarConverterTests
 
         Assert.AreEqual(1, matches.Count);
         Assert.AreEqual("UP1008", matches[0].Code);
-        StringAssert.Contains(matches[0].Message, "recognized but ignored");
+        StringAssert.Contains(matches[0].Message, "no typed or implicit runtime semantics");
+        StringAssert.Contains(matches[0].Message, "generated C# opt-in");
         StringAssert.Contains(matches[0].Message, "start");
     }
 
@@ -399,6 +400,67 @@ public class Antlr4GrammarConverterTests
 
         Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleReturnsIgnored.Code));
         Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+    }
+
+    [TestMethod]
+    public void Converter_LocalsClause_PreservesRawMetadata()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start locals [int x, string name] : 'a' ;
+            """, diagnostics);
+
+        var rule = definition.AllRules["start"];
+        Assert.IsNotNull(rule.Locals);
+        Assert.AreEqual(1, rule.Locals!.Count);
+        StringAssert.Contains(rule.Locals[0].RawDeclaration, "int x");
+        StringAssert.Contains(rule.Locals[0].RawDeclaration, "string name");
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleLocalsIgnored.Code));
+    }
+
+    [TestMethod]
+    public void Converter_ExceptionMetadata_PreservesThrowsCatchAndFinally()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start throws System.Exception, CustomError : 'a' ;
+              catch [System.Exception ex] { ignoredCatch(); }
+              finally { ignoredFinally(); }
+            """, diagnostics);
+
+        var metadata = definition.AllRules["start"].ExceptionMetadata;
+        Assert.IsNotNull(metadata);
+        CollectionAssert.AreEqual(new[] { "System.Exception", "CustomError" }, metadata!.Throws.ToArray());
+        Assert.AreEqual(1, metadata.CatchClauses.Count);
+        Assert.AreEqual("System.Exception ex", metadata.CatchClauses[0].RawArgument);
+        Assert.AreEqual("ignoredCatch();", metadata.CatchClauses[0].RawAction);
+        Assert.AreEqual("ignoredFinally();", metadata.FinallyAction);
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
+    }
+
+    [TestMethod]
+    public void Converter_CatchAndFinallyWithoutThrows_PreserveExceptionMetadata()
+    {
+        var diagnostics = new DiagnosticBag();
+
+        var definition = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : 'a' ;
+              catch [RecognitionException ex] { recover(ex); }
+              finally { cleanup(); }
+            """, diagnostics);
+
+        var metadata = definition.AllRules["start"].ExceptionMetadata;
+        Assert.IsNotNull(metadata);
+        Assert.AreEqual(0, metadata!.Throws.Count);
+        Assert.AreEqual("RecognitionException ex", metadata.CatchClauses.Single().RawArgument);
+        Assert.AreEqual("recover(ex);", metadata.CatchClauses.Single().RawAction);
+        Assert.AreEqual("cleanup();", metadata.FinallyAction);
+        Assert.AreEqual(1, diagnostics.Count(d => d.Code == ParserDiagnostics.RuleExceptionMetadataIgnored.Code));
     }
 
 
@@ -785,6 +847,124 @@ public class Antlr4GrammarConverterTests
         Assert.IsTrue(def.AllRules.ContainsKey("start"));
     }
 
+    // ─── Silent-drop diagnostics ─────────────────────────────────────────────
+
+    [TestMethod]
+    public void Alternative_WithUnknownElementOption_EmitsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            expr : <myOption=someValue> 'x' 'y' | 'z' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ElementOptionIgnored.Code),
+            "Expected UP1032 for unknown element option <myOption=...>");
+        var diag = diagnostics.First(d => d.Code == ParserDiagnostics.ElementOptionIgnored.Code);
+        StringAssert.Contains(diag.Message, "myOption");
+    }
+
+    [TestMethod]
+    public void Alternative_WithAssocRight_DoesNotEmitElementOptionDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            expr : <assoc=right> expr '^' expr | INT ;
+            INT : ('0'..'9')+ ;
+            """, diagnostics);
+
+        Assert.IsFalse(diagnostics.Any(d => d.Code == ParserDiagnostics.ElementOptionIgnored.Code),
+            "assoc=right must not emit UP1032");
+    }
+
+    [TestMethod]
+    public void LexerRule_WithOptionsBlock_EmitsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID options { caseInsensitive=true; } : ('a'..'z')+ ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.LexerRuleOptionsIgnored.Code),
+            "Expected UP1033 for options block on lexer rule");
+        var diag = diagnostics.First(d => d.Code == ParserDiagnostics.LexerRuleOptionsIgnored.Code);
+        StringAssert.Contains(diag.Message, "ID");
+    }
+
+    [TestMethod]
+    public void LexerRule_WithOptionsBlock_StoresOptionsAsMetadata()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID options { caseInsensitive=true; } : ('a'..'z')+ ;
+            """);
+
+        var rule = def.AllRules["ID"];
+        Assert.IsNotNull(rule.Options, "Rule.Options should be populated");
+        Assert.IsTrue(rule.Options!.Values.TryGetValue("caseInsensitive", out var v));
+        Assert.AreEqual("true", v);
+    }
+
+    [TestMethod]
+    public void LexerRule_WithoutOptionsBlock_HasNullOptions()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : ID ;
+            ID : ('a'..'z')+ ;
+            """);
+
+        Assert.IsNull(def.AllRules["ID"].Options);
+    }
+
+    [TestMethod]
+    public void ParserRule_WithOptionsBlock_EmitsDiagnostic()
+    {
+        var diagnostics = new DiagnosticBag();
+        _ = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start
+              options { caseInsensitive=true; }
+              : 'x' ;
+            """, diagnostics);
+
+        Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code),
+            "Expected UP1034 for options block on parser rule");
+        var diag = diagnostics.First(d => d.Code == ParserDiagnostics.ParserRuleOptionsIgnored.Code);
+        StringAssert.Contains(diag.Message, "start");
+    }
+
+    [TestMethod]
+    public void ParserRule_WithOptionsBlock_StoresOptionsAsMetadata()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start
+              options { caseInsensitive=true; }
+              : 'x' ;
+            """);
+
+        var rule = def.AllRules["start"];
+        Assert.IsNotNull(rule.Options, "Rule.Options should be populated");
+        Assert.IsTrue(rule.Options!.Values.TryGetValue("caseInsensitive", out var v));
+        Assert.AreEqual("true", v);
+    }
+
+    [TestMethod]
+    public void ParserRule_WithoutOptionsBlock_HasNullOptions()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : 'x' ;
+            """);
+
+        Assert.IsNull(def.AllRules["start"].Options);
+    }
+
     // ─── Utilitaires ─────────────────────────────────────────────────────────
 
     private static bool ContainsLexerCommand(RuleContent content, LexerCommandType type)
@@ -798,5 +978,148 @@ public class Antlr4GrammarConverterTests
             Quantifier q         => ContainsLexerCommand(q.Inner, type),
             _                    => false
         };
+    }
+
+    // ─── Predicate options (UP1030) ───────────────────────────────────────────
+
+    [TestMethod]
+    public void PredicateOptions_IntValue_ParseSucceeds()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { true }?<fail=42> 'x' ;
+            """);
+
+        Assert.IsTrue(def.AllRules.ContainsKey("start"));
+    }
+
+    [TestMethod]
+    public void PredicateOptions_IntValue_ProducesValidatingPredicate()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { myPred }?<fail=42> 'x' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var seq = (Sequence)startRule.Content.Alternatives[0].Content;
+        var predicate = seq.Items.OfType<ValidatingPredicate>().First();
+        Assert.AreEqual("myPred", predicate.Code);
+    }
+
+    [TestMethod]
+    public void PredicateOptions_IntValue_EmitsPredicateOptionsIgnoredDiagnostic()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { myPred }?<fail=42> 'x' ;
+            """, diag);
+
+        Assert.IsTrue(diag.Any(d => d.Code == "UP1030"),
+            "Expected UP1030 (PredicateOptionsIgnored) diagnostic");
+    }
+
+    [TestMethod]
+    public void PredicateOptions_Absent_NoPredicateOptionsIgnoredDiagnostic()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : { myPred }? 'x' ;
+            """, diag);
+
+        Assert.IsFalse(diag.Any(d => d.Code == "UP1030"),
+            "Did not expect UP1030 when no predicate options are present");
+    }
+
+    // ─── Rule-call arguments callee[...] ─────────────────────────────────────
+
+    [TestMethod]
+    public void RuleCallArgs_Simple_RawArgumentsPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child[42] ;
+            child[int value] : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.AreEqual("42", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_Multiple_RawTextPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child[1, "x", foo()] ;
+            child[int a, string b, int c] : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.AreEqual("1, \"x\", foo()", ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_Absent_RawArgumentsIsNull()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.IsNull(ruleRef.RawArguments);
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_EmitsDiagnosticUP1037()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child[42] ;
+            child[int value] : 'a' ;
+            """, diag);
+
+        Assert.IsTrue(diag.Any(d => d.Code == "UP1037"),
+            "Expected UP1037 (RuleCallArgumentsPreservedAsMetadata) diagnostic");
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_Absent_NoUP1037Diagnostic()
+    {
+        var diag = new DiagnosticBag();
+        Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : child ;
+            child : 'a' ;
+            """, diag);
+
+        Assert.IsFalse(diag.Any(d => d.Code == "UP1037"),
+            "Did not expect UP1037 when no rule-call arguments are present");
+    }
+
+    [TestMethod]
+    public void RuleCallArgs_WithLabel_BothPreserved()
+    {
+        var def = Antlr4GrammarConverter.Parse("""
+            grammar G;
+            start : e=child[42] ;
+            child[int value] : 'a' ;
+            """);
+
+        var startRule = def.AllRules["start"];
+        var ruleRef = (RuleRef)startRule.Content.Alternatives[0].Content;
+        Assert.AreEqual("child", ruleRef.RuleName);
+        Assert.IsNotNull(ruleRef.Label);
+        Assert.AreEqual("e", ruleRef.Label!.Label);
+        Assert.AreEqual("42", ruleRef.RawArguments);
     }
 }

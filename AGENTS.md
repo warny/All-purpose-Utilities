@@ -22,6 +22,46 @@ This project targets **.NET 9**.
 - Every change must include a corresponding **test**.  
 - The only exception is when modifying **library metadata**.  
 
+### Test projects
+
+The test suite is split into two MSTest projects:
+
+| Project | Path | When to use |
+|---|---|---|
+| **UtilsTest.Unit** | `UtilsTest/UtilsTest.Unit.csproj` | Deterministic, self-contained — in-memory data, embedded resources, no external system dependencies |
+| **UtilsTest.Functional** | `UtilsTest.Functional/UtilsTest.Functional.csproj` | Tests that depend on real external systems — network sockets, OS processes, environment-dependent file paths |
+
+**Default: add tests to `UtilsTest.Unit`.**  
+Only move a test to `UtilsTest.Functional` when it genuinely requires an external system that cannot be substituted.
+
+#### Criteria
+
+A test belongs in **UtilsTest.Unit** if it:
+- produces the same result regardless of the host environment,
+- uses only in-memory data: literals, `MemoryStream`, synthetic objects, embedded resources (`Resources.*`),
+- may span multiple components or assemblies as long as no external system is involved.
+
+A test belongs in **UtilsTest.Functional** if it:
+- opens real network sockets (`TcpClient`, `UdpClient`, `HttpClient` against a live endpoint),
+- spawns or communicates with OS processes,
+- reads files whose path depends on the host environment (fonts loaded from disk, EDMX files resolved at runtime),
+- relies on a running external service (SMTP server, NTP, OData endpoint).
+
+> **Note — embedded resources are not "file system".** A test that reads data via `Resources.*` or a compiled-in `byte[]` is deterministic and belongs in `UtilsTest.Unit`, even if the data originated from a file.
+
+#### Running tests
+
+```
+# Fast loop (no external dependencies):
+dotnet test UtilsTest/UtilsTest.Unit.csproj
+
+# Integration suite (requires network / environment):
+dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj
+```
+
+#### SpecFlow
+SpecFlow `.feature` files and their step bindings live exclusively in **UtilsTest.Unit** (the `Lists/` and `Mathematics/` BDD scenarios). Do not add SpecFlow infrastructure to `UtilsTest.Functional`.
+
 ---
 
 ## README  

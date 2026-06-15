@@ -170,12 +170,12 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
     {
         if (percent < 0) percent = 0;
         else if (percent > 1) percent = 1;
+        double inv = 1 - percent;
         return new ColorArgb(
-                color1.alpha * (1 - percent) + color2.alpha * percent,
-    Math.Sqrt(Math.Pow(color1.Red, 2) * (1 - percent) + Math.Pow(color2.Red, 2) * percent),
-    Math.Sqrt(Math.Pow(color1.green, 2) * (1 - percent) + Math.Pow(color2.green, 2) * percent),
-    Math.Sqrt(Math.Pow(color1.blue, 2) * (1 - percent) + Math.Pow(color2.blue, 2) * percent)
-);
+            color1.alpha * inv + color2.alpha * percent,
+            Math.Sqrt(color1.red   * color1.red   * inv + color2.red   * color2.red   * percent),
+            Math.Sqrt(color1.green * color1.green * inv + color2.green * color2.green * percent),
+            Math.Sqrt(color1.blue  * color1.blue  * inv + color2.blue  * color2.blue  * percent));
     }
     /// <summary>
     /// Returns a textual representation of the ARGB components.

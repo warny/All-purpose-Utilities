@@ -22,7 +22,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new ValidatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected) });
 
         var result = parser.Parse([]);
 
@@ -34,7 +34,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new GatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Satisfied) });
 
         var result = parser.Parse([]);
 
@@ -46,7 +46,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     {
         var startRule = CreateStartRuleWithPredicate(new ValidatingPredicate("canProceed"));
         var definition = CreateDefinition(startRule);
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.NotEvaluated()));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.NotEvaluated()) });
         var diagnostics = new DiagnosticBag();
 
         parser.Parse([], diagnostics: diagnostics);
@@ -93,7 +93,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
             """,
             diagnostics: null);
 
-        var parser = new ParserEngine(definition, new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected) });
         var lexer = new LexerEngine(definition);
         var result = parser.Parse(lexer.Tokenize(new StringReader("a")));
 
@@ -105,7 +105,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     public void Parser_ExpressionEvaluator_WhenCompilationThrows_EmitsUP1026WithoutUP1006()
     {
         var definition = CreateSemanticPredicateGrammarDefinition();
-        var parser = new ParserEngine(definition, new ExpressionSemanticPredicateEvaluator(new ThrowingExpressionCompiler()));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new ExpressionSemanticPredicateEvaluator(new ThrowingExpressionCompiler()) });
         var lexer = new LexerEngine(definition);
         var diagnostics = new DiagnosticBag();
 
@@ -120,7 +120,7 @@ public class ParserEngineSemanticPredicateEvaluatorTests
     public void Parser_ExpressionEvaluator_WhenExpressionIsNotBoolean_EmitsUP1026WithoutUP1006()
     {
         var definition = CreateSemanticPredicateGrammarDefinition();
-        var parser = new ParserEngine(definition, new ExpressionSemanticPredicateEvaluator(new NonBooleanExpressionCompiler()));
+        var parser = new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = new ExpressionSemanticPredicateEvaluator(new NonBooleanExpressionCompiler()) });
         var lexer = new LexerEngine(definition);
         var diagnostics = new DiagnosticBag();
 
@@ -178,7 +178,9 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         {
             new(new SourceSpan(0, 1, 1, 1), "A", "DEFAULT_MODE", "DEFAULT_CHANNEL", "a")
         };
-        var parser = new ParserEngine(definition, observer);
+        var parser = new ParserEngine(
+            definition,
+            ParserRuntimeFeaturePolicy.Default with { SemanticPredicateEvaluator = observer });
 
         var result = parser.Parse(tokens);
 
@@ -201,7 +203,10 @@ public class ParserEngineSemanticPredicateEvaluatorTests
 
         var grammar = new CompiledGrammar(
             definition,
-            new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected));
+            ParserRuntimeFeaturePolicy.Default with
+            {
+                SemanticPredicateEvaluator = new ConstantSemanticPredicateEvaluator(SemanticPredicateEvaluationOutcome.Rejected)
+            });
 
         var result = grammar.Parse("a");
 
