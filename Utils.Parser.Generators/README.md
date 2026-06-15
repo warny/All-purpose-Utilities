@@ -359,11 +359,11 @@ IReadOnlyList<object?> values = GetLabeledRuleCallReturns(context, "xs", "value"
 
 `x=child` retains the last successful immutable `ParserRuleCallResult`; `xs+=child` appends successful results in execution order. Child returns are captured after child `@after`. Missing return keys and present-null values remain distinct. List return projection includes present-null entries and skips calls where the key is absent. Managed snapshots make retention rollback-safe, and memoized child results receive the current call site's label before binding. Assignment and list namespaces are separate if a grammar reuses one lexical label with both operators.
 
-This is explicit metadata-driven access only. The generator does not emit `$x`, `$x.value`, `$xs`, `$rule.value`, implicit variables, typed label fields, typed return accessors, automatic return assignment, or lexer label/return support. Positional, named, typed, and default-aware argument policies are unchanged, and generated `Parse(...)` remains conservative.
+This remains metadata-driven access. The generator does not emit bare `$x`/`$xs`, implicit variables, typed label fields, typed return accessors, automatic return assignment, or lexer label/return support. Positional, named, typed, and default-aware argument policies are unchanged, and generated `Parse(...)` remains conservative.
 
 ## Limited parser return attributes
 
-Generated parser C# now accepts two read-only forms in inline parser actions and `@after` hooks:
+Generated parser C# accepts three read-only forms in inline parser actions and `@after` hooks:
 
 ```antlr
 start
@@ -382,4 +382,4 @@ child returns [int value]
     ;
 ```
 
-`$x.value` reads an assignment-labeled child return, and `$child.value` reads the current `child` frame return. Rewritten expressions return `object?`; there is no automatic conversion or generated typed variable. Present-null is valid. Invalid roots, list/token labels, undeclared returns, writes, chains, bare attributes, `$x.value` in `@init`, and all predicate attribute references produce `UP0014`. List labels use `GetLabeledRuleCallReturns(context, "xs", "value")`. Existing explicit helpers remain available, lexer attributes are unsupported, and this feature does not imply general ANTLR attribute compatibility. Generated `Parse(...)` remains conservative.
+`$x.value` reads an assignment-labeled child return as `object?`, `$xs.value` projects a list-labeled child return as `IReadOnlyList<object?>`, and `$child.value` reads the current `child` frame return as `object?`. List projection preserves successful execution order, includes present-null entries, skips missing returns, and returns an empty list when the label has no successful results; assignment-label absence still throws. There is no automatic conversion or generated typed variable. Invalid roots, token labels, undeclared returns, assignment/list name ambiguity, writes, chains, bare attributes, label reads in `@init`, and all predicate attribute references produce `UP0014`. No special `$xs[i]` or `$xs.value[i]` syntax is added; ordinary C# operations may be applied to the rewritten list expression. Existing explicit helpers remain available, lexer attributes are unsupported, and this feature does not imply general ANTLR attribute compatibility. Generated `Parse(...)` remains conservative.

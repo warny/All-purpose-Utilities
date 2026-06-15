@@ -18,13 +18,13 @@ public class EmbeddedParserAttributeRewriterTests
         A : 'a' ;
         """;
 
-    /// <summary>Verifies assignment-label and current-rule reads are rewritten independently.</summary>
+    /// <summary>Verifies assignment-label, list-label, and current-rule reads are rewritten independently.</summary>
     [TestMethod]
     public void Rewrite_SupportedReads_RewritesMultipleReferences()
     {
-        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + (int)$start.own;");
+        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$start.own;");
 
-        Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
+        Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Select(v => v).Count() + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
         Assert.AreEqual(0, result.Errors.Count);
     }
 
@@ -56,15 +56,17 @@ public class EmbeddedParserAttributeRewriterTests
         Assert.AreEqual(0, result.Errors.Count);
     }
 
-    /// <summary>Verifies unsupported roots, list labels, token labels, missing returns, bare reads, and chains are diagnosed.</summary>
+    /// <summary>Verifies unsupported roots, token labels, missing returns, bare reads, and chains are diagnosed.</summary>
     [DataTestMethod]
     [DataRow("$unknown.value", "not the current rule name")]
-    [DataRow("$xs.value", "List label 'xs'")]
     [DataRow("$t.value", "Token label 't'")]
     [DataRow("$x.missing", "not declared by parser rule 'child'")]
+    [DataRow("$xs.missing", "referenced by list label 'xs'")]
     [DataRow("$start.missing", "not declared by current parser rule 'start'")]
     [DataRow("$x", "Bare parser attribute '$x'")]
+    [DataRow("$xs", "Bare parser attribute '$xs'")]
     [DataRow("$x.value.other", "Chained parser attribute '$x.value'")]
+    [DataRow("$xs.value.other", "Chained parser attribute '$xs.value'")]
     public void Rewrite_UnsupportedReference_ReportsDeterministicError(string code, string expectedMessage)
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
@@ -79,9 +81,15 @@ public class EmbeddedParserAttributeRewriterTests
     [DataRow("$start.own = 1;")]
     [DataRow("$x.value += 1;")]
     [DataRow("$x.value++;")]
+    [DataRow("$xs.value = 1;")]
+    [DataRow("$xs.value += 1;")]
+    [DataRow("$xs.value++;")]
     [DataRow("++$x.value;")]
+    [DataRow("++$xs.value;")]
     [DataRow("Use(ref $x.value);")]
+    [DataRow("Use(ref $xs.value);")]
     [DataRow("Use(out $x.value);")]
+    [DataRow("Use(out $xs.value);")]
     public void Rewrite_WriteTarget_ReportsDeterministicError(string code)
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
@@ -98,6 +106,45 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "not available in @init");
+    }
+
+    /// <summary>Verifies list-labeled child returns are statically unavailable during initialization.</summary>
+    [TestMethod]
+    public void Rewrite_ListLabelInInit_ReportsLifecycleError()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $xs.value;", EmbeddedParserAttributeLocationKind.Init);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "List label 'xs' is not available in @init");
+    }
+
+    /// <summary>Verifies list-label attributes remain unavailable in semantic predicates.</summary>
+    [TestMethod]
+    public void Rewrite_ListLabelInPredicate_ReportsLifecycleError()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$xs.value.Count > 0", EmbeddedParserAttributeLocationKind.Predicate);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "not supported in semantic predicates");
+    }
+
+    /// <summary>Verifies a lexical name shared by assignment and list labels requires explicit helpers.</summary>
+    [TestMethod]
+    public void Rewrite_AmbiguousAssignmentAndListLabel_ReportsDeterministicError()
+    {
+        const string grammarText = """
+            grammar P;
+            start : x=child | x+=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+        G4Grammar grammar = Parse(grammarText);
+        G4Rule rule = grammar.ParserRules.Single(candidate => candidate.Name == "start");
+
+        EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "used as both assignment and list label");
     }
 
     /// <summary>Verifies current-rule name resolution takes precedence over a same-named assignment label.</summary>

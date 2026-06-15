@@ -224,7 +224,7 @@ Explicit arguments override defaults, and an invalid default is not parsed or co
 | `x=child` retention | Managed parent-frame state | `TryGetLabeledRuleCallResult` / `TryGetLabeledRuleCallReturn` | Last successful result wins; failures do not overwrite |
 | `xs+=child` retention | Managed parent-frame state | `GetLabeledRuleCallResults` / `GetLabeledRuleCallReturns` | Successful results append in order; missing requested returns are skipped |
 | Backtracking/memoization | Rollback-aware with managed execution state | Rollback-aware | Memoized returns may be reused, but current call-site label metadata is reapplied |
-| ANTLR attribute syntax | Unsupported in runtime-inline execution | Limited in generated C# | Read-only `$x.value` assignment-label returns and exact-current-rule `$rule.value` only; no bare/list/token/lexer attributes, writes, implicit fields, or automatic binding |
+| ANTLR attribute syntax | Unsupported in runtime-inline execution | Limited in generated C# | Read-only `$x.value` assignment-label returns, `$xs.value` list-return projections, and exact-current-rule `$rule.value`; no bare/token/lexer attributes, writes, implicit fields, or automatic binding |
 | Lexer labels/returns | Unsupported | Unsupported | No lexer invocation frames are added |
 
 ### Limited parser return attribute rewrite
@@ -232,7 +232,8 @@ Explicit arguments override defaults, and an invalid default is not parsed or co
 | Generated-C# form | Status | Boundary |
 |---|---|---|
 | `$x.value` for `x=child` | Partially supported in inline parser actions and `@after` | Returns `object?` through assignment-label storage only; declared target return is validated; present-null is valid; absent runtime label throws `ParserAttributeAccessException`; rejected in `@init` and predicates |
+| `$xs.value` for `xs+=child` | Partially supported in inline parser actions and `@after` | Returns `IReadOnlyList<object?>`; successful order is preserved, present-null is included, missing returns are skipped, and an absent label yields an empty list; rejected in `@init` and predicates |
 | `$rule.value` for the exact current rule name | Partially supported in `@init`, inline parser actions, and `@after` | Returns `object?` from the current invocation frame; declared return is validated; current-rule name wins over a same-named label; missing runtime value throws |
-| `$xs.value`, token attributes, bare attributes, writes, chains, lexer attributes | Unsupported | `UP0014`; list returns use `GetLabeledRuleCallReturns(...)` explicitly |
+| Token attributes, bare attributes, writes, chains, list indexing syntax, lexer attributes | Unsupported | `UP0014`; no general ANTLR list-label or lexer compatibility |
 
-This is not general ANTLR attribute compatibility. No typed variables, implicit fields, conversions, flow-sensitive definite assignment, or execution in conservative `Parse(...)` are introduced.
+This is not general ANTLR attribute compatibility. No typed variables, implicit fields, conversions, special `$xs[i]`/`$xs.value[i]` syntax, flow-sensitive definite assignment, or execution in conservative `Parse(...)` are introduced.
