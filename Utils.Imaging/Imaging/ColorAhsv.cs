@@ -102,15 +102,15 @@ namespace Utils.Imaging
         /// <summary>
         /// Converts any implementation of <see cref="IColorAhsv{T}"/> into <see cref="ColorAhsv"/>.
         /// </summary>
-        /// <typeparam name="TColorAshv">Source color type.</typeparam>
+        /// <typeparam name="TColorAhsv">Source color type.</typeparam>
         /// <typeparam name="T">Component type.</typeparam>
         /// <param name="color">Color to convert.</param>
         /// <returns>A new <see cref="ColorAhsv"/> instance.</returns>
-        public static ColorAhsv FromColorAshv<TColorAshv, T>(TColorAshv color)
-                where TColorAshv : IColorAhsv<T>
+        public static ColorAhsv FromColorAhsv<TColorAhsv, T>(TColorAhsv color)
+                where TColorAhsv : IColorAhsv<T>
                 where T : struct, INumber<T>
         {
-            double maxValue = double.CreateChecked(TColorAshv.MaxValue);
+            double maxValue = double.CreateChecked(TColorAhsv.MaxValue);
             double alpha = double.CreateChecked(color.Alpha) / maxValue;
             double hue = double.CreateChecked(color.Hue) / maxValue * 360;
             double saturation = double.CreateChecked(color.Saturation) / maxValue;
@@ -143,14 +143,14 @@ namespace Utils.Imaging
         /// </summary>
         /// <param name="color">Source HSV color.</param>
         /// <returns>The converted color.</returns>
-        public static implicit operator ColorAhsv(ColorAhsv32 color) => FromColorAshv<ColorAhsv32, byte>(color);
+        public static implicit operator ColorAhsv(ColorAhsv32 color) => FromColorAhsv<ColorAhsv32, byte>(color);
 
         /// <summary>
         /// Converts a 16-bit HSV color to the double-precision representation.
         /// </summary>
         /// <param name="color">Source HSV color.</param>
         /// <returns>The converted color.</returns>
-        public static implicit operator ColorAhsv(ColorAhsv64 color) => FromColorAshv<ColorAhsv64, ushort>(color);
+        public static implicit operator ColorAhsv(ColorAhsv64 color) => FromColorAhsv<ColorAhsv64, ushort>(color);
 
         /// <summary>
         /// Returns a textual representation of the HSV components.

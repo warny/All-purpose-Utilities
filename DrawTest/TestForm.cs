@@ -90,7 +90,7 @@ namespace DrawTest
                 d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(255, 255, 0));
                 d.DrawEllipse(new Point(1000, 300), 250, 100, new ColorArgb32(0, 255, 255), 0);
                 d.FillCircle(new Point(1000, 300), 250, new ColorArgb32(0, 0, 0), Math.PI / 2, Math.PI);
-                MapBrush<ColorArgb32> c1 = new MapBrush<ColorArgb32>((p, s) => ColorArgb32.LinearGrandient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), p), 5);
+                MapBrush<ColorArgb32> c1 = new MapBrush<ColorArgb32>((p, s) => ColorArgb32.LinearGradient(new ColorArgb32(255, 0, 255), new ColorArgb32(255, 255, 0), p), 5);
                 d.DrawCircle(new Point(1000, 300), 250, c1, Math.PI / 2, Math.PI);
 
                 var s1 = new Pathes(
@@ -145,7 +145,7 @@ namespace DrawTest
             // UV coordinates are normalized [0,1] over the bounding box of the whole string.
             // Solid fill:  (u, v) => fillColor
             // Texture:     (u, v) => texture[(int)(u * tex.Width), (int)(v * tex.Height)]
-            // Gradient:    (u, v) => ColorArgb32.LinearGrandient(colorA, colorB, u)
+            // Gradient:    (u, v) => ColorArgb32.LinearGradient(colorA, colorB, u)
             draw.FillShape2((u, v) => new ColorArgb32(255, 255, 255), textDrawable);
 
             // Thick stroke on the text outline.
@@ -153,7 +153,7 @@ namespace DrawTest
             // would otherwise be re-evaluated for every painted pixel.
             float textLen = textDrawable.Length;
             draw.DrawShapeThick(
-                (arc, dist) => ColorArgb32.LinearGrandient(
+                (arc, dist) => ColorArgb32.LinearGradient(
                     new ColorArgb32(255, 0, 0),
                     new ColorArgb32(0, 0, 255),
                     textLen > 0f ? arc / textLen : 0f),

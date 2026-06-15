@@ -285,17 +285,18 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     }
 
     /// <summary>
-    /// Subtracts each component of another color from the current one using a minimum operator.
+    /// Subtracts each channel of <paramref name="other"/> from the corresponding channel of this
+    /// color, clamping results to [0, 65535].
     /// </summary>
     /// <param name="other">The color to subtract.</param>
-    /// <returns>The resulting color containing the minimum components.</returns>
-    public IColorArgb<ushort> Substract(IColorArgb<ushort> other)
+    /// <returns>The channel-wise clamped difference.</returns>
+    public IColorArgb<ushort> Subtract(IColorArgb<ushort> other)
     {
         return new ColorArgb64(
-                                        MathEx.Min(this.Alpha, other.Alpha),
-                                        MathEx.Min(this.Red, other.Red),
-                MathEx.Min(this.Green, other.Green),
-                MathEx.Min(this.Blue, other.Blue)
+            (ushort)Math.Max(0, this.Alpha - other.Alpha),
+            (ushort)Math.Max(0, this.Red   - other.Red),
+            (ushort)Math.Max(0, this.Green - other.Green),
+            (ushort)Math.Max(0, this.Blue  - other.Blue)
         );
     }
 
