@@ -25,6 +25,7 @@
         <Compile Include="..\Utils\Mathematics\NumberConverterConfiguration.cs" Link="Mathematics\NumberConverterConfiguration.cs" />
         <Compile Include="..\Utils\Mathematics\NumberToStringConverter.cs" Link="Mathematics\NumberToStringConverter.cs" />
         <Compile Include="..\Utils\Mathematics\NumberToStringConverter.Globalization.cs" Link="Mathematics\NumberToStringConverter.Globalization.cs" />
+        <Compile Include="..\Utils\Mathematics\NumberToStringConverterOptions.cs" Link="Mathematics\NumberToStringConverterOptions.cs" />
         <Compile Include="..\Utils\Mathematics\NumberConverterResources.Designer.cs" Link="Mathematics\NumberConverterResources.Designer.cs">
             <DesignTime>true</DesignTime>
             <AutoGen>true</AutoGen>

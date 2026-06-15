@@ -26,6 +26,7 @@
 		<Compile Remove="Mathematics\INumberToStringConverter.cs" />
 		<Compile Remove="Mathematics\NumberConverterConfiguration.cs" />
 		<Compile Remove="Mathematics\NumberConverterResources.Designer.cs" />
+		<Compile Remove="Mathematics\NumberToStringConverterOptions.cs" />
 		<EmbeddedResource Remove="Globalization\**" />
 		<EmbeddedResource Remove="Mathematics\NumberConverterResources.resx" />
 		<None Remove="Globalization\**" />

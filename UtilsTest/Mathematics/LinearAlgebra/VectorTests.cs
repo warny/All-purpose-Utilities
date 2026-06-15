@@ -29,7 +29,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0, 0);
         var p2 = new Vector<double>(2, 0);
-        var (weight, barycenter) = p1.ComputeBarycenter((1d, p1), (3d, p2));
+        var (weight, barycenter) = Vector<double>.ComputeBarycenter((1d, p1), (3d, p2));
         Assert.AreEqual(4d, weight, 1e-9);
         Assert.AreEqual(1.5d, barycenter[0], 1e-9);
         Assert.AreEqual(0d, barycenter[1], 1e-9);
