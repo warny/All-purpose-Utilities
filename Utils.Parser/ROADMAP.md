@@ -578,3 +578,11 @@ The runtime currently remains conservative and deterministic. Metadata-rich infr
 - Conversion is checked and culture invariant: integral ranges are enforced, integral-to-floating and double-to-float require exact preservation, floating-to-integral and double-to-decimal are rejected, and text conversion is limited to exact string/char forms.
 - Explicit arguments and only the defaults required for omitted parameters pass through the simple-literal parser and typed converter; complete validation and conversion precede one atomic managed seed batch. Positional omission is trailing-only, named omission may occur in any order, and explicit values override defaults. Generated rollback and memoization use converted effective values; runtime numeric types remain distinct, while different source forms may share a key after conversion to the same target value.
 - Arbitrary type resolution, user-defined types, arrays, generics, enums, general/default expression evaluation, parameter references, constants, Roslyn conversion, mixed binding, policy composition, generated typed signatures, `$param` forms, returns, labels, and lexer execution remain out of scope.
+
+## Incremental generated-C# parser return attribute compatibility
+
+**Status: complete.**
+
+- Generated parser inline actions and `@after` hooks support narrow read-only `$x.value` assignment-label return access and exact-current-rule `$rule.value` access; current-rule reads are also permitted in `@init`.
+- The lexical rewrite ignores strings, characters, and comments, returns `object?`, validates roots and declared returns with ordinal matching, and emits blocking `UP0014` diagnostics for unsupported or unsafe forms. Predicate, lexer, list-label scalar, token, write, chain, and bare attribute semantics remain unsupported.
+- Required generated helpers preserve present-null values and throw deterministic `ParserAttributeAccessException` failures for runtime absence. Reads use current rollback-aware frame state, including memoized call-site label rebinding. Existing explicit helpers and conservative `Parse(...)` remain unchanged.

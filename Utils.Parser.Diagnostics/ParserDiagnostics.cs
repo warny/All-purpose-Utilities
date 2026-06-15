@@ -202,6 +202,14 @@ public static class ParserDiagnostics
             "{0} code in '{1}' was injected as generated C# source near the top of the generated parser file. This is a source-generator C# compatibility bridge only, so invalid C# is reported by Roslyn and this does not imply full ANTLR target-language compatibility.",
             DefaultCategory);
 
+    /// <summary>An embedded parser attribute reference is invalid for the deliberately limited generated-C# compatibility subset.</summary>
+    public static readonly ParserDiagnosticDescriptor InvalidEmbeddedParserAttribute =
+        new(
+            "UP0014",
+            "Invalid embedded parser attribute",
+            "Invalid embedded parser attribute in '{0}': {1}",
+            DefaultCategory);
+
     /// <summary>Parser footer code is injected near the end of generated C# source by the source generator.</summary>
     public static readonly ParserDiagnosticDescriptor EmbeddedFooterInjectedByGenerator =
         new(
@@ -320,6 +328,7 @@ public static class ParserDiagnostics
             [UnknownLexerMode.Code] = UnknownLexerMode,
             [ParseFailure.Code] = ParseFailure,
             [InternalInconsistency.Code] = InternalInconsistency,
+            [InvalidEmbeddedParserAttribute.Code] = InvalidEmbeddedParserAttribute,
             [ImportedGrammarNotFound.Code] = ImportedGrammarNotFound,
             [ImportCycleDetected.Code] = ImportCycleDetected,
             [ParserRuleNotAllowedInLexerGrammar.Code] = ParserRuleNotAllowedInLexerGrammar,

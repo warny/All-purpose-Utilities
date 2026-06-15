@@ -754,6 +754,15 @@ internal static class GrammarEmitter
         sb.AppendLine("        return context.InvocationFrame.TryGetReturnValue(name, out value);");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Gets a required current-rule return while preserving present-null values.</summary>");
+        sb.AppendLine("    private static object? GetRequiredRuleReturn(ParserRuleLifecycleContext context, string returnName)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(returnName);");
+        sb.AppendLine("        if (context.InvocationFrame is not null && context.InvocationFrame.TryGetReturnValue(returnName, out object? value)) return value;");
+        sb.AppendLine(@"        throw new global::Utils.Parser.Runtime.ParserAttributeAccessException(""$"" + context.RuleName + ""."" + returnName, returnName, ""Return '"" + returnName + ""' is not available on the current rule invocation."");");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    /// <summary>Stores an untyped rule-return value on the active lifecycle invocation frame.</summary>");
         sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to update.</param>");
         sb.AppendLine("    /// <param name=\"name\">Rule-return metadata name.</param>");
@@ -865,6 +874,17 @@ internal static class GrammarEmitter
         sb.AppendLine("        return false;");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Gets a required assignment-labeled child return while preserving present-null values.</summary>");
+        sb.AppendLine("    private static object? GetRequiredLabeledRuleCallReturn(ParserRuleLifecycleContext context, string labelName, string returnName)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(labelName);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(returnName);");
+        sb.AppendLine(@"        if (!TryGetLabeledRuleCallResult(context, labelName, out var result)) throw new global::Utils.Parser.Runtime.ParserAttributeAccessException(""$"" + labelName + ""."" + returnName, labelName, returnName, ""Assignment label '"" + labelName + ""' is not available in the current rule invocation."");");
+        sb.AppendLine("        if (result.TryGetReturn(returnName, out object? value)) return value;");
+        sb.AppendLine(@"        throw new global::Utils.Parser.Runtime.ParserAttributeAccessException(""$"" + labelName + ""."" + returnName, labelName, returnName, ""Return '"" + returnName + ""' is not available on assignment label '"" + labelName + ""'."");");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    /// <summary>Gets present ordinal named returns from list-labeled child results in call order; results missing the return are skipped and present-null values are included.</summary>");
         sb.AppendLine("    private static global::System.Collections.Generic.IReadOnlyList<object?> GetLabeledRuleCallReturns(ParserRuleLifecycleContext context, string labelName, string returnName)");
         sb.AppendLine("    {");
@@ -903,6 +923,27 @@ internal static class GrammarEmitter
         sb.AppendLine("        return false;");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Inline-action overload for required assignment-labeled child return access.</summary>");
+        sb.AppendLine("    private object? GetRequiredLabeledRuleCallReturn(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string labelName, string returnName)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(labelName);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(returnName);");
+        sb.AppendLine(@"        if (!TryGetLabeledRuleCallResult(context, labelName, out var result)) throw new global::Utils.Parser.Runtime.ParserAttributeAccessException(""$"" + labelName + ""."" + returnName, labelName, returnName, ""Assignment label '"" + labelName + ""' is not available in the current rule invocation."");");
+        sb.AppendLine("        if (result.TryGetReturn(returnName, out object? value)) return value;");
+        sb.AppendLine(@"        throw new global::Utils.Parser.Runtime.ParserAttributeAccessException(""$"" + labelName + ""."" + returnName, labelName, returnName, ""Return '"" + returnName + ""' is not available on assignment label '"" + labelName + ""'."");");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Inline-action overload for required current-rule return access.</summary>");
+        sb.AppendLine("    private object? GetRequiredRuleReturn(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string returnName)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(returnName);");
+        sb.AppendLine("        var frame = _frameManager?.Current;");
+        sb.AppendLine("        if (frame is not null && frame.TryGetReturnValue(returnName, out object? value)) return value;");
+        sb.AppendLine(@"        throw new global::Utils.Parser.Runtime.ParserAttributeAccessException(""$"" + context.Rule.Name + ""."" + returnName, returnName, ""Return '"" + returnName + ""' is not available on the current rule invocation."");");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    /// <summary>Inline-action overload returning present list-labeled child returns in call order, skipping absent returns.</summary>");
         sb.AppendLine("    private global::System.Collections.Generic.IReadOnlyList<object?> GetLabeledRuleCallReturns(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string labelName, string returnName)");
         sb.AppendLine("    {");
@@ -917,7 +958,7 @@ internal static class GrammarEmitter
         sb.AppendLine("    /// <summary>Gets the most recent completed child rule call result from the active lifecycle invocation frame.</summary>");
         sb.AppendLine("    /// <param name=\"context\">Lifecycle context carrying the invocation frame to inspect.</param>");
         sb.AppendLine("    /// <returns>The last completed child call result, or <c>null</c> when no child rule has yet completed successfully or no frame is available.</returns>");
-        sb.AppendLine("    /// <remarks>Returns are not propagated automatically. <c>$rule.value</c> and labeled rule-reference access are not supported. Call results are rollback-safe when the managed execution-state mechanism is active.</remarks>");
+        sb.AppendLine("    /// <remarks>Returns are not propagated automatically. Limited read-only parser return attributes project the same rollback-safe frame state; no implicit variables are generated.</remarks>");
         sb.AppendLine("    private static global::Utils.Parser.Runtime.ParserRuleCallResult? GetLastRuleCallResult(ParserRuleLifecycleContext context)");
         sb.AppendLine("    {");
         sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
@@ -1476,7 +1517,7 @@ internal static class GrammarEmitter
     /// <param name="hook">Predicate hook metadata.</param>
     private static void EmitPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
-        var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.Code);
+        var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes semantic predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
         sb.AppendLine($"    private bool {hook.MethodName}(SemanticPredicateEvaluationContext context)");
@@ -1494,7 +1535,7 @@ internal static class GrammarEmitter
     /// <param name="hook">Action hook metadata.</param>
     private static void EmitActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
-        var body = GeneratedEmbeddedCodeBody.ForAction(hook.Code);
+        var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes inline parser action hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
         sb.AppendLine($"    private void {hook.MethodName}(ParserActionExecutionContext context)");
@@ -1668,12 +1709,14 @@ internal static class GrammarEmitter
         {
             if (rule.InitAction is not null)
             {
-                hooks.Add(new LifecycleHook(rule.Name, rule.InitAction.Code, isInit: true, $"__Init_{Sanitize(rule.Name)}"));
+                string code = EmbeddedParserAttributeRewriter.Rewrite(rule.InitAction.Code, grammar, rule, EmbeddedParserAttributeLocationKind.Init).Code;
+                hooks.Add(new LifecycleHook(rule.Name, code, isInit: true, $"__Init_{Sanitize(rule.Name)}"));
             }
 
             if (rule.AfterAction is not null)
             {
-                hooks.Add(new LifecycleHook(rule.Name, rule.AfterAction.Code, isInit: false, $"__After_{Sanitize(rule.Name)}"));
+                string code = EmbeddedParserAttributeRewriter.Rewrite(rule.AfterAction.Code, grammar, rule, EmbeddedParserAttributeLocationKind.After).Code;
+                hooks.Add(new LifecycleHook(rule.Name, code, isInit: false, $"__After_{Sanitize(rule.Name)}"));
             }
         }
 
@@ -1785,7 +1828,16 @@ internal static class GrammarEmitter
         var hooks = new List<EmbeddedCodeHook>();
         foreach (var rule in grammar.ParserRules)
         {
+            int firstHookIndex = hooks.Count;
             CollectRuleEmbeddedCodeHooks(rule, hooks);
+            for (int index = firstHookIndex; index < hooks.Count; index++)
+            {
+                EmbeddedCodeHook hook = hooks[index];
+                EmbeddedParserAttributeLocationKind kind = hook.IsPredicate
+                    ? EmbeddedParserAttributeLocationKind.Predicate
+                    : EmbeddedParserAttributeLocationKind.InlineAction;
+                hook.EmittedCode = EmbeddedParserAttributeRewriter.Rewrite(hook.Code, grammar, rule, kind).Code;
+            }
         }
 
         return hooks;
@@ -2096,6 +2148,7 @@ internal static class GrammarEmitter
         {
             RuleName = ruleName;
             Code = code;
+            EmittedCode = code;
             IsPredicate = isPredicate;
             AlternativeIndex = alternativeIndex;
             ElementIndex = elementIndex;
@@ -2107,6 +2160,9 @@ internal static class GrammarEmitter
 
         /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
         public string Code { get; }
+
+        /// <summary>Gets or sets the rewritten C# source emitted into the hook method.</summary>
+        public string EmittedCode { get; set; }
 
         /// <summary>Gets a value indicating whether the hook is a semantic predicate.</summary>
         public bool IsPredicate { get; }

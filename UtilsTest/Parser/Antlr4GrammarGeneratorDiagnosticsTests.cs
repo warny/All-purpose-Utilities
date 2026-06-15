@@ -488,6 +488,56 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         AssertNoUnsupportedDiagnostics(RunGenerator(grammar));
     }
 
+    /// <summary>Verifies invalid parser attribute roots are reported structurally by the generator.</summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_UnknownParserAttributeRoot_ReportsDedicatedError()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = $unknown.value; } : A ;
+            A : 'a' ;
+            """;
+
+        Diagnostic diagnostic = RunGenerator(grammar).Single(candidate => candidate.Id == ParserDiagnostics.InvalidEmbeddedParserAttribute.Code);
+
+        Assert.AreEqual(Microsoft.CodeAnalysis.DiagnosticSeverity.Error, diagnostic.Severity);
+        StringAssert.Contains(diagnostic.GetMessage(), "not the current rule name");
+    }
+
+    /// <summary>Verifies list-label scalar access recommends the existing explicit list helper.</summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_ListParserAttribute_ReportsExplicitHelper()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = $xs.value; } : xs+=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+
+        Diagnostic diagnostic = RunGenerator(grammar).Single(candidate => candidate.Id == ParserDiagnostics.InvalidEmbeddedParserAttribute.Code);
+
+        StringAssert.Contains(diagnostic.GetMessage(), "GetLabeledRuleCallReturns");
+    }
+
+    /// <summary>Verifies assignment-label access in init and attribute writes are rejected before source emission.</summary>
+    [DataTestMethod]
+    [DataRow("@init { Seen = $x.value; }", "not available in @init")]
+    [DataRow("@after { $x.value = 1; }", "writes are not supported")]
+    public void GeneratorDiagnostics_InvalidAttributeLifecycleOrWrite_ReportsDedicatedError(string lifecycle, string expectedMessage)
+    {
+        string grammar = $$"""
+            grammar P;
+            start {{lifecycle}} : x=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+
+        Diagnostic diagnostic = RunGenerator(grammar).Single(candidate => candidate.Id == ParserDiagnostics.InvalidEmbeddedParserAttribute.Code);
+
+        StringAssert.Contains(diagnostic.GetMessage(), expectedMessage);
+    }
+
     /// <summary>
     /// Asserts that exactly one unsupported embedded-code diagnostic exists and that it describes the expected construct.
     /// </summary>
