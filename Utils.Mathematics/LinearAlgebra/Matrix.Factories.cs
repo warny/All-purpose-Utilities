@@ -43,12 +43,14 @@ public sealed partial class Matrix<T>
         var array = new T[n, n];
         T det = T.One;
         bool isIdentity = true;
+        bool hasZero = false;
         for (int i = 0; i < n; i++)
         {
             array[i, i] = values[i];
             det *= values[i];
-            if (values[i] != T.One) isIdentity = false;
+            if (values[i] == T.Zero) { hasZero = true; isIdentity = false; }
+            else if (values[i] != T.One) isIdentity = false;
         }
-        return new Matrix<T>(array, isIdentity: isIdentity, isDiagonalized: true, isTriangularised: true, determinant: det);
+        return new Matrix<T>(array, isIdentity: isIdentity, isDiagonalized: !hasZero, isTriangularised: !hasZero, determinant: det);
     }
 }

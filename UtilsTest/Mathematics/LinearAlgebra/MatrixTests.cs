@@ -68,6 +68,51 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             }
         }
 
+        [TestMethod]
+        public void Identity_ProducesCorrectDiagonalAndFlags()
+        {
+            var m = Matrix<double>.Identity(3);
+            Assert.AreEqual(3, m.Rows);
+            Assert.AreEqual(3, m.Columns);
+            Assert.IsTrue(m.IsIdentity);
+            Assert.IsTrue(m.IsDiagonalized);
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    Assert.AreEqual(i == j ? 1d : 0d, m[i, j], 1e-12);
+        }
+
+        [TestMethod]
+        public void Zero_ProducesAllZeroMatrix()
+        {
+            var m = Matrix<double>.Zero(2, 3);
+            Assert.AreEqual(2, m.Rows);
+            Assert.AreEqual(3, m.Columns);
+            for (int i = 0; i < 2; i++)
+                for (int j = 0; j < 3; j++)
+                    Assert.AreEqual(0d, m[i, j], 1e-12);
+        }
+
+        [TestMethod]
+        public void Diagonal_NonZero_SetsStructuralFlags()
+        {
+            var m = Matrix<double>.Diagonal(2d, 3d);
+            Assert.IsTrue(m.IsDiagonalized);
+            Assert.IsTrue(m.IsTriangularised);
+            Assert.IsFalse(m.IsIdentity);
+            Assert.AreEqual(2d, m[0, 0], 1e-12);
+            Assert.AreEqual(3d, m[1, 1], 1e-12);
+            Assert.AreEqual(0d, m[0, 1], 1e-12);
+        }
+
+        [TestMethod]
+        public void Diagonal_WithZeroEntry_ClearsStructuralFlags()
+        {
+            var m = Matrix<double>.Diagonal(2d, 0d);
+            Assert.IsFalse(m.IsDiagonalized);
+            Assert.IsFalse(m.IsTriangularised);
+            Assert.IsFalse(m.IsIdentity);
+        }
+
         /// <summary>
         /// Asserts that two matrices contain the same components within the provided tolerance.
         /// </summary>

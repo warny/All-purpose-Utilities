@@ -82,6 +82,7 @@ public static class XmlUtils
 
     /// <summary>
     /// Gets the XPath for the given XML node, including indexes for repeated elements at the same level.
+    /// Attributes are represented as <c>/@name</c> appended to their owner element path.
     /// </summary>
     /// <param name="node">The XML node for which to generate the XPath.</param>
     /// <returns>The XPath string for the given node.</returns>
@@ -89,8 +90,17 @@ public static class XmlUtils
     {
         if (node == null) throw new ArgumentNullException(nameof(node));
 
+        if (node is XmlDocument) return "/";
+        if (node is XmlAttribute attr)
+            return GetElementXPath(attr.OwnerElement) + "/@" + attr.Name;
+
+        return GetElementXPath(node as XmlElement ?? node.ParentNode as XmlElement);
+    }
+
+    private static string GetElementXPath(XmlElement? element)
+    {
         var xpath = string.Empty;
-        var current = node as XmlElement ?? node.ParentNode as XmlElement;
+        var current = element;
 
         while (current != null)
         {
@@ -108,7 +118,7 @@ public static class XmlUtils
     /// </summary>
     /// <param name="element">The XmlElement for which to generate the XPath.</param>
     /// <returns>The XPath string for the given XmlElement.</returns>
-    public static string GetXPath(this XmlElement element) => GetXPath((XmlNode)element);
+    public static string GetXPath(this XmlElement element) => GetElementXPath(element);
 
     /// <summary>
     /// Gets the index of the current element among its siblings with the same name.

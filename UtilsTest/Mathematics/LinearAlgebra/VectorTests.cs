@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using Utils.Mathematics.LinearAlgebra;
 
 namespace UtilsTest.Mathematics.LinearAlgebra;
@@ -87,6 +88,31 @@ public class VectorTests
         Assert.AreEqual(0d, vector[2], 1e-12);
 
         Assert.AreEqual(1d, normalized.Norm, 1e-12);
+    }
+
+    [TestMethod]
+    public void Zero_ReturnsAllZeroComponents()
+    {
+        var v = Vector<double>.Zero(3);
+        Assert.AreEqual(3, v.Dimension);
+        Assert.IsTrue(v.All(c => c == 0d));
+    }
+
+    [TestMethod]
+    public void Unit_ReturnsCorrectBasisVector()
+    {
+        var v = Vector<double>.Unit(1, 3);
+        Assert.AreEqual(0d, v[0], 1e-12);
+        Assert.AreEqual(1d, v[1], 1e-12);
+        Assert.AreEqual(0d, v[2], 1e-12);
+    }
+
+    [TestMethod]
+    public void Enumeration_YieldsAllComponents()
+    {
+        var v = new Vector<double>(1d, 2d, 3d);
+        double[] items = v.ToArray();
+        CollectionAssert.AreEqual(new[] { 1d, 2d, 3d }, items);
     }
 }
 

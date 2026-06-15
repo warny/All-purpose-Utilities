@@ -189,7 +189,6 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     }
 
     /// <inheritdoc cref="CrossProduct(Vector{T}[])"/>
-    [Obsolete("Use CrossProduct instead.")]
     public static Vector<T> Product(params Vector<T>[] vectors) => CrossProduct(vectors);
 
     /// <summary>
