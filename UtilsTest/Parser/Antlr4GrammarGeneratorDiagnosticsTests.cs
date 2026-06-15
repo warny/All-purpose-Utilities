@@ -504,20 +504,25 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         StringAssert.Contains(diagnostic.GetMessage(), "not the current rule name");
     }
 
-    /// <summary>Verifies list-label scalar access recommends the existing explicit list helper.</summary>
-    [TestMethod]
-    public void GeneratorDiagnostics_ListParserAttribute_ReportsExplicitHelper()
+    /// <summary>Verifies invalid list-label returns, lifecycle locations, writes, and ambiguity are diagnosed.</summary>
+    [DataTestMethod]
+    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "not declared by any parser rule referenced by list label 'xs'")]
+    [DataRow("@after { $xs.value = 1; }", "xs+=child", "writes are not supported")]
+    [DataRow("@init { Seen = $xs.value; }", "xs+=child", "not available in @init")]
+    [DataRow(": { return $xs.value.Count > 0; }? xs+=child", null, "not supported in semantic predicates")]
+    [DataRow("@after { Seen = $x.value; }", "x=child | x+=child", "used as both assignment and list label")]
+    public void GeneratorDiagnostics_InvalidListParserAttribute_ReportsDedicatedError(string ruleFragment, string? content, string expectedMessage)
     {
-        const string grammar = """
+        string grammar = $$"""
             grammar P;
-            start @after { Seen = $xs.value; } : xs+=child ;
+            start {{ruleFragment}} {{(content is null ? ";" : ": " + content + " ;")}}
             child returns [int value] : A ;
             A : 'a' ;
             """;
 
         Diagnostic diagnostic = RunGenerator(grammar).Single(candidate => candidate.Id == ParserDiagnostics.InvalidEmbeddedParserAttribute.Code);
 
-        StringAssert.Contains(diagnostic.GetMessage(), "GetLabeledRuleCallReturns");
+        StringAssert.Contains(diagnostic.GetMessage(), expectedMessage);
     }
 
     /// <summary>Verifies assignment-label access in init and attribute writes are rejected before source emission.</summary>

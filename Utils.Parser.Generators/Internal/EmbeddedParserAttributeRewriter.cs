@@ -135,7 +135,14 @@ internal static class EmbeddedParserAttributeRewriter
             string returnName = ReadIdentifier(code, ref index);
             string attributeText = $"${root}.{returnName}";
             int next = SkipWhitespace(code, index);
-            if (next < code.Length && code[next] == '.')
+            bool isUnambiguousListRoot = labels.TryGetValue(root, out RuleLabelTargets? earlyLabel)
+                && earlyLabel.Assignment is null
+                && earlyLabel.List.Count > 0;
+            bool continuesWithSupportedListMember = isUnambiguousListRoot
+                && next < code.Length
+                && code[next] == '.'
+                && (IsMemberName(code, next + 1, "Count") || IsMemberName(code, next + 1, "Select"));
+            if (next < code.Length && code[next] == '.' && !continuesWithSupportedListMember)
             {
                 errors.Add($"Chained parser attribute '{attributeText}' is not supported.");
                 output.Append(code, attributeStart, index - attributeStart);
@@ -171,42 +178,68 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
-            if (!labels.TryGetValue(root, out RuleLabelTarget? label))
+            if (!labels.TryGetValue(root, out RuleLabelTargets? label))
             {
                 errors.Add($"Parser attribute root '{root}' is not the current rule name or a visible assignment rule-reference label.");
                 output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
 
-            if (label.IsAdditive)
+            if (label.Assignment is not null && label.List.Count > 0)
             {
-                errors.Add($"List label '{root}' cannot be read as a scalar parser attribute. Use GetLabeledRuleCallReturns(context, \"{root}\", \"{returnName}\").");
+                errors.Add($"Parser attribute root '{root}' is used as both assignment and list label in this rule. Use explicit helpers to disambiguate.");
                 output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
 
-            if (!parserRules.TryGetValue(label.RuleName, out G4Rule? targetRule))
+            if (label.List.Count > 0)
             {
-                errors.Add($"Token label '{root}' cannot be used as a parser rule-return attribute.");
-                output.Append(code, attributeStart, index - attributeStart);
-                continue;
-            }
+                if (label.List.Any(target => !parserRules.ContainsKey(target.RuleName)))
+                {
+                    errors.Add($"Token label '{root}' cannot be used as a parser rule-return attribute.");
+                    output.Append(code, attributeStart, index - attributeStart);
+                    continue;
+                }
 
-            if (!ParseDeclarationNames(targetRule.Returns).Contains(returnName))
+                bool isDeclaredByAnyTarget = label.List
+                    .Select(target => parserRules[target.RuleName])
+                    .Any(targetRule => ParseDeclarationNames(targetRule.Returns).Contains(returnName));
+                if (!isDeclaredByAnyTarget)
+                {
+                    errors.Add($"Return '{returnName}' is not declared by any parser rule referenced by list label '{root}'.");
+                    output.Append(code, attributeStart, index - attributeStart);
+                    continue;
+                }
+            }
+            else
             {
-                errors.Add($"Return '{returnName}' is not declared by parser rule '{targetRule.Name}' referenced by assignment label '{root}'.");
-                output.Append(code, attributeStart, index - attributeStart);
-                continue;
+                RuleLabelTarget target = label.Assignment!;
+                if (!parserRules.TryGetValue(target.RuleName, out G4Rule? targetRule))
+                {
+                    errors.Add($"Token label '{root}' cannot be used as a parser rule-return attribute.");
+                    output.Append(code, attributeStart, index - attributeStart);
+                    continue;
+                }
+
+                if (!ParseDeclarationNames(targetRule.Returns).Contains(returnName))
+                {
+                    errors.Add($"Return '{returnName}' is not declared by parser rule '{targetRule.Name}' referenced by assignment label '{root}'.");
+                    output.Append(code, attributeStart, index - attributeStart);
+                    continue;
+                }
             }
 
             if (locationKind == EmbeddedParserAttributeLocationKind.Init)
             {
-                errors.Add($"Assignment label '{root}' is not available in @init. Read '{attributeText}' only after the child rule call succeeds.");
+                string labelKind = label.List.Count == 0 ? "Assignment" : "List";
+                errors.Add($"{labelKind} label '{root}' is not available in @init. Read '{attributeText}' only after the child rule call succeeds.");
                 output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
 
-            output.Append("GetRequiredLabeledRuleCallReturn(context, \"")
+            output.Append(label.List.Count == 0
+                    ? "GetRequiredLabeledRuleCallReturn(context, \""
+                    : "GetLabeledRuleCallReturns(context, \"")
                 .Append(Escape(root))
                 .Append("\", \"")
                 .Append(Escape(returnName))
@@ -221,9 +254,9 @@ internal static class EmbeddedParserAttributeRewriter
     /// </summary>
     /// <param name="content">Rule content to inspect.</param>
     /// <returns>Rule-wide label targets.</returns>
-    private static Dictionary<string, RuleLabelTarget> CollectLabels(G4Content content)
+    private static Dictionary<string, RuleLabelTargets> CollectLabels(G4Content content)
     {
-        var labels = new Dictionary<string, RuleLabelTarget>(StringComparer.Ordinal);
+        var labels = new Dictionary<string, RuleLabelTargets>(StringComparer.Ordinal);
         CollectLabels(content, labels);
         return labels;
     }
@@ -233,12 +266,18 @@ internal static class EmbeddedParserAttributeRewriter
     /// </summary>
     /// <param name="content">Content node to inspect.</param>
     /// <param name="labels">Destination label map.</param>
-    private static void CollectLabels(G4Content content, Dictionary<string, RuleLabelTarget> labels)
+    private static void CollectLabels(G4Content content, Dictionary<string, RuleLabelTargets> labels)
     {
         switch (content)
         {
             case G4RuleRef ruleRef when ruleRef.LabelName is not null:
-                labels[ruleRef.LabelName] = new RuleLabelTarget(ruleRef.RuleName, ruleRef.LabelIsAdditive);
+                if (!labels.TryGetValue(ruleRef.LabelName, out RuleLabelTargets? targets))
+                {
+                    targets = new RuleLabelTargets();
+                    labels.Add(ruleRef.LabelName, targets);
+                }
+
+                targets.Add(new RuleLabelTarget(ruleRef.RuleName), ruleRef.LabelIsAdditive);
                 break;
             case G4Alternation alternation:
                 foreach (G4Alternative alternative in alternation.Alternatives)
@@ -503,6 +542,13 @@ internal static class EmbeddedParserAttributeRewriter
         return index >= 0 && index + value.Length <= text.Length && string.CompareOrdinal(text, index, value, 0, value.Length) == 0;
     }
 
+    /// <summary>Tests whether an ordinal member name starts at an index and ends at an identifier boundary.</summary>
+    private static bool IsMemberName(string text, int index, string value)
+    {
+        return StartsWith(text, index, value)
+            && (index + value.Length >= text.Length || !IsIdentifierPart(text[index + value.Length]));
+    }
+
     /// <summary>Determines whether a character can start the supported identifier form.</summary>
     private static bool IsIdentifierStart(char value) => value == '_' || char.IsLetter(value);
 
@@ -512,21 +558,42 @@ internal static class EmbeddedParserAttributeRewriter
     /// <summary>Escapes text for a generated C# string literal.</summary>
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
+    /// <summary>Stores assignment and list targets for one visible lexical label name.</summary>
+    private sealed class RuleLabelTargets
+    {
+        /// <summary>Gets the last assignment-label target, when present.</summary>
+        public RuleLabelTarget? Assignment { get; private set; }
+
+        /// <summary>Gets every list-label target in lexical encounter order.</summary>
+        public List<RuleLabelTarget> List { get; } = [];
+
+        /// <summary>Adds a target to the namespace selected by the label operator.</summary>
+        /// <param name="target">Referenced rule target.</param>
+        /// <param name="isAdditive">Whether the target belongs to the list-label namespace.</param>
+        public void Add(RuleLabelTarget target, bool isAdditive)
+        {
+            if (isAdditive)
+            {
+                List.Add(target);
+            }
+            else
+            {
+                Assignment = target;
+            }
+        }
+    }
+
     /// <summary>Stores the target of one visible rule-reference label.</summary>
     private sealed class RuleLabelTarget
     {
         /// <summary>Initializes label target metadata.</summary>
-        public RuleLabelTarget(string ruleName, bool isAdditive)
+        public RuleLabelTarget(string ruleName)
         {
             RuleName = ruleName;
-            IsAdditive = isAdditive;
         }
 
         /// <summary>Gets the referenced rule name.</summary>
         public string RuleName { get; }
-
-        /// <summary>Gets whether the label is additive.</summary>
-        public bool IsAdditive { get; }
     }
 }
 

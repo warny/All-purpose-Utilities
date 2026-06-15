@@ -4075,15 +4075,16 @@ public class Antlr4GeneratedRuleLifecycleTests
     [TestMethod]
     public void GeneratedSource_ContainsGenericLabeledRuleCallHelpers()
     {
-        string source = Emit("grammar P; start : x=child | xs+=child ; child : A ; A : 'a' ;");
+        string source = Emit("grammar P; start @after { Values = $xs.value; } : x=child | xs+=child ; child returns [int value] : A ; A : 'a' ;");
 
         StringAssert.Contains(source, "TryGetLabeledRuleCallResult");
         StringAssert.Contains(source, "GetLabeledRuleCallResults");
         StringAssert.Contains(source, "TryGetLabeledRuleCallReturn");
-        StringAssert.Contains(source, "GetLabeledRuleCallReturns");
+        StringAssert.Contains(source, "GetLabeledRuleCallReturns(context, \"xs\", \"value\")");
         Assert.IsFalse(source.Contains("GetX(", StringComparison.Ordinal));
         Assert.IsFalse(source.Contains("GetXs(", StringComparison.Ordinal));
         Assert.IsFalse(source.Contains("$x.value", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("$xs.value", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -4147,7 +4148,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             grammar P;
             start @after {
                 ResultCount = GetLabeledRuleCallResults(context, "xs").Count;
-                var values = GetLabeledRuleCallReturns(context, "xs", "value");
+                var values = $xs.value;
                 ValueCount = values.Count;
                 First = values[0] is int first ? first : -1;
                 Last = values[2] is int last ? last : -1;
@@ -4177,6 +4178,126 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(3, ReadIntField(assembly, "ValueCount"));
         Assert.AreEqual(0, ReadIntField(assembly, "First"));
         Assert.AreEqual(2, ReadIntField(assembly, "Last"));
+    }
+
+    /// <summary>
+    /// Verifies list-label attribute projection includes present-null values, skips absent returns, and preserves order.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelAttribute_ProjectsReturnPresence()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var values = $xs.value;
+                Count = values.Count;
+                First = values[0] is int first ? first : -1;
+                NullAtEnd = values[1] == null;
+            }
+                : (xs+=child)+ ;
+            child returns [object value]
+            @after {
+                if (context.InputPosition == 0) SetRuleReturn(context, "value", 7);
+                if (context.InputPosition == 2) SetRuleReturn(context, "value", null);
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int Count;
+                public static int First = -1;
+                public static bool NullAtEnd;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aaa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadIntField(assembly, "Count"));
+        Assert.AreEqual(7, ReadIntField(assembly, "First"));
+        Assert.IsTrue(ReadBoolField(assembly, "NullAtEnd"));
+    }
+
+    /// <summary>
+    /// Verifies a repeated list label may target different rules and skips calls whose rule lacks the projected return.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RepeatedListLabelTargets_ProjectsDeclaredReturns()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var values = $xs.value;
+                Count = values.Count;
+                Seen = values[0] is int value ? value : -1;
+            }
+                : xs+=withoutValue xs+=withValue ;
+            withoutValue : A ;
+            withValue returns [int value]
+            @after { SetRuleReturn(context, "value", 42); }
+                : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int Count;
+                public static int Seen = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "Count"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>
+    /// Verifies absent and rolled-back list labels project as empty while a memoized child binds to the successful label.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelAttribute_UsesSuccessfulCurrentLabelState()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                XCount = $xs.value.Count;
+                YCount = $ys.value.Count;
+                Seen = $ys.value[0] is int value ? value : -1;
+            }
+                : xs+=child B
+                | ys+=child
+                ;
+            child returns [int value]
+            @after { SetRuleReturn(context, "value", 42); }
+                : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext
+            {
+                public static int XCount = -1;
+                public static int YCount = -1;
+                public static int Seen = -1;
+            }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "XCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "YCount"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
     }
 
     /// <summary>
