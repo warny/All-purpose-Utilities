@@ -78,48 +78,6 @@ namespace Utils.Mathematics
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NumberToStringConverter"/> class with individual parameters.
-        /// </summary>
-        [Obsolete("Use NumberToStringConverter(NumberToStringConverterOptions) instead.")]
-        public NumberToStringConverter(
-            int group,
-            string separator,
-            string groupSeparator,
-            string zero,
-            string minus,
-            string decimalSeparator,
-            IReadOnlyDictionary<int, DigitListType> groups,
-            IReadOnlyDictionary<long, string> exceptions,
-            IEnumerable<ReplacementRule> replacements,
-            NumberScale scale,
-            Func<string, string> adjustFunction = null,
-            INumberToStringLanguageSpecifics languageSpecifics = null,
-            string languageIdentifier = null,
-            IReadOnlyDictionary<int, string> fractions = null,
-            BigInteger? maxNumber = null,
-            string fractionSeparator = null)
-            : this(new NumberToStringConverterOptions
-            {
-                Group = group,
-                Separator = separator,
-                GroupSeparator = groupSeparator,
-                Zero = zero,
-                Minus = minus,
-                DecimalSeparator = decimalSeparator,
-                Groups = groups,
-                Exceptions = exceptions,
-                Replacements = replacements,
-                Scale = scale,
-                AdjustFunction = adjustFunction,
-                LanguageSpecifics = languageSpecifics,
-                LanguageIdentifier = languageIdentifier,
-                Fractions = fractions,
-                MaxNumber = maxNumber,
-                FractionSeparator = fractionSeparator,
-            })
-        { }
-
-        /// <summary>
         /// Default grouping size (e.g., thousands)
         /// </summary>
         public int Group { get; } = 3;
