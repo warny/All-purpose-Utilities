@@ -96,6 +96,8 @@ internal static class EmbeddedParserAttributeRewriter
         var labels = CollectLabels(rule.Content);
         var parserRules = grammar.ParserRules.ToDictionary(static candidate => candidate.Name, StringComparer.Ordinal);
         var currentReturns = ParseDeclarationNames(rule.Returns);
+        var parameters = ParseTypedDeclarations(rule.Parameters);
+        var locals = ParseTypedDeclarations(rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals));
         int index = 0;
 
         while (index < code.Length)
@@ -117,8 +119,7 @@ internal static class EmbeddedParserAttributeRewriter
             int dotIndex = SkipWhitespace(code, index);
             if (dotIndex >= code.Length || code[dotIndex] != '.')
             {
-                errors.Add($"Bare parser attribute '${root}' is not supported. Only '$label.return' and '$rule.return' reads are supported.");
-                output.Append(code, attributeStart, index - attributeStart);
+                RewriteBareAttribute(code, rule, locationKind, errors, output, parameters, locals, labels, attributeStart, index, root);
                 continue;
             }
 
@@ -304,6 +305,151 @@ internal static class EmbeddedParserAttributeRewriter
                 CollectLabels(negation.Inner, labels);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Rewrites one bare current-rule parameter or local attribute, or records a deterministic validation error.
+    /// </summary>
+    private static void RewriteBareAttribute(
+        string code,
+        G4Rule rule,
+        EmbeddedParserAttributeLocationKind locationKind,
+        List<string> errors,
+        StringBuilder output,
+        Dictionary<string, TypedDeclaration> parameters,
+        Dictionary<string, TypedDeclaration> locals,
+        Dictionary<string, RuleLabelTargets> labels,
+        int attributeStart,
+        int attributeEnd,
+        string root)
+    {
+        string attributeText = "$" + root;
+        if (IsWriteContext(code, attributeStart, attributeEnd))
+        {
+            errors.Add($"Parser attribute writes are not supported for '{attributeText}'. Use explicit parameter/local helpers such as SetRuleLocal(context, name, value).");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
+        {
+            errors.Add($"Parser attribute read '{attributeText}' is not supported in semantic predicates.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return;
+        }
+
+        bool hasParameter = parameters.TryGetValue(root, out TypedDeclaration? parameter);
+        bool hasLocal = locals.TryGetValue(root, out TypedDeclaration? local);
+        if (hasParameter && hasLocal)
+        {
+            errors.Add($"Bare parser attribute '{attributeText}' is ambiguous because current rule '{rule.Name}' declares both a parameter and a local named '{root}'.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return;
+        }
+
+        TypedDeclaration? declaration = hasParameter ? parameter : local;
+        if (declaration is null)
+        {
+            string message = labels.ContainsKey(root)
+                ? $"Bare parser attribute '{attributeText}' is a label access and is not supported. Use '$" + root + ".returnName' for declared child rule returns."
+                : $"Bare parser attribute '{attributeText}' does not resolve to a current-rule parameter or local.";
+            errors.Add(message);
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(declaration.RawType))
+        {
+            errors.Add($"Bare parser attribute '{attributeText}' cannot be typed because declaration '{declaration.RawDeclaration}' does not expose a raw type.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return;
+        }
+
+        output.Append(hasParameter ? "GetRequiredRuleParameter<" : "GetRequiredRuleLocal<")
+            .Append(declaration.RawType)
+            .Append(">(context, \"")
+            .Append(Escape(root))
+            .Append("\")");
+    }
+
+    /// <summary>
+    /// Extracts declaration names and raw type prefixes from comma-separated rule parameter or local metadata.
+    /// </summary>
+    /// <param name="rawDeclarations">Raw declaration text.</param>
+    /// <returns>Typed declarations keyed by ordinal metadata name.</returns>
+    private static Dictionary<string, TypedDeclaration> ParseTypedDeclarations(string? rawDeclarations)
+    {
+        var declarations = new Dictionary<string, TypedDeclaration>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(rawDeclarations))
+        {
+            return declarations;
+        }
+
+        foreach (string declaration in SplitTopLevel(rawDeclarations!))
+        {
+            string prefix = RemoveTopLevelInitializer(declaration).Trim();
+            string? name = GetTrailingIdentifier(prefix);
+            if (string.IsNullOrEmpty(name))
+            {
+                continue;
+            }
+
+            string nameValue = name!;
+            string? rawType = null;
+            if (prefix.Length > nameValue.Length && prefix.EndsWith(nameValue, StringComparison.Ordinal))
+            {
+                int nameStart = prefix.Length - nameValue.Length;
+                if (char.IsWhiteSpace(prefix[nameStart - 1]))
+                {
+                    rawType = prefix.Substring(0, nameStart).TrimEnd();
+                }
+            }
+
+            declarations[nameValue] = new TypedDeclaration(nameValue, string.IsNullOrWhiteSpace(rawType) ? null : rawType, declaration);
+        }
+
+        return declarations;
+    }
+
+    /// <summary>
+    /// Removes a top-level default initializer from a parameter declaration while preserving generic and literal text.
+    /// </summary>
+    private static string RemoveTopLevelInitializer(string declaration)
+    {
+        int angle = 0;
+        int round = 0;
+        int square = 0;
+        int curly = 0;
+        for (int index = 0; index < declaration.Length; index++)
+        {
+            switch (declaration[index])
+            {
+                case '<': angle++; break;
+                case '>': angle = Math.Max(0, angle - 1); break;
+                case '(': round++; break;
+                case ')': round = Math.Max(0, round - 1); break;
+                case '[': square++; break;
+                case ']': square = Math.Max(0, square - 1); break;
+                case '{': curly++; break;
+                case '}': curly = Math.Max(0, curly - 1); break;
+                case '=' when angle == 0 && round == 0 && square == 0 && curly == 0:
+                    return declaration.Substring(0, index);
+            }
+        }
+
+        return declaration;
+    }
+
+    /// <summary>
+    /// Gets the final identifier from a declaration prefix.
+    /// </summary>
+    private static string? GetTrailingIdentifier(string text)
+    {
+        int end = text.Length - 1;
+        while (end >= 0 && char.IsWhiteSpace(text[end])) end--;
+        int start = end;
+        while (start >= 0 && IsIdentifierPart(text[start])) start--;
+        return end >= 0 && start < end ? text.Substring(start + 1, end - start) : null;
     }
 
     /// <summary>
@@ -594,6 +740,27 @@ internal static class EmbeddedParserAttributeRewriter
 
         /// <summary>Gets the referenced rule name.</summary>
         public string RuleName { get; }
+    }
+
+    /// <summary>Stores a current-rule parameter or local declaration that can be emitted as a typed helper access.</summary>
+    private sealed class TypedDeclaration
+    {
+        /// <summary>Initializes typed declaration metadata.</summary>
+        public TypedDeclaration(string name, string? rawType, string rawDeclaration)
+        {
+            Name = name;
+            RawType = rawType;
+            RawDeclaration = rawDeclaration;
+        }
+
+        /// <summary>Gets the declaration name.</summary>
+        public string Name { get; }
+
+        /// <summary>Gets the raw C# type text, when conservatively extractable.</summary>
+        public string? RawType { get; }
+
+        /// <summary>Gets the original raw declaration text.</summary>
+        public string RawDeclaration { get; }
     }
 }
 

@@ -12,7 +12,7 @@ public class EmbeddedParserAttributeRewriterTests
 {
     private const string GrammarText = """
         grammar P;
-        start returns [int own] : x=child | xs+=child | t=A ;
+        start[int count, string? name] returns [int own] locals [int total, object value] : x=child | xs+=child | t=A ;
         child returns [int value, object nullable] : nested=leaf ;
         leaf returns [int value] : A ;
         A : 'a' ;
@@ -25,6 +25,16 @@ public class EmbeddedParserAttributeRewriterTests
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$start.own;");
 
         Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Select(v => v).Count() + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
+    }
+
+    /// <summary>Verifies current-rule parameters and locals are rewritten through typed helper calls.</summary>
+    [TestMethod]
+    public void Rewrite_ParameterAndLocalReads_RewritesToTypedHelpers()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $count + $total; Name = $name; Value = $value;");
+
+        Assert.AreEqual("Seen = GetRequiredRuleParameter<int>(context, \"count\") + GetRequiredRuleLocal<int>(context, \"total\"); Name = GetRequiredRuleParameter<string?>(context, \"name\"); Value = GetRequiredRuleLocal<object>(context, \"value\");", result.Code);
         Assert.AreEqual(0, result.Errors.Count);
     }
 
@@ -63,8 +73,8 @@ public class EmbeddedParserAttributeRewriterTests
     [DataRow("$x.missing", "not declared by parser rule 'child'")]
     [DataRow("$xs.missing", "not declared by any parser rule referenced by list label 'xs'")]
     [DataRow("$start.missing", "not declared by current parser rule 'start'")]
-    [DataRow("$x", "Bare parser attribute '$x'")]
-    [DataRow("$xs", "Bare parser attribute '$xs'")]
+    [DataRow("$x", "label access")]
+    [DataRow("$xs", "label access")]
     [DataRow("$x.value.other", "Chained parser attribute '$x.value'")]
     [DataRow("$xs.value.other", "Chained parser attribute '$xs.value'")]
     public void Rewrite_UnsupportedReference_ReportsDeterministicError(string code, string expectedMessage)
@@ -96,6 +106,32 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "writes are not supported");
+    }
+
+    /// <summary>Verifies bare parameter and local write-target shapes are rejected.</summary>
+    [DataTestMethod]
+    [DataRow("$count = 1;")]
+    [DataRow("$count += 1;")]
+    [DataRow("$count++;")]
+    [DataRow("++$count;")]
+    [DataRow("Use(ref $count);")]
+    [DataRow("Use(out $count);")]
+    public void Rewrite_BareParameterWriteTarget_ReportsDeterministicError(string code)
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite(code);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "writes are not supported");
+    }
+
+    /// <summary>Verifies bare parameter and local reads are rejected in predicates.</summary>
+    [TestMethod]
+    public void Rewrite_BareParameterInPredicate_ReportsLifecycleError()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$count > 0", EmbeddedParserAttributeLocationKind.Predicate);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "not supported in semantic predicates");
     }
 
     /// <summary>Verifies assignment-labeled child returns are statically unavailable during initialization.</summary>
@@ -196,6 +232,25 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "not the current rule name");
+    }
+
+    /// <summary>Verifies a parameter takes bare-name precedence while label-return syntax remains label-based.</summary>
+    [TestMethod]
+    public void Rewrite_ParameterAndLabelSameName_SeparatesBareAndReturnForms()
+    {
+        const string grammarText = """
+            grammar P;
+            start[int x] : x=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+        G4Grammar grammar = Parse(grammarText);
+        G4Rule rule = grammar.ParserRules.Single(candidate => candidate.Name == "start");
+
+        EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("A = $x; B = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
+
+        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
     /// <summary>Rewrites code against the start rule in the shared grammar.</summary>

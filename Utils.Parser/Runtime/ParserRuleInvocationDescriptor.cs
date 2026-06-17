@@ -223,9 +223,11 @@ public sealed class ParserRuleInvocationDescriptor
     {
         foreach (string declaration in SplitTopLevelLocalDeclarations(rawLocals))
         {
+            string? name = GetLocalDeclarationName(declaration);
             yield return new ParserRuleLocalDescriptor
             {
-                Name = GetLocalDeclarationName(declaration),
+                Name = name,
+                RawType = name is null ? null : GetParameterDeclarationType(declaration, name),
                 RawDeclaration = declaration
             };
         }
@@ -799,6 +801,12 @@ public sealed class ParserRuleLocalDescriptor
     /// Gets the local name text when it is available in the parser model.
     /// </summary>
     public string? Name { get; init; }
+
+    /// <summary>
+    /// Gets the conservatively extracted raw type prefix, or <c>null</c> when the declaration shape is unsupported.
+    /// This metadata is never resolved as an arbitrary C# type.
+    /// </summary>
+    public string? RawType { get; init; }
 
     /// <summary>
     /// Gets the raw local declaration text without semantic type binding or allocation.
