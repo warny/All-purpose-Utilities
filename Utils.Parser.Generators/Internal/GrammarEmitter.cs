@@ -929,6 +929,14 @@ internal static class GrammarEmitter
         sb.AppendLine("        return values.AsReadOnly();");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Inline-action overload for storing a passive rule-local value on the current invocation frame.</summary>");
+        sb.AppendLine("    private void SetRuleLocal(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string name, object? value)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(name);");
+        sb.AppendLine("        _frameManager?.Current?.SetLocal(name, value);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    /// <summary>Inline-action overload for required typed rule-parameter access.</summary>");
         sb.AppendLine("    private T GetRequiredRuleParameter<T>(global::Utils.Parser.Runtime.ParserActionExecutionContext context, string parameterName)");
         sb.AppendLine("    {");

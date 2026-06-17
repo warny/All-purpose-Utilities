@@ -885,6 +885,195 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures typed bare parameter reads compile and execute from <c>@init</c>, inline actions, and <c>@after</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedParameterAttributes_ReadInInitInlineAndAfter()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int InitSeen { get; private set; }
+                public int InlineSeen { get; private set; }
+                public int AfterSeen { get; private set; }
+            }
+            start : child[42] ;
+            child[int value]
+            @init {
+                InitSeen = $value;
+            }
+            @after {
+                AfterSeen = $value;
+            }
+                : { InlineSeen = $value; } A ;
+            A : 'a' ;
+            """;
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "GetRequiredRuleParameter<int>(context, \"value\")");
+        var assembly = CompileGeneratedSource(source);
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "InitSeen"));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "InlineSeen"));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "AfterSeen"));
+    }
+
+    /// <summary>
+    /// Ensures typed bare local reads observe values explicitly written through the frame helper.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedLocalAttribute_ReadsValueAfterExplicitSet()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start locals [int total]
+            @init {
+                SetRuleLocal(context, "total", 42);
+            }
+            @after {
+                Seen = $total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\")");
+        var assembly = CompileGeneratedSource(source);
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures typed nullable/reference local reads can observe an allocated present-null value.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NullableLocalAttribute_PresentNullSucceeds()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public bool IsNull { get; private set; }
+            }
+            start locals [string? label]
+            @after {
+                IsNull = $label == null;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(true, ReadContextObjectProperty(executionContext, "IsNull"));
+    }
+
+    /// <summary>
+    /// Ensures reading a present-null local as a non-nullable value type fails deterministically.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NonNullableLocalAttribute_PresentNullThrows()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start locals [int total]
+            @after {
+                Seen = $total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+            InvokeParseWithContext(assembly, "a", executionContext));
+
+        Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
+    }
+
+    /// <summary>
+    /// Ensures typed bare parameter reads do not convert incompatible runtime seed values.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedParameterAttribute_WrongRuntimeTypeThrows()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start : child["42"] ;
+            child[int value]
+            @after {
+                Seen = $value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+            InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy));
+
+        Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
+    }
+
+    /// <summary>
+    /// Ensures managed rollback restores local writes before a later typed local read.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedLocalAttribute_FailedAlternativeDoesNotLeak()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start locals [int total]
+            @after {
+                Seen = $total;
+            }
+                : { SetRuleLocal(context, "total", 1); } B
+                | { SetRuleLocal(context, "total", 2); } A
+                ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
     /// Ensures generated embedded-code parsing accepts an explicitly installed typed named policy through <c>basePolicy</c>.
     /// </summary>
     [TestMethod]
