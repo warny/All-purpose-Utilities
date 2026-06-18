@@ -908,7 +908,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 : { InlineSeen = $value; } A ;
             A : 'a' ;
             """;
-        string source = Emit(grammar);
+        string source = EmitWithAntlrStyleTransformer(grammar);
         StringAssert.Contains(source, "GetRequiredRuleParameter<int>(context, \"value\")");
         var assembly = CompileGeneratedSource(source);
         var executionContext = CreateExecutionContext(assembly);
@@ -946,7 +946,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 : A ;
             A : 'a' ;
             """;
-        string source = Emit(grammar);
+        string source = EmitWithAntlrStyleTransformer(grammar);
         StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\")");
         var assembly = CompileGeneratedSource(source);
         var executionContext = CreateExecutionContext(assembly);
@@ -975,7 +975,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(Emit(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         var executionContext = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
@@ -1002,7 +1002,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(Emit(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         var executionContext = CreateExecutionContext(assembly);
 
         TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
@@ -1030,7 +1030,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(Emit(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         var executionContext = CreateExecutionContext(assembly);
         var basePolicy = ParserRuntimeFeaturePolicy.Default with
         {
@@ -1064,7 +1064,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : 'a' ;
             B : 'b' ;
             """;
-        var assembly = CompileGeneratedSource(Emit(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         var executionContext = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
@@ -2375,6 +2375,17 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
         return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4");
+    }
+
+    /// <summary>
+    /// Emits generated C# with the optional C# ANTLR-style transformer enabled for compatibility tests.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source.</param>
+    /// <returns>Generated C# source with optional ANTLR-style convenience rewrites applied.</returns>
+    private static string EmitWithAntlrStyleTransformer(string grammarText)
+    {
+        var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
+        return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4", new CSharpAntlrStyleParserEmbeddedCodeTransformer(grammar));
     }
 
     /// <summary>
