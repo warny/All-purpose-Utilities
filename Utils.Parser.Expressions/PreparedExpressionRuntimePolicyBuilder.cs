@@ -26,7 +26,8 @@ public static class PreparedExpressionRuntimePolicyBuilder
 
         options ??= PreparedExpressionRuntimePolicyBuilderOptions.Default;
 
-        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+        var basePolicy = options.BasePolicy ?? ParserRuntimeFeaturePolicy.Default;
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, basePolicy.EmbeddedCodeTransformer);
         var registryBuildResult = PreparedExpressionEmbeddedCodeRegistryBuilder.Build(
             definition,
             preparer,
@@ -38,7 +39,7 @@ public static class PreparedExpressionRuntimePolicyBuilder
             });
 
         var registry = registryBuildResult.Registry;
-        var policy = (options.BasePolicy ?? ParserRuntimeFeaturePolicy.Default) with
+        var policy = basePolicy with
         {
             SemanticPredicateEvaluator = new PreparedExpressionSemanticPredicateEvaluator(registry),
             ParserActionExecutor = new PreparedExpressionParserActionExecutor(registry)

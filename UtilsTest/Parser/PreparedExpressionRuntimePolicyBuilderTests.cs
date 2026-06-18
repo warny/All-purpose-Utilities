@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Utils.Expressions;
 using Utils.Parser.Bootstrap;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Expressions;
 using Utils.Parser.Model;
@@ -218,6 +219,56 @@ public class PreparedExpressionRuntimePolicyBuilderTests
     }
 
     /// <summary>
+    /// Verifies the base policy transformer is used before compilation while registry lookup keeps raw source identity.
+    /// </summary>
+    [TestMethod]
+    public void Parse_WhenBasePolicyTransformerRewritesPredicate_UsesTransformedCompilerInputAndRawRuntimeKey()
+    {
+        var definition = CreatePredicateDefinition("needsTransform");
+        var compiler = new TrackingExpressionCompiler();
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            EmbeddedCodeTransformer = new ReplaceEmbeddedCodeTransformer("needsTransform", "predicateTrue")
+        };
+
+        var integration = PreparedExpressionRuntimePolicyBuilder.Build(
+            definition,
+            compiler,
+            new PreparedExpressionRuntimePolicyBuilderOptions { BasePolicy = basePolicy });
+        var result = ParseText(definition, integration.Policy, "a");
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual("predicateTrue", compiler.LastContent);
+        Assert.AreEqual("needsTransform", integration.RegistryBuildResult.SuccessfulSemanticPredicates.Single().Key!.SourceText);
+        Assert.AreEqual(1, compiler.PredicateTrueExecutionCount);
+    }
+
+    /// <summary>
+    /// Verifies transformed parser actions are compiled but still keyed by raw parser action text at runtime.
+    /// </summary>
+    [TestMethod]
+    public void Parse_WhenBasePolicyTransformerRewritesParserAction_UsesTransformedCompilerInputAndRawRuntimeKey()
+    {
+        var definition = CreateActionDefinition("needsTransform");
+        var compiler = new TrackingExpressionCompiler();
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            EmbeddedCodeTransformer = new ReplaceEmbeddedCodeTransformer("needsTransform", "record")
+        };
+
+        var integration = PreparedExpressionRuntimePolicyBuilder.Build(
+            definition,
+            compiler,
+            new PreparedExpressionRuntimePolicyBuilderOptions { BasePolicy = basePolicy });
+        var result = ParseText(definition, integration.Policy, "a");
+
+        Assert.IsInstanceOfType<ParserNode>(result);
+        Assert.AreEqual("record", compiler.LastContent);
+        Assert.AreEqual("needsTransform", integration.RegistryBuildResult.SuccessfulParserActions.Single().Key!.SourceText);
+        Assert.AreEqual(1, compiler.ActionExecutionCount);
+    }
+
+    /// <summary>
     /// Verifies that preparation failures remain visible and are not hidden by the integration builder.
     /// </summary>
     [TestMethod]
@@ -327,11 +378,17 @@ public class PreparedExpressionRuntimePolicyBuilderTests
         /// </summary>
         public IReadOnlyDictionary<string, Expression>? LastSymbols { get; private set; }
 
+        /// <summary>
+        /// Gets the latest source text supplied to the compiler.
+        /// </summary>
+        public string? LastContent { get; private set; }
+
         /// <inheritdoc />
         public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompilationCount++;
             LastSymbols = symbols;
+            LastContent = content.Trim();
 
             return content.Trim() switch
             {
@@ -380,6 +437,35 @@ public class PreparedExpressionRuntimePolicyBuilderTests
         {
             return typeof(TrackingExpressionCompiler).GetMethod(name, BindingFlags.Instance | BindingFlags.Public)
                 ?? throw new MissingMethodException(typeof(TrackingExpressionCompiler).FullName, name);
+        }
+    }
+
+    /// <summary>
+    /// Test transformer that replaces one embedded-code token with compiler-ready source.
+    /// </summary>
+    private sealed class ReplaceEmbeddedCodeTransformer : IParserEmbeddedCodeTransformer
+    {
+        private readonly string _oldValue;
+        private readonly string _newValue;
+
+        /// <summary>
+        /// Initializes a replacement transformer.
+        /// </summary>
+        /// <param name="oldValue">Text to replace.</param>
+        /// <param name="newValue">Replacement text.</param>
+        public ReplaceEmbeddedCodeTransformer(string oldValue, string newValue)
+        {
+            _oldValue = oldValue;
+            _newValue = newValue;
+        }
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            return new ParserEmbeddedCodeTransformationResult
+            {
+                Code = context.Code.Replace(_oldValue, _newValue)
+            };
         }
     }
 

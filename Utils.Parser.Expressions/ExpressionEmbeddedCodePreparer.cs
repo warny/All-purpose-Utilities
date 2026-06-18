@@ -47,9 +47,9 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
 
         try
         {
-            source = TransformSource(source, ParserEmbeddedCodeLocation.SemanticPredicate);
+            string transformedCode = TransformSource(source, ParserEmbeddedCodeLocation.SemanticPredicate);
             var runtimeContext = Expression.Parameter(typeof(SemanticPredicateEvaluationContext), "context");
-            var expression = _compiler.Compile(source.SourceText, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
+            var expression = _compiler.Compile(transformedCode, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
             if (expression.Type != typeof(bool))
             {
                 return EmbeddedCodePreparationResult<PreparedExpressionSemanticPredicate>.CompilationFailed(
@@ -89,9 +89,9 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
 
         try
         {
-            source = TransformSource(source, ParserEmbeddedCodeLocation.InlineAction);
+            string transformedCode = TransformSource(source, ParserEmbeddedCodeLocation.InlineAction);
             var runtimeContext = Expression.Parameter(typeof(ParserActionExecutionContext), "context");
-            var expression = _compiler.Compile(source.SourceText, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
+            var expression = _compiler.Compile(transformedCode, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
             var executableExpression = expression.Type == typeof(void)
                 ? expression
                 : Expression.Block(expression, Expression.Empty());
@@ -112,8 +112,8 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     /// </summary>
     /// <param name="source">Original embedded-code source.</param>
     /// <param name="location">Embedded-code location represented by the source.</param>
-    /// <returns>A source object containing transformed code.</returns>
-    private EmbeddedCodeSource TransformSource(EmbeddedCodeSource source, ParserEmbeddedCodeLocation location)
+    /// <returns>Transformed source text to pass to the compiler.</returns>
+    private string TransformSource(EmbeddedCodeSource source, ParserEmbeddedCodeLocation location)
     {
         ParserEmbeddedCodeTransformationResult result = _transformer.Transform(new ParserEmbeddedCodeTransformationContext
         {
@@ -128,7 +128,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
             throw new ParserEmbeddedCodeTransformationException(error.Message);
         }
 
-        return new EmbeddedCodeSource(result.Code, source.Kind, source.RuleName, source.AlternativeIndex, source.ElementIndex, source.Location);
+        return result.Code;
     }
 
     /// <summary>
