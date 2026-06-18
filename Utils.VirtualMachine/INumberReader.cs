@@ -70,6 +70,50 @@ namespace Utils.VirtualMachine
         /// <param name="context">The execution context containing the instruction stream.</param>
         /// <returns>The next <see cref="double"/> value available in the context.</returns>
         double ReadDouble(Context context);
+
+        /// <summary>
+        /// Reads an unsigned LEB128-encoded integer from the supplied <paramref name="context"/>.
+        /// LEB128 is byte-order independent; this default implementation delegates to <see cref="ReadByte"/>.
+        /// </summary>
+        /// <param name="context">The execution context containing the instruction stream.</param>
+        /// <returns>The unsigned integer decoded from the LEB128 byte sequence.</returns>
+        ulong ReadULEB128(Context context)
+        {
+            ulong result = 0;
+            int shift = 0;
+            byte b;
+            do
+            {
+                b = ReadByte(context);
+                result |= (ulong)(b & 0x7F) << shift;
+                shift += 7;
+            }
+            while ((b & 0x80) != 0);
+            return result;
+        }
+
+        /// <summary>
+        /// Reads a signed LEB128-encoded integer from the supplied <paramref name="context"/>.
+        /// LEB128 is byte-order independent; this default implementation delegates to <see cref="ReadByte"/>.
+        /// </summary>
+        /// <param name="context">The execution context containing the instruction stream.</param>
+        /// <returns>The signed integer decoded from the LEB128 byte sequence.</returns>
+        long ReadSLEB128(Context context)
+        {
+            long result = 0;
+            int shift = 0;
+            byte b;
+            do
+            {
+                b = ReadByte(context);
+                result |= (long)(b & 0x7F) << shift;
+                shift += 7;
+            }
+            while ((b & 0x80) != 0);
+            if (shift < 64 && (b & 0x40) != 0)
+                result |= -(1L << shift);
+            return result;
+        }
     }
 
     /// <summary>

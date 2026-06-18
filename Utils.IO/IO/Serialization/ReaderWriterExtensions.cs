@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 
 namespace Utils.IO.Serialization;
@@ -82,6 +83,88 @@ public static class ReaderWriterExtensions
         var buffer = new byte[length];
         encoding.GetBytes(value, 0, value.Length, buffer, 0);
         writer.WriteBytes(buffer);
+    }
+
+    /// <summary>
+    /// Reads an unsigned LEB128-encoded integer from the reader.
+    /// </summary>
+    /// <param name="reader">The reader to read from.</param>
+    /// <returns>The unsigned integer decoded from the LEB128 byte sequence.</returns>
+    /// <exception cref="EndOfStreamException">Thrown when the stream ends before the value is complete.</exception>
+    public static ulong ReadULEB128(this IReader reader)
+    {
+        ulong result = 0;
+        int shift = 0;
+        int raw;
+        do
+        {
+            raw = reader.ReadByte();
+            if (raw < 0) throw new EndOfStreamException("Unexpected end of stream reading ULEB128.");
+            result |= (ulong)(raw & 0x7F) << shift;
+            shift += 7;
+        }
+        while ((raw & 0x80) != 0);
+        return result;
+    }
+
+    /// <summary>
+    /// Reads a signed LEB128-encoded integer from the reader.
+    /// </summary>
+    /// <param name="reader">The reader to read from.</param>
+    /// <returns>The signed integer decoded from the LEB128 byte sequence.</returns>
+    /// <exception cref="EndOfStreamException">Thrown when the stream ends before the value is complete.</exception>
+    public static long ReadSLEB128(this IReader reader)
+    {
+        long result = 0;
+        int shift = 0;
+        int raw;
+        do
+        {
+            raw = reader.ReadByte();
+            if (raw < 0) throw new EndOfStreamException("Unexpected end of stream reading SLEB128.");
+            result |= (long)(raw & 0x7F) << shift;
+            shift += 7;
+        }
+        while ((raw & 0x80) != 0);
+        if (shift < 64 && (raw & 0x40) != 0)
+            result |= -(1L << shift);
+        return result;
+    }
+
+    /// <summary>
+    /// Writes an unsigned LEB128-encoded integer to the writer.
+    /// </summary>
+    /// <param name="writer">The writer to write to.</param>
+    /// <param name="value">The value to encode.</param>
+    public static void WriteULEB128(this IWriter writer, ulong value)
+    {
+        do
+        {
+            byte b = (byte)(value & 0x7F);
+            value >>= 7;
+            if (value != 0) b |= 0x80;
+            writer.WriteByte(b);
+        }
+        while (value != 0);
+    }
+
+    /// <summary>
+    /// Writes a signed LEB128-encoded integer to the writer.
+    /// </summary>
+    /// <param name="writer">The writer to write to.</param>
+    /// <param name="value">The value to encode.</param>
+    public static void WriteSLEB128(this IWriter writer, long value)
+    {
+        bool more;
+        do
+        {
+            byte b = (byte)(value & 0x7F);
+            value >>= 7;
+            more = !((value == 0 && (b & 0x40) == 0) || (value == -1 && (b & 0x40) != 0));
+            if (more) b |= 0x80;
+            writer.WriteByte(b);
+        }
+        while (more);
     }
 
     /// <summary>
