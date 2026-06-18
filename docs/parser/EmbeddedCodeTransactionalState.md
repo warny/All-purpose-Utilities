@@ -319,3 +319,7 @@ Generated `$x.value` reads project one required return from the current invocati
 ### Typed current-rule parameter/local reads
 
 Generated C# embedded code supports a deliberately narrow read-only `$name` form when `name` is a current-rule parameter or local with a conservatively extracted raw type. The rewriter emits typed helper calls such as `GetRequiredRuleParameter<int>(context, "count")` and `GetRequiredRuleLocal<string?>(context, "label")`. It performs no conversion, creates no fields/properties, and does not initialize locals to typed defaults. Present `null` is allowed only when the requested type can receive it; non-nullable value-type reads of `null` and incompatible runtime values fail deterministically. Parameters and locals remain read-only through attribute syntax; writes and `ref`/`out` require explicit helper APIs such as `SetRuleLocal(...)`. Label-return attributes remain separate (`$x.value`, `$xs.value`), bare labels remain unsupported, lexer attributes and general ANTLR attributes remain unsupported, and conservative `Parse(...)` is unchanged.
+
+## Transformer boundary and transactional state
+
+Embedded-code transformation is a pre-emission or pre-compilation step. The default no-op transformer does not read or mutate parser transactional state. Optional transformers may rewrite target-language text, but generated helper APIs and dynamic compiler integration remain the execution boundary; transformation alone does not grant runtime authority, local writes, return writes, rollback control, or parse acceptance control.

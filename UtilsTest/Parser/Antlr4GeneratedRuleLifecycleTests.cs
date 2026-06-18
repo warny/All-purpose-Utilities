@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Generators.Internal;
@@ -4570,10 +4571,116 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.IsFalse(ReadBoolField(assembly, "HasOptional"));
     }
 
+
+    /// <summary>
+    /// Verifies default generation preserves lifecycle embedded code instead of rewriting ANTLR-style attributes.
+    /// </summary>
+    [TestMethod]
+    public void Emit_DefaultTransformer_PreservesRuleAfterCodeUnchanged()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Seen = $value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        var parsed = new G4Parser(new G4Tokenizer(grammar).Tokenize()).Parse();
+        string generated = GrammarEmitter.Emit(parsed, "Generated.Tests", "P", "P.g4");
+
+        StringAssert.Contains(generated, "Seen = $value;");
+    }
+
+    /// <summary>
+    /// Verifies generated emission uses a caller-provided embedded-code transformer.
+    /// </summary>
+    [TestMethod]
+    public void Emit_CustomTransformer_ReplacesEmbeddedCodeToken()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Seen = __TOKEN__;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var parsed = new G4Parser(new G4Tokenizer(grammar).Tokenize()).Parse();
+
+        string generated = GrammarEmitter.Emit(parsed, "Generated.Tests", "P", "P.g4", new ReplaceTokenTransformer());
+
+        StringAssert.Contains(generated, "Seen = 42;");
+    }
+
+    /// <summary>
+    /// Verifies transformer metadata identifies rule lifecycle locations and rule declarations.
+    /// </summary>
+    [TestMethod]
+    public void Emit_CustomTransformer_ReceivesLifecycleMetadata()
+    {
+        const string grammar = """
+            grammar P;
+            start[int value] returns [int result] locals [int total]
+            @init { __INIT__; }
+            @after { __AFTER__; }
+                : x=child xs+=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+        var transformer = new RecordingTransformer();
+        var parsed = new G4Parser(new G4Tokenizer(grammar).Tokenize()).Parse();
+
+        _ = GrammarEmitter.Emit(parsed, "Generated.Tests", "P", "P.g4", transformer);
+
+        ParserEmbeddedCodeTransformationContext init = transformer.Contexts.Single(context => context.Location == ParserEmbeddedCodeLocation.RuleInit);
+        ParserEmbeddedCodeTransformationContext after = transformer.Contexts.Single(context => context.Location == ParserEmbeddedCodeLocation.RuleAfter);
+        Assert.AreEqual("P", init.GrammarName);
+        Assert.AreEqual("start", init.RuleName);
+        Assert.IsTrue(init.Parameters.Any(parameter => parameter.Name == "value"));
+        Assert.IsTrue(init.Locals.Any(local => local.Name == "total"));
+        Assert.IsTrue(init.Returns.Any(ret => ret.Name == "result"));
+        Assert.IsTrue(after.Labels.ContainsKey("x"));
+        Assert.IsTrue(after.Labels.ContainsKey("xs"));
+        CollectionAssert.Contains(after.Labels["xs"].RuleNames.ToList(), "child");
+    }
+
     private static string Emit(string grammarText)
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
-        return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4");
+        return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4", new CSharpAntlrStyleParserEmbeddedCodeTransformer(grammar));
+    }
+
+
+    /// <summary>
+    /// Test transformer that replaces a sentinel token with a numeric literal.
+    /// </summary>
+    private sealed class ReplaceTokenTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "42") };
+        }
+    }
+
+    /// <summary>
+    /// Test transformer that records every context it receives.
+    /// </summary>
+    private sealed class RecordingTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <summary>
+        /// Gets recorded transformation contexts.
+        /// </summary>
+        public List<ParserEmbeddedCodeTransformationContext> Contexts { get; } = [];
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            Contexts.Add(context);
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code };
+        }
     }
 
     /// <summary>Compiles generated C# and optional user partial, then loads the resulting assembly.</summary>

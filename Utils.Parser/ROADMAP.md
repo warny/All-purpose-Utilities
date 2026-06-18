@@ -587,3 +587,9 @@ The runtime currently remains conservative and deterministic. Metadata-rich infr
 - The lexical rewrite ignores strings, characters, and comments, resolves assignment/list label kinds with ordinal matching, validates declared returns, and emits blocking `UP0014` diagnostics for unsupported or unsafe forms. Assignment/current-rule reads return `object?`; list reads return `IReadOnlyList<object?>`, preserve successful order, include present-null, skip missing returns, and yield an empty list when absent.
 - Assignment required helpers still throw deterministic `ParserAttributeAccessException` failures for runtime absence. Predicate, lexer, token, write, chain, bare attribute, ambiguous assignment/list names, special indexing, typed list, and conversion semantics remain unsupported. Reads use current rollback-aware frame state, including memoized call-site label rebinding. Existing explicit helpers and conservative `Parse(...)` remain unchanged.
 - Generated C# embedded-code rewriting now supports read-only bare `$param` and `$local` current-rule access through typed helper calls based on descriptor raw type text. The feature performs no conversion, creates no implicit variables or typed fields/properties, leaves writes to explicit helpers, keeps label-return syntax separate, rejects lexer/general ANTLR attributes, and keeps generated `Parse(...)` conservative.
+
+## Embedded-code transformation boundary
+
+**Status: in progress.**
+
+Parser embedded-code handling is centered on preservation plus an explicit `IParserEmbeddedCodeTransformer` extension point. The default transformer is no-op, `$...` rewriting is no longer a core parser/generator responsibility, and dynamic expression-backed preparation transforms code before using the existing compiler mechanism. Future target-language transformers must remain isolated from parser runtime authority and must not introduce a second compiler abstraction.

@@ -142,12 +142,6 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
             }
             ReportUnsupportedEmbeddedCodeDiagnostics(context, file, text, grammar);
-            if (ReportEmbeddedParserAttributeDiagnostics(context, file, text, grammar))
-            {
-                ReportParserDiagnostics(context, diagnostics, fileName);
-                return;
-            }
-
             var generated = GrammarEmitter.Emit(grammar, namespaceName!, className!, fileName);
             ReportParserDiagnostics(context, diagnostics, fileName);
 

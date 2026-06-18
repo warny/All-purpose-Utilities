@@ -387,3 +387,7 @@ child returns [int value]
 ### Typed current-rule parameter/local reads
 
 Generated C# embedded code supports a deliberately narrow read-only `$name` form when `name` is a current-rule parameter or local with a conservatively extracted raw type. The rewriter emits typed helper calls such as `GetRequiredRuleParameter<int>(context, "count")` and `GetRequiredRuleLocal<string?>(context, "label")`. It performs no conversion, creates no fields/properties, and does not initialize locals to typed defaults. Present `null` is allowed only when the requested type can receive it; non-nullable value-type reads of `null` and incompatible runtime values fail deterministically. Parameters and locals remain read-only through attribute syntax; writes and `ref`/`out` require explicit helper APIs such as `SetRuleLocal(...)`. Label-return attributes remain separate (`$x.value`, `$xs.value`), bare labels remain unsupported, lexer attributes and general ANTLR attributes remain unsupported, and conservative `Parse(...)` is unchanged.
+
+## Embedded parser code transformation
+
+Generated C# preserves embedded parser code by default through `NoOpParserEmbeddedCodeTransformer`. The generator does not treat ANTLR-style `$...` parser attributes as intrinsic grammar semantics. If a project needs target-language conveniences, it must opt into an `IParserEmbeddedCodeTransformer`; generated hook bodies emit the transformed code, and transformer errors stop safe generation. Existing generated helper methods remain available for plain C# embedded code.

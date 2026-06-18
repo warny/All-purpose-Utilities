@@ -548,3 +548,11 @@ Inline actions and `@after` support both forms. Current-rule reads are also allo
 ### Typed current-rule parameter/local reads
 
 Generated C# embedded code supports a deliberately narrow read-only `$name` form when `name` is a current-rule parameter or local with a conservatively extracted raw type. The rewriter emits typed helper calls such as `GetRequiredRuleParameter<int>(context, "count")` and `GetRequiredRuleLocal<string?>(context, "label")`. It performs no conversion, creates no fields/properties, and does not initialize locals to typed defaults. Present `null` is allowed only when the requested type can receive it; non-nullable value-type reads of `null` and incompatible runtime values fail deterministically. Parameters and locals remain read-only through attribute syntax; writes and `ref`/`out` require explicit helper APIs such as `SetRuleLocal(...)`. Label-return attributes remain separate (`$x.value`, `$xs.value`), bare labels remain unsupported, lexer attributes and general ANTLR attributes remain unsupported, and conservative `Parse(...)` is unchanged.
+
+## Pluggable embedded-code transformation boundary
+
+Embedded parser code is preserved as target-language code by default. The default `NoOpParserEmbeddedCodeTransformer` returns the grammar text unchanged, so parser `@header`, parser `@footer`, rule `@init`, rule `@after`, inline parser actions, and semantic predicates are emitted or prepared without implicit `$...` rewriting.
+
+Target-language conveniences such as ANTLR-style `$param`, `$local`, `$x.value`, `$xs.value`, or `$rule.value` are not intrinsic parser behavior. They belong behind an explicit `IParserEmbeddedCodeTransformer`. Generated C# emission uses the transformer result before writing hook bodies, and dynamic expression preparation transforms code before invoking the existing compiler selected by the caller. The parser runtime does not gain a second compiler abstraction.
+
+Transformers receive the raw code, embedded-code location, grammar/rule names, declaration metadata, and visible rule-reference labels. Existing generated helper APIs remain available for users who write plain C# directly. Conservative `Parse(...)` remains unchanged and does not execute embedded code.

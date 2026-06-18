@@ -239,3 +239,11 @@ Explicit arguments override defaults, and an invalid default is not parsed or co
 This is not general ANTLR attribute compatibility. No typed variables, implicit fields, conversions, special `$xs[i]`/`$xs.value[i]` syntax, flow-sensitive definite assignment, or execution in conservative `Parse(...)` are introduced.
 
 | Bare `$name` current-rule parameter/local read | Unsupported | Unsupported | Supported only for current-rule parameters/locals with raw declaration types; emits typed helper reads, performs no conversion, remains read-only, rejects predicates/writes/chains, and does not affect conservative `Parse(...)`. |
+
+## Embedded-code transformation matrix
+
+| Capability | Status | Notes |
+|---|---|---|
+| Embedded code preservation | Supported | Default no-op transformation keeps target-language code unchanged. |
+| ANTLR-style attribute rewriting | Optional transformer | `$...` rewriting is not core parser/generator behavior. |
+| Dynamic embedded-code compilation | Existing compiler path after transformation | No new compiler abstraction is introduced. |

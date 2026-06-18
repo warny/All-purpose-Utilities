@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 
 namespace Utils.Parser.Generators.Internal;
 
@@ -25,16 +26,18 @@ internal static class GrammarEmitter
         G4Grammar grammar,
         string namespaceName,
         string className,
-        string sourceFileName)
+        string sourceFileName,
+        IParserEmbeddedCodeTransformer? embeddedCodeTransformer = null)
     {
+        embeddedCodeTransformer ??= NoOpParserEmbeddedCodeTransformer.Instance;
         var sb = new StringBuilder();
         string stringSyntaxName = GetStringSyntaxName(grammar.Name);
         string[] syntaxKeywords = GetStringSyntaxKeywords(grammar);
         string[] stringSyntaxNonAlphanumericTokens = GetStringSyntaxNonAlphanumericTokens(grammar);
         string[] stringSyntaxNumberRules = GetStringSyntaxRulesByName(grammar, "NUMBER");
         string[] stringSyntaxStringRules = GetStringSyntaxRulesByName(grammar, "STRING");
-        var embeddedHooks = CollectEmbeddedCodeHooks(grammar);
-        var lifecycleHooks = CollectLifecycleHooks(grammar);
+        var embeddedHooks = CollectEmbeddedCodeHooks(grammar, embeddedCodeTransformer);
+        var lifecycleHooks = CollectLifecycleHooks(grammar, embeddedCodeTransformer);
         var parserHeaders = CollectParserHeaders(grammar);
         var parserMembers = CollectParserMembers(grammar);
         var parserFooters = CollectParserFooters(grammar);
@@ -51,7 +54,7 @@ internal static class GrammarEmitter
         sb.AppendLine("using Utils.Parser.Runtime;");
         sb.AppendLine();
 
-        EmitParserHeaders(sb, parserHeaders);
+        EmitParserHeaders(sb, parserHeaders, grammar, embeddedCodeTransformer);
 
         if (!string.IsNullOrEmpty(namespaceName))
         {
@@ -187,7 +190,7 @@ internal static class GrammarEmitter
         sb.AppendLine("}");
         sb.AppendLine();
         EmitExecutionContext(sb, embeddedHooks, lifecycleHooks, parserMembers, className, sourceFileName);
-        EmitParserFooters(sb, parserFooters);
+        EmitParserFooters(sb, parserFooters, grammar, embeddedCodeTransformer);
 
         return sb.ToString();
     }
@@ -1753,6 +1756,142 @@ internal static class GrammarEmitter
         }
     }
 
+
+    /// <summary>
+    /// Applies the configured embedded-code transformer and rejects diagnostics marked as errors.
+    /// </summary>
+    /// <param name="transformer">Transformer selected for generation.</param>
+    /// <param name="code">Raw embedded code.</param>
+    /// <param name="location">Grammar location of the embedded code.</param>
+    /// <param name="grammar">Owning grammar.</param>
+    /// <param name="rule">Owning parser rule, or <c>null</c> for grammar-level code.</param>
+    /// <returns>Transformed code safe to emit.</returns>
+    private static string TransformEmbeddedCode(
+        IParserEmbeddedCodeTransformer transformer,
+        string code,
+        ParserEmbeddedCodeLocation location,
+        G4Grammar grammar,
+        G4Rule? rule)
+    {
+        ParserEmbeddedCodeTransformationResult result = transformer.Transform(new ParserEmbeddedCodeTransformationContext
+        {
+            Code = code,
+            Location = location,
+            GrammarName = grammar.Name,
+            RuleName = rule?.Name,
+            Parameters = CreateDeclarationDescriptors(rule?.Parameters),
+            Locals = CreateDeclarationDescriptors(rule is null || rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals)),
+            Returns = CreateDeclarationDescriptors(rule?.Returns),
+            Labels = rule is null ? ParserEmbeddedCodeTransformationContext.EmptyLabels : CreateLabelDescriptors(rule.Content)
+        });
+
+        ParserEmbeddedCodeDiagnostic? error = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Severity == ParserEmbeddedCodeDiagnosticSeverity.Error);
+        if (error is not null)
+        {
+            string codeText = string.IsNullOrWhiteSpace(error.Code) ? "APU embedded-code transformer" : error.Code!;
+            throw new InvalidOperationException($"{codeText}: {error.Message}");
+        }
+
+        return result.Code;
+    }
+
+    /// <summary>
+    /// Creates conservative declaration descriptors from a raw comma-separated declaration list.
+    /// </summary>
+    /// <param name="rawDeclarations">Raw declaration list, or <c>null</c> when absent.</param>
+    /// <returns>Passive descriptors for transformer metadata.</returns>
+    private static IReadOnlyList<ParserEmbeddedRuleDeclarationDescriptor> CreateDeclarationDescriptors(string? rawDeclarations)
+    {
+        if (string.IsNullOrWhiteSpace(rawDeclarations))
+        {
+            return Array.Empty<ParserEmbeddedRuleDeclarationDescriptor>();
+        }
+
+        return rawDeclarations.Split(',')
+            .Select(static declaration => declaration.Trim())
+            .Where(static declaration => declaration.Length > 0)
+            .Select(static declaration => new ParserEmbeddedRuleDeclarationDescriptor
+            {
+                RawDeclaration = declaration,
+                Name = ExtractDeclarationName(declaration)
+            })
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Conservatively extracts the last identifier before a top-level default assignment.
+    /// </summary>
+    /// <param name="declaration">Raw declaration text.</param>
+    /// <returns>The extracted identifier, or <c>null</c> when the declaration is not recognized.</returns>
+    private static string? ExtractDeclarationName(string declaration)
+    {
+        int end = declaration.IndexOf('=');
+        string candidate = (end >= 0 ? declaration.Substring(0, end) : declaration).Trim();
+        int index = candidate.Length - 1;
+        while (index >= 0 && (char.IsLetterOrDigit(candidate[index]) || candidate[index] == '_'))
+        {
+            index--;
+        }
+
+        string name = candidate.Substring(index + 1);
+        return name.Length == 0 ? null : name;
+    }
+
+    /// <summary>
+    /// Creates label descriptors for visible parser rule-reference labels without collapsing multi-target list labels.
+    /// </summary>
+    /// <param name="content">Rule content to inspect.</param>
+    /// <returns>Label descriptors keyed by label name.</returns>
+    private static IReadOnlyDictionary<string, ParserEmbeddedRuleLabelDescriptor> CreateLabelDescriptors(G4Content content)
+    {
+        var labels = new Dictionary<string, List<(bool IsList, string RuleName)>>(StringComparer.Ordinal);
+        CollectLabelTargets(content, labels);
+        return labels.ToDictionary(
+            static item => item.Key,
+            static item => new ParserEmbeddedRuleLabelDescriptor
+            {
+                Name = item.Key,
+                IsList = item.Value.Any(static target => target.IsList),
+                RuleNames = item.Value.Select(static target => target.RuleName).Distinct(StringComparer.Ordinal).ToArray()
+            },
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Recursively collects parser rule-reference label targets from rule content.
+    /// </summary>
+    /// <param name="content">Content node to inspect.</param>
+    /// <param name="labels">Mutable target map.</param>
+    private static void CollectLabelTargets(G4Content content, Dictionary<string, List<(bool IsList, string RuleName)>> labels)
+    {
+        switch (content)
+        {
+            case G4RuleRef ruleRef when ruleRef.LabelName is not null:
+                if (!labels.TryGetValue(ruleRef.LabelName, out var targets))
+                {
+                    targets = new List<(bool IsList, string RuleName)>();
+                    labels.Add(ruleRef.LabelName, targets);
+                }
+                targets.Add((ruleRef.LabelIsAdditive, ruleRef.RuleName));
+                break;
+            case G4Alternation alternation:
+                foreach (G4Alternative alternative in alternation.Alternatives) CollectLabelTargets(alternative, labels);
+                break;
+            case G4Alternative alternative:
+                foreach (G4Content item in alternative.Items) CollectLabelTargets(item, labels);
+                break;
+            case G4Sequence sequence:
+                foreach (G4Content item in sequence.Items) CollectLabelTargets(item, labels);
+                break;
+            case G4Quantifier quantifier:
+                CollectLabelTargets(quantifier.Inner, labels);
+                break;
+            case G4Negation negation:
+                CollectLabelTargets(negation.Inner, labels);
+                break;
+        }
+    }
+
     /// <summary>
     /// Gets the stable generated execution-context class name for a generated grammar facade.
     /// </summary>
@@ -1769,20 +1908,20 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="grammar">Parsed grammar AST.</param>
     /// <returns>Deterministic lifecycle hook metadata for parser rules.</returns>
-    private static IReadOnlyList<LifecycleHook> CollectLifecycleHooks(G4Grammar grammar)
+    private static IReadOnlyList<LifecycleHook> CollectLifecycleHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         var hooks = new List<LifecycleHook>();
         foreach (var rule in grammar.ParserRules)
         {
             if (rule.InitAction is not null)
             {
-                string code = EmbeddedParserAttributeRewriter.Rewrite(rule.InitAction.Code, grammar, rule, EmbeddedParserAttributeLocationKind.Init).Code;
+                string code = TransformEmbeddedCode(transformer, rule.InitAction.Code, ParserEmbeddedCodeLocation.RuleInit, grammar, rule);
                 hooks.Add(new LifecycleHook(rule.Name, code, isInit: true, $"__Init_{Sanitize(rule.Name)}"));
             }
 
             if (rule.AfterAction is not null)
             {
-                string code = EmbeddedParserAttributeRewriter.Rewrite(rule.AfterAction.Code, grammar, rule, EmbeddedParserAttributeLocationKind.After).Code;
+                string code = TransformEmbeddedCode(transformer, rule.AfterAction.Code, ParserEmbeddedCodeLocation.RuleAfter, grammar, rule);
                 hooks.Add(new LifecycleHook(rule.Name, code, isInit: false, $"__After_{Sanitize(rule.Name)}"));
             }
         }
@@ -1808,12 +1947,13 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="parserHeaders">Parser header blocks to inject.</param>
-    private static void EmitParserHeaders(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserHeaders)
+    private static void EmitParserHeaders(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserHeaders, G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         foreach (var header in parserHeaders)
         {
+            string code = TransformEmbeddedCode(transformer, header.RawCode, ParserEmbeddedCodeLocation.ParserHeader, grammar, null);
             sb.AppendLine("// <auto-generated-parser-header>");
-            foreach (string line in SplitEmbeddedCodeLines(header.RawCode))
+            foreach (string line in SplitEmbeddedCodeLines(code))
             {
                 sb.AppendLine(line);
             }
@@ -1839,12 +1979,13 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="parserFooters">Parser footer blocks to inject.</param>
-    private static void EmitParserFooters(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserFooters)
+    private static void EmitParserFooters(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserFooters, G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         foreach (var footer in parserFooters)
         {
+            string code = TransformEmbeddedCode(transformer, footer.RawCode, ParserEmbeddedCodeLocation.ParserFooter, grammar, null);
             sb.AppendLine("// <auto-generated-parser-footer>");
-            foreach (string line in SplitEmbeddedCodeLines(footer.RawCode))
+            foreach (string line in SplitEmbeddedCodeLines(code))
             {
                 sb.AppendLine(line);
             }
@@ -1890,7 +2031,7 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="grammar">Parsed grammar AST.</param>
     /// <returns>Deterministic hook metadata for embedded parser code.</returns>
-    private static IReadOnlyList<EmbeddedCodeHook> CollectEmbeddedCodeHooks(G4Grammar grammar)
+    private static IReadOnlyList<EmbeddedCodeHook> CollectEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         var hooks = new List<EmbeddedCodeHook>();
         foreach (var rule in grammar.ParserRules)
@@ -1900,10 +2041,7 @@ internal static class GrammarEmitter
             for (int index = firstHookIndex; index < hooks.Count; index++)
             {
                 EmbeddedCodeHook hook = hooks[index];
-                EmbeddedParserAttributeLocationKind kind = hook.IsPredicate
-                    ? EmbeddedParserAttributeLocationKind.Predicate
-                    : EmbeddedParserAttributeLocationKind.InlineAction;
-                hook.EmittedCode = EmbeddedParserAttributeRewriter.Rewrite(hook.Code, grammar, rule, kind).Code;
+                hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, hook.IsPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.InlineAction, grammar, rule);
             }
         }
 
