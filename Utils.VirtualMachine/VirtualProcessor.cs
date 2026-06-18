@@ -20,8 +20,11 @@ namespace Utils.VirtualMachine
     public abstract class VirtualProcessor<T> where T : Context
     {
         // INumberReader methods never change; cache per-type avoids rebuilding on every instantiation.
+        // IsAbstract filters to fixed-width methods only; default-implementation methods (LEB128) share
+        // return types with ulong/long and would cause duplicate-key conflicts in the dictionary.
         private static readonly Dictionary<Type, MethodInfo> _numberReaderMethods =
             typeof(INumberReader).GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                 .Where(m => m.IsAbstract)
                                  .ToDictionary(m => m.ReturnType, m => m);
 
         private readonly INumberReader _numberReader;
@@ -38,6 +41,13 @@ namespace Utils.VirtualMachine
         /// The equality comparer for keys is configured to handle byte-array comparison.
         /// </summary>
         protected Dictionary<IReadOnlyCollection<byte>, (string Name, InstructionDelegate Handler)> InstructionsSet { get; }
+
+        /// <summary>
+        /// Gets a read-only enumeration of all registered instructions, including those discovered via
+        /// <see cref="InstructionAttribute"/> and those added with <see cref="RegisterInstruction"/>.
+        /// </summary>
+        public IEnumerable<(IReadOnlyCollection<byte> Opcode, string Name)> Instructions
+            => InstructionsSet.Select(kv => (kv.Key, kv.Value.Name));
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VirtualProcessor{T}"/> class,
@@ -83,6 +93,9 @@ namespace Utils.VirtualMachine
                 }
                 else
                 {
+                    // Build an expression-tree delegate that reads each operand from the INumberReader
+                    // and passes them to the instruction method. This compiles to a direct call with no
+                    // boxing or reflection overhead at dispatch time.
                     var contextParameter = Expression.Parameter(typeof(T), "context");
                     var numberReaderExpression = Expression.Constant(_numberReader);
 
@@ -92,11 +105,14 @@ namespace Utils.VirtualMachine
 
                     foreach (var parameter in parameters.Skip(1))
                     {
+                        // Map each parameter type to the INumberReader method returning that type
+                        // (e.g. short → ReadInt16, int → ReadInt32). Lookup table cached in _numberReaderMethods.
                         var readerMethod = _numberReaderMethods[parameter.ParameterType];
                         var methodCallExpression = Expression.Call(numberReaderExpression, readerMethod, [contextParameter]);
                         methodParameters.Add(methodCallExpression);
                     }
 
+                    // Final lambda: (T context) => this.Method(context, reader.ReadXxx(context), ...)
                     var expression = Expression.Lambda<InstructionDelegate>(Expression.Call(Expression.Constant(this), method, methodParameters.ToArray()), [contextParameter]);
                     instructionDelegate = expression.Compile();
                 }
@@ -178,6 +194,20 @@ namespace Utils.VirtualMachine
         /// <returns>A 64-bit floating-point number.</returns>
         protected double ReadDouble(Context context) => _numberReader.ReadDouble(context);
 
+        /// <summary>
+        /// Reads an unsigned LEB128-encoded integer from the context.
+        /// </summary>
+        /// <param name="context">The current execution context.</param>
+        /// <returns>The unsigned integer decoded from the LEB128 byte sequence.</returns>
+        protected ulong ReadULEB128(Context context) => _numberReader.ReadULEB128(context);
+
+        /// <summary>
+        /// Reads a signed LEB128-encoded integer from the context.
+        /// </summary>
+        /// <param name="context">The current execution context.</param>
+        /// <returns>The signed integer decoded from the LEB128 byte sequence.</returns>
+        protected long ReadSLEB128(Context context) => _numberReader.ReadSLEB128(context);
+
         #endregion
 
         /// <summary>
@@ -227,8 +257,12 @@ namespace Utils.VirtualMachine
             ArgumentNullException.ThrowIfNull(opcode);
             ArgumentNullException.ThrowIfNull(handler);
             if (opcode.Length == 0) throw new ArgumentException("Opcode cannot be empty.", nameof(opcode));
+            if (InstructionsSet.ContainsKey(opcode))
+                throw new ArgumentException(
+                    $"An instruction with opcode [{string.Join(", ", opcode.Select(b => $"0x{b:X2}"))}] is already registered.",
+                    nameof(opcode));
 
-            InstructionsSet[opcode] = (name ?? string.Empty, ctx => handler(ctx));
+            InstructionsSet.Add(opcode, (name ?? string.Empty, ctx => handler(ctx)));
             _maxInstructionSize = Math.Max(_maxInstructionSize, opcode.Length);
         }
 
@@ -236,20 +270,33 @@ namespace Utils.VirtualMachine
         /// Shared dispatch core: reads bytes one at a time and invokes the matching handler.
         /// Reuses <paramref name="buffer"/> across iterations (caller must call Clear before each call).
         /// </summary>
+        /// <exception cref="VirtualProcessorException">
+        /// Thrown when no instruction matches the bytes at the current position, or when a matched
+        /// instruction's handler raises <see cref="IndexOutOfRangeException"/> or
+        /// <see cref="ArgumentOutOfRangeException"/> (indicating truncated operand data).
+        /// </exception>
         private void TryDispatch(T context, List<byte> buffer)
         {
             buffer.Clear();
+            int instructionStart = context.InstructionPointer;
             for (int i = 0; i < _maxInstructionSize && context.InstructionPointer < context.Data.Length; i++)
             {
                 buffer.Add(ReadByte(context));
                 if (InstructionsSet.TryGetValue(buffer, out var entry))
                 {
-                    entry.Handler(context);
+                    try
+                    {
+                        entry.Handler(context);
+                    }
+                    catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
+                    {
+                        // INumberReader methods throw these when the byte stream ends before all operand bytes are read.
+                        throw new VirtualProcessorException(instructionStart, buffer, ex);
+                    }
                     return;
                 }
             }
-            throw new VirtualProcessorException(
-                $"Unknown instruction at InstructionPointer={context.InstructionPointer - buffer.Count}.");
+            throw new VirtualProcessorException(instructionStart, buffer);
         }
     }
 
