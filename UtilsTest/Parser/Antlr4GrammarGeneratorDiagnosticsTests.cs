@@ -543,6 +543,26 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         StringAssert.Contains(diagnostic.GetMessage(), expectedMessage);
     }
 
+    /// <summary>Verifies invalid bare parser attributes are surfaced through generator diagnostics.</summary>
+    [DataTestMethod]
+    [DataRow("start @after { Seen = $unknown; } : A ;", "does not resolve")]
+    [DataRow("start[int count] @after { $count = 1; } : A ;", "writes are not supported")]
+    [DataRow("start[int count] : { return $count > 0; }? A ;", "not supported in semantic predicates")]
+    [DataRow("start @after { Seen = $x; } : x=child ;", "label access")]
+    public void GeneratorDiagnostics_InvalidBareParserAttribute_ReportsDedicatedError(string ruleText, string expectedMessage)
+    {
+        string grammar = $$"""
+            grammar P;
+            {{ruleText}}
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+
+        Diagnostic diagnostic = RunGenerator(grammar).Single(candidate => candidate.Id == ParserDiagnostics.InvalidEmbeddedParserAttribute.Code);
+
+        StringAssert.Contains(diagnostic.GetMessage(), expectedMessage);
+    }
+
     /// <summary>
     /// Asserts that exactly one unsupported embedded-code diagnostic exists and that it describes the expected construct.
     /// </summary>

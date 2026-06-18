@@ -257,7 +257,7 @@ if (TryGetLastRuleCallRawArguments(context, "child", out string? raw))
 
 This helper requires an explicit mapper delegate and never evaluates arguments automatically. Null `rawArguments` returns `false`. Mapper exceptions propagate. Seeds the **next** invocation of the named rule.
 
-Use `SetNextRuleParameter(...)` for direct explicit seeding. `$param` is not supported.
+Use `SetNextRuleParameter(...)` for direct explicit seeding. Bare `$param` reads are supported only inside generated embedded C# for the current rule and do not seed child calls.
 
 ## Rule-reference label metadata (`x=child`, `xs+=child`)
 
@@ -307,7 +307,7 @@ var basePolicy = ParserRuntimeFeaturePolicy.Default with
 P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
 ```
 
-The default and generated `Parse(...)` remain metadata-only/conservative. The policy requires exact positional arity and binds declared parser-rule parameter names without enforcing their C# declaration types. It supports only `null`, lowercase Booleans, signed decimal `int`/`long`, finite invariant `double`, quoted strings, and character literals with a small escape set. Named binding, arbitrary expressions, Roslyn evaluation, `$param`, labels/returns, and lexer execution are not supported. Managed pending seeds are applied as one all-or-none batch, are rollback-aware, and generated memoization distinguishes the supported literal values deterministically. Existing explicit helpers continue to accept arbitrary values: deterministic scalars and `IParserExecutionStateHashable` values receive stable keys, while other objects force volatile keys that bypass completed-result reuse while pending.
+The default and generated `Parse(...)` remain metadata-only/conservative. The policy requires exact positional arity and binds declared parser-rule parameter names without enforcing their C# declaration types. It supports only `null`, lowercase Booleans, signed decimal `int`/`long`, finite invariant `double`, quoted strings, and character literals with a small escape set. Named binding, arbitrary expressions, Roslyn evaluation, `$param` writes/chains, labels/returns as call arguments, and lexer execution are not supported. Managed pending seeds are applied as one all-or-none batch, are rollback-aware, and generated memoization distinguishes the supported literal values deterministically. Existing explicit helpers continue to accept arbitrary values: deterministic scalars and `IParserExecutionStateHashable` values receive stable keys, while other objects force volatile keys that bypass completed-result reuse while pending.
 
 ## Opt-in named literal rule-call binding
 
@@ -383,3 +383,7 @@ child returns [int value]
 ```
 
 `$x.value` reads an assignment-labeled child return as `object?`, `$xs.value` projects a list-labeled child return as `IReadOnlyList<object?>`, and `$child.value` reads the current `child` frame return as `object?`. List projection preserves successful execution order, includes present-null entries, skips missing returns, and returns an empty list when the label has no successful results; assignment-label absence still throws. There is no automatic conversion or generated typed variable. Invalid roots, token labels, undeclared returns, assignment/list name ambiguity, writes, chains, bare attributes, label reads in `@init`, and all predicate attribute references produce `UP0014`. No special `$xs[i]` or `$xs.value[i]` syntax is added; ordinary C# operations may be applied to the rewritten list expression. Existing explicit helpers remain available, lexer attributes are unsupported, and this feature does not imply general ANTLR attribute compatibility. Generated `Parse(...)` remains conservative.
+
+### Typed current-rule parameter/local reads
+
+Generated C# embedded code supports a deliberately narrow read-only `$name` form when `name` is a current-rule parameter or local with a conservatively extracted raw type. The rewriter emits typed helper calls such as `GetRequiredRuleParameter<int>(context, "count")` and `GetRequiredRuleLocal<string?>(context, "label")`. It performs no conversion, creates no fields/properties, and does not initialize locals to typed defaults. Present `null` is allowed only when the requested type can receive it; non-nullable value-type reads of `null` and incompatible runtime values fail deterministically. Parameters and locals remain read-only through attribute syntax; writes and `ref`/`out` require explicit helper APIs such as `SetRuleLocal(...)`. Label-return attributes remain separate (`$x.value`, `$xs.value`), bare labels remain unsupported, lexer attributes and general ANTLR attributes remain unsupported, and conservative `Parse(...)` is unchanged.
