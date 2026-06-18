@@ -1,0 +1,40 @@
+namespace Utils.VirtualMachine;
+
+/// <summary>
+/// Represents an active if/else conditional block on a <see cref="ControlFlowStack"/>.
+/// </summary>
+/// <remarks>
+/// Typical VM usage:
+/// <list type="bullet">
+///   <item>IF instruction: evaluate condition; push a <see cref="ConditionalBlock"/>;
+///     if false, jump to <see cref="ElseAddress"/> (or <see cref="EndAddress"/> when no else).</item>
+///   <item>ELSE instruction: jump to <see cref="EndAddress"/>; execution continues in the else branch.</item>
+///   <item>ENDIF instruction: call <see cref="ControlFlowStack.Pop"/>.</item>
+/// </list>
+/// </remarks>
+public sealed class ConditionalBlock : IControlFlowBlock
+{
+    /// <inheritdoc/>
+    public int StartAddress { get; }
+
+    /// <summary>
+    /// Address of the else branch, or <see langword="null"/> when there is no else clause.
+    /// </summary>
+    public int? ElseAddress { get; }
+
+    /// <summary>First instruction after the entire if/else structure (ENDIF address).</summary>
+    public int EndAddress { get; }
+
+    /// <summary>
+    /// Initializes a new conditional block.
+    /// </summary>
+    /// <param name="startAddress">Address of the IF instruction.</param>
+    /// <param name="endAddress">Address immediately after the ENDIF.</param>
+    /// <param name="elseAddress">Address of the ELSE branch, or <see langword="null"/> if absent.</param>
+    public ConditionalBlock(int startAddress, int endAddress, int? elseAddress = null)
+    {
+        StartAddress = startAddress;
+        EndAddress = endAddress;
+        ElseAddress = elseAddress;
+    }
+}
