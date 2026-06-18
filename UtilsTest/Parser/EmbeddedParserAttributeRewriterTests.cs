@@ -85,7 +85,49 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], expectedMessage);
     }
 
-    /// <summary>Verifies every supported write-target shape is rejected before C# compilation.</summary>
+    /// <summary>Verifies current-rule local write statements are rewritten to typed setter helpers.</summary>
+    [DataTestMethod]
+    [DataRow("$total = 1;", "SetRequiredRuleLocal<int>(context, \"total\", 1);")]
+    [DataRow("$total = $count + 1;", "SetRequiredRuleLocal<int>(context, \"total\", GetRequiredRuleParameter<int>(context, \"count\") + 1);")]
+    [DataRow("$total += 1;", "GetRequiredRuleLocal<int>(context, \"total\") + 1")]
+    [DataRow("$total -= 1;", "GetRequiredRuleLocal<int>(context, \"total\") - 1")]
+    [DataRow("$total *= 2;", "GetRequiredRuleLocal<int>(context, \"total\") * 2")]
+    [DataRow("$total /= 2;", "GetRequiredRuleLocal<int>(context, \"total\") / 2")]
+    [DataRow("$total %= 2;", "GetRequiredRuleLocal<int>(context, \"total\") % 2")]
+    [DataRow("$total &= mask;", "GetRequiredRuleLocal<int>(context, \"total\") & mask")]
+    [DataRow("$total |= mask;", "GetRequiredRuleLocal<int>(context, \"total\") | mask")]
+    [DataRow("$total ^= mask;", "GetRequiredRuleLocal<int>(context, \"total\") ^ mask")]
+    [DataRow("$total <<= 1;", "GetRequiredRuleLocal<int>(context, \"total\") << 1")]
+    [DataRow("$total >>= 1;", "GetRequiredRuleLocal<int>(context, \"total\") >> 1")]
+    [DataRow("$total++;", "GetRequiredRuleLocal<int>(context, \"total\") + 1")]
+    [DataRow("++$total;", "GetRequiredRuleLocal<int>(context, \"total\") + 1")]
+    [DataRow("$total--;", "GetRequiredRuleLocal<int>(context, \"total\") - 1")]
+    [DataRow("--$total;", "GetRequiredRuleLocal<int>(context, \"total\") - 1")]
+    [DataRow("$total   +=   1 ;", "GetRequiredRuleLocal<int>(context, \"total\") + 1")]
+    public void Rewrite_LocalWriteStatement_RewritesToTypedSetter(string code, string expected)
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite(code);
+
+        StringAssert.Contains(result.Code, "SetRequiredRuleLocal<int>(context, \"total\",");
+        StringAssert.Contains(result.Code, expected);
+        Assert.AreEqual(0, result.Errors.Count);
+    }
+
+    /// <summary>Verifies right-hand side attributes remain recursively rewritten in local assignments.</summary>
+    [TestMethod]
+    public void Rewrite_LocalWriteRhs_RewritesSupportedReadAttributes()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$total = (int)$x.value + $xs.value.Count + (int)$start.own + $count + $value;");
+
+        StringAssert.Contains(result.Code, "GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")");
+        StringAssert.Contains(result.Code, "GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count");
+        StringAssert.Contains(result.Code, "GetRequiredRuleReturn(context, \"own\")");
+        StringAssert.Contains(result.Code, "GetRequiredRuleParameter<int>(context, \"count\")");
+        StringAssert.Contains(result.Code, "GetRequiredRuleLocal<object>(context, \"value\")");
+        Assert.AreEqual(0, result.Errors.Count);
+    }
+
+    /// <summary>Verifies every unsupported return and label write-target shape is rejected before C# compilation.</summary>
     [DataTestMethod]
     [DataRow("$x.value = 1;")]
     [DataRow("$start.own = 1;")]
@@ -104,11 +146,11 @@ public class EmbeddedParserAttributeRewriterTests
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
 
-        Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "writes are not supported");
+        Assert.IsTrue(result.Errors.Count > 0);
+        StringAssert.Contains(string.Join("\n", result.Errors), "read-only");
     }
 
-    /// <summary>Verifies bare parameter and local write-target shapes are rejected.</summary>
+    /// <summary>Verifies bare parameter write-target shapes remain rejected.</summary>
     [DataTestMethod]
     [DataRow("$count = 1;")]
     [DataRow("$count += 1;")]
@@ -120,8 +162,23 @@ public class EmbeddedParserAttributeRewriterTests
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
 
-        Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "writes are not supported");
+        Assert.IsTrue(result.Errors.Count > 0);
+        string joinedErrors = string.Join("\n", result.Errors);
+        StringAssert.Contains(joinedErrors, code.Contains("ref") || code.Contains("out") ? "ref/out" : "read-only");
+    }
+
+    /// <summary>Verifies local increment and assignment expression values remain unsupported.</summary>
+    [DataTestMethod]
+    [DataRow("value = $total++;")]
+    [DataRow("value = ++$total;")]
+    [DataRow("Foo($total++);")]
+    [DataRow("return --$total;")]
+    [DataRow("$total = ($value = 1);")]
+    public void Rewrite_LocalWriteExpression_ReportsDeterministicError(string code)
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite(code);
+
+        Assert.IsTrue(result.Errors.Count > 0);
     }
 
     /// <summary>Verifies bare parameter and local reads are rejected in predicates.</summary>

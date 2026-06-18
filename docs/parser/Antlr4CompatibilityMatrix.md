@@ -239,3 +239,7 @@ Explicit arguments override defaults, and an invalid default is not parsed or co
 This is not general ANTLR attribute compatibility. No typed variables, implicit fields, conversions, special `$xs[i]`/`$xs.value[i]` syntax, flow-sensitive definite assignment, or execution in conservative `Parse(...)` are introduced.
 
 | Bare `$name` current-rule parameter/local read | Unsupported | Unsupported | Supported only for current-rule parameters/locals with raw declaration types; emits typed helper reads, performs no conversion, remains read-only, rejects predicates/writes/chains, and does not affect conservative `Parse(...)`. |
+
+## Generated parser local attribute writes
+
+Generated embedded parser C# now supports a narrow read/write subset for current-rule locals only: simple assignment, compound assignment, and standalone prefix/postfix ++ or -- statements. Parameters, returns, assignment/list label return attributes, token attributes, lexer attributes, ref/out attributes, property/indexer writes, assignment expressions, and increment/decrement expression values remain unsupported and are reported as UP0014 where applicable. Compound local assignments are emitted as an explicit GetRequiredRuleLocal<T>(...) operator expression passed to SetRequiredRuleLocal<T>(...), using the declared raw local type without runtime conversion or C# compound-assignment special conversions. Local writes go through the managed invocation-frame local store, so existing rollback snapshots remain authoritative; conservative Parse(...) still does not execute embedded code.

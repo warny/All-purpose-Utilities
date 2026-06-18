@@ -91,6 +91,19 @@ internal static class EmbeddedParserAttributeRewriter
         if (grammar is null) throw new ArgumentNullException(nameof(grammar));
         if (rule is null) throw new ArgumentNullException(nameof(rule));
 
+        return RewriteCore(code, grammar, rule, locationKind, allowWrites: true);
+    }
+
+    /// <summary>
+    /// Rewrites supported attributes with an explicit mode controlling whether local-write statements are accepted.
+    /// </summary>
+    private static EmbeddedParserAttributeRewriteResult RewriteCore(
+        string code,
+        G4Grammar grammar,
+        G4Rule rule,
+        EmbeddedParserAttributeLocationKind locationKind,
+        bool allowWrites)
+    {
         var errors = new List<string>();
         var output = new StringBuilder(code.Length);
         var labels = CollectLabels(rule.Content);
@@ -107,6 +120,11 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
+            if (allowWrites && TryRewritePrefixLocalUpdate(code, ref index, grammar, rule, locationKind, errors, output, parameters, locals))
+            {
+                continue;
+            }
+
             if (code[index] != '$' || index + 1 >= code.Length || !IsIdentifierStart(code[index + 1]))
             {
                 output.Append(code[index++]);
@@ -119,7 +137,12 @@ internal static class EmbeddedParserAttributeRewriter
             int dotIndex = SkipWhitespace(code, index);
             if (dotIndex >= code.Length || code[dotIndex] != '.')
             {
-                RewriteBareAttribute(code, rule, locationKind, errors, output, parameters, locals, labels, attributeStart, index, root);
+                if (allowWrites && TryRewriteBareLocalWrite(code, ref index, grammar, rule, locationKind, errors, output, parameters, locals, labels, attributeStart, root))
+                {
+                    continue;
+                }
+
+                RewriteBareAttribute(code, rule, locationKind, allowWrites, errors, output, parameters, locals, labels, attributeStart, index, root);
                 continue;
             }
 
@@ -152,7 +175,10 @@ internal static class EmbeddedParserAttributeRewriter
 
             if (IsWriteContext(code, attributeStart, index))
             {
-                errors.Add($"Parser attribute writes are not supported for '{attributeText}'. Use SetRuleReturn(context, name, value) for current-rule returns.");
+                string message = string.Equals(root, rule.Name, StringComparison.Ordinal)
+                    ? $"Current-rule return attribute '{attributeText}' is read-only through parser attribute syntax in generated C#. Use SetRuleReturn(context, \"{Escape(returnName)}\", value) instead."
+                    : $"Label-return attribute '{attributeText}' is read-only through parser attribute syntax in generated C#.";
+                errors.Add(message);
                 output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
@@ -314,6 +340,7 @@ internal static class EmbeddedParserAttributeRewriter
         string code,
         G4Rule rule,
         EmbeddedParserAttributeLocationKind locationKind,
+        bool allowWrites,
         List<string> errors,
         StringBuilder output,
         Dictionary<string, TypedDeclaration> parameters,
@@ -326,7 +353,27 @@ internal static class EmbeddedParserAttributeRewriter
         string attributeText = "$" + root;
         if (IsWriteContext(code, attributeStart, attributeEnd))
         {
-            errors.Add($"Parser attribute writes are not supported for '{attributeText}'. Use explicit parameter/local helpers such as SetRuleLocal(context, name, value).");
+            string message;
+            if (IsRefOrOutContext(code, attributeStart))
+            {
+                message = $"ref/out parser attributes are not supported for '{attributeText}' in generated embedded parser C#.";
+            }
+            else if (parameters.ContainsKey(root))
+            {
+                message = $"Parser parameter '{attributeText}' is read-only. Use a local if mutable state is needed.";
+            }
+            else if (locals.ContainsKey(root))
+            {
+                message = allowWrites
+                    ? $"Parser local write '{attributeText}' is only supported as a standalone assignment or increment/decrement statement."
+                    : $"Parser local write '{attributeText}' is not supported inside expressions.";
+            }
+            else
+            {
+                message = $"Parser attribute write target '{attributeText}' does not resolve to a writable current-rule local.";
+            }
+
+            errors.Add(message);
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return;
         }
@@ -370,6 +417,185 @@ internal static class EmbeddedParserAttributeRewriter
             .Append(">(context, \"")
             .Append(Escape(root))
             .Append("\")");
+    }
+
+    /// <summary>
+    /// Rewrites a supported standalone assignment, compound assignment, or postfix update of a current-rule local.
+    /// </summary>
+    private static bool TryRewriteBareLocalWrite(
+        string code,
+        ref int index,
+        G4Grammar grammar,
+        G4Rule rule,
+        EmbeddedParserAttributeLocationKind locationKind,
+        List<string> errors,
+        StringBuilder output,
+        Dictionary<string, TypedDeclaration> parameters,
+        Dictionary<string, TypedDeclaration> locals,
+        Dictionary<string, RuleLabelTargets> labels,
+        int attributeStart,
+        string root)
+    {
+        int afterAttribute = index;
+        int operatorStart = SkipWhitespace(code, afterAttribute);
+        string? assignmentOperator = ReadAssignmentOperator(code, operatorStart);
+        string? postfixOperator = StartsWith(code, operatorStart, "++") ? "++" : StartsWith(code, operatorStart, "--") ? "--" : null;
+        if (assignmentOperator is null && postfixOperator is null)
+        {
+            return false;
+        }
+
+        string attributeText = "$" + root;
+        if (!locals.TryGetValue(root, out TypedDeclaration? local))
+        {
+            string message = parameters.ContainsKey(root)
+                ? $"Parser parameter '{attributeText}' is read-only. Use a local if mutable state is needed."
+                : labels.ContainsKey(root)
+                    ? $"Bare parser attribute '{attributeText}' is a label access and is read-only through generated embedded parser C#."
+                    : $"Parser attribute write target '{attributeText}' does not resolve to a writable current-rule local.";
+            errors.Add(message);
+            int statementEnd = FindTopLevelSemicolon(code, afterAttribute);
+            if (statementEnd >= 0)
+            {
+                output.Append(code, attributeStart, statementEnd - attributeStart + 1);
+                index = statementEnd + 1;
+            }
+            else
+            {
+                output.Append(code, attributeStart, afterAttribute - attributeStart);
+            }
+            return true;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
+        {
+            errors.Add($"Parser local write '{attributeText}' is not supported in semantic predicates.");
+            int statementEnd = FindTopLevelSemicolon(code, afterAttribute);
+            if (statementEnd >= 0)
+            {
+                output.Append(code, attributeStart, statementEnd - attributeStart + 1);
+                index = statementEnd + 1;
+            }
+            else
+            {
+                output.Append(code, attributeStart, afterAttribute - attributeStart);
+            }
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(local.RawType))
+        {
+            errors.Add($"Parser local write '{attributeText}' cannot be typed because declaration '{local.RawDeclaration}' does not expose a raw type.");
+            output.Append(code, attributeStart, afterAttribute - attributeStart);
+            return false;
+        }
+
+        if (postfixOperator is not null)
+        {
+            int semicolon = SkipWhitespace(code, operatorStart + postfixOperator.Length);
+            if (semicolon >= code.Length || code[semicolon] != ';' || !IsStandaloneStatementStart(code, attributeStart))
+            {
+                errors.Add($"Parser local update '{attributeText}{postfixOperator}' is supported only as a standalone statement.");
+                output.Append(code, attributeStart, afterAttribute - attributeStart);
+                return false;
+            }
+
+            AppendSetLocal(output, local.RawType!, root, $"GetRequiredRuleLocal<{local.RawType}>(context, \"{Escape(root)}\") {(postfixOperator == "++" ? "+" : "-")} 1");
+            index = semicolon + 1;
+            return true;
+        }
+
+        if (!IsStandaloneStatementStart(code, attributeStart))
+        {
+            errors.Add($"Parser local assignment '{attributeText} {assignmentOperator}' is supported only as a standalone statement.");
+            output.Append(code, attributeStart, afterAttribute - attributeStart);
+            return false;
+        }
+
+        int rhsStart = operatorStart + assignmentOperator!.Length;
+        int semicolonIndex = FindTopLevelSemicolon(code, rhsStart);
+        if (semicolonIndex < 0)
+        {
+            errors.Add($"Parser local assignment '{attributeText} {assignmentOperator}' must end with a top-level semicolon.");
+            output.Append(code, attributeStart, afterAttribute - attributeStart);
+            return false;
+        }
+
+        string rhs = code.Substring(rhsStart, semicolonIndex - rhsStart).Trim();
+        EmbeddedParserAttributeRewriteResult rewrittenRhs = RewriteCore(rhs, grammar, rule, locationKind, allowWrites: false);
+        errors.AddRange(rewrittenRhs.Errors);
+        string valueExpression = assignmentOperator == "="
+            ? rewrittenRhs.Code
+            : $"GetRequiredRuleLocal<{local.RawType}>(context, \"{Escape(root)}\") {assignmentOperator.Substring(0, assignmentOperator.Length - 1)} {rewrittenRhs.Code}";
+        AppendSetLocal(output, local.RawType!, root, valueExpression);
+        index = semicolonIndex + 1;
+        return true;
+    }
+
+    /// <summary>
+    /// Rewrites a supported standalone prefix increment or decrement of a current-rule local.
+    /// </summary>
+    private static bool TryRewritePrefixLocalUpdate(
+        string code,
+        ref int index,
+        G4Grammar grammar,
+        G4Rule rule,
+        EmbeddedParserAttributeLocationKind locationKind,
+        List<string> errors,
+        StringBuilder output,
+        Dictionary<string, TypedDeclaration> parameters,
+        Dictionary<string, TypedDeclaration> locals)
+    {
+        string? updateOperator = StartsWith(code, index, "++") ? "++" : StartsWith(code, index, "--") ? "--" : null;
+        if (updateOperator is null)
+        {
+            return false;
+        }
+
+        int attributeStart = SkipWhitespace(code, index + updateOperator.Length);
+        if (attributeStart >= code.Length || code[attributeStart] != '$' || attributeStart + 1 >= code.Length || !IsIdentifierStart(code[attributeStart + 1]))
+        {
+            return false;
+        }
+
+        if (!IsStandaloneStatementStart(code, index))
+        {
+            return false;
+        }
+
+        int nameIndex = attributeStart + 1;
+        string root = ReadIdentifier(code, ref nameIndex);
+        int semicolon = SkipWhitespace(code, nameIndex);
+        if (semicolon >= code.Length || code[semicolon] != ';')
+        {
+            errors.Add($"Parser local update '{updateOperator}${root}' is supported only as a standalone statement.");
+            output.Append(code[index++]);
+            return true;
+        }
+
+        string attributeText = "$" + root;
+        if (!locals.TryGetValue(root, out TypedDeclaration? local) || string.IsNullOrWhiteSpace(local.RawType))
+        {
+            string message = parameters.ContainsKey(root)
+                ? $"Parser parameter '{attributeText}' is read-only. Use a local if mutable state is needed."
+                : $"Parser attribute write target '{attributeText}' does not resolve to a writable typed current-rule local.";
+            errors.Add(message);
+            output.Append(code, index, nameIndex - index);
+            index = nameIndex;
+            return true;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
+        {
+            errors.Add($"Parser local write '{attributeText}' is not supported in semantic predicates.");
+            output.Append(code, index, nameIndex - index);
+            index = nameIndex;
+            return true;
+        }
+
+        AppendSetLocal(output, local.RawType!, root, $"GetRequiredRuleLocal<{local.RawType}>(context, \"{Escape(root)}\") {(updateOperator == "++" ? "+" : "-")} 1");
+        index = semicolon + 1;
+        return true;
     }
 
     /// <summary>
@@ -657,6 +883,118 @@ internal static class EmbeddedParserAttributeRewriter
         while (previous >= 0 && IsIdentifierPart(code[previous])) previous--;
         string previousWord = code.Substring(previous + 1, wordEnd - previous - 1);
         return string.Equals(previousWord, "ref", StringComparison.Ordinal) || string.Equals(previousWord, "out", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Detects whether an attribute is preceded by the unsupported <c>ref</c> or <c>out</c> modifier.
+    /// </summary>
+    private static bool IsRefOrOutContext(string code, int start)
+    {
+        int previous = start - 1;
+        while (previous >= 0 && char.IsWhiteSpace(code[previous])) previous--;
+        int wordEnd = previous + 1;
+        while (previous >= 0 && IsIdentifierPart(code[previous])) previous--;
+        string previousWord = code.Substring(previous + 1, wordEnd - previous - 1);
+        return string.Equals(previousWord, "ref", StringComparison.Ordinal) || string.Equals(previousWord, "out", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Reads a supported assignment operator at the supplied index.
+    /// </summary>
+    private static string? ReadAssignmentOperator(string code, int index)
+    {
+        string[] operators = ["<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "="];
+        foreach (string op in operators)
+        {
+            if (StartsWith(code, index, op) && !StartsWith(code, index, "==") && !StartsWith(code, index, "=>"))
+            {
+                return op;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Appends a typed local setter helper call using the declared raw local type.
+    /// </summary>
+    private static void AppendSetLocal(StringBuilder output, string rawType, string localName, string valueExpression)
+    {
+        output.Append("SetRequiredRuleLocal<")
+            .Append(rawType)
+            .Append(">(context, \"")
+            .Append(Escape(localName))
+            .Append("\", ")
+            .Append(valueExpression)
+            .Append(");");
+    }
+
+    /// <summary>
+    /// Determines whether an attribute write starts at a conservative statement boundary.
+    /// </summary>
+    private static bool IsStandaloneStatementStart(string code, int start)
+    {
+        int previous = start - 1;
+        while (previous >= 0 && char.IsWhiteSpace(code[previous])) previous--;
+        return previous < 0 || code[previous] is ';' or '{' or '}';
+    }
+
+    /// <summary>
+    /// Finds the next top-level semicolon without splitting strings, characters, comments, or nested expressions.
+    /// </summary>
+    private static int FindTopLevelSemicolon(string code, int start)
+    {
+        int round = 0;
+        int square = 0;
+        int curly = 0;
+        int angle = 0;
+        int index = start;
+        var sink = new StringBuilder();
+        while (index < code.Length)
+        {
+            int before = index;
+            if (TryCopyTriviaOrLiteral(code, ref index, sink))
+            {
+                sink.Clear();
+                if (index == before) index++;
+                continue;
+            }
+
+            char value = code[index];
+            switch (value)
+            {
+                case '(':
+                    round++;
+                    break;
+                case ')':
+                    round = Math.Max(0, round - 1);
+                    break;
+                case '[':
+                    square++;
+                    break;
+                case ']':
+                    square = Math.Max(0, square - 1);
+                    break;
+                case '{':
+                    curly++;
+                    break;
+                case '}':
+                    curly = Math.Max(0, curly - 1);
+                    break;
+                case '<':
+                    angle++;
+                    break;
+                case '>':
+                    angle = Math.Max(0, angle - 1);
+                    break;
+                case ';' when round == 0 && square == 0 && curly == 0 && angle == 0:
+                    return index;
+            }
+
+            index++;
+        }
+
+        return -1;
     }
 
     /// <summary>Reads one identifier and advances the supplied index.</summary>
