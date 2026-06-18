@@ -84,6 +84,37 @@ Before implementation, identify whether the change alters:
 - test strategy,
 - roadmap sequencing.
 
+
+## Embedded parser code
+
+Do not add target-language-specific parsing or rewriting logic to the parser/generator core. Embedded code is raw target-language code by default.
+
+Any transformation of embedded code must go through `IParserEmbeddedCodeTransformer`. The default transformer is `NoOpParserEmbeddedCodeTransformer` and returns embedded code unchanged.
+
+If ANTLR-style `$...` conveniences are needed, implement or use a target-language-specific transformer, for example a C# transformer. Keep it optional and isolated.
+
+Do not add new `$...` semantics directly to `GrammarEmitter`, `ParserEngine`, runtime frame classes, or source generator core logic.
+
+Dynamic embedded code must be transformed before being passed to the existing compiler/preparer mechanism. Do not introduce a parallel compiler abstraction.
+
+## Parser architecture boundaries
+
+- Parser core parses grammar and builds the runtime model.
+- Generator emits target code from the model.
+- Runtime manages parser state, rollback, rule frames, parameters, locals, returns, and labeled call results.
+- Embedded target-language code is external to parser semantics.
+- External side effects from embedded code are not automatically rolled back.
+
+## Embedded-code documentation rule
+
+When changing embedded-code behavior, update:
+
+- `docs/parser/EmbeddedCodeExecutionModel.md`
+- `docs/parser/EmbeddedCodeTransactionalState.md`
+- `docs/parser/Antlr4CompatibilityMatrix.md`
+- `Utils.Parser.Generators/README.md`
+- `Utils.Parser/ROADMAP.md`
+
 ## Runtime safety rules
 
 Agents must not introduce:

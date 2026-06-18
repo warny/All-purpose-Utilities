@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq.Expressions;
 using Utils.Expressions;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Expressions;
@@ -48,6 +49,36 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.AreSame(ParserDiagnostics.EmbeddedCodeCompilationFailed, result.DiagnosticDescriptor);
         Assert.IsNotNull(result.Exception);
         StringAssert.Contains(result.Exception.Message, "Expected Boolean result");
+    }
+
+
+    [TestMethod]
+    public void PrepareParserAction_WhenTransformerProvided_CompilerReceivesTransformedCode()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, new ReplaceRuntimeCodeTransformer());
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("__TOKEN__", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.AreEqual("increment", compiler.LastContent);
+    }
+
+    [TestMethod]
+    public void PrepareParserAction_WhenTransformerReportsError_DoesNotInvokeCompiler()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, new ErrorRuntimeCodeTransformer());
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("increment", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.CompilationFailed, result.Status);
+        Assert.AreEqual(0, compiler.CompileCount);
+        Assert.IsInstanceOfType(result.Exception, typeof(ParserEmbeddedCodeTransformationException));
     }
 
     [TestMethod]
@@ -328,6 +359,9 @@ public class ExpressionEmbeddedCodePreparerTests
         /// </summary>
         public int CompileCount { get; private set; }
 
+        /// <summary>Gets the last content passed to the fake compiler.</summary>
+        public string? LastContent { get; private set; }
+
         /// <summary>
         /// Gets the number of action executions observed by generated action delegates.
         /// </summary>
@@ -347,6 +381,7 @@ public class ExpressionEmbeddedCodePreparerTests
         public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompileCount++;
+            LastContent = content;
             return content switch
             {
                 "true" => Expression.Constant(true),
@@ -378,4 +413,33 @@ public class ExpressionEmbeddedCodePreparerTests
         /// <param name="inputPosition">Input position to record.</param>
         public void RecordPosition(int inputPosition) => RecordedPositions.Add(inputPosition);
     }
+
+    /// <summary>
+    /// Test transformer that rewrites a sentinel into the fake compiler's action expression.
+    /// </summary>
+    private sealed class ReplaceRuntimeCodeTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "increment") };
+        }
+    }
+
+    /// <summary>
+    /// Test transformer that blocks compilation with a deterministic error.
+    /// </summary>
+    private sealed class ErrorRuntimeCodeTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            return new ParserEmbeddedCodeTransformationResult
+            {
+                Code = context.Code,
+                Diagnostics = [new ParserEmbeddedCodeDiagnostic { Message = "blocked", Severity = ParserEmbeddedCodeDiagnosticSeverity.Error }]
+            };
+        }
+    }
+
 }

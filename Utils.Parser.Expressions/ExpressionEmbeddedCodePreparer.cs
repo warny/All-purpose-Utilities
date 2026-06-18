@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Utils.Expressions;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Model;
 using Utils.Parser.Runtime;
@@ -12,15 +13,18 @@ namespace Utils.Parser.Expressions;
 public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction>
 {
     private readonly IExpressionCompiler _compiler;
+    private readonly IParserEmbeddedCodeTransformer _transformer;
 
     /// <summary>
     /// Initializes a new expression-backed embedded-code preparer.
     /// </summary>
     /// <param name="compiler">Expression compiler selected by the caller.</param>
+    /// <param name="embeddedCodeTransformer">Optional transformer applied before compiler invocation.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="compiler"/> is <c>null</c>.</exception>
-    public ExpressionEmbeddedCodePreparer(IExpressionCompiler compiler)
+    public ExpressionEmbeddedCodePreparer(IExpressionCompiler compiler, IParserEmbeddedCodeTransformer? embeddedCodeTransformer = null)
     {
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+        _transformer = embeddedCodeTransformer ?? NoOpParserEmbeddedCodeTransformer.Instance;
     }
 
     /// <inheritdoc />
@@ -43,8 +47,9 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
 
         try
         {
+            string transformedCode = TransformSource(source, ParserEmbeddedCodeLocation.SemanticPredicate);
             var runtimeContext = Expression.Parameter(typeof(SemanticPredicateEvaluationContext), "context");
-            var expression = _compiler.Compile(source.SourceText, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
+            var expression = _compiler.Compile(transformedCode, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
             if (expression.Type != typeof(bool))
             {
                 return EmbeddedCodePreparationResult<PreparedExpressionSemanticPredicate>.CompilationFailed(
@@ -84,8 +89,9 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
 
         try
         {
+            string transformedCode = TransformSource(source, ParserEmbeddedCodeLocation.InlineAction);
             var runtimeContext = Expression.Parameter(typeof(ParserActionExecutionContext), "context");
-            var expression = _compiler.Compile(source.SourceText, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
+            var expression = _compiler.Compile(transformedCode, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
             var executableExpression = expression.Type == typeof(void)
                 ? expression
                 : Expression.Block(expression, Expression.Empty());
@@ -99,6 +105,30 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
                 exception,
                 CreateDiagnosticArguments(source, context));
         }
+    }
+
+    /// <summary>
+    /// Applies the configured transformer before invoking the expression compiler.
+    /// </summary>
+    /// <param name="source">Original embedded-code source.</param>
+    /// <param name="location">Embedded-code location represented by the source.</param>
+    /// <returns>Transformed source text to pass to the compiler.</returns>
+    private string TransformSource(EmbeddedCodeSource source, ParserEmbeddedCodeLocation location)
+    {
+        ParserEmbeddedCodeTransformationResult result = _transformer.Transform(new ParserEmbeddedCodeTransformationContext
+        {
+            Code = source.SourceText,
+            Location = location,
+            RuleName = source.RuleName
+        });
+
+        ParserEmbeddedCodeDiagnostic? error = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Severity == ParserEmbeddedCodeDiagnosticSeverity.Error);
+        if (error is not null)
+        {
+            throw new ParserEmbeddedCodeTransformationException(error.Message);
+        }
+
+        return result.Code;
     }
 
     /// <summary>

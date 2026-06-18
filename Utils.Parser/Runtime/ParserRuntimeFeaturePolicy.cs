@@ -1,3 +1,5 @@
+using Utils.Parser.Diagnostics.EmbeddedCode;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -19,7 +21,8 @@ public sealed record ParserRuntimeFeaturePolicy
         RuleLifecycleExecutor = NullParserRuleLifecycleExecutor.Instance,
         RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance,
         RuleCallExecutionPolicy = NullParserRuleCallExecutionPolicy.Instance,
-        RuntimeObserver = null
+        RuntimeObserver = null,
+        EmbeddedCodeTransformer = NoOpParserEmbeddedCodeTransformer.Instance
     };
 
     /// <summary>
@@ -61,5 +64,11 @@ public sealed record ParserRuntimeFeaturePolicy
     /// This observer is descriptive-only and does not control parser execution.
     /// </summary>
     public IParserRuntimeObserver? RuntimeObserver { get; init; }
+
+    /// <summary>
+    /// Gets the embedded-code transformer that dynamic embedded-code preparation paths apply before invoking their configured compiler.
+    /// The default transformer preserves code unchanged.
+    /// </summary>
+    public IParserEmbeddedCodeTransformer EmbeddedCodeTransformer { get; init; } = NoOpParserEmbeddedCodeTransformer.Instance;
 }
 
