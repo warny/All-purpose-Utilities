@@ -579,17 +579,24 @@ The runtime currently remains conservative and deterministic. Metadata-rich infr
 - Explicit arguments and only the defaults required for omitted parameters pass through the simple-literal parser and typed converter; complete validation and conversion precede one atomic managed seed batch. Positional omission is trailing-only, named omission may occur in any order, and explicit values override defaults. Generated rollback and memoization use converted effective values; runtime numeric types remain distinct, while different source forms may share a key after conversion to the same target value.
 - Arbitrary type resolution, user-defined types, arrays, generics, enums, general/default expression evaluation, parameter references, constants, Roslyn conversion, mixed binding, policy composition, generated typed signatures, `$param` write/chained forms, returns, labels, and lexer execution remain out of scope.
 
-## Incremental generated-C# parser return attribute compatibility
+## Optional generated-C# ANTLR-style convenience transformer
 
 **Status: complete.**
 
-- Generated parser inline actions and `@after` hooks support narrow read-only `$x.value` assignment-label return access, `$xs.value` list-label return projection, and exact-current-rule `$rule.value` access; current-rule reads are also permitted in `@init`.
-- The lexical rewrite ignores strings, characters, and comments, resolves assignment/list label kinds with ordinal matching, validates declared returns, and emits blocking `UP0014` diagnostics for unsupported or unsafe forms. Assignment/current-rule reads return `object?`; list reads return `IReadOnlyList<object?>`, preserve successful order, include present-null, skip missing returns, and yield an empty list when absent.
-- Assignment required helpers still throw deterministic `ParserAttributeAccessException` failures for runtime absence. Predicate, lexer, token, write, chain, bare attribute, ambiguous assignment/list names, special indexing, typed list, and conversion semantics remain unsupported. Reads use current rollback-aware frame state, including memoized call-site label rebinding. Existing explicit helpers and conservative `Parse(...)` remain unchanged.
-- Generated C# embedded-code rewriting now supports read-only bare `$param` and `$local` current-rule access through typed helper calls based on descriptor raw type text. The feature performs no conversion, creates no implicit variables or typed fields/properties, leaves writes to explicit helpers, keeps label-return syntax separate, rejects lexer/general ANTLR attributes, and keeps generated `Parse(...)` conservative.
+- ANTLR-style `$...` forms are no longer parser/generator core behavior. They belong behind an explicit target-language transformer such as a C# compatibility transformer.
+- The optional C# transformer may rewrite narrow read-only `$x.value` assignment-label return access, `$xs.value` list-label return projection, exact-current-rule `$rule.value` access, and current-rule `$param` / `$local` reads to generated helper calls. With `NoOpParserEmbeddedCodeTransformer`, those forms remain unchanged target-language text.
+- The optional transformer remains conservative: it performs no conversion, creates no implicit variables or typed fields/properties, leaves writes to explicit helpers, keeps generated `Parse(...)` conservative, rejects unsupported lexer/general ANTLR attributes, and emits diagnostics for unsafe forms. Its limitations are isolated from parser core behavior.
+- Existing explicit helper APIs remain the recommended direct C# style for no-transformer embedded code.
 
 ## Embedded-code transformation boundary
 
 **Status: in progress.**
 
-Parser embedded-code handling is centered on preservation plus an explicit `IParserEmbeddedCodeTransformer` extension point. The default transformer is no-op, `$...` rewriting is no longer a core parser/generator responsibility, and dynamic expression-backed preparation transforms code before using the existing compiler mechanism. Future target-language transformers must remain isolated from parser runtime authority and must not introduce a second compiler abstraction.
+Parser embedded-code handling is centered on preservation plus an explicit `IParserEmbeddedCodeTransformer` extension point. The default transformer is no-op, `$...` rewriting is no longer a core parser/generator responsibility, and dynamic expression-backed preparation transforms code before using the existing compiler/preparer mechanism. Future target-language transformers must remain isolated from parser runtime authority and must not introduce a second compiler abstraction.
+
+### Optional full embedded-code transformer
+
+- A fuller C# transformer may be implemented later, but it must live behind `IParserEmbeddedCodeTransformer`.
+- It must remain optional and target-language-specific.
+- It must not drive parser core development or add C# parsing/rewriting to `GrammarEmitter`, `ParserEngine`, runtime frame classes, or source generator core logic.
+- It must keep dynamic execution on the existing compiler/preparer path rather than introducing a parallel compiler API.
