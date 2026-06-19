@@ -1094,6 +1094,45 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures comparison operators in typed local write right-hand sides are not mistaken for nested assignments.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$count == 1 ? 10 : 20", 1, 10)]
+    [DataRow("$count != 0 ? 1 : 0", 0, 0)]
+    [DataRow("$count <= 10 ? 1 : 0", 10, 1)]
+    [DataRow("$count >= 10 ? 1 : 0", 9, 0)]
+    public void ParseWithEmbeddedCode_TypedLocalWriteRhs_AllowsComparisonOperators(string expression, int count, int expected)
+    {
+        string grammar = $$"""
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start : child[{{count}}] ;
+            child[int count] locals [int total]
+            @init {
+                $total = {{expression}};
+            }
+            @after {
+                Seen = $total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(expected, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
     /// Ensures typed string local compound writes use the generated getter/operator/setter form.
     /// </summary>
     [TestMethod]

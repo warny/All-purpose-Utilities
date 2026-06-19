@@ -826,7 +826,24 @@ internal static class EmbeddedParserAttributeRewriter
     private static string? ReadAssignmentOperator(string code, int index)
     {
         string[] operators = ["<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "="];
-        return operators.FirstOrDefault(op => StartsWith(code, index, op) && !StartsWith(code, index, "==") && !StartsWith(code, index, "=>"));
+        return operators.FirstOrDefault(op => StartsWith(code, index, op) && IsAssignmentOperatorStart(code, index, op));
+    }
+
+    /// <summary>Determines whether an operator token is an assignment rather than a comparison or lambda operator.</summary>
+    private static bool IsAssignmentOperatorStart(string code, int index, string op)
+    {
+        if (op != "=")
+        {
+            return true;
+        }
+
+        if (StartsWith(code, index, "==") || StartsWith(code, index, "=>"))
+        {
+            return false;
+        }
+
+        char previous = index > 0 ? code[index - 1] : '\0';
+        return previous != '=' && previous != '!' && previous != '<' && previous != '>';
     }
 
     /// <summary>Appends a typed local setter helper call.</summary>
