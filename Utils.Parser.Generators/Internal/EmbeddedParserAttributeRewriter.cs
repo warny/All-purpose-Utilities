@@ -119,7 +119,10 @@ internal static class EmbeddedParserAttributeRewriter
             int dotIndex = SkipWhitespace(code, index);
             if (dotIndex >= code.Length || code[dotIndex] != '.')
             {
-                RewriteBareAttribute(code, rule, locationKind, errors, output, parameters, locals, labels, attributeStart, index, root);
+                if (!TryRewriteBareLocalWrite(code, rule, locationKind, errors, output, parameters, locals, labels, grammar, attributeStart, index, root, ref index))
+                {
+                    RewriteBareAttribute(code, rule, locationKind, errors, output, parameters, locals, labels, attributeStart, index, root);
+                }
                 continue;
             }
 
@@ -152,7 +155,27 @@ internal static class EmbeddedParserAttributeRewriter
 
             if (IsWriteContext(code, attributeStart, index))
             {
-                errors.Add($"Parser attribute writes are not supported for '{attributeText}'. Use SetRuleReturn(context, name, value) for current-rule returns.");
+                if (IsRefOrOutContext(code, attributeStart))
+                {
+                    errors.Add("ref/out parser attributes are not supported by the ANTLR-style transformer. Parser attribute writes are not supported.");
+                }
+                else if (string.Equals(root, rule.Name, StringComparison.Ordinal))
+                {
+                    errors.Add("Current-rule return attributes are read-only in the ANTLR-style transformer. Use SetRuleReturn(...) explicitly. Parser attribute writes are not supported.");
+                }
+                else if (labels.TryGetValue(root, out RuleLabelTargets? writeLabel) && writeLabel.List.Count > 0 && writeLabel.Assignment is null)
+                {
+                    errors.Add("List-labeled rule-call return projections are read-only. Parser attribute writes are not supported.");
+                }
+                else if (labels.ContainsKey(root))
+                {
+                    errors.Add("Labeled rule-call return attributes are read-only. Parser attribute writes are not supported.");
+                }
+                else
+                {
+                    errors.Add($"Parser attribute writes are not supported for '{attributeText}'.");
+                }
+
                 output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
@@ -305,6 +328,145 @@ internal static class EmbeddedParserAttributeRewriter
                 CollectLabels(negation.Inner, labels);
                 break;
         }
+    }
+
+
+    /// <summary>
+    /// Tries to rewrite a supported current-rule local write at the current parser attribute position.
+    /// </summary>
+    private static bool TryRewriteBareLocalWrite(
+        string code,
+        G4Rule rule,
+        EmbeddedParserAttributeLocationKind locationKind,
+        List<string> errors,
+        StringBuilder output,
+        Dictionary<string, TypedDeclaration> parameters,
+        Dictionary<string, TypedDeclaration> locals,
+        Dictionary<string, RuleLabelTargets> labels,
+        G4Grammar grammar,
+        int attributeStart,
+        int attributeEnd,
+        string root,
+        ref int index)
+    {
+        string attributeText = "$" + root;
+        int previous = PreviousNonWhitespace(code, attributeStart - 1);
+        bool hasPrefixIncrement = previous >= 1 && code[previous - 1] == '+' && code[previous] == '+';
+        bool hasPrefixDecrement = previous >= 1 && code[previous - 1] == '-' && code[previous] == '-';
+        int operatorStart = SkipWhitespace(code, attributeEnd);
+        string? assignmentOperator = ReadAssignmentOperator(code, operatorStart);
+        bool hasPostfixIncrement = StartsWith(code, operatorStart, "++");
+        bool hasPostfixDecrement = StartsWith(code, operatorStart, "--");
+        bool isWrite = assignmentOperator is not null || hasPostfixIncrement || hasPostfixDecrement || hasPrefixIncrement || hasPrefixDecrement;
+        bool isRefOrOut = IsRefOrOutContext(code, attributeStart);
+        if (!isWrite && !isRefOrOut)
+        {
+            return false;
+        }
+
+        if (isRefOrOut)
+        {
+            errors.Add("ref/out parser attributes are not supported by the ANTLR-style transformer. Parser attribute writes are not supported.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
+        {
+            errors.Add("Parser local writes are not supported in semantic predicates.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (parameters.ContainsKey(root))
+        {
+            errors.Add($"Parser parameter '{attributeText}' is read-only. Use a local or explicit helper API for mutable state. Parser attribute writes are not supported.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (labels.ContainsKey(root))
+        {
+            errors.Add($"Bare parser attribute '{attributeText}' is a label access and is read-only.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (!locals.TryGetValue(root, out TypedDeclaration? local))
+        {
+            errors.Add($"Bare parser attribute '{attributeText}' does not resolve to a current-rule local.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(local.RawType))
+        {
+            errors.Add($"Bare parser attribute '{attributeText}' cannot be typed because declaration '{local.RawDeclaration}' does not expose a raw type.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (hasPrefixIncrement || hasPrefixDecrement)
+        {
+            if (!IsStandalonePrefixUpdate(code, previous - 1, operatorStart))
+            {
+                errors.Add("Increment/decrement parser local attributes are supported only as standalone statements.");
+                output.Append(code, attributeStart, attributeEnd - attributeStart);
+                return true;
+            }
+
+            RemoveTrailingOperator(output, code, previous - 1, attributeStart);
+            int statementEnd = SkipWhitespace(code, operatorStart);
+            AppendLocalUpdate(output, local.RawType!, root, hasPrefixIncrement ? "+" : "-", "1");
+            index = statementEnd;
+            return true;
+        }
+
+        if (hasPostfixIncrement || hasPostfixDecrement)
+        {
+            int afterOperator = operatorStart + 2;
+            if (!IsStandalonePostfixUpdate(code, attributeStart, afterOperator))
+            {
+                errors.Add("Increment/decrement parser local attributes are supported only as standalone statements.");
+                output.Append(code, attributeStart, attributeEnd - attributeStart);
+                return true;
+            }
+
+            AppendLocalUpdate(output, local.RawType!, root, hasPostfixIncrement ? "+" : "-", "1");
+            index = afterOperator;
+            return true;
+        }
+
+        int rhsStart = operatorStart + assignmentOperator!.Length;
+        int rhsEnd = FindStatementTerminator(code, rhsStart);
+        if (rhsEnd < 0)
+        {
+            errors.Add($"Parser local write '{attributeText}' must be a complete statement ending with ';'.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        string rhs = code.Substring(rhsStart, rhsEnd - rhsStart).Trim();
+        if (ContainsTopLevelAssignment(rhs))
+        {
+            errors.Add("Nested parser attribute assignment expressions are not supported by the ANTLR-style transformer.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        EmbeddedParserAttributeRewriteResult rhsResult = Rewrite(rhs, grammar, rule, locationKind);
+        errors.AddRange(rhsResult.Errors);
+        if (assignmentOperator == "=")
+        {
+            AppendLocalSet(output, local.RawType!, root, rhsResult.Code);
+        }
+        else
+        {
+            AppendLocalUpdate(output, local.RawType!, root, assignmentOperator.Substring(0, assignmentOperator.Length - 1), rhsResult.Code);
+        }
+
+        index = rhsEnd;
+        return true;
     }
 
     /// <summary>
@@ -657,6 +819,107 @@ internal static class EmbeddedParserAttributeRewriter
         while (previous >= 0 && IsIdentifierPart(code[previous])) previous--;
         string previousWord = code.Substring(previous + 1, wordEnd - previous - 1);
         return string.Equals(previousWord, "ref", StringComparison.Ordinal) || string.Equals(previousWord, "out", StringComparison.Ordinal);
+    }
+
+
+    /// <summary>Reads a supported assignment operator at the supplied index.</summary>
+    private static string? ReadAssignmentOperator(string code, int index)
+    {
+        string[] operators = ["<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "="];
+        return operators.FirstOrDefault(op => StartsWith(code, index, op) && !StartsWith(code, index, "==") && !StartsWith(code, index, "=>"));
+    }
+
+    /// <summary>Appends a typed local setter helper call.</summary>
+    private static void AppendLocalSet(StringBuilder output, string rawType, string name, string value)
+    {
+        output.Append("SetRequiredRuleLocal<").Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\", ").Append(value).Append(')');
+    }
+
+    /// <summary>Appends a typed local getter/operator/setter helper call.</summary>
+    private static void AppendLocalUpdate(StringBuilder output, string rawType, string name, string op, string value)
+    {
+        output.Append("SetRequiredRuleLocal<").Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\", GetRequiredRuleLocal<")
+            .Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\") ").Append(op).Append(' ').Append(value).Append(')');
+    }
+
+    /// <summary>Finds the semicolon that terminates the current top-level embedded C# statement.</summary>
+    private static int FindStatementTerminator(string code, int index)
+    {
+        int round = 0;
+        int square = 0;
+        int curly = 0;
+        while (index < code.Length)
+        {
+            var ignored = new StringBuilder();
+            if (TryCopyTriviaOrLiteral(code, ref index, ignored)) continue;
+            switch (code[index])
+            {
+                case '(' : round++; break;
+                case ')' : round = Math.Max(0, round - 1); break;
+                case '[' : square++; break;
+                case ']' : square = Math.Max(0, square - 1); break;
+                case '{' : curly++; break;
+                case '}' : curly = Math.Max(0, curly - 1); break;
+                case ';' when round == 0 && square == 0 && curly == 0: return index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
+    /// <summary>Conservatively detects unsupported nested assignment expressions in a right-hand side.</summary>
+    private static bool ContainsTopLevelAssignment(string text)
+    {
+        for (int index = 0; index < text.Length; index++)
+        {
+            var ignored = new StringBuilder();
+            if (TryCopyTriviaOrLiteral(text, ref index, ignored)) { index--; continue; }
+            if (ReadAssignmentOperator(text, index) is not null) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Determines whether a parser attribute is preceded by ref or out.</summary>
+    private static bool IsRefOrOutContext(string code, int start)
+    {
+        int previous = PreviousNonWhitespace(code, start - 1);
+        int wordEnd = previous + 1;
+        while (previous >= 0 && IsIdentifierPart(code[previous])) previous--;
+        string previousWord = code.Substring(previous + 1, wordEnd - previous - 1);
+        return string.Equals(previousWord, "ref", StringComparison.Ordinal) || string.Equals(previousWord, "out", StringComparison.Ordinal);
+    }
+
+    /// <summary>Checks statement boundaries for a prefix increment or decrement local write.</summary>
+    private static bool IsStandalonePrefixUpdate(string code, int operatorStart, int afterAttribute)
+    {
+        int before = PreviousNonWhitespace(code, operatorStart - 1);
+        int after = SkipWhitespace(code, afterAttribute);
+        return (before < 0 || code[before] == ';' || code[before] == '{' || code[before] == '}') && after < code.Length && code[after] == ';';
+    }
+
+    /// <summary>Checks statement boundaries for a postfix increment or decrement local write.</summary>
+    private static bool IsStandalonePostfixUpdate(string code, int attributeStart, int afterOperator)
+    {
+        int before = PreviousNonWhitespace(code, attributeStart - 1);
+        int after = SkipWhitespace(code, afterOperator);
+        return (before < 0 || code[before] == ';' || code[before] == '{' || code[before] == '}') && after < code.Length && code[after] == ';';
+    }
+
+    /// <summary>Removes a previously copied prefix increment or decrement operator and whitespace from the output.</summary>
+    private static void RemoveTrailingOperator(StringBuilder output, string code, int operatorStart, int attributeStart)
+    {
+        int length = attributeStart - operatorStart;
+        if (length > 0 && output.Length >= length)
+        {
+            output.Length -= length;
+        }
+    }
+
+    /// <summary>Finds the previous non-whitespace character index.</summary>
+    private static int PreviousNonWhitespace(string code, int index)
+    {
+        while (index >= 0 && char.IsWhiteSpace(code[index])) index--;
+        return index;
     }
 
     /// <summary>Reads one identifier and advances the supplied index.</summary>

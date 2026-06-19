@@ -251,3 +251,8 @@ This is not general ANTLR attribute compatibility. No typed variables, implicit 
 | Embedded code preservation | Supported | Default no-op transformation keeps target-language code unchanged. |
 | ANTLR-style attribute rewriting | Optional transformer | `$...` rewriting is not core parser/generator behavior. |
 | Dynamic embedded-code compilation | Existing compiler path after transformation | No new compiler abstraction is introduced. |
+
+
+### Embedded C# local writes
+
+Default generation preserves `$local = ...` unchanged. Generated C# can opt into `CSharpAntlrStyleParserEmbeddedCodeTransformer` for current-rule local writes only; the transformer rewrites supported assignment operators and statement-only increment/decrement to typed local getter/setter helpers. Parameters, returns, labels, list-label projections, lexer attributes, `ref`/`out`, semantic-predicate writes, and increment/decrement expression values remain unsupported. Compound assignment uses getter/operator/setter and does not emulate C# special conversions.
