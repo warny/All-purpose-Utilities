@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Utils.VirtualMachine;
 
@@ -19,8 +20,17 @@ public class ControlFlowStack
     /// <summary>Gets the number of currently open blocks.</summary>
     public int Depth => _blocks.Count;
 
+    /// <summary>Gets a value indicating whether no blocks are currently open.</summary>
+    public bool IsEmpty => _blocks.Count == 0;
+
     /// <summary>Gets the innermost open block, or <see langword="null"/> when the stack is empty.</summary>
     public IControlFlowBlock? CurrentBlock => _blocks.TryPeek(out var b) ? b : null;
+
+    /// <summary>
+    /// Gets all currently open blocks from innermost (top of stack) to outermost (bottom),
+    /// as a live enumerable. Useful for diagnostics and post-execution assertions.
+    /// </summary>
+    public IEnumerable<IControlFlowBlock> Blocks => _blocks;
 
     /// <summary>Opens a conditional (if/else) block.</summary>
     /// <param name="startAddress">Address of the IF instruction.</param>
@@ -51,6 +61,27 @@ public class ControlFlowStack
         if (_blocks.Count == 0)
             throw new InvalidOperationException("Control flow stack underflow: no open block to close.");
         return _blocks.Pop();
+    }
+
+    /// <summary>
+    /// Closes the innermost open block, asserting that it is of type <typeparamref name="T"/>.
+    /// Use this overload when the bytecode guarantees the block type (e.g. ENDIF always closes a
+    /// <see cref="ConditionalBlock"/>); mismatched types indicate malformed bytecode.
+    /// </summary>
+    /// <typeparam name="T">The expected concrete block type.</typeparam>
+    /// <returns>The closed block cast to <typeparamref name="T"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no block is open.</exception>
+    /// <exception cref="VirtualProcessorException">
+    /// Thrown when the innermost block is not of type <typeparamref name="T"/>.
+    /// </exception>
+    public T Pop<T>() where T : class, IControlFlowBlock
+    {
+        if (_blocks.Count == 0)
+            throw new InvalidOperationException("Control flow stack underflow: no open block to close.");
+        if (_blocks.Peek() is not T)
+            throw new VirtualProcessorException(
+                $"Control flow type mismatch: expected {typeof(T).Name} but found {_blocks.Peek().GetType().Name}.");
+        return (T)_blocks.Pop();
     }
 
     /// <summary>
@@ -93,6 +124,16 @@ public class ControlFlowStack
     }
 
     /// <summary>
+    /// Returns the nearest enclosing block of type <typeparamref name="T"/> without removing it
+    /// from the stack, or <see langword="null"/> when no such block is open.
+    /// Useful for introspection (e.g. "are we inside a loop?") and diagnostic assertions.
+    /// </summary>
+    /// <typeparam name="T">The concrete block type to search for.</typeparam>
+    /// <returns>The innermost open block of type <typeparamref name="T"/>, or <see langword="null"/>.</returns>
+    public T? FindEnclosing<T>() where T : class, IControlFlowBlock
+        => _blocks.OfType<T>().FirstOrDefault();
+
+    /// <summary>
     /// Handles a THROW instruction: pops all blocks until the nearest <see cref="ExceptionBlock"/>
     /// is found, stores the thrown value in <see cref="ExceptionBlock.ThrownValue"/>, and
     /// redirects <see cref="Context.InstructionPointer"/> to the catch handler (or finally if
@@ -128,11 +169,59 @@ public class ControlFlowStack
 public class ControlFlowContext : DefaultContext
 {
     /// <summary>Gets the control flow stack managing open blocks for the current execution.</summary>
+    public ControlFlowStack ControlFlow { get; }
+
+    /// <summary>
+    /// Initializes a new instance with the given instruction stream and a fresh <see cref="ControlFlowStack"/>.
+    /// </summary>
+    /// <param name="data">The byte array containing the instruction stream.</param>
+    public ControlFlowContext(byte[] data) : base(data)
+    {
+        ControlFlow = new ControlFlowStack();
+    }
+
+    /// <summary>
+    /// Initializes a new instance with the given instruction stream and a caller-supplied
+    /// <see cref="ControlFlowStack"/>, allowing pre-configuration or substitution.
+    /// </summary>
+    /// <param name="data">The byte array containing the instruction stream.</param>
+    /// <param name="controlFlow">The control flow stack to use.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="controlFlow"/> is <see langword="null"/>.</exception>
+    public ControlFlowContext(byte[] data, ControlFlowStack controlFlow) : base(data)
+    {
+        ControlFlow = controlFlow ?? throw new ArgumentNullException(nameof(controlFlow));
+    }
+}
+
+/// <summary>
+/// A <see cref="DefaultContext"/> combining an <see cref="ICallStack"/> for subroutine calls
+/// with a <see cref="ControlFlowStack"/> for structured control flow.
+/// Use this when the VM needs both call/return and if/loop/try semantics.
+/// </summary>
+public class FullContext : DefaultContext
+{
+    /// <summary>Gets the call stack used to track subroutine return addresses.</summary>
+    public ICallStack CallStack { get; }
+
+    /// <summary>Gets the control flow stack managing open structured blocks.</summary>
     public ControlFlowStack ControlFlow { get; } = new();
 
     /// <summary>
-    /// Initializes a new instance with the given instruction stream.
+    /// Initializes a new instance with a default <see cref="CallStack"/>.
     /// </summary>
     /// <param name="data">The byte array containing the instruction stream.</param>
-    public ControlFlowContext(byte[] data) : base(data) { }
+    public FullContext(byte[] data) : base(data)
+    {
+        CallStack = new CallStack();
+    }
+
+    /// <summary>
+    /// Initializes a new instance with a caller-supplied <see cref="ICallStack"/> implementation.
+    /// </summary>
+    /// <param name="data">The byte array containing the instruction stream.</param>
+    /// <param name="callStack">The call stack to use.</param>
+    public FullContext(byte[] data, ICallStack callStack) : base(data)
+    {
+        CallStack = callStack ?? throw new ArgumentNullException(nameof(callStack));
+    }
 }

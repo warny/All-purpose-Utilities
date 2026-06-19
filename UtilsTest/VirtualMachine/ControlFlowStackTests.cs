@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using Utils.VirtualMachine;
 
 namespace UtilsTest.VirtualMachine;
@@ -292,6 +293,87 @@ public class ControlFlowStackTests
         Assert.ThrowsException<InvalidOperationException>(() => cfs.Pop());
     }
 
+    // ── Typed Pop<T> ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void PopTyped_CorrectType_ReturnsBlock()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushConditional(0, 20, 10);
+        var block = cfs.Pop<ConditionalBlock>();
+        Assert.IsNotNull(block);
+        Assert.AreEqual(0, block.StartAddress);
+        Assert.AreEqual(0, cfs.Depth);
+    }
+
+    [TestMethod]
+    public void PopTyped_WrongType_ThrowsVirtualProcessorException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 50); // LoopBlock is on top
+        Assert.ThrowsException<VirtualProcessorException>(() => cfs.Pop<ConditionalBlock>());
+    }
+
+    [TestMethod]
+    public void PopTyped_WrongType_BlockNotConsumed()
+    {
+        // Pop<T> peeks before popping: on type mismatch the block stays on the stack.
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 50);
+        try { cfs.Pop<ConditionalBlock>(); } catch (VirtualProcessorException) { }
+        Assert.AreEqual(1, cfs.Depth);
+        Assert.IsInstanceOfType<LoopBlock>(cfs.CurrentBlock);
+    }
+
+    [TestMethod]
+    public void PopTyped_EmptyStack_Throws()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.Pop<LoopBlock>());
+    }
+
+    // ── FullContext ───────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void FullContext_DefaultCtor_HasCallStackAndControlFlow()
+    {
+        var ctx = new FullContext([]);
+        Assert.IsNotNull(ctx.CallStack);
+        Assert.IsNotNull(ctx.ControlFlow);
+        Assert.IsInstanceOfType<CallStack>(ctx.CallStack);
+    }
+
+    [TestMethod]
+    public void FullContext_CustomCallStack_IsUsed()
+    {
+        var simple = new SimpleCallStack();
+        var ctx = new FullContext([], simple);
+        Assert.AreSame(simple, ctx.CallStack);
+    }
+
+    [TestMethod]
+    public void FullContext_NullCallStack_Throws()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() => new FullContext([], null!));
+    }
+
+    [TestMethod]
+    public void FullContext_CallAndControlFlow_WorkIndependently()
+    {
+        var ctx = new FullContext([]);
+        ctx.CallStack.Call(42);
+        ctx.ControlFlow.PushLoop(0, 100);
+
+        Assert.AreEqual(1, ctx.CallStack.Depth);
+        Assert.AreEqual(1, ctx.ControlFlow.Depth);
+
+        Assert.AreEqual(42, ctx.CallStack.Return());
+        ctx.ControlFlow.Pop();
+
+        Assert.IsTrue(ctx.CallStack.IsEmpty);
+        Assert.AreEqual(0, ctx.ControlFlow.Depth);
+    }
+
     // ── Integration: BREAK exits loop, PUSH_INT 99 is never reached ──────────
 
     [TestMethod]
@@ -368,5 +450,141 @@ public class ControlFlowStackTests
 
         var ex = (ExceptionBlock)ctx.ControlFlow.CurrentBlock!;
         Assert.AreEqual(7, ex.ThrownValue);
+    }
+
+    // ── FindEnclosing<T> ──────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void FindEnclosing_ReturnsNearestBlockOfType_WithoutModifyingStack()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 50);
+        cfs.PushConditional(10, 30);
+        var loop = cfs.FindEnclosing<LoopBlock>();
+        Assert.IsNotNull(loop);
+        Assert.AreEqual(0, loop.StartAddress);
+        Assert.AreEqual(2, cfs.Depth); // stack unchanged
+    }
+
+    [TestMethod]
+    public void FindEnclosing_TypeNotPresent_ReturnsNull()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushConditional(0, 20);
+        Assert.IsNull(cfs.FindEnclosing<LoopBlock>());
+    }
+
+    [TestMethod]
+    public void FindEnclosing_ReturnsInnermostMatchWhenMultiplePresent()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 100);   // outer loop
+        cfs.PushLoop(10, 50);   // inner loop (top of stack)
+        var found = cfs.FindEnclosing<LoopBlock>();
+        Assert.AreEqual(10, found!.StartAddress);
+    }
+
+    [TestMethod]
+    public void FindEnclosing_EmptyStack_ReturnsNull()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.IsNull(cfs.FindEnclosing<LoopBlock>());
+    }
+
+    // ── ControlFlowContext injectable constructor ──────────────────────────────
+
+    [TestMethod]
+    public void ControlFlowContext_InjectableStack_IsUsed()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 100);
+        var ctx = new ControlFlowContext([], cfs);
+        Assert.AreSame(cfs, ctx.ControlFlow);
+        Assert.AreEqual(1, ctx.ControlFlow.Depth);
+    }
+
+    [TestMethod]
+    public void ControlFlowContext_NullStack_Throws()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() => new ControlFlowContext([], null!));
+    }
+
+    // ── IsEmpty ───────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void IsEmpty_TrueWhenNoBlocksOpen()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.IsTrue(cfs.IsEmpty);
+    }
+
+    [TestMethod]
+    public void IsEmpty_FalseAfterPush()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        Assert.IsFalse(cfs.IsEmpty);
+    }
+
+    [TestMethod]
+    public void IsEmpty_TrueAfterPopAll()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        cfs.Pop();
+        Assert.IsTrue(cfs.IsEmpty);
+    }
+
+    // ── Blocks enumerable ─────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Blocks_EmptyWhenNoBlocksOpen()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.AreEqual(0, cfs.Blocks.Count());
+    }
+
+    [TestMethod]
+    public void Blocks_EnumeratesInnermostFirst()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 50);
+        cfs.PushConditional(10, 30);
+
+        var blocks = cfs.Blocks.ToArray();
+        Assert.AreEqual(2, blocks.Length);
+        Assert.IsInstanceOfType<ConditionalBlock>(blocks[0]); // innermost first
+        Assert.IsInstanceOfType<LoopBlock>(blocks[1]);
+    }
+
+    [TestMethod]
+    public void Blocks_IsLiveView_ReflectsSubsequentPush()
+    {
+        var cfs = new ControlFlowStack();
+        var view = cfs.Blocks;
+        cfs.PushLoop(0, 10);
+        Assert.AreEqual(1, view.Count());
+    }
+
+    // ── Context.Terminate ─────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Context_Terminate_SetsInstructionPointerToMinusOne()
+    {
+        var ctx = new ControlFlowContext([0x01, 0x02, 0x03]);
+        ctx.Terminate();
+        Assert.AreEqual(-1, ctx.InstructionPointer);
+    }
+
+    [TestMethod]
+    public void Context_Terminate_StopsExecution()
+    {
+        // Terminate() before Execute: the PUSH_INT at byte 0 must never run.
+        byte[] program = [0x01, 99, 0, 0, 0]; // PUSH_INT 99
+        var ctx = new ControlFlowContext(program);
+        ctx.Terminate();
+        new ControlFlowTestMachine().Execute(ctx);
+
+        Assert.AreEqual(0, ctx.Stack.Count);
     }
 }

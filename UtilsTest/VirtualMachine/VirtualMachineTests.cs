@@ -7,6 +7,18 @@ using Utils.VirtualMachine;
 
 namespace UtilsTest.VirtualMachine
 {
+    /// <summary>
+    /// Minimal machine whose NOP instruction has no parameters at all (not even a context).
+    /// Validates that parameterless [Instruction] methods are dispatched correctly.
+    /// </summary>
+    public class NoopTestMachine : VirtualProcessor<DefaultContext>
+    {
+        public bool NopExecuted;
+
+        [Instruction("NOP", 0xF0)]
+        void Nop() => NopExecuted = true;
+    }
+
     public class LEB128TestMachine : VirtualProcessor<DefaultContext>
     {
         [Instruction("PUSH_ULEB128", 0x20)]
@@ -354,5 +366,117 @@ namespace UtilsTest.VirtualMachine
             Assert.IsTrue(names.Contains("POP"));
             Assert.IsTrue(names.Contains("NOP"));
         }
+
+        // ── OnStep ────────────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void OnStep_IsCalledBeforeEachInstruction()
+        {
+            // Two PUSH instructions → OnStep must fire twice, each time with the correct IP.
+            byte[] instructions = [0x01, 0x01, 0x10,  0x01, 0x01, 0x01];
+            var context = new DefaultContext(instructions);
+
+            var recordedPointers = new System.Collections.Generic.List<int>();
+            var machine = new TrackingTestMachine(recordedPointers);
+            machine.Execute(context);
+
+            Assert.AreEqual(2, recordedPointers.Count);
+            Assert.AreEqual(0, recordedPointers[0]); // first PUSH starts at 0
+            Assert.AreEqual(3, recordedPointers[1]); // second PUSH starts at 3
+        }
+
+        [TestMethod]
+        public void OnStep_IsCalledByExecuteStep()
+        {
+            byte[] instructions = [0x01, 0x01, 0x42];
+            var context = new DefaultContext(instructions);
+
+            var recordedPointers = new System.Collections.Generic.List<int>();
+            var machine = new TrackingTestMachine(recordedPointers);
+            machine.ExecuteStep(context);
+
+            Assert.AreEqual(1, recordedPointers.Count);
+            Assert.AreEqual(0, recordedPointers[0]);
+        }
+
+        // ── IP = -1 termination ───────────────────────────────────────────────
+
+        [TestMethod]
+        public void Execute_NegativeInstructionPointer_TerminatesImmediately()
+        {
+            // Start with IP = -1: the Execute loop must not dispatch any instruction.
+            byte[] instructions = [0x02]; // POP — would crash on empty stack
+            var context = new DefaultContext(instructions);
+            context.InstructionPointer = -1;
+
+            new TestMachine().Execute(context); // must not throw
+            Assert.AreEqual(0, context.Stack.Count);
+        }
+
+        // ── InstructionAttribute validation ───────────────────────────────────
+
+        [TestMethod]
+        public void InstructionAttribute_NullName_Throws()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => new InstructionAttribute(null!, 0x01));
+        }
+
+        [TestMethod]
+        public void InstructionAttribute_EmptyOpcode_Throws()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new InstructionAttribute("NOP"));
+        }
+
+        [TestMethod]
+        public void InstructionAttribute_ValidArgs_StoresNameAndInstruction()
+        {
+            var attr = new InstructionAttribute("HALT", 0xFF);
+            Assert.AreEqual("HALT", attr.Name);
+            CollectionAssert.AreEqual(new byte[] { 0xFF }, attr.Instruction);
+        }
+
+        // ── Parameterless instruction (NOOP) ──────────────────────────────────────
+
+        [TestMethod]
+        public void ParameterlessInstruction_IsDispatched()
+        {
+            var machine = new NoopTestMachine();
+            var ctx = new DefaultContext([0xF0]);
+            machine.Execute(ctx);
+            Assert.IsTrue(machine.NopExecuted);
+        }
+
+        [TestMethod]
+        public void ParameterlessInstruction_DoesNotConsumeOperandBytes()
+        {
+            // NOP (0xF0) followed by POP (0x02) — POP must execute correctly after NOP.
+            byte[] program = [0xF0, 0x02];
+            var machine = new NoopTestMachine();
+            // Inherit POP from TestMachine? No — NoopTestMachine has no POP.
+            // Just verify NOP + EOF leaves the IP at position 1 (NOP consumes only its opcode).
+            var ctx = new DefaultContext(program);
+            machine.ExecuteStep(ctx); // NOP
+            Assert.AreEqual(1, ctx.InstructionPointer);
+            Assert.IsTrue(machine.NopExecuted);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Minimal processor that records the IP seen by OnStep before each dispatch.
+    /// Extends VirtualProcessor directly (not TestMachine) so that its own instruction
+    /// methods are found by reflection — private methods of base classes are not returned
+    /// by GetMethods on derived types.
+    /// </summary>
+    public class TrackingTestMachine : VirtualProcessor<DefaultContext>
+    {
+        private readonly System.Collections.Generic.List<int> _steps;
+
+        [Instruction("PUSH_BYTE", 0x01, 0x01)]
+        void PushByte(DefaultContext context, byte b1) => context.Stack.Push(b1);
+
+        public TrackingTestMachine(System.Collections.Generic.List<int> steps) => _steps = steps;
+        protected override void OnStep(DefaultContext context) => _steps.Add(context.InstructionPointer);
     }
 }

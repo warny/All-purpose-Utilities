@@ -21,11 +21,10 @@ public interface ICallStack
     bool IsEmpty { get; }
 
     /// <summary>
-    /// Gets or sets the maximum number of frames allowed before <see cref="Call"/> throws.
+    /// Gets the maximum number of frames allowed before <see cref="Call"/> throws.
+    /// Configured at construction time.
     /// </summary>
-    /// <value>Defaults to <c>512</c>.</value>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a value less than one.</exception>
-    int MaxDepth { get; set; }
+    int MaxDepth { get; }
 
     /// <summary>
     /// Pushes a new frame onto the stack, recording <paramref name="returnAddress"/> as the
@@ -36,18 +35,21 @@ public interface ICallStack
     void Call(int returnAddress);
 
     /// <summary>
-    /// Pops the current frame and returns the saved return address.
+    /// Pops the current frame and returns the saved return address, or <c>-1</c> when the
+    /// stack is empty. A return address of <c>-1</c> is a sentinel signalling program
+    /// termination: callers should assign it to <see cref="Context.InstructionPointer"/>
+    /// so the <see cref="VirtualProcessor{T}"/> execution loop stops.
     /// </summary>
-    /// <returns>The instruction-pointer value saved by the matching <see cref="Call"/>.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the stack is empty.</exception>
+    /// <returns>
+    /// The instruction-pointer value saved by the matching <see cref="Call"/>,
+    /// or <c>-1</c> if the stack is empty.
+    /// </returns>
     int Return();
 
     /// <summary>
-    /// Attempts to pop the current frame without throwing when the stack is empty.
+    /// Gets the frame at the top of the stack, or <see langword="null"/> when the stack is
+    /// empty or the implementation does not support per-frame local variables
+    /// (e.g. <see cref="SimpleCallStack"/>).
     /// </summary>
-    /// <param name="returnAddress">
-    /// When this method returns <see langword="true"/>, receives the saved return address; otherwise, zero.
-    /// </param>
-    /// <returns><see langword="true"/> if a frame was popped; <see langword="false"/> if the stack was empty.</returns>
-    bool TryReturn(out int returnAddress);
+    CallFrame? CurrentFrame { get; }
 }
