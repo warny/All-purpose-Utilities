@@ -52,4 +52,17 @@ public sealed class CallFrame
         value = default;
         return false;
     }
+
+    /// <summary>
+    /// Retrieves a typed local variable, throwing if the variable is absent or has an incompatible type.
+    /// </summary>
+    /// <typeparam name="T">Expected type of the value.</typeparam>
+    /// <param name="name">Variable name.</param>
+    /// <returns>The typed value stored under <paramref name="name"/>.</returns>
+    /// <exception cref="KeyNotFoundException">
+    /// Thrown when no variable with <paramref name="name"/> exists in this frame, or when the
+    /// stored value cannot be cast to <typeparamref name="T"/>.
+    /// </exception>
+    public T GetLocal<T>(string name)
+        => TryGetLocal<T>(name, out var v) ? v! : throw new KeyNotFoundException($"Local '{name}' not found or not assignable to {typeof(T).Name}.");
 }

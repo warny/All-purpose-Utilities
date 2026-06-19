@@ -10,7 +10,6 @@ namespace Utils.VirtualMachine;
 public class SimpleCallStack : ICallStack
 {
     private readonly Stack<int> _returnAddresses = new();
-    private int _maxDepth = 512;
 
     /// <inheritdoc/>
     public int Depth => _returnAddresses.Count;
@@ -19,37 +18,35 @@ public class SimpleCallStack : ICallStack
     public bool IsEmpty => _returnAddresses.Count == 0;
 
     /// <inheritdoc/>
-    public int MaxDepth
+    public int MaxDepth { get; }
+
+    /// <summary>
+    /// Initializes a new instance with the specified maximum stack depth.
+    /// </summary>
+    /// <param name="maxDepth">Maximum number of frames allowed. Defaults to <c>512</c>.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxDepth"/> is less than one.</exception>
+    public SimpleCallStack(int maxDepth = 512)
     {
-        get => _maxDepth;
-        set
-        {
-            if (value < 1) throw new ArgumentOutOfRangeException(nameof(value), "MaxDepth must be at least 1.");
-            _maxDepth = value;
-        }
+        if (maxDepth < 1) throw new ArgumentOutOfRangeException(nameof(maxDepth), "MaxDepth must be at least 1.");
+        MaxDepth = maxDepth;
     }
 
     /// <inheritdoc/>
     public void Call(int returnAddress)
     {
-        if (_returnAddresses.Count >= _maxDepth)
-            throw new InvalidOperationException($"Call stack overflow: maximum depth of {_maxDepth} exceeded.");
+        if (_returnAddresses.Count >= MaxDepth)
+            throw new InvalidOperationException($"Call stack overflow: maximum depth of {MaxDepth} exceeded.");
         _returnAddresses.Push(returnAddress);
     }
 
     /// <inheritdoc/>
     public int Return()
     {
-        if (_returnAddresses.Count == 0)
-            throw new InvalidOperationException("Call stack underflow: cannot return from an empty call stack.");
+        if (_returnAddresses.Count == 0) return -1;
         return _returnAddresses.Pop();
     }
 
     /// <inheritdoc/>
-    public bool TryReturn(out int returnAddress)
-    {
-        if (_returnAddresses.Count == 0) { returnAddress = 0; return false; }
-        returnAddress = _returnAddresses.Pop();
-        return true;
-    }
+    /// <remarks><see cref="SimpleCallStack"/> does not support per-frame locals; this property always returns <see langword="null"/>.</remarks>
+    public CallFrame? CurrentFrame => null;
 }

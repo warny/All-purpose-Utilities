@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Utils.VirtualMachine;
 
@@ -21,7 +22,10 @@ public class CallMachine : VirtualProcessor<CallStackContext>
         ctx.InstructionPointer = target;
     }
 
-    /// <summary>Returns to the address saved by the most recent CALL.</summary>
+    /// <summary>
+    /// Returns to the address saved by the most recent CALL.
+    /// When the call stack is empty, Return() yields -1, which terminates the Execute loop.
+    /// </summary>
     [Instruction("RET", 0xC1)]
     void Ret(CallStackContext ctx) => ctx.InstructionPointer = ctx.CallStack.Return();
 
@@ -70,34 +74,24 @@ public class CallStackTests
     }
 
     [TestMethod]
-    public void CallStack_Return_OnEmpty_Throws()
+    public void CallStack_Return_OnEmpty_ReturnsMinusOne()
     {
         var cs = new CallStack();
-        Assert.ThrowsException<InvalidOperationException>(() => cs.Return());
+        Assert.AreEqual(-1, cs.Return());
     }
 
     [TestMethod]
-    public void CallStack_TryReturn_OnEmpty_ReturnsFalse()
+    public void CallStack_Return_OnEmpty_DoesNotAlterDepth()
     {
         var cs = new CallStack();
-        Assert.IsFalse(cs.TryReturn(out int addr));
-        Assert.AreEqual(0, addr);
-    }
-
-    [TestMethod]
-    public void CallStack_TryReturn_WhenNotEmpty_ReturnsTrueAndAddress()
-    {
-        var cs = new CallStack();
-        cs.Call(42);
-        Assert.IsTrue(cs.TryReturn(out int addr));
-        Assert.AreEqual(42, addr);
-        Assert.IsTrue(cs.IsEmpty);
+        cs.Return();
+        Assert.AreEqual(0, cs.Depth);
     }
 
     [TestMethod]
     public void CallStack_MaxDepth_Overflow_Throws()
     {
-        var cs = new CallStack { MaxDepth = 3 };
+        var cs = new CallStack(maxDepth: 3);
         cs.Call(1);
         cs.Call(2);
         cs.Call(3);
@@ -107,8 +101,14 @@ public class CallStackTests
     [TestMethod]
     public void CallStack_MaxDepth_SetBelowOne_Throws()
     {
-        var cs = new CallStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.MaxDepth = 0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new CallStack(0));
+    }
+
+    [TestMethod]
+    public void CallStack_MaxDepth_IsImmutable()
+    {
+        var cs = new CallStack(maxDepth: 10);
+        Assert.AreEqual(10, cs.MaxDepth);
     }
 
     [TestMethod]
@@ -183,6 +183,44 @@ public class CallStackTests
         Assert.AreEqual(1, prev);
     }
 
+    // ── ICallStack.CurrentFrame via SimpleCallStack ───────────────────────────
+
+    [TestMethod]
+    public void SimpleCallStack_CurrentFrame_AlwaysNull()
+    {
+        ICallStack cs = new SimpleCallStack();
+        cs.Call(42);
+        Assert.IsNull(cs.CurrentFrame);
+    }
+
+    // ── CallFrame.GetLocal<T> throwing variant ────────────────────────────────
+
+    [TestMethod]
+    public void CallFrame_GetLocal_ReturnsTypedValue()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("x", 99);
+        Assert.AreEqual(99, cs.CurrentFrame.GetLocal<int>("x"));
+    }
+
+    [TestMethod]
+    public void CallFrame_GetLocal_MissingKey_ThrowsKeyNotFoundException()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        Assert.ThrowsException<KeyNotFoundException>(() => cs.CurrentFrame!.GetLocal<int>("missing"));
+    }
+
+    [TestMethod]
+    public void CallFrame_GetLocal_WrongType_ThrowsKeyNotFoundException()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("x", 42);
+        Assert.ThrowsException<KeyNotFoundException>(() => cs.CurrentFrame.GetLocal<string>("x"));
+    }
+
     // ── ICallStack contract: SimpleCallStack ──────────────────────────────────
 
     [TestMethod]
@@ -204,23 +242,16 @@ public class CallStackTests
     }
 
     [TestMethod]
-    public void SimpleCallStack_Return_OnEmpty_Throws()
+    public void SimpleCallStack_Return_OnEmpty_ReturnsMinusOne()
     {
         var cs = new SimpleCallStack();
-        Assert.ThrowsException<InvalidOperationException>(() => cs.Return());
-    }
-
-    [TestMethod]
-    public void SimpleCallStack_TryReturn_OnEmpty_ReturnsFalse()
-    {
-        var cs = new SimpleCallStack();
-        Assert.IsFalse(cs.TryReturn(out _));
+        Assert.AreEqual(-1, cs.Return());
     }
 
     [TestMethod]
     public void SimpleCallStack_MaxDepth_Overflow_Throws()
     {
-        var cs = new SimpleCallStack { MaxDepth = 2 };
+        var cs = new SimpleCallStack(maxDepth: 2);
         cs.Call(1);
         cs.Call(2);
         Assert.ThrowsException<InvalidOperationException>(() => cs.Call(3));
@@ -229,8 +260,14 @@ public class CallStackTests
     [TestMethod]
     public void SimpleCallStack_MaxDepth_SetBelowOne_Throws()
     {
-        var cs = new SimpleCallStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.MaxDepth = 0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new SimpleCallStack(0));
+    }
+
+    [TestMethod]
+    public void SimpleCallStack_MaxDepth_IsImmutable()
+    {
+        var cs = new SimpleCallStack(maxDepth: 5);
+        Assert.AreEqual(5, cs.MaxDepth);
     }
 
     // ── CallStackContext ──────────────────────────────────────────────────────
@@ -333,5 +370,18 @@ public class CallStackTests
         new CallMachine().Execute(ctx);
 
         Assert.AreEqual(55, (int)ctx.Stack.Peek());
+    }
+
+    [TestMethod]
+    public void Integration_Ret_OnEmptyStack_TerminatesExecution()
+    {
+        // RET with an empty call stack yields IP = -1; the Execute loop stops.
+        // Program: RET (0xC1) — no prior CALL.
+        byte[] program = [0xC1];
+        var ctx = new CallStackContext(program);
+        new CallMachine().Execute(ctx);
+
+        Assert.AreEqual(-1, ctx.InstructionPointer);
+        Assert.AreEqual(0, ctx.CallStack.Depth);
     }
 }
