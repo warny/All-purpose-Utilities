@@ -1059,6 +1059,30 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures inline-only local writes allocate declared local slots even when no lifecycle executor is installed.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedLocalWrite_InlineOnlyAllocatesDeclaredLocal()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start locals [int total]
+                : { $total = 1; Seen = $total; } A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
     /// Ensures typed local write right-hand sides still use supported ANTLR-style read rewrites.
     /// </summary>
     [TestMethod]
