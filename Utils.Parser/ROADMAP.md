@@ -600,3 +600,8 @@ Parser embedded-code handling is centered on preservation plus an explicit `IPar
 - It must remain optional and target-language-specific.
 - It must not drive parser core development or add C# parsing/rewriting to `GrammarEmitter`, `ParserEngine`, runtime frame classes, or source generator core logic.
 - It must keep dynamic execution on the existing compiler/preparer path rather than introducing a parallel compiler API.
+
+
+### Embedded-code transformer boundary update
+
+ANTLR-style current-rule local writes are now documented as an optional C# transformer convenience only. The parser/generator core continues to treat embedded code as raw target-language text by default; no-op generation preserves `$local = ...` unchanged, while richer conveniences remain isolated behind `IParserEmbeddedCodeTransformer`.

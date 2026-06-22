@@ -958,6 +958,250 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures default no-op embedded-code generation preserves ANTLR-style local writes unchanged.
+    /// </summary>
+    [TestMethod]
+    public void Emit_WithDefaultTransformer_PreservesLocalWriteSyntax()
+    {
+        const string grammar = """
+            grammar P;
+            start locals [int total]
+            @after {
+                $total = 1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "$total = 1;");
+    }
+
+    /// <summary>
+    /// Ensures the optional ANTLR-style transformer rewrites supported typed local write operators.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_TypedLocalWrites_RewritesSupportedOperators()
+    {
+        const string grammar = """
+            grammar P;
+            start locals [int total]
+            @init {
+                int mask = 1;
+                $total = 1;
+                $total += 1;
+                $total -= 1;
+                $total *= 2;
+                $total /= 2;
+                $total %= 2;
+                $total &= mask;
+                $total |= mask;
+                $total ^= mask;
+                $total <<= 1;
+                $total >>= 1;
+                $total++;
+                ++$total;
+                $total--;
+                --$total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        StringAssert.Contains(source, "SetRequiredRuleLocal<int>(context, \"total\", 1)");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") + 1");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") - 1");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") * 2");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") / 2");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") % 2");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") & mask");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") | mask");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") ^ mask");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") << 1");
+        StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") >> 1");
+    }
+
+    /// <summary>
+    /// Ensures typed local writes execute through managed parser frame local state.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedLocalWrites_UpdateManagedLocalState()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start locals [int total]
+            @init {
+                $total = 10;
+                $total *= 2;
+                $total -= 3;
+                $total++;
+                --$total;
+            }
+            @after {
+                Seen = $total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(17, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures inline-only local writes allocate declared local slots even when no lifecycle executor is installed.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedLocalWrite_InlineOnlyAllocatesDeclaredLocal()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start locals [int total]
+                : { $total = 1; Seen = $total; } A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures typed local write right-hand sides still use supported ANTLR-style read rewrites.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedLocalWriteRhs_RewritesParameterReads()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start : child[41] ;
+            child[int count] locals [int total]
+            @init {
+                $total = $count + 1;
+            }
+            @after {
+                Seen = $total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures comparison operators in typed local write right-hand sides are not mistaken for nested assignments.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$count == 1 ? 10 : 20", 1, 10)]
+    [DataRow("$count != 0 ? 1 : 0", 0, 0)]
+    [DataRow("$count <= 10 ? 1 : 0", 10, 1)]
+    [DataRow("$count >= 10 ? 1 : 0", 9, 0)]
+    public void ParseWithEmbeddedCode_TypedLocalWriteRhs_AllowsComparisonOperators(string expression, int count, int expected)
+    {
+        string grammar = $$"""
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start : child[{{count}}] ;
+            child[int count] locals [int total]
+            @init {
+                $total = {{expression}};
+            }
+            @after {
+                Seen = $total;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+        var basePolicy = ParserRuntimeFeaturePolicy.Default with
+        {
+            RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(),
+        };
+
+        ParseNode result = InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(expected, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures typed string local compound writes use the generated getter/operator/setter form.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TypedStringLocalCompoundWrite_Concatenates()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public string? Seen { get; private set; }
+            }
+            start locals [string text]
+            @init {
+                $text = "a";
+            }
+            @after {
+                Seen = $text;
+            }
+                : { $text += "b"; } A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("ab", ReadContextObjectProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures unsupported ANTLR-style local write contexts fail with transformer diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_UnsupportedLocalWriteContexts_ReportDiagnostics()
+    {
+        AssertTransformerDiagnostic("start[int count] locals [int total] @init { $count = 1; } : A ; A : 'a' ;", "Parser parameter '$count' is read-only.");
+        AssertTransformerDiagnostic("start locals [int total] returns [int value] @after { $start.value = 1; } : A ; A : 'a' ;", "Current-rule return attributes are read-only");
+        AssertTransformerDiagnostic("start locals [int total] : x=child { $x.value = 1; } ; child returns [int value] : A ; A : 'a' ;", "Labeled rule-call return attributes are read-only.");
+        AssertTransformerDiagnostic("start locals [int total] : xs+=child { $xs.value = values; } ; child returns [int value] : A ; A : 'a' ;", "List-labeled rule-call return projections are read-only.");
+        AssertTransformerDiagnostic("start locals [int total] @init { value = $total++; } : A ; A : 'a' ;", "Increment/decrement parser local attributes are supported only as standalone statements.");
+        AssertTransformerDiagnostic("start locals [int total] @init { Use(ref $total); } : A ; A : 'a' ;", "ref/out parser attributes are not supported");
+        AssertTransformerDiagnostic("start locals [int total] : { $total = 1; }? A ; A : 'a' ;", "Parser local writes are not supported in semantic predicates.");
+    }
+
+    /// <summary>
     /// Ensures typed nullable/reference local reads can observe an allocated present-null value.
     /// </summary>
     [TestMethod]
@@ -2365,6 +2609,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 }
             }
         };
+
+    /// <summary>
+    /// Asserts that the optional ANTLR-style transformer rejects a parser rule fragment.
+    /// </summary>
+    private static void AssertTransformerDiagnostic(string ruleFragment, string expectedMessage)
+    {
+        string grammar = "grammar P; " + ruleFragment;
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+
+        StringAssert.Contains(exception.Message, expectedMessage);
+    }
 
     /// <summary>
     /// Emits generated C# for the supplied grammar using the production grammar emitter.
