@@ -1313,7 +1313,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         AssertTransformerDiagnostic("start locals [int total] : xs+=child { $xs.value = values; } ; child returns [int value] : A ; A : 'a' ;", "List-labeled rule-call return projections are read-only.");
         AssertTransformerDiagnostic("start locals [int total] @init { value = $total++; } : A ; A : 'a' ;", "Increment/decrement parser attributes are supported only as standalone statements.");
         AssertTransformerDiagnostic("start locals [int total] @init { Use(ref $total); } : A ; A : 'a' ;", "ref/out parser attributes are not supported");
-        AssertTransformerDiagnostic("start locals [int total] : { $total = 1; }? A ; A : 'a' ;", "Parser return writes are not supported in semantic predicates.");
+        AssertTransformerDiagnostic("start locals [int total] : { $total = 1; }? A ; A : 'a' ;", "Parser local writes are not supported in semantic predicates.");
     }
 
     /// <summary>

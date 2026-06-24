@@ -373,13 +373,6 @@ internal static class EmbeddedParserAttributeRewriter
             return true;
         }
 
-        if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
-        {
-            errors.Add("Parser return writes are not supported in semantic predicates.");
-            output.Append(code, attributeStart, attributeEnd - attributeStart);
-            return true;
-        }
-
         int declarationCount = (parameters.ContainsKey(root) ? 1 : 0) + (locals.ContainsKey(root) ? 1 : 0) + (returns.ContainsKey(root) ? 1 : 0);
         if (declarationCount > 1)
         {
@@ -407,6 +400,13 @@ internal static class EmbeddedParserAttributeRewriter
         if (!isReturn && !locals.TryGetValue(root, out local))
         {
             errors.Add($"Bare parser attribute '{attributeText}' does not resolve to a current-rule parameter, local, or return.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
+        {
+            errors.Add(isReturn ? "Parser return writes are not supported in semantic predicates." : "Parser local writes are not supported in semantic predicates.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
