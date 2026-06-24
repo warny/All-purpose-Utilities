@@ -90,10 +90,10 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     /// roll back with failed alternatives.
     /// </summary>
     /// <returns>The current frame return snapshot, or <c>null</c> when no frame is active.</returns>
-    public IReadOnlyDictionary<string, object?>? GetCurrentReturns()
+    public ParserRuleReturnSnapshot? GetCurrentReturnSnapshot()
         => _current is null
             ? null
-            : new Dictionary<string, object?>(_current.Returns, StringComparer.Ordinal);
+            : new ParserRuleReturnSnapshot(_current.RuleName, _current.InputPosition, _current.Depth, _current.Returns);
 
     /// <summary>
     /// Attempts to atomically merge pending child-rule parameter seeds on the current frame.
@@ -160,10 +160,24 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     /// Called by generated managed execution-state restoration so failed parser alternatives
     /// do not leak return writes into later alternatives.
     /// </summary>
-    /// <param name="returns">Restored return values, or <c>null</c> to clear the active frame returns.</param>
-    public void SyncReturnsToCurrentFrame(IReadOnlyDictionary<string, object?>? returns)
+    /// <param name="snapshot">Restored return snapshot, or <c>null</c> to clear the active frame returns.</param>
+    public void SyncReturnSnapshotToCurrentFrame(ParserRuleReturnSnapshot? snapshot)
     {
-        _current?.ReplaceReturnValues(returns);
+        if (_current is null)
+        {
+            return;
+        }
+
+        if (snapshot is null)
+        {
+            _current.ReplaceReturnValues(null);
+            return;
+        }
+
+        if (snapshot.Matches(_current))
+        {
+            _current.ReplaceReturnValues(snapshot.Returns);
+        }
     }
 
     /// <summary>

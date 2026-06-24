@@ -1179,6 +1179,62 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(2, ReadContextIntProperty(executionContext, "Seen"));
     }
 
+
+    /// <summary>Ensures memoized child return snapshots are not restored into the caller return frame.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_MemoizedChildReturnSnapshot_DoesNotOverwriteCallerReturn()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            root
+                : x=start { Seen = $x.value; }
+                ;
+            start returns [int value]
+                : { $value = 1; } child B
+                | { $value = 2; } child A
+                ;
+            child returns [int value]
+            @after {
+                $value = 99;
+            }
+                : ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures arbitrary object current-rule returns do not make state-key hashing throw.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ArbitraryObjectReturnBeforeChild_DoesNotBreakStateHashing()
+    {
+        const string grammar = """
+            grammar P;
+            root returns [object value]
+                : { $value = new object(); } child
+                ;
+            child
+                : A
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
     /// <summary>Ensures present-null return values remain distinguishable from missing returns.</summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_NullReturnWrite_IsPresentForParentRead()
