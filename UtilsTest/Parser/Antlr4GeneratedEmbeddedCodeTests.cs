@@ -2112,6 +2112,180 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsTrue(ReadContextIntProperty(secondContext, "CountValue") > 0);
     }
 
+
+    /// <summary>
+    /// Ensures <c>@parser::members</c> is emitted inside the generated parser execution context.
+    /// </summary>
+    [TestMethod]
+    public void ParserNamedActionMembers_SourceShape_EmitsInsideExecutionContext()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public int Seen { get; private set; }
+
+                private void Mark(int value)
+                {
+                    Seen = value;
+                }
+            }
+
+            start : A { Mark(42); } ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        int contextStart = source.IndexOf("internal sealed partial class PExecutionContext", StringComparison.Ordinal);
+        int membersStart = source.IndexOf("public int Seen { get; private set; }", StringComparison.Ordinal);
+        int actionHookStart = source.IndexOf("private void __Action_start_0_1_0", StringComparison.Ordinal);
+
+        Assert.IsTrue(contextStart >= 0, source);
+        Assert.IsTrue(membersStart > contextStart, source);
+        Assert.IsTrue(actionHookStart > membersStart, source);
+        StringAssert.Contains(source, "private void Mark(int value)");
+    }
+
+    /// <summary>
+    /// Ensures parser members are callable from generated inline parser actions.
+    /// </summary>
+    [TestMethod]
+    public void ParserNamedActionMembers_InlineAction_CanCallMember()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public int Seen { get; private set; }
+
+                private void Mark(int value)
+                {
+                    Seen = value;
+                }
+            }
+
+            start : A { Mark(42); } ;
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures parser members are callable from generated <c>@after</c> lifecycle hooks.
+    /// </summary>
+    [TestMethod]
+    public void ParserNamedActionMembers_AfterAction_CanCallMember()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public int Seen { get; private set; }
+                private void Mark(int value) => Seen = value;
+            }
+
+            start
+            @after { Mark(42); }
+                : A ;
+
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures parser members are callable from generated <c>@init</c> lifecycle hooks.
+    /// </summary>
+    [TestMethod]
+    public void ParserNamedActionMembers_InitAction_CanCallMember()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public int Seen { get; private set; }
+                private void Mark(int value) => Seen = value;
+            }
+
+            start
+            @init { Mark(42); }
+                : A ;
+
+            A : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures multiple parser named-action blocks are emitted in deterministic source order and compile.
+    /// </summary>
+    [TestMethod]
+    public void ParserNamedActions_MultipleBlocks_EmitInSourceOrderAndCompile()
+    {
+        const string grammar = """
+            grammar P;
+
+            @header { using System; }
+            @parser::header { using System.Linq; }
+
+            @parser::members { public int AValue { get; private set; } }
+            @parser::members { public int BValue { get; private set; } }
+
+            @parser::footer { // parser footer marker }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        Assert.IsTrue(source.IndexOf("using System;", StringComparison.Ordinal) < source.IndexOf("using System.Linq;", StringComparison.Ordinal), source);
+        Assert.IsTrue(source.IndexOf("public int AValue", StringComparison.Ordinal) < source.IndexOf("public int BValue", StringComparison.Ordinal), source);
+        StringAssert.Contains(source, "// parser footer marker");
+        _ = CompileGeneratedSource(source);
+    }
+
+    /// <summary>
+    /// Ensures no-op parser named-action emission preserves raw <c>$...</c> text in member content.
+    /// </summary>
+    [TestMethod]
+    public void ParserNamedActionMembers_NoOpPreservesRawDollarText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public string Raw => "$value should stay raw here";
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "public string Raw => \"$value should stay raw here\";");
+        _ = CompileGeneratedSource(source);
+    }
+
     /// <summary>
     /// Ensures invalid C# injected through <c>@members</c> remains a Roslyn compilation error.
     /// </summary>

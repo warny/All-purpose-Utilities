@@ -85,6 +85,9 @@ public enum ParserEmbeddedCodeLocation
     /// <summary>Parser footer action.</summary>
     ParserFooter,
 
+    /// <summary>Parser members action.</summary>
+    ParserMembers,
+
     /// <summary>Rule <c>@init</c> action.</summary>
     RuleInit,
 
