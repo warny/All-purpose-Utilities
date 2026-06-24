@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Utils.VirtualMachine;
@@ -111,5 +112,27 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     {
         ArgumentNullException.ThrowIfNull(process);
         process.UnmapPage(virtualPageIndex);
+    }
+
+    /// <summary>
+    /// Removes all page mappings from <paramref name="process"/> and unregisters it from this
+    /// <see cref="VirtualMemory{TAddress}"/> instance. Call this when a process has terminated
+    /// to reclaim its page table entries and avoid unbounded growth of the process list.
+    /// </summary>
+    /// <param name="process">The process to free.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="process"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="process"/> is the master process, or when it does not belong
+    /// to this <see cref="VirtualMemory{TAddress}"/> instance.
+    /// </exception>
+    public void FreeProcess(VirtualProcess<TAddress> process)
+    {
+        ArgumentNullException.ThrowIfNull(process);
+        if (process.IsMaster)
+            throw new ArgumentException("The master process cannot be freed.", nameof(process));
+        if (!_processes.Remove(process))
+            throw new ArgumentException("The process does not belong to this VirtualMemory instance.", nameof(process));
+        foreach (var (virtualPageIndex, _, _) in process.Mappings.ToList())
+            process.UnmapPage(virtualPageIndex);
     }
 }

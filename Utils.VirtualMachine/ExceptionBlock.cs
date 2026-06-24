@@ -10,9 +10,12 @@ namespace Utils.VirtualMachine;
 /// <list type="bullet">
 ///   <item>TRY instruction: push an <see cref="ExceptionBlock"/> with the handler addresses.</item>
 ///   <item>THROW instruction: call <see cref="ControlFlowStack.Throw"/>; unwinds to this block,
-///     sets <see cref="ThrownValue"/>, and redirects execution to <see cref="CatchAddress"/>
-///     (or <see cref="FinallyAddress"/> when there is no catch). The block stays on the stack
-///     so that the handler body can inspect <see cref="ThrownValue"/>.</item>
+///     sets <see cref="ThrownValue"/>, and redirects execution to <see cref="FinallyAddress"/>
+///     when present (storing the catch address in <see cref="PendingCatchAddress"/> for later),
+///     or directly to <see cref="CatchAddress"/> when there is no finally clause.
+///     The block stays on the stack so that the handler body can inspect <see cref="ThrownValue"/>.</item>
+///   <item>ENDFINALLY instruction: read <see cref="PendingCatchAddress"/>; if non-null, jump there
+///     to enter the catch body; if null, call <see cref="ControlFlowStack.Pop"/> and propagate.</item>
 ///   <item>ENDTRY instruction: call <see cref="ControlFlowStack.Pop"/>.</item>
 /// </list>
 /// At least one of <see cref="CatchAddress"/> or <see cref="FinallyAddress"/> must be provided.
@@ -34,6 +37,24 @@ public sealed class ExceptionBlock : IControlFlowBlock
     /// Set by <see cref="ControlFlowStack.Throw"/> and readable from the catch/finally handler body.
     /// </summary>
     public object? ThrownValue { get; internal set; }
+
+    /// <summary>
+    /// When <see cref="ControlFlowStack.Throw"/> routes execution through a finally block because
+    /// both <see cref="FinallyAddress"/> and <see cref="CatchAddress"/> are present, this property
+    /// stores the catch handler address so that the ENDFINALLY instruction handler can jump there
+    /// after the finally block completes. <see langword="null"/> when there is no pending catch
+    /// (finally-only or catch-only scenarios, or when the block has not been thrown into yet).
+    /// </summary>
+    public int? PendingCatchAddress { get; internal set; }
+
+    /// <summary>
+    /// <see langword="true"/> when an exception is currently in flight through this block —
+    /// set by <see cref="ControlFlowStack.Throw"/> and consumed by
+    /// <see cref="ControlFlowStack.EndFinally"/> to propagate the exception to outer handlers
+    /// once the finally block completes.
+    /// <see langword="false"/> when the finally block was entered during normal (non-exception) execution.
+    /// </summary>
+    internal bool ExceptionInFlight { get; set; }
 
     /// <summary>
     /// Initializes a new exception block.

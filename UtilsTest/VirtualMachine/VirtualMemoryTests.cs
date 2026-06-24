@@ -301,4 +301,66 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         Assert.IsNull(mem.MasterProcess.GetAccess(0));
     }
+
+    // ─────────────────────────────── FreeProcess ────────────────────────────────
+
+    [TestMethod]
+    public void FreeProcess_RemovesProcessFromList()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        Assert.AreEqual(2, mem.Processes.Count); // master + proc
+        mem.FreeProcess(proc);
+        Assert.AreEqual(1, mem.Processes.Count);
+        Assert.IsFalse(mem.Processes.Contains(proc));
+    }
+
+    [TestMethod]
+    public void FreeProcess_RemovesAllMappings()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadOnly);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadWrite);
+        mem.FreeProcess(proc);
+        Assert.IsFalse(proc.Mappings.Any());
+    }
+
+    [TestMethod]
+    public void FreeProcess_DoesNotAffectOtherProcesses()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc1 = mem.CreateProcess();
+        var proc2 = mem.CreateProcess();
+        mem.MapPage(proc1, page, 0, PageAccess.ReadOnly);
+        mem.MapPage(proc2, page, 0, PageAccess.ReadWrite);
+        mem.FreeProcess(proc1);
+        Assert.AreEqual(PageAccess.ReadWrite, proc2.GetAccess(0));
+    }
+
+    [TestMethod]
+    public void FreeProcess_MasterProcess_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        Assert.ThrowsException<ArgumentException>(() => mem.FreeProcess(mem.MasterProcess));
+    }
+
+    [TestMethod]
+    public void FreeProcess_ProcessNotBelongingToInstance_Throws()
+    {
+        var mem1 = new VirtualMemory<int>(pageSize: 16);
+        var mem2 = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem2.CreateProcess();
+        Assert.ThrowsException<ArgumentException>(() => mem1.FreeProcess(proc));
+    }
+
+    [TestMethod]
+    public void FreeProcess_Null_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        Assert.ThrowsException<ArgumentNullException>(() => mem.FreeProcess(null!));
+    }
 }

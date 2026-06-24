@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.VirtualMachine;
 
@@ -408,5 +409,64 @@ public class SchedulerTests
             Assert.AreEqual(4, ctx.Stack.Count,
                 $"Process {proc.ProcessId} ran wrong number of steps.");
         }
+    }
+
+    // ── Process Name ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void AddProcess_NoName_NameIsNull()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        var proc = scheduler.AddProcess(Ctx(0x00), Proc());
+        Assert.IsNull(proc.Name);
+    }
+
+    [TestMethod]
+    public void AddProcess_WithName_NameStored()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        var proc = scheduler.AddProcess(Ctx(0x00), Proc(), name: "GC");
+        Assert.AreEqual("GC", proc.Name);
+    }
+
+    [TestMethod]
+    public void AddProcess_NameDoesNotAffectScheduling()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        scheduler.AddProcess(Ctx(0x01, 0x00), Proc(), name: "Worker");
+        scheduler.Run();
+        Assert.IsTrue(scheduler.Processes.All(p => p.State == ProcessState.Terminated));
+    }
+
+    // ── RunAsync ─────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void RunAsync_CompletesAllProcesses()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var ctx = Ctx(0x01, 0x01, 0x00); // STEP, STEP, HALT
+        scheduler.AddProcess(ctx, Proc());
+        scheduler.RunAsync().GetAwaiter().GetResult();
+        Assert.AreEqual(ProcessState.Terminated, scheduler.Processes[0].State);
+        Assert.AreEqual(2, ctx.Stack.Count);
+    }
+
+    [TestMethod]
+    public void RunAsync_CancellationToken_Throws()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 1);
+        // Infinite loop: only STEPs, no HALT
+        scheduler.AddProcess(Ctx(0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01), Proc());
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        Assert.ThrowsException<OperationCanceledException>(
+            () => scheduler.RunAsync(cts.Token).GetAwaiter().GetResult());
+    }
+
+    [TestMethod]
+    public void RunAsync_NoProcesses_CompletesImmediately()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        scheduler.RunAsync().GetAwaiter().GetResult(); // must not throw or block
     }
 }

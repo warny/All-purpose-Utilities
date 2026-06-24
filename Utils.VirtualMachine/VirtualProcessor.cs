@@ -45,6 +45,13 @@ public abstract class VirtualProcessor<T> where T : Context
     private int _bufferLength;
 
     /// <summary>
+    /// Fast-path lookup indexed by first byte. Non-null only for single-byte opcodes whose first
+    /// byte is not shared by any multi-byte opcode, enabling O(1) dispatch without a loop.
+    /// Rebuilt whenever the instruction set changes (construction or <see cref="RegisterInstruction"/>).
+    /// </summary>
+    private (string Name, InstructionDelegate Handler)?[] _fastLookup = new (string, InstructionDelegate)?[256];
+
+    /// <summary>
     /// Represents a delegate to handle an instruction, given the current context.
     /// </summary>
     /// <param name="context">An instance of the execution context.</param>
@@ -64,6 +71,20 @@ public abstract class VirtualProcessor<T> where T : Context
         => InstructionsSet.Select(kv => (kv.Key, kv.Value.Name));
 
     /// <summary>
+    /// Gets or sets an optional inspector that receives a notification before each instruction is
+    /// dispatched. Setting this to <see langword="null"/> (the default) disables inspection with
+    /// zero per-instruction overhead.
+    /// </summary>
+    public IVmInspector<T>? Inspector { get; set; }
+
+    /// <summary>
+    /// A set of instruction-pointer addresses that trigger
+    /// <see cref="IVmInspector{T}.OnBreakpoint"/> when execution reaches them.
+    /// Breakpoints are only checked when <see cref="Inspector"/> is non-null.
+    /// </summary>
+    public HashSet<int> Breakpoints { get; } = [];
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="VirtualProcessor{T}"/> class,
     /// specifying whether the byte data should be interpreted as little-endian.
     /// </summary>
@@ -76,6 +97,7 @@ public abstract class VirtualProcessor<T> where T : Context
         _numberReader = NumberReader.GetReader(littleEndian);
         InstructionsSet = DiscoverInstructionSet();
         _buffer = new byte[_maxInstructionSize];
+        RebuildFastLookup();
     }
 
     /// <summary>
@@ -144,6 +166,34 @@ public abstract class VirtualProcessor<T> where T : Context
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Rebuilds <see cref="_fastLookup"/> after any change to the instruction set.
+    /// A slot is populated only when all opcodes sharing that first byte are exactly one byte long,
+    /// making the dispatch unambiguous without reading additional bytes.
+    /// </summary>
+    private void RebuildFastLookup()
+    {
+        // First pass: mark which first-bytes have at least one multi-byte opcode.
+        bool[] hasMultiByteExtension = new bool[256];
+        foreach (var key in InstructionsSet.Keys)
+        {
+            if (key.Count > 1)
+                hasMultiByteExtension[key.First()] = true;
+        }
+
+        // Second pass: populate fast-path slots for unambiguous single-byte opcodes.
+        var lookup = new (string Name, InstructionDelegate Handler)?[256];
+        foreach (var kv in InstructionsSet)
+        {
+            var key = kv.Key;
+            if (key.Count != 1) continue;
+            byte firstByte = key.First();
+            if (!hasMultiByteExtension[firstByte])
+                lookup[firstByte] = (kv.Value.Name, kv.Value.Handler);
+        }
+        _fastLookup = lookup;
     }
 
     #region Reading Methods
@@ -312,10 +362,13 @@ public abstract class VirtualProcessor<T> where T : Context
             _maxInstructionSize = opcode.Length;
             Array.Resize(ref _buffer, _maxInstructionSize);
         }
+        RebuildFastLookup();
     }
 
     /// <summary>
-    /// Shared dispatch core: reads bytes one at a time and invokes the matching handler.
+    /// Shared dispatch core: resolves and invokes the instruction at the current pointer.
+    /// Uses a pre-built fast-path array for unambiguous single-byte opcodes (O(1)) and falls
+    /// back to a byte-by-byte loop for multi-byte opcodes.
     /// Reuses the instance-level <see cref="_buffer"/> array; not thread-safe.
     /// </summary>
     /// <exception cref="VirtualProcessorException">
@@ -325,14 +378,40 @@ public abstract class VirtualProcessor<T> where T : Context
     /// </exception>
     private void TryDispatch(T context)
     {
-        _bufferLength = 0;
         int instructionStart = context.InstructionPointer;
+
+        // Fast path: O(1) dispatch for single-byte opcodes with no multi-byte peers.
+        byte firstByte = context.Data.Span[instructionStart];
+        if (_fastLookup[firstByte] is { } fast)
+        {
+            NotifyInspector(context, instructionStart, fast.Name);
+            // If the inspector redirected execution (e.g. a breakpoint handler jumped away),
+            // skip this instruction entirely to honour the new instruction pointer.
+            if (context.InstructionPointer != instructionStart) return;
+            context.InstructionPointer++;
+            try
+            {
+                fast.Handler(context);
+            }
+            catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
+            {
+                throw new VirtualProcessorException(instructionStart, new ArraySegment<byte>([firstByte]), fast.Name, ex);
+            }
+            return;
+        }
+
+        // Slow path: accumulate bytes until a match is found or all options are exhausted.
+        _bufferLength = 0;
         for (int i = 0; i < _maxInstructionSize && context.InstructionPointer < context.Data.Length; i++)
         {
             _buffer[_bufferLength++] = ReadByte(context);
             var segment = new ArraySegment<byte>(_buffer, 0, _bufferLength);
             if (InstructionsSet.TryGetValue(segment, out var entry))
             {
+                int afterOpcodeIp = context.InstructionPointer;
+                NotifyInspector(context, instructionStart, entry.Name);
+                // Same guard: inspector may redirect before operands are consumed.
+                if (context.InstructionPointer != afterOpcodeIp) return;
                 try
                 {
                     entry.Handler(context);
@@ -346,6 +425,19 @@ public abstract class VirtualProcessor<T> where T : Context
             }
         }
         throw new VirtualProcessorException(instructionStart, new ArraySegment<byte>(_buffer, 0, _bufferLength));
+    }
+
+    /// <summary>
+    /// Notifies <see cref="Inspector"/> (when set) before an instruction runs, and additionally
+    /// calls <see cref="IVmInspector{T}.OnBreakpoint"/> when the address is in <see cref="Breakpoints"/>.
+    /// Inlined from <see cref="TryDispatch"/> to keep the hot path clean.
+    /// </summary>
+    private void NotifyInspector(T context, int address, string instructionName)
+    {
+        if (Inspector is not { } inspector) return;
+        if (Breakpoints.Count > 0 && Breakpoints.Contains(address))
+            inspector.OnBreakpoint(context, address, instructionName);
+        inspector.BeforeInstruction(context, address, instructionName);
     }
 }
 

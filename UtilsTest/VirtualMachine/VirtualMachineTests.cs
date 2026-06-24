@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Utils.Arrays;
@@ -585,6 +586,188 @@ namespace UtilsTest.VirtualMachine
             new TestMachine().Execute(context);
             Assert.AreEqual((byte)0x42, context.Stack.Peek());
         }
+
+        // ── IVmInspector / Breakpoints ────────────────────────────────────────
+
+        private sealed class RecordingInspector : IVmInspector<DefaultContext>
+        {
+            public readonly List<(int Address, string Name)> Instructions = [];
+            public readonly List<(int Address, string Name)> HitBreakpoints = [];
+
+            public void BeforeInstruction(DefaultContext ctx, int address, string instructionName)
+                => Instructions.Add((address, instructionName));
+
+            public void OnBreakpoint(DefaultContext ctx, int address, string instructionName)
+                => HitBreakpoints.Add((address, instructionName));
+        }
+
+        private sealed class DelegateInspector<T> : IVmInspector<T> where T : Context
+        {
+            private readonly Action<T, int, string> _beforeInstruction;
+            private readonly Action<T, int, string> _onBreakpoint;
+
+            internal DelegateInspector(Action<T, int, string> beforeInstruction, Action<T, int, string> onBreakpoint)
+            {
+                _beforeInstruction = beforeInstruction;
+                _onBreakpoint = onBreakpoint;
+            }
+
+            public void BeforeInstruction(T ctx, int address, string name) => _beforeInstruction(ctx, address, name);
+            public void OnBreakpoint(T ctx, int address, string name) => _onBreakpoint(ctx, address, name);
+        }
+
+        [TestMethod]
+        public void Inspector_BeforeInstruction_CalledForEachInstruction()
+        {
+            var machine = new InspectorMachine();
+            var inspector = new RecordingInspector();
+            machine.Inspector = inspector;
+
+            // PUSH_A (addr 0), PUSH_B (addr 1), ADD (addr 2)
+            byte[] program = [0x01, 0x02, 0x10];
+            machine.Execute(new DefaultContext(program));
+
+            Assert.AreEqual(3, inspector.Instructions.Count);
+            Assert.AreEqual("PUSH_A", inspector.Instructions[0].Name);
+            Assert.AreEqual("PUSH_B", inspector.Instructions[1].Name);
+            Assert.AreEqual("ADD",    inspector.Instructions[2].Name);
+            Assert.AreEqual(0, inspector.Instructions[0].Address);
+            Assert.AreEqual(1, inspector.Instructions[1].Address);
+            Assert.AreEqual(2, inspector.Instructions[2].Address);
+        }
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_CalledOnlyAtBreakpointAddress()
+        {
+            var machine = new InspectorMachine();
+            var inspector = new RecordingInspector();
+            machine.Inspector = inspector;
+            machine.Breakpoints.Add(1); // break at PUSH_B
+
+            byte[] program = [0x01, 0x02, 0x10];
+            machine.Execute(new DefaultContext(program));
+
+            Assert.AreEqual(1, inspector.HitBreakpoints.Count);
+            Assert.AreEqual(1,        inspector.HitBreakpoints[0].Address);
+            Assert.AreEqual("PUSH_B", inspector.HitBreakpoints[0].Name);
+            Assert.AreEqual(3, inspector.Instructions.Count); // BeforeInstruction fires for all 3
+        }
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_FiresBeforeBeforeInstruction()
+        {
+            var machine = new InspectorMachine();
+            var order = new List<string>();
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => order.Add($"before:{addr}"),
+                onBreakpoint:      (ctx, addr, name) => order.Add($"break:{addr}")
+            );
+            machine.Breakpoints.Add(0);
+
+            byte[] program = [0x01]; // single PUSH_A
+            machine.Execute(new DefaultContext(program));
+
+            Assert.AreEqual(2, order.Count);
+            Assert.AreEqual("break:0",  order[0]);
+            Assert.AreEqual("before:0", order[1]);
+        }
+
+        [TestMethod]
+        public void Inspector_Null_ExecutesNormally()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = null;
+
+            byte[] program = [0x01, 0x02, 0x10];
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void Breakpoints_WithoutInspector_DoNotAffectExecution()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = null;
+            machine.Breakpoints.Add(0);
+
+            byte[] program = [0x01, 0x02, 0x10];
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+
+        // ── Fast dispatch path ────────────────────────────────────────────────
+
+        [TestMethod]
+        public void FastDispatch_SingleByteOpcode_ExecutesCorrectly()
+        {
+            // InspectorMachine has only single-byte opcodes with no multi-byte peers.
+            var machine = new InspectorMachine();
+            byte[] program = [0x01, 0x02, 0x10]; // PUSH_A(5), PUSH_B(3), ADD → 8
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void FastDispatch_MultiByteOpcode_ExcludedFromFastPath_StillExecutes()
+        {
+            // TrackingTestMachine has PUSH_BYTE=[0x01,0x01] (multi-byte starting with 0x01).
+            // Byte 0x01 must NOT use the fast path; the slow path must handle it correctly.
+            var machine = new TrackingTestMachine(new List<int>());
+            byte[] program = [0x01, 0x01, 42]; // PUSH_BYTE 42
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+            Assert.AreEqual(42, (byte)ctx.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void FastDispatch_NoopMachine_FastPathHitsNop()
+        {
+            // NoopTestMachine has NOP=0xF0 only — unambiguous single-byte, uses fast path.
+            var machine = new NoopTestMachine();
+            byte[] program = [0xF0, 0xF0]; // two NOPs
+            machine.Execute(new DefaultContext(program));
+            Assert.IsTrue(machine.NopExecuted);
+        }
+
+        [TestMethod]
+        public void Inspector_RedirectIpInBeforeInstruction_SkipsDispatch()
+        {
+            // If BeforeInstruction changes IP, the instruction must not be dispatched.
+            var machine = new InspectorMachine();
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => ctx.InstructionPointer = ctx.Data.Length,
+                onBreakpoint: (ctx, addr, name) => { }
+            );
+
+            byte[] program = [0x01]; // PUSH_A would push 5 — must not run
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+
+            Assert.AreEqual(0, ctx.Stack.Count);
+        }
+
+        [TestMethod]
+        public void Inspector_RedirectIpInOnBreakpoint_SkipsDispatch()
+        {
+            // If OnBreakpoint changes IP, the instruction must not be dispatched.
+            var machine = new InspectorMachine();
+            machine.Breakpoints.Add(0);
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => { },
+                onBreakpoint: (ctx, addr, name) => ctx.InstructionPointer = ctx.Data.Length
+            );
+
+            byte[] program = [0x01]; // PUSH_A would push 5 — must not run
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+
+            Assert.AreEqual(0, ctx.Stack.Count);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -604,5 +787,18 @@ namespace UtilsTest.VirtualMachine
 
         public TrackingTestMachine(System.Collections.Generic.List<int> steps) => _steps = steps;
         protected override void OnStep(DefaultContext context) => _steps.Add(context.InstructionPointer);
+    }
+
+    /// <summary>Minimal machine with only unambiguous single-byte opcodes (no multi-byte peers).</summary>
+    public class InspectorMachine : VirtualProcessor<DefaultContext>
+    {
+        [Instruction("PUSH_A", 0x01)]
+        void PushA(DefaultContext ctx) => ctx.Stack.Push(5);
+
+        [Instruction("PUSH_B", 0x02)]
+        void PushB(DefaultContext ctx) => ctx.Stack.Push(3);
+
+        [Instruction("ADD", 0x10)]
+        void Add(DefaultContext ctx) { var b = (int)ctx.Stack.Pop(); var a = (int)ctx.Stack.Pop(); ctx.Stack.Push(a + b); }
     }
 }
