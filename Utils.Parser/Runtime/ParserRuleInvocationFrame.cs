@@ -213,6 +213,24 @@ public sealed class ParserRuleInvocationFrame
     }
 
     /// <summary>
+    /// Replaces passive return values from a managed execution-state snapshot.
+    /// </summary>
+    /// <param name="returns">Return values to restore on this invocation frame.</param>
+    internal void ReplaceReturnValues(IReadOnlyDictionary<string, object?>? returns)
+    {
+        _returns.Clear();
+        if (returns is null)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, object?> item in returns)
+        {
+            _returns[item.Key] = item.Value;
+        }
+    }
+
+    /// <summary>
     /// Attempts to get a passive return value by metadata name.
     /// </summary>
     /// <param name="name">Return metadata name.</param>
