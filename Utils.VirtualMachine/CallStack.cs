@@ -66,8 +66,8 @@ public class CallStackContext : DefaultContext
     /// <summary>
     /// Initializes a new instance with a default <see cref="CallStack"/>.
     /// </summary>
-    /// <param name="data">The byte array containing the instruction stream.</param>
-    public CallStackContext(byte[] data) : base(data)
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    public CallStackContext(ReadOnlyMemory<byte> data) : base(data)
     {
         CallStack = new CallStack();
     }
@@ -75,9 +75,9 @@ public class CallStackContext : DefaultContext
     /// <summary>
     /// Initializes a new instance with a caller-supplied <see cref="ICallStack"/> implementation.
     /// </summary>
-    /// <param name="data">The byte array containing the instruction stream.</param>
+    /// <param name="data">The byte data containing the instruction stream.</param>
     /// <param name="callStack">The call stack to use.</param>
-    public CallStackContext(byte[] data, ICallStack callStack) : base(data)
+    public CallStackContext(ReadOnlyMemory<byte> data, ICallStack callStack) : base(data)
     {
         CallStack = callStack ?? throw new ArgumentNullException(nameof(callStack));
     }

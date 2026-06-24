@@ -28,6 +28,26 @@ namespace UtilsTest.VirtualMachine
         void PushSLEB128(DefaultContext context) => context.Stack.Push(ReadSLEB128(context));
     }
 
+    public class SByteTestMachine : VirtualProcessor<DefaultContext>
+    {
+        [Instruction("PUSH_SBYTE", 0x30)]
+        void PushSByte(DefaultContext context, sbyte b) => context.Stack.Push(b);
+    }
+
+    public class IntMachine : VirtualProcessor<TypedStackContext<int>>
+    {
+        [Instruction("PUSH_INT", 0x40)]
+        void Push(TypedStackContext<int> context, int v) => context.Stack.Push(v);
+
+        [Instruction("ADD_INT", 0x41)]
+        void Add(TypedStackContext<int> context)
+        {
+            var b = context.Stack.Pop();
+            var a = context.Stack.Pop();
+            context.Stack.Push(a + b);
+        }
+    }
+
     public class TestMachine : VirtualProcessor<DefaultContext>
     {
         // Two [Instruction] attributes on the same method (verifies AllowMultiple = true).
@@ -204,7 +224,7 @@ namespace UtilsTest.VirtualMachine
             bool executed = false;
             machine.RegisterInstruction([0xFF], "NOP", _ => executed = true);
 
-            var context = new DefaultContext([0xFF]);
+            var context = new DefaultContext(new byte[] { 0xFF });
             machine.Execute(context);
             Assert.IsTrue(executed);
         }
@@ -256,7 +276,7 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void Execute_UnknownOpcode_ThrowsWithDetails()
         {
-            var context = new DefaultContext([0xFF]);
+            var context = new DefaultContext(new byte[] { 0xFF });
             var machine = new TestMachine();
             var ex = Assert.ThrowsException<VirtualProcessorException>(() => machine.Execute(context));
             Assert.AreEqual(0, ex.InstructionPointer);
@@ -267,7 +287,7 @@ namespace UtilsTest.VirtualMachine
         public void Execute_PartialMultiByteOpcode_ThrowsVirtualProcessorException()
         {
             // 0x01 alone doesn't match any instruction — all opcodes starting with 0x01 are 2 bytes.
-            var context = new DefaultContext([0x01]);
+            var context = new DefaultContext(new byte[] { 0x01 });
             var machine = new TestMachine();
             var ex = Assert.ThrowsException<VirtualProcessorException>(() => machine.Execute(context));
             Assert.AreEqual(0, ex.InstructionPointer);
@@ -277,7 +297,7 @@ namespace UtilsTest.VirtualMachine
         public void Execute_IncompleteOperand_ThrowsVirtualProcessorException()
         {
             // Opcode [0x01, 0x01] (PUSH_BYTE) matches, but no operand byte follows.
-            var context = new DefaultContext([0x01, 0x01]);
+            var context = new DefaultContext(new byte[] { 0x01, 0x01 });
             var machine = new TestMachine();
             var ex = Assert.ThrowsException<VirtualProcessorException>(() => machine.Execute(context));
             Assert.AreEqual(0, ex.InstructionPointer);
@@ -441,7 +461,7 @@ namespace UtilsTest.VirtualMachine
         public void ParameterlessInstruction_IsDispatched()
         {
             var machine = new NoopTestMachine();
-            var ctx = new DefaultContext([0xF0]);
+            var ctx = new DefaultContext(new byte[] { 0xF0 });
             machine.Execute(ctx);
             Assert.IsTrue(machine.NopExecuted);
         }
@@ -458,6 +478,112 @@ namespace UtilsTest.VirtualMachine
             machine.ExecuteStep(ctx); // NOP
             Assert.AreEqual(1, ctx.InstructionPointer);
             Assert.IsTrue(machine.NopExecuted);
+        }
+
+        // ── ReadSByte ─────────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void ReadSByte_PositiveValue_PushedCorrectly()
+        {
+            byte[] instructions = [0x30, 0x7F]; // PUSH_SBYTE 127
+            var context = new DefaultContext(instructions);
+            new SByteTestMachine().Execute(context);
+            Assert.AreEqual((sbyte)127, (sbyte)context.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void ReadSByte_NegativeValue_SignExtended()
+        {
+            byte[] instructions = [0x30, 0xFF]; // PUSH_SBYTE -1
+            var context = new DefaultContext(instructions);
+            new SByteTestMachine().Execute(context);
+            Assert.AreEqual((sbyte)-1, (sbyte)context.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void ReadSByte_BigEndian_SameResultAsLittleEndian()
+        {
+            // sbyte is one byte — endianness has no effect
+            var readerLE = NumberReader.GetReader(littleEndian: true);
+            var readerBE = NumberReader.GetReader(littleEndian: false);
+            byte[] data = [0x80]; // -128 as sbyte
+            Assert.AreEqual(readerLE.ReadSByte(new DefaultContext(data)),
+                            readerBE.ReadSByte(new DefaultContext(data)));
+        }
+
+        // ── TypedStackContext<TValue> ─────────────────────────────────────────
+
+        [TestMethod]
+        public void TypedStackContext_PushAndAdd_ReturnsCorrectSum()
+        {
+            byte[] prog = [
+                0x40, 0x0A, 0, 0, 0,  // PUSH_INT 10
+                0x40, 0x05, 0, 0, 0,  // PUSH_INT 5
+                0x41                   // ADD_INT
+            ];
+            var ctx = new TypedStackContext<int>(prog);
+            new IntMachine().Execute(ctx);
+            Assert.AreEqual(15, ctx.Stack.Peek());
+        }
+
+        // ── RegisterInstruction with overwrite ───────────────────────────────
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_ReplacesHandler()
+        {
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xFF], "OLD", _ => { });
+            int newCount = 0;
+            machine.RegisterInstruction([0xFF], "NEW", _ => newCount++, overwrite: true);
+
+            var context = new DefaultContext(new byte[] { 0xFF });
+            machine.Execute(context);
+            Assert.AreEqual(1, newCount);
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_UpdatesName()
+        {
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xFF], "OLD", _ => { });
+            machine.RegisterInstruction([0xFF], "NEW", _ => { }, overwrite: true);
+            Assert.IsTrue(machine.Instructions.Any(i => i.Name == "NEW"));
+            Assert.IsFalse(machine.Instructions.Any(i => i.Name == "OLD"));
+        }
+
+        // ── InstructionName in VirtualProcessorException ──────────────────────
+
+        [TestMethod]
+        public void Execute_IncompleteOperand_ExceptionContainsInstructionName()
+        {
+            // PUSH_BYTE matches [0x01, 0x01] but operand byte is missing
+            var context = new DefaultContext(new byte[] { 0x01, 0x01 });
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => new TestMachine().Execute(context));
+            Assert.AreEqual("PUSH_BYTE", ex.InstructionName);
+        }
+
+        [TestMethod]
+        public void Execute_UnknownOpcode_InstructionNameIsNull()
+        {
+            // Unknown opcode: no instruction matched, so no name is available
+            var context = new DefaultContext(new byte[] { 0xAA });
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => new TestMachine().Execute(context));
+            Assert.IsNull(ex.InstructionName);
+        }
+
+        // ── Context.Data as ReadOnlyMemory<byte> ─────────────────────────────
+
+        [TestMethod]
+        public void Context_Data_AcceptsMemorySlice()
+        {
+            // Execute only a slice of a larger byte array without copying
+            byte[] backing = [0x00, 0x01, 0x01, 0x42, 0x00]; // [padding, PUSH_BYTE, operand, padding]
+            var memory = new ReadOnlyMemory<byte>(backing, 1, 3);
+            var context = new DefaultContext(memory);
+            new TestMachine().Execute(context);
+            Assert.AreEqual((byte)0x42, context.Stack.Peek());
         }
     }
 

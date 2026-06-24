@@ -17,6 +17,13 @@ public interface INumberReader
     byte ReadByte(Context context);
 
     /// <summary>
+    /// Reads a single signed byte from the supplied <paramref name="context"/>.
+    /// </summary>
+    /// <param name="context">The execution context containing the instruction stream.</param>
+    /// <returns>The next <see cref="sbyte"/> available in the context.</returns>
+    sbyte ReadSByte(Context context);
+
+    /// <summary>
     /// Reads a 16-bit signed integer from the supplied <paramref name="context"/>.
     /// </summary>
     /// <param name="context">The execution context containing the instruction stream.</param>
@@ -145,12 +152,16 @@ internal class NormalReader : INumberReader
 {
     /// <inheritdoc />
     public byte ReadByte(Context context)
-        => context.Data[context.InstructionPointer++];
+        => context.Data.Span[context.InstructionPointer++];
+
+    /// <inheritdoc />
+    public sbyte ReadSByte(Context context)
+        => (sbyte)context.Data.Span[context.InstructionPointer++];
 
     /// <inheritdoc />
     public short ReadInt16(Context context)
     {
-        var result = MemoryMarshal.Read<short>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<short>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(short);
         return result;
     }
@@ -158,7 +169,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public int ReadInt32(Context context)
     {
-        var result = MemoryMarshal.Read<int>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<int>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(int);
         return result;
     }
@@ -166,7 +177,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public long ReadInt64(Context context)
     {
-        var result = MemoryMarshal.Read<long>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<long>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(long);
         return result;
     }
@@ -174,7 +185,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public ushort ReadUInt16(Context context)
     {
-        var result = MemoryMarshal.Read<ushort>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<ushort>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(ushort);
         return result;
     }
@@ -182,7 +193,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public uint ReadUInt32(Context context)
     {
-        var result = MemoryMarshal.Read<uint>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<uint>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(uint);
         return result;
     }
@@ -190,7 +201,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public ulong ReadUInt64(Context context)
     {
-        var result = MemoryMarshal.Read<ulong>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<ulong>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(ulong);
         return result;
     }
@@ -198,7 +209,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public float ReadSingle(Context context)
     {
-        var result = MemoryMarshal.Read<float>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<float>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(float);
         return result;
     }
@@ -206,7 +217,7 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public double ReadDouble(Context context)
     {
-        var result = MemoryMarshal.Read<double>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<double>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(double);
         return result;
     }
@@ -220,12 +231,15 @@ internal class NormalReader : INumberReader
 internal class InvertedReader : INumberReader
 {
     /// <inheritdoc />
-    public byte ReadByte(Context context) => context.Data[context.InstructionPointer++];
+    public byte ReadByte(Context context) => context.Data.Span[context.InstructionPointer++];
+
+    /// <inheritdoc />
+    public sbyte ReadSByte(Context context) => (sbyte)context.Data.Span[context.InstructionPointer++];
 
     /// <inheritdoc />
     public short ReadInt16(Context context)
     {
-        var result = MemoryMarshal.Read<short>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<short>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(short);
         return BinaryPrimitives.ReverseEndianness(result);
     }
@@ -233,7 +247,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public int ReadInt32(Context context)
     {
-        var result = MemoryMarshal.Read<int>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<int>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(int);
         return BinaryPrimitives.ReverseEndianness(result);
     }
@@ -241,7 +255,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public long ReadInt64(Context context)
     {
-        var result = MemoryMarshal.Read<long>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<long>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(long);
         return BinaryPrimitives.ReverseEndianness(result);
     }
@@ -249,7 +263,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public ushort ReadUInt16(Context context)
     {
-        var result = MemoryMarshal.Read<ushort>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<ushort>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(ushort);
         return BinaryPrimitives.ReverseEndianness(result);
     }
@@ -257,7 +271,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public uint ReadUInt32(Context context)
     {
-        var result = MemoryMarshal.Read<uint>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<uint>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(uint);
         return BinaryPrimitives.ReverseEndianness(result);
     }
@@ -265,7 +279,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public ulong ReadUInt64(Context context)
     {
-        var result = MemoryMarshal.Read<ulong>(context.Data.AsSpan(context.InstructionPointer));
+        var result = MemoryMarshal.Read<ulong>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(ulong);
         return BinaryPrimitives.ReverseEndianness(result);
     }
@@ -273,7 +287,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public float ReadSingle(Context context)
     {
-        var bits = MemoryMarshal.Read<uint>(context.Data.AsSpan(context.InstructionPointer));
+        var bits = MemoryMarshal.Read<uint>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(float);
         return BitConverter.UInt32BitsToSingle(BinaryPrimitives.ReverseEndianness(bits));
     }
@@ -281,7 +295,7 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public double ReadDouble(Context context)
     {
-        var bits = MemoryMarshal.Read<ulong>(context.Data.AsSpan(context.InstructionPointer));
+        var bits = MemoryMarshal.Read<ulong>(context.Data.Span[context.InstructionPointer..]);
         context.InstructionPointer += sizeof(double);
         return BitConverter.UInt64BitsToDouble(BinaryPrimitives.ReverseEndianness(bits));
     }

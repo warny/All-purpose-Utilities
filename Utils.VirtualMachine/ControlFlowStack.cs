@@ -174,8 +174,8 @@ public class ControlFlowContext : DefaultContext
     /// <summary>
     /// Initializes a new instance with the given instruction stream and a fresh <see cref="ControlFlowStack"/>.
     /// </summary>
-    /// <param name="data">The byte array containing the instruction stream.</param>
-    public ControlFlowContext(byte[] data) : base(data)
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    public ControlFlowContext(ReadOnlyMemory<byte> data) : base(data)
     {
         ControlFlow = new ControlFlowStack();
     }
@@ -184,10 +184,10 @@ public class ControlFlowContext : DefaultContext
     /// Initializes a new instance with the given instruction stream and a caller-supplied
     /// <see cref="ControlFlowStack"/>, allowing pre-configuration or substitution.
     /// </summary>
-    /// <param name="data">The byte array containing the instruction stream.</param>
+    /// <param name="data">The byte data containing the instruction stream.</param>
     /// <param name="controlFlow">The control flow stack to use.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="controlFlow"/> is <see langword="null"/>.</exception>
-    public ControlFlowContext(byte[] data, ControlFlowStack controlFlow) : base(data)
+    public ControlFlowContext(ReadOnlyMemory<byte> data, ControlFlowStack controlFlow) : base(data)
     {
         ControlFlow = controlFlow ?? throw new ArgumentNullException(nameof(controlFlow));
     }
@@ -204,24 +204,43 @@ public class FullContext : DefaultContext
     public ICallStack CallStack { get; }
 
     /// <summary>Gets the control flow stack managing open structured blocks.</summary>
-    public ControlFlowStack ControlFlow { get; } = new();
+    public ControlFlowStack ControlFlow { get; }
 
     /// <summary>
-    /// Initializes a new instance with a default <see cref="CallStack"/>.
+    /// Initializes a new instance with a default <see cref="CallStack"/> and a fresh <see cref="ControlFlowStack"/>.
     /// </summary>
-    /// <param name="data">The byte array containing the instruction stream.</param>
-    public FullContext(byte[] data) : base(data)
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    public FullContext(ReadOnlyMemory<byte> data) : base(data)
     {
         CallStack = new CallStack();
+        ControlFlow = new ControlFlowStack();
     }
 
     /// <summary>
-    /// Initializes a new instance with a caller-supplied <see cref="ICallStack"/> implementation.
+    /// Initializes a new instance with a caller-supplied <see cref="ICallStack"/> implementation
+    /// and a fresh <see cref="ControlFlowStack"/>.
     /// </summary>
-    /// <param name="data">The byte array containing the instruction stream.</param>
+    /// <param name="data">The byte data containing the instruction stream.</param>
     /// <param name="callStack">The call stack to use.</param>
-    public FullContext(byte[] data, ICallStack callStack) : base(data)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="callStack"/> is <see langword="null"/>.</exception>
+    public FullContext(ReadOnlyMemory<byte> data, ICallStack callStack) : base(data)
     {
         CallStack = callStack ?? throw new ArgumentNullException(nameof(callStack));
+        ControlFlow = new ControlFlowStack();
+    }
+
+    /// <summary>
+    /// Initializes a new instance with caller-supplied <see cref="ICallStack"/> and
+    /// <see cref="ControlFlowStack"/> implementations, allowing full substitution for testing
+    /// or pre-configuration.
+    /// </summary>
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    /// <param name="callStack">The call stack to use.</param>
+    /// <param name="controlFlow">The control flow stack to use.</param>
+    /// <exception cref="ArgumentNullException">Thrown when either argument is <see langword="null"/>.</exception>
+    public FullContext(ReadOnlyMemory<byte> data, ICallStack callStack, ControlFlowStack controlFlow) : base(data)
+    {
+        CallStack = callStack ?? throw new ArgumentNullException(nameof(callStack));
+        ControlFlow = controlFlow ?? throw new ArgumentNullException(nameof(controlFlow));
     }
 }

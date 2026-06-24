@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using Utils.VirtualMachine;
 
 namespace UtilsTest.VirtualMachine;
 
-// ── Test processor wiring CALL/RET against CallStackContext ──────────────────
+// â”€â”€ Test processor wiring CALL/RET against CallStackContext â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 public class CallMachine : VirtualProcessor<CallStackContext>
 {
@@ -34,12 +34,12 @@ public class CallMachine : VirtualProcessor<CallStackContext>
     void Halt(CallStackContext ctx) => ctx.InstructionPointer = ctx.Data.Length;
 }
 
-// ── Unit tests ────────────────────────────────────────────────────────────────
+// â”€â”€ Unit tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 [TestClass]
 public class CallStackTests
 {
-    // ── ICallStack contract: CallStack ────────────────────────────────────────
+    // â”€â”€ ICallStack contract: CallStack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void CallStack_Call_IncrementsDepth()
@@ -127,7 +127,7 @@ public class CallStackTests
         Assert.AreEqual(99, cs.CurrentFrame!.ReturnAddress);
     }
 
-    // ── CallFrame local variables ─────────────────────────────────────────────
+    // â”€â”€ CallFrame local variables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void CallFrame_SetLocal_CanBeRetrievedTyped()
@@ -183,7 +183,7 @@ public class CallStackTests
         Assert.AreEqual(1, prev);
     }
 
-    // ── ICallStack.CurrentFrame via SimpleCallStack ───────────────────────────
+    // â”€â”€ ICallStack.CurrentFrame via SimpleCallStack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void SimpleCallStack_CurrentFrame_AlwaysNull()
@@ -193,7 +193,7 @@ public class CallStackTests
         Assert.IsNull(cs.CurrentFrame);
     }
 
-    // ── CallFrame.GetLocal<T> throwing variant ────────────────────────────────
+    // â”€â”€ CallFrame.GetLocal<T> throwing variant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void CallFrame_GetLocal_ReturnsTypedValue()
@@ -221,7 +221,7 @@ public class CallStackTests
         Assert.ThrowsException<KeyNotFoundException>(() => cs.CurrentFrame.GetLocal<string>("x"));
     }
 
-    // ── ICallStack contract: SimpleCallStack ──────────────────────────────────
+    // â”€â”€ ICallStack contract: SimpleCallStack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void SimpleCallStack_Call_IncrementsDepth()
@@ -270,12 +270,12 @@ public class CallStackTests
         Assert.AreEqual(5, cs.MaxDepth);
     }
 
-    // ── CallStackContext ──────────────────────────────────────────────────────
+    // â”€â”€ CallStackContext â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void CallStackContext_DefaultCtor_UsesCallStack()
     {
-        var ctx = new CallStackContext([]);
+        var ctx = new CallStackContext(new byte[0]);
         Assert.IsInstanceOfType<CallStack>(ctx.CallStack);
     }
 
@@ -283,17 +283,17 @@ public class CallStackTests
     public void CallStackContext_CustomCtor_UsesProvidedStack()
     {
         var simple = new SimpleCallStack();
-        var ctx = new CallStackContext([], simple);
+        var ctx = new CallStackContext(new byte[0], simple);
         Assert.AreSame(simple, ctx.CallStack);
     }
 
     [TestMethod]
     public void CallStackContext_CustomCtor_NullStack_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new CallStackContext([], null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new CallStackContext(new byte[0], null!));
     }
 
-    // ── Integration: CALL / RET in a VirtualProcessor ────────────────────────
+    // â”€â”€ Integration: CALL / RET in a VirtualProcessor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [TestMethod]
     public void Integration_Call_JumpsToSubroutine_ReturnRestoresIP()
@@ -301,12 +301,12 @@ public class CallStackTests
         // Layout (little-endian, 14 bytes total):
         //   0: CALL 0xC0
         //   1-4: target = 8 (jump to subroutine)
-        //        → after operand read: IP=5, return addr = 5
+        //        â†’ after operand read: IP=5, return addr = 5
         //   5: HALT 0xFF
         //   6-7: (padding, never reached)
         //   8: PUSH_INT 0x01
         //   9-12: 99 (int operand)
-        //   13: RET 0xC1  → pops 5, sets IP=5 → HALT
+        //   13: RET 0xC1  â†’ pops 5, sets IP=5 â†’ HALT
         byte[] program =
         [
             0xC0, 8, 0, 0, 0,   // CALL 8  (bytes 0-4)
@@ -327,10 +327,10 @@ public class CallStackTests
     public void Integration_NestedCalls_UnwindCorrectly()
     {
         // Layout:
-        //   0: CALL → 10    (return to 5)
+        //   0: CALL â†’ 10    (return to 5)
         //   5: HALT
         //   6-9: padding
-        //  10: CALL → 20   (return to 15)
+        //  10: CALL â†’ 20   (return to 15)
         //  15: RET          (return to 5)
         //  16-19: padding
         //  20: PUSH_INT 7
@@ -376,7 +376,7 @@ public class CallStackTests
     public void Integration_Ret_OnEmptyStack_TerminatesExecution()
     {
         // RET with an empty call stack yields IP = -1; the Execute loop stops.
-        // Program: RET (0xC1) — no prior CALL.
+        // Program: RET (0xC1) â€” no prior CALL.
         byte[] program = [0xC1];
         var ctx = new CallStackContext(program);
         new CallMachine().Execute(ctx);
