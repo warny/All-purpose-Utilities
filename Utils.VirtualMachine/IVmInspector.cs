@@ -8,8 +8,11 @@ namespace Utils.VirtualMachine;
 /// <typeparam name="T">The context type, constrained to <see cref="Context"/>.</typeparam>
 /// <remarks>
 /// <see cref="OnBreakpoint"/> is called first (when applicable), then <see cref="BeforeInstruction"/>
-/// for the same step. Both callbacks fire before the instruction handler runs, so the context
-/// (including <see cref="Context.InstructionPointer"/>) may be modified before dispatch.
+/// for the same step. Both callbacks fire before the instruction handler runs and before the
+/// instruction pointer is advanced past the opcode bytes. If either callback changes
+/// <see cref="Context.InstructionPointer"/>, the processor skips the current instruction and
+/// resumes from the new address — this is the supported way to redirect or halt execution from
+/// inside an inspector callback.
 /// </remarks>
 public interface IVmInspector<in T> where T : Context
 {

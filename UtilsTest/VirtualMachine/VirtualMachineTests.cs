@@ -733,6 +733,41 @@ namespace UtilsTest.VirtualMachine
             machine.Execute(new DefaultContext(program));
             Assert.IsTrue(machine.NopExecuted);
         }
+
+        [TestMethod]
+        public void Inspector_RedirectIpInBeforeInstruction_SkipsDispatch()
+        {
+            // If BeforeInstruction changes IP, the instruction must not be dispatched.
+            var machine = new InspectorMachine();
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => ctx.InstructionPointer = ctx.Data.Length,
+                onBreakpoint: (ctx, addr, name) => { }
+            );
+
+            byte[] program = [0x01]; // PUSH_A would push 5 — must not run
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+
+            Assert.AreEqual(0, ctx.Stack.Count);
+        }
+
+        [TestMethod]
+        public void Inspector_RedirectIpInOnBreakpoint_SkipsDispatch()
+        {
+            // If OnBreakpoint changes IP, the instruction must not be dispatched.
+            var machine = new InspectorMachine();
+            machine.Breakpoints.Add(0);
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => { },
+                onBreakpoint: (ctx, addr, name) => ctx.InstructionPointer = ctx.Data.Length
+            );
+
+            byte[] program = [0x01]; // PUSH_A would push 5 — must not run
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx);
+
+            Assert.AreEqual(0, ctx.Stack.Count);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

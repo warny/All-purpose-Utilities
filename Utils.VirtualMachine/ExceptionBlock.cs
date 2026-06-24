@@ -48,6 +48,15 @@ public sealed class ExceptionBlock : IControlFlowBlock
     public int? PendingCatchAddress { get; internal set; }
 
     /// <summary>
+    /// <see langword="true"/> when an exception is currently in flight through this block —
+    /// set by <see cref="ControlFlowStack.Throw"/> and consumed by
+    /// <see cref="ControlFlowStack.EndFinally"/> to propagate the exception to outer handlers
+    /// once the finally block completes.
+    /// <see langword="false"/> when the finally block was entered during normal (non-exception) execution.
+    /// </summary>
+    internal bool ExceptionInFlight { get; set; }
+
+    /// <summary>
     /// Initializes a new exception block.
     /// </summary>
     /// <param name="startAddress">Address of the TRY instruction.</param>

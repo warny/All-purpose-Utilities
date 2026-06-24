@@ -764,6 +764,84 @@ public class ControlFlowStackTests
     }
 
     [TestMethod]
+    public void EndFinally_FinallyOnly_ExceptionInFlight_PropagatesThrowToOuterHandler()
+    {
+        // Inner try/finally-only sits inside outer try/catch.
+        // After THROW lands in the inner finally, ENDFINALLY should propagate to the outer catch.
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[50]);
+        cfs.PushException(startAddress: 0, catchAddress: 40, finallyAddress: null); // outer try/catch
+        cfs.PushException(startAddress: 5, catchAddress: null, finallyAddress: 20); // inner try/finally-only
+
+        bool thrown = cfs.Throw(ctx, "error");
+        Assert.IsTrue(thrown);
+        Assert.AreEqual(20, ctx.InstructionPointer); // redirected to inner finally
+
+        // ENDFINALLY — should propagate exception to outer catch
+        bool result = cfs.EndFinally(ctx);
+        Assert.IsTrue(result);
+        Assert.AreEqual(40, ctx.InstructionPointer); // redirected to outer catch
+        Assert.AreEqual(1, cfs.Depth);               // outer block remains
+    }
+
+    [TestMethod]
+    public void EndFinally_FinallyOnly_NoExceptionInFlight_PopsBlock()
+    {
+        // Finally entered normally (no throw) — ENDFINALLY should just pop and return false.
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[50]);
+        cfs.PushException(startAddress: 0, catchAddress: null, finallyAddress: 20);
+
+        // Manually jump into the finally without going through Throw (no exception in flight).
+        ctx.InstructionPointer = 20;
+
+        bool result = cfs.EndFinally(ctx);
+        Assert.IsFalse(result);
+        Assert.AreEqual(0, cfs.Depth);
+        Assert.AreEqual(20, ctx.InstructionPointer); // unchanged
+    }
+
+    [TestMethod]
+    public void Integration_ThrowInFinallyOnly_PropagatesThrowToOuterCatch()
+    {
+        // Layout:
+        //  0: TRY catch=28       [0x30, 28,0,0,0]              5 bytes
+        //  5: TRY_FINALLY f=22   [0x35, 22,0,0,0]              5 bytes → addr 10
+        // 10: PUSH_INT 99        [0x01, 99,0,0,0]              5 bytes → addr 15
+        // 15: THROW              [0x31]                         1 byte  → addr 16 (dead)
+        // 16: PUSH_INT 0 (dead)  [0x01, 0,0,0,0]               5 bytes → addr 21
+        // 21: HALT (dead)        [0xFF]                         1 byte  → addr 22
+        // 22: PUSH_INT 1 (finally marker) [0x01, 1,0,0,0]      5 bytes → addr 27
+        // 27: ENDFINALLY         [0x34]    → propagates to outer catch → IP=28
+        // 28: PUSH_INT 2 (catch marker)   [0x01, 2,0,0,0]      5 bytes → addr 33
+        // 33: ENDTRY             [0x32]                         1 byte  → addr 34
+        // 34: HALT               [0xFF]
+        byte[] program =
+        [
+            0x30, 28, 0, 0, 0,        //  0: TRY catch=28
+            0x35, 22, 0, 0, 0,        //  5: TRY_FINALLY finally=22
+            0x01, 99, 0, 0, 0,        // 10: PUSH_INT 99
+            0x31,                      // 15: THROW → IP=22 (inner finally)
+            0x01, 0, 0, 0, 0,         // 16: dead
+            0xFF,                      // 21: HALT (dead)
+            0x01, 1, 0, 0, 0,         // 22: PUSH_INT 1 (finally marker)
+            0x34,                      // 27: ENDFINALLY → propagates to outer catch → IP=28
+            0x01, 2, 0, 0, 0,         // 28: PUSH_INT 2 (catch marker)
+            0x32,                      // 33: ENDTRY
+            0xFF                       // 34: HALT
+        ];
+
+        var ctx = new ControlFlowContext(program);
+        new ControlFlowTestMachine().Execute(ctx);
+
+        Assert.AreEqual(0, ctx.ControlFlow.Depth);
+        var stack = ctx.Stack.ToArray(); // top is index 0
+        Assert.AreEqual(2, stack.Length);
+        Assert.AreEqual(2, (int)stack[0]); // catch marker (top)
+        Assert.AreEqual(1, (int)stack[1]); // finally marker
+    }
+
+    [TestMethod]
     public void Integration_ThrowWithFinallyOnly_RunsFinally()
     {
         // Layout:

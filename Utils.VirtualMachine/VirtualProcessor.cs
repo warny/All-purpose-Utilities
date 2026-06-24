@@ -384,8 +384,11 @@ public abstract class VirtualProcessor<T> where T : Context
         byte firstByte = context.Data.Span[instructionStart];
         if (_fastLookup[firstByte] is { } fast)
         {
-            context.InstructionPointer++;
             NotifyInspector(context, instructionStart, fast.Name);
+            // If the inspector redirected execution (e.g. a breakpoint handler jumped away),
+            // skip this instruction entirely to honour the new instruction pointer.
+            if (context.InstructionPointer != instructionStart) return;
+            context.InstructionPointer++;
             try
             {
                 fast.Handler(context);
@@ -405,7 +408,10 @@ public abstract class VirtualProcessor<T> where T : Context
             var segment = new ArraySegment<byte>(_buffer, 0, _bufferLength);
             if (InstructionsSet.TryGetValue(segment, out var entry))
             {
+                int afterOpcodeIp = context.InstructionPointer;
                 NotifyInspector(context, instructionStart, entry.Name);
+                // Same guard: inspector may redirect before operands are consumed.
+                if (context.InstructionPointer != afterOpcodeIp) return;
                 try
                 {
                     entry.Handler(context);

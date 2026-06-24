@@ -128,13 +128,17 @@ public class ControlFlowStack
     /// <see cref="Throw"/> call when both <see cref="ExceptionBlock.CatchAddress"/> and
     /// <see cref="ExceptionBlock.FinallyAddress"/> were set), redirects
     /// <see cref="Context.InstructionPointer"/> to that catch handler and clears the pending
-    /// address. Otherwise, pops the <see cref="ExceptionBlock"/> from the stack (finally-only
-    /// scenario where no catch needs to run).
+    /// address. When no pending catch is present but an exception is in flight (finally-only
+    /// block, or the innermost finally in a nested try), pops the block and propagates the
+    /// exception to the next outer handler by calling <see cref="Throw"/> recursively.
+    /// Otherwise, simply pops the block (normal exit from a try/finally without an exception).
     /// </summary>
     /// <param name="context">The current execution context.</param>
     /// <returns>
-    /// <see langword="true"/> if execution was redirected to a pending catch handler;
-    /// <see langword="false"/> if the exception block was popped (no pending catch).
+    /// <see langword="true"/> if execution was redirected to a catch handler (either a pending
+    /// one on this block or an outer one found via propagation);
+    /// <see langword="false"/> if the block was popped with no handler to redirect to
+    /// (normal exit, or unhandled exception that reached the top of the control-flow stack).
     /// </returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the innermost open block is not an <see cref="ExceptionBlock"/>.
@@ -150,6 +154,8 @@ public class ControlFlowStack
                 return true;
             }
             _blocks.Pop();
+            if (ex.ExceptionInFlight)
+                return Throw(context, ex.ThrownValue);
             return false;
         }
         throw new InvalidOperationException("ENDFINALLY used outside of an exception block.");
@@ -193,6 +199,7 @@ public class ControlFlowStack
             if (block is ExceptionBlock ex)
             {
                 ex.ThrownValue = value;
+                ex.ExceptionInFlight = true;
                 _blocks.Push(ex);
                 if (ex.FinallyAddress.HasValue)
                 {
