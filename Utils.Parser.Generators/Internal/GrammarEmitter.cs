@@ -22,6 +22,7 @@ internal static class GrammarEmitter
     /// <param name="namespaceName">Namespace for the generated class (may be empty).</param>
     /// <param name="className">Class name for the generated partial class.</param>
     /// <param name="sourceFileName">Original .g4 file name, used in the header comment.</param>
+    /// <param name="embeddedCodeTransformer">Optional parser embedded-code transformer.</param>
     public static string Emit(
         G4Grammar grammar,
         string namespaceName,
@@ -189,7 +190,7 @@ internal static class GrammarEmitter
 
         sb.AppendLine("}");
         sb.AppendLine();
-        EmitExecutionContext(sb, embeddedHooks, lifecycleHooks, parserMembers, className, sourceFileName);
+        EmitExecutionContext(sb, embeddedHooks, lifecycleHooks, parserMembers, className, sourceFileName, grammar, embeddedCodeTransformer);
         EmitParserFooters(sb, parserFooters, grammar, embeddedCodeTransformer);
 
         return sb.ToString();
@@ -513,13 +514,17 @@ internal static class GrammarEmitter
     /// <param name="parserMembers">Parser members blocks to inject verbatim.</param>
     /// <param name="className">Generated grammar class name.</param>
     /// <param name="sourceFileName">Original .g4 file name, used in generated XML documentation.</param>
+    /// <param name="grammar">Parsed grammar AST used for transformer context.</param>
+    /// <param name="embeddedCodeTransformer">Parser embedded-code transformer used for parser members.</param>
     private static void EmitExecutionContext(
         StringBuilder sb,
         IReadOnlyList<EmbeddedCodeHook> hooks,
         IReadOnlyList<LifecycleHook> lifecycleHooks,
         IReadOnlyList<G4GrammarAction> parserMembers,
         string className,
-        string sourceFileName)
+        string sourceFileName,
+        G4Grammar grammar,
+        IParserEmbeddedCodeTransformer embeddedCodeTransformer)
     {
         var predicates = hooks.Where(static hook => hook.IsPredicate).ToList();
         var actions = hooks.Where(static hook => !hook.IsPredicate).ToList();
@@ -529,7 +534,7 @@ internal static class GrammarEmitter
         sb.AppendLine("[global::System.CodeDom.Compiler.GeneratedCode(\"Utils.Parser.Generators\", \"0.1.0\")]");
         sb.AppendLine($"internal sealed partial class {contextClassName}");
         sb.AppendLine("{");
-        EmitParserMembers(sb, parserMembers);
+        EmitParserMembers(sb, parserMembers, grammar, embeddedCodeTransformer);
         sb.AppendLine("    /// <summary>Creates a copied execution context that can be used by future speculative parser execution paths.</summary>");
         sb.AppendLine("    /// <remarks>The copy follows <c>ParserExecutionContextCopier&lt;TContext&gt;</c> semantics.</remarks>");
         sb.AppendLine($"    /// <returns>A copied <see cref=\"{contextClassName}\"/> instance.</returns>");
@@ -1918,7 +1923,7 @@ internal static class GrammarEmitter
             return Array.Empty<ParserEmbeddedRuleDeclarationDescriptor>();
         }
 
-        return rawDeclarations.Split(',')
+        return rawDeclarations!.Split(',')
             .Select(static declaration => declaration.Trim())
             .Where(static declaration => declaration.Length > 0)
             .Select(static declaration => new ParserEmbeddedRuleDeclarationDescriptor
@@ -2018,6 +2023,7 @@ internal static class GrammarEmitter
     /// Only parser rules are considered; lexer rule lifecycle hooks are not generated.
     /// </summary>
     /// <param name="grammar">Parsed grammar AST.</param>
+    /// <param name="transformer">Parser embedded-code transformer used for lifecycle action bodies.</param>
     /// <returns>Deterministic lifecycle hook metadata for parser rules.</returns>
     private static IReadOnlyList<LifecycleHook> CollectLifecycleHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
@@ -2058,6 +2064,8 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="parserHeaders">Parser header blocks to inject.</param>
+    /// <param name="grammar">Parsed grammar AST used for transformer context.</param>
+    /// <param name="transformer">Parser embedded-code transformer used for parser headers.</param>
     private static void EmitParserHeaders(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserHeaders, G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         foreach (var header in parserHeaders)
@@ -2090,6 +2098,8 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="parserFooters">Parser footer blocks to inject.</param>
+    /// <param name="grammar">Parsed grammar AST used for transformer context.</param>
+    /// <param name="transformer">Parser embedded-code transformer used for parser footers.</param>
     private static void EmitParserFooters(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserFooters, G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         foreach (var footer in parserFooters)
@@ -2123,12 +2133,15 @@ internal static class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="parserMembers">Parser members blocks to inject.</param>
-    private static void EmitParserMembers(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserMembers)
+    /// <param name="grammar">Parsed grammar AST used for transformer context.</param>
+    /// <param name="transformer">Parser embedded-code transformer used for parser members.</param>
+    private static void EmitParserMembers(StringBuilder sb, IReadOnlyList<G4GrammarAction> parserMembers, G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         foreach (var members in parserMembers)
         {
+            string code = TransformEmbeddedCode(transformer, members.RawCode, ParserEmbeddedCodeLocation.ParserMembers, grammar, null);
             sb.AppendLine("    // <auto-generated-parser-members>");
-            foreach (string line in SplitEmbeddedCodeLines(members.RawCode))
+            foreach (string line in SplitEmbeddedCodeLines(code))
             {
                 sb.AppendLine($"    {line}");
             }
@@ -2141,6 +2154,7 @@ internal static class GrammarEmitter
     /// Collects parser-rule embedded predicates and inline actions using indexes aligned with the parser runtime.
     /// </summary>
     /// <param name="grammar">Parsed grammar AST.</param>
+    /// <param name="transformer">Parser embedded-code transformer used for inline action and predicate bodies.</param>
     /// <returns>Deterministic hook metadata for embedded parser code.</returns>
     private static IReadOnlyList<EmbeddedCodeHook> CollectEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {

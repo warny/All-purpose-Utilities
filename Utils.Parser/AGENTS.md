@@ -99,6 +99,8 @@ ANTLR-style local writes are implemented only in the optional C# transformer. Do
 
 ANTLR-style return writes are implemented only in the optional C# transformer. Runtime support must use parser-managed frame return state and must not add target-language rewrite logic to parser/generator core.
 
+Parser named actions are parser-side only unless explicitly implemented for lexer code. Keep `@parser::members` emission inside the generated parser execution context/class. Do not move target-language rewriting into parser/generator core. ANTLR-style `$...` current-rule attribute rewriting applies to parser actions/lifecycle code only, not parser members/header/footer content.
+
 Dynamic embedded code must be transformed before being passed to the existing compiler/preparer mechanism. Do not introduce a parallel compiler abstraction.
 
 ## Parser architecture boundaries

@@ -153,7 +153,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @lexer::footer action");
         string generatedSource = GetGeneratedSource(grammar);
 
-        StringAssert.Contains(diagnostic.GetMessage(), "parser @footer");
+        StringAssert.Contains(diagnostic.GetMessage(), "Lexer named action '@lexer::footer' is not supported by this generator.");
         AssertNoFooterInjectedDiagnostics(diagnostics);
         Assert.IsFalse(generatedSource.Contains("LexerFooterHelper", StringComparison.Ordinal));
     }
@@ -350,7 +350,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         var diagnostics = RunGenerator(grammar);
         var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @lexer::members action");
 
-        StringAssert.Contains(diagnostic.GetMessage(), "metadata-only");
+        StringAssert.Contains(diagnostic.GetMessage(), "Lexer named action '@lexer::members' is not supported by this generator.");
         AssertNoMembersInjectedDiagnostics(diagnostics);
     }
 
@@ -375,7 +375,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @lexer::header action");
         string generatedSource = GetGeneratedSource(grammar);
 
-        StringAssert.Contains(diagnostic.GetMessage(), "metadata-only");
+        StringAssert.Contains(diagnostic.GetMessage(), "Lexer named action '@lexer::header' is not supported by this generator.");
         AssertNoHeaderInjectedDiagnostics(diagnostics);
         Assert.IsFalse(generatedSource.Contains("using System.Text;", StringComparison.Ordinal));
     }
@@ -681,6 +681,79 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         Assert.IsFalse(
             diagnostics.Any(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedHeaderInjectedByGenerator.Code),
             string.Join(Environment.NewLine, diagnostics));
+    }
+
+
+    /// <summary>
+    /// Ensures unsupported lexer named actions report deterministic messages and are not injected into parser source.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("header", "// lexer header")]
+    [DataRow("members", "// lexer members")]
+    [DataRow("footer", "// lexer footer")]
+    public void GeneratorDiagnostics_LexerNamedActions_ReportDeterministicDiagnostic(string actionName, string marker)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            @lexer::{{actionName}} {
+                {{marker}}
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostics = RunGenerator(grammar);
+        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, $"Grammar @lexer::{actionName} action");
+        string generatedSource = GetGeneratedSource(grammar);
+
+        StringAssert.Contains(diagnostic.GetMessage(), $"Lexer named action '@lexer::{actionName}' is not supported by this generator.");
+        Assert.IsFalse(generatedSource.Contains(marker, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Ensures unknown named-action scopes report deterministic diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_UnknownNamedActionScope_ReportsDeterministicDiagnostic()
+    {
+        const string grammar = """
+            grammar P;
+
+            @tree::members {
+                // tree
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @tree::members action");
+
+        StringAssert.Contains(diagnostic.GetMessage(), "Named action scope '@tree::members' is not supported by this generator.");
+    }
+
+    /// <summary>
+    /// Ensures unknown parser named-action names report deterministic diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_UnknownParserNamedAction_ReportsDeterministicDiagnostic()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::custom {
+                // custom
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @parser::custom action");
+
+        StringAssert.Contains(diagnostic.GetMessage(), "Parser named action '@parser::custom' is not supported by this generator.");
     }
 
     /// <summary>

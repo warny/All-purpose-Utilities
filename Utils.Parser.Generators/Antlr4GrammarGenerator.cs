@@ -444,6 +444,24 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <returns>Construct-specific diagnostic reason.</returns>
     private static string FormatGrammarActionReason(G4GrammarAction action)
     {
+        if (string.Equals(action.Target, "lexer", StringComparison.Ordinal)
+            && (string.Equals(action.Name, "header", StringComparison.Ordinal)
+                || string.Equals(action.Name, "members", StringComparison.Ordinal)
+                || string.Equals(action.Name, "footer", StringComparison.Ordinal)))
+        {
+            return $"Lexer named action '@lexer::{action.Name}' is not supported by this generator.";
+        }
+
+        if (action.Target is not null && !string.Equals(action.Target, "parser", StringComparison.Ordinal))
+        {
+            return $"Named action scope '@{action.Target}::{action.Name}' is not supported by this generator.";
+        }
+
+        if (string.Equals(action.Target, "parser", StringComparison.Ordinal))
+        {
+            return $"Parser named action '@parser::{action.Name}' is not supported by this generator.";
+        }
+
         if (string.Equals(action.Name, "header", StringComparison.Ordinal))
         {
             return "This header action is not a parser @header block supported by generated C# source-file injection and remains metadata-only.";
