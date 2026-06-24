@@ -92,6 +92,10 @@ public class Scheduler<T> where T : Context
 
         foreach (var process in ready)
         {
+            // Recheck: a higher-priority process in this pass may have suspended or removed this one.
+            if (process.State != ProcessState.Ready || !_processes.Contains(process))
+                continue;
+
             process.SetState(ProcessState.Running);
             process.ClearYield();
 
@@ -114,9 +118,14 @@ public class Scheduler<T> where T : Context
                 }
             }
 
-            // Quantum exhausted without termination, yield, or suspension.
+            // Quantum exhausted without an explicit break; check whether the last instruction
+            // called Terminate() (IP < 0) or ran past the bytecode end (IP >= Data.Length).
             if (process.State == ProcessState.Running)
-                process.SetState(ProcessState.Ready);
+            {
+                bool contextDone = process.Context.InstructionPointer < 0
+                    || process.Context.InstructionPointer >= process.Context.Data.Length;
+                process.SetState(contextDone ? ProcessState.Terminated : ProcessState.Ready);
+            }
         }
 
         return true;

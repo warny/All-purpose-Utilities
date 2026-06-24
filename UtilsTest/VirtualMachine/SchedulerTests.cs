@@ -303,6 +303,62 @@ public class SchedulerTests
         Assert.AreEqual(ProcessState.Terminated, proc.State);
     }
 
+    // ── Quantum boundary termination ──────────────────────────────────────────
+
+    [TestMethod]
+    public void Step_ProcessTerminates_WhenHaltLandsOnLastQuantumSlot()
+    {
+        // HALT falls exactly on the last quantum slot: ExecuteStep returns true
+        // (it executed the instruction), so the loop ends naturally without hitting
+        // the early-break path. The scheduler must still detect the terminated context.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 2);
+        var proc = scheduler.AddProcess(Ctx(0x01, 0x00), Proc()); // STEP then HALT
+        scheduler.Step();
+        Assert.AreEqual(ProcessState.Terminated, proc.State);
+    }
+
+    // ── Cross-process interactions within a Step pass ─────────────────────────
+
+    [TestMethod]
+    public void Step_HighPriorityRemovesLow_LowDoesNotRunInSamePass()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var lowCtx = Ctx(0x01, 0x01, 0x01);
+        ScheduledProcess<DefaultContext>? lowProc = null;
+
+        var highProcessor = new CountingProcessor();
+        highProcessor.RegisterInstruction([0x01], "STEP", _ =>
+            scheduler.RemoveProcess(lowProc!.ProcessId), overwrite: true);
+
+        scheduler.AddProcess(Ctx(0x01, 0x00), highProcessor, priority: 10);
+        lowProc = scheduler.AddProcess(lowCtx, Proc(), priority: 0);
+
+        scheduler.Step();
+
+        Assert.AreEqual(0, lowCtx.Stack.Count);
+        Assert.IsFalse(scheduler.Processes.Contains(lowProc));
+    }
+
+    [TestMethod]
+    public void Step_HighPrioritySuspendsLow_LowDoesNotRunInSamePass()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var lowCtx = Ctx(0x01, 0x01, 0x01);
+        ScheduledProcess<DefaultContext>? lowProc = null;
+
+        var highProcessor = new CountingProcessor();
+        highProcessor.RegisterInstruction([0x01], "STEP", _ =>
+            lowProc!.Suspend(), overwrite: true);
+
+        scheduler.AddProcess(Ctx(0x01, 0x00), highProcessor, priority: 10);
+        lowProc = scheduler.AddProcess(lowCtx, Proc(), priority: 0);
+
+        scheduler.Step();
+
+        Assert.AreEqual(0, lowCtx.Stack.Count);
+        Assert.AreEqual(ProcessState.Suspended, lowProc.State);
+    }
+
     // ── Run ───────────────────────────────────────────────────────────────────
 
     [TestMethod]
